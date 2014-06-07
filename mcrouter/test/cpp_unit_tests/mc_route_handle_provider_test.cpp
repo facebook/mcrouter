@@ -1,0 +1,121 @@
+#include <string>
+
+#include <glog/logging.h>
+#include <gtest/gtest.h>
+
+#include "folly/Memory.h"
+#include "folly/io/async/EventBase.h"
+#include "folly/json.h"
+#include "mcrouter/PoolFactoryIf.h"
+#include "mcrouter/options.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/routes/McRouteHandleProvider.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+
+using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
+
+class MockPoolFactory : public PoolFactoryIf {
+public:
+  std::shared_ptr<ProxyGenericPool> fetchPool(folly::StringPiece poolName) {
+    if (poolName == "mock") {
+      return std::make_shared<ProxyRegularPool>("mock");
+    }
+    return nullptr;
+  }
+
+  std::shared_ptr<ProxyGenericPool>
+  parsePool(const std::string& pool_name_str,
+            const folly::dynamic& jpool,
+            const folly::dynamic& jpools) {
+    return nullptr;
+  }
+};
+
+static const std::string kConstShard =
+ R"({
+  "type": "HashRoute",
+  "children": "ErrorRoute",
+  "hash_func": "ConstShard"
+ })";
+
+static const std::string kShard =
+ R"({
+  "type": "HashRoute",
+  "children": "ErrorRoute",
+  "hash_func": "Shard",
+  "shard_map" : { "0": 0 }
+ })";
+
+static const std::string kWarmUp =
+ R"({
+   "type": "WarmUpRoute",
+   "cold": "ErrorRoute",
+   "warm": "NullRoute"
+ })";
+
+static const std::string kPoolRoute =
+ R"({
+   "type": "PoolRoute",
+   "pool": "mock",
+   "hash": { "hash_func": "Crc32" }
+ })";
+
+static std::shared_ptr<McrouterRouteHandleIf>
+getRoute(const folly::dynamic& d) {
+  McrouterOptions opts;
+  folly::EventBase eventBase;
+  auto proxy = folly::make_unique<proxy_t>(nullptr, &eventBase,
+                                           opts,
+                                           /* perform_stats_logging */ false);
+  MockPoolFactory pf;
+  McRouteHandleProvider provider(proxy.get(), *proxy->destinationMap, pf);
+  RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
+  auto res = factory.create(d);
+
+  // should be disposed before event_base
+  proxy.reset();
+
+  return res;
+}
+
+TEST(McRouteHandleProviderTest, sanity) {
+  auto rh = getRoute(folly::parseJson(kConstShard));
+  EXPECT_TRUE(rh != nullptr);
+  EXPECT_EQ(rh->routeName(), "hash");
+}
+
+TEST(McRouteHandleProviderTest, invalid_func) {
+  auto d = folly::parseJson(kConstShard);
+  d["hash_func"] = "SomeNotExistingFunc";
+  try {
+    auto rh = getRoute(d);
+  } catch (const std::logic_error& e) {
+    return;
+  }
+  FAIL() << "No exception thrown";
+}
+
+TEST(McRouteHandleProviderTest, obj_func) {
+  auto rh = getRoute(folly::parseJson(kShard));
+  EXPECT_TRUE(rh != nullptr);
+  EXPECT_EQ(rh->routeName(), "hash");
+}
+
+TEST(McRouteHandleProvider, warmup) {
+  auto rh = getRoute(folly::parseJson(kWarmUp));
+  EXPECT_TRUE(rh != nullptr);
+  EXPECT_EQ(rh->routeName(), "warm-up");
+}
+
+TEST(McRouteHandleProvider, pool) {
+  auto rh = getRoute("AllInitialRoute|Pool|mock");
+  EXPECT_TRUE(rh != nullptr);
+  EXPECT_EQ(rh->routeName(), "all-initial");
+}
+
+TEST(McRouteHandleProvider, pool_route) {
+  auto rh = getRoute(folly::parseJson(kPoolRoute));
+  EXPECT_TRUE(rh != nullptr);
+  EXPECT_EQ(rh->routeName(), "asynclog");
+}

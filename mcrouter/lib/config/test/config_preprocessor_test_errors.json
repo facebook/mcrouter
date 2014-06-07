@@ -1,0 +1,104 @@
+{
+  "nestedLimit": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "result": "@a"
+      }
+    },
+    "ret": "@a"
+  },
+  "invalidMacroDef": {
+    "macros": {
+      "a": "str"
+    }
+  },
+  "invalidConsts": {
+    "consts": "@a",
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "result": "a"
+      }
+    }
+  },
+  "invalidMacroDefType": {
+    "macros": {
+      "a": {
+        "result": "a"
+      }
+    }
+  },
+  "invalidMerge": {
+    "ret": {
+      "type": "merge",
+      "params": [ [], {} ]
+    }
+  },
+  "invalidSelect": {
+    "ret": {
+      "type": "select",
+      "key": "b",
+      "dictionary": { "a": 1 }
+    }
+  },
+  "invalidTransform": {
+    "ret": {
+      "type": "transform",
+      "dictionary": {}
+    }
+  },
+  "invalidTransformNames": {
+    "ret": {
+      "type": "transform",
+      "itemName": "not_item",
+      "itemTransform": "%item%",
+      "dictionary": { "a": 1 }
+    }
+  },
+  "invalidDefaults": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [
+          {
+            "name": "a",
+            "default": 1
+          },
+          "b"
+        ],
+        "result": "a"
+      }
+    }
+  },
+  "tooFewParams": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [ "a", { "name": "b", "default": "1" } ],
+        "result": "%a%"
+      }
+    },
+    "ret": "@a"
+  },
+  "tooManyParams": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [ "a", { "name": "b", "default": "1" } ],
+        "result": "%a%"
+      }
+    },
+    "ret": "@a(1,2,3)"
+  },
+  "stringAfterMacro": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [ "a" ],
+        "result": "%a%"
+      }
+    },
+    "ret": "@a()a"
+  }
+}

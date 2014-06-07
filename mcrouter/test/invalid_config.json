@@ -1,0 +1,23 @@
+{
+    "region": "test",
+    "clusters": {
+        "A": {
+            "cluster": "A",
+            "pools": {
+                "A.wildcard": {
+                    "cluster": "A",
+                    "protocol": "ascii",
+                    "servers": [
+                        "127.0.0.1:11615"
+                    ]
+                }
+            }
+        }
+    },
+    "routes": [
+        {
+            "aliases": [ "/test/A/" ],
+            "route": "PoolRoute|A.pho"
+        }
+    ]
+}

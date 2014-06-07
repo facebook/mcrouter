@@ -1,0 +1,27 @@
+{
+    "clusters": {
+        "A": {
+            "cluster": "A",
+            "pools": {
+                "A-foo": {
+                    "cluster": "A",
+                    "protocol": "ascii",
+                    "servers": [
+                        "127.0.0.1:11610"
+                    ]
+                }
+            }
+        }
+    },
+    "routes": [
+        {
+            "aliases": [ "/././" ],
+            "route": {
+                "type": "route",
+                "policies": {
+                    "foo": "PoolRoute|A-foo"
+                }
+            }
+        }
+    ]
+}

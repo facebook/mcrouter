@@ -1,0 +1,26 @@
+{
+  "clusters": {
+    "A": {
+      "pools": {
+        "A.alt": {
+          "server_list_from_pool": "A.pri"
+        },
+        "A.pri": {
+          "servers": [ "localhost:12345" ]
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/a/a/" ],
+      "route": {
+        "type": "route",
+        "policies": {
+          "alt": "PoolRoute|A.alt",
+          "pri": "PoolRoute|A.pri"
+        }
+      }
+    }
+  ]
+}

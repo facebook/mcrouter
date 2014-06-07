@@ -1,0 +1,38 @@
+{
+  "clusters": {
+    "A": {
+      "pools": {
+        "A.wildcard": {
+          "servers": [ "localhost:12345" ]
+        }
+      }
+    },
+    "B": {
+      "pools": {
+        "B.wildcard": {
+          "servers": [ "localhost:12346" ]
+        }
+      }
+    },
+    "C": {
+      "pools": {
+        "C.wildcard": {
+          "servers": [ "localhost:12347" ]
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/a/a/" ],
+      "route": {
+        "type": "AllSyncRoute",
+        "children": [
+          "PoolRoute|A.wildcard",
+          "PoolRoute|B.wildcard",
+          "PoolRoute|C.wildcard"
+        ]
+      }
+    }
+  ]
+}

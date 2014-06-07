@@ -1,0 +1,110 @@
+/**
+ *  Copyright (c) 2014, Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the BSD-style license found in the
+ *  LICENSE file in the root directory of this source tree. An additional grant
+ *  of patent rights can be found in the PATENTS file in the same directory.
+ */
+/**
+ * Cpplint enforces include guards, but this is not a typical include file
+ * and we do want to include it multiple times.  This hack fools Cpplint
+ * into believing we have a proper include guard.
+ */
+// %flint: pause
+#if 0
+// %flint: resume
+#ifndef FAKE_INCLUDE_GUARD
+#define FAKE_INCLUDE_GUARD
+#endif
+// %flint: pause
+#endif
+
+
+#ifndef mcrouter_option_group
+#define mcrouter_option_group(_sep)
+#endif
+
+#define no_long ""
+#define no_short '\0'
+
+/**
+ * Format same as in mcrouter_options_list.h
+ */
+
+mcrouter_option_group("Standalone mcrouter options")
+
+mcrouter_option_string(
+  log_file, "",
+  "log-path", 'L',
+  "Log file path")
+
+/* Note that debug level is handled specially in main.cpp
+   due to -v and -d options, so no long/short options here */
+mcrouter_option_integer(
+  int, debug_level, FBI_LOG_NOTIFY,
+  no_long, no_short,
+  "Debug level")
+
+mcrouter_option_other(
+  std::vector<uint16_t>, ports, ,
+  "port", 'p',
+  "Port(s) to listen on (comma separated)")
+
+mcrouter_option_other(
+  std::vector<uint16_t>, ssl_ports, ,
+  "ssl-port", no_short,
+  "SSL Port(s) to listen on (comma separated)")
+
+mcrouter_option_integer(
+  int, listen_sock_fd, -1,
+  "listen-sock-fd", no_short,
+  "Listen socket to take over")
+
+mcrouter_option_string(
+  pidfile, "",
+  "pid-file", 'P',
+  "PID file")
+
+mcrouter_option_toggle(
+  background, false,
+  "background", 'b',
+  "Run in background")
+
+mcrouter_option_toggle(
+  managed, false,
+  "managed-mode", 'm',
+  "Managed mode (auto restart on crash)")
+
+mcrouter_option_integer(
+  rlim_t, fdlimit, DEFAULT_FDLIMIT,
+  "connection-limit", 'n',
+  "Connection limit")
+
+mcrouter_option_toggle(
+  enable_fatal_signal_spin_wait, true,
+  "disable-spin-wait", 'S',
+  "Disable spin wait on fatal signal")
+
+mcrouter_option_integer(
+  uint32_t, max_global_outstanding_reqs, DEFAULT_MAX_GLOBAL_OUTSTANDING_REQS,
+  "max-global-outstanding-reqs", no_short,
+  "Maximum requests outstanding globally (0 to disable)")
+
+mcrouter_option_integer(
+  uint32_t, max_client_outstanding_reqs, DEFAULT_MAX_CLIENT_OUTSTANDING_REQS,
+  "max-client-outstanding-reqs", no_short,
+  "Maximum requests outstanding per client (0 to disable)")
+
+mcrouter_option_integer(
+  size_t, requests_per_read, 5,
+  "reqs-per-read", no_short,
+  "Adjusts server buffer size to process this many requests per read."
+  " Smaller values may improve latency.")
+
+#undef no_short
+#undef no_long
+#undef mcrouter_option_group
+#undef mcrouter_option
+
+// %flint: resume

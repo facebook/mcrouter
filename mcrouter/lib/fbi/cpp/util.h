@@ -1,0 +1,182 @@
+/**
+ *  Copyright (c) 2014, Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the BSD-style license found in the
+ *  LICENSE file in the root directory of this source tree. An additional grant
+ *  of patent rights can be found in the PATENTS file in the same directory.
+ */
+#ifndef FBI_CPP_UTIL_H
+#define FBI_CPP_UTIL_H
+
+#include <string>
+
+#include "folly/Format.h"
+#include "folly/Likely.h"
+#include "folly/Range.h"
+#include "mcrouter/lib/fbi/nstring.h"
+
+// forward declaration
+namespace folly {
+  class IPAddress;
+}
+
+namespace facebook { namespace memcache {
+
+/**
+ * If `condition` is false, throws std::logic_error.
+ * `format` and `args` are passed to folly::format().
+ */
+template<typename... Args>
+void checkLogic(bool condition, folly::StringPiece format, Args&&... args) {
+  if (UNLIKELY(!condition)) {
+    throw std::logic_error(
+      folly::format(format, std::forward<Args>(args)...).str());
+  }
+}
+
+/** folly::to style conversion routines */
+
+template <typename T, typename F> T to(const F& x);
+
+template <>
+inline nstring_t to<nstring_t>(const folly::StringPiece& sp) {
+  nstring_t ns;
+  ns.str = (sp.empty() ? nullptr : (char*)sp.begin());
+  ns.len = sp.size();
+  return ns;
+}
+
+template <>
+inline nstring_t to<nstring_t>(const std::string& s) {
+  nstring_t ns;
+  ns.str = (s.empty() ? nullptr : (char*)s.data());
+  ns.len = s.size();
+  return ns;
+}
+
+template <>
+inline folly::StringPiece to<folly::StringPiece>(const nstring_t& ns) {
+  return folly::StringPiece(ns.str, ns.len);
+}
+
+template <>
+inline std::string to<std::string>(const nstring_t& ns) {
+  return std::string(ns.str, ns.len);
+}
+
+template <>
+inline std::string to<std::string>(nstring_t* const& ns) {
+  return std::string(ns->str, ns->len);
+}
+
+/** milliseconds to timeval_t */
+template <>
+inline timeval_t to<timeval_t>(const unsigned int& ms) {
+  timeval_t r;
+  r.tv_sec = ms / 1000;
+  r.tv_usec = ms % 1000 * 1000;
+  return r;
+}
+
+/**
+ * True iff a and b point to the same region in memory
+ */
+inline bool sameMemoryRegion(folly::StringPiece a, folly::StringPiece b) {
+  return (a.empty() && b.empty()) ||
+    (a.size() == b.size() && a.begin() == b.begin());
+}
+
+/**
+ * Returns value from map or default, if there is no key in map.
+ */
+template <class Map>
+inline typename Map::mapped_type tryGet(
+    const Map& map,
+    const typename Map::key_type& key,
+    const typename Map::mapped_type def = typename Map::mapped_type()) {
+
+  auto it = map.find(key);
+  return it == map.end() ? def : it->second;
+}
+
+/**
+ * Returns string with length in [minLen, maxLen] and random characters
+ * from range.
+ */
+std::string randomString(size_t minLen = 1, size_t maxLen = 20,
+    folly::StringPiece range = "abcdefghijklmnopqrstuvwxyz");
+
+/**
+ * Returns hash value for a given key.
+ * To use for probabilistic sampling, e.g. for stats.
+ */
+uint32_t getMemcacheKeyHashValue(folly::StringPiece key);
+
+/**
+ * Checks if the given hash is within a range.
+ * The range is from 0 to (MAX(uint32_t)/sample_rate)
+ * Used for probabilistic decisions, like stats sampling.
+ */
+bool determineIfSampleKeyForViolet(uint32_t routingKeyHash,
+                                   uint32_t sample_period);
+
+/**
+ * @return MD5 hash of a string
+ */
+std::string Md5Hash(folly::StringPiece input);
+
+/**
+ * Writes 'contents' to the file
+ *
+ * @return true on success, false otherwise
+ */
+bool writeStringToFile(folly::StringPiece contents, const std::string& path);
+
+/**
+ * Write the given 'contents' to 'absFilename' atomically. This first writes
+ * the contents to a temp file to in the absFilename's parent directory
+ * and then calls 'rename()', which is atomic.
+ *
+ * @return true on success, false otherwise
+*/
+bool atomicallyWriteFileToDisk(folly::StringPiece contents,
+                               const std::string& absFilename);
+
+/**
+ * Analogue of UNIX touch: changes file access and modification time, if file
+ * doesn't exist creates it.
+ *
+ * @return true on success, false otherwise
+*/
+bool touchFile(const std::string& path);
+
+/**
+ * Make uint64 random number out of uint32. Especially useful for mt19937.
+ */
+template <class RNG>
+typename std::enable_if<
+  std::is_same<typename RNG::result_type, uint32_t>::value,
+  uint64_t
+>::type
+randomInt64(RNG& rng) {
+  return ((uint64_t)rng() << 32) | rng();
+}
+
+/**
+ * Specialization for random generator with uint64 result type.
+ */
+template <class RNG>
+typename std::enable_if<
+  std::is_same<typename RNG::result_type, uint64_t>::value,
+  uint64_t
+>::type
+randomInt64(RNG& rng) {
+  return rng();
+}
+
+std::string joinHostPort(const folly::IPAddress& ip, const std::string& port);
+
+}}  // facebook::memcache
+
+#endif

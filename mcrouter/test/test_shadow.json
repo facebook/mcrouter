@@ -1,0 +1,109 @@
+{
+  "clusters": {
+    "A": {
+      "pools": {
+        "foo": {
+          "servers": [
+            "127.0.0.1:11710",
+            "127.0.0.1:11711"
+          ]
+        },
+        "bar-old": {
+          "servers": [ "127.0.0.1:11720" ]
+        },
+        "bar-new": {
+          "servers": [ "127.0.0.1:11721" ]
+        },
+        "foo-regional": {
+          "servers": [
+            "127.0.0.1:11710",
+            "127.0.0.1:11711"
+          ],
+          "pool_locality": "region"
+        },
+        "foo-shadow": {
+          "servers": [ "127.0.0.1:11712" ]
+        },
+        "bar-shadow": {
+          "servers": [ "127.0.0.1:11722" ]
+        }
+      }
+    }
+  },
+  "named_handles": [
+    {
+      "type": "PoolRoute",
+      "name": "pool-migrate-old",
+      "pool": "bar-old",
+      "shadows": [
+        {
+          "target": "PoolRoute|bar-shadow",
+          "index_range": [0, 2],
+          "index_range_rv": "index_range_0",
+          "key_fraction_range": [0.0, 0.1]
+        }
+      ]
+    },
+    {
+      "type": "PoolRoute",
+      "name": "pool-migrate-new",
+      "pool": "bar-new",
+      "shadows": [
+        {
+          "target": "PoolRoute|bar-shadow",
+          "index_range": [0, 2],
+          "index_range_rv": "index_range_0",
+          "key_fraction_range": [0.0, 0.1]
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "aliases": [ "/a/a/" ],
+      "route": {
+        "type": "route",
+        "policies": {
+          "f": {
+            "type": "PoolRoute",
+            "pool": "foo",
+            "shadows": [
+              {
+                "target": "PoolRoute|foo-shadow",
+                "index_range": [0, 2],
+                "key_fraction_range": [0.0, 0.1],
+                "key_fraction_range_rv": "key_fraction_range_0"
+              },
+              {
+                "target": "PoolRoute|bar-shadow",
+                "index_range": [0, 2],
+                "key_fraction_range": [0, 0.1],
+                "key_fraction_range_rv": "key_fraction_range_0"
+              }
+            ]
+          },
+          "b_migrate": {
+            "type": "MigrateRoute",
+            "from": "pool-migrate-old",
+            "to": "pool-migrate-new",
+            "start_time": 0,
+            "interval": 1
+          },
+          "b_old": "pool-migrate-old",
+          "b_new": "pool-migrate-new",
+          "reg_f": {
+            "type": "PoolRoute",
+            "pool": "foo-regional",
+            "shadows": [
+              {
+                "target": "PoolRoute|foo-shadow",
+                "index_range": [0, 2],
+                "key_fraction_range": [0.0, 0.1]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

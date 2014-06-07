@@ -1,0 +1,27 @@
+{
+  "clusters": {
+    "A": {
+      "pools": {
+        "A.wildcard": {
+          "servers": [ "localhost:12345" ]
+        }
+      }
+    }
+  },
+  "regional_pools": {
+    "wildcard": {
+      "servers": [ "localhost:12346" ]
+    }
+  },
+  "routes" : [
+    {
+      "aliases" : [ "/a/a/" ],
+      "route" : {
+        "type" : "WarmUpRoute",
+        "cold" : "PoolRoute|A.wildcard",
+        "warm" : "PoolRoute|wildcard",
+        "exptime" : 0
+      }
+    }
+  ]
+}

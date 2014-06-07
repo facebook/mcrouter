@@ -1,0 +1,29 @@
+{
+  "split_key_configs": {},
+  "routes": [
+    {
+      "aliases": [
+        "/mctest/mctestc00/"
+      ],
+      "route": "PoolRoute|mctestc00.wildcard"
+    }
+  ],
+  "clusters": {
+    "mctestc00": {
+      "pools": {
+        "mctestc00.wildcard": {
+          "protocol": "ascii",
+          "name": "wildcard",
+          "servers": [
+            "localhost:11400",
+            {"totally" : "invalid"}
+          ],
+          "hash": "ch3",
+          "transport": "tcp"
+        }
+      },
+      "cluster": "mctestc00"
+    }
+  },
+  "regional_pools": {}
+}

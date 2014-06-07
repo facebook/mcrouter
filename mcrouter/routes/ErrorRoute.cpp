@@ -1,0 +1,22 @@
+#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/lib/routes/ErrorRoute.h"
+
+namespace facebook { namespace memcache {
+
+template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
+makeRouteHandle<mcrouter::McrouterRouteHandleIf, ErrorRoute>(
+  const folly::dynamic&);
+
+namespace mcrouter {
+
+McrouterRouteHandlePtr makeErrorRoute(const char* name) {
+  return makeMcrouterRouteHandle<ErrorRoute>(name);
+}
+
+McrouterRouteHandlePtr makeErrorRoute(const char* name,
+                                      McStringData valueToSet) {
+  return makeMcrouterRouteHandle<ErrorRoute>(name, std::move(valueToSet));
+}
+
+}}}

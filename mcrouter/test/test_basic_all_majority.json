@@ -1,0 +1,46 @@
+{
+  "clusters": {
+    "A": {
+      "pools": {
+        "A.wildcard": {
+          "servers": [ "localhost:12345" ]
+        }
+      }
+    },
+    "B": {
+      "pools": {
+        "B.wildcard": {
+          "servers": [ "localhost:12346" ]
+        }
+      }
+    },
+    "C": {
+      "pools": {
+        "C.wildcard": {
+          "servers": [ "localhost:12347" ]
+        }
+      }
+    },
+    "D": {
+      "pools": {
+        "D.wildcard": {
+          "servers": [ "localhost:12348" ]
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/a/a/" ],
+      "route": {
+        "type": "AllMajorityRoute",
+        "children": [
+          "PoolRoute|A.wildcard",
+          "PoolRoute|B.wildcard",
+          "PoolRoute|C.wildcard",
+          "PoolRoute|D.wildcard"
+        ]
+      }
+    }
+  ]
+}

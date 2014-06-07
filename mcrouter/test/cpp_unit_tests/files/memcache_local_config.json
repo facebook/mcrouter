@@ -1,0 +1,25 @@
+{
+  "clusters": {
+    "prn2c07": {
+      "pools": {
+        "prn2c07-mctest": {
+          "servers": [
+            "localhost:PORT"
+          ]
+        }
+      }
+    }
+  },
+  "regional_pools": {
+  },
+  "split_key_configs": {
+  },
+  "routes": [
+    {
+      "aliases": [
+        "/oregon/prn2c07/"
+      ],
+      "route": "PoolRoute|prn2c07-mctest"
+    }
+  ]
+}

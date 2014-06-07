@@ -1,0 +1,47 @@
+{
+    "clusters": {
+        "A": {
+            "cluster": "A",
+            "pools": {
+                "A-warm": {
+                    "cluster": "A",
+                    "protocol": "ascii",
+                    "servers": [
+                        "127.0.0.1:11610"
+                    ]
+                },
+                "A-cold": {
+                    "cluster": "A",
+                    "protocol": "ascii",
+                    "servers": [
+                        "127.0.0.1:11611"
+                    ]
+                }
+            }
+        }
+    },
+    "routes": [
+        {
+            "aliases": [
+                "/region/cluster/"
+            ],
+            "route": {
+                "type": "route",
+                "policies": {
+                    "foo": {
+                        "type": "MigrateRoute",
+                        "from": "PoolRoute|A-warm",
+                        "to": {
+                            "type": "WarmUpRoute",
+                            "cold": "PoolRoute|A-cold",
+                            "warm": "PoolRoute|A-warm",
+                            "exptime": 20000
+                        },
+                        "start_time": 1380331354,
+                        "interval": 1
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,141 @@
+/**
+ *  Copyright (c) 2014, Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the BSD-style license found in the
+ *  LICENSE file in the root directory of this source tree. An additional grant
+ *  of patent rights can be found in the PATENTS file in the same directory.
+ */
+#pragma once
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+
+namespace folly {
+class EventBase;
+}
+
+namespace facebook { namespace memcache {
+
+class McServerThread;
+
+/**
+ * A multithreaded, asynchronous MC protocol server.
+ */
+class AsyncMcServer {
+ public:
+
+  /**
+   * Server startup options
+   */
+  struct Options {
+    /**
+     * Take over an exernally created socket.
+     * The server will call listen(), but not bind().
+     * If this is used (not -1), ports must be empty.
+     * It will be used as SSL socket if and only if all of pem* paths are set.
+     */
+    int existingSocketFd{-1};
+
+    /**
+     * The list of ports to listen on.
+     * If this is used, existingSocketFd must be unset (-1).
+     */
+    std::vector<uint16_t> ports;
+
+    /**
+     * The list of ports to listen on for SSL connections.
+     * If this is used, existingSocketFd must be unset (-1).
+     */
+    std::vector<uint16_t> sslPorts;
+
+    /**
+     * SSL cert/key/CA paths.
+     * If sslPorts is non-empty, these must also be nonempty.
+     */
+    std::string pemCertPath;
+    std::string pemKeyPath;
+    std::string pemCaPath;
+
+    /**
+     * Number of threads to spawn, must be positive.
+     */
+    size_t numThreads{1};
+
+    /**
+     * Worker-specific options
+     */
+    AsyncMcServerWorker::Options worker;
+  };
+
+  /**
+   * User-defined loop function.
+   * Args are threadId (0 to numThreads - 1), eventBase and the thread's worker
+   * The user is responsible for calling eventBase.loop() or similar.
+   */
+  typedef std::function<void(size_t,
+                             folly::EventBase&,
+                             facebook::memcache::AsyncMcServerWorker&)> LoopFn;
+
+  explicit AsyncMcServer(Options opts);
+  ~AsyncMcServer();
+
+  /**
+   * Spawn the required number of threads, and run the loop function in each
+   * of them.
+   *
+   * @throws apache::thrift::transport::TTransportException
+   *   If bind or listen fails.
+   */
+  void spawn(LoopFn fn);
+
+  /**
+   * Start shutting down all processing gracefully.  Will ensure that any
+   * pending requests are replied, and any writes on the sockets complete.
+   * Can only be called after spawn();
+   *
+   * Note: you still have to call join() to wait for all writes to complete.
+   *
+   * Can be called from any thread. Safe to call multiple times - the first
+   * call will start shutting down, subsequent calls will not have any effect.
+   */
+  void shutdown();
+
+  /**
+   * Installs a new handler for the given signals that would shutdown
+   * this server when delivered.
+   * Note: only one server can be managed by these handlers per process.
+   *
+   * @param signals  List of signals
+   */
+  void installShutdownHandler(const std::vector<int>& signals);
+
+  /**
+   * Signal handler-safe version of shutdown.
+   * Can only be called after spawn().
+   */
+  void shutdownFromSignalHandler();
+
+  /**
+   * Join all spawned threads.  Will exit upon server shutdown.
+   */
+  void join();
+
+ private:
+  Options opts_;
+  std::vector<std::unique_ptr<McServerThread>> threads_;
+
+  bool alive_{true};
+  std::mutex shutdownLock_;
+
+  AsyncMcServer(const AsyncMcServer&) = delete;
+  AsyncMcServer& operator=(const AsyncMcServer&) = delete;
+
+  friend class McServerThread;
+};
+
+}}  // facebook::memcache

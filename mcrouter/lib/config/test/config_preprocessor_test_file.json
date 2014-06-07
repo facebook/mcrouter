@@ -1,0 +1,342 @@
+{
+  "sanity": {
+    "macros": {
+      "s": {
+        "type": "macroDef",
+        "result": "string"
+      },
+      "sParam": {
+        "type": "macroDef",
+        "params": [ "a" ],
+        "result": "%a%"
+      }
+    },
+    "cases": {
+      "simple": {
+        "orig": "@s",
+        "expand": "string"
+      },
+      "emptyParam": {
+        "orig": "@sParam()",
+        "expand": ""
+      },
+      "normalParam": {
+        "orig": "@sParam(a)",
+        "expand": "a"
+      },
+      "escapedParam": {
+        "orig": "@sParam(\\))",
+        "expand": ")"
+      },
+      "keys": {
+        "orig": {
+          "type": "keys",
+          "dictionary": { "a": 1 }
+        },
+        "expand": [ "a" ]
+      },
+      "values": {
+        "orig": {
+          "type": "values",
+          "dictionary": { "a": 1 }
+        },
+        "expand": [ 1 ]
+      }
+    }
+  },
+  "inner": {
+    "macros": {
+      "s": {
+        "type": "macroDef",
+        "result": "string"
+      },
+      "subst": {
+        "type": "macroDef",
+        "params": [
+          "inner"
+        ],
+        "result": "@%inner%"
+      },
+      "concat": {
+        "type": "macroDef",
+        "params": [
+          "p1",
+          {
+            "name": "p2",
+            "default": "321"
+          }
+        ],
+        "result": "%p1%%p2%"
+      },
+      "multiple_concat": {
+        "type": "macroDef",
+        "params": [ "a", "b" ],
+        "result": "%a%2%b%"
+      }
+    },
+    "cases": {
+      "inner": {
+        "orig": "@subst(s)",
+        "expand": "string"
+      },
+      "concat": {
+        "orig": "@concat(@s,123)",
+        "expand" : "string123"
+      },
+      "concat_default": {
+        "orig": "@concat(@s)",
+        "expand": "string321"
+      },
+      "concat_multiple": {
+        "orig": "@multiple_concat(1,3)",
+        "expand": "123"
+      }
+    }
+  },
+  "import": {
+    "consts": [
+      {
+        "type": "constDef",
+        "name": "importedConst",
+        "result": "%templGlobal%"
+      }
+    ],
+    "macros": {
+      "type": "merge",
+      "params": [
+        {
+          "imported": "@import(%importedConst%)"
+        }
+      ]
+    },
+    "cases": {
+      "simple": {
+        "orig": "@import(test)",
+        "expand": "mock_test"
+      },
+      "templ": {
+        "orig": "@import(%testGlobal%)",
+        "expand": "mock_test"
+      },
+      "imported_templ": {
+        "orig": "@imported",
+        "expand": "imported_macro"
+      }
+    }
+  },
+  "shuffle": {
+    "macros": {
+    },
+    "cases": {
+      "empty": {
+        "orig": {
+          "type": "shuffle",
+          "dictionary": { }
+        },
+        "expand": { }
+      },
+      "one": {
+        "orig": {
+          "type": "shuffle",
+          "dictionary": [ 1 ]
+        },
+        "expand": [ 1 ]
+      }
+    }
+  },
+  "slice": {
+    "macros": {
+    },
+    "cases": {
+      "sanity": {
+        "orig": {
+          "type": "slice",
+          "from": "@int(1)",
+          "to": 2,
+          "dictionary": [ "a", "b", "c", "d" ]
+        },
+        "expand": [ "b", "c" ]
+      }
+    }
+  },
+  "transform": {
+    "macros": {
+      "concat": {
+        "type": "macroDef",
+        "params": [ "a", "b" ],
+        "result": "%a%%b%"
+      }
+    },
+    "cases": {
+      "list": {
+        "orig": {
+          "type": "transform",
+          "dictionary": [ "a", "b", "c" ],
+          "itemTransform": "@concat(%item%,1)"
+        },
+        "expand": [ "a1", "b1", "c1" ]
+      },
+      "map": {
+        "orig": {
+          "type": "transform",
+          "dictionary": { "a": "1", "b": "2", "c": "3" },
+          "keyTransform": "%key%1",
+          "itemTransform": "@concat(%item%,%key%)"
+        },
+        "expand": { "a1": "1a", "b1": "2b", "c1": "3c" }
+      },
+      "inner": {
+        "orig": {
+          "type": "transform",
+          "itemName": "list",
+          "keyName": "listKey",
+          "itemTransform": {
+            "type": "transform",
+            "dictionary": "%list%",
+            "itemTransform": "@concat(%listKey%,@str(%item%))"
+          },
+          "dictionary": {
+            "a": [1, 2, 3],
+            "b": [4, 5, 6]
+          }
+        },
+        "expand": {
+          "a": ["a1", "a2", "a3"],
+          "b": ["b4", "b5", "b6"]
+        }
+      }
+    }
+  },
+  "escape": {
+    "consts": [
+      {
+        "type": "constDef",
+        "name": "amp",
+        "result": "\\@"
+      }
+    ],
+    "macros": {
+      "\\@": {
+        "type": "macroDef",
+        "result": "\\@\\(\\\\\\)"
+      },
+      "a": {
+        "type": "macroDef",
+        "result": "@\\@"
+      },
+      "b": {
+        "type": "macroDef",
+        "params": [ "a", "b" ],
+        "result": {
+          "\\@a": "@%a%",
+          "\\@b": "@%a%%b%",
+          "@a": "\\%a\\%%amp%"
+        }
+      }
+    },
+    "cases": {
+      "simple": {
+        "orig": "\\%\\\\",
+        "expand": "%\\"
+      },
+      "macro": {
+        "orig": "@a",
+        "expand": "@(\\)"
+      },
+      "macro2": {
+        "orig": "@\\a",
+        "expand": "@(\\)"
+      },
+      "inner": {
+        "orig": "@b(\\a,)",
+        "expand": {
+          "@a": "@(\\)",
+          "@b": "@(\\)",
+          "@(\\)": "%a%@"
+        }
+      },
+      "merge": {
+        "orig": {
+          "type": "merge",
+          "params": [ [ "\\\\" ], [ "\\@" ], [ "@\\@" ] ]
+        },
+        "expand": [ "\\", "@", "@(\\)" ]
+      },
+      "transform_dict": {
+        "orig": {
+          "type": "transform",
+          "itemTransform": "\\%%item1%",
+          "keyTransform": "%key1%\\@",
+          "keyName": "key1",
+          "itemName": "item1",
+          "dictionary": {
+            "\\@": "\\\\"
+          }
+        },
+        "expand": {
+          "@@": "%\\"
+        }
+      },
+      "transform_list": {
+        "orig": {
+          "type": "transform",
+          "itemTransform": "\\%%item1%",
+          "itemName": "item1",
+          "dictionary": [ "\\@", "\\\\" ]
+        },
+        "expand": [ "%@", "%\\" ]
+      }
+    }
+  },
+  "consts_in_consts": {
+    "consts": {
+      "type": "merge",
+      "params": [
+        [
+          {
+            "type": "constDef",
+            "name": "a",
+            "result": "a"
+          }
+        ],
+        [
+          {
+            "type": "constDef",
+            "name": "b",
+            "result": "%a%b"
+          },
+          {
+            "type": "constDef",
+            "name": "c",
+            "result": "%b%c"
+          }
+        ]
+      ]
+    },
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [ "param" ],
+        "result": "%c%%param%"
+      }
+    },
+    "cases": {
+      "a": {
+        "orig": "%a%",
+        "expand": "a"
+      },
+      "b": {
+        "orig": "%b%",
+        "expand": "ab"
+      },
+      "c": {
+        "orig": "%c%",
+        "expand": "abc"
+      },
+      "macroA": {
+        "orig": "@%a%(%c%)",
+        "expand": "abcabc"
+      }
+    }
+  }
+}

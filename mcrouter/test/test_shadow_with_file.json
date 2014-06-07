@@ -1,0 +1,40 @@
+{
+  "macros": {
+    "pool": {
+      "type": "macroDef",
+      "params": [ "name" ],
+      "result": {
+        "type": "select",
+        "key": "%name%",
+        "dictionary": {
+          "type": "merge",
+          "params": [
+            {
+              "%name%": "PoolRoute|%name%"
+            },
+            "@import(test_shadow_with_file_config.json)"
+          ]
+        }
+      }
+    }
+  },
+  "clusters": {
+    "A": {
+      "pools": {
+        "foo": {
+          "server_timeout": 3500,
+          "servers": [
+            "127.0.0.1:11710",
+            "127.0.0.1:11711"
+          ]
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/a/a/" ],
+      "route": "@pool(foo)"
+    }
+  ]
+}

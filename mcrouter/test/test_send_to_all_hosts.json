@@ -1,0 +1,47 @@
+{
+  "clusters": {
+    "clusterA": {
+      "cluster": "clusterA",
+      "pools": {
+        "poolA": {
+          "cluster": "clusterA",
+          "protocol": "ascii",
+          "servers": [
+            "127.0.0.1:11810"
+          ]
+        }
+      }
+    },
+    "clusterB": {
+      "cluster": "clusterB",
+      "pools": {
+        "poolB": {
+          "cluster": "clusterB",
+          "protocol": "ascii",
+          "servers": [
+            "127.0.0.1:11811",
+            "127.0.0.1:11812"
+          ]
+        }
+      }
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/test/clusterA/" ],
+      "route": {
+        "type": "route",
+        "policies": {
+          "a": {
+            "type": "AllSyncRoute",
+            "children": [
+              "Pool|poolA",
+              "AllSyncRoute|Pool|poolB"
+            ]
+          }
+        },
+        "wildcard": "PoolRoute|poolA"
+      }
+    }
+  ]
+}
