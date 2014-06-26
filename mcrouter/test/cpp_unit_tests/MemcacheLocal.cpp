@@ -50,7 +50,7 @@ int MemcacheLocal::startMemcachedOnPort(const string& path,
   //memcache prints some lines. redirect output to file / silence output.
   int fd1;
   //open the output file
-  fd1 = open("/dev/null", O_CREAT | O_RDWR);
+  fd1 = open("/dev/null", O_RDWR);
 
   /**
    * options: redirect stdout and stderr of the subprocess to fd1 (/dev/null)
