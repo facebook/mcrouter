@@ -9,11 +9,13 @@ sed 's/PKG_CHECK_MODULES.*$/true/g' -i configure.ac
 autoreconf --install
 # LD_LIBRARY_PATH is needed since configure builds small programs with -lgflags, and doesn't use
 # libtool to encode full library path, so running those will not find libgflags otherwise
+# We need --enable-boostthreads, since otherwise thrift will not link against
+# -lboost_thread, while still using functions from it (need to fix thrift directly)
 LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH" \
     LD_RUN_PATH="$INSTALL_DIR/lib" \
     LDFLAGS="-L$INSTALL_DIR/lib" \
     CPPFLAGS="-I$INSTALL_DIR/include -I$INSTALL_DIR/include/python2.7 -I$PKG_DIR/folly -I$PKG_DIR/double-conversion" \
-    ./configure --prefix=$INSTALL_DIR
+    ./configure --prefix=$INSTALL_DIR --enable-boostthreads
 
 # Circular and missing dependencies.  Awesome.
 cd compiler && make libparse.la libthriftcompilerbase.la $MAKE_ARGS

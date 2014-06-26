@@ -205,13 +205,8 @@ AC_CHECK_FUNCS([gettimeofday \
                 dup2 \
                 ftruncate])
 
-AC_SUBST(AM_LDFLAGS, ["$BOOST_LDFLAGS \
-                       $BOOST_CONTEXT_LIB \
-                       $BOOST_FILESYSTEM_LIB \
-                       $BOOST_SYSTEM_LIB \
-                       $BOOST_REGEX_LIB \
-                       -lpthread \
-                       -pthread"])
+LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
+     $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB -lpthread -pthread"
 
 AM_CONDITIONAL([HAVE_STD_THREAD], [test "$ac_cv_header_features" = "yes"])
 AM_CONDITIONAL([HAVE_X86_64], [test "$build_cpu" = "x86_64"])
