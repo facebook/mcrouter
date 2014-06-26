@@ -9,6 +9,7 @@
 #pragma once
 
 #include "folly/io/IOBuf.h"
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/fibers/WhenN.h"
 
@@ -36,11 +37,10 @@ BigValueRoute<RouteHandleIf>::ChunksInfo::ChunksInfo(uint32_t num_chunks)
     valid_(true) {}
 
 template <class RouteHandleIf>
-McStringData BigValueRoute<RouteHandleIf>::ChunksInfo::toStringType() const {
-  return McStringData(
-    folly::IOBuf::copyBuffer(
-      folly::format("{}-{}-{}", infoVersion_, numChunks_, randSuffix_).str()
-    )
+std::unique_ptr<folly::IOBuf>
+BigValueRoute<RouteHandleIf>::ChunksInfo::toStringType() const {
+  return folly::IOBuf::copyBuffer(
+    folly::format("{}-{}-{}", infoVersion_, numChunks_, randSuffix_).str()
   );
 }
 
@@ -88,7 +88,8 @@ BigValueRoute<RouteHandleIf>::route(const Request& req,
   }
 
   typedef typename ReplyType<Operation, Request>::type Reply;
-  ChunksInfo chunks_info(initialReply.value().dataRange());
+  auto buf = initialReply.value().clone();
+  ChunksInfo chunks_info(coalesceAndGetRange(buf));
   if (!chunks_info.valid()) {
     return NullRoute<RouteHandleIf>::route(req, Operation());
   }
@@ -181,8 +182,10 @@ BigValueRoute<RouteHandleIf>::chunkUpdateRequests(const Request& req,
   size_t i_pos = 0;
   for (int i = 0; i < num_chunks;  i++, i_pos += options_.threshold_) {
     // generate chunk_key and chunk_value
-    auto chunk_value = req.value().substr(i_pos, options_.threshold_);
-
+    auto chunk_value = req.value().clone();
+    chunk_value->trimStart(i_pos);
+    chunk_value->trimEnd(chunk_value->length() -
+                         std::min(options_.threshold_, chunk_value->length()));
     auto req_big = createEmptyRequest(ChunkUpdateOP(), req);
     req_big.setKey(createChunkKey(base_key, i, info.randSuffix()));
     req_big.setValue(std::move(chunk_value));
@@ -227,9 +230,9 @@ Reply BigValueRoute<RouteHandleIf>::mergeChunkGetReplies(
       return Reply(reduced_reply_it->result());
   }
 
-  std::vector<McStringData> data_vec;
+  std::vector<std::unique_ptr<folly::IOBuf>> data_vec;
   while (begin != end) {
-    data_vec.push_back(begin->value());
+    data_vec.push_back(begin->value().clone());
     ++begin;
   }
 
@@ -239,15 +242,13 @@ Reply BigValueRoute<RouteHandleIf>::mergeChunkGetReplies(
 }
 
 template <class RouteHandleIf>
-McStringData BigValueRoute<RouteHandleIf>::createChunkKey(
+std::unique_ptr<folly::IOBuf> BigValueRoute<RouteHandleIf>::createChunkKey(
     folly::StringPiece base_key,
     uint32_t chunk_index,
     uint64_t rand_suffix) const {
 
-  return McStringData(
-      folly::IOBuf::copyBuffer(
-        folly::format("{}:{}:{}", base_key, chunk_index, rand_suffix).str()
-      )
+  return folly::IOBuf::copyBuffer(
+    folly::format("{}:{}:{}", base_key, chunk_index, rand_suffix).str()
   );
 }
 

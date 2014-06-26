@@ -15,8 +15,8 @@ McrouterRouteHandlePtr makeErrorRoute(const char* name) {
 }
 
 McrouterRouteHandlePtr makeErrorRoute(const char* name,
-                                      McStringData valueToSet) {
-  return makeMcrouterRouteHandle<ErrorRoute>(name, std::move(valueToSet));
+                                      const std::string& valueToSet) {
+  return makeMcrouterRouteHandle<ErrorRoute>(name, valueToSet);
 }
 
 }}}

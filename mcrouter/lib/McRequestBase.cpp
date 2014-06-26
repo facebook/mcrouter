@@ -1,5 +1,7 @@
 #include "McRequestBase.h"
 
+#include "folly/io/IOBuf.h"
+#include "folly/Memory.h"
 #include "folly/Range.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -7,29 +9,29 @@ namespace facebook { namespace memcache {
 
 McRequestBase::McRequestBase(McMsgRef&& msg)
     : msg_(std::move(msg)),
-      keyData_(McStringData::SaveMsgKey, msg_.clone()),
-      valueData_(McStringData::SaveMsgValue, msg_.clone()),
-      keys_(keyData_.dataRange()),
+      keyData_(makeMsgKeyIOBuf(msg_)),
+      valueData_(makeMsgValueIOBuf(msg_)),
+      keys_(getRange(keyData_)),
       exptime_(msg_->exptime),
       flags_(msg_->flags),
       delta_(msg_->delta),
       leaseToken_(msg_->lease_id) {
 }
 
-McRequestBase::McRequestBase(const std::string& key)
-    : keyData_(key),
-      keys_(keyData_.dataRange()) {
+McRequestBase::McRequestBase(folly::StringPiece key)
+    : keyData_(folly::IOBuf::copyBuffer(key)) {
+  keyData_->coalesce();
+  keys_.update(getRange(keyData_));
   auto msg = createMcMsgRef();
-  msg->key = to<nstring_t>(keyData_.dataRange());
+  msg->key = to<nstring_t>(getRange(keyData_));
   msg_ = std::move(msg);
 }
 
-
 McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
   auto is_key_set =
-    keyData_.hasSameMemoryRegion(to<folly::StringPiece>(msg_->key));
+    hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
   auto is_value_set =
-    valueData_.hasSameMemoryRegion(to<folly::StringPiece>(msg_->value));
+    hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value));
 
   if (msg_->op == op &&
       msg_->exptime == exptime_ &&
@@ -52,10 +54,12 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
     toRelease->delta = delta_;
     toRelease->lease_id = leaseToken_;
     if (!is_key_set) {
-      toRelease->key = to<nstring_t>(keyData_.dataRange());
+      toRelease->key = to<nstring_t>(getRange(keyData_));
     }
     if (!is_value_set) {
-      toRelease->value = to<nstring_t>(valueData_.dataRange());
+      toRelease->value = to<nstring_t>(
+        coalesceAndGetRange(
+          const_cast<std::unique_ptr<folly::IOBuf>&>(valueData_)));
     }
     return std::move(toRelease);
   }
@@ -64,9 +68,9 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
 McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
   auto is_key_set =
     keys_.routingPrefix.empty() &&
-    keyData_.hasSameMemoryRegion(to<folly::StringPiece>(msg_->key));
+    hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
   auto is_value_set =
-    valueData_.hasSameMemoryRegion(to<folly::StringPiece>(msg_->value));
+    hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value));
 
   if (msg_->op == op &&
       msg_->exptime == exptime_ &&
@@ -87,7 +91,9 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
       toRelease->key = to<nstring_t>(keys_.keyWithoutRoute);
     }
     if (!is_value_set) {
-      toRelease->value = to<nstring_t>(valueData_.dataRange());
+      toRelease->value = to<nstring_t>(
+        coalesceAndGetRange(
+          const_cast<std::unique_ptr<folly::IOBuf>&>(valueData_)));
     }
     toRelease->op = op;
     toRelease->exptime = exptime_;
@@ -110,8 +116,9 @@ uint64_t McRequestBase::flags() const {
   return flags_;
 }
 
-const McStringData& McRequestBase::value() const {
-  return valueData_;
+const folly::IOBuf& McRequestBase::value() const {
+  static auto emptyIOBuf = folly::IOBuf::create(0);
+  return valueData_ ? *valueData_ : *emptyIOBuf;
 }
 
 McRequestBase::Keys::Keys(folly::StringPiece key) noexcept {
@@ -146,22 +153,26 @@ void McRequestBase::Keys::update(folly::StringPiece key) {
 }
 
 McRequestBase::McRequestBase(const McRequestBase& other)
-    : keyData_(other.keyData_),
-      valueData_(other.valueData_),
-      keys_(keyData_.dataRange()),
+    : keyData_(other.keyData_ ? other.keyData_->clone() : nullptr),
+      valueData_(other.valueData_ ? other.valueData_->clone() : nullptr),
+      keys_(getRange(keyData_)),
       exptime_(other.exptime_),
       flags_(other.flags_),
       delta_(other.delta_),
       leaseToken_(other.leaseToken_) {
 
-  if (keyData_.hasSameMemoryRegion(other.keyData_) &&
-      valueData_.hasSameMemoryRegion(other.valueData_)) {
+  if (hasSameMemoryRegion(keyData_, other.keyData_) &&
+      hasSameMemoryRegion(valueData_, other.valueData_)) {
 
     msg_ = other.msg_.clone();
   } else {
     msg_ = createMcMsgRef(
-        other.msg_, keyData_.dataRange(), valueData_.dataRange());
+      other.msg_, getRange(keyData_),
+      coalesceAndGetRange(valueData_));
   }
+}
+
+McRequestBase::~McRequestBase() {
 }
 
 }}

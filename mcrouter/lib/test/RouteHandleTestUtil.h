@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "folly/Memory.h"
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
@@ -183,7 +184,8 @@ struct RecordingRoute {
       return McReply(dataGet_.result_, std::move(msg));
     }
     if (UpdateLike<McOperation<M>>::value) {
-      folly::StringPiece sp_value = req.value().dataRange();
+      auto val = req.value().clone();
+      folly::StringPiece sp_value = coalesceAndGetRange(val);
       h_->sawValues.push_back(sp_value.str());
       auto msg = createMcMsgRef(req.fullKey(), sp_value);
       msg->flags = dataUpdate_.flags_;
@@ -238,10 +240,15 @@ class TestFiberManager {
   FiberManager fm_;
 };
 
+inline std::string toString(const folly::IOBuf& buf) {
+  auto b = buf.clone();
+  return coalesceAndGetRange(b).str();
+}
+
 template <class Rh>
 std::string replyFor(Rh& rh, const std::string& key) {
   auto reply = rh.route(McRequest(key), McOperation<mc_op_get>());
-  return reply.value().dataRange().str();
+  return toString(reply.value());
 }
 
 }}  // facebook::memcache

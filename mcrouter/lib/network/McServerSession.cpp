@@ -214,8 +214,7 @@ void McServerSession::requestReady(McRequest req,
   if (result == mc_res_bad_key) {
     transaction.sendReply(McReply(mc_res_bad_key));
   } else if (operation == mc_op_version) {
-    transaction.sendReply(McReply(mc_res_ok,
-                                  McStringData(options_.versionString)));
+    transaction.sendReply(McReply(mc_res_ok, options_.versionString));
   } else if (operation == mc_op_shutdown) {
     transaction.sendReply(McReply(mc_res_ok));
     onShutdown_();

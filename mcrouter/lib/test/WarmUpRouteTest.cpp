@@ -38,7 +38,7 @@ TEST(warmUpRouteTest, warmUp) {
 
     auto reply_get = rh.route(McRequest("key_get"),
                               McOperation<mc_op_get>());
-    EXPECT_TRUE("b" == reply_get.value().dataRange().str());
+    EXPECT_TRUE("b" == toString(reply_get.value()));
     EXPECT_TRUE(vector<string>{"key_get"} != test_handles[0]->saw_keys);
     EXPECT_TRUE(vector<string>{"key_get"} == test_handles[1]->saw_keys);
     (test_handles[0]->saw_keys).clear();
@@ -57,7 +57,7 @@ TEST(warmUpRouteTest, warmUp) {
 
     auto reply_get = rh.route(McRequest("key_get"),
                               McOperation<mc_op_get>());
-    EXPECT_TRUE("a" == reply_get.value().dataRange().str());
+    EXPECT_TRUE("a" == toString(reply_get.value()));
     EXPECT_TRUE(vector<string>{"key_get"} == test_handles[0]->saw_keys);
     EXPECT_TRUE(vector<string>{"key_get"} == test_handles[2]->saw_keys);
   });

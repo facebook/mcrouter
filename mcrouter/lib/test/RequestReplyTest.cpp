@@ -10,6 +10,7 @@
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRequest.h"
 
 using namespace facebook::memcache;
@@ -318,9 +319,9 @@ TEST(requestReply, replyBasic) {
     EXPECT_TRUE(msg->result == mc_res_found);
 
     {
-      McReply reply(mc_res_found, McStringData("value"));
+      McReply reply(mc_res_found, "value");
       EXPECT_TRUE(reply.result() == mc_res_found);
-      EXPECT_TRUE(reply.value().dataRange().str() == "value");
+      EXPECT_TRUE(toString(reply.value()) == "value");
       msg = reply.releasedMsg(mc_op_get);
       EXPECT_EQ(to<string>(msg->value), "value");
     }
@@ -331,13 +332,11 @@ TEST(requestReply, replyBasic) {
   }
 
   {
-    vector<McStringData> string_vec;
-    string_vec.push_back(McStringData(folly::IOBuf::copyBuffer("testing ")));
-    string_vec.push_back(McStringData(folly::IOBuf::copyBuffer("releasedMsg")));
-    auto value = concatAll(string_vec.begin(), string_vec.end());
-    EXPECT_TRUE(value.asIOBuf()->isChained());
+    std::unique_ptr<folly::IOBuf> buf = folly::IOBuf::copyBuffer("testing ");
+    buf->prependChain(folly::IOBuf::copyBuffer("releasedMsg"));
+    EXPECT_TRUE(buf->isChained());
 
-    McReply reply(mc_res_found, value);
+    McReply reply(mc_res_found, std::move(buf));
     auto msg = reply.releasedMsg(mc_op_get);
     EXPECT_TRUE(msg.get() != nullptr);
     EXPECT_EQ(msg->op, mc_op_get);
@@ -351,8 +350,8 @@ TEST(requestReply, replyBasic) {
 TEST(requestReply, mutableReply) {
   { // msg_ == nullptr
     McReply r(mc_res_found);
-    r.setValue(McStringData("dummy"));
-    EXPECT_EQ(r.value().dataRange().str(), "dummy");
+    r.setValue("dummy");
+    EXPECT_EQ(toString(r.value()), "dummy");
 
     EXPECT_EQ(r.result(), mc_res_found);
     r.setResult(mc_res_notfound);
@@ -363,10 +362,9 @@ TEST(requestReply, mutableReply) {
     auto msg = createMcMsgRef("key", "value");
     msg->flags = MC_MSG_FLAG_COMPRESSED;
     McReply r(mc_res_found, std::move(msg));
-
-    EXPECT_EQ(r.value().dataRange().str(), "value");
-    r.setValue(McStringData("test"));
-    EXPECT_EQ(r.value().dataRange().str(), "test");
+    EXPECT_EQ(toString(r.value()), "value");
+    r.setValue("test");
+    EXPECT_EQ(toString(r.value()), "test");
     EXPECT_EQ(r.flags(), MC_MSG_FLAG_COMPRESSED);
   }
 }
@@ -384,7 +382,7 @@ TEST(requestReply, replyMcMsg) {
 
     McReply reply(mc_res_found, McMsgRef::moveRef(mc_msg));
     EXPECT_TRUE(reply.result() == mc_res_found);
-    EXPECT_TRUE(reply.value().dataRange().str() == "value");
+    EXPECT_TRUE(toString(reply.value()) == "value");
     auto msg = reply.releasedMsg(mc_op_get);
     auto msg_2 = reply.releasedMsg(mc_op_set);
     EXPECT_TRUE(msg.get() == mc_msg);

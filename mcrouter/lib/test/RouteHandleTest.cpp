@@ -78,7 +78,7 @@ TEST(routeHandleTest, allSync) {
 
         /* Check that we got the worst result back */
         EXPECT_TRUE(reply.result() == mc_res_remote_error);
-        EXPECT_TRUE(reply.value().dataRange().str() == "c");
+        EXPECT_TRUE(toString(reply.value()) == "c");
 
         for (auto& h : test_handles) {
           EXPECT_TRUE(h->saw_keys == vector<string>{"key"});
@@ -136,7 +136,7 @@ TEST(routeHandleTest, allInitial) {
 
         /* Check that we got the initial result back */
         EXPECT_TRUE(reply.result() == mc_res_found);
-        EXPECT_TRUE(reply.value().dataRange().str() == "a");
+        EXPECT_TRUE(toString(reply.value()) == "a");
       }
     });
 
@@ -261,7 +261,7 @@ TEST(routeHandleTest, allFastest) {
         /* Check that we got the fastest non-error result back
            ('b' is paused) */
         EXPECT_TRUE(reply.result() == mc_res_found);
-        EXPECT_TRUE(reply.value().dataRange().str() == "c");
+        EXPECT_TRUE(toString(reply.value()) == "c");
 
         EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key"});
         EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{});
@@ -305,17 +305,17 @@ TEST(routeHandleTest, hashNoSalt) {
 
   fm.run([&]() {
       auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-      EXPECT_TRUE(reply.value().dataRange().str() == "a");
+      EXPECT_TRUE(toString(reply.value()) == "a");
     });
 
   fm.run([&]() {
       auto reply = rh.route(McRequest("1"), McOperation<mc_op_get>());
-      EXPECT_TRUE(reply.value().dataRange().str() == "b");
+      EXPECT_TRUE(toString(reply.value()) == "b");
     });
 
   fm.run([&]() {
       auto reply = rh.route(McRequest("2"), McOperation<mc_op_get>());
-      EXPECT_TRUE(reply.value().dataRange().str() == "c");
+      EXPECT_TRUE(toString(reply.value()) == "c");
     });
 }
 
@@ -336,18 +336,18 @@ TEST(routeHandleTest, hashSalt) {
   fm.run([&]() {
       auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
       /* 01 % 3 == 1 */
-      EXPECT_TRUE(reply.value().dataRange().str() == "b");
+      EXPECT_TRUE(toString(reply.value()) == "b");
     });
 
   fm.run([&]() {
       auto reply = rh.route(McRequest("1"), McOperation<mc_op_get>());
       /* 11 % 3 == 2 */
-      EXPECT_TRUE(reply.value().dataRange().str() == "c");
+      EXPECT_TRUE(toString(reply.value()) == "c");
     });
 
   fm.run([&]() {
       auto reply = rh.route(McRequest("2"), McOperation<mc_op_get>());
       /* 21 % 3 == 0 */
-      EXPECT_TRUE(reply.value().dataRange().str() == "a");
+      EXPECT_TRUE(toString(reply.value()) == "a");
     });
 }

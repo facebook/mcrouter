@@ -160,7 +160,7 @@ class SessionTestHarness {
 
   McReply makeReply(const McRequest& req, McOperation<mc_op_get>) {
     return McReply(mc_res_found,
-                   McStringData(req.fullKey().str() + "_value"));
+                   req.fullKey().str() + "_value");
   }
 
   class OnRequest {

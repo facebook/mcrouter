@@ -46,7 +46,7 @@ TEST(migrateRouteTest, migrate) {
 
       auto reply_get = rh.route(McRequest("key_get"),
                                 McOperation<mc_op_get>());
-      EXPECT_TRUE(reply_get.value().dataRange().str() == "a");
+      EXPECT_TRUE(toString(reply_get.value()) == "a");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_FALSE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
@@ -75,7 +75,7 @@ TEST(migrateRouteTest, migrate) {
 
       auto reply_get = rh.route(McRequest("key_get"),
                                 McOperation<mc_op_get>());
-      EXPECT_TRUE(reply_get.value().dataRange().str() == "a");
+      EXPECT_TRUE(toString(reply_get.value()) == "a");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_FALSE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
@@ -104,7 +104,7 @@ TEST(migrateRouteTest, migrate) {
 
       auto reply_get = rh.route(McRequest("key_get"),
                                 McOperation<mc_op_get>());
-      EXPECT_TRUE(reply_get.value().dataRange().str() == "b");
+      EXPECT_TRUE(toString(reply_get.value()) == "b");
       EXPECT_FALSE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
@@ -123,7 +123,7 @@ TEST(migrateRouteTest, migrate) {
 
       auto reply_get = rh.route(McRequest("key_get"),
                                 McOperation<mc_op_get>());
-      EXPECT_TRUE(reply_get.value().dataRange().str() == "b");
+      EXPECT_TRUE(toString(reply_get.value()) == "b");
       EXPECT_FALSE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();

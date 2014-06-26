@@ -5,6 +5,7 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "thrift/lib/cpp/transport/TSSLSocket.h"
 
 using folly::EventBase;
@@ -222,7 +223,7 @@ class TestClient {
                     McOperation<mc_op_get>(),
                     [expectedResult, req, this] (McReply&& reply) {
                       if (reply.result() == mc_res_found) {
-                        EXPECT_EQ(reply.value().dataRange(), req->fullKey());
+                        EXPECT_EQ(toString(reply.value()), req->fullKey());
                       }
                       EXPECT_EQ(expectedResult, reply.result());
                     });

@@ -104,8 +104,7 @@ bool McServerParser::umRequestReady(
   if (st != um_ok) {
     if (parseCallback_) {
       parseCallback_->parseError(
-        McReply(mc_res_remote_error,
-                McStringData("Error parsing Umbrella message")));
+        McReply(mc_res_remote_error, "Error parsing Umbrella message"));
     }
     return false;
   }
@@ -114,17 +113,15 @@ bool McServerParser::umRequestReady(
   auto req = McRequest(msg.clone());
   if (msg->key.len != 0) {
     req.setKey(
-      McStringData(
-        cloneSubBuf(bodyBuffer,
-                    reinterpret_cast<uint8_t*>(msg->key.str),
-                    msg->key.len)));
+      cloneSubBuf(bodyBuffer,
+                  reinterpret_cast<uint8_t*>(msg->key.str),
+                  msg->key.len));
   }
   if (msg->value.len != 0) {
     req.setValue(
-      McStringData(
-        cloneSubBuf(bodyBuffer,
-                    reinterpret_cast<uint8_t*>(msg->value.str),
-                    msg->value.len)));
+      cloneSubBuf(bodyBuffer,
+                  reinterpret_cast<uint8_t*>(msg->value.str),
+                  msg->value.len));
   }
   requestReadyHelper(std::move(req), msg->op, reqid, msg->result);
   return true;
@@ -152,7 +149,7 @@ bool McServerParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
       if (parseCallback_) {
         parseCallback_->parseError(
           McReply(mc_res_remote_error,
-                  McStringData("Error parsing Umbrella header")));
+                  "Error parsing Umbrella header"));
       }
       return false;
     }
@@ -251,20 +248,20 @@ void McServerParser::parserMsgReady(void* context,
 }
 
 void McServerParser::parseError(parser_error_t error) {
-  McStringData data;
+  std::string err;
 
   switch (error) {
     case parser_unspecified_error:
     case parser_malformed_request:
-      data = McStringData("malformed request");
+      err = "malformed request";
       break;
     case parser_out_of_memory:
-      data = McStringData("out of memory");
+      err = "out of memory";
       break;
   }
 
   if (parseCallback_) {
-    parseCallback_->parseError(McReply(mc_res_client_error, std::move(data)));
+    parseCallback_->parseError(McReply(mc_res_client_error, err));
   }
 }
 

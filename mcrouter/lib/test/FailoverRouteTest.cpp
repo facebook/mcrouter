@@ -24,7 +24,7 @@ TEST(failoverRouteTest, success) {
     get_route_handles(test_handles));
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "a");
+  EXPECT_TRUE(toString(reply.value()) == "a");
 }
 
 TEST(failoverRouteTest, once) {
@@ -38,7 +38,7 @@ TEST(failoverRouteTest, once) {
     get_route_handles(test_handles));
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "b");
+  EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
 TEST(failoverRouteTest, twice) {
@@ -52,7 +52,7 @@ TEST(failoverRouteTest, twice) {
     get_route_handles(test_handles));
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "c");
+  EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
 TEST(failoverRouteTest, fail) {
@@ -68,5 +68,5 @@ TEST(failoverRouteTest, fail) {
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
 
   /* Will return the last reply when ran out of targets */
-  EXPECT_EQ(reply.value().dataRange().str(), "c");
+  EXPECT_EQ(toString(reply.value()), "c");
 }

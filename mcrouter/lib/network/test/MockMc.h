@@ -8,11 +8,15 @@
  */
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
 #include "folly/Range.h"
-#include "mcrouter/lib/McStringData.h"
+
+namespace folly {
+class IOBuf;
+}
 
 namespace facebook { namespace memcache {
 
@@ -25,11 +29,11 @@ class McRequest;
 class MockMc {
  public:
   struct Item {
-    McStringData value;
+    std::unique_ptr<folly::IOBuf> value;
     uint32_t exptime{0};
     uint64_t flags{0};
 
-    explicit Item(McStringData v);
+    explicit Item(std::unique_ptr<folly::IOBuf> v);
     explicit Item(const McRequest& req);
   };
 
@@ -116,7 +120,7 @@ class MockMc {
     uint64_t token{0};
 
     explicit CacheItem(Item it)
-        : item(it) {}
+        : item(std::move(it)) {}
 
     void updateToken();
   };

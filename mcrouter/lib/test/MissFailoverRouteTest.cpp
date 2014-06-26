@@ -24,7 +24,7 @@ TEST(missMissFailoverRouteTest, success) {
     get_route_handles(test_handles));
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "a");
+  EXPECT_TRUE(toString(reply.value()) == "a");
 }
 
 TEST(missMissFailoverRouteTest, once) {
@@ -38,7 +38,7 @@ TEST(missMissFailoverRouteTest, once) {
     get_route_handles(test_handles));
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "b");
+  EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
 TEST(missMissFailoverRouteTest, twice) {
@@ -52,7 +52,7 @@ TEST(missMissFailoverRouteTest, twice) {
     get_route_handles(test_handles));
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "c");
+  EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
 TEST(missMissFailoverRouteTest, fail) {
@@ -68,7 +68,7 @@ TEST(missMissFailoverRouteTest, fail) {
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
 
   // Should get the last reply
-  EXPECT_TRUE(reply.value().dataRange().str() == "c");
+  EXPECT_TRUE(toString(reply.value()) == "c");
   EXPECT_TRUE(reply.result() == mc_res_timeout);
 }
 
@@ -85,7 +85,7 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
   auto msg = createMcMsgRef("0", "a");
   auto reply = rh.route(McRequest(std::move(msg)),
       McOperation<mc_op_set>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "a");
+  EXPECT_TRUE(toString(reply.value()) == "a");
   // only first handle sees the key
   EXPECT_TRUE(test_handles[0]->saw_keys == vector<std::string>{"0"});
   EXPECT_TRUE(test_handles[1]->saw_keys.size() == 0);

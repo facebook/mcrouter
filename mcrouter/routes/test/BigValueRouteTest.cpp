@@ -39,7 +39,7 @@ TEST(BigValueRouteTest, smallvalue) {
       McRequest req_get(std::move(msg));
       auto f_get = rh.route(req_get, McOperation<mc_op_get>());
 
-      EXPECT_TRUE(f_get.value().dataRange().str() == "a");
+      EXPECT_TRUE(toString(f_get.value()) == "a");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
 
@@ -48,7 +48,7 @@ TEST(BigValueRouteTest, smallvalue) {
       msg_set->op = mc_op_set;
       McRequest req_set(std::move(msg_set));
       auto f_set = rh.route(req_set, McOperation<mc_op_set>());
-      EXPECT_TRUE(f_set.value().dataRange().str() == "value");
+      EXPECT_TRUE(toString(f_set.value()) == "value");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_set"});
     }
   });
@@ -105,7 +105,7 @@ TEST(BigValueRouteTest, bigvalue) {
 
         // each chunk_key saw value as init_reply.
         // In GetLike path, it gets appended num_chunks time
-        EXPECT_TRUE(f_get.value().dataRange().str() == merged_str);
+        EXPECT_TRUE(toString(f_get.value()) == merged_str);
       }
 
       { // Test Get Like path with init_reply_error
@@ -122,7 +122,7 @@ TEST(BigValueRouteTest, bigvalue) {
         // first get the result for original key, then return mc_res_notfound
         EXPECT_TRUE(keys_get.front() == "key_get");
         EXPECT_TRUE(f_get.result() == mc_res_notfound);
-        EXPECT_TRUE(f_get.value().dataRange().str() == "");
+        EXPECT_TRUE(toString(f_get.value()) == "");
       }
 
       { // Test Update Like path with mc_op_set op
@@ -169,7 +169,7 @@ TEST(BigValueRouteTest, bigvalue) {
         auto chunks_info = folly::format(
             "{}-{}-{}", version, num_chunks, rand_suffix_set).str();
         EXPECT_TRUE(values_set[num_chunks] == chunks_info);
-        EXPECT_TRUE(f_set.value().dataRange().str() == values_set[num_chunks]);
+        EXPECT_TRUE(toString(f_set.value()) == values_set[num_chunks]);
       }
 
       { // Test Update Like path with mc_op_lease_set op

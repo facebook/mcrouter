@@ -8,7 +8,13 @@
  */
 #pragma once
 
-#include "mcrouter/lib/McStringData.h"
+#include <memory>
+
+#include "folly/io/IOBuf.h"
+#include "folly/Memory.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/McMsgRef.h"
 
 namespace facebook { namespace memcache {
 
@@ -32,7 +38,7 @@ class McReplyBase {
   /**
    * Constructs an "error" reply, meaning that there was a routing error.
    */
-  static McReplyBase errorReply(McStringData valueToSet=McStringData());
+  static McReplyBase errorReply(folly::StringPiece valueToSet="");
 
   /**
    * Constructs a TKO reply.
@@ -135,22 +141,25 @@ class McReplyBase {
   /**
    * Functions to update value and result
    */
-  void setValue(McStringData valueData);
+  void setValue(std::unique_ptr<folly::IOBuf> valueData);
+  void setValue(folly::StringPiece str);
   void setResult(mc_res_t res);
 
   /* mc_msg_t specific */
 
   explicit McReplyBase(mc_res_t result);
   McReplyBase(mc_res_t result, McMsgRef&& reply);
-  McReplyBase(mc_res_t result, McStringData value);
+  McReplyBase(mc_res_t result, std::unique_ptr<folly::IOBuf> value);
+  McReplyBase(mc_res_t res, folly::StringPiece val);
   McReplyBase(McReplyBase&& other) noexcept = default;
   McReplyBase& operator=(McReplyBase&& other) = default;
   mc_res_t result() const {
     return result_;
   }
 
-  const McStringData& value() const {
-    return valueData_;
+  const folly::IOBuf& value() const {
+    static auto emptyIOBuf = folly::IOBuf::create(0);
+    return valueData_ ? *valueData_ : *emptyIOBuf;
   }
 
   uint64_t flags() const {
@@ -195,7 +204,7 @@ class McReplyBase {
  private:
   McMsgRef msg_;
   mc_res_t result_{mc_res_unknown};
-  McStringData valueData_;
+  std::unique_ptr<folly::IOBuf> valueData_;
   uint64_t flags_{0};
   uint64_t leaseToken_{0};
   uint64_t delta_{0};

@@ -90,7 +90,7 @@ class WarmUpRoute {
     auto warmReply = warm_->route(req, Operation());
     if (warmReply.isHit()) {
       auto addReq = req.clone();
-      addReq.setValue(McStringData(warmReply.value()));
+      addReq.setValue(warmReply.value().clone());
       addReq.setFlags(warmReply.flags());
       addReq.setExptime(exptime_);
 

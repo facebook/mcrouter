@@ -1,5 +1,6 @@
 #include "MockMc.h"
 
+#include "folly/io/IOBuf.h"
 #include "mcrouter/lib/McRequest.h"
 
 namespace facebook { namespace memcache {
@@ -9,12 +10,12 @@ void MockMc::CacheItem::updateToken() {
   token = leaseCounter++;
 }
 
-MockMc::Item::Item(McStringData v)
+MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v)
     : value(std::move(v)) {
 }
 
 MockMc::Item::Item(const McRequest& req)
-    : value(req.value()),
+    : value(req.value().clone()),
       exptime(req.exptime() > 0 ? req.exptime() + time(nullptr) : 0),
       flags(req.flags()) {
 }
@@ -54,9 +55,9 @@ std::pair<bool, int64_t> MockMc::arith(folly::StringPiece key, int64_t delta) {
     return std::make_pair(false, 0);
   }
 
-  auto oldval = folly::to<uint64_t>(item->value.dataRange());
+  auto oldval = folly::to<uint64_t>(coalesceAndGetRange(item->value));
   auto newval = folly::to<std::string>(oldval + delta);
-  item->value = McStringData(std::move(newval));
+  item->value = folly::IOBuf::copyBuffer(newval);
   return std::make_pair(true, oldval + delta);
 }
 
@@ -86,7 +87,8 @@ std::pair<MockMc::Item*, uint64_t> MockMc::leaseGet(folly::StringPiece key) {
     /* Lease get on a non-existing item: create a new empty item and
        put it in TLRU with valid token */
     it = citems_.insert(
-      std::make_pair(key.str(), CacheItem(Item(McStringData(""))))).first;
+      std::make_pair(key.str(),
+                     CacheItem(Item(folly::IOBuf::copyBuffer(""))))).first;
     it->second.state = CacheItem::TLRU;
     it->second.updateToken();
   }

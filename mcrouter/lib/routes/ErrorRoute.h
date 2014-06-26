@@ -15,7 +15,6 @@
 #include "folly/dynamic.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McStringData.h"
 
 namespace facebook { namespace memcache {
 
@@ -42,11 +41,11 @@ struct ErrorRoute {
                "ErrorRoute: response should be string or empty");
 
     if (json.isString()) {
-      valueToSet_ = McStringData(json.asString().toStdString());
+      valueToSet_ = json.asString().toStdString();
     }
   }
 
-  explicit ErrorRoute(McStringData valueToSet)
+  explicit ErrorRoute(std::string valueToSet)
     : valueToSet_(std::move(valueToSet)) {}
 
   template <class Operation, class Request>
@@ -59,7 +58,7 @@ struct ErrorRoute {
   }
 
  private:
-  McStringData valueToSet_;
+  std::string valueToSet_;
 };
 
 }}

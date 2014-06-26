@@ -32,7 +32,7 @@ TEST(failoverWithExptimeRouteTest, success) {
     FailoverWithExptimeSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "a");
+  EXPECT_TRUE(toString(reply.value()) == "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
 }
 
@@ -54,7 +54,7 @@ TEST(failoverWithExptimeRouteTest, once) {
     FailoverWithExptimeSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "b");
+  EXPECT_TRUE(toString(reply.value()) == "b");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
@@ -78,7 +78,7 @@ TEST(failoverWithExptimeRouteTest, twice) {
     FailoverWithExptimeSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_TRUE(reply.value().dataRange().str() == "c");
+  EXPECT_TRUE(toString(reply.value()) == "c");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
@@ -105,7 +105,7 @@ TEST(failoverWithExptimeRouteTest, fail) {
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
 
   /* Will return the last reply when ran out of targets */
-  EXPECT_TRUE(reply.value().dataRange().str() == "c");
+  EXPECT_TRUE(toString(reply.value()) == "c");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
@@ -152,7 +152,7 @@ void testFailoverGet(mc_res_t res) {
 
   auto reply = rhNoFail.route(McRequest("0"),
       McOperation<mc_op_get>());
-  EXPECT_EQ(reply.value().dataRange().str(), "a");
+  EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
 
   opSettings->gets = true;
@@ -164,7 +164,7 @@ void testFailoverGet(mc_res_t res) {
     settings);
 
   reply = rhFail.route(McRequest("0"), McOperation<mc_op_get>());
-  EXPECT_EQ(reply.value().dataRange().str(), "b");
+  EXPECT_EQ(toString(reply.value()), "b");
 }
 
 void testFailoverUpdate(mc_res_t res) {
@@ -192,7 +192,7 @@ void testFailoverUpdate(mc_res_t res) {
   auto msg = createMcMsgRef("0", "a");
   auto reply = rhNoFail.route(McRequest(std::move(msg)),
       McOperation<mc_op_set>());
-  EXPECT_EQ(reply.value().dataRange().str(), "a");
+  EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   // only normal handle sees the key
   EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
@@ -210,7 +210,7 @@ void testFailoverUpdate(mc_res_t res) {
   msg = createMcMsgRef("0", "a");
   reply = rhFail.route(McRequest(std::move(msg)),
       McOperation<mc_op_set>());
-  EXPECT_EQ(reply.value().dataRange().str(), "a");
+  EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
   EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
 }

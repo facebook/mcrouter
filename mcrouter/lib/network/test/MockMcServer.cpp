@@ -5,7 +5,6 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
-#include "mcrouter/lib/McStringData.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
@@ -34,7 +33,6 @@ using facebook::memcache::McOperation;
 using facebook::memcache::McReply;
 using facebook::memcache::McRequest;
 using facebook::memcache::McServerRequestContext;
-using facebook::memcache::McStringData;
 using facebook::memcache::MockMc;
 using facebook::memcache::createMcMsgRef;
 
@@ -90,7 +88,7 @@ class MockMcOnRequest {
       ctx.sendReply(McReply(mc_res_notfound));
     } else {
       McReply reply(mc_res_found);
-      reply.setValue(item->value);
+      reply.setValue(item->value->clone());
       reply.setFlags(item->flags);
       ctx.sendReply(std::move(reply));
     }
@@ -103,7 +101,7 @@ class MockMcOnRequest {
 
     auto out = mc_.leaseGet(key);
     McReply reply(mc_res_found);
-    reply.setValue(out.first->value);
+    reply.setValue(out.first->value->clone());
     reply.setLeaseToken(out.second);
     if (out.second) {
       reply.setResult(mc_res_notfound);
@@ -139,7 +137,7 @@ class MockMcOnRequest {
     if (key == "__mockmc__.trigger_server_error") {
       ctx.sendReply(
         McReply(mc_res_remote_error,
-                McStringData("returned error msg with binary data \xdd\xab")));
+                "returned error msg with binary data \xdd\xab"));
       return;
     }
 

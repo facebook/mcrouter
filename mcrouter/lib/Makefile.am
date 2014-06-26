@@ -18,8 +18,6 @@ libmcrouter_a_SOURCES = \
   McRequestBase.h \
   McRequestWithContext-inl.h \
   McRequestWithContext.h \
-  McStringData.cpp \
-  McStringData.h \
   Operation.h \
   OperationTraits.h \
   RouteHandleIf.h \

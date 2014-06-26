@@ -8,10 +8,17 @@
  */
 #pragma once
 
+#include <memory>
+
+#include "folly/io/IOBuf.h"
 #include "folly/Range.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McMsgRef.h"
-#include "mcrouter/lib/McStringData.h"
+
+namespace folly {
+class IOBuf;
+}
 
 namespace facebook { namespace memcache {
 /**
@@ -62,11 +69,17 @@ class McRequestBase {
   void setExptime(uint32_t expt) {
     exptime_ = expt;
   }
-  void setKey(McStringData&& keyData) {
-    keyData_ = std::move(keyData);
-    keys_.update(keyData_.dataRange());
+  void setKey(folly::StringPiece key) {
+    keyData_ = folly::IOBuf::copyBuffer(key);
+    keyData_->coalesce();
+    keys_.update(getRange(keyData_));
   }
-  void setValue(McStringData&& valueData) {
+  void setKey(std::unique_ptr<folly::IOBuf> keyData) {
+    keyData_ = std::move(keyData);
+    keyData_->coalesce();
+    keys_.update(getRange(keyData_));
+  }
+  void setValue(std::unique_ptr<folly::IOBuf> valueData) {
     valueData_ = std::move(valueData);
   }
   void setFlags(uint64_t f) {
@@ -87,7 +100,7 @@ class McRequestBase {
   /**
    * Constructs an McRequestBase with the given full key
    */
-  explicit McRequestBase(const std::string& key);
+  explicit McRequestBase(folly::StringPiece key);
 
   /**
    * Returns a reference to an mc_msg_t representing this request
@@ -141,21 +154,25 @@ class McRequestBase {
    *         non-hashable parts if present
    */
   folly::StringPiece fullKey() const {
-    return keyData_.dataRange();
+    return getRange(keyData_);
   }
 
-  const McStringData& value() const;
+  const folly::IOBuf& value() const;
 
  private:
   McMsgRef msg_;
-  McStringData keyData_;
-  McStringData valueData_;
+
+  /* Always stored unchained */
+  std::unique_ptr<folly::IOBuf> keyData_;
+
+  /* May be chained */
+  std::unique_ptr<folly::IOBuf> valueData_;
 
   /**
    * Holds all the references to the various parts of the key.
    *
    *                        /region/cluster/foo:key|#|etc
-   * keyData_.dataRange():  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   * keyData_:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    * keyWithoutRoute:                       ^^^^^^^^^^^^^
    * routingPrefix:         ^^^^^^^^^^^^^^^^
    * routingKey:                            ^^^^^^^
@@ -179,7 +196,7 @@ class McRequestBase {
 
  protected:
   McRequestBase(const McRequestBase& other);
-  ~McRequestBase() {};
+  ~McRequestBase();
 };
 
 }}  // facebook::memcache

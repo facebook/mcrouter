@@ -54,7 +54,7 @@ TEST(shadowRouteTest, defaultPolicy) {
                               McOperation<mc_op_get>());
 
         EXPECT_TRUE(reply.result() == mc_res_found);
-        EXPECT_TRUE(reply.value().dataRange().str() == "a");
+        EXPECT_TRUE(toString(reply.value()) == "a");
       }
     });
 
@@ -70,7 +70,7 @@ TEST(shadowRouteTest, defaultPolicy) {
                               McOperation<mc_op_get>());
 
         EXPECT_TRUE(reply.result() == mc_res_found);
-        EXPECT_TRUE(reply.value().dataRange().str() == "a");
+        EXPECT_TRUE(toString(reply.value()) == "a");
       }
     });
 

@@ -149,15 +149,15 @@ class FailoverWithExptimeRoute {
     return false;
   }
 
-  static McStringData keyWithFailoverTag(const ProxyMcRequest& req,
-                                         const ProxyMcReply& reply) {
+  static std::string keyWithFailoverTag(const ProxyMcRequest& req,
+                                        const ProxyMcReply& reply) {
     if (req.keyWithoutRoute() == req.routingKey()) {
       // The key doesn't have a hash stop.
-      return McStringData(req.fullKey().str());
+      return req.fullKey().str();
     }
     auto proxyClient = reply.getDestination();
     if (proxyClient == nullptr) {
-      return McStringData(req.fullKey().str());
+      return req.fullKey().str();
     }
     const size_t tagLength =
       kFailoverTagStart.size() +
@@ -183,13 +183,13 @@ class FailoverWithExptimeRoute {
       }
     }
 
-    return McStringData(req.fullKey().str() + failoverTag);
+    return req.fullKey().str() + failoverTag;
   }
 
   template <class Request, class Reply>
-  static McStringData keyWithFailoverTag(const Request& req,
-                                         const Reply& reply) {
-    return McStringData(req.fullKey().str());
+  static std::string keyWithFailoverTag(const Request& req,
+                                        const Reply& reply) {
+    return req.fullKey().str();
   }
 };
 

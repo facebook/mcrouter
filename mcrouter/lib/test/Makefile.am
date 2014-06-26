@@ -6,7 +6,6 @@ mcrouter_lib_test_SOURCES = \
   FailoverRouteTest.cpp \
   LatestRouteTest.cpp \
   Main.cpp \
-  McStringDataTest.cpp \
   MigrateRouteTest.cpp \
   MissFailoverRouteTest.cpp \
   RequestReplyTest.cpp \

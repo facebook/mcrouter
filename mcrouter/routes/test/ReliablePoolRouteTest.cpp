@@ -46,7 +46,7 @@ TEST(ReliablePoolRouteTest, firstHostSuccess) {
                         McOperation<mc_op_get>());
 
   EXPECT_EQ(reply.result(), mc_res_found);
-  EXPECT_EQ(reply.value().dataRange().str(), "a");
+  EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(saltedHandle[0]->saw_keys == vector<std::string>{"key"});
   EXPECT_TRUE(saltedHandle[1]->saw_keys.empty());
   EXPECT_TRUE(saltedHandle[2]->saw_keys.empty());
@@ -71,7 +71,7 @@ TEST(ReliablePoolRouteTest, failoverOnce) {
                         McOperation<mc_op_get>());
 
   EXPECT_EQ(reply.result(), mc_res_notfound);
-  EXPECT_EQ(reply.value().dataRange().str(), "b");
+  EXPECT_EQ(toString(reply.value()), "b");
   EXPECT_TRUE(saltedHandle[0]->saw_keys == vector<std::string>{"key"});
   EXPECT_TRUE(saltedHandle[1]->saw_keys == vector<std::string>{"key"});
   EXPECT_TRUE(saltedHandle[2]->saw_keys.empty());
@@ -96,7 +96,7 @@ TEST(ReliablePoolRouteTest, failoverTwice) {
                         McOperation<mc_op_get>());
 
   EXPECT_EQ(reply.result(), mc_res_found);
-  EXPECT_EQ(reply.value().dataRange().str(), "c");
+  EXPECT_EQ(toString(reply.value()), "c");
   EXPECT_TRUE(saltedHandle[0]->saw_keys == vector<std::string>{"key"});
   EXPECT_TRUE(saltedHandle[1]->saw_keys == vector<std::string>{"key"});
   EXPECT_TRUE(saltedHandle[2]->saw_keys == vector<std::string>{"key"});

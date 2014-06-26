@@ -1,5 +1,7 @@
 #include "McReplyBase.h"
 
+#include "folly/io/IOBuf.h"
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook { namespace memcache {
@@ -8,8 +10,8 @@ bool McReplyBase::worseThan(const McReplyBase& other) const {
   return awfulness(result_) > awfulness(other.result_);
 }
 
-McReplyBase McReplyBase::errorReply(McStringData valueToSet) {
-  return McReplyBase(mc_res_local_error, std::move(valueToSet));
+McReplyBase McReplyBase::errorReply(folly::StringPiece valueToSet) {
+  return McReplyBase(mc_res_local_error, valueToSet);
 }
 
 McReplyBase McReplyBase::tkoReply() {
@@ -42,8 +44,12 @@ bool McReplyBase::isError() const {
   }
 }
 
-void McReplyBase::setValue(McStringData valueData) {
-  valueData_ = valueData;
+void McReplyBase::setValue(std::unique_ptr<folly::IOBuf> valueData) {
+  valueData_ = std::move(valueData);
+}
+
+void McReplyBase::setValue(folly::StringPiece str) {
+  valueData_ = folly::IOBuf::copyBuffer(str);
 }
 
 void McReplyBase::setResult(mc_res_t res) {
@@ -54,15 +60,20 @@ McReplyBase::McReplyBase(mc_res_t res)
     : result_(res) {
 }
 
-McReplyBase::McReplyBase(mc_res_t res, McStringData val)
+McReplyBase::McReplyBase(mc_res_t res, std::unique_ptr<folly::IOBuf> val)
     : result_(res),
-      valueData_(val) {
+      valueData_(std::move(val)) {
+}
+
+McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)
+    : result_(res),
+      valueData_(folly::IOBuf::copyBuffer(val)) {
 }
 
 McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
     : msg_(std::move(msg)),
       result_(res),
-      valueData_(McStringData::SaveMsgValue, msg_.clone()),
+      valueData_(makeMsgValueIOBuf(msg_)),
       flags_(msg_.get() ? msg_->flags : 0),
       leaseToken_(msg_.get() ? msg_->lease_id : 0),
       delta_(msg_.get() ? msg_->delta : 0) {
@@ -73,7 +84,8 @@ void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
     mc_msg_shallow_copy(out, msg_.get());
   }
 
-  auto value = valueData_.dataRange();
+  auto value = coalesceAndGetRange(
+    const_cast<std::unique_ptr<folly::IOBuf>&>(valueData_));
 
   out->key.str = nullptr;
   out->key.len = 0;
@@ -93,10 +105,11 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->lease_id == leaseToken_ &&
       msg_->delta == delta_ &&
-      valueData_.hasSameMemoryRegion(to<folly::StringPiece>(msg_->value))) {
+      hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value))) {
     return msg_.clone();
   } else {
-    auto toRelease = createMcMsgRef(valueData_.length() + 1);
+    auto len = valueData_ ? valueData_->computeChainDataLength() : 0;
+    auto toRelease = createMcMsgRef(len + 1);
     if (msg_.get() != nullptr) {
       mc_msg_shallow_copy(toRelease.get(), msg_.get());
       // TODO: fbtrace?
@@ -105,8 +118,10 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
     toRelease->key.len = 0;
     toRelease->value.str =
       static_cast<char*>(static_cast<void*>(toRelease.get() + 1));
-    valueData_.dataCopy(toRelease->value.str);
-    toRelease->value.len = valueData_.length();
+    if (valueData_) {
+      copyInto(toRelease->value.str, *valueData_);
+    }
+    toRelease->value.len = len;
     toRelease->op = op;
     toRelease->result = result_;
     toRelease->flags = flags_;
