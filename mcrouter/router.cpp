@@ -25,21 +25,22 @@
 
 #include <boost/filesystem/operations.hpp>
 
+#include <mcrouter/config.h>
+
 #include "folly/Format.h"
 #include "folly/Memory.h"
 #include "folly/ThreadName.h"
 #include "folly/io/async/EventBase.h"
-#include "mcrouter/lib/fbi/error.h"
-#include "mcrouter/lib/fbi/timer.h"
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/FileObserver.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/async.h"
-#include "mcrouter/config.h"
 #include "mcrouter/dynamic_stats.h"
 #include "mcrouter/flavor.h"
+#include "mcrouter/lib/fbi/error.h"
+#include "mcrouter/lib/fbi/timer.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/stats.h"
@@ -408,6 +409,12 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
     throw mcrouter_exception(
       "Invalid service_name or router_name provided; must be"
       " strings matching [a-zA-Z0-9_-]+");
+  }
+
+  if (!input_options.async_spool.empty()) {
+    auto rc = ::access(input_options.async_spool.c_str(), W_OK);
+    PLOG_IF(WARNING, rc) << "Error while checking spooldir (" <<
+                            input_options.async_spool << ")";
   }
 
   mcrouter_t *router = new mcrouter_t(input_options);
