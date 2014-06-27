@@ -64,7 +64,7 @@ class TestMcrouterBasic(McrouterTestCase):
 
         def run_client():
             global failures
-            mc = MCProcess.McrouterClient(mcr.port)
+            mc = McrouterClient(mcr.port)
             mc.connect()
             for i in xrange(1000):
                 s = mc.stats()
