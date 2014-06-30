@@ -1,5 +1,13 @@
 /* -*- Mode: C; tab-width: 2; c-basic-offset: 2; indent-tabs-mode:
    nil; fill-column: 80 -*- */
+/**
+ *  Copyright (c) 2014, Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the BSD-style license found in the
+ *  LICENSE file in the root directory of this source tree. An additional grant
+ *  of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 // Skip list implementation from http://epaperpress.com/sortsearch/txt/skl.txt.
 // The license can be found on http://www.epaperpress.com/sortsearch/ -- "Source
