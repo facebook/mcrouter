@@ -80,7 +80,7 @@ class ConfigApi {
   /**
    * Starts observing for file changes
    */
-  void startObserving();
+  virtual void startObserving();
 
   /**
    * Stops observing for file changes

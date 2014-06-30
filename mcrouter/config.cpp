@@ -220,11 +220,6 @@ static void proxy_config_swap(proxy_t* proxy,
   auto oldConfig = std::move(proxy->config);
   proxy->config = config;
 
-  LOG_IF(INFO, !proxy->opts.constantly_reload_configs) <<
-      "reconfigured with " << config->clients().size() <<
-      " clients and " << config->pools().size() << " pools (" <<
-      config->getConfigMd5Digest() << ")";
-
   stat_set_uint64(proxy, config_last_success_stat, time(nullptr));
 
   sfrlock_wrunlock(proxy->config_lock.get());
@@ -281,6 +276,12 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
   for (size_t i = 0; i < proxyCount; i++) {
     proxy_config_swap(router->proxy_threads[i]->proxy, newConfigs[i]);
   }
+
+  LOG_IF(INFO, !router->opts.constantly_reload_configs) <<
+      "reconfigured " << proxyCount << " proxies with " <<
+      newConfigs[0]->clients().size() << " clients and " <<
+      newConfigs[0]->pools().size() << " pools (" <<
+      newConfigs[0]->getConfigMd5Digest() << ")";
 
   return 1;
 }
