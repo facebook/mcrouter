@@ -5,6 +5,8 @@ noinst_LIBRARIES = libmcrouter.a
 libmcrouter_a_SOURCES = \
   Ch3HashFunc.h \
   Crc32HashFunc.h \
+  IOBufUtil.cpp \
+  IOBufUtil.h \
   McMsgRef.h \
   McOpList.h \
   McOperation.h \
