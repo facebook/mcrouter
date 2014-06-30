@@ -12,4 +12,4 @@ mcrouter_fbi_test_SOURCES = \
   test_util.cpp
 
 mcrouter_fbi_test_CPPFLAGS = -I$(top_srcdir)/oss_include
-mcrouter_fbi_test_LDADD = $(top_builddir)/lib/libmcrouter.a -lgtest -lgtest_main
+mcrouter_fbi_test_LDADD = $(top_builddir)/lib/libmcrouter.a -lgtest -lgtestmain
