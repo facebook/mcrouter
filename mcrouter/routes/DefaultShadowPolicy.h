@@ -17,7 +17,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class DefaultShadowPolicy {
  public:
   template <class Operation, class Request>
-  static Request makeShadowRequest(const Request& req, Operation) {
+  static Request updateRequestForShadowing(const Request& req, Operation) {
     return req.clone();
   }
 

@@ -12,12 +12,14 @@
 #include <utility>
 #include <vector>
 
-#include "mcrouter/proxy.h"
+#include <folly/Optional.h>
+
 #include "mcrouter/ProxyRequest.h"
-#include "mcrouter/route.h"
-#include "mcrouter/routes/ShadowRouteIf.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/route.h"
+#include "mcrouter/routes/ShadowRouteIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -61,13 +63,29 @@ class ShadowRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    if (shadowPolicy_.shouldDelayShadow(req, Operation())) {
-      auto reply = normal_->route(req, Operation());
-      sendShadowRequests(req, Operation());
-      return reply;
+    std::shared_ptr<Request> shadowReq;
+    folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
+    for (auto iter: shadowData_) {
+      if (shouldShadow(req, iter.second)) {
+        if (!shadowReq) {
+          shadowReq = std::make_shared<Request>(
+            shadowPolicy_.updateRequestForShadowing(req, Operation()));
+        }
+        if (!normalReply && shadowPolicy_.shouldDelayShadow(req, Operation())) {
+          normalReply = normal_->route(*shadowReq, Operation());
+        }
+        auto shadow = iter.first;
+        fiber::addTask(
+          [shadow, shadowReq] () {
+            shadow->route(*shadowReq, Operation());
+          });
+      }
+    }
+
+    if (normalReply) {
+      return std::move(*normalReply);
     } else {
-      sendShadowRequests(req, Operation());
-      return normal_->route(req, Operation());
+      return normal_->route(shadowReq ? *shadowReq : req, Operation());
     }
   }
 
@@ -83,23 +101,6 @@ class ShadowRoute {
 
   template <class Request>
   void attachRequestClass(Request& req) const {
-  }
-
-  template <class Operation, class Request>
-  void sendShadowRequests(const Request& req, Operation) const {
-    auto shadowReq = std::make_shared<Request>(
-      shadowPolicy_.makeShadowRequest(req, Operation()));
-    attachRequestClass(*shadowReq);
-
-    for (auto iter: shadowData_) {
-      if (shouldShadow(req, iter.second)) {
-        auto shadow = iter.first;
-        fiber::addTask(
-          [shadow, shadowReq] () {
-            shadow->route(*shadowReq, Operation());
-          });
-      }
-    }
   }
 
   template <class Request>
