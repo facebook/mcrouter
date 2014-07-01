@@ -14,19 +14,8 @@ namespace facebook { namespace memcache {
 
 template <class RouteHandleIf>
 RouteHandleFactory<RouteHandleIf>::RouteHandleFactory(
-    RouteHandleProviderIf<RouteHandleIf>& provider,
-    OnCreateCallback onCreateRoot)
-    : provider_(provider),
-      onCreateRoot_(std::move(onCreateRoot)) {
-}
-
-template <class RouteHandleIf>
-std::shared_ptr<RouteHandleIf>
-RouteHandleFactory<RouteHandleIf>::createRoot(const folly::dynamic& json) {
-  if (onCreateRoot_) {
-    return onCreateRoot_(create(json));
-  }
-  return create(json);
+    RouteHandleProviderIf<RouteHandleIf>& provider)
+    : provider_(provider) {
 }
 
 template <class RouteHandleIf>

@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -29,17 +28,10 @@ class RouteHandleProviderIf;
 template <class RouteHandleIf>
 class RouteHandleFactory {
  public:
-  typedef std::function<
-    std::shared_ptr<RouteHandleIf>(std::shared_ptr<RouteHandleIf>)
-  > OnCreateCallback;
-
   /**
    * @param provider that can create single node of RouteHandle tree.
-   * @param onCreateRoot callback that will be called every time createRoot
-   *        is called. One can modify the root using this callback.
    */
-  explicit RouteHandleFactory(RouteHandleProviderIf<RouteHandleIf>& provider,
-                              OnCreateCallback onCreateRoot = nullptr);
+  explicit RouteHandleFactory(RouteHandleProviderIf<RouteHandleIf>& provider);
 
   /**
    * Creates single RouteHandle from JSON object.
@@ -47,13 +39,6 @@ class RouteHandleFactory {
    * @param json object that contains RouteHandle with (optional) children.
    */
   std::shared_ptr<RouteHandleIf> create(const folly::dynamic& json);
-
-  /**
-   * Creates root of route handle tree
-   *
-   * @param json object that contains RouteHandle with (optional) children.
-   */
-  std::shared_ptr<RouteHandleIf> createRoot(const folly::dynamic& json);
 
   /**
    * Creates multiple subtrees from JSON object. Should be used to create
@@ -66,7 +51,6 @@ class RouteHandleFactory {
   createList(const folly::dynamic& json);
  private:
   RouteHandleProviderIf<RouteHandleIf>& provider_;
-  OnCreateCallback onCreateRoot_;
 
   /// Named routes we've already parsed
   std::unordered_map<std::string,

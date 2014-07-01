@@ -20,12 +20,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
 PrefixRouteSelector::PrefixRouteSelector(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
-  // If json is not PrefixRouteSelector, use it as wildcard RouteHandle.
+  // if json is not PrefixRouteSelector, just treat it as RouteHandle
+  // for wildcard.
   // NOTE: "route" is deprecated and will go away soon
   if (!json.isObject() || !json.count("type") || !json["type"].isString() ||
       (json["type"].asString() != "route" &&
        json["type"].asString() != "PrefixSelectorRoute")) {
-    wildcard = factory.createRoot(json);
+    wildcard = factory.create(json);
     return;
   }
 
@@ -40,12 +41,12 @@ PrefixRouteSelector::PrefixRouteSelector(
     }
     // order is important
     for (const auto& it : items) {
-      policies.emplace(it.first, factory.createRoot(it.second));
+      policies.emplace(it.first, factory.create(it.second));
     }
   }
 
   if (json.count("wildcard")) {
-    wildcard = factory.createRoot(json["wildcard"]);
+    wildcard = factory.create(json["wildcard"]);
   }
 
   checkLogic(json.count("wildcard") || json.count("policies"), "Empty route");

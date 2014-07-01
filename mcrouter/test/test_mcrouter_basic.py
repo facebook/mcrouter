@@ -78,18 +78,6 @@ class TestMcrouterBasic(McrouterTestCase):
 
         self.assertFalse(run_client.failed)
 
-    def test_use_big_value(self):
-        mcr = self.get_mcrouter(['--big-value-split-threshold=100'])
-
-        reply = mcr.get('__mcrouter__.route_handles(get,test)')
-        self.assertIn('big-value', reply)
-
-    def test_no_big_value(self):
-        mcr = self.get_mcrouter()
-
-        reply = mcr.get('__mcrouter__.route_handles(get,test)')
-        self.assertNotIn('big-value', reply)
-
 class TestMcrouterInvalidRoute(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--send-invalid-route-to-default']

@@ -8,25 +8,18 @@
  */
 #include "ProxyConfig.h"
 
-#include <functional>
-
 #include "folly/Conv.h"
 #include "folly/dynamic.h"
 #include "folly/json.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/routes/BigValueRouteIf.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/PrefixRouteSelector.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr ch,
-                                         BigValueRouteOptions options);
 
 namespace {
 
@@ -47,15 +40,6 @@ void addRouteSelector(const folly::dynamic& aliases,
   }
 }
 
-McrouterRouteHandlePtr
-attachRootHandles(proxy_t* proxy, McrouterRouteHandlePtr root) {
-  if (proxy->opts.big_value_split_threshold != 0) {
-    BigValueRouteOptions options(proxy->opts.big_value_split_threshold);
-    return makeBigValueRoute(std::move(root), std::move(options));
-  }
-  return root;
-}
-
 }  // anonymous namespace
 
 ProxyConfig::ProxyConfig(proxy_t* proxy,
@@ -65,10 +49,9 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
   : poolFactory_(std::move(poolFactory)),
     configMd5Digest_(std::move(configMd5Digest)) {
 
-  McRouteHandleProvider provider(proxy, *proxy->destinationMap, *poolFactory_);
-  RouteHandleFactory<McrouterRouteHandleIf> factory(
-    provider,
-    std::bind(attachRootHandles, proxy, std::placeholders::_1));
+  McRouteHandleProvider provider(proxy, *proxy->destinationMap,
+                                 *poolFactory_);
+  RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 
   checkLogic(json.isObject(), "Config is not object");
 

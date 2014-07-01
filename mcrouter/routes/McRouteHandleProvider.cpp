@@ -16,6 +16,7 @@
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/routes/BigValueRouteIf.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
@@ -31,6 +32,9 @@ typedef std::function<void(proxy_request_t*,
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
                                          std::string poolName,
                                          AsynclogFunc asyncLog);
+
+McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr ch,
+                                         BigValueRouteOptions options);
 
 McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
@@ -235,7 +239,12 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     const folly::dynamic& json) {
 
   if (type == "PrefixPolicyRoute") {
-    return { makePrefixPolicyRoute(factory, json) };
+    auto rh = makePrefixPolicyRoute(factory, json);
+    if (proxy_->opts.big_value_split_threshold != 0) {
+      BigValueRouteOptions options(proxy_->opts.big_value_split_threshold);
+      rh = makeBigValueRoute(std::move(rh), options);
+    }
+    return { rh };
   } else if (type == "DevNullRoute") {
     return { makeDevNullRoute("devnull") };
   } else if (type == "FailoverWithExptimeRoute") {
