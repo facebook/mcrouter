@@ -8,12 +8,16 @@
  */
 #pragma once
 
+#include <memory>
+#include <string>
+
 namespace facebook { namespace memcache {
 
 class McrouterOptions;
 
 namespace mcrouter {
 
+class McrouterRouteHandleIf;
 class ProxyRoute;
 class ServiceInfo;
 
@@ -24,6 +28,9 @@ class ProxyConfigIf {
   virtual std::shared_ptr<ProxyRoute> proxyRoute() const = 0;
 
   virtual std::shared_ptr<ServiceInfo> serviceInfo() const = 0;
+
+  virtual std::shared_ptr<McrouterRouteHandleIf>
+  getRouteHandleForProxyPool(const std::string& poolName) const = 0;
 
   virtual ~ProxyConfigIf() {}
 };

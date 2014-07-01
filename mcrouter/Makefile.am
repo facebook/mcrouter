@@ -137,6 +137,7 @@ libmcroutercore_a_SOURCES = \
   routes/RateLimitRoute.h \
   routes/ReliablePoolRoute.cpp \
   routes/ReliablePoolRoute.h \
+  routes/RootRoute.h \
   routes/RouteHandleMap.cpp \
   routes/RouteHandleMap.h \
   routes/RoutePolicyMap.cpp \

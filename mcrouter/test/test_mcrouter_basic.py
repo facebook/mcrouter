@@ -124,9 +124,9 @@ class TestMcrouterBasic2(McrouterTestCase):
         self.mc1 = self.add_server(Memcached())
         self.mc2 = self.add_server(Memcached())
 
-    def get_mcrouter(self):
+    def get_mcrouter(self, additional_args=[]):
         return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+            self.config, '/a/a/', extra_args=self.extra_args + additional_args)
 
     def test_prefix_routing(self):
         mcr = self.get_mcrouter()
@@ -164,6 +164,18 @@ class TestMcrouterBasic2(McrouterTestCase):
         self.assertTrue(data)
 
         # else hang
+
+    def test_use_big_value(self):
+        mcr = self.get_mcrouter(['--big-value-split-threshold=100'])
+
+        reply = mcr.get('__mcrouter__.route_handles(get,test)')
+        self.assertEqual(reply.count('big-value'), 1)
+
+    def test_no_big_value(self):
+        mcr = self.get_mcrouter()
+
+        reply = mcr.get('__mcrouter__.route_handles(get,test)')
+        self.assertNotIn('big-value', reply)
 
 class TestBasicAllSync(McrouterTestCase):
     config = './mcrouter/test/test_basic_all_sync.json'

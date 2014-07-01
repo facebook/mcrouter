@@ -60,8 +60,7 @@ RouteHandleMap::RouteHandleMap(
     : defaultRoute_(std::move(defaultRoute)),
       sendInvalidRouteToDefault_(sendInvalidRouteToDefault) {
 
-  const auto& routes = routeSelectors.routes;
-  checkLogic(routes.find(defaultRoute_) != routes.end(),
+  checkLogic(routeSelectors.find(defaultRoute_) != routeSelectors.end(),
              "invalid default route: {}", defaultRoute_);
 
   RouteSelectorVector allRoutes;
@@ -69,7 +68,7 @@ RouteHandleMap::RouteHandleMap(
   std::unordered_map<std::string, RouteSelectorVector> byRoute;
   // add defaults first
   auto defaultRegion = getRegionFromRoutingPrefix(defaultRoute);
-  for (const auto& it : routes) {
+  for (const auto& it : routeSelectors) {
     if (it.first == defaultRoute_) {
       allRoutes.push_back(it.second);
     }
@@ -81,7 +80,7 @@ RouteHandleMap::RouteHandleMap(
   }
 
   // then add rest
-  for (const auto& it : routes) {
+  for (const auto& it : routeSelectors) {
     if (it.first != defaultRoute_) {
       allRoutes.push_back(it.second);
     }
@@ -103,8 +102,6 @@ RouteHandleMap::RouteHandleMap(
   for (const auto& it : byRoute) {
     byRoute_.emplace(it.first, makePolicyMap(uniqueVectors, it.second));
   }
-
-  byPoolName_ = routeSelectors.pools;
 }
 
 void RouteHandleMap::foreachRoutePolicy(folly::StringPiece prefix,
@@ -170,16 +167,6 @@ RouteHandleMap::getTargetsForKeySlow(folly::StringPiece prefix,
       return rh;
     }
   );
-}
-
-std::shared_ptr<McrouterRouteHandleIf>
-RouteHandleMap::getRouteHandleForProxyPool(const std::string& poolName) const {
-  auto rh = byPoolName_.find(poolName);
-  if (rh == byPoolName_.end()) {
-    return nullptr;
-  }
-
-  return rh->second;
 }
 
 const std::vector<McrouterRouteHandlePtr>&

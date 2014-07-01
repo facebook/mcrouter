@@ -15,6 +15,7 @@
 #include "folly/Range.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/ProxyConfigIf.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
   class dynamic;
@@ -56,11 +57,15 @@ class ProxyConfig : public ProxyConfigIf {
     return configMd5Digest_;
   }
 
+  McrouterRouteHandlePtr
+  getRouteHandleForProxyPool(const std::string& poolName) const;
+
  private:
   std::shared_ptr<ProxyRoute> proxyRoute_;
   std::shared_ptr<ServiceInfo> serviceInfo_;
   std::shared_ptr<PoolFactory> poolFactory_;
   std::string configMd5Digest_;
+  std::unordered_map<std::string, McrouterRouteHandlePtr> byPoolName_;
 
   /**
    * Parses config and creates ProxyRoute

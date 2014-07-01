@@ -32,10 +32,10 @@ void addRouteSelector(const folly::dynamic& aliases,
   for (const auto& alias : aliases) {
     checkLogic(alias.isString(), "Alias is not string");
     auto key = alias.asString().toStdString();
-    if (routeSelectors.routes.count(key)) {
-      routeSelectors.routes[key] = routeSelector;
+    if (routeSelectors.count(key)) {
+      routeSelectors[key] = routeSelector;
     } else {
-      routeSelectors.routes.emplace(key, routeSelector);
+      routeSelectors.emplace(key, routeSelector);
     }
   }
 }
@@ -89,13 +89,18 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
     if (pool->getType() == REGIONAL_POOL || pool->getType() == REGULAR_POOL) {
       auto handle = provider.getPoolHandle(pool->getName());
       if (handle) {
-        routeSelectors.pools.emplace(pool->getName(), std::move(handle));
+        byPoolName_.emplace(pool->getName(), std::move(handle));
       }
     }
   }
 
   proxyRoute_ = std::make_shared<ProxyRoute>(proxy, routeSelectors);
   serviceInfo_ = std::make_shared<ServiceInfo>(proxy, *this);
+}
+
+std::shared_ptr<McrouterRouteHandleIf>
+ProxyConfig::getRouteHandleForProxyPool(const std::string& poolName) const {
+  return tryGet(byPoolName_, poolName);
 }
 
 }}} // facebook::memcache::mcrouter

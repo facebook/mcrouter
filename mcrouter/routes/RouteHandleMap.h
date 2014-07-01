@@ -16,11 +16,11 @@
 #include "folly/Range.h"
 #include "mcrouter/config.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/RouteSelectorMap.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class RoutePolicyMap;
-class RouteSelectorMap;
 
 /* A bridge between proxy_* config structures and corresponding route handles.
    It is initialized by RouteHandleMapBuilder. */
@@ -34,12 +34,6 @@ class RouteHandleMap {
     folly::StringPiece prefix,
     folly::StringPiece key) const;
 
-  /**
-   * Returns the route handles for the given pool name.
-   * Returns nullptr if pool name is not found.
-   */
-  McrouterRouteHandlePtr getRouteHandleForProxyPool(
-    const std::string& poolName) const;
  private:
   std::string defaultRoute_;
   bool sendInvalidRouteToDefault_;
@@ -49,7 +43,6 @@ class RouteHandleMap {
   std::shared_ptr<RoutePolicyMap> allRoutes_;
   StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRegion_;
   StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRoute_;
-  std::unordered_map<std::string, McrouterRouteHandlePtr> byPoolName_;
 
   const std::vector<McrouterRouteHandlePtr>& getBySingleRoute(
     folly::StringPiece route,
