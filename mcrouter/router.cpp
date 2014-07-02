@@ -60,14 +60,15 @@ struct mcrouter_queue_entry_t {
   void* context;
 };
 
-}  // anonymous namespace
-
 /* Default thread stack size if RLIMIT_STACK is unlimited */
 const size_t DEFAULT_STACK_SIZE = 8192 * 1024;
 
 typedef SLIST_HEAD(mcrouter_list_t, mcrouter_t) mcrouter_list_t;
 static mcrouter_list_t router_list;
 std::mutex router_list_lock;
+size_t gNumRouters{0};
+
+}  // anonymous namespace
 
 static void mcrouter_client_cleanup(mcrouter_client_t *client);
 
@@ -682,6 +683,10 @@ mcrouter_t* mcrouter_init(const std::string& persistence_id,
       SLIST_INSERT_HEAD(&router_list, router, entry);
       router->is_linked = 1;
       router->persistence_id = persistence_id;
+      if (!gNumRouters) {
+        PCHECK(!::atexit(&free_all_libmcrouters));
+      }
+      ++gNumRouters;
     }
   }
   return router;
@@ -1133,13 +1138,13 @@ void free_all_libmcrouters() {
       router;
       router=next_it,
         next_it = (next_it) ? SLIST_NEXT(next_it, entry): nullptr) {
-    FBI_ASSERT(!(router->opts.standalone ||
-                router->opts.sync));
 
     // Unlink before free to avoid deadlock
     SLIST_REMOVE(&router_list, router, mcrouter_t, entry);
     router->is_linked = 0;
     mcrouter_free(router);
+    assert(gNumRouters > 0);
+    --gNumRouters;
   }
 }
 
