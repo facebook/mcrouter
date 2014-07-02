@@ -57,7 +57,7 @@ class AsyncMcClientImpl::TimeoutCallback : public folly::AsyncTimeout {
  public:
   TimeoutCallback(AsyncMcClientImpl& client) : client_(client) {
     attachEventBase(&client_.eventBase_,
-                    folly::TimeoutManager::InternalEnum::INTERNAL);
+                    folly::TimeoutManager::InternalEnum::NORMAL);
   }
 
   void timeoutExpired() noexcept {
