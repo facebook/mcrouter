@@ -84,6 +84,20 @@ class McReplyBase {
   }
 
   /**
+   * Did we receieve a mc_res_try_again from the server.
+   */
+  bool isTryAgain() {
+    return result_ == mc_res_try_again;
+  }
+
+  /**
+   * Did we receieve a mc_res_busy from the server.
+   */
+  bool isBusy() {
+    return result_ == mc_res_busy;
+  }
+
+  /**
    * Was the connection attempt refused?
    */
   bool isConnectError() const {
