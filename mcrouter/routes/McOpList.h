@@ -14,27 +14,34 @@
 
 namespace facebook { namespace memcache {
 
-typedef List<
-  McOperation<mc_op_echo>,
-  McOperation<mc_op_version>,
-  McOperation<mc_op_get>,
-  McOperation<mc_op_set>,
-  McOperation<mc_op_add>,
-  McOperation<mc_op_replace>,
-  McOperation<mc_op_cas>,
-  McOperation<mc_op_delete>,
-  McOperation<mc_op_incr>,
-  McOperation<mc_op_decr>,
-  McOperation<mc_op_stats>,
-  McOperation<mc_op_lease_get>,
-  McOperation<mc_op_lease_set>,
-  McOperation<mc_op_metaget>,
-  McOperation<mc_op_gets>,
-  McOperation<mc_op_get_service_info>,
-  McOperation<mc_op_get_count>,
-  McOperation<mc_op_bump_count>,
-  McOperation<mc_op_get_unique_count>,
-  McOperation<mc_op_bump_unique_count>>
-McOperationList;
+struct McOpList {
+  template <int i>
+  struct Item {};
+
+  static constexpr int kLastItemId = 20;
+
+  typedef Item<kLastItemId> LastItem;
+};
+
+template <> struct McOpList::Item<1> { typedef McOperation<mc_op_echo> op; };
+template <> struct McOpList::Item<2> { typedef McOperation<mc_op_version> op; };
+template <> struct McOpList::Item<3> { typedef McOperation<mc_op_get> op; };
+template <> struct McOpList::Item<4> { typedef McOperation<mc_op_set> op; };
+template <> struct McOpList::Item<5> { typedef McOperation<mc_op_add> op; };
+template <> struct McOpList::Item<6> { typedef McOperation<mc_op_replace> op; };
+template <> struct McOpList::Item<7> { typedef McOperation<mc_op_cas> op; };
+template <> struct McOpList::Item<8> { typedef McOperation<mc_op_delete> op; };
+template <> struct McOpList::Item<9> { typedef McOperation<mc_op_incr> op; };
+template <> struct McOpList::Item<10> { typedef McOperation<mc_op_decr> op; };
+template <> struct McOpList::Item<11> { typedef McOperation<mc_op_stats> op; };
+template <> struct McOpList::Item<12> { typedef McOperation<mc_op_lease_get> op; };
+template <> struct McOpList::Item<13> { typedef McOperation<mc_op_lease_set> op; };
+template <> struct McOpList::Item<14> { typedef McOperation<mc_op_metaget> op; };
+template <> struct McOpList::Item<15> { typedef McOperation<mc_op_gets> op; };
+template <> struct McOpList::Item<16> { typedef McOperation<mc_op_get_service_info> op; };
+template <> struct McOpList::Item<17> { typedef McOperation<mc_op_get_count> op; };
+template <> struct McOpList::Item<18> { typedef McOperation<mc_op_bump_count> op; };
+template <> struct McOpList::Item<19> { typedef McOperation<mc_op_get_unique_count> op; };
+template <> struct McOpList::Item<20> { typedef McOperation<mc_op_bump_unique_count> op; };
 
 }}

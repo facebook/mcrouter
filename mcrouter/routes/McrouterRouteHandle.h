@@ -18,26 +18,29 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-typedef RouteOperationListT<
-  McOperationList,
-  List<ProxyMcRequest, RecordingMcRequest>> McrouterOpList;
-
 class McrouterRouteHandleIf;
 
 template <typename Route>
 class McrouterRouteHandle :
-      public RouteHandle<Route, McrouterRouteHandleIf, McrouterOpList> {
+      public RouteHandle<Route,
+                         McrouterRouteHandleIf,
+                         List<ProxyMcRequest, RecordingMcRequest>,
+                         McOpList> {
  public:
   template<typename... Args>
   explicit McrouterRouteHandle(Args&&... args)
     : RouteHandle<Route,
                   McrouterRouteHandleIf,
-                  McrouterOpList>(std::forward<Args>(args)...) {
+                  List<ProxyMcRequest, RecordingMcRequest>,
+                  McOpList>(
+                    std::forward<Args>(args)...) {
   }
 };
 
 class McrouterRouteHandleIf :
-      public RouteHandleIf<McrouterRouteHandleIf, McrouterOpList> {
+      public RouteHandleIf<McrouterRouteHandleIf,
+                           List<ProxyMcRequest, RecordingMcRequest>,
+                           McOpList> {
  public:
   template <class Route>
   using Impl = McrouterRouteHandle<Route>;

@@ -12,38 +12,6 @@
 
 namespace facebook { namespace memcache {
 
-template <typename Operation_, typename Request_>
-struct RouteOperation {
-  typedef Operation_ Operation;
-  typedef Request_ Request;
-};
-
-template <typename OperationList, typename RequestList>
-struct RouteOperationList;
-
-template <typename OperationList, typename RequestList>
-using RouteOperationListT =
-  typename RouteOperationList<OperationList, RequestList>::type;
-
-template <typename Operation>
-struct RouteOperationList<List<Operation>, List<>> {
-  typedef List<> type;
-};
-
-template <typename Operation, typename Request, typename... Requests>
-struct RouteOperationList<List<Operation>, List<Request, Requests...>> {
-  typedef ConcatListsT<
-    RouteOperationListT<List<Operation>, List<Requests...>>,
-    List<RouteOperation<Operation, Request>>> type;
-};
-
-template <typename Operation, typename... Operations, typename... Requests>
-struct RouteOperationList<List<Operation, Operations...>, List<Requests...>> {
-  typedef ConcatListsT<
-    RouteOperationListT<List<Operation>, List<Requests...>>,
-    RouteOperationListT<List<Operations...>, List<Requests...>>> type;
-};
-
 /**
  * We need the wrapper class below since we can't have templated
  * virtual methods.
@@ -57,11 +25,16 @@ struct RouteOperationList<List<Operation, Operations...>, List<Requests...>> {
  * where "route_name" is the result of R::routeName().
  */
 
-template<typename Route, typename RouteHandleIf, typename List>
-class RouteHandle {};
+template<typename Route,
+         typename RouteHandleIf,
+         typename RequestList,
+         typename OpList,
+         int op_id = OpList::kLastItemId>
+class RouteHandle;
 
-template<typename Route, typename RouteHandleIf>
-class RouteHandle<Route, RouteHandleIf, List<>> : public RouteHandleIf {
+template<typename Route, typename RouteHandleIf, typename OpList, int op_id>
+class RouteHandle<Route, RouteHandleIf, List<>, OpList, op_id> :
+      public RouteHandleIf {
  public:
   template<typename... Args>
   explicit RouteHandle(Args&&... args)
@@ -94,52 +67,102 @@ class RouteHandle<Route, RouteHandleIf, List<>> : public RouteHandleIf {
 
 template<typename Route,
          typename RouteHandleIf,
-         typename RouteOperation,
-         typename... RouteOperations>
+         typename Request,
+         typename... Requests,
+         typename OpList>
 class RouteHandle<Route,
                   RouteHandleIf,
-                  List<RouteOperation, RouteOperations...>> :
+                  List<Request, Requests...>,
+                  OpList,
+                  0> :
       public RouteHandle<Route,
                          RouteHandleIf,
-                         List<RouteOperations...>>{
+                         List<Requests...>,
+                         OpList,
+                         OpList::kLastItemId>{
  public:
   template<typename... Args>
   explicit RouteHandle(Args&&... args)
     : RouteHandle<Route,
                   RouteHandleIf,
-                  List<RouteOperations...>>(std::forward<Args>(args)...) {
+                  List<Requests...>,
+                  OpList,
+                  OpList::kLastItemId>(std::forward<Args>(args)...) {
   }
 
   using RouteHandle<Route,
                     RouteHandleIf,
-                    List<RouteOperations...>>::couldRouteTo;
+                    List<Requests...>,
+                    OpList,
+                    OpList::kLastItemId>::couldRouteTo;
   using RouteHandle<Route,
                     RouteHandleIf,
-                    List<RouteOperations...>>::route;
+                    List<Requests...>,
+                    OpList,
+                    OpList::kLastItemId>::route;
+};
 
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const typename RouteOperation::Request& req,
-    typename RouteOperation::Operation) const {
-
-    return this->route_.couldRouteTo(req, typename RouteOperation::Operation());
+template<typename Route,
+         typename RouteHandleIf,
+         typename Request,
+         typename... Requests,
+         typename OpList,
+         int op_id>
+class RouteHandle<Route,
+                  RouteHandleIf,
+                  List<Request, Requests...>,
+                  OpList,
+                  op_id> :
+      public RouteHandle<Route,
+                         RouteHandleIf,
+                         List<Request, Requests...>,
+                         OpList,
+                         op_id-1>{
+ public:
+  template<typename... Args>
+  explicit RouteHandle(Args&&... args)
+    : RouteHandle<Route,
+                  RouteHandleIf,
+                  List<Request, Requests...>,
+                  OpList,
+                  op_id-1>(std::forward<Args>(args)...) {
   }
 
-  typename ReplyType<typename RouteOperation::Operation,
-                     typename RouteOperation::Request>::type
-  route(const typename RouteOperation::Request& req,
-        typename RouteOperation::Operation) {
-    return this->route_.route(req, typename RouteOperation::Operation());
+  using RouteHandle<Route,
+                    RouteHandleIf,
+                    List<Request, Requests...>,
+                    OpList,
+                    op_id-1>::couldRouteTo;
+  using RouteHandle<Route,
+                    RouteHandleIf,
+                    List<Request, Requests...>,
+                    OpList,
+                    op_id-1>::route;
+
+  std::vector<std::shared_ptr<RouteHandleIf>>
+  couldRouteTo(const Request& req,
+               typename OpList::template Item<op_id>::op) const {
+    return this->route_.couldRouteTo(
+      req, typename OpList::template Item<op_id>::op());
+  }
+
+  typename ReplyType<typename OpList::template Item<op_id>::op, Request>::type
+  route(const Request& req, typename OpList::template Item<op_id>::op) {
+    return this->route_.route(req, typename OpList::template Item<op_id>::op());
   }
 };
 
-template <typename RouteHandleIf_, typename List>
+template <typename RouteHandleIf_,
+          typename RequestList,
+          typename OpList,
+          int op_id = OpList::kLastItemId>
 class RouteHandleIf;
 
-template <typename RouteHandleIf_, typename RouteOperation>
-class RouteHandleIf<RouteHandleIf_, List<RouteOperation>> {
+template <typename RouteHandleIf_, typename Request, typename OpList>
+class RouteHandleIf<RouteHandleIf_, List<Request>, OpList, 1> {
  public:
   template <class Route>
-  using Impl = RouteHandle<Route, RouteHandleIf_, List<RouteOperation>>;
+  using Impl = RouteHandle<Route, RouteHandleIf_, List<Request>, OpList, 1>;
 
   /**
    * Returns a string identifying this route handle instance (for debugging)
@@ -151,55 +174,88 @@ class RouteHandleIf<RouteHandleIf_, List<RouteOperation>> {
    * send a request to (for debugging)
    */
   virtual std::vector<std::shared_ptr<RouteHandleIf_>> couldRouteTo(
-    const typename RouteOperation::Request& req,
-    const typename RouteOperation::Operation) const = 0;
+    const Request& req, typename OpList::template Item<1>::op) const = 0;
 
   /**
    * Routes the request through this route handle
    */
-  virtual
-  typename ReplyType<typename RouteOperation::Operation,
-                     typename RouteOperation::Request>::type
-  route(const typename RouteOperation::Request& req,
-        const typename RouteOperation::Operation) = 0;
+  virtual typename ReplyType<typename OpList::template Item<1>::op,
+                             Request>::type
+  route(const Request& req,
+        typename OpList::template Item<1>::op) = 0;
 
   virtual ~RouteHandleIf() {}
 };
 
 template <typename RouteHandleIf_,
-          typename RouteOperation,
-          typename... RouteOperations>
+          typename Request,
+          typename... Requests,
+          typename OpList>
 class RouteHandleIf<RouteHandleIf_,
-                    List<RouteOperation,
-                         RouteOperations...>> :
-      public RouteHandleIf<RouteHandleIf_, List<RouteOperations...>> {
+                    List<Request, Requests...>,
+                    OpList,
+                    0> :
+      public RouteHandleIf<RouteHandleIf_,
+                           List<Requests...>,
+                           OpList,
+                           OpList::kLastItemId> {
 
  public:
+  using RouteHandleIf<RouteHandleIf_,
+                      List<Requests...>,
+                      OpList,
+                      OpList::kLastItemId>::couldRouteTo;
+  using RouteHandleIf<RouteHandleIf_,
+                      List<Requests...>,
+                      OpList,
+                      OpList::kLastItemId>::route;
+};
+
+template <typename RouteHandleIf_,
+          typename Request,
+          typename... Requests,
+          typename OpList,
+          int op_id>
+class RouteHandleIf<RouteHandleIf_,
+                    List<Request, Requests...>,
+                    OpList,
+                    op_id> :
+      public RouteHandleIf<RouteHandleIf_,
+                           List<Request, Requests...>,
+                           OpList,
+                           op_id-1> {
+ public:
   template <class Route>
-  using Impl = RouteHandle<Route, RouteHandleIf_, List<RouteOperation,
-                                                       RouteOperations...>>;
+  using Impl = RouteHandle<Route,
+                           RouteHandleIf_,
+                           List<Request, Requests...>,
+                           OpList,
+                           op_id>;
 
   using RouteHandleIf<RouteHandleIf_,
-                      List<RouteOperations...>>::couldRouteTo;
+                      List<Request, Requests...>,
+                      OpList,
+                      op_id-1>::couldRouteTo;
   using RouteHandleIf<RouteHandleIf_,
-                      List<RouteOperations...>>::route;
+                      List<Request, Requests...>,
+                      OpList,
+                      op_id-1>::route;
 
   /**
    * Returns a list of all possible route handles this route handle could
    * send a request to (for debugging)
    */
   virtual std::vector<std::shared_ptr<RouteHandleIf_>> couldRouteTo(
-    const typename RouteOperation::Request& req,
-    const typename RouteOperation::Operation) const = 0;
+    const Request& req, typename OpList::template Item<op_id>::op) const = 0;
 
   /**
    * Routes the request through this route handle
    */
-  virtual
-  typename ReplyType<typename RouteOperation::Operation,
-                     typename RouteOperation::Request>::type
-  route(const typename RouteOperation::Request& req,
-        const typename RouteOperation::Operation) = 0;
+  virtual typename ReplyType<typename OpList::template Item<op_id>::op,
+                             Request>::type
+  route(const Request& req,
+        typename OpList::template Item<op_id>::op) = 0;
 };
+
 
 }}

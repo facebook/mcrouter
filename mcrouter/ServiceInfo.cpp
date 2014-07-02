@@ -51,14 +51,14 @@ struct ServiceInfo::ServiceInfoImpl {
     folly::StringPiece op,
     folly::StringPiece key,
     const ProxyMcRequest& req,
-    List<>) const;
+    McOpList::Item<0>) const;
 
-  template <typename Operation, typename... Operations>
+  template <int op_id>
   void routeCommandHelper(
     folly::StringPiece op,
     folly::StringPiece key,
     const ProxyMcRequest& req,
-    List<Operation, Operations...>) const;
+    McOpList::Item<op_id>) const;
 };
 
 template <typename Operation>
@@ -117,28 +117,28 @@ inline void dumpTree(std::string& tree,
 }
 }
 
-template <typename Operation, typename... Operations>
+template <int op_id>
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
   const RecordingMcRequest& req,
   const ProxyRoute& proxyRoute,
-  List<Operation, Operations...>) {
+  McOpList::Item<op_id>) {
 
-  if (op == mc_op_to_string(Operation::mc_op)) {
+  if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
      std::string tree;
-     dumpTree(tree, 0, proxyRoute, req, Operation());
+     dumpTree(tree, 0, proxyRoute, req, typename McOpList::Item<op_id>::op());
      return tree;
   }
 
   return routeHandlesCommandHelper(
-    op, req, proxyRoute, List<Operations...>());
+    op, req, proxyRoute, McOpList::Item<op_id-1>());
 }
 
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
   const RecordingMcRequest& req,
   const ProxyRoute& proxyRoute,
-  List<>) {
+  McOpList::Item<0>) {
 
   throw std::runtime_error("route_handles: unknown op " + op.str());
 }
@@ -147,24 +147,26 @@ void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
   folly::StringPiece op,
   folly::StringPiece key,
   const ProxyMcRequest& req,
-  List<>) const {
+  McOpList::Item<0>) const {
 
   throw std::runtime_error("route: unknown op " + op.str());
 }
 
-template <typename Operation, typename... Operations>
+template <int op_id>
 void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
   folly::StringPiece op,
   folly::StringPiece key,
   const ProxyMcRequest& req,
-  List<Operation, Operations...>) const {
+  McOpList::Item<op_id>) const {
 
-  if (op == mc_op_to_string(Operation::mc_op)) {
-    handleRouteCommandForOp(req, key.str(), Operation());
+  if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
+    handleRouteCommandForOp(req,
+                            key.str(),
+                            typename McOpList::Item<op_id>::op());
     return;
   }
 
-  routeCommandHelper(op, key, req, List<Operations...>());
+  routeCommandHelper(op, key, req, McOpList::Item<op_id-1>());
 }
 
 /* Must be here since unique_ptr destructor needs to know complete
@@ -262,7 +264,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       RecordingMcRequest req(ctx, key.str());
 
       return routeHandlesCommandHelper(op, req, *proxyRoute_,
-                                       McOperationList());
+                                       McOpList::LastItem());
     }
   );
 
@@ -313,7 +315,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
   auto op = args[0];
   auto key = args[1];
 
-  routeCommandHelper(op, key, req, McOperationList());
+  routeCommandHelper(op, key, req, McOpList::LastItem());
 }
 
 void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {

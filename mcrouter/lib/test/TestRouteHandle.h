@@ -15,14 +15,17 @@
 
 namespace facebook { namespace memcache {
 
-typedef RouteOperationListT<McOperationList, List<McRequest>> TestOpList;
-
-class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf, TestOpList> {
+class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
+                                               List<McRequest>,
+                                               McOpList> {
 };
 
 typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
 
 template <typename Route>
-using TestRouteHandle = RouteHandle<Route, TestRouteHandleIf, TestOpList>;
+using TestRouteHandle = RouteHandle<Route,
+                                    TestRouteHandleIf,
+                                    List<McRequest>,
+                                    McOpList>;
 
 }}  // facebook::memcache

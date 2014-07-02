@@ -29,28 +29,30 @@ template <typename F>
 void sendRequest(
     AsyncMcClient& client,
     const McRequest& request,
-    mc_op_t operation,
+    mc_op_t op,
     F&& f,
-    List<>) {
+    McOpList::Item<0>) {
   throw std::runtime_error(std::string("send for requested op (") +
-                           mc_op_to_string(operation) + ") not supported");
+                           mc_op_to_string(op) + ") not supported");
 }
 
-template <typename F, int Op, typename... Operations>
+template <typename F, int op_id>
 void sendRequest(
     AsyncMcClient& client,
     const McRequest& request,
-    mc_op_t operation,
+    mc_op_t op,
     F&& f,
-    List<McOperation<Op>, Operations...>) {
+    McOpList::Item<op_id>) {
 
-  if (operation == Op) {
-    client.send(request, McOperation<Op>(), std::forward<F>(f));
+  if (McOpList::Item<op_id>::op::mc_op == op) {
+    client.send(request,
+                typename McOpList::Item<op_id>::op(),
+                std::forward<F>(f));
     return;
   }
 
-  return sendRequest(client, request, operation, std::forward<F>(f),
-                     List<Operations...>());
+  return sendRequest(client, request, op, std::forward<F>(f),
+                     McOpList::Item<op_id-1>());
 }
 
 }  // anonymous namespace
@@ -102,7 +104,7 @@ int DestinationClient::send(mc_msg_t* request, void* req_ctx,
                          reply.result(),
                          req_ctx);
     },
-    McOperationList());
+    McOpList::LastItem());
 
   return 0;
 }

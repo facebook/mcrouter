@@ -30,22 +30,23 @@ class ProxyRoute {
   ProxyMcReply dispatchMcMsgHelper(
     const McMsgRef& msg,
     std::shared_ptr<ProxyRequestContext> ctx,
-    List<>) const {
+    McOpList::Item<0>) const {
 
     throw std::runtime_error("dispatch for requested op not implemented");
   }
 
-  template <typename Operation, typename... Operations>
+  template <int op_id>
   ProxyMcReply dispatchMcMsgHelper(
     const McMsgRef& msg,
     std::shared_ptr<ProxyRequestContext> ctx,
-    List<Operation, Operations...>) const {
+    McOpList::Item<op_id>) const {
 
-    if (msg->op == Operation::mc_op) {
-      return route(ProxyMcRequest(ctx, msg.clone()), Operation());
+    if (msg->op == McOpList::Item<op_id>::op::mc_op) {
+      return route(ProxyMcRequest(ctx, msg.clone()),
+                   typename McOpList::Item<op_id>::op());
     }
 
-    return dispatchMcMsgHelper(msg, std::move(ctx), List<Operations...>());
+    return dispatchMcMsgHelper(msg, std::move(ctx), McOpList::Item<op_id-1>());
   }
 
  public:
@@ -59,7 +60,7 @@ class ProxyRoute {
 
   ProxyMcReply dispatchMcMsg(const McMsgRef& msg,
                              std::shared_ptr<ProxyRequestContext> ctx) const {
-    return dispatchMcMsgHelper(msg, std::move(ctx), McOperationList());
+    return dispatchMcMsgHelper(msg, std::move(ctx), McOpList::LastItem());
   }
 
   template <class Operation, class Request>
