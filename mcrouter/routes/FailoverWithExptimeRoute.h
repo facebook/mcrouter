@@ -100,7 +100,9 @@ class FailoverWithExptimeRoute {
       return reply;
     }
 
-    if ((reply.isTko() && !settings_.tko.shouldFailover(Operation())) ||
+    if ((!reply.isTko() && !reply.isConnectTimeout() &&
+         !reply.isDataTimeout()) ||
+        (reply.isTko() && !settings_.tko.shouldFailover(Operation())) ||
         (reply.isConnectTimeout() &&
          !settings_.connectTimeout.shouldFailover(Operation())) ||
         (reply.isDataTimeout() &&
