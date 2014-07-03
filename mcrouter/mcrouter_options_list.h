@@ -303,7 +303,7 @@ mcrouter_option_integer(
   "Mark as TKO after this many failures")
 
 mcrouter_option_integer(
-  size_t, maximum_soft_tkos, 10,
+  size_t, maximum_soft_tkos, 40,
   "maximum-soft-tkos", no_short,
   "The Maximum number of machines we can mark TKO if they don't have a hard"
   " failure.")
