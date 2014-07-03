@@ -10,6 +10,8 @@
 
 #include <atomic>
 
+#include <mcrouter/lib/fibers/TimeoutController.h>
+
 namespace facebook { namespace memcache {
 
 class Fiber;
@@ -37,14 +39,38 @@ class Baton {
   void wait(F&& mainContextFunc);
 
   /**
+   * Puts active fiber to sleep. Returns when post is called.
+   *
+   * @param timeout Baton will be automatically awaken if timeout is hit
+   *
+   * @return true if was posted, false if timeout expired
+   */
+  bool timed_wait(TimeoutController::Duration timeout);
+
+  /**
+   * Puts active fiber to sleep. Returns when post is called.
+   *
+   * @param timeout Baton will be automatically awaken if timeout is hit
+   * @param mainContextFunc this function is immediately executed on the main
+   *        context.
+   *
+   * @return true if was posted, false if timeout expired
+   */
+  template <typename F>
+  bool timed_wait(TimeoutController::Duration timeout, F&& mainContextFunc);
+
+  /**
    * Wakes up Fiber which was waiting on this Baton (or if no Fiber is waiting,
    * next wait() call will return immediately).
    */
   void post();
 
  private:
+  void postHelper(intptr_t new_value);
+
   static constexpr intptr_t WAITING_FIBER_EMPTY = 0;
   static constexpr intptr_t WAITING_FIBER_POSTED = -1;
+  static constexpr intptr_t WAITING_FIBER_TIMEOUT = -2;
 
   std::atomic<intptr_t> waitingFiber_{WAITING_FIBER_EMPTY};
 };

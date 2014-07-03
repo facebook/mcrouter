@@ -21,26 +21,45 @@ void Baton::wait(F&& mainContextFunc) {
   auto& waitingFiber = waitingFiber_;
   auto f = [&mainContextFunc, &waitingFiber](Fiber& fiber) mutable {
     auto baton_fiber = waitingFiber.load();
-    intptr_t new_value;
     do {
-      if (baton_fiber == WAITING_FIBER_EMPTY) {
-        new_value = reinterpret_cast<intptr_t>(&fiber);
-      } else if (LIKELY(baton_fiber == WAITING_FIBER_POSTED)) {
-        new_value = WAITING_FIBER_EMPTY;
+      if (LIKELY(baton_fiber == WAITING_FIBER_EMPTY)) {
+        continue;
+      } else if (baton_fiber == WAITING_FIBER_POSTED ||
+                 baton_fiber == WAITING_FIBER_TIMEOUT) {
+        fiber.setData(0);
+        break;
       } else {
         throw std::logic_error("Some Fiber is already waiting on this Baton.");
       }
-    } while(!waitingFiber.compare_exchange_weak(baton_fiber, new_value));
-
-    if (new_value == WAITING_FIBER_EMPTY) {
-      fiber.setData(0);
-    }
+    } while(!waitingFiber.compare_exchange_weak(
+              baton_fiber,
+              reinterpret_cast<intptr_t>(&fiber)));
 
     mainContextFunc();
   };
 
   fm.awaitFunc_ = std::ref(f);
   fm.activeFiber_->preempt(Fiber::AWAITING);
+}
+
+template <typename F>
+bool Baton::timed_wait(TimeoutController::Duration timeout,
+                       F&& mainContextFunc) {
+  auto& baton = *this;
+  auto timeoutFunc = [&baton]() mutable {
+    baton.postHelper(WAITING_FIBER_TIMEOUT);
+  };
+
+  TimeoutHandle timeout_handle(std::ref(timeoutFunc));
+
+  auto& fm = FiberManager::getFiberManager();
+  fm.timeoutManager_.registerTimeout(timeout_handle, timeout);
+
+  wait(std::move(mainContextFunc));
+
+  timeout_handle.tryCancel();
+
+  return waitingFiber_ == WAITING_FIBER_POSTED;
 }
 
 }}

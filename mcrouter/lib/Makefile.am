@@ -106,6 +106,8 @@ libmcrouter_a_SOURCES = \
   fibers/GuardPageAllocator-inl.h \
   fibers/GuardPageAllocator.h \
   fibers/LoopController.h \
+  fibers/TimeoutController.cpp \
+  fibers/TimeoutController.h \
   fibers/SimpleLoopController.h \
   fibers/WhenN-inl.h \
   fibers/WhenN.h \

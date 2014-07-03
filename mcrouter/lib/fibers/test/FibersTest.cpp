@@ -22,6 +22,90 @@ using namespace facebook::memcache;
 
 using folly::wangle::Try;
 
+TEST(FiberManager, batonTimedWaitTimeout) {
+  bool taskAdded = false;
+  size_t iterations = 0;
+
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+  auto& loopController =
+    dynamic_cast<SimpleLoopController&>(manager.loopController());
+
+  auto loopFunc = [&]() {
+    if (!taskAdded) {
+      manager.addTask(
+        [&]() {
+          Baton baton;
+
+          auto res = baton.timed_wait(std::chrono::milliseconds(23));
+
+          EXPECT_FALSE(res);
+          EXPECT_EQ(5, iterations);
+
+          loopController.stop();
+        }
+      );
+      manager.addTask(
+        [&]() {
+          Baton baton;
+
+          auto res = baton.timed_wait(std::chrono::milliseconds(13));
+
+          EXPECT_FALSE(res);
+          EXPECT_EQ(3, iterations);
+
+          loopController.stop();
+        }
+      );
+      taskAdded = true;
+    } else {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      iterations ++;
+      loopController.schedule();
+    }
+  };
+
+  loopController.loop(std::move(loopFunc));
+}
+
+TEST(FiberManager, batonTimedWaitPost) {
+  bool taskAdded = false;
+  size_t iterations = 0;
+  Baton* baton_ptr;
+
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+  auto& loopController =
+    dynamic_cast<SimpleLoopController&>(manager.loopController());
+
+  auto loopFunc = [&]() {
+    if (!taskAdded) {
+      manager.addTask(
+        [&]() {
+          Baton baton;
+          baton_ptr = &baton;
+
+          auto res = baton.timed_wait(std::chrono::milliseconds(13));
+
+          EXPECT_TRUE(res);
+          EXPECT_EQ(2, iterations);
+
+          loopController.stop();
+        }
+      );
+      taskAdded = true;
+    } else {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      iterations ++;
+      if (iterations == 2) {
+        baton_ptr->post();
+      } else {
+        loopController.schedule();
+      }
+    }
+  };
+
+  loopController.loop(std::move(loopFunc));
+}
+
 TEST(FiberManager, addTasksNoncopyable) {
   std::vector<FiberPromise<int>> pendingFibers;
   bool taskAdded = false;

@@ -20,6 +20,7 @@
 #include "mcrouter/lib/fbi/cpp/traits.h"
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fibers/Fiber.h"
+#include "mcrouter/lib/fibers/TimeoutController.h"
 
 #ifdef USE_GUARD_ALLOCATOR
 #include "mcrouter/lib/fibers/GuardPageAllocator.h"
@@ -262,6 +263,8 @@ class FiberManager {
   ExceptionCallback exceptionCallback_; /**< task exception callback */
 
   AtomicLinkedList<Fiber, &Fiber::nextRemoteReady_> remoteReadyQueue_;
+
+  TimeoutController timeoutManager_;
 
   void runReadyFiber(Fiber* fiber);
   void remoteReadyInsert(Fiber* fiber);

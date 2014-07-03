@@ -53,6 +53,10 @@ class SimpleLoopController : public LoopController {
     return remoteScheduleCalled_;
   }
 
+  void schedule() override {
+    scheduled_ = true;
+  }
+
  private:
   FiberManager* fm_;
   bool scheduled_;
@@ -63,10 +67,6 @@ class SimpleLoopController : public LoopController {
 
   void setFiberManager(FiberManager* fm) override {
     fm_ = fm;
-  }
-
-  void schedule() override {
-    scheduled_ = true;
   }
 
   void cancel() override {

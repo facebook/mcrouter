@@ -90,6 +90,8 @@ inline bool FiberManager::loopUntilNoReady() {
 
   currentFiberManager_ = this;
 
+  timeoutManager_.runTimeouts();
+
   while (!TAILQ_EMPTY(&readyFibers_)) {
     auto fiber = TAILQ_FIRST(&readyFibers_);
     TAILQ_REMOVE(&readyFibers_, fiber, entry_);
