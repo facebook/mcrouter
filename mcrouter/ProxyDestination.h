@@ -76,11 +76,12 @@ struct ProxyDestination {
   bool use_ssl{false};
 
   static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
-                                                  const ProxyClientCommon& ro,
-                                                  std::string pdstnKey);
+                                                   const ProxyClientCommon& ro,
+                                                   std::string pdstnKey);
 
   ~ProxyDestination();
 
+  void track_latency(int64_t latency);
   void handle_tko(mc_res_t result, const mc_msg_t* reply,
                   int consecutive_errors);
 
@@ -112,6 +113,7 @@ struct ProxyDestination {
   mc_msg_t* probe_req{nullptr};
   asox_timer_t probe_timer{nullptr};
   size_t consecutiveErrors_{0};
+  double avgLatency_{0.0};
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
                      // mc_client_reset and not a remote connection failure.
@@ -135,8 +137,8 @@ struct ProxyDestination {
   void initializeClient();
 
   ProxyDestination(proxy_t* proxy,
-                   const ProxyClientCommon& ro,
-                   std::string pdstnKey);
+                 const ProxyClientCommon& ro,
+                 std::string pdstnKey);
 
   // for no-network mode (debug/performance measurement only)
   void sendFakeReply(mc_msg_t* request, void* req_ctx);

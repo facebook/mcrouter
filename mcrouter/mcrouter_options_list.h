@@ -305,8 +305,21 @@ mcrouter_option_integer(
 mcrouter_option_integer(
   size_t, maximum_soft_tkos, 40,
   "maximum-soft-tkos", no_short,
-  "The Maximum number of machines we can mark TKO if they don't have a hard"
+  "The maximum number of machines we can mark TKO if they don't have a hard"
   " failure.")
+
+mcrouter_option_integer(
+  size_t, latency_window_size, 0,
+  "latency-window-size", no_short,
+  "The number of samples to track when computing moving average latency for"
+  " a proxy destination. If 0, TKO decisions based on latency are disabled.")
+
+mcrouter_option_integer(
+  int64_t, latency_threshold_us, 2000000,
+  "latency-threshold-us", no_short,
+  "The maximum average destination latency (in us) that is considered"
+  " acceptable. Destinations above this threshold will begin recording soft"
+  " failures.")
 
 mcrouter_option_group("Timeouts")
 

@@ -1,0 +1,55 @@
+{
+    "region": "test",
+    "clusters": {
+        "A": {
+            "cluster": "A",
+            "pools": {
+                "A.wildcard": {
+                    "cluster": "A",
+                    "protocol": "ascii",
+                    "servers": [
+                        "[127.0.0.1]:11615"
+                        ]
+                    }
+                }
+            },
+        "B": {
+            "cluster": "B",
+            "pools": {
+                "B.wildcard": {
+                    "cluster": "B",
+                    "protocol": "ascii",
+                    "servers": [
+                        "[::ffff:7f00:1]:11616"
+                        ]
+                    }
+                }
+            }
+        },
+    "routes": [
+        {
+            "aliases": [ "/test/A/" ],
+            "route": {
+                "type": "FailoverWithExptimeRoute",
+                "failover": "PoolRoute|B.wildcard",
+                "normal": "PoolRoute|A.wildcard",
+                "settings" : {
+                  "connectTimeout" : false,
+                  "dataTimeout" : false
+                }
+            }
+        },
+        {
+            "aliases": [ "/test/B/" ],
+            "route": {
+                "type": "FailoverWithExptimeRoute",
+                "failover": "PoolRoute|A.wildcard",
+                "normal": "PoolRoute|B.wildcard",
+                "settings" : {
+                  "connectTimeout" : false,
+                  "dataTimeout" : false
+                }
+            }
+        }
+    ]
+}

@@ -152,9 +152,21 @@ void ProxyDestination::unmark_global_tko() {
   FBI_ASSERT(shared);
   shared->tko.recordSuccess();
   if (sending_probes) {
-    VLOG(1) << shared->key << " marked up";
+    VLOG(1) << pdstnKey << " marked up";
     stop_sending_probes();
   }
+}
+
+void ProxyDestination::track_latency(int64_t latency) {
+  size_t window_size = proxy->opts.latency_window_size;
+  // If window size is 0, the feature is gated so just return
+  if (window_size == 0) {
+    return;
+  }
+  /* We use a geometric moving average for speed and simplicity. Since latency
+  is capped by timeout, this number can never explode, and samples will be
+  weighted to effectively 0 over time */
+  avgLatency_ = (latency + avgLatency_ * (window_size-1)) / window_size;
 }
 
 void ProxyDestination::handle_tko(mc_res_t result,
@@ -173,19 +185,26 @@ void ProxyDestination::handle_tko(mc_res_t result,
       return;
     }
 
+    bool responsible = false;
     if (is_error_reply(result, reply)) {
-      bool responsible = false;
       if (result == mc_res_connect_error) {
         responsible = shared->tko.recordHardFailure();
       } else {
         responsible = shared->tko.recordSoftFailure();
       }
-      if (responsible) {
-        VLOG(1) << shared->key << " marked TKO";
-        start_sending_probes();
-      }
+    } else if (proxy->opts.latency_window_size != 0 &&
+        !sending_probes &&
+        avgLatency_ > proxy->opts.latency_threshold_us) {
+    /* Even if it's not an error, if we've gone above our latency SLA we count
+       that as a soft failure. We also check current latency to ensure that
+       if things get better we don't keep TKOing the box */
+      responsible = shared->tko.recordSoftFailure();
     } else {
       unmark_global_tko();
+    }
+    if (responsible) {
+      VLOG(1) << pdstnKey << " marked TKO";
+      start_sending_probes();
     }
   } else {
     if (consecutive_errors >= proxy->opts.failures_until_tko) {
@@ -256,6 +275,11 @@ void ProxyDestination::on_reply(mc_msg_t *req,
     destreqCtx->endTime = nowUs();
     destreqCtx->reply = reply;
     destreqCtx->result = result;
+
+    /* For code simplicity we look at latency for making TKO decisions with a
+       1 request delay */
+    int64_t latency = destreqCtx->endTime - destreqCtx->startTime;
+    track_latency(latency);
 
     auto promise = std::move(destreqCtx->promise.value());
     promise.setValue();
