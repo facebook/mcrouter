@@ -19,7 +19,6 @@
 #include <boost/filesystem/path.hpp>
 
 #include "folly/FileUtil.h"
-#include "folly/IPAddress.h"
 #include "folly/Random.h"
 #include "folly/SpookyHashV2.h"
 
@@ -124,15 +123,6 @@ bool touchFile(const std::string& path) {
     }
   }
   return utime(path.data(), nullptr) == 0;
-}
-
-std::string joinHostPort(const folly::IPAddress& ip, const std::string& port) {
-  auto hostPort = ip.toFullyQualified();
-  if (ip.isV6()) {
-    hostPort = "[" + hostPort + "]";
-  }
-  hostPort += ":" + port;
-  return hostPort;
 }
 
 }} // facebook::memcache

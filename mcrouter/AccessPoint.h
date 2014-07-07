@@ -53,7 +53,14 @@ struct AccessPoint {
     return ap_.transport;
   }
 
-  /* host:port:transport:protocol */
+  /**
+   * @return [host]:port if address is IPv6, host:port otherwise
+   */
+  std::string toHostPortString() const;
+
+  /**
+   * @return HostPort:transport:protocol string
+   */
   std::string toString() const;
 
  private:

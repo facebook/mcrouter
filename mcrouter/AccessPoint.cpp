@@ -9,6 +9,7 @@
 #include "AccessPoint.h"
 
 #include <boost/regex.hpp>
+#include <folly/IPAddress.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -114,9 +115,23 @@ bool AccessPoint::create(const std::string& host_port_protocol,
   return true;
 }
 
+std::string AccessPoint::toHostPortString() const {
+  try {
+    folly::IPAddress ip(host_);
+    auto hostPort = ip.toFullyQualified();
+    if (ip.isV6()) {
+      hostPort = "[" + hostPort + "]";
+    }
+    return hostPort + ":" + port_;
+  } catch (const folly::IPAddressFormatException& e) {
+    // host is not IP address (e.g. 'localhost')
+    return host_ + ":" + port_;
+  }
+}
+
 std::string AccessPoint::toString() const {
-  FBI_ASSERT(ap_.protocol != mc_unknown_protocol);
-  return folly::stringPrintf("%s:%s:%s:%s", host_.data(), port_.data(),
+  assert(ap_.protocol != mc_unknown_protocol);
+  return folly::stringPrintf("%s:%s:%s", toHostPortString().data(),
                              (ap_.transport == mc_stream) ? "TCP" : "UDP",
                              mc_protocol_to_string(ap_.protocol));
 }

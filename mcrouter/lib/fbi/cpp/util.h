@@ -16,11 +16,6 @@
 #include "folly/Range.h"
 #include "mcrouter/lib/fbi/nstring.h"
 
-// forward declaration
-namespace folly {
-  class IPAddress;
-}
-
 namespace facebook { namespace memcache {
 
 /**
@@ -174,8 +169,6 @@ typename std::enable_if<
 randomInt64(RNG& rng) {
   return rng();
 }
-
-std::string joinHostPort(const folly::IPAddress& ip, const std::string& port);
 
 }}  // facebook::memcache
 

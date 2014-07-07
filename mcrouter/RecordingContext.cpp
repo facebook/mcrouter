@@ -27,17 +27,7 @@ RecordingContext::~RecordingContext() {
 }
 
 void RecordingContext::recordDestination(const ProxyClientCommon& destination) {
-  std::string fullAddress;
-  const auto& host = destination.ap.getHost();
-  const auto& port = destination.ap.getPort();
-  try {
-    folly::IPAddress destIP(host);
-    fullAddress = joinHostPort(destIP, port);
-  } catch (const folly::IPAddressFormatException& e) {
-    // host is not IP address (e.g. 'localhost')
-    fullAddress = host + ":" + port;
-  }
-  recordedData_->destinations.push_back(fullAddress);
+  recordedData_->destinations.push_back(destination.ap.toHostPortString());
 }
 
 std::unique_ptr<RecordingContext::RecordedData>
