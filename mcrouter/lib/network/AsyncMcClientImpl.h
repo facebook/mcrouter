@@ -11,11 +11,10 @@
 #include <chrono>
 #include <string>
 
-#include "folly/io/IOBufQueue.h"
-
-#include "thrift/lib/cpp/async/TAsyncTransport.h"
-#include "thrift/lib/cpp/async/TDelayedDestruction.h"
-#include "thrift/lib/cpp/transport/TTransportException.h"
+#include <folly/io/IOBufQueue.h>
+#include <thrift/lib/cpp/async/TAsyncTransport.h>
+#include <thrift/lib/cpp/async/TDelayedDestruction.h>
+#include <thrift/lib/cpp/transport/TTransportException.h>
 
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McProtocolSerializer.h"
