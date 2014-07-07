@@ -357,7 +357,7 @@ void ProxyDestination::reset_fields() {
   consecutiveErrors_ = 0;
   if (proxy->router &&
       proxy->router->opts.global_tko_tracking) {
-    if (shared) {
+    if (shared && sending_probes) {
       unmark_global_tko();
     }
   } else {
