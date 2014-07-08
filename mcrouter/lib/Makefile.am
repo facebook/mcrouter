@@ -22,6 +22,7 @@ libmcrouter_a_SOURCES = \
   McRequestWithContext.h \
   Operation.h \
   OperationTraits.h \
+  Reply.h \
   RouteHandleIf.h \
   StatsReply.cpp \
   StatsReply.h \

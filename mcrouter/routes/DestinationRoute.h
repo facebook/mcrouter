@@ -121,7 +121,7 @@ class DestinationRoute {
       update_send_stats(req.context().proxyRequest().proxy,
                         const_cast<mc_msg_t*>(msg.get()),
                         PROXY_SEND_REMOTE_ERROR);
-      ProxyMcReply reply(ProxyMcReply::tkoReply());
+      ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
       return reply;
     }
@@ -168,7 +168,7 @@ class DestinationRoute {
   McReply routeImpl(const RecordingMcRequest& req, Operation) const {
     auto msg = generateMsg(req, Operation());
     if (!destination_->may_send(const_cast<mc_msg_t*>(msg.get()))) {
-      return McReply::tkoReply();
+      return McReply(TkoReply);
     }
 
     req.context().recordDestination(*client_);

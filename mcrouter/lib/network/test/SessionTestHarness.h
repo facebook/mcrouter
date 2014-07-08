@@ -155,7 +155,7 @@ class SessionTestHarness {
 
   template <class Operation>
   McReply makeReply(const McRequest& req, Operation) {
-    return McReply::defaultReply(Operation());
+    return McReply(DefaultReply, Operation());
   }
 
   McReply makeReply(const McRequest& req, McOperation<mc_op_get>) {

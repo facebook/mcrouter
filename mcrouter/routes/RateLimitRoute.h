@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/routes/RateLimiter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -47,7 +48,7 @@ class RateLimitRoute {
     }
 
     using Reply = typename ReplyType<Operation, Request>::type;
-    return Reply::defaultReply(Operation());
+    return Reply(DefaultReply, Operation());
   }
 
  private:

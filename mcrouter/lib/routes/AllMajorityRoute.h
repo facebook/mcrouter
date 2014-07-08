@@ -17,6 +17,7 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fibers/AddTasks.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache {
 
@@ -39,7 +40,7 @@ class AllMajorityRoute {
     return children_;
   }
 
-  AllMajorityRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
+  explicit AllMajorityRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
   }
 
@@ -82,7 +83,7 @@ class AllMajorityRoute {
     size_t counts[mc_nres];
     std::fill(counts, counts + mc_nres, 0);
     size_t majorityCount = 0;
-    Reply majorityReply = Reply::defaultReply(Operation());
+    Reply majorityReply = Reply(DefaultReply, Operation());
 
     auto taskIt = fiber::addTasks(funcs.begin(), funcs.end());
     while (taskIt.hasNext() &&

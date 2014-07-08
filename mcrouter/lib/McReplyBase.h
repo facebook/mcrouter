@@ -15,6 +15,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache {
 
@@ -33,12 +34,14 @@ class McReplyBase {
    * a reply for a delete queued for replay, etc.
    */
   template <typename Operation>
-  static McReplyBase defaultReply(Operation op);
+  McReplyBase(DefaultReplyT, Operation op);
 
   /**
    * Constructs an "error" reply, meaning that there was a routing error.
    */
-  static McReplyBase errorReply(folly::StringPiece valueToSet="");
+  explicit McReplyBase(ErrorReplyT, folly::StringPiece valueToSet="")
+      : McReplyBase(mc_res_local_error, valueToSet) {
+  }
 
   /**
    * Constructs a TKO reply.
@@ -46,7 +49,9 @@ class McReplyBase {
    * Used to signal that the Route Handle didn't attempt to send out a request.
    * A sending Route Handle might attempt an immediate failover on a TKO reply.
    */
-  static McReplyBase tkoReply();
+  explicit McReplyBase(TkoReplyT)
+      : McReplyBase(mc_res_tko) {
+  }
 
   /**
    * Picks one McReplyBase from the iterator range.
@@ -159,14 +164,6 @@ class McReplyBase {
   void setValue(folly::StringPiece str);
   void setResult(mc_res_t res);
 
-  /* mc_msg_t specific */
-
-  explicit McReplyBase(mc_res_t result);
-  McReplyBase(mc_res_t result, McMsgRef&& reply);
-  McReplyBase(mc_res_t result, std::unique_ptr<folly::IOBuf> value);
-  McReplyBase(mc_res_t res, folly::StringPiece val);
-  McReplyBase(McReplyBase&& other) noexcept = default;
-  McReplyBase& operator=(McReplyBase&& other) = default;
   mc_res_t result() const {
     return result_;
   }
@@ -213,7 +210,15 @@ class McReplyBase {
    */
   McMsgRef releasedMsg(mc_op_t op) const;
 
-  ~McReplyBase() {}
+ protected:
+  ~McReplyBase() {};
+
+  explicit McReplyBase(mc_res_t result);
+  McReplyBase(mc_res_t result, McMsgRef&& reply);
+  McReplyBase(mc_res_t result, std::unique_ptr<folly::IOBuf> value);
+  McReplyBase(mc_res_t result, folly::StringPiece value);
+  McReplyBase(McReplyBase&& other) noexcept = default;
+  McReplyBase& operator=(McReplyBase&& other) = default;
 
  private:
   McMsgRef msg_;

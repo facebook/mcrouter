@@ -15,6 +15,7 @@
 #include "folly/dynamic.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache {
 
@@ -54,7 +55,7 @@ struct ErrorRoute {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
-    return Reply::errorReply(valueToSet_);
+    return Reply(ErrorReply, valueToSet_);
   }
 
  private:

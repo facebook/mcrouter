@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache {
 
@@ -38,7 +39,7 @@ struct NullRoute {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
-    return Reply::defaultReply(Operation());
+    return Reply(DefaultReply, Operation());
   }
 };
 

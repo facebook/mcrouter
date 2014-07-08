@@ -61,12 +61,10 @@ inline int awfulness(mc_res_t result) {
 }
 
 template <typename Operation>
-McReplyBase McReplyBase::defaultReply(Operation) {
-  if (UpdateLike<Operation>::value) {
-    return McReplyBase(mc_res_notstored);
-  } else {
-    return McReplyBase(mc_res_notfound);
-  }
+McReplyBase::McReplyBase(DefaultReplyT, Operation)
+    : McReplyBase(UpdateLike<Operation>::value ?
+                  mc_res_notstored :
+                  mc_res_notfound) {
 }
 
 template <typename InputIterator>

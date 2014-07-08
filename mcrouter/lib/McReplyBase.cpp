@@ -18,14 +18,6 @@ bool McReplyBase::worseThan(const McReplyBase& other) const {
   return awfulness(result_) > awfulness(other.result_);
 }
 
-McReplyBase McReplyBase::errorReply(folly::StringPiece valueToSet) {
-  return McReplyBase(mc_res_local_error, valueToSet);
-}
-
-McReplyBase McReplyBase::tkoReply() {
-  return McReplyBase(mc_res_tko);
-}
-
 bool McReplyBase::isError() const {
   switch (result_) {
     case mc_res_busy:

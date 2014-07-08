@@ -168,7 +168,7 @@ struct RecordingRoute {
     const Request& req, McOperation<M>) {
 
     if (h_->isTko) {
-      return McReply::tkoReply();
+      return McReply(TkoReply);
     }
 
     if (h_->isPaused) {
@@ -195,7 +195,7 @@ struct RecordingRoute {
       auto msg = createMcMsgRef(req.fullKey());
       return McReply(dataDelete_.result_, std::move(msg));
     }
-    return McReply::defaultReply(McOperation<M>());
+    return McReply(DefaultReply, McOperation<M>());
   }
 };
 
