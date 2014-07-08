@@ -424,13 +424,14 @@ static void asynclog_event(proxy_request_t *preq,
 /** stub, until I get marc's ascii protocol stuff into libmc */
 ssize_t mc_ascii_req_to_string(const mc_msg_t* req, char* buf, size_t nbuf) {
   if (req->op == mc_op_delete) {
-    return snprintf(buf, nbuf, "delete %s\r\n", req->key.str);
+    return snprintf(buf, nbuf, "delete %.*s\r\n",
+                    (int)req->key.len, req->key.str);
   } else if (req->op == mc_op_incr) {
-    return snprintf(buf, nbuf, "incr %s %" PRIu64 "\r\n",
-                   req->key.str, req->delta);
+    return snprintf(buf, nbuf, "incr %.*s %" PRIu64 "\r\n",
+                    (int)req->key.len, req->key.str, req->delta);
   } else if (req->op == mc_op_decr) {
-    return snprintf(buf, nbuf, "decr %s %" PRIu64 "\r\n",
-                   req->key.str, req->delta);
+    return snprintf(buf, nbuf, "decr %.*s %" PRIu64 "\r\n",
+                    (int)req->key.len, req->key.str, req->delta);
   } else {
     LOG(FATAL) << "don't know how to serialize " << mc_op_to_string(req->op);
   }
