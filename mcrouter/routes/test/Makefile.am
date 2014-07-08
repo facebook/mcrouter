@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_routes_test
+check_PROGRAMS = mcrouter_routes_test
 
 mcrouter_routes_test_SOURCES = \
   BigValueRouteTest.cpp \

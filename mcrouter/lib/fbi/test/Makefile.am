@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_fbi_test
+check_PROGRAMS = mcrouter_fbi_test
 
 mcrouter_fbi_test_SOURCES = \
   asox_queue_test.cpp \

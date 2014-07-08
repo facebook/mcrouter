@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_config_test
+check_PROGRAMS = mcrouter_config_test
 
 mcrouter_config_test_SOURCES = \
   config_preprocessor_test.cpp \

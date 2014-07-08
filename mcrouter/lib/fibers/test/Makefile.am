@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_fibers_test
+check_PROGRAMS = mcrouter_fibers_test
 
 mcrouter_fibers_test_SOURCES = \
   FibersTest.cpp \

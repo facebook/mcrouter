@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_lib_test
+check_PROGRAMS = mcrouter_lib_test
 
 mcrouter_lib_test_SOURCES = \
   Ch3HashTest.cpp \

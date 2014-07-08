@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_fbi_cpp_test
+check_PROGRAMS = mcrouter_fbi_cpp_test
 
 mcrouter_fbi_cpp_test_SOURCES = \
   TrieTests.cpp

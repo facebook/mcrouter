@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_test mcrouter_libmc_test
+check_PROGRAMS = mcrouter_test mcrouter_libmc_test
 
 mcrouter_test_SOURCES = \
   AccessPointTest.cpp \

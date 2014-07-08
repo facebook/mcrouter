@@ -1,4 +1,4 @@
-noinst_PROGRAMS = mcrouter_network_test
+check_PROGRAMS = mcrouter_network_test
 
 mcrouter_network_test_SOURCES = \
   AsyncMcClientTest.cpp
