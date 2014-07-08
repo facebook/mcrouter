@@ -372,6 +372,7 @@ size_t ProxyDestination::getInflightRequestCount() const {
 }
 
 void ProxyDestination::reset_fields() {
+  /* This all goes away once global TKO is rolled out */
   FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
   if (!proxy || proxy->opts.disable_tko_tracking) {
     return;
@@ -379,12 +380,9 @@ void ProxyDestination::reset_fields() {
 
   /* Reset TKO state */
   consecutiveErrors_ = 0;
-  if (proxy->router &&
-      proxy->router->opts.global_tko_tracking) {
-    if (shared && sending_probes) {
-      unmark_global_tko();
-    }
-  } else {
+
+  if (!proxy->router ||
+      !proxy->router->opts.global_tko_tracking) {
     unmark_tko();
   }
 }
