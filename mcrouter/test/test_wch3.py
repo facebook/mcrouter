@@ -41,7 +41,9 @@ class TestWCH3(McrouterTestCase):
             key = 'someprefix:{}:|#|id=123'.format(i)
             resp = int(self.mcrouter.get(key))
             respB = int(self.mcrouter.get('/test/B/' + key))
+            respC = int(self.mcrouter.get('/test/C/' + key))
             self.assertEqual(resp, respB)
+            self.assertEqual(resp, respC)
             request_counts[resp] += 1
             self.assertTrue(resp in valid_ports)
             self.assertTrue(resp not in invalid_ports)
