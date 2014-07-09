@@ -159,8 +159,10 @@ void write_config_sources_info_to_disk(const proxy_t* proxy) {
 
 }  // anonymous namespace
 
-ProxyLogger::ProxyLogger(proxy_t* proxy)
-    : proxy_(proxy) {
+ProxyLogger::ProxyLogger(proxy_t* proxy,
+  std::unique_ptr<AdditionalLoggerIf> additionalLogger)
+    : proxy_(proxy),
+      additionalLogger_(std::move(additionalLogger)) {
 
   if (!ensure_dir_exists_and_writeable(proxy_->opts.stats_root)) {
     LOG(ERROR) << "Can't create or chmod " << proxy_->opts.stats_root <<
@@ -185,7 +187,7 @@ ProxyLogger::~ProxyLogger() {
   }
 }
 
-std::vector<stat_t> ProxyLogger::log() {
+void ProxyLogger::log() {
   std::vector<stat_t> stats(num_stats);
   try {
     proxy_->router->startupLock.wait();
@@ -195,7 +197,7 @@ std::vector<stat_t> ProxyLogger::log() {
 
     prepare_stats(proxy_, stats.data());
   } catch (const shutdown_started_exception& e) {
-    return {};
+    return;
   }
 
   for (int i = 0; i < num_stats; ++i) {
@@ -211,7 +213,10 @@ std::vector<stat_t> ProxyLogger::log() {
   for (const auto& filepath : touchStatsFilepaths_) {
     touchFile(filepath);
   }
-  return stats;
+
+  if (additionalLogger_) {
+    additionalLogger_->log(stats);
+  }
 }
 
 }}}  // facebook::memcache::mcrouter

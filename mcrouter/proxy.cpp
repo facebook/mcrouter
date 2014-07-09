@@ -241,7 +241,7 @@ void proxy_t::onEventBaseAttached() {
 
   if (performStatsLogging_ && router != nullptr
       && opts.stats_logging_interval != 0) {
-    logger = folly::make_unique<ProxyMcLogger>(this);
+    logger = createProxyLogger(this);
   }
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);

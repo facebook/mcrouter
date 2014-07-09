@@ -13,6 +13,7 @@
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyLogger.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -62,6 +63,10 @@ bool preprocessGetErrors(const McrouterOptions& opts, McReplyBase& reply) {
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
   return folly::make_unique<McExtraRouteHandleProvider>();
+}
+
+std::unique_ptr<ProxyLogger> createProxyLogger(proxy_t* proxy) {
+  return folly::make_unique<ProxyLogger>(proxy);
 }
 
 McrouterOptions defaultTestOptions() {

@@ -63,6 +63,7 @@ class ProxyClientShared;
 class ProxyClientOwner;
 class ProxyDestination;
 class ProxyDestinationMap;
+class ProxyLogger;
 class ProxyPool;
 class RateLimiter;
 class RuntimeVarsData;
@@ -520,7 +521,7 @@ struct proxy_t {
    * Logs mcrouter stats to disk every opts->stats_logging_interval
    * milliseconds
    */
-  std::unique_ptr<ProxyMcLogger> logger;
+  std::unique_ptr<ProxyLogger> logger;
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 

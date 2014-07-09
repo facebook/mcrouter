@@ -46,7 +46,6 @@ class mcrouter_t;
 class proxy_t;
 
 typedef DestinationClient DestinationMcClient;
-typedef ProxyLogger ProxyMcLogger;
 typedef ProxyRequestLogger ProxyMcRequestLogger;
 struct ProxyStatsContainer {
   explicit ProxyStatsContainer(proxy_t*) {}
@@ -151,6 +150,8 @@ bool standaloneInit(const McrouterOptions& opts);
 bool preprocessGetErrors(const McrouterOptions& opts, McReplyBase& reply);
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
+
+std::unique_ptr<ProxyLogger> createProxyLogger(proxy_t* proxy);
 
 inline bool mcrouterLoopOnce(folly::EventBase* eventBase) {
   return eventBase->loopOnce();
