@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include <folly/Range.h>
+
 #include "mcrouter/lib/mc/protocol.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -28,7 +30,7 @@ struct AccessPoint {
 
   AccessPoint& operator=(AccessPoint&& other);
 
-  static bool create(const std::string& host_port_protocol,
+  static bool create(folly::StringPiece host_port_protocol,
                      mc_protocol_t default_protocol,
                      mc_transport_t default_transport,
                      AccessPoint& ap);

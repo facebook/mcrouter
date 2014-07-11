@@ -8,7 +8,6 @@
  */
 #include "AccessPoint.h"
 
-#include <boost/regex.hpp>
 #include <folly/IPAddress.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -76,38 +75,55 @@ AccessPoint& AccessPoint::operator=(AccessPoint&& other) {
   return *this;
 }
 
-bool AccessPoint::create(const std::string& host_port_protocol,
+bool AccessPoint::create(folly::StringPiece host_port_protocol,
                          mc_protocol_t default_protocol,
                          mc_transport_t default_transport,
                          AccessPoint& ap) {
-
-  boost::regex r(
-      // host is required but square brackets are optional
-      "^(?:\\[)?([-0-9a-zA-Z.:]+)(?:\\])?"
-      //port, required
-      ":([0-9]+)"
-      //protocol, optional
-      "(?::([0-9a-zA-Z]+))?$");
-
-  std::string protocol;
-  boost::cmatch matches;
-  if (!boost::regex_match(host_port_protocol.data(), matches, r)) {
-    LOG(ERROR) << "Expected host:port(:protocol)?, got " <<
-                  host_port_protocol;
+  if (host_port_protocol.empty()) {
     return false;
   }
 
-  ap.host_ = matches[1].str();
-  ap.port_ = matches[2].str();
-  if (matches.size() > 3) {
-    protocol = matches[3].str();
+  if (host_port_protocol[0] == '[') {
+    // IPv6
+    auto closing = host_port_protocol.find(']');
+    if (closing == std::string::npos) {
+      return false;
+    }
+    ap.host_ = host_port_protocol.subpiece(1, closing - 1).str();
+    host_port_protocol.advance(closing + 1);
+  } else {
+    // IPv4 or hostname
+    auto colon = host_port_protocol.find(':');
+    if (colon == std::string::npos) {
+      return false;
+    }
+    ap.host_ = host_port_protocol.subpiece(0, colon).str();
+    host_port_protocol.advance(colon);
+  }
+
+  if (host_port_protocol.empty() || host_port_protocol[0] != ':') {
+    // port is required
+    return false;
   }
 
   ap.ap_.transport = default_transport;
 
-  ap.ap_.protocol = (!protocol.empty())
-      ? mc_string_to_protocol(protocol.data())
-      : default_protocol;
+  // skip ':'
+  host_port_protocol.advance(1);
+  auto colon = host_port_protocol.find(':');
+  if (colon == std::string::npos) {
+    // protocol is optional
+    ap.port_ = host_port_protocol.str();
+    ap.ap_.protocol = default_protocol;
+  } else {
+    ap.port_ = host_port_protocol.subpiece(0, colon).str();
+    host_port_protocol.advance(colon + 1);
+    ap.ap_.protocol = mc_string_to_protocol(host_port_protocol.data());
+  }
+
+  if (ap.host_.empty() || ap.port_.empty()) {
+    return false;
+  }
 
   ap.ap_.host = to<nstring_t>(ap.host_);
   ap.ap_.port = to<nstring_t>(ap.port_);

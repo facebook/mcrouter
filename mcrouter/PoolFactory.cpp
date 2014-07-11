@@ -553,7 +553,7 @@ PoolFactory::parsePool(const string& pool_name_str,
       const dynamic jserver = jservers[i];
       bool serverUseSsl = useSslDefault;
       if (jserver.isString()) {
-        auto jhostnameStr = jserver.asString().toStdString();
+        auto jhostnameStr = jserver.asString();
 
         // we support both host:port and host:port:protocol
         if (!AccessPoint::create(jhostnameStr, pool->protocol, pool->transport,
@@ -568,7 +568,7 @@ PoolFactory::parsePool(const string& pool_name_str,
         DYNAMIC_EXPECT(jServerUseSsl, dynamic::Type::BOOL, "use_ssl");
         serverUseSsl = jServerUseSsl.asBool();
 
-        auto jhostnameStr = jhostname.asString().toStdString();
+        auto jhostnameStr = jhostname.asString();
         if (!AccessPoint::create(jhostnameStr,
                                  parse_protocol(jserver, pool->protocol),
                                  parse_transport(jserver, pool->transport),
