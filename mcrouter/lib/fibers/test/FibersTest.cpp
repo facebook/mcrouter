@@ -36,7 +36,7 @@ TEST(FiberManager, batonTimedWaitTimeout) {
         [&]() {
           Baton baton;
 
-          auto res = baton.timed_wait(std::chrono::milliseconds(23));
+          auto res = baton.timed_wait(std::chrono::milliseconds(230));
 
           EXPECT_FALSE(res);
           EXPECT_EQ(5, iterations);
@@ -48,7 +48,7 @@ TEST(FiberManager, batonTimedWaitTimeout) {
         [&]() {
           Baton baton;
 
-          auto res = baton.timed_wait(std::chrono::milliseconds(13));
+          auto res = baton.timed_wait(std::chrono::milliseconds(130));
 
           EXPECT_FALSE(res);
           EXPECT_EQ(3, iterations);
@@ -58,7 +58,7 @@ TEST(FiberManager, batonTimedWaitTimeout) {
       );
       taskAdded = true;
     } else {
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
       iterations ++;
       loopController.schedule();
     }
@@ -83,7 +83,7 @@ TEST(FiberManager, batonTimedWaitPost) {
           Baton baton;
           baton_ptr = &baton;
 
-          auto res = baton.timed_wait(std::chrono::milliseconds(13));
+          auto res = baton.timed_wait(std::chrono::milliseconds(130));
 
           EXPECT_TRUE(res);
           EXPECT_EQ(2, iterations);
@@ -93,7 +93,7 @@ TEST(FiberManager, batonTimedWaitPost) {
       );
       taskAdded = true;
     } else {
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
       iterations ++;
       if (iterations == 2) {
         baton_ptr->post();
