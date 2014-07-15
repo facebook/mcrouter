@@ -34,13 +34,13 @@ WeightedCh3HashFunc::WeightedCh3HashFunc(const folly::dynamic& json, size_t n) {
   LOG_IF(ERROR, jWeights.size() < n)
     << "WeightedCh3HashFunc: CONFIG IS BROKEN!!! number of weights ("
     << jWeights.size() << ") is smaller than number of servers (" << n
-    << "). Missing weights are set to 1";
+    << "). Missing weights are set to 0.5";
   for (size_t i = 0; i < std::min(n, jWeights.size()); ++i) {
     const auto& weight = jWeights[i];
     checkLogic(weight.isNumber(), "WeightedCh3HashFunc: weight is not number");
     weights_.push_back(weight.asDouble());
   }
-  weights_.resize(n, 1.0);
+  weights_.resize(n, 0.5);
 }
 
 size_t WeightedCh3HashFunc::operator()(folly::StringPiece key) const {

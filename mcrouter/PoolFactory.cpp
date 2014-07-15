@@ -642,8 +642,8 @@ PoolFactory::parsePool(const string& pool_name_str,
         LOG(ERROR) << "CONFIG IS BROKEN!!! Hash weight vector size ("
                    << hash_weights.size()
                    << ") is smaller than number of servers (" << n
-                   << "). Missing weights are set to 1";
-        hash_weights.resize(n, 1.0);
+                   << "). Missing weights are set to 0.5";
+        hash_weights.resize(n, 0.5);
       } else if (hash_weights.size() > n) {
         hash_weights.resize(n);
       }

@@ -57,7 +57,7 @@ class TestWCH3(McrouterTestCase):
             4: 0.5,
             5: 1,
             6: 0.3,
-            7: 1.0
+            7: 0.5
         }
         tolerance = 0.075
         total_weight = reduce(lambda x, y: x + y,
