@@ -311,8 +311,17 @@ void AsyncMcClientImpl::attemptConnection() {
   connectionState_ = ConnectionState::CONNECTING;
 
   if (connectionOptions_.sslContextProvider) {
+    auto sslContext = connectionOptions_.sslContextProvider();
+    if (!sslContext) {
+      LOG(ERROR) << "SSLContext provider returned nullptr, check SSL "
+                 << "certificates. Any further request to "
+                 << connectionOptions_.host << ":" << connectionOptions_.port
+                 << " will fail.";
+      connectError(TransportException(TransportException::SSL_ERROR));
+      return;
+    }
     socket_.reset(new apache::thrift::async::TAsyncSSLSocket(
-      connectionOptions_.sslContextProvider(), &eventBase_));
+      sslContext, &eventBase_));
   } else {
     socket_.reset(new apache::thrift::async::TAsyncSocket(&eventBase_));
   }
@@ -325,9 +334,9 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionOptions_.tcpKeepAliveCount, connectionOptions_.tcpKeepAliveIdle,
     connectionOptions_.tcpKeepAliveInterval);
 
+  socket_->setSendTimeout(connectionOptions_.timeout.count());
   socket_->connect(this, address, connectionOptions_.timeout.count(),
                    socketOptions);
-  socket_->setSendTimeout(connectionOptions_.timeout.count());
 }
 
 void AsyncMcClientImpl::connectSuccess() noexcept {

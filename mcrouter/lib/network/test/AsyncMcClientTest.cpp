@@ -202,14 +202,19 @@ class TestClient {
  public:
   TestClient(std::string host, uint16_t port, int timeoutMs,
              mc_protocol_t protocol = mc_ascii_protocol,
-             bool useSsl = false) {
+             bool useSsl = false,
+             std::function<
+               std::shared_ptr<apache::thrift::transport::SSLContext>()
+             > contextProvider = nullptr) {
     ConnectionOptions opts(host, port, protocol);
     opts.timeout = std::chrono::milliseconds(timeoutMs);
     if (useSsl) {
-      auto contextProvider = [] () {
+      auto defaultContextProvider = [] () {
         return getSSLContext(kPemCertPath, kPemKeyPath, kPemCaPath);
       };
-      opts.sslContextProvider = contextProvider;
+      opts.sslContextProvider = contextProvider
+        ? contextProvider
+        : defaultContextProvider;
     }
     client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
     client_->setStatusCallbacks([] { LOG(INFO) << "Client UP."; },
@@ -358,6 +363,40 @@ TEST(AsyncMcClient, noServerTimeout) {
 
 TEST(AsyncMcClient, noServerTimeoutSsl) {
   noServerTimeoutTest(true);
+}
+
+void immediateConnectFailTest(bool useSsl = false) {
+  TestClient client("255.255.255.255", 12345, 200, mc_ascii_protocol, useSsl);
+  client.sendGet("nohold", mc_res_connect_error);
+  client.waitForReplies();
+}
+
+TEST(AsyncMcClient, immeadiateConnectFail) {
+  immediateConnectFailTest();
+}
+
+TEST(AsyncMcClient, immeadiateConnectFailSsl) {
+  immediateConnectFailTest(true);
+}
+
+TEST(AsyncMcClient, invalidCerts) {
+  TestServer server(true, true);
+  TestClient brokenClient("127.0.0.1", server.getListenPort(), 200,
+                    mc_umbrella_protocol, true, []() {
+                      return getSSLContext("/does/not/exist",
+                                           "/does/not/exist",
+                                           "/does/not/exist");
+                    });
+  TestClient client("127.0.0.1", server.getListenPort(), 200,
+                    mc_umbrella_protocol, true);
+  brokenClient.sendGet("test", mc_res_connect_error);
+  brokenClient.waitForReplies();
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("shutdown", mc_res_ok);
+  client.waitForReplies();
+  server.join();
+  EXPECT_EQ(server.getStats().accepted.load(), 1);
 }
 
 void inflightThrottleTest(bool useSsl = false) {

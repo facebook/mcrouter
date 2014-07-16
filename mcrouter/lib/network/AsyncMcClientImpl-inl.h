@@ -37,10 +37,6 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
 
   switch (serializationResult) {
     case McProtocolSerializer::Result::OK:
-      if (connectionState_ == ConnectionState::DOWN) {
-        attemptConnection();
-      }
-
       incMsgId(nextMsgId_);
 
       if (outOfOrder_) {
@@ -48,6 +44,9 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
       }
       sendQueue_.pushBack(std::move(req));
       scheduleNextWriterLoop();
+      if (connectionState_ == ConnectionState::DOWN) {
+        attemptConnection();
+      }
       return;
     case McProtocolSerializer::Result::BAD_KEY:
       reply(std::move(req), McReply(mc_res_bad_key));
