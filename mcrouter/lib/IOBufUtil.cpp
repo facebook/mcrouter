@@ -37,6 +37,9 @@ std::unique_ptr<folly::IOBuf> makeMsgIOBufHelper(const McMsgRef& msgRef) {
     return nullptr;
   }
   auto msg = const_cast<mc_msg_t*>(msgRef.get());
+  if (!(msg->*F).len) {
+    return nullptr;
+  }
   return folly::IOBuf::takeOwnership(
     (msg->*F).str, (msg->*F).len, (msg->*F).len,
     [] (void* buf, void* ctx) {
