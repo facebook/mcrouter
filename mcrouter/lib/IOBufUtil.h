@@ -24,9 +24,19 @@ folly::StringPiece getRange(const std::unique_ptr<folly::IOBuf>& buf);
 
 folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf);
 
-std::unique_ptr<folly::IOBuf> makeMsgKeyIOBuf(const McMsgRef& msg);
+/**
+ * Create an IOBuf that will incref the msg, wrap the key/value of the msg
+ * and decref the msg on destruction.
+ *
+ * @param returnEmpty  If true, will return an empty IOBuf object if
+ *                     the key/value is missing or zero length.
+ *                     Otherwise would return nullptr in that case.
+ */
+std::unique_ptr<folly::IOBuf> makeMsgKeyIOBuf(const McMsgRef& msg,
+                                              bool returnEmpty = false);
 
-std::unique_ptr<folly::IOBuf> makeMsgValueIOBuf(const McMsgRef& msg);
+std::unique_ptr<folly::IOBuf> makeMsgValueIOBuf(const McMsgRef& msg,
+                                                bool returnEmpty = false);
 
 bool hasSameMemoryRegion(const std::unique_ptr<folly::IOBuf>& buf,
                          folly::StringPiece range);

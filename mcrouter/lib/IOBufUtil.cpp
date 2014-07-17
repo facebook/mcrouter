@@ -32,13 +32,14 @@ folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf) {
 }
 
 template <nstring_t mc_msg_t::* F>
-std::unique_ptr<folly::IOBuf> makeMsgIOBufHelper(const McMsgRef& msgRef) {
+std::unique_ptr<folly::IOBuf> makeMsgIOBufHelper(const McMsgRef& msgRef,
+                                                 bool returnEmpty) {
   if (!msgRef.get()) {
-    return nullptr;
+    return returnEmpty ? folly::IOBuf::create(0) : nullptr;
   }
   auto msg = const_cast<mc_msg_t*>(msgRef.get());
   if (!(msg->*F).len) {
-    return nullptr;
+    return returnEmpty ? folly::IOBuf::create(0) : nullptr;
   }
   return folly::IOBuf::takeOwnership(
     (msg->*F).str, (msg->*F).len, (msg->*F).len,
@@ -49,12 +50,14 @@ std::unique_ptr<folly::IOBuf> makeMsgIOBufHelper(const McMsgRef& msgRef) {
     mc_msg_incref(msg));
 }
 
-std::unique_ptr<folly::IOBuf> makeMsgKeyIOBuf(const McMsgRef& msgRef) {
-  return makeMsgIOBufHelper<&mc_msg_t::key>(msgRef);
+std::unique_ptr<folly::IOBuf> makeMsgKeyIOBuf(const McMsgRef& msgRef,
+                                              bool returnEmpty) {
+  return makeMsgIOBufHelper<&mc_msg_t::key>(msgRef, returnEmpty);
 }
 
-std::unique_ptr<folly::IOBuf> makeMsgValueIOBuf(const McMsgRef& msgRef) {
-  return makeMsgIOBufHelper<&mc_msg_t::value>(msgRef);
+std::unique_ptr<folly::IOBuf> makeMsgValueIOBuf(const McMsgRef& msgRef,
+                                                bool returnEmpty) {
+  return makeMsgIOBufHelper<&mc_msg_t::value>(msgRef, returnEmpty);
 }
 
 bool hasSameMemoryRegion(const std::unique_ptr<folly::IOBuf>& buf,
