@@ -58,6 +58,16 @@ typedef struct extern_string_s {
   uint32_t len;       // How long is it?
 } extern_string_t;
 
+// Similar to extern strings, extern iovs allow entries to point to externally
+// allocated iovecs. This is only used while creating a serialized reply.
+// Over the wire these are sent as BSTRING obtained by concatenating all iovecs
+// and a terminating null-byte
+typedef struct extern_iov_s {
+  int entry_idx;            // Which entry are we pointing to?
+  struct iovec* iovs;       // Pointer to the array of iovs
+  size_t niovs;             // Number of iovecs in iovs
+} extern_iov_t;
+
 typedef struct um_elist_entry_s {
   uint16_t type;        // What's the type of this entry?
   uint16_t tag;         // Application-specific tag for this entry
@@ -121,6 +131,9 @@ typedef struct entry_list_s {
   extern_string_t estrings[MAX_EXTERN_STRINGS]; // external strings
   uint32_t total_estrings_len; // total length of external strings
 
+  extern_iov_t eiov;       // we allow only one external iov array for now
+  uint32_t total_eiov_len; // sum of the lengths of all iovs
+
   entry_list_msg_t msg;    // So we have something for iovecs to point to
 
   uint32_t body_allocated; // only free the body if we allocated it
@@ -171,6 +184,10 @@ int entry_list_lazy_append_BSTRING(entry_list_t *elist,
 int entry_list_lazy_append_CSTRING(entry_list_t *elist,
                                    int32_t tag,
                                    const char *str);
+int entry_list_lazy_append_IOVEC(entry_list_t *elist,
+                                 int32_t tag,
+                                 struct iovec* iovs,
+                                 size_t niovs);
 
 void print_entry_list(entry_list_t *elist);
 

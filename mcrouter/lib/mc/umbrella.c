@@ -25,7 +25,7 @@ static inline size_t entries_array_size(int num_entries) {
 
 static inline size_t entry_list_msg_size(entry_list_t *el) {
   return sizeof(entry_list_msg_t) + entries_array_size(el->nentries)
-    + el->nbody + el->total_estrings_len;
+    + el->nbody + el->total_estrings_len + el->total_eiov_len;
 }
 
 static inline size_t entry_list_msg_body_size(entry_list_msg_t *msg) {
@@ -204,14 +204,26 @@ ssize_t entry_list_write_to_buf(entry_list_t *elist, char *buf, ssize_t len) {
   memcpy(body, elist->body, elist->nbody);
 
   uint32_t i;
-  uint32_t off;
-  for (i = 0, off = elist->nbody; i < elist->nestrings; i++) {
+  uint32_t off = elist->nbody;
+  for (i = 0; i < elist->nestrings; i++) {
     extern_string_t *estring = &elist->estrings[i];
     um_elist_entry_t *entry = &msg->entries[estring->entry_idx];
     entry->data.str.offset = hton32(off);
     entry->data.str.len = hton32(estring->len);
     memcpy(body + off, estring->ptr, estring->len);
     off += estring->len;
+  }
+
+  if (elist->eiov.niovs > 0) {
+    extern_iov_t* eiov = &elist->eiov;
+    um_elist_entry_t* entry = &elist->entries[eiov->entry_idx];
+    entry->data.str.offset = hton32(off);
+    entry->data.str.len = hton32(elist->total_eiov_len);
+    for (i = 0; i < eiov->niovs; i++) {
+      memcpy(body + off, eiov->iovs[i].iov_base, eiov->iovs[i].iov_len);
+      off += eiov->iovs[i].iov_len;
+    }
+    memcpy(body + off, "\0", 1); /* null terminate */
   }
 
   return required;
@@ -235,13 +247,20 @@ int entry_list_emit_iovs(entry_list_t* elist, emit_iov_cb* emit_iov,
 #endif
 
   uint32_t i;
-  uint32_t off;
-  for (i = 0, off = elist->nbody; i < elist->nestrings; i++) {
+  uint32_t off = elist->nbody;
+  for (i = 0; i < elist->nestrings; i++) {
     extern_string_t* estring = &elist->estrings[i];
     um_elist_entry_t* entry = &elist->entries[estring->entry_idx];
     entry->data.str.offset = hton32(off);
     entry->data.str.len = hton32(estring->len);
     off += estring->len;
+  }
+
+  if (elist->eiov.niovs > 0) {
+    extern_iov_t* eiov = &elist->eiov;
+    um_elist_entry_t* entry = &elist->entries[eiov->entry_idx];
+    entry->data.str.offset = hton32(off);
+    entry->data.str.len = hton32(elist->total_eiov_len);
   }
 
   const size_t entries_size = entries_array_size(elist->nentries);
@@ -272,6 +291,27 @@ int entry_list_emit_iovs(entry_list_t* elist, emit_iov_cb* emit_iov,
 #endif
   }
 
+  if (elist->eiov.niovs > 0) {
+    extern_iov_t* eiov = &elist->eiov;
+    for (i = 0; i < eiov->niovs; i++) {
+      if (emit_iov(context, eiov->iovs[i].iov_base,
+                   eiov->iovs[i].iov_len)) {
+        return -1;
+      }
+#ifndef NDEBUG
+      iov_size += eiov->iovs[i].iov_len;
+#endif
+    }
+
+    /* write out a terminating null byte */
+    if (emit_iov(context, "\0", 1)) {
+      return -1;
+    }
+#ifndef NDEBUG
+      iov_size++;
+#endif
+  }
+
   assert(iov_size == total_size);
 
   return 0;
@@ -281,6 +321,9 @@ int entry_list_emit_iovs(entry_list_t* elist, emit_iov_cb* emit_iov,
 int entry_list_to_iovecs(entry_list_t *elist, struct iovec *vecs, int max) {
   int niovs = 0;
   int req = 2 + elist->nestrings;
+  if (elist->eiov.niovs > 0) {
+    req += elist->eiov.niovs + 1 /* iovec for null terminator */;
+  }
   if (elist->nbody > 0) {
     req++;
   }
@@ -307,8 +350,8 @@ int entry_list_to_iovecs(entry_list_t *elist, struct iovec *vecs, int max) {
   }
 
   uint32_t i;
-  uint32_t off;
-  for (i = 0, off = elist->nbody; i < elist->nestrings; i++) {
+  uint32_t off = elist->nbody;
+  for (i = 0; i < elist->nestrings; i++) {
     extern_string_t *estring = &elist->estrings[i];
     um_elist_entry_t *entry = &elist->entries[estring->entry_idx];
     entry->data.str.offset = hton32(off);
@@ -320,6 +363,21 @@ int entry_list_to_iovecs(entry_list_t *elist, struct iovec *vecs, int max) {
     niovs++;
 
     off += estring->len;
+  }
+
+  if (elist->eiov.niovs > 0) {
+    extern_iov_t *eiov = &elist->eiov;
+    um_elist_entry_t *entry = &elist->entries[eiov->entry_idx];
+    entry->data.str.offset = hton32(off);
+    entry->data.str.len = hton32(elist->total_eiov_len);
+
+    // Just copy the iovecs
+    for (i = 0; i < eiov->niovs; i++) {
+      vecs[niovs++] = eiov->iovs[i];
+    }
+
+    // copy the null terminator
+    vecs[niovs++] = (struct iovec){.iov_base = "\0", .iov_len = 1};
   }
   return req;
 }
@@ -545,6 +603,36 @@ int entry_list_lazy_append_CSTRING(entry_list_t *elist,
                                    const char *str) {
   int len = strlen(str) + 1;
   return entry_list_lazy_append_string_like(elist, CSTRING, tag, str, len);
+}
+
+int entry_list_lazy_append_IOVEC(entry_list_t* elist,
+                                 int32_t tag,
+                                 struct iovec* iovs,
+                                 size_t niovs) {
+  /* Over the wire iovecs are sent as a BSTRING that is obtained by
+     concatenating all iovecs and a terminating '\0' byte */
+  if (elist->eiov.niovs != 0) {
+    /* only on iovec array per entry_list supported as of now */
+    return -1;
+  }
+  int entry_idx = entry_list_new_entry(elist);
+  if (entry_idx < 0) {
+    return -1;
+  }
+  um_elist_entry_t *entry = &elist->entries[entry_idx];
+  entry->type = hton16(BSTRING);
+  entry->tag = hton16(tag);
+
+  elist->eiov.iovs = iovs;
+  elist->eiov.niovs = niovs;
+  elist->eiov.entry_idx = entry_idx;
+
+  elist->total_eiov_len = 0;
+  for (int i = 0; i < niovs; i++) {
+    elist->total_eiov_len += iovs[i].iov_len;
+  }
+  elist->total_eiov_len++; /* for null byte */
+  return 0;
 }
 
 void print_entry_list(entry_list_t *elist) {

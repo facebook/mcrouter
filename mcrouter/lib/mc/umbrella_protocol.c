@@ -559,7 +559,9 @@ int um_consume_buffer(um_parser_t* um_parser,
 
 static void _msg_to_elist(entry_list_t* elist,
                           uint64_t reqid,
-                          const mc_msg_t* msg) {
+                          const mc_msg_t* msg,
+                          struct iovec* value_iovs,
+                          size_t n_value_iovs) {
   char* ip_addr_buf;
   entry_list_append_I32(elist, msg_op, umbrella_op_from_mc[msg->op]);
 
@@ -597,10 +599,16 @@ static void _msg_to_elist(entry_list_t* elist,
     entry_list_lazy_append_BSTRING(elist, msg_key, msg->key.str,
                                    msg->key.len + 1);
   }
+
+  /* either iovec or string, but not both */
+  assert(!(msg->value.str != NULL && n_value_iovs != 0));
   if (msg->value.str != NULL) {
     entry_list_lazy_append_BSTRING(elist, msg_value,
                                    msg->value.str, msg->value.len + 1);
+  } else if (n_value_iovs != 0) {
+    entry_list_lazy_append_IOVEC(elist, msg_value, value_iovs, n_value_iovs);
   }
+
   if (msg->op == mc_op_stats && msg->number > 0) {
     int i, stats_count = msg->number * 2;
     for (i = 0; i < stats_count; i++) {
@@ -627,14 +635,16 @@ static void _msg_to_elist(entry_list_t* elist,
 }
 
 static void _backing_msg_fill(um_backing_msg_t* bmsg,
-                              uint64_t reqid, mc_msg_t* msg) {
+                              uint64_t reqid, mc_msg_t* msg,
+                              struct iovec* value_iovs,
+                              size_t n_value_iovs) {
   FBI_ASSERT(bmsg->msg == NULL);
   if (msg->_refcount != MSG_NOT_REFCOUNTED) {
     bmsg->msg = mc_msg_incref(msg);
   } else {
     bmsg->msg = NULL;
   }
-  _msg_to_elist(&bmsg->elist, reqid, msg);
+  _msg_to_elist(&bmsg->elist, reqid, msg, value_iovs, n_value_iovs);
   bmsg->inuse = 1;
 }
 
@@ -658,14 +668,16 @@ void um_backing_msg_cleanup(um_backing_msg_t* bmsg) {
   bmsg->inuse = 0;
 }
 
-int um_emit_iovs(um_backing_msg_t* bmsg,
-                 uint64_t reqid,
-                 mc_msg_t* msg,
-                 emit_iov_cb* emit_iov,
-                 void* context) {
+int um_emit_iovs_extended(um_backing_msg_t* bmsg,
+                          uint64_t reqid,
+                          mc_msg_t* msg,
+                          struct iovec* value_iovs,
+                          size_t n_value_iovs,
+                          emit_iov_cb* emit_iov,
+                          void* context) {
 
   FBI_ASSERT(bmsg && !bmsg->inuse && msg && msg->op != mc_op_end && emit_iov);
-  _backing_msg_fill(bmsg, reqid, msg);
+  _backing_msg_fill(bmsg, reqid, msg, value_iovs, n_value_iovs);
 
   if (entry_list_emit_iovs(&bmsg->elist, emit_iov, context)) {
     um_backing_msg_cleanup(bmsg);
@@ -675,14 +687,16 @@ int um_emit_iovs(um_backing_msg_t* bmsg,
   return 0;
 }
 
-ssize_t um_write_iovs(um_backing_msg_t* bmsg,
-                      uint64_t reqid,
-                      mc_msg_t* msg,
-                      struct iovec* iovs,
-                      size_t n_iovs) {
+ssize_t um_write_iovs_extended(um_backing_msg_t* bmsg,
+                               uint64_t reqid,
+                               mc_msg_t* msg,
+                               struct iovec* value_iovs,
+                               size_t n_value_iovs,
+                               struct iovec* iovs,
+                               size_t n_iovs) {
 
   FBI_ASSERT(bmsg && !bmsg->inuse && msg && msg->op != mc_op_end && iovs);
-  _backing_msg_fill(bmsg, reqid, msg);
+  _backing_msg_fill(bmsg, reqid, msg, value_iovs, n_value_iovs);
 
   int iovs_used = entry_list_to_iovecs(&bmsg->elist, iovs, n_iovs);
   if (iovs_used <= 0) {
