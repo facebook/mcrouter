@@ -832,6 +832,56 @@ TEST(FiberManager, remoteFiberBasic) {
   EXPECT_EQ(43, result[1]);
 }
 
+TEST(FiberManager, addTaskRemoteBasic) {
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+  auto& loopController =
+    dynamic_cast<SimpleLoopController&>(manager.loopController());
+
+  int result[2];
+  result[0] = result[1] = 0;
+  folly::Optional<FiberPromise<int>> savedPromise[2];
+
+  std::thread remoteThread0{
+    [&] () {
+      manager.addTaskRemote(
+        [&] () {
+          result[0] = fiber::await([&] (FiberPromise<int> promise) {
+              savedPromise[0] = std::move(promise);
+            });
+        });
+    }
+  };
+  std::thread remoteThread1{
+    [&] () {
+      manager.addTaskRemote(
+        [&] () {
+          result[1] = fiber::await([&] (FiberPromise<int> promise) {
+              savedPromise[1] = std::move(promise);
+            });
+        });
+    }
+  };
+  remoteThread0.join();
+  remoteThread1.join();
+
+  manager.loopUntilNoReady();
+
+  EXPECT_TRUE(savedPromise[0].hasValue());
+  EXPECT_TRUE(savedPromise[1].hasValue());
+  EXPECT_EQ(0, result[0]);
+  EXPECT_EQ(0, result[1]);
+
+  savedPromise[0]->setValue(42);
+  savedPromise[1]->setValue(43);
+
+  EXPECT_EQ(0, result[0]);
+  EXPECT_EQ(0, result[1]);
+
+  manager.loopUntilNoReady();
+  EXPECT_EQ(42, result[0]);
+  EXPECT_EQ(43, result[1]);
+}
+
 static size_t sNumAwaits;
 
 void runBenchmark(size_t numAwaits, size_t toSend) {

@@ -116,13 +116,22 @@ class FiberManager {
   void setExceptionCallback(ExceptionCallback ec);
 
   /**
-   * Add a new task to be executed.
+   * Add a new task to be executed. Must be called from FiberManager's thread.
    *
    * @param func Task functor; must have a signature of `void func()`.
    *             The object will be destroyed once task execution is complete.
    */
   template <typename F>
   void addTask(F&& func);
+
+  /**
+   * Add a new task to be executed. Safe to call from other threads.
+   *
+   * @param func Task function; must have a signature of `void func()`.
+   *             The object will be destroyed once task execution is complete.
+   */
+  template <typename F>
+  void addTaskRemote(F&& func);
 
   /**
    * Add a new task. When the task is complete, execute finally(Try<Result>&&)
@@ -180,6 +189,13 @@ class FiberManager {
  private:
   friend class Baton;
   friend class Fiber;
+
+  struct RemoteTask {
+    template <typename F>
+    explicit RemoteTask(F&& f) : func(std::move(f)) {}
+    std::function<void()> func;
+    AtomicLinkedListHook<RemoteTask> nextRemoteTask;
+  };
 
   TAILQ_HEAD(FiberTailQHead, Fiber);
 
@@ -263,6 +279,8 @@ class FiberManager {
   ExceptionCallback exceptionCallback_; /**< task exception callback */
 
   AtomicLinkedList<Fiber, &Fiber::nextRemoteReady_> remoteReadyQueue_;
+
+  AtomicLinkedList<RemoteTask, &RemoteTask::nextRemoteTask> remoteTaskQueue_;
 
   TimeoutController timeoutManager_;
 

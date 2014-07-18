@@ -10,6 +10,7 @@
 
 #include <cassert>
 
+#include <folly/Memory.h>
 #include "folly/MoveWrapper.h"
 #include "folly/Portability.h"
 #include "folly/ScopeGuard.h"
@@ -92,17 +93,34 @@ inline bool FiberManager::loopUntilNoReady() {
 
   timeoutManager_.runTimeouts();
 
-  while (!TAILQ_EMPTY(&readyFibers_)) {
-    auto fiber = TAILQ_FIRST(&readyFibers_);
-    TAILQ_REMOVE(&readyFibers_, fiber, entry_);
-    runReadyFiber(fiber);
-  }
+  bool hadRemoteFiber = true;
+  while (hadRemoteFiber) {
+    hadRemoteFiber = false;
 
-  remoteReadyQueue_.sweep(
-    [this] (Fiber* fiber) {
+    while (!TAILQ_EMPTY(&readyFibers_)) {
+      auto fiber = TAILQ_FIRST(&readyFibers_);
+      TAILQ_REMOVE(&readyFibers_, fiber, entry_);
       runReadyFiber(fiber);
     }
-  );
+
+    remoteReadyQueue_.sweep(
+      [this, &hadRemoteFiber] (Fiber* fiber) {
+        runReadyFiber(fiber);
+        hadRemoteFiber = true;
+      }
+    );
+
+    remoteTaskQueue_.sweep(
+      [this, &hadRemoteFiber] (RemoteTask* taskPtr) {
+        std::unique_ptr<RemoteTask> task(taskPtr);
+        auto fiber = getFiber();
+        fiber->setFunction(std::move(task->func));
+        fiber->data_ = reinterpret_cast<intptr_t>(fiber);
+        runReadyFiber(fiber);
+        hadRemoteFiber = true;
+      }
+    );
+  }
 
   return fibersActive_ > 0;
 }
@@ -116,6 +134,14 @@ void FiberManager::addTask(F&& func) {
   TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
 
   ensureLoopScheduled();
+}
+
+template <typename F>
+void FiberManager::addTaskRemote(F&& func) {
+  auto task = folly::make_unique<RemoteTask>(std::move(func));
+  if (remoteTaskQueue_.insertHead(task.release())) {
+    loopController_->scheduleThreadSafe();
+  }
 }
 
 template <typename X>

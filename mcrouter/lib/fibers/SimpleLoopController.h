@@ -19,7 +19,6 @@ class SimpleLoopController : public LoopController {
  public:
   SimpleLoopController()
       : fm_(nullptr),
-        scheduled_(false),
         stopRequested_(false) {
   }
 
@@ -59,7 +58,7 @@ class SimpleLoopController : public LoopController {
 
  private:
   FiberManager* fm_;
-  bool scheduled_;
+  std::atomic<bool> scheduled_{false};
   bool stopRequested_;
   std::atomic<int> remoteScheduleCalled_{0};
 
@@ -75,6 +74,7 @@ class SimpleLoopController : public LoopController {
 
   void scheduleThreadSafe() override {
     ++remoteScheduleCalled_;
+    scheduled_ = true;
   }
 
   friend class FiberManager;
