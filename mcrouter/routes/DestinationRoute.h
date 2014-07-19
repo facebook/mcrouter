@@ -72,6 +72,13 @@ class DestinationRoute {
       destination_(std::move(destination)) {
   }
 
+  template <class Operation>
+  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+    const RecordingMcRequest& req, Operation) const {
+    req.context().recordDestination(*client_);
+    return {};
+  }
+
   template <class Operation, class Request>
   static
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(

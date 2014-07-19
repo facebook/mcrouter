@@ -200,7 +200,7 @@ static void proxy_config_swap(proxy_t* proxy,
                               std::shared_ptr<ProxyConfig> config) {
   /* Update the number of server stat for this proxy. */
   stat_set_uint64(proxy, num_servers_stat, 0);
-  for (auto& it : config->pools()) {
+  for (auto& it : config->poolsMap()) {
     auto pool = it.second;
 
     switch (pool->getType()) {
@@ -279,8 +279,8 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
 
   LOG_IF(INFO, !router->opts.constantly_reload_configs) <<
       "reconfigured " << proxyCount << " proxies with " <<
-      newConfigs[0]->clients().size() << " clients and " <<
-      newConfigs[0]->pools().size() << " pools (" <<
+      newConfigs[0]->clientsMap().size() << " clients and " <<
+      newConfigs[0]->poolsMap().size() << " pools (" <<
       newConfigs[0]->getConfigMd5Digest() << ")";
 
   return 1;

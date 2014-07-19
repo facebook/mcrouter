@@ -56,6 +56,15 @@ inline void shift_nstring_inplace(nstring_t* nstr, int pos) {
   nstr->len -= pos;
 }
 
+void foreachPossibleClientHelper(const McrouterRouteHandleIf& rh,
+                                 const RecordingMcRequest& req,
+                                 const std::string& key) {
+  auto children = rh.couldRouteTo(req, McOperation<mc_op_get>());
+  for (const auto& it : children) {
+    foreachPossibleClientHelper(*it, req, key);
+  }
+}
+
 }  // anonymous namespace
 
 const std::string kInternalGetPrefix = "__mcrouter__.";
@@ -276,6 +285,21 @@ int proxy_start_awriter_threads(proxy_t* proxy, bool realtime) {
   folly::setThreadName(proxy->stats_log_writer_thread_handle, "mcrtr-statsw");
 
   return 0;
+}
+
+void proxy_t::foreachPossibleClient(
+    const std::string& key,
+    std::function<void(const ProxyClientCommon&)> callback) const {
+
+  auto ctx = std::make_shared<RecordingContext>(std::move(callback));
+  RecordingMcRequest req(ctx, key);
+  sfrlock_rdlock(config_lock.get());
+  auto children =
+    config->proxyRoute()->couldRouteTo(req, McOperation<mc_op_get>());
+  for (const auto& it : children) {
+    foreachPossibleClientHelper(*it, req, key);
+  }
+  sfrlock_rdunlock(config_lock.get());
 }
 
 void proxy_stop_awriter_threads(proxy_t* proxy) {

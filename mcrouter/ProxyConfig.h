@@ -43,13 +43,13 @@ class ProxyConfig : public ProxyConfigIf {
   }
 
   const std::unordered_map<std::string, std::shared_ptr<ProxyGenericPool>>&
-  pools() {
+  poolsMap() const {
     return poolFactory_->pools();
   }
 
   const std::unordered_map<std::string,
                            std::shared_ptr<const ProxyClientCommon>>&
-  clients() {
+  clientsMap() const {
     return poolFactory_->clients();
   }
 

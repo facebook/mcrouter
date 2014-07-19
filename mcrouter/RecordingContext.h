@@ -11,7 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "folly/Optional.h"
+#include <folly/Optional.h>
+
 #include "mcrouter/lib/McRequestWithContext.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/fibers/FiberPromise.h"
@@ -30,12 +31,9 @@ class ProxyClientCommon;
  */
 class RecordingContext {
  public:
+  typedef std::function<void(const ProxyClientCommon&)> OnRecordCallback;
 
-  struct RecordedData {
-    std::vector<std::string> destinations;
-  };
-
-  RecordingContext();
+  explicit RecordingContext(OnRecordCallback callback);
 
   ~RecordingContext();
 
@@ -45,13 +43,11 @@ class RecordingContext {
    * Waits until all owners (i.e. requests) of ctx expire on other
    * fibers and returns the resulting vector of recorded destinations.
    */
-  static
-  std::unique_ptr<RecordedData> waitForRecorded(
-    std::shared_ptr<RecordingContext>&& ctx);
+  static void waitForRecorded(std::shared_ptr<RecordingContext>&& ctx);
 
  private:
-  std::unique_ptr<RecordedData> recordedData_;
-  folly::Optional<FiberPromise<std::unique_ptr<RecordedData>>> promise_;
+  OnRecordCallback callback_;
+  folly::Optional<FiberPromise<void>> promise_;
 };
 
 typedef McRequestWithContext<RecordingContext> RecordingMcRequest;

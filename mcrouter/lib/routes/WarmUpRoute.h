@@ -41,7 +41,7 @@ class WarmUpRoute {
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
     const Request& req, Operation) const {
 
-    return {warm_, cold_};
+    return {cold_, warm_};
   }
 
   WarmUpRoute(std::shared_ptr<RouteHandleIf> warmh,

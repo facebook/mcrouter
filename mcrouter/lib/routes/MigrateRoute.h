@@ -12,7 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
@@ -45,7 +46,15 @@ class MigrateRoute {
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
     const Request& req, Operation) const {
 
-    return {from_, to_};
+    auto mask = routeMask(req, Operation());
+    std::vector<std::shared_ptr<RouteHandleIf>> ret;
+    if (mask & kFromMask) {
+      ret.push_back(from_);
+    }
+    if (mask & kToMask) {
+      ret.push_back(to_);
+    }
+    return ret;
   }
 
   MigrateRoute(std::shared_ptr<RouteHandleIf> fh,
@@ -91,39 +100,64 @@ class MigrateRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
+    const Request& req, Operation) const {
+
+    typedef typename ReplyType<Operation, Request>::type Reply;
+
+    auto mask = routeMask(req, Operation());
+
+    switch (mask) {
+      case kFromMask: return from_->route(req, Operation());
+      case kToMask: return to_->route(req, Operation());
+      default: {
+        auto& from = from_;
+        auto& to = to_;
+        std::vector<std::function<Reply()>> fs = {
+          [&req, &from]() {
+            return from->route(req, Operation());
+          },
+          [&req, &to]() {
+            return to->route(req, Operation());
+          }
+        };
+
+        auto replies = fiber::whenAll(fs.begin(), fs.end());
+        return std::move(*Reply::reduce(replies.begin(), replies.end()));
+      }
+    }
+  }
+ private:
+  static constexpr int kFromMask = 1;
+  static constexpr int kToMask = 2;
+
+  std::shared_ptr<RouteHandleIf> from_;
+  std::shared_ptr<RouteHandleIf> to_;
+  time_t startTimeSec_;
+  time_t intervalSec_;
+  const TimeProvider tp_;
+
+  template <class Operation, class Request>
+  int routeMask(
     const Request& req, Operation, typename DeleteLike<Operation>::Type = 0)
     const {
 
-    typedef typename ReplyType<Operation, Request>::type Reply;
     const auto& creq = req;
     time_t curr = tp_(creq);
 
     if (curr < startTimeSec_) {
-      return from_->route(req, Operation());
+      return kFromMask;
     }
 
     if (curr < (startTimeSec_ + 2*intervalSec_)) {
-      auto& from = from_;
-      auto& to = to_;
-      std::vector<std::function<Reply()>> fs = {
-        [&req, &from]() {
-          return from->route(req, Operation());
-        },
-        [&req, &to]() {
-          return to->route(req, Operation());
-        }
-      };
-
-      auto replies = fiber::whenAll(fs.begin(), fs.end());
-      return std::move(*Reply::reduce(replies.begin(), replies.end()));
+      return kFromMask & kToMask;
     }
 
     /* else */
-    return to_->route(req, Operation());
+    return kToMask;
   }
 
   template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
+  int routeMask(
     const Request& req, Operation, OtherThanT(Operation, DeleteLike<>) = 0)
     const {
 
@@ -131,18 +165,11 @@ class MigrateRoute {
     time_t curr = tp_(creq);
 
     if (curr < (startTimeSec_ + intervalSec_)) {
-      return from_->route(req, Operation());
+      return kFromMask;
     } else {
-      return to_->route(req, Operation());
+      return kToMask;
     }
   }
-
- private:
-  std::shared_ptr<RouteHandleIf> from_;
-  std::shared_ptr<RouteHandleIf> to_;
-  time_t startTimeSec_;
-  time_t intervalSec_;
-  const TimeProvider tp_;
 };
 
 }}

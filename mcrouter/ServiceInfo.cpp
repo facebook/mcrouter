@@ -74,20 +74,26 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
 
   proxy_->fiberManager.addTaskFinally(
     [keyStr, proxy, proxyRoute]() {
-      auto ctx = std::make_shared<RecordingContext>();
+      auto destinations = folly::make_unique<std::vector<std::string>>();
+      auto ctx = std::make_shared<RecordingContext>(
+        [&destinations](const ProxyClientCommon& client) {
+          destinations->push_back(client.ap.toHostPortString());
+        }
+      );
       {
         RecordingMcRequest recordingReq(ctx, keyStr);
 
         /* ignore the reply */
         proxyRoute->route(recordingReq, Operation());
       }
-      return RecordingContext::waitForRecorded(
-        std::move(ctx));
+      RecordingContext::waitForRecorded(std::move(ctx));
+      return destinations;
     },
     [reqCopy](folly::wangle::Try<
-              std::unique_ptr<RecordingContext::RecordedData>>&& data) {
+              std::unique_ptr<std::vector<std::string>>>&& data) {
       std::string str;
-      for (const auto& d : (*data)->destinations) {
+      const auto& destinations = *data;
+      for (const auto& d : *destinations) {
         if (!str.empty()) {
           str.push_back('\r');
           str.push_back('\n');
@@ -260,7 +266,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       }
       auto op = args[0];
       auto key = args[1];
-      auto ctx = std::make_shared<RecordingContext>();
+      auto ctx = std::make_shared<RecordingContext>(nullptr);
       RecordingMcRequest req(ctx, key.str());
 
       return routeHandlesCommandHelper(op, req, *proxyRoute_,

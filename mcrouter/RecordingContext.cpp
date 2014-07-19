@@ -8,45 +8,46 @@
  */
 #include "RecordingContext.h"
 
-#include "folly/IPAddress.h"
-#include "folly/Memory.h"
+#include <folly/IPAddress.h>
+#include <folly/Memory.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-RecordingContext::RecordingContext()
-    : recordedData_(folly::make_unique<RecordedData>()) {
+RecordingContext::RecordingContext(OnRecordCallback callback)
+    : callback_(std::move(callback)) {
 }
 
 RecordingContext::~RecordingContext() {
   if (promise_) {
-    promise_->setValue(std::move(recordedData_));
+    promise_->setValue();
   }
 }
 
 void RecordingContext::recordDestination(const ProxyClientCommon& destination) {
-  recordedData_->destinations.push_back(destination.ap.toHostPortString());
+  if (callback_) {
+    callback_(destination);
+  }
 }
 
-std::unique_ptr<RecordingContext::RecordedData>
-RecordingContext::waitForRecorded(
+void RecordingContext::waitForRecorded(
   std::shared_ptr<RecordingContext>&& ctx) {
 
   if (ctx.unique()) {
     /* This was the last reference, nothing to do */
-    return std::move(ctx->recordedData_);
+    return;
   }
 
   /* Make sure we get notified on destruction */
-  return
-    fiber::await([&ctx](FiberPromise<std::unique_ptr<RecordedData>> promise) {
-        ctx->promise_ = std::move(promise);
+  fiber::await([&ctx](FiberPromise<void> promise) {
+      ctx->promise_ = std::move(promise);
 
-        /* Surrender the reference we hold */
-        ctx.reset();
-      });
+      /* Surrender the reference we hold */
+      ctx.reset();
+    });
 }
 
 }}}

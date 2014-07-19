@@ -542,6 +542,15 @@ struct proxy_t {
   void dispatchRequest(proxy_request_t* preq);
 
   /**
+   * Iterates over possible clients for given key on get request. This
+   * includes all failovers, shadows, etc. The first client (if there is some)
+   * is for "fast" route, i.e. the one we synchronously route to.
+   */
+  void foreachPossibleClient(
+    const std::string& key,
+    std::function<void(const ProxyClientCommon&)> callback) const;
+
+  /**
    * If no event base was provided on construction, this must be called
    * before spawning the proxy.
    */
