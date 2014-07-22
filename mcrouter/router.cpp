@@ -187,8 +187,9 @@ void mcrouter_request_ready_cb(asox_queue_t q,
     // this will also grab a reference to the router_entry->request
     // so free the reference from the enqueue below
     try {
+      /* steal router_entry->request, so we don't need to mc_msg_decref() */
       preq = new proxy_request_t(proxy,
-                                 router_entry->request,
+                                 McMsgRef::moveRef(router_entry->request),
                                  mcrouter_enqueue_reply,
                                  router_entry->context,
                                  /* reqComplete= */ nullptr,
@@ -210,7 +211,6 @@ void mcrouter_request_ready_cb(asox_queue_t q,
     preq->requester = mcrouter_client_incref(client);
     proxy->dispatchRequest(preq);
 
-    mc_msg_decref(router_entry->request);
     free(router_entry);
     proxy_request_decref(preq);
   } else if (entry->type == request_type_continue_reply_error) {
@@ -710,10 +710,9 @@ void mcrouter_enqueue_reply(proxy_request_t *preq) {
     (mcrouter_queue_entry_t*)malloc(sizeof(mcrouter_queue_entry_t));
 
   stat_incr_safe(preq->proxy, mcrouter_queue_entry_num_outstanding_stat);
-  router_entry->request = preq->orig_req;
-  mc_msg_incref(router_entry->request);
-
-  router_entry->reply = mc_msg_incref(preq->reply);
+  router_entry->request = mc_msg_incref(const_cast<mc_msg_t*>(
+                                          preq->orig_req.get()));
+  router_entry->reply = mc_msg_incref(const_cast<mc_msg_t*>(preq->reply.get()));
 
   router_entry->context = preq->context;
   router_entry->proxy = preq->proxy;

@@ -17,6 +17,7 @@
 #include "folly/IntrusiveList.h"
 #include "mcrouter/AccessPoint.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/McMsgRef.h"
 
 using asox_timer_t = void*;
 class fb_timer_s;
@@ -82,13 +83,13 @@ struct ProxyDestination {
   ~ProxyDestination();
 
   void track_latency(int64_t latency);
-  void handle_tko(mc_res_t result, const mc_msg_t* reply,
+  void handle_tko(mc_res_t result, const McMsgRef& reply,
                   int consecutive_errors);
 
   // returns non-zero on error
-  int send(mc_msg_t* request, void* req_ctx, uint64_t senderId);
+  int send(McMsgRef request, void* req_ctx, uint64_t senderId);
   // returns 1 if okay to send req using this client
-  int may_send(mc_msg_t *req);
+  int may_send(const McMsgRef& req);
 
   proxy_client_state_t state();
 
@@ -96,8 +97,8 @@ struct ProxyDestination {
 
   void on_up();
   void on_down();
-  void on_reply(mc_msg_t *req,
-                mc_msg_t *reply, mc_res_t result, void* req_ctx);
+  void on_reply(const McMsgRef& req,
+                McMsgRef reply, mc_res_t result, void* req_ctx);
 
   // on probe timer
   void on_timer(const asox_timer_t timer);
@@ -110,7 +111,7 @@ struct ProxyDestination {
 
   int probe_delay_next_ms{0};
   bool sending_probes{false};
-  mc_msg_t* probe_req{nullptr};
+  McMsgRef probe_req;
   asox_timer_t probe_timer{nullptr};
   size_t consecutiveErrors_{0};
   double avgLatency_{0.0};
@@ -141,7 +142,7 @@ struct ProxyDestination {
                  std::string pdstnKey);
 
   // for no-network mode (debug/performance measurement only)
-  void sendFakeReply(mc_msg_t* request, void* req_ctx);
+  void sendFakeReply(const McMsgRef& request, void* req_ctx);
 
   std::atomic<bool> isUsedInConfig_{false};
   void* stateList_{nullptr};

@@ -71,12 +71,10 @@ void DestinationClient::resetInactive() {
   }
 }
 
-int DestinationClient::send(mc_msg_t* request, void* req_ctx,
+int DestinationClient::send(McMsgRef requestMsg, void* req_ctx,
                             uint64_t senderId) {
-
   auto& client = getAsyncMcClient();
-  auto op = request->op;
-  auto requestMsg = McMsgRef::moveRef(request);
+  auto op = requestMsg->op;
   McRequest mcReq(requestMsg.clone());
   auto requestMsgWrapper = folly::makeMoveWrapper(std::move(requestMsg));
   auto pdstn = pdstn_;
@@ -90,7 +88,7 @@ int DestinationClient::send(mc_msg_t* request, void* req_ctx,
       auto proxy = pdstnPtr->proxy;
       std::lock_guard<ThreadReadLock> lock(proxy->proxyThreadConfigReadLock);
 
-      mc_msg_t* req = const_cast<mc_msg_t*>(requestMsgWrapper->release());
+      auto& req = *requestMsgWrapper;
 
       if (reply.result() == mc_res_local_error) {
         update_send_stats(proxy, req, PROXY_SEND_LOCAL_ERROR);
@@ -100,7 +98,7 @@ int DestinationClient::send(mc_msg_t* request, void* req_ctx,
       }
 
       pdstnPtr->on_reply(req,
-                         const_cast<mc_msg_t*>(reply.releasedMsg(op).release()),
+                         reply.releasedMsg(op),
                          reply.result(),
                          req_ctx);
     },

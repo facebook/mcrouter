@@ -10,8 +10,7 @@
 
 #include <memory>
 
-class mc_msg_s;
-using mc_msg_t = mc_msg_s;
+#include "mcrouter/lib/McMsgRef.h"
 
 namespace facebook { namespace memcache {
 
@@ -31,7 +30,7 @@ class DestinationClient {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  int send(mc_msg_t* request, void* req_ctx, uint64_t senderId);
+  int send(McMsgRef requestMsg, void* req_ctx, uint64_t senderId);
 
   ~DestinationClient();
 

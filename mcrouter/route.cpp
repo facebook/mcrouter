@@ -246,7 +246,7 @@ bool match_routing_key_hash(uint32_t routingKeyHash,
         stat_incr(proxy, cmd_other_ ## CATEGORY, 1);                \
         break;}} while(0)
 
-void update_send_stats(proxy_t *proxy, mc_msg_t* req,
+void update_send_stats(proxy_t *proxy, const McMsgRef& req,
                        proxy_send_stat_result_t res) {
 
   switch (res) {

@@ -16,10 +16,12 @@
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/router.h"
+#include "mcrouter/lib/McMsgRef.h"
 
 using namespace facebook::memcache::mcrouter;
 
 using facebook::memcache::McrouterOptions;
+using facebook::memcache::McMsgRef;
 
 int up_count, response_count, down_count, may_send_count, remove_count;
 
@@ -60,7 +62,7 @@ proxy_client_monitor_t angry_monitor = {
 
 
 void reply_ready(proxy_request_t *preq) {
-  mc_msg_t *reply = mc_msg_incref(preq->reply);
+  mc_msg_t *reply = mc_msg_incref(const_cast<mc_msg_t*>(preq->reply.get()));
   *(mc_msg_t**)preq->context = reply;
 }
 
@@ -86,7 +88,8 @@ void run_lifecycle_test(proxy_client_monitor_t *monitor, bool allow_failover,
   mc_msg_t *req = mc_msg_new(0);
   req->key = NSTRING_LIT("tmo:monitor:unit_test:missingkey");
   req->op = mc_op_get;
-  proxy_request_t *preq = new proxy_request_t(proxy, req, reply_ready, &reply);
+  proxy_request_t *preq = new proxy_request_t(proxy, McMsgRef::moveRef(req),
+                                              reply_ready, &reply);
   preq->failover_disabled = allow_failover ? 0 : 1;
 
   proxy->dispatchRequest(preq);
@@ -100,7 +103,6 @@ void run_lifecycle_test(proxy_client_monitor_t *monitor, bool allow_failover,
     EXPECT_EQ(reply->result, expected_result);
   }
 
-  mc_msg_decref(req);
   mc_msg_decref(reply);
   delete proxy;
   delete router;

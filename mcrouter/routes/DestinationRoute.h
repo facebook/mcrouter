@@ -36,7 +36,7 @@ struct DestinationRequestCtx {
   proxy_request_t* preq{nullptr};
   int64_t startTime{0};
   int64_t endTime{0};
-  mc_msg_t* reply{nullptr};
+  McMsgRef reply;
   mc_res_t result{mc_res_unknown};
 
   explicit DestinationRequestCtx(proxy_request_t* proxyReq)
@@ -117,31 +117,27 @@ class DestinationRoute {
   ProxyMcReply routeImpl(const ProxyMcRequest& req, Operation) const {
     auto msg = generateMsg(req, Operation());
 
-    if (!destination_->may_send(const_cast<mc_msg_t*>(msg.get()))) {
+    if (!destination_->may_send(msg)) {
       update_send_stats(req.context().proxyRequest().proxy,
-                        const_cast<mc_msg_t*>(msg.get()),
+                        msg,
                         PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
       return reply;
     }
 
-    auto msgCpy = msg.clone();
-    auto mcMsg = msgCpy.release();
-
     auto& destination = destination_;
 
     DestinationRequestCtx ctx(&req.context().proxyRequest());
 
     fiber::await(
-      [&destination, &mcMsg, &req, &ctx](FiberPromise<void> promise) {
+      [&destination, &msg, &req, &ctx](FiberPromise<void> promise) {
         ctx.promise = std::move(promise);
-        destination->send(const_cast<mc_msg_t*>(mcMsg),
+        destination->send(std::move(msg),
                           &ctx,
                           req.context().senderId());
       });
-    auto reply = ProxyMcReply(ctx.result,
-                              McMsgRef::moveRef(ctx.reply));
+    auto reply = ProxyMcReply(ctx.result, std::move(ctx.reply));
 
     req.context().onReplyReceived(*client_,
                                   req,
@@ -167,7 +163,7 @@ class DestinationRoute {
   template <typename Operation>
   McReply routeImpl(const RecordingMcRequest& req, Operation) const {
     auto msg = generateMsg(req, Operation());
-    if (!destination_->may_send(const_cast<mc_msg_t*>(msg.get()))) {
+    if (!destination_->may_send(msg)) {
       return McReply(TkoReply);
     }
 

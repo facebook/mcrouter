@@ -45,11 +45,11 @@ void on_probe_timer(const asox_timer_t timer, void* arg) {
   pdstn->on_timer(timer);
 }
 
-bool is_error_reply(mc_res_t result, const mc_msg_t* reply) {
+bool is_error_reply(mc_res_t result, const McMsgRef& reply) {
   if (result == mc_res_remote_error) {
     // mc_res_remote_error with a reply object is an application-level
     // error, not a network/server level error.
-    return reply == nullptr;
+    return reply.get() == nullptr;
   } else if (result == mc_res_try_again) {
     return false;
   } else {
@@ -99,11 +99,11 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
   probe_timer = nullptr;
   if (sending_probes) {
     // Note that the previous probe might still be in flight
-    if (probe_req == nullptr) {
-      probe_req = mc_msg_new(0);
-      FBI_ASSERT(probe_req);
-      probe_req->op = mc_op_version;
-      send(probe_req, nullptr, /* senderId= */ 0);
+    if (probe_req.get() == nullptr) {
+      auto mutReq = createMcMsgRef();
+      mutReq->op = mc_op_version;
+      probe_req = std::move(mutReq);
+      send(probe_req.clone(), nullptr, /* senderId= */ 0);
     }
     schedule_next_probe();
   }
@@ -170,7 +170,7 @@ void ProxyDestination::track_latency(int64_t latency) {
 }
 
 void ProxyDestination::handle_tko(mc_res_t result,
-                                  const mc_msg_t* reply,
+                                  const McMsgRef& reply,
                                   int consecutive_errors) {
   if (resetting ||
       proxy->opts.disable_tko_tracking ||
@@ -215,12 +215,10 @@ void ProxyDestination::handle_tko(mc_res_t result,
   }
 }
 
-void ProxyDestination::on_reply(mc_msg_t *req,
-                                mc_msg_t *reply, const mc_res_t result,
+void ProxyDestination::on_reply(const McMsgRef& req,
+                                McMsgRef reply, const mc_res_t result,
                                 void* req_ctx) {
   FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(req);
-
 
   proxy_request_t* preq = nullptr;
 
@@ -238,7 +236,7 @@ void ProxyDestination::on_reply(mc_msg_t *req,
   // mc_res_busy with a code not SERVER_ERROR_BUSY means
   // the server is fine, just can't fulfil the request now
   if (mc_res_is_err(result) &&
-      !(result == mc_res_remote_error && reply != nullptr) &&
+      !(result == mc_res_remote_error && reply.get() != nullptr) &&
       result != mc_res_try_again) {
     ++consecutiveErrors_;
   } else {
@@ -259,8 +257,8 @@ void ProxyDestination::on_reply(mc_msg_t *req,
 
   handle_tko(result, reply, consecutiveErrors_);
 
-  if (req == probe_req) {
-    probe_req = nullptr;
+  if (req.get() == probe_req.get()) {
+    probe_req = McMsgRef();
   } else {
     stats.results[result]++;
 
@@ -269,11 +267,12 @@ void ProxyDestination::on_reply(mc_msg_t *req,
 
     if (proxy->monitor) {
       proxy->monitor->on_response(proxy->monitor, this,
-                                  preq, req, reply, result);
+                                  preq, const_cast<mc_msg_t*>(req.get()),
+                                  const_cast<mc_msg_t*>(reply.get()), result);
     }
 
     destreqCtx->endTime = nowUs();
-    destreqCtx->reply = reply;
+    destreqCtx->reply = std::move(reply);
     destreqCtx->result = result;
 
     /* For code simplicity we look at latency for making TKO decisions with a
@@ -283,19 +282,8 @@ void ProxyDestination::on_reply(mc_msg_t *req,
 
     auto promise = std::move(destreqCtx->promise.value());
     promise.setValue();
-    reply = nullptr;
   }
 
-  // The reply path gets a request in three states
-  // (1) A request's refcount was incremented in send_to_mcc
-  // (2) A request was duped from send_to_mcc
-  // (3) A new probe request was issued
-  // in all three cases we must decrement the associated refcount
-  mc_msg_decref(req);
-
-  if (reply != nullptr) {
-    mc_msg_decref(reply);
-  }
   if (preq) {
     stat_decr(proxy, sum_server_queue_length_stat, 1);
   }
@@ -358,7 +346,7 @@ void ProxyDestination::on_down() {
 
     /* Record on_down as a mc_res_connect_error; note we pass failure_until_tko
        to force TKO for the deprecated per-proxy logic */
-    handle_tko(mc_res_connect_error, nullptr,
+    handle_tko(mc_res_connect_error, McMsgRef(),
                proxy->opts.failures_until_tko);
   }
 }
@@ -490,20 +478,20 @@ proxy_client_state_t ProxyDestination::state() {
   }
 }
 
-int ProxyDestination::may_send(mc_msg_t *req) {
+int ProxyDestination::may_send(const McMsgRef& req) {
   FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
 
   int rv;
   if (proxy && proxy->monitor) {
     rv = proxy->monitor->may_send(proxy->monitor,
-                                  this, req);
+                                  this, const_cast<mc_msg_t*>(req.get()));
   } else {
     rv = state() != PROXY_CLIENT_TKO;
   }
   return rv;
 }
 
-void ProxyDestination::sendFakeReply(mc_msg_t* request, void* req_ctx) {
+void ProxyDestination::sendFakeReply(const McMsgRef& request, void* req_ctx) {
   mc_res_t result;
   std::string replyStr;
   switch (request->op) {
@@ -522,13 +510,12 @@ void ProxyDestination::sendFakeReply(mc_msg_t* request, void* req_ctx) {
   }
 
   auto reply = create_reply(request->op, result, replyStr.data());
-  on_reply(request, reply, result, req_ctx);
+  on_reply(request, std::move(reply), result, req_ctx);
 }
 
-int ProxyDestination::send(mc_msg_t* request, void* req_ctx,
+int ProxyDestination::send(McMsgRef request, void* req_ctx,
                            uint64_t senderId) {
   FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(request);
 
   proxy->destinationMap->markAsActive(*this);
 
@@ -543,7 +530,7 @@ int ProxyDestination::send(mc_msg_t* request, void* req_ctx,
     return 0;
   }
 
-  return client_->send(request, req_ctx, senderId);
+  return client_->send(std::move(request), req_ctx, senderId);
 }
 
 void ProxyDestination::resetInactive() {

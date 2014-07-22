@@ -331,13 +331,12 @@ void proxy_set_monitor(proxy_t *proxy, proxy_client_monitor_t *mon) {
 }
 
 proxy_request_t::proxy_request_t(proxy_t* p,
-                                 mc_msg_t* req,
+                                 McMsgRef req,
                                  void (*enqReply)(proxy_request_t* preq),
                                  void *con,
                                  void (*reqComplete)(proxy_request_t* preq),
                                  uint64_t senderId)
   : proxy(p),
-    reply(nullptr),
     reply_state(REPLY_STATE_NO_REPLY),
     delay_reply(0),
     failover_disabled(0),
@@ -354,9 +353,8 @@ proxy_request_t::proxy_request_t(proxy_t* p,
     enqueueReply_(enqReply),
     reqComplete_(reqComplete),
     processing_(false) {
-  FBI_ASSERT(req != nullptr);
 
-  if (!mc_client_req_is_valid(req)) {
+  if (!mc_client_req_is_valid(req.get())) {
     throw std::runtime_error("Invalid request");
   }
 
@@ -365,11 +363,12 @@ proxy_request_t::proxy_request_t(proxy_t* p,
     /* HACK: for backwards compatibility, convert (get, "__mcrouter__.key")
        into (get-service-info, "key") */
     legacy_get_service_info = true;
-    orig_req = mc_msg_dup(req);
-    orig_req->op = mc_op_get_service_info;
-    shift_nstring_inplace(&orig_req->key, kInternalGetPrefix.size());
+    auto copy = MutableMcMsgRef(mc_msg_dup(req.get()));
+    copy->op = mc_op_get_service_info;
+    shift_nstring_inplace(&copy->key, kInternalGetPrefix.size());
+    orig_req = std::move(copy);
   } else {
-    orig_req = mc_msg_incref(req);
+    orig_req = std::move(req);
   }
 
   stat_incr_safe(proxy, proxy_request_num_outstanding_stat);
@@ -382,12 +381,6 @@ proxy_request_t::~proxy_request_t() {
     stat_decr(proxy, proxy_reqs_processing_stat, 1);
     proxy->pump();
   }
-
-  if (reply) {
-    mc_msg_decref(reply);
-  }
-
-  mc_msg_decref(orig_req);
 
   if (requester) {
     mcrouter_client_decref(requester);
@@ -448,15 +441,15 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   if (preq->orig_req->op == mc_op_stats) {
     auto msg = McMsgRef::moveRef(
       stats_reply(this, to<folly::StringPiece>(preq->orig_req->key)));
-    preq->sendReply(const_cast<mc_msg_t*>(msg.get()));
+    preq->sendReply(std::move(msg));
     return;
   }
 
   auto ctx = std::make_shared<ProxyRequestContext>(preq, config->proxyRoute());
-  auto orig = McMsgRef::cloneRef(ctx->proxyRequest().orig_req);
 
   if (preq->orig_req->op == mc_op_get_service_info) {
-    ProxyMcRequest req(ctx, orig.clone());
+    auto orig = ctx->proxyRequest().orig_req.clone();
+    ProxyMcRequest req(ctx, std::move(orig));
 
     /* Will answer request for us */
     config->serviceInfo()->handleRequest(req);
@@ -465,20 +458,18 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
 
   fiberManager.addTaskFinally(
     [ctx]() {
-      auto origReq = McMsgRef::cloneRef(ctx->proxyRequest().orig_req);
+      auto& origReq = ctx->proxyRequest().orig_req;
       try {
-        auto reply = ctx->proxyRoute().dispatchMcMsg(origReq, ctx);
+        auto reply = ctx->proxyRoute().dispatchMcMsg(origReq.clone(), ctx);
         return reply.releasedMsg(origReq->op);
       } catch (const std::exception& e) {
         std::string err = "error routing "
           + to<std::string>(origReq->key) + ": " + e.what();
-        return McMsgRef::moveRef(create_reply(origReq->op,
-                                              mc_res_local_error,
-                                              err.c_str()));
+        return create_reply(origReq->op, mc_res_local_error, err.c_str());
       }
     },
     [ctx](Try<McMsgRef>&& msg) {
-      ctx->proxyRequest().sendReply(const_cast<mc_msg_t*>(msg->get()));
+      ctx->proxyRequest().sendReply(std::move(*msg));
     }
   );
 }
@@ -610,18 +601,14 @@ void proxy_t::pump() {
 
     @return nullptr on failure
 */
-static mc_msg_t* new_reply(const char* str) {
+MutableMcMsgRef new_reply(const char* str) {
   if (str == nullptr) {
-    return mc_msg_new(0);
+    return createMcMsgRef();
   }
   size_t n = strlen(str);
 
-  mc_msg_t* reply = mc_msg_new(n + 1);
-  reply->value.str = (char*) &(reply[1]);
-
-  if (reply == nullptr) {
-    return nullptr;
-  }
+  auto reply = createMcMsgRef(n + 1);
+  reply->value.str = (char*) &(reply.get()[1]);
 
   memcpy(reply->value.str, str, n);
   reply->value.len = n;
@@ -630,17 +617,13 @@ static mc_msg_t* new_reply(const char* str) {
   return reply;
 }
 
-mc_msg_t *create_reply(mc_op_t op, mc_res_t result, const char *str) {
-  mc_msg_t *reply = new_reply(str);
-  if (reply == nullptr) {
-    LOG(ERROR) << "couldn't allocate reply: " << strerror(errno);
-    return nullptr;
-  }
+McMsgRef create_reply(mc_op_t op, mc_res_t result, const char *str) {
+  auto reply = new_reply(str);
 
   reply->op = op;
   reply->result = result;
 
-  return reply;
+  return std::move(reply);
 }
 
 void proxy_request_t::continueSendReply() {
@@ -666,15 +649,15 @@ void proxy_request_t::continueSendReply() {
   }
 }
 
-void proxy_request_t::sendReply(mc_msg_t* newReply) {
+void proxy_request_t::sendReply(McMsgRef newReply) {
   // Make sure we don't set the reply twice for a reply
-  FBI_ASSERT(reply == nullptr);
-  FBI_ASSERT(newReply);
+  FBI_ASSERT(reply.get() == nullptr);
 
-  reply = mc_msg_incref(newReply);
+  reply = std::move(newReply);
 
   // undo op munging
-  reply->op = legacy_get_service_info ? mc_op_get : orig_req->op;
+  const_cast<mc_op_t&>(reply->op) =
+    legacy_get_service_info ? mc_op_get : orig_req->op;
 
   if (reply_state != REPLY_STATE_NO_REPLY) {
     return;

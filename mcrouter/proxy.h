@@ -25,6 +25,7 @@
 #include "mcrouter/lib/fbi/cpp/AtomicSharedPtr.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/ThreadReadLock.h"
 #include "mcrouter/awriter.h"
@@ -97,9 +98,9 @@ enum reply_state_t {
 struct proxy_request_t {
   proxy_t* proxy; ///< For convenience
 
-  mc_msg_t* orig_req; ///< Reference to the incoming request
+  McMsgRef orig_req; ///< Reference to the incoming request
 
-  mc_msg_t* reply; /**< The reply that has been sent out for this request */
+  McMsgRef reply; /**< The reply that has been sent out for this request */
 
   /** Whether we have replied, and therefore have handed the request back */
   reply_state_t reply_state;
@@ -132,7 +133,7 @@ struct proxy_request_t {
    * Constructor
    *
    * @param p proxy that is satisfying the request
-   * @param req the original request (we mc_msg_incref this request)
+   * @param req the original request
    * @param enqReply the function we will use to enqueue the reply when done
    * @param con the context for this request
    * @param reqComplete if non-null, will be called when all replies
@@ -140,7 +141,7 @@ struct proxy_request_t {
    *   (even async) complete.
    */
   proxy_request_t(proxy_t* p,
-                  mc_msg_t* req,
+                  McMsgRef req,
                   void (*enqReply)(proxy_request_t* preq),
                   void *con,
                   void (*reqComplete)(proxy_request_t* preq) = nullptr,
@@ -156,7 +157,7 @@ struct proxy_request_t {
    * @param newReply the message that we are sending out as the reply
    *        for the request we are currently handling
    */
-  void sendReply(mc_msg_t* newReply);
+  void sendReply(McMsgRef newReply);
 
   void continueSendReply();
 
@@ -630,7 +631,7 @@ proxy_request_t* proxy_request_incref(proxy_request_t*);
 
 void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e);
 
-mc_msg_t* create_reply(mc_op_t op, mc_res_t result, const char *str);
+McMsgRef create_reply(mc_op_t op, mc_res_t result, const char *str);
 
 folly::StringPiece getRegionFromRoutingPrefix(folly::StringPiece prefix);
 

@@ -9,10 +9,8 @@
 #pragma once
 
 #include "folly/Range.h"
+#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/fbi/nstring.h"
-
-class mc_msg_s;
-using mc_msg_t = mc_msg_s;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -27,7 +25,7 @@ enum proxy_send_stat_result_t {
   PROXY_SEND_NUM_ERROR_TYPES
 };
 
-void update_send_stats(proxy_t *proxy, mc_msg_t* req,
+void update_send_stats(proxy_t *proxy, const McMsgRef& req,
                        proxy_send_stat_result_t res);
 
 /**

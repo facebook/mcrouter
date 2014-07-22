@@ -30,7 +30,7 @@ McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr ch,
 class ProxyRoute {
  private:
   ProxyMcReply dispatchMcMsgHelper(
-    const McMsgRef& msg,
+    McMsgRef&& msg,
     std::shared_ptr<ProxyRequestContext> ctx,
     McOpList::Item<0>) const {
 
@@ -39,16 +39,17 @@ class ProxyRoute {
 
   template <int op_id>
   ProxyMcReply dispatchMcMsgHelper(
-    const McMsgRef& msg,
+    McMsgRef&& msg,
     std::shared_ptr<ProxyRequestContext> ctx,
     McOpList::Item<op_id>) const {
 
     if (msg->op == McOpList::Item<op_id>::op::mc_op) {
-      return route(ProxyMcRequest(ctx, msg.clone()),
+      return route(ProxyMcRequest(ctx, std::move(msg)),
                    typename McOpList::Item<op_id>::op());
     }
 
-    return dispatchMcMsgHelper(msg, std::move(ctx), McOpList::Item<op_id-1>());
+    return dispatchMcMsgHelper(std::move(msg), std::move(ctx),
+                               McOpList::Item<op_id-1>());
   }
 
  public:
@@ -64,9 +65,12 @@ class ProxyRoute {
     }
   }
 
-  ProxyMcReply dispatchMcMsg(const McMsgRef& msg,
-                             std::shared_ptr<ProxyRequestContext> ctx) const {
-    return dispatchMcMsgHelper(msg, std::move(ctx), McOpList::LastItem());
+  ProxyMcReply dispatchMcMsg(
+    McMsgRef&& msg,
+    std::shared_ptr<ProxyRequestContext> ctx) const {
+
+    return dispatchMcMsgHelper(std::move(msg), std::move(ctx),
+                               McOpList::LastItem());
   }
 
   template <class Operation, class Request>
