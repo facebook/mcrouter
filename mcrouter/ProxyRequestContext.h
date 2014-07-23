@@ -10,13 +10,8 @@
 
 #include <memory>
 
-#include "mcrouter/config.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class ProxyClientCommon;
-class ProxyMcReply;
-class ProxyMcRequest;
 class ProxyRoute;
 class proxy_request_t;
 
@@ -39,24 +34,9 @@ class ProxyRequestContext {
 
   ProxyRoute& proxyRoute() const;
 
-  /**
-   * Called once a reply is received to record a stats sample if required.
-   */
-  template <typename Operation>
-  void onReplyReceived(const ProxyClientCommon& pclient,
-                       const ProxyMcRequest& request,
-                       const ProxyMcReply& reply,
-                       const int64_t startTimeUs,
-                       const int64_t endTimeUs,
-                       Operation);
-
  private:
   proxy_request_t* preq_;
   std::shared_ptr<ProxyRoute> proxyRoute_;
-
-  std::unique_ptr<ProxyMcRequestLogger> logger_;
 };
 
 }}}  // facebook::memcache::mcrouter
-
-#include "ProxyRequestContext-inl.h"

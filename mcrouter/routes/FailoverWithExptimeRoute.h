@@ -13,10 +13,11 @@
 #include <vector>
 
 #include "folly/dynamic.h"
+#include "mcrouter/config-impl.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -149,7 +150,7 @@ class FailoverWithExptimeRoute {
   }
 
   bool isFailoverDisabledForRequest(const ProxyMcRequest& req) const {
-    return req.context().proxyRequest().failover_disabled;
+    return req.context().ctx().proxyRequest().failover_disabled;
   }
 
   template <class Request>

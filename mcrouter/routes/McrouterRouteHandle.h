@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/RecordingContext.h"
 #include "mcrouter/routes/McOpList.h"

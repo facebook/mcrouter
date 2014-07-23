@@ -24,6 +24,7 @@
 #include "folly/Memory.h"
 #include "folly/Random.h"
 #include "folly/Range.h"
+#include "mcrouter/config-impl.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/queue.h"
@@ -32,7 +33,7 @@
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyLogger.h"
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/_router.h"
@@ -445,10 +446,11 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
     return;
   }
 
-  auto ctx = std::make_shared<ProxyRequestContext>(preq, config->proxyRoute());
+  auto ctx = std::make_shared<GenericProxyRequestContext>(preq,
+                                                          config->proxyRoute());
 
   if (preq->orig_req->op == mc_op_get_service_info) {
-    auto orig = ctx->proxyRequest().orig_req.clone();
+    auto orig = ctx->ctx().proxyRequest().orig_req.clone();
     ProxyMcRequest req(ctx, std::move(orig));
 
     /* Will answer request for us */
@@ -458,9 +460,10 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
 
   fiberManager.addTaskFinally(
     [ctx]() {
-      auto& origReq = ctx->proxyRequest().orig_req;
+      auto& origReq = ctx->ctx().proxyRequest().orig_req;
       try {
-        auto reply = ctx->proxyRoute().dispatchMcMsg(origReq.clone(), ctx);
+        auto reply = ctx->ctx().proxyRoute().dispatchMcMsg(origReq.clone(),
+                                                           ctx);
         return reply.releasedMsg(origReq->op);
       } catch (const std::exception& e) {
         std::string err = "error routing "
@@ -469,7 +472,7 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
       }
     },
     [ctx](Try<McMsgRef>&& msg) {
-      ctx->proxyRequest().sendReply(std::move(*msg));
+      ctx->ctx().proxyRequest().sendReply(std::move(*msg));
     }
   );
 }

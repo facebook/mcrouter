@@ -16,10 +16,11 @@
 #include "folly/json.h"
 #include "folly/Memory.h"
 #include "folly/Range.h"
+#include "mcrouter/config-impl.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyConfigIf.h"
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/config.h"
 #include "mcrouter/options.h"
@@ -96,7 +97,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
       auto msg = create_reply(mc_op_get_service_info,
                               mc_res_found,
                               str.c_str());
-      reqCopy->context().proxyRequest().sendReply(std::move(msg));
+      reqCopy->context().ctx().proxyRequest().sendReply(std::move(msg));
     }
   );
 }
@@ -357,7 +358,7 @@ void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
   auto msg = create_reply(mc_op_get_service_info,
                           mc_res_found,
                           replyStr.c_str());
-  req.context().proxyRequest().sendReply(std::move(msg));
+  req.context().ctx().proxyRequest().sendReply(std::move(msg));
 }
 
 }}}  // facebook::memcache::mcrouter

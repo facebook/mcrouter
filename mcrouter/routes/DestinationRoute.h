@@ -17,9 +17,11 @@
 
 #include "folly/Format.h"
 #include "folly/Memory.h"
+#include "mcrouter/config-impl.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/RecordingContext.h"
 #include "mcrouter/lib/McOperation.h"
@@ -118,7 +120,7 @@ class DestinationRoute {
     auto msg = generateMsg(req, Operation());
 
     if (!destination_->may_send(msg)) {
-      update_send_stats(req.context().proxyRequest().proxy,
+      update_send_stats(req.context().ctx().proxyRequest().proxy,
                         msg,
                         PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);
@@ -128,14 +130,14 @@ class DestinationRoute {
 
     auto& destination = destination_;
 
-    DestinationRequestCtx ctx(&req.context().proxyRequest());
+    DestinationRequestCtx ctx(&req.context().ctx().proxyRequest());
 
     fiber::await(
       [&destination, &msg, &req, &ctx](FiberPromise<void> promise) {
         ctx.promise = std::move(promise);
         destination->send(std::move(msg),
                           &ctx,
-                          req.context().senderId());
+                          req.context().ctx().senderId());
       });
     auto reply = ProxyMcReply(ctx.result, std::move(ctx.reply));
 

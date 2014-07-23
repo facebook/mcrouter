@@ -8,7 +8,9 @@
  */
 #pragma once
 
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/config-impl.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/lib/Operation.h"
@@ -34,7 +36,8 @@ class DevNullRoute {
   template <class Operation>
   static ProxyMcReply route(const ProxyMcRequest& req, Operation) {
 
-    stat_incr(req.context().proxyRequest().proxy, dev_null_requests_stat, 1);
+    stat_incr(req.context().ctx().proxyRequest().proxy, dev_null_requests_stat,
+              1);
     return NullRoute<RouteHandleIf>::route(req, Operation());
   }
 

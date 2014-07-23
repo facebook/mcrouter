@@ -14,7 +14,7 @@
 
 #include <folly/Optional.h>
 
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/proxy.h"

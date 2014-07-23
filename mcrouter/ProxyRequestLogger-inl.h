@@ -9,7 +9,7 @@
 #include "mcrouter/proxy.h"
 #include "mcrouter/stats.h"
 #include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/lib/McOperation.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

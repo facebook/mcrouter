@@ -46,7 +46,7 @@ class mcrouter_t;
 class proxy_t;
 
 typedef DestinationClient DestinationMcClient;
-typedef ProxyRequestLogger ProxyMcRequestLogger;
+typedef LoggingProxyRequestContext GenericProxyRequestContext;
 struct ProxyStatsContainer {
   explicit ProxyStatsContainer(proxy_t*) {}
 };

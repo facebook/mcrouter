@@ -37,6 +37,7 @@ libmcroutercore_a_SOURCES = \
   FileObserver.h \
   flavor.cpp \
   flavor.h \
+  LoggingProxyRequestContext.h \
   mcrouter_client.h \
   mcrouter_config-impl.h \
   mcrouter_config.cpp \
@@ -74,8 +75,8 @@ libmcroutercore_a_SOURCES = \
   ProxyLogger.h \
   ProxyMcReply.cpp \
   ProxyMcReply.h \
-  ProxyRequest.h \
-  ProxyRequestContext-inl.h \
+  ProxyMcRequest.cpp \
+  ProxyMcRequest.h \
   ProxyRequestContext.cpp \
   ProxyRequestContext.h \
   ProxyRequestLogger-inl.h \

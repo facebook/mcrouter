@@ -8,11 +8,14 @@
  */
 #pragma once
 
+#include "mcrouter/config-impl.h"
 #include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/ProxyRequest.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
+#include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -71,7 +74,7 @@ class AsynclogRoute {
     auto msg = generateMsg(dest, req, Operation());
     auto& asyncLog = asyncLog_;
     auto& poolName = poolName_;
-    proxy_request_t* preq = &req.context().proxyRequest();
+    proxy_request_t* preq = &req.context().ctx().proxyRequest();
     fiber::runInMainContext(
       [&asyncLog, preq, dest, &msg, &poolName] () {
         asyncLog(preq, dest, msg.get(), poolName);
