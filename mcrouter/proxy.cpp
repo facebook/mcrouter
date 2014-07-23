@@ -446,10 +446,10 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
     return;
   }
 
-  auto ctx = std::make_shared<GenericProxyRequestContext>(preq,
-                                                          config->proxyRoute());
-
   if (preq->orig_req->op == mc_op_get_service_info) {
+    auto ctx = std::make_shared<GenericProxyRequestContext>(
+      preq,
+      config->proxyRoute());
     auto orig = ctx->ctx().proxyRequest().orig_req.clone();
     ProxyMcRequest req(std::move(ctx), std::move(orig));
 
@@ -459,20 +459,45 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   }
 
   fiberManager.addTaskFinally(
-    [ctx]() {
-      auto& origReq = ctx->ctx().proxyRequest().orig_req;
+    /* We'll get this many bytes of uninitialized storage on the fiber stack */
+    sizeof(McMsgRef),
+
+    /* Called from fiber context */
+    [](intptr_t resultLoc, intptr_t pctx) {
+      auto result = reinterpret_cast<McMsgRef*>(resultLoc);
+      auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
+
+      auto ctx = std::make_shared<GenericProxyRequestContext>(
+        ppreq,
+        ppreq->proxy->config->proxyRoute());
       try {
         auto& proute = ctx->ctx().proxyRoute();
-        auto reply = proute.dispatchMcMsg(origReq.clone(), std::move(ctx));
-        return reply.releasedMsg(origReq->op);
+        auto reply = proute.dispatchMcMsg(ppreq->orig_req.clone(),
+                                          std::move(ctx));
+        new (result) McMsgRef(reply.releasedMsg(ppreq->orig_req->op));
       } catch (const std::exception& e) {
         std::string err = "error routing "
-          + to<std::string>(origReq->key) + ": " + e.what();
-        return create_reply(origReq->op, mc_res_local_error, err.c_str());
+          + to<std::string>(ppreq->orig_req->key) + ": " +
+          e.what();
+        new (result) McMsgRef(create_reply(ppreq->orig_req->op,
+                                           mc_res_local_error,
+                                           err.c_str()));
       }
     },
-    [ctx](Try<McMsgRef>&& msg) {
-      ctx->ctx().proxyRequest().sendReply(std::move(*msg));
+
+    /* Called from main context */
+    [](intptr_t resultLoc, intptr_t pctx) {
+      auto msg = reinterpret_cast<McMsgRef*>(resultLoc);
+      auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
+      ppreq->sendReply(std::move(*msg));
+      msg->~McMsgRef();
+    },
+
+    /* Incref and pass as context, decref in the cleanup function */
+    reinterpret_cast<intptr_t>(proxy_request_incref(preq)),
+    [](intptr_t pctx) {
+      auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
+      proxy_request_decref(ppreq);
     }
   );
 }

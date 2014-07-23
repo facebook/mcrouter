@@ -65,11 +65,16 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
     fiber->resultFunc_ = nullptr;
     if (fiber->finallyFunc_) {
       try {
-        fiber->finallyFunc_(result);
+        fiber->finallyFunc_(result, fiber->context_);
       } catch (...) {
         exceptionCallback_(std::current_exception());
       }
       fiber->finallyFunc_ = nullptr;
+      if (fiber->cleanupFunc_) {
+        fiber->cleanupFunc_(fiber->context_);
+        fiber->cleanupFunc_ = nullptr;
+      }
+      fiber->context_ = 0;
     }
 
     if (fibersPoolSize_ < options_.maxFibersPoolSize) {
@@ -167,32 +172,47 @@ void FiberManager::addTaskFinally(F&& func, G&& finally) {
 
   auto fiber = getFiber();
 
-  auto moveFunc = folly::makeMoveWrapper(std::move(func));
-  auto moveFinally = folly::makeMoveWrapper(std::move(finally));
+  struct Context {
+    F func;
+    G finally;
+    FiberManager* fm;
+
+    Context(F&& f, G&& g, FiberManager* fm_)
+        : func(std::move(f)), finally(std::move(g)), fm(fm_) {}
+  };
+
   fiber->setFunctionFinally(
     sizeof(folly::wangle::Try<Result>),
-    [moveFunc] (intptr_t resultLoc) mutable {
+    [] (intptr_t resultLoc, intptr_t contextPtr) {
+      auto context = reinterpret_cast<Context*>(contextPtr);
       auto storage = reinterpret_cast<MaxAlign*>(resultLoc);
       auto result =
         static_cast<folly::wangle::Try<Result>*>(
           static_cast<void*>(storage));
       try {
-        new (result) folly::wangle::Try<Result>((*moveFunc)());
+        new (result) folly::wangle::Try<Result>(context->func());
       } catch (...) {
         new (result) folly::wangle::Try<Result>(std::current_exception());
       }
     },
-    [this, moveFinally] (intptr_t resultLoc) mutable {
+    [] (intptr_t resultLoc, intptr_t contextPtr) {
+      auto context = reinterpret_cast<Context*>(contextPtr);
       auto storage = reinterpret_cast<MaxAlign*>(resultLoc);
       auto result =
         static_cast<folly::wangle::Try<Result>*>(
           static_cast<void*>(storage));
       try {
-        (*moveFinally)(std::move(*result));
+        context->finally(std::move(*result));
       } catch (...) {
-        exceptionCallback_(std::current_exception());
+        context->fm->exceptionCallback_(std::current_exception());
       }
       result->~Try();
+    },
+    reinterpret_cast<intptr_t>(
+      new Context(std::move(func), std::move(finally), this)),
+    [] (intptr_t contextPtr) {
+      auto context = reinterpret_cast<Context*>(contextPtr);
+      delete context;
     }
   );
 

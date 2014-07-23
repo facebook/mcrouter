@@ -119,6 +119,9 @@ Fiber::Fiber(FiberManager& fiberManager) :
 }
 
 Fiber::~Fiber() {
+  if (cleanupFunc_) {
+    cleanupFunc_(context_);
+  }
   fiberManager_.stackAllocator_.deallocate(
     static_cast<unsigned char*>(stackLimit(contextPtr_->fc_stack)),
     fiberManager_.options_.stackSize);
@@ -157,7 +160,7 @@ void Fiber::fiberFunc() {
         assert(finallyFunc_);
         assert(!func_);
 
-        resultFunc_(resultLoc);
+        resultFunc_(resultLoc, context_);
       } else {
         assert(func_);
         func_();
@@ -200,6 +203,22 @@ intptr_t Fiber::preempt(State state) {
   state_ = RUNNING;
 
   return ret;
+}
+
+void Fiber::setFunctionFinally(
+  size_t resultSize,
+  void (*resultFunc)(intptr_t resultLoc, intptr_t context),
+  void (*finallyFunc)(intptr_t resultLoc, intptr_t context),
+  intptr_t context,
+  void (*cleanupFunc)(intptr_t context)) {
+
+  assert(state_ == INVALID);
+  resultSize_ = resultSize;
+  resultFunc_ = resultFunc;
+  finallyFunc_ = finallyFunc;
+  context_ = context;
+  cleanupFunc_ = cleanupFunc;
+  state_ = NOT_STARTED;
 }
 
 }}

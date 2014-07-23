@@ -146,6 +146,22 @@ class FiberManager {
   void addTaskFinally(F&& func, G&& finally);
 
   /**
+   * Lower-level version of addTaskFinally.
+   *
+   * Both func() and finally() will be passed a pointer to a stack-allocated
+   * storage of resultSize bytes, as well as the context.
+   *
+   * @param cleanup  If non-nullptr, will be called exactly once after finally()
+   *                 with context as the parameter.  Must not throw.
+   *                 (Useful if you want to allocate a context on the heap).
+   */
+  void addTaskFinally(size_t resultSize,
+                      void (*func)(intptr_t resultLoc, intptr_t context),
+                      void (*finally)(intptr_t resultLoc, intptr_t context),
+                      intptr_t context,
+                      void (*cleanup)(intptr_t context));
+
+  /**
    * Blocks task execution until given promise is fulfilled.
    *
    * Calls function passing in a FiberPromise<T>, which has to be fulfilled.

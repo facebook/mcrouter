@@ -19,15 +19,4 @@ void Fiber::setFunction(F&& func) {
   state_ = NOT_STARTED;
 }
 
-template <typename F, typename G>
-void Fiber::setFunctionFinally(size_t resultSize,
-                               F&& resultFunc,
-                               G&& finallyFunc) {
-  assert(state_ == INVALID);
-  resultSize_ = resultSize;
-  resultFunc_ = std::move(resultFunc);
-  finallyFunc_ = std::move(finallyFunc);
-  state_ = NOT_STARTED;
-}
-
 }}  // facebook::memcache

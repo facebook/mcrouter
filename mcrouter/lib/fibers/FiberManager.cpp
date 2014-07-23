@@ -95,4 +95,25 @@ void FiberManager::remoteReadyInsert(Fiber* fiber) {
   }
 }
 
+void FiberManager::addTaskFinally(
+  size_t resultSize,
+  void (*func)(intptr_t resultLoc, intptr_t context),
+  void (*finally)(intptr_t resultLoc, intptr_t context),
+  intptr_t context,
+  void (*cleanup)(intptr_t context)) {
+
+  auto fiber = getFiber();
+
+  fiber->setFunctionFinally(resultSize,
+                            func,
+                            finally,
+                            context,
+                            cleanup);
+
+  fiber->data_ = reinterpret_cast<intptr_t>(fiber);
+  TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
+
+  ensureLoopScheduled();
+}
+
 }}
