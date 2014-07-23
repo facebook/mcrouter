@@ -451,7 +451,7 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
 
   if (preq->orig_req->op == mc_op_get_service_info) {
     auto orig = ctx->ctx().proxyRequest().orig_req.clone();
-    ProxyMcRequest req(ctx, std::move(orig));
+    ProxyMcRequest req(std::move(ctx), std::move(orig));
 
     /* Will answer request for us */
     config->serviceInfo()->handleRequest(req);
@@ -462,8 +462,8 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
     [ctx]() {
       auto& origReq = ctx->ctx().proxyRequest().orig_req;
       try {
-        auto reply = ctx->ctx().proxyRoute().dispatchMcMsg(origReq.clone(),
-                                                           ctx);
+        auto& proute = ctx->ctx().proxyRoute();
+        auto reply = proute.dispatchMcMsg(origReq.clone(), std::move(ctx));
         return reply.releasedMsg(origReq->op);
       } catch (const std::exception& e) {
         std::string err = "error routing "

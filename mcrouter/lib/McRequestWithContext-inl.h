@@ -17,13 +17,13 @@ template <class Ctx>
 McRequestWithContext<Ctx>::McRequestWithContext(std::shared_ptr<Ctx> ctx,
                                                 McMsgRef&& msg)
   : McRequestBase(std::move(msg)),
-    ctx_(ctx) {}
+    ctx_(std::move(ctx)) {}
 
 template <class Ctx>
 McRequestWithContext<Ctx>::McRequestWithContext(std::shared_ptr<Ctx> ctx,
                                                 const std::string& key)
   : McRequestBase(key),
-    ctx_(ctx) {}
+    ctx_(std::move(ctx)) {}
 
 template <class Ctx>
 typename std::add_lvalue_reference<Ctx>::type
