@@ -47,7 +47,8 @@ class RootRoute {
        run in the background.
 
        This is a good default for /star/star/ requests. */
-    auto rh = rhMap_.getTargetsForKey(req.routingPrefix(), req.routingKey());
+    const auto& rh =
+      rhMap_.getTargetsForKey(req.routingPrefix(), req.routingKey());
     return routeImpl(rh, req, Operation());
   }
 

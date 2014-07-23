@@ -216,7 +216,7 @@ RouteHandleMap::getTargetsForKeyFast(folly::StringPiece prefix,
   return nullptr;
 }
 
-std::vector<McrouterRouteHandlePtr> RouteHandleMap::getTargetsForKey(
+const std::vector<McrouterRouteHandlePtr>& RouteHandleMap::getTargetsForKey(
   folly::StringPiece prefix,
   folly::StringPiece key) const {
 

@@ -30,7 +30,7 @@ class RouteHandleMap {
                  std::string defaultRoute,
                  bool sendInvalidRouteToDefault);
 
-  std::vector<McrouterRouteHandlePtr> getTargetsForKey(
+  const std::vector<McrouterRouteHandlePtr>& getTargetsForKey(
     folly::StringPiece prefix,
     folly::StringPiece key) const;
 
