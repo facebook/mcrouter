@@ -37,9 +37,10 @@ BigValueRoute<RouteHandleIf>::ChunksInfo::ChunksInfo(uint32_t num_chunks)
     valid_(true) {}
 
 template <class RouteHandleIf>
-std::unique_ptr<folly::IOBuf>
+folly::IOBuf
 BigValueRoute<RouteHandleIf>::ChunksInfo::toStringType() const {
-  return folly::IOBuf::copyBuffer(
+  return folly::IOBuf(
+    folly::IOBuf::COPY_BUFFER,
     folly::format("{}-{}-{}", infoVersion_, numChunks_, randSuffix_).str()
   );
 }
@@ -182,10 +183,11 @@ BigValueRoute<RouteHandleIf>::chunkUpdateRequests(const Request& req,
   size_t i_pos = 0;
   for (int i = 0; i < num_chunks;  i++, i_pos += options_.threshold_) {
     // generate chunk_key and chunk_value
-    auto chunk_value = req.value().clone();
-    chunk_value->trimStart(i_pos);
-    chunk_value->trimEnd(chunk_value->length() -
-                         std::min(options_.threshold_, chunk_value->length()));
+    folly::IOBuf chunk_value;
+    req.value().cloneInto(chunk_value);
+    chunk_value.trimStart(i_pos);
+    chunk_value.trimEnd(chunk_value.length() -
+                        std::min(options_.threshold_, chunk_value.length()));
     auto req_big = createEmptyRequest(ChunkUpdateOP(), req);
     req_big.setKey(createChunkKey(base_key, i, info.randSuffix()));
     req_big.setValue(std::move(chunk_value));
@@ -242,12 +244,13 @@ Reply BigValueRoute<RouteHandleIf>::mergeChunkGetReplies(
 }
 
 template <class RouteHandleIf>
-std::unique_ptr<folly::IOBuf> BigValueRoute<RouteHandleIf>::createChunkKey(
+folly::IOBuf BigValueRoute<RouteHandleIf>::createChunkKey(
     folly::StringPiece base_key,
     uint32_t chunk_index,
     uint64_t rand_suffix) const {
 
-  return folly::IOBuf::copyBuffer(
+  return folly::IOBuf(
+    folly::IOBuf::COPY_BUFFER,
     folly::format("{}:{}:{}", base_key, chunk_index, rand_suffix).str()
   );
 }

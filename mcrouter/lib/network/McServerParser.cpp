@@ -72,18 +72,19 @@ void McServerParser::recalculateBufferSize(size_t read) {
 namespace {
 /**
  * Given an IOBuf and a range of bytes [begin, begin + size) inside it,
- * returns a clone of the IOBuf so that cloned->data() == begin and
- * cloned->length() == size.
+ * returns a clone of the IOBuf so that cloned.data() == begin and
+ * cloned.length() == size.
  */
-std::unique_ptr<folly::IOBuf> cloneSubBuf(
+folly::IOBuf cloneSubBuf(
   const std::unique_ptr<folly::IOBuf>& from,
   uint8_t* begin, size_t size) {
 
-  auto out = from->clone();
-  assert(begin >= out->data() && begin <= out->data() + out->length());
-  out->trimStart(begin - out->data());
-  assert(size <= out->length());
-  out->trimEnd(out->length() - size);
+  folly::IOBuf out;
+  from->cloneInto(out);
+  assert(begin >= out.data() && begin <= out.data() + out.length());
+  out.trimStart(begin - out.data());
+  assert(size <= out.length());
+  out.trimEnd(out.length() - size);
   return out;
 }
 }

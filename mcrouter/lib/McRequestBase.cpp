@@ -17,8 +17,8 @@ namespace facebook { namespace memcache {
 
 McRequestBase::McRequestBase(McMsgRef&& msg)
     : msg_(std::move(msg)),
-      keyData_(makeMsgKeyIOBuf(msg_)),
-      valueData_(makeMsgValueIOBuf(msg_)),
+      keyData_(makeMsgKeyIOBufStack(msg_)),
+      valueData_(makeMsgValueIOBufStack(msg_)),
       keys_(getRange(keyData_)),
       exptime_(msg_->exptime),
       flags_(msg_->flags),
@@ -27,8 +27,8 @@ McRequestBase::McRequestBase(McMsgRef&& msg)
 }
 
 McRequestBase::McRequestBase(folly::StringPiece key)
-    : keyData_(folly::IOBuf::copyBuffer(key)) {
-  keyData_->coalesce();
+    : keyData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, key)) {
+  keyData_.coalesce();
   keys_.update(getRange(keyData_));
   auto msg = createMcMsgRef();
   msg->key = to<nstring_t>(getRange(keyData_));
@@ -66,8 +66,7 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
     }
     if (!is_value_set) {
       toRelease->value = to<nstring_t>(
-        coalesceAndGetRange(
-          const_cast<std::unique_ptr<folly::IOBuf>&>(valueData_)));
+        coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)));
     }
     return std::move(toRelease);
   }
@@ -100,8 +99,7 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
     }
     if (!is_value_set) {
       toRelease->value = to<nstring_t>(
-        coalesceAndGetRange(
-          const_cast<std::unique_ptr<folly::IOBuf>&>(valueData_)));
+        coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)));
     }
     toRelease->op = op;
     toRelease->exptime = exptime_;
@@ -122,11 +120,6 @@ uint32_t McRequestBase::exptime() const {
 
 uint64_t McRequestBase::flags() const {
   return flags_;
-}
-
-const folly::IOBuf& McRequestBase::value() const {
-  static auto emptyIOBuf = folly::IOBuf::create(0);
-  return valueData_ ? *valueData_ : *emptyIOBuf;
 }
 
 McRequestBase::Keys::Keys(folly::StringPiece key) noexcept {
@@ -161,13 +154,13 @@ void McRequestBase::Keys::update(folly::StringPiece key) {
 }
 
 McRequestBase::McRequestBase(const McRequestBase& other)
-    : keyData_(other.keyData_ ? other.keyData_->clone() : nullptr),
-      valueData_(other.valueData_ ? other.valueData_->clone() : nullptr),
-      keys_(getRange(keyData_)),
-      exptime_(other.exptime_),
+    : exptime_(other.exptime_),
       flags_(other.flags_),
       delta_(other.delta_),
       leaseToken_(other.leaseToken_) {
+  other.keyData_.cloneInto(keyData_);
+  keys_ = Keys(getRange(keyData_));
+  other.valueData_.cloneInto(valueData_);
 
   if (hasSameMemoryRegion(keyData_, other.keyData_) &&
       hasSameMemoryRegion(valueData_, other.valueData_)) {

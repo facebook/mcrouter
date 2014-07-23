@@ -44,12 +44,12 @@ bool McReplyBase::isError() const {
   }
 }
 
-void McReplyBase::setValue(std::unique_ptr<folly::IOBuf> valueData) {
+void McReplyBase::setValue(folly::IOBuf valueData) {
   valueData_ = std::move(valueData);
 }
 
 void McReplyBase::setValue(folly::StringPiece str) {
-  valueData_ = folly::IOBuf::copyBuffer(str);
+  valueData_ = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
 }
 
 void McReplyBase::setResult(mc_res_t res) {
@@ -60,20 +60,20 @@ McReplyBase::McReplyBase(mc_res_t res)
     : result_(res) {
 }
 
-McReplyBase::McReplyBase(mc_res_t res, std::unique_ptr<folly::IOBuf> val)
+McReplyBase::McReplyBase(mc_res_t res, folly::IOBuf val)
     : result_(res),
       valueData_(std::move(val)) {
 }
 
 McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)
     : result_(res),
-      valueData_(folly::IOBuf::copyBuffer(val)) {
+      valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, val)) {
 }
 
 McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
     : msg_(std::move(msg)),
       result_(res),
-      valueData_(makeMsgValueIOBuf(msg_)),
+      valueData_(makeMsgValueIOBufStack(msg_)),
       flags_(msg_.get() ? msg_->flags : 0),
       leaseToken_(msg_.get() ? msg_->lease_id : 0),
       delta_(msg_.get() ? msg_->delta : 0) {
@@ -85,7 +85,7 @@ void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
   }
 
   auto value = coalesceAndGetRange(
-    const_cast<std::unique_ptr<folly::IOBuf>&>(valueData_));
+    const_cast<folly::IOBuf&>(valueData_));
 
   out->key.str = nullptr;
   out->key.len = 0;
@@ -108,7 +108,7 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
       hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value))) {
     return msg_.clone();
   } else {
-    auto len = valueData_ ? valueData_->computeChainDataLength() : 0;
+    auto len = valueData_.computeChainDataLength();
     auto toRelease = createMcMsgRef(len + 1);
     if (msg_.get() != nullptr) {
       mc_msg_shallow_copy(toRelease.get(), msg_.get());
@@ -118,9 +118,7 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
     toRelease->key.len = 0;
     toRelease->value.str =
       static_cast<char*>(static_cast<void*>(toRelease.get() + 1));
-    if (valueData_) {
-      copyInto(toRelease->value.str, *valueData_);
-    }
+    copyInto(toRelease->value.str, valueData_);
     toRelease->value.len = len;
     toRelease->op = op;
     toRelease->result = result_;

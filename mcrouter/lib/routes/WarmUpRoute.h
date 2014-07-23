@@ -90,7 +90,9 @@ class WarmUpRoute {
     auto warmReply = warm_->route(req, Operation());
     if (warmReply.isHit()) {
       auto addReq = req.clone();
-      addReq.setValue(warmReply.value().clone());
+      folly::IOBuf cloned;
+      warmReply.value().cloneInto(cloned);
+      addReq.setValue(std::move(cloned));
       addReq.setFlags(warmReply.flags());
       addReq.setExptime(exptime_);
 

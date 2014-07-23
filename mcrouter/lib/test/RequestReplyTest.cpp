@@ -344,7 +344,7 @@ TEST(requestReply, replyBasic) {
     buf->prependChain(folly::IOBuf::copyBuffer("releasedMsg"));
     EXPECT_TRUE(buf->isChained());
 
-    McReply reply(mc_res_found, std::move(buf));
+    McReply reply(mc_res_found, std::move(*buf));
     auto msg = reply.releasedMsg(mc_op_get);
     EXPECT_TRUE(msg.get() != nullptr);
     EXPECT_EQ(msg->op, mc_op_get);

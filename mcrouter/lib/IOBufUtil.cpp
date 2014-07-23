@@ -18,8 +18,12 @@ folly::StringPiece getRange(const std::unique_ptr<folly::IOBuf>& buf) {
   if (!buf) {
     return {};
   }
-  assert(!buf->isChained());
-  return {reinterpret_cast<const char*>(buf->data()), buf->length()};
+  return getRange(*buf);
+}
+
+folly::StringPiece getRange(const folly::IOBuf& buf) {
+  assert(!buf.isChained());
+  return {reinterpret_cast<const char*>(buf.data()), buf.length()};
 }
 
 folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf) {
@@ -27,7 +31,11 @@ folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf) {
     return {};
   }
 
-  buf->coalesce();
+  return coalesceAndGetRange(*buf);
+}
+
+folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf) {
+  buf.coalesce();
   return getRange(buf);
 }
 
@@ -50,6 +58,25 @@ std::unique_ptr<folly::IOBuf> makeMsgIOBufHelper(const McMsgRef& msgRef,
     mc_msg_incref(msg));
 }
 
+template <nstring_t mc_msg_t::* F>
+folly::IOBuf makeMsgIOBufStackHelper(const McMsgRef& msgRef) {
+  if (!msgRef.get()) {
+    return {};
+  }
+  auto msg = const_cast<mc_msg_t*>(msgRef.get());
+  if (!(msg->*F).len) {
+    return {};
+  }
+  return folly::IOBuf(
+    folly::IOBuf::TAKE_OWNERSHIP,
+    (msg->*F).str, (msg->*F).len, (msg->*F).len,
+    [] (void* buf, void* ctx) {
+      auto m = reinterpret_cast<mc_msg_t*>(ctx);
+      mc_msg_decref(m);
+    },
+    mc_msg_incref(msg));
+}
+
 std::unique_ptr<folly::IOBuf> makeMsgKeyIOBuf(const McMsgRef& msgRef,
                                               bool returnEmpty) {
   return makeMsgIOBufHelper<&mc_msg_t::key>(msgRef, returnEmpty);
@@ -60,30 +87,25 @@ std::unique_ptr<folly::IOBuf> makeMsgValueIOBuf(const McMsgRef& msgRef,
   return makeMsgIOBufHelper<&mc_msg_t::value>(msgRef, returnEmpty);
 }
 
-bool hasSameMemoryRegion(const std::unique_ptr<folly::IOBuf>& buf,
-                         folly::StringPiece range) {
-  if (!buf) {
-    return range.empty();
-  }
-  return !buf->isChained() &&
-    range.begin() == reinterpret_cast<const char*>(buf->data()) &&
-    range.size() == buf->length();
+folly::IOBuf makeMsgKeyIOBufStack(const McMsgRef& msgRef) {
+  return makeMsgIOBufStackHelper<&mc_msg_t::key>(msgRef);
 }
 
-bool hasSameMemoryRegion(const std::unique_ptr<folly::IOBuf>& a,
-                         const std::unique_ptr<folly::IOBuf>& b) {
-  if (!a && !b) {
-    return true;
-  }
-  if (!a) {
-    return !b->isChained() && !b->length();
-  }
-  if (!b) {
-    return !a->isChained() && !a->length();
-  }
-  return !a->isChained() && !b->isChained() &&
-    a->data() == b->data() &&
-    a->length() == b->length();
+folly::IOBuf makeMsgValueIOBufStack(const McMsgRef& msgRef) {
+  return makeMsgIOBufStackHelper<&mc_msg_t::value>(msgRef);
+}
+
+bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range) {
+  return !buf.isChained() &&
+    (buf.length() == 0 ||
+     (range.begin() == reinterpret_cast<const char*>(buf.data()) &&
+      range.size() == buf.length()));
+}
+
+bool hasSameMemoryRegion(const folly::IOBuf& a, const folly::IOBuf& b) {
+  return !a.isChained() && !b.isChained() &&
+    ((a.length() == 0 && b.length() == 0) ||
+     (a.data() == b.data() && a.length() == b.length()));
 }
 
 void copyInto(char* raw, const folly::IOBuf& buf) {

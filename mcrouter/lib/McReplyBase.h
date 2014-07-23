@@ -160,7 +160,7 @@ class McReplyBase {
   /**
    * Functions to update value and result
    */
-  void setValue(std::unique_ptr<folly::IOBuf> valueData);
+  void setValue(folly::IOBuf valueData);
   void setValue(folly::StringPiece str);
   void setResult(mc_res_t res);
 
@@ -169,8 +169,7 @@ class McReplyBase {
   }
 
   const folly::IOBuf& value() const {
-    static auto emptyIOBuf = folly::IOBuf::create(0);
-    return valueData_ ? *valueData_ : *emptyIOBuf;
+    return valueData_;
   }
 
   uint64_t flags() const {
@@ -215,7 +214,7 @@ class McReplyBase {
 
   explicit McReplyBase(mc_res_t result);
   McReplyBase(mc_res_t result, McMsgRef&& reply);
-  McReplyBase(mc_res_t result, std::unique_ptr<folly::IOBuf> value);
+  McReplyBase(mc_res_t result, folly::IOBuf value);
   McReplyBase(mc_res_t result, folly::StringPiece value);
   McReplyBase(McReplyBase&& other) noexcept = default;
   McReplyBase& operator=(McReplyBase&& other) = default;
@@ -223,7 +222,7 @@ class McReplyBase {
  private:
   McMsgRef msg_;
   mc_res_t result_{mc_res_unknown};
-  std::unique_ptr<folly::IOBuf> valueData_;
+  folly::IOBuf valueData_;
   uint64_t flags_{0};
   uint64_t leaseToken_{0};
   uint64_t delta_{0};

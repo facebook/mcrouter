@@ -96,7 +96,9 @@ class MockMcOnRequest {
       ctx.sendReply(McReply(mc_res_notfound));
     } else {
       McReply reply(mc_res_found);
-      reply.setValue(item->value->clone());
+      folly::IOBuf cloned;
+      item->value->cloneInto(cloned);
+      reply.setValue(std::move(cloned));
       reply.setFlags(item->flags);
       ctx.sendReply(std::move(reply));
     }
@@ -109,7 +111,9 @@ class MockMcOnRequest {
 
     auto out = mc_.leaseGet(key);
     McReply reply(mc_res_found);
-    reply.setValue(out.first->value->clone());
+    folly::IOBuf cloned;
+    out.first->value->cloneInto(cloned);
+    reply.setValue(std::move(cloned));
     reply.setLeaseToken(out.second);
     if (out.second) {
       reply.setResult(mc_res_notfound);

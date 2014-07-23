@@ -88,7 +88,7 @@ class BigValueRoute {
     explicit ChunksInfo(folly::StringPiece reply_value);
     explicit ChunksInfo(uint32_t num_chunks);
 
-    std::unique_ptr<folly::IOBuf> toStringType() const;
+    folly::IOBuf toStringType() const;
     uint32_t numChunks() const;
     uint32_t randSuffix() const;
     bool valid() const;
@@ -115,7 +115,7 @@ class BigValueRoute {
   Reply mergeChunkGetReplies(
       InputIterator begin, InputIterator end, Reply&& init_reply) const;
 
-  std::unique_ptr<folly::IOBuf> createChunkKey(
+  folly::IOBuf createChunkKey(
     folly::StringPiece key, uint32_t index, uint64_t suffix) const;
 };
 

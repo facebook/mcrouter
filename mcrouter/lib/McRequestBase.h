@@ -16,10 +16,6 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McMsgRef.h"
 
-namespace folly {
-class IOBuf;
-}
-
 namespace facebook { namespace memcache {
 /**
  * As far as the routing module is concerned, a Request has
@@ -70,16 +66,16 @@ class McRequestBase {
     exptime_ = expt;
   }
   void setKey(folly::StringPiece key) {
-    keyData_ = folly::IOBuf::copyBuffer(key);
-    keyData_->coalesce();
+    keyData_ = folly::IOBuf(folly::IOBuf::COPY_BUFFER, key);
+    keyData_.coalesce();
     keys_.update(getRange(keyData_));
   }
-  void setKey(std::unique_ptr<folly::IOBuf> keyData) {
+  void setKey(folly::IOBuf keyData) {
     keyData_ = std::move(keyData);
-    keyData_->coalesce();
+    keyData_.coalesce();
     keys_.update(getRange(keyData_));
   }
-  void setValue(std::unique_ptr<folly::IOBuf> valueData) {
+  void setValue(folly::IOBuf valueData) {
     valueData_ = std::move(valueData);
   }
   void setFlags(uint64_t f) {
@@ -157,16 +153,18 @@ class McRequestBase {
     return getRange(keyData_);
   }
 
-  const folly::IOBuf& value() const;
+  const folly::IOBuf& value() const {
+    return valueData_;
+  }
 
  private:
   McMsgRef msg_;
 
   /* Always stored unchained */
-  std::unique_ptr<folly::IOBuf> keyData_;
+  folly::IOBuf keyData_;
 
   /* May be chained */
-  std::unique_ptr<folly::IOBuf> valueData_;
+  folly::IOBuf valueData_;
 
   /**
    * Holds all the references to the various parts of the key.
