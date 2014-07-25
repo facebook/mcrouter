@@ -18,6 +18,7 @@
 #include "folly/Range.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/_router.h"
+#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyConfigIf.h"
 #include "mcrouter/ProxyMcRequest.h"

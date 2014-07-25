@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyRequestLogger.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

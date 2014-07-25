@@ -41,7 +41,7 @@ class ConfigApi;
 class DestinationClient;
 class ExtraRouteHandleProviderIf;
 class ProxyLogger;
-class ProxyRequestLogger;
+class LoggingProxyRequestContext;
 class mcrouter_t;
 class proxy_t;
 
