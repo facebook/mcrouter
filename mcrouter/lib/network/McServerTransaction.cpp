@@ -18,12 +18,14 @@ McServerTransaction::McServerTransaction(
   mc_op_t operation,
   uint64_t reqid,
   bool isMultiget,
-  bool isSubRequest)
+  bool isSubRequest,
+  bool noreply)
     : session_(std::move(session)),
       request_(std::move(request)),
       operation_(operation),
       reqid_(reqid),
       appContext_(*this),
+      noReply_(noreply),
       isMultiget_(isMultiget),
       isSubRequest_(isSubRequest) {
 

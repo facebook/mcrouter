@@ -92,11 +92,12 @@ folly::IOBuf cloneSubBuf(
 void McServerParser::requestReadyHelper(McRequest req,
                                         mc_op_t operation,
                                         uint64_t reqid,
-                                        mc_res_t result) {
+                                        mc_res_t result,
+                                        bool noreply) {
   ++parsedRequests_;
   if (LIKELY(parseCallback_ != nullptr)) {
     parseCallback_->requestReady(
-      std::move(req), operation, reqid, result);
+      std::move(req), operation, reqid, result, noreply);
   }
 }
 
@@ -132,7 +133,7 @@ bool McServerParser::umRequestReady(
                   reinterpret_cast<uint8_t*>(msg->value.str),
                   msg->value.len));
   }
-  requestReadyHelper(std::move(req), msg->op, reqid, msg->result);
+  requestReadyHelper(std::move(req), msg->op, reqid, msg->result, msg->noreply);
   return true;
 }
 
@@ -245,8 +246,10 @@ bool McServerParser::readDataAvailable(size_t len) {
 void McServerParser::msgReady(McMsgRef msg, uint64_t reqid) {
   auto operation = msg->op;
   auto result = msg->result;
+  auto noreply = msg->noreply;
 
-  requestReadyHelper(McRequest(std::move(msg)), operation, reqid, result);
+  requestReadyHelper(McRequest(std::move(msg)), operation, reqid, result,
+                     noreply);
 }
 
 void McServerParser::parserMsgReady(void* context,

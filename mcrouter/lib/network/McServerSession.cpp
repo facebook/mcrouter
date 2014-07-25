@@ -191,7 +191,8 @@ void McServerSession::readError(
 void McServerSession::requestReady(McRequest req,
                                    mc_op_t operation,
                                    uint64_t reqid,
-                                   mc_res_t result) {
+                                   mc_res_t result,
+                                   bool noreply) {
   DestructorGuard dg(this);
 
   auto sharedThis = weakThis_.lock();
@@ -210,7 +211,8 @@ void McServerSession::requestReady(McRequest req,
       operation,
       reqid,
       isMultiget,
-      isSubRequest);
+      isSubRequest,
+      noreply);
   McServerTransaction& transaction = [&]() -> McServerTransaction& {
     if (isSubRequest) {
       return multigetRequests_.pushBack(std::move(transactionPtr));
@@ -262,6 +264,10 @@ void McServerSession::parseError(McReply reply) {
 void McServerSession::queueWrite(
   std::unique_ptr<McServerTransaction> ptransaction) {
   DestructorGuard dg(this);
+
+  if (ptransaction->noReply()) {
+    return;
+  }
 
   /* TODO: the subrequests should simply add to the parent's request
      iovs, so that we only write once */

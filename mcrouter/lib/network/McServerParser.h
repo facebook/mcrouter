@@ -31,11 +31,14 @@ class McServerParser {
      *                ParseError is not appropriate in this case since
      *                we usually can keep parsing, but we need to notify
      *                that the request is invalid.
+     * @param noreply  If true, the server should not serialize and send
+     *                 a reply for this request.
      */
     virtual void requestReady(McRequest req,
                               mc_op_t operation,
                               uint64_t reqid,
-                              mc_res_t result) = 0;
+                              mc_res_t result,
+                              bool noreply) = 0;
 
     /**
      * Called on fatal parse error (the stream should normally be closed)
@@ -126,7 +129,7 @@ class McServerParser {
   bool readUmbrellaData(std::unique_ptr<folly::IOBuf> data);
 
   void requestReadyHelper(McRequest req, mc_op_t operation, uint64_t reqid,
-                          mc_res_t result);
+                          mc_res_t result, bool noreply);
   void recalculateBufferSize(size_t read);
 
   /* mc_parser callbacks */

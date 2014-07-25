@@ -263,12 +263,24 @@ class MCProcess(object):
                 res[k] = {"value": self.fd.read(int(n)),
                           "token": int(t)}
 
-    def _set(self, command, key, value, replicate=False):
+    def expectNoReply(self):
+        self.socket.settimeout(0.5)
+        try:
+            self.socket.recv(1)
+            return False
+        except socket.timeout:
+            pass
+        return True
+
+    def _set(self, command, key, value, replicate=False, noreply=False):
         self.sets += 1
         value = str(value)
         flags = 1024 if replicate else 0
-        self.socket.sendall("%s %s %d 0 %d\r\n%s\r\n" %
-                            (command, key, flags, len(value), value))
+        self.socket.sendall("%s %s %d 0 %d%s\r\n%s\r\n" %
+                            (command, key, flags, len(value),
+                             (' noreply' if noreply else ''), value))
+        if noreply:
+            return self.expectNoReply()
 
         answer = self.fd.readline().strip()
         if re.search('ERROR', answer):
@@ -295,27 +307,35 @@ class MCProcess(object):
             return re.match("STALE_STORED", answer)
         return re.match("STORED", answer)
 
-    def set(self, key, value, replicate=False):
-        return self._set("set", key, value, replicate)
+    def set(self, key, value, replicate=False, noreply=False):
+        return self._set("set", key, value, replicate, noreply)
 
-    def add(self, key, value, replicate=False):
-        return self._set("add", key, value, replicate)
+    def add(self, key, value, replicate=False, noreply=False):
+        return self._set("add", key, value, replicate, noreply)
 
-    def replace(self, key, value, replicate=False):
-        return self._set("replace", key, value, replicate)
+    def replace(self, key, value, replicate=False, noreply=False):
+        return self._set("replace", key, value, replicate, noreply)
 
-    def delete(self, key):
-        self.socket.sendall("delete %s\r\n" % key)
+    def delete(self, key, noreply=False):
+        self.socket.sendall("delete %s%s\r\n" %
+                            (key, (' noreply' if noreply else '')))
         self.deletes += 1
+
+        if noreply:
+            return self.expectNoReply()
 
         answer = self.fd.readline()
 
         assert re.match("DELETED|NOT_FOUND", answer), answer
         return re.match("DELETED", answer)
 
-    def incr(self, key, value=1):
-        self.socket.sendall("incr %s %d\r\n" % (key, value))
+    def incr(self, key, value=1, noreply=False):
+        self.socket.sendall("incr %s %d%s\r\n" %
+                            (key, value, (' noreply' if noreply else '')))
         self.sets += 1
+
+        if noreply:
+            return self.expectNoReply()
 
         answer = self.fd.readline()
         if re.match("NOT_FOUND", answer):
@@ -323,9 +343,13 @@ class MCProcess(object):
         else:
             return int(answer)
 
-    def decr(self, key, value=1):
-        self.socket.sendall("decr %s %d\r\n" % (key, value))
+    def decr(self, key, value=1, noreply=False):
+        self.socket.sendall("decr %s %d%s\r\n" %
+                            (key, value, (' noreply' if noreply else '')))
         self.sets += 1
+
+        if noreply:
+            return self.expectNoReply()
 
         answer = self.fd.readline()
         if re.match("NOT_FOUND", answer):

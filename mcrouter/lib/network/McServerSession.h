@@ -184,7 +184,8 @@ class McServerSession :
   void requestReady(McRequest req,
                     mc_op_t operation,
                     uint64_t reqid,
-                    mc_res_t result);
+                    mc_res_t result,
+                    bool noreply);
   void parseError(McReply reply);
 
   /**

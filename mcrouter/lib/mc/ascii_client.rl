@@ -272,6 +272,9 @@ delta = digit+ >start_token %finish_token %{
 number = digit+ >start_token %finish_token %{
   parser->msg->number = strtoll(ts, NULL, 10);
 };
+noreply = 'noreply' %{
+  parser->msg->noreply = true;
+};
 
 value_bytes = digit+ >start_token %finish_token %{
   /* prepare for receiving data */
@@ -448,16 +451,16 @@ cas = 'cas' %{
 } ' '+ key ' '+ flags ' '+ exptime ' '+ value_bytes ' '+ casid nl
   @rx_data fin;
 
-store = (set_op ' '+ key | leaseset ' '+ key ' '+ lease_token) ' '+ flags ' '+ exptime ' '+ value_bytes nl
+store = (set_op ' '+ key | leaseset ' '+ key ' '+ lease_token) ' '+ flags ' '+ exptime ' '+ value_bytes (' '+ noreply)? nl
   @rx_data fin;
 
 get = get_op (' '+ key %get_req_is_ready)+  fin >{
   parser->msg->op = mc_op_end;
 };
 
-arithmetic = arithmetic_op ' '+ key ' '+ delta fin;
+arithmetic = arithmetic_op ' '+ key ' '+ delta (' '+ noreply)? fin;
 
-delete = delete_op ' '+ key (' '+ exptime)? fin;
+delete = delete_op ' '+ key (' '+ exptime)? (' '+ noreply)? fin;
 
 quit = quit_op fin;
 

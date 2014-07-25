@@ -9,6 +9,7 @@
 #ifndef FB_MEMCACHE_MC_MSG_H
 #define FB_MEMCACHE_MC_MSG_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <netinet/in.h>
@@ -250,6 +251,8 @@ typedef struct mc_msg_s {
   /** NULL if not fbtracing. */
   struct mc_fbtrace_info_s* fbtrace_info;
 #endif
+
+  bool noreply;
 
   void *context; ///< get/set key, stats arg, flushre regexp
   size_t _extra_size;

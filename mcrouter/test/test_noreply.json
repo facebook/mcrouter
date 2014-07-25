@@ -1,0 +1,17 @@
+{
+    "clusters": {
+        "a": {
+            "pools": {
+                "A": {
+                    "servers": [ "127.0.0.1:10001" ]
+                }
+            }
+        }
+    },
+    "routes": [
+        {
+            "aliases": [ "/a/a/" ],
+            "route": "PoolRoute|A"
+        }
+    ]
+}

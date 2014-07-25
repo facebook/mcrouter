@@ -54,7 +54,8 @@ class McServerTransaction {
                       mc_op_t operation,
                       uint64_t reqid,
                       bool isMultiget = false,
-                      bool isSubRequest = false);
+                      bool isSubRequest = false,
+                      bool noReply = false);
 
   ~McServerTransaction();
 
@@ -101,6 +102,14 @@ class McServerTransaction {
    */
   void queueSubRequestsWrites();
 
+  /**
+   * If true, no reply should be sent back over the network for this
+   * transaction.
+   */
+  bool noReply() const {
+    return noReply_;
+  }
+
  private:
   std::shared_ptr<McServerSession> session_;
   McRequest request_;
@@ -111,6 +120,8 @@ class McServerTransaction {
 
   folly::Optional<McReply> reply_;
   bool replyReady_{false};
+
+  bool noReply_{false};  /**< If true, no reply should be written */
 
   /* Multiget state */
   bool isMultiget_{false};  /**< True on the parent request only */
