@@ -150,9 +150,9 @@ void ProxyDestination::unmark_global_tko() {
   FBI_ASSERT(proxy->router &&
              proxy->router->opts.global_tko_tracking);
   FBI_ASSERT(shared);
-  shared->tko.recordSuccess();
+  shared->tko.recordSuccess(this);
   if (sending_probes) {
-    VLOG(1) << pdstnKey << " marked up";
+    VLOG(1) << shared->key << " marked up";
     stop_sending_probes();
   }
 }
@@ -188,9 +188,9 @@ void ProxyDestination::handle_tko(mc_res_t result,
     bool responsible = false;
     if (is_error_reply(result, reply)) {
       if (result == mc_res_connect_error) {
-        responsible = shared->tko.recordHardFailure();
+        responsible = shared->tko.recordHardFailure(this);
       } else {
-        responsible = shared->tko.recordSoftFailure();
+        responsible = shared->tko.recordSoftFailure(this);
       }
     } else if (proxy->opts.latency_window_size != 0 &&
         !sending_probes &&
@@ -198,12 +198,12 @@ void ProxyDestination::handle_tko(mc_res_t result,
     /* Even if it's not an error, if we've gone above our latency SLA we count
        that as a soft failure. We also check current latency to ensure that
        if things get better we don't keep TKOing the box */
-      responsible = shared->tko.recordSoftFailure();
+      responsible = shared->tko.recordSoftFailure(this);
     } else {
       unmark_global_tko();
     }
     if (responsible) {
-      VLOG(1) << pdstnKey << " marked TKO";
+      VLOG(1) << shared->key << " marked TKO";
       start_sending_probes();
     }
   } else {
