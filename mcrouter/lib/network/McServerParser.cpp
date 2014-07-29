@@ -197,6 +197,12 @@ bool McServerParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
 }
 
 bool McServerParser::readDataAvailable(size_t len) {
+  SCOPE_EXIT {
+    if (requestsPerRead_ > 0) {
+      recalculateBufferSize(len);
+    }
+  };
+
   if (umBodyBuffer_) {
     umBodyBuffer_->append(len);
     if (umBodyBuffer_->length() == umMsgInfo_.body_size) {
@@ -236,10 +242,6 @@ bool McServerParser::readDataAvailable(size_t len) {
       mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
       return true;
     }
-  }
-
-  if (requestsPerRead_ > 0) {
-    recalculateBufferSize(len);
   }
 }
 
