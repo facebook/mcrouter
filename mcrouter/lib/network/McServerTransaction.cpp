@@ -25,7 +25,7 @@ McServerTransaction::McServerTransaction(
       operation_(operation),
       reqid_(reqid),
       appContext_(*this),
-      noReply_(noreply),
+      noReply_(noreply || (operation == mc_op_quit)),
       isMultiget_(isMultiget),
       isSubRequest_(isSubRequest) {
 

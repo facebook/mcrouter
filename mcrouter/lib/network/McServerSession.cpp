@@ -118,8 +118,10 @@ void McServerSession::checkClosed() {
 
     if (state_ == CLOSING) {
       transport_->close();
-      /* Ok if nullptr */
-      onClosed_(weakThis_.lock());
+      if (onClosed_) {
+        /* Ok if nullptr */
+        onClosed_(weakThis_.lock());
+      }
     }
   }
 }
@@ -202,6 +204,10 @@ void McServerSession::requestReady(McRequest req,
     return;
   }
 
+  if (state_ != STREAMING) {
+    return;
+  }
+
   auto isSubRequest = isPartOfMultiget(parser_.protocol(), operation);
   auto isMultiget = (operation == mc_op_end);
   auto transactionPtr =
@@ -225,6 +231,11 @@ void McServerSession::requestReady(McRequest req,
     transaction.sendReply(McReply(mc_res_bad_key));
   } else if (operation == mc_op_version) {
     transaction.sendReply(McReply(mc_res_ok, options_.versionString));
+  } else if (operation == mc_op_quit) {
+    /* mc_op_quit transaction will have `noreply` set, so this call
+       is solely to make sure the transaction is completed and cleaned up */
+    transaction.sendReply(McReply(mc_res_ok));
+    close();
   } else if (operation == mc_op_shutdown) {
     transaction.sendReply(McReply(mc_res_ok));
     onShutdown_();

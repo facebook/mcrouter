@@ -119,3 +119,18 @@ TEST(Session, throttleBigPacket) {
     t.flushWrites());
   EXPECT_TRUE(t.pausedKeys().empty());
 }
+
+TEST(Session, quit) {
+  AsyncMcServerWorker::Options opts;
+  SessionTestHarness t(opts);
+  t.inputPackets(
+    "get ke", "y\r\n",
+    "quit\r\nget key2\r\n");
+
+  /* First get should go through; then quit will close the connection
+     and second get will be ignored */
+
+  EXPECT_EQ(
+    vector<string>({"VALUE key 0 9\r\nkey_value\r\nEND\r\n"}),
+    t.flushWrites());
+}
