@@ -1,18 +1,12 @@
 {
-    "clusters": {
-        "A": {
-            "cluster": "A",
-            "pools": {
-                "A.wildcard": {
-                    "cluster": "A",
-                    "protocol": "ascii",
-                    "servers": [
-                        "[localhost]:11132"
-                        ]
-                    }
-                }
-            }
-        },
+    "pools": {
+        "A.wildcard": {
+            "protocol": "ascii",
+            "servers": [
+                "[localhost]:11132"
+            ]
+        }
+    },
     "routes": [
         {
             "aliases": [ "/test/A/" ],

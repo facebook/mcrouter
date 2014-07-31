@@ -1,151 +1,136 @@
 {
-  "clusters": {
-    "A": {
-      "cluster": "A",
-      "pools": {
-        "A-bar": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11511"
-          ]
-        },
-        "A-ci": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11512"
-          ]
-        },
-        "A-datamiss": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11541"
-          ]
-        },
-        "A-down": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:65532"
-          ]
-        },
-        "A-failover": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:65522"
-          ]
-        },
-        "A-foo": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11510"
-          ]
-        },
-        "A-gut": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11540"
-          ]
-        },
-        "A-lat": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11513"
-          ]
-        },
-        "A-tmo": {
-          "protocol": "ascii",
-          "servers": [
-            "10.1.1.1:11302"
-          ]
-        },
-        "A-wildcard": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11510",
-            "127.0.0.1:11511",
-            "127.0.0.1:11512"
-          ]
-        }
-      }
+  "pools": {
+    "A-bar": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11511"
+      ]
     },
-    "B": {
-      "cluster": "B",
-      "pools": {
-        "B-bar": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11521"
-          ]
-        },
-        "B-ci": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11522"
-          ]
-        },
-        "B-foo": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11520"
-          ]
-        },
-        "B-lat": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11523"
-          ]
-        },
-        "B-rej": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11523"
-          ]
-        },
-        "B-wildcard": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11520",
-            "127.0.0.1:11521",
-            "127.0.0.1:11522"
-          ]
-        }
-      }
+    "A-ci": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11512"
+      ]
     },
-    "C": {
-      "cluster": "C",
-      "pools": {
-        "C-bar": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11531"
-          ]
-        },
-        "C-ci": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11532"
-          ]
-        },
-        "C-foo": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11530"
-          ]
-        },
-        "C-lat": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11533"
-          ]
-        },
-        "C-wildcard": {
-          "protocol": "ascii",
-          "servers": [
-            "127.0.0.1:11530",
-            "127.0.0.1:11531",
-            "127.0.0.1:11532"
-          ]
-        }
-      }
+    "A-datamiss": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11541"
+      ]
+    },
+    "A-down": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:65532"
+      ]
+    },
+    "A-failover": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:65522"
+      ]
+    },
+    "A-foo": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11510"
+      ]
+    },
+    "A-gut": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11540"
+      ]
+    },
+    "A-lat": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11513"
+      ]
+    },
+    "A-tmo": {
+      "protocol": "ascii",
+      "servers": [
+        "10.1.1.1:11302"
+      ]
+    },
+    "A-wildcard": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11510",
+        "127.0.0.1:11511",
+        "127.0.0.1:11512"
+      ]
+    },
+    "B-bar": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11521"
+      ]
+    },
+    "B-ci": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11522"
+      ]
+    },
+    "B-foo": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11520"
+      ]
+    },
+    "B-lat": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11523"
+      ]
+    },
+    "B-rej": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11523"
+      ]
+    },
+    "B-wildcard": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11520",
+        "127.0.0.1:11521",
+        "127.0.0.1:11522"
+      ]
+    },
+    "C-bar": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11531"
+      ]
+    },
+    "C-ci": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11532"
+      ]
+    },
+    "C-foo": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11530"
+      ]
+    },
+    "C-lat": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11533"
+      ]
+    },
+    "C-wildcard": {
+      "protocol": "ascii",
+      "servers": [
+        "127.0.0.1:11530",
+        "127.0.0.1:11531",
+        "127.0.0.1:11532"
+      ]
     }
   },
   "named_handles": [

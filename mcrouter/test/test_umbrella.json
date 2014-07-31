@@ -1,151 +1,136 @@
 {
-  "clusters": {
-    "A": {
-      "cluster": "A",
-      "pools": {
-        "A-bar": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11511"
-          ]
-        },
-        "A-ci": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11512"
-          ]
-        },
-        "A-datamiss": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11541"
-          ]
-        },
-        "A-down": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:65532"
-          ]
-        },
-        "A-failover": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:65522"
-          ]
-        },
-        "A-foo": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11510"
-          ]
-        },
-        "A-gut": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11540"
-          ]
-        },
-        "A-lat": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11513"
-          ]
-        },
-        "A-tmo": {
-          "protocol": "umbrella",
-          "servers": [
-            "10.1.1.1:11302"
-          ]
-        },
-        "A-wildcard": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11510",
-            "127.0.0.1:11511",
-            "127.0.0.1:11512"
-          ]
-        }
-      }
+  "pools": {
+    "A-bar": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11511"
+      ]
     },
-    "B": {
-      "cluster": "B",
-      "pools": {
-        "B-bar": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11521"
-          ]
-        },
-        "B-ci": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11522"
-          ]
-        },
-        "B-foo": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11520"
-          ]
-        },
-        "B-lat": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11523"
-          ]
-        },
-        "B-rej": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11523"
-          ]
-        },
-        "B-wildcard": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11520",
-            "127.0.0.1:11521",
-            "127.0.0.1:11522"
-          ]
-        }
-      }
+    "A-ci": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11512"
+      ]
     },
-    "C": {
-      "cluster": "C",
-      "pools": {
-        "C-bar": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11531"
-          ]
-        },
-        "C-ci": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11532"
-          ]
-        },
-        "C-foo": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11530"
-          ]
-        },
-        "C-lat": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11533"
-          ]
-        },
-        "C-wildcard": {
-          "protocol": "umbrella",
-          "servers": [
-            "127.0.0.1:11530",
-            "127.0.0.1:11531",
-            "127.0.0.1:11532"
-          ]
-        }
-      }
+    "A-datamiss": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11541"
+      ]
+    },
+    "A-down": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:65532"
+      ]
+    },
+    "A-failover": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:65522"
+      ]
+    },
+    "A-foo": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11510"
+      ]
+    },
+    "A-gut": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11540"
+      ]
+    },
+    "A-lat": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11513"
+      ]
+    },
+    "A-tmo": {
+      "protocol": "umbrella",
+      "servers": [
+        "10.1.1.1:11302"
+      ]
+    },
+    "A-wildcard": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11510",
+        "127.0.0.1:11511",
+        "127.0.0.1:11512"
+      ]
+    },
+    "B-bar": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11521"
+      ]
+    },
+    "B-ci": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11522"
+      ]
+    },
+    "B-foo": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11520"
+      ]
+    },
+    "B-lat": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11523"
+      ]
+    },
+    "B-rej": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11523"
+      ]
+    },
+    "B-wildcard": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11520",
+        "127.0.0.1:11521",
+        "127.0.0.1:11522"
+      ]
+    },
+    "C-bar": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11531"
+      ]
+    },
+    "C-ci": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11532"
+      ]
+    },
+    "C-foo": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11530"
+      ]
+    },
+    "C-lat": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11533"
+      ]
+    },
+    "C-wildcard": {
+      "protocol": "umbrella",
+      "servers": [
+        "127.0.0.1:11530",
+        "127.0.0.1:11531",
+        "127.0.0.1:11532"
+      ]
     }
   },
   "named_handles": [

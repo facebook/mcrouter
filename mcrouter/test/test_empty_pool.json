@@ -1,15 +1,9 @@
 {
-    "clusters": {
-        "A": {
-            "cluster": "A",
-            "pools": {
-                "A-foo": {
-                    "cluster": "A",
-                    "hash": "ch3",
-                    "protocol": "ascii",
-                    "servers": []
-                }
-            }
+    "pools": {
+        "A-foo": {
+            "hash": "ch3",
+            "protocol": "ascii",
+            "servers": []
         }
     },
     "routes": [

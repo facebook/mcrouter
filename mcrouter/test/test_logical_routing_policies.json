@@ -1,16 +1,10 @@
 {
-    "clusters": {
-        "A": {
-            "cluster": "A",
-            "pools": {
-                "A-foo": {
-                    "cluster": "A",
-                    "protocol": "ascii",
-                    "servers": [
-                        "127.0.0.1:11610"
-                    ]
-                }
-            }
+    "pools": {
+        "A-foo": {
+            "protocol": "ascii",
+            "servers": [
+                "127.0.0.1:11610"
+            ]
         }
     },
     "routes": [

@@ -1,33 +1,29 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "foo": {
-          "servers": [
-            "127.0.0.1:11710",
-            "127.0.0.1:11711"
-          ]
-        },
-        "bar-old": {
-          "servers": [ "127.0.0.1:11720" ]
-        },
-        "bar-new": {
-          "servers": [ "127.0.0.1:11721" ]
-        },
-        "foo-regional": {
-          "servers": [
-            "127.0.0.1:11710",
-            "127.0.0.1:11711"
-          ],
-          "pool_locality": "region"
-        },
-        "foo-shadow": {
-          "servers": [ "127.0.0.1:11712" ]
-        },
-        "bar-shadow": {
-          "servers": [ "127.0.0.1:11722" ]
-        }
-      }
+  "pools": {
+    "foo": {
+      "servers": [
+        "127.0.0.1:11710",
+        "127.0.0.1:11711"
+      ]
+    },
+    "bar-old": {
+      "servers": [ "127.0.0.1:11720" ]
+    },
+    "bar-new": {
+      "servers": [ "127.0.0.1:11721" ]
+    },
+    "foo-regional": {
+      "servers": [
+        "127.0.0.1:11710",
+        "127.0.0.1:11711"
+      ],
+      "pool_locality": "region"
+    },
+    "foo-shadow": {
+      "servers": [ "127.0.0.1:11712" ]
+    },
+    "bar-shadow": {
+      "servers": [ "127.0.0.1:11722" ]
     }
   },
   "named_handles": [

@@ -1,14 +1,10 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "A.gut": {
-          "servers": [ "localhost:12345" ]
-        },
-        "A.wildcard": {
-          "servers": [ "localhost:12346" ]
-        }
-      }
+  "pools": {
+    "A.gut": {
+      "servers": [ "localhost:12345" ]
+    },
+    "A.wildcard": {
+      "servers": [ "localhost:12346" ]
     }
   },
   "routes" : [

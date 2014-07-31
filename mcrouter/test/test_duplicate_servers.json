@@ -1,24 +1,16 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "A.wildcard": {
-          "servers": [
-            "localhost:12345",
-            "localhost:12345"
-          ]
-        }
-      }
+  "pools": {
+    "A.wildcard": {
+      "servers": [
+        "localhost:12345",
+        "localhost:12345"
+      ]
     },
-    "B": {
-      "pools": {
-        "B.wildcard": {
-          "servers": [
-            "localhost:12345",
-            "localhost:12345"
-          ]
-        }
-      }
+    "B.wildcard": {
+      "servers": [
+        "localhost:12345",
+        "localhost:12345"
+      ]
     }
   },
   "routes": [

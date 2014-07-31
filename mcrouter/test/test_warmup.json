@@ -1,23 +1,16 @@
 {
-    "clusters": {
-        "A": {
-            "cluster": "A",
-            "pools": {
-                "A-warm": {
-                    "cluster": "A",
-                    "protocol": "ascii",
-                    "servers": [
-                        "127.0.0.1:11610"
-                    ]
-                },
-                "A-cold": {
-                    "cluster": "A",
-                    "protocol": "ascii",
-                    "servers": [
-                        "127.0.0.1:11611"
-                    ]
-                }
-            }
+    "pools": {
+        "A-warm": {
+            "protocol": "ascii",
+            "servers": [
+                "127.0.0.1:11610"
+            ]
+        },
+        "A-cold": {
+            "protocol": "ascii",
+            "servers": [
+                "127.0.0.1:11611"
+            ]
         }
     },
     "routes": [

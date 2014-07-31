@@ -21,42 +21,26 @@
       }
     }
   },
-  "clusters": {
-    "A": {
-      "pools": {
-        "A.wildcard": {
-          "protocol": "ascii",
-          "keep_routing_prefix": false,
-          "servers": [ "localhost:12345" ]
-        }
-      }
+  "pools": {
+    "A.wildcard": {
+      "protocol": "ascii",
+      "keep_routing_prefix": false,
+      "servers": [ "localhost:12345" ]
     },
-    "B": {
-      "pools": {
-        "B.wildcard": {
-          "protocol": "ascii",
-          "keep_routing_prefix": true,
-          "servers": [ "localhost:12346" ]
-        }
-      }
+    "B.wildcard": {
+      "protocol": "ascii",
+      "keep_routing_prefix": true,
+      "servers": [ "localhost:12346" ]
     },
-    "C": {
-      "pools": {
-        "C.wildcard": {
-          "protocol": "ascii",
-          "keep_routing_prefix": true,
-          "servers": [ "localhost:12347" ]
-        }
-      }
+    "C.wildcard": {
+      "protocol": "ascii",
+      "keep_routing_prefix": true,
+      "servers": [ "localhost:12347" ]
     },
-    "D": {
-      "pools": {
-        "D.wildcard": {
-          "protocol": "ascii",
-          "keep_routing_prefix": true,
-          "servers": [ "localhost:12348" ]
-        }
-      }
+    "D.wildcard": {
+      "protocol": "ascii",
+      "keep_routing_prefix": true,
+      "servers": [ "localhost:12348" ]
     }
   },
   "routes": [

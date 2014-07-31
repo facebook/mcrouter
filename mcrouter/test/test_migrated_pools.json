@@ -1,14 +1,10 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "wildcard-new": {
-          "servers": [ "localhost:12345" ]
-        },
-        "wildcard-old": {
-          "servers": [ "localhost:12346" ]
-        }
-      }
+  "pools": {
+    "wildcard-new": {
+      "servers": [ "localhost:12345" ]
+    },
+    "wildcard-old": {
+      "servers": [ "localhost:12346" ]
     }
   },
   "routes": [

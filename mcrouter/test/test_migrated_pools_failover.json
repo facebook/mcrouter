@@ -1,20 +1,16 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "A-new": {
-          "servers": [ "localhost:12345" ]
-        },
-        "A-old": {
-          "servers": [ "localhost:12346" ]
-        },
-        "B-new": {
-          "servers": [ "localhost:12347" ]
-        },
-        "B-old": {
-          "servers": [ "localhost:12348" ]
-        }
-      }
+  "pools": {
+    "A-new": {
+      "servers": [ "localhost:12345" ]
+    },
+    "A-old": {
+      "servers": [ "localhost:12346" ]
+    },
+    "B-new": {
+      "servers": [ "localhost:12347" ]
+    },
+    "B-old": {
+      "servers": [ "localhost:12348" ]
     }
   },
   "routes" : [

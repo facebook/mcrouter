@@ -1,13 +1,9 @@
 {
-    "clusters": {
-        "a": {
-            "pools": {
-                "A": {
-                    "servers": [ "127.0.0.1:10001" ],
-                    "rates": {
-                        "sets_rate": 2.0
-                    }
-                }
+    "pools": {
+        "A": {
+            "servers": [ "127.0.0.1:10001" ],
+            "rates": {
+                "sets_rate": 2.0
             }
         }
     },

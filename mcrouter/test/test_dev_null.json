@@ -1,18 +1,14 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "A.good": {
-          "servers": [
-            "localhost:12345"
-          ]
-        },
-        "A.wildcard": {
-          "servers": [
-            "localhost:12347"
-          ]
-        }
-      }
+  "pools": {
+    "A.good": {
+      "servers": [
+        "localhost:12345"
+      ]
+    },
+    "A.wildcard": {
+      "servers": [
+        "localhost:12347"
+      ]
     }
   },
   "routes": [

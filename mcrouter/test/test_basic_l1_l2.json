@@ -1,14 +1,8 @@
 {
-  "clusters": {
-    "A": {
-      "pools": {
-        "A.wildcard": {
-          "servers": [ "localhost:12345" ]
-        }
-      }
-    }
-  },
-  "regional_pools": {
+  "pools": {
+    "A.wildcard": {
+      "servers": [ "localhost:12345" ]
+    },
     "wildcard": {
       "servers": [ "localhost:12346" ]
     }
