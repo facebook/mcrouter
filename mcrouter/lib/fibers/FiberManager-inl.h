@@ -293,4 +293,8 @@ inline FiberManager* FiberManager::getFiberManagerUnsafe() {
   return currentFiberManager_;
 }
 
+inline bool FiberManager::hasActiveFiber() {
+  return activeFiber_ != nullptr;
+}
+
 }}

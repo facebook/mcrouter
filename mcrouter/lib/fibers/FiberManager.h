@@ -195,6 +195,11 @@ class FiberManager {
   size_t fibersPoolSize() const;
 
   /**
+   * return     true if running activeFiber_ is not nullptr.
+   */
+  bool hasActiveFiber();
+
+  /**
    * @return What was the most observed fiber stack usage (in bytes).
    */
   size_t stackHighWatermark() const;
@@ -305,6 +310,14 @@ class FiberManager {
 };
 
 namespace fiber {
+
+/**
+ * @return      true iff we are running in a fiber's context
+ */
+inline bool onFiber() {
+  auto fm = FiberManager::getFiberManagerUnsafe();
+  return fm ? fm->hasActiveFiber() : false;
+}
 
 /**
  * Add a new task to be executed.

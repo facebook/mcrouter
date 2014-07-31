@@ -6,6 +6,7 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
+#include <atomic>
 #include <thread>
 #include <vector>
 
@@ -14,6 +15,7 @@
 #include "folly/Benchmark.h"
 #include "folly/Memory.h"
 #include "mcrouter/lib/fibers/AddTasks.h"
+#include "mcrouter/lib/fibers/GenericBaton.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/fibers/SimpleLoopController.h"
 #include "mcrouter/lib/fibers/WhenN.h"
@@ -104,6 +106,60 @@ TEST(FiberManager, batonTimedWaitPost) {
   };
 
   loopController.loop(std::move(loopFunc));
+}
+
+TEST(FiberManager, genericBatonFiberWait) {
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+
+  GenericBaton b;
+  bool fiberRunning = false;
+
+  manager.addTask([&](){
+    EXPECT_EQ(manager.hasActiveFiber(), true);
+    fiberRunning = true;
+    b.wait();
+    fiberRunning = false;
+  });
+
+  EXPECT_FALSE(fiberRunning);
+  manager.loopUntilNoReady();
+  EXPECT_TRUE(fiberRunning); // ensure fiber still active
+
+  auto thr = std::thread([&](){
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    b.post();
+  });
+
+  while (fiberRunning) {
+    manager.loopUntilNoReady();
+  }
+
+  thr.join();
+}
+
+TEST(FiberManager, genericBatonThreadWait) {
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+  GenericBaton b;
+  std::atomic<bool> threadWaiting(false);
+
+  auto thr = std::thread([&](){
+    threadWaiting = true;
+    b.wait();
+    threadWaiting = false;
+  });
+
+  while (!threadWaiting) {}
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  manager.addTask([&](){
+    EXPECT_EQ(manager.hasActiveFiber(), true);
+    EXPECT_TRUE(threadWaiting);
+    b.post();
+    while(threadWaiting) {}
+  });
+
+  manager.loopUntilNoReady();
+  thr.join();
 }
 
 TEST(FiberManager, addTasksNoncopyable) {
