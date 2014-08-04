@@ -78,8 +78,10 @@ std::string Md5Hash(folly::StringPiece input) {
   return ret;
 }
 
-bool writeStringToFile(folly::StringPiece contents, const std::string& path) {
-  int fd = folly::openNoInt(path.data(), O_WRONLY | O_CREAT | O_TRUNC);
+namespace {
+bool writeToFile(folly::StringPiece contents, const std::string& path,
+                 int flags) {
+  int fd = folly::openNoInt(path.data(), flags, 0664);
   if (fd == -1) {
     return false;
   }
@@ -88,6 +90,15 @@ bool writeStringToFile(folly::StringPiece contents, const std::string& path) {
     return false;
   }
   return written >= 0 && size_t(written) == contents.size();
+}
+}
+
+bool writeStringToFile(folly::StringPiece contents, const std::string& path) {
+  return writeToFile(contents, path, O_CREAT | O_WRONLY | O_TRUNC);
+}
+
+bool appendStringToFile(folly::StringPiece contents, const std::string& path) {
+  return writeToFile(contents, path, O_CREAT | O_WRONLY | O_APPEND);
 }
 
 bool atomicallyWriteFileToDisk(folly::StringPiece contents,

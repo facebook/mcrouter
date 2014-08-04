@@ -63,21 +63,23 @@ class ShadowRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    std::shared_ptr<Request> shadowReq;
+    std::shared_ptr<Request> adjustedReq;
     folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
     for (auto iter: shadowData_) {
       if (shouldShadow(req, iter.second)) {
-        if (!shadowReq) {
-          shadowReq = std::make_shared<Request>(
+        if (!adjustedReq) {
+          adjustedReq = std::make_shared<Request>(
             shadowPolicy_.updateRequestForShadowing(req, Operation()));
         }
         if (!normalReply && shadowPolicy_.shouldDelayShadow(req, Operation())) {
-          normalReply = normal_->route(*shadowReq, Operation());
+          normalReply = normal_->route(*adjustedReq, Operation());
         }
         auto shadow = iter.first;
         fiber::addTask(
-          [shadow, shadowReq] () {
-            shadow->route(*shadowReq, Operation());
+          [shadow, adjustedReq] () {
+            Request shadowReq(adjustedReq->clone());
+            attachRequestClass(shadowReq);
+            shadow->route(shadowReq, Operation());
           });
       }
     }
@@ -85,7 +87,7 @@ class ShadowRoute {
     if (normalReply) {
       return std::move(*normalReply);
     } else {
-      return normal_->route(shadowReq ? *shadowReq : req, Operation());
+      return normal_->route(adjustedReq ? *adjustedReq : req, Operation());
     }
   }
 
@@ -95,12 +97,12 @@ class ShadowRoute {
   const size_t normalIndex_;
   ShadowPolicy shadowPolicy_;
 
-  void attachRequestClass(ProxyMcRequest& req) const {
+  static void attachRequestClass(ProxyMcRequest& req) {
     req.setRequestClass(RequestClass::SHADOW);
   }
 
   template <class Request>
-  void attachRequestClass(Request& req) const {
+  static void attachRequestClass(Request& req) {
   }
 
   template <class Request>

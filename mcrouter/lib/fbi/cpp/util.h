@@ -122,11 +122,19 @@ bool determineIfSampleKeyForViolet(uint32_t routingKeyHash,
 std::string Md5Hash(folly::StringPiece input);
 
 /**
- * Writes 'contents' to the file
+ * Writes 'contents' to the file, overwriting any existing contents
+ * (will create if file doesn't exist)
  *
  * @return true on success, false otherwise
  */
 bool writeStringToFile(folly::StringPiece contents, const std::string& path);
+
+/**
+ * Append 'contents' to the file (will create if file doesn't exist)
+ *
+ * @return true on success, false otherwise
+ */
+bool appendStringToFile(folly::StringPiece contents, const std::string& path);
 
 /**
  * Write the given 'contents' to 'absFilename' atomically. This first writes
