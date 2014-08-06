@@ -308,6 +308,11 @@ void AsyncMcServer::spawn(LoopFn fn) {
   for (size_t id = 1; id < threads_.size(); ++id) {
     threads_[id]->spawn(fn, id);
   }
+
+  if (!deferredSignals_.empty()) {
+    installShutdownHandlerHelper(deferredSignals_);
+    deferredSignals_.clear();
+  }
 }
 
 void AsyncMcServer::shutdown() {
@@ -323,6 +328,18 @@ void AsyncMcServer::shutdown() {
 }
 
 void AsyncMcServer::installShutdownHandler(const std::vector<int>& signals) {
+  if (threads_.empty()) {
+    /* spawn() wasn't called yet; don't set up the handler to avoid a
+       possible race - otherwise if a signal is caught before we spawn threads,
+       we would do nothing */
+    deferredSignals_ = signals;
+  } else {
+    installShutdownHandlerHelper(signals);
+  }
+}
+
+void AsyncMcServer::installShutdownHandlerHelper(
+    const std::vector<int>& signals) {
   gServer = this;
   struct sigaction act;
   memset(&act, 0, sizeof(struct sigaction));

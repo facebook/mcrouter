@@ -132,6 +132,10 @@ class AsyncMcServer {
   bool alive_{true};
   std::mutex shutdownLock_;
 
+  std::vector<int> deferredSignals_;
+
+  void installShutdownHandlerHelper(const std::vector<int>& signals);
+
   AsyncMcServer(const AsyncMcServer&) = delete;
   AsyncMcServer& operator=(const AsyncMcServer&) = delete;
 
