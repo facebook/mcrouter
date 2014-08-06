@@ -6,21 +6,7 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-/**
- * Cpplint enforces include guards, but this is not a typical include file
- * and we do want to include it multiple times.  This hack fools Cpplint
- * into believing we have a proper include guard.
- */
-// %flint: pause
-#if 0
-// %flint: resume
-#ifndef FAKE_INCLUDE_GUARD
-#define FAKE_INCLUDE_GUARD
-#endif
-// %flint: pause
-#endif
-
-
+// @nolint
 #ifndef mcrouter_option_group
 #define mcrouter_option_group(_sep)
 #endif
@@ -391,5 +377,3 @@ mcrouter_option_integer(
 #undef no_short
 #undef no_long
 #undef mcrouter_option_group
-
-// %flint: resume

@@ -6,20 +6,7 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-/**
- * Cpplint enforces include guards, but this is not a typical include file
- * and we do want to include it multiple times.  This hack fools Cpplint
- * into believing we have a proper include guard.
- */
-// %flint: pause
-#if 0
-// %flint: resume
-#ifndef FAKE_INCLUDE_GUARD
-#define FAKE_INCLUDE_GUARD
-#endif
-// %flint: pause
-#endif
-
+// @nolint
 #ifndef MC_OP
 #define MC_OP(Operation)
 #endif
@@ -55,5 +42,3 @@ MC_OP(McOperation<mc_op_get_unique_count>)
 MC_OP(McOperation<mc_op_bump_unique_count>)
 
 #undef MC_OP
-
-// %flint: resume
