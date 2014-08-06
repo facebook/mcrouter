@@ -55,21 +55,28 @@ void ProxyDestinationMap::markAsUsed(ProxyDestination& destination) {
 }
 
 void ProxyDestinationMap::removeAllUnused() {
-  std::lock_guard<std::mutex> lck(destinationsLock_);
+  /* We don't want to destroy any ProxyDestinations while holding
+     the destinationsLock_, since the destruction obtains other locks */
+  std::vector<std::shared_ptr<ProxyDestination>> toRemove;
 
-  auto cur = destinations_.begin();
-  while (cur != destinations_.end()) {
-    const auto& dest = cur->second;
-    if (!dest->isUsedInConfig_) {
-      if (dest->stateList_ == active_.get()) {
-        active_->list.erase(StateList::List::s_iterator_to(*dest));
-      } else if (dest->stateList_ == inactive_.get()) {
-        inactive_->list.erase(StateList::List::s_iterator_to(*dest));
+  {
+    std::lock_guard<std::mutex> lck(destinationsLock_);
+
+    auto cur = destinations_.begin();
+    while (cur != destinations_.end()) {
+      auto& dest = cur->second;
+      if (!dest->isUsedInConfig_) {
+        if (dest->stateList_ == active_.get()) {
+          active_->list.erase(StateList::List::s_iterator_to(*dest));
+        } else if (dest->stateList_ == inactive_.get()) {
+          inactive_->list.erase(StateList::List::s_iterator_to(*dest));
+        }
+        dest->stateList_ = nullptr;
+        toRemove.emplace_back(std::move(dest));
+        cur = destinations_.erase(cur);
+      } else {
+        ++cur;
       }
-      dest->stateList_ = nullptr;
-      cur = destinations_.erase(cur);
-    } else {
-      ++cur;
     }
   }
 }
