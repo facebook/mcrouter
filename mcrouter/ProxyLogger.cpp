@@ -193,7 +193,6 @@ void ProxyLogger::log() {
     proxy_->router->startupLock.wait();
     std::lock_guard<ShutdownLock> lg(proxy_->router->shutdownLock());
     std::lock_guard<std::mutex> guard(proxy_->stats_lock);
-    std::lock_guard<ThreadReadLock> lock(proxy_->proxyThreadConfigReadLock);
 
     prepare_stats(proxy_, stats.data());
   } catch (const shutdown_started_exception& e) {

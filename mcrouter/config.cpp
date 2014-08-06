@@ -215,14 +215,8 @@ static void proxy_config_swap(proxy_t* proxy,
     }
   }
 
-  sfrlock_wrlock(proxy->config_lock.get());
-
-  auto oldConfig = std::move(proxy->config);
-  proxy->config = config;
-
+  auto oldConfig = proxy->swapConfig(std::move(config));
   stat_set_uint64(proxy, config_last_success_stat, time(nullptr));
-
-  sfrlock_wrunlock(proxy->config_lock.get());
 
   if (oldConfig) {
     if (!proxy->opts.sync) {

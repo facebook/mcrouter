@@ -169,8 +169,6 @@ proxy_t::proxy_t(mcrouter_t *router_,
       request_queue(0),
       eventBase(eventBase_),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
-      config_lock(std::make_shared<sfrlock_t>()),
-      proxyThreadConfigReadLock(config_lock),
       async_fd(nullptr),
       async_spool_time(0),
       rtt_timer(0),
@@ -208,7 +206,6 @@ proxy_t::proxy_t(mcrouter_t *router_,
   proxy_init_timers(this);
   init_stats(stats);
 
-  sfrlock_init(config_lock.get());
   if (!opts.disable_dynamic_stats) {
     FBI_VERIFY(rtt_timer =
                fb_timer_alloc((nstring_t)NSTRING_LIT("proxy_rtt_timer"), 0,0));
@@ -287,19 +284,34 @@ int proxy_start_awriter_threads(proxy_t* proxy, bool realtime) {
   return 0;
 }
 
+std::shared_ptr<ProxyConfigIf> proxy_t::getConfig() const {
+  std::lock_guard<SFRReadLock> lg(
+    const_cast<SFRLock&>(configLock_).readLock());
+  return config_;
+}
+
+std::shared_ptr<ProxyConfigIf> proxy_t::swapConfig(
+  std::shared_ptr<ProxyConfigIf> newConfig) {
+
+  std::lock_guard<SFRWriteLock> lg(configLock_.writeLock());
+  auto old = std::move(config_);
+  config_ = std::move(newConfig);
+  return old;
+}
+
 void proxy_t::foreachPossibleClient(
     const std::string& key,
     std::function<void(const ProxyClientCommon&)> callback) const {
 
   auto ctx = std::make_shared<RecordingContext>(std::move(callback));
   RecordingMcRequest req(ctx, key);
-  sfrlock_rdlock(config_lock.get());
+
+  auto config = getConfig();
   auto children =
-    config->proxyRoute()->couldRouteTo(req, McOperation<mc_op_get>());
+    config->proxyRoute().couldRouteTo(req, McOperation<mc_op_get>());
   for (const auto& it : children) {
     foreachPossibleClientHelper(*it, req, key);
   }
-  sfrlock_rdunlock(config_lock.get());
 }
 
 void proxy_stop_awriter_threads(proxy_t* proxy) {
@@ -326,12 +338,11 @@ void proxy_stop_awriter_threads(proxy_t* proxy) {
 
 /** drain and delete proxy object */
 proxy_t::~proxy_t() {
-  config.reset();
   destinationMap.reset();
 
   being_destroyed = true;
   if (request_queue) {
-      asox_queue_del(request_queue);
+    asox_queue_del(request_queue);
   }
 
   proxy_del_timers(this);
@@ -374,7 +385,6 @@ proxy_request_t::proxy_request_t(proxy_t* p,
     requester(nullptr),
     legacy_get_service_info(false),
     context(con),
-    config_(p->config),
     enqueueReply_(enqReply),
     reqComplete_(reqComplete),
     processing_(false) {
@@ -471,9 +481,10 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   }
 
   if (preq->orig_req->op == mc_op_get_service_info) {
+    auto config = getConfig();
     auto ctx = std::make_shared<GenericProxyRequestContext>(
       preq,
-      config->proxyRoute());
+      config);
     auto orig = ctx->ctx().proxyRequest().orig_req.clone();
     ProxyMcRequest req(std::move(ctx), std::move(orig));
 
@@ -493,7 +504,7 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
 
       auto ctx = std::make_shared<GenericProxyRequestContext>(
         ppreq,
-        ppreq->proxy->config->proxyRoute());
+        ppreq->proxy->getConfig());
       try {
         auto& proute = ctx->ctx().proxyRoute();
         auto reply = proute.dispatchMcMsg(ppreq->orig_req.clone(),
@@ -527,10 +538,6 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
 }
 
 void proxy_t::processRequest(proxy_request_t* preq) {
-  // make sure that we grab the config_lock before we route
-  // to ensure the config doesn't change on us while routing
-  std::lock_guard<ThreadReadLock> lock(proxyThreadConfigReadLock);
-
   assert(!preq->processing_);
   preq->processing_ = true;
   ++numRequestsProcessing_;

@@ -15,10 +15,11 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyRequestContext::ProxyRequestContext(proxy_request_t* preq,
-                                         std::shared_ptr<ProxyRoute> pr)
+ProxyRequestContext::ProxyRequestContext(
+  proxy_request_t* preq,
+  std::shared_ptr<const ProxyConfigIf> config)
     : preq_(proxy_request_incref(preq)),
-      proxyRoute_(std::move(pr)) {
+      config_(std::move(config)) {
   FBI_ASSERT(preq_);
 }
 
@@ -33,14 +34,6 @@ uint64_t ProxyRequestContext::senderId() const {
   }
 
   return id;
-}
-
-proxy_request_t& ProxyRequestContext::proxyRequest() const {
-  return *preq_;
-}
-
-ProxyRoute& ProxyRequestContext::proxyRoute() const {
-  return *proxyRoute_;
 }
 
 }}}

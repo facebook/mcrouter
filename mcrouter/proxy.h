@@ -27,7 +27,6 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/Observable.h"
-#include "mcrouter/ThreadReadLock.h"
 #include "mcrouter/awriter.h"
 #include "mcrouter/config.h"
 #include "mcrouter/options.h"
@@ -174,10 +173,6 @@ struct proxy_request_t {
   bool enqueueReplyEquals(void (*funcPtr)(proxy_request_t* preq));
 
  private:
-  /**
-   * We don't want config to be destroyed during request
-   */
-  std::shared_ptr<const ProxyConfigIf> config_;
   /**
    * The function that will be called when the reply is ready
    */
@@ -436,22 +431,13 @@ struct proxy_t {
 
   asox_queue_t request_queue;
   folly::EventBase* eventBase;
-  std::shared_ptr<ProxyConfigIf> config;
+
   std::unique_ptr<ProxyDestinationMap> destinationMap;
 
   /** set by proxy_set_default_route */
   std::string default_route;
   std::string default_region;
   std::string default_cluster;
-
-  /** lock for the final config pointer swap */
-  std::shared_ptr<sfrlock_t> config_lock;
-
-  /**
-   * Used to acquire config_lock for reading on the proxy thread
-   * to protect from recursive locking.
-   */
-  ThreadReadLock proxyThreadConfigReadLock;
 
   // async spool related
   countedfd_t *async_fd;
@@ -538,6 +524,18 @@ struct proxy_t {
 
   ~proxy_t();
 
+  /**
+   * Thread-safe access to config
+   */
+  std::shared_ptr<ProxyConfigIf> getConfig() const;
+
+  /**
+   * Thread-safe config swap; returns the previous contents of
+   * the config pointer
+   */
+  std::shared_ptr<ProxyConfigIf> swapConfig(
+    std::shared_ptr<ProxyConfigIf> newConfig);
+
   /** Queue up and route the new incoming request */
   void dispatchRequest(proxy_request_t* preq);
 
@@ -557,6 +555,10 @@ struct proxy_t {
   void attachEventBase(folly::EventBase* eventBase);
 
  private:
+  /** Read/write lock for config pointer */
+  SFRLock configLock_;
+  std::shared_ptr<ProxyConfigIf> config_;
+
   static FiberManager::Options getFiberManagerOptions(
     const McrouterOptions& opts);
 

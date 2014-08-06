@@ -34,8 +34,8 @@ class proxy_t;
  */
 class ProxyConfig : public ProxyConfigIf {
  public:
-  std::shared_ptr<ProxyRoute> proxyRoute() const {
-    return proxyRoute_;
+  ProxyRoute& proxyRoute() const override {
+    return *proxyRoute_;
   }
 
   std::shared_ptr<ServiceInfo> serviceInfo() const {

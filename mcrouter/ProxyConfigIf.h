@@ -27,7 +27,7 @@ class ProxyConfigIf {
  public:
   virtual std::string getConfigMd5Digest() const = 0;
 
-  virtual std::shared_ptr<ProxyRoute> proxyRoute() const = 0;
+  virtual ProxyRoute& proxyRoute() const = 0;
 
   virtual std::shared_ptr<ServiceInfo> serviceInfo() const = 0;
 

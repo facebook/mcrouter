@@ -86,8 +86,6 @@ int DestinationClient::send(McMsgRef requestMsg, void* req_ctx,
         return;
       }
       auto proxy = pdstnPtr->proxy;
-      std::lock_guard<ThreadReadLock> lock(proxy->proxyThreadConfigReadLock);
-
       auto& req = *requestMsgWrapper;
 
       if (reply.result() == mc_res_local_error) {
@@ -147,24 +145,14 @@ void DestinationClient::initializeAsyncMcClient() {
       if (!pdstnPtr) {
         return;
       }
-
-      {
-        std::lock_guard<ThreadReadLock> lock(
-          pdstnPtr->proxy->proxyThreadConfigReadLock);
-        pdstnPtr->on_up();
-      }
+      pdstnPtr->on_up();
     },
     [pdstnWeakPtr] (const apache::thrift::transport::TTransportException&) {
       auto pdstnPtr = pdstnWeakPtr.lock();
       if (!pdstnPtr) {
         return;
       }
-
-      {
-        std::lock_guard<ThreadReadLock> lock(
-          pdstnPtr->proxy->proxyThreadConfigReadLock);
-        pdstnPtr->on_down();
-      }
+      pdstnPtr->on_down();
     });
 
   if (proxy_->opts.target_max_inflight_requests > 0) {

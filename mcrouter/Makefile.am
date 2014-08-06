@@ -158,7 +158,6 @@ libmcroutercore_a_SOURCES = \
   stat_list.h \
   stats.cpp \
   stats.h \
-  ThreadReadLock.h \
   TkoTracker.cpp \
   TkoTracker.h \
   TokenBucket.h

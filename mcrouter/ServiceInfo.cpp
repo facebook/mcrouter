@@ -33,7 +33,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 struct ServiceInfo::ServiceInfoImpl {
   proxy_t* proxy_;
-  std::shared_ptr<ProxyRoute> proxyRoute_;
+  ProxyRoute& proxyRoute_;
   std::unordered_map<
     std::string,
     std::function<std::string(const std::vector<folly::StringPiece>& args)>>
@@ -70,8 +70,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
   Operation) const {
 
   auto reqCopy = folly::makeMoveWrapper(req.clone());
-  auto& proxy = proxy_;
-  auto& proxyRoute = proxyRoute_;
+  auto proxy = proxy_;
+  auto proxyRoute = &proxyRoute_;
 
   proxy_->fiberManager.addTaskFinally(
     [keyStr, proxy, proxyRoute]() {
@@ -270,7 +270,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       auto ctx = std::make_shared<RecordingContext>(nullptr);
       RecordingMcRequest req(ctx, key.str());
 
-      return routeHandlesCommandHelper(op, req, *proxyRoute_,
+      return routeHandlesCommandHelper(op, req, proxyRoute_,
                                        McOpList::LastItem());
     }
   );

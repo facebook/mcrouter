@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include "mcrouter/ProxyConfigIf.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyRoute;
@@ -24,19 +26,23 @@ class proxy_request_t;
 class ProxyRequestContext {
  public:
   ProxyRequestContext(proxy_request_t* preq,
-                      std::shared_ptr<ProxyRoute> pr);
+                      std::shared_ptr<const ProxyConfigIf> config);
 
   ~ProxyRequestContext();
 
   uint64_t senderId() const;
 
-  proxy_request_t& proxyRequest() const;
+  proxy_request_t& proxyRequest() const {
+    return *preq_;
+  }
 
-  ProxyRoute& proxyRoute() const;
+  ProxyRoute& proxyRoute() const {
+    return config_->proxyRoute();
+  }
 
  private:
   proxy_request_t* preq_;
-  std::shared_ptr<ProxyRoute> proxyRoute_;
+  std::shared_ptr<const ProxyConfigIf> config_;
 };
 
 }}}  // facebook::memcache::mcrouter
