@@ -415,7 +415,7 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
 McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   std::lock_guard<std::mutex> guard(proxy->stats_lock);
 
-  proxy_flush_rtt_stats(proxy);
+  proxy->flushRttStats();
 
   StatsReply reply;
 

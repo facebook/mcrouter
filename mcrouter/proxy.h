@@ -111,11 +111,6 @@ struct proxy_request_t {
 
   uint64_t sender_id;
 
-  uint64_t start_time_up;
-  uint64_t start_time_down;
-  uint64_t send_time;
-  uint64_t created_time;
-
   /// Reference to the client that issued this
   struct mcrouter_client_t *requester;
 
@@ -424,13 +419,13 @@ class ExponentialSmoothData {
 
 struct proxy_t {
   uint64_t magic;
-  mcrouter_t *router;
+  mcrouter_t *router{nullptr};
 
   /** Note: will go away once the router pointer above is guaranteed to exist */
   const McrouterOptions opts;
 
-  asox_queue_t request_queue;
-  folly::EventBase* eventBase;
+  asox_queue_t request_queue{0};
+  folly::EventBase* eventBase{nullptr};
 
   std::unique_ptr<ProxyDestinationMap> destinationMap;
 
@@ -440,15 +435,14 @@ struct proxy_t {
   std::string default_cluster;
 
   // async spool related
-  countedfd_t *async_fd;
-  time_t async_spool_time;
+  countedfd_t* async_fd{nullptr};
+  time_t async_spool_time{0};
 
   std::mutex stats_lock;
-  fb_timer_t *rtt_timer; // rtt for libmcrouter (mcrouter <=> memcached)
-  fb_timer_t *request_timer_up;
-  fb_timer_t *request_timer_down;
   stat_t stats[num_stats];
-  ExponentialSmoothData durationUs;
+
+  static constexpr double kExponentialFactor{1.0 / 64.0};
+  ExponentialSmoothData durationUs{kExponentialFactor};
 
   // we are wasting some memory here to get faster mapping from stat name to
   // stats_bin[] and stats_num_within_window[] entry. i.e., the stats_bin[]
@@ -480,35 +474,24 @@ struct proxy_t {
    * num_bins_used is at most MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
    * MOVING_AVERAGE_BIN_SIZE_IN_SECOND
    */
-  int num_bins_used;
+  int num_bins_used{0};
 
-  proxy_client_monitor_t *monitor;
+  proxy_client_monitor_t* monitor{nullptr};
 
   /*
    * Asynchronous writer.
    */
   std::unique_ptr<awriter_t> awriter;
-  pthread_t awriter_thread_handle;
-  void *awriter_thread_stack;
-  // Proxies are numbered
-  int id;
-  int version;
-
-  pthread_t stats_log_writer_thread_handle;
   std::unique_ptr<awriter_t> stats_log_writer;
-  void *stats_log_writer_thread_stack;
 
   std::mt19937 randomGenerator;
 
-  bool being_destroyed;  /**< If true, processing new requests is not safe. */
+  /**
+   * If true, processing new requests is not safe.
+   */
+  bool being_destroyed{false};
 
   FiberManager fiberManager;
-
-  /**
-   * Logs mcrouter stats to disk every opts->stats_logging_interval
-   * milliseconds
-   */
-  std::unique_ptr<ProxyLogger> logger;
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
@@ -554,13 +537,42 @@ struct proxy_t {
    */
   void attachEventBase(folly::EventBase* eventBase);
 
+  void flushRttStats();
+
+  /**
+   * Spawns the required async writer threads.
+   * These include the asynclog thread (if needed) and threads
+   * for other less critical writes, like stats collection.
+   *
+   * realtime: if true, schedule the threads with realtime priority
+   *
+   * Returns -1 on error, 0 on success.
+   */
+  int startAwriterThreads(bool realtime);
+
+  /**
+   * Must be called before destroying the proxy if awriter threads were started.
+   */
+  void stopAwriterThreads();
+
  private:
   /** Read/write lock for config pointer */
   SFRLock configLock_;
   std::shared_ptr<ProxyConfigIf> config_;
 
-  static FiberManager::Options getFiberManagerOptions(
-    const McrouterOptions& opts);
+  fb_timer_t* rttTimer_{nullptr};  // rtt (mcrouter <=> memcached)
+
+  pthread_t awriterThreadHandle_{0};
+  void* awriterThreadStack_{nullptr};
+
+  pthread_t statsLogWriterThreadHandle_{0};
+  void* statsLogWriterThreadStack_{nullptr};
+
+  /**
+   * Logs mcrouter stats to disk every opts->stats_logging_interval
+   * milliseconds
+   */
+  std::unique_ptr<ProxyLogger> logger_;
 
   void routeHandlesProcessRequest(proxy_request_t* preq);
   void processRequest(proxy_request_t* preq);
@@ -576,13 +588,13 @@ struct proxy_t {
    */
 
   /** Number of requests processing */
-  size_t numRequestsProcessing_;
+  size_t numRequestsProcessing_{0};
 
   /** Queue of requests we didn't start processing yet */
   TAILQ_HEAD(RequestTailqHead, proxy_request_t);
   RequestTailqHead waitingRequests_;
 
-  bool performStatsLogging_;
+  bool performStatsLogging_{false};
 
   /** If true, we can't start processing this request right now */
   bool rateLimited(const proxy_request_t* preq) const;
@@ -618,22 +630,6 @@ int router_configure(mcrouter_t *router);
 
 int router_configure(mcrouter_t *router, folly::StringPiece input);
 
-/**
- * Spawns the required async writer threads.
- * These include the asynclog thread (if needed) and threads
- * for other less critical writes, like stats collection.
- *
- * realtime: if true, schedule the threads with realtime priority
- *
- * Returns -1 on error, 0 on success.
- */
-int proxy_start_awriter_threads(proxy_t* proxy, bool realtime);
-
-/**
- * Must be called before destroying the proxy if awriter threads were started.
- */
-void proxy_stop_awriter_threads(proxy_t* proxy);
-
 // set the monitor to nullptr to remove an existing one
 void proxy_set_monitor(proxy_t*, proxy_client_monitor_t* monitor);
 
@@ -645,7 +641,5 @@ void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e);
 McMsgRef create_reply(mc_op_t op, mc_res_t result, const char *str);
 
 folly::StringPiece getRegionFromRoutingPrefix(folly::StringPiece prefix);
-
-void proxy_flush_rtt_stats(proxy_t *proxy);
 
 }}} // facebook::memcache::mcrouter

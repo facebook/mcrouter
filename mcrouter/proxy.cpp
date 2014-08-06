@@ -68,7 +68,6 @@ void foreachPossibleClientHelper(const McrouterRouteHandleIf& rh,
 }  // anonymous namespace
 
 const std::string kInternalGetPrefix = "__mcrouter__.";
-const double kExponentialFactor = 1.0 / 64.0;
 
 static void proxy_set_default_route(proxy_t* proxy, const std::string& str) {
   if (str.empty()) {
@@ -99,22 +98,6 @@ static void proxy_set_default_route(proxy_t* proxy, const std::string& str) {
     proxy->default_route.substr(regionEnd + 1, clusterEnd - regionEnd - 1);
 }
 
-static void proxy_init_timers(proxy_t *proxy) {
-  if (!proxy->opts.disable_dynamic_stats) {
-    nstring_t name_up = NSTRING_LIT("mcrouter_request_up");
-    proxy->request_timer_up = fb_timer_alloc(name_up, 0, 0);
-    nstring_t name_down = NSTRING_LIT("mcrouter_request_down");
-    proxy->request_timer_down = fb_timer_alloc(name_down, 0, 0);
-  }
-}
-
-static void proxy_del_timers(const proxy_t *proxy) {
-  if (!proxy->opts.disable_dynamic_stats) {
-    fb_timer_free(proxy->request_timer_up);
-    fb_timer_free(proxy->request_timer_down);
-  }
-}
-
 static asox_queue_callbacks_t const proxy_request_queue_cb =  {
   /* Note that we want to drain the queue on cleanup,
      so we register both regular and sweep callbacks */
@@ -141,10 +124,9 @@ double ExponentialSmoothData::getCurrentValue() const {
   return currentValue_;
 }
 
-facebook::memcache::FiberManager::Options
-proxy_t::getFiberManagerOptions(
-  const facebook::memcache::McrouterOptions& opts) {
+namespace {
 
+FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
   FiberManager::Options fmOpts;
 #ifdef __SANITIZE_ADDRESS__
   /* ASAN needs a lot of extra stack space.
@@ -160,36 +142,20 @@ proxy_t::getFiberManagerOptions(
   return fmOpts;
 }
 
+}
+
 proxy_t::proxy_t(mcrouter_t *router_,
                  folly::EventBase* eventBase_,
                  const McrouterOptions& opts_,
                  bool perform_stats_logging)
     : router(router_),
       opts(opts_),
-      request_queue(0),
       eventBase(eventBase_),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
-      async_fd(nullptr),
-      async_spool_time(0),
-      rtt_timer(0),
-      request_timer_up(0),
-      request_timer_down(0),
       durationUs(kExponentialFactor),
-      num_bins_used(0),
-      monitor(0),
-      awriter(nullptr),
-      awriter_thread_handle(0),
-      awriter_thread_stack(0),
-      id(-1),
-      version(0),
-      stats_log_writer_thread_handle(0),
-      stats_log_writer(nullptr),
-      stats_log_writer_thread_stack(0),
       randomGenerator(folly::randomNumberSeed()),
-      being_destroyed(false),
       fiberManager(folly::make_unique<EventBaseLoopController>(),
                    getFiberManagerOptions(opts_)),
-      numRequestsProcessing_(0),
       performStatsLogging_(perform_stats_logging) {
   TAILQ_INIT(&waitingRequests_);
 
@@ -203,11 +169,10 @@ proxy_t::proxy_t(mcrouter_t *router_,
 
   proxy_set_default_route(this, opts.default_route);
 
-  proxy_init_timers(this);
   init_stats(stats);
 
   if (!opts.disable_dynamic_stats) {
-    FBI_VERIFY(rtt_timer =
+    FBI_VERIFY(rttTimer_ =
                fb_timer_alloc((nstring_t)NSTRING_LIT("proxy_rtt_timer"), 0,0));
   }
 
@@ -248,7 +213,7 @@ void proxy_t::onEventBaseAttached() {
 
   if (performStatsLogging_ && router != nullptr
       && opts.stats_logging_interval != 0) {
-    logger = createProxyLogger(this);
+    logger_ = createProxyLogger(this);
   }
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
@@ -258,28 +223,28 @@ void proxy_t::onEventBaseAttached() {
   }
 }
 
-int proxy_start_awriter_threads(proxy_t* proxy, bool realtime) {
-  if (!proxy->opts.asynclog_disable) {
-    int rc = spawn_thread(&proxy->awriter_thread_handle,
-                          &proxy->awriter_thread_stack, &awriter_thread_run,
-                          proxy->awriter.get(), realtime);
+int proxy_t::startAwriterThreads(bool realtime) {
+  if (!opts.asynclog_disable) {
+    int rc = spawn_thread(&awriterThreadHandle_,
+                          &awriterThreadStack_, &awriter_thread_run,
+                          awriter.get(), realtime);
     if (!rc) {
       LOG(ERROR) << "Failed to start asynclog awriter thread";
       return -1;
     }
-    folly::setThreadName(proxy->awriter_thread_handle, "mcrtr-awriter");
+    folly::setThreadName(awriterThreadHandle_, "mcrtr-awriter");
   }
 
-  int rc = spawn_thread(&proxy->stats_log_writer_thread_handle,
-                        &proxy->stats_log_writer_thread_stack,
+  int rc = spawn_thread(&statsLogWriterThreadHandle_,
+                        &statsLogWriterThreadStack_,
                         &awriter_thread_run,
-                        proxy->stats_log_writer.get(), realtime);
+                        stats_log_writer.get(), realtime);
   if (!rc) {
     LOG(ERROR) << "Failed to start async stats_log_writer thread";
     return -1;
   }
 
-  folly::setThreadName(proxy->stats_log_writer_thread_handle, "mcrtr-statsw");
+  folly::setThreadName(statsLogWriterThreadHandle_, "mcrtr-statsw");
 
   return 0;
 }
@@ -314,26 +279,22 @@ void proxy_t::foreachPossibleClient(
   }
 }
 
-void proxy_stop_awriter_threads(proxy_t* proxy) {
-  if (proxy->awriter_thread_handle) {
-    awriter_stop(proxy->awriter.get());
-    pthread_join(proxy->awriter_thread_handle, nullptr);
+void proxy_t::stopAwriterThreads() {
+  if (awriterThreadHandle_ && router->pid == getpid()) {
+    awriter_stop(awriter.get());
+    pthread_join(awriterThreadHandle_, nullptr);
   }
 
-  if (proxy->stats_log_writer_thread_handle) {
-    awriter_stop(proxy->stats_log_writer.get());
-    pthread_join(proxy->stats_log_writer_thread_handle, nullptr);
+  if (statsLogWriterThreadHandle_ && router->pid == getpid()) {
+    awriter_stop(stats_log_writer.get());
+    pthread_join(statsLogWriterThreadHandle_, nullptr);
   }
 
-  if (proxy->awriter_thread_stack) {
-    free(proxy->awriter_thread_stack);
-    proxy->awriter_thread_stack = nullptr;
-  }
+  free(awriterThreadStack_);
+  awriterThreadStack_ = nullptr;
 
-  if (proxy->stats_log_writer_thread_stack) {
-    free(proxy->stats_log_writer_thread_stack);
-    proxy->stats_log_writer_thread_stack = nullptr;
-  }
+  free(statsLogWriterThreadStack_);
+  statsLogWriterThreadStack_ = nullptr;
 }
 
 /** drain and delete proxy object */
@@ -345,10 +306,8 @@ proxy_t::~proxy_t() {
     asox_queue_del(request_queue);
   }
 
-  proxy_del_timers(this);
-
-  if (rtt_timer) {
-    fb_timer_free(rtt_timer);
+  if (rttTimer_) {
+    fb_timer_free(rttTimer_);
   }
 
   magic = 0xdeadbeefdeadbeefLL;
@@ -378,10 +337,6 @@ proxy_request_t::proxy_request_t(proxy_t* p,
     failover_disabled(0),
     _refcount(1),
     sender_id(senderId),
-    start_time_up(0),
-    start_time_down(0),
-    send_time(0),
-    created_time(fb_timer_cycle_timer()),
     requester(nullptr),
     legacy_get_service_info(false),
     context(con),
@@ -688,11 +643,6 @@ McMsgRef create_reply(mc_op_t op, mc_res_t result, const char *str) {
 void proxy_request_t::continueSendReply() {
   reply_state = REPLY_STATE_REPLIED;
 
-  if (start_time_down && !proxy->opts.disable_dynamic_stats) {
-    fb_timer_record_finish(proxy->request_timer_down,
-                           start_time_down, fb_timer_cycle_timer());
-  }
-
   if (!proxy->opts.sync) {
     enqueueReply_(this);
   }
@@ -743,14 +693,14 @@ void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e) {
   writelog_entry_free(e);
 }
 
-void proxy_flush_rtt_stats(proxy_t *proxy) {
-  if (!proxy->opts.disable_dynamic_stats) {
-    uint64_t rtt_min = fb_timer_get_avg_min(proxy->rtt_timer);
-    stat_set_uint64(proxy, rtt_min_stat, rtt_min);
-    uint64_t rtt = fb_timer_get_avg(proxy->rtt_timer);
-    stat_set_uint64(proxy, rtt_stat, rtt);
-    uint64_t rtt_max = fb_timer_get_avg_peak(proxy->rtt_timer);
-    stat_set_uint64(proxy, rtt_max_stat, rtt_max);
+void proxy_t::flushRttStats() {
+  if (!opts.disable_dynamic_stats) {
+    uint64_t rtt_min = fb_timer_get_avg_min(rttTimer_);
+    stat_set_uint64(this, rtt_min_stat, rtt_min);
+    uint64_t rtt = fb_timer_get_avg(rttTimer_);
+    stat_set_uint64(this, rtt_stat, rtt);
+    uint64_t rtt_max = fb_timer_get_avg_peak(rttTimer_);
+    stat_set_uint64(this, rtt_max_stat, rtt_max);
   }
 }
 

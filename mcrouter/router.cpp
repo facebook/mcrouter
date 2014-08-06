@@ -445,7 +445,6 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
       return nullptr;
     }
 
-    proxy->id = i;
     router->proxy_threads.emplace_back(
       folly::make_unique<ProxyThread>(std::move(proxy)));
   }
@@ -476,8 +475,8 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   }
 
   for (auto& proxy_thread : router->proxy_threads) {
-    int rc = proxy_start_awriter_threads(proxy_thread->proxy,
-                                         router->wantRealtimeThreads());
+    int rc = proxy_thread->proxy->startAwriterThreads(
+      router->wantRealtimeThreads());
     if (rc != 0) {
       mcrouter_free(router);
       return nullptr;
@@ -1027,7 +1026,7 @@ int mcrouter_get_stats(mcrouter_t *router,
 
   {
     std::lock_guard<std::mutex> guard(proxy->stats_lock);
-    proxy_flush_rtt_stats(proxy);
+    proxy->flushRttStats();
     prepare_stats(proxy, stats);
   }
 

@@ -50,20 +50,6 @@ void ProxyThread::stopAndJoin() {
   }
 }
 
-void ProxyThread::stopAwriterThreads() {
-  auto router = proxy->router;
-  if (router->pid == getpid()) {
-    proxy_stop_awriter_threads(proxy);
-  }
-  if (proxy->awriter_thread_stack != nullptr) {
-    free(proxy->awriter_thread_stack);
-  }
-  if (proxy->stats_log_writer_thread_stack != nullptr) {
-    free(proxy->stats_log_writer_thread_stack);
-    proxy->stats_log_writer_thread_stack = nullptr;
-  }
-}
-
 void ProxyThread::proxyThreadRun() {
   FBI_ASSERT(proxy->router != nullptr);
   mcrouter_set_thread_name(pthread_self(), proxy->router->opts, "mcrpxy");
@@ -76,7 +62,7 @@ void ProxyThread::proxyThreadRun() {
     mcrouterLoopOnce(proxy->eventBase);
   }
 
-  stopAwriterThreads();
+  proxy->stopAwriterThreads();
   // Delete the proxy from the proxy thread so that the clients get
   // deleted from the same thread where they were created.
   folly::EventBase *eventBase = proxy->eventBase;
