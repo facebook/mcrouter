@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#include <mutex>
+
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/stats.h"
 
@@ -24,15 +26,10 @@ struct dynamic_stat_t {
 typedef TAILQ_HEAD(dynamic_stats_list, dynamic_stat_t) dynamic_stats_list_t;
 
 void dynamic_stats_init();
-void dynamic_stats_lock();
-void dynamic_stats_unlock();
+std::mutex& dynamic_stats_mutex();
 dynamic_stat_t* dynamic_stats_register(const stat_t*, void*);
 int dynamic_stats_unregister(dynamic_stat_t*);
 dynamic_stats_list_t dynamic_stats_get_all();
-int dynamic_stats_get_num_stats();
-size_t dynamic_stat_size();
-size_t proxy_client_stat_to_str(char *buf,
-                                size_t size,
-                                void* ptr);
+std::string proxy_client_stat_to_str(void* ptr);
 
 }}} // facebook::memcache::mcrouter

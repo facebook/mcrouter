@@ -86,14 +86,6 @@ class ProxyRoute {
     return root_->route(req, Operation());
   }
 
-  ProxyMcReply route(
-    const ProxyMcRequest& req, McOperation<mc_op_stats>) const {
-
-    auto msg = McMsgRef::moveRef(stats_reply(proxy_, req.fullKey()));
-
-    return ProxyMcReply(msg->result, std::move(msg));
-  }
-
  private:
   proxy_t* proxy_;
   McrouterRouteHandlePtr root_;

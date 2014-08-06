@@ -464,9 +464,9 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   FBI_ASSERT(preq->proxy);
 
   if (preq->orig_req->op == mc_op_stats) {
-    auto msg = McMsgRef::moveRef(
-      stats_reply(this, to<folly::StringPiece>(preq->orig_req->key)));
-    preq->sendReply(std::move(msg));
+    auto reply =
+      stats_reply(this, to<folly::StringPiece>(preq->orig_req->key));
+    preq->sendReply(reply.releasedMsg(mc_op_stats));
     return;
   }
 

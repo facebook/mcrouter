@@ -6,32 +6,29 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-// for PRIu64 and friends in C++
-#define __STDC_FORMAT_MACROS
-
 #include "stats.h"
 
 #include <dirent.h>
-#include <unistd.h>
-#include <time.h>
+#include <pthread.h>
 #include <sys/resource.h>
 #include <sys/types.h>
-#include <pthread.h>
+#include <time.h>
+#include <unistd.h>
 
-#include "folly/Range.h"
-#include "folly/json.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/timer.h"
-#include "mcrouter/lib/mc/msg.h"
+#include <mcrouter/config.h>
+
+#include <folly/Range.h>
+#include <folly/json.h>
+
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/_router.h"
-#include "mcrouter/config.h"
 #include "mcrouter/dynamic_stats.h"
+#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/StatsReply.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/proxy.h"
-
-using facebook::memcache::to;
-using std::string;
 
 /**                             .__
  * __  _  _______ _______  ____ |__| ____    ____
@@ -55,24 +52,6 @@ struct proc_stat_data_t {
   unsigned long rss;
 };
 
-static size_t check_stat_size(size_t size, const stat_t* stat) {
-  if(!stat) {
-    return 0;
-  }
-
-  if(size >= stat->size) {
-    // snprintf returns number of chars that would have been written
-    // (excluding \0 terminator) had there been enough room in the
-    // buffer. If return value >= allowed size, it means that we
-    // didn't have enough room.
-    LOG(ERROR) << "stat " << stat->name << " was truncated to " << stat->size <<
-                  " chars";
-    return stat->size - 1; // exclude terminator
-  }
-
-  return size;
-}
-
 double stats_rate_value(proxy_t* proxy, int idx) {
   const stat_t* stat = &proxy->stats[idx];
   double rate = 0;
@@ -95,14 +74,9 @@ double stats_rate_value(proxy_t* proxy, int idx) {
   return rate;
 }
 
-static size_t rate_stat_to_str(proxy_t * proxy,
-                               int idx,
-                               char* buf) {
-  const stat_t* stat = &proxy->stats[idx];
-  double rate = stats_rate_value(proxy, idx);
-  size_t size = snprintf(buf, stat->size, "%g",  rate);
-
-  return check_stat_size(size, stat);
+static std::string rate_stat_to_str(proxy_t * proxy,
+                                    int idx) {
+  return folly::stringPrintf("%g", stats_rate_value(proxy, idx));
 }
 
 /**
@@ -114,46 +88,29 @@ static size_t rate_stat_to_str(proxy_t * proxy,
  *
  * @eturn the length of the string written, excluding terminator
  */
-static size_t stat_to_str(const stat_t* stat,
-                          char* buf,
-                          void *ptr) {
-  int size = 0;
+static std::string stat_to_str(const stat_t* stat, void *ptr) {
   switch (stat->type) {
     case stat_string_fn:
-      size = stat->data.string_fn(buf, stat->size, ptr);
-      break;
+      return stat->data.string_fn(ptr);
     case stat_string:
-      size = snprintf(buf, stat->size, "%s",  stat->data.string);
-      break;
+      return stat->data.string;
     case stat_uint64:
-      size = snprintf(buf, stat->size, "%" PRIu64, stat->data.uint64);
-      break;
+      return folly::to<std::string>(stat->data.uint64);
     case stat_int64:
-      size = snprintf(buf, stat->size, "%" PRId64, stat->data.int64);
-      break;
+      return folly::to<std::string>(stat->data.int64);
     case stat_double:
-      size = snprintf(buf, stat->size, "%g",  stat->data.dbl);
-      break;
+      return folly::stringPrintf("%g", stat->data.dbl);
     default:
       LOG(ERROR) << "unknown stat type " << stat->type << " (" <<
                     stat->name << ")";
-      if (stat->size > 0) {
-        buf[0] = '\0';
-        return 0;
-      } else {
-        LOG(FATAL) << "Zero length stat " << stat->name << ", stats are broken";
-      }
+      return "";
   }
-
-  return check_stat_size(size, stat);
 }
 
-static size_t stat_get_rusage(char* buf, size_t size, void* ptr) {
+static std::string stat_get_rusage(void* ptr) {
   struct rusage ru;
   getrusage(RUSAGE_SELF, &ru);
-  return snprintf(
-      buf,
-      size,
+  return folly::stringPrintf(
       "{ user_time: %ld.%06ld, "
       "system_time: %ld.%06ld, "
       "max_rss: %ld, "
@@ -174,21 +131,19 @@ static size_t stat_get_rusage(char* buf, size_t size, void* ptr) {
 // define all data structs for stats here [median, percentile, etc]
 
 void init_stats(stat_t *stats) {
-#define STAT(_name, _type, _size, _aggregate, _data_assignment)         \
+#define STAT(_name, _type, _aggregate, _data_assignment)                \
   {                                                                     \
     stat_t& s = stats[_name##_stat];                                    \
     s.name = #_name;                                                    \
     s.group = GROUP;                                                    \
     s.type = _type;                                                     \
-    s.size = _size;                                                     \
     s.aggregate = _aggregate;                                           \
     s.data _data_assignment;                                            \
-  }                                                                     \
-// Length of longest ascii representation of uint64/int64 + 1 ('\0')  = 21
-#define STUI(name, value, agg) STAT(name, stat_uint64, 21, agg, .uint64=value)
-#define STUIR(name, value, agg) STAT(name, stat_uint64, 25, agg, .uint64=value)
-#define STSI(name, value, agg) STAT(name, stat_int64, 21, agg, .int64=value)
-#define STSS(name, value, agg) STAT(name, stat_string, strlen(value) + 1, agg, \
+  }
+#define STUI(name, value, agg) STAT(name, stat_uint64, agg, .uint64=value)
+#define STUIR(name, value, agg) STAT(name, stat_uint64, agg, .uint64=value)
+#define STSI(name, value, agg) STAT(name, stat_int64, agg, .int64=value)
+#define STSS(name, value, agg) STAT(name, stat_string, agg, \
                                     .string=(char*)value)
 #include "stat_list.h"
 #undef STAT
@@ -312,8 +267,6 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
   stat_set_uint64(proxy, mcc_waiting_replies_stat, total_mcc_waiting_replies);
 
   stats[commandargs_stat].data.string = router->command_args;
-  stats[commandargs_stat].size =
-    router->command_args ? strlen(router->command_args) + 1 : 0;
 
   uint64_t now = time(nullptr);
   stats[time_stat].data.uint64 = now;
@@ -456,200 +409,67 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
   }
 }
 
-nstring_t version_stats[] = {
-  {(char*)"mcrouter-version", strlen("mcrouter-version")},
-  {(char*)MCROUTER_PACKAGE_STRING, strlen(MCROUTER_PACKAGE_STRING)},
-};
-
-static mc_msg_t* version_stats_reply() {
-  mc_msg_t* reply = mc_msg_new(0);
-  if (reply == nullptr) {
-    return nullptr;
-  }
-
-  reply->op = mc_op_stats;
-  reply->number = 1;
-  reply->result = mc_res_ok;
-  reply->stats = version_stats;
-  return reply;
-}
-
-static mc_msg_t* create_error_reply(const string& message, mc_op_t op) {
-  mc_msg_t *reply = mc_msg_new(message.size());
-  if (reply == nullptr) {
-    return nullptr;
-  }
-
-  reply->op = op;
-  reply->result = mc_res_client_error;
-  reply->value.str = (char*) &reply[1];
-  reply->value.len = message.size();
-
-  FBI_ASSERT(reply->value.str + reply->value.len <=
-             (char*)reply + sizeof(mc_msg_t) + message.size());
-  memcpy(reply->value.str, message.c_str(), reply->value.len);
-
-  return reply;
-}
-
 /**
  * @param proxy_t proxy
  */
-mc_msg_t* stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
+McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   std::lock_guard<std::mutex> guard(proxy->stats_lock);
-  dynamic_stats_lock();
 
   proxy_flush_rtt_stats(proxy);
 
-  size_t string_size = 0;
-  size_t stats_arr_size = 0;
-  size_t num_stats_in_group = 0;
-  fb_timer_list_t timer_list = fb_timer_get_all_timers();
-  dynamic_stats_list_t dynamic_stat_list = dynamic_stats_get_all();
-  nstring_t* timers = nullptr;
-  int num_timers = fb_timer_get_num_timers();
-  mc_msg_t *reply = nullptr;
-  uint32_t groups;
-  stat_t stats[num_stats];
+  StatsReply reply;
 
   if (group_str == "version") {
-    reply = version_stats_reply();
-    goto epilogue;
+    reply.addStat("mcrouter-version", MCROUTER_PACKAGE_STRING);
+    return reply.getMcReply();
   }
 
-  if (proxy->router == nullptr) {
-    reply =
-      create_error_reply("stats unsupported with detached proxy", mc_op_stats);
-    goto epilogue;
+  auto groups = stat_parse_group_str(group_str);
+  if (groups == unknown_stats) {
+    return McReply(mc_res_client_error, "bad stats command");
   }
 
-  groups = stat_parse_group_str(group_str);
-
+  stat_t stats[num_stats];
   init_stats(stats);
 
-  // find allocation size
+  prepare_stats(proxy, stats);
+
   for (unsigned int ii = 0; ii < num_stats; ii++) {
     stat_t* stat = &stats[ii];
     if (stat->group & groups) {
-      ++num_stats_in_group;
-      string_size += stat->size;
-    }
-  }
-
-  // add the registered timers to the stats
-  if (groups & timer_stats) {
-    int i = 0;
-    fb_timer_t* timer;
-    timers = (nstring_t*)malloc(sizeof(nstring_t)*num_timers*
-                                NUM_TIMER_OUTPUT_TYPES);
-    TAILQ_FOREACH(timer, &timer_list, entry) {
-      int j;
-      num_stats_in_group += NUM_TIMER_OUTPUT_TYPES;
-      // convert the timer object to a set of NUM_TIMER_OUTPUT_TYPES
-      // nstrings
-      fb_timer_to_nstring(timer, timers + i * NUM_TIMER_OUTPUT_TYPES);
-      for (j=0; j < NUM_TIMER_OUTPUT_TYPES; j++) {
-        string_size += timers[i * NUM_TIMER_OUTPUT_TYPES + j].len + 1;
+      if (stat->group & rate_stats) {
+        reply.addStat(stat->name, rate_stat_to_str(proxy, ii));
+      } else {
+        reply.addStat(stat->name, stat_to_str(stat, nullptr));
       }
-      i++;
     }
   }
 
-  // add the registered dynamic stats to the stats
-  // assuming mcrouter is single-threaded
+  if (groups & timer_stats) {
+    fb_timer_list_t timer_list = fb_timer_get_all_timers();
+    fb_timer_t* timer;
+    TAILQ_FOREACH(timer, &timer_list, entry) {
+      nstring_t timers[NUM_TIMER_OUTPUT_TYPES];
+      fb_timer_to_nstring(timer, timers);
+      for (int i = 0; i < NUM_TIMER_OUTPUT_TYPES; ++i) {
+        reply.addStat(to<folly::StringPiece>(timer->names[i]),
+                      to<folly::StringPiece>(timers[i]));
+        free(timers[i].str);
+      }
+    }
+  }
+
   if (groups & server_stats) {
-    int i = 0;
+    std::lock_guard<std::mutex> lg(dynamic_stats_mutex());
+    dynamic_stats_list_t dynamic_stat_list = dynamic_stats_get_all();
     dynamic_stat_t* d_stat;
     TAILQ_FOREACH(d_stat, &dynamic_stat_list, entry) {
-      string_size += d_stat->stat.size;
-      ++num_stats_in_group;
-      ++i;
+      reply.addStat(d_stat->stat.name,
+                    stat_to_str(&d_stat->stat, d_stat->entity_ptr));
     }
   }
 
-  // key and value for each of num_stats_in_group stats
-  stats_arr_size = sizeof(nstring_t) * 2 * num_stats_in_group;
-
-  // freed in mc_reply_decref
-  reply = mc_msg_new(stats_arr_size + string_size);
-  if (reply == nullptr) {
-    goto epilogue;
-  }
-
-  reply->op = mc_op_stats;
-
-  if (groups == unknown_stats) {
-    reply->result = mc_res_client_error;
-    reply->value = (nstring_t) NSTRING_LIT("bad stats command");
-  }
-  else {
-    reply->number = num_stats_in_group;
-    reply->result = mc_res_ok;
-    reply->stats = (nstring_t*) (&reply[1]);
-    reply->value.str = (char*) &(reply->stats[num_stats_in_group * 2]);
-
-    prepare_stats(proxy, stats);
-
-    unsigned int cur = 0;
-    size_t offset = 0;
-    for (unsigned int ii = 0; ii < num_stats; ii++) {
-      stat_t* stat = &stats[ii];
-      if (stat->group & groups) {
-        nstring_t* ns = &reply->stats[cur++];
-        *ns = to<nstring_t>(stat->name);
-
-        ns = &reply->stats[cur++];
-        ns->str = reply->value.str + offset;
-
-        if (stat->group & rate_stats) {
-          ns->len = rate_stat_to_str(proxy, ii, ns->str);
-        } else {
-          ns->len = stat_to_str(stat, ns->str, nullptr);
-        }
-        offset += ns->len + 1; // \0 terminator
-      }
-    }
-
-    if (timers) {
-      fb_timer_t *timer;
-      int ii = 0;
-      TAILQ_FOREACH(timer, &timer_list, entry) {
-        int jj;
-        for (jj = 0; jj < NUM_TIMER_OUTPUT_TYPES; jj++) {
-          int idx = ii * NUM_TIMER_OUTPUT_TYPES + jj;
-          nstring_t* ns = &reply->stats[cur++];
-          *ns = timer->names[jj];
-
-          ns = &reply->stats[cur++];
-          ns->str = reply->value.str + offset;
-          strncpy(ns->str, timers[idx].str, timers[idx].len);
-          free(timers[idx].str);
-          ns->len = timers[idx].len;
-          offset += ns->len + 1; // \0 terminator
-        }
-        ii ++;
-      }
-    }
-
-    if (groups & server_stats) {
-      dynamic_stat_t* d_stat;
-      TAILQ_FOREACH(d_stat, &dynamic_stat_list, entry) {
-        nstring_t* ns = &reply->stats[cur++];
-        *ns = to<nstring_t>(d_stat->stat.name);
-
-        ns = &reply->stats[cur++];
-        ns->str = reply->value.str + offset;
-        ns->len = stat_to_str(&d_stat->stat, ns->str, d_stat->entity_ptr);
-        offset += ns->len + 1;
-      }
-    }
-  }
-
-
-epilogue:
-  free(timers);
-  dynamic_stats_unlock();
-  return reply;
+  return reply.getMcReply();
 }
 
 }}} // facebook::memcache::mcrouter

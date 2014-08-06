@@ -11,11 +11,13 @@
 #include <string>
 #include <unordered_map>
 
-#include "folly/Range.h"
+#include <folly/Range.h>
 
-struct mc_msg_s;
+namespace facebook { namespace memcache {
 
-namespace facebook { namespace memcache { namespace mcrouter {
+class McReply;
+
+namespace mcrouter {
 
 // define stat_name_t
 #define STAT(name,...) name##_stat,
@@ -40,7 +42,7 @@ struct proxy_t;
 /** statistics ftw */
 
 struct stat_s;
-typedef size_t(*string_fn_t)(char*, size_t, void*);
+typedef std::string(*string_fn_t)(void*);
 
 enum stat_type_t {
   stat_string_fn,
@@ -74,7 +76,6 @@ struct stat_t {
   folly::StringPiece name;
   int group;
   stat_type_t type;
-  size_t size;
   int aggregate;
   union {
     string_fn_t string_fn;
@@ -104,7 +105,7 @@ double stats_rate_value(proxy_t* proxy, int idx);
 void stat_set_uint64(proxy_t*, stat_name_t, uint64_t);
 uint64_t stat_get_uint64(proxy_t*, stat_name_t);
 uint64_t stat_get_config_age(const proxy_t* proxy, uint64_t now);
-struct mc_msg_s* stats_reply(proxy_t*, folly::StringPiece);
+McReply stats_reply(proxy_t*, folly::StringPiece);
 void prepare_stats(proxy_t *proxy, stat_t *stats);
 
 }}} // facebook::memcache::mcrouter

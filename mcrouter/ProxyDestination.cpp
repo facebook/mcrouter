@@ -10,23 +10,24 @@
 
 #include <mcrouter/config-impl.h>
 
-#include "folly/Conv.h"
-#include "folly/Memory.h"
+#include <folly/Conv.h>
+#include <folly/Memory.h>
+
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/dynamic_stats.h"
-#include "mcrouter/pclient.h"
-#include "mcrouter/proxy.h"
-#include "mcrouter/routes/DestinationRoute.h"
-#include "mcrouter/stats.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/fbi/util.h"
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/pclient.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/routes/DestinationRoute.h"
+#include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -450,8 +451,7 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
     stat.name = pdstnKey;
     stat.group = server_stats;
     stat.type = stat_string_fn;
-    stat.data.string_fn = proxy_client_stat_to_str;
-    stat.size = dynamic_stat_size();
+    stat.data.string_fn = &proxy_client_stat_to_str;
     stats_ptr = dynamic_stats_register(&stat, this);
     if (stats_ptr == nullptr) {
       throw std::runtime_error("dynamic_stats_register failure");

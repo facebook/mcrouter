@@ -46,12 +46,12 @@
 //  STUI(bytes_written, 0)
 //  STUI(get_hits, 0)
 //  STUI(get_misses, 0)
-  STAT(rusage_system, stat_double, 25, 0, .dbl = 0.0)
-  STAT(rusage_user, stat_double, 25, 0, .dbl = 0.0)
+  STAT(rusage_system, stat_double, 0, .dbl = 0.0)
+  STAT(rusage_user, stat_double, 0, .dbl = 0.0)
   STUI(ps_num_minor_faults, 0, 0)
   STUI(ps_num_major_faults, 0, 0)
-  STAT(ps_user_time_sec, stat_double, 25, 0, .dbl = 0.0)
-  STAT(ps_system_time_sec, stat_double, 25, 0, .dbl = 0.0)
+  STAT(ps_user_time_sec, stat_double, 0, .dbl = 0.0)
+  STAT(ps_system_time_sec, stat_double, 0, .dbl = 0.0)
   STUI(ps_vsize, 0, 0)
   STUI(ps_rss, 0, 0)
   STUI(ps_open_fd, 0, 0)
@@ -60,7 +60,7 @@
   STUI(fibers_stack_high_watermark, 0, 0)
 //  STUI(failed_client_connections, 0)
   STUI(successful_client_connections, 0, 1)
-  STAT(duration_us, stat_double, 25, 0, .dbl = 0.0)
+  STAT(duration_us, stat_double, 0, .dbl = 0.0)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | cmd_all_stats | \
   cmd_in_stats | count_stats
@@ -357,7 +357,7 @@
   STUIR(result_busy_all, 0, 1)
 #undef GROUP
 #define GROUP detailed_stats
-  STAT(rusage, stat_string_fn, 255, 0, .string_fn = &stat_get_rusage)
+  STAT(rusage, stat_string_fn, 0, .string_fn = &stat_get_rusage)
 #undef GROUP
 #define GROUP memory_stats | ods_stats | detailed_stats
 #ifndef FBCODE_OPT_BUILD
