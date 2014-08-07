@@ -104,6 +104,7 @@ libmcrouter_a_SOURCES = \
   fibers/FiberManager.h \
   fibers/FiberPromise-inl.h \
   fibers/FiberPromise.h \
+  fibers/GenericBaton-inl.h \
   fibers/GenericBaton.cpp \
   fibers/GenericBaton.h \
   fibers/GuardPageAllocator-inl.h \

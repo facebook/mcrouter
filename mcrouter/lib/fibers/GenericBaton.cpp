@@ -30,14 +30,6 @@ bool GenericBaton::try_wait() {
   }
 }
 
-bool GenericBaton::timed_wait(TimeoutController::Duration timeout) {
-  if (fiber::onFiber()) {
-    return fiberBaton_.timed_wait(timeout);
-  } else {
-    return threadBaton_.timed_wait(std::chrono::system_clock::now() + timeout);
-  }
-}
-
 void GenericBaton::post() {
   // We need to post both batons since we aren't sure if
   // the waiter is a fiber or a thread

@@ -38,10 +38,12 @@ class GenericBaton {
   /**
    * Puts active fiber / thread to sleep. Returns when post is called.
    *
-   * @param timeout    Time until the fiber / thread can block
+   * @param timeout    The absolute time until which the fiber / thread can
+   *                   block
    * @return           true if was posted, false if timeout expired
    */
-  bool timed_wait(TimeoutController::Duration timeout);
+  template<typename C, typename D = typename C::duration>
+  bool timed_wait(const std::chrono::time_point<C,D>& timeout);
 
   /**
    * Wakes up Fiber/ thread  which was waiting on this Baton. If no fiber or
@@ -56,3 +58,5 @@ class GenericBaton {
 };
 
 }}
+
+#include "mcrouter/lib/fibers/GenericBaton-inl.h"
