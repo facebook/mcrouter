@@ -108,6 +108,42 @@ TEST(FiberManager, batonTimedWaitPost) {
   loopController.loop(std::move(loopFunc));
 }
 
+TEST(FiberManager, batonTryWait) {
+
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+  auto& loopController =
+    dynamic_cast<SimpleLoopController&>(manager.loopController());
+
+  // Check if try_wait and post work as expected
+  Baton b;
+
+  manager.addTask([&](){
+    while (!b.try_wait()) {
+    }
+  });
+  auto thr = std::thread([&](){
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    b.post();
+  });
+
+  manager.loopUntilNoReady();
+  thr.join();
+
+  Baton c;
+
+  // Check try_wait without post
+  manager.addTask([&](){
+    int cnt = 100;
+    while (cnt && !c.try_wait()) {
+      cnt--;
+    }
+    EXPECT_TRUE(!c.try_wait()); // must still hold
+    EXPECT_EQ(cnt, 0);
+  });
+
+  manager.loopUntilNoReady();
+}
+
 TEST(FiberManager, genericBatonFiberWait) {
   FiberManager manager(folly::make_unique<SimpleLoopController>());
 

@@ -30,6 +30,12 @@ class GenericBaton {
   void wait();
 
   /**
+   * Check if the baton has been posted without blocking.
+   * @return           true if posted, false otherwise
+   */
+  bool try_wait();
+
+  /**
    * Puts active fiber / thread to sleep. Returns when post is called.
    *
    * @param timeout    Time until the fiber / thread can block
@@ -50,5 +56,3 @@ class GenericBaton {
 };
 
 }}
-
-#include "mcrouter/lib/fibers/GenericBaton-inl.h"

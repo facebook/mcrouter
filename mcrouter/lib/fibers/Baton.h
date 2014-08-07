@@ -60,6 +60,12 @@ class Baton {
   bool timed_wait(TimeoutController::Duration timeout, F&& mainContextFunc);
 
   /**
+   * Checks if the baton has been posted without blocking.
+   * @return    true iff the baton has been posted.
+   */
+  bool try_wait();
+
+  /**
    * Wakes up Fiber which was waiting on this Baton (or if no Fiber is waiting,
    * next wait() call will return immediately).
    */

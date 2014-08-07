@@ -7,7 +7,10 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include "mcrouter/lib/fibers/GenericBaton.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
+
+#include <chrono>
 
 namespace facebook { namespace memcache {
 
@@ -19,13 +22,19 @@ void GenericBaton::wait() {
   }
 }
 
+bool GenericBaton::try_wait() {
+  if (fiber::onFiber()) {
+    return fiberBaton_.try_wait();
+  } else {
+    return threadBaton_.try_wait();
+  }
+}
+
 bool GenericBaton::timed_wait(TimeoutController::Duration timeout) {
   if (fiber::onFiber()) {
     return fiberBaton_.timed_wait(timeout);
   } else {
-    // TODO(mssarang): Change this once D1468909 is in
-    assert(false && "thread can't do a timed_wait on generic baton yet");
-    return false;
+    return threadBaton_.timed_wait(std::chrono::system_clock::now() + timeout);
   }
 }
 

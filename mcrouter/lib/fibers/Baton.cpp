@@ -36,4 +36,8 @@ void Baton::postHelper(intptr_t new_value) {
   }
 }
 
+bool Baton::try_wait() {
+  return waitingFiber_.load() == WAITING_FIBER_POSTED;
+}
+
 }}
