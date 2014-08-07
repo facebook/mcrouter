@@ -30,6 +30,7 @@
 #include <folly/ThreadName.h>
 
 #include "mcrouter/EventBaseLoopController.h"
+#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
