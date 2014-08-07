@@ -56,6 +56,9 @@ void McReplyBase::setResult(mc_res_t res) {
   result_ = res;
 }
 
+McReplyBase::McReplyBase() {
+}
+
 McReplyBase::McReplyBase(mc_res_t res)
     : result_(res) {
 }
@@ -76,7 +79,8 @@ McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
       valueData_(makeMsgValueIOBufStack(msg_)),
       flags_(msg_.get() ? msg_->flags : 0),
       leaseToken_(msg_.get() ? msg_->lease_id : 0),
-      delta_(msg_.get() ? msg_->delta : 0) {
+      delta_(msg_.get() ? msg_->delta : 0),
+      cas_(msg_.get() ? msg_->cas : 0) {
 }
 
 void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
@@ -96,6 +100,7 @@ void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
   out->flags = flags_;
   out->lease_id = leaseToken_;
   out->delta = delta_;
+  out->cas = cas_;
 }
 
 McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
@@ -125,6 +130,7 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
     toRelease->flags = flags_;
     toRelease->lease_id = leaseToken_;
     toRelease->delta = delta_;
+    toRelease->cas = cas_;
 
     return std::move(toRelease);
   }

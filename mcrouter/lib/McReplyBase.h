@@ -172,12 +172,24 @@ class McReplyBase {
     return valueData_;
   }
 
+  uint32_t appSpecificErrorCode() const {
+    return msg_.get() ? msg_->err_code : 0;
+  }
+
   uint64_t flags() const {
     return flags_;
   }
 
   void setFlags(uint64_t fl) {
     flags_ = fl;
+  }
+
+  uint32_t exptime() const {
+    return msg_.get() ? msg_->exptime : 0;
+  }
+
+  uint32_t number() const {
+    return msg_.get() ? msg_->number : 0;
   }
 
   uint64_t leaseToken() const {
@@ -188,8 +200,37 @@ class McReplyBase {
     leaseToken_ = lt;
   }
 
-  void setDelta(uint64_t delta) {
-    delta_ = delta;
+  uint64_t cas() const {
+    return cas_;
+  }
+
+  void setCas(uint64_t c) {
+    cas_ = c;
+  }
+
+  uint64_t delta() const {
+    return delta_;
+  }
+
+  void setDelta(uint64_t d) {
+    delta_ = d;
+  }
+
+  double lowValue() const {
+    return msg_.get() ? msg_->lowval : 0;
+  }
+
+  double highValue() const {
+    return msg_.get() ? msg_->highval : 0;
+  }
+
+  uint8_t ipv() const {
+    return msg_.get() ? msg_->ipv : 0;
+  }
+
+  const struct in6_addr& ipAddress() const {
+    static struct in6_addr addr;
+    return msg_.get() ? msg_->ip_addr : addr;
   }
 
   /**
@@ -213,6 +254,7 @@ class McReplyBase {
   ~McReplyBase() {};
 
   explicit McReplyBase(mc_res_t result);
+  McReplyBase();
   McReplyBase(mc_res_t result, McMsgRef&& reply);
   McReplyBase(mc_res_t result, folly::IOBuf value);
   McReplyBase(mc_res_t result, folly::StringPiece value);
@@ -226,6 +268,7 @@ class McReplyBase {
   uint64_t flags_{0};
   uint64_t leaseToken_{0};
   uint64_t delta_{0};
+  uint64_t cas_{0};
 };
 
 }}  // facebook::memcache

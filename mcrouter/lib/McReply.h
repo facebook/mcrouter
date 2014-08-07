@@ -20,8 +20,6 @@ class McReply : public McReplyBase {
   template<typename... Args>
   explicit McReply(Args&&... args)
     : McReplyBase(std::forward<Args>(args)...) {}
-  /* implicit */ McReply(McReplyBase reply)
-    : McReplyBase(std::move(reply)) {}
 };
 
 }}  // facebook::memcache
