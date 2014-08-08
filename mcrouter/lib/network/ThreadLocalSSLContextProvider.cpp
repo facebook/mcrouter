@@ -80,6 +80,10 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
       sslContext->loadPrivateKey(pemKeyPath.begin());
       sslContext->loadTrustedCertificates(pemCaPath.begin());
       sslContext->loadClientCAList(pemCaPath.begin());
+      // Disable compression if possible to reduce CPU and memory usage.
+#ifdef SSL_OP_NO_COMPRESSION
+      sslContext->setOptions(SSL_OP_NO_COMPRESSION);
+#endif
       contextInfo.lastLoadTime = now;
       contextInfo.context = std::move(sslContext);
     } catch (const apache::thrift::transport::TTransportException& ex) {
