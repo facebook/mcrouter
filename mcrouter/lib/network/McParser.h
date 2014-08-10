@@ -106,7 +106,6 @@ class McParser {
   bool outOfOrder_{false};
   mc_protocol_t protocol_{mc_unknown_protocol};
   mc_parser_t mcParser_;
-  folly::IOBufQueue readBuffer_;
 
   enum class ParserType {
     SERVER,
@@ -129,11 +128,7 @@ class McParser {
   size_t parsedMessages_{0};
   double bytesPerRequest_{0.0};
 
-  /**
-   * Stores partially read umbrella message header
-   * Always coalesced.
-   */
-  std::unique_ptr<folly::IOBuf> umHeaderBuffer_;
+  folly::IOBuf readBuffer_;
 
   /**
    * If we've read an umbrella header, this will contain header/body sizes.
@@ -160,9 +155,9 @@ class McParser {
   bool umMessageReady(
     const uint8_t* header,
     const uint8_t* body,
-    const std::unique_ptr<folly::IOBuf>& bodyBuffer);
+    const folly::IOBuf& bodyBuffer);
 
-  bool readUmbrellaData(std::unique_ptr<folly::IOBuf> data);
+  bool readUmbrellaData();
 
   void requestReadyHelper(McRequest req, mc_op_t operation, uint64_t reqid,
                           mc_res_t result, bool noreply);
