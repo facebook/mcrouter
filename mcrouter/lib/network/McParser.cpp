@@ -8,6 +8,8 @@
  */
 #include "McParser.h"
 
+#include <folly/Memory.h>
+
 namespace facebook { namespace memcache {
 
 /* Adjust buffer size after this many requests */
@@ -24,7 +26,8 @@ McParser::McParser(ServerParseCallback* callback,
       serverParseCallback_(callback),
       messagesPerRead_(requestsPerRead),
       minBufferSize_(minBufferSize),
-      maxBufferSize_(maxBufferSize) {
+      maxBufferSize_(maxBufferSize),
+      readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
   assert(serverParseCallback_ != nullptr);
   mc_parser_init(&mcParser_,
                  request_parser,
@@ -41,7 +44,8 @@ McParser::McParser(ClientParseCallback* callback,
       clientParseCallback_(callback),
       messagesPerRead_(repliesPerRead),
       minBufferSize_(minBufferSize),
-      maxBufferSize_(maxBufferSize) {
+      maxBufferSize_(maxBufferSize),
+      readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
   assert(clientParseCallback_ != nullptr);
   mc_parser_init(&mcParser_,
                  reply_parser,
@@ -61,11 +65,19 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
     return std::make_pair(umBodyBuffer_->writableTail(),
                           umMsgInfo_.body_size - umBodyBuffer_->length());
   } else {
-    auto p = readBuffer_.preallocate(bufferSize_, bufferSize_);
-    /* preallocate might return more than asked,
-       but it's always safe to use a smaller portion */
-    p.second = std::min(p.second, bufferSize_);
-    return p;
+    readBuffer_.unshare();
+    if (!readBuffer_.length()) {
+      /* If we read everything, reset pointers to 0 and re-use the buffer */
+      readBuffer_.clear();
+    } else if (readBuffer_.headroom() > 0) {
+      /* Move partially read data to the beginning */
+      readBuffer_.retreat(readBuffer_.headroom());
+    } else {
+      /* Reallocate more space if necessary */
+      readBuffer_.reserve(0, bufferSize_);
+    }
+    return std::make_pair(readBuffer_.writableTail(),
+                          std::min(readBuffer_.tailroom(), bufferSize_));
   }
 }
 
@@ -106,11 +118,11 @@ namespace {
  * cloned.length() == size.
  */
 folly::IOBuf cloneSubBuf(
-  const std::unique_ptr<folly::IOBuf>& from,
+  const folly::IOBuf& from,
   uint8_t* begin, size_t size) {
 
   folly::IOBuf out;
-  from->cloneInto(out);
+  from.cloneInto(out);
   assert(begin >= out.data() && begin <= out.data() + out.length());
   out.trimStart(begin - out.data());
   assert(size <= out.length());
@@ -139,7 +151,7 @@ void McParser::replyReadyHelper(McReply reply,
 bool McParser::umMessageReady(
   const uint8_t* header,
   const uint8_t* body,
-  const std::unique_ptr<folly::IOBuf>& bodyBuffer) {
+  const folly::IOBuf& bodyBuffer) {
 
   auto mutMsg = createMcMsgRef();
   uint64_t reqid;
@@ -196,19 +208,10 @@ bool McParser::umMessageReady(
   return true;
 }
 
-bool McParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
-  if (umHeaderBuffer_ && !umHeaderBuffer_->empty()) {
-    /* Headers are generally short (few dozen bytes), so it's really
-       unlikely that we end up here */
-    umHeaderBuffer_->appendChain(std::move(data));
-    umHeaderBuffer_->coalesce();
-  } else {
-    umHeaderBuffer_ = std::move(data);
-  }
-
-  while (!umHeaderBuffer_->empty()) {
-    auto st = um_parse_header(umHeaderBuffer_->data(),
-                              umHeaderBuffer_->length(),
+bool McParser::readUmbrellaData() {
+  while (!readBuffer_.empty()) {
+    auto st = um_parse_header(readBuffer_.data(),
+                              readBuffer_.length(),
                               &umMsgInfo_);
     if (st == um_not_enough_data) {
       return true;
@@ -221,26 +224,28 @@ bool McParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
     }
 
     /* Three cases: */
-    if (umHeaderBuffer_->length() >= umMsgInfo_.message_size) {
+    if (readBuffer_.length() >= umMsgInfo_.message_size) {
       /* 1) we already have the entire message */
       if (!umMessageReady(
-            umHeaderBuffer_->data(),
-            umHeaderBuffer_->data() + umMsgInfo_.header_size,
-            umHeaderBuffer_)) {
-        umHeaderBuffer_.reset();
+            readBuffer_.data(),
+            readBuffer_.data() + umMsgInfo_.header_size,
+            readBuffer_)) {
+        readBuffer_.clear();
         return false;
       }
       /* Re-enter the loop */
-      umHeaderBuffer_->trimStart(umMsgInfo_.message_size);
+      readBuffer_.trimStart(umMsgInfo_.message_size);
       continue;
-    } else if (umHeaderBuffer_->length() >= umMsgInfo_.header_size) {
+    } else if (readBuffer_.length() >= umMsgInfo_.header_size &&
+               umMsgInfo_.message_size - readBuffer_.length() >
+               minBufferSize_) {
       /* 2) we have the entire header, but body is incomplete.
          Copy the partially read body into the new buffer.
          TODO: this copy could be eliminated, but needs
          some modification of umbrella library. */
-      auto partial = umHeaderBuffer_->length() - umMsgInfo_.header_size;
+      auto partial = readBuffer_.length() - umMsgInfo_.header_size;
       umBodyBuffer_ = folly::IOBuf::copyBuffer(
-        umHeaderBuffer_->data() + umMsgInfo_.header_size,
+        readBuffer_.data() + umMsgInfo_.header_size,
         partial,
         /* headroom= */ 0,
         /* minTailroom= */ umMsgInfo_.body_size - partial);
@@ -262,25 +267,24 @@ bool McParser::readDataAvailable(size_t len) {
   if (umBodyBuffer_) {
     umBodyBuffer_->append(len);
     if (umBodyBuffer_->length() == umMsgInfo_.body_size) {
-      auto res = umMessageReady(umHeaderBuffer_->data(),
+      auto res = umMessageReady(readBuffer_.data(),
                                 umBodyBuffer_->data(),
-                                umBodyBuffer_);
-      umHeaderBuffer_.reset();
+                                *umBodyBuffer_);
+      readBuffer_.clear();
       umBodyBuffer_.reset();
       return res;
     }
     return true;
   } else {
-    readBuffer_.postallocate(len);
-    auto data = readBuffer_.split(len);
-    if (UNLIKELY(data->empty())) {
+    readBuffer_.append(len);
+    if (UNLIKELY(readBuffer_.empty())) {
       return true;
     }
 
     if (UNLIKELY(!seenFirstByte_)) {
       seenFirstByte_ = true;
       protocol_ = mc_parser_determine_protocol(&mcParser_,
-                                               *data->data());
+                                               *readBuffer_.data());
       if (protocol_ == mc_umbrella_protocol) {
         outOfOrder_ = true;
       } else if (protocol_ == mc_ascii_protocol) {
@@ -291,11 +295,12 @@ bool McParser::readDataAvailable(size_t len) {
     }
 
     if (protocol_ == mc_umbrella_protocol) {
-      return readUmbrellaData(std::move(data));
+      return readUmbrellaData();
     } else {
       /* mc_parser only works with contiguous blocks */
-      auto bytes = data->coalesce();
+      auto bytes = readBuffer_.coalesce();
       mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
+      readBuffer_.clear();
       return true;
     }
   }
