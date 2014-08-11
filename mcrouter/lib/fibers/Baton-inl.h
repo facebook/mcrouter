@@ -12,20 +12,32 @@
 
 namespace facebook { namespace memcache {
 
+inline Baton::Baton() : Baton(NO_WAITER) {
+  assert(Baton(NO_WAITER).futex_.futex == static_cast<uint32_t>(NO_WAITER));
+  assert(Baton(POSTED).futex_.futex == static_cast<uint32_t>(POSTED));
+  assert(Baton(TIMEOUT).futex_.futex == static_cast<uint32_t>(TIMEOUT));
+  assert(Baton(THREAD_WAITING).futex_.futex ==
+         static_cast<uint32_t>(THREAD_WAITING));
+
+  assert(futex_.futex.is_lock_free());
+  assert(waitingFiber_.is_lock_free());
+}
+
 template <typename F>
 void Baton::wait(F&& mainContextFunc) {
-  auto& fm = FiberManager::getFiberManager();
-
-  assert(fm.activeFiber_ != nullptr);
+  auto fm = FiberManager::getFiberManagerUnsafe();
+  if (!fm || !fm->activeFiber_) {
+    mainContextFunc();
+    return waitThread();
+  }
 
   auto& waitingFiber = waitingFiber_;
   auto f = [&mainContextFunc, &waitingFiber](Fiber& fiber) mutable {
     auto baton_fiber = waitingFiber.load();
     do {
-      if (LIKELY(baton_fiber == WAITING_FIBER_EMPTY)) {
+      if (LIKELY(baton_fiber == NO_WAITER)) {
         continue;
-      } else if (baton_fiber == WAITING_FIBER_POSTED ||
-                 baton_fiber == WAITING_FIBER_TIMEOUT) {
+      } else if (baton_fiber == POSTED || baton_fiber == TIMEOUT) {
         fiber.setData(0);
         break;
       } else {
@@ -38,28 +50,46 @@ void Baton::wait(F&& mainContextFunc) {
     mainContextFunc();
   };
 
-  fm.awaitFunc_ = std::ref(f);
-  fm.activeFiber_->preempt(Fiber::AWAITING);
+  fm->awaitFunc_ = std::ref(f);
+  fm->activeFiber_->preempt(Fiber::AWAITING);
 }
 
 template <typename F>
 bool Baton::timed_wait(TimeoutController::Duration timeout,
                        F&& mainContextFunc) {
+  auto fm = FiberManager::getFiberManagerUnsafe();
+
+  if (!fm || !fm->activeFiber_) {
+    mainContextFunc();
+    return timedWaitThread(timeout);
+  }
+
   auto& baton = *this;
   auto timeoutFunc = [&baton]() mutable {
-    baton.postHelper(WAITING_FIBER_TIMEOUT);
+    baton.postHelper(TIMEOUT);
   };
 
   TimeoutHandle timeout_handle(std::ref(timeoutFunc));
 
-  auto& fm = FiberManager::getFiberManager();
-  fm.timeoutManager_.registerTimeout(timeout_handle, timeout);
+  fm->timeoutManager_.registerTimeout(timeout_handle, timeout);
 
   wait(std::move(mainContextFunc));
 
   timeout_handle.tryCancel();
 
-  return waitingFiber_ == WAITING_FIBER_POSTED;
+  return waitingFiber_ == POSTED;
 }
+
+template<typename C, typename D>
+bool Baton::timed_wait(const std::chrono::time_point<C,D>& timeout) {
+  auto now = C::now();
+
+  if (LIKELY(now <= timeout)) {
+    return timed_wait(timeout - now);
+  } else {
+    return timed_wait(TimeoutController::Duration(0));
+  }
+}
+
 
 }}

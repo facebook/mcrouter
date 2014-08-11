@@ -10,6 +10,8 @@
 
 #include <atomic>
 
+#include <folly/detail/Futex.h>
+
 #include <mcrouter/lib/fibers/TimeoutController.h>
 
 namespace facebook { namespace memcache {
@@ -24,6 +26,10 @@ class Fiber;
  */
 class Baton {
  public:
+  Baton();
+
+  ~Baton() {}
+
   /**
    * Puts active fiber to sleep. Returns when post is called.
    */
@@ -37,6 +43,13 @@ class Baton {
    */
   template <typename F>
   void wait(F&& mainContextFunc);
+
+  /**
+   * This is here only not break tao/locks. Please don't use it, because it is
+   * inefficient when used on Fibers.
+   */
+  template<typename C, typename D = typename C::duration>
+  bool timed_wait(const std::chrono::time_point<C,D>& timeout);
 
   /**
    * Puts active fiber to sleep. Returns when post is called.
@@ -72,13 +85,52 @@ class Baton {
   void post();
 
  private:
+  enum {
+    /**
+     * Must be positive.  If multiple threads are actively using a
+     * higher-level data structure that uses batons internally, it is
+     * likely that the post() and wait() calls happen almost at the same
+     * time.  In this state, we lose big 50% of the time if the wait goes
+     * to sleep immediately.  On circa-2013 devbox hardware it costs about
+     * 7 usec to FUTEX_WAIT and then be awoken (half the t/iter as the
+     * posix_sem_pingpong test in BatonTests).  We can improve our chances
+     * of early post by spinning for a bit, although we have to balance
+     * this against the loss if we end up sleeping any way.  Spins on this
+     * hw take about 7 nanos (all but 0.5 nanos is the pause instruction).
+     * We give ourself 300 spins, which is about 2 usec of waiting.  As a
+     * partial consolation, since we are using the pause instruction we
+     * are giving a speed boost to the colocated hyperthread.
+     */
+    PreBlockAttempts = 300,
+  };
+
+  explicit Baton(intptr_t state) : waitingFiber_(state) {};
+
   void postHelper(intptr_t new_value);
+  void postThread();
+  void waitThread();
+  /**
+   * Spin for "some time" (see discussion on PreBlockAttempts) waiting
+   * for a post.
+   * @return true if we received a post the spin wait, false otherwise. If the
+   *         function returns true then Baton state is guaranteed to be POSTED
+   */
+  bool spinWaitForEarlyPost();
 
-  static constexpr intptr_t WAITING_FIBER_EMPTY = 0;
-  static constexpr intptr_t WAITING_FIBER_POSTED = -1;
-  static constexpr intptr_t WAITING_FIBER_TIMEOUT = -2;
+  bool timedWaitThread(TimeoutController::Duration timeout);
 
-  std::atomic<intptr_t> waitingFiber_{WAITING_FIBER_EMPTY};
+  static constexpr intptr_t NO_WAITER = 0;
+  static constexpr intptr_t POSTED = -1;
+  static constexpr intptr_t TIMEOUT = -2;
+  static constexpr intptr_t THREAD_WAITING = -3;
+
+  union {
+    std::atomic<intptr_t> waitingFiber_;
+    struct {
+      folly::detail::Futex<> futex;
+      int32_t _unused_packing;
+    } futex_;
+  };
 };
 
 }}
