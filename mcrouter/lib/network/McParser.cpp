@@ -6,7 +6,7 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include "McServerParser.h"
+#include "McParser.h"
 
 namespace facebook { namespace memcache {
 
@@ -16,14 +16,16 @@ const size_t kAdjustBufferSizeInterval = 10000;
 /* Decay previous bytes per request value with this constant */
 const double kBprDecay = 0.9;
 
-McServerParser::McServerParser(ParseCallback* callback,
-                               size_t requestsPerRead,
-                               size_t minBufferSize,
-                               size_t maxBufferSize)
-    : parseCallback_(callback),
-      requestsPerRead_(requestsPerRead),
+McParser::McParser(ServerParseCallback* callback,
+                   size_t requestsPerRead,
+                   size_t minBufferSize,
+                   size_t maxBufferSize)
+    : type_(ParserType::SERVER),
+      serverParseCallback_(callback),
+      messagesPerRead_(requestsPerRead),
       minBufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize) {
+  assert(serverParseCallback_ != nullptr);
   mc_parser_init(&mcParser_,
                  request_parser,
                  &parserMsgReady,
@@ -31,11 +33,28 @@ McServerParser::McServerParser(ParseCallback* callback,
                  this);
 }
 
-McServerParser::~McServerParser() {
+McParser::McParser(ClientParseCallback* callback,
+                   size_t repliesPerRead,
+                   size_t minBufferSize,
+                   size_t maxBufferSize)
+    : type_(ParserType::CLIENT),
+      clientParseCallback_(callback),
+      messagesPerRead_(repliesPerRead),
+      minBufferSize_(minBufferSize),
+      maxBufferSize_(maxBufferSize) {
+  assert(clientParseCallback_ != nullptr);
+  mc_parser_init(&mcParser_,
+                 reply_parser,
+                 &parserMsgReady,
+                 &parserParseError,
+                 this);
+}
+
+McParser::~McParser() {
   mc_parser_reset(&mcParser_);
 }
 
-std::pair<void*, size_t> McServerParser::getReadBuffer() {
+std::pair<void*, size_t> McParser::getReadBuffer() {
   if (protocol_ == mc_umbrella_protocol
       && umBodyBuffer_) {
     /* We're reading in umbrella message body */
@@ -50,13 +69,13 @@ std::pair<void*, size_t> McServerParser::getReadBuffer() {
   }
 }
 
-void McServerParser::recalculateBufferSize(size_t read) {
+void McParser::recalculateBufferSize(size_t read) {
   readBytes_ += read;
-  if (LIKELY(parsedRequests_ < kAdjustBufferSizeInterval)) {
+  if (LIKELY(parsedMessages_ < kAdjustBufferSizeInterval)) {
     return;
   }
 
-  double bpr = (double)readBytes_ / parsedRequests_;
+  double bpr = (double)readBytes_ / parsedMessages_;
   if (UNLIKELY(bytesPerRequest_ == 0.0)) {
     bytesPerRequest_ = bpr;
   } else {
@@ -64,9 +83,20 @@ void McServerParser::recalculateBufferSize(size_t read) {
   }
   bufferSize_ = std::max(
     minBufferSize_,
-    std::min((size_t)bytesPerRequest_ * requestsPerRead_, maxBufferSize_));
-  parsedRequests_ = 0;
+    std::min((size_t)bytesPerRequest_ * messagesPerRead_, maxBufferSize_));
+  parsedMessages_ = 0;
   readBytes_ = 0;
+}
+
+void McParser::errorHelper(McReply reply) {
+  switch (type_) {
+    case ParserType::SERVER:
+      serverParseCallback_->parseError(std::move(reply));
+      break;
+    case ParserType::CLIENT:
+      clientParseCallback_->parseError(std::move(reply));
+      break;
+  }
 }
 
 namespace {
@@ -89,19 +119,24 @@ folly::IOBuf cloneSubBuf(
 }
 }
 
-void McServerParser::requestReadyHelper(McRequest req,
-                                        mc_op_t operation,
-                                        uint64_t reqid,
-                                        mc_res_t result,
-                                        bool noreply) {
-  ++parsedRequests_;
-  if (LIKELY(parseCallback_ != nullptr)) {
-    parseCallback_->requestReady(
-      std::move(req), operation, reqid, result, noreply);
-  }
+void McParser::requestReadyHelper(McRequest req,
+                                  mc_op_t operation,
+                                  uint64_t reqid,
+                                  mc_res_t result,
+                                  bool noreply) {
+  ++parsedMessages_;
+  serverParseCallback_->requestReady(std::move(req), operation, reqid, result,
+                                     noreply);
 }
 
-bool McServerParser::umRequestReady(
+void McParser::replyReadyHelper(McReply reply,
+                                mc_op_t operation,
+                                uint64_t reqid) {
+  ++parsedMessages_;
+  clientParseCallback_->replyReady(std::move(reply), operation, reqid);
+}
+
+bool McParser::umMessageReady(
   const uint8_t* header,
   const uint8_t* body,
   const std::unique_ptr<folly::IOBuf>& bodyBuffer) {
@@ -112,32 +147,56 @@ bool McServerParser::umRequestReady(
                                body, umMsgInfo_.body_size,
                                &reqid, mutMsg.get());
   if (st != um_ok) {
-    if (parseCallback_) {
-      parseCallback_->parseError(
-        McReply(mc_res_remote_error, "Error parsing Umbrella message"));
-    }
+    errorHelper(McReply(mc_res_remote_error,
+                        "Error parsing Umbrella message"));
     return false;
   }
 
-  McMsgRef msg = std::move(mutMsg);
-  auto req = McRequest(msg.clone());
-  if (msg->key.len != 0) {
-    req.setKey(
-      cloneSubBuf(bodyBuffer,
-                  reinterpret_cast<uint8_t*>(msg->key.str),
-                  msg->key.len));
+  switch (type_) {
+    case ParserType::SERVER:
+      {
+        McMsgRef msg(std::move(mutMsg));
+        auto req = McRequest(msg.clone());
+        if (msg->key.len != 0) {
+          req.setKey(
+            cloneSubBuf(bodyBuffer,
+                        reinterpret_cast<uint8_t*>(msg->key.str),
+                        msg->key.len));
+        }
+        if (msg->value.len != 0) {
+          req.setValue(
+            cloneSubBuf(bodyBuffer,
+                        reinterpret_cast<uint8_t*>(msg->value.str),
+                        msg->value.len));
+        }
+        requestReadyHelper(std::move(req), msg->op, reqid, msg->result,
+                           msg->noreply);
+      }
+      break;
+    case ParserType::CLIENT:
+      {
+        folly::IOBuf value;
+        if (mutMsg->value.len != 0) {
+          value = cloneSubBuf(bodyBuffer,
+                              reinterpret_cast<uint8_t*>(mutMsg->value.str),
+                              mutMsg->value.len);
+          // Reset msg->value, or it will confuse McReply::releasedMsg
+          mutMsg->value.str = nullptr;
+          mutMsg->value.len = 0;
+        }
+        McMsgRef msg(std::move(mutMsg));
+        auto reply = McReply(msg->result, msg.clone());
+        if (value.length() != 0) {
+          reply.setValue(std::move(value));
+        }
+        replyReadyHelper(std::move(reply), msg->op, reqid);
+      }
+      break;
   }
-  if (msg->value.len != 0) {
-    req.setValue(
-      cloneSubBuf(bodyBuffer,
-                  reinterpret_cast<uint8_t*>(msg->value.str),
-                  msg->value.len));
-  }
-  requestReadyHelper(std::move(req), msg->op, reqid, msg->result, msg->noreply);
   return true;
 }
 
-bool McServerParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
+bool McParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
   if (umHeaderBuffer_ && !umHeaderBuffer_->empty()) {
     /* Headers are generally short (few dozen bytes), so it's really
        unlikely that we end up here */
@@ -156,18 +215,15 @@ bool McServerParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
     }
 
     if (st != um_ok) {
-      if (parseCallback_) {
-        parseCallback_->parseError(
-          McReply(mc_res_remote_error,
-                  "Error parsing Umbrella header"));
-      }
+      errorHelper(McReply(mc_res_remote_error,
+                          "Error parsing Umbrella header"));
       return false;
     }
 
     /* Three cases: */
     if (umHeaderBuffer_->length() >= umMsgInfo_.message_size) {
       /* 1) we already have the entire message */
-      if (!umRequestReady(
+      if (!umMessageReady(
             umHeaderBuffer_->data(),
             umHeaderBuffer_->data() + umMsgInfo_.header_size,
             umHeaderBuffer_)) {
@@ -196,9 +252,9 @@ bool McServerParser::readUmbrellaData(std::unique_ptr<folly::IOBuf> data) {
   return true;
 }
 
-bool McServerParser::readDataAvailable(size_t len) {
+bool McParser::readDataAvailable(size_t len) {
   SCOPE_EXIT {
-    if (requestsPerRead_ > 0) {
+    if (messagesPerRead_ > 0) {
       recalculateBufferSize(len);
     }
   };
@@ -206,7 +262,7 @@ bool McServerParser::readDataAvailable(size_t len) {
   if (umBodyBuffer_) {
     umBodyBuffer_->append(len);
     if (umBodyBuffer_->length() == umMsgInfo_.body_size) {
-      auto res = umRequestReady(umHeaderBuffer_->data(),
+      auto res = umMessageReady(umHeaderBuffer_->data(),
                                 umBodyBuffer_->data(),
                                 umBodyBuffer_);
       umHeaderBuffer_.reset();
@@ -245,23 +301,30 @@ bool McServerParser::readDataAvailable(size_t len) {
   }
 }
 
-void McServerParser::msgReady(McMsgRef msg, uint64_t reqid) {
+void McParser::msgReady(McMsgRef msg, uint64_t reqid) {
   auto operation = msg->op;
   auto result = msg->result;
   auto noreply = msg->noreply;
 
-  requestReadyHelper(McRequest(std::move(msg)), operation, reqid, result,
-                     noreply);
+  switch (type_) {
+    case ParserType::SERVER:
+      requestReadyHelper(McRequest(std::move(msg)), operation, reqid, result,
+                         noreply);
+      break;
+    case ParserType::CLIENT:
+      replyReadyHelper(McReply(result, std::move(msg)), operation, reqid);
+      break;
+  }
 }
 
-void McServerParser::parserMsgReady(void* context,
-                                    uint64_t reqid,
-                                    mc_msg_t* msg) {
-  auto parser = reinterpret_cast<McServerParser*>(context);
+void McParser::parserMsgReady(void* context,
+                              uint64_t reqid,
+                              mc_msg_t* msg) {
+  auto parser = reinterpret_cast<McParser*>(context);
   parser->msgReady(McMsgRef::moveRef(msg), reqid);
 }
 
-void McServerParser::parseError(parser_error_t error) {
+void McParser::parseError(parser_error_t error) {
   std::string err;
 
   switch (error) {
@@ -274,14 +337,12 @@ void McServerParser::parseError(parser_error_t error) {
       break;
   }
 
-  if (parseCallback_) {
-    parseCallback_->parseError(McReply(mc_res_client_error, err));
-  }
+  errorHelper(McReply(mc_res_client_error, std::move(err)));
 }
 
-void McServerParser::parserParseError(void* context,
-                                      parser_error_t error) {
-  auto parser = reinterpret_cast<McServerParser*>(context);
+void McParser::parserParseError(void* context,
+                                parser_error_t error) {
+  auto parser = reinterpret_cast<McParser*>(context);
   parser->parseError(error);
 }
 

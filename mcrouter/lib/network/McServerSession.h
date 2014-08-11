@@ -9,7 +9,7 @@
 #pragma once
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/McServerParser.h"
+#include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/McServerTransaction.h"
 #include "thrift/lib/cpp/async/TAsyncTransport.h"
 
@@ -24,7 +24,7 @@ class McServerSession :
       public apache::thrift::async::TDelayedDestruction,
       private apache::thrift::async::TAsyncTransport::ReadCallback,
       private apache::thrift::async::TAsyncTransport::WriteCallback,
-      private McServerParser::ParseCallback {
+      private McParser::ServerParseCallback {
  public:
 
   /**
@@ -83,7 +83,7 @@ class McServerSession :
   };
   State state_{STREAMING};
 
-  McServerParser parser_;
+  McParser parser_;
 
   /**
    * Requests (possibly replied) which we didn't write to the network yet
@@ -180,7 +180,7 @@ class McServerSession :
   void readError(const apache::thrift::transport::TTransportException& ex)
     noexcept override;
 
-  /* McServerParser's parseCallback */
+  /* McParser's parseCallback */
   void requestReady(McRequest req,
                     mc_op_t operation,
                     uint64_t reqid,

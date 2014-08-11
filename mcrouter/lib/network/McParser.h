@@ -8,7 +8,7 @@
  */
 #pragma once
 
-#include "folly/io/IOBufQueue.h"
+#include <folly/io/IOBufQueue.h>
 #include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
@@ -17,12 +17,12 @@
 
 namespace facebook { namespace memcache {
 
-class McServerParser {
+class McParser {
  public:
 
-  class ParseCallback {
+  class ServerParseCallback {
    public:
-    virtual ~ParseCallback() {}
+    virtual ~ServerParseCallback() {}
 
     /**
      * Called on every new request.
@@ -46,11 +46,34 @@ class McServerParser {
     virtual void parseError(McReply errorReply) = 0;
   };
 
-  McServerParser(ParseCallback* cb,
-                 size_t requestsPerRead,
-                 size_t minBufferSize,
-                 size_t maxBufferSize);
-  ~McServerParser();
+  class ClientParseCallback {
+   public:
+    virtual ~ClientParseCallback() {}
+
+    /**
+     * Called on every new reply.
+     */
+    virtual void replyReady(McReply reply,
+                            mc_op_t operation,
+                            uint64_t reqid) = 0;
+
+    /**
+     * Called on fatal parse error (the stream should normally be closed)
+     */
+    virtual void parseError(McReply errorReply) = 0;
+  };
+
+  McParser(ServerParseCallback* cb,
+           size_t requestsPerRead,
+           size_t minBufferSize,
+           size_t maxBufferSize);
+
+  McParser(ClientParseCallback* cb,
+           size_t repliesPerRead,
+           size_t minBufferSize,
+           size_t maxBufferSize);
+
+  ~McParser();
 
   mc_protocol_t protocol() const {
     return protocol_;
@@ -83,15 +106,26 @@ class McServerParser {
   mc_protocol_t protocol_{mc_unknown_protocol};
   mc_parser_t mcParser_;
   folly::IOBufQueue readBuffer_;
-  ParseCallback* parseCallback_;
 
-  size_t requestsPerRead_{0};
+  enum class ParserType {
+    SERVER,
+    CLIENT
+  };
+
+  ParserType type_;
+
+  union {
+    ServerParseCallback* serverParseCallback_;
+    ClientParseCallback* clientParseCallback_;
+  };
+
+  size_t messagesPerRead_{0};
   size_t minBufferSize_{256};
   size_t maxBufferSize_{4096};
   size_t bufferSize_{4096};
 
   size_t readBytes_{0};
-  size_t parsedRequests_{0};
+  size_t parsedMessages_{0};
   double bytesPerRequest_{0.0};
 
   /**
@@ -112,7 +146,8 @@ class McServerParser {
   std::unique_ptr<folly::IOBuf> umBodyBuffer_;
 
   /**
-   * We fully parsed an umbrella message and want to call RequestReady callback.
+   * We fully parsed an umbrella message and want to call RequestReady or
+   * ReplyReady callback.
    * umMsgInfo_ must be filled out.
    *
    * @param header      Pointer to a contigous block of header_size bytes
@@ -121,7 +156,7 @@ class McServerParser {
    * @param bodyBuffer  Cloneable buffer that holds body bytes.
    * @return            False on any parse errors.
    */
-  bool umRequestReady(
+  bool umMessageReady(
     const uint8_t* header,
     const uint8_t* body,
     const std::unique_ptr<folly::IOBuf>& bodyBuffer);
@@ -130,7 +165,9 @@ class McServerParser {
 
   void requestReadyHelper(McRequest req, mc_op_t operation, uint64_t reqid,
                           mc_res_t result, bool noreply);
+  void replyReadyHelper(McReply reply, mc_op_t operation, uint64_t reqid);
   void recalculateBufferSize(size_t read);
+  void errorHelper(McReply reply);
 
   /* mc_parser callbacks */
   void msgReady(McMsgRef msg, uint64_t reqid);
