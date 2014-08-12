@@ -448,33 +448,33 @@ flush_regex_op = 'flush_regex' @ { parser->msg->op = mc_op_flushre; };
 
 cas = 'cas' %{
   parser->msg->op = mc_op_cas;
-} ' '+ key ' '+ flags ' '+ exptime ' '+ value_bytes ' '+ casid nl
+} ' '+ key ' '+ flags ' '+ exptime ' '+ value_bytes ' '+ casid ' '* nl
   @rx_data fin;
 
-store = (set_op ' '+ key | leaseset ' '+ key ' '+ lease_token) ' '+ flags ' '+ exptime ' '+ value_bytes (' '+ noreply)? nl
+store = (set_op ' '+ key | leaseset ' '+ key ' '+ lease_token) ' '+ flags ' '+ exptime ' '+ value_bytes (' '+ noreply)? ' '* nl
   @rx_data fin;
 
-get = get_op (' '+ key %get_req_is_ready)+  fin >{
+get = get_op (' '+ key %get_req_is_ready)+ ' '* fin >{
   parser->msg->op = mc_op_end;
 };
 
-arithmetic = arithmetic_op ' '+ key ' '+ delta (' '+ noreply)? fin;
+arithmetic = arithmetic_op ' '+ key ' '+ delta (' '+ noreply)? ' '* fin;
 
-delete = delete_op ' '+ key (' '+ exptime)? (' '+ noreply)? fin;
+delete = delete_op ' '+ key (' '+ exptime)? (' '+ noreply)? ' '* fin;
 
-quit = quit_op fin;
+quit = quit_op ' '* fin;
 
-version = version_op fin;
+version = version_op ' '* fin;
 
-stats = stats_op (' '+ multi_token)? fin;
+stats = stats_op (' '+ multi_token)? ' '* fin;
 
-exec = exec_op ' '+ multi_token fin;
+exec = exec_op ' '+ multi_token ' '* fin;
 
-shutdown = shutdown_op (' '+ number)? fin;
+shutdown = shutdown_op (' '+ number)? ' '* fin;
 
-flush_all = flush_all_op (' '+ number)? fin;
+flush_all = flush_all_op (' '+ number)? ' '* fin;
 
-flush_regex = flush_regex_op ' ' key fin;
+flush_regex = flush_regex_op ' ' key ' '* fin;
 
 request := get | store | cas | delete | arithmetic
   | quit | version | stats | shutdown | flush_all | flush_regex | exec;
