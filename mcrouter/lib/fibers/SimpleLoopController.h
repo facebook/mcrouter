@@ -34,6 +34,18 @@ class SimpleLoopController : public LoopController {
 
     while (LIKELY(waiting || !stopRequested_)) {
       func();
+
+      auto time = Clock::now();
+
+      for (size_t i=0; i<scheduledFuncs_.size(); ++i) {
+        if (scheduledFuncs_[i].first <= time) {
+          scheduledFuncs_[i].second();
+          swap(scheduledFuncs_[i], scheduledFuncs_.back());
+          scheduledFuncs_.pop_back();
+          --i;
+        }
+      }
+
       if (scheduled_) {
         scheduled_ = false;
         waiting = fm_->loopUntilNoReady();
@@ -56,11 +68,16 @@ class SimpleLoopController : public LoopController {
     scheduled_ = true;
   }
 
+  void timedSchedule(std::function<void()> func, TimePoint time) override {
+    scheduledFuncs_.push_back({time, std::move(func)});
+  }
+
  private:
   FiberManager* fm_;
   std::atomic<bool> scheduled_{false};
   bool stopRequested_;
   std::atomic<int> remoteScheduleCalled_{0};
+  std::vector<std::pair<TimePoint, std::function<void()>>> scheduledFuncs_;
 
   /* LoopController interface */
 

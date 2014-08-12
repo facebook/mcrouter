@@ -26,7 +26,9 @@ void TimeoutHandle::onTimeout() {
   timeoutFunc_();
 }
 
-TimeoutController::TimeoutController() : nextTimeout_(TimePoint::max()) {}
+TimeoutController::TimeoutController(LoopController& loopController) :
+    nextTimeout_(TimePoint::max()),
+    loopController_(loopController) {}
 
 void TimeoutController::registerTimeout(TimeoutHandle& th, Duration duration) {
   auto& list = [&]() -> TimeoutHandleList& {
@@ -40,15 +42,22 @@ void TimeoutController::registerTimeout(TimeoutHandle& th, Duration duration) {
     return timeoutHandleBuckets_.back().second;
   }();
 
-  th.timeout_ = Clock::now() + duration;
-  nextTimeout_ = std::min(nextTimeout_, th.timeout_);
-
   list.push_back(th);
+
+  th.timeout_ = Clock::now() + duration;
+  if (th.timeout_ < nextTimeout_) {
+    nextTimeout_ = th.timeout_;
+    scheduleRun();
+  }
 }
 
-void TimeoutController::runTimeouts() {
+void TimeoutController::runTimeouts(TimePoint time) {
   auto now = Clock::now();
-  if (LIKELY(nextTimeout_ > now)) {
+  // Make sure we don't skip some events if function was run before actual time.
+  if (time < now) {
+    time = now;
+  }
+  if (nextTimeout_ > time) {
     return;
   }
 
@@ -58,7 +67,7 @@ void TimeoutController::runTimeouts() {
     auto& list = bucket.second;
 
     for (auto it = list.begin(); it != list.end();) {
-      if (it->timeout_ > now) {
+      if (it->timeout_ > time) {
         nextTimeout_ = std::min(nextTimeout_, it->timeout_);
         break;
       }
@@ -67,6 +76,19 @@ void TimeoutController::runTimeouts() {
       it = list.erase(it);
     }
   }
+
+  if (nextTimeout_ != TimePoint::max()) {
+    scheduleRun();
+  }
+}
+
+void TimeoutController::scheduleRun() {
+  auto time = nextTimeout_;
+  auto timeoutController = this;
+
+  loopController_.timedSchedule([timeoutController, time]() {
+      timeoutController->runTimeouts(time);
+    }, time);
 }
 
 }}

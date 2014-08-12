@@ -15,6 +15,8 @@
 
 #include <folly/Likely.h>
 
+#include "mcrouter/lib/fibers/LoopController.h"
+
 namespace facebook { namespace memcache {
 
 class TimeoutController;
@@ -46,13 +48,15 @@ class TimeoutController {
   typedef TimeoutHandle::TimePoint TimePoint;
   typedef Clock::duration Duration;
 
-  TimeoutController();
+  explicit TimeoutController(LoopController& loopController);
 
   void registerTimeout(TimeoutHandle& timeoutHandle, Duration duration);
 
-  void runTimeouts();
+  void runTimeouts(TimePoint time);
 
  private:
+  void scheduleRun();
+
   typedef boost::intrusive::member_hook<
     TimeoutHandle,
     TimeoutHandle::ListHook,
@@ -64,6 +68,7 @@ class TimeoutController {
 
   std::vector<std::pair<Duration, TimeoutHandleList>> timeoutHandleBuckets_;
   TimePoint nextTimeout_;
+  LoopController& loopController_;
 };
 
 }}

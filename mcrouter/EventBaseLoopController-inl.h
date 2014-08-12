@@ -9,8 +9,9 @@
 #include "EventBaseLoopController.h"
 
 #include "folly/Memory.h"
-
 #include "folly/io/async/EventBase.h"
+
+#include "mcrouter/lib/fibers/FiberManager.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -82,6 +83,18 @@ inline void EventBaseLoopController::scheduleThreadSafe() {
      3) We fulfill the promise from the other thread. */
   assert(eventBaseAttached_);
   eventBase_->runInEventBaseThread([this] () { runLoop(); });
+}
+
+inline void EventBaseLoopController::timedSchedule(std::function<void()> func,
+                                                   TimePoint time) {
+  assert(eventBaseAttached_);
+
+  // We want upper bound for the cast, thus we just add 1
+  auto delay_ms = std::chrono::duration_cast<
+    std::chrono::milliseconds>(time - Clock::now()).count() + 1;
+  // If clock is not monotonic
+  delay_ms = std::max(delay_ms, 0L);
+  eventBase_->runAfterDelay(func, delay_ms);
 }
 
 }}}  // facebook::memcache::mcrouter

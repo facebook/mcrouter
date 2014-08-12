@@ -8,10 +8,17 @@
  */
 #pragma once
 
+#include <functional>
+
 namespace facebook { namespace memcache {
+
+class FiberManager;
 
 class LoopController {
  public:
+  typedef std::chrono::steady_clock Clock;
+  typedef std::chrono::time_point<Clock> TimePoint;
+
   virtual ~LoopController() {}
 
   /**
@@ -35,6 +42,11 @@ class LoopController {
    * loop function run.
    */
   virtual void cancel() = 0;
+
+  /**
+   * Called by FiberManager to schedule some function to be run at some time.
+   */
+  virtual void timedSchedule(std::function<void()> func, TimePoint time) = 0;
 };
 
 }}  // facebook::memcache

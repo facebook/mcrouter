@@ -24,7 +24,8 @@ __thread FiberManager* FiberManager::currentFiberManager_ = nullptr;
 FiberManager::FiberManager(std::unique_ptr<LoopController> loopController,
                            Options options) :
     loopController_(std::move(loopController)),
-    options_(options) {
+    options_(options),
+    timeoutManager_(*loopController_) {
   TAILQ_INIT(&readyFibers_);
   TAILQ_INIT(&fibersPool_);
 

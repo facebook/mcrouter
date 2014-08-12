@@ -46,6 +46,7 @@ class EventBaseLoopController : public LoopController {
   void cancel() override;
   void runLoop();
   void scheduleThreadSafe() override;
+  void timedSchedule(std::function<void()> func, TimePoint time) override;
 
   friend class FiberManager;
 };

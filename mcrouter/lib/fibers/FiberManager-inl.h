@@ -96,8 +96,6 @@ inline bool FiberManager::loopUntilNoReady() {
 
   currentFiberManager_ = this;
 
-  timeoutManager_.runTimeouts();
-
   bool hadRemoteFiber = true;
   while (hadRemoteFiber) {
     hadRemoteFiber = false;

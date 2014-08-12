@@ -14,6 +14,7 @@
 
 #include "folly/Benchmark.h"
 #include "folly/Memory.h"
+#include "mcrouter/EventBaseLoopController.h"
 #include "mcrouter/lib/fibers/AddTasks.h"
 #include "mcrouter/lib/fibers/GenericBaton.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
@@ -21,6 +22,7 @@
 #include "mcrouter/lib/fibers/WhenN.h"
 
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using folly::wangle::Try;
 
@@ -33,7 +35,7 @@ TEST(FiberManager, batonTimedWaitTimeout) {
     dynamic_cast<SimpleLoopController&>(manager.loopController());
 
   auto loopFunc = [&]() {
-    if (!taskAdded) {
+  if (!taskAdded) {
       manager.addTask(
         [&]() {
           Baton baton;
@@ -62,7 +64,6 @@ TEST(FiberManager, batonTimedWaitTimeout) {
     } else {
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
       iterations ++;
-      loopController.schedule();
     }
   };
 
@@ -99,13 +100,99 @@ TEST(FiberManager, batonTimedWaitPost) {
       iterations ++;
       if (iterations == 2) {
         baton_ptr->post();
-      } else {
-        loopController.schedule();
       }
     }
   };
 
   loopController.loop(std::move(loopFunc));
+}
+
+TEST(FiberManager, batonTimedWaitTimeoutEvb) {
+  size_t tasksComplete = 0;
+
+  folly::EventBase evb;
+
+  FiberManager manager(folly::make_unique<EventBaseLoopController>());
+  dynamic_cast<EventBaseLoopController&>(
+    manager.loopController()).attachEventBase(evb);
+
+  auto task = [&](size_t timeout_ms) {
+    Baton baton;
+
+    auto start = EventBaseLoopController::Clock::now();
+    auto res = baton.timed_wait(std::chrono::milliseconds(timeout_ms));
+    auto finish = EventBaseLoopController::Clock::now();
+
+    EXPECT_FALSE(res);
+
+    auto duration_ms = std::chrono::duration_cast<
+    std::chrono::milliseconds>(finish - start);
+
+    EXPECT_TRUE(duration_ms.count() > timeout_ms - 5 &&
+                duration_ms.count() < timeout_ms + 10);
+
+    if (++tasksComplete == 2) {
+      evb.terminateLoopSoon();
+    }
+  };
+
+  evb.runInEventBaseThread([&]() {
+    manager.addTask(
+      [&]() {
+        task(230);
+      }
+    );
+    manager.addTask(
+      [&]() {
+        task(130);
+      }
+    );
+  });
+
+  evb.loopForever();
+
+  EXPECT_EQ(2, tasksComplete);
+}
+
+TEST(FiberManager, batonTimedWaitPostEvb) {
+  size_t tasksComplete = 0;
+
+  folly::EventBase evb;
+
+  FiberManager manager(folly::make_unique<EventBaseLoopController>());
+  dynamic_cast<EventBaseLoopController&>(
+    manager.loopController()).attachEventBase(evb);
+
+  evb.runInEventBaseThread([&]() {
+      manager.addTask([&]() {
+          Baton baton;
+
+          evb.runAfterDelay([&]() {
+              baton.post();
+            },
+            100);
+
+          auto start = EventBaseLoopController::Clock::now();
+          auto res = baton.timed_wait(std::chrono::milliseconds(130));
+          auto finish = EventBaseLoopController::Clock::now();
+
+          EXPECT_TRUE(res);
+
+          auto duration_ms = std::chrono::duration_cast<
+            std::chrono::milliseconds>(finish - start);
+
+          EXPECT_TRUE(duration_ms.count() > 95 &&
+                      duration_ms.count() < 110);
+
+          if (++tasksComplete == 1) {
+            evb.terminateLoopSoon();
+          }
+        });
+    });
+
+  evb.loopForever();
+
+  EXPECT_EQ(1, tasksComplete);
 }
 
 TEST(FiberManager, batonTryWait) {
