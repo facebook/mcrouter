@@ -132,9 +132,13 @@ class AsyncMcServer {
   bool alive_{true};
   std::mutex shutdownLock_;
 
-  std::vector<int> deferredSignals_;
-
-  void installShutdownHandlerHelper(const std::vector<int>& signals);
+  enum class SignalShutdownState : uint64_t {
+    STARTUP,
+    SHUTDOWN,
+    SPAWNED
+  };
+  std::atomic<SignalShutdownState> signalShutdownState_{
+    SignalShutdownState::STARTUP};
 
   AsyncMcServer(const AsyncMcServer&) = delete;
   AsyncMcServer& operator=(const AsyncMcServer&) = delete;

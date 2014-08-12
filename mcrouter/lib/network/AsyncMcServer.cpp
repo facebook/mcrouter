@@ -309,10 +309,19 @@ void AsyncMcServer::spawn(LoopFn fn) {
     threads_[id]->spawn(fn, id);
   }
 
-  if (!deferredSignals_.empty()) {
-    installShutdownHandlerHelper(deferredSignals_);
-    deferredSignals_.clear();
-  }
+  /* We atomically attempt to change the state STARTUP -> SPAWNED.
+     If we see the state SHUTDOWN, it means a signal handler ran
+     concurrently with us (maybe even on this thread),
+     so we just shutdown threads. */
+  auto state = signalShutdownState_.load();
+  do {
+    if (state == SignalShutdownState::SHUTDOWN) {
+      shutdown();
+      return;
+    }
+  } while (!signalShutdownState_.compare_exchange_weak(
+             state,
+             SignalShutdownState::SPAWNED));
 }
 
 void AsyncMcServer::shutdown() {
@@ -328,19 +337,11 @@ void AsyncMcServer::shutdown() {
 }
 
 void AsyncMcServer::installShutdownHandler(const std::vector<int>& signals) {
-  if (threads_.empty()) {
-    /* spawn() wasn't called yet; don't set up the handler to avoid a
-       possible race - otherwise if a signal is caught before we spawn threads,
-       we would do nothing */
-    deferredSignals_ = signals;
-  } else {
-    installShutdownHandlerHelper(signals);
-  }
-}
-
-void AsyncMcServer::installShutdownHandlerHelper(
-    const std::vector<int>& signals) {
   gServer = this;
+
+  /* prevent the above write being reordered with installing the handler */
+  std::atomic_signal_fence(std::memory_order_seq_cst);
+
   struct sigaction act;
   memset(&act, 0, sizeof(struct sigaction));
   act.sa_handler = [] (int) {
@@ -356,9 +357,19 @@ void AsyncMcServer::installShutdownHandlerHelper(
 }
 
 void AsyncMcServer::shutdownFromSignalHandler() {
-  if (!threads_.empty()) {
-    threads_[0]->shutdownFromSignalHandler();
-  }
+  /* We atomically attempt to change the state STARTUP -> SHUTDOWN.
+     If we see that the state is already SPAWNED,
+     we can just issue a shutdown request. */
+
+  auto state = signalShutdownState_.load();
+  do {
+    if (state == SignalShutdownState::SPAWNED) {
+      threads_[0]->shutdownFromSignalHandler();
+      return;
+    }
+  } while (!signalShutdownState_.compare_exchange_weak(
+             state,
+             SignalShutdownState::SHUTDOWN));
 }
 
 void AsyncMcServer::join() {
