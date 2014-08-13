@@ -38,7 +38,12 @@ class MockServer(threading.Thread):
         self.join()
 
     def run(self):
-        self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if socket.has_ipv6:
+            self.listen_socket = socket.socket(socket.AF_INET6,
+                                               socket.SOCK_STREAM)
+        else:
+            self.listen_socket = socket.socket(socket.AF_INET,
+                                               socket.SOCK_STREAM)
         self.listen_socket.setblocking(0)
         self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.listen_socket.bind(('', self.port))

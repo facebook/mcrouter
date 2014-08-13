@@ -471,6 +471,15 @@ def replace_strings(json, replace_map):
         json = json.replace(key, str(value))
     return json
 
+def create_listen_socket():
+    if socket.has_ipv6:
+        listen_sock = socket.socket(socket.AF_INET6)
+    else:
+        listen_sock = socket.socket(socket.AF_INET)
+    listen_sock.listen(100)
+    return listen_sock
+
+
 class Mcrouter(MCProcess):
     def __init__(self, config, port=None, default_route=None, extra_args=None,
                  base_dir=None, substitute_config_ports=None,
@@ -507,8 +516,7 @@ class Mcrouter(MCProcess):
 
         listen_sock = None
         if port is None:
-            listen_sock = socket.socket()
-            listen_sock.listen(100)
+            listen_sock = create_listen_socket()
             port = listen_sock.getsockname()[1]
             args.extend(['--listen-sock-fd', str(listen_sock.fileno())])
         else:
@@ -537,8 +545,7 @@ class Memcached(MCProcess):
                     '/mcrouter/lib/network/mock_mc_server']
         listen_sock = None
         if port is None:
-            listen_sock = socket.socket()
-            listen_sock.listen(100)
+            listen_sock = create_listen_socket()
             port = listen_sock.getsockname()[1]
             args.extend(['-t', str(listen_sock.fileno())])
         else:

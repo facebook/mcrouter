@@ -69,12 +69,16 @@ int createListenSocket() {
   struct addrinfo* res;
 
   memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = AF_INET6;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  /* Use all available interfaces, and choose an available port */
-  CHECK(!getaddrinfo(nullptr, "0", &hints, &res));
+  // Use all available interfaces, and choose an available port,
+  // first try IPv6 address.
+  if (getaddrinfo(nullptr, "0", &hints, &res)) {
+    hints.ai_family = AF_INET;
+    CHECK(!getaddrinfo(nullptr, "0", &hints, &res));
+  }
 
   auto listen_socket =
     socket(res->ai_family, res->ai_socktype, res->ai_protocol);
