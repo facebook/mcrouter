@@ -83,7 +83,7 @@ mcrouter_option_integer(
   "Maximum requests outstanding per client (0 to disable)")
 
 mcrouter_option_integer(
-  size_t, requests_per_read, 5,
+  size_t, requests_per_read, 0,
   "reqs-per-read", no_short,
   "Adjusts server buffer size to process this many requests per read."
   " Smaller values may improve latency.")
