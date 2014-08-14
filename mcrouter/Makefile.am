@@ -28,8 +28,6 @@ libmcroutercore_a_SOURCES = \
   DestinationClient.h \
   dynamic_stats.cpp \
   dynamic_stats.h \
-  EventBaseLoopController-inl.h \
-  EventBaseLoopController.h \
   FileDataProvider.cpp \
   FileDataProvider.h \
   FileObserver.cpp \

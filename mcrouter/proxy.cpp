@@ -29,7 +29,6 @@
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/EventBaseLoopController.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
@@ -47,6 +46,7 @@
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fbi/timer.h"
+#include "mcrouter/lib/fibers/EventBaseLoopController.h"
 #include "mcrouter/options.h"
 #include "mcrouter/priorities.h"
 #include "mcrouter/route.h"
