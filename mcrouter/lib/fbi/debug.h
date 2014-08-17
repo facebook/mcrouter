@@ -57,7 +57,7 @@ void fbi_dbg_log(const char* principal, const char* component,
                  const char* function, const int line,
                  const char* type, const uint level,
                  const int indent_offset, const char* format, ...)
-    __attribute__ ((format (printf, 8, 9))); /* tell gcc to check printf args */
+    __attribute__ ((__format__ (__printf__, 8, 9))); /* tell gcc to check printf args */
 
 uint fbi_get_debug();
 void fbi_set_debug(const uint level);
