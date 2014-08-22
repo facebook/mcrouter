@@ -628,7 +628,8 @@ int entry_list_lazy_append_IOVEC(entry_list_t* elist,
   elist->eiov.entry_idx = entry_idx;
 
   elist->total_eiov_len = 0;
-  for (int i = 0; i < niovs; i++) {
+  uint32_t i;
+  for (i = 0; i < niovs; i++) {
     elist->total_eiov_len += iovs[i].iov_len;
   }
   elist->total_eiov_len++; /* for null byte */
