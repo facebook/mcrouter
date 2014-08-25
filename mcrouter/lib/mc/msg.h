@@ -196,6 +196,7 @@ enum mc_msg_flags_t {
     MC_MSG_FLAG_QUICKLZ_COMPRESSED = 0x2000,
     MC_MSG_FLAG_SNAPPY_COMPRESSED = 0x4000,
     MC_MSG_FLAG_BIG_VALUE = 0X8000,
+    MC_MSG_FLAG_NEGATIVE_CACHE = 0x10000,
     /* Bits reserved for application-specific extension flags: */
     MC_MSG_FLAG_USER_1 = 0x100000000LL,
     MC_MSG_FLAG_USER_2 = 0x200000000LL,

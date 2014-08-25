@@ -254,6 +254,18 @@ mcrouter_option_integer(
   "0 means that we will use the L2 exptime. Otherwise, when upgrading"
   " this value is used as the exptime for all requests")
 
+mcrouter_option_integer(
+  size_t, l1_ncache_exptime, 0,
+  "l1-ncache-exptime", no_short,
+  "If L1 negative cache is enabled, the TTL on the negative cache entries."
+  " 0 means no TTL - entries will live until evicted")
+
+mcrouter_option_integer(
+  size_t, l1_ncache_update_period, 0,
+  "l1-ncache-update-period", no_short,
+  "If nonzero, L1 negative cache is enabled and roughly 1 our of N L1 misses"
+  " result in an async update request to L2 where N is this period.")
+
 mcrouter_option_toggle(
   send_invalid_route_to_default, false,
   "send-invalid-route-to-default", no_short,
