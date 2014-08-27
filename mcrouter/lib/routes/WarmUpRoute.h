@@ -46,15 +46,10 @@ class WarmUpRoute {
 
   WarmUpRoute(std::shared_ptr<RouteHandleIf> warmh,
               std::shared_ptr<RouteHandleIf> coldh,
-              uint32_t exptime,
-              size_t ncacheExptime,
-              size_t ncacheUpdatePeriod)
+              uint32_t exptime)
   : warm_(std::move(warmh)),
     cold_(std::move(coldh)),
-    exptime_(exptime),
-    ncacheExptime_(ncacheExptime),
-    ncacheUpdatePeriod_(ncacheUpdatePeriod),
-    ncacheUpdateCounter_(ncacheUpdatePeriod) {
+    exptime_(exptime) {
 
     assert(warm_ != nullptr);
     assert(cold_ != nullptr);
@@ -83,43 +78,29 @@ class WarmUpRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0) {
-
-    using Reply = typename ReplyType<Operation, Request>::type;
+    const Request& req, Operation, typename GetLike<Operation>::Type = 0)
+    const {
 
     auto coldReply = cold_->route(req, Operation());
     if (coldReply.isHit()) {
-      if (coldReply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
-        if (ncacheUpdatePeriod_) {
-          if (ncacheUpdateCounter_ == 1) {
-            updateColdNcache(req, Operation());
-            ncacheUpdateCounter_ = ncacheUpdatePeriod_;
-          } else {
-            --ncacheUpdateCounter_;
-          }
-        }
-
-        /* return a miss */
-        coldReply = Reply(DefaultReply, Operation());
-      }
       return coldReply;
     }
 
     /* else */
     auto warmReply = warm_->route(req, Operation());
     if (warmReply.isHit()) {
-      auto wrappedAddReq = folly::makeMoveWrapper(
-        coldUpdateFromWarm(req, warmReply, exptime_));
+      auto addReq = req.clone();
+      folly::IOBuf cloned;
+      warmReply.value().cloneInto(cloned);
+      addReq.setValue(std::move(cloned));
+      addReq.setFlags(warmReply.flags());
+      addReq.setExptime(exptime_);
+
+      auto wrappedAddReq = folly::MoveWrapper<Request>(std::move(addReq));
+
       auto cold = cold_;
       fiber::addTask([cold, wrappedAddReq]() {
-        cold->route(*wrappedAddReq, AddOperation());
-      });
-    } else if (warmReply.isMiss() && ncacheUpdatePeriod_) {
-      auto wrappedAddReq = folly::makeMoveWrapper(
-        coldNcache(req, ncacheExptime_));
-      auto cold = cold_;
-      fiber::addTask([cold, wrappedAddReq]() {
-        cold->route(*wrappedAddReq, AddOperation());
+        cold->route(std::move(*wrappedAddReq), AddOperation());
       });
     }
     return warmReply;
@@ -135,56 +116,7 @@ class WarmUpRoute {
  private:
   std::shared_ptr<RouteHandleIf> warm_;
   std::shared_ptr<RouteHandleIf> cold_;
-  uint32_t exptime_{0};
-  size_t ncacheExptime_{0};
-  size_t ncacheUpdatePeriod_{0};
-  size_t ncacheUpdateCounter_{0};
-
-  template <class Request, class Reply>
-  static Request coldUpdateFromWarm(const Request& origReq,
-                                    const Reply& reply,
-                                    size_t exptime) {
-    auto req = origReq.clone();
-    folly::IOBuf cloned;
-    reply.value().cloneInto(cloned);
-    req.setValue(std::move(cloned));
-    req.setFlags(reply.flags());
-    req.setExptime(exptime);
-    return std::move(req);
-  }
-
-  template <class Request>
-  static Request coldNcache(const Request& origReq, size_t ncacheExptime) {
-    auto req = origReq.clone();
-    req.setValue(
-      folly::IOBuf(
-        folly::IOBuf::COPY_BUFFER, "ncache"));
-    req.setFlags(MC_MSG_FLAG_NEGATIVE_CACHE);
-    req.setExptime(ncacheExptime);
-    return std::move(req);
-  }
-
-  template <class Request, class Operation>
-  void updateColdNcache(const Request& req, Operation) {
-    auto cold = cold_;
-    auto warm = warm_;
-    auto creq = folly::makeMoveWrapper(Request(req.clone()));
-    auto exptime = exptime_;
-    auto ncacheExptime = ncacheExptime_;
-    fiber::addTask(
-      [cold, warm, creq, exptime, ncacheExptime]() {
-        auto warmReply = warm->route(*creq, Operation());
-        if (warmReply.isHit()) {
-          cold->route(coldUpdateFromWarm(*creq, warmReply, exptime),
-                      McOperation<mc_op_set>());
-        } else {
-          /* bump TTL on the ncache entry */
-          cold->route(coldNcache(*creq, ncacheExptime),
-                      McOperation<mc_op_set>());
-        }
-      }
-    );
-  }
+  uint32_t exptime_;
 };
 
 }}

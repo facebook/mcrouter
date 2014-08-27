@@ -15,16 +15,12 @@ namespace facebook { namespace memcache { namespace mcrouter {
 McrouterRouteHandlePtr makeWarmUpRouteAdd(
   McrouterRouteHandlePtr warmh,
   McrouterRouteHandlePtr coldh,
-  uint32_t exptime,
-  size_t ncacheExptime,
-  size_t ncacheUpdatePeriod) {
+  uint32_t exptime) {
 
   return makeMcrouterRouteHandle<WarmUpRoute, McOperation<mc_op_add>>(
     std::move(warmh),
     std::move(coldh),
-    exptime,
-    ncacheExptime,
-    ncacheUpdatePeriod);
+    exptime);
 }
 
 McrouterRouteHandlePtr makeWarmUpRoute(
