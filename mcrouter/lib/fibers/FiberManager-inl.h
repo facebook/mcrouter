@@ -40,6 +40,9 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
    while (fiber->state_ == Fiber::NOT_STARTED ||
          fiber->state_ == Fiber::READY_TO_RUN) {
     activeFiber_ = fiber;
+    if (fiber->readyFunc_) {
+      fiber->readyFunc_();
+    }
     jumpContext(&mainContext_, &fiber->fcontext_, fiber->data_);
     if (fiber->state_ == Fiber::AWAITING_IMMEDIATE) {
       try {
@@ -127,6 +130,18 @@ template <typename F>
 void FiberManager::addTask(F&& func) {
   auto fiber = getFiber();
   fiber->setFunction(std::forward<F>(func));
+
+  fiber->data_ = reinterpret_cast<intptr_t>(fiber);
+  TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
+
+  ensureLoopScheduled();
+}
+
+template <typename F, typename G>
+void FiberManager::addTaskReadyFunc(F&& func, G&& readyFunc) {
+  auto fiber = getFiber();
+  fiber->setFunction(std::forward<F>(func));
+  fiber->setReadyFunction(std::forward<G>(readyFunc));
 
   fiber->data_ = reinterpret_cast<intptr_t>(fiber);
   TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);

@@ -30,6 +30,10 @@ class EventBaseLoopController : public LoopController {
    */
   void attachEventBase(folly::EventBase& eventBase);
 
+  folly::EventBase* getEventBase() {
+    return eventBase_;
+  }
+
  private:
   class ControllerCallback;
 
