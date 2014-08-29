@@ -53,7 +53,7 @@ struct ProxyDestination {
 
   proxy_t* proxy{nullptr}; ///< for convenience
   AccessPoint accessPoint;
-  std::string destinationKey;///< always the same for a given (host, port)
+  const std::string destinationKey;///< always the same for a given (host, port)
   int rxpriority{0};
   int txpriority{0};
   const timeval_t server_timeout{0};
@@ -63,13 +63,6 @@ struct ProxyDestination {
 
   ProxyClientOwner* owner{nullptr};
   std::shared_ptr<ProxyClientShared> shared;
-
-  /**
-   * A key that would be hashed to this client in the current config.
-   * Set on the first request and reset with reconfigure.
-   * The client creates a copy of the key and is responsible for it.
-   */
-  std::string sample_key;
 
   proxy_client_conn_stats_t stats;
   dynamic_stat_t* stats_ptr{nullptr};
@@ -106,6 +99,9 @@ struct ProxyDestination {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
+  void start_sending_probes();
+  void stop_sending_probes();
+
  private:
   std::unique_ptr<DestinationMcClient> client_;
 
@@ -125,9 +121,7 @@ struct ProxyDestination {
   // tko behaviour
   char marked_tko{0};
 
-  void start_sending_probes();
   void schedule_next_probe();
-  void stop_sending_probes();
 
   void reset_fields();
 

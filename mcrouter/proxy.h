@@ -155,18 +155,6 @@ struct proxy_request_t {
 
   void continueSendReply();
 
-  /**
-   * @DEPRECATED
-   *
-   * Checks if the funciton pointer passed in is the same as the one this proxy
-   * request is using for enqueue-ing replies.
-   *
-   * @param funcPtr the function pointer to compare
-   *
-   * @returns true if funcPtr equals the enqueue reply function pointer
-   */
-  bool enqueueReplyEquals(void (*funcPtr)(proxy_request_t* preq));
-
  private:
   /**
    * The function that will be called when the reply is ready
@@ -198,12 +186,9 @@ struct proxy_request_t {
  *  a client (whether the client is considered to be tko). */
 typedef struct proxy_client_monitor proxy_client_monitor_t;
 struct proxy_client_monitor {
-  /** Called on successful lazy establishment of a client connection. */
-  void (*on_up)(proxy_client_monitor_t *mon, ProxyDestination* pdstn);
-
   /** Called when libmc.client finishes a request. */
   void (*on_response)(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                      proxy_request_t *preq, mc_msg_t *req, mc_msg_t *reply,
+                      mc_msg_t *req, mc_msg_t *reply,
                       mc_res_t result);
 
   /** Called when a connection or reconnection attempt fails. */

@@ -324,7 +324,6 @@ proxy_t::~proxy_t() {
 
 void proxy_set_monitor(proxy_t *proxy, proxy_client_monitor_t *mon) {
   if (mon) {
-    FBI_ASSERT(mon->on_up);
     FBI_ASSERT(mon->on_response);
     FBI_ASSERT(mon->on_down);
     FBI_ASSERT(mon->may_send);
@@ -686,11 +685,6 @@ void proxy_request_t::sendReply(McMsgRef newReply) {
   } else {
     reply_state = REPLY_STATE_REPLY_DELAYED;
   }
-}
-
-bool proxy_request_t::enqueueReplyEquals(
-    void (*funcPtr)(proxy_request_t* preq)) {
-  return enqueueReply_ == funcPtr;
 }
 
 void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e) {

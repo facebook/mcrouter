@@ -256,7 +256,13 @@ void ProxyDestination::on_reply(const McMsgRef& req,
     }
   }
 
-  handle_tko(result, reply, consecutiveErrors_);
+  if (proxy->monitor) {
+      proxy->monitor->on_response(proxy->monitor, this,
+                                  const_cast<mc_msg_t*>(req.get()),
+                                  const_cast<mc_msg_t*>(reply.get()), result);
+  } else {
+    handle_tko(result, reply, consecutiveErrors_);
+  }
 
   if (req.get() == probe_req.get()) {
     probe_req = McMsgRef();
@@ -265,12 +271,6 @@ void ProxyDestination::on_reply(const McMsgRef& req,
 
     auto destreqCtx = reinterpret_cast<DestinationRequestCtx*>(req_ctx);
     preq = destreqCtx->preq;
-
-    if (proxy->monitor) {
-      proxy->monitor->on_response(proxy->monitor, this,
-                                  preq, const_cast<mc_msg_t*>(req.get()),
-                                  const_cast<mc_msg_t*>(reply.get()), result);
-    }
 
     destreqCtx->endTime = nowUs();
     destreqCtx->reply = std::move(reply);
@@ -297,11 +297,6 @@ void ProxyDestination::on_reply(const McMsgRef& req,
 void ProxyDestination::on_up() {
   FBI_ASSERT(proxy->magic == proxy_magic);
   FBI_ASSERT(!stats.is_up);
-
-
-  if (proxy->monitor) {
-    proxy->monitor->on_up(proxy->monitor, this);
-  }
 
   stat_incr(proxy, server_up_events_stat, 1);
   stat_incr(proxy, num_servers_up_stat, 1);
@@ -518,11 +513,6 @@ int ProxyDestination::send(McMsgRef request, void* req_ctx,
   FBI_ASSERT(proxy->magic == proxy_magic);
 
   proxy->destinationMap->markAsActive(*this);
-
-  if (sample_key.empty() && request->key.len > 0) {
-    FBI_ASSERT(request->key.str != nullptr);
-    sample_key = to<std::string>(request->key);
-  }
 
   // Do not communicate with memcache at all
   if (UNLIKELY(proxy->opts.no_network)) {

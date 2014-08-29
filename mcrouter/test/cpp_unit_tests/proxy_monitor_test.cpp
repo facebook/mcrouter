@@ -8,8 +8,9 @@
  */
 #include <gtest/gtest.h>
 
-#include "folly/Memory.h"
-#include "folly/io/async/EventBase.h"
+#include <folly/Memory.h>
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
@@ -23,14 +24,10 @@ using namespace facebook::memcache::mcrouter;
 using facebook::memcache::McrouterOptions;
 using facebook::memcache::McMsgRef;
 
-int up_count, response_count, down_count, may_send_count, remove_count;
-
-void on_up(proxy_client_monitor_t *mon, ProxyDestination* pdstn) {
-  ++up_count;
-}
+int response_count, down_count, may_send_count, remove_count;
 
 void on_response(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                 proxy_request_t *preq, mc_msg_t *req, mc_msg_t *reply,
+                 mc_msg_t *req, mc_msg_t *reply,
                  mc_res_t result) {
   ++response_count;
 }
@@ -56,9 +53,9 @@ void remove_client(proxy_client_monitor_t *mon, ProxyDestination* pdstn) {
 }
 
 proxy_client_monitor_t happy_monitor = {
-  &on_up, &on_response, &on_down, &may_send, &remove_client };
+  &on_response, &on_down, &may_send, &remove_client };
 proxy_client_monitor_t angry_monitor = {
-  &on_up, &on_response, &on_down, &may_not_send, &remove_client };
+  &on_response, &on_down, &may_not_send, &remove_client };
 
 
 void reply_ready(proxy_request_t *preq) {
@@ -69,7 +66,7 @@ void reply_ready(proxy_request_t *preq) {
 void run_lifecycle_test(proxy_client_monitor_t *monitor, bool allow_failover,
                         mc_res_t expected_result, int expected_response_count,
                         int expected_down_count) {
-  up_count = response_count = down_count = may_send_count = remove_count = 0;
+  response_count = down_count = may_send_count = remove_count = 0;
 
   auto opts = defaultTestOptions();
   opts.config_file = "mcrouter/test/test_ascii.json";
@@ -108,7 +105,6 @@ void run_lifecycle_test(proxy_client_monitor_t *monitor, bool allow_failover,
   delete router;
 
   if (!allow_failover) {
-    EXPECT_EQ(up_count, 0);
     EXPECT_EQ(response_count, expected_response_count);
     EXPECT_EQ(down_count, expected_down_count);
     EXPECT_EQ(may_send_count, 1);
