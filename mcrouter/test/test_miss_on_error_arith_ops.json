@@ -11,7 +11,7 @@
         {
             "aliases": [ "/././" ],
             "route": {
-                "type": "route",
+                "type": "PrefixSelectorRoute",
                 "policies": {
                     "foo": "PoolRoute|A-foo"
                 }

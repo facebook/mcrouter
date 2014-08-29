@@ -15,7 +15,7 @@
     {
       "aliases": [ "/a/a/" ],
       "route": {
-        "type": "route",
+        "type": "PrefixSelectorRoute",
         "policies": {
           "good": "PoolRoute|A.good",
           "null": "DevNullRoute"

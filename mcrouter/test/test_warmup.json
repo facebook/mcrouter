@@ -19,7 +19,7 @@
                 "/region/cluster/"
             ],
             "route": {
-                "type": "route",
+                "type": "PrefixSelectorRoute",
                 "policies": {
                     "foo": {
                         "type": "MigrateRoute",

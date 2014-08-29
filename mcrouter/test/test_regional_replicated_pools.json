@@ -28,14 +28,14 @@
       "servers": [ "localhost:12353" ]
     }
   },
-  "routes" : [
+  "routes": [
     {
-      "aliases" : [ "/a/a/" ],
-      "route" : {
-        "type" : "route",
-        "policies" : {
-          "CI*" : {
-            "children" : [
+      "aliases": [ "/a/a/" ],
+      "route": {
+        "type": "PrefixSelectorRoute",
+        "policies": {
+          "CI*": {
+            "children": [
               "PoolRoute|mctest.CI0",
               "PoolRoute|mctest.CI1",
               "PoolRoute|mctest.CI2",
@@ -46,17 +46,17 @@
               "PoolRoute|mctest.CI7",
               "PoolRoute|mctest.CI8"
             ],
-            "type" : "AllSyncRoute"
+            "type": "AllSyncRoute"
           },
-          "CI0" : "PoolRoute|mctest.CI0",
-          "CI1" : "PoolRoute|mctest.CI1",
-          "CI2" : "PoolRoute|mctest.CI2",
-          "CI3" : "PoolRoute|mctest.CI3",
-          "CI4" : "PoolRoute|mctest.CI4",
-          "CI5" : "PoolRoute|mctest.CI5",
-          "CI6" : "PoolRoute|mctest.CI6",
-          "CI7" : "PoolRoute|mctest.CI7",
-          "CI8" : "PoolRoute|mctest.CI8"
+          "CI0": "PoolRoute|mctest.CI0",
+          "CI1": "PoolRoute|mctest.CI1",
+          "CI2": "PoolRoute|mctest.CI2",
+          "CI3": "PoolRoute|mctest.CI3",
+          "CI4": "PoolRoute|mctest.CI4",
+          "CI5": "PoolRoute|mctest.CI5",
+          "CI6": "PoolRoute|mctest.CI6",
+          "CI7": "PoolRoute|mctest.CI7",
+          "CI8": "PoolRoute|mctest.CI8"
         }
       }
     }

@@ -58,7 +58,7 @@
     {
       "aliases": [ "/a/a/" ],
       "route": {
-        "type": "route",
+        "type": "PrefixSelectorRoute",
         "policies": {
           "f": {
             "type": "PoolRoute",

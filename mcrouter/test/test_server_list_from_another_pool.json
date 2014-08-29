@@ -11,7 +11,7 @@
     {
       "aliases": [ "/a/a/" ],
       "route": {
-        "type": "route",
+        "type": "PrefixSelectorRoute",
         "policies": {
           "alt": "PoolRoute|A.alt",
           "pri": "PoolRoute|A.pri"
