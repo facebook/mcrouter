@@ -301,7 +301,9 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
   stats[ps_rss_stat].data.uint64 = ps_data.rss;
   stats[ps_vsize_stat].data.uint64 = ps_data.vsize;
   size_t open_fd = 0;
-  getOpenFDCount(open_fd);
+  if (proxy->opts.track_open_fds) {
+    getOpenFDCount(open_fd);
+  }
   stats[ps_open_fd_stat].data.uint64 = open_fd;
 
   stats[fibers_allocated_stat].data.uint64 = 0;

@@ -369,6 +369,11 @@ mcrouter_option_integer(
   "stats-async-queue-length", no_short,
   "Asynchronous queue size for logging.")
 
+mcrouter_option_toggle(
+  track_open_fds, false,
+  "track-open-fds", no_short,
+  "Log number of file descriptors opened by mcrouter process. This might cause "
+  "performance regression in case number of mcrouter clients is huge.")
 
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
