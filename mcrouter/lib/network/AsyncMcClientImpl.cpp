@@ -100,11 +100,12 @@ std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
 void AsyncMcClientImpl::closeNow() {
   DestructorGuard dg(this);
 
-  if (connectionState_ != ConnectionState::DOWN) {
-    processShutdown(true /* isAborting */);
-    if (socket_) {
-      socket_->closeNow();
-    }
+  if (socket_) {
+    isAborting_ = true;
+    // We need to destroy it immediately.
+    socket_->closeNow();
+    socket_.reset();
+    isAborting_ = false;
   }
 
   timeoutCallback_->cancelTimeout();
@@ -371,6 +372,8 @@ void AsyncMcClientImpl::connectError(const TransportException& ex) noexcept {
 
   if (ex.getType() == TransportException::TIMED_OUT) {
     error = mc_res_connect_timeout;
+  } else if (isAborting_) {
+    error = mc_res_aborted;
   } else {
     error = mc_res_connect_error;
   }
@@ -391,11 +394,10 @@ void AsyncMcClientImpl::connectError(const TransportException& ex) noexcept {
   }
 }
 
-void AsyncMcClientImpl::processShutdown(bool isAborting) {
+void AsyncMcClientImpl::processShutdown() {
   DestructorGuard dg(this);
   switch (connectionState_) {
     case ConnectionState::UP: // on error, UP always transitions to ERROR state
-      isAborting_ = isAborting;
       if (writeScheduled_) {
         // Cancel loop callback, or otherwise we might attempt to write
         // something while processing error state.
@@ -412,11 +414,11 @@ void AsyncMcClientImpl::processShutdown(bool isAborting) {
     case ConnectionState::ERROR:
       while (!pendingReplyQueue_.empty()) {
         reply(pendingReplyQueue_.popFront(),
-              McReply(isAborting ? mc_res_aborted : mc_res_remote_error));
+              McReply(isAborting_ ? mc_res_aborted : mc_res_remote_error));
       }
       if (writeQueue_.empty()) {
         // No need to send any of remaining requests if we're aborting.
-        if (isAborting) {
+        if (isAborting_) {
           while (!sendQueue_.empty()) {
             reply(sendQueue_.popFront(), McReply(mc_res_aborted));
           }
@@ -442,7 +444,7 @@ void AsyncMcClientImpl::processShutdown(bool isAborting) {
     case ConnectionState::CONNECTING:
       // connectError is not a remote error, it's processed in connectError.
     case ConnectionState::DOWN:
-      // We shouldn't have any remote errors while not connected.
+      // We shouldn't have any errors while not connected.
       CHECK(false);
   }
 }

@@ -631,3 +631,32 @@ TEST(AsyncMcClient, eventBaseDestruction) {
   client.waitForReplies();
   server.join();
 }
+
+TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
+  auto eventBase = new EventBase();
+  bool wasUp = false;
+  bool replied = false;
+
+  ConnectionOptions opts("10.1.1.1", 11302, mc_ascii_protocol);
+  opts.timeout = std::chrono::milliseconds(200);
+  auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
+  client->setStatusCallbacks(
+    [&wasUp] {
+      wasUp = true;
+    }, nullptr);
+
+  auto msg = createMcMsgRef("hold");
+  msg->op = mc_op_get;
+  McRequest req(std::move(msg));
+
+  client->send(req, McOperation<mc_op_get>(),
+               [&replied] (McReply&& reply) {
+                 EXPECT_EQ(reply.result(), mc_res_aborted);
+                 replied = true;
+               });
+
+  delete eventBase;
+
+  EXPECT_FALSE(wasUp);
+  EXPECT_TRUE(replied);
+}

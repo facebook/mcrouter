@@ -195,7 +195,7 @@ class AsyncMcClientImpl :
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
-  void processShutdown(bool isAborting = false);
+  void processShutdown();
 
   // TAsyncTransport::ReadCallback overrides
   void getReadBuffer(void** bufReturn, size_t* lenReturn);
