@@ -432,6 +432,19 @@ folly::StringPiece getRegionFromRoutingPrefix(folly::StringPiece prefix) {
   return prefix.subpiece(1, regEnd - 1);
 }
 
+/**
+ * Deleter that deletes the object on the main context
+ */
+struct MainContextDeleter {
+  void operator() (GenericProxyRequestContext* ctx) const {
+    fiber::runInMainContext(
+      [ctx] () {
+        delete ctx;
+      }
+    );
+  }
+};
+
 void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   FBI_ASSERT(preq);
   FBI_ASSERT(preq->proxy);
@@ -465,9 +478,13 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
       auto result = reinterpret_cast<McMsgRef*>(resultLoc);
       auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
 
-      auto ctx = std::make_shared<GenericProxyRequestContext>(
-        ppreq,
-        ppreq->proxy->getConfig());
+      /* Note: we want MainContextDeleter here since the destructor
+         can do complicated things, like finalize stats entry and
+         destroy a stale config.  We assume that there's not enough
+         stack space for these operations. */
+      auto ctx = std::shared_ptr<GenericProxyRequestContext>(
+        new GenericProxyRequestContext(ppreq, ppreq->proxy->getConfig()),
+        MainContextDeleter());
       try {
         auto& proute = ctx->ctx().proxyRoute();
         auto reply = proute.dispatchMcMsg(ppreq->orig_req.clone(),
