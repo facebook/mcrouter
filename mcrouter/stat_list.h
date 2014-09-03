@@ -25,18 +25,10 @@
   STUI(closed_inactive_connections, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats
-  /* Total size of incoming network buffer for all clients being served. */
-  STUI(mcs_cinq_bytes, 0, 1)
-  /* Total outstanding reqs in mc server yet to be consumed by application. */
-  STUI(mcs_ready_reqs, 0, 1)
-  /* Total reqs routed by mcrouter in last round. */
-  STUI(requests_sent_last_round, 0, 1)
   /* Total reqs in mc client yet to be sent to memcache. */
   STUI(mcc_txbuf_reqs, 0, 1)
   /* Total reqs waiting for reply from memcache. */
   STUI(mcc_waiting_replies, 0, 1)
-  /* Total reqs completed but yet to sent the reply to clients. */
-  STUI(mcs_blocked_replies, 0, 1)
   STUI(asynclog_requests, 0, 1)
   STUI(sum_server_queue_length, 0, 1)
   /* Proxy requests we started routing */
@@ -277,41 +269,20 @@
   STUI(config_last_attempt, 0, 0)
   STUI(config_last_success, 0, 0)
   STUI(config_failures, 0, 0)
-  STUI(remote_error, 0, 1)
-  STUI(reply_received, 0, 1)
   STUI(start_time, 0, 0)
   STUI(dev_null_requests, 0, 1)
-  STUI(proxy_replication_failure, 0, 1)
 #undef GROUP
 #define GROUP count_stats
-  STUI(request_in_count, 0, 1)
   STUI(request_sent_count, 0, 1)
-  STUI(request_send_failure_count, 0, 1)
   STUI(request_error_count, 0, 1)
   STUI(request_success_count, 0, 1)
   STUI(request_replied_count, 0, 1)
-  STUI(request_complete_count, 0, 1)
-  STUI(request_regular_pool_failed_over_count, 0, 1)
-  STUI(request_regional_pool_failed_over_count, 0, 1)
-  STUI(request_tko_failed_over_count, 0, 1)
-  STUI(request_connect_failed_over_count, 0, 1)
-  STUI(request_data_failed_over_count, 0, 1)
-  STUI(request_datamiss_failed_over_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | rate_stats
-  STUIR(request_in, 0, 1)
   STUIR(request_sent, 0, 1)
-  STUIR(request_send_failure, 0, 1)
   STUIR(request_error, 0, 1)
   STUIR(request_success, 0, 1)
   STUIR(request_replied, 0, 1)
-  STUIR(request_complete, 0, 1)
-  STUIR(request_regular_pool_failed_over, 0, 1)
-  STUIR(request_regional_pool_failed_over, 0, 1)
-  STUIR(request_tko_failed_over, 0, 1)
-  STUIR(request_connect_failed_over, 0, 1)
-  STUIR(request_data_failed_over, 0, 1)
-  STUIR(request_datamiss_failed_over, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
   STUI(result_error_count, 0, 1)
@@ -374,30 +345,4 @@
   STUI(rtt_min, 0, 0)
   STUI(rtt, 0, 0)
   STUI(rtt_max, 0, 0)
-#undef GROUP
-#define GROUP count_stats
-  STUI(failover_log_rate_limited_count, 0, 1)
-  STUI(failover_result_log_rate_limited_count, 0, 1)
-  STUI(spec_failover_log_rate_limited_count, 0, 1)
-  STUI(spec_failover_timer_started_count, 0, 1)
-  STUI(spec_failover_timer_canceled_count, 0, 1)
-  STUI(spec_failover_rate_limited_count, 0, 1)
-  STUI(spec_failover_timer_triggered_count, 0, 1)
-  STUI(spec_failover_sent_count, 0, 1)
-  STUI(spec_failover_result_used_count, 0, 1)
-  STUI(spec_failover_result_early_count, 0, 1)
-  STUI(spec_failover_result_early_and_used_count, 0, 1)
-#undef GROUP
-#define GROUP rate_stats
-  STUI(failover_log_rate_limited, 0, 1)
-  STUI(failover_result_log_rate_limited, 0, 1)
-  STUI(spec_failover_log_rate_limited, 0, 1)
-  STUI(spec_failover_timer_started, 0, 1)
-  STUI(spec_failover_timer_canceled, 0, 1)
-  STUI(spec_failover_rate_limited, 0, 1)
-  STUI(spec_failover_timer_triggered, 0, 1)
-  STUI(spec_failover_sent, 0, 1)
-  STUI(spec_failover_result_used, 0, 1)
-  STUI(spec_failover_result_early, 0, 1)
-  STUI(spec_failover_result_early_and_used, 0, 1)
 #undef GROUP
