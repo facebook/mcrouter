@@ -55,6 +55,9 @@
   STUI(successful_client_connections, 0, 1)
   STAT(duration_us, stat_double, 0, .dbl = 0.0)
 #undef GROUP
+#define GROUP ods_stats | detailed_stats | count_stats
+  STUI(rate_limited_log_count, 0, 1)
+#undef GROUP
 #define GROUP ods_stats | mcproxy_stats | cmd_all_stats | \
   cmd_in_stats | count_stats
   STUI(cmd_delete_count, 0, 1)
