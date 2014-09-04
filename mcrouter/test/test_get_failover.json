@@ -7,15 +7,10 @@
       "servers": [ "localhost:12346" ]
     }
   },
-  "routes" : [
-    {
-      "aliases" : [ "/a/a/" ],
-      "route" : {
-        "type" : "FailoverWithExptimeRoute",
-        "failover" : "PoolRoute|A.gut",
-        "normal" : "PoolRoute|A.wildcard",
-        "failover_exptime" : 3
-      }
-    }
-  ]
+  "route": {
+    "type": "FailoverWithExptimeRoute",
+    "failover": "PoolRoute|A.gut",
+    "normal": "PoolRoute|A.wildcard",
+    "failover_exptime": 3
+  }
 }

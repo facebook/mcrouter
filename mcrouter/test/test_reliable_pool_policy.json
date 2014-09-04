@@ -41,10 +41,5 @@
       ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/region/cluster/" ],
-      "route": "@reliablePool(A-foo,)"
-    }
-  ]
+  "route": "@reliablePool(A-foo,)"
 }

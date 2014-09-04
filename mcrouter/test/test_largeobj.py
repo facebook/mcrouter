@@ -10,11 +10,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from subprocess import Popen
-import time
-import unittest
-
-from mcrouter.test.MCProcess import *
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import StoreServer
 
@@ -27,7 +22,6 @@ class TestLargeObj(McrouterTestCase):
         self.add_server(StoreServer('test_largeobj', 'x' * self.value_size))
         self.mcrouter = self.add_mcrouter(
             self.config,
-            '/test/A/',
             extra_args=self.extra_args)
 
     def test_largeobj(self):

@@ -54,52 +54,47 @@
       ]
     }
   ],
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": {
-        "type": "PrefixSelectorRoute",
-        "policies": {
-          "f": {
-            "type": "PoolRoute",
-            "pool": "foo",
-            "shadows": [
-              {
-                "target": "PoolRoute|foo-shadow",
-                "index_range": [0, 2],
-                "key_fraction_range": [0.0, 0.1],
-                "key_fraction_range_rv": "key_fraction_range_0"
-              },
-              {
-                "target": "PoolRoute|bar-shadow",
-                "index_range": [0, 2],
-                "key_fraction_range": [0, 0.1],
-                "key_fraction_range_rv": "key_fraction_range_0"
-              }
-            ]
+  "route": {
+    "type": "PrefixSelectorRoute",
+    "policies": {
+      "f": {
+        "type": "PoolRoute",
+        "pool": "foo",
+        "shadows": [
+          {
+            "target": "PoolRoute|foo-shadow",
+            "index_range": [0, 2],
+            "key_fraction_range": [0.0, 0.1],
+            "key_fraction_range_rv": "key_fraction_range_0"
           },
-          "b_migrate": {
-            "type": "MigrateRoute",
-            "from": "pool-migrate-old",
-            "to": "pool-migrate-new",
-            "start_time": 0,
-            "interval": 1
-          },
-          "b_old": "pool-migrate-old",
-          "b_new": "pool-migrate-new",
-          "reg_f": {
-            "type": "PoolRoute",
-            "pool": "foo-regional",
-            "shadows": [
-              {
-                "target": "PoolRoute|foo-shadow",
-                "index_range": [0, 2],
-                "key_fraction_range": [0.0, 0.1]
-              }
-            ]
+          {
+            "target": "PoolRoute|bar-shadow",
+            "index_range": [0, 2],
+            "key_fraction_range": [0, 0.1],
+            "key_fraction_range_rv": "key_fraction_range_0"
           }
-        }
+        ]
+      },
+      "b_migrate": {
+        "type": "MigrateRoute",
+        "from": "pool-migrate-old",
+        "to": "pool-migrate-new",
+        "start_time": 0,
+        "interval": 1
+      },
+      "b_old": "pool-migrate-old",
+      "b_new": "pool-migrate-new",
+      "reg_f": {
+        "type": "PoolRoute",
+        "pool": "foo-regional",
+        "shadows": [
+          {
+            "target": "PoolRoute|foo-shadow",
+            "index_range": [0, 2],
+            "key_fraction_range": [0.0, 0.1]
+          }
+        ]
       }
     }
-  ]
+  }
 }

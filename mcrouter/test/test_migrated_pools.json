@@ -7,16 +7,11 @@
       "servers": [ "localhost:12346" ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": {
-        "type": "MigrateRoute",
-        "from": "PoolRoute|wildcard-old",
-        "to": "PoolRoute|wildcard-new",
-        "start_time": START_TIME,
-        "interval": 2
-      }
-    }
-  ]
+  "route": {
+    "type": "MigrateRoute",
+    "from": "PoolRoute|wildcard-old",
+    "to": "PoolRoute|wildcard-new",
+    "start_time": START_TIME,
+    "interval": 2
+  }
 }

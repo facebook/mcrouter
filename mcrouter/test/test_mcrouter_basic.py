@@ -26,7 +26,7 @@ class TestMcrouterBasic(McrouterTestCase):
 
     def get_mcrouter(self, additional_args=[]):
         return self.add_mcrouter(
-            self.config, '/././', extra_args=self.extra_args + additional_args)
+            self.config, extra_args=self.extra_args + additional_args)
 
     def test_basic_lease(self):
         mcr = self.get_mcrouter()
@@ -88,7 +88,7 @@ class TestMcrouterInvalidRoute(McrouterTestCase):
 
     def get_mcrouter(self, additional_args=[]):
         return self.add_mcrouter(
-            self.config, '/././', extra_args=self.extra_args + additional_args)
+            self.config, extra_args=self.extra_args + additional_args)
 
     def test_basic_invalid_route(self):
         mcr = self.get_mcrouter()
@@ -188,8 +188,7 @@ class TestBasicAllSync(McrouterTestCase):
         self.mc3 = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_basic_all_sync(self):
         """
@@ -232,8 +231,7 @@ class TestBasicAllFirst(McrouterTestCase):
         self.mc3 = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_basic_all_first(self):
         """
@@ -257,8 +255,7 @@ class TestBasicAllMajority(McrouterTestCase):
         self.mc4 = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_basic_all_majority(self):
         """
@@ -332,8 +329,7 @@ class TestBasicFailover(McrouterTestCase):
         self.mc2 = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_failover(self):
         """
@@ -370,8 +366,7 @@ class TestBasicFailoverOverride(McrouterTestCase):
         self.mc2 = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_failover_override(self):
         """
@@ -400,8 +395,7 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         self.l2 = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_l1_l2_get(self):
         """

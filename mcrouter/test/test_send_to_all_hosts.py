@@ -10,12 +10,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestSendToAllHosts(McrouterTestCase):
     config = './mcrouter/test/test_send_to_all_hosts.json'
-    route = '/test/clusterA/'
     extra_args = []
 
     def setUp(self):
@@ -28,7 +27,7 @@ class TestSendToAllHosts(McrouterTestCase):
         self.cacheB2.set('ccw', 'cacheB2')
 
     def test_regular_request(self):
-        mcrouter = self.add_mcrouter(self.config, self.route, self.extra_args)
+        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
         mcrouter.set("test", "val")
         self.assertEqual(self.cacheA.get("test"), "val")
         self.assertIsNone(self.cacheB1.get("test"))
@@ -37,7 +36,7 @@ class TestSendToAllHosts(McrouterTestCase):
     def test_set(self):
         self.assertIsNone(self.cacheB1.get("aaa"))
         self.assertIsNone(self.cacheB2.get("aaa"))
-        mcrouter = self.add_mcrouter(self.config, self.route, self.extra_args)
+        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
         mcrouter.set("aaa", "val")
         self.assertEqual(self.cacheA.get("aaa"), "val")
         self.assertEqual(self.cacheB1.get("aaa"), "val")
@@ -47,7 +46,7 @@ class TestSendToAllHosts(McrouterTestCase):
         self.assertTrue(self.cacheA.set("aaa", "val"))
         self.assertTrue(self.cacheB1.set("aaa", "val"))
         self.assertTrue(self.cacheB2.set("aaa", "val"))
-        mcrouter = self.add_mcrouter(self.config, self.route, self.extra_args)
+        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
         mcrouter.delete("aaa")
         self.assertIsNone(self.cacheA.get("aaa"))
         self.assertIsNone(self.cacheB1.get("aaa"))

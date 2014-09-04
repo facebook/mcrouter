@@ -10,7 +10,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+import shutil
+import time
+
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 from mcrouter.test.mock_servers import SleepServer
 
@@ -26,10 +28,7 @@ class TestProbeTimeout(McrouterTestCase):
         self.mc = self.add_server(SleepServer())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config,
-            '/a/a/',
-            extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_probe_timeout(self):
         mcrouter = self.get_mcrouter()

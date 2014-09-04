@@ -1,42 +1,36 @@
 {
-    "pools": {
-        "A.wildcard": {
-            "protocol": "ascii",
-            "servers": [
-                "[127.0.0.1]:11615"
-            ]
-        },
-        "B.wildcard": {
-            "protocol": "ascii",
-            "servers": [
-                "[::ffff:7f00:1]:11616"
-            ]
-        }
+  "pools": {
+    "A.wildcard": {
+      "servers": [ "[127.0.0.1]:11615" ]
     },
-    "routes": [
-        {
-            "aliases": [ "/test/A/" ],
-            "route": {
-                "type": "FailoverWithExptimeRoute",
-                "failover": "PoolRoute|B.wildcard",
-                "normal": "PoolRoute|A.wildcard",
-                "settings" : {
-                  "connectTimeout" : false,
-                  "dataTimeout" : false
-                }
-            }
-        },
-        {
-            "aliases": [ "/test/B/" ],
-            "route": {
-                "type": "FailoverWithExptimeRoute",
-                "failover": "PoolRoute|A.wildcard",
-                "normal": "PoolRoute|B.wildcard",
-                "settings" : {
-                  "connectTimeout" : false,
-                  "dataTimeout" : false
-                }
-            }
+    "B.wildcard": {
+      "servers": [ "[::ffff:7f00:1]:11616" ]
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/test/A/" ],
+      "route": {
+        "type": "FailoverWithExptimeRoute",
+        "failover": "PoolRoute|B.wildcard",
+        "normal": "PoolRoute|A.wildcard",
+        "settings" : {
+          "connectTimeout" : false,
+          "dataTimeout" : false
         }
-    ]
+      }
+    },
+    {
+      "aliases": [ "/test/B/" ],
+      "route": {
+        "type": "FailoverWithExptimeRoute",
+        "failover": "PoolRoute|A.wildcard",
+        "normal": "PoolRoute|B.wildcard",
+        "settings" : {
+          "connectTimeout" : false,
+          "dataTimeout" : false
+        }
+      }
+    }
+  ]
 }

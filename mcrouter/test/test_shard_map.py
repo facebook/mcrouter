@@ -31,12 +31,11 @@ class TestShardMap(McrouterTestCase):
     extra_args = []
 
     def setUp(self):
-        for i in xrange(7):
+        for i in range(7):
             self.add_server(EchoServer())
 
         self.mcrouter = self.add_mcrouter(
             self.config,
-            '/test/A/',
             extra_args=self.extra_args)
 
     def test_shard_map(self):

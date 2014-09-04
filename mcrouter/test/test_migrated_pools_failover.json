@@ -13,26 +13,21 @@
       "servers": [ "localhost:12348" ]
     }
   },
-  "routes" : [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": {
-        "type": "FailoverWithExptimeRoute",
-        "failover": {
-          "type": "MigrateRoute",
-          "from": "PoolRoute|B-old",
-          "to": "PoolRoute|B-new",
-          "start_time": START_TIME,
-          "interval": 2
-        },
-        "normal": {
-          "type": "MigrateRoute",
-          "from": "PoolRoute|A-old",
-          "to": "PoolRoute|A-new",
-          "start_time": START_TIME,
-          "interval": 2
-        }
-      }
+  "route": {
+    "type": "FailoverWithExptimeRoute",
+    "failover": {
+      "type": "MigrateRoute",
+      "from": "PoolRoute|B-old",
+      "to": "PoolRoute|B-new",
+      "start_time": START_TIME,
+      "interval": 2
+    },
+    "normal": {
+      "type": "MigrateRoute",
+      "from": "PoolRoute|A-old",
+      "to": "PoolRoute|A-new",
+      "start_time": START_TIME,
+      "interval": 2
     }
-  ]
+  }
 }

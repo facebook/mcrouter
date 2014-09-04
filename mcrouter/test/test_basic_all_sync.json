@@ -10,17 +10,12 @@
       "servers": [ "localhost:12347" ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": {
-        "type": "AllSyncRoute",
-        "children": [
-          "PoolRoute|A.wildcard",
-          "PoolRoute|B.wildcard",
-          "PoolRoute|C.wildcard"
-        ]
-      }
-    }
-  ]
+  "route": {
+    "type": "AllSyncRoute",
+    "children": [
+      "PoolRoute|A.wildcard",
+      "PoolRoute|B.wildcard",
+      "PoolRoute|C.wildcard"
+    ]
+  }
 }

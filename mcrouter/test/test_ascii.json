@@ -2,57 +2,39 @@
   "pools": {
     "A-bar": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11511"
-      ]
+      "servers": [ "127.0.0.1:11511" ]
     },
     "A-ci": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11512"
-      ]
+      "servers": [ "127.0.0.1:11512" ]
     },
     "A-datamiss": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11541"
-      ]
+      "servers": [ "127.0.0.1:11541" ]
     },
     "A-down": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:65532"
-      ]
+      "servers": [ "127.0.0.1:65532" ]
     },
     "A-failover": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:65522"
-      ]
+      "servers": [ "127.0.0.1:65522" ]
     },
     "A-foo": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11510"
-      ]
+      "servers": [ "127.0.0.1:11510" ]
     },
     "A-gut": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11540"
-      ]
+      "servers": [ "127.0.0.1:11540" ]
     },
     "A-lat": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11513"
-      ]
+      "servers": [ "127.0.0.1:11513" ]
     },
     "A-tmo": {
       "protocol": "ascii",
-      "servers": [
-        "10.1.1.1:11302"
-      ]
+      "servers": [ "10.1.1.1:11302" ]
     },
     "A-wildcard": {
       "protocol": "ascii",
@@ -64,33 +46,23 @@
     },
     "B-bar": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11521"
-      ]
+      "servers": [ "127.0.0.1:11521" ]
     },
     "B-ci": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11522"
-      ]
+      "servers": [ "127.0.0.1:11522" ]
     },
     "B-foo": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11520"
-      ]
+      "servers": [ "127.0.0.1:11520" ]
     },
     "B-lat": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11523"
-      ]
+      "servers": [ "127.0.0.1:11523" ]
     },
     "B-rej": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11523"
-      ]
+      "servers": [ "127.0.0.1:11523" ]
     },
     "B-wildcard": {
       "protocol": "ascii",
@@ -102,27 +74,19 @@
     },
     "C-bar": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11531"
-      ]
+      "servers": [ "127.0.0.1:11531" ]
     },
     "C-ci": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11532"
-      ]
+      "servers": [ "127.0.0.1:11532" ]
     },
     "C-foo": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11530"
-      ]
+      "servers": [ "127.0.0.1:11530" ]
     },
     "C-lat": {
       "protocol": "ascii",
-      "servers": [
-        "127.0.0.1:11533"
-      ]
+      "servers": [ "127.0.0.1:11533" ]
     },
     "C-wildcard": {
       "protocol": "ascii",
@@ -135,27 +99,27 @@
   },
   "named_handles": [
     {
-      "type" : "AllInitialRoute",
-      "name" : "policy-bar",
-      "children" : [
+      "type": "AllInitialRoute",
+      "name": "policy-bar",
+      "children": [
         "PoolRoute|A-bar",
         "PoolRoute|C-bar",
         "PoolRoute|B-bar"
       ]
     },
     {
-      "type" : "AllInitialRoute",
-      "name" : "policy-ci",
-      "children" : [
+      "type": "AllInitialRoute",
+      "name": "policy-ci",
+      "children": [
         "PoolRoute|A-ci",
         "PoolRoute|C-ci",
         "PoolRoute|B-ci"
       ]
     },
     {
-      "type" : "AllInitialRoute",
-      "name" : "policy-foo",
-      "children" : [
+      "type": "AllInitialRoute",
+      "name": "policy-foo",
+      "children": [
         {
           "type": "PoolRoute",
           "pool": "A-foo",
@@ -174,15 +138,15 @@
       ]
     },
     {
-      "type" : "PoolRoute",
-      "name" : "hash:A-gut",
+      "type": "PoolRoute",
+      "name": "hash:A-gut",
       "pool": "A-gut",
       "hash": "Crc32"
     },
     {
-      "type" : "AllInitialRoute",
-      "name" : "policy-lat",
-      "children" : [
+      "type": "AllInitialRoute",
+      "name": "policy-lat",
+      "children": [
         {
           "type": "PoolRoute",
           "pool": "A-lat",
@@ -207,9 +171,9 @@
       "hash": "Latest"
     },
     {
-      "type" : "AllInitialRoute",
-      "name" : "policy-wildcard",
-      "children" : [
+      "type": "AllInitialRoute",
+      "name": "policy-wildcard",
+      "children": [
         {
           "type": "PoolRoute",
           "pool": "A-wildcard",
@@ -228,118 +192,111 @@
       ]
     }
   ],
-  "routes" : [
-    {
-      "aliases" : [
-        "/././"
-      ],
-      "route" : {
-        "type" : "PrefixSelectorRoute",
-        "policies" : {
-          "bar" : {
-            "default_policy" : "PoolRoute|A-bar",
-            "operation_policies" : {
-              "decr" : "policy-bar",
-              "delete" : "policy-bar",
-              "incr" : "policy-bar"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "ci" : {
-            "default_policy" : "PoolRoute|A-ci",
-            "operation_policies" : {
-              "decr" : "policy-ci",
-              "delete" : "policy-ci",
-              "incr" : "policy-ci"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "datamiss" : {
-            "type" : "MissFailoverRoute",
-            "children": [
-              "PoolRoute|A-datamiss",
-              "hash:A-gut"
-            ]
-          },
-          "down" : {
-            "default_policy" : "PoolRoute|A-down",
-            "operation_policies" : {
-              "decr" : "PoolRoute|A-down",
-              "delete" : "PoolRoute|A-down",
-              "incr" : "PoolRoute|A-down"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "failover" : {
-            "type" : "FailoverWithExptimeRoute",
-            "failover" : "hash:A-gut",
-            "failover_exptime" : 3,
-            "normal" : "PoolRoute|A-failover"
-          },
-          "foo" : {
-            "default_policy" : {
-              "type": "PoolRoute",
-              "pool": "A-foo",
-              "hash": "Crc32"
-            },
-            "operation_policies" : {
-              "decr" : "policy-foo",
-              "delete" : "policy-foo",
-              "incr" : "policy-foo"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "gut" : {
-            "default_policy" : "hash:A-gut",
-            "operation_policies" : {
-              "decr" : "hash:A-gut",
-              "delete" : "hash:A-gut",
-              "incr" : "hash:A-gut"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "lat" : {
-            "default_policy" : {
-              "type": "PoolRoute",
-              "pool": "A-lat",
-              "hash": "Latest"
-            },
-            "operation_policies" : {
-              "decr" : "policy-lat",
-              "delete" : "policy-lat",
-              "incr" : "policy-lat"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "rej" : {
-            "default_policy" : "ErrorRoute|reject",
-            "operation_policies" : {
-              "decr" : "policy-rej",
-              "delete" : "policy-rej",
-              "incr" : "policy-rej"
-            },
-            "type" : "PrefixPolicyRoute"
-          },
-          "tmo" : {
-            "failover" : "hash:A-gut",
-            "normal" : "PoolRoute|A-tmo",
-            "type" : "FailoverWithExptimeRoute"
-          }
+  "route": {
+    "type": "PrefixSelectorRoute",
+    "policies": {
+      "bar": {
+        "default_policy": "PoolRoute|A-bar",
+        "operation_policies": {
+          "decr": "policy-bar",
+          "delete": "policy-bar",
+          "incr": "policy-bar"
         },
-        "wildcard" : {
-          "default_policy" : {
-            "type": "PoolRoute",
-            "pool": "A-wildcard",
-            "hash": "Crc32"
-          },
-          "operation_policies" : {
-            "decr" : "policy-wildcard",
-            "delete" : "policy-wildcard",
-            "incr" : "policy-wildcard"
-          },
-          "type" : "PrefixPolicyRoute"
-        }
+        "type": "PrefixPolicyRoute"
+      },
+      "ci": {
+        "default_policy": "PoolRoute|A-ci",
+        "operation_policies": {
+          "decr": "policy-ci",
+          "delete": "policy-ci",
+          "incr": "policy-ci"
+        },
+        "type": "PrefixPolicyRoute"
+      },
+      "datamiss": {
+        "type": "MissFailoverRoute",
+        "children": [
+          "PoolRoute|A-datamiss",
+          "hash:A-gut"
+        ]
+      },
+      "down": {
+        "default_policy": "PoolRoute|A-down",
+        "operation_policies": {
+          "decr": "PoolRoute|A-down",
+          "delete": "PoolRoute|A-down",
+          "incr": "PoolRoute|A-down"
+        },
+        "type": "PrefixPolicyRoute"
+      },
+      "failover": {
+        "type": "FailoverWithExptimeRoute",
+        "failover": "hash:A-gut",
+        "failover_exptime": 3,
+        "normal": "PoolRoute|A-failover"
+      },
+      "foo": {
+        "default_policy": {
+          "type": "PoolRoute",
+          "pool": "A-foo",
+          "hash": "Crc32"
+        },
+        "operation_policies": {
+          "decr": "policy-foo",
+          "delete": "policy-foo",
+          "incr": "policy-foo"
+        },
+        "type": "PrefixPolicyRoute"
+      },
+      "gut": {
+        "default_policy": "hash:A-gut",
+        "operation_policies": {
+          "decr": "hash:A-gut",
+          "delete": "hash:A-gut",
+          "incr": "hash:A-gut"
+        },
+        "type": "PrefixPolicyRoute"
+      },
+      "lat": {
+        "default_policy": {
+          "type": "PoolRoute",
+          "pool": "A-lat",
+          "hash": "Latest"
+        },
+        "operation_policies": {
+          "decr": "policy-lat",
+          "delete": "policy-lat",
+          "incr": "policy-lat"
+        },
+        "type": "PrefixPolicyRoute"
+      },
+      "rej": {
+        "default_policy": "ErrorRoute|reject",
+        "operation_policies": {
+          "decr": "policy-rej",
+          "delete": "policy-rej",
+          "incr": "policy-rej"
+        },
+        "type": "PrefixPolicyRoute"
+      },
+      "tmo": {
+        "failover": "hash:A-gut",
+        "normal": "PoolRoute|A-tmo",
+        "type": "FailoverWithExptimeRoute"
       }
+    },
+    "wildcard": {
+      "default_policy": {
+        "type": "PoolRoute",
+        "pool": "A-wildcard",
+        "hash": "Crc32"
+      },
+      "operation_policies": {
+        "decr": "policy-wildcard",
+        "delete": "policy-wildcard",
+        "incr": "policy-wildcard"
+      },
+      "type": "PrefixPolicyRoute"
     }
-  ]
+  }
 }

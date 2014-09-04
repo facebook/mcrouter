@@ -27,10 +27,5 @@
       ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": "@pool(foo)"
-    }
-  ]
+  "route": "@pool(foo)"
 }

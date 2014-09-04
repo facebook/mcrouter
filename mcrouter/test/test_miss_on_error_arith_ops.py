@@ -10,7 +10,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestMissOnErrorArithOps(McrouterTestCase):
@@ -20,7 +19,6 @@ class TestMissOnErrorArithOps(McrouterTestCase):
     def setUp(self):
         self.mcrouter = self.add_mcrouter(
             self.config,
-            None,
             extra_args=self.extra_args)
 
     def test_behaviour(self):

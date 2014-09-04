@@ -7,16 +7,11 @@
       "servers": [ "localhost:12345" ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": {
-        "type": "PrefixSelectorRoute",
-        "policies": {
-          "alt": "PoolRoute|A.alt",
-          "pri": "PoolRoute|A.pri"
-        }
-      }
+  "route": {
+    "type": "PrefixSelectorRoute",
+    "policies": {
+      "alt": "PoolRoute|A.alt",
+      "pri": "PoolRoute|A.pri"
     }
-  ]
+  }
 }

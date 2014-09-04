@@ -10,12 +10,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from subprocess import Popen
-import time
-from time import sleep
-import unittest
-
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Mcrouter
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestShadowWithFile(McrouterTestCase):
@@ -29,7 +25,6 @@ class TestShadowWithFile(McrouterTestCase):
 
     def get_mcrouter(self):
         return self.add_server(Mcrouter(self.config,
-                                        default_route='/a/a/',
                                         extra_args=self.extra_args))
 
     def test_shadow_with_file(self):

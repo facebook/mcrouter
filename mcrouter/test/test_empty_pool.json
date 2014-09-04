@@ -1,15 +1,8 @@
 {
-    "pools": {
-        "A-foo": {
-            "hash": "ch3",
-            "protocol": "ascii",
-            "servers": []
-        }
-    },
-    "routes": [
-        {
-            "aliases": [ "/region/cluster/" ],
-            "route": "AllSyncRoute|Pool|A-foo"
-        }
-    ]
+  "pools": {
+    "A-foo": {
+      "servers": []
+    }
+  },
+  "route": "AllSyncRoute|Pool|A-foo"
 }

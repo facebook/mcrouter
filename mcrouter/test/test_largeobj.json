@@ -1,16 +1,8 @@
 {
-    "pools": {
-        "A.wildcard": {
-            "protocol": "ascii",
-            "servers": [
-                "[localhost]:11132"
-            ]
-        }
-    },
-    "routes": [
-        {
-            "aliases": [ "/test/A/" ],
-            "route": "PoolRoute|A.wildcard"
-        }
-    ]
+  "pools": {
+    "A.wildcard": {
+      "servers": [ "[localhost]:11132" ]
+    }
+  },
+  "route": "PoolRoute|A.wildcard"
 }

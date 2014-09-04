@@ -41,10 +41,5 @@
       ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": "@reliablePool(A.wildcard,)"
-    }
-  ]
+  "route": "@reliablePool(A.wildcard,)"
 }

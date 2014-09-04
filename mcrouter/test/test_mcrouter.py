@@ -10,13 +10,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
-import threading
-import pprint
-import pdb
-import socket
+import time
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestDevNull(McrouterTestCase):
@@ -29,8 +25,7 @@ class TestDevNull(McrouterTestCase):
         self.mc_wild = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_dev_null(self):
         mcr = self.get_mcrouter()
@@ -58,8 +53,7 @@ class TestServerListFromAnotherPool(McrouterTestCase):
         self.mc_pri = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_server_list_from_another_pool(self):
         mcr = self.get_mcrouter()
@@ -91,7 +85,7 @@ class TestMigratedPools(McrouterTestCase):
 
     def get_mcrouter(self):
         return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args,
+            self.config, extra_args=self.extra_args,
             replace_map={"START_TIME": (int(time.time()) + 2)})
 
     def test_migrated_pools(self):
@@ -164,7 +158,7 @@ class TestMigratedPoolsFailover(McrouterTestCase):
 
     def get_mcrouter(self):
         return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args,
+            self.config, extra_args=self.extra_args,
             replace_map={"START_TIME": (int(time.time()) + 2)})
 
     def test_migrated_pools_failover(self):
@@ -259,8 +253,7 @@ class TestSamePoolFailover(McrouterTestCase):
         self.add_server(Memcached(), 12345)
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_same_pool_failover(self):
         mcr = self.get_mcrouter()
@@ -280,8 +273,7 @@ class TestGetFailover(McrouterTestCase):
         self.wildcard = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def failover_common(self, key):
         self.mcr = self.get_mcrouter()
@@ -326,8 +318,7 @@ class TestLeaseGetFailover(McrouterTestCase):
         self.wildcard = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_lease_get_failover(self):
         mcr = self.get_mcrouter()
@@ -370,8 +361,7 @@ class TestMetaGetFailover(McrouterTestCase):
         self.wildcard = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config, '/a/a/', extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_meta_get_failover(self):
         mcr = self.get_mcrouter()

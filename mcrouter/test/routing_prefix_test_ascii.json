@@ -4,13 +4,13 @@
       "type": "macroDef",
       "params": [ "cluster" ],
       "result": {
-        "type" : "PrefixPolicyRoute",
-        "default_policy" : "PoolRoute|%cluster%.wildcard",
-        "operation_policies" : {
-          "delete" : {
-            "type" : "AllSyncRoute",
+        "type": "PrefixPolicyRoute",
+        "default_policy": "PoolRoute|%cluster%.wildcard",
+        "operation_policies": {
+          "delete": {
+            "type": "AllSyncRoute",
             "name": "all-sync",
-            "children" : [
+            "children": [
               "PoolRoute|A.wildcard",
               "PoolRoute|B.wildcard",
               "PoolRoute|C.wildcard",
@@ -49,16 +49,16 @@
       "route": "@policy(A)"
     },
     {
-      "aliases" : [ "/b/b/" ],
-      "route" : "@policy(B)"
+      "aliases": [ "/b/b/" ],
+      "route": "@policy(B)"
     },
     {
-      "aliases" : [ "/c/c/" ],
-      "route" : "@policy(C)"
+      "aliases": [ "/c/c/" ],
+      "route": "@policy(C)"
     },
     {
-      "aliases" : [ "/d/d/" ],
-      "route" : "@policy(D)"
+      "aliases": [ "/d/d/" ],
+      "route": "@policy(D)"
     }
   ]
 }

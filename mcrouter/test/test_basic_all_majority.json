@@ -13,18 +13,13 @@
       "servers": [ "localhost:12348" ]
     }
   },
-  "routes": [
-    {
-      "aliases": [ "/a/a/" ],
-      "route": {
-        "type": "AllMajorityRoute",
-        "children": [
-          "PoolRoute|A.wildcard",
-          "PoolRoute|B.wildcard",
-          "PoolRoute|C.wildcard",
-          "PoolRoute|D.wildcard"
-        ]
-      }
-    }
-  ]
+  "route": {
+    "type": "AllMajorityRoute",
+    "children": [
+      "PoolRoute|A.wildcard",
+      "PoolRoute|B.wildcard",
+      "PoolRoute|C.wildcard",
+      "PoolRoute|D.wildcard"
+    ]
+  }
 }

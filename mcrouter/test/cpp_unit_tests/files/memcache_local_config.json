@@ -1,17 +1,8 @@
 {
   "pools": {
-    "prn2c07-mctest": {
-      "servers": [
-        "localhost:PORT"
-      ]
+    "A": {
+      "servers": [ "localhost:PORT" ]
     }
   },
-  "routes": [
-    {
-      "aliases": [
-        "/oregon/prn2c07/"
-      ],
-      "route": "PoolRoute|prn2c07-mctest"
-    }
-  ]
+  "route": "PoolRoute|A"
 }

@@ -1,32 +1,27 @@
 {
-    "pools": {
-        "A": {
-            "servers": [ "127.0.0.1:10001" ],
-            "rates": {
-                "sets_rate": 2.0
-            }
+  "pools": {
+    "A": {
+      "servers": [ "127.0.0.1:10001" ],
+      "rates": {
+        "sets_rate": 2.0
+      }
+    }
+  },
+  "route": {
+    "type": "PrefixSelectorRoute",
+    "policies": {
+      "basic": {
+        "type": "PoolRoute",
+        "pool": "A"
+      },
+      "burst": {
+        "type": "PoolRoute",
+        "pool": "A",
+        "rates": {
+          "sets_rate": 4.0,
+          "sets_burst": 3.0
         }
-    },
-    "routes": [
-        {
-            "aliases": [ "/a/a/" ],
-            "route": {
-                "type": "PrefixSelectorRoute",
-                "policies": {
-                    "basic": {
-                        "type": "PoolRoute",
-                        "pool": "A"
-                    },
-                    "burst": {
-                        "type": "PoolRoute",
-                        "pool": "A",
-                        "rates": {
-                            "sets_rate": 4.0,
-                            "sets_burst": 3.0
-                        }
-                    }
-                }
-            }
-        }
-    ]
+      }
+    }
+  }
 }

@@ -9,12 +9,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import time
-from time import sleep
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
-from mcrouter.test.mock_servers import SleepServer
 
 class TestMigratedFailover(McrouterTestCase):
     config = './mcrouter/test/test_migrated_failover.json'
@@ -24,10 +21,7 @@ class TestMigratedFailover(McrouterTestCase):
     ]
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config,
-            '/test/A/',
-            extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_migrated_failover(self):
         self.add_server(Memcached())  # "old" pool, ignored

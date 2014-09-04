@@ -1,16 +1,8 @@
 {
-    "pools": {
-        "A.wildcard": {
-            "protocol": "ascii",
-            "servers": [
-                "127.0.0.1:11615"
-            ]
-        }
-    },
-    "routes": [
-        {
-            "aliases": [ "/test/A/" ],
-            "route": "PoolRoute|A.pho"
-        }
-    ]
+  "pools": {
+    "A.wildcard": {
+      "servers": [ "127.0.0.1:11615" ]
+    }
+  },
+  "route": "PoolRoute|A.pho"
 }

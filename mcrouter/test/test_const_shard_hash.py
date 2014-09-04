@@ -10,7 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestConstShardHash(McrouterTestCase):
@@ -20,10 +20,7 @@ class TestConstShardHash(McrouterTestCase):
     def test_const_shard_hash(self):
         mc1 = self.add_server(Memcached())
         mc2 = self.add_server(Memcached())
-        mcrouter = self.add_mcrouter(
-            self.config,
-            '/region/cluster/',
-            extra_args=self.extra_args)
+        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
 
         key = 'foo:0:test'
         value = 'value0'

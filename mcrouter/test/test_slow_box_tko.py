@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import time
 
-from mcrouter.test.MCProcess import *
 from mcrouter.test.mock_servers import MockServer
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
@@ -75,19 +74,19 @@ class TestSlowBoxTko(McrouterTestCase):
         self.failover_server = self.add_server(FailoverServer())
         self.mcrouter = self.add_mcrouter(
             self.config,
-            '/test/A',
+            '/test/A/',
             extra_args=self.extra_args + self.additional_args)
 
     def test_tko(self):
         # The first request in test seems to be really slow. We push the box
         # through a few reqs just to clean him out, and bring him to the slow
         # period
-        for i in xrange(4):
+        for i in range(4):
             self.mcrouter.get('hit')
 
         # We need 3 requests to bring the box above the threshold. Because of
         # the one request delay 2 more requests are required to TKO
-        for i in xrange(5):
+        for i in range(5):
             resp = self.mcrouter.get('hit')
             self.assertEqual(resp, str(self.slow_server.getport()))
 
@@ -97,6 +96,6 @@ class TestSlowBoxTko(McrouterTestCase):
 
         # As his latency improves, we should not tko him again in the next 3
         # requests, since the current reqs are all fast
-        for i in xrange(3):
+        for i in range(3):
             resp = self.mcrouter.get('hit')
             self.assertEqual(resp, str(self.slow_server.getport()))

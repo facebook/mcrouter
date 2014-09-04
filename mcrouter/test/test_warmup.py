@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 
 import time
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestWarmup(McrouterTestCase):
@@ -24,7 +24,6 @@ class TestWarmup(McrouterTestCase):
         self.mc2 = self.add_server(Memcached())
         self.mcrouter = self.add_mcrouter(
             self.config,
-            '/region/cluster/',
             extra_args=self.extra_args)
 
     def test_sanity(self):

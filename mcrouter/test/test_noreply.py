@@ -10,7 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestNoreply(McrouterTestCase):
@@ -21,7 +21,7 @@ class TestNoreply(McrouterTestCase):
         self.mc = self.add_server(Memcached())
 
     def get_mcrouter(self):
-        return self.add_mcrouter(self.config, '/a/a/')
+        return self.add_mcrouter(self.config)
 
     def test_set_noreply(self):
         mcrouter = self.get_mcrouter()

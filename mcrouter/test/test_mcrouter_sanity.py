@@ -10,7 +10,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+import random
+import time
+
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 def randstring(n):
@@ -72,12 +75,6 @@ class TestMcrouterSanity(McrouterTestCase):
             self.assertEqual(v, got)
         t2 = time.time()
         self.mcrouter_time = (t2 - t1)
-
-        @atexit.register
-        def atexit_print():
-            pass
-            # print "test_getset timings for %d gets and sets:" % len(data)
-            # print "  mcrouter tests took %fs" % self.mcrouter_time
 
     def test_ops(self):
         mcr = self.mcrouter

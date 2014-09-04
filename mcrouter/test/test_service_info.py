@@ -9,22 +9,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import time
-from time import sleep
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
-from mcrouter.test.mock_servers import SleepServer
 
 class TestServiceInfo(McrouterTestCase):
     config = './mcrouter/test/test_service_info.json'
     extra_args = []
 
     def get_mcrouter(self):
-        return self.add_mcrouter(
-            self.config,
-            '/test/A/',
-            extra_args=self.extra_args)
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_route_format(self):
         mc1 = self.add_server(Memcached())

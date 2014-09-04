@@ -10,7 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestReliablePoolPolicy(McrouterTestCase):
@@ -22,7 +22,6 @@ class TestReliablePoolPolicy(McrouterTestCase):
         self.mc2 = self.add_server(Memcached())
         self.mcrouter = self.add_mcrouter(
             self.config,
-            '/region/cluster/',
             extra_args=self.extra_args)
 
     def test_reliable_pool_no_failover(self):

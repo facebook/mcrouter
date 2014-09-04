@@ -1,22 +1,11 @@
 {
   "pools": {
-    "mctestc00.wildcard": {
-      "protocol": "ascii",
-      "name": "wildcard",
+    "A": {
       "servers": [
         "localhost:11400",
         {"totally" : "invalid"}
-      ],
-      "hash": "ch3",
-      "transport": "tcp"
+      ]
     }
   },
-  "routes": [
-    {
-      "aliases": [
-        "/mctest/mctestc00/"
-      ],
-      "route": "PoolRoute|mctestc00.wildcard"
-    }
-  ]
+  "route": "PoolRoute|A"
 }

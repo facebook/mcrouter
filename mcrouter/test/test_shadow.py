@@ -10,7 +10,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import *
+import time
+
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestShadow(McrouterTestCase):
@@ -29,7 +31,6 @@ class TestShadow(McrouterTestCase):
     def get_mcrouter(self, more_extra_args=[]):
         return self.add_mcrouter(
             self.config,
-            '/a/a/',
             extra_args=self.extra_args + more_extra_args)
 
     def test_normal_shadow(self):
