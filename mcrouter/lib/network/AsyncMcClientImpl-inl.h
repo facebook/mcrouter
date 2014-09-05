@@ -23,20 +23,18 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
   // shouldn't happen.
   assert(selfPtr);
 
-  auto op = (mc_op_t)Op;
-  auto req = folly::make_unique<ReqInfo>(nextMsgId_, op, std::move(callback),
-                                         selfPtr);
-
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    reply(std::move(req), McReply(mc_res_local_error));
+    callback(McReply(mc_res_local_error));
     return;
   }
 
-  auto serializationResult =
-    serializer_.serialize(request.dependentMsg(op), req->id, req->reqContext);
+  auto op = (mc_op_t)Op;
+  auto req = folly::make_unique<ReqInfo>(request, nextMsgId_, op,
+                                         connectionOptions_.protocol,
+                                         std::move(callback), selfPtr);
 
-  switch (serializationResult) {
-    case McProtocolSerializer::Result::OK:
+  switch (req->reqContext.serializationResult()) {
+    case McSerializedRequest::Result::OK:
       incMsgId(nextMsgId_);
 
       if (outOfOrder_) {
@@ -48,10 +46,10 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
         attemptConnection();
       }
       return;
-    case McProtocolSerializer::Result::BAD_KEY:
+    case McSerializedRequest::Result::BAD_KEY:
       reply(std::move(req), McReply(mc_res_bad_key));
       return;
-    case McProtocolSerializer::Result::ERROR:
+    case McSerializedRequest::Result::ERROR:
       reply(std::move(req), McReply(mc_res_local_error));
       return;
   }

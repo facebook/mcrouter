@@ -17,7 +17,8 @@
 #include <thrift/lib/cpp/transport/TTransportException.h>
 
 #include "mcrouter/lib/network/ConnectionOptions.h"
-#include "mcrouter/lib/network/McProtocolSerializer.h"
+#include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/network/McSerializedRequest.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 
 namespace facebook { namespace memcache {
@@ -40,7 +41,8 @@ class AsyncMcClientImpl :
       public apache::thrift::async::TDelayedDestruction,
       private apache::thrift::async::TAsyncSocket::ConnectCallback,
       private apache::thrift::async::TAsyncTransport::ReadCallback,
-      private apache::thrift::async::TAsyncTransport::WriteCallback {
+      private apache::thrift::async::TAsyncTransport::WriteCallback,
+      private McParser::ClientParseCallback {
 
  public:
   using TransportException = apache::thrift::transport::TTransportException;
@@ -86,18 +88,21 @@ class AsyncMcClientImpl :
   // Class for storing internal data for each request.
   class ReqInfo {
    public:
-    typename McProtocolSerializer::RequestContext reqContext;
+    McSerializedRequest reqContext;
 
     uint64_t id;
     mc_op_t op;
     std::chrono::steady_clock::time_point sentAt;
     std::function<void(McReply&&)> replyCallback;
 
-    ReqInfo(uint64_t reqid,
+    ReqInfo(const McRequest& request,
+            uint64_t reqid,
             mc_op_t operation,
+            mc_protocol_t protocol,
             std::function<void(McReply&&)> callback,
             std::shared_ptr<AsyncMcClientImpl> client)
-      : id(reqid),
+      : reqContext(request, operation, reqid, protocol),
+        id(reqid),
         op(operation),
         replyCallback(std::move(callback)),
         client_(client) {
@@ -130,7 +135,7 @@ class AsyncMcClientImpl :
   std::unordered_map<uint64_t, ReqInfo*> idMap_;
 
   folly::EventBase& eventBase_;
-  McProtocolSerializer serializer_;
+  std::unique_ptr<McParser> parser_;
 
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
@@ -181,36 +186,35 @@ class AsyncMcClientImpl :
   void cancelWriterCallback();
 
   // call reply callback for the request and remove it from requests map
-  void reply(std::unique_ptr<ReqInfo> req, McReply&& reply);
+  void reply(std::unique_ptr<ReqInfo> req, McReply mcReply);
 
   // reply request with the reply received from network
-  void replyReceived(uint64_t id, McMsgRef&& reply);
-  void setOpAndReply(std::unique_ptr<ReqInfo> req, McMsgRef&& reply);
+  void replyReceived(uint64_t id, McReply mcReply);
 
   void attemptConnection();
 
   // TAsyncSocket::ConnectCallback overrides
-  void connectSuccess() noexcept;
-  void connectError(const TransportException& ex) noexcept;
+  void connectSuccess() noexcept override;
+  void connectError(const TransportException& ex) noexcept override;
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
   void processShutdown();
 
   // TAsyncTransport::ReadCallback overrides
-  void getReadBuffer(void** bufReturn, size_t* lenReturn);
-  void readDataAvailable(size_t len) noexcept;
-  void readEOF() noexcept;
-  void readError(const TransportException& ex) noexcept;
+  void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
+  void readDataAvailable(size_t len) noexcept override;
+  void readEOF() noexcept override;
+  void readError(const TransportException& ex) noexcept override;
 
   // TAsyncTransport::WriteCallback overrides
-  void writeSuccess() noexcept;
-  void writeError(size_t bytesWritten, const TransportException& ex) noexcept;
+  void writeSuccess() noexcept override;
+  void writeError(size_t bytesWritten,
+                  const TransportException& ex) noexcept override;
 
-  // callback for serializer to call when new message arrived.
-  void onParseReply(uint64_t reqId, McMsgRef&& msg);
-  // callback for serializer to call on error.
-  void onParseError(parser_error_t error);
+  // McParser::ClientParseCallback overrides
+  void replyReady(McReply mcReply, mc_op_t operation, uint64_t reqid) override;
+  void parseError(McReply errorReply) override;
 
   static void incMsgId(size_t& msgId);
 };

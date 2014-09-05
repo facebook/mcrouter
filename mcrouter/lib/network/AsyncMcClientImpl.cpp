@@ -16,7 +16,8 @@
 
 namespace facebook { namespace memcache {
 
-constexpr size_t kReadBufferSize = 4096;
+constexpr size_t kReadBufferSizeMin = 256;
+constexpr size_t kReadBufferSizeMax = 4096;
 
 namespace detail {
 class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
@@ -71,14 +72,6 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     folly::EventBase& eventBase,
     ConnectionOptions options)
     : eventBase_(eventBase),
-      serializer_(options.protocol,
-                  std::bind(&AsyncMcClientImpl::onParseReply,
-                            this,
-                            std::placeholders::_1,
-                            std::placeholders::_2),
-                  std::bind(&AsyncMcClientImpl::onParseError,
-                            this,
-                            std::placeholders::_1)),
       connectionOptions_(std::move(options)),
       outOfOrder_(connectionOptions_.protocol == mc_umbrella_protocol),
       timeoutCallback_(folly::make_unique<TimeoutCallback>(*this)),
@@ -269,12 +262,12 @@ void AsyncMcClientImpl::scheduleNextTimeout() {
   }
 }
 
-void AsyncMcClientImpl::reply(std::unique_ptr<ReqInfo> req, McReply&& reply) {
+void AsyncMcClientImpl::reply(std::unique_ptr<ReqInfo> req, McReply mcReply) {
   idMap_.erase(req->id);
-  req->replyCallback(std::move(reply));
+  req->replyCallback(std::move(mcReply));
 }
 
-void AsyncMcClientImpl::replyReceived(uint64_t id, McMsgRef&& msg) {
+void AsyncMcClientImpl::replyReceived(uint64_t id, McReply mcReply) {
   // We could have already timed out all request.
   if (pendingReplyQueue_.empty()) {
     return;
@@ -287,23 +280,16 @@ void AsyncMcClientImpl::replyReceived(uint64_t id, McMsgRef&& msg) {
     if (value != nullptr) {
       auto req = pendingReplyQueue_.extract(
         pendingReplyQueue_.iterator_to(*value));
-      setOpAndReply(std::move(req), std::move(msg));
+      reply(std::move(req), std::move(mcReply));
     }
   } else {
     // Check that it wasn't previously replied with timeout (e.g. we hadn't
     // already removed it).
     if (pendingReplyQueue_.front().id == id) {
       auto req = pendingReplyQueue_.popFront();
-      setOpAndReply(std::move(req), std::move(msg));
+      reply(std::move(req), std::move(mcReply));
     }
   }
-}
-
-void AsyncMcClientImpl::setOpAndReply(std::unique_ptr<ReqInfo> req,
-                                      McMsgRef&& msg) {
-  const_cast<mc_msg_t*>(msg.get())->op = req->op;
-  mc_res_t result = msg->result;
-  reply(std::move(req), McReply(result, std::move(msg)));
 }
 
 void AsyncMcClientImpl::attemptConnection() {
@@ -356,11 +342,9 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   nextInflightMsgId_ = sendQueue_.front().id;
 
   scheduleNextWriterLoop();
-  serializer_ = McProtocolSerializer(
-    connectionOptions_.protocol,
-    std::bind(&AsyncMcClientImpl::onParseReply, this, std::placeholders::_1,
-              std::placeholders::_2),
-    std::bind(&AsyncMcClientImpl::onParseError, this, std::placeholders::_1));
+  parser_ = folly::make_unique<McParser>(
+    static_cast<McParser::ClientParseCallback*>(this), 0,
+    kReadBufferSizeMin, kReadBufferSizeMax);
   socket_->setReadCallback(this);
 }
 
@@ -450,15 +434,14 @@ void AsyncMcClientImpl::processShutdown() {
 }
 
 void AsyncMcClientImpl::getReadBuffer(void** bufReturn, size_t* lenReturn) {
-  auto prealloc = buffer_.preallocate(kReadBufferSize, kReadBufferSize);
+  auto prealloc = parser_->getReadBuffer();
   *bufReturn = prealloc.first;
   *lenReturn = prealloc.second;
 }
 
 void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
   DestructorGuard dg(this);
-  buffer_.postallocate(len);
-  serializer_.readData(buffer_.split(len));
+  parser_->readDataAvailable(len);
 }
 
 void AsyncMcClientImpl::readEOF() noexcept {
@@ -498,18 +481,22 @@ void AsyncMcClientImpl::writeError(
   processShutdown();
 }
 
-void AsyncMcClientImpl::onParseReply(uint64_t reqId, McMsgRef&& msg) {
+void AsyncMcClientImpl::replyReady(McReply mcReply, mc_op_t operation,
+                                   uint64_t reqId) {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
   if (!outOfOrder_) {
     reqId = nextInflightMsgId_;
     incMsgId(nextInflightMsgId_);
   }
-  replyReceived(reqId, std::move(msg));
+  replyReceived(reqId, std::move(mcReply));
 }
 
-void AsyncMcClientImpl::onParseError(parser_error_t error) {
-  assert(connectionState_ == ConnectionState::UP);
+void AsyncMcClientImpl::parseError(McReply errorReply) {
+  // mc_parser can call the parseError multiple times, process only first.
+  if (connectionState_ != ConnectionState::UP) {
+    return;
+  }
   DestructorGuard dg(this);
   processShutdown();
 }
