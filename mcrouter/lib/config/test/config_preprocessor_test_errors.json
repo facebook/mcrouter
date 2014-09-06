@@ -100,5 +100,18 @@
       }
     },
     "ret": "@a()a"
+  },
+  "divBy0": {
+    "ret": "@div(@int(5),@int(0))"
+  },
+  "modBy0": {
+    "ret": "@mod(@int(5),@int(0))"
+  },
+  "lessObjs": {
+    "ret": {
+      "type": "less",
+      "A": {},
+      "B": {}
+    }
   }
 }

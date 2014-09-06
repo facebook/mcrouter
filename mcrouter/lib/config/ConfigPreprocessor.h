@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
 
 namespace facebook { namespace memcache {
 
@@ -66,6 +66,8 @@ class ConfigPreprocessor {
   > builtInCalls_;
 
   mutable size_t nestedLimit_;
+
+  static const Context emptyContext_;
 
   /**
    * Create preprocessor with given macros

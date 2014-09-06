@@ -41,6 +41,39 @@
           "dictionary": { "a": 1 }
         },
         "expand": [ 1 ]
+      },
+      "range": {
+        "orig": "@range(@int(-1),@int(5))",
+        "expand": [ -1, 0, 1, 2, 3, 4, 5 ]
+      }
+    }
+  },
+  "casts": {
+    "macros": {},
+    "cases": {
+      "trueToBool": {
+        "orig": "@bool(true)",
+        "expand": true
+      },
+      "falseToBool": {
+        "orig": "@bool(false)",
+        "expand": false
+      },
+      "0toBool": {
+        "orig": "@bool(@int(0))",
+        "expand": false
+      },
+      "1toBool": {
+        "orig": "@bool(@int(1))",
+        "expand": true
+      },
+      "strToInt": {
+        "orig": "@int(-1)",
+        "expand": -1
+      },
+      "intToStr": {
+        "orig": "@str(@int(5))",
+        "expand": "5"
       }
     }
   },
@@ -156,6 +189,10 @@
           "dictionary": [ "a", "b", "c", "d" ]
         },
         "expand": [ "b", "c" ]
+      },
+      "string": {
+        "orig": "@slice(abcd,@int(2),@int(3))",
+        "expand": "cd"
       }
     }
   },
@@ -203,6 +240,21 @@
         "expand": {
           "a": ["a1", "a2", "a3"],
           "b": ["b4", "b5", "b6"]
+        }
+      },
+      "multiKey": {
+        "orig": {
+          "type": "transform",
+          "keyTransform": "%item%",
+          "itemTransform": "%key%",
+          "dictionary": {
+            "a": ["1", "2", "3"],
+            "b": ["4", "5", "6"]
+          }
+        },
+        "expand": {
+          "1": "a", "2": "a", "3": "a",
+          "4": "b", "5": "b", "6": "b"
         }
       }
     }
@@ -336,6 +388,208 @@
       "macroA": {
         "orig": "@%a%(%c%)",
         "expand": "abcabc"
+      }
+    }
+  },
+  "process": {
+    "macros": {
+      "indexof": {
+        "type": "macroDef",
+        "params": [ "list", "x" ],
+        "result": {
+          "type": "process",
+          "initialValue": "@int(-1)",
+          "dictionary": "%list%",
+          "transform": {
+            "type": "if",
+            "condition": "@and(@equals(%value%,@int(-1)),@equals(%item%,%x%))",
+            "is_true": "%key%",
+            "is_false": "%value%"
+          }
+        }
+      },
+      "objectToString": {
+        "type": "macroDef",
+        "params": [ "dictionary" ],
+        "result": {
+          "type": "merge",
+          "params": [
+            "{",
+            {
+              "type": "process",
+              "initialValue": "",
+              "dictionary": "%dictionary%",
+              "transform": {
+                "type": "merge",
+                "params": [
+                  {
+                    "type": "if",
+                    "condition": "@empty(%value%)",
+                    "is_true": "%key%:",
+                    "is_false": "%value%,%key%:"
+                  },
+                  {
+                    "type": "if",
+                    "condition": "@isObject(%item%)",
+                    "is_true": "@objectToString(%item%)",
+                    "is_false": "%item%"
+                  }
+                ]
+              }
+            },
+            "}"
+          ]
+        }
+      },
+      "minEl": {
+        "type": "macroDef",
+        "params": [ "list" ],
+        "result": {
+          "type": "process",
+          "initialValue": "@select(%list%,@int(0))",
+          "dictionary": "@slice(%list%,@int(1),@size(%list%))",
+          "transform": {
+            "type": "if",
+            "condition": "@less(%item%,%value%)",
+            "is_true": "%item%",
+            "is_false": "%value%"
+          }
+        }
+      }
+    },
+    "cases": {
+      "indexof": {
+        "orig": {
+          "type": "indexof",
+          "list": [ "a", "b", "c", "d", "e" ],
+          "x": "a"
+        },
+        "expand": 0
+      },
+      "indexof2": {
+        "orig": {
+          "type": "indexof",
+          "list": [ "a", "b", "c", "d", "e" ],
+          "x": "d"
+        },
+        "expand": 3
+      },
+      "objectToString": {
+        "orig": {
+          "type": "objectToString",
+          "dictionary": { "a": "b" }
+        },
+        "expand": "{a:b}"
+      },
+      "objectToString2": {
+        "orig": {
+          "type": "objectToString",
+          "dictionary": { "a": { "b": "c"} }
+        },
+        "expand": "{a:{b:c}}"
+      },
+      "minEl": {
+        "orig": {
+          "type": "minEl",
+          "list": [ "fd", "b", "d", "bab" ]
+        },
+        "expand": "b"
+      },
+      "minEl2": {
+        "orig": {
+          "type": "minEl",
+          "list": [ 1, 3, 0, 4 ]
+        },
+        "expand": 0
+      }
+    }
+  },
+  "math": {
+    "macros": {
+      "factorial": {
+        "type": "macroDef",
+        "params": [ "x" ],
+        "result": {
+          "type": "if",
+          "condition": "@less(@int(1),%x%)",
+          "is_true": "@mul(%x%,@factorial(@sub(%x%,@int(1))))",
+          "is_false": "@int(1)"
+        }
+      }
+    },
+    "cases": {
+      "fact5": {
+        "orig": "@factorial(@int(5))",
+        "expand": 120
+      },
+      "fact0": {
+        "orig": "@factorial(@int(0))",
+        "expand": 1
+      },
+      "mod": {
+        "orig": "@mod(@int(5),@int(3))",
+        "expand": 2
+      },
+      "div": {
+        "orig": "@div(@int(7),@int(3))",
+        "expand": 2
+      },
+      "div2": {
+        "orig": "@div(@int(0),@int(3))",
+        "expand": 0
+      }
+    }
+  },
+  "contains": {
+    "macros": {},
+    "cases": {
+      "containsList": {
+        "orig": {
+          "type": "contains",
+          "dictionary": [ 100, 1, 2, 3 ],
+          "key": 100
+        },
+        "expand": true
+      },
+      "containsStr": {
+        "orig": {
+          "type": "contains",
+          "dictionary": "abacaba",
+          "key": "aca"
+        },
+        "expand": true
+      },
+      "containsObj": {
+        "orig": {
+          "type": "contains",
+          "dictionary": { "a": 1, "b": 2},
+          "key": "a"
+        },
+        "expand": true
+      },
+      "notContainsList": {
+        "orig": {
+          "type": "contains",
+          "dictionary": [ 0, 1, 2, 3 ],
+          "key": 5
+        },
+        "expand": false
+      },
+      "notContainsStr": {
+        "orig": {
+          "type": "contains",
+          "dictionary": "abacaba",
+          "key": "ada"
+        },
+        "expand": false
+      },
+      "notContainsObj": {
+        "orig": {
+          "type": "contains",
+          "dictionary": { "a": 1, "b": 2},
+          "key": "c"
+        },
+        "expand": false
       }
     }
   }
