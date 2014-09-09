@@ -10,8 +10,9 @@
 
 #include <memory>
 
-#include "folly/io/IOBuf.h"
-#include "folly/Memory.h"
+#include <folly/io/IOBuf.h>
+#include <folly/Memory.h>
+#include <folly/Optional.h>
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McMsgRef.h"
@@ -168,8 +169,18 @@ class McReplyBase {
     return result_;
   }
 
+  bool hasValue() const {
+    return valueData_.hasValue();
+  }
+
   const folly::IOBuf& value() const {
-    return valueData_;
+    static folly::IOBuf emptyBuffer;
+    return hasValue() ? valueData_.value() : emptyBuffer;
+  }
+
+  folly::StringPiece valueRangeSlow() const {
+    return valueData_.hasValue() ? folly::StringPiece(valueData_->coalesce())
+                                 : folly::StringPiece();
   }
 
   uint32_t appSpecificErrorCode() const {
@@ -258,13 +269,13 @@ class McReplyBase {
   McReplyBase(mc_res_t result, McMsgRef&& reply);
   McReplyBase(mc_res_t result, folly::IOBuf value);
   McReplyBase(mc_res_t result, folly::StringPiece value);
-  McReplyBase(McReplyBase&& other) noexcept = default;
+  McReplyBase(McReplyBase&& other) = default;
   McReplyBase& operator=(McReplyBase&& other) = default;
 
  private:
   McMsgRef msg_;
   mc_res_t result_{mc_res_unknown};
-  folly::IOBuf valueData_;
+  mutable folly::Optional<folly::IOBuf> valueData_;
   uint64_t flags_{0};
   uint64_t leaseToken_{0};
   uint64_t delta_{0};

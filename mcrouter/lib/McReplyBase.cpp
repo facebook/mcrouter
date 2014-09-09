@@ -76,11 +76,13 @@ McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)
 McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
     : msg_(std::move(msg)),
       result_(res),
-      valueData_(makeMsgValueIOBufStack(msg_)),
       flags_(msg_.get() ? msg_->flags : 0),
       leaseToken_(msg_.get() ? msg_->lease_id : 0),
       delta_(msg_.get() ? msg_->delta : 0),
       cas_(msg_.get() ? msg_->cas : 0) {
+  if (msg_.get() && msg_->value.str != nullptr) {
+    valueData_.emplace(makeMsgValueIOBufStack(msg_));
+  }
 }
 
 void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
@@ -88,8 +90,7 @@ void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
     mc_msg_shallow_copy(out, msg_.get());
   }
 
-  auto value = coalesceAndGetRange(
-    const_cast<folly::IOBuf&>(valueData_));
+  auto value = valueRangeSlow();
 
   out->key.str = nullptr;
   out->key.len = 0;
@@ -110,10 +111,10 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->lease_id == leaseToken_ &&
       msg_->delta == delta_ &&
-      hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value))) {
+      hasSameMemoryRegion(value(), to<folly::StringPiece>(msg_->value))) {
     return msg_.clone();
   } else {
-    auto len = valueData_.computeChainDataLength();
+    auto len = value().computeChainDataLength();
     auto toRelease = createMcMsgRef(len + 1);
     if (msg_.get() != nullptr) {
       mc_msg_shallow_copy(toRelease.get(), msg_.get());
@@ -123,7 +124,7 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
     toRelease->key.len = 0;
     toRelease->value.str =
       static_cast<char*>(static_cast<void*>(toRelease.get() + 1));
-    copyInto(toRelease->value.str, valueData_);
+    copyInto(toRelease->value.str, value());
     toRelease->value.len = len;
     toRelease->op = op;
     toRelease->result = result_;
