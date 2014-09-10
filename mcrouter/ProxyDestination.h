@@ -23,11 +23,7 @@ using asox_timer_t = void*;
 class fb_timer_s;
 using fb_timer_t = fb_timer_s;
 
-namespace facebook { namespace memcache {
-
-class McReply;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyClientCommon;
 class ProxyClientOwner;
@@ -80,7 +76,8 @@ struct ProxyDestination {
   ~ProxyDestination();
 
   void track_latency(int64_t latency);
-  void handle_tko(const McReply& reply, int consecutive_errors);
+  void handle_tko(mc_res_t result, const McMsgRef& reply,
+                  int consecutive_errors);
 
   // returns non-zero on error
   int send(McMsgRef request, void* req_ctx, uint64_t senderId);
@@ -93,7 +90,8 @@ struct ProxyDestination {
 
   void on_up();
   void on_down();
-  void on_reply(const McMsgRef& req, McReply reply, void* req_ctx);
+  void on_reply(const McMsgRef& req,
+                McMsgRef reply, mc_res_t result, void* req_ctx);
 
   // on probe timer
   void on_timer(const asox_timer_t timer);

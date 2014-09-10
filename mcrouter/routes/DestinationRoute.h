@@ -38,12 +38,12 @@ struct DestinationRequestCtx {
   proxy_request_t* preq{nullptr};
   int64_t startTime{0};
   int64_t endTime{0};
-  McReply reply;
+  McMsgRef reply;
+  mc_res_t result{mc_res_unknown};
 
   explicit DestinationRequestCtx(proxy_request_t* proxyReq)
       : preq(proxyReq),
-        startTime(nowUs()),
-        reply(mc_res_unknown) {
+        startTime(nowUs()) {
   }
 };
 
@@ -146,7 +146,7 @@ class DestinationRoute {
                           &ctx,
                           req.context().ctx().senderId());
       });
-    auto reply = ProxyMcReply(std::move(ctx.reply));
+    auto reply = ProxyMcReply(ctx.result, std::move(ctx.reply));
 
     req.context().onReplyReceived(*client_,
                                   req,

@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/stats.h"
 
@@ -35,9 +34,13 @@ struct mcrouter_exception : std::runtime_error {
       : std::runtime_error(e) {}
 };
 
+/*
+ * When reply is not nullptr, result == reply->result
+ */
 struct mcrouter_msg_t {
   mc_msg_t* req;
-  McReply reply{mc_res_unknown};
+  mc_msg_t* reply;
+  mc_res_t result;
   void *context;
 };
 

@@ -54,7 +54,7 @@ namespace {
 
 struct mcrouter_queue_entry_t {
   mc_msg_t* request;
-  McReply reply{mc_res_unknown};
+  mc_msg_t* reply;
   mcrouter_client_t *router_client;
   proxy_t *proxy;
   void* context;
@@ -83,7 +83,8 @@ static int precheck_request(mcrouter_queue_entry_t *mcreq) {
   switch (mcreq->request->op) {
     // Return error (pretend to not even understand the protocol)
     case mc_op_shutdown:
-      mcreq->reply = McReply(mc_res_bad_command);
+      mcreq->reply = mc_msg_new(0);
+      mcreq->reply->result = mc_res_bad_command;
       break;
 
     // Return 'Not supported' message
@@ -91,17 +92,24 @@ static int precheck_request(mcrouter_queue_entry_t *mcreq) {
     case mc_op_prepend:
     case mc_op_flushall:
     case mc_op_flushre:
-      mcreq->reply = McReply(mc_res_remote_error, "Command not supported");
+      mcreq->reply = mc_msg_new(0);
+      mcreq->reply->result = mc_res_remote_error;
+      mcreq->reply->value.str = (char*)"Command not supported";
+      mcreq->reply->value.len = strlen(mcreq->reply->value.str);
       break;
 
     // Everything else is supported
     default:
       if (!mc_client_req_is_valid(mcreq->request)) {
-        mcreq->reply = McReply(mc_res_remote_error, "Invalid key");
+        mcreq->reply = mc_msg_new(0);
+        mcreq->reply->result = mc_res_bad_key;
+        mcreq->reply->value.str = (char*)"Invalid key";
+        mcreq->reply->value.len = strlen(mcreq->reply->value.str);
         break;
       }
       return 0;
   }
+  mcreq->reply->op = mcreq->request->op;
   return 1;
 }
 
@@ -112,7 +120,10 @@ void mcrouter_reply_ready_cb(asox_queue_t q,
 void router_entry_destroy(mcrouter_queue_entry_t *router_entry) {
   FBI_ASSERT(router_entry->request);
   mc_msg_decref(router_entry->request);
-  delete router_entry;
+  if (router_entry->reply) {
+    mc_msg_decref(router_entry->reply);
+  }
+  free(router_entry);
 }
 
 static inline void router_client_on_reply(mcrouter_client_t *client,
@@ -190,15 +201,17 @@ void mcrouter_request_ready_cb(asox_queue_t q,
     // we weren't able to construct a preq so pass it back
     // to the client as an error
     if (!preq) {
-      router_entry->reply = McReply(mc_res_local_error,
-                                    "Couldn't create proxy_request_t");
+      router_entry->reply = mc_msg_new(0);
+      router_entry->reply->result = mc_res_local_error;
+      router_entry->reply->value.str = (char*)"Couldn't create proxy_request_t";
+      router_entry->reply->value.len = strlen(router_entry->reply->value.str);
       router_client_on_reply(client, entry);
       return;
     }
     preq->requester = mcrouter_client_incref(client);
     proxy->dispatchRequest(preq);
 
-    delete router_entry;
+    free(router_entry);
     proxy_request_decref(preq);
   } else if (entry->type == request_type_continue_reply_error) {
     proxy_on_continue_reply_error((proxy_t*)arg,
@@ -692,17 +705,18 @@ mcrouter_t* mcrouter_new_transient(const McrouterOptions& options) {
 
 void mcrouter_enqueue_reply(proxy_request_t *preq) {
   asox_queue_entry_t entry;
-  mcrouter_queue_entry_t *router_entry = new mcrouter_queue_entry_t();
+  mcrouter_queue_entry_t *router_entry =
+    (mcrouter_queue_entry_t*)malloc(sizeof(mcrouter_queue_entry_t));
 
   stat_incr_safe(preq->proxy, mcrouter_queue_entry_num_outstanding_stat);
   router_entry->request = mc_msg_incref(const_cast<mc_msg_t*>(
                                           preq->orig_req.get()));
-
-  router_entry->reply = std::move(preq->reply);
+  router_entry->reply = mc_msg_incref(const_cast<mc_msg_t*>(preq->reply.get()));
 
   router_entry->context = preq->context;
   router_entry->proxy = preq->proxy;
 
+  FBI_ASSERT(router_entry->reply->_refcount > 1);
   entry.data = router_entry;
   entry.nbytes = sizeof(router_entry);
   entry.type = entry.priority = 0;
@@ -721,17 +735,18 @@ void mcrouter_reply_ready_cb(asox_queue_t q,
   // references, and are guaranteed to be shorted lived than router_entry's
   // reference.  This is a premature optimization.
   router_reply.req = router_entry->request;
-  router_reply.reply = std::move(router_entry->reply);
+  router_reply.reply = router_entry->reply;
 
+  router_reply.result = router_entry->reply->result;
   router_reply.context = router_entry->context;
 
-  if (router_reply.reply.result() == mc_res_timeout ||
-      router_reply.reply.result() == mc_res_connect_timeout) {
+  if (router_entry->reply->result == mc_res_timeout ||
+      router_entry->reply->result == mc_res_connect_timeout) {
     __sync_fetch_and_add(&client->stats.ntmo, 1);
   }
 
   __sync_fetch_and_add(&client->stats.op_value_bytes[router_entry->request->op],
-                       router_reply.reply.value().length());
+                       router_entry->reply->value.len);
 
   if (client->callbacks.on_reply && !client->disconnected) {
     client->callbacks.on_reply(client,
@@ -739,9 +754,11 @@ void mcrouter_reply_ready_cb(asox_queue_t q,
                                client->arg);
   }
 
+  mc_msg_decref(router_entry->request);
+  mc_msg_decref(router_entry->reply);
   stat_decr_safe(router_entry->proxy,
                  mcrouter_queue_entry_num_outstanding_stat);
-  router_entry_destroy(router_entry);
+  free(router_entry);
 }
 
 void mcrouter_reply_sweep_cb(asox_queue_t q,
@@ -910,9 +927,11 @@ int mcrouter_send(mcrouter_client_t *client,
 
   __sync_fetch_and_add(&client->stats.nreq, nreqs);
   for (size_t i = 0; i < nreqs; i++) {
-    mcrouter_queue_entry_t *router_entry = new mcrouter_queue_entry_t();
+    mcrouter_queue_entry_t *router_entry =
+      (mcrouter_queue_entry_t*)malloc(sizeof(*router_entry));
     FBI_ASSERT(requests[i].req->_refcount > 0);
     router_entry->request = requests[i].req;
+    router_entry->reply = nullptr;
     mc_msg_incref(router_entry->request);
     __sync_fetch_and_add(&client->stats.op_count[requests[i].req->op], 1);
     __sync_fetch_and_add(&client->stats.op_value_bytes[requests[i].req->op],

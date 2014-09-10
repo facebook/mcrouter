@@ -28,18 +28,18 @@ public:
     sem_init(&outstanding_, 0, 0);
   }
 
-  void push(std::pair<mc_msg_t*, McReply> &&msg) {
+  void push(std::pair<mc_msg_t*, mc_msg_t*> &&msg) {
     std::lock_guard<SFRWriteLock> lck(queueLock_.writeLock());
     replies_.push(std::move(msg));
     sem_post(&outstanding_);
   }
 
-  bool try_pop(std::pair<mc_msg_t*, McReply> &msg) {
+  bool try_pop(std::pair<mc_msg_t*, mc_msg_t*> &msg) {
     std::lock_guard<SFRReadLock> lck(queueLock_.readLock());
     if (replies_.empty()) {
       return false;
     } else {
-      msg = std::move(replies_.front());
+      msg = replies_.front();
       replies_.pop();
       return true;
     }
@@ -51,7 +51,7 @@ public:
 
 private:
   SFRLock queueLock_;
-  std::queue<std::pair<mc_msg_t*, McReply>> replies_;
+  std::queue<std::pair<mc_msg_t*, mc_msg_t*>> replies_;
   sem_t outstanding_;
 };
 }}}
@@ -63,7 +63,8 @@ static void on_reply(mcrouter_client_t *client,
                      void *context) {
   facebook::memcache::test::ResultsSet *rs =
     (facebook::memcache::test::ResultsSet*) context;
-  rs->push(std::make_pair(router_req->req, std::move(router_req->reply)));
+  mc_msg_incref(router_req->reply);
+  rs->push(std::make_pair(router_req->req, router_req->reply));
 }
 
 
@@ -121,24 +122,24 @@ bool MCRouterTestClient::issueRequests(const mcrouter_msg_t* msgs,
   mcrouter_send(client_, msgs, nreqs);
   int outstanding = nreqs;
   while (outstanding > 0) {
-    std::pair<mc_msg_t*, McReply> pr(nullptr, McReply(mc_res_unknown));
+    std::pair<mc_msg_t*, mc_msg_t*> pr;
     rs_->wait();
     rs_->try_pop(pr);
 
     mc_msg_t *req = pr.first;
-    McReply& reply = pr.second;
+    mc_msg_t *reply = pr.second;
 
-    if (mc_res_is_err(reply.result())) {
+    if (mc_res_is_err(reply->result)) {
       no_errors = false;
     } else {
-      dynamic result = dynamic::object("result", (int) reply.result());
-      if (reply.value().length() > 0) {
-        result["value"] = std::string(reinterpret_cast<const char*>(
-          reply.value().data()), reply.value().length());
+      dynamic result = dynamic::object("result", (int) reply->result);
+      if (reply->value.len > 0) {
+        result["value"] = to<string>(reply->value);
       }
       results[to<string>(req->key)] = result;
 
       mc_msg_decref(req);
+      mc_msg_decref(reply);
     }
     outstanding --;
   }
@@ -148,7 +149,7 @@ bool MCRouterTestClient::issueRequests(const mcrouter_msg_t* msgs,
 
 int MCRouterTestClient::get(const dynamic &keys,
                             dynamic &results) {
-  std::vector<mcrouter_msg_t> msgs(keys.size());
+  mcrouter_msg_t msgs[keys.size()];
   int ret = 0;
   dynamic raw_results = dynamic::object;
 
@@ -156,7 +157,7 @@ int MCRouterTestClient::get(const dynamic &keys,
     msgs[i] = make_get_request(keys[i].asString().toStdString());
   }
 
-  bool res = issueRequests(msgs.data(), keys.size(), raw_results);
+  bool res = issueRequests(msgs, keys.size(), raw_results);
   assert(res);
   for ( auto & raw_reply : raw_results.items() ) {
     if (raw_reply.second["result"] == (int) mc_res_found) {
@@ -170,7 +171,7 @@ int MCRouterTestClient::get(const dynamic &keys,
 
 int MCRouterTestClient::set(const dynamic &kv_pairs,
                             dynamic &results) {
-  std::vector<mcrouter_msg_t> msgs(kv_pairs.size());
+  mcrouter_msg_t msgs[kv_pairs.size()];
   int i = 0;
   dynamic raw_results = dynamic::object;
 
@@ -181,7 +182,7 @@ int MCRouterTestClient::set(const dynamic &kv_pairs,
   }
 
   int ret = 0;
-  bool res = issueRequests(msgs.data(), kv_pairs.size(), raw_results);
+  bool res = issueRequests(msgs, kv_pairs.size(), raw_results);
   if (res) {
     for ( auto& raw_reply : raw_results.items()) {
       bool stored = (raw_reply.second["result"] == (int) mc_res_stored);
@@ -195,7 +196,7 @@ int MCRouterTestClient::set(const dynamic &kv_pairs,
 int MCRouterTestClient::del(const dynamic &keys, bool local,
                             dynamic &results) {
 
-  std::vector<mcrouter_msg_t> msgs(keys.size());
+  mcrouter_msg_t msgs[keys.size()];
   dynamic raw_results = dynamic::object;
 
   for (int i = 0; i < keys.size(); i ++) {
@@ -207,7 +208,7 @@ int MCRouterTestClient::del(const dynamic &keys, bool local,
   }
 
   int ret = 0;
-  bool res = issueRequests(msgs.data(), keys.size(), raw_results);
+  bool res = issueRequests(msgs, keys.size(), raw_results);
   if (res) {
     for ( auto& raw_reply : raw_results.items() ) {
       bool found = (raw_reply.second["result"] == (int) mc_res_deleted);

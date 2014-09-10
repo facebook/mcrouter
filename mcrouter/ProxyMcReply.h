@@ -10,11 +10,7 @@
 
 #include "mcrouter/lib/McReplyBase.h"
 
-namespace facebook { namespace memcache {
-
-class McReply;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyClientCommon;
 
@@ -30,11 +26,6 @@ class ProxyMcReply : public McReplyBase {
    * The value is only set when an error reply was received.
    */
   std::shared_ptr<const ProxyClientCommon> getDestination() const;
-
-  /**
-   * Creates new McReply objects and moves all data into it.
-   */
-  static McReply moveToMcReply(ProxyMcReply&& proxyMcReply);
 
  private:
   std::shared_ptr<const ProxyClientCommon> dest_;

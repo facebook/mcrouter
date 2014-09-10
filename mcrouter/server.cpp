@@ -44,6 +44,8 @@ class ServerOnRequest {
        directly here.  For now, hand off the dependentMsg() since we can assume
        req will stay alive. */
     router_msg.req = const_cast<mc_msg_t*>(req.dependentMsg(op).get());
+    router_msg.reply = nullptr;
+    router_msg.result = mc_res_unknown;
     router_msg.context = &ctx;
 
     mcrouter_send(client_, &router_msg, 1);
@@ -59,7 +61,10 @@ void router_on_reply(mcrouter_client_t *client,
   auto reqCtx = reinterpret_cast<McServerRequestContext*>(msg->context);
 
   assert(reqCtx);
-  reqCtx->sendReply(std::move(msg->reply));
+  /* TODO: this is nasty C/C++ interface code. Convert everything
+     to McRequest/McReply throughout. */
+  reqCtx->sendReply(McReply(msg->reply->result,
+                            McMsgRef::cloneRef(msg->reply)));
   msg->context = nullptr;
 }
 

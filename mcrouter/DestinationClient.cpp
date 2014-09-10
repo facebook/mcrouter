@@ -96,7 +96,8 @@ int DestinationClient::send(McMsgRef requestMsg, void* req_ctx,
       }
 
       pdstnPtr->on_reply(req,
-                         std::move(reply),
+                         reply.releasedMsg(op),
+                         reply.result(),
                          req_ctx);
     },
     McOpList::LastItem());
