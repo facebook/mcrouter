@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
 #include "ProxyMcReply.h"
+#include "mcrouter/lib/McReply.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -20,6 +21,10 @@ void ProxyMcReply::setDestination(
 
 std::shared_ptr<const ProxyClientCommon> ProxyMcReply::getDestination() const {
   return dest_;
+}
+
+McReply ProxyMcReply::moveToMcReply(ProxyMcReply&& proxyMcReply) {
+  return McReply(std::move(*static_cast<McReplyBase*>(&proxyMcReply)));
 }
 
 }}}

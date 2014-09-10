@@ -101,10 +101,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         }
         str.append(d);
       }
-      auto msg = create_reply(mc_op_get_service_info,
-                              mc_res_found,
-                              str.c_str());
-      reqCopy->context().ctx().proxyRequest().sendReply(std::move(msg));
+      reqCopy->context().ctx().proxyRequest().sendReply(
+        McReply(mc_res_found, str));
     }
   );
 }
@@ -362,10 +360,8 @@ void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
     replyStr = std::string("ERROR: ") + e.what();
   }
 
-  auto msg = create_reply(mc_op_get_service_info,
-                          mc_res_found,
-                          replyStr.c_str());
-  req.context().ctx().proxyRequest().sendReply(std::move(msg));
+  req.context().ctx().proxyRequest().sendReply(
+    McReply(mc_res_found, replyStr));
 }
 
 }}}  // facebook::memcache::mcrouter

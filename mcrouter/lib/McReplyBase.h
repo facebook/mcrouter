@@ -269,6 +269,8 @@ class McReplyBase {
   McReplyBase(mc_res_t result, McMsgRef&& reply);
   McReplyBase(mc_res_t result, folly::IOBuf value);
   McReplyBase(mc_res_t result, folly::StringPiece value);
+  McReplyBase(mc_res_t result, const char* value);
+  McReplyBase(mc_res_t result, const std::string& value);
   McReplyBase(McReplyBase&& other) = default;
   McReplyBase& operator=(McReplyBase&& other) = default;
 
