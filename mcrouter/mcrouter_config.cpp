@@ -77,4 +77,8 @@ std::vector<std::string> defaultTestCommandLineArgs() {
   return {};
 }
 
+std::shared_ptr<RouterLogger> createRouterLogger() {
+  return std::make_shared<RouterLogger>();
+}
+
 }}}  // facebook::memcache::mcrouter

@@ -65,7 +65,7 @@ const size_t DEFAULT_STACK_SIZE = 8192 * 1024;
 
 typedef SLIST_HEAD(mcrouter_list_t, mcrouter_t) mcrouter_list_t;
 static mcrouter_list_t router_list;
-std::mutex router_list_lock;
+std::mutex* router_list_lock = new std::mutex;
 size_t gNumRouters{0};
 
 }  // anonymous namespace
@@ -375,7 +375,8 @@ mcrouter_t::mcrouter_t(const McrouterOptions& input_options) :
     is_linked(0),
     is_transient(false),
     live_clients(0),
-    startupLock(opts.sync ? 0 : opts.num_proxies + 1) {
+    startupLock(opts.sync ? 0 : opts.num_proxies + 1),
+    logger(createRouterLogger()) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);
@@ -636,7 +637,7 @@ void mcrouter_free(mcrouter_t *router) {
 
   if (router->is_linked) {
     {
-      std::lock_guard<std::mutex> guard(router_list_lock);
+      std::lock_guard<std::mutex> guard(*router_list_lock);
       SLIST_REMOVE(&router_list, router, mcrouter_t, entry);
     }
   }
@@ -648,7 +649,7 @@ static inline mcrouter_t *mcrouter_get_ext(const std::string& persistence_id,
                                            int need_to_lock) {
   mcrouter_t *router = nullptr;
   if (need_to_lock) {
-    router_list_lock.lock();
+    router_list_lock->lock();
   }
   SLIST_FOREACH(router, &router_list, entry) {
     if (router->persistence_id == persistence_id) {
@@ -656,7 +657,7 @@ static inline mcrouter_t *mcrouter_get_ext(const std::string& persistence_id,
     }
   }
   if (need_to_lock) {
-    router_list_lock.unlock();
+    router_list_lock->unlock();
   }
   return router;
 }
@@ -674,7 +675,7 @@ mcrouter_t* mcrouter_init(const std::string& persistence_id,
     return mcrouter_new(options);
   }
 
-  std::lock_guard<std::mutex> guard(router_list_lock);
+  std::lock_guard<std::mutex> guard(*router_list_lock);
   mcrouter_t *router = mcrouter_get_ext(persistence_id, 0);
   if (!router) {
     router = mcrouter_new(options);
@@ -1129,7 +1130,7 @@ void mcrouter_client_set_context(mcrouter_client_t* client, void* context) {
 void free_all_libmcrouters() {
   mcrouter_t *router, *next_it;
 
-  std::lock_guard<std::mutex> guard(router_list_lock);
+  std::lock_guard<std::mutex> guard(*router_list_lock);
   router = SLIST_FIRST(&router_list);
   for (next_it =
           (router) ? SLIST_NEXT(router, entry) : nullptr;

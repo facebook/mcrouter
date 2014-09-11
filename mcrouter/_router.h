@@ -98,6 +98,8 @@ struct mcrouter_t {
 
   StartupLock startupLock;
 
+  std::shared_ptr<RouterLogger> logger;
+
   explicit mcrouter_t(const McrouterOptions& input_options);
 
   mcrouter_t(const mcrouter_t&) = delete;
