@@ -340,6 +340,7 @@ proxy_request_t::proxy_request_t(proxy_t* p,
                                  void (*reqComplete)(proxy_request_t* preq),
                                  uint64_t senderId)
   : proxy(p),
+    reply(mc_res_unknown),
     reply_state(REPLY_STATE_NO_REPLY),
     delay_reply(0),
     failover_disabled(0),
@@ -450,9 +451,8 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   FBI_ASSERT(preq->proxy);
 
   if (preq->orig_req->op == mc_op_stats) {
-    auto reply =
-      stats_reply(this, to<folly::StringPiece>(preq->orig_req->key));
-    preq->sendReply(reply.releasedMsg(mc_op_stats));
+    preq->sendReply(
+      stats_reply(this, to<folly::StringPiece>(preq->orig_req->key)));
     return;
   }
 
@@ -471,11 +471,11 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
 
   fiberManager.addTaskFinally(
     /* We'll get this many bytes of uninitialized storage on the fiber stack */
-    sizeof(McMsgRef),
+    sizeof(McReply),
 
     /* Called from fiber context */
     [](intptr_t resultLoc, intptr_t pctx) {
-      auto result = reinterpret_cast<McMsgRef*>(resultLoc);
+      auto result = reinterpret_cast<McReply*>(resultLoc);
       auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
 
       /* Note: we want MainContextDeleter here since the destructor
@@ -489,23 +489,21 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
         auto& proute = ctx->ctx().proxyRoute();
         auto reply = proute.dispatchMcMsg(ppreq->orig_req.clone(),
                                           std::move(ctx));
-        new (result) McMsgRef(reply.releasedMsg(ppreq->orig_req->op));
+        new (result) McReply(ProxyMcReply::moveToMcReply(std::move(reply)));
       } catch (const std::exception& e) {
         std::string err = "error routing "
           + to<std::string>(ppreq->orig_req->key) + ": " +
           e.what();
-        new (result) McMsgRef(create_reply(ppreq->orig_req->op,
-                                           mc_res_local_error,
-                                           err.c_str()));
+        new (result) McReply(mc_res_local_error, err);
       }
     },
 
     /* Called from main context */
     [](intptr_t resultLoc, intptr_t pctx) {
-      auto msg = reinterpret_cast<McMsgRef*>(resultLoc);
+      auto reply = reinterpret_cast<McReply*>(resultLoc);
       auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
-      ppreq->sendReply(std::move(*msg));
-      msg->~McMsgRef();
+      ppreq->sendReply(std::move(*reply));
+      reply->~McReply();
     },
 
     /* Incref and pass as context, decref in the cleanup function */
@@ -656,15 +654,6 @@ MutableMcMsgRef new_reply(const char* str) {
   return reply;
 }
 
-McMsgRef create_reply(mc_op_t op, mc_res_t result, const char *str) {
-  auto reply = new_reply(str);
-
-  reply->op = op;
-  reply->result = result;
-
-  return std::move(reply);
-}
-
 void proxy_request_t::continueSendReply() {
   reply_state = REPLY_STATE_REPLIED;
 
@@ -674,7 +663,7 @@ void proxy_request_t::continueSendReply() {
 
   stat_incr(proxy, request_replied_stat, 1);
   stat_incr(proxy, request_replied_count_stat, 1);
-  if (mc_res_is_err(reply->result)) {
+  if (mc_res_is_err(reply.result())) {
     stat_incr(proxy, request_error_stat, 1);
     stat_incr(proxy, request_error_count_stat, 1);
   } else {
@@ -683,15 +672,12 @@ void proxy_request_t::continueSendReply() {
   }
 }
 
-void proxy_request_t::sendReply(McMsgRef newReply) {
+void proxy_request_t::sendReply(McReply newReply) {
   // Make sure we don't set the reply twice for a reply
-  FBI_ASSERT(reply.get() == nullptr);
+  FBI_ASSERT(reply.result() == mc_res_unknown);
+  FBI_ASSERT(newReply.result() != mc_res_unknown);
 
   reply = std::move(newReply);
-
-  // undo op munging
-  const_cast<mc_op_t&>(reply->op) =
-    legacy_get_service_info ? mc_op_get : orig_req->op;
 
   if (reply_state != REPLY_STATE_NO_REPLY) {
     return;

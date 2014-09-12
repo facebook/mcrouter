@@ -73,6 +73,17 @@ McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)
       valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, val)) {
 }
 
+McReplyBase::McReplyBase(mc_res_t res, const char* value)
+    : result_(res),
+      valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, value,
+                              strlen(value))) {
+}
+
+McReplyBase::McReplyBase(mc_res_t res, const std::string& value)
+    : result_(res),
+      valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, value)) {
+}
+
 McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
     : msg_(std::move(msg)),
       result_(res),

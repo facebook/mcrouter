@@ -21,6 +21,7 @@
 #include <string>
 
 #include "folly/Range.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/fbi/cpp/AtomicSharedPtr.h"
 #include "mcrouter/lib/mc/msg.h"
@@ -51,6 +52,7 @@ typedef class fb_timer_s fb_timer_t;
 namespace facebook { namespace memcache {
 
 class AsyncMcClient;
+class McReply;
 class WeightedCh3HashFunc;
 
 namespace mcrouter {
@@ -99,7 +101,7 @@ struct proxy_request_t {
 
   McMsgRef orig_req; ///< Reference to the incoming request
 
-  McMsgRef reply; /**< The reply that has been sent out for this request */
+  McReply reply; /**< The reply that has been sent out for this request */
 
   /** Whether we have replied, and therefore have handed the request back */
   reply_state_t reply_state;
@@ -151,7 +153,7 @@ struct proxy_request_t {
    * @param newReply the message that we are sending out as the reply
    *        for the request we are currently handling
    */
-  void sendReply(McMsgRef newReply);
+  void sendReply(McReply newReply);
 
   void continueSendReply();
 
@@ -188,8 +190,7 @@ typedef struct proxy_client_monitor proxy_client_monitor_t;
 struct proxy_client_monitor {
   /** Called when libmc.client finishes a request. */
   void (*on_response)(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                      mc_msg_t *req, mc_msg_t *reply,
-                      mc_res_t result);
+                      mc_msg_t *req, const McReply& reply);
 
   /** Called when a connection or reconnection attempt fails. */
   void (*on_down)(proxy_client_monitor_t *mon, ProxyDestination* pdstn);
@@ -622,8 +623,6 @@ void proxy_request_decref(proxy_request_t*);
 proxy_request_t* proxy_request_incref(proxy_request_t*);
 
 void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e);
-
-McMsgRef create_reply(mc_op_t op, mc_res_t result, const char *str);
 
 folly::StringPiece getRegionFromRoutingPrefix(folly::StringPiece prefix);
 
