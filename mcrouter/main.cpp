@@ -72,39 +72,10 @@ static McrouterStandaloneOptions standaloneOpts;
 
 static int pidfile_fd;
 
-/* freeze mcrouter in a while loop so that we can attach GDB to it */
-static int segv_stopped;
-uint64_t thread_segvs;
-void segv_spin_wait(siginfo_t *info) {
-  thread_segvs++;
-  /* raise the spin loop halt across all threads */
-  segv_stopped = 1;
-  syslog(LOG_ALERT,"MCROUTER (pid=%d) FATAL SIGNAL %d.%s\n",
-         getpid(),
-         info->si_signo,
-         (standaloneOpts.enable_fatal_signal_spin_wait ?
-          " Frozen waiting for debugger." : "")
-        );
-  fprintf(stderr,
-          "MCROUTER (pid=%d) FATAL SIGNAL %d (see /var/log/messages fore more information).%s\n",
-          getpid(),
-          info->si_signo,
-          (standaloneOpts.enable_fatal_signal_spin_wait ?
-           " Frozen waiting for debugger." : "")
-         );
-  while (standaloneOpts.enable_fatal_signal_spin_wait) {
-    /* sleep for one second to ensure that the box doesn't lock up */
-    sleep(1);
-  }
-  /*lower the spin loop halt across all threads*/
-  segv_stopped = 0;
-}
-
 static void print_usage_and_die(char* progname) {
   fprintf(stderr, "%s\n"
-          "usage: %s [options] -p port(s) -f config\n"
-          "       %s [options] -p port(s) -F host:port -k key\n\n",
-          MCROUTER_PACKAGE_STRING, progname, progname);
+          "usage: %s [options] -p port(s) -f config\n\n",
+          MCROUTER_PACKAGE_STRING, progname);
 
   fprintf(stderr, "libmcrouter options:\n");
 

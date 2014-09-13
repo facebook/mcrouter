@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(mcrouter, 0.1, mcrouter@fb.com)
+AC_INIT(mcrouter, 1.0, mcrouter@fb.com)
 AC_CONFIG_SRCDIR([router.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])

@@ -67,11 +67,6 @@ mcrouter_option_integer(
   "connection-limit", 'n',
   "Connection limit")
 
-mcrouter_option_toggle(
-  enable_fatal_signal_spin_wait, true,
-  "disable-spin-wait", 'S',
-  "Disable spin wait on fatal signal")
-
 mcrouter_option_integer(
   uint32_t, max_global_outstanding_reqs, DEFAULT_MAX_GLOBAL_OUTSTANDING_REQS,
   "max-global-outstanding-reqs", no_short,
