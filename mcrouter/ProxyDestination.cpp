@@ -17,6 +17,7 @@
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/_router.h"
+#include "mcrouter/config.h"
 #include "mcrouter/dynamic_stats.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/nstring.h"
@@ -105,6 +106,7 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
       auto mutReq = createMcMsgRef();
       mutReq->op = mc_op_version;
       probe_req = std::move(mutReq);
+      ++probesSent_;
       send(probe_req.clone(), nullptr, /* senderId= */ 0);
     }
     schedule_next_probe();
@@ -119,6 +121,7 @@ void ProxyDestination::start_sending_probes() {
 }
 
 void ProxyDestination::stop_sending_probes() {
+  probesSent_ = 0;
   sending_probes = false;
   if (probe_timer) {
     asox_remove_timer(probe_timer);
@@ -143,18 +146,6 @@ void ProxyDestination::unmark_tko() {
   if (marked_tko) {
     VLOG(1) << pdstnKey << " marked up";
     marked_tko = 0;
-    stop_sending_probes();
-  }
-}
-
-void ProxyDestination::unmark_global_tko() {
-  FBI_ASSERT(!proxy->opts.disable_tko_tracking);
-  FBI_ASSERT(proxy->router &&
-             proxy->router->opts.global_tko_tracking);
-  FBI_ASSERT(shared);
-  shared->tko.recordSuccess(this);
-  if (sending_probes) {
-    VLOG(1) << shared->key << " marked up";
     stop_sending_probes();
   }
 }
@@ -190,8 +181,14 @@ void ProxyDestination::handle_tko(const McReply& reply,
     if (is_error_reply(reply)) {
       if (reply.result() == mc_res_connect_error) {
         responsible = shared->tko.recordHardFailure(this);
+        if (responsible) {
+          onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
+        }
       } else {
         responsible = shared->tko.recordSoftFailure(this);
+        if (responsible) {
+          onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
+        }
       }
     } else if (proxy->opts.latency_window_size != 0 &&
         !sending_probes &&
@@ -200,8 +197,16 @@ void ProxyDestination::handle_tko(const McReply& reply,
        that as a soft failure. We also check current latency to ensure that
        if things get better we don't keep TKOing the box */
       responsible = shared->tko.recordSoftFailure(this);
+      if (responsible) {
+        onTkoEvent(TkoLogEvent::MarkLatencyTko, reply.result());
+      }
     } else {
-      unmark_global_tko();
+      shared->tko.recordSuccess(this);
+      if (sending_probes) {
+        VLOG(1) << shared->key << " marked up";
+        onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
+        stop_sending_probes();
+      }
     }
     if (responsible) {
       VLOG(1) << shared->key << " marked TKO";
@@ -524,6 +529,23 @@ void ProxyDestination::resetInactive() {
   client_->resetInactive();
   reset_fields();
   resetting = 0;
+}
+
+void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
+  if (!shared) {
+    return;
+  }
+
+  TkoLog tkoLog(accessPoint);
+  tkoLog.event = event;
+  tkoLog.globalSoftTkos = shared->tko.globalSoftTkos();
+  tkoLog.isHardTko = shared->tko.isHardTko();
+  tkoLog.isSoftTko = shared->tko.isSoftTko();
+  tkoLog.avgLatency = avgLatency_;
+  tkoLog.probesSent = probesSent_;
+  tkoLog.result = result;
+
+  logTkoEvent(proxy, tkoLog);
 }
 
 proxy_client_conn_stats_t::proxy_client_conn_stats_t()

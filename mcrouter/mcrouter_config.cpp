@@ -8,7 +8,8 @@
  */
 #include "config.h"
 
-#include "folly/Memory.h"
+#include <folly/Memory.h>
+
 #include "mcrouter/_router.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
@@ -80,5 +81,7 @@ std::vector<std::string> defaultTestCommandLineArgs() {
 std::shared_ptr<RouterLogger> createRouterLogger() {
   return std::make_shared<RouterLogger>();
 }
+
+void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog) { }
 
 }}}  // facebook::memcache::mcrouter

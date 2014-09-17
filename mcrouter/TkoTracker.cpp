@@ -36,6 +36,10 @@ bool TkoTracker::isSoftTko() const {
   return (curSumFailures > tkoThreshold_ && curSumFailures % 2 == 0);
 }
 
+size_t TkoTracker::globalSoftTkos() const {
+  return currentSoftTkos_;
+}
+
 bool TkoTracker::incrementSoftTkoCount() {
   size_t old_soft_tkos = currentSoftTkos_;
   do {
@@ -149,4 +153,5 @@ void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
     setSumFailures(0);
   }
 }
+
 }}} // facebook::memcache::mcrouter

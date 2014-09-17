@@ -47,9 +47,9 @@ class TkoTracker {
    *        the router
    * @param currentSoftTkos the number of current soft TKOs
    */
-  explicit TkoTracker(size_t tkoThreshold,
-                      size_t maxSoftTkos,
-                      std::atomic<size_t>& currentSoftTkos);
+  TkoTracker(size_t tkoThreshold,
+             size_t maxSoftTkos,
+             std::atomic<size_t>& currentSoftTkos);
 
   /**
    * @return Is the destination currently marked Hard TKO?
@@ -68,6 +68,10 @@ class TkoTracker {
     return sumFailures_ > tkoThreshold_;
   }
 
+  /**
+   * @return number of destinations marked Soft TKO for current router
+   */
+  size_t globalSoftTkos() const;
 
   /**
    * Can be called from any proxy thread.

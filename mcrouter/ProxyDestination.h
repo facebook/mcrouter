@@ -14,10 +14,12 @@
 #include <memory>
 #include <string>
 
-#include "folly/IntrusiveList.h"
+#include <folly/IntrusiveList.h>
+
 #include "mcrouter/AccessPoint.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/TkoLog.h"
 
 using asox_timer_t = void*;
 class fb_timer_s;
@@ -113,6 +115,7 @@ struct ProxyDestination {
   asox_timer_t probe_timer{nullptr};
   size_t consecutiveErrors_{0};
   double avgLatency_{0.0};
+  size_t probesSent_{0};
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
                      // mc_client_reset and not a remote connection failure.
@@ -129,16 +132,17 @@ struct ProxyDestination {
 
   void mark_tko();
   void unmark_tko();
-  void unmark_global_tko();
 
   void initializeClient();
 
   ProxyDestination(proxy_t* proxy,
-                 const ProxyClientCommon& ro,
-                 std::string pdstnKey);
+                   const ProxyClientCommon& ro,
+                   std::string pdstnKey);
 
   // for no-network mode (debug/performance measurement only)
   void sendFakeReply(const McMsgRef& request, void* req_ctx);
+
+  void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
   std::atomic<bool> isUsedInConfig_{false};
   void* stateList_{nullptr};

@@ -23,8 +23,8 @@ static_assert(false, "mcrouter: invalid build");
 #include <unordered_map>
 #include <utility>
 
-#include "folly/Range.h"
-#include "folly/io/async/EventBase.h"
+#include <folly/Range.h>
+#include <folly/io/async/EventBase.h>
 
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
@@ -40,10 +40,11 @@ namespace mcrouter {
 class ConfigApi;
 class DestinationClient;
 class ExtraRouteHandleProviderIf;
-class ProxyLogger;
 class LoggingProxyRequestContext;
 class mcrouter_t;
 class proxy_t;
+class ProxyLogger;
+class TkoLog;
 
 typedef DestinationClient DestinationMcClient;
 typedef LoggingProxyRequestContext GenericProxyRequestContext;
@@ -164,6 +165,8 @@ McrouterOptions defaultTestOptions();
 std::vector<std::string> defaultTestCommandLineArgs();
 
 std::shared_ptr<RouterLogger> createRouterLogger();
+
+void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog);
 
 #ifdef PACKAGE_STRING
   #define MCROUTER_PACKAGE_STRING PACKAGE_STRING
