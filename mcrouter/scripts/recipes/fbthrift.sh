@@ -17,9 +17,9 @@ LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH" \
     LDFLAGS="-L$INSTALL_DIR/lib" \
     CPPFLAGS="-I$INSTALL_DIR/include -I$INSTALL_DIR/include/python2.7 -I$PKG_DIR/folly -I$PKG_DIR/double-conversion" \
     ./configure --prefix=$INSTALL_DIR --enable-boostthreads
-
+cd "$PKG_DIR/fbthrift/thrift/" && make clean
 cd "$PKG_DIR/fbthrift/thrift/compiler" && make $MAKE_ARGS
 cd "$PKG_DIR/fbthrift/thrift/lib/thrift" && make $MAKE_ARGS
 cd "$PKG_DIR/fbthrift/thrift/lib/cpp2" && make gen-cpp2/Sasl_types.h $MAKE_ARGS
 cd "$PKG_DIR/fbthrift/thrift/lib/cpp2/test" && make gen-cpp2/Service_constants.cpp $MAKE_ARGS
-cd "$PKG_DIR/fbthrift/thrift" && make $MAKE_ARGS && make install $MAKE_ARGS
+cd "$PKG_DIR/fbthrift/thrift" && make $MAKE_ARGS && sudo make install $MAKE_ARGS
