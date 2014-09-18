@@ -363,7 +363,7 @@ class TestMetaGetFailover(McrouterTestCase):
     def get_mcrouter(self):
         return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
-    def test_meta_get_failover(self):
+    def test_metaget_failover(self):
         mcr = self.get_mcrouter()
 
         get_res = {}
@@ -376,7 +376,9 @@ class TestMetaGetFailover(McrouterTestCase):
         self.assertTrue(mcr.set('testkey', 'bizbang-fail'))
         self.assertEqual(mcr.get('testkey'), 'bizbang-fail')
         get_res = mcr.metaget('testkey')
-        self.assertEqual(int(get_res['exptime']), int(time.time()) + 3)
+        self.assertAlmostEqual(int(get_res['exptime']),
+                               int(time.time()) + 3,
+                               delta=1)
 
         # the failover should have set it with a much shorter TTL
         # so make sure that we can't get the value after the TTL
