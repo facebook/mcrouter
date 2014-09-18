@@ -32,9 +32,10 @@
 
 #include <glog/logging.h>
 
-#include "folly/Format.h"
-#include "folly/Range.h"
-#include "folly/ScopeGuard.h"
+#include <folly/Format.h>
+#include <folly/Range.h>
+#include <folly/ScopeGuard.h>
+
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/fb_cpu_util.h"
 #include "mcrouter/_router.h"
@@ -672,6 +673,7 @@ int main(int argc, char **argv) {
   }
 
   router->command_args = construct_arg_string(argc, argv);
+  router->addStartupOpts(standaloneOpts.toDict());
 
   /* TODO(server): real AsyncMcServer stats */
   router->prepare_proxy_server_stats = nullptr;

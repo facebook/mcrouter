@@ -9,6 +9,9 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
+#include <string>
+#include <unordered_map>
 
 #include "folly/Range.h"
 #include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
@@ -107,6 +110,10 @@ struct mcrouter_t {
 
   ~mcrouter_t();
 
+  std::unordered_map<std::string, std::string> getStartupOpts() const;
+  void addStartupOpts(
+    std::unordered_map<std::string, std::string> additionalOpts);
+
   void startShutdown();
   bool shutdownStarted();
 
@@ -132,6 +139,8 @@ struct mcrouter_t {
   PeriodicTaskScheduler taskScheduler_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
+
+  std::unordered_map<std::string, std::string> additionalStartupOpts_;
 
   void spawnStatUpdaterThread();
   void startObservingRuntimeVarsFile();

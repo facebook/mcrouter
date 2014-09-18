@@ -32,7 +32,9 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-const std::string kConfigSourcesInfoFileName = "config_sources_info";
+const char* kStatsSfx = "stats";
+const char* kStatsStartupOptionsSfx = "startup_options";
+const char* kConfigSourcesInfoFileName = "config_sources_info";
 
 void log_stats(const asox_timer_t timer, void* arg) {
   auto logger = reinterpret_cast<ProxyLogger*>(arg);
@@ -70,11 +72,10 @@ inline std::string get_stats_key(const proxy_t* proxy) {
     proxy->opts.router_name).str();
 }
 
-/**
- * Converts stats to a string format.
- */
-std::string proxy_stats_to_string(const folly::dynamic& stats) {
-  return folly::toPrettyJson(stats).toStdString() + "\n";
+std::string proxy_stats_file_path(proxy_t* proxy, const std::string& suffix) {
+  boost::filesystem::path path(proxy->opts.stats_root);
+  path /= get_stats_key(proxy) + "." + suffix;
+  return path.string();
 }
 
 /**
@@ -89,10 +90,9 @@ void proxy_write_file(proxy_t* proxy,
       return;
     }
 
-    boost::filesystem::path path(proxy->opts.stats_root);
-    path /= get_stats_key(proxy) + "." + suffix;
+    auto path = proxy_stats_file_path(proxy, suffix);
 
-    async_write_file(proxy->stats_log_writer.get(), path.string(), str);
+    async_write_file(proxy->stats_log_writer.get(), path, str);
   } catch (...) {
     // Do nothing
   }
@@ -100,14 +100,14 @@ void proxy_write_file(proxy_t* proxy,
 
 /**
  * Determines the correct location and file name and writes the stats object
- * to disk in json format. The suffix is the file extension - like "stats"
- * or "rtt_stats". If the stats root directory is ever removed or is
- * unwriteable, we just give up.
+ * to disk in json format. The suffix is the file extension. If the stats root
+ * directory is ever removed or is unwriteable, we just give up.
  */
 void proxy_write_stats_file(proxy_t* proxy,
                             const std::string& suffix,
                             const folly::dynamic& stats) {
-  proxy_write_file(proxy, suffix, proxy_stats_to_string(stats));
+  auto statsString = folly::toPrettyJson(stats).toStdString() + "\n";
+  proxy_write_file(proxy, suffix, statsString);
 }
 
 void write_stats_to_disk(proxy_t* proxy, const std::vector<stat_t>& stats) {
@@ -138,7 +138,7 @@ void write_stats_to_disk(proxy_t* proxy, const std::vector<stat_t>& stats) {
       }
     }
 
-    proxy_write_stats_file(proxy, "stats", jstats);
+    proxy_write_stats_file(proxy, kStatsSfx, jstats);
   } catch (...) {
     // Do nothing
   }
@@ -168,12 +168,10 @@ ProxyLogger::ProxyLogger(proxy_t* proxy,
     LOG(ERROR) << "Can't create or chmod " << proxy_->opts.stats_root <<
                   ", disabling stats logging";
   } else {
-    std::string stats_startup_options_sfx("startup_options");
-    auto json_options = folly::toDynamic(proxy_->opts.toDict());
-    proxy_write_stats_file(proxy_, stats_startup_options_sfx, json_options);
-    boost::filesystem::path path(proxy_->opts.stats_root);
-    path /= get_stats_key(proxy_) + "." + stats_startup_options_sfx;
-    touchStatsFilepaths_.push_back(path.string());
+    auto json_options = folly::toDynamic(proxy_->router->getStartupOpts());
+    proxy_write_stats_file(proxy_, kStatsStartupOptionsSfx, json_options);
+    auto path = proxy_stats_file_path(proxy_, kStatsStartupOptionsSfx);
+    touchStatsFilepaths_.push_back(std::move(path));
 
     timeval_t delay = to<timeval_t>(proxy_->opts.stats_logging_interval);
     statsLoggingTimer_ = asox_add_timer(proxy_->eventBase->getLibeventBase(),

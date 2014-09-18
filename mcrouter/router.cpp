@@ -27,10 +27,12 @@
 
 #include <mcrouter/config.h>
 
-#include "folly/Format.h"
-#include "folly/Memory.h"
-#include "folly/ThreadName.h"
-#include "folly/io/async/EventBase.h"
+#include <folly/Conv.h>
+#include <folly/Format.h>
+#include <folly/Memory.h>
+#include <folly/ThreadName.h>
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/FileObserver.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
@@ -392,6 +394,16 @@ void mcrouter_t::startObservingRuntimeVarsFile() {
   );
 }
 
+unordered_map<string, string> mcrouter_t::getStartupOpts() const {
+  auto result = opts.toDict();
+  result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
+  return result;
+}
+
+void mcrouter_t::addStartupOpts(unordered_map<string, string> additionalOpts) {
+  additionalStartupOpts_.insert(additionalOpts.begin(), additionalOpts.end());
+}
+
 mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   if (!is_valid_router_name(input_options.service_name) ||
       !is_valid_router_name(input_options.router_name)) {
@@ -490,6 +502,8 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
 
   router->is_transient = false;
   router->live_clients = 0;
+
+  router->addStartupOpts({ { "pid", folly::to<string>(getpid()) } });
 
   router->startupLock.notify();
 
