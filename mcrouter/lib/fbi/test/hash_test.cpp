@@ -6,17 +6,7 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-/*
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-#include <time.h>
-*/
-
-#include <math.h>
+#include <cmath>
 #include <sys/time.h>
 
 #include <gtest/gtest.h>
@@ -198,7 +188,7 @@ TEST(ch3, verify_correctness) {
     double max_diff = 0;
     double sum = 0;
     for (j = 0; j < pool_size; j++) {
-      double diff = abs(pools[i][j] - expected_mean);
+      double diff = std::abs(pools[i][j] - expected_mean);
       if (diff > max_diff)
         max_diff = diff;
       sum += pools[i][j];
