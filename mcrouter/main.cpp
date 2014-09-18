@@ -24,6 +24,7 @@
 #include <syslog.h>
 #include <time.h>
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -63,16 +64,12 @@ using std::vector;
 static McrouterOptions opts;
 static McrouterStandaloneOptions standaloneOpts;
 
-#define max(a,b) ((a) < (b) ? (b) : (a))
-
 #define print_usage(opt, desc) fprintf(stderr, "\t%*s%s\n", -49, opt, desc)
-#define print_usage_wdefault(type, opt, desc, val) \
-  fprintf(stderr, "\t%*s%s (default " type ")\n", -49, opt, desc, val)
-
 
 static int pidfile_fd;
 
-static void print_usage_and_die(char* progname) {
+static void print_usage_and_die(char* progname, int errorCode) {
+
   fprintf(stderr, "%s\n"
           "usage: %s [options] -p port(s) -f config\n\n",
           MCROUTER_PACKAGE_STRING, progname);
@@ -124,7 +121,7 @@ static void print_usage_and_die(char* progname) {
               "restarting.");
   static_assert(3 == EXIT_STATUS_UNRECOVERABLE_ERROR,
                 "Unrecoverable error status must be 3");
-  exit(EXIT_STATUS_UNRECOVERABLE_ERROR);
+  exit(errorCode);
 }
 
 // output the unimplemented option
@@ -223,16 +220,16 @@ static void parse_options(int argc,
                           &long_index)) != -1) {
     switch (c) {
     case 'd':
-      debug_level = max(debug_level + 10, FBI_LOG_DEBUG);
+      debug_level = std::max(debug_level + 10, FBI_LOG_DEBUG);
       break;
     case 'D':
       debug_level = strtol(optarg, nullptr, 10);
     case 'v':
-      debug_level = max(debug_level, FBI_LOG_INFO);
+      debug_level = std::max(debug_level, FBI_LOG_INFO);
       break;
 
     case 'h':
-      print_usage_and_die(argv[0]);
+      print_usage_and_die(argv[0], /* errorCode */ 0);
       break;
     case 'V':
       printf("%s\n", MCROUTER_PACKAGE_STRING);
@@ -580,7 +577,7 @@ int main(int argc, char **argv) {
         LOG(ERROR) << "CRITICAL: Option parse error: " << e.requestedName <<
                       "=" << e.requestedValue << ", " << e.errorMsg;
       }
-      print_usage_and_die(argv[0]);
+      print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
     }
   };
   auto errors = opts.updateFromDict(option_dict);
@@ -609,7 +606,7 @@ int main(int argc, char **argv) {
   notify_command_line(argc, argv);
 
   if (!standaloneInit(opts) || !validate_options()) {
-    print_usage_and_die(argv[0]);
+    print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
   }
 
   FILE *pidfile = nullptr;
