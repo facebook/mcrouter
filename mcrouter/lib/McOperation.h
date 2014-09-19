@@ -12,6 +12,7 @@
  * Operation and ReplyType Specializations for McRequest/McReply.
  */
 
+#include <string>
 #include <type_traits>
 
 #include "mcrouter/lib/mc/msg.h"
@@ -26,7 +27,11 @@ namespace facebook { namespace memcache {
 template <int op>
 struct McOperation {
   static const mc_op_t mc_op = (mc_op_t)op;
+  static const char* const name;
 };
+
+template <int op>
+const char* const McOperation<op>::name = mc_op_to_string((mc_op_t)op);
 
 struct McRequest;
 template <typename Ctx> struct McRequestWithContext;
