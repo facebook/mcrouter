@@ -51,6 +51,11 @@ class ConfigPreprocessor {
   class Macro;
 
   /**
+   * Inner representation of const/global param
+   */
+  class Const;
+
+  /**
    * Built-in calls and macros
    */
   class BuiltIns;
@@ -58,7 +63,7 @@ class ConfigPreprocessor {
   typedef std::unordered_map<std::string, folly::dynamic> Context;
 
   std::unordered_map<std::string, std::unique_ptr<Macro>> macros_;
-  Context globals_;
+  std::unordered_map<std::string, std::unique_ptr<Const>> consts_;
   std::unordered_map<std::string, folly::dynamic> importCache_;
   std::unordered_map<
     std::string,

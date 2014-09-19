@@ -260,14 +260,11 @@
     }
   },
   "escape": {
-    "consts": [
-      {
-        "type": "constDef",
-        "name": "amp",
-        "result": "\\@"
-      }
-    ],
     "macros": {
+      "amp": {
+        "type": "constDef",
+        "result": "\\@"
+      },
       "\\@": {
         "type": "macroDef",
         "result": "\\@\\(\\\\\\)"
@@ -341,53 +338,56 @@
     }
   },
   "consts_in_consts": {
-    "consts": {
+    "macros": {
       "type": "merge",
       "params": [
-        [
-          {
+        {
+          "a": {
             "type": "constDef",
-            "name": "a",
-            "result": "a"
+            "result": "A"
           }
-        ],
-        [
-          {
+        },
+        {
+          "A": {
+            "type": "macroDef",
+            "params": [ "param" ],
+            "result": "%c%%param%"
+          },
+          "b": {
             "type": "constDef",
-            "name": "b",
             "result": "%a%b"
           },
-          {
+          "c": {
             "type": "constDef",
-            "name": "c",
             "result": "%b%c"
+          },
+          "d": {
+            "type": "constDef",
+            "result": "@A(d)"
           }
-        ]
+        }
       ]
-    },
-    "macros": {
-      "a": {
-        "type": "macroDef",
-        "params": [ "param" ],
-        "result": "%c%%param%"
-      }
     },
     "cases": {
       "a": {
         "orig": "%a%",
-        "expand": "a"
+        "expand": "A"
       },
       "b": {
         "orig": "%b%",
-        "expand": "ab"
+        "expand": "Ab"
       },
       "c": {
         "orig": "%c%",
-        "expand": "abc"
+        "expand": "Abc"
+      },
+      "d": {
+        "orig": "%d%",
+        "expand": "Abcd"
       },
       "macroA": {
         "orig": "@%a%(%c%)",
-        "expand": "abcabc"
+        "expand": "AbcAbc"
       }
     }
   },

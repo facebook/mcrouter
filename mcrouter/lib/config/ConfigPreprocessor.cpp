@@ -207,6 +207,37 @@ class ConfigPreprocessor::Macro {
   }
 };
 
+////////////////////////////////////Const///////////////////////////////////////
+
+class ConfigPreprocessor::Const {
+ public:
+  Const(const ConfigPreprocessor& prep,
+        std::string name,
+        dynamic result)
+    : prep_(prep),
+      name_(std::move(name)),
+      result_(std::move(result)) {
+  }
+
+  const dynamic& getResult() const {
+    if (!expanded_) {
+      try {
+        result_ =
+          prep_.expandMacros(result_, ConfigPreprocessor::emptyContext_);
+      } catch (const std::logic_error& e) {
+        throw std::logic_error("Const '" + name_ + "':\n" + e.what());
+      }
+      expanded_ = true;
+    }
+    return result_;
+  }
+ private:
+  mutable bool expanded_{false};
+  const ConfigPreprocessor& prep_;
+  std::string name_;
+  mutable dynamic result_;
+};
+
 ///////////////////////////////////BuiltIns/////////////////////////////////////
 
 class ConfigPreprocessor::BuiltIns {
@@ -862,8 +893,12 @@ class ConfigPreprocessor::BuiltIns {
 ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
                                        Context globals,
                                        size_t nestedLimit)
-  : globals_(std::move(globals)),
-    nestedLimit_(nestedLimit) {
+  : nestedLimit_(nestedLimit) {
+
+  for (auto& it : globals) {
+    auto constObj = make_unique<Const>(*this, it.first, std::move(it.second));
+    consts_.emplace(std::move(it.first), std::move(constObj));
+  }
 
   addBuiltInMacro("import", { "path" },
     std::bind(&BuiltIns::importMacro, this, std::ref(importResolver), _1));
@@ -963,7 +998,7 @@ dynamic ConfigPreprocessor::replaceParams(StringPiece str,
     // first check current context, then global context
     auto paramIt = context.find(paramName);
     const auto& substitution = paramIt == context.end()
-      ? tryGet(globals_, paramName, "Param in string")
+      ? tryGet(consts_, paramName, "Param in string")->getResult()
       : paramIt->second;
 
     if (buf.empty() && nextPos == str.size() - 1) {
@@ -1165,7 +1200,7 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
 
   ConfigPreprocessor prep(importResolver, std::move(globalParams), nestedLimit);
 
-  // parse and add consts
+  // parse and add consts. DEPRECATED.
   auto constsIt = config.find("consts");
   if (constsIt != config.items().end()) {
     auto consts = prep.expandMacros(constsIt->second, emptyContext_);
@@ -1177,7 +1212,7 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
       auto name = asString(tryGet(it, "name", "constDef"), "constDef name");
       const auto& result = tryGet(it, "result", "constDef");
       try {
-        prep.globals_.emplace(name, prep.expandMacros(result, emptyContext_));
+        prep.consts_.emplace(name, make_unique<Const>(prep, name, result));
       } catch (const std::logic_error& e) {
         throw std::logic_error("'" + name + "' const:\n" + e.what());
       }
@@ -1193,27 +1228,35 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
     config.erase("macros");
 
     for (const auto& it : macros.items()) {
-      auto key = asString(it.first, "macros key");
+      auto key = asString(it.first, "macro definition key");
       const auto& obj = it.second;
-      checkLogic(obj.isObject(), "'{}' macroDef is not an object", key);
-      auto objType = asString(tryGet(obj, "type", "macroDef"), "macroDef type");
-      checkLogic(objType == "macroDef",
-                 "macroDef has invalid type: {}", objType);
+      checkLogic(obj.isObject(), "'{}' macro definition is not an object", key);
+      auto objType = asString(tryGet(obj, "type", "macro definition"),
+                              "macro definition type");
 
-      const auto& res = tryGet(obj, "result", "Macro definition");
-      vector<dynamic> params;
-      auto paramsIt = obj.find("params");
-      if (paramsIt != obj.items().end()) {
-        checkLogic(paramsIt->second.isArray(),
-                   "'{}' macroDef params is not an array", key);
-        for (auto& paramObj : paramsIt->second) {
-          params.push_back(paramObj);
+      if (objType == "macroDef") {
+        const auto& res = tryGet(obj, "result", "Macro definition");
+        vector<dynamic> params;
+        auto paramsIt = obj.find("params");
+        if (paramsIt != obj.items().end()) {
+          checkLogic(paramsIt->second.isArray(),
+                     "'{}' macroDef params is not an array", key);
+          for (auto& paramObj : paramsIt->second) {
+            params.push_back(paramObj);
+          }
         }
+        auto f = [res, &prep](const Context& ctx) {
+          return prep.expandMacros(res, ctx);
+        };
+        prep.macros_.emplace(
+          key, make_unique<Macro>(key, params, std::move(f)));
+      } else if (objType == "constDef") {
+        checkLogic(it.second.isObject(), "constDef is not an object");
+        const auto& result = tryGet(it.second, "result", "constDef");
+        prep.consts_.emplace(key, make_unique<Const>(prep, key, result));
+      } else {
+        throw std::logic_error("Unknown macro definition type: " + objType);
       }
-      auto f = [res, &prep](const Context& ctx) {
-        return prep.expandMacros(res, ctx);
-      };
-      prep.macros_.emplace(key, make_unique<Macro>(key, params, std::move(f)));
     }
   }
 
