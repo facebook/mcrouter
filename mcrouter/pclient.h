@@ -22,8 +22,8 @@ class ProxyClientOwner;
 class ProxyDestination;
 
 /**
- * Proxy clients from multiple proxy threads can share this storage.
- * If pclient->shared is not null, it points to valid storage area
+ * ProxyDestinations from multiple proxy threads can share this storage.
+ * If pdstn->shared is not null, it points to valid storage area
  * that's shared for all the clients with the same destination_key
  */
 struct ProxyClientShared {
@@ -31,8 +31,8 @@ struct ProxyClientShared {
   std::string key;
   TkoTracker tko;
 
-  /// pclients that reference this shared object
-  std::unordered_set<ProxyDestination*> pclients;
+  /// ProxyDestinations that reference this shared object
+  std::unordered_set<ProxyDestination*> pdstns;
 
   ProxyClientShared(const std::string& key_,
                     const size_t tkoThreshold,
@@ -51,8 +51,8 @@ struct ProxyClientShared {
  */
 struct ProxyClientOwner {
   /**
-   * Creates/updates ProxyClientShared with the given pclient
-   * and also updates pclient->shared pointer.
+   * Creates/updates ProxyClientShared with the given pdstn
+   * and also updates pdstn->shared pointer.
    */
   void updateProxyClientShared(ProxyDestination& pdstn,
                                const size_t tkoThreshold,

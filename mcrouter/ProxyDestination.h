@@ -18,12 +18,11 @@
 
 #include "mcrouter/AccessPoint.h"
 #include "mcrouter/config.h"
+#include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/TkoLog.h"
 
 using asox_timer_t = void*;
-class fb_timer_s;
-using fb_timer_t = fb_timer_s;
 
 namespace facebook { namespace memcache {
 
@@ -46,51 +45,57 @@ enum proxy_client_state_t {
   PROXY_CLIENT_NUM_STATES
 };
 
-struct proxy_client_conn_stats_t {
-  char is_up;
-  fb_timer_t* rtt_timer;
-  uint64_t results[mc_nres];
+struct ProxyDestinationStats {
+  bool is_up{0};
+  ExponentialSmoothData avgLatency;
+  uint64_t results[mc_nres] = {0};
 
-  proxy_client_conn_stats_t();
+  explicit ProxyDestinationStats(const McrouterOptions& opts);
 };
 
 struct ProxyDestination {
   static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
 
   proxy_t* proxy{nullptr}; ///< for convenience
-  AccessPoint accessPoint;
+  const AccessPoint accessPoint;
   const std::string destinationKey;///< always the same for a given (host, port)
-  int rxpriority{0};
-  int txpriority{0};
+  const int rxpriority{0};
+  const int txpriority{0};
   const timeval_t server_timeout{0};
   const std::string pdstnKey;///< consists of ap, server_timeout
   uint64_t magic{0}; ///< to allow asserts that pdstn is still alive
-  uint64_t proxy_magic{0}; ///< to allow asserts that proxy is still alive
+  const uint64_t proxy_magic{0}; ///< to allow asserts that proxy is still alive
 
   ProxyClientOwner* owner{nullptr};
   std::shared_ptr<ProxyClientShared> shared;
 
-  proxy_client_conn_stats_t stats;
-  dynamic_stat_t* stats_ptr{nullptr};
-
-  bool use_ssl{false};
+  const bool use_ssl{false};
 
   static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
-                                                   const ProxyClientCommon& ro,
-                                                   std::string pdstnKey);
+                                                  const ProxyClientCommon& ro,
+                                                  std::string pdstnKey);
 
   ~ProxyDestination();
 
-  void track_latency(int64_t latency);
   bool is_hard_error(mc_res_t result);
-  void handle_tko(const McReply& reply, int consecutive_errors);
 
   // returns non-zero on error
   int send(McMsgRef request, void* req_ctx, uint64_t senderId);
   // returns 1 if okay to send req using this client
   int may_send(const McMsgRef& req);
 
-  proxy_client_state_t state();
+  /**
+   * Returns one of the three states that the server could be in:
+   * new, up, or total knockout (tko): means we're out for the count,
+   * i.e. we had a timeout or connection failure and haven't had time
+   * to recover.
+   */
+  proxy_client_state_t state() const;
+
+  /**
+   * @return stats for ProxyDestination
+   */
+  const ProxyDestinationStats& stats() const;
 
   void resetInactive();
 
@@ -110,12 +115,13 @@ struct ProxyDestination {
  private:
   std::unique_ptr<DestinationMcClient> client_;
 
+  ProxyDestinationStats stats_;
+
   int probe_delay_next_ms{0};
   bool sending_probes{false};
   McMsgRef probe_req;
   asox_timer_t probe_timer{nullptr};
   size_t consecutiveErrors_{0};
-  double avgLatency_{0.0};
   size_t probesSent_{0};
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
@@ -130,6 +136,8 @@ struct ProxyDestination {
   void schedule_next_probe();
 
   void reset_fields();
+
+  void handle_tko(const McReply& reply, int consecutive_errors);
 
   void mark_tko();
   void unmark_tko();

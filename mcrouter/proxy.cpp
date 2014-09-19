@@ -114,25 +114,6 @@ static asox_queue_callbacks_t const proxy_request_queue_cb =  {
   mcrouter_request_ready_cb,
 };
 
-ExponentialSmoothData::ExponentialSmoothData(double smoothingFactor)
-  : smoothingFactor_(smoothingFactor) {
-  assert(smoothingFactor_ >= 0.0 && smoothingFactor_ <= 1.0);
-}
-
-void ExponentialSmoothData::insertSample(double value) {
-  if (LIKELY(hasRegisteredFirstSample_)) {
-    currentValue_ = smoothingFactor_ * value +
-                    (1 - smoothingFactor_) * currentValue_;
-  } else {
-    currentValue_ = value;
-    hasRegisteredFirstSample_ = true;
-  }
-}
-
-double ExponentialSmoothData::getCurrentValue() const {
-  return currentValue_;
-}
-
 namespace {
 
 FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
@@ -179,11 +160,6 @@ proxy_t::proxy_t(mcrouter_t *router_,
   proxy_set_default_route(this, opts.default_route);
 
   init_stats(stats);
-
-  if (!opts.disable_dynamic_stats) {
-    FBI_VERIFY(rttTimer_ =
-               fb_timer_alloc((nstring_t)NSTRING_LIT("proxy_rtt_timer"), 0,0));
-  }
 
   /* TODO: Determine what the maximum queue length should be. */
   awriter = folly::make_unique<awriter_t>(0);
@@ -313,10 +289,6 @@ proxy_t::~proxy_t() {
   being_destroyed = true;
   if (request_queue) {
     asox_queue_del(request_queue);
-  }
-
-  if (rttTimer_) {
-    fb_timer_free(rttTimer_);
   }
 
   magic = 0xdeadbeefdeadbeefLL;
@@ -697,17 +669,6 @@ void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e) {
   }
 
   writelog_entry_free(e);
-}
-
-void proxy_t::flushRttStats() {
-  if (!opts.disable_dynamic_stats) {
-    uint64_t rtt_min = fb_timer_get_avg_min(rttTimer_);
-    stat_set_uint64(this, rtt_min_stat, rtt_min);
-    uint64_t rtt = fb_timer_get_avg(rttTimer_);
-    stat_set_uint64(this, rtt_stat, rtt);
-    uint64_t rtt_max = fb_timer_get_avg_peak(rttTimer_);
-    stat_set_uint64(this, rtt_max_stat, rtt_max);
-  }
 }
 
 proxy_pool_shadowing_policy_t::Data::Data()

@@ -38,7 +38,6 @@
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/async.h"
-#include "mcrouter/dynamic_stats.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/timer.h"
@@ -448,8 +447,6 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
     router->proxy_threads.emplace_back(
       folly::make_unique<ProxyThread>(std::move(proxy)));
   }
-
-  dynamic_stats_init();
 
   if (!router_configure(router)) {
     LOG(ERROR) << "Failed to configure proxies";
@@ -1022,7 +1019,6 @@ int mcrouter_get_stats(mcrouter_t *router,
 
   {
     std::lock_guard<std::mutex> guard(proxy->stats_lock);
-    proxy->flushRttStats();
     prepare_stats(proxy, stats);
   }
 

@@ -26,8 +26,8 @@ libmcroutercore_a_SOURCES = \
   ConfigApi.h \
   DestinationClient.cpp \
   DestinationClient.h \
-  dynamic_stats.cpp \
-  dynamic_stats.h \
+  ExponentialSmoothData.cpp \
+  ExponentialSmoothData.h \
   FileDataProvider.cpp \
   FileDataProvider.h \
   FileObserver.cpp \

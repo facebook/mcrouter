@@ -17,13 +17,14 @@
 
 #include <mcrouter/config.h>
 
+#include <folly/Conv.h>
 #include <folly/Range.h>
 #include <folly/json.h>
 
+#include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/_router.h"
-#include "mcrouter/dynamic_stats.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/StatsReply.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -41,6 +42,52 @@
  */
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+namespace {
+
+const char* clientStateToStr(proxy_client_state_t state) {
+  switch (state) {
+    case PROXY_CLIENT_TKO:
+      return "tko";
+    case PROXY_CLIENT_UP:
+      return "up";
+    case PROXY_CLIENT_NEW:
+      return "new";
+    default:
+      return "unknown";
+  }
+}
+
+struct ServerStat {
+  uint64_t results[mc_nres] = {0};
+  size_t states[PROXY_CLIENT_NUM_STATES] = {0};
+  double sumLatencies{0.0};
+  size_t cntLatencies{0};
+
+  std::string toString() const {
+    double avgLatency = cntLatencies == 0 ? 0 : sumLatencies / cntLatencies;
+    auto res = folly::format("avg_latency_us:{:.3f}", avgLatency).str();
+    for (size_t i = 0; i < PROXY_CLIENT_NUM_STATES; ++i) {
+      if (states[i] > 0) {
+        auto state = clientStateToStr(static_cast<proxy_client_state_t>(i));
+        folly::format(" {}:{}", state, states[i]).appendTo(res);
+      }
+    }
+    bool firstResult = true;
+    for (size_t i = 0; i < mc_nres; ++i) {
+      if (results[i] > 0) {
+        folly::StringPiece result(mc_res_to_string(static_cast<mc_res_t>(i)));
+        result.removePrefix("mc_res_");
+        folly::format("{} {}:{}", firstResult ? ";" : "", result,
+                      results[i]).appendTo(res);
+        firstResult = false;
+      }
+    }
+    return res;
+  }
+};
+
+}  // anonymous namespace
 
 // This is a subset of what's in proc(5).
 struct proc_stat_data_t {
@@ -250,11 +297,6 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
     router->prepare_proxy_server_stats(proxy);
   }
 
-  // Put rtt stats in stats
-  stats[rtt_min_stat].data.uint64 = proxy->stats[rtt_min_stat].data.uint64;
-  stats[rtt_stat].data.uint64 = proxy->stats[rtt_stat].data.uint64;
-  stats[rtt_max_stat].data.uint64 = proxy->stats[rtt_max_stat].data.uint64;
-
   uint64_t total_mcc_txbuf_reqs = 0;
   uint64_t total_mcc_waiting_replies = 0;
   for (auto& pr : router->proxy_threads) {
@@ -318,7 +360,7 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
     stats[fibers_stack_high_watermark_stat].data.uint64 =
       std::max(stats[fibers_stack_high_watermark_stat].data.uint64,
                pr->fiberManager.stackHighWatermark());
-    stats[duration_us_stat].data.dbl += pr->durationUs.getCurrentValue();
+    stats[duration_us_stat].data.dbl += pr->durationUs.value();
   }
   if (!router->proxy_threads.empty()) {
     stats[duration_us_stat].data.dbl /= router->proxy_threads.size();
@@ -417,8 +459,6 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
 McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   std::lock_guard<std::mutex> guard(proxy->stats_lock);
 
-  proxy->flushRttStats();
-
   StatsReply reply;
 
   if (group_str == "version") {
@@ -432,7 +472,6 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   }
 
   stat_t stats[num_stats];
-  init_stats(stats);
 
   prepare_stats(proxy, stats);
 
@@ -462,12 +501,24 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   }
 
   if (groups & server_stats) {
-    std::lock_guard<std::mutex> lg(dynamic_stats_mutex());
-    dynamic_stats_list_t dynamic_stat_list = dynamic_stats_get_all();
-    dynamic_stat_t* d_stat;
-    TAILQ_FOREACH(d_stat, &dynamic_stat_list, entry) {
-      reply.addStat(d_stat->stat.name,
-                    stat_to_str(&d_stat->stat, d_stat->entity_ptr));
+    std::unordered_map<std::string, ServerStat> serverStats;
+    proxy->router->pclient_owner.foreach_shared_synchronized(
+      [&serverStats](const std::string& key, ProxyClientShared& shared) {
+        for (auto pdstn : shared.pdstns) {
+          auto& stat = serverStats[pdstn->pdstnKey];
+          for (size_t i = 0; i < mc_nres; ++i) {
+            stat.results[i] += pdstn->stats().results[i];
+          }
+          ++stat.states[pdstn->state()];
+
+          if (pdstn->stats().avgLatency.hasValue()) {
+            stat.sumLatencies += pdstn->stats().avgLatency.value();
+            ++stat.cntLatencies;
+          }
+        }
+      });
+    for (const auto& it : serverStats) {
+      reply.addStat(it.first, it.second.toString());
     }
   }
 

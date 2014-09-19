@@ -18,7 +18,6 @@
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
-#include "mcrouter/dynamic_stats.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/timer.h"
@@ -150,18 +149,6 @@ void ProxyDestination::unmark_tko() {
   }
 }
 
-void ProxyDestination::track_latency(int64_t latency) {
-  size_t window_size = proxy->opts.latency_window_size;
-  // If window size is 0, the feature is gated so just return
-  if (window_size == 0) {
-    return;
-  }
-  /* We use a geometric moving average for speed and simplicity. Since latency
-  is capped by timeout, this number can never explode, and samples will be
-  weighted to effectively 0 over time */
-  avgLatency_ = (latency + avgLatency_ * (window_size-1)) / window_size;
-}
-
 bool ProxyDestination::is_hard_error(mc_res_t result) {
   switch (result) {
     case mc_res_connect_error:
@@ -201,9 +188,9 @@ void ProxyDestination::handle_tko(const McReply& reply,
           onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
         }
       }
-    } else if (proxy->opts.latency_window_size != 0 &&
-        !sending_probes &&
-        avgLatency_ > proxy->opts.latency_threshold_us) {
+    } else if (proxy->opts.latency_threshold_us != 0 &&
+               !sending_probes &&
+               stats_.avgLatency.value() > proxy->opts.latency_threshold_us) {
     /* Even if it's not an error, if we've gone above our latency SLA we count
        that as a soft failure. We also check current latency to ensure that
        if things get better we don't keep TKOing the box */
@@ -262,7 +249,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
      * on_reply was still delivered.  So we just manually call on_up here.
      * Ideally we wouldn't miss on_up callbacks, but it's not easy to do.
      */
-    if (!stats.is_up) {
+    if (!stats_.is_up) {
       on_up();
     }
   }
@@ -278,7 +265,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
   if (req.get() == probe_req.get()) {
     probe_req = McMsgRef();
   } else {
-    stats.results[reply.result()]++;
+    stats_.results[reply.result()]++;
 
     auto destreqCtx = reinterpret_cast<DestinationRequestCtx*>(req_ctx);
     preq = destreqCtx->preq;
@@ -289,7 +276,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
     /* For code simplicity we look at latency for making TKO decisions with a
        1 request delay */
     int64_t latency = destreqCtx->endTime - destreqCtx->startTime;
-    track_latency(latency);
+    stats_.avgLatency.insertSample(latency);
 
     auto promise = std::move(destreqCtx->promise.value());
     promise.setValue();
@@ -306,12 +293,12 @@ void ProxyDestination::on_reply(const McMsgRef& req,
 
 void ProxyDestination::on_up() {
   FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(!stats.is_up);
+  FBI_ASSERT(!stats_.is_up);
 
   stat_incr(proxy, server_up_events_stat, 1);
   stat_incr(proxy, num_servers_up_stat, 1);
 
-  stats.is_up = 1;
+  stats_.is_up = true;
   gettimeofday(&up_time, 0);
 
   VLOG(1) << "server " << pdstnKey << " up (" <<
@@ -327,9 +314,9 @@ void ProxyDestination::on_down() {
         stat_get_uint64(proxy, num_servers_up_stat) << " of " <<
         stat_get_uint64(proxy, num_servers_stat) << ")";
     stat_incr(proxy, closed_inactive_connections_stat, 1);
-    if (stats.is_up) {
+    if (stats_.is_up) {
       stat_decr(proxy, num_servers_up_stat, 1);
-      stats.is_up = 0;
+      stats_.is_up = false;
     }
   } else {
     VLOG(1) << "server " << pdstnKey << " down (" <<
@@ -340,14 +327,14 @@ void ProxyDestination::on_down() {
       proxy->monitor->on_down(proxy->monitor, this);
     }
 
-    /* NB stats.is_up may be 0, there's no guarantee we're up because of
+    /* NB stats_.is_up may be 0, there's no guarantee we're up because of
      * the way libasox does auto-connect-on-send */
 
     stat_incr(proxy, server_down_events_stat, 1);
-    if (stats.is_up) {
+    if (stats_.is_up) {
       stat_decr(proxy, num_servers_up_stat, 1);
     }
-    stats.is_up = 0;
+    stats_.is_up = false;
     gettimeofday(&down_time, 0);
 
     /* Record on_down as a mc_res_connect_error; note we pass failure_until_tko
@@ -401,7 +388,7 @@ ProxyDestination::~ProxyDestination() {
 
   if (owner != nullptr) {
     std::lock_guard<std::mutex> lock(owner->mx);
-    shared->pclients.erase(this);
+    shared->pdstns.erase(this);
   }
 
   if (proxy->monitor) {
@@ -409,14 +396,6 @@ ProxyDestination::~ProxyDestination() {
   }
 
   client_.reset();
-
-  if (stats_ptr) {
-    dynamic_stats_unregister(stats_ptr);
-  }
-
-  if (stats.rtt_timer) {
-    fb_timer_free(stats.rtt_timer);
-  }
 
   if (sending_probes) {
     stop_sending_probes();
@@ -435,52 +414,28 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
     txpriority(ro_.txpriority),
     server_timeout(ro_.server_timeout),
     pdstnKey(std::move(pdstnKey_)),
-    use_ssl(ro_.useSsl) {
+    proxy_magic(proxy->magic),
+    use_ssl(ro_.useSsl),
+    stats_(proxy_->opts) {
 
   static uint64_t next_magic = 0x12345678900000LL;
   magic = __sync_fetch_and_add(&next_magic, 1);
-
-  proxy_magic = proxy->magic;
-
-  if (!proxy->opts.disable_dynamic_stats) {
-    nstring_t name_rtt = NSTRING_LIT("server_rtt");
-    stats.rtt_timer = fb_timer_alloc(name_rtt, 0, 0);
-    if (stats.rtt_timer == nullptr) {
-      throw std::runtime_error("fb_timer_alloc of rtt_timer failure");
-    }
-  }
-
-  if (!proxy->opts.disable_dynamic_stats &&
-      !proxy->opts.disable_global_dynamic_stats) {
-    stat_t stat;
-    stat.name = pdstnKey;
-    stat.group = server_stats;
-    stat.type = stat_string_fn;
-    stat.data.string_fn = &proxy_client_stat_to_str;
-    stats_ptr = dynamic_stats_register(&stat, this);
-    if (stats_ptr == nullptr) {
-      throw std::runtime_error("dynamic_stats_register failure");
-    }
-  } else {
-    FBI_ASSERT(stats_ptr == nullptr);
-  }
 }
 
-/** Returns one of the three states that the server could be in:
- *  up, down, or total knockout (tko): means we're out for the count,
- *  i.e. we had a timeout or connection failure and haven't had time
- *  to recover.
- */
-proxy_client_state_t ProxyDestination::state() {
+proxy_client_state_t ProxyDestination::state() const {
   // We don't need to check if global tracking is disabled. If it is
   // isTko will always be false
   if ((shared && shared->tko.isTko()) || marked_tko) {
     return PROXY_CLIENT_TKO;
-  } else if (stats.is_up) {
+  } else if (stats_.is_up) {
     return PROXY_CLIENT_UP;
   } else {
     return PROXY_CLIENT_NEW;
   }
+}
+
+const ProxyDestinationStats& ProxyDestination::stats() const {
+  return stats_;
 }
 
 int ProxyDestination::may_send(const McMsgRef& req) {
@@ -552,17 +507,15 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   tkoLog.globalSoftTkos = shared->tko.globalSoftTkos();
   tkoLog.isHardTko = shared->tko.isHardTko();
   tkoLog.isSoftTko = shared->tko.isSoftTko();
-  tkoLog.avgLatency = avgLatency_;
+  tkoLog.avgLatency = stats_.avgLatency.value();
   tkoLog.probesSent = probesSent_;
   tkoLog.result = result;
 
   logTkoEvent(proxy, tkoLog);
 }
 
-proxy_client_conn_stats_t::proxy_client_conn_stats_t()
-    : is_up(0),
-      rtt_timer(nullptr) {
-  memset(results, 0, sizeof(results));
+ProxyDestinationStats::ProxyDestinationStats(const McrouterOptions& opts)
+  : avgLatency(1.0 / opts.latency_window_size) {
 }
 
 }}}  // facebook::memcache::mcrouter

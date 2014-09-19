@@ -343,9 +343,3 @@
 #define GROUP memory_stats
   STUI(mcrouter_queue_entry_num_outstanding, 0, 1)
 #undef GROUP
-#define GROUP ods_stats
-  /* TODO(jsedgwick) ensure correct agg behavior */
-  STUI(rtt_min, 0, 0)
-  STUI(rtt, 0, 0)
-  STUI(rtt_max, 0, 0)
-#undef GROUP

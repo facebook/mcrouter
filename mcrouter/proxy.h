@@ -27,6 +27,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/awriter.h"
 #include "mcrouter/config.h"
@@ -391,18 +392,6 @@ struct countedfd_t {
   int refcount;
 };
 
-class ExponentialSmoothData {
- public:
-  explicit ExponentialSmoothData(double smootingFactor);
-  void insertSample(double value);
-  double getCurrentValue() const;
-
- private:
-  double smoothingFactor_{0.0};
-  double currentValue_{0.0};
-  bool hasRegisteredFirstSample_{false};
-};
-
 struct proxy_t {
   uint64_t magic;
   mcrouter_t *router{nullptr};
@@ -523,8 +512,6 @@ struct proxy_t {
    */
   void attachEventBase(folly::EventBase* eventBase);
 
-  void flushRttStats();
-
   /**
    * Spawns the required async writer threads.
    * These include the asynclog thread (if needed) and threads
@@ -545,8 +532,6 @@ struct proxy_t {
   /** Read/write lock for config pointer */
   SFRLock configLock_;
   std::shared_ptr<ProxyConfigIf> config_;
-
-  fb_timer_t* rttTimer_{nullptr};  // rtt (mcrouter <=> memcached)
 
   pthread_t awriterThreadHandle_{0};
   void* awriterThreadStack_{nullptr};

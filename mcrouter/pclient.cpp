@@ -48,7 +48,7 @@ void ProxyClientOwner::updateProxyClientShared(
                                                 *this);
       pclient_shared.emplace(key, pcs);
     }
-    pcs->pclients.insert(&pdstn);
+    pcs->pdstns.insert(&pdstn);
     pdstn.shared = std::move(pcs);
   }
   pdstn.owner = this;

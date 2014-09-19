@@ -41,7 +41,6 @@
 #include "mcrouter/_router.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
-#include "mcrouter/dynamic_stats.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"

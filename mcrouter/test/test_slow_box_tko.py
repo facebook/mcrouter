@@ -59,8 +59,8 @@ class TestSlowBoxTko(McrouterTestCase):
     config = './mcrouter/test/test_slow_box_tko.json'
     extra_args = ['-t', '2500',
                   '--timeouts-until-tko', '2',
-                  '--latency-window-size', '4',
-                  '--latency-threshold-us', '60000',
+                  '--latency-window-size', '3',
+                  '--latency-threshold-us', '80000',
                   '-r', '140']
     additional_args = ['--global-tko-tracking']
 
