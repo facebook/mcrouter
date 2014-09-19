@@ -162,6 +162,17 @@ void ProxyDestination::track_latency(int64_t latency) {
   avgLatency_ = (latency + avgLatency_ * (window_size-1)) / window_size;
 }
 
+bool ProxyDestination::is_hard_error(mc_res_t result) {
+  switch (result) {
+    case mc_res_connect_error:
+    case mc_res_connect_timeout:
+      return true;
+
+    default:
+      return false;
+  }
+}
+
 void ProxyDestination::handle_tko(const McReply& reply,
                                   int consecutive_errors) {
   if (resetting ||
@@ -179,7 +190,7 @@ void ProxyDestination::handle_tko(const McReply& reply,
 
     bool responsible = false;
     if (is_error_reply(reply)) {
-      if (reply.result() == mc_res_connect_error) {
+      if (is_hard_error(reply.result())) {
         responsible = shared->tko.recordHardFailure(this);
         if (responsible) {
           onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());

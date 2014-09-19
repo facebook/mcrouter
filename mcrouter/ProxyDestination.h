@@ -82,6 +82,7 @@ struct ProxyDestination {
   ~ProxyDestination();
 
   void track_latency(int64_t latency);
+  bool is_hard_error(mc_res_t result);
   void handle_tko(const McReply& reply, int consecutive_errors);
 
   // returns non-zero on error
