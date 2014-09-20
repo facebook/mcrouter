@@ -12,8 +12,9 @@
 #include <string>
 #include <vector>
 
-#include "folly/Memory.h"
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+#include <folly/Range.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
@@ -30,23 +31,22 @@ class HashRoute {
   static std::string routeName() { return "hash"; }
 
   HashRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh,
-            const std::string& salt,
+            std::string salt,
             HashFunc hashFunc)
     : rh_(std::move(rh)),
-      salt_(salt),
-      hashFunc_(folly::make_unique<HashFunc>(std::move(hashFunc))) {
+      salt_(std::move(salt)),
+      hashFunc_(std::move(hashFunc)) {
   }
 
   HashRoute(const folly::dynamic& json,
             std::vector<std::shared_ptr<RouteHandleIf>> children)
-    : rh_(std::move(children)) {
+    : rh_(std::move(children)),
+      hashFunc_(json, rh_.size()) {
 
     if (json.isObject() && json.count("salt")) {
-      checkLogic(json["salt"].isString(), "HashRoute salt is not string");
-      salt_ = json["salt"].asString().toStdString();
+      checkLogic(json["salt"].isString(), "HashRoute salt is not a string");
+      salt_ = json["salt"].getString().toStdString();
     }
-
-    hashFunc_ = folly::make_unique<HashFunc>(json, rh_.size());
   }
 
   template <class Operation, class Request>
@@ -71,13 +71,13 @@ class HashRoute {
   static const size_t kMaxKeySaltSize = 512;
   const std::vector<std::shared_ptr<RouteHandleIf>> rh_;
   std::string salt_;
-  std::unique_ptr<HashFunc> hashFunc_;
+  HashFunc hashFunc_;
 
   template <class Request>
   size_t pick(const Request& req) const {
     size_t n = 0;
     if (salt_.empty()) {
-      n = (*hashFunc_)(req.routingKey());
+      n = hashFunc_(req.routingKey());
     } else {
       // fast string concatenation
       char c[kMaxKeySaltSize];
@@ -89,7 +89,7 @@ class HashRoute {
       memcpy(c, key.data(), key.size());
       memcpy(c + key.size(), salt_.data(), salt_.size());
 
-      n = (*hashFunc_)(folly::StringPiece(c, c + keySaltSize));
+      n = hashFunc_(folly::StringPiece(c, c + keySaltSize));
     }
     if (UNLIKELY(n >= rh_.size())) {
       throw std::runtime_error("index out of range");

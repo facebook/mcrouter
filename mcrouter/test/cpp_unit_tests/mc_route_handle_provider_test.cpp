@@ -11,9 +11,11 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include "folly/Memory.h"
-#include "folly/io/async/EventBase.h"
-#include "folly/json.h"
+#include <folly/Memory.h>
+#include <folly/io/async/EventBase.h>
+#include <folly/json.h>
+
+#include "mcrouter/_router.h"
 #include "mcrouter/PoolFactoryIf.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
@@ -73,7 +75,8 @@ static std::shared_ptr<McrouterRouteHandleIf>
 getRoute(const folly::dynamic& d) {
   McrouterOptions opts;
   folly::EventBase eventBase;
-  auto proxy = folly::make_unique<proxy_t>(nullptr, &eventBase,
+  auto router = folly::make_unique<mcrouter_t>(opts);
+  auto proxy = folly::make_unique<proxy_t>(router.get(), &eventBase,
                                            opts,
                                            /* perform_stats_logging */ false);
   MockPoolFactory pf;

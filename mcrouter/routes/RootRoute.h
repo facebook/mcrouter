@@ -27,9 +27,9 @@ class RootRoute {
   static std::string routeName() { return "root"; }
 
   RootRoute(proxy_t* proxy, const RouteSelectorMap& routeSelectors)
-      : proxy_(proxy),
-        rhMap_(routeSelectors, proxy_->default_route,
-               proxy_->opts.send_invalid_route_to_default) {
+      : opts_(proxy->opts),
+        rhMap_(routeSelectors, proxy->default_route,
+               proxy->opts.send_invalid_route_to_default) {
   }
 
   template <class Operation, class Request>
@@ -53,7 +53,7 @@ class RootRoute {
   }
 
  private:
-  proxy_t* proxy_;
+  const McrouterOptions& opts_;
   RouteHandleMap rhMap_;
 
   template <class Operation, class Request>
@@ -69,8 +69,7 @@ class RootRoute {
       return reply;
     }
 
-    if (!preprocessGetErrors(proxy_->opts, reply) &&
-        proxy_->opts.miss_on_get_errors) {
+    if (!preprocessGetErrors(opts_, reply) && opts_.miss_on_get_errors) {
       reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
     }
 
@@ -113,7 +112,7 @@ class RootRoute {
       auto reqCopy = std::make_shared<Request>(req.clone());
       for (size_t i = 1; i < rh.size(); ++i) {
         auto r = rh[i];
-        proxy_->fiberManager.addTask(
+        fiber::addTask(
           [r, reqCopy]() {
             r->route(*reqCopy, Operation());
           });
