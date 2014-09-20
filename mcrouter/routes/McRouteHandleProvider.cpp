@@ -8,7 +8,8 @@
  */
 #include "McRouteHandleProvider.h"
 
-#include "folly/Range.h"
+#include <folly/Range.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/PoolFactoryIf.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -20,6 +21,7 @@
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 #include "mcrouter/routes/ShardHashFunc.h"
+#include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -53,6 +55,9 @@ McrouterRouteHandlePtr makePrefixPolicyRoute(
 McrouterRouteHandlePtr makeRateLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   RateLimiter rateLimiter);
+
+McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
+                                           ShardSplitter);
 
 McrouterRouteHandlePtr makeWarmUpRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -208,6 +213,13 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     } else if (proxyPool->rate_limiter) {
       route = makeRateLimitRoute(std::move(route), *proxyPool->rate_limiter);
     }
+  }
+
+  if (json.isObject() && json.count("shard_splits")) {
+    route = makeShardSplitRoute(std::move(route),
+                                ShardSplitter(json["shard_splits"]));
+  } else if (proxyPool->shardSplitter) {
+    route = makeShardSplitRoute(std::move(route), *proxyPool->shardSplitter);
   }
 
   if (!proxy_->opts.asynclog_disable) {

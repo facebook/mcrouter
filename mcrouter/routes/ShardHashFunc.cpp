@@ -8,17 +8,15 @@
  */
 #include "ShardHashFunc.h"
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 using std::string;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-namespace {
-
-inline bool getShardId(folly::StringPiece key,
-                       folly::StringPiece& lookupKey) {
+bool getShardId(folly::StringPiece key, folly::StringPiece& shardId) {
   size_t colon = qfind(key, ':');
   if (colon == string::npos) {
     return false;
@@ -31,10 +29,8 @@ inline bool getShardId(folly::StringPiece key,
   if (colon <= 0 || !isdigit(key[colon - 1])) {
     return false;
   }
-  lookupKey = key.subpiece(0, colon);
+  shardId = key.subpiece(0, colon);
   return true;
-}
-
 }
 
 ShardHashFunc::ShardHashFunc(StringKeyedUnorderedMap<size_t> shardMap, size_t n)

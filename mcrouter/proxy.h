@@ -70,6 +70,7 @@ class ProxyLogger;
 class ProxyPool;
 class RateLimiter;
 class RuntimeVarsData;
+class ShardSplitter;
 
 typedef Observable<std::shared_ptr<const RuntimeVarsData>>
   ObservableRuntimeVars;
@@ -318,6 +319,7 @@ class ProxyPool : public ProxyGenericPool {
   std::string hash_salt;
   std::unique_ptr<WeightedCh3HashFunc> wch3_func;
   StringKeyedUnorderedMap<size_t> shard_map;
+  std::unique_ptr<ShardSplitter> shardSplitter;
   timeval_t timeout;
   int keep_routing_prefix;
 

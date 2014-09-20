@@ -52,6 +52,7 @@
 #include "mcrouter/route.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RateLimiter.h"
+#include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/stats.h"
 
 using folly::wangle::Try;

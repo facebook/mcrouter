@@ -10,7 +10,8 @@
 
 #include <string>
 
-#include "folly/Range.h"
+#include <folly/Range.h>
+
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Ch3HashFunc.h"
 
@@ -19,6 +20,20 @@ class dynamic;
 }
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+/**
+ * Returns shard id part of a key. Shard id is first number surrounded by
+ * colons in the key: prefix:[0-9]+:suffix
+ *                           ^^^^^^
+ *                           shardId
+ *
+ * @param [in] key Any string
+ * @param [out] shardId Subpiece of original key
+ *
+ * @return if key has shard id, stores subpiece in shardId and returns true;
+ *         otherwise returns false and doesn't change shardId.
+ */
+bool getShardId(folly::StringPiece key, folly::StringPiece& shardId);
 
 class ShardHashFunc {
  public:

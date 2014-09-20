@@ -23,6 +23,7 @@
 #include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/RateLimiter.h"
+#include "mcrouter/routes/ShardSplitter.h"
 
 using facebook::memcache::Md5Hash;
 using folly::dynamic;
@@ -605,6 +606,7 @@ PoolFactory::parsePool(const string& pool_name_str,
       pool->clients.push_back(std::move(client));
     } // servers
 
+    // shard map
     it = jpool.find("shard_map");
     if (it != jpool.items().end()) {
       dynamic jshard_map = jpool["shard_map"];
@@ -620,6 +622,12 @@ PoolFactory::parsePool(const string& pool_name_str,
           pool->shard_map.emplace(std::move(key), index);
         }
       }
+    }
+
+    // shard splits
+    it = jpool.find("shard_splits");
+    if (it != jpool.items().end()) {
+      pool->shardSplitter = folly::make_unique<ShardSplitter>(it->second);
     }
 
     // Hash weights
