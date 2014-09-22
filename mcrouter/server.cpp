@@ -87,7 +87,7 @@ void serverLoop(
                         server_callbacks,
                         &worker,
                         0, false);
-  auto proxy = router.proxy_threads[threadId]->proxy;
+  auto proxy = router.getProxy(threadId);
   proxy->attachEventBase(&evb);
   // Manually override proxy assignment
   routerClient->proxy = proxy;

@@ -72,12 +72,14 @@ void run_lifecycle_test(proxy_client_monitor_t *monitor, bool allow_failover,
   opts.config_file = "mcrouter/test/test_ascii.json";
   opts.disable_dynamic_stats = true;
   opts.miss_on_get_errors = false;
+  opts.num_proxies = 1;
+  opts.standalone = true;
 
-  auto router = new mcrouter_t(opts);
-  folly::EventBase eventBase;
-  auto proxy = new proxy_t(router, &eventBase, opts, false);
-  router->proxy_threads.push_back(folly::make_unique<ProxyThread>(proxy));
-  EXPECT_NE(router_configure(router), 0);
+  auto router = mcrouter_new(opts);
+  EXPECT_TRUE(router != nullptr);
+  auto proxy = router->getProxy(0);
+  folly::EventBase evb;
+  proxy->attachEventBase(&evb);
   proxy_set_monitor(proxy, monitor);
 
   McReply reply(mc_res_unknown);
@@ -93,15 +95,14 @@ void run_lifecycle_test(proxy_client_monitor_t *monitor, bool allow_failover,
   proxy_request_decref(preq);
 
   while (reply.result() == mc_res_unknown) {
-    mcrouterLoopOnce(proxy->eventBase);
+    mcrouterLoopOnce(&evb);
   }
 
   if (!allow_failover) {
     EXPECT_EQ(reply.result(), expected_result);
   }
 
-  delete proxy;
-  delete router;
+  mcrouter_free(router);
 
   if (!allow_failover) {
     EXPECT_EQ(response_count, expected_response_count);

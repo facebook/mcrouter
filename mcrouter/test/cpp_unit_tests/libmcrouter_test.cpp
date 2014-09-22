@@ -239,8 +239,9 @@ TEST(libmcrouter, standalone) {
   opts.default_route = kDefaultRoute;
   mcrouter_t *router = mcrouter_init("standalone_test", opts);
 
-  for (auto& pt : router->proxy_threads) {
-    pt->proxy->attachEventBase(new folly::EventBase());
+  folly::EventBase evb;
+  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+    router->getProxy(i)->attachEventBase(&evb);
   }
 
   mcrouter_client_t *client = mcrouter_client_new(router,
@@ -248,7 +249,6 @@ TEST(libmcrouter, standalone) {
                                                   {on_reply, nullptr},
                                                   nullptr,
                                                   0, false);
-  folly::EventBase* clientBase = mcrouter_client_get_base(client);
 
   const char key[] = "mcrouter_test:standalone:key:1";
   mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
@@ -262,7 +262,7 @@ TEST(libmcrouter, standalone) {
   on_reply_count = 0;
   mcrouter_send(client, &msg, 1);
   while (on_reply_count == 0) {
-    mcrouterLoopOnce(clientBase);
+    mcrouterLoopOnce(&evb);
   }
   EXPECT_TRUE(on_reply_count == 1);
 

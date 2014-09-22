@@ -267,12 +267,12 @@ static void *stat_updater_thread_run(void *arg) {
     }
 
     // to avoid inconsistence among proxies, we lock all mutexes together
-    for (auto& proxy_thread : router->proxy_threads) {
-      proxy_thread->proxy->stats_lock.lock();
+    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+      router->getProxy(i)->stats_lock.lock();
     }
 
-    for (auto& proxy_thread : router->proxy_threads) {
-      auto proxy = proxy_thread->proxy;
+    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+      auto proxy = router->getProxy(i);
       if (proxy->num_bins_used < BIN_NUM) {
         ++proxy->num_bins_used;
       }
@@ -287,8 +287,8 @@ static void *stat_updater_thread_run(void *arg) {
       }
     }
 
-    for (auto& proxy_thread : router->proxy_threads) {
-      proxy_thread->proxy->stats_lock.unlock();
+    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+      router->getProxy(i)->stats_lock.unlock();
     }
 
     idx = (idx + 1) % BIN_NUM;
@@ -412,6 +412,25 @@ std::string mcrouter_t::routerName() const {
   return "libmcrouter." + opts.service_name + "." + opts.router_name;
 }
 
+void mcrouter_t::addNonownedProxy(proxy_t* proxy) {
+  assert(proxies_.empty() && proxyThreads_.empty());
+  nonownedProxies_.push_back(proxy);
+}
+
+proxy_t* mcrouter_t::getProxy(size_t index) {
+  if (!nonownedProxies_.empty()) {
+    return index < nonownedProxies_.size() ?
+                   nonownedProxies_[index] : nullptr;
+  } else if (opts.standalone) {
+    assert(!proxies_.empty() && proxyThreads_.empty());
+    return index < proxies_.size() ? proxies_[index].get() : nullptr;
+  } else {
+    assert(proxies_.empty() && !proxyThreads_.empty());
+    return index < proxyThreads_.size() ?
+                   &proxyThreads_[index]->proxy() : nullptr;
+  }
+}
+
 mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   if (!is_valid_router_name(input_options.service_name) ||
       !is_valid_router_name(input_options.router_name)) {
@@ -443,27 +462,22 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
     return nullptr;
   }
 
-  int i;
-
-  router->proxy_threads.reserve(router->opts.num_proxies);
-  for (i = 0; i < router->opts.num_proxies; i++) {
-    proxy_t *proxy;
+  for (size_t i = 0; i < router->opts.num_proxies; i++) {
     try {
-      folly::EventBase* evb = nullptr;
+      auto proxy =
+        folly::make_unique<proxy_t>(router, nullptr, router->opts,
+                                    /* perform_stats_logging */ i == 0);
       if (!router->opts.standalone) {
-        /* Standalone mcrouter creates its own event bases */
-        evb = new folly::EventBase();
+        router->proxyThreads_.emplace_back(
+          folly::make_unique<ProxyThread>(std::move(proxy)));
+      } else {
+        router->proxies_.emplace_back(std::move(proxy));
       }
-      proxy = new proxy_t(router, evb,
-                          router->opts, /* perform_stats_logging */ i == 0);
     } catch (...) {
       LOG(ERROR) << "Failed to create proxy";
       mcrouter_free(router);
       return nullptr;
     }
-
-    router->proxy_threads.emplace_back(
-      folly::make_unique<ProxyThread>(std::move(proxy)));
   }
 
   if (!router_configure(router)) {
@@ -479,8 +493,8 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
    * Specifically, we'll run them under proxy servers in main()
    */
   if (!(router->opts.standalone || router->opts.sync)) {
-    for (auto& proxy_thread : router->proxy_threads) {
-      int rc = proxy_thread->spawn();
+    for (auto& pt : router->proxyThreads_) {
+      int rc = pt->spawn();
       if (!rc) {
         LOG(ERROR) << "Failed to start proxy thread";
         mcrouter_free(router);
@@ -489,8 +503,8 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
     }
   }
 
-  for (auto& proxy_thread : router->proxy_threads) {
-    int rc = proxy_thread->proxy->startAwriterThreads(
+  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+    int rc = router->getProxy(i)->startAwriterThreads(
       router->wantRealtimeThreads());
     if (rc != 0) {
       mcrouter_free(router);
@@ -644,9 +658,13 @@ void mcrouter_free(mcrouter_t *router) {
 
   router->joinAuxiliaryThreads();
 
-  for (auto& pt : router->proxy_threads) {
-    pt->stopAndJoin();
+  if (!router->opts.sync) {
+    for (auto& pt : router->proxyThreads_) {
+      pt->stopAndJoin();
+    }
   }
+  router->proxies_.clear();
+  router->proxyThreads_.clear();
 
   if (router->is_linked) {
     {
@@ -786,7 +804,7 @@ void mcrouter_client_assign_proxy(mcrouter_client_t *client) {
   mcrouter_t *router = client->router;
   std::lock_guard<std::mutex> guard(router->next_proxy_mutex);
   FBI_ASSERT(router->next_proxy < router->opts.num_proxies);
-  client->proxy = router->proxy_threads[router->next_proxy]->proxy;
+  client->proxy = router->getProxy(router->next_proxy);
   router->next_proxy = (router->next_proxy + 1) % router->opts.num_proxies;
 }
 
@@ -1028,7 +1046,7 @@ const McrouterOptions& mcrouter_get_opts(mcrouter_t *router) {
 }
 
 int mcrouter_get_stats_age(mcrouter_t *router) {
-  stat_t *stats = router->proxy_threads[0]->proxy->stats;
+  stat_t *stats = router->getProxy(0)->stats;
   return time(nullptr) - stats[start_time_stat].data.int64;
 }
 
@@ -1038,7 +1056,7 @@ int mcrouter_get_stats(mcrouter_t *router,
                        stat_t **stats_ret,
                        size_t *num_stats_ret) {
   stat_t stats[num_stats];
-  proxy_t *proxy = router->proxy_threads[0]->proxy;
+  auto proxy = router->getProxy(0);
 
   {
     std::lock_guard<std::mutex> guard(proxy->stats_lock);
@@ -1060,11 +1078,10 @@ int mcrouter_get_stats(mcrouter_t *router,
   }
 
   if (clear) {
-    for (auto& pr : router->proxy_threads) {
-      {
-        std::lock_guard<std::mutex> guard(pr->proxy->stats_lock);
-        init_stats(pr->proxy->stats);
-      }
+    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+      auto pr = router->getProxy(i);
+      std::lock_guard<std::mutex> guard(pr->stats_lock);
+      init_stats(pr->stats);
     }
   }
 

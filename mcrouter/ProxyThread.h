@@ -9,7 +9,10 @@
 #pragma once
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
+
+#include <folly/io/async/EventBase.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -17,8 +20,7 @@ class proxy_t;
 
 class ProxyThread {
  public:
-  proxy_t* proxy;
-  explicit ProxyThread(proxy_t* proxy_);
+  explicit ProxyThread(std::unique_ptr<proxy_t> pr);
 
   /**
    * Stops the underlyting proxy thread and joins it.
@@ -30,7 +32,12 @@ class ProxyThread {
    */
   int spawn();
 
+  proxy_t& proxy() { return *proxy_; }
+  folly::EventBase& eventBase() { return evb_; }
+
  private:
+  std::unique_ptr<proxy_t> proxy_;
+  folly::EventBase evb_;
   pthread_t thread_handle;
   void *thread_stack;
   std::mutex mux;

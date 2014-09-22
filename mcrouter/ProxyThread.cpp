@@ -16,29 +16,30 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyThread::ProxyThread(proxy_t* proxy_)
-  : proxy(proxy_),
-    thread_handle(0),
-    thread_stack(nullptr),
-    isSafeToDeleteProxy(false) {
+ProxyThread::ProxyThread(std::unique_ptr<proxy_t> pr)
+    : proxy_(std::move(pr)),
+      thread_handle(0),
+      thread_stack(nullptr),
+      isSafeToDeleteProxy(false) {
+  proxy_->attachEventBase(&evb_);
 }
 
 int ProxyThread::spawn() {
   return spawn_thread(&thread_handle,
                       &thread_stack,
                       proxyThreadRunHandler, this,
-                      proxy->router->wantRealtimeThreads());
+                      proxy_->router->wantRealtimeThreads());
 }
 
 void ProxyThread::stopAndJoin() {
-  if (thread_handle && proxy->router->pid == getpid()) {
-    FBI_ASSERT(proxy->request_queue != nullptr);
+  if (thread_handle && proxy_->router->pid == getpid()) {
+    FBI_ASSERT(proxy_->request_queue != nullptr);
     asox_queue_entry_t entry;
     entry.type = request_type_router_shutdown;
     entry.priority = 0;
     entry.data = nullptr;
     entry.nbytes = 0;
-    asox_queue_enqueue(proxy->request_queue, &entry);
+    asox_queue_enqueue(proxy_->request_queue, &entry);
     {
       std::unique_lock<std::mutex> lk(mux);
       isSafeToDeleteProxy = true;
@@ -52,21 +53,20 @@ void ProxyThread::stopAndJoin() {
 }
 
 void ProxyThread::proxyThreadRun() {
-  FBI_ASSERT(proxy->router != nullptr);
-  mcrouter_set_thread_name(pthread_self(), proxy->router->opts, "mcrpxy");
+  FBI_ASSERT(proxy_->router != nullptr);
+  mcrouter_set_thread_name(pthread_self(), proxy_->router->opts, "mcrpxy");
 
-  while(!proxy->router->shutdownStarted()) {
-    mcrouterLoopOnce(proxy->eventBase);
+  while (!proxy_->router->shutdownStarted()) {
+    mcrouterLoopOnce(proxy_->eventBase);
   }
 
-  while (proxy->fiberManager.hasTasks()) {
-    mcrouterLoopOnce(proxy->eventBase);
+  while (proxy_->fiberManager.hasTasks()) {
+    mcrouterLoopOnce(proxy_->eventBase);
   }
 
-  proxy->stopAwriterThreads();
+  proxy_->stopAwriterThreads();
   // Delete the proxy from the proxy thread so that the clients get
   // deleted from the same thread where they were created.
-  folly::EventBase *eventBase = proxy->eventBase;
   std::unique_lock<std::mutex> lk(mux);
   // This is to avoid a race condition where proxy is deleted
   // before the call to stopAndJoin is made.
@@ -74,10 +74,9 @@ void ProxyThread::proxyThreadRun() {
     [this]() {
       return this->isSafeToDeleteProxy;
     });
-  delete proxy;
-  if (eventBase != nullptr) {
-    delete eventBase;
-  }
+
+  /* make sure proxy is deleted on the proxy thread */
+  proxy_.reset();
 }
 
 void *ProxyThread::proxyThreadRunHandler(void *arg) {

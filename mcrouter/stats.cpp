@@ -110,8 +110,8 @@ double stats_rate_value(proxy_t* proxy, int idx) {
     if (stat->aggregate) {
       mcrouter_t* router = proxy->router;
       uint64_t num = 0;
-      for (auto& pr : router->proxy_threads) {
-        num += pr->proxy->stats_num_within_window[idx];
+      for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+        num += router->getProxy(i)->stats_num_within_window[idx];
       }
       rate = (double)num / (proxy->num_bins_used *
                             MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
@@ -302,8 +302,9 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
 
   uint64_t total_mcc_txbuf_reqs = 0;
   uint64_t total_mcc_waiting_replies = 0;
-  for (auto& pr : router->proxy_threads) {
-    auto cnt = pr->proxy->destinationMap->getOutstandingRequestStats();
+  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+    auto cnt = router->getProxy(i)->destinationMap
+      ->getOutstandingRequestStats();
     total_mcc_txbuf_reqs += cnt.first;
     total_mcc_waiting_replies += cnt.second;
   }
@@ -354,8 +355,8 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
   stats[fibers_allocated_stat].data.uint64 = 0;
   stats[fibers_pool_size_stat].data.uint64 = 0;
   stats[fibers_stack_high_watermark_stat].data.uint64 = 0;
-  for (const auto& proxy_thread : router->proxy_threads) {
-    auto pr = proxy_thread->proxy;
+  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+    auto pr = router->getProxy(i);
     stats[fibers_allocated_stat].data.uint64 +=
       pr->fiberManager.fibersAllocated();
     stats[fibers_pool_size_stat].data.uint64 +=
@@ -365,8 +366,8 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
                pr->fiberManager.stackHighWatermark());
     stats[duration_us_stat].data.dbl += pr->durationUs.value();
   }
-  if (!router->proxy_threads.empty()) {
-    stats[duration_us_stat].data.dbl /= router->proxy_threads.size();
+  if (router->opts.num_proxies > 0) {
+    stats[duration_us_stat].data.dbl /= router->opts.num_proxies;
   }
 #ifndef FBCODE_OPT_BUILD
   stats[mc_msg_num_outstanding_stat].data.uint64 =
@@ -375,8 +376,8 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
 
   for (int i = 0; i < num_stats; i++) {
     if (stats[i].aggregate && !(stats[i].group & rate_stats)) {
-      for (auto& proxy_thread : router->proxy_threads) {
-        auto pr = proxy_thread->proxy;
+      for (size_t j = 0; j < router->opts.num_proxies; ++j) {
+        auto pr = router->getProxy(j);
         if (stats[i].type == stat_uint64) {
           stats[i].data.uint64 += pr->stats[i].data.uint64;
         } else if (stats[i].type == stat_int64) {

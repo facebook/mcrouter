@@ -44,7 +44,6 @@ struct mcrouter_t {
    * For non-standalone mcrouter, set to 0.
    */
   char* command_args;
-  std::vector<std::unique_ptr<ProxyThread>> proxy_threads;
   void (*prepare_proxy_server_stats)(proxy_t*);
   pid_t pid;
 
@@ -134,6 +133,18 @@ struct mcrouter_t {
   void subscribeToConfigUpdate();
   void unsubscribeFromConfigUpdate();
 
+  /**
+   * DEPRECATED. Register a proxy with the router;
+   * the router is not responsible for deleting the proxy.
+   */
+  void addNonownedProxy(proxy_t* proxy);
+
+  /**
+   * @return  nullptr if index is >= opts.num_proxies,
+   *          pointer to the proxy otherwise.
+   */
+  proxy_t* getProxy(size_t index);
+
  private:
   ShutdownLock shutdownLock_;
 
@@ -144,8 +155,27 @@ struct mcrouter_t {
 
   std::unordered_map<std::string, std::string> additionalStartupOpts_;
 
+  /**
+   * Exactly one of these vectors will contain opts.num_proxies elements,
+   * others will be empty.
+   *
+   * Standalone/sync mode: we don't startup proxy threads, so mcrouter_t
+   * owns the proxies directly.
+   *
+   * Embedded mode: mcrouter_t owns ProxyThreads, which managed the lifetime
+   * of proxies on their own threads.
+   *
+   * Nonowned proxies is a deprecated mode.
+   */
+  std::vector<std::unique_ptr<proxy_t>> proxies_;
+  std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
+  std::vector<proxy_t*> nonownedProxies_;
+
   void spawnStatUpdaterThread();
   void startObservingRuntimeVarsFile();
+
+  friend mcrouter_t* mcrouter_new(const McrouterOptions&);
+  friend void mcrouter_free(mcrouter_t*);
 };
 
 enum request_entry_type_t {

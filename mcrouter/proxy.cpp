@@ -814,9 +814,8 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
       router->configApi.get(),
       input);
 
-    for (size_t i = 0 ; i < proxyCount; i++) {
-      auto proxy = router->proxy_threads[i]->proxy;
-      newConfigs.push_back(builder.buildConfig(proxy));
+    for (size_t i = 0; i < proxyCount; i++) {
+      newConfigs.push_back(builder.buildConfig(router->getProxy(i)));
     }
   } catch (const std::exception& e) {
     logFailure(router, failure::Category::kInvalidConfig,
@@ -825,7 +824,7 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
   }
 
   for (size_t i = 0; i < proxyCount; i++) {
-    proxy_config_swap(router->proxy_threads[i]->proxy, newConfigs[i]);
+    proxy_config_swap(router->getProxy(i), newConfigs[i]);
   }
 
   VLOG_IF(0, !router->opts.constantly_reload_configs) <<
