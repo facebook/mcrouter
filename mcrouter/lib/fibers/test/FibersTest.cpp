@@ -787,42 +787,52 @@ TEST(FiberManager, whenAny) {
   loopController.loop(std::move(loopFunc));
 }
 
-TEST(FiberManager, runInMainContext) {
-  /* Small stack */
-  FiberManager::Options opts;
-  opts.stackSize = 1024;
+namespace {
+/* Checks that this function was run from a main context,
+   by comparing an address on a stack to a known main stack address
+   and a known related fiber stack address.  The assumption
+   is that fiber stack and main stack will be far enough apart,
+   while any two values on the same stack will be close. */
+void expectMainContext(bool& ran, int* mainLocation, int* fiberLocation) {
+  int here;
+  /* 2 pages is a good guess */
+  constexpr size_t DISTANCE = 0x2000 / sizeof(int);
+  if (fiberLocation) {
+    EXPECT_TRUE(std::abs(&here - fiberLocation) > DISTANCE);
+  }
+  if (mainLocation) {
+    EXPECT_TRUE(std::abs(&here - mainLocation) < DISTANCE);
+  }
 
-  FiberManager manager(folly::make_unique<SimpleLoopController>(), opts);
+  EXPECT_FALSE(ran);
+  ran = true;
+}
+}
+
+TEST(FiberManager, runInMainContext) {
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
   auto& loopController =
     dynamic_cast<SimpleLoopController&>(manager.loopController());
 
-  bool bigStackFuncRun = false;
+  bool checkRan = false;
 
-  auto bigStackFunc = [&]() {
-    int bigArray[1024 * 1024];
+  int mainLocation;
+  manager.runInMainContext(
+    [&]() {
+      expectMainContext(checkRan, &mainLocation, nullptr);
+    });
+  EXPECT_TRUE(checkRan);
 
-    for (size_t i = 0; i < 1024 * 1024; ++i) {
-      bigArray[i] = 0x1234;
-    }
-
-    for (size_t i = 0; i < 1024 * 1024; ++i) {
-      EXPECT_EQ(bigArray[i], 0x1234);
-    }
-
-    EXPECT_FALSE(bigStackFuncRun);
-    bigStackFuncRun = true;
-  };
-
-  manager.runInMainContext(bigStackFunc);
-  EXPECT_TRUE(bigStackFuncRun);
-
-  bigStackFuncRun = false;
+  checkRan = false;
 
   manager.addTask(
-    [&bigStackFunc, &bigStackFuncRun]() {
-      /* Would crash if run in fiber's context */
-      fiber::runInMainContext(bigStackFunc);
-      EXPECT_TRUE(bigStackFuncRun);
+    [&]() {
+      int stackLocation;
+      fiber::runInMainContext(
+        [&]() {
+          expectMainContext(checkRan, &mainLocation, &stackLocation);
+        });
+      EXPECT_TRUE(checkRan);
     }
   );
 
@@ -832,34 +842,17 @@ TEST(FiberManager, runInMainContext) {
     }
   );
 
-  EXPECT_TRUE(bigStackFuncRun);
+  EXPECT_TRUE(checkRan);
 }
 
 TEST(FiberManager, addTaskFinally) {
-  /* Small stack */
-  FiberManager::Options opts;
-  opts.stackSize = 1024;
-
-  FiberManager manager(folly::make_unique<SimpleLoopController>(), opts);
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
   auto& loopController =
     dynamic_cast<SimpleLoopController&>(manager.loopController());
 
-  bool bigStackFuncRun = false;
+  bool checkRan = false;
 
-  auto bigStackFunc = [&]() {
-    int bigArray[1024 * 1024];
-
-    for (size_t i = 0; i < 1024 * 1024; ++i) {
-      bigArray[i] = 0x1234;
-    }
-
-    for (size_t i = 0; i < 1024 * 1024; ++i) {
-      EXPECT_EQ(bigArray[i], 0x1234);
-    }
-
-    EXPECT_FALSE(bigStackFuncRun);
-    bigStackFuncRun = true;
-  };
+  int mainLocation;
 
   manager.addTaskFinally(
     [&]() {
@@ -868,11 +861,11 @@ TEST(FiberManager, addTaskFinally) {
     [&](Try<int>&& result) {
       EXPECT_EQ(result.value(), 1234);
 
-      /* Would crash if run in fiber's context */
-      bigStackFunc();
-      EXPECT_TRUE(bigStackFuncRun);
+      expectMainContext(checkRan, &mainLocation, nullptr);
     }
   );
+
+  EXPECT_FALSE(checkRan);
 
   loopController.loop(
     [&]() {
@@ -880,7 +873,7 @@ TEST(FiberManager, addTaskFinally) {
     }
   );
 
-  EXPECT_TRUE(bigStackFuncRun);
+  EXPECT_TRUE(checkRan);
 }
 
 TEST(FiberManager, fibersPoolWithinLimit) {
