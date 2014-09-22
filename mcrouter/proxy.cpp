@@ -277,6 +277,10 @@ void proxy_t::stopAwriterThreads() {
 
 /** drain and delete proxy object */
 proxy_t::~proxy_t() {
+  if (async_fd) {
+    countedfd_decref(async_fd);
+  }
+
   destinationMap.reset();
 
   being_destroyed = true;

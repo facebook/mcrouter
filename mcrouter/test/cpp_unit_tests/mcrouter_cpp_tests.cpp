@@ -29,6 +29,8 @@ using namespace boost::filesystem;
 using namespace facebook::memcache::mcrouter;
 using namespace std;
 
+using facebook::memcache::createMcMsgRef;
+using facebook::memcache::McMsgRef;
 using facebook::memcache::McReply;
 using facebook::memcache::McrouterOptions;
 
@@ -38,27 +40,16 @@ const std::string kAlreadyRepliedConfig =
 #define MEMCACHE_CONFIG "mcrouter/test/test_ascii.json"
 #define MEMCACHE_ROUTE "/././"
 
-mc_msg_t *new_get_req(const char *key) {
-  mc_msg_t *msg = mc_msg_new(strlen(key)+1);
+McMsgRef new_get_req(const char *key) {
+  auto msg = createMcMsgRef(key);
   msg->op = mc_op_get;
-  strcpy(reinterpret_cast<char*>(&msg[1]), key);
-  msg->key = nstring_of(reinterpret_cast<char*>(&msg[1]));
-  return msg;
+  return std::move(msg);
 }
 
-mc_msg_t *new_del_req(const char *key) {
-  mc_msg_t *msg = mc_msg_new(strlen(key)+1);
+McMsgRef new_del_req(const char *key) {
+  auto msg = createMcMsgRef(key);
   msg->op = mc_op_delete;
-  strcpy(reinterpret_cast<char*>(&msg[1]), key);
-  msg->key = nstring_of(reinterpret_cast<char*>(&msg[1]));
-  return msg;
-}
-
-void clean_msg_vectors(vector<mc_msg_t*> &msgs) {
-  for (vector<mc_msg_t*>::iterator it = msgs.begin(); it != msgs.end(); it++) {
-    mc_msg_decref(*it);
-  }
-  msgs.clear();
+  return std::move(msg);
 }
 
 void on_reply(mcrouter_client_t *client,
@@ -69,7 +60,7 @@ void on_reply(mcrouter_client_t *client,
 }
 
 void mcrouter_send_helper(mcrouter_client_t *client,
-                          const vector<mc_msg_t*>& reqs,
+                          const vector<McMsgRef>& reqs,
                           vector<McReply> &replies) {
   vector<mc_msg_t*> ret;
   int n = reqs.size();
@@ -77,7 +68,7 @@ void mcrouter_send_helper(mcrouter_client_t *client,
 
   mcrouter_msg_t *r_msgs = new mcrouter_msg_t[n];
   for (int i = 0; i < n; i++) {
-    r_msgs[i].req = reqs[i];
+    r_msgs[i].req = const_cast<mc_msg_t*>(reqs[i].get());
     r_msgs[i].reply = McReply(mc_res_unknown);
     r_msgs[i].context = &r_msgs[i];
   }
@@ -143,7 +134,8 @@ void test_disconnect_callback(bool thread_safe_callbacks) {
 
   const char test_key[] = "test_key_disconnect";
   vector<mcrouter_msg_t> reqs(1);
-  reqs.back().req = new_get_req(test_key);
+  auto msg = new_get_req(test_key);
+  reqs.back().req = const_cast<mc_msg_t*>(msg.get());
   reqs.back().reply = McReply(mc_res_unknown);
 
   mcrouter_send(client, reqs.data(), reqs.size());
@@ -207,10 +199,12 @@ TEST(mcrouter, fork) {
   const char parent_key[] = "libmcrouter_test:fork:parent";
   const char child_key[] = "libmcrouter_test:fork:child";
 
-  vector<mc_msg_t*> preqs;
+  vector<McMsgRef> preqs;
   vector<McReply> preplies;
   preqs.push_back(new_get_req(parent_key));
   mcrouter_send_helper(client, preqs, preplies);
+
+  mcrouter_client_disconnect(client);
 
   free_all_libmcrouters();
 
@@ -230,7 +224,7 @@ TEST(mcrouter, fork) {
     0, false);
   EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
 
-  vector<mc_msg_t*> reqs;
+  vector<McMsgRef> reqs;
   vector<McReply> replies;
   if (pid) { // parent
     close(fds[1]);
@@ -241,7 +235,6 @@ TEST(mcrouter, fork) {
     reqs.push_back(new_get_req(child_key));
     mcrouter_send_helper(client, reqs, replies);
   }
-  clean_msg_vectors(reqs);
   mcrouter_client_disconnect(client);
 
   mcrouter_free(router);
@@ -277,7 +270,7 @@ TEST(mcrouter, already_replied_failed_delete) {
       nullptr, 0, false);
   EXPECT_TRUE(client != nullptr);
 
-  vector<mc_msg_t*> reqs;
+  vector<McMsgRef> reqs;
   vector<McReply> replies;
   reqs.push_back(new_del_req("abc"));
   mcrouter_send_helper(client, reqs, replies);

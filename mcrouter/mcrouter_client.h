@@ -78,6 +78,8 @@ struct mcrouter_client_t {
 
   mcrouter_client_t(const mcrouter_client_t&) = delete;
   mcrouter_client_t& operator=(const mcrouter_client_t&) = delete;
+
+  ~mcrouter_client_t();
 };
 
 mcrouter_client_t* mcrouter_client_incref(mcrouter_client_t* client);

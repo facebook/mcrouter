@@ -127,6 +127,15 @@ awriter_t::awriter_t(unsigned limit)
   TAILQ_INIT(&entries);
 }
 
+awriter_t::~awriter_t() {
+  /* The writer is inactive, so complete all pending requests with error. */
+  while (!TAILQ_EMPTY(&entries)) {
+    auto e = TAILQ_FIRST(&entries);
+    TAILQ_REMOVE(&entries, e, links);
+    e->callbacks->completed(e, EPIPE);
+  }
+}
+
 void awriter_stop(awriter_t *w) {
   if (!w) {
     return;
@@ -164,7 +173,7 @@ static void countedfd_incref(countedfd_t *cfd) {
   __sync_add_and_fetch(&cfd->refcount, 1);
 }
 
-static void countedfd_decref(countedfd_t *cfd) {
+void countedfd_decref(countedfd_t *cfd) {
   if (!__sync_sub_and_fetch(&cfd->refcount, 1)) {
     close(cfd->fd);
     free(cfd);

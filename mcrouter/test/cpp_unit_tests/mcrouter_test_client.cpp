@@ -245,5 +245,7 @@ void MCRouterTestClient::stats(dynamic& out_stats, bool clear) {
         break;
     }
   }
+
+  free(stats);
 }
 #pragma GCC diagnostic pop

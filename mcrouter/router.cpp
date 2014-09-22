@@ -596,7 +596,6 @@ static void mcrouter_client_cleanup(mcrouter_client_t *client) {
        for the already deleted queue */
     asox_queue_remote_disconnect(client->reply_queue);
   }
-  asox_queue_del(client->reply_queue);
   {
     std::lock_guard<std::mutex> guard(client->router->client_list_lock);
     TAILQ_REMOVE(&client->router->client_list, client, entry);
@@ -822,6 +821,10 @@ mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
                                                     nonblocking);
 
   return client;
+}
+
+mcrouter_client_t::~mcrouter_client_t() {
+  asox_queue_del(reply_queue);
 }
 
 mcrouter_client_t::mcrouter_client_t(

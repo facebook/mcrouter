@@ -87,6 +87,8 @@ int createListenSocket() {
   CHECK(!bind(listen_socket, res->ai_addr, res->ai_addrlen));
   CHECK(!listen(listen_socket, SOMAXCONN));
 
+  freeaddrinfo(res);
+
   return listen_socket;
 }
 
@@ -118,6 +120,8 @@ int connectToLocalPort(uint16_t port) {
 
   CHECK(client_socket >= 0);
   CHECK(!connect(client_socket, res->ai_addr, res->ai_addrlen));
+
+  freeaddrinfo(res);
 
   return client_socket;
 }
@@ -214,13 +218,13 @@ static void premature_disconnect_common(bool use_client_event_base) {
 
 
   for (int i = 0; i < 10; i++) {
-    int* myint = (int*) calloc(1, sizeof(int));
+    int myint;
     folly::EventBase eventBase;
     mcrouter_client_t *client = mcrouter_client_new(
       router,
       use_client_event_base ? &eventBase : nullptr,
       {on_reply, nullptr},
-      (void*) myint, 0, false);
+      (void*) &myint, 0, false);
 
     const char key[] = "adi:unit_test:key";
     mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
@@ -230,12 +234,12 @@ static void premature_disconnect_common(bool use_client_event_base) {
     mc_msg->op = mc_op_get;
     mcrouter_msg_t router_msg;
     router_msg.req = mc_msg;
-    *myint = 42;
+    myint = 42;
     mcrouter_send(client, &router_msg, 1);
     mc_msg_decref(mc_msg);
     mcrouter_client_disconnect(client);
     // pretend to free by setting the value to 0;
-    *myint = 0;
+    myint = 0;
 
     if (use_client_event_base) {
       // event_base_loop() returns 1 only when there is no event attached to
@@ -305,6 +309,7 @@ TEST(libmcrouter, standalone) {
   mcrouter_t *router2 = mcrouter_init("standalone_test", opts);
   EXPECT_TRUE(router != router2);
 
+  mcrouter_client_disconnect(client);
   mcrouter_free(router);
   mcrouter_free(router2);
 }

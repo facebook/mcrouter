@@ -38,6 +38,7 @@ struct awriter_t {
   TAILQ_HEAD(awriter_entry_head, awriter_entry_t) entries;
 
   explicit awriter_t(unsigned limit);
+  ~awriter_t();
 };
 
 void awriter_stop(awriter_t *w);
