@@ -144,8 +144,8 @@ libmcrouter_a_SOURCES = \
   network/ConnectionOptions.h \
   network/McParser.cpp \
   network/McParser.h \
-  network/McProtocolSerializer.cpp \
-  network/McProtocolSerializer.h \
+  network/McSerializedRequest.cpp \
+  network/McSerializedRequest.h \
   network/McServerRequestContext-inl.h \
   network/McServerRequestContext.cpp \
   network/McServerRequestContext.h \
