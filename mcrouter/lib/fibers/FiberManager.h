@@ -44,19 +44,20 @@ class LoopController;
 class FiberManager {
  public:
   struct Options {
-    /**
-     * Maximum stack size for fibers which will be used for executing all the
-     * tasks.
-     */
-#ifdef __SANITIZE_ADDRESS__
+#ifdef FOLLY_SANITIZE_ADDRESS
     /* ASAN needs a lot of extra stack space.
        16x is a conservative estimate, 8x also worked with tests
        where it mattered.  Note that overallocating here does not necessarily
        increase RSS, since unused memory is pretty much free. */
-    size_t stackSize{16 * 16 * 1024};
+    static constexpr size_t kDefaultStackSize{16 * 16 * 1024};
 #else
-    size_t stackSize{16 * 1024};
+    static constexpr size_t kDefaultStackSize{16 * 1024};
 #endif
+    /**
+     * Maximum stack size for fibers which will be used for executing all the
+     * tasks.
+     */
+    size_t stackSize{kDefaultStackSize};
 
     /**
      * Record exact amount of stack used.

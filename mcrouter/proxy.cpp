@@ -119,15 +119,7 @@ namespace {
 
 FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
   FiberManager::Options fmOpts;
-#ifdef __SANITIZE_ADDRESS__
-  /* ASAN needs a lot of extra stack space.
-     16x is a conservative estimate, 8x also worked with tests
-     where it mattered.  Note that overallocating here does not necessarily
-     increase RSS, since unused memory is pretty much free. */
-  fmOpts.stackSize = opts.fibers_stack_size * 16;
-#else
   fmOpts.stackSize = opts.fibers_stack_size;
-#endif
   fmOpts.debugRecordStackUsed = opts.fibers_debug_record_stack_size;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
   return fmOpts;
