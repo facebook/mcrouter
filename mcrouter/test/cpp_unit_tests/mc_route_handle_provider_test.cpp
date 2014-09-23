@@ -49,14 +49,6 @@ static const std::string kConstShard =
   "hash_func": "ConstShard"
  })";
 
-static const std::string kShard =
- R"({
-  "type": "HashRoute",
-  "children": "ErrorRoute",
-  "hash_func": "Shard",
-  "shard_map" : { "0": 0 }
- })";
-
 static const std::string kWarmUp =
  R"({
    "type": "WarmUpRoute",
@@ -105,12 +97,6 @@ TEST(McRouteHandleProviderTest, invalid_func) {
     return;
   }
   FAIL() << "No exception thrown";
-}
-
-TEST(McRouteHandleProviderTest, obj_func) {
-  auto rh = getRoute(folly::parseJson(kShard));
-  EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "hash");
 }
 
 TEST(McRouteHandleProvider, warmup) {

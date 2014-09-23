@@ -12,7 +12,6 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/lib/Ch3HashFunc.h"
 
 namespace folly {
@@ -34,24 +33,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
  *         otherwise returns false and doesn't change shardId.
  */
 bool getShardId(folly::StringPiece key, folly::StringPiece& shardId);
-
-class ShardHashFunc {
- public:
-  ShardHashFunc(StringKeyedUnorderedMap<size_t> shardMap, size_t n);
-
-  ShardHashFunc(const folly::dynamic& json, size_t n);
-
-  size_t operator()(folly::StringPiece key) const;
-
-  static std::string type() { return "Shard"; }
-
- private:
-  StringKeyedUnorderedMap<size_t> shardMap_;
-  size_t n_;
-  Ch3HashFunc ch3_;
-
-  bool shardLookup(folly::StringPiece key, size_t* result) const;
-};
 
 /**
  * Shard hash function for const sharding. This function

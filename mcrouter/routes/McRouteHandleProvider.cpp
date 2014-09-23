@@ -279,10 +279,6 @@ McrouterRouteHandlePtr McRouteHandleProvider::createHash(
                            ConstShardHashFunc>(
       json, std::move(children));
   }
-  if (funcType == ShardHashFunc::type()) {
-    return makeRouteHandle<McrouterRouteHandleIf, HashRoute, ShardHashFunc>(
-      json, std::move(children));
-  }
 
   auto ret = RouteHandleProvider<McrouterRouteHandleIf>::createHash(
     funcType, json, std::move(children));

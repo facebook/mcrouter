@@ -10,17 +10,32 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.McrouterTestCase import McrouterTestCase
-from mcrouter.test.test_shard_map import EchoServer
-
 from collections import defaultdict
+from functools import reduce
+
+from mcrouter.test.mock_servers import MockServer
+from mcrouter.test.McrouterTestCase import McrouterTestCase
+
+class EchoServer(MockServer):
+    """A server that responds to get requests with its port number.
+    """
+
+    def runServer(self, client_socket, client_address):
+        while not self.is_stopped():
+            cmd = client_socket.recv(1000)
+            if not cmd:
+                return
+            if cmd.startswith('get'):
+                client_socket.send('VALUE hit 0 %d\r\n%s\r\nEND\r\n' %
+                                   (len(str(self.port)), str(self.port)))
+
 
 class TestWCH3(McrouterTestCase):
     config = './mcrouter/test/test_wch3.json'
     extra_args = []
 
     def setUp(self):
-        for i in xrange(8):
+        for i in range(8):
             self.add_server(EchoServer())
 
         self.mcrouter = self.add_mcrouter(

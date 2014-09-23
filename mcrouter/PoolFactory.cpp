@@ -444,8 +444,6 @@ PoolFactory::parsePool(const string& pool_name_str,
         pool->hash = proxy_hash_crc32;
       } else if (strcasecmp("latest", str) == 0) {
         pool->hash = proxy_hash_latest;
-      } else if (strcasecmp("shard", str) == 0) {
-        pool->hash = proxy_hash_shard;
       } else if (strcasecmp("const_shard", str) == 0) {
         pool->hash = proxy_hash_const_shard;
       } else if (strcasecmp("wch3", str) == 0) {
@@ -605,24 +603,6 @@ PoolFactory::parsePool(const string& pool_name_str,
 
       pool->clients.push_back(std::move(client));
     } // servers
-
-    // shard map
-    it = jpool.find("shard_map");
-    if (it != jpool.items().end()) {
-      dynamic jshard_map = jpool["shard_map"];
-      DYNAMIC_EXPECT(jshard_map, dynamic::Type::OBJECT, "shard_map");
-
-      for (auto& jiter : jshard_map.items()) {
-        auto key = jiter.first.asString().toStdString();
-        auto index = jiter.second.asInt();
-        if (index < 0 || size_t(index) >= pool->clients.size()) {
-          LOG(ERROR) << "Invalid shard_map entry for pool " <<
-            pool->getName() << "\"" << key << "\": " << index;
-        } else {
-          pool->shard_map.emplace(std::move(key), index);
-        }
-      }
-    }
 
     // shard splits
     it = jpool.find("shard_splits");

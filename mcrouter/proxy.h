@@ -82,10 +82,9 @@ enum proxy_hash_policy_t {
   proxy_hash_ch2 = 1,
   proxy_hash_ch3 = 2,
   proxy_hash_latest = 3,
-  proxy_hash_shard = 4,
-  proxy_hash_const_shard = 5,
-  proxy_hash_wch3 = 6,
-  proxy_hash_unknown = 7,
+  proxy_hash_const_shard = 4,
+  proxy_hash_wch3 = 5,
+  proxy_hash_unknown = 6,
 };
 
 enum reply_state_t {
@@ -318,7 +317,6 @@ class ProxyPool : public ProxyGenericPool {
   int delete_time;
   std::string hash_salt;
   std::unique_ptr<WeightedCh3HashFunc> wch3_func;
-  StringKeyedUnorderedMap<size_t> shard_map;
   std::unique_ptr<ShardSplitter> shardSplitter;
   timeval_t timeout;
   int keep_routing_prefix;

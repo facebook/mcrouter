@@ -38,12 +38,6 @@ makeRouteHandle<mcrouter::McrouterRouteHandleIf, HashRoute,
   const folly::dynamic&,
   std::vector<std::shared_ptr<mcrouter::McrouterRouteHandleIf>>&&);
 
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, HashRoute,
-                mcrouter::ShardHashFunc>(
-  const folly::dynamic&,
-  std::vector<std::shared_ptr<mcrouter::McrouterRouteHandleIf>>&&);
-
 namespace mcrouter {
 
 McrouterRouteHandlePtr makeHashRouteCrc32(
@@ -70,20 +64,6 @@ McrouterRouteHandlePtr makeHashRouteCh3(
     std::move(rh),
     salt,
     Ch3HashFunc(n));
-}
-
-McrouterRouteHandlePtr makeHashRouteShard(
-  std::string name,
-  std::vector<McrouterRouteHandlePtr> rh,
-  const std::string& salt,
-  StringKeyedUnorderedMap<size_t> shard_map) {
-
-  auto n = rh.size();
-  return makeMcrouterRouteHandle<HashRoute, ShardHashFunc>(
-    std::move(name),
-    std::move(rh),
-    salt,
-    ShardHashFunc(std::move(shard_map), n));
 }
 
 McrouterRouteHandlePtr makeHashRouteConstShard(

@@ -8,15 +8,13 @@
  */
 #pragma once
 
-#include "folly/Range.h"
+#include <folly/Range.h>
+
 #include "mcrouter/lib/McMsgRef.h"
-#include "mcrouter/lib/fbi/nstring.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class proxy_t;
-class ProxyGenericPool;
-class ProxyPool;
 
 enum proxy_send_stat_result_t {
   PROXY_SEND_OK = 0,
@@ -41,13 +39,5 @@ bool match_pattern_route(folly::StringPiece pattern,
 bool match_routing_key_hash(uint32_t routingKeyHash,
     double start_key_fraction,
     double end_key_fraction);
-
-/* return the index of the server in pool, where request with key should be sent
-   to. -1 is returned on error.
-   NOTE: 1. if needed, hashtable contains salt already. */
-int get_server_index_in_pool(const ProxyPool* pool,
-                             const nstring_t hashable);
-
-ProxyPool* pick_pool(ProxyGenericPool* generic_pool);
 
 }}} // facebook::memcache::mcrouter
