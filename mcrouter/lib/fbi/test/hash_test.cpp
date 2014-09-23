@@ -122,7 +122,7 @@ TEST(ch3, verify_correctness) {
   uint32_t i, j;
   uint32_t maximum_pool_size = furc_maximum_pool_size();
   char key[MAX_KEY_LENGTH + 1];
-  uint64_t *pools[NUM_POOLS];
+  std::vector<uint64_t> pools[NUM_POOLS];
   uint32_t sizes[NUM_POOLS];
   size_t num_pools;
 
@@ -144,10 +144,7 @@ TEST(ch3, verify_correctness) {
       sizes[num_pools] = maximum_pool_size;
     }
 
-    pools[num_pools] = (uint64_t*)
-      calloc(sizes[num_pools], sizeof *(pools[num_pools]));
-    EXPECT_TRUE(pools[num_pools] != nullptr);
-    assert(pools[num_pools]);
+    pools[num_pools] = std::vector<uint64_t>(sizes[num_pools]);
 
     if (sizes[num_pools] == maximum_pool_size) break;
   }
@@ -208,8 +205,6 @@ TEST(ch3, verify_correctness) {
     double stddev = sqrt(sum / pool_size);
     // expect the standard deviation to be < 5%
     EXPECT_NEAR(stddev, 0, mean * 0.05);
-
-    free(pools[i]);
   }
 }
 
@@ -224,10 +219,8 @@ TEST(ch3, timing) {
   unsigned i;
   struct timeval lstart, lend;
   uint64_t start, end;
-  char* const keys = (char*)malloc((MAX_KEY_LENGTH + 1) * NUM_LOOKUPS);
+  std::vector<char> keys((MAX_KEY_LENGTH + 1) * NUM_LOOKUPS);
   char* keys_itr;
-  EXPECT_TRUE(keys != nullptr);
-  assert(keys);
 
   printf("Servers:\t\t%d\n", NUM_SERVERS);
   printf("Lookups:\t\t%d\n", NUM_LOOKUPS);
@@ -236,7 +229,7 @@ TEST(ch3, timing) {
   fflush(stdout);
 
   srand(time(nullptr));
-  for (i = 0, keys_itr = keys;
+  for (i = 0, keys_itr = keys.data();
        i < NUM_LOOKUPS;
        ++i, keys_itr += MAX_KEY_LENGTH + 1) {
     make_random_key(keys_itr, MAX_KEY_LENGTH);
@@ -247,7 +240,7 @@ TEST(ch3, timing) {
   fflush(stdout);
 
   gettimeofday(&lstart, nullptr);
-  for (i = 0, keys_itr = keys;
+  for (i = 0, keys_itr = keys.data();
        i < NUM_LOOKUPS;
        ++i, keys_itr += MAX_KEY_LENGTH + 1) {
     uint32_t hash_code = crc32_hash(keys_itr, strlen(keys_itr));
@@ -269,7 +262,7 @@ TEST(ch3, timing) {
   fflush(stdout);
 
   gettimeofday(&lstart, nullptr);
-  for (i = 0, keys_itr = keys;
+  for (i = 0, keys_itr = keys.data();
        i < NUM_LOOKUPS;
        ++i, keys_itr += MAX_KEY_LENGTH + 1) {
     auto res = furc_hash(keys_itr, strlen(keys_itr), NUM_SERVERS);

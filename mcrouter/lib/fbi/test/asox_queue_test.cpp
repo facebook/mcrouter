@@ -473,6 +473,7 @@ TEST(libasox_queuetest, disconnect_from_callback) {
                       asox_queue_entry_t* e,
                       void* arg) {
       asox_queue_disconnect(q);
+      delete (int*)(e->data);
       auto running = reinterpret_cast<std::atomic<bool>*>(arg);
       *running = false;
     }
@@ -504,4 +505,5 @@ TEST(libasox_queuetest, disconnect_from_callback) {
     EXPECT_TRUE(base.loopOnce());
   }
   client.join();
+  asox_queue_del(q);
 }
