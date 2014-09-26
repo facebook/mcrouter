@@ -50,7 +50,7 @@ class ShardSplitRoute {
       return rh_->couldRouteTo(req, Operation());
     }
     if (GetLike<Operation>::value) {
-      size_t i = req.routingKeyHash() % cnt;
+      size_t i = globals::hostid() % cnt;
       if (i == 0) {
         return rh_->couldRouteTo(req, Operation());
       }
@@ -73,7 +73,7 @@ class ShardSplitRoute {
 
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
-    size_t i = req.routingKeyHash() % cnt;
+    size_t i = globals::hostid() % cnt;
     if (i == 0) {
       return rh_->route(req, Operation());
     }

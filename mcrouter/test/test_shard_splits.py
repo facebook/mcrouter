@@ -28,12 +28,6 @@ class TestShardSplits(McrouterTestCase):
             self.config,
             extra_args=self.extra_args)
 
-        # Test shard_splits entries
-        resp = mcrouter.get('__mcrouter__.route(get,a:1:foo)')
-        self.assertIn(str(self.get_open_ports()[4]), resp)
-        resp = mcrouter.get('__mcrouter__.route(get,a:1:bar)')
-        self.assertIn(str(self.get_open_ports()[2]), resp)
-
         # Test set, get, direct get (by split shard id)
         self.assertTrue(mcrouter.set('a:1:blah', 'value'))
         time.sleep(0.1)
