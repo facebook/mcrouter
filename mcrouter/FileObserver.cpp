@@ -38,13 +38,13 @@ bool FileObserver::startObserving(const std::string& filePath,
 
     onUpdate(provider->load());
   } catch (const std::exception& e) {
-    LOG(INFO) << "Can not start watching " << filePath <<
-                 " for modifications: " << e.what();
+    VLOG(0) << "Can not start watching " << filePath <<
+               " for modifications: " << e.what();
     checkAndExecuteFallbackOnError(fallbackOnError);
     return false;
   }
 
-  LOG(INFO) << "Watching " << filePath << " for modifications.";
+  VLOG(0) << "Watching " << filePath << " for modifications.";
   taskScheduler.scheduleTask(
     /* tmo_ms = */ pollPeriodMs,
     [onUpdate, fallbackOnError, sleepBeforeUpdateMs, provider]

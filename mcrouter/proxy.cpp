@@ -896,7 +896,7 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
     proxy_config_swap(router->proxy_threads[i]->proxy, newConfigs[i]);
   }
 
-  LOG_IF(INFO, !router->opts.constantly_reload_configs) <<
+  VLOG_IF(0, !router->opts.constantly_reload_configs) <<
       "reconfigured " << proxyCount << " proxies with " <<
       newConfigs[0]->clientsMap().size() << " clients and " <<
       newConfigs[0]->poolsMap().size() << " pools (" <<
