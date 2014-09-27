@@ -10,7 +10,8 @@
 
 #include <string>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 using folly::dynamic;

@@ -11,7 +11,8 @@
 #include <map>
 #include <utility>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 

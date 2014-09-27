@@ -13,7 +13,8 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/io/IOBuf.h"
+#include <folly/io/IOBuf.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"

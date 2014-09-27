@@ -36,12 +36,12 @@
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/lib/fbi/error.h"
-#include "mcrouter/lib/fbi/fb_cpu_util.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
+#include "mcrouter/lib/fbi/error.h"
+#include "mcrouter/lib/fbi/fb_cpu_util.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/router.h"

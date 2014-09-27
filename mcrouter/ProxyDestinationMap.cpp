@@ -8,15 +8,15 @@
  */
 #include "ProxyDestinationMap.h"
 
-#include <folly/Memory.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/Memory.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/asox_timer.h"
-#include "mcrouter/ProxyDestination.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/_router.h"
+#include "mcrouter/lib/fbi/asox_timer.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyClientCommon.h"
+#include "mcrouter/ProxyDestination.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

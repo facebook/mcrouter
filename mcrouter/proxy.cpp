@@ -18,9 +18,6 @@
 
 #include <boost/regex.hpp>
 
-#include <mcrouter/config-impl.h>
-#include <mcrouter/config.h>
-
 #include <folly/DynamicConverter.h>
 #include <folly/FileUtil.h>
 #include <folly/Format.h>
@@ -29,6 +26,18 @@
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 
+#include "mcrouter/_router.h"
+#include "mcrouter/async.h"
+#include "mcrouter/config-impl.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fbi/nstring.h"
+#include "mcrouter/lib/fbi/queue.h"
+#include "mcrouter/lib/fbi/timer.h"
+#include "mcrouter/lib/fibers/EventBaseLoopController.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/options.h"
+#include "mcrouter/priorities.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
@@ -37,22 +46,12 @@
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/RuntimeVarsData.h"
-#include "mcrouter/ServiceInfo.h"
-#include "mcrouter/_router.h"
-#include "mcrouter/async.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/nstring.h"
-#include "mcrouter/lib/fbi/queue.h"
-#include "mcrouter/lib/fbi/timer.h"
-#include "mcrouter/lib/fibers/EventBaseLoopController.h"
-#include "mcrouter/options.h"
-#include "mcrouter/priorities.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShardSplitter.h"
+#include "mcrouter/RuntimeVarsData.h"
+#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/stats.h"
 
 using folly::wangle::Try;

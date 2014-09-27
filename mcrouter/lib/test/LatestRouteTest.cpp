@@ -11,10 +11,11 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/Hash.h"
+#include <folly/Hash.h>
+
+#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
-#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/routes/LatestRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 

@@ -8,7 +8,8 @@
  */
 #pragma once
 
-#include "folly/Likely.h"
+#include <folly/Likely.h>
+
 #include "mcrouter/lib/fibers/LoopController.h"
 
 namespace facebook { namespace memcache {

@@ -9,7 +9,8 @@
 #include <iostream>
 #include <queue>
 
-#include "folly/Memory.h"
+#include <folly/Memory.h>
+
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/fibers/SimpleLoopController.h"
 

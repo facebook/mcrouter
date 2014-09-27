@@ -12,13 +12,13 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
-#include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
-using namespace facebook::memcache::mcrouter;
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 using std::string;

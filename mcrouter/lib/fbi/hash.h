@@ -10,9 +10,10 @@
 #if !defined(_facebook_ch_hash_h_)
 #define _facebook_ch_hash_h_
 
-#include <sys/types.h>
 #include <inttypes.h>
-#include "decls.h"
+#include <sys/types.h>
+
+#include "mcrouter/lib/fbi/decls.h"
 
 __BEGIN_DECLS
 

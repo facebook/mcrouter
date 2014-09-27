@@ -9,10 +9,10 @@
 #ifndef FB_MEMCACHE_MC_MSG_H
 #define FB_MEMCACHE_MC_MSG_H
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <inttypes.h>
 #include <netinet/in.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/fbi/nstring.h"

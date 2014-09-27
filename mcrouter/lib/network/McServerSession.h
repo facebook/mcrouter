@@ -8,10 +8,11 @@
  */
 #pragma once
 
+#include <thrift/lib/cpp/async/TAsyncTransport.h>
+
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/McServerTransaction.h"
-#include "thrift/lib/cpp/async/TAsyncTransport.h"
 
 namespace facebook { namespace memcache {
 

@@ -10,15 +10,16 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/FileUtil.h"
-#include "folly/experimental/TestUtil.h"
+#include <folly/experimental/TestUtil.h>
+#include <folly/FileUtil.h>
+
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/options.h"
 
-using folly::test::TemporaryFile;
 using facebook::memcache::McrouterOptions;
 using facebook::memcache::mcrouter::ConfigApi;
 using facebook::memcache::mcrouter::ConfigType;
+using folly::test::TemporaryFile;
 
 TEST(ConfigApi, file_change) {
   TemporaryFile config("config_api_test");

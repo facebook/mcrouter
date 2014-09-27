@@ -12,7 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fibers/AddTasks.h"
 #include "mcrouter/lib/routes/NullRoute.h"

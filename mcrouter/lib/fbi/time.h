@@ -8,12 +8,10 @@
  */
 #ifndef FBI_TIME_H
 #define FBI_TIME_H
-
 /** timeval inline functions */
-
 #include <stdint.h>
-#include <sys/types.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 typedef struct timeval timeval_t;
 

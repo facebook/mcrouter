@@ -9,6 +9,8 @@
 #ifndef FBI_FB_CPU_UTIL
 #define FBI_FB_CPU_UTIL
 
+#include <stdint.h>
+
 __BEGIN_DECLS
 
 extern double get_cpu_frequency(void);

@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include "mcrouter/proxy.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
@@ -16,6 +15,7 @@
 #include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/lib/routes/HashRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/proxy.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

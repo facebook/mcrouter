@@ -9,12 +9,13 @@
 #include <string>
 #include <vector>
 
-#include <gtest/gtest.h>
 #include <glog/logging.h>
+#include <gtest/gtest.h>
 
-#include "folly/FileUtil.h"
-#include "folly/Range.h"
-#include "folly/json.h"
+#include <folly/FileUtil.h>
+#include <folly/json.h>
+#include <folly/Range.h>
+
 #include "mcrouter/lib/config/ConfigPreprocessor.h"
 #include "mcrouter/lib/config/ImportResolverIf.h"
 

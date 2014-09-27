@@ -12,8 +12,8 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
+#include "mcrouter/ProxyClientCommon.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

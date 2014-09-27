@@ -8,8 +8,9 @@
  */
 #include "SessionTestHarness.h"
 
+#include <thrift/lib/cpp/transport/TSocketAddress.h>
+
 #include "mcrouter/lib/network/McServerSession.h"
-#include "thrift/lib/cpp/transport/TSocketAddress.h"
 
 using apache::thrift::async::WriteFlags;
 

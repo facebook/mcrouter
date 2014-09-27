@@ -6,11 +6,11 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include <unistd.h>
-#include <pthread.h>
-#include <sys/time.h>
-#include <signal.h>
 #include <fcntl.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include <gtest/gtest.h>
 

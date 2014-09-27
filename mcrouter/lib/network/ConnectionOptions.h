@@ -10,8 +10,9 @@
 
 #include <chrono>
 
+#include <thrift/lib/cpp/async/TAsyncSocket.h>
+
 #include "mcrouter/lib/mc/protocol.h"
-#include "thrift/lib/cpp/async/TAsyncSocket.h"
 
 namespace apache { namespace thrift { namespace transport {
 class SSLContext;

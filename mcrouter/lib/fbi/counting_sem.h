@@ -8,7 +8,6 @@
  */
 #ifndef FBI_COUNTING_SEM_H
 #define FBI_COUNTING_SEM_H
-
 /**
  * A counting semaphore.
  *
@@ -39,9 +38,9 @@
  * We need a state distinct from '0' to avoid calling wake
  * in the uncontented case.
  */
-
 #include <stdint.h>
-#include "decls.h"
+
+#include "mcrouter/lib/fbi/decls.h"
 
 __BEGIN_DECLS
 

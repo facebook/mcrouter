@@ -8,23 +8,23 @@
  */
 #include <gtest/gtest.h>
 
-#include <folly/Memory.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/Memory.h>
 
-#include "mcrouter/ProxyThread.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyThread.h"
 #include "mcrouter/router.h"
-#include "mcrouter/lib/McMsgRef.h"
 
 using namespace facebook::memcache::mcrouter;
 
+using facebook::memcache::McMsgRef;
 using facebook::memcache::McReply;
 using facebook::memcache::McrouterOptions;
-using facebook::memcache::McMsgRef;
 
 int response_count, down_count, may_send_count, remove_count;
 

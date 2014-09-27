@@ -10,7 +10,8 @@
 
 #include <string>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/OperationTraits.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

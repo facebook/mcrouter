@@ -6,16 +6,17 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
+#include <pthread.h>
 #include <unistd.h>
+
 #include <mutex>
 #include <thread>
-#include <pthread.h>
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 #include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/fbi/sfrlock.h"
-#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 #include "mcrouter/lib/fbi/test/test_util.h"
 
 const unsigned repeat = 1000000U;

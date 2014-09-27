@@ -8,8 +8,9 @@
  */
 #include "PeriodicTaskScheduler.h"
 
-#include "folly/Memory.h"
-#include "folly/ThreadName.h"
+#include <folly/Memory.h>
+#include <folly/ThreadName.h>
+
 #include "mcrouter/lib/fbi/debug.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

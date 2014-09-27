@@ -8,8 +8,9 @@
  */
 #include "IOBufUtil.h"
 
-#include "folly/Range.h"
-#include "folly/io/IOBuf.h"
+#include <folly/io/IOBuf.h>
+#include <folly/Range.h>
+
 #include "mcrouter/lib/McMsgRef.h"
 
 namespace facebook { namespace memcache {

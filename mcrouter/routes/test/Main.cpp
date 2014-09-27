@@ -8,7 +8,7 @@
  */
 #include <gtest/gtest.h>
 
-#include "folly/Benchmark.h"
+#include <folly/Benchmark.h>
 
 // for backward compatibility with gflags
 namespace gflags { }

@@ -8,7 +8,8 @@
  */
 #include "ProxyThread.h"
 
-#include "folly/io/async/EventBase.h"
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/proxy.h"

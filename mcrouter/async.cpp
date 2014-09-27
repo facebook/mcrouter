@@ -10,12 +10,13 @@
   @file asynchronous request logging (to /var/spool/mcproxy)
   for later replay by mcreplay
 */
-
 // for printing PRIu64 in c++
 #define __STDC_FORMAT_MACROS
 
 #include "async.h"
+
 #include <limits.h>
+
 #ifndef IOV_MAX
 /* POSIX says IOV_MAX is defined in limits.h, but glibc is broken */
 #define __need_IOV_MAX /* must come before including stdio.h */

@@ -12,10 +12,10 @@
 #include <assert.h>
 #include <netinet/in.h>
 
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/util.h"
+#include "mcrouter/lib/mc/msg.h"
 
 __BEGIN_DECLS
 

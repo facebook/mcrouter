@@ -8,7 +8,8 @@
  */
 #include "MockMc.h"
 
-#include "folly/io/IOBuf.h"
+#include <folly/io/IOBuf.h>
+
 #include "mcrouter/lib/McRequest.h"
 
 namespace facebook { namespace memcache {

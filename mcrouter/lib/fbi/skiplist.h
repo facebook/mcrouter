@@ -10,7 +10,8 @@
 #define FBI_SKIPLIST_H
 
 #include <stdint.h>
-#include "decls.h"
+
+#include "mcrouter/lib/fbi/decls.h"
 
 __BEGIN_DECLS
 

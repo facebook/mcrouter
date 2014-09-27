@@ -6,21 +6,23 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include <gtest/gtest.h>
-
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "folly/FileUtil.h"
-#include "folly/Memory.h"
-#include "folly/experimental/TestUtil.h"
+#include <gtest/gtest.h>
+
+#include <folly/experimental/TestUtil.h>
+#include <folly/FileUtil.h>
+#include <folly/Memory.h>
+
 #include "mcrouter/awriter.h"
 #include "mcrouter/proxy.h"
 
-using folly::test::TemporaryFile;
 using namespace facebook::memcache::mcrouter;
+
+using folly::test::TemporaryFile;
 
 #define WRITE_STRING "abc\n"
 #define WRITE_STRING_LEN (sizeof(WRITE_STRING) - 1)

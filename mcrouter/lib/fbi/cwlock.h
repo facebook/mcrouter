@@ -9,8 +9,8 @@
 #ifndef FBI_CWLOCK_H
 #define FBI_CWLOCK_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * This file and its matching .c file contain the implementation of a small

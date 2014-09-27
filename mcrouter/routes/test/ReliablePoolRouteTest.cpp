@@ -11,11 +11,11 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/routes/ReliablePoolRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/routes/ReliablePoolRoute.h"
 
-using namespace facebook::memcache::mcrouter;
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 using std::shared_ptr;

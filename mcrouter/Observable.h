@@ -10,8 +10,8 @@
 
 #include <functional>
 
-#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 #include "mcrouter/CallbackPool.h"
+#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

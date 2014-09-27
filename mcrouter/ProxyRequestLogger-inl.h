@@ -6,11 +6,11 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
+#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/stats.h"
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
-#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

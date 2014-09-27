@@ -8,9 +8,9 @@
  */
 #include <pthread.h>
 
-#include <gtest/gtest.h>
-
 #include <atomic>
+
+#include <gtest/gtest.h>
 
 #include "mcrouter/lib/fbi/counter.h"
 

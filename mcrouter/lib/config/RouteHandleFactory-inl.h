@@ -6,7 +6,8 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 

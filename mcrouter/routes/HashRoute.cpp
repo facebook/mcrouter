@@ -6,13 +6,13 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include "mcrouter/routes/McrouterRouteHandle.h"
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/ShardHashFunc.h"
 #include "mcrouter/lib/Ch3HashFunc.h"
 #include "mcrouter/lib/Crc32HashFunc.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/routes/HashRoute.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/ShardHashFunc.h"
 
 namespace facebook { namespace memcache {
 

@@ -19,9 +19,9 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

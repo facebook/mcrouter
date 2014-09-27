@@ -10,8 +10,9 @@
 
 #include <vector>
 
-#include "folly/FileUtil.h"
-#include "folly/Memory.h"
+#include <folly/FileUtil.h>
+#include <folly/Memory.h>
+
 #include "mcrouter/config.h"
 
 using namespace folly;

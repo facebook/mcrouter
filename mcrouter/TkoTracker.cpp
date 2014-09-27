@@ -9,6 +9,7 @@
 #include "TkoTracker.h"
 
 #include <cassert>
+
 #include <glog/logging.h>
 
 #include "mcrouter/ProxyDestination.h"

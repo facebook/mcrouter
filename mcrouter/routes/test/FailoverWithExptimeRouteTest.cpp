@@ -11,13 +11,13 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/routes/FailoverWithExptimeRoute.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/routes/FailoverWithExptimeRoute.h"
 
-using namespace facebook::memcache::mcrouter;
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 using std::vector;

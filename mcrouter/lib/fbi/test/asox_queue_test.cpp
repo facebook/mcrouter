@@ -11,8 +11,9 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/io/async/EventBase.h"
-#include "folly/Memory.h"
+#include <folly/io/async/EventBase.h>
+#include <folly/Memory.h>
+
 #include "mcrouter/lib/fbi/asox_queue.h"
 
 #define NUM_THREADS 10

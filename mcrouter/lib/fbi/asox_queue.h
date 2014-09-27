@@ -9,10 +9,9 @@
 #ifndef FB_MEMCACHE_ASOX_QUEUE_H
 #define FB_MEMCACHE_ASOX_QUEUE_H 1
 
+#include <event.h>
 #include <stdint.h>
 #include <sys/types.h>
-
-#include <event.h>
 
 #include "mcrouter/lib/fbi/decls.h"
 

@@ -11,7 +11,7 @@
 
 #include <netinet/in.h>
 
-#include "decls.h"
+#include "mcrouter/lib/fbi/decls.h"
 
 #define fbi_expected(__expr) __builtin_expect(!!(__expr), true)
 #define fbi_unexpected(__expr) __builtin_expect(!!(__expr), false)

@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-#include "folly/MoveWrapper.h"
+#include <folly/MoveWrapper.h>
 
 #include "mcrouter/lib/fibers/FiberManager.h"
 

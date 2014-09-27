@@ -14,8 +14,8 @@
 #include <stack>
 #include <utility>
 
-#include "folly/Optional.h"
-#include "folly/Range.h"
+#include <folly/Optional.h>
+#include <folly/Range.h>
 
 namespace facebook { namespace memcache {
 

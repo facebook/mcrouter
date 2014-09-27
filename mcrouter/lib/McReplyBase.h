@@ -13,8 +13,9 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Memory.h>
 #include <folly/Optional.h>
-#include "mcrouter/lib/mc/msg.h"
+
 #include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/Reply.h"
 

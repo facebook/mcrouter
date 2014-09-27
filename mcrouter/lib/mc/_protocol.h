@@ -8,7 +8,6 @@
  */
 #ifndef FB_MEMCACHE_MC_INTERNAL_PROTOCOL_H
 #define FB_MEMCACHE_MC_INTERNAL_PROTOCOL_H
-
 //#include "protocol.h"
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/mc/msg.h"

@@ -8,10 +8,11 @@
  */
 #include "WeightedCh3HashFunc.h"
 
-#include "folly/dynamic.h"
-#include "folly/SpookyHashV2.h"
-#include "mcrouter/lib/fbi/hash.h"
+#include <folly/dynamic.h>
+#include <folly/SpookyHashV2.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fbi/hash.h"
 
 namespace facebook { namespace memcache {
 

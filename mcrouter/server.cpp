@@ -10,15 +10,16 @@
 
 #include <signal.h>
 
-#include "mcrouter/ProxyThread.h"
+#include <thrift/lib/cpp/transport/TTransportException.h>
+
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
-#include "mcrouter/mcrouter_client.h"
-#include "mcrouter/proxy.h"
-#include "mcrouter/standalone_options.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "thrift/lib/cpp/transport/TTransportException.h"
+#include "mcrouter/mcrouter_client.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/ProxyThread.h"
+#include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

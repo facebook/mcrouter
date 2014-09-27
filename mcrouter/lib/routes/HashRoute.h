@@ -16,8 +16,8 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {

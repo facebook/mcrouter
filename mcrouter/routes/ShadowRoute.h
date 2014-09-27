@@ -14,10 +14,10 @@
 
 #include <folly/Optional.h>
 
-#include "mcrouter/ProxyMcRequest.h"
-#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 

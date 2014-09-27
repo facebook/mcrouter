@@ -12,7 +12,8 @@
 #include <string>
 #include <vector>
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Reply.h"

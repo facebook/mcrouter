@@ -6,8 +6,6 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include "_router.h"
-
 #include <event.h>
 #include <pthread.h>
 #include <signal.h>
@@ -25,25 +23,25 @@
 
 #include <boost/filesystem/operations.hpp>
 
-#include <mcrouter/config.h>
-
 #include <folly/Conv.h>
 #include <folly/Format.h>
+#include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 #include <folly/ThreadName.h>
-#include <folly/io/async/EventBase.h>
 
-#include "mcrouter/FileObserver.h"
-#include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyThread.h"
-#include "mcrouter/RuntimeVarsData.h"
+#include "mcrouter/_router.h"
 #include "mcrouter/async.h"
+#include "mcrouter/config.h"
+#include "mcrouter/FileObserver.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyDestinationMap.h"
+#include "mcrouter/ProxyThread.h"
+#include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/stats.h"
 
 using std::string;

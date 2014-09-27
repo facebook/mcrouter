@@ -8,7 +8,6 @@
  */
 #ifndef FBI_SFRLOCK_H
 #define FBI_SFRLOCK_H
-
 /**
  * This file and its matching .c file contain the implementation of a small
  * (8 bytes) non-recursive unfair read/write lock that is optimized for uses
@@ -77,8 +76,7 @@
  * this case, a write is in the process of acquiring the lock, so we must
  * first wait for everyone to release it.
  */
-
-#include "util.h"
+#include "mcrouter/lib/fbi/util.h"
 
 typedef struct {
   uint32_t value;

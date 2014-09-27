@@ -8,9 +8,10 @@
  */
 #include "McRequestBase.h"
 
-#include "folly/io/IOBuf.h"
-#include "folly/Memory.h"
-#include "folly/Range.h"
+#include <folly/io/IOBuf.h>
+#include <folly/Memory.h>
+#include <folly/Range.h>
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook { namespace memcache {

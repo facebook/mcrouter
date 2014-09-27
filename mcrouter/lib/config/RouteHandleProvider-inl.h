@@ -8,11 +8,11 @@
  */
 #pragma once
 
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Ch3HashFunc.h"
-#include "mcrouter/lib/Crc32HashFunc.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/Crc32HashFunc.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
 
 namespace facebook { namespace memcache {
 

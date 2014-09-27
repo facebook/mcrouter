@@ -8,7 +8,7 @@
  */
 #include "ThreadLocalSSLContextProvider.h"
 
-#include "thrift/lib/cpp/transport/TSSLSocket.h"
+#include <thrift/lib/cpp/transport/TSSLSocket.h>
 
 using apache::thrift::transport::SSLContext;
 

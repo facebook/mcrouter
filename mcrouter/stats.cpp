@@ -15,21 +15,20 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <mcrouter/config.h>
-
 #include <folly/Conv.h>
-#include <folly/Range.h>
 #include <folly/json.h>
+#include <folly/Range.h>
 
+#include "mcrouter/_router.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fbi/timer.h"
+#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/StatsReply.h"
+#include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/_router.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/StatsReply.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/timer.h"
-#include "mcrouter/proxy.h"
 
 /**                             .__
  * __  _  _______ _______  ____ |__| ____    ____

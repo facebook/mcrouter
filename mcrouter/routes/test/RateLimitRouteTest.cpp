@@ -12,12 +12,13 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/json.h"
-#include "mcrouter/routes/RateLimitRoute.h"
-#include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include <folly/json.h>
 
-using namespace facebook::memcache::mcrouter;
+#include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/routes/RateLimitRoute.h"
+
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 using std::string;

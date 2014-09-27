@@ -12,13 +12,14 @@
 #include <string>
 #include <vector>
 
-#include "folly/Memory.h"
-#include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/OperationTraits.h"
+#include <folly/Memory.h>
+
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/fibers/SimpleLoopController.h"
 #include "mcrouter/lib/fibers/WhenN.h"
+#include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 
 namespace facebook { namespace memcache {

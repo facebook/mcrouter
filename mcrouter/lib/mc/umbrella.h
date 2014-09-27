@@ -12,8 +12,8 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <sys/uio.h>
 #include <string.h>
+#include <sys/uio.h>
 
 #include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/fbi/decls.h"

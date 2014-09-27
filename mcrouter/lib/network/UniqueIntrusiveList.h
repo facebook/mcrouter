@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "folly/IntrusiveList.h"
+#include <folly/IntrusiveList.h>
 
 namespace facebook { namespace memcache {
 

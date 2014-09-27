@@ -8,20 +8,16 @@
  */
 #ifndef FBI_QUEUE_H
 #define FBI_QUEUE_H
-
 /* libfbi users:
  * This is a full-featured queue.h from FreeBSD, with some
  * slightly-fancy macro magic to try to minimize confusion with sys/queue.h
  */
-
 #if __linux__
 #  if defined(_SYS_QUEUE_H_) && !defined(_facebook_std_queue_h_)
 #    warning "fbi/queue.h included after deficient sys/queue.h"
 #  endif
 #endif
-
 #define _SYS_QUEUE_H_
-
 /*-
  * Copyright (c) 1991, 1993
  *      The Regents of the University of California.  All rights reserved.
@@ -53,7 +49,6 @@
  *      @(#)queue.h     8.5 (Berkeley) 8/20/94
  * $FreeBSD: src/sys/sys/queue.h,v 1.72 2009/05/27 19:28:04 ed Exp $
  */
-
 #include <sys/cdefs.h>
 
 /*

@@ -14,12 +14,12 @@
 
 #include <folly/dynamic.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/fibers/WhenN.h"
+#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/OperationTraits.h"
 
 namespace facebook { namespace memcache {
 

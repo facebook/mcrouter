@@ -12,8 +12,9 @@
 #include <string>
 #include <unordered_map>
 
-#include "folly/dynamic.h"
-#include "folly/Range.h"
+#include <folly/dynamic.h>
+#include <folly/Range.h>
+
 #include "mcrouter/options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

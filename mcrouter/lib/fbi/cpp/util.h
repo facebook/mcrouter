@@ -11,9 +11,10 @@
 
 #include <string>
 
-#include "folly/Format.h"
-#include "folly/Likely.h"
-#include "folly/Range.h"
+#include <folly/Format.h>
+#include <folly/Likely.h>
+#include <folly/Range.h>
+
 #include "mcrouter/lib/fbi/nstring.h"
 
 namespace facebook { namespace memcache {

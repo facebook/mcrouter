@@ -9,9 +9,9 @@
 #ifndef FBI_TIMER_H
 #define FBI_TIMER_H
 
-#include "queue.h"
-#include "nstring.h"
-#include "fb_cpu_util.h"
+#include "mcrouter/lib/fbi/fb_cpu_util.h"
+#include "mcrouter/lib/fbi/nstring.h"
+#include "mcrouter/lib/fbi/queue.h"
 
 __BEGIN_DECLS
 

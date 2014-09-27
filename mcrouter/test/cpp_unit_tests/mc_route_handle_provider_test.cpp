@@ -11,16 +11,16 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
-#include <folly/Memory.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/json.h>
+#include <folly/Memory.h>
 
 #include "mcrouter/_router.h"
-#include "mcrouter/PoolFactoryIf.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/options.h"
+#include "mcrouter/PoolFactoryIf.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;

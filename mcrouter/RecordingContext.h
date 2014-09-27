@@ -13,9 +13,9 @@
 
 #include <folly/Optional.h>
 
+#include "mcrouter/lib/fibers/FiberPromise.h"
 #include "mcrouter/lib/McRequestWithContext.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/fibers/FiberPromise.h"
 
 namespace facebook { namespace memcache {
 

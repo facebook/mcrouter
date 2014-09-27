@@ -15,6 +15,7 @@
 #include "mcrouter/lib/network/test/SessionTestHarness.h"
 
 using namespace facebook::memcache;
+
 using std::string;
 using std::vector;
 

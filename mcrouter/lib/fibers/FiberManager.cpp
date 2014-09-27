@@ -8,8 +8,8 @@
  */
 #include "FiberManager.h"
 
-#include <unistd.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
 #include <cassert>
 #include <stdexcept>

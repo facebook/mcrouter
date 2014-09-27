@@ -10,9 +10,10 @@
 #define FBI_CPP_TRIE_INL_H
 
 #include <boost/iterator/iterator_facade.hpp>
+
 #include <glog/logging.h>
 
-#include "folly/Memory.h"
+#include <folly/Memory.h>
 
 namespace facebook { namespace memcache {
 

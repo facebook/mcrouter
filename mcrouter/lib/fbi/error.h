@@ -13,10 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nstring.h"
-
-#include "time.h"
-#include "decls.h"
+#include "mcrouter/lib/fbi/decls.h"
+#include "mcrouter/lib/fbi/nstring.h"
+#include "mcrouter/lib/fbi/time.h"
 
 __BEGIN_DECLS
 

@@ -11,7 +11,7 @@
 
 #include <sys/time.h>
 
-#include "decls.h"
+#include "mcrouter/lib/fbi/decls.h"
 
 __BEGIN_DECLS
 

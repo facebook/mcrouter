@@ -9,10 +9,9 @@
 #ifndef FB_MEMCACHE_ASOX_SEMAPHORE_H
 #define FB_MEMCACHE_ASOX_SEMAPHORE_H
 
+#include <event.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-#include <event.h>
 
 #include "mcrouter/lib/fbi/decls.h"
 

@@ -12,7 +12,8 @@
 #include <memory>
 #include <unordered_set>
 
-#include "thrift/lib/cpp/async/TAsyncSocket.h"
+#include <thrift/lib/cpp/async/TAsyncSocket.h>
+
 #include "mcrouter/lib/network/McServerRequestContext.h"
 
 namespace folly {

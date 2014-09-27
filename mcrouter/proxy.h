@@ -20,20 +20,21 @@
 #include <random>
 #include <string>
 
-#include "folly/Range.h"
-#include "mcrouter/lib/McReply.h"
+#include <folly/Range.h>
+
+#include "mcrouter/awriter.h"
+#include "mcrouter/config.h"
+#include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/fbi/cpp/AtomicSharedPtr.h"
+#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
-#include "mcrouter/ExponentialSmoothData.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/Observable.h"
-#include "mcrouter/awriter.h"
-#include "mcrouter/config.h"
 #include "mcrouter/options.h"
 #include "mcrouter/stats.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 
 // make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
 // MOVING_AVERAGE_BIN_SIZE_IN_SECOND

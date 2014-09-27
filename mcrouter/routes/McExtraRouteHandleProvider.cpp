@@ -8,7 +8,8 @@
  */
 #include "McExtraRouteHandleProvider.h"
 
-#include "folly/Range.h"
+#include <folly/Range.h>
+
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 

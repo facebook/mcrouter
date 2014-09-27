@@ -11,8 +11,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/stats.h"
 
 namespace folly {

@@ -8,16 +8,18 @@
  */
 #include <gtest/gtest.h>
 
-#include "folly/io/async/EventBase.h"
-#include "mcrouter/lib/network/AsyncMcServer.h"
+#include <folly/io/async/EventBase.h>
+#include <thrift/lib/cpp/transport/TSSLSocket.h>
+
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "thrift/lib/cpp/transport/TSSLSocket.h"
+
+using namespace facebook::memcache;
 
 using folly::EventBase;
-using namespace facebook::memcache;
 
 namespace {
 

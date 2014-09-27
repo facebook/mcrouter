@@ -8,8 +8,8 @@
  */
 #include "standalone_options.h"
 
-#include "folly/Format.h"
-#include "folly/Range.h"
+#include <folly/Format.h>
+#include <folly/Range.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
 namespace options {

@@ -12,14 +12,15 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/FileUtil.h"
-#include "folly/experimental/TestUtil.h"
+#include <folly/experimental/TestUtil.h>
+#include <folly/FileUtil.h>
+
 #include "mcrouter/FileObserver.h"
 #include "mcrouter/PeriodicTaskScheduler.h"
 
-using folly::test::TemporaryFile;
 using facebook::memcache::mcrouter::FileObserver;
 using facebook::memcache::mcrouter::PeriodicTaskScheduler;
+using folly::test::TemporaryFile;
 
 const std::string BOGUS_CONFIG = "this/file/doesnot/exists";
 

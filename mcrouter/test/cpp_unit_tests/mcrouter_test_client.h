@@ -9,7 +9,8 @@
 #ifndef MCROUTER_TEST_CLIENT_H
 #define MCROUTER_TEST_CLIENT_H 1
 
-#include "folly/dynamic.h"
+#include <folly/dynamic.h>
+
 #include "mcrouter/router.h"
 
 /**

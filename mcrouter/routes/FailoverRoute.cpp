@@ -6,9 +6,9 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache {
 

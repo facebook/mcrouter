@@ -13,17 +13,18 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
-#include "folly/FileUtil.h"
-#include "folly/Memory.h"
-#include "folly/dynamic.h"
-#include "folly/io/async/EventBase.h"
-#include "mcrouter/ProxyThread.h"
+#include <folly/dynamic.h>
+#include <folly/FileUtil.h>
+#include <folly/io/async/EventBase.h>
+#include <folly/Memory.h>
+
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyThread.h"
 #include "mcrouter/router.h"
-#include "mcrouter/test/cpp_unit_tests/MemcacheLocal.h"
 #include "mcrouter/test/cpp_unit_tests/mcrouter_test_client.h"
+#include "mcrouter/test/cpp_unit_tests/MemcacheLocal.h"
 
 using namespace facebook::memcache::mcrouter;
 using namespace facebook::memcache::test;

@@ -8,15 +8,11 @@
  */
 #include "ProxyDestination.h"
 
-#include <mcrouter/config-impl.h>
-
 #include <folly/Conv.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/TkoTracker.h"
 #include "mcrouter/_router.h"
+#include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/nstring.h"
@@ -26,8 +22,11 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/pclient.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyClientCommon.h"
+#include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
+#include "mcrouter/TkoTracker.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

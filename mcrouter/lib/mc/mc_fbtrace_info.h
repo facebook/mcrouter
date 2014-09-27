@@ -12,7 +12,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/uio.h>
-#include <fbtrace/libfbtrace/c/fbtrace.h>
+
+#include "fbtrace/libfbtrace/c/fbtrace.h"
 
 __BEGIN_DECLS
 

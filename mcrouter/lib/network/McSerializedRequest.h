@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/mc/umbrella_protocol.h"
+#include "mcrouter/lib/McMsgRef.h"
 
 namespace facebook { namespace memcache {
 

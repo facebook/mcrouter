@@ -12,8 +12,9 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/Memory.h"
-#include "folly/wangle/Future.h"
+#include <folly/Memory.h>
+#include <folly/wangle/Future.h>
+
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"

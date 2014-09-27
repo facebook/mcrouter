@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#include <memory>
+
 namespace facebook { namespace memcache {
 
 template <class RouteHandleIf,

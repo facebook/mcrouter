@@ -8,7 +8,8 @@
  */
 #include "ProxyRequestContext.h"
 
-#include "folly/Memory.h"
+#include <folly/Memory.h>
+
 #include "mcrouter/config.h"
 #include "mcrouter/mcrouter_client.h"
 #include "mcrouter/proxy.h"

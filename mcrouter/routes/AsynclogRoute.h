@@ -9,15 +9,15 @@
 #pragma once
 
 #include "mcrouter/config-impl.h"
+#include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
-#include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

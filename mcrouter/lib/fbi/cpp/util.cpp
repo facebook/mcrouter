@@ -13,14 +13,14 @@
 
 #include <random>
 
-#include <openssl/md5.h>
-
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include "folly/FileUtil.h"
-#include "folly/Random.h"
-#include "folly/SpookyHashV2.h"
+#include <openssl/md5.h>
+
+#include <folly/FileUtil.h>
+#include <folly/Random.h>
+#include <folly/SpookyHashV2.h>
 
 namespace facebook { namespace memcache {
 

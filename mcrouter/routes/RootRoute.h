@@ -13,10 +13,10 @@
 #include <vector>
 
 #include "mcrouter/config.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/proxy.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteHandleMap.h"
 

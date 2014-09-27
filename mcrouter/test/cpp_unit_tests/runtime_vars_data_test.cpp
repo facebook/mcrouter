@@ -10,7 +10,8 @@
 
 #include <gtest/gtest.h>
 
-#include "folly/json.h"
+#include <folly/json.h>
+
 #include "mcrouter/Observable.h"
 #include "mcrouter/RuntimeVarsData.h"
 

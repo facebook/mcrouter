@@ -11,12 +11,12 @@
 #include <random>
 
 #include <folly/Format.h>
+#include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/Random.h>
-#include <folly/json.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/config/ImportResolverIf.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 
 using folly::StringPiece;
 using folly::dynamic;

@@ -8,15 +8,13 @@
  */
 #ifndef FBI_NSTRING_H
 #define FBI_NSTRING_H
-
 /** A collection of fixed length string utility functions.  */
-
 #include <assert.h>
-#include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "decls.h"
+#include "mcrouter/lib/fbi/decls.h"
 
 __BEGIN_DECLS
 

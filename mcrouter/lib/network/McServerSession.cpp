@@ -10,7 +10,8 @@
 
 #include <memory>
 
-#include "folly/Memory.h"
+#include <folly/Memory.h>
+
 #include "mcrouter/lib/network/McServerTransaction.h"
 
 namespace facebook { namespace memcache {

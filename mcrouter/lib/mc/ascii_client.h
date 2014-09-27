@@ -10,6 +10,7 @@
 #define FB_MEMCACHE_MC_ASCII_CLIENT_H
 
 #include "mcrouter/lib/mc/parser.h"
+
 int _on_ascii_rx(mc_parser_t *parser, char* buf, size_t nbuf);
 
 #endif // libmc_ASCII_H

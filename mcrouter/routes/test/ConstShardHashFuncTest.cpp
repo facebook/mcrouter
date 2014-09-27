@@ -10,8 +10,8 @@
 
 #include "mcrouter/routes/ShardHashFunc.h"
 
-using namespace facebook::memcache::mcrouter;
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 TEST(constShardHashFuncTest, picksRightShard) {
   ConstShardHashFunc func(4);

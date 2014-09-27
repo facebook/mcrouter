@@ -8,7 +8,7 @@
  */
 #include "RuntimeVarsData.h"
 
-#include "folly/json.h"
+#include <folly/json.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
