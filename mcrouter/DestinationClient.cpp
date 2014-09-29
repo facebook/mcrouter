@@ -66,8 +66,7 @@ DestinationClient::DestinationClient(std::shared_ptr<ProxyDestination> pdstn)
 void DestinationClient::resetInactive() {
   // No need to reset non-existing client.
   if (asyncMcClient_) {
-    assert(asyncMcClient_->getPendingRequestCount() == 0);
-    assert(asyncMcClient_->getInflightRequestCount() == 0);
+    asyncMcClient_->closeNow();
     asyncMcClient_.reset();
   }
 }
@@ -180,6 +179,7 @@ size_t DestinationClient::getInflightRequestCount() const {
 DestinationClient::~DestinationClient() {
   if (asyncMcClient_) {
     asyncMcClient_->setStatusCallbacks(nullptr, nullptr);
+    asyncMcClient_->closeNow();
   }
 }
 

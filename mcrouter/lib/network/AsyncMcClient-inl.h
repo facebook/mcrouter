@@ -17,6 +17,10 @@ inline AsyncMcClient::AsyncMcClient(folly::EventBase& eventBase,
     base_(AsyncMcClientImpl::create(eventBase, std::move(options))) {
 }
 
+inline void AsyncMcClient::closeNow() {
+  base_->closeNow();
+}
+
 inline void AsyncMcClient::setStatusCallbacks(
     std::function<void()> onUp,
     std::function<void(const TransportException&)> onDown) {

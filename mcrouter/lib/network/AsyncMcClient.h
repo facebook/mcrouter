@@ -33,6 +33,11 @@ class AsyncMcClient {
                 ConnectionOptions options);
 
   /**
+   * Close connection and fail all outstanding requests immediately.
+   */
+  void closeNow();
+
+  /**
    * Set status callbacks for the underlying connection.
    *
    * @param onUp  will be called whenever client successfully connects to the
