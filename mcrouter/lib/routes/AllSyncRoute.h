@@ -13,7 +13,6 @@
 #include <vector>
 
 #include <folly/dynamic.h>
-#include <folly/MoveWrapper.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fibers/WhenN.h"
@@ -68,11 +67,13 @@ class AllSyncRoute {
     }
 
     std::vector<std::function<Reply()>> fs;
+    fs.reserve(children_.size());
     for (auto& rh : children_) {
-      auto reqCopy = folly::MoveWrapper<Request>(req.clone());
-      fs.push_back(
-        [rh, reqCopy]() {
-          return rh->route(*reqCopy, Operation());
+      // no need to copy the child and request, we will not return from method
+      // until we get replies
+      fs.emplace_back(
+        [&rh, &req]() {
+          return rh->route(req, Operation());
         }
       );
     }

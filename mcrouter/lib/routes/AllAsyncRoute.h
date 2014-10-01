@@ -29,7 +29,7 @@ class AllAsyncRoute {
  public:
   static std::string routeName() { return "all-async"; }
 
-  AllAsyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
+  explicit AllAsyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
   }
 
@@ -55,12 +55,14 @@ class AllAsyncRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    for (auto& rh : children_) {
-      auto reqCopy = folly::MoveWrapper<Request>(req.clone());
-      fiber::addTask(
-        [rh, reqCopy]() {
-          rh->route(*reqCopy, Operation());
-        });
+    if (!children_.empty()) {
+      auto reqCopy = std::make_shared<Request>(req.clone());
+      for (auto& rh : children_) {
+        fiber::addTask(
+          [rh, reqCopy]() {
+            rh->route(*reqCopy, Operation());
+          });
+      }
     }
     return NullRoute<RouteHandleIf>::route(req, Operation());
   }
