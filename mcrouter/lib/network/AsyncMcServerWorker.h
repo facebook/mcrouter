@@ -20,11 +20,8 @@
 
 namespace folly {
 class EventBase;
-}
-
-namespace apache { namespace thrift { namespace transport {
 class SSLContext;
-}}}
+}
 
 namespace facebook { namespace memcache {
 
@@ -53,7 +50,7 @@ class AsyncMcServerWorker {
    */
   void addSecureClientSocket(
       int fd,
-      const std::shared_ptr<apache::thrift::transport::SSLContext>& context);
+      const std::shared_ptr<folly::SSLContext>& context);
 
   /**
    * Install onRequest callback to call for all new connections.

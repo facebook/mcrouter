@@ -8,9 +8,10 @@
  */
 #include "ThreadLocalSSLContextProvider.h"
 
-#include <thrift/lib/cpp/transport/TSSLSocket.h>
+#include <folly/io/async/SSLContext.h>
+#include <unordered_map>
 
-using apache::thrift::transport::SSLContext;
+using folly::SSLContext;
 
 namespace facebook { namespace memcache {
 
@@ -86,7 +87,7 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
 #endif
       contextInfo.lastLoadTime = now;
       contextInfo.context = std::move(sslContext);
-    } catch (const apache::thrift::transport::TTransportException& ex) {
+    } catch (const std::exception& ex) {
       LOG(ERROR) << "Failed to load certificate, ex: " << ex.what();
     }
   }

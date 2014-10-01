@@ -10,9 +10,9 @@
 
 #include <folly/Range.h>
 
-namespace apache { namespace thrift { namespace transport {
+namespace folly {
 class SSLContext;
-}}}  // apache::thrift::transport
+}  // namespace
 
 namespace facebook { namespace memcache {
 
@@ -21,7 +21,7 @@ namespace facebook { namespace memcache {
  * Each set will be loaded only once per thread and will be reloaded if it's
  * older than 5 minutes.
  */
-std::shared_ptr<apache::thrift::transport::SSLContext> getSSLContext(
+std::shared_ptr<folly::SSLContext> getSSLContext(
   folly::StringPiece pemCertPath,
   folly::StringPiece pemKeyPath,
   folly::StringPiece pemCaPath);

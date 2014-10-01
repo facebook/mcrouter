@@ -14,9 +14,9 @@
 
 #include "mcrouter/lib/mc/protocol.h"
 
-namespace apache { namespace thrift { namespace transport {
+namespace folly {
 class SSLContext;
-}}} // apache::thrift::transport
+} // folly
 
 namespace facebook { namespace memcache {
 
@@ -77,7 +77,7 @@ struct ConnectionOptions {
    * established, else it will be called for each attempt to establish
    * connection.
    */
-  std::function<std::shared_ptr<apache::thrift::transport::SSLContext>()>
+  std::function<std::shared_ptr<folly::SSLContext>()>
     sslContextProvider;
 };
 
