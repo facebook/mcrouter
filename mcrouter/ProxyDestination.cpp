@@ -160,6 +160,7 @@ bool ProxyDestination::is_hard_error(mc_res_t result) {
 }
 
 void ProxyDestination::handle_tko(const McReply& reply,
+                                  bool is_probe_req,
                                   int consecutive_errors) {
   if (resetting ||
       proxy->opts.disable_tko_tracking ||
@@ -198,7 +199,11 @@ void ProxyDestination::handle_tko(const McReply& reply,
         onTkoEvent(TkoLogEvent::MarkLatencyTko, reply.result());
       }
     } else {
-      shared->tko.recordSuccess(this);
+      /* If we're sending probes, only a probe request should be considered
+         successful to avoid outstanding requests from unmarking the box */
+      if (!sending_probes || is_probe_req) {
+        shared->tko.recordSuccess(this);
+      }
       if (sending_probes) {
         VLOG(1) << shared->key << " marked up";
         onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
@@ -253,15 +258,17 @@ void ProxyDestination::on_reply(const McMsgRef& req,
     }
   }
 
+  bool is_probe_req = (req.get() == probe_req.get());
+
   if (proxy->monitor) {
       proxy->monitor->on_response(proxy->monitor, this,
                                   const_cast<mc_msg_t*>(req.get()),
                                   reply);
   } else {
-    handle_tko(reply, consecutiveErrors_);
+    handle_tko(reply, is_probe_req, consecutiveErrors_);
   }
 
-  if (req.get() == probe_req.get()) {
+  if (is_probe_req) {
     probe_req = McMsgRef();
   } else {
     stats_.results[reply.result()]++;
@@ -339,6 +346,7 @@ void ProxyDestination::on_down() {
     /* Record on_down as a mc_res_connect_error; note we pass failure_until_tko
        to force TKO for the deprecated per-proxy logic */
     handle_tko(McReply(mc_res_connect_error),
+               /* is_probe_req= */ false,
                proxy->opts.failures_until_tko);
   }
 }

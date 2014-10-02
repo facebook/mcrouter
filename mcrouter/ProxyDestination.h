@@ -137,7 +137,9 @@ struct ProxyDestination {
 
   void reset_fields();
 
-  void handle_tko(const McReply& reply, int consecutive_errors);
+  void handle_tko(const McReply& reply,
+                  bool is_probe_req,
+                  int consecutive_errors);
 
   void mark_tko();
   void unmark_tko();
