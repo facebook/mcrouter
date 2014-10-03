@@ -22,12 +22,12 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-const std::string kMcrouterConfigKey = "mcrouter_config";
-const std::string kConfigFile = "config_file";
-const std::string kConfigImport = "config_import";
+const char* const kMcrouterConfigKey = "mcrouter_config";
+const char* const kConfigFile = "config_file";
+const char* const kConfigImport = "config_import";
 const int kConfigReloadInterval = 60;
 
-const std::string ConfigApi::kAbsoluteFilePrefix = "file:";
+const char* const ConfigApi::kAbsoluteFilePrefix = "file:";
 
 ConfigApi::~ConfigApi() {
   /* Must be here to forward declare FileDataProvider */
@@ -166,14 +166,14 @@ bool ConfigApi::get(ConfigType type, const std::string& path,
   std::string fullPath;
   if (type == ConfigType::ConfigImport) {
     if (folly::StringPiece(path).startsWith(kAbsoluteFilePrefix)) {
-      fullPath = path.substr(kAbsoluteFilePrefix.length());
+      fullPath = path.substr(strlen(kAbsoluteFilePrefix));
     } else {
       boost::filesystem::path filePath(opts_.config_file);
       fullPath = (filePath.parent_path() / path).string();
     }
   } else if (type == ConfigType::Pool) {
     if (folly::StringPiece(path).startsWith(kAbsoluteFilePrefix)) {
-      fullPath = path.substr(kAbsoluteFilePrefix.length());
+      fullPath = path.substr(strlen(kAbsoluteFilePrefix));
     } else {
       return false;
     }
@@ -185,29 +185,61 @@ bool ConfigApi::get(ConfigType type, const std::string& path,
     return false;
   }
 
-  {
+  if (tracking_) {
     std::lock_guard<std::mutex> lock(fileInfoMutex_);
-    auto fileInfoIt = fileInfos_.find(fullPath);
-    if (fileInfoIt == fileInfos_.end()) {
-      fileInfoIt = fileInfos_.emplace(fullPath, FileInfo()).first;
-    }
+    auto fileInfoIt = trackedFiles_.emplace(fullPath, FileInfo()).first;
 
     auto& file = fileInfoIt->second;
     file.path = fullPath;
     file.type = type;
     file.lastMd5Check = nowWallSec();
     file.md5 = Md5Hash(contents);
-    try {
-      if (!file.provider) {
-        file.provider = folly::make_unique<FileDataProvider>(file.path);
-      }
-    } catch (const std::exception& e) {
-      // it's not that bad, we will check for change in hash
-      LOG(INFO) << "Can not start watching " << file.path <<
-                   " for modifications: " << e.what();
-    }
   }
   return true;
+}
+
+void ConfigApi::trackConfigSources() {
+  std::lock_guard<std::mutex> lock(fileInfoMutex_);
+  tracking_ = true;
+}
+
+void ConfigApi::subscribeToTrackedSources() {
+  std::lock_guard<std::mutex> lock(fileInfoMutex_);
+  assert(tracking_);
+  tracking_ = false;
+
+  if (!opts_.disable_reload_configs) {
+    // start watching for updates
+    for (auto& it : trackedFiles_) {
+      auto& file = it.second;
+      try {
+        if (!file.provider) {
+          // reuse existing providers
+          auto fileInfoIt = fileInfos_.find(file.path);
+          if (fileInfoIt != fileInfos_.end()) {
+            file.provider = std::move(fileInfoIt->second.provider);
+          }
+        }
+        if (!file.provider) {
+          file.provider = folly::make_unique<FileDataProvider>(file.path);
+        }
+      } catch (const std::exception& e) {
+        // it's not that bad, we will check for change in hash
+        LOG(INFO) << "Can not start watching " << file.path <<
+                     " for modifications: " << e.what();
+      }
+    }
+  }
+
+  fileInfos_ = std::move(trackedFiles_);
+  trackedFiles_.clear();
+}
+
+void ConfigApi::abandonTrackedSources() {
+  std::lock_guard<std::mutex> lock(fileInfoMutex_);
+  assert(tracking_);
+  tracking_ = false;
+  trackedFiles_.clear();
 }
 
 folly::dynamic ConfigApi::getConfigSourcesInfo() {

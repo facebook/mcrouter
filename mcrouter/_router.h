@@ -16,7 +16,6 @@
 #include <folly/Range.h>
 
 #include "mcrouter/ConfigApi.h"
-#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 #include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
 #include "mcrouter/lib/fbi/cpp/StartupLock.h"
 #include "mcrouter/mcrouter_client.h"
@@ -61,7 +60,7 @@ struct mcrouter_t {
   int config_failures;
 
   // Lock to get before regenerating config structure
-  SFRLock config_reconfig_lock;
+  std::mutex config_reconfig_lock;
 
   // Stat updater thread updates rate stat windows for each proxy
   pthread_t stat_updater_thread_handle;

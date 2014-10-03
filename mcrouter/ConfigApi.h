@@ -43,7 +43,7 @@ class ConfigApi {
   typedef std::function<void()> Callback;
   typedef CallbackPool<>::CallbackHandle CallbackHandle;
 
-  static const std::string kAbsoluteFilePrefix;
+  static const char* const kAbsoluteFilePrefix;
 
   explicit ConfigApi(const McrouterOptions& opts);
 
@@ -56,13 +56,30 @@ class ConfigApi {
   CallbackHandle subscribe(Callback callback);
 
   /**
-   * Reads config from 'path', remembers it as one of configuration files and
-   * starts watching for updates.
+   * Reads config from 'path'.
    *
    * @return true on success, false otherwise
    */
   virtual bool get(ConfigType type, const std::string& path,
                    std::string& contents);
+
+  /**
+   * All files we 'get' after this call will be marked as 'tracked'. Once
+   * we call 'subscribeToTrackedSources', we'll receive updates only for
+   * 'tracked' files.
+   */
+  void trackConfigSources();
+
+  /**
+   * Changes set of files we're observing to 'tracked' files.
+   */
+  virtual void subscribeToTrackedSources();
+
+  /**
+   * Discard 'tracked' files, keep observing files we had before
+   * 'trackConfigSources' call.
+   */
+  virtual void abandonTrackedSources();
 
   /**
    * Reads configuration file according to mcrouter options.
@@ -92,6 +109,7 @@ class ConfigApi {
  protected:
   const McrouterOptions& opts_;
   CallbackPool<> callbacks_;
+  std::atomic<bool> tracking_;
 
   /**
    * @return true, if files have update since last call, false otherwise
@@ -114,6 +132,8 @@ class ConfigApi {
   };
   /// file path -> FileInfo
   std::unordered_map<std::string, FileInfo> fileInfos_;
+  std::unordered_map<std::string, FileInfo> trackedFiles_;
+
   std::thread configThread_;
   std::mutex fileInfoMutex_;
   std::atomic<bool> finish_;

@@ -912,11 +912,12 @@ int router_configure(mcrouter_t *router) {
   int success = 0;
 
   {
-    std::lock_guard<SFRWriteLock> lg(router->config_reconfig_lock.writeLock());
+    std::lock_guard<std::mutex> lg(router->config_reconfig_lock);
     /* mark config attempt before, so that
        successful config is always >= last config attempt. */
     router->last_config_attempt = time(nullptr);
 
+    router->configApi->trackConfigSources();
     std::string config;
     success = router->configApi->getConfigFile(config);
     if (success) {
@@ -927,6 +928,9 @@ int router_configure(mcrouter_t *router) {
 
     if (!success) {
       router->config_failures++;
+      router->configApi->abandonTrackedSources();
+    } else {
+      router->configApi->subscribeToTrackedSources();
     }
   }
 

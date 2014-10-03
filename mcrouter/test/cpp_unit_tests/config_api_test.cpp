@@ -37,12 +37,14 @@ TEST(ConfigApi, file_change) {
   std::atomic<int> changes(0);
   auto handle = api.subscribe([&changes]() { ++changes; });
 
+  api.trackConfigSources();
   std::string buf;
   EXPECT_TRUE(api.get(ConfigType::ConfigFile, path, buf));
   EXPECT_EQ(contents, buf);
 
   EXPECT_TRUE(api.getConfigFile(buf));
   EXPECT_EQ(contents, buf);
+  api.subscribeToTrackedSources();
 
   EXPECT_EQ(changes, 0);
 
@@ -50,7 +52,7 @@ TEST(ConfigApi, file_change) {
   EXPECT_EQ(folly::writeFull(config.fd(), contents.data(), contents.size()),
             contents.size());
 
-  // wait for file to flush and api to check for update
+  // wait for the file to flush and api to check for update
   sleep(4);
 
   EXPECT_EQ(changes, 1);
@@ -60,5 +62,25 @@ TEST(ConfigApi, file_change) {
 
   EXPECT_TRUE(api.get(ConfigType::ConfigFile, path, buf));
   EXPECT_EQ("ab", buf);
+
+  // clear tracked sources
+  api.trackConfigSources();
+  api.subscribeToTrackedSources();
+
+  contents = "c";
+  EXPECT_EQ(folly::writeFull(config.fd(), contents.data(), contents.size()),
+            contents.size());
+
+  // wait for the file to flush
+  sleep(4);
+
+  EXPECT_EQ(changes, 1);
+
+  EXPECT_TRUE(api.getConfigFile(buf));
+  EXPECT_EQ("abc", buf);
+
+  EXPECT_TRUE(api.get(ConfigType::ConfigFile, path, buf));
+  EXPECT_EQ("abc", buf);
+
   api.stopObserving(getpid());
 }
