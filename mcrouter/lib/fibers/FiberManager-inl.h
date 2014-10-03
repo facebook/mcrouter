@@ -40,8 +40,7 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
   while (fiber->state_ == Fiber::NOT_STARTED ||
          fiber->state_ == Fiber::READY_TO_RUN) {
     activeFiber_ = fiber;
-    result =
-      jump_fcontext(&mainContext_, fiber->contextPtr_, fiber->data_, true);
+    result = jumpContext(&mainContext_, &fiber->fcontext_, fiber->data_);
     if (fiber->state_ == Fiber::AWAITING_IMMEDIATE) {
       try {
         immediateFunc_();

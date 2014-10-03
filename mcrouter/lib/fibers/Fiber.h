@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
 #include "mcrouter/lib/fbi/queue.h"
+#include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 
 namespace facebook { namespace memcache {
 
@@ -32,11 +33,6 @@ class FiberManager;
  */
 class Fiber {
  public:
-#if BOOST_VERSION >= 105200
-  typedef boost::context::fcontext_t Context;
-#else
-  typedef boost::ctx::fcontext_t Context;
-#endif
   /**
    * Sets data for the blocked task
    *
@@ -108,10 +104,7 @@ class Fiber {
   void recordStackPosition();
 
   FiberManager& fiberManager_;  /**< Associated FiberManager */
-  Context* contextPtr_;         /**< current task execution context */
-#if BOOST_VERSION < 105200
-  Context contextImpl_;
-#endif
+  FContext fcontext_;           /**< current task execution context */
   intptr_t data_;               /**< Used to keep some data with the Fiber */
   std::function<void()> func_;  /**< task function */
 

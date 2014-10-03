@@ -19,6 +19,7 @@
 #include <folly/Likely.h>
 #include <folly/Portability.h>
 
+#include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 
 namespace facebook { namespace memcache {
@@ -31,47 +32,17 @@ pid_t localThreadId() {
   return threadId;
 }
 
-#if BOOST_VERSION >= 105200
-
-typedef boost::context::stack_t Stack;
-typedef boost::context::fcontext_t Context;
-
-// we assume stack grows downwards
-inline void* stackLimit(const Stack& stack) {
-  return static_cast<unsigned char*>(stack.sp) - stack.size;
-}
-
-inline void* stackBase(const Stack& stack) {
-  return stack.sp;
-}
-
-#else
-
-typedef boost::ctx::stack_t Stack;
-typedef boost::ctx::fcontext_t Context;
-
-// we assume stack grows downwards
-inline void* stackLimit(const Stack& stack) {
-  return stack.limit;
-}
-
-inline void* stackBase(const Stack& stack) {
-  return stack.base;
-}
-
-#endif
-
-static void fillMagic(const Stack& stack) {
-  uint64_t* begin = static_cast<uint64_t*>(stackLimit(stack));
-  uint64_t* end = static_cast<uint64_t*>(stackBase(stack));
+static void fillMagic(const FContext& context) {
+  uint64_t* begin = static_cast<uint64_t*>(context.stackLimit());
+  uint64_t* end = static_cast<uint64_t*>(context.stackBase());
 
   std::fill(begin, end, kMagic8Bytes);
 }
 
 /* Size of the region from p + nBytes down to the last non-magic value */
-static size_t nonMagicInBytes(const Stack& stack) {
-  uint64_t* begin = static_cast<uint64_t*>(stackLimit(stack));
-  uint64_t* end = static_cast<uint64_t*>(stackBase(stack));
+static size_t nonMagicInBytes(const FContext& context) {
+  uint64_t* begin = static_cast<uint64_t*>(context.stackLimit());
+  uint64_t* end = static_cast<uint64_t*>(context.stackBase());
 
   auto firstNonMagic = std::find_if(
     begin, end,
@@ -104,18 +75,10 @@ Fiber::Fiber(FiberManager& fiberManager) :
   auto size = fiberManager_.options_.stackSize;
   auto limit = fiberManager_.stackAllocator_.allocate(size);
 
-#if BOOST_VERSION >= 105200
-  contextPtr_ = boost::context::make_fcontext(
-    limit + size, size, &Fiber::fiberFuncHelper);
-#else
-  contextImpl_.fc_stack.limit = limit;
-  contextImpl_.fc_stack.base = limit + size;
-  contextPtr_ = &contextImpl_;
-  make_fcontext(contextPtr_, &Fiber::fiberFuncHelper);
-#endif
+  fcontext_ = makeContext(limit, size, &Fiber::fiberFuncHelper);
 
   if (UNLIKELY(fiberManager_.options_.debugRecordStackUsed)) {
-    fillMagic(contextPtr_->fc_stack);
+    fillMagic(fcontext_);
   }
 }
 
@@ -124,7 +87,7 @@ Fiber::~Fiber() {
     cleanupFunc_(context_);
   }
   fiberManager_.stackAllocator_.deallocate(
-    static_cast<unsigned char*>(stackLimit(contextPtr_->fc_stack)),
+    static_cast<unsigned char*>(fcontext_.stackLimit()),
     fiberManager_.options_.stackSize);
 }
 
@@ -133,7 +96,7 @@ void Fiber::recordStackPosition() {
   fiberManager_.stackHighWatermark_ =
     std::max(fiberManager_.stackHighWatermark_,
              static_cast<size_t>(
-               static_cast<unsigned char*>(stackBase(contextPtr_->fc_stack)) -
+               static_cast<unsigned char*>(fcontext_.stackBase()) -
                static_cast<unsigned char*>(
                  static_cast<void*>(&stackDummy))));
 }
@@ -173,7 +136,7 @@ void Fiber::fiberFunc() {
     if (UNLIKELY(fiberManager_.options_.debugRecordStackUsed)) {
       fiberManager_.stackHighWatermark_ =
         std::max(fiberManager_.stackHighWatermark_,
-                 nonMagicInBytes(contextPtr_->fc_stack));
+                 nonMagicInBytes(fcontext_));
     }
 
     state_ = INVALID;
@@ -182,7 +145,7 @@ void Fiber::fiberFunc() {
     fiberManager_.activeFiber_ = nullptr;
 
     auto fiber = reinterpret_cast<Fiber*>(
-      jump_fcontext(contextPtr_, &fiberManager_.mainContext_, resultLoc, true));
+      jumpContext(&fcontext_, &fiberManager_.mainContext_, resultLoc));
     assert(fiber == this);
   }
 }
@@ -197,7 +160,7 @@ intptr_t Fiber::preempt(State state) {
 
   recordStackPosition();
 
-  auto ret = jump_fcontext(contextPtr_, &fiberManager_.mainContext_, 0, true);
+  auto ret = jumpContext(&fcontext_, &fiberManager_.mainContext_, 0);
 
   assert(fiberManager_.activeFiber_ == this);
   assert(state_ == READY_TO_RUN);

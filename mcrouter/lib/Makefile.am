@@ -96,6 +96,7 @@ libmcrouter_a_SOURCES = \
   fibers/Baton.cpp \
   fibers/Baton.h \
   fibers/Baton-inl.h \
+  fibers/BoostContextCompatibility.h \
   fibers/EventBaseLoopController-inl.h \
   fibers/EventBaseLoopController.h \
   fibers/Fiber-inl.h \

@@ -20,6 +20,7 @@
 #include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
 #include "mcrouter/lib/fbi/cpp/traits.h"
 #include "mcrouter/lib/fbi/queue.h"
+#include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/fibers/TimeoutController.h"
 
@@ -231,7 +232,7 @@ class FiberManager {
   size_t fibersPoolSize_{0};    /**< total number of fibers in the free pool */
   size_t fibersActive_{0};      /**< number of running or blocked fibers */
 
-  Fiber::Context mainContext_;  /**< stores loop function context */
+  FContext mainContext_;        /**< stores loop function context */
 
   std::unique_ptr<LoopController> loopController_;
   bool isLoopScheduled_{false}; /**< was the ready loop scheduled to run? */
