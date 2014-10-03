@@ -65,24 +65,8 @@ class Fiber {
   template <typename F>
   void setFunction(F&& func);
 
-  /**
-   * resultSize bytes will be allocated on the fiber stack (intptr_t-aligned);
-   * the pointer to that location is passed to both func()
-   * which is called from the fiber context, and finally() which is
-   * called from the main context (while fiber stack is still valid).
-   *
-   * Context is also passed to both functions.
-   *
-   * If cleanup() is non-nullptr, it is guaranteed to be called sometime
-   * between finally() and this fiber's destruction; it must not throw.
-   */
-  void setFunctionFinally(
-    size_t resultSize,
-    void (*func)(intptr_t resultLoc, intptr_t context),
-    void (*finally)(intptr_t resultLoc, intptr_t context),
-    intptr_t context,
-    void (*cleanup)(intptr_t context)
-  );
+  template <typename F, typename G>
+  void setFunctionFinally(F&& func, G&& finally);
 
   static void fiberFuncHelper(intptr_t fiber);
   void fiberFunc();
@@ -113,14 +97,13 @@ class Fiber {
    */
   AtomicLinkedListHook<Fiber> nextRemoteReady_;
 
-  /**
-   * addTaskFinally implementation
-   */
-  size_t resultSize_{0};
-  void (*resultFunc_)(intptr_t resultLoc, intptr_t context){nullptr};
-  void (*finallyFunc_)(intptr_t resultLoc, intptr_t context){nullptr};
-  intptr_t context_{0};
-  void (*cleanupFunc_)(intptr_t context){nullptr};
+  static constexpr size_t kUserBufferSize = 256;
+  std::aligned_storage<kUserBufferSize>::type userBuffer_;
+
+  void* getUserBuffer();
+
+  std::function<void()> resultFunc_;
+  std::function<void()> finallyFunc_;
 
   TAILQ_ENTRY(Fiber) entry_;    /**< entry for different FiberManager queues */
 

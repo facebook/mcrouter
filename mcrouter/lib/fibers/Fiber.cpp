@@ -83,9 +83,6 @@ Fiber::Fiber(FiberManager& fiberManager) :
 }
 
 Fiber::~Fiber() {
-  if (cleanupFunc_) {
-    cleanupFunc_(context_);
-  }
   fiberManager_.stackAllocator_.deallocate(
     static_cast<unsigned char*>(fcontext_.stackLimit()),
     fiberManager_.options_.stackSize);
@@ -112,19 +109,12 @@ void Fiber::fiberFunc() {
     threadId_ = localThreadId();
     state_ = RUNNING;
 
-    /* We need to allocate at least resultSize_ bytes with
-       the least restrictive alignment requirement. */
-    MaxAlign result[(resultSize_ + sizeof(MaxAlign) - 1) /
-                    sizeof(MaxAlign)];
-
-    intptr_t resultLoc = reinterpret_cast<intptr_t>(&result);
-
     try {
       if (resultFunc_) {
         assert(finallyFunc_);
         assert(!func_);
 
-        resultFunc_(resultLoc, context_);
+        resultFunc_();
       } else {
         assert(func_);
         func_();
@@ -141,11 +131,10 @@ void Fiber::fiberFunc() {
 
     state_ = INVALID;
 
-    resultSize_ = 0;
     fiberManager_.activeFiber_ = nullptr;
 
     auto fiber = reinterpret_cast<Fiber*>(
-      jumpContext(&fcontext_, &fiberManager_.mainContext_, resultLoc));
+      jumpContext(&fcontext_, &fiberManager_.mainContext_, 0));
     assert(fiber == this);
   }
 }
@@ -167,22 +156,6 @@ intptr_t Fiber::preempt(State state) {
   state_ = RUNNING;
 
   return ret;
-}
-
-void Fiber::setFunctionFinally(
-  size_t resultSize,
-  void (*resultFunc)(intptr_t resultLoc, intptr_t context),
-  void (*finallyFunc)(intptr_t resultLoc, intptr_t context),
-  intptr_t context,
-  void (*cleanupFunc)(intptr_t context)) {
-
-  assert(state_ == INVALID);
-  resultSize_ = resultSize;
-  resultFunc_ = resultFunc;
-  finallyFunc_ = finallyFunc;
-  context_ = context;
-  cleanupFunc_ = cleanupFunc;
-  state_ = NOT_STARTED;
 }
 
 }}

@@ -377,11 +377,15 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
     return;
   }
 
+  auto config = getConfig();
+  /* Note: we want MainContextDeleter here since the destructor
+     can do complicated things, like finalize stats entry and
+     destroy a stale config.  We assume that there's not enough
+     stack space for these operations. */
+  std::shared_ptr<GenericProxyRequestContext> ctx(
+    new GenericProxyRequestContext(preq, config), MainContextDeleter());
+
   if (preq->orig_req->op == mc_op_get_service_info) {
-    auto config = getConfig();
-    auto ctx = std::make_shared<GenericProxyRequestContext>(
-      preq,
-      config);
     auto orig = ctx->ctx().proxyRequest().orig_req.clone();
     ProxyMcRequest req(std::move(ctx), std::move(orig));
 
@@ -390,48 +394,27 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
     return;
   }
 
+  auto func_ctx = folly::makeMoveWrapper(
+    std::shared_ptr<GenericProxyRequestContext>(ctx));
+  auto finally_ctx = folly::makeMoveWrapper(std::move(ctx));
+
   fiberManager.addTaskFinally(
-    /* We'll get this many bytes of uninitialized storage on the fiber stack */
-    sizeof(McReply),
-
-    /* Called from fiber context */
-    [](intptr_t resultLoc, intptr_t pctx) {
-      auto result = reinterpret_cast<McReply*>(resultLoc);
-      auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
-
-      /* Note: we want MainContextDeleter here since the destructor
-         can do complicated things, like finalize stats entry and
-         destroy a stale config.  We assume that there's not enough
-         stack space for these operations. */
-      auto ctx = std::shared_ptr<GenericProxyRequestContext>(
-        new GenericProxyRequestContext(ppreq, ppreq->proxy->getConfig()),
-        MainContextDeleter());
+    [func_ctx]() {
+      auto& origReq = (*func_ctx)->ctx().proxyRequest().orig_req;
       try {
-        auto& proute = ctx->ctx().proxyRoute();
-        auto reply = proute.dispatchMcMsg(ppreq->orig_req.clone(),
-                                          std::move(ctx));
-        new (result) McReply(ProxyMcReply::moveToMcReply(std::move(reply)));
+        auto& proute = (*func_ctx)->ctx().proxyRoute();
+        auto reply = proute.dispatchMcMsg(origReq.clone(),
+                                          std::move(*func_ctx));
+        return ProxyMcReply::moveToMcReply(std::move(reply));
       } catch (const std::exception& e) {
         std::string err = "error routing "
-          + to<std::string>(ppreq->orig_req->key) + ": " +
+          + to<std::string>(origReq->key) + ": " +
           e.what();
-        new (result) McReply(mc_res_local_error, err);
+        return McReply(mc_res_local_error, err);
       }
     },
-
-    /* Called from main context */
-    [](intptr_t resultLoc, intptr_t pctx) {
-      auto reply = reinterpret_cast<McReply*>(resultLoc);
-      auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
-      ppreq->sendReply(std::move(*reply));
-      reply->~McReply();
-    },
-
-    /* Incref and pass as context, decref in the cleanup function */
-    reinterpret_cast<intptr_t>(proxy_request_incref(preq)),
-    [](intptr_t pctx) {
-      auto ppreq = reinterpret_cast<proxy_request_t*>(pctx);
-      proxy_request_decref(ppreq);
+    [finally_ctx](folly::wangle::Try<McReply>&& reply) {
+      (*finally_ctx)->ctx().proxyRequest().sendReply(std::move(*reply));
     }
   );
 }

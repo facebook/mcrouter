@@ -19,4 +19,17 @@ void Fiber::setFunction(F&& func) {
   state_ = NOT_STARTED;
 }
 
+template <typename F, typename G>
+void Fiber::setFunctionFinally(F&& resultFunc,
+                               G&& finallyFunc) {
+  assert(state_ == INVALID);
+  resultFunc_ = std::move(resultFunc);
+  finallyFunc_ = std::move(finallyFunc);
+  state_ = NOT_STARTED;
+}
+
+inline void* Fiber::getUserBuffer() {
+  return &userBuffer_;
+}
+
 }}  // facebook::memcache

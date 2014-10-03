@@ -12,6 +12,7 @@
 
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
+#include <folly/Optional.h>
 #include <folly/Portability.h>
 #include <folly/ScopeGuard.h>
 #include <folly/wangle/Try.h>
@@ -36,11 +37,10 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
   assert(fiber->state_ == Fiber::NOT_STARTED ||
          fiber->state_ == Fiber::READY_TO_RUN);
 
-  intptr_t result = 0;
-  while (fiber->state_ == Fiber::NOT_STARTED ||
+   while (fiber->state_ == Fiber::NOT_STARTED ||
          fiber->state_ == Fiber::READY_TO_RUN) {
     activeFiber_ = fiber;
-    result = jumpContext(&mainContext_, &fiber->fcontext_, fiber->data_);
+    jumpContext(&mainContext_, &fiber->fcontext_, fiber->data_);
     if (fiber->state_ == Fiber::AWAITING_IMMEDIATE) {
       try {
         immediateFunc_();
@@ -65,16 +65,11 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
     fiber->resultFunc_ = nullptr;
     if (fiber->finallyFunc_) {
       try {
-        fiber->finallyFunc_(result, fiber->context_);
+        fiber->finallyFunc_();
       } catch (...) {
         exceptionCallback_(std::current_exception());
       }
       fiber->finallyFunc_ = nullptr;
-      if (fiber->cleanupFunc_) {
-        fiber->cleanupFunc_(fiber->context_);
-        fiber->cleanupFunc_ = nullptr;
-      }
-      fiber->context_ = 0;
     }
 
     if (fibersPoolSize_ < options_.maxFibersPoolSize) {
@@ -152,6 +147,69 @@ struct IsRvalueRefTry { static const bool value = false; };
 template <typename T>
 struct IsRvalueRefTry<folly::wangle::Try<T>&&> { static const bool value = true; };
 
+// We need this to be in a struct, not inlined in addTaskFinally, because clang
+// crashes otherwise.
+template <typename F, typename G>
+struct FiberManager::AddTaskFinallyHelper {
+  class Func;
+  class Finally;
+
+  typedef typename std::result_of<F()>::type Result;
+
+  static constexpr bool allocateInBuffer =
+    sizeof(Func) + sizeof(Finally) <= Fiber::kUserBufferSize;
+
+  class Finally {
+   public:
+    Finally(G&& finally,
+            FiberManager& fm) :
+        finally_(std::move(finally)),
+        fm_(fm) {
+    }
+
+    void operator()() {
+      try {
+        finally_(std::move(*result_));
+      } catch (...) {
+        fm_.exceptionCallback_(std::current_exception());
+      }
+
+      if (allocateInBuffer) {
+        this->~Finally();
+      } else {
+        delete this;
+      }
+    }
+
+   private:
+    friend class Func;
+
+    G finally_;
+    folly::Optional<folly::wangle::Try<Result>> result_;
+    FiberManager& fm_;
+  };
+
+  class Func {
+   public:
+    Func(F&& func, Finally& finally) :
+        func_(std::move(func)), result_(finally.result_) {}
+
+    void operator()() {
+      result_ = folly::wangle::makeTryFunction(std::move(func_));
+
+      if (allocateInBuffer) {
+        this->~Func();
+      } else {
+        delete this;
+      }
+    }
+
+   private:
+    F func_;
+    folly::Optional<folly::wangle::Try<Result>>& result_;
+  };
+};
+
 template <typename F, typename G>
 void FiberManager::addTaskFinally(F&& func, G&& finally) {
   typedef typename std::result_of<F()>::type Result;
@@ -170,49 +228,24 @@ void FiberManager::addTaskFinally(F&& func, G&& finally) {
 
   auto fiber = getFiber();
 
-  struct Context {
-    F func;
-    G finally;
-    FiberManager* fm;
+  typedef AddTaskFinallyHelper<F,G> Helper;
 
-    Context(F&& f, G&& g, FiberManager* fm_)
-        : func(std::move(f)), finally(std::move(g)), fm(fm_) {}
-  };
+  if (Helper::allocateInBuffer) {
+    auto funcLoc = static_cast<typename Helper::Func*>(
+      fiber->getUserBuffer());
+    auto finallyLoc = static_cast<typename Helper::Finally*>(
+      static_cast<void*>(funcLoc + 1));
 
-  fiber->setFunctionFinally(
-    sizeof(folly::wangle::Try<Result>),
-    [] (intptr_t resultLoc, intptr_t contextPtr) {
-      auto context = reinterpret_cast<Context*>(contextPtr);
-      auto storage = reinterpret_cast<MaxAlign*>(resultLoc);
-      auto result =
-        static_cast<folly::wangle::Try<Result>*>(
-          static_cast<void*>(storage));
-      try {
-        new (result) folly::wangle::Try<Result>(context->func());
-      } catch (...) {
-        new (result) folly::wangle::Try<Result>(std::current_exception());
-      }
-    },
-    [] (intptr_t resultLoc, intptr_t contextPtr) {
-      auto context = reinterpret_cast<Context*>(contextPtr);
-      auto storage = reinterpret_cast<MaxAlign*>(resultLoc);
-      auto result =
-        static_cast<folly::wangle::Try<Result>*>(
-          static_cast<void*>(storage));
-      try {
-        context->finally(std::move(*result));
-      } catch (...) {
-        context->fm->exceptionCallback_(std::current_exception());
-      }
-      result->~Try();
-    },
-    reinterpret_cast<intptr_t>(
-      new Context(std::move(func), std::move(finally), this)),
-    [] (intptr_t contextPtr) {
-      auto context = reinterpret_cast<Context*>(contextPtr);
-      delete context;
-    }
-  );
+    new (finallyLoc) typename Helper::Finally(std::move(finally), *this);
+    new (funcLoc) typename Helper::Func(std::move(func), *finallyLoc);
+
+    fiber->setFunctionFinally(std::ref(*funcLoc), std::ref(*finallyLoc));
+  } else {
+    auto finallyLoc = new typename Helper::Finally(std::move(finally), *this);
+    auto funcLoc = new typename Helper::Func(std::move(func), *finallyLoc);
+
+    fiber->setFunctionFinally(std::ref(*funcLoc), std::ref(*finallyLoc));
+  }
 
   fiber->data_ = reinterpret_cast<intptr_t>(fiber);
   TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
