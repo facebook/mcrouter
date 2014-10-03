@@ -43,18 +43,6 @@ ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
     resetTimer_(nullptr) {
 }
 
-void ProxyDestinationMap::markAllAsUnused() {
-  std::lock_guard<std::mutex> lck(destinationsLock_);
-
-  for (auto& it : destinations_) {
-    it.second->isUsedInConfig_ = false;
-  }
-}
-
-void ProxyDestinationMap::markAsUsed(ProxyDestination& destination) {
-  destination.isUsedInConfig_ = true;
-}
-
 void ProxyDestinationMap::removeAllUnused() {
   /* We don't want to destroy any ProxyDestinations while holding
      the destinationsLock_, since the destruction obtains other locks */
@@ -66,7 +54,7 @@ void ProxyDestinationMap::removeAllUnused() {
     auto cur = destinations_.begin();
     while (cur != destinations_.end()) {
       auto& dest = cur->second;
-      if (!dest->isUsedInConfig_) {
+      if (dest.unique()) {
         if (dest->stateList_ == active_.get()) {
           active_->list.erase(StateList::List::s_iterator_to(*dest));
         } else if (dest->stateList_ == inactive_.get()) {
@@ -97,7 +85,6 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
       destinations_.emplace(std::move(key), destination);
     }
   }
-  markAsUsed(*destination);
 
   // Update shared area of ProxyDestinations with same key from different
   // threads. This shared area is represented with ProxyClientShared class.
@@ -125,7 +112,7 @@ ProxyDestinationMap::getOutstandingRequestStats() {
 }
 
 void ProxyDestinationMap::markAsActive(ProxyDestination& destination) {
-  if (destination.stateList_ == active_.get() || !destination.isUsedInConfig_) {
+  if (destination.stateList_ == active_.get()) {
     return;
   }
   if (destination.stateList_ == inactive_.get()) {

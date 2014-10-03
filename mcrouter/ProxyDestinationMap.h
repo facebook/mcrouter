@@ -42,26 +42,14 @@ class ProxyDestinationMap {
   explicit ProxyDestinationMap(proxy_t* proxy);
 
   /**
-   * Mark all ProxyDestinations stored in this object as 'unused'. Next time
-   * removeAllUnused is called this ProxyDestinations will be destroyed.
-   */
-  void markAllAsUnused();
-
-  /**
-   * Mark destination as 'used', so it won't be destroyed on next
-   * removeAllUnused call.
-   */
-  void markAsUsed(ProxyDestination& destination);
-
-  /**
-   * Removes all ProxyDestinations marked as 'unused'
+   * Removes all ProxyDestinations that are used only by ProxyDestinationMap
+   * (shared_ptr is unique)
    */
   void removeAllUnused();
 
   /**
-   * If ProxyDestination is already stored in this object - returns it.
-   * Otherwise creates new one. Returned destination will be marked as 'used',
-   * so it won't be destroyed on next removeAllUnused call.
+   * If ProxyDestination is already stored in this object - returns it;
+   * otherwise creates a new one.
    */
   std::shared_ptr<ProxyDestination> fetch(const ProxyClientCommon& client);
 

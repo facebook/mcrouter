@@ -46,7 +46,7 @@ enum proxy_client_state_t {
 };
 
 struct ProxyDestinationStats {
-  bool is_up{0};
+  bool is_up{false};
   ExponentialSmoothData avgLatency;
   uint64_t results[mc_nres] = {0};
 
@@ -155,7 +155,6 @@ struct ProxyDestination {
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
-  std::atomic<bool> isUsedInConfig_{false};
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;
 

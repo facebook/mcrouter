@@ -881,10 +881,6 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
         return 0;
       }
 
-      // current connections may be reused in new config, those which are
-      // not reused will eventually be removed
-      proxy->destinationMap->markAllAsUnused();
-
       newConfigs.push_back(builder.buildConfig(proxy));
     }
   } catch (const std::exception& e) {
