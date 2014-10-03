@@ -452,9 +452,9 @@ void AsyncMcClientImpl::readEOF() noexcept {
 
 void AsyncMcClientImpl::readError(const TransportException& ex) noexcept {
   assert(connectionState_ == ConnectionState::UP);
-  LOG(ERROR) << "Failed to read from socket with remote endpoint \""
-             << connectionOptions_.host << ":" << connectionOptions_.port
-             << "\". Exception: " << ex.what();
+  VLOG(1) << "Failed to read from socket with remote endpoint \""
+          << connectionOptions_.host << ":" << connectionOptions_.port
+          << "\". Exception: " << ex.what();
   processShutdown();
 }
 
@@ -471,10 +471,10 @@ void AsyncMcClientImpl::writeError(
   assert(connectionState_ == ConnectionState::UP ||
          connectionState_ == ConnectionState::ERROR);
 
-  LOG(ERROR) << "Failed to write into socket with remote endpoint \""
-             << connectionOptions_.host << ":" << connectionOptions_.port
-             << "\", wrote " << bytesWritten
-             << " bytes. Exception: " << ex.what();
+  VLOG(1) << "Failed to write into socket with remote endpoint \""
+          << connectionOptions_.host << ":" << connectionOptions_.port
+          << "\", wrote " << bytesWritten
+          << " bytes. Exception: " << ex.what();
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
