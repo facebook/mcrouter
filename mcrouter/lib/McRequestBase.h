@@ -22,6 +22,8 @@
 #endif
 
 namespace facebook { namespace memcache {
+class McRequest;
+
 /**
  * As far as the routing module is concerned, a Request has
  * a routingKey() and an optional routingPrefix(),
@@ -146,8 +148,24 @@ class McRequestBase {
     return delta_;
   }
 
+  void setDelta(uint64_t d) {
+    delta_ = d;
+  }
+
   uint64_t leaseToken() const {
     return leaseToken_;
+  }
+
+  void setLeaseToken(uint64_t lt) {
+    leaseToken_ = lt;
+  }
+
+  uint64_t cas() const {
+    return cas_;
+  }
+
+  void setCas(uint64_t c) {
+    cas_ = c;
   }
 
   /**
@@ -213,6 +231,7 @@ class McRequestBase {
   uint64_t flags_{0};
   uint64_t delta_{0};
   uint64_t leaseToken_{0};
+  uint64_t cas_{0};
 
 #ifndef LIBMC_FBTRACE_DISABLE
   struct McFbtraceRefPolicy {
@@ -235,7 +254,35 @@ class McRequestBase {
   McFbtraceRef fbtraceInfo_;
 #endif
 
+  /**
+   * Direct key/value construction from the parsing code for efficiency.
+   */
+  friend McRequest umbrellaParseRequest(const folly::IOBuf& source,
+                                        const uint8_t*, size_t,
+                                        const uint8_t*, size_t,
+                                        mc_op_t&, uint64_t&);
+  /**
+   * Clone the key from the subregion of source [begin, begin + size).
+   * @return false If the subregion is empty or not valid (i.e. not contained
+   *   within [source.data(), source.data() + length())
+   */
+  bool setKeyFrom(const folly::IOBuf& source,
+                  const uint8_t* keyBegin, size_t keySize);
+
+  /**
+   * Clone the key from the subregion of source [begin, begin + size).
+   * @return false If the subregion is empty or not valid (i.e. not contained
+   *   within [source.data(), source.data() + length())
+   */
+  bool setValueFrom(const folly::IOBuf& source,
+                    const uint8_t* valueBegin, size_t valueSize);
+
  protected:
+  /**
+   * Useful for incremental construction, i.e. during parsing.
+   */
+  McRequestBase() {}
+
   McRequestBase(const McRequestBase& other);
   ~McRequestBase();
 };

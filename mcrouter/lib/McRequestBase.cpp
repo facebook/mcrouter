@@ -24,7 +24,8 @@ McRequestBase::McRequestBase(McMsgRef&& msg)
       exptime_(msg_->exptime),
       flags_(msg_->flags),
       delta_(msg_->delta),
-      leaseToken_(msg_->lease_id)
+      leaseToken_(msg_->lease_id),
+      cas_(msg_->cas)
 #ifndef LIBMC_FBTRACE_DISABLE
     ,
       fbtraceInfo_(McFbtraceRef::cloneRef(msg_->fbtrace_info))
@@ -41,6 +42,20 @@ McRequestBase::McRequestBase(folly::StringPiece key)
   msg_ = std::move(msg);
 }
 
+bool McRequestBase::setKeyFrom(const folly::IOBuf& source,
+                               const uint8_t* keyBegin, size_t keySize) {
+  if (keySize && cloneInto(keyData_, source, keyBegin, keySize)) {
+    keys_ = Keys(getRange(keyData_));
+    return true;
+  }
+  return false;
+}
+
+bool McRequestBase::setValueFrom(const folly::IOBuf& source,
+                                 const uint8_t* valueBegin, size_t valueSize) {
+  return valueSize && cloneInto(valueData_, source, valueBegin, valueSize);
+}
+
 McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
   auto is_key_set =
     hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
@@ -52,6 +67,7 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->delta == delta_ &&
       msg_->lease_id == leaseToken_ &&
+      msg_->cas == cas_ &&
 #ifndef LIBMC_FBTRACE_DISABLE
       msg_->fbtrace_info == fbtraceInfo_.get() &&
 #endif
@@ -70,6 +86,7 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
     toRelease->flags = flags_;
     toRelease->delta = delta_;
     toRelease->lease_id = leaseToken_;
+    toRelease->cas = cas_;
 #ifndef LIBMC_FBTRACE_DISABLE
     toRelease->fbtrace_info = fbtraceInfo_.clone().release();
 #endif
@@ -96,6 +113,7 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->delta == delta_ &&
       msg_->lease_id == leaseToken_ &&
+      msg_->cas == cas_ &&
 #ifndef LIBMC_FBTRACE_DISABLE
       msg_->fbtrace_info == fbtraceInfo_.get() &&
 #endif
@@ -121,6 +139,7 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
     toRelease->flags = flags_;
     toRelease->delta = delta_;
     toRelease->lease_id = leaseToken_;
+    toRelease->cas = cas_;
 #ifndef LIBMC_FBTRACE_DISABLE
     toRelease->fbtrace_info = fbtraceInfo_.clone().release();
 #endif
@@ -175,7 +194,8 @@ McRequestBase::McRequestBase(const McRequestBase& other)
     : exptime_(other.exptime_),
       flags_(other.flags_),
       delta_(other.delta_),
-      leaseToken_(other.leaseToken_) {
+      leaseToken_(other.leaseToken_),
+      cas_(other.cas_) {
   other.keyData_.cloneInto(keyData_);
   keys_ = Keys(getRange(keyData_));
   other.valueData_.cloneInto(valueData_);

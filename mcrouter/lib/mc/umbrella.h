@@ -216,6 +216,53 @@ struct um_parser_s {
   entry_list_msg_preparer_t prep;
 };
 
+typedef enum msg_field_e {
+  msg_undefined = 0,
+
+  msg_op = 0x1,
+  msg_result = 0x2,
+  msg_reqid = 0x4,
+  msg_err_code = 0x8,
+
+  msg_flags = 0x10,
+  msg_exptime = 0x20,
+  msg_number = 0x40,
+
+  msg_delta = 0x100,
+  msg_lease_id = 0x200,
+  msg_cas = 0x400,
+#ifndef LIBMC_FBTRACE_DISABLE
+  msg_fbtrace = 0x800,
+#endif
+
+  msg_double = 0x80,
+
+  msg_stats = 0x1000,
+  msg_key = 0x2000,
+  msg_value = 0x4000,
+  // These values must fit in a short, so 0x8000 is the max
+  // with this scheme.
+} msg_field_t;
+
+#define UM_NOPS 32
+
+#ifdef HAVE_STATIC_ASSERT
+_Static_assert(
+  mc_nops == 31,
+  "If you add a new mc_op, make sure to update mc/umbrella_conv.h");
+#endif
+
+extern uint32_t const umbrella_op_from_mc[UM_NOPS];
+extern uint32_t const umbrella_op_to_mc[UM_NOPS];
+
+#ifdef HAVE_STATIC_ASSERT
+_Static_assert(
+  mc_nres == 30,
+  "If you add a new mc_res, make sure to update mc/umbrella_conv.h");
+#endif
+
+extern uint32_t const umbrella_res_from_mc[mc_nres];
+extern uint32_t const umbrella_res_to_mc[mc_nres];
 
 __END_DECLS
 
