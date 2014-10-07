@@ -18,38 +18,24 @@
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
 #endif
 
-#define UM_NOPS 32
-
-#ifdef HAVE_STATIC_ASSERT
-_Static_assert(
-  mc_nops == 31,
-  "If you add a new mc_op, make sure to update mc/umbrella_conv.h");
-#endif
-
-static uint32_t const umbrella_op_from_mc[UM_NOPS] = {
+uint32_t const umbrella_op_from_mc[UM_NOPS] = {
 #define UM_OP(mc, um) [mc] = um,
-#include "mcrouter/lib/mc/umbrella_conv.h"
+#include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
 };
 
-static uint32_t const umbrella_op_to_mc[UM_NOPS] = {
+uint32_t const umbrella_op_to_mc[UM_NOPS] = {
 #define UM_OP(mc, um) [um] = mc,
-#include "mcrouter/lib/mc/umbrella_conv.h"
+#include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
 };
 
-#ifdef HAVE_STATIC_ASSERT
-_Static_assert(
-  mc_nres == 30,
-  "If you add a new mc_res, make sure to update mc/umbrella_conv.h");
-#endif
-
-static uint32_t const umbrella_res_from_mc[mc_nres] = {
+uint32_t const umbrella_res_from_mc[mc_nres] = {
 #define UM_RES(mc, um) [mc] = um,
-#include "mcrouter/lib/mc/umbrella_conv.h"
+#include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
 };
 
-static uint32_t const umbrella_res_to_mc[mc_nres] = {
+uint32_t const umbrella_res_to_mc[mc_nres] = {
 #define UM_RES(mc, um) [um] = mc,
-#include "mcrouter/lib/mc/umbrella_conv.h"
+#include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
 };
 
 typedef struct _parse_info_s {
@@ -61,34 +47,6 @@ typedef struct _parse_info_s {
 #endif
   int stats_count;
 } _parse_info_t;
-
-typedef enum msg_field_e {
-  msg_undefined = 0,
-
-  msg_op = 0x1,
-  msg_result = 0x2,
-  msg_reqid = 0x4,
-  msg_err_code = 0x8,
-
-  msg_flags = 0x10,
-  msg_exptime = 0x20,
-  msg_number = 0x40,
-
-  msg_delta = 0x100,
-  msg_lease_id = 0x200,
-  msg_cas = 0x400,
-#ifndef LIBMC_FBTRACE_DISABLE
-  msg_fbtrace = 0x800,
-#endif
-
-  msg_double = 0x80,
-
-  msg_stats = 0x1000,
-  msg_key = 0x2000,
-  msg_value = 0x4000,
-  // These values must fit in a short, so 0x8000 is the max
-  // with this scheme.
-} msg_field_t;
 
 // Which fields are required for each message?
 #define always_required msg_op

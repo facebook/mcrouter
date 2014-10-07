@@ -69,4 +69,22 @@ folly::IOBuf concatAll(InputIterator begin, InputIterator end) {
   return out;
 }
 
+/**
+ * Given a coalesced IOBuf and a range of bytes [begin, begin + size) inside it,
+ * clones into out IOBuf so that cloned.data() == begin and
+ * cloned.length() == size.
+ * @return false If the range is invalid.
+ */
+inline bool cloneInto(folly::IOBuf& out, const folly::IOBuf& source,
+                      const uint8_t* begin, size_t size) {
+  if (!(begin >= source.data() &&
+        begin + size <= source.data() + source.length())) {
+    return false;
+  }
+  source.cloneOneInto(out);
+  out.trimStart(begin - out.data());
+  out.trimEnd(out.length() - size);
+  return true;
+}
+
 }}

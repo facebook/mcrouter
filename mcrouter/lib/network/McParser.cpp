@@ -10,6 +10,8 @@
 
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
+
 namespace facebook { namespace memcache {
 
 /* Adjust buffer size after this many requests */
@@ -111,26 +113,6 @@ void McParser::errorHelper(McReply reply) {
   }
 }
 
-namespace {
-/**
- * Given an IOBuf and a range of bytes [begin, begin + size) inside it,
- * returns a clone of the IOBuf so that cloned.data() == begin and
- * cloned.length() == size.
- */
-folly::IOBuf cloneSubBuf(
-  const folly::IOBuf& from,
-  uint8_t* begin, size_t size) {
-
-  folly::IOBuf out;
-  from.cloneInto(out);
-  assert(begin >= out.data() && begin <= out.data() + out.length());
-  out.trimStart(begin - out.data());
-  assert(size <= out.length());
-  out.trimEnd(out.length() - size);
-  return out;
-}
-}
-
 void McParser::requestReadyHelper(McRequest&& req,
                                   mc_op_t operation,
                                   uint64_t reqid,
@@ -153,45 +135,51 @@ bool McParser::umMessageReady(
   const uint8_t* body,
   const folly::IOBuf& bodyBuffer) {
 
-  auto mutMsg = createMcMsgRef();
-  uint64_t reqid;
-  auto st = um_consume_no_copy(header, umMsgInfo_.header_size,
-                               body, umMsgInfo_.body_size,
-                               &reqid, mutMsg.get());
-  if (st != um_ok) {
-    errorHelper(McReply(mc_res_remote_error,
-                        "Error parsing Umbrella message"));
-    return false;
-  }
-
   switch (type_) {
     case ParserType::SERVER:
       {
-        McMsgRef msg(std::move(mutMsg));
-        auto req = McRequest(msg.clone());
-        if (msg->key.len != 0) {
-          req.setKey(
-            cloneSubBuf(bodyBuffer,
-                        reinterpret_cast<uint8_t*>(msg->key.str),
-                        msg->key.len));
+        try {
+          mc_op_t op;
+          uint64_t reqid;
+          auto req = umbrellaParseRequest(bodyBuffer,
+                                          header, umMsgInfo_.header_size,
+                                          body, umMsgInfo_.body_size,
+                                          op, reqid);
+          /* Umbrella requests never include a result and are never 'noreply' */
+          requestReadyHelper(std::move(req), op, reqid,
+                             /* result= */ mc_res_unknown,
+                             /* noreply= */ false);
+        } catch (const std::runtime_error& e) {
+          errorHelper(
+            McReply(mc_res_remote_error,
+                    std::string("Error parsing Umbrella message: ")
+                    + e.what()));
+          return false;
         }
-        if (msg->value.len != 0) {
-          req.setValue(
-            cloneSubBuf(bodyBuffer,
-                        reinterpret_cast<uint8_t*>(msg->value.str),
-                        msg->value.len));
-        }
-        requestReadyHelper(std::move(req), msg->op, reqid, msg->result,
-                           msg->noreply);
       }
       break;
     case ParserType::CLIENT:
       {
+        auto mutMsg = createMcMsgRef();
+        uint64_t reqid;
+        auto st = um_consume_no_copy(header, umMsgInfo_.header_size,
+                                     body, umMsgInfo_.body_size,
+                                     &reqid, mutMsg.get());
+        if (st != um_ok) {
+          errorHelper(McReply(mc_res_remote_error,
+                              "Error parsing Umbrella message"));
+          return false;
+        }
+
         folly::IOBuf value;
         if (mutMsg->value.len != 0) {
-          value = cloneSubBuf(bodyBuffer,
-                              reinterpret_cast<uint8_t*>(mutMsg->value.str),
-                              mutMsg->value.len);
+          if (!cloneInto(value, bodyBuffer,
+                         reinterpret_cast<uint8_t*>(mutMsg->value.str),
+                         mutMsg->value.len)) {
+            errorHelper(McReply(mc_res_remote_error,
+                                "Error parsing Umbrella value"));
+            return false;
+          }
           // Reset msg->value, or it will confuse McReply::releasedMsg
           mutMsg->value.str = nullptr;
           mutMsg->value.len = 0;

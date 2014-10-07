@@ -161,6 +161,8 @@ libmcrouter_a_SOURCES = \
   network/MultiOpParent.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
+  network/UmbrellaProtocol.cpp \
+  network/UmbrellaProtocol.h \
   network/UniqueIntrusiveList.h \
   network/WriteBuffer.cpp \
   network/WriteBuffer.h \
