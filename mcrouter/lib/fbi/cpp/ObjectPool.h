@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include <cassert>
 #include <exception>
 #include <limits>
 #include <memory>
