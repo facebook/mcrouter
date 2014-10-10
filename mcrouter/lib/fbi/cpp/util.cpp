@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <utime.h>
+#include <pthread.h>
 
 #include <random>
 
@@ -134,6 +135,23 @@ bool touchFile(const std::string& path) {
     }
   }
   return utime(path.data(), nullptr) == 0;
+}
+
+// one day we should move it to folly/ThreadName.h
+std::string getThreadName() {
+
+#if defined(__GLIBC__) && !defined(__APPLE__)
+#if __GLIBC_PREREQ(2, 12)
+
+  char threadName[32];
+  if (pthread_getname_np(pthread_self(), threadName, sizeof(threadName)) == 0) {
+    return threadName;
+  }
+
+#endif
+#endif
+
+  return "unknown";
 }
 
 }} // facebook::memcache

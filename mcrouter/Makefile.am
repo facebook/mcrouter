@@ -40,6 +40,7 @@ libmcroutercore_a_SOURCES = \
   mcrouter_config.cpp \
   mcrouter_config.h \
   mcrouter_options_list.h \
+  McrouterLogFailure.h \
   Observable-inl.h \
   Observable.h \
   options-template.h \

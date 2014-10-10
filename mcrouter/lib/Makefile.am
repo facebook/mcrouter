@@ -49,6 +49,8 @@ libmcrouter_a_SOURCES = \
   fbi/counting_sem.h \
   fbi/cpp/AtomicLinkedList.h \
   fbi/cpp/AtomicSharedPtr.h \
+  fbi/cpp/LogFailure.cpp \
+  fbi/cpp/LogFailure.h \
   fbi/cpp/ShutdownLock.h \
   fbi/cpp/StartupLock.h \
   fbi/cpp/Trie-inl.h \

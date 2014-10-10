@@ -114,6 +114,8 @@ struct mcrouter_t {
   void addStartupOpts(
     std::unordered_map<std::string, std::string> additionalOpts);
 
+  std::string routerName() const;
+
   void startShutdown();
   bool shutdownStarted();
 

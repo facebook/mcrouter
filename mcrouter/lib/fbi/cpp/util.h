@@ -179,6 +179,11 @@ randomInt64(RNG& rng) {
   return rng();
 }
 
+/**
+ * @return name of current thread
+ */
+std::string getThreadName();
+
 }}  // facebook::memcache
 
 #endif

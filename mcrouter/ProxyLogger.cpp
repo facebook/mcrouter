@@ -170,6 +170,7 @@ ProxyLogger::ProxyLogger(proxy_t* proxy,
                   ", disabling stats logging";
   } else {
     auto json_options = folly::toDynamic(proxy_->router->getStartupOpts());
+    json_options["pid"] = folly::to<string>(getpid());
     proxy_write_stats_file(proxy_, kStatsStartupOptionsSfx, json_options);
     auto path = proxy_stats_file_path(proxy_, kStatsStartupOptionsSfx);
     touchStatsFilepaths_.push_back(std::move(path));

@@ -168,6 +168,8 @@ std::shared_ptr<RouterLogger> createRouterLogger();
 
 void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog);
 
+void initFailureLogger();
+
 #ifdef PACKAGE_STRING
   #define MCROUTER_PACKAGE_STRING PACKAGE_STRING
 #else

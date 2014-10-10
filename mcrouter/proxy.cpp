@@ -36,6 +36,7 @@
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/fibers/EventBaseLoopController.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/priorities.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -53,8 +54,6 @@
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/stats.h"
-
-using folly::wangle::Try;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -84,8 +83,9 @@ static void proxy_set_default_route(proxy_t* proxy, const std::string& str) {
   }
   boost::regex routeRegex("^/[^/]+/[^/]+/?$");
   if (!boost::regex_match(str, routeRegex)) {
-    LOG(ERROR) << "default route (" << str <<
-                  ") should be of the form /region/cluster/";
+    logFailure(proxy->router, failure::Category::kInvalidOption,
+               "default route ({}) should be of the form /region/cluster/",
+               str);
     // Not setting the default route here causes proxy_validate_config() to
     // fail, so mcrouter will not start. It will have printed useful error
     // messages, so this seems like the right behavior.
@@ -206,7 +206,8 @@ int proxy_t::startAwriterThreads(bool realtime) {
                           &awriterThreadStack_, &awriter_thread_run,
                           awriter.get(), realtime);
     if (!rc) {
-      LOG(ERROR) << "Failed to start asynclog awriter thread";
+      logFailure(router, failure::Category::kSystemError,
+                 "Failed to start asynclog awriter thread");
       return -1;
     }
     folly::setThreadName(awriterThreadHandle_, "mcrtr-awriter");
@@ -217,7 +218,8 @@ int proxy_t::startAwriterThreads(bool realtime) {
                         &awriter_thread_run,
                         stats_log_writer.get(), realtime);
   if (!rc) {
-    LOG(ERROR) << "Failed to start async stats_log_writer thread";
+    logFailure(router, failure::Category::kSystemError,
+               "Failed to start async stats_log_writer thread");
     return -1;
   }
 
@@ -877,14 +879,16 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
       auto proxy = router->proxy_threads[i]->proxy;
 
       if (proxy->default_route.empty()) {
-        LOG(ERROR) << "empty default route";
+        logFailure(router, failure::Category::kInvalidOption,
+                   "empty default route");
         return 0;
       }
 
       newConfigs.push_back(builder.buildConfig(proxy));
     }
   } catch (const std::exception& e) {
-    LOG(ERROR) << "CRITICAL: Error creating ProxyRoute: " << e.what();
+    logFailure(router, failure::Category::kInvalidConfig,
+               "Failed to reconfigure: {}", e.what());
     return 0;
   }
 
@@ -919,7 +923,8 @@ int router_configure(mcrouter_t *router) {
     if (success) {
       success = router_configure_from_string(router, config);
     } else {
-      LOG(INFO) << "Can not read config file";
+      logFailure(router, failure::Category::kBadEnvironment,
+                 "Can not read config file");
     }
 
     if (!success) {

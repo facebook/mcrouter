@@ -12,6 +12,7 @@
 #include <folly/Memory.h>
 #include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
 
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 
@@ -301,10 +302,10 @@ void AsyncMcClientImpl::attemptConnection() {
   if (connectionOptions_.sslContextProvider) {
     auto sslContext = connectionOptions_.sslContextProvider();
     if (!sslContext) {
-      LOG(ERROR) << "SSLContext provider returned nullptr, check SSL "
-                 << "certificates. Any further request to "
-                 << connectionOptions_.host << ":" << connectionOptions_.port
-                 << " will fail.";
+      failure::log("AsyncMcClient", failure::Category::kBadEnvironment,
+        "SSLContext provider returned nullptr, check SSL certificates. Any "
+        "further request to [{}]:{} will fail.", connectionOptions_.host,
+        connectionOptions_.port);
       connectError(TransportException(TransportException::SSL_ERROR));
       return;
     }

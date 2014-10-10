@@ -24,8 +24,10 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/Conv.h>
+#include <folly/DynamicConverter.h>
 #include <folly/Format.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/ThreadName.h>
 
@@ -34,6 +36,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/FileObserver.h"
 #include "mcrouter/flavor.h"
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/mc/msg.h"
@@ -401,6 +404,10 @@ void mcrouter_t::addStartupOpts(unordered_map<string, string> additionalOpts) {
   additionalStartupOpts_.insert(additionalOpts.begin(), additionalOpts.end());
 }
 
+std::string mcrouter_t::routerName() const {
+  return "libmcrouter." + opts.service_name + "." + opts.router_name;
+}
+
 mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   if (!is_valid_router_name(input_options.service_name) ||
       !is_valid_router_name(input_options.router_name)) {
@@ -416,6 +423,15 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   }
 
   mcrouter_t *router = new mcrouter_t(input_options);
+
+  folly::json::serialization_opts jsonOpts;
+  jsonOpts.sort_keys = true;
+  folly::dynamic dict = folly::dynamic::object
+    ("opts", folly::toDynamic(router->getStartupOpts()))
+    ("version", MCROUTER_PACKAGE_STRING);
+  auto jsonStr = folly::json::serialize(dict, jsonOpts);
+  failure::setServiceContext(router->routerName(), jsonStr.toStdString());
+
   // Initialize client_list now as it is accessed in mcrouter_free
   TAILQ_INIT(&router->client_list);
   if (!router) {
@@ -497,8 +513,6 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
 
   router->is_transient = false;
   router->live_clients = 0;
-
-  router->addStartupOpts({ { "pid", folly::to<string>(getpid()) } });
 
   router->startupLock.notify();
 

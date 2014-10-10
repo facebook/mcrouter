@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <glog/logging.h>
@@ -42,6 +43,7 @@
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/fb_cpu_util.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/router.h"
@@ -54,6 +56,7 @@ using namespace facebook::memcache::mcrouter;
 
 using std::string;
 using std::unordered_map;
+using std::unordered_set;
 using std::vector;
 
 #define EXIT_STATUS_TRANSIENT_ERROR 2
@@ -170,6 +173,7 @@ static void parse_options(int argc,
                           char** argv,
                           unordered_map<string, string>& option_dict,
                           unordered_map<string, string>& standalone_option_dict,
+                          unordered_set<string>& unrecognized_options,
                           int* validate_configs,
                           string* flavor) {
 
@@ -282,7 +286,7 @@ static void parse_options(int argc,
       }
 
       if (long_index == -1) {
-        LOG(WARNING) << "unrecognized option";
+        unrecognized_options.insert(argv[optind - 1]);
       } else if (strcmp("proxy-threads",
                         long_options[long_index].name) == 0) {
         if (strcmp(optarg, "auto") == 0) {
@@ -306,7 +310,7 @@ static void parse_options(int argc,
                         " --probe-timeout-initial";
         option_dict["probe_delay_initial_ms"] = optarg;
       } else {
-        LOG(WARNING) << "unrecognized option";
+        unrecognized_options.insert(argv[optind - 1]);
       }
     }
     long_index = -1;
@@ -527,7 +531,7 @@ void notify_command_line(int argc, char ** argv) {
 }
 
 void on_assert_fail(const char *msg) {
-  LOG(ERROR) << "CRITICAL: " << msg;
+  logFailure(failure::Category::kBrokenLogic, msg);
 }
 
 int main(int argc, char **argv) {
@@ -537,11 +541,12 @@ int main(int argc, char **argv) {
 
   unordered_map<string, string> option_dict, st_option_dict,
     cmdline_option_dict, cmdline_st_option_dict;
+  unordered_set<string> unrecognized_options;
   int validate_configs = 0;
   std::string flavor;
 
   parse_options(argc, argv, cmdline_option_dict, cmdline_st_option_dict,
-                &validate_configs, &flavor);
+                unrecognized_options, &validate_configs, &flavor);
 
   if (flavor.empty()) {
     option_dict = cmdline_option_dict;
@@ -570,22 +575,37 @@ int main(int argc, char **argv) {
     }
   }
 
+  auto commandArgs = construct_arg_string(argc, argv);
+  failure::setServiceContext("mcrouter",
+                             std::string(argv[0]) + " " + commandArgs);
+
   auto check_errors =
   [&] (const vector<McrouterOptionError>& errors) {
     if (!errors.empty()) {
       for (auto& e : errors) {
-        LOG(ERROR) << "CRITICAL: Option parse error: " << e.requestedName <<
-                      "=" << e.requestedValue << ", " << e.errorMsg;
+        logFailure(failure::Category::kInvalidOption,
+                   "Option parse error: {}={}, {}",
+                   e.requestedName, e.requestedValue, e.errorMsg);
       }
       print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
     }
   };
-  auto errors = opts.updateFromDict(option_dict);
-  check_errors(errors);
-  errors = standaloneOpts.updateFromDict(st_option_dict);
+
+  auto errors = standaloneOpts.updateFromDict(st_option_dict);
   standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
     standaloneOpts);
+  if (standaloneOpts.enable_failure_logging) {
+    initFailureLogger();
+  }
+
   check_errors(errors);
+  errors = opts.updateFromDict(option_dict);
+  check_errors(errors);
+
+  for (const auto& option : unrecognized_options) {
+    logFailure(failure::Category::kInvalidOption, "Unrecognized option: {}",
+               option);
+  }
 
   srand(time(nullptr) + getpid());
 
@@ -607,6 +627,10 @@ int main(int argc, char **argv) {
 
   if (!standaloneInit(opts) || !validate_options()) {
     print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
+  }
+
+  if (validate_configs) {
+    failure::addHandler(failure::handlers::throwLogicError());
   }
 
   FILE *pidfile = nullptr;
@@ -671,7 +695,7 @@ int main(int argc, char **argv) {
     _exit(0);
   }
 
-  router->command_args = construct_arg_string(argc, argv);
+  router->command_args = commandArgs;
   router->addStartupOpts(standaloneOpts.toDict());
 
   /* TODO(server): real AsyncMcServer stats */
