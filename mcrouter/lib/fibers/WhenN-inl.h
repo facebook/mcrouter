@@ -9,6 +9,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/fibers/FiberManager.h"
+#include "mcrouter/lib/fibers/ForEach.h"
 
 namespace facebook { namespace memcache { namespace fiber {
 
@@ -150,20 +151,25 @@ inline whenAll(InputIterator first, InputIterator last) {
   typedef typename std::result_of<
     typename std::iterator_traits<InputIterator>::value_type()>::type Result;
   size_t n = std::distance(first, last);
-  auto results = whenN(first, last, n);
+  std::vector<Result> results;
+  std::vector<size_t> order(n);
+  results.reserve(n);
+
+  forEach(first, last,
+    [&results, &order] (size_t id, Result result) {
+      order[id] = results.size();
+      results.emplace_back(std::move(result));
+    });
   assert(results.size() == n);
 
-  std::vector<size_t> order(n);
+  std::vector<Result> orderedResults;
+  orderedResults.reserve(n);
+
   for (size_t i = 0; i < n; ++i) {
-    order[results[i].first] = i;
-  }
-  std::vector<Result> ret;
-  ret.reserve(n);
-  for (size_t i = 0; i < n; ++i) {
-    ret.push_back(std::move(results[order[i]].second));
+    orderedResults.emplace_back(std::move(results[order[i]]));
   }
 
-  return ret;
+  return orderedResults;
 }
 
 template <class InputIterator>
@@ -173,7 +179,7 @@ typename std::enable_if<
       typename std::iterator_traits<InputIterator>::value_type()>::type, void
     >::value, void>::type
 inline whenAll(InputIterator first, InputIterator last) {
-  whenN(first, last, std::distance(first, last));
+  forEach(first, last, [] (size_t id) {});
 }
 
 template <class InputIterator>
