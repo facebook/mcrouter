@@ -15,39 +15,49 @@
 
 namespace facebook { namespace memcache {
 
-class McServerTransaction;
-
 template <class OnRequest>
 class McServerOnRequestWrapper;
+class McServerTransaction;
 
 /**
  * API for users of McServer to send back a reply for a request.
  *
- * Each onRequest callback is provided a reference to a context object,
- * which will stay alive until sendReply() is called on it.
+ * Each onRequest callback is provided a context object,
+ * which must eventually be surrendered back via a reply() call.
  */
 class McServerRequestContext {
  public:
   /**
    * Notify the server that the request-reply exchange is complete.
    *
+   * @param ctx  The original context.
    * @param msg  Reply to hand off.
    */
-  void sendReply(McReply&& reply);
+  static void reply(McServerRequestContext&& ctx, McReply&& reply);
+
+  ~McServerRequestContext() {
+    /* Check that a reply was returned */
+    assert(!transaction_);
+  }
+
+  McServerRequestContext(McServerRequestContext&& other) noexcept
+      : transaction_(other.transaction_) {
+    other.transaction_ = nullptr;
+  }
 
  private:
-  McServerTransaction& transaction_;
+  McServerTransaction* transaction_{nullptr};
 
   McServerRequestContext(const McServerRequestContext&) = delete;
   const McServerRequestContext& operator=(const McServerRequestContext&)
     = delete;
-  McServerRequestContext(McServerRequestContext&&) = delete;
-  const McServerRequestContext& operator=(McServerRequestContext&&) = delete;
+  const McServerRequestContext& operator=(
+    McServerRequestContext&& other) = delete;
 
   /* Only McServerTransaction can create these */
   friend class McServerTransaction;
   explicit McServerRequestContext(McServerTransaction& t)
-      : transaction_(t) {}
+      : transaction_(&t) {}
 };
 
 /**
@@ -59,8 +69,8 @@ public:
 
 private:
   McServerOnRequest() {}
-  virtual void requestReady(McServerRequestContext& ctx,
-                            const McRequest& req,
+  virtual void requestReady(McServerRequestContext&& ctx,
+                            McRequest&& req,
                             mc_op_t operation) = 0;
 
   friend class McServerTransaction;
@@ -83,7 +93,7 @@ class McServerOnRequestWrapper : public McServerOnRequest {
  private:
   OnRequest onRequest_;
 
-  void requestReady(McServerRequestContext& ctx, const McRequest& req,
+  void requestReady(McServerRequestContext&& ctx, McRequest&& req,
                     mc_op_t operation);
   friend class McServerTransaction;
 };

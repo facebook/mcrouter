@@ -104,11 +104,11 @@ class SessionTestHarness {
      reply only to that many requests */
   int allowed_{-1};
   struct Transaction {
-    McServerRequestContext& ctx;
-    const McRequest& req;
+    McServerRequestContext ctx;
+    McRequest req;
     McReply reply;
-    Transaction(McServerRequestContext& c, const McRequest& r, McReply p)
-        : ctx(c), req(r), reply(std::move(p)) {
+    Transaction(McServerRequestContext&& c, McRequest&& r, McReply p)
+        : ctx(std::move(c)), req(std::move(r)), reply(std::move(p)) {
     }
   };
   std::deque<Transaction> transactions_;
@@ -134,7 +134,7 @@ class SessionTestHarness {
   void fulfillTransactions() {
     while (!transactions_.empty() && (allowed_ == -1 || allowed_ > 0)) {
       auto& t = transactions_.front();
-      t.ctx.sendReply(std::move(t.reply));
+      McServerRequestContext::reply(std::move(t.ctx), std::move(t.reply));
       transactions_.pop_front();
       if (allowed_ != -1) {
         --allowed_;
@@ -146,11 +146,12 @@ class SessionTestHarness {
   }
 
   template <class Operation>
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  Operation) {
     auto reply = makeReply(req, Operation());
-    transactions_.emplace_back(ctx, req, std::move(reply));
+    transactions_.emplace_back(std::move(ctx), std::move(req),
+                               std::move(reply));
     fulfillTransactions();
   }
 
@@ -170,10 +171,10 @@ class SessionTestHarness {
         harness_(harness) {}
 
     template <class Operation>
-    void onRequest(McServerRequestContext& ctx,
-                   const McRequest& req,
+    void onRequest(McServerRequestContext&& ctx,
+                   McRequest&& req,
                    Operation) {
-      harness_.onRequest(ctx, req, Operation());
+      harness_.onRequest(std::move(ctx), std::move(req), Operation());
     }
 
    private:

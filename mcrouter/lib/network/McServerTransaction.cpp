@@ -24,7 +24,6 @@ McServerTransaction::McServerTransaction(
       request_(std::move(request)),
       operation_(operation),
       reqid_(reqid),
-      appContext_(*this),
       noReply_(noreply || (operation == mc_op_quit)),
       isMultiget_(isMultiget),
       isSubRequest_(isSubRequest) {
@@ -93,7 +92,7 @@ void McServerTransaction::pushMultigetRequest(
 }
 
 void McServerTransaction::dispatchRequest(McServerOnRequest& cb) {
-  cb.requestReady(appContext_, request_, operation_);
+  cb.requestReady(McServerRequestContext(*this), request_.clone(), operation_);
 }
 
 void McServerTransaction::dispatchSubRequests(McServerOnRequest& cb) {
@@ -109,7 +108,7 @@ void McServerTransaction::dispatchSubRequests(McServerOnRequest& cb) {
     if (req.replyReady_) {
       onMultigetReply(*req.reply_);
     } else {
-      cb.requestReady(req.appContext_, req.request_, req.operation_);
+      req.dispatchRequest(cb);
     }
   }
 }

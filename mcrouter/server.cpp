@@ -25,6 +25,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
+using CtxReqPair = std::pair<McServerRequestContext, McRequest>;
+
 /**
  * Server callback for standalone Mcrouter
  */
@@ -35,8 +37,8 @@ class ServerOnRequest {
   }
 
   template <int M>
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<M>) {
     mcrouter_msg_t router_msg;
 
@@ -44,10 +46,12 @@ class ServerOnRequest {
     /* TODO: nasty C/C++ interface stuff.  We should hand off the McRequest
        directly here.  For now, hand off the dependentMsg() since we can assume
        req will stay alive. */
-    router_msg.req = const_cast<mc_msg_t*>(req.dependentMsg(op).get());
-    router_msg.context = &ctx;
+    auto p = folly::make_unique<CtxReqPair>(std::move(ctx), std::move(req));
+    router_msg.req = const_cast<mc_msg_t*>(p->second.dependentMsg(op).get());
+    router_msg.context = p.get();
 
     mcrouter_send(client_, &router_msg, 1);
+    p.release();
   }
 
  private:
@@ -57,10 +61,11 @@ class ServerOnRequest {
 void router_on_reply(mcrouter_client_t *client,
                      mcrouter_msg_t* msg,
                      void *context) {
-  auto reqCtx = reinterpret_cast<McServerRequestContext*>(msg->context);
+  std::unique_ptr<CtxReqPair> p(reinterpret_cast<CtxReqPair*>(msg->context));
 
-  assert(reqCtx);
-  reqCtx->sendReply(std::move(msg->reply));
+  assert(p.get());
+  McServerRequestContext::reply(std::move(p->first),
+                                std::move(msg->reply));
   msg->context = nullptr;
 }
 
