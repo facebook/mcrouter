@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/Optional.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -112,7 +113,7 @@ class MigrateRoute {
       default: {
         auto& from = from_;
         auto& to = to_;
-        std::vector<std::function<Reply()>> fs = {
+        std::function<Reply()> fs[2] {
           [&req, &from]() {
             return from->route(req, Operation());
           },
@@ -121,8 +122,14 @@ class MigrateRoute {
           }
         };
 
-        auto replies = fiber::whenAll(fs.begin(), fs.end());
-        return std::move(*Reply::reduce(replies.begin(), replies.end()));
+        folly::Optional<Reply> reply;
+        fiber::forEach(fs, fs + 2,
+          [&reply] (size_t id, Reply newReply) {
+            if (!reply || newReply.worseThan(reply.value())) {
+              reply = std::move(newReply);
+            }
+          });
+        return std::move(reply.value());
       }
     }
   }

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/Optional.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fibers/WhenN.h"
@@ -78,8 +79,13 @@ class AllSyncRoute {
       );
     }
 
-    auto replies = fiber::whenAll(fs.begin(), fs.end());
-    return std::move(*Reply::reduce(replies.begin(), replies.end()));
+    folly::Optional<Reply> reply;
+    fiber::forEach(fs.begin(), fs.end(), [&reply] (size_t id, Reply newReply) {
+      if (!reply || newReply.worseThan(reply.value())) {
+        reply = std::move(newReply);
+      }
+    });
+    return std::move(reply.value());
   }
 
  private:
