@@ -39,48 +39,48 @@ class ServerOnRequest {
       outOfOrder_(outOfOrder) {
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_get>) {
     if (req.fullKey() == "sleep") {
       usleep(1000000);
-      processReply(ctx, McReply(mc_res_ok));
+      processReply(std::move(ctx), McReply(mc_res_ok));
     } else if (req.fullKey() == "shutdown") {
       shutdown_ = true;
-      processReply(ctx, McReply(mc_res_ok));
+      processReply(std::move(ctx), McReply(mc_res_ok));
       flushQueue();
     } else {
       McReply foundReply = McReply(mc_res_found, createMcMsgRef(req.fullKey(),
                                                                 req.fullKey()));
       if (req.fullKey() == "hold") {
-        waitingReplies_.emplace_back(ctx, std::move(foundReply));
+        waitingReplies_.emplace_back(std::move(ctx), std::move(foundReply));
       } else if (req.fullKey() == "flush") {
-        processReply(ctx, std::move(foundReply));
+        processReply(std::move(ctx), std::move(foundReply));
         flushQueue();
       } else {
-        processReply(ctx, std::move(foundReply));
+        processReply(std::move(ctx), std::move(foundReply));
       }
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_set>) {
-    processReply(ctx, McReply(mc_res_stored));
+    processReply(std::move(ctx), McReply(mc_res_stored));
   }
 
   template <int M>
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<M>) {
     LOG(ERROR) << "Unhandled operation " << M;
   }
 
-  void processReply(McServerRequestContext& context, McReply&& reply) {
+  void processReply(McServerRequestContext&& context, McReply&& reply) {
     if (outOfOrder_) {
-      context.sendReply(std::move(reply));
+      McServerRequestContext::reply(std::move(context), std::move(reply));
     } else {
-      waitingReplies_.emplace_back(context, std::move(reply));
+      waitingReplies_.emplace_back(std::move(context), std::move(reply));
       if (waitingReplies_.size() == 1) {
         flushQueue();
       }
@@ -89,7 +89,8 @@ class ServerOnRequest {
 
   void flushQueue() {
     for (size_t i = 0; i < waitingReplies_.size(); ++i) {
-      waitingReplies_[i].first.sendReply(std::move(waitingReplies_[i].second));
+      McServerRequestContext::reply(std::move(waitingReplies_[i].first),
+                                    std::move(waitingReplies_[i].second));
     }
     waitingReplies_.clear();
   }
@@ -97,7 +98,7 @@ class ServerOnRequest {
  private:
   bool& shutdown_;
   bool outOfOrder_;
-  std::vector<std::pair<McServerRequestContext&, McReply>> waitingReplies_;
+  std::vector<std::pair<McServerRequestContext, McReply>> waitingReplies_;
 };
 
 class TestServer {

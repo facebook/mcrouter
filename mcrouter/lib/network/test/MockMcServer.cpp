@@ -47,20 +47,20 @@ using facebook::memcache::createMcMsgRef;
 class MockMcOnRequest {
  public:
   template <class Operation>
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  Operation) {
-    ctx.sendReply(McReply(mc_res_remote_error));
+    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_remote_error));
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_metaget>) {
     auto key = req.fullKey().str();
 
     auto item = mc_.get(key);
     if (!item) {
-      ctx.sendReply(McReply(mc_res_notfound));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
       return;
     }
 
@@ -72,11 +72,12 @@ class MockMcOnRequest {
     inet_pton(AF_INET, "127.0.0.1", &msg->ip_addr); // FIXME
     msg->ipv = 4;
 
-    ctx.sendReply(McReply(mc_res_found, std::move(msg)));
+    McServerRequestContext::reply(std::move(ctx),
+                                  McReply(mc_res_found, std::move(msg)));
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_get>) {
     auto key = req.fullKey().str();
 
@@ -84,28 +85,29 @@ class MockMcOnRequest {
       auto msg = createMcMsgRef();
       msg->result = mc_res_busy;
       msg->err_code = SERVER_ERROR_BUSY;
-      ctx.sendReply(McReply(mc_res_busy, std::move(msg)));
+      McServerRequestContext::reply(std::move(ctx),
+                                    McReply(mc_res_busy, std::move(msg)));
       return;
     } else if (key == "__mockmc__.want_try_again") {
-      ctx.sendReply(McReply(mc_res_try_again));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_try_again));
       return;
     }
 
     auto item = mc_.get(key);
     if (!item) {
-      ctx.sendReply(McReply(mc_res_notfound));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
     } else {
       McReply reply(mc_res_found);
       folly::IOBuf cloned;
       item->value->cloneInto(cloned);
       reply.setValue(std::move(cloned));
       reply.setFlags(item->flags);
-      ctx.sendReply(std::move(reply));
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_lease_get>) {
     auto key = req.fullKey().str();
 
@@ -118,106 +120,108 @@ class MockMcOnRequest {
     if (out.second) {
       reply.setResult(mc_res_notfound);
     }
-    ctx.sendReply(std::move(reply));
+    McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_lease_set>) {
     auto key = req.fullKey().str();
 
     switch (mc_.leaseSet(key, MockMc::Item(req), req.leaseToken())) {
       case MockMc::NOT_STORED:
-        ctx.sendReply(McReply(mc_res_notstored));
+        McServerRequestContext::reply(std::move(ctx),
+                                      McReply(mc_res_notstored));
         return;
 
       case MockMc::STORED:
-        ctx.sendReply(McReply(mc_res_stored));
+        McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
         return;
 
       case MockMc::STALE_STORED:
-        ctx.sendReply(McReply(mc_res_stalestored));
+        McServerRequestContext::reply(std::move(ctx),
+                                      McReply(mc_res_stalestored));
         return;
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_set>) {
     auto key = req.fullKey().str();
 
     if (key == "__mockmc__.trigger_server_error") {
-      ctx.sendReply(
+      McServerRequestContext::reply(std::move(ctx),
         McReply(mc_res_remote_error,
                 "returned error msg with binary data \xdd\xab"));
       return;
     }
 
     mc_.set(key, MockMc::Item(req));
-    ctx.sendReply(McReply(mc_res_stored));
+    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_add>) {
     auto key = req.fullKey().str();
 
     if (mc_.add(key, MockMc::Item(req))) {
-      ctx.sendReply(McReply(mc_res_stored));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
     } else {
-      ctx.sendReply(McReply(mc_res_notstored));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notstored));
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_replace>) {
     auto key = req.fullKey().str();
 
     if (mc_.replace(key, MockMc::Item(req))) {
-      ctx.sendReply(McReply(mc_res_stored));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
     } else {
-      ctx.sendReply(McReply(mc_res_notstored));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notstored));
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_delete>) {
     auto key = req.fullKey().str();
 
     if (mc_.del(key)) {
-      ctx.sendReply(McReply(mc_res_deleted));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_deleted));
     } else {
-      ctx.sendReply(McReply(mc_res_notfound));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_incr>) {
     auto key = req.fullKey().str();
     auto p = mc_.arith(key, req.delta());
     if (!p.first) {
-      ctx.sendReply(McReply(mc_res_notfound));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
     } else {
       McReply reply(mc_res_stored);
       reply.setDelta(p.second);
-      ctx.sendReply(std::move(reply));
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
     }
   }
 
-  void onRequest(McServerRequestContext& ctx,
-                 const McRequest& req,
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_decr>) {
     auto key = req.fullKey().str();
     auto p = mc_.arith(key, -req.delta());
     if (!p.first) {
-      ctx.sendReply(McReply(mc_res_notfound));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
     } else {
       McReply reply(mc_res_stored);
       reply.setDelta(p.second);
-      ctx.sendReply(std::move(reply));
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
     }
   }
 

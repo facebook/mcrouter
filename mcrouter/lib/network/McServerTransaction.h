@@ -61,13 +61,6 @@ class McServerTransaction {
   ~McServerTransaction();
 
   /**
-   * Application-visible context
-   */
-  McServerRequestContext& appContext() {
-    return appContext_;
-  }
-
-  /**
    * Start writing out the reply and clean up on completion.
    */
   void sendReply(McReply&& reply);
@@ -116,8 +109,6 @@ class McServerTransaction {
   McRequest request_;
   mc_op_t operation_;
   uint64_t reqid_;
-
-  McServerRequestContext appContext_;
 
   folly::Optional<McReply> reply_;
   bool replyReady_{false};

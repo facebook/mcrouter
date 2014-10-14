@@ -8,12 +8,17 @@
  */
 #include "McServerRequestContext.h"
 
-#include "mcrouter/lib/network/McServerTransaction.h"
+#include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook { namespace memcache {
 
-void McServerRequestContext::sendReply(McReply&& reply) {
-  transaction_.sendReply(std::move(reply));
+void McServerRequestContext::reply(
+  McServerRequestContext&& ctx,
+  McReply&& reply) {
+
+  auto transaction = ctx.transaction_;
+  ctx.transaction_ = nullptr;
+  transaction->sendReply(std::move(reply));
 }
 
 }}  // facebook::memcache

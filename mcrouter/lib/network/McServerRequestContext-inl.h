@@ -13,12 +13,13 @@ namespace facebook { namespace memcache {
 
 template <class OnRequest>
 void McServerOnRequestWrapper<OnRequest>::requestReady(
-  McServerRequestContext& ctx, const McRequest& req, mc_op_t operation) {
+  McServerRequestContext&& ctx, McRequest&& req, mc_op_t operation) {
 
   switch (operation) {
-#define MC_OP(MC_OPERATION)                             \
-    case MC_OPERATION::mc_op:                           \
-      onRequest_.onRequest(ctx, req, MC_OPERATION());   \
+#define MC_OP(MC_OPERATION)                                             \
+    case MC_OPERATION::mc_op:                                           \
+      onRequest_.onRequest(std::move(ctx), std::move(req),              \
+                           MC_OPERATION());                             \
       break;
 #include "mcrouter/lib/McOpList.h"
 
