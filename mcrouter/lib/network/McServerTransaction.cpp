@@ -13,14 +13,14 @@
 namespace facebook { namespace memcache {
 
 McServerTransaction::McServerTransaction(
-  std::shared_ptr<McServerSession> session,
+  McServerSession& session,
   McRequest&& request,
   mc_op_t operation,
   uint64_t reqid,
   bool isMultiget,
   bool isSubRequest,
   bool noreply)
-    : session_(std::move(session)),
+    : session_(session),
       request_(std::move(request)),
       operation_(operation),
       reqid_(reqid),
@@ -35,11 +35,11 @@ McServerTransaction::McServerTransaction(
   mc_ascii_response_buf_init(&asciiResponse_);
 
   assert(!(isMultiget_ && isSubRequest));
-  session_->onTransactionStarted(isSubRequest_);
+  session_.onTransactionStarted(isSubRequest_);
 }
 
 McServerTransaction::~McServerTransaction() {
-  session_->onTransactionCompleted(isSubRequest_);
+  session_.onTransactionCompleted(isSubRequest_);
 
   um_backing_msg_cleanup(&umMsg_);
   mc_ascii_response_buf_cleanup(&asciiResponse_);
@@ -65,7 +65,7 @@ void McServerTransaction::onMultigetReply(McReply& subReply) {
       reply_ = McReply(mc_res_found);
     }
     replyReady_ = true;
-    session_->onRequestReplied(*this);
+    session_.onRequestReplied(*this);
   }
 }
 
@@ -79,7 +79,7 @@ void McServerTransaction::sendReply(McReply&& reply) {
   if (multigetParent_) {
     multigetParent_->onMultigetReply(*reply_);
   } else {
-    session_->onRequestReplied(*this);
+    session_.onRequestReplied(*this);
   }
 }
 
@@ -133,7 +133,7 @@ void McServerTransaction::queueSubRequestsWrites() {
          !(req->operation_ == mc_op_get ||
            req->operation_ == mc_op_metaget ||
            req->operation_ == mc_op_gets))) {
-      session_->queueWrite(std::move(req));
+      session_.queueWrite(std::move(req));
     }
   }
 }
@@ -143,9 +143,9 @@ bool McServerTransaction::prepareWrite() {
 
   reply_->dependentMsg(operation_, &replyMsg_);
 
-  if (session_->parser_.protocol() == mc_ascii_protocol) {
+  if (session_.parser_.protocol() == mc_ascii_protocol) {
     buildResponseText();
-  } else if (session_->parser_.protocol() == mc_umbrella_protocol) {
+  } else if (session_.parser_.protocol() == mc_umbrella_protocol) {
     buildResponseUmbrella();
   } else {
     CHECK(false) << "Unknown protocol";

@@ -50,7 +50,7 @@ class McServerTransaction {
    *                      Note: a subrequest _must_ be written to socket
    *                      before its parent request.
    */
-  McServerTransaction(std::shared_ptr<McServerSession> session,
+  McServerTransaction(McServerSession& session,
                       McRequest&& request,
                       mc_op_t operation,
                       uint64_t reqid,
@@ -112,7 +112,7 @@ class McServerTransaction {
   }
 
  private:
-  std::shared_ptr<McServerSession> session_;
+  McServerSession& session_;
   McRequest request_;
   mc_op_t operation_;
   uint64_t reqid_;

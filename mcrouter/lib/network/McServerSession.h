@@ -8,9 +8,11 @@
  */
 #pragma once
 
+#include <folly/IntrusiveList.h>
+#include <folly/io/async/DelayedDestruction.h>
 #include <thrift/lib/cpp/async/TAsyncTransport.h>
 
-#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/McServerTransaction.h"
 
@@ -22,31 +24,45 @@ class McServerOnRequest;
  * A session owns a single transport, and processes the request/reply stream.
  */
 class McServerSession :
-      public apache::thrift::async::TDelayedDestruction,
+      public folly::DelayedDestruction,
       private apache::thrift::async::TAsyncTransport::ReadCallback,
       private apache::thrift::async::TAsyncTransport::WriteCallback,
       private McParser::ServerParseCallback {
+ private:
+  folly::SafeIntrusiveListHook hook_;
+
  public:
+  using Queue = folly::CountedIntrusiveList<McServerSession,
+                                            &McServerSession::hook_>;
 
   /**
+   * Creates a new session.  Sessions manage their own lifetime.
+   * A session will self-destruct right after an onTerminated() callback
+   * call, by which point all of the following must have occured:
+   *   1) All outstanding requests have been replied and pending
+   *      writes have been completed/errored out.
+   *   2) The outgoing connection is closed, either via an explicit close()
+   *      call or due to some error.
+   * The application may use onTerminated() callback as the point in
+   * time after which the session is considered done, and no event loop
+   * iteration is necessary.
+   * The session will be alive for the duration of onTerminated callback,
+   * but this is the last time the application can safely assume that
+   * the session is alive.
+   *
    * @param transport  Connected transport; transfers ownership inside
    *                   this session.
-   * @param onClosed   Will be called after the transport is closed,
-   *                   passing a shared_ptr to this object. Note:
-   *                   the passed in shared_ptr might be nullptr
-   *                   in the situation where the session is only held
-   *                   alive by a DestructorGuard.
    */
-  static std::shared_ptr<McServerSession> create(
+  static McServerSession& create(
     apache::thrift::async::TAsyncTransport::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
-    std::function<void(std::shared_ptr<McServerSession>)> onClosed,
+    std::function<void(McServerSession&)> onTerminated,
     std::function<void()> onShutdown,
-    AsyncMcServerWorker::Options options);
+    AsyncMcServerWorkerOptions options);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
-   * onClosed callback will only be called after the last write completes.
+   * onTerminated() callback will only be called after the last write completes.
    */
   void close();
 
@@ -58,28 +74,14 @@ class McServerSession :
   }
 
  private:
-  /**
-   * This object must be handled through a shared_ptr
-   * with a TDelayedDestruction destructor, as enforced by create().
-   * weakThis_ is how this object can create more shared_ptrs
-   * to itself.  If all shared_ptrs are gone, but the object is held
-   * alive by a DestructorGuard, weakThis_.lock() will be null, signifiying
-   * the impending destruction.
-   *
-   * This is basically std::enable_shared_from_this, but shared_from_this()
-   * would always throw once all shared_ptrs are gone.
-   */
-  std::weak_ptr<McServerSession> weakThis_;
-
   apache::thrift::async::TAsyncTransport::UniquePtr transport_;
   std::shared_ptr<McServerOnRequest> onRequest_;
-  std::function<void(std::shared_ptr<McServerSession>)> onClosed_;
+  std::function<void(McServerSession&)> onTerminated_;
   std::function<void()> onShutdown_;
-  AsyncMcServerWorker::Options options_;
+  AsyncMcServerWorkerOptions options_;
 
   enum State {
     STREAMING,
-    SHUTDOWN_READ,
     CLOSING,
   };
   State state_{STREAMING};
@@ -159,7 +161,8 @@ class McServerSession :
   void sendWrites();
 
   /**
-   * Check if no outstanding transactions, and close socket/call onClosed if so.
+   * Check if no outstanding transactions, and close socket and
+   * call onTerminated() if so.
    */
   void checkClosed();
 
@@ -208,9 +211,9 @@ class McServerSession :
   McServerSession(
     apache::thrift::async::TAsyncTransport::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
-    std::function<void(std::shared_ptr<McServerSession>)> onClosed,
+    std::function<void(McServerSession&)> onTerminated,
     std::function<void()> onShutdown,
-    AsyncMcServerWorker::Options options);
+    AsyncMcServerWorkerOptions options);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

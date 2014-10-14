@@ -24,8 +24,8 @@ class MockAsyncSocket;
 
 class SessionTestHarness {
  public:
-  explicit SessionTestHarness(AsyncMcServerWorker::Options opts =
-                              AsyncMcServerWorker::Options());
+  explicit SessionTestHarness(AsyncMcServerWorkerOptions opts =
+                              AsyncMcServerWorkerOptions());
 
   /**
    * Input packets in order into the socket.
@@ -95,7 +95,7 @@ class SessionTestHarness {
 
  private:
   folly::EventBase eventBase_;
-  std::shared_ptr<McServerSession> session_;
+  McServerSession& session_;
   std::deque<std::string> savedInputs_;
   std::vector<std::string> output_;
   apache::thrift::async::TAsyncTransport::ReadCallback* read_;
