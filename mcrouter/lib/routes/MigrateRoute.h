@@ -149,7 +149,7 @@ class MigrateRoute {
     }
 
     if (curr < (startTimeSec_ + 2*intervalSec_)) {
-      return kFromMask & kToMask;
+      return kFromMask | kToMask;
     }
 
     /* else */
