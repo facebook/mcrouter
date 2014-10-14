@@ -42,7 +42,8 @@ inline void forEach(InputIterator first, InputIterator last, F&& f) {
   Baton baton;
 
   auto taskFunc =
-    [&tasksTodo, &e, &f, &baton] (size_t id, folly::MoveWrapper<FuncType> fm) {
+    [&tasksTodo, &e, &f, &baton] (size_t id, FuncType&& func) {
+      auto fm = folly::makeMoveWrapper(std::move(func));
       return [id, &tasksTodo, &e, &f, &baton, fm]() {
         try {
           callFuncs(*fm, f, id);
@@ -55,14 +56,14 @@ inline void forEach(InputIterator first, InputIterator last, F&& f) {
       };
     };
 
-  folly::MoveWrapper<FuncType> firstTask(std::move(*first));
+  auto firstTask = first;
   ++first;
 
   for (size_t i = 1; first != last; ++i, ++first, ++tasksTodo) {
-    fiber::addTask(taskFunc(i, folly::makeMoveWrapper(std::move(*first))));
+    fiber::addTask(taskFunc(i, std::move(*first)));
   }
 
-  taskFunc(0, firstTask)();
+  taskFunc(0, std::move(*firstTask))();
   baton.wait();
 
   if (e != std::exception_ptr()) {
