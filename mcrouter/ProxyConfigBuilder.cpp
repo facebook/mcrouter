@@ -22,9 +22,6 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
-                                       std::string defaultRoute,
-                                       std::string defaultRegion,
-                                       std::string defaultCluster,
                                        ConfigApi* configApi,
                                        folly::StringPiece jsonC)
     : json_(nullptr) {
@@ -34,9 +31,9 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
     jsonC,
     importResolver,
     {
-      { "default-route", defaultRoute },
-      { "default-region", defaultRegion },
-      { "default-cluster", defaultCluster },
+      { "default-route", opts.default_route.str() },
+      { "default-region", opts.default_route.getRegion().str() },
+      { "default-cluster", opts.default_route.getCluster().str() },
     });
 
   poolFactory_ = std::make_shared<PoolFactory>(json_, configApi, opts);

@@ -69,8 +69,8 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
   RouteSelectorMap routeSelectors;
 
   if (json.count("route")) {
-    addRouteSelector({ proxy->default_route }, json["route"], factory,
-                     routeSelectors);
+    addRouteSelector({ proxy->opts.default_route.str() },
+                     json["route"], factory, routeSelectors);
   } else if (json.count("routes")) {
     checkLogic(json["routes"].isArray(), "Config: routes is not array");
     for (const auto& it : json["routes"]) {

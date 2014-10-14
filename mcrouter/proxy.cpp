@@ -77,36 +77,6 @@ void foreachPossibleClientHelper(const McrouterRouteHandleIf& rh,
 
 const std::string kInternalGetPrefix = "__mcrouter__.";
 
-static void proxy_set_default_route(proxy_t* proxy, const std::string& str) {
-  if (str.empty()) {
-    return;
-  }
-  boost::regex routeRegex("^/[^/]+/[^/]+/?$");
-  if (!boost::regex_match(str, routeRegex)) {
-    logFailure(proxy->router, failure::Category::kInvalidOption,
-               "default route ({}) should be of the form /region/cluster/",
-               str);
-    // Not setting the default route here causes proxy_validate_config() to
-    // fail, so mcrouter will not start. It will have printed useful error
-    // messages, so this seems like the right behavior.
-    return;
-  }
-
-  proxy->default_route = str;
-  if (str.back() != '/') {
-    proxy->default_route += "/";
-  }
-
-  auto regionEnd = proxy->default_route.find('/', 1);
-  FBI_ASSERT(regionEnd != std::string::npos);
-  proxy->default_region = proxy->default_route.substr(1, regionEnd - 1);
-
-  auto clusterEnd = proxy->default_route.find('/', regionEnd + 1);
-  FBI_ASSERT(clusterEnd != std::string::npos);
-  proxy->default_cluster =
-    proxy->default_route.substr(regionEnd + 1, clusterEnd - regionEnd - 1);
-}
-
 static asox_queue_callbacks_t const proxy_request_queue_cb =  {
   /* Note that we want to drain the queue on cleanup,
      so we register both regular and sweep callbacks */
@@ -148,8 +118,6 @@ proxy_t::proxy_t(mcrouter_t *router_,
   static uint64_t next_magic = 0x12345678900000LL;
 
   magic = __sync_fetch_and_add(&next_magic, 1);
-
-  proxy_set_default_route(this, opts.default_route);
 
   init_stats(stats);
 
@@ -384,23 +352,6 @@ proxy_request_t* proxy_request_incref(proxy_request_t* preq) {
   FBI_ASSERT(preq->_refcount > 0);
   preq->_refcount++;
   return preq;
-}
-
-/**
- * extracts "region" part from "/region/cluster/" routing prefix
- * @return region if prefix is valid, empty StringPiece otherwise
- */
-folly::StringPiece getRegionFromRoutingPrefix(folly::StringPiece prefix) {
-  if (prefix.empty() || prefix[0] != '/') {
-    return folly::StringPiece();
-  }
-
-  auto regEnd = prefix.find("/", 1);
-  if (regEnd == std::string::npos) {
-    return folly::StringPiece();
-  }
-  assert(regEnd >= 1);
-  return prefix.subpiece(1, regEnd - 1);
 }
 
 /**
@@ -869,21 +820,11 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
     // each proxy
     ProxyConfigBuilder builder(
       router->opts,
-      router->proxy_threads[0]->proxy->default_route,
-      router->proxy_threads[0]->proxy->default_region,
-      router->proxy_threads[0]->proxy->default_cluster,
       router->configApi.get(),
       input);
 
     for (size_t i = 0 ; i < proxyCount; i++) {
       auto proxy = router->proxy_threads[i]->proxy;
-
-      if (proxy->default_route.empty()) {
-        logFailure(router, failure::Category::kInvalidOption,
-                   "empty default route");
-        return 0;
-      }
-
       newConfigs.push_back(builder.buildConfig(proxy));
     }
   } catch (const std::exception& e) {

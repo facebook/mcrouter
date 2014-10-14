@@ -16,6 +16,7 @@
 #include <boost/any.hpp>
 
 #include "mcrouter/config.h"
+#include "mcrouter/RoutingPrefix.h"
 
 #define DEFAULT_NUM_PROXIES               1
 
@@ -40,6 +41,7 @@ struct McrouterOptionData {
     string,
     double_precision,
     toggle,
+    routing_prefix,
     other
   };
 

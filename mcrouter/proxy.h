@@ -405,11 +405,6 @@ struct proxy_t {
 
   std::unique_ptr<ProxyDestinationMap> destinationMap;
 
-  /** set by proxy_set_default_route */
-  std::string default_route;
-  std::string default_region;
-  std::string default_cluster;
-
   // async spool related
   countedfd_t* async_fd{nullptr};
   time_t async_spool_time{0};
@@ -609,7 +604,5 @@ void proxy_request_decref(proxy_request_t*);
 proxy_request_t* proxy_request_incref(proxy_request_t*);
 
 void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e);
-
-folly::StringPiece getRegionFromRoutingPrefix(folly::StringPiece prefix);
 
 }}} // facebook::memcache::mcrouter

@@ -28,7 +28,7 @@ class RootRoute {
 
   RootRoute(proxy_t* proxy, const RouteSelectorMap& routeSelectors)
       : opts_(proxy->opts),
-        rhMap_(routeSelectors, proxy->default_route,
+        rhMap_(routeSelectors, proxy->opts.default_route,
                proxy->opts.send_invalid_route_to_default) {
   }
 

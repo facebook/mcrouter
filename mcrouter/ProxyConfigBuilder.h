@@ -28,9 +28,6 @@ class proxy_t;
 class ProxyConfigBuilder {
  public:
   ProxyConfigBuilder(const McrouterOptions& opts,
-                     std::string defaultRoute,
-                     std::string defaultRegion,
-                     std::string defaultCluster,
                      ConfigApi* configApi,
                      folly::StringPiece jsonC);
 

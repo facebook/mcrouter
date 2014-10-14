@@ -22,6 +22,7 @@
 #include "mcrouter/routes/PrefixRouteSelector.h"
 #include "mcrouter/routes/RoutePolicyMap.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
+#include "mcrouter/RoutingPrefix.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -56,39 +57,38 @@ std::shared_ptr<RoutePolicyMap> makePolicyMap(UniqueVectorMap& uniqueVectors,
 
 RouteHandleMap::RouteHandleMap(
   const RouteSelectorMap& routeSelectors,
-  std::string defaultRoute,
+  const RoutingPrefix& defaultRoute,
   bool sendInvalidRouteToDefault)
-    : defaultRoute_(std::move(defaultRoute)),
+    : defaultRoute_(defaultRoute),
       sendInvalidRouteToDefault_(sendInvalidRouteToDefault) {
 
   checkLogic(routeSelectors.find(defaultRoute_) != routeSelectors.end(),
-             "invalid default route: {}", defaultRoute_);
+             "invalid default route: {}", defaultRoute_.str());
 
   RouteSelectorVector allRoutes;
   std::unordered_map<std::string, RouteSelectorVector> byRegion;
   std::unordered_map<std::string, RouteSelectorVector> byRoute;
   // add defaults first
-  auto defaultRegion = getRegionFromRoutingPrefix(defaultRoute);
   for (const auto& it : routeSelectors) {
-    if (it.first == defaultRoute_) {
+    RoutingPrefix prefix(it.first);
+    if (prefix.str() == defaultRoute_.str()) {
       allRoutes.push_back(it.second);
     }
 
-    auto region = getRegionFromRoutingPrefix(it.first);
-    if (region == defaultRegion) {
-      byRegion[region.str()].push_back(it.second);
+    if (prefix.getRegion() == defaultRoute_.getRegion()) {
+      byRegion[prefix.getRegion().str()].push_back(it.second);
     }
   }
 
   // then add rest
   for (const auto& it : routeSelectors) {
-    if (it.first != defaultRoute_) {
+    RoutingPrefix prefix(it.first);
+    if (prefix.str() != defaultRoute_.str()) {
       allRoutes.push_back(it.second);
     }
 
-    auto region = getRegionFromRoutingPrefix(it.first);
-    if (!region.empty() && region != defaultRoute_) {
-      byRegion[region.str()].push_back(it.second);
+    if (prefix.getRegion() != defaultRoute_.getRegion()) {
+      byRegion[prefix.getRegion().str()].push_back(it.second);
     }
 
     byRoute[it.first].push_back(it.second);
@@ -193,24 +193,20 @@ RouteHandleMap::getTargetsForKeyFast(folly::StringPiece prefix,
     return &allRoutes_->getTargetsForKey(key);
   }
 
-  if (prefix.find("*") == std::string::npos) {
+  auto starPos = prefix.find("*");
+  if (starPos == std::string::npos) {
     // no stars at all
     return &getBySingleRoute(prefix, key);
   }
 
-  if (prefix.endsWith("/*/")) {
-    auto region = getRegionFromRoutingPrefix(prefix);
-    if (region.empty()) {
+  if (prefix.endsWith("/*/") && starPos == prefix.size() - 2) {
+    // route to all clusters of some region (/region/*/)
+    auto region = prefix.subpiece(1, prefix.size() - 4);
+    auto it = byRegion_.find(region);
+    if (it == byRegion_.end()) {
       return &emptyV_;
     }
-    // route to all clusters of some region (/region/*/)
-    if (region.find("*") == std::string::npos) {
-      auto it = byRegion_.find(region);
-      if (it == byRegion_.end()) {
-        return &emptyV_;
-      }
-      return &it->second->getTargetsForKey(key);
-    }
+    return &it->second->getTargetsForKey(key);
   }
 
   // no other types supported

@@ -297,9 +297,6 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
         throw std::runtime_error("can not load config");
       }
       ProxyConfigBuilder builder(proxy_->opts,
-                                 proxy_->default_route,
-                                 proxy_->default_region,
-                                 proxy_->default_cluster,
                                  proxy_->router->configApi.get(),
                                  confFile);
       folly::json::serialization_opts jsonOpts;

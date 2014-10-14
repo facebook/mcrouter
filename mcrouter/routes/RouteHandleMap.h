@@ -22,13 +22,14 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class RoutePolicyMap;
+class RoutingPrefix;
 
 /* A bridge between proxy_* config structures and corresponding route handles.
    It is initialized by RouteHandleMapBuilder. */
 class RouteHandleMap {
  public:
   RouteHandleMap(const RouteSelectorMap& routeSelectors,
-                 std::string defaultRoute,
+                 const RoutingPrefix& defaultRoute,
                  bool sendInvalidRouteToDefault);
 
   const std::vector<McrouterRouteHandlePtr>& getTargetsForKey(
@@ -36,7 +37,7 @@ class RouteHandleMap {
     folly::StringPiece key) const;
 
  private:
-  std::string defaultRoute_;
+  const RoutingPrefix& defaultRoute_;
   bool sendInvalidRouteToDefault_;
 
   const std::vector<McrouterRouteHandlePtr> emptyV_;

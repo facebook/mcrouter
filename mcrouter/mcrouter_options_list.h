@@ -246,10 +246,10 @@ mcrouter_option_string(
   "config-str", no_short,
   "Configuration string provided as a command line argument")
 
-mcrouter_option_string(
-  default_route, "/././",
+mcrouter_option(
+  facebook::memcache::mcrouter::RoutingPrefix, default_route, "/././",
   "route-prefix", 'R',
-  "default routing prefix (ex. /oregon/prn1c16/)")
+  "default routing prefix (ex. /oregon/prn1c16/)", routing_prefix)
 
 mcrouter_option_toggle(
   async, false,

@@ -52,6 +52,21 @@ to(const Src& value) {
   return folly::join(",", value);
 }
 
+template <class Tgt>
+typename std::enable_if<std::is_same<std::string, Tgt>::value, Tgt>::type
+to(const facebook::memcache::mcrouter::RoutingPrefix& prefix) {
+  return prefix;
+}
+
+template <class Tgt>
+typename std::enable_if<
+  std::is_same<facebook::memcache::mcrouter::RoutingPrefix, Tgt>::value,
+  facebook::memcache::mcrouter::RoutingPrefix
+>::type
+to(const std::string& value) {
+  return facebook::memcache::mcrouter::RoutingPrefix(value);
+}
+
 }  // folly
 
 namespace facebook { namespace memcache {
@@ -77,7 +92,8 @@ std::string toString(const boost::any& value) {
             tryToString<double>(value, res) ||
             tryToString<bool>(value, res) ||
             tryToString<std::string>(value, res) ||
-            tryToString<vector<uint16_t>>(value, res);
+            tryToString<vector<uint16_t>>(value, res) ||
+            tryToString<mcrouter::RoutingPrefix>(value, res);
   if (!ok) {
     throw std::logic_error("Unsupported option type: " +
       std::string(value.type().name()));
@@ -104,7 +120,8 @@ void fromString(const std::string& str, const boost::any& value) {
             tryFromString<double>(str, value) ||
             tryFromString<bool>(str, value) ||
             tryFromString<std::string>(str, value) ||
-            tryFromString<vector<uint16_t>>(str, value);
+            tryFromString<vector<uint16_t>>(str, value) ||
+            tryFromString<mcrouter::RoutingPrefix>(str, value);
 
   if (!ok) {
     throw std::logic_error("Unsupported option type: " +
@@ -121,6 +138,8 @@ std::string optionTypeToString(McrouterOptionData::Type type) {
       return "double";
     case McrouterOptionData::Type::string:
       return "string";
+    case McrouterOptionData::Type::routing_prefix:
+      return "routing prefix";
     default:
       return "unknown";
   }
@@ -153,11 +172,18 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
     if (it != new_opts.end()) {
       try {
         fromString(it->second, value);
+      } catch (const std::exception& ex) {
+        McrouterOptionError e;
+        e.requestedName = name;
+        e.requestedValue = it->second;
+        e.errorMsg = "couldn't convert value to " + optionTypeToString(type) +
+                     ". Exception: " + ex.what();
+        errors.push_back(std::move(e));
       } catch (...) {
         McrouterOptionError e;
         e.requestedName = name;
         e.requestedValue = it->second;
-        e.errorMsg = "Couldn't convert value to " + optionTypeToString(type);
+        e.errorMsg = "couldn't convert value to " + optionTypeToString(type);
         errors.push_back(std::move(e));
       }
       seen.insert(it->first);
@@ -190,6 +216,11 @@ McrouterOptions substituteTemplates(McrouterOptions opts) {
     auto strPtr = boost::any_cast<std::string*>(&value);
     if (strPtr != nullptr) {
       **strPtr = mcrouter::performOptionSubstitution(**strPtr);
+      return;
+    }
+    auto routingPrefix = boost::any_cast<mcrouter::RoutingPrefix*>(&value);
+    if (routingPrefix != nullptr) {
+      **routingPrefix = mcrouter::performOptionSubstitution(**routingPrefix);
     }
   });
 

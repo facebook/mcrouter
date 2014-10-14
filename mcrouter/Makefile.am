@@ -153,6 +153,9 @@ libmcroutercore_a_SOURCES = \
   routes/ShardSplitter.h \
   routes/TimeProviderFunc.h \
   routes/WarmUpRoute.cpp \
+  routes/WarmUpRoute.h \
+  RoutingPrefix.cpp \
+  RoutingPrefix.h \
   RuntimeVarsData.cpp \
   RuntimeVarsData.h \
   ServiceInfo.cpp \

@@ -119,13 +119,8 @@ PoolFactory::PoolFactory(const folly::dynamic& config,
   opts_.rxpriority = get_event_priority(mcOpts, CLIENT_REPLY);
   opts_.txpriority = get_event_priority(mcOpts, CLIENT_REQUEST);
 
-  // Assuming default_route is well formatted
-  if (!mcOpts.default_route.empty()) {
-    auto pos = mcOpts.default_route.find('/', 1);
-    opts_.region = mcOpts.default_route.substr(1, pos - 1);
-    opts_.cluster = mcOpts.default_route.substr(
-        pos + 1, mcOpts.default_route.size() - 1 - (pos + 1));
-  }
+  opts_.region = mcOpts.default_route.getRegion().str();
+  opts_.cluster = mcOpts.default_route.getCluster().str();
   opts_.cross_region_timeout_ms = mcOpts.cross_region_timeout_ms;
   opts_.cross_cluster_timeout_ms = mcOpts.cross_cluster_timeout_ms;
   opts_.within_cluster_timeout_ms = mcOpts.within_cluster_timeout_ms;
