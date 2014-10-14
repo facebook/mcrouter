@@ -14,7 +14,9 @@
 
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 
+#include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/McServerSession.h"
 
 namespace folly {
 class EventBase;
@@ -27,83 +29,17 @@ class SSLContext;
 namespace facebook { namespace memcache {
 
 class McServerOnRequest;
-class McServerSession;
 
 /**
  * A single threaded Memcache server.
  */
 class AsyncMcServerWorker {
  public:
-
-  /**
-   * Worker options
-   */
-  struct Options {
-    /**
-     * String that will be returned for 'VERSION' commands.
-     */
-    std::string versionString{"AsyncMcServer-1.0"};
-
-    /**
-     * Timeout for writes (i.e. replies to the clients).
-     * If 0, no timeout.
-     */
-    std::chrono::milliseconds sendTimeout{0};
-
-    /**
-     * Maximum number of unreplied requests allowed before
-     * we stop reading from client sockets.
-     * If 0, there is no limit.
-     */
-    size_t maxInFlight{0};
-
-    /**
-     * Maximum number of read system calls per event loop iteration.
-     * If 0, there is no limit.
-     *
-     * If a socket has available data to read, we'll keep calling read()
-     * on it this many times before we do any writes.
-     *
-     * For heavy workloads, larger values may hurt latency
-     * but increase throughput.
-     */
-    uint16_t maxReadsPerEvent{0};
-
-    /**
-     * If non-zero, the buffer size will be dynamically adjusted
-     * to contain roughly this many requests, within min/max limits below.
-     *
-     * The intention is to limit the number of requests processed
-     * per loop iteration. Smaller values may improve latency.
-     *
-     * If 0, buffer size is always maxBufferSize.
-     */
-    size_t requestsPerRead{0};
-
-    /**
-     * Smallest allowed buffer size.
-     */
-    size_t minBufferSize{256};
-
-    /**
-     * Largest allowed buffer size.
-     */
-    size_t maxBufferSize{4096};
-
-    /**
-     * If true, we attempt to write every reply to the socket
-     * immediately.  If the write cannot be fully completed (i.e. not
-     * enough TCP memory), all reading is paused until after the write
-     * is completed.
-     */
-    bool singleWrite{false};
-  };
-
   /**
    * @param opts       Options
    * @param eventBase  eventBase that will process socket events
    */
-  explicit AsyncMcServerWorker(Options opts,
+  explicit AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
                                folly::EventBase& eventBase);
 
   /**
@@ -193,7 +129,7 @@ class AsyncMcServerWorker {
   void addClientSocket(
       apache::thrift::async::TAsyncSocket::UniquePtr&& socket);
 
-  Options opts_;
+  AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
@@ -203,7 +139,7 @@ class AsyncMcServerWorker {
   bool isAlive_{true};
 
   /* Open sessions and closing sessions that still have pending writes */
-  std::unordered_set<std::shared_ptr<McServerSession>> sessions_;
+  McServerSession::Queue sessions_;
 
   AsyncMcServerWorker(const AsyncMcServerWorker&) = delete;
   AsyncMcServerWorker& operator=(const AsyncMcServerWorker&) = delete;

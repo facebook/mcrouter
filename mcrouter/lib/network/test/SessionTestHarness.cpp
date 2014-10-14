@@ -114,7 +114,7 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
   std::string corkedOutput_;
 };
 
-SessionTestHarness::SessionTestHarness(AsyncMcServerWorker::Options opts)
+SessionTestHarness::SessionTestHarness(AsyncMcServerWorkerOptions opts)
     : session_(
       McServerSession::create(
         apache::thrift::async::TAsyncTransport::UniquePtr(

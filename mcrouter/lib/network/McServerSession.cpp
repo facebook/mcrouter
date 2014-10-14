@@ -38,36 +38,33 @@ bool isPartOfMultiget(mc_protocol_t protocol, mc_op_t operation) {
 
 }  // namespace
 
-std::shared_ptr<McServerSession> McServerSession::create(
+McServerSession& McServerSession::create(
   apache::thrift::async::TAsyncTransport::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
-  std::function<void(std::shared_ptr<McServerSession>)> onClosed,
+  std::function<void(McServerSession&)> onTerminated,
   std::function<void()> onShutdown,
-  AsyncMcServerWorker::Options options) {
+  AsyncMcServerWorkerOptions options) {
 
-  auto ptr = std::shared_ptr<McServerSession>(
-    new McServerSession(
-      std::move(transport),
-      std::move(cb),
-      std::move(onClosed),
-      std::move(onShutdown),
-      std::move(options)
-    ),
-    Destructor());
+  auto ptr = new McServerSession(
+    std::move(transport),
+    std::move(cb),
+    std::move(onTerminated),
+    std::move(onShutdown),
+    std::move(options)
+  );
 
-  ptr->weakThis_ = std::weak_ptr<McServerSession>(ptr);
-  return ptr;
+  return *ptr;
 }
 
 McServerSession::McServerSession(
   apache::thrift::async::TAsyncTransport::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
-  std::function<void(std::shared_ptr<McServerSession>)> onClosed,
+  std::function<void(McServerSession&)> onTerminated,
   std::function<void()> onShutdown,
-  AsyncMcServerWorker::Options options)
+  AsyncMcServerWorkerOptions options)
     : transport_(std::move(transport)),
       onRequest_(std::move(cb)),
-      onClosed_(std::move(onClosed)),
+      onTerminated_(std::move(onTerminated)),
       onShutdown_(std::move(onShutdown)),
       options_(std::move(options)),
       parser_(this,
@@ -118,11 +115,13 @@ void McServerSession::checkClosed() {
     assert(pendingWrites_.empty());
 
     if (state_ == CLOSING) {
-      transport_->close();
-      if (onClosed_) {
-        /* Ok if nullptr */
-        onClosed_(weakThis_.lock());
+      /* prevent readEOF() from being called */
+      transport_->setReadCallback(nullptr);
+      transport_.reset();
+      if (onTerminated_) {
+        onTerminated_(*this);
       }
+      destroy();
     }
   }
 }
@@ -137,11 +136,12 @@ void McServerSession::onTransactionCompleted(bool isSubRequest) {
     --realRequestsInFlight_;
   }
 
-  checkClosed();
   if (options_.maxInFlight > 0 &&
       realRequestsInFlight_ < options_.maxInFlight) {
     resume(PAUSE_THROTTLED);
   }
+
+  checkClosed();
 }
 
 void McServerSession::onRequestReplied(McServerTransaction& transaction) {
@@ -198,13 +198,6 @@ void McServerSession::requestReady(McRequest req,
                                    bool noreply) {
   DestructorGuard dg(this);
 
-  auto sharedThis = weakThis_.lock();
-  if (!sharedThis) {
-    /* This session is being destroyed, can't create new transactions */
-    close();
-    return;
-  }
-
   if (state_ != STREAMING) {
     return;
   }
@@ -213,7 +206,7 @@ void McServerSession::requestReady(McRequest req,
   auto isMultiget = (operation == mc_op_end);
   auto transactionPtr =
     folly::make_unique<McServerTransaction>(
-      sharedThis,
+      *this,
       std::move(req),
       operation,
       reqid,
@@ -254,16 +247,13 @@ void McServerSession::requestReady(McRequest req,
 void McServerSession::parseError(McReply reply) {
   DestructorGuard dg(this);
 
-  auto sharedThis = weakThis_.lock();
-  if (!sharedThis) {
-    /* This session is being destroyed, can't create new transactions */
-    close();
+  if (state_ != STREAMING) {
     return;
   }
 
   auto& transaction = unansweredRequests_.pushBack(
     folly::make_unique<McServerTransaction>(
-      sharedThis,
+      *this,
       McRequest(createMcMsgRef()),
       mc_op_unknown,
       0)
@@ -287,7 +277,7 @@ void McServerSession::queueWrite(
   auto& transaction = pendingWrites_.pushBack(std::move(ptransaction));
   if (options_.singleWrite) {
     if (!transaction.prepareWrite()) {
-      transport_->close();
+      close();
       return;
     }
 
@@ -322,7 +312,7 @@ void McServerSession::sendWrites() {
   while (!pendingWrites_.empty()) {
     auto& transaction = batch.pushBack(pendingWrites_.popFront());
     if (!transaction.prepareWrite()) {
-      transport_->close();
+      close();
       return;
     }
 

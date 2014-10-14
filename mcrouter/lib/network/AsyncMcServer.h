@@ -10,10 +10,11 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 
 namespace folly {
 class EventBase;
@@ -21,6 +22,7 @@ class EventBase;
 
 namespace facebook { namespace memcache {
 
+class AsyncMcServerWorker;
 class McServerThread;
 
 /**
@@ -69,7 +71,7 @@ class AsyncMcServer {
     /**
      * Worker-specific options
      */
-    AsyncMcServerWorker::Options worker;
+    AsyncMcServerWorkerOptions worker;
   };
 
   /**

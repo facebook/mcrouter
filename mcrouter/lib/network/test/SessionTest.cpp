@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/test/SessionTestHarness.h"
 
 using namespace facebook::memcache;
@@ -20,7 +20,7 @@ using std::string;
 using std::vector;
 
 TEST(Session, basic) {
-  AsyncMcServerWorker::Options opts;
+  AsyncMcServerWorkerOptions opts;
   opts.versionString = "Test-1.0";
   SessionTestHarness t(opts);
   t.inputPackets(
@@ -34,7 +34,7 @@ TEST(Session, basic) {
 }
 
 TEST(Session, throttle) {
-  AsyncMcServerWorker::Options opts;
+  AsyncMcServerWorkerOptions opts;
   opts.maxInFlight = 2;
   SessionTestHarness t(opts);
 
@@ -76,7 +76,7 @@ TEST(Session, throttle) {
 }
 
 TEST(Session, throttleBigPacket) {
-  AsyncMcServerWorker::Options opts;
+  AsyncMcServerWorkerOptions opts;
   opts.maxInFlight = 2;
   SessionTestHarness t(opts);
 
@@ -122,7 +122,7 @@ TEST(Session, throttleBigPacket) {
 }
 
 TEST(Session, quit) {
-  AsyncMcServerWorker::Options opts;
+  AsyncMcServerWorkerOptions opts;
   SessionTestHarness t(opts);
   t.inputPackets(
     "get ke", "y\r\n",

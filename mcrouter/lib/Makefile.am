@@ -146,6 +146,7 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServer.h \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
+  network/AsyncMcServerWorkerOptions.h \
   network/ConnectionOptions.h \
   network/McParser.cpp \
   network/McParser.h \

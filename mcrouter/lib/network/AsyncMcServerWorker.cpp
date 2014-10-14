@@ -64,7 +64,7 @@ class SimpleHandshakeCallback : public TAsyncSSLSocket::HandshakeCallback {
 SimpleHandshakeCallback simpleHandshakeCallback;
 } // anonymous
 
-AsyncMcServerWorker::AsyncMcServerWorker(Options opts,
+AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
                                          folly::EventBase& eventBase)
     : opts_(std::move(opts)),
       eventBase_(eventBase) {
@@ -100,18 +100,15 @@ void AsyncMcServerWorker::addClientSocket(
   socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
   socket->setNoDelay(true);
 
-  sessions_.insert(
+  sessions_.push_back(
     McServerSession::create(
       std::move(socket),
       onRequest_,
-      [this] (std::shared_ptr<McServerSession> session) {
-        /* We know that we keep alive all sessions until closed */
-        assert(session != nullptr);
-
+      [this] (McServerSession& session) {
         if (onClosed_) {
           onClosed_();
         }
-        sessions_.erase(session);
+        sessions_.erase(sessions_.iterator_to(session));
       },
       onShutdown_,
       opts_
@@ -125,16 +122,18 @@ void AsyncMcServerWorker::shutdown() {
 
   isAlive_ = false;
   /* Closing a session might cause it to remove itself from sessions_,
-     so save a copy first */
-  auto sessions = sessions_;
-  for (auto& session : sessions) {
-    session->close();
+     so we should be careful with the iterator */
+  auto it = sessions_.begin();
+  while (it != sessions_.end()) {
+    auto& session = *it;
+    ++it;
+    session.close();
   }
 }
 
 bool AsyncMcServerWorker::writesPending() const {
   for (auto& session : sessions_) {
-    if (session->writesPending()) {
+    if (session.writesPending()) {
       return true;
     }
   }
