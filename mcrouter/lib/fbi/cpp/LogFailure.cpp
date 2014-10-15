@@ -20,6 +20,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+#include <folly/experimental/Singleton.h>
 #include <folly/Format.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -74,7 +75,7 @@ struct StaticContainer {
   };
 };
 
-StaticContainer* container = new StaticContainer();
+folly::Singleton<StaticContainer> containerSingleton;
 
 }  // anonymous namespace
 
@@ -101,19 +102,24 @@ const char* const Category::kSystemError = "system-error";
 const char* const Category::kOther = "other";
 
 bool addHandler(std::pair<std::string, HandlerFunc> handler) {
-  std::lock_guard<std::mutex> lock(container->lock);
-  for (const auto& it : container->handlers) {
-    if (it.first == handler.first) {
-      return false;
+  if (auto container = containerSingleton.get_weak().lock()) {
+    std::lock_guard<std::mutex> lock(container->lock);
+    for (const auto& it : container->handlers) {
+      if (it.first == handler.first) {
+        return false;
+      }
     }
+    container->handlers.push_back(std::move(handler));
+    return true;
   }
-  container->handlers.push_back(std::move(handler));
-  return true;
+  return false;
 }
 
 void setServiceContext(folly::StringPiece service, std::string context) {
-  std::lock_guard<std::mutex> lock(container->lock);
-  container->contexts[service.str()] = std::move(context);
+  if (auto container = containerSingleton.get_weak().lock()) {
+    std::lock_guard<std::mutex> lock(container->lock);
+    container->contexts[service.str()] = std::move(context);
+  }
 }
 
 void log(folly::StringPiece service,
@@ -121,7 +127,7 @@ void log(folly::StringPiece service,
          folly::StringPiece msg) {
   std::map<std::string, std::string> contexts;
   std::vector<std::pair<std::string, HandlerFunc>> handlers;
-  {
+  if (auto container = containerSingleton.get_weak().lock()) {
     std::lock_guard<std::mutex> lock(container->lock);
     contexts = container->contexts;
     handlers = container->handlers;
