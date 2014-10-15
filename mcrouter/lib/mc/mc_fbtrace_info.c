@@ -41,6 +41,7 @@ mc_fbtrace_info_t* new_mc_fbtrace_info(int is_copy) {
     dbg_debug("Error while allocating memory for mc_fbtrace_info_t object");
     return fbt_i;
   }
+  fbt_i->_refcount = 1;
   if (!is_copy) {
     fbt_i->fbtrace = new_mc_fbtrace();
     if (fbt_i->fbtrace == NULL) {
@@ -60,9 +61,25 @@ mc_fbtrace_info_t* mc_fbtrace_info_deep_copy(const mc_fbtrace_info_t* orig) {
   return new_copy;
 }
 
-void mc_fbtrace_info_delete(mc_fbtrace_info_t* fbt_i) {
-  if (fbt_i->fbtrace) {
-    mc_fbtrace_decref(fbt_i->fbtrace);
+void mc_fbtrace_info_decref(mc_fbtrace_info_t* fbt_i) {
+  if (!fbt_i) {
+    return;
   }
-  free(fbt_i);
+  int newrefcount = __sync_add_and_fetch(&fbt_i->_refcount, -1);
+  FBI_ASSERT(newrefcount >= 0);
+  if (newrefcount == 0) {
+    if (fbt_i->fbtrace) {
+      mc_fbtrace_decref(fbt_i->fbtrace);
+    }
+    free(fbt_i);
+  }
+}
+
+mc_fbtrace_info_t* mc_fbtrace_info_incref(mc_fbtrace_info_t* fbt_i) {
+  if (!fbt_i) {
+    return NULL;
+  }
+  int newrefcount = __sync_add_and_fetch(&fbt_i->_refcount, 1);
+  FBI_ASSERT(newrefcount > 0);
+  return fbt_i;
 }

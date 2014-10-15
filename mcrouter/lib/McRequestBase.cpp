@@ -24,7 +24,12 @@ McRequestBase::McRequestBase(McMsgRef&& msg)
       exptime_(msg_->exptime),
       flags_(msg_->flags),
       delta_(msg_->delta),
-      leaseToken_(msg_->lease_id) {
+      leaseToken_(msg_->lease_id)
+#ifndef LIBMC_FBTRACE_DISABLE
+    ,
+      fbtraceInfo_(McFbtraceRef::cloneRef(msg_->fbtrace_info))
+#endif
+{
 }
 
 McRequestBase::McRequestBase(folly::StringPiece key)
@@ -47,6 +52,9 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->delta == delta_ &&
       msg_->lease_id == leaseToken_ &&
+#ifndef LIBMC_FBTRACE_DISABLE
+      msg_->fbtrace_info == fbtraceInfo_.get() &&
+#endif
       is_key_set &&
       is_value_set) {
     /* msg_ is an object with the same fields we expect.
@@ -62,6 +70,9 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
     toRelease->flags = flags_;
     toRelease->delta = delta_;
     toRelease->lease_id = leaseToken_;
+#ifndef LIBMC_FBTRACE_DISABLE
+    toRelease->fbtrace_info = fbtraceInfo_.clone().release();
+#endif
     if (!is_key_set) {
       toRelease->key = to<nstring_t>(getRange(keyData_));
     }
@@ -85,6 +96,9 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->delta == delta_ &&
       msg_->lease_id == leaseToken_ &&
+#ifndef LIBMC_FBTRACE_DISABLE
+      msg_->fbtrace_info == fbtraceInfo_.get() &&
+#endif
       is_key_set &&
       is_value_set) {
     /* msg_ is an object with the same fields we expect.
@@ -107,6 +121,9 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
     toRelease->flags = flags_;
     toRelease->delta = delta_;
     toRelease->lease_id = leaseToken_;
+#ifndef LIBMC_FBTRACE_DISABLE
+    toRelease->fbtrace_info = fbtraceInfo_.clone().release();
+#endif
     return std::move(toRelease);
   }
 }
@@ -172,6 +189,13 @@ McRequestBase::McRequestBase(const McRequestBase& other)
       other.msg_, getRange(keyData_),
       coalesceAndGetRange(valueData_));
   }
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  if (other.fbtraceInfo_.get()) {
+    fbtraceInfo_ = McFbtraceRef::moveRef(
+      mc_fbtrace_info_deep_copy(other.fbtraceInfo_.get()));
+  }
+#endif
 }
 
 McRequestBase::~McRequestBase() {

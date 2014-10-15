@@ -382,9 +382,7 @@ void mc_msg_decref(mc_msg_t* msg) {
         __sync_fetch_and_add(&_mc_msg_num_outstanding, -1);
       }
 #ifndef LIBMC_FBTRACE_DISABLE
-      if (msg->fbtrace_info) {
-        mc_fbtrace_info_delete(msg->fbtrace_info);
-      }
+      mc_fbtrace_info_decref(msg->fbtrace_info);
 #endif
 #ifndef FBCODE_OPT_BUILD
       memset(msg, 'P', sizeof(*msg));

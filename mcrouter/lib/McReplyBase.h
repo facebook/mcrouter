@@ -185,7 +185,11 @@ class McReplyBase {
   }
 
   uint32_t appSpecificErrorCode() const {
-    return msg_.get() ? msg_->err_code : 0;
+    return errCode_;
+  }
+
+  void setAppSpecificErrorCode(uint32_t ecode) {
+    errCode_ = ecode;
   }
 
   uint64_t flags() const {
@@ -268,7 +272,13 @@ class McReplyBase {
   explicit McReplyBase(mc_res_t result);
   McReplyBase();
   McReplyBase(mc_res_t result, McMsgRef&& reply);
-  McReplyBase(mc_res_t result, folly::IOBuf value);
+
+  /**
+   * If destructor/ctx are non-null, will call destructor(ctx)
+   * when this reply is destroyed.
+   */
+  McReplyBase(mc_res_t result, folly::IOBuf value,
+              void (*destructor)(void*) = nullptr, void* ctx = nullptr);
   McReplyBase(mc_res_t result, folly::StringPiece value);
   McReplyBase(mc_res_t result, const char* value);
   McReplyBase(mc_res_t result, const std::string& value);
@@ -283,6 +293,13 @@ class McReplyBase {
   uint64_t leaseToken_{0};
   uint64_t delta_{0};
   uint64_t cas_{0};
+  uint32_t errCode_{0};
+
+  /**
+   * Container for a C-style destructor
+   */
+  using CUniquePtr = std::unique_ptr<void, void(*)(void*)>;
+  folly::Optional<CUniquePtr> destructor_;
 };
 
 }}  // facebook::memcache
