@@ -123,7 +123,7 @@ void RouteHandleMap::foreachRoutePolicy(folly::StringPiece prefix,
 
   bool selectAll = (prefix == "/*/*/");
   for (const auto& it : byRoute_) {
-    if (it.first != defaultRoute_ &&
+    if (it.first != defaultRoute_.str() &&
         (selectAll || match_pattern_route(prefix, it.first))) {
       f(it.second);
     }
