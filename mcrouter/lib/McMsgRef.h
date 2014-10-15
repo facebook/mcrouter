@@ -27,8 +27,6 @@ namespace facebook { namespace memcache {
  *   McMsgRef b = a.clone();
  * This is done to emphasize creation of new references in code and force
  * move semantics as the default.
- *
- * NOTE: Generic to simplify unit tests
  */
 template <class T, class RefPolicy>
 class Ref {
@@ -65,9 +63,11 @@ class Ref {
   }
 
   Ref& operator=(Ref&& from) {
-    RefPolicy::decref(ref_);
-    ref_ = from.ref_;
-    from.ref_ = nullptr;
+    if (this != &from) {
+      RefPolicy::decref(ref_);
+      ref_ = from.ref_;
+      from.ref_ = nullptr;
+    }
     return *this;
   }
 

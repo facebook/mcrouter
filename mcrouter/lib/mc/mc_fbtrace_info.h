@@ -23,6 +23,7 @@ typedef struct mc_fbtrace_s {
 } mc_fbtrace_t;
 
 typedef struct mc_fbtrace_info_s {
+  int _refcount;
   mc_fbtrace_t* fbtrace;
   fbtrace_remote_node_t child_node;
   char metadata[FBTRACE_METADATA_SZ + 1];
@@ -30,7 +31,8 @@ typedef struct mc_fbtrace_info_s {
 
 mc_fbtrace_info_t* new_mc_fbtrace_info(int is_copy);
 mc_fbtrace_info_t* mc_fbtrace_info_deep_copy(const mc_fbtrace_info_t* orig);
-void mc_fbtrace_info_delete(mc_fbtrace_info_t* fbt_w);
+void mc_fbtrace_info_decref(mc_fbtrace_info_t* fbt_w);
+mc_fbtrace_info_t* mc_fbtrace_info_incref(mc_fbtrace_info_t* fbt_w);
 
 __END_DECLS
 

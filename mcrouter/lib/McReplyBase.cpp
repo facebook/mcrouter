@@ -64,9 +64,11 @@ McReplyBase::McReplyBase(mc_res_t res)
     : result_(res) {
 }
 
-McReplyBase::McReplyBase(mc_res_t res, folly::IOBuf val)
+McReplyBase::McReplyBase(mc_res_t res, folly::IOBuf val,
+                         void (*destructor)(void*), void* ctx)
     : result_(res),
-      valueData_(std::move(val)) {
+      valueData_(std::move(val)),
+      destructor_(CUniquePtr(ctx, destructor)) {
 }
 
 McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)
@@ -91,7 +93,8 @@ McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
       flags_(msg_.get() ? msg_->flags : 0),
       leaseToken_(msg_.get() ? msg_->lease_id : 0),
       delta_(msg_.get() ? msg_->delta : 0),
-      cas_(msg_.get() ? msg_->cas : 0) {
+      cas_(msg_.get() ? msg_->cas : 0),
+      errCode_(msg_.get() ? msg_->err_code : 0) {
   if (msg_.get() && msg_->value.str != nullptr) {
     valueData_.emplace(makeMsgValueIOBufStack(msg_));
   }
@@ -114,6 +117,7 @@ void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
   out->lease_id = leaseToken_;
   out->delta = delta_;
   out->cas = cas_;
+  out->err_code = errCode_;
 }
 
 McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
@@ -123,6 +127,7 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
       msg_->flags == flags_ &&
       msg_->lease_id == leaseToken_ &&
       msg_->delta == delta_ &&
+      msg_->err_code == errCode_ &&
       hasSameMemoryRegion(value(), to<folly::StringPiece>(msg_->value))) {
     return msg_.clone();
   } else {
@@ -144,6 +149,7 @@ McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
     toRelease->lease_id = leaseToken_;
     toRelease->delta = delta_;
     toRelease->cas = cas_;
+    toRelease->err_code = errCode_;
 
     return std::move(toRelease);
   }

@@ -15,6 +15,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/lib/network/test/TestUtil.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -122,7 +123,7 @@ class TestServer {
   }
 
   uint16_t getListenPort() const {
-    return getListenPort(socketFd_);
+    return facebook::memcache::getListenPort(socketFd_);
   }
 
   bool run() {
@@ -170,35 +171,6 @@ class TestServer {
   std::unique_ptr<AsyncMcServer> server_;
   bool outOfOrder_ = false;
   CommonStats stats_;
-
-  static uint16_t getListenPort(int socketFd) {
-    struct sockaddr_in sin;
-    socklen_t len = sizeof(struct sockaddr_in);
-    CHECK(!getsockname(socketFd, (struct sockaddr *)&sin, &len));
-    return ntohs(sin.sin_port);
-  }
-
-  static int createListenSocket() {
-    struct addrinfo hints;
-    struct addrinfo* res;
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    /* Use all available interfaces, and choose an available port */
-    CHECK(!getaddrinfo(nullptr, "0", &hints, &res));
-
-    auto listen_socket =
-      socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-    CHECK(listen_socket >= 0);
-    CHECK(!bind(listen_socket, res->ai_addr, res->ai_addrlen));
-    CHECK(!listen(listen_socket, SOMAXCONN));
-
-    return listen_socket;
-  }
 };
 
 class TestClient {
@@ -294,7 +266,7 @@ class TestClient {
 
 void serverShutdownTest(bool useSsl = false) {
   TestServer server(false, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.sendGet("shutdown", mc_res_ok);
   client.waitForReplies();
@@ -312,7 +284,7 @@ TEST(AsyncMcClient, serverShutdownSsl) {
 
 void simpleAsciiTimeoutTest(bool useSsl = false) {
   TestServer server(false, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
@@ -334,7 +306,7 @@ TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
 
 void simpleUmbrellaTimeoutTest(bool useSsl = false) {
   TestServer server(true, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol, useSsl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
@@ -384,13 +356,13 @@ TEST(AsyncMcClient, immeadiateConnectFailSsl) {
 
 TEST(AsyncMcClient, invalidCerts) {
   TestServer server(true, true);
-  TestClient brokenClient("127.0.0.1", server.getListenPort(), 200,
+  TestClient brokenClient("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol, true, []() {
                       return getSSLContext("/does/not/exist",
                                            "/does/not/exist",
                                            "/does/not/exist");
                     });
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol, true);
   brokenClient.sendGet("test", mc_res_connect_error);
   brokenClient.waitForReplies();
@@ -404,7 +376,7 @@ TEST(AsyncMcClient, invalidCerts) {
 
 void inflightThrottleTest(bool useSsl = false) {
   TestServer server(false, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.setThrottle(5, 6);
   for (size_t i = 0; i < 5; ++i) {
@@ -427,7 +399,7 @@ TEST(AsyncMcClient, inflightThrottleSsl) {
 
 void inflightThrottleFlushTest(bool useSsl = false) {
   TestServer server(false, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.setThrottle(6, 6);
   for (size_t i = 0; i < 5; ++i) {
@@ -451,7 +423,7 @@ TEST(AsyncMcClient, inflightThrottleFlushSsl) {
 
 void outstandingThrottleTest(bool useSsl = false) {
   TestServer server(false, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.setThrottle(5, 5);
   for (size_t i = 0; i < 5; ++i) {
@@ -475,9 +447,9 @@ TEST(AsyncMcClient, outstandingThrottleSsl) {
 
 void connectionErrorTest(bool useSsl = false) {
   TestServer server(false, useSsl);
-  TestClient client1("127.0.0.1", server.getListenPort(), 200,
+  TestClient client1("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
-  TestClient client2("127.0.0.1", server.getListenPort(), 200,
+  TestClient client2("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client1.sendGet("shutdown", mc_res_ok);
   client1.waitForReplies();
@@ -498,7 +470,7 @@ TEST(AsyncMcClient, connectionErrorSsl) {
 
 void umbrellaTest(bool useSsl = false) {
   TestServer server(true, useSsl);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol, useSsl);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
@@ -528,7 +500,7 @@ void reconnectTest(mc_protocol_t protocol) {
   }
 
   TestServer server(protocol == mc_umbrella_protocol, false);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     protocol);
   client.sendGet("test1", mc_res_found);
   client.sendSet("test", "testValue", mc_res_stored);
@@ -557,7 +529,7 @@ TEST(AsyncMcClient, reconnectUmbrella) {
 
 void bigKeyTest(mc_protocol_t protocol) {
   TestServer server(protocol == mc_umbrella_protocol, false);
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     protocol);
   constexpr int len = MC_KEY_MAX_LEN_ASCII + 5;
   char key[len] = {0};
@@ -591,7 +563,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
   {
     EventBase eventBase;
     {
-      ConnectionOptions opts("127.0.0.1", server.getListenPort(),
+      ConnectionOptions opts("localhost", server.getListenPort(),
                              mc_ascii_protocol);
       opts.timeout = std::chrono::milliseconds(200);
       auto client = folly::make_unique<AsyncMcClient>(eventBase, opts);
@@ -628,7 +600,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
   // Wait for server to wake-up.
   usleep(700000);
 
-  TestClient client("127.0.0.1", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol);
   client.sendGet("shutdown", mc_res_ok);
   client.waitForReplies();

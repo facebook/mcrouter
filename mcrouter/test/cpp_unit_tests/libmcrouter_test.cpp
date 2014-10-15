@@ -23,6 +23,7 @@
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/router.h"
+#include "mcrouter/lib/network/test/TestUtil.h"
 #include "mcrouter/test/cpp_unit_tests/mcrouter_test_client.h"
 #include "mcrouter/test/cpp_unit_tests/MemcacheLocal.h"
 
@@ -61,47 +62,6 @@ std::string kInvalidPoolConfig =
   "mcrouter/test/cpp_unit_tests/files/libmcrouter_invalid_pools.json";
 
 namespace {
-
-/**
- * @return File descriptor
- */
-int createListenSocket() {
-  struct addrinfo hints;
-  struct addrinfo* res;
-
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_INET6;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE;
-
-  // Use all available interfaces, and choose an available port,
-  // first try IPv6 address.
-  if (getaddrinfo(nullptr, "0", &hints, &res)) {
-    hints.ai_family = AF_INET;
-    CHECK(!getaddrinfo(nullptr, "0", &hints, &res));
-  }
-
-  auto listen_socket =
-    socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-  CHECK(listen_socket >= 0);
-  CHECK(!bind(listen_socket, res->ai_addr, res->ai_addrlen));
-  CHECK(!listen(listen_socket, SOMAXCONN));
-
-  freeaddrinfo(res);
-
-  return listen_socket;
-}
-
-/**
- * @return port the socket is listening on
- */
-uint16_t getListenPort(int listen_socket) {
-  struct sockaddr_in sin;
-  socklen_t len = sizeof(struct sockaddr_in);
-  CHECK(!getsockname(listen_socket, (struct sockaddr *)&sin, &len));
-  return ntohs(sin.sin_port);
-}
 
 /**
  * @return File descriptor
@@ -318,8 +278,8 @@ TEST(libmcrouter, standalone) {
 TEST(libmcrouter, listenSock) {
   /* Create a listen socket, pass it to a child mcrouter and
      check that communication through the socket works */
-  auto listen_socket = createListenSocket();
-  auto port = getListenPort(listen_socket);
+  auto listen_socket = facebook::memcache::createListenSocket();
+  auto port = facebook::memcache::getListenPort(listen_socket);
 
   std::vector<std::string> args{MCROUTER_INSTALL_PATH "mcrouter/mcrouter",
         "--listen-sock-fd", folly::to<std::string>(listen_socket),

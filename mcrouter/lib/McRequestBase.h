@@ -17,6 +17,10 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
 
+#ifndef LIBMC_FBTRACE_DISABLE
+#include "mcrouter/lib/mc/mc_fbtrace_info.h"
+#endif
+
 namespace facebook { namespace memcache {
 /**
  * As far as the routing module is concerned, a Request has
@@ -158,6 +162,19 @@ class McRequestBase {
     return valueData_;
   }
 
+#ifndef LIBMC_FBTRACE_DISABLE
+  const mc_fbtrace_info_s* fbtraceInfo() const {
+    return fbtraceInfo_.get();
+  }
+
+  /**
+   * Note: will not incref info, it's up to the caller.
+   */
+  void setFbtraceInfo(mc_fbtrace_info_s* info) {
+    fbtraceInfo_ = McFbtraceRef::moveRef(info);
+  }
+#endif
+
  private:
   McMsgRef msg_;
 
@@ -192,6 +209,27 @@ class McRequestBase {
   uint64_t flags_{0};
   uint64_t delta_{0};
   uint64_t leaseToken_{0};
+
+#ifndef LIBMC_FBTRACE_DISABLE
+  struct McFbtraceRefPolicy {
+    struct Deleter {
+      void operator()(mc_fbtrace_info_t* info) const {
+        mc_fbtrace_info_decref(info);
+      }
+    };
+
+    static mc_fbtrace_info_t* increfOrNull(
+      mc_fbtrace_info_t* info) {
+      return mc_fbtrace_info_incref(info);
+    }
+
+    static void decref(mc_fbtrace_info_t* info) {
+      mc_fbtrace_info_decref(info);
+    }
+  };
+  using McFbtraceRef = Ref<mc_fbtrace_info_t, McFbtraceRefPolicy>;
+  McFbtraceRef fbtraceInfo_;
+#endif
 
  protected:
   McRequestBase(const McRequestBase& other);
