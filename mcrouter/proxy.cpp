@@ -497,8 +497,15 @@ void proxy_t::processRequest(proxy_request_t* preq) {
 
 void proxy_t::dispatchRequest(proxy_request_t* preq) {
   if (rateLimited(preq)) {
+    if (opts.proxy_max_throttled_requests > 0 &&
+        numRequestsWaiting_ >= opts.proxy_max_throttled_requests) {
+      preq->sendReply(McReply(mc_res_local_error, "Max throttled exceeded"));
+      return;
+    }
     proxy_request_incref(preq);
+    // TODO(bwatling): replace waitingRequests_ with folly::CountedIntrusiveList
     TAILQ_INSERT_TAIL(&waitingRequests_, preq, entry_);
+    numRequestsWaiting_ += 1;
     stat_incr(this, proxy_reqs_waiting_stat, 1);
   } else {
     processRequest(preq);
@@ -530,6 +537,7 @@ void proxy_t::pump() {
          !TAILQ_EMPTY(&waitingRequests_)) {
     auto preq = TAILQ_FIRST(&waitingRequests_);
     TAILQ_REMOVE(&waitingRequests_, preq, entry_);
+    numRequestsWaiting_ -= 1;
     stat_decr(this, proxy_reqs_waiting_stat, 1);
     processRequest(preq);
     proxy_request_decref(preq);

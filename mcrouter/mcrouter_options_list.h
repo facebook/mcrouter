@@ -203,6 +203,15 @@ mcrouter_option_integer(
   " in parallel by each proxy thread.  Requests over limit will be queued up"
   " until the number of inflight requests drops.")
 
+mcrouter_option_integer(
+  size_t, proxy_max_throttled_requests, 0,
+  "proxy-max-throttled-requests", no_short,
+  "Only active if proxy-max-inflight-requests is non-zero. "
+  "Hard limit on the number of requests to queue per proxy after "
+  "there are already proxy-max-inflight-requests requests in flight for the "
+  "proxy. Further requests will be rejected with an error immediately. 0 means "
+  "disabled.")
+
 mcrouter_option_string(
   pem_cert_path, "",
   "pem-cert-path", no_short,

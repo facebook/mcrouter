@@ -556,6 +556,8 @@ struct proxy_t {
 
   /** Number of requests processing */
   size_t numRequestsProcessing_{0};
+  /** Number of requests queued in waitingRequests_ */
+  size_t numRequestsWaiting_{0};
 
   /** Queue of requests we didn't start processing yet */
   TAILQ_HEAD(RequestTailqHead, proxy_request_t);
