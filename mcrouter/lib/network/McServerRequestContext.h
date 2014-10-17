@@ -17,7 +17,8 @@ namespace facebook { namespace memcache {
 
 template <class OnRequest>
 class McServerOnRequestWrapper;
-class McServerTransaction;
+class McServerSession;
+class MultiOpParent;
 
 /**
  * API for users of McServer to send back a reply for a request.
@@ -35,29 +36,34 @@ class McServerRequestContext {
    */
   static void reply(McServerRequestContext&& ctx, McReply&& reply);
 
-  ~McServerRequestContext() {
-    /* Check that a reply was returned */
-    assert(!transaction_);
-  }
+  ~McServerRequestContext();
 
-  McServerRequestContext(McServerRequestContext&& other) noexcept
-      : transaction_(other.transaction_) {
-    other.transaction_ = nullptr;
-  }
+  McServerRequestContext(McServerRequestContext&& other) noexcept;
+  McServerRequestContext& operator=(McServerRequestContext&& other);
 
  private:
-  McServerTransaction* transaction_{nullptr};
+  McServerSession* session_;
+  mc_op_t operation_;
+  uint64_t reqid_;
+  bool noReply_;
+  bool replied_{false};
+
+  std::shared_ptr<MultiOpParent> parent_;
+  folly::Optional<folly::IOBuf> key_;
+
+  bool noReply(const McReply& reply) const;
 
   McServerRequestContext(const McServerRequestContext&) = delete;
   const McServerRequestContext& operator=(const McServerRequestContext&)
     = delete;
-  const McServerRequestContext& operator=(
-    McServerRequestContext&& other) = delete;
 
-  /* Only McServerTransaction can create these */
-  friend class McServerTransaction;
-  explicit McServerRequestContext(McServerTransaction& t)
-      : transaction_(&t) {}
+  /* Only McServerSession can create these */
+  friend class McServerSession;
+  friend class MultiOpParent;
+  friend class WriteBuffer;
+  McServerRequestContext(McServerSession& s, mc_op_t op, uint64_t r,
+                         bool nr = false,
+                         std::shared_ptr<MultiOpParent> parent = nullptr);
 };
 
 /**
@@ -73,7 +79,7 @@ private:
                             McRequest&& req,
                             mc_op_t operation) = 0;
 
-  friend class McServerTransaction;
+  friend class McServerSession;
   template <class OnRequest>
   friend class McServerOnRequestWrapper;
 };
@@ -95,7 +101,7 @@ class McServerOnRequestWrapper : public McServerOnRequest {
 
   void requestReady(McServerRequestContext&& ctx, McRequest&& req,
                     mc_op_t operation);
-  friend class McServerTransaction;
+  friend class McServerSession;
 };
 
 }}  // facebook::memcache

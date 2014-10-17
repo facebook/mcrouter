@@ -131,7 +131,7 @@ folly::IOBuf cloneSubBuf(
 }
 }
 
-void McParser::requestReadyHelper(McRequest req,
+void McParser::requestReadyHelper(McRequest&& req,
                                   mc_op_t operation,
                                   uint64_t reqid,
                                   mc_res_t result,

@@ -435,7 +435,8 @@ arithmetic_op = 'incr' @ { parser->msg->op = mc_op_incr; } |
 
 version_op = 'version' @ { parser->msg->op = mc_op_version; };
 
-quit_op = 'quit' @ { parser->msg->op = mc_op_quit;  };
+quit_op = 'quit' @ { parser->msg->op = mc_op_quit;
+                     parser->msg->noreply = true; };
 
 stats_op = 'stats' @ { parser->msg->op = mc_op_stats; };
 

@@ -152,7 +152,8 @@ void mc_ascii_response_buf_cleanup(mc_ascii_response_buf_t* buf) {
 }
 
 size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
-                                    const mc_msg_t* req,
+                                    nstring_t key,
+                                    mc_op_t op,
                                     const mc_msg_t* reply,
                                     struct iovec* iovs,
                                     size_t max_niovs) {
@@ -177,7 +178,7 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
     return niovs;
   }
 
-  switch (req->op) {
+  switch (op) {
     case mc_op_incr:
     case mc_op_decr:
       switch (reply->result) {
@@ -236,10 +237,10 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
       switch (reply->result) {
         case mc_res_found:
           IOV_WRITE_CONST_STR("VALUE ");
-          IOV_WRITE_NSTRING(req->key);
+          IOV_WRITE_NSTRING(key);
           IOV_FORMAT(buf, " %" PRIu64 " %lu", reply->flags,
                      reply->value.len);
-          if (req->op == mc_op_gets) {
+          if (op == mc_op_gets) {
             IOV_FORMAT(buf, " %" PRIu64, reply->cas);
           }
           IOV_WRITE_CONST_STR("\r\n");
@@ -248,13 +249,13 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
           break;
 
         case mc_res_notfound:
-          if (req->op != mc_op_lease_get) {
+          if (op != mc_op_lease_get) {
             // misses should have been suppressed!
             goto UNEXPECTED;
           }
           // but lease-get always has a response
           IOV_WRITE_CONST_STR("LVALUE ");
-          IOV_WRITE_NSTRING(req->key);
+          IOV_WRITE_NSTRING(key);
           IOV_FORMAT(buf, " %" PRIu64 " %"PRIu64 " %zu\r\n",
                      reply->lease_id,
                      reply->flags,
@@ -274,7 +275,7 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
           /* (META key age: (unknown|\d+); exptime: \d+;
              from: (\d+\.\d+\.\d+\.\d+|unknown); is_transient: (1|0)\r\n) */
           IOV_WRITE_CONST_STR("META ");
-          IOV_WRITE_NSTRING(req->key);
+          IOV_WRITE_NSTRING(key);
           IOV_WRITE_CONST_STR(" age: ");
           if (reply->number == (uint32_t) -1) {
             IOV_WRITE_CONST_STR("unknown");
@@ -376,8 +377,8 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
 
     default:
       IOV_WRITE_CONST_STR("SERVER_ERROR unhandled token ");
-      IOV_WRITE_STR(mc_op_to_string(req->op));
-      IOV_FORMAT(buf, " (%d)\r\n", (int)req->op);
+      IOV_WRITE_STR(mc_op_to_string(op));
+      IOV_FORMAT(buf, " (%d)\r\n", (int)op);
       break;
   }
 
@@ -388,7 +389,7 @@ UNEXPECTED:
   IOV_WRITE_CONST_STR("SERVER_ERROR unexpected result ");
   IOV_WRITE_STR(mc_res_to_string(reply->result));
   IOV_FORMAT(buf, " (%d) for ", (int)reply->result);
-  IOV_WRITE_STR(mc_op_to_string(req->op));
-  IOV_FORMAT(buf, " (%d)\r\n", (int)req->op);
+  IOV_WRITE_STR(mc_op_to_string(op));
+  IOV_FORMAT(buf, " (%d)\r\n", (int)op);
   return niovs;
 }
