@@ -496,7 +496,7 @@ class Mcrouter(MCProcess):
             with open(config, 'r') as config_file:
                 replaced_config = replace_strings(config_file.read(),
                                                   replace_map)
-            config = tempfile.mktemp(dir=self.base_dir.path)
+            (_, config) = tempfile.mkstemp(dir=self.base_dir.path)
             with open(config, 'w') as config_file:
                 config_file.write(replaced_config)
 
@@ -504,7 +504,7 @@ class Mcrouter(MCProcess):
             with open(config, 'r') as config_file:
                 replaced_config = replace_ports(config_file.read(),
                                                 substitute_config_ports)
-            config = tempfile.mktemp(dir=self.base_dir.path)
+            (_, config) = tempfile.mkstemp(dir=self.base_dir.path)
             with open(config, 'w') as config_file:
                 config_file.write(replaced_config)
 
