@@ -35,7 +35,7 @@ class McParser {
      * @param noreply  If true, the server should not serialize and send
      *                 a reply for this request.
      */
-    virtual void requestReady(McRequest req,
+    virtual void requestReady(McRequest&& req,
                               mc_op_t operation,
                               uint64_t reqid,
                               mc_res_t result,
@@ -159,7 +159,7 @@ class McParser {
 
   bool readUmbrellaData();
 
-  void requestReadyHelper(McRequest req, mc_op_t operation, uint64_t reqid,
+  void requestReadyHelper(McRequest&& req, mc_op_t operation, uint64_t reqid,
                           mc_res_t result, bool noreply);
   void replyReadyHelper(McReply reply, mc_op_t operation, uint64_t reqid);
   void recalculateBufferSize(size_t read);

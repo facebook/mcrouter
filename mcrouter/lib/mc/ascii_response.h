@@ -37,14 +37,16 @@ void mc_ascii_response_buf_cleanup(mc_ascii_response_buf_t* buf);
  * For given request and reply, builds the Ascii protocol response.
  *
  * @param buf    Storage to use for response substrings
- * @param req    Original request
+ * @param key    Original request key
+ * @param op     Original operation
  * @param reply  Reply
  * @param iovs   Pointer to an IOV array of max_iovs size
  *
  * @return The number of IOVs used, or 0 if an error occurred.
  */
 size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
-                                    const mc_msg_t* req,
+                                    nstring_t key,
+                                    mc_op_t op,
                                     const mc_msg_t* reply,
                                     struct iovec* iovs,
                                     size_t max_iovs);

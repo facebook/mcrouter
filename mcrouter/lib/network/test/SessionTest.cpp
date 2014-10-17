@@ -28,7 +28,7 @@ TEST(Session, basic) {
     "version\r\n");
 
   EXPECT_EQ(
-    vector<string>({"VALUE key 0 9\r\nkey_value\r\nEND\r\n",
+    vector<string>({"VALUE key 0 9\r\nkey_value\r\nEND\r\n"
                     "VERSION Test-1.0\r\n"}),
     t.flushWrites());
 }

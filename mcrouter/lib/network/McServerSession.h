@@ -14,7 +14,8 @@
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/McParser.h"
-#include "mcrouter/lib/network/McServerTransaction.h"
+#include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/WriteBuffer.h"
 
 namespace facebook { namespace memcache {
 
@@ -88,27 +89,38 @@ class McServerSession :
 
   McParser parser_;
 
-  /**
-   * Requests (possibly replied) which we didn't write to the network yet
-   */
-  McServerTransaction::Queue unansweredRequests_;
+  /* In-order protocol state */
+
+  /* headReqid_ <= tailReqid_.  Since we must output replies sequentially,
+     headReqid_ tracks the last reply id we're allowed to sent out.
+     Out of order replies are stalled in the blockedReplies_ queue. */
+  uint64_t headReqid_{0}; /**< Id of next unblocked reply */
+  uint64_t tailReqid_{0}; /**< Id to assign to next request */
+  std::unordered_map<
+    uint64_t,
+    std::pair<McServerRequestContext, McReply>> blockedReplies_;
+
+  /* If non-null, a multi-op operation is being parsed.*/
+  std::shared_ptr<MultiOpParent> currentMultiop_;
+
+
+  /* Batch writing state */
 
   /**
-   * Buffer for an incoming multiget request components
+   * All writes to be written at the end of the loop in a single batch.
    */
-  McServerTransaction::Queue multigetRequests_;
+  std::deque<std::pair<McServerRequestContext, McReply>> pendingWrites_;
 
   /**
-   * Transactions with replies being written to the transport after the current
-   * loop iteration
-   */
-  McServerTransaction::Queue pendingWrites_;
-
-  /**
-   * Each batch contains transactions with replies already written
+   * Each entry contains the count of requests with replies already written
    * to the transport, waiting on write success.
    */
-  std::deque<McServerTransaction::Queue> writeBatches_;
+  std::deque<size_t> writeBatches_;
+
+  /**
+   * Queue of write buffers.
+   */
+  WriteBufferQueue writeBufs_;
 
   /**
    * True iff SendWritesCallback has been scheduled.
@@ -166,16 +178,7 @@ class McServerSession :
    */
   void checkClosed();
 
-  /**
-   * Flush any already replied requests (replies might be queued up
-   * due to head-of-line blocking)
-   *
-   * @param transaction  A reference to the transaction from unansweredRequests_
-   *                     that became replied.  If the protocol is out of order,
-   *                     this will simply write out the reply for that request
-   *                     only immediately.
-   */
-  void onRequestReplied(McServerTransaction& transaction);
+  void reply(McServerRequestContext&& ctx, McReply&& reply);
 
   /* TAsyncTransport's readCallback */
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
@@ -185,17 +188,14 @@ class McServerSession :
     noexcept override;
 
   /* McParser's parseCallback */
-  void requestReady(McRequest req,
+  void requestReady(McRequest&& req,
                     mc_op_t operation,
                     uint64_t reqid,
                     mc_res_t result,
                     bool noreply);
   void parseError(McReply reply);
 
-  /**
-   * Queue up the transaction for writing.
-   */
-  void queueWrite(std::unique_ptr<McServerTransaction> transaction);
+  void queueWrite(McServerRequestContext&& ctx, McReply&& reply);
 
   void completeWrite();
 
@@ -218,7 +218,8 @@ class McServerSession :
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;
 
-  friend class McServerTransaction;
+  friend class McServerRequestContext;
 };
+
 
 }}  // facebook::memcache

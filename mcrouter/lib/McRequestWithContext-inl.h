@@ -21,8 +21,8 @@ McRequestWithContext<Ctx>::McRequestWithContext(std::shared_ptr<Ctx> ctx,
 
 template <class Ctx>
 McRequestWithContext<Ctx>::McRequestWithContext(std::shared_ptr<Ctx> ctx,
-                                                const std::string& key)
-  : McRequestBase(key),
+                                                const std::string& k)
+  : McRequestBase(k),
     ctx_(std::move(ctx)) {}
 
 template <class Ctx>

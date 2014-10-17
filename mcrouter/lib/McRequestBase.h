@@ -70,8 +70,8 @@ class McRequestBase {
   void setExptime(uint32_t expt) {
     exptime_ = expt;
   }
-  void setKey(folly::StringPiece key) {
-    keyData_ = folly::IOBuf(folly::IOBuf::COPY_BUFFER, key);
+  void setKey(folly::StringPiece k) {
+    keyData_ = folly::IOBuf(folly::IOBuf::COPY_BUFFER, k);
     keyData_.coalesce();
     keys_.update(getRange(keyData_));
   }
@@ -160,6 +160,10 @@ class McRequestBase {
 
   const folly::IOBuf& value() const {
     return valueData_;
+  }
+
+  const folly::IOBuf& key() const {
+    return keyData_;
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE

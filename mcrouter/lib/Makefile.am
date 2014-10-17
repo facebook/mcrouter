@@ -157,11 +157,13 @@ libmcrouter_a_SOURCES = \
   network/McServerRequestContext.h \
   network/McServerSession.cpp \
   network/McServerSession.h \
-  network/McServerTransaction.cpp \
-  network/McServerTransaction.h \
+  network/MultiOpParent.cpp \
+  network/MultiOpParent.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
   network/UniqueIntrusiveList.h \
+  network/WriteBuffer.cpp \
+  network/WriteBuffer.h \
   routes/AllAsyncRoute.h \
   routes/AllFastestRoute.h \
   routes/AllInitialRoute.h \

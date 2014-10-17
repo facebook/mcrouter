@@ -7,7 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/McServerTransaction.h"
 
 namespace facebook { namespace memcache {
 
