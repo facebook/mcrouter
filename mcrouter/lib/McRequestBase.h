@@ -82,6 +82,10 @@ class McRequestBase {
     keyData_.coalesce();
     keys_.update(getRange(keyData_));
   }
+  void stripRoutingPrefix() {
+    keyData_.trimStart(keys_.routingPrefix.size());
+    keys_.routingPrefix.clear();
+  }
   void setValue(folly::IOBuf valueData) {
     valueData_ = std::move(valueData);
   }

@@ -23,7 +23,7 @@ enum proxy_send_stat_result_t {
   PROXY_SEND_NUM_ERROR_TYPES
 };
 
-void update_send_stats(proxy_t *proxy, const McMsgRef& req,
+void update_send_stats(proxy_t *proxy, mc_op_t op,
                        proxy_send_stat_result_t res);
 
 /**

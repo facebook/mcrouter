@@ -13,50 +13,12 @@
 #include <folly/Conv.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/route.h"
-#include "mcrouter/routes/McOpList.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-namespace {
-
-template <typename F>
-void sendRequest(
-    AsyncMcClient& client,
-    const McRequest& request,
-    mc_op_t op,
-    F&& f,
-    McOpList::Item<0>) {
-  throw std::runtime_error(std::string("send for requested op (") +
-                           mc_op_to_string(op) + ") not supported");
-}
-
-template <typename F, int op_id>
-void sendRequest(
-    AsyncMcClient& client,
-    const McRequest& request,
-    mc_op_t op,
-    F&& f,
-    McOpList::Item<op_id>) {
-
-  if (McOpList::Item<op_id>::op::mc_op == op) {
-    client.send(request,
-                typename McOpList::Item<op_id>::op(),
-                std::forward<F>(f));
-    return;
-  }
-
-  return sendRequest(client, request, op, std::forward<F>(f),
-                     McOpList::Item<op_id-1>());
-}
-
-}  // anonymous namespace
 
 DestinationClient::DestinationClient(std::shared_ptr<ProxyDestination> pdstn)
     : proxy_(pdstn->proxy),
@@ -71,37 +33,24 @@ void DestinationClient::resetInactive() {
   }
 }
 
-int DestinationClient::send(McMsgRef requestMsg, void* req_ctx,
-                            uint64_t senderId) {
-  auto& client = getAsyncMcClient();
-  auto op = requestMsg->op;
-  McRequest mcReq(requestMsg.clone());
-  auto requestMsgWrapper = folly::makeMoveWrapper(std::move(requestMsg));
-  auto pdstn = pdstn_;
-  sendRequest(client, mcReq, op,
-    [pdstn, req_ctx, op, requestMsgWrapper] (McReply&& reply) mutable {
-      auto pdstnPtr = pdstn.lock();
-      // ProxyDestination is already dead, just return.
-      if (!pdstnPtr) {
-        return;
-      }
-      auto proxy = pdstnPtr->proxy;
-      auto& req = *requestMsgWrapper;
+void DestinationClient::onReply(McReply reply, mc_op_t op, void* req_ctx,
+                                std::weak_ptr<ProxyDestination> pdstn) {
+  auto pdstnPtr = pdstn.lock();
+  // ProxyDestination is already dead, just return.
+  if (!pdstnPtr) {
+    return;
+  }
+  auto proxy = pdstnPtr->proxy;
 
-      if (reply.result() == mc_res_local_error) {
-        update_send_stats(proxy, req, PROXY_SEND_LOCAL_ERROR);
-      } else {
-        stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
-        update_send_stats(proxy, req, PROXY_SEND_OK);
-      }
+  if (reply.result() == mc_res_local_error) {
+    update_send_stats(proxy, op, PROXY_SEND_LOCAL_ERROR);
+  } else {
+    stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
+    update_send_stats(proxy, op, PROXY_SEND_OK);
+  }
 
-      pdstnPtr->on_reply(req,
-                         std::move(reply),
-                         req_ctx);
-    },
-    McOpList::LastItem());
-
-  return 0;
+  pdstnPtr->on_reply(std::move(reply),
+                     req_ctx);
 }
 
 void DestinationClient::initializeAsyncMcClient() {

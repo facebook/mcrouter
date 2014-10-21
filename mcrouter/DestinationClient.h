@@ -11,10 +11,12 @@
 #include <memory>
 
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McOperation.h"
 
 namespace facebook { namespace memcache {
 
 class AsyncMcClient;
+class McRequest;
 
 namespace mcrouter {
 
@@ -37,7 +39,9 @@ class DestinationClient {
    */
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
 
-  int send(McMsgRef requestMsg, void* req_ctx, uint64_t senderId);
+  template <int Op>
+  int send(const McRequest& request, McOperation<Op>, void* req_ctx,
+           uint64_t senderId);
 
   ~DestinationClient();
 
@@ -48,6 +52,12 @@ class DestinationClient {
 
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
+
+  // Callback that would forward reply to the ProxyDestination.
+  static void onReply(McReply reply, mc_op_t op, void* req_ctx,
+                      std::weak_ptr<ProxyDestination> pdstn);
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "DestinationClient-inl.h"

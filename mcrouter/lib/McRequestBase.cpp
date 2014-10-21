@@ -205,7 +205,8 @@ McRequestBase::McRequestBase(const McRequestBase& other)
       delta_(other.delta_),
       leaseToken_(other.leaseToken_),
       cas_(other.cas_) {
-  other.keyData_.cloneInto(keyData_);
+  // Key is always a single piece, so it's safe to do cloneOneInto.
+  other.keyData_.cloneOneInto(keyData_);
   keys_ = Keys(getRange(keyData_));
   other.valueData_.cloneInto(valueData_);
 

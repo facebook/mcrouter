@@ -25,6 +25,14 @@ class McRequest : public McRequestBase {
   McRequest clone() const {
     return McRequest(*this);
   }
+  static McRequest cloneFrom(const McRequestBase& other,
+                             bool stripRoutingPrefix = false) {
+    McRequest result(other);
+    if (stripRoutingPrefix) {
+      result.stripRoutingPrefix();
+    }
+    return result;
+  }
 
  private:
   McRequest(const McRequest& other)

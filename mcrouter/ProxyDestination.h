@@ -20,6 +20,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/TkoLog.h"
 
 using asox_timer_t = void*;
@@ -27,6 +28,7 @@ using asox_timer_t = void*;
 namespace facebook { namespace memcache {
 
 class McReply;
+class McRequest;
 
 namespace mcrouter {
 
@@ -80,9 +82,11 @@ struct ProxyDestination {
   ~ProxyDestination();
 
   // returns non-zero on error
-  int send(McMsgRef request, void* req_ctx, uint64_t senderId);
-  // returns 1 if okay to send req using this client
-  int may_send(const McMsgRef& req);
+  template <class Operation>
+  int send(const McRequest &request, Operation, void* req_ctx,
+           uint64_t senderId);
+  // returns true if okay to send req using this client
+  bool may_send();
 
   /**
    * Returns one of the three states that the server could be in:
@@ -101,7 +105,7 @@ struct ProxyDestination {
 
   void on_up();
   void on_down();
-  void on_reply(const McMsgRef& req, McReply reply, void* req_ctx);
+  void on_reply(McReply reply, void* req_ctx);
 
   // on probe timer
   void on_timer(const asox_timer_t timer);
@@ -123,7 +127,7 @@ struct ProxyDestination {
 
   int probe_delay_next_ms{0};
   bool sending_probes{false};
-  McMsgRef probe_req;
+  std::unique_ptr<McRequest> probe_req;
   asox_timer_t probe_timer{nullptr};
   size_t probesSent_{0};
 
@@ -158,3 +162,5 @@ struct ProxyDestination {
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "ProxyDestination-inl.h"

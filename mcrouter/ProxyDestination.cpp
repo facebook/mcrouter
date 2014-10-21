@@ -12,8 +12,6 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/_router.h"
-#include "mcrouter/config-impl.h"
-#include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/timer.h"
@@ -21,9 +19,7 @@
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/pclient.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
 #include "mcrouter/TkoTracker.h"
@@ -87,12 +83,13 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
   probe_timer = nullptr;
   if (sending_probes) {
     // Note that the previous probe might still be in flight
-    if (probe_req.get() == nullptr) {
+    if (!probe_req) {
       auto mutReq = createMcMsgRef();
       mutReq->op = mc_op_version;
-      probe_req = std::move(mutReq);
+      probe_req = folly::make_unique<McRequest>(std::move(mutReq));
       ++probesSent_;
-      send(probe_req.clone(), nullptr, /* senderId= */ 0);
+      send(*probe_req, McOperation<mc_op_version>(), /* context */ nullptr,
+           /* senderId= */ 0);
     }
     schedule_next_probe();
   }
@@ -162,8 +159,7 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
   }
 }
 
-void ProxyDestination::on_reply(const McMsgRef& req,
-                                McReply reply,
+void ProxyDestination::on_reply(McReply reply,
                                 void* req_ctx) {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
@@ -179,12 +175,15 @@ void ProxyDestination::on_reply(const McMsgRef& req,
     fb_timer_start(on_reply_timer);
   }
 
-  bool is_probe_req = (req.get() == probe_req.get());
+  // When we send a regular request, we pass a pointer to DestinationRequestCtx
+  // as a req_ctx. In case of probes we don't have that context and use nullptr
+  // to distinguish it from regular requests.
+  bool is_probe_req = (req_ctx == nullptr);
 
   handle_tko(reply, is_probe_req);
 
   if (is_probe_req) {
-    probe_req = McMsgRef();
+    probe_req.reset();
   } else {
     stats_.results[reply.result()]++;
 
@@ -334,19 +333,10 @@ const ProxyDestinationStats& ProxyDestination::stats() const {
   return stats_;
 }
 
-int ProxyDestination::may_send(const McMsgRef& req) {
+bool ProxyDestination::may_send() {
   FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
 
   return state() != PROXY_CLIENT_TKO;
-}
-
-int ProxyDestination::send(McMsgRef request, void* req_ctx,
-                           uint64_t senderId) {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-
-  proxy->destinationMap->markAsActive(*this);
-
-  return client_->send(std::move(request), req_ctx, senderId);
 }
 
 void ProxyDestination::resetInactive() {

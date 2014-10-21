@@ -94,7 +94,7 @@ bool match_routing_key_hash(uint32_t routingKeyHash,
 }
 
 #define STAT_UPDATE(CATEGORY)                                       \
-  do {switch (req->op) {                                            \
+  do {switch (op) {                                                 \
       case mc_op_get:                                               \
         stat_incr(proxy->stats, cmd_get_ ## CATEGORY, 1);           \
         break;                                                      \
@@ -128,7 +128,7 @@ bool match_routing_key_hash(uint32_t routingKeyHash,
         stat_incr(proxy->stats, cmd_other_ ## CATEGORY, 1);         \
         break;}} while(0)
 
-void update_send_stats(proxy_t *proxy, const McMsgRef& req,
+void update_send_stats(proxy_t *proxy, mc_op_t op,
                        proxy_send_stat_result_t res) {
 
   switch (res) {

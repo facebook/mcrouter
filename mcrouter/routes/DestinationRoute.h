@@ -126,13 +126,12 @@ class DestinationRoute {
     return req.dependentMsgStripRoutingPrefix((mc_op_t)M);
   }
 
-  template <typename Operation>
-  ProxyMcReply routeImpl(const ProxyMcRequest& req, Operation) const {
-    auto msg = generateMsg(req, Operation());
+  template <int Op>
+  ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
 
     auto proxy = req.context().ctx().proxyRequest().proxy;
-    if (!destination_->may_send(msg)) {
-      update_send_stats(proxy, msg, PROXY_SEND_REMOTE_ERROR);
+    if (!destination_->may_send()) {
+      update_send_stats(proxy, (mc_op_t)Op, PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
       return reply;
@@ -141,7 +140,7 @@ class DestinationRoute {
     if (req.getRequestClass() == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
-        update_send_stats(proxy, msg, PROXY_SEND_LOCAL_ERROR);
+        update_send_stats(proxy, (mc_op_t)Op, PROXY_SEND_LOCAL_ERROR);
         ProxyMcReply reply(ErrorReply);
         reply.setDestination(client_);
         return reply;
@@ -160,13 +159,16 @@ class DestinationRoute {
     auto& destination = destination_;
 
     DestinationRequestCtx ctx(&req.context().ctx().proxyRequest());
+    uint64_t senderId = req.context().ctx().senderId();
+    auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
 
     fiber::await(
-      [&destination, &msg, &req, &ctx](FiberPromise<void> promise) {
+      [&destination, &newReq, senderId, &ctx](FiberPromise<void> promise) {
         ctx.promise = std::move(promise);
-        destination->send(std::move(msg),
+        destination->send(newReq,
+                          McOperation<Op>(),
                           &ctx,
-                          req.context().ctx().senderId());
+                          senderId);
       });
     auto reply = ProxyMcReply(std::move(ctx.reply));
 
@@ -175,7 +177,7 @@ class DestinationRoute {
                                   reply,
                                   ctx.startTime,
                                   ctx.endTime,
-                                  Operation());
+                                  McOperation<Op>());
 
     // For AsynclogRoute
     if (reply.isFailoverError()) {
@@ -187,8 +189,7 @@ class DestinationRoute {
 
   template <typename Operation>
   McReply routeImpl(const RecordingMcRequest& req, Operation) const {
-    auto msg = generateMsg(req, Operation());
-    if (!destination_->may_send(msg)) {
+    if (!destination_->may_send()) {
       return McReply(TkoReply);
     }
 

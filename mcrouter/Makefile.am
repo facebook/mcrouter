@@ -22,6 +22,7 @@ libmcroutercore_a_SOURCES = \
   CallbackPool.h \
   ConfigApi.cpp \
   ConfigApi.h \
+  DestinationClient-inl.h \
   DestinationClient.cpp \
   DestinationClient.h \
   ExponentialSmoothData.cpp \
@@ -65,6 +66,7 @@ libmcroutercore_a_SOURCES = \
   ProxyConfigBuilder.cpp \
   ProxyConfigBuilder.h \
   ProxyConfigIf.h \
+  ProxyDestination-inl.h \
   ProxyDestination.cpp \
   ProxyDestination.h \
   ProxyDestinationMap.cpp \
