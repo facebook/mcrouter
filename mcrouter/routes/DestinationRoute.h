@@ -18,6 +18,7 @@
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
@@ -55,11 +56,12 @@ template <class RouteHandleIf>
 class DestinationRoute {
  public:
   std::string routeName() const {
-    return folly::format("host|pool={}|id={}|ssl={}|ap={}",
+    return folly::format("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
       client_->pool ? client_->pool->getName() : "NOPOOL",
       client_->indexInPool,
       client_->useSsl,
-      client_->ap.toString()).str();
+      client_->ap.toString(),
+      to<std::chrono::milliseconds>(client_->server_timeout).count()).str();
   }
 
   /**

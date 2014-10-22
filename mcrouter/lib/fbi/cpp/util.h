@@ -9,6 +9,7 @@
 #ifndef FBI_CPP_UTIL_H
 #define FBI_CPP_UTIL_H
 
+#include <chrono>
 #include <string>
 
 #include <folly/Format.h>
@@ -73,6 +74,15 @@ inline timeval_t to<timeval_t>(const unsigned int& ms) {
   r.tv_sec = ms / 1000;
   r.tv_usec = ms % 1000 * 1000;
   return r;
+}
+
+/** timeval_t to milliseconds */
+template <>
+inline std::chrono::milliseconds
+to<std::chrono::milliseconds>(const timeval_t& t) {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(
+    seconds(t.tv_sec) + microseconds(t.tv_usec));
 }
 
 /**
