@@ -100,7 +100,7 @@ TEST(mcrouter, start_and_stop) {
     mcrouter_client_t *client = mcrouter_client_new(
       router,
       &eventBase,
-      (mcrouter_client_callbacks_t){nullptr, nullptr},
+      (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
       nullptr,
       0, false);
     EXPECT_FALSE(client == nullptr);
@@ -128,7 +128,7 @@ void test_disconnect_callback(bool thread_safe_callbacks) {
   mcrouter_client_t *client = mcrouter_client_new(
     router,
     thread_safe_callbacks ? nullptr : &eventBase,
-    (mcrouter_client_callbacks_t){nullptr, on_disconnect},
+    (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
     &sem_disconnect,
     0, false);
   EXPECT_FALSE(client == nullptr);
@@ -158,7 +158,7 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
   mcrouter_client_t *client = mcrouter_client_new(
     router,
     nullptr,
-    (mcrouter_client_callbacks_t){nullptr, on_disconnect},
+    (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
     &sem_disconnect,
     0, false);
 
@@ -192,7 +192,7 @@ TEST(mcrouter, fork) {
   mcrouter_client_t *client = mcrouter_client_new(
     router,
     eventBase.get(),
-    (mcrouter_client_callbacks_t){on_reply, nullptr},
+    (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
     nullptr,
     0, false);
   EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
@@ -220,7 +220,7 @@ TEST(mcrouter, fork) {
   client = mcrouter_client_new(
     router,
     eventBase.get(),
-    (mcrouter_client_callbacks_t){on_reply, nullptr},
+    (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
     nullptr,
     0, false);
   EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
@@ -256,6 +256,7 @@ TEST(mcrouter, already_replied_failed_delete) {
   folly::test::TemporaryDirectory tmpdir("already_replied_failed_delete");
   mcrouter_client_callbacks_t cb = {
     .on_reply = &on_reply,
+    .on_cancel = nullptr,
     .on_disconnect = nullptr
   };
   auto opts = defaultTestOptions();

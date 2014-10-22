@@ -73,7 +73,7 @@ MCRouterTestClient::MCRouterTestClient(const std::string& name,
   router_ = mcrouter_init(name, opts);
   client_ = mcrouter_client_new(router_,
                                 nullptr,
-                                {on_reply, nullptr},
+                                {on_reply, nullptr, nullptr},
                                 rs_,
                                 0, false);
 }

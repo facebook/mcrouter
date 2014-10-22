@@ -72,6 +72,7 @@ void router_on_reply(mcrouter_client_t *client,
 
 mcrouter_client_callbacks_t const server_callbacks = {
   router_on_reply,  // on_reply callback
+  nullptr,
   nullptr
 };
 

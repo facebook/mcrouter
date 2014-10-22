@@ -70,14 +70,19 @@ const McrouterOptions& mcrouter_get_opts(mcrouter_t *router);
 
 typedef void (mcrouter_on_reply_t)(mcrouter_client_t *client,
                                    mcrouter_msg_t *router_req,
-                                   void* context);
+                                   void* client_context);
 
-typedef void (mcrouter_on_disconnect_ts_t)(void *context);
+typedef void (mcrouter_on_cancel_t)(mcrouter_client_t *client,
+                                    void* request_context,
+                                    void* client_context);
+
+typedef void (mcrouter_on_disconnect_ts_t)(void *client_context);
 
 typedef void (mcrouter_on_request_sweep_t)(mcrouter_msg_t *router_req);
 
 struct mcrouter_client_callbacks_t {
   mcrouter_on_reply_t* on_reply;
+  mcrouter_on_cancel_t* on_cancel;
   mcrouter_on_disconnect_ts_t* on_disconnect;
 };
 

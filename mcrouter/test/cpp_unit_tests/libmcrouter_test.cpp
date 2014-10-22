@@ -159,7 +159,7 @@ TEST(libmcrouter, sanity) {
   client.stats(stats, false);
 }
 
-static int on_reply_count = 0;
+static std::atomic<int> on_reply_count{0};
 void on_reply(mcrouter_client_t *client,
               mcrouter_msg_t *router_req,
               void* context) {
@@ -171,6 +171,18 @@ void on_reply(mcrouter_client_t *client,
   }
 }
 
+static std::atomic<int> on_cancel_count{0};
+void on_cancel(mcrouter_client_t* client,
+               void* request_context,
+               void* client_context) {
+  on_cancel_count++;
+  if (request_context) {
+    EXPECT_TRUE(*((int*) request_context) == 42);
+    free(request_context);
+  }
+
+}
+
 static void premature_disconnect_common(bool use_client_event_base) {
   auto opts = defaultTestOptions();
   opts.config_str = configString;
@@ -179,12 +191,15 @@ static void premature_disconnect_common(bool use_client_event_base) {
 
 
   for (int i = 0; i < 10; i++) {
+    on_reply_count = 0;
+    on_cancel_count = 0;
+
     int myint;
     folly::EventBase eventBase;
     mcrouter_client_t *client = mcrouter_client_new(
       router,
       use_client_event_base ? &eventBase : nullptr,
-      {on_reply, nullptr},
+      {on_reply, on_cancel, nullptr},
       (void*) &myint, 0, false);
 
     const char key[] = "adi:unit_test:key";
@@ -206,7 +221,14 @@ static void premature_disconnect_common(bool use_client_event_base) {
       // event_base_loop() returns 1 only when there is no event attached to
       // the event_base_loope
       EXPECT_TRUE(1 == event_base_loop(
-        eventBase.getLibeventBase(), EVLOOP_ONCE | EVLOOP_NONBLOCK));
+        eventBase.getLibeventBase(), EVLOOP_ONCE));
+    } else {
+      usleep(5000);
+    }
+
+    EXPECT_EQ(0, on_reply_count);
+    if (!use_client_event_base) {
+      EXPECT_EQ(1, on_cancel_count);
     }
   }
 

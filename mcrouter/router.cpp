@@ -778,10 +778,16 @@ void mcrouter_reply_ready_cb(asox_queue_t q,
   __sync_fetch_and_add(&client->stats.op_value_bytes[router_entry->request->op],
                        router_reply.reply.value().length());
 
-  if (client->callbacks.on_reply && !client->disconnected) {
-    client->callbacks.on_reply(client,
-                               &router_reply,
-                               client->arg);
+  if (LIKELY(client->callbacks.on_reply && !client->disconnected)) {
+      client->callbacks.on_reply(client,
+                                 &router_reply,
+                                 client->arg);
+  } else if (client->callbacks.on_cancel && client->disconnected) {
+    // This should be called for all canceled requests, when cancellation is
+    // implemented properly.
+    client->callbacks.on_cancel(client,
+                                router_entry->context,
+                                client->arg);
   }
 
   stat_decr_safe(router_entry->proxy,
