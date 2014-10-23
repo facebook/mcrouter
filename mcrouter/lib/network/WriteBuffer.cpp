@@ -12,58 +12,118 @@
 
 namespace facebook { namespace memcache {
 
-WriteBuffer::WriteBuffer() {
-  mc_msg_init_not_refcounted(&replyMsg_);
-  um_backing_msg_init(&umMsg_);
-  mc_ascii_response_buf_init(&asciiResponse_);
+WriteBuffer::WriteBuffer(mc_protocol_t protocol)
+    : protocol_(protocol) {
+  switch (protocol_) {
+    case mc_ascii_protocol:
+      new (&asciiReply_) AsciiSerializedReply();
+      break;
+
+    case mc_umbrella_protocol:
+      new (&umbrellaReply_) UmbrellaSerializedReply();
+      break;
+
+    default:
+      CHECK(false) << "Unknown protocol";
+  }
+}
+
+WriteBuffer::~WriteBuffer() {
+  switch (protocol_) {
+    case mc_ascii_protocol:
+      asciiReply_.~AsciiSerializedReply();
+      break;
+
+    case mc_umbrella_protocol:
+      umbrellaReply_.~UmbrellaSerializedReply();
+      break;
+
+    default:
+      CHECK(false);
+  }
 }
 
 void WriteBuffer::clear() {
   ctx_.clear();
   reply_.clear();
-  um_backing_msg_cleanup(&umMsg_);
-  um_backing_msg_init(&umMsg_);
+
+  switch (protocol_) {
+    case mc_ascii_protocol:
+      asciiReply_.clear();
+      break;
+
+    case mc_umbrella_protocol:
+      umbrellaReply_.clear();
+      break;
+
+    default:
+      CHECK(false);
+  }
+}
+
+bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply,
+                          struct iovec*& iovOut, size_t& niovOut) {
+  ctx_.emplace(std::move(ctx));
+  reply_.emplace(std::move(reply));
+
+  switch (protocol_) {
+    case mc_ascii_protocol:
+      return asciiReply_.prepare(reply_.value(),
+                                 ctx_->operation_,
+                                 ctx_->key_,
+                                 iovOut, niovOut);
+      break;
+
+    case mc_umbrella_protocol:
+      return umbrellaReply_.prepare(reply_.value(),
+                                    ctx_->operation_,
+                                    ctx_->reqid_,
+                                    iovOut, niovOut);
+      break;
+
+    default:
+      CHECK(false);
+  }
+}
+
+AsciiSerializedReply::AsciiSerializedReply() {
+  mc_ascii_response_buf_init(&asciiResponse_);
+}
+
+AsciiSerializedReply::~AsciiSerializedReply() {
+  mc_ascii_response_buf_cleanup(&asciiResponse_);
+}
+
+void AsciiSerializedReply::clear() {
   mc_ascii_response_buf_cleanup(&asciiResponse_);
   mc_ascii_response_buf_init(&asciiResponse_);
 }
 
-bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply,
-                          mc_protocol_t protocol,
-                          struct iovec*& iovOut, size_t& niovOut) {
-  ctx_.emplace(std::move(ctx));
-  reply_.emplace(std::move(reply));
-  reply_->dependentMsg(ctx_->operation_, &replyMsg_);
+bool AsciiSerializedReply::prepare(const McReply& reply,
+                                   mc_op_t operation,
+                                   const folly::Optional<folly::IOBuf>& key,
+                                   struct iovec*& iovOut, size_t& niovOut) {
+  mc_msg_t replyMsg;
+  mc_msg_init_not_refcounted(&replyMsg);
+  reply.dependentMsg(operation, &replyMsg);
 
   nstring_t k;
-  if (ctx_->key_.hasValue()) {
-    k.str = (char*)ctx_->key_->data();
-    k.len = ctx_->key_->length();
+  if (key.hasValue()) {
+    k.str = (char*)key->data();
+    k.len = key->length();
   } else {
     k.str = nullptr;
     k.len = 0;
   }
-
-  if (protocol == mc_ascii_protocol) {
-    niovs_ = mc_ascii_response_write_iovs(
-      &asciiResponse_,
-      k,
-      ctx_->operation_,
-      &replyMsg_,
-      iovs_,
-      kMaxIovs);
-  } else if (protocol == mc_umbrella_protocol) {
-    auto niovs = um_write_iovs(&umMsg_, ctx_->reqid_,
-                               &replyMsg_,
-                               iovs_, kMaxIovs);
-    niovs_ = (niovs == -1 ? 0 : niovs);
-  } else {
-    CHECK(false) << "Unknown protocol";
-  }
-
+  niovOut = mc_ascii_response_write_iovs(
+    &asciiResponse_,
+    k,
+    operation,
+    &replyMsg,
+    iovs_,
+    kMaxIovs);
   iovOut = iovs_;
-  niovOut = niovs_;
-
-  return niovs_ != 0;
+  return niovOut != 0;
 }
 
 }}  // facebook::memcache

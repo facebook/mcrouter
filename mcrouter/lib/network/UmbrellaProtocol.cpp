@@ -10,6 +10,7 @@
 
 #include <folly/Bits.h>
 
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/mc/umbrella.h"
 
@@ -124,6 +125,141 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
   }
 
   return req;
+}
+
+UmbrellaSerializedReply::UmbrellaSerializedReply() {
+  /* These will not change from message to message */
+  msg_.msg_header.magic_byte = ENTRY_LIST_MAGIC_BYTE;
+  msg_.msg_header.version = UMBRELLA_VERSION_BASIC;
+
+  iovs_[0].iov_base = &msg_;
+  iovs_[0].iov_len = sizeof(msg_);
+
+  iovs_[1].iov_base = entries_;
+}
+
+bool UmbrellaSerializedReply::prepare(const McReply& reply,
+                                      mc_op_t op, uint64_t reqid,
+                                      struct iovec*& iovOut, size_t& niovOut) {
+  static char nul = '\0';
+
+  /* We can reuse this struct multiple times, reset the counters */
+  nEntries_ = nStrings_ = offset_ = 0;
+  error_ = false;
+  niovOut = 0;
+
+  appendInt(I32, msg_op, umbrella_op_from_mc[op]);
+  appendInt(U64, msg_reqid, reqid);
+  appendInt(I32, msg_result, umbrella_res_from_mc[reply.result()]);
+
+  if (reply.appSpecificErrorCode()) {
+    appendInt(I32, msg_err_code, reply.appSpecificErrorCode());
+  }
+  if (reply.flags()) {
+    appendInt(U64, msg_flags, reply.flags());
+  }
+  if (reply.exptime()) {
+    appendInt(U64, msg_exptime, reply.exptime());
+  }
+  if (reply.delta()) {
+    appendInt(U64, msg_delta, reply.delta());
+  }
+  if (reply.leaseToken()) {
+    appendInt(U64, msg_lease_id, reply.leaseToken());
+  }
+  if (reply.cas()) {
+    appendInt(U64, msg_cas, reply.cas());
+  }
+  if (reply.lowValue() || reply.highValue()) {
+    appendDouble(reply.lowValue());
+  }
+  if (reply.highValue()) {
+    appendDouble(reply.highValue());
+  }
+
+  /* TODO: if we intend to pass chained IOBufs as values,
+     we can optimize this to write multiple iovs directly */
+  auto valueRange = reply.valueRangeSlow();
+  if (!valueRange.empty()) {
+    appendString(msg_value,
+                 reinterpret_cast<const uint8_t*>(valueRange.begin()),
+                 valueRange.size());
+  }
+
+  /* NOTE: this check must come after all append*() calls */
+  if (error_) {
+    return false;
+  }
+
+  size_t size = sizeof(entry_list_msg_t) +
+    sizeof(um_elist_entry_t) * nEntries_ +
+    offset_;
+
+  msg_.total_size = folly::Endian::big((uint32_t)size);
+  msg_.nentries = folly::Endian::big((uint16_t)nEntries_);
+
+  iovs_[1].iov_len = sizeof(um_elist_entry_t) * nEntries_;
+  niovOut = 2;
+
+  for (size_t i = 0; i < nStrings_; i++) {
+    iovs_[niovOut].iov_base = (char *)strings_[i].begin();
+    iovs_[niovOut].iov_len = strings_[i].size();
+    niovOut++;
+
+    iovs_[niovOut].iov_base = &nul;
+    iovs_[niovOut].iov_len = 1;
+    niovOut++;
+  }
+
+  iovOut = iovs_;
+  return true;
+}
+
+void UmbrellaSerializedReply::appendInt(
+  entry_type_t type, int32_t tag, uint64_t val) {
+
+  if (nEntries_ >= kInlineEntries) {
+    error_ = true;
+    return;
+  }
+
+  um_elist_entry_t& entry = entries_[nEntries_++];
+  entry.type = folly::Endian::big((uint16_t)type);
+  entry.tag = folly::Endian::big((uint16_t)tag);
+  entry.data.val = folly::Endian::big((uint64_t)val);
+}
+
+void UmbrellaSerializedReply::appendDouble(double val) {
+  if (nEntries_ >= kInlineEntries) {
+    error_ = true;
+    return;
+  }
+
+  um_elist_entry_t& entry = entries_[nEntries_++];
+  entry.type = folly::Endian::big((uint16_t)DOUBLE);
+  entry.tag = folly::Endian::big((uint16_t)msg_double);
+  uint64_t doubleBits;
+  static_assert(sizeof(double) == sizeof(uint64_t), "double is not 8 bytes!");
+  memcpy(&doubleBits, &val, sizeof(double));
+  entry.data.val = folly::Endian::big(doubleBits);
+}
+
+void UmbrellaSerializedReply::appendString(
+  int32_t tag, const uint8_t* data, size_t len, entry_type_t type) {
+
+  if (nStrings_ >= kInlineStrings) {
+    error_ = true;
+    return;
+  }
+
+  strings_[nStrings_++] = folly::StringPiece((const char*)data, len);
+
+  um_elist_entry_t& entry = entries_[nEntries_++];
+  entry.type = folly::Endian::big((uint16_t)type);
+  entry.tag = folly::Endian::big((uint16_t)tag);
+  entry.data.str.offset = folly::Endian::big((uint32_t)offset_);
+  entry.data.str.len = folly::Endian::big((uint32_t)(len + 1));
+  offset_ += len + 1;
 }
 
 }}

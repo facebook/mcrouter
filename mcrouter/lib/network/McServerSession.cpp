@@ -271,6 +271,18 @@ void McServerSession::parseError(McReply reply) {
   close();
 }
 
+bool McServerSession::ensureWriteBufs() {
+  if (!writeBufs_.hasValue()) {
+    try {
+      writeBufs_.emplace(parser_.protocol());
+    } catch (const std::runtime_error& e) {
+      LOG(ERROR) << "Invalid protocol detected";
+      return false;
+    }
+  }
+  return true;
+}
+
 void McServerSession::queueWrite(McServerRequestContext&& ctx,
                                  McReply&& reply) {
   DestructorGuard dg(this);
@@ -282,14 +294,17 @@ void McServerSession::queueWrite(McServerRequestContext&& ctx,
   if (options_.singleWrite) {
     struct iovec* i;
     size_t n;
-    auto& wb = writeBufs_.push();
-    if (!wb.prepare(std::move(ctx), std::move(reply),
-                    parser_.protocol(), i, n)) {
+    if (!ensureWriteBufs()) {
+      transport_->close();
+      return;
+    }
+    auto& wb = writeBufs_->push();
+    if (!wb.prepare(std::move(ctx), std::move(reply), i, n)) {
       transport_->close();
       return;
     }
     transport_->writev(this, i, n);
-    if (!writeBufs_.empty()) {
+    if (!writeBufs_->empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
          in one go */
       pause(PAUSE_WRITE);
@@ -321,10 +336,13 @@ void McServerSession::sendWrites() {
     auto& pw = pendingWrites_.front();
     struct iovec* i;
     size_t n;
-    auto& wb = writeBufs_.push();
+    if (!ensureWriteBufs()) {
+      close();
+      return;
+    }
+    auto& wb = writeBufs_->push();
 
-    if (!wb.prepare(std::move(pw.first), std::move(pw.second),
-                    parser_.protocol(), i, n)) {
+    if (!wb.prepare(std::move(pw.first), std::move(pw.second), i, n)) {
       close();
       return;
     }
@@ -348,8 +366,8 @@ void McServerSession::completeWrite() {
   }
 
   while (count-- > 0) {
-    assert(!writeBufs_.empty());
-    writeBufs_.pop();
+    assert(!writeBufs_->empty());
+    writeBufs_->pop();
   }
 }
 
@@ -361,7 +379,8 @@ void McServerSession::writeSuccess() noexcept {
     onWriteSuccess_(*this);
   }
 
-  if (writeBufs_.empty()) {
+  assert(writeBufs_.hasValue());
+  if (writeBufs_->empty()) {
     /* No-op if not paused */
     resume(PAUSE_WRITE);
   }

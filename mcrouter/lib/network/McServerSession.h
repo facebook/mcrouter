@@ -141,8 +141,9 @@ class McServerSession :
 
   /**
    * Queue of write buffers.
+   * Only initialized after we know the protocol (see ensureWriteBufs())
    */
-  WriteBufferQueue writeBufs_;
+  folly::Optional<WriteBufferQueue> writeBufs_;
 
   /**
    * True iff SendWritesCallback has been scheduled.
@@ -217,6 +218,14 @@ class McServerSession :
                     mc_res_t result,
                     bool noreply);
   void parseError(McReply reply);
+
+  /**
+   * Must be called after parser has detected the protocol (i.e.
+   * at least one request was processed).
+   * @return True if writeBufs_ has value after this call,
+   *         False on any protocol error.
+   */
+  bool ensureWriteBufs();
 
   void queueWrite(McServerRequestContext&& ctx, McReply&& reply);
 
