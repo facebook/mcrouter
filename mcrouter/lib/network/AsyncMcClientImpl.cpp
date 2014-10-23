@@ -315,7 +315,7 @@ void AsyncMcClientImpl::attemptConnection() {
     socket_.reset(new apache::thrift::async::TAsyncSocket(&eventBase_));
   }
 
-  auto address = apache::thrift::transport::TSocketAddress(
+  auto address = folly::SocketAddress(
     connectionOptions_.host, connectionOptions_.port,
     /* allowNameLookup */ true);
 
