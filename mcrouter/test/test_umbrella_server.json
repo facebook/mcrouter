@@ -1,0 +1,14 @@
+{
+  "pools": {
+    /* We need this port for the test case to ignore */
+    "mc": {
+      "protocol": "umbrella",
+      "servers": [ "localhost:11000" ]
+    },
+    "mcr": {
+      "protocol": "umbrella",
+      "servers": [ "localhost:11001" ]
+    }
+  },
+  "route": "PoolRoute|mcr"
+}

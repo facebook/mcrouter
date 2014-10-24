@@ -277,6 +277,8 @@ class McRequestBase {
   bool setValueFrom(const folly::IOBuf& source,
                     const uint8_t* valueBegin, size_t valueSize);
 
+  void ensureMsgExists(mc_op_t op) const;
+
  protected:
   /**
    * Useful for incremental construction, i.e. during parsing.
