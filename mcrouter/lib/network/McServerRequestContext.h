@@ -48,15 +48,34 @@ class McServerRequestContext {
 
  private:
   McServerSession* session_;
+
+  /* Pack these together, operation + flags takes one word */
   mc_op_t operation_;
-  uint64_t reqid_;
   bool noReply_;
   bool replied_{false};
 
-  std::shared_ptr<MultiOpParent> parent_;
-  folly::Optional<folly::IOBuf> key_;
+  uint64_t reqid_;
+  struct AsciiState {
+    std::shared_ptr<MultiOpParent> parent_;
+    folly::Optional<folly::IOBuf> key_;
+  };
+  std::unique_ptr<AsciiState> asciiState_;
 
   bool noReply(const McReply& reply) const;
+
+  folly::Optional<folly::IOBuf>& asciiKey() {
+    if (!asciiState_) {
+      asciiState_ = folly::make_unique<AsciiState>();
+    }
+    return asciiState_->key_;
+  }
+  bool hasParent() const {
+    return asciiState_ && asciiState_->parent_;
+  }
+  MultiOpParent& parent() const {
+    assert(hasParent());
+    return *asciiState_->parent_;
+  }
 
   McServerRequestContext(const McServerRequestContext&) = delete;
   const McServerRequestContext& operator=(const McServerRequestContext&)

@@ -70,7 +70,7 @@ bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply,
     case mc_ascii_protocol:
       return asciiReply_.prepare(reply_.value(),
                                  ctx_->operation_,
-                                 ctx_->key_,
+                                 ctx_->asciiKey(),
                                  iovOut, niovOut);
       break;
 

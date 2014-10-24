@@ -236,8 +236,8 @@ void McServerSession::requestReady(McRequest&& req,
   McServerRequestContext ctx(*this, operation, reqid, noreply, currentMultiop_);
 
   if (parser_.protocol() == mc_ascii_protocol) {
-    ctx.key_.emplace();
-    req.key().cloneOneInto(ctx.key_.value());
+    ctx.asciiKey().emplace();
+    req.key().cloneOneInto(ctx.asciiKey().value());
   }
 
   if (result == mc_res_bad_key) {

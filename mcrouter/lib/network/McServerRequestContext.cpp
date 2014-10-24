@@ -26,7 +26,7 @@ void McServerRequestContext::reply(
 
   ctx.replied_ = true;
 
-  if (ctx.parent_ && ctx.parent_->reply(std::move(reply))) {
+  if (ctx.hasParent() && ctx.parent().reply(std::move(reply))) {
     /* parent stole the reply */
     session->reply(std::move(ctx), McReply());
   } else {
@@ -39,7 +39,7 @@ bool McServerRequestContext::noReply(const McReply& reply) const {
     return true;
   }
 
-  if (!parent_) {
+  if (!hasParent()) {
     return false;
   }
 
@@ -47,7 +47,7 @@ bool McServerRequestContext::noReply(const McReply& reply) const {
      1) We saw an error (the error will be printed out by the end context)
      2) This is a miss, except for lease_get (lease get misses still have
      'LVALUE' replies with the token) */
-  return (parent_->error() ||
+  return (parent().error() ||
           !(reply.result() == mc_res_found ||
             operation_ == mc_op_lease_get));
 }
@@ -57,27 +57,26 @@ McServerRequestContext::McServerRequestContext(
   std::shared_ptr<MultiOpParent> parent)
     : session_(&s),
       operation_(op),
-      reqid_(r),
       noReply_(nr),
-      parent_(std::move(parent)) {
+      reqid_(r) {
 
-  if (parent_) {
-    parent_->recordRequest();
+  if (parent) {
+    asciiState_ = folly::make_unique<AsciiState>();
+    asciiState_->parent_ = std::move(parent);
+    asciiState_->parent_->recordRequest();
   }
 
-  session_->onTransactionStarted(parent_ != nullptr ||
-                                 operation_ == mc_op_end);
+  session_->onTransactionStarted(hasParent() || operation_ == mc_op_end);
 }
 
 McServerRequestContext::McServerRequestContext(
   McServerRequestContext&& other) noexcept
     : session_(other.session_),
       operation_(other.operation_),
-      reqid_(other.reqid_),
       noReply_(other.noReply_),
       replied_(other.replied_),
-      parent_(std::move(other.parent_)),
-      key_(std::move(other.key_)) {
+      reqid_(other.reqid_),
+      asciiState_(std::move(other.asciiState_)) {
   other.session_ = nullptr;
 }
 
@@ -89,8 +88,7 @@ McServerRequestContext& McServerRequestContext::operator=(
   reqid_ = other.reqid_;
   noReply_ = other.noReply_;
   replied_ = other.replied_;
-  parent_ = std::move(other.parent_);
-  key_ = std::move(other.key_);
+  asciiState_ = std::move(other.asciiState_);
   other.session_ = nullptr;
 
   return *this;
@@ -100,8 +98,7 @@ McServerRequestContext::~McServerRequestContext() {
   if (session_) {
     /* Check that a reply was returned */
     assert(replied_);
-    session_->onTransactionCompleted(parent_ != nullptr ||
-                                     operation_ == mc_op_end);
+    session_->onTransactionCompleted(hasParent() || operation_ == mc_op_end);
   }
 }
 
