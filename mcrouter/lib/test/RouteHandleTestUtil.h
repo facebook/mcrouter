@@ -176,7 +176,10 @@ struct RecordingRoute {
       h_->wait();
     }
 
-    h_->saw_keys.push_back(req.routingKey().str());
+    {
+      auto key = req.key().clone();
+      h_->saw_keys.push_back(coalesceAndGetRange(key).str());
+    }
     h_->sawOperations.push_back((mc_op_t) M);
     h_->sawExptimes.push_back(req.exptime());
     if (GetLike<McOperation<M>>::value) {

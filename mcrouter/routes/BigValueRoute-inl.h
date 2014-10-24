@@ -252,7 +252,7 @@ folly::IOBuf BigValueRoute<RouteHandleIf>::createChunkKey(
 
   return folly::IOBuf(
     folly::IOBuf::COPY_BUFFER,
-    folly::format("{}:{}:{}", base_key, chunk_index, rand_suffix).str()
+    folly::format("{}|#|{}:{}", base_key, chunk_index, rand_suffix).str()
   );
 }
 
