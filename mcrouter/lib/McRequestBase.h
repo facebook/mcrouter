@@ -277,6 +277,13 @@ class McRequestBase {
   bool setValueFrom(const folly::IOBuf& source,
                     const uint8_t* valueBegin, size_t valueSize);
 
+  /**
+   * Helper method to set all fields and proper key/value into McMsgRef.
+   */
+  void dependentHelper(mc_op_t op, folly::StringPiece key,
+                       folly::StringPiece value,
+                       MutableMcMsgRef& into) const;
+
   void ensureMsgExists(mc_op_t op) const;
 
  protected:

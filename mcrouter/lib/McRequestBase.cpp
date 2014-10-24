@@ -56,15 +56,33 @@ bool McRequestBase::setValueFrom(const folly::IOBuf& source,
   return valueSize && cloneInto(valueData_, source, valueBegin, valueSize);
 }
 
+void McRequestBase::dependentHelper(mc_op_t op, folly::StringPiece key,
+                                    folly::StringPiece value,
+                                    MutableMcMsgRef& into) const {
+  if (msg_.get()) {
+    mc_msg_shallow_copy(into.get(), msg_.get());
+  }
+  into->op = op;
+  into->exptime = exptime_;
+  into->flags = flags_;
+  into->delta = delta_;
+  into->lease_id = leaseToken_;
+  into->cas = cas_;
+#ifndef LIBMC_FBTRACE_DISABLE
+  into->fbtrace_info = fbtraceInfo_.clone().release();
+#endif
+  into->key = to<nstring_t>(key);
+  into->value = to<nstring_t>(value);
+}
+
 void McRequestBase::ensureMsgExists(mc_op_t op) const {
   /* dependentMsg* functions assume msg_ exists,
      so create one if necessary. */
   if (!msg_.get()) {
     auto msg = createMcMsgRef();
-    msg->op = op;
-    msg->key = to<nstring_t>(getRange(keyData_));
-    msg->value = to<nstring_t>(
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)));
+    dependentHelper(op, getRange(keyData_),
+                    coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)),
+                    msg);
     const_cast<McMsgRef&>(msg_) = std::move(msg);
   }
 }
@@ -95,23 +113,10 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
   } else {
     /* Out of luck.  The best we can do is make the copy
        reference key/value fields from the backing store. */
-    auto toRelease = dependentMcMsgRef(msg_);
-    toRelease->op = op;
-    toRelease->exptime = exptime_;
-    toRelease->flags = flags_;
-    toRelease->delta = delta_;
-    toRelease->lease_id = leaseToken_;
-    toRelease->cas = cas_;
-#ifndef LIBMC_FBTRACE_DISABLE
-    toRelease->fbtrace_info = fbtraceInfo_.clone().release();
-#endif
-    if (!is_key_set) {
-      toRelease->key = to<nstring_t>(getRange(keyData_));
-    }
-    if (!is_value_set) {
-      toRelease->value = to<nstring_t>(
-        coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)));
-    }
+    auto toRelease = createMcMsgRef();
+    dependentHelper(op, getRange(keyData_),
+                    coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)),
+                    toRelease);
     return std::move(toRelease);
   }
 }
@@ -144,22 +149,9 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
     /* Out of luck.  The best we can do is make the copy
        reference key/value fields from the backing store. */
     auto toRelease = dependentMcMsgRef(msg_);
-    if (!is_key_set) {
-      toRelease->key = to<nstring_t>(keys_.keyWithoutRoute);
-    }
-    if (!is_value_set) {
-      toRelease->value = to<nstring_t>(
-        coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)));
-    }
-    toRelease->op = op;
-    toRelease->exptime = exptime_;
-    toRelease->flags = flags_;
-    toRelease->delta = delta_;
-    toRelease->lease_id = leaseToken_;
-    toRelease->cas = cas_;
-#ifndef LIBMC_FBTRACE_DISABLE
-    toRelease->fbtrace_info = fbtraceInfo_.clone().release();
-#endif
+    dependentHelper(op, keys_.keyWithoutRoute,
+                    coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)),
+                    toRelease);
     return std::move(toRelease);
   }
 }
