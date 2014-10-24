@@ -124,7 +124,9 @@ SessionTestHarness::SessionTestHarness(AsyncMcServerWorkerOptions opts)
           OnRequest(*this)),
         nullptr,
         nullptr,
-        std::move(opts))) {
+        nullptr,
+        std::move(opts),
+        nullptr)) {
 }
 
 void SessionTestHarness::inputPacket(folly::StringPiece p) {

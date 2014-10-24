@@ -57,9 +57,11 @@ class McServerSession :
   static McServerSession& create(
     apache::thrift::async::TAsyncTransport::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
+    std::function<void(McServerSession&)> onWriteSuccess,
     std::function<void(McServerSession&)> onTerminated,
     std::function<void()> onShutdown,
-    AsyncMcServerWorkerOptions options);
+    AsyncMcServerWorkerOptions options,
+    void* userCtxt);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
@@ -74,12 +76,32 @@ class McServerSession :
     return inFlight_ > 0;
   }
 
+  /**
+   * Allow clients to pause and resume reading form the sockets.
+   * See pause(PauseReason) and resume(PauseReason) below.
+   */
+  void pause() {
+    pause(PAUSE_USER);
+  }
+  void resume() {
+    resume(PAUSE_USER);
+  }
+
+  /**
+   * Get the user context associated with this session.
+   */
+  void* userContext() {
+    return userCtxt_;
+  }
+
  private:
   apache::thrift::async::TAsyncTransport::UniquePtr transport_;
   std::shared_ptr<McServerOnRequest> onRequest_;
+  std::function<void(McServerSession&)> onWriteSuccess_;
   std::function<void(McServerSession&)> onTerminated_;
   std::function<void()> onShutdown_;
   AsyncMcServerWorkerOptions options_;
+  void* userCtxt_{nullptr};
 
   enum State {
     STREAMING,
@@ -150,8 +172,9 @@ class McServerSession :
 
   /* OR-able bits of pauseState_ */
   enum PauseReason : uint64_t {
-    PAUSE_THROTTLED = 0x1,
-    PAUSE_WRITE = 0x2,
+    PAUSE_THROTTLED = 1 << 0,
+    PAUSE_WRITE = 1 << 1,
+    PAUSE_USER = 1 << 2,
   };
 
   /* Reads are enabled iff pauseState_ == 0 */
@@ -211,9 +234,11 @@ class McServerSession :
   McServerSession(
     apache::thrift::async::TAsyncTransport::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
+    std::function<void(McServerSession&)> onWriteSuccess,
     std::function<void(McServerSession&)> onTerminated,
     std::function<void()> onShutdown,
-    AsyncMcServerWorkerOptions options);
+    AsyncMcServerWorkerOptions options,
+    void* userCtxt);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

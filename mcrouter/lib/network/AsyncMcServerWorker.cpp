@@ -77,17 +77,18 @@ void AsyncMcServerWorker::addSecureClientSocket(
       new apache::thrift::async::TAsyncSSLSocket(
           context, &eventBase_, fd, /* server = */ true));
   sslSocket->sslAccept(&simpleHandshakeCallback, /* timeout = */ 0);
-  addClientSocket(std::move(sslSocket));
+  addClientSocket(std::move(sslSocket), nullptr /* userCtxt */);
 }
 
-void AsyncMcServerWorker::addClientSocket(int fd) {
+void AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
   auto socket = apache::thrift::async::TAsyncSocket::UniquePtr(
       new apache::thrift::async::TAsyncSocket(&eventBase_, fd));
-  addClientSocket(std::move(socket));
+  addClientSocket(std::move(socket), userCtxt);
 }
 
 void AsyncMcServerWorker::addClientSocket(
-    apache::thrift::async::TAsyncSocket::UniquePtr&& socket) {
+    apache::thrift::async::TAsyncSocket::UniquePtr&& socket,
+    void* userCtxt) {
   if (!onRequest_) {
     throw std::logic_error("can't add a socket without onRequest callback");
   }
@@ -104,14 +105,16 @@ void AsyncMcServerWorker::addClientSocket(
     McServerSession::create(
       std::move(socket),
       onRequest_,
+      onWriteSuccess_,
       [this] (McServerSession& session) {
         if (onClosed_) {
-          onClosed_();
+          onClosed_(session);
         }
         sessions_.erase(sessions_.iterator_to(session));
       },
       onShutdown_,
-      opts_
+      opts_,
+      userCtxt
     ));
 }
 
