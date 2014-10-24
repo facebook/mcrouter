@@ -43,7 +43,8 @@ class McrouterTestCase(unittest.TestCase):
         self.open_servers = self.open_servers[:-1]
         return server
 
-    def add_mcrouter(self, config, route=None, extra_args=[], replace_map=None):
+    def add_mcrouter(self, config, route=None, extra_args=[], replace_map=None,
+                     bg_mcrouter=False):
         self.ensureClassVariables()
         substitute_ports = (self.open_ports
                             if 'port_map' not in self.__dict__
@@ -55,6 +56,10 @@ class McrouterTestCase(unittest.TestCase):
                             extra_args=extra_args,
                             replace_map=replace_map)
         mcrouter.ensure_connected()
+
+        if bg_mcrouter:
+            self.open_ports.append(mcrouter.getport())
+
         if 'open_mcrouters' not in self.__dict__:
             self.open_mcrouters = []
         self.open_mcrouters.append(mcrouter)

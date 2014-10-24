@@ -56,7 +56,22 @@ bool McRequestBase::setValueFrom(const folly::IOBuf& source,
   return valueSize && cloneInto(valueData_, source, valueBegin, valueSize);
 }
 
+void McRequestBase::ensureMsgExists(mc_op_t op) const {
+  /* dependentMsg* functions assume msg_ exists,
+     so create one if necessary. */
+  if (!msg_.get()) {
+    auto msg = createMcMsgRef();
+    msg->op = op;
+    msg->key = to<nstring_t>(getRange(keyData_));
+    msg->value = to<nstring_t>(
+      coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)));
+    const_cast<McMsgRef&>(msg_) = std::move(msg);
+  }
+}
+
 McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
+  ensureMsgExists(op);
+
   auto is_key_set =
     hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
   auto is_value_set =
@@ -102,6 +117,8 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
 }
 
 McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
+  ensureMsgExists(op);
+
   auto is_key_set =
     keys_.routingPrefix.empty() &&
     hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
