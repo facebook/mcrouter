@@ -13,6 +13,11 @@
 
 namespace facebook { namespace memcache {
 
+McServerSession& McServerRequestContext::session() {
+  assert(session_ != nullptr);
+  return *session_;
+}
+
 void McServerRequestContext::reply(
   McServerRequestContext&& ctx,
   McReply&& reply) {

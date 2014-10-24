@@ -97,7 +97,7 @@ void serverLoop(
       stat_incr(proxy, successful_client_connections_stat, 1);
       stat_incr(proxy, num_clients_stat, 1);
     });
-  worker.setOnConnectionClosed([proxy] () {
+  worker.setOnConnectionClosed([proxy] (facebook::memcache::McServerSession&) {
       stat_decr(proxy, num_clients_stat, 1);
     });
 

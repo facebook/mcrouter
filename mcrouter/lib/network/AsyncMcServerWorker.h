@@ -45,7 +45,7 @@ class AsyncMcServerWorker {
   /**
    * Moves in ownership of an externally accepted client socket.
    */
-  void addClientSocket(int fd);
+  void addClientSocket(int fd, void* userCtxt = nullptr);
 
   /**
    * Moves in ownership of an externally accepted client socket with an ssl
@@ -91,11 +91,23 @@ class AsyncMcServerWorker {
   }
 
   /**
-   * Will be called once on closing every connection.
+   * Will be called when reply is successfuly written out to the transport.
+   * The callback is passed the McServerSession object that wrote the reply.
+   *
+   * Note: This doesn't apply to already open connections
+   */
+  void setOnWriteSuccess(std::function<void(McServerSession&)> cb) {
+    onWriteSuccess_ = std::move(cb);
+  }
+
+  /**
+   * Will be called once on closing every connection. The McServerSession
+   * that was closed is passed in as a parameter.
+   *
    * Note: this callback will be applied even to already open connections.
    * Can be nullptr for no action.
    */
-  void setOnConnectionClosed(std::function<void()> cb) {
+  void setOnConnectionClosed(std::function<void(McServerSession&)> cb) {
     onClosed_ = std::move(cb);
   }
 
@@ -127,13 +139,15 @@ class AsyncMcServerWorker {
 
  private:
   void addClientSocket(
-      apache::thrift::async::TAsyncSocket::UniquePtr&& socket);
+      apache::thrift::async::TAsyncSocket::UniquePtr&& socket,
+      void* userCtxt);
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
-  std::function<void()> onClosed_;
+  std::function<void(McServerSession&)> onWriteSuccess_;
+  std::function<void(McServerSession&)> onClosed_;
   std::function<void()> onShutdown_;
 
   bool isAlive_{true};

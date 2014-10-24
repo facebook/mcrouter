@@ -41,6 +41,11 @@ class McServerRequestContext {
   McServerRequestContext(McServerRequestContext&& other) noexcept;
   McServerRequestContext& operator=(McServerRequestContext&& other);
 
+  /**
+   * Get the associated McServerSession
+   */
+  McServerSession& session();
+
  private:
   McServerSession* session_;
   mc_op_t operation_;
