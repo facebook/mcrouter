@@ -13,6 +13,7 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/stats.h"
 
 namespace folly {
@@ -39,6 +40,7 @@ struct mcrouter_msg_t {
   mc_msg_t* req;
   McReply reply{mc_res_unknown};
   void *context;
+  folly::Optional<McRequest> saved_request;
 };
 
 /**

@@ -57,6 +57,7 @@ namespace {
 struct mcrouter_queue_entry_t {
   mc_msg_t* request;
   McReply reply{mc_res_unknown};
+  folly::Optional<McRequest> saved_request;
   mcrouter_client_t *router_client;
   proxy_t *proxy;
   void* context;
@@ -185,6 +186,9 @@ void mcrouter_request_ready_cb(asox_queue_t q,
                                  router_entry->context,
                                  /* reqComplete= */ nullptr,
                                  client->clientId);
+      if (router_entry->saved_request.hasValue()) {
+        preq->saved_request.emplace(std::move(*router_entry->saved_request));
+      }
     } catch (...) {
       preq = nullptr;
       LOG(ERROR) << "Failed to create proxy_request";
@@ -950,6 +954,10 @@ int mcrouter_send(mcrouter_client_t *client,
     router_entry->context = requests[i].context;
     router_entry->router_client = client;
     router_entry->proxy = client->proxy;
+    if (requests[i].saved_request.hasValue()) {
+      router_entry->saved_request.emplace(
+        std::move(*requests[i].saved_request));
+    }
     entries[i].data = router_entry;
     entries[i].nbytes = sizeof(mcrouter_queue_entry_t*);
     entries[i].priority = 0;
