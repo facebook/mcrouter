@@ -205,13 +205,11 @@ void ProxyDestination::handle_tko(const McReply& reply,
         shared->tko.recordSuccess(this);
       }
       if (sending_probes) {
-        VLOG(1) << shared->key << " marked up";
         onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
         stop_sending_probes();
       }
     }
     if (responsible) {
-      VLOG(1) << shared->key << " marked TKO";
       start_sending_probes();
     }
   } else {
@@ -507,6 +505,25 @@ void ProxyDestination::resetInactive() {
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   if (!shared) {
     return;
+  }
+
+  switch (event) {
+    case TkoLogEvent::MarkHardTko:
+      VLOG(1) << shared->key << " marked hard TKO. Reply: "
+              << mc_res_to_string(result);
+      break;
+    case TkoLogEvent::MarkSoftTko:
+      VLOG(1) << shared->key << " marked soft TKO. Reply: "
+              << mc_res_to_string(result);
+      break;
+    case TkoLogEvent::MarkLatencyTko:
+      VLOG(1) << shared->key << " marked latency TKO. Reply: "
+              << mc_res_to_string(result);
+      break;
+    case TkoLogEvent::UnMarkTko:
+      VLOG(1) << shared->key << " unmarked TKO. Reply: "
+              << mc_res_to_string(result);
+      break;
   }
 
   TkoLog tkoLog(accessPoint);
