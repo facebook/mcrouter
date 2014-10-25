@@ -32,6 +32,7 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
 #include "mcrouter/stats.h"
@@ -104,6 +105,8 @@ struct proxy_request_t {
   McMsgRef orig_req; ///< Reference to the incoming request
 
   McReply reply; /**< The reply that has been sent out for this request */
+
+  folly::Optional<McRequest> saved_request;
 
   /** Whether we have replied, and therefore have handed the request back */
   reply_state_t reply_state;
