@@ -47,9 +47,9 @@ class ServerOnRequest {
     auto p = folly::make_unique<McServerRequestContext>(std::move(ctx));
     router_msg.context = p.get();
     router_msg.saved_request = std::move(req);
-    router_msg.req = const_cast<mc_msg_t*>(
-      router_msg.saved_request->dependentMsg(op).get());
-
+    auto msg = router_msg.saved_request->dependentMsg(op);
+    router_msg.req = const_cast<mc_msg_t*>(msg.get());
+    /* mcrouter_send will incref req, it's ok to destroy msg after this call */
     mcrouter_send(client_, &router_msg, 1);
     p.release();
   }
@@ -155,7 +155,7 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
     server.join();
 
     LOG(INFO) << "Shutting down";
-  } catch (const apache::thrift::transport::TTransportException& e) {
+  } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
   }
 }
