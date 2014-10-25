@@ -203,10 +203,10 @@ void ProxyDestination::handle_tko(const McReply& reply,
          successful to avoid outstanding requests from unmarking the box */
       if (!sending_probes || is_probe_req) {
         shared->tko.recordSuccess(this);
-      }
-      if (sending_probes) {
-        onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
-        stop_sending_probes();
+        if (sending_probes) {
+          onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
+          stop_sending_probes();
+        }
       }
     }
     if (responsible) {
