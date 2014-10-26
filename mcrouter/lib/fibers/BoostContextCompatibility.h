@@ -23,6 +23,13 @@ namespace facebook { namespace memcache {
 
 struct FContext {
  public:
+
+#if BOOST_VERSION >= 105200
+  using ContextStruct = boost::context::fcontext_t;
+#else
+  using ContextStruct = boost::ctx::fcontext_t;
+#endif
+
   void* stackLimit() const {
     return stackLimit_;
   }
@@ -36,26 +43,41 @@ struct FContext {
   void* stackBase_;
 
 #if BOOST_VERSION >= 105600
-  boost::context::fcontext_t context_;
+  ContextStruct context_;
 #elif BOOST_VERSION >= 105200
-  boost::context::fcontext_t* context_;
+  ContextStruct* context_;
 #else
-  boost::ctx::fcontext_t context_;
+  ContextStruct context_;
 #endif
 
-  friend intptr_t jumpContext(FContext* oldC, FContext* newC, intptr_t p);
+  friend intptr_t jumpContext(FContext* oldC, FContext::ContextStruct* newC,
+                              intptr_t p);
+  friend intptr_t jumpContext(FContext::ContextStruct* oldC, FContext* newC,
+                              intptr_t p);
   friend FContext makeContext(void* stackLimit, size_t stackSize,
                               void(*fn)(intptr_t));
 };
 
-inline intptr_t jumpContext(FContext* oldC, FContext* newC, intptr_t p) {
+inline intptr_t jumpContext(FContext* oldC, FContext::ContextStruct* newC,
+                            intptr_t p) {
 
 #if BOOST_VERSION >= 105600
-  return boost::context::jump_fcontext(&oldC->context_, newC->context_, p);
+  return boost::context::jump_fcontext(&oldC->context_, *newC, p);
 #elif BOOST_VERSION >= 105200
-  return boost::context::jump_fcontext(oldC->context_, newC->context_, p);
+  return boost::context::jump_fcontext(oldC->context_, newC, p);
 #else
-  return jump_fcontext(&oldC->context_, &newC->context_, p);
+  return jump_fcontext(&oldC->context_, newC, p);
+#endif
+
+}
+
+inline intptr_t jumpContext(FContext::ContextStruct* oldC, FContext* newC,
+                            intptr_t p) {
+
+#if BOOST_VERSION >= 105200
+  return boost::context::jump_fcontext(oldC, newC->context_, p);
+#else
+  return jump_fcontext(oldC, &newC->context_, p);
 #endif
 
 }

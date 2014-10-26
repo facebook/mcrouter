@@ -230,7 +230,7 @@ class FiberManager {
   size_t fibersPoolSize_{0};    /**< total number of fibers in the free pool */
   size_t fibersActive_{0};      /**< number of running or blocked fibers */
 
-  FContext mainContext_;        /**< stores loop function context */
+  FContext::ContextStruct mainContext_;  /**< stores loop function context */
 
   std::unique_ptr<LoopController> loopController_;
   bool isLoopScheduled_{false}; /**< was the ready loop scheduled to run? */
