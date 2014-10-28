@@ -264,7 +264,7 @@ void AsyncMcClientImpl::scheduleNextTimeout() {
   }
 }
 
-void AsyncMcClientImpl::reply(std::unique_ptr<ReqInfo> req, McReply mcReply) {
+void AsyncMcClientImpl::reply(ReqInfo::UniquePtr req, McReply mcReply) {
   idMap_.erase(req->id);
   req->replyCallback(std::move(mcReply));
 }

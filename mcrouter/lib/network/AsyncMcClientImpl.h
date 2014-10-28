@@ -16,6 +16,7 @@
 #include <thrift/lib/cpp/async/TDelayedDestruction.h>
 #include <thrift/lib/cpp/transport/TTransportException.h>
 
+#include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
@@ -112,11 +113,32 @@ class AsyncMcClientImpl :
     ReqInfo& operator=(const ReqInfo& other) = delete;
 
    private:
+    static ObjectPool<ReqInfo>& getPool() {
+      static thread_local ObjectPool<ReqInfo> pool(1024);
+      return pool;
+    }
+
+    class Deleter {
+     public:
+      void operator()(ReqInfo* ptr) const {
+        getPool().free(ptr);
+      }
+    };
+
+   public:
+    using UniquePtr = std::unique_ptr<ReqInfo, Deleter>;
+
+    template <typename... Args>
+    static UniquePtr getFromPool(Args&&... args) {
+      return UniquePtr(getPool().alloc(std::forward<Args>(args)...), Deleter());
+    }
+
+   private:
     std::shared_ptr<AsyncMcClientImpl> client_;
     UniqueIntrusiveListHook hook_;
 
    public:
-    using RequestQueue = UniqueIntrusiveList<ReqInfo, &ReqInfo::hook_>;
+    using RequestQueue = UniqueIntrusiveList<ReqInfo, &ReqInfo::hook_, Deleter>;
   };
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()
@@ -186,7 +208,7 @@ class AsyncMcClientImpl :
   void cancelWriterCallback();
 
   // call reply callback for the request and remove it from requests map
-  void reply(std::unique_ptr<ReqInfo> req, McReply mcReply);
+  void reply(ReqInfo::UniquePtr req, McReply mcReply);
 
   // reply request with the reply received from network
   void replyReceived(uint64_t id, McReply mcReply);

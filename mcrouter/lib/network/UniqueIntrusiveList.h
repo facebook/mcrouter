@@ -25,7 +25,8 @@ using UniqueIntrusiveListHook = folly::SafeIntrusiveListHook;
  * All entries still in the list are deleted on destruction.
  * Only allows pushing/popping unique_ptr<T>.
  */
-template<typename T, UniqueIntrusiveListHook T::* PtrToMember>
+template<typename T, UniqueIntrusiveListHook T::* PtrToMember,
+         typename TDeleter = std::default_delete<T>>
 class UniqueIntrusiveList {
  public:
   using iterator =
@@ -42,7 +43,7 @@ class UniqueIntrusiveList {
   ~UniqueIntrusiveList() {
     list_.clear_and_dispose(
       [] (T* t) {
-        delete t;
+        TDeleter()(t);
       }
     );
   }
@@ -54,7 +55,7 @@ class UniqueIntrusiveList {
    * @return   Reference to *t for convenience.  For example,
    *           auto& t = list.pushBack(make_unique<T>());
    */
-  T& pushBack(std::unique_ptr<T> t) {
+  T& pushBack(std::unique_ptr<T, TDeleter> t) {
     assert(t);
     list_.push_back(*t);
     t.release();
@@ -64,9 +65,9 @@ class UniqueIntrusiveList {
   /**
    * Transfers ownership of the front element out of the list.
    */
-  std::unique_ptr<T> popFront() {
+  std::unique_ptr<T, TDeleter> popFront() {
     assert(!list_.empty());
-    std::unique_ptr<T> t(&list_.front());
+    std::unique_ptr<T, TDeleter> t(&list_.front(), TDeleter());
     list_.pop_front();
     return t;
   }
@@ -75,8 +76,8 @@ class UniqueIntrusiveList {
    * Remove the element pointed to by `it` from the list,
    * and return the unique_ptr to it.
    */
-  std::unique_ptr<T> extract(iterator it) {
-    std::unique_ptr<T> t(&(*it));
+  std::unique_ptr<T, TDeleter> extract(iterator it) {
+    std::unique_ptr<T, TDeleter> t(&(*it), TDeleter());
     list_.erase(it);
     return t;
   }

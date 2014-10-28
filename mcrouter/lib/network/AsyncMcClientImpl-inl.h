@@ -29,9 +29,9 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
   }
 
   auto op = (mc_op_t)Op;
-  auto req = folly::make_unique<ReqInfo>(request, nextMsgId_, op,
-                                         connectionOptions_.protocol,
-                                         std::move(callback), selfPtr);
+  auto req = ReqInfo::getFromPool(request, nextMsgId_, op,
+                                  connectionOptions_.protocol,
+                                  std::move(callback), selfPtr);
 
   switch (req->reqContext.serializationResult()) {
     case McSerializedRequest::Result::OK:
