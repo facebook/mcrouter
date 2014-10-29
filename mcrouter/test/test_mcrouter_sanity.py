@@ -251,6 +251,10 @@ class TestMcrouterSanity(McrouterTestCase):
             key_parts = stat_key.split(':')
             self.assertEqual(4, len(key_parts))  # IP:port:transport:protocol
             num_stats += 1
+            value_parts = stat_value.split(' ')
+            self.assertEqual(value_parts[0], 'avg_latency_us:0.000')
+            self.assertEqual(value_parts[1], 'pending_reqs:0')
+            self.assertEqual(value_parts[2], 'inflight_reqs:0')
 
         # Not sure if there is an easy way to automate this
         # Now that we have proxy destination - no of distinct servers

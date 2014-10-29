@@ -62,10 +62,14 @@ struct ServerStat {
   size_t states[PROXY_CLIENT_NUM_STATES] = {0};
   double sumLatencies{0.0};
   size_t cntLatencies{0};
+  size_t pendingRequestsCount{0};
+  size_t inflightRequestsCount{0};
 
   std::string toString() const {
     double avgLatency = cntLatencies == 0 ? 0 : sumLatencies / cntLatencies;
     auto res = folly::format("avg_latency_us:{:.3f}", avgLatency).str();
+    folly::format(" pending_reqs:{}", pendingRequestsCount).appendTo(res);
+    folly::format(" inflight_reqs:{}", inflightRequestsCount).appendTo(res);
     for (size_t i = 0; i < PROXY_CLIENT_NUM_STATES; ++i) {
       if (states[i] > 0) {
         auto state = clientStateToStr(static_cast<proxy_client_state_t>(i));
@@ -514,6 +518,8 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
             stat.sumLatencies += pdstn->stats().avgLatency.value();
             ++stat.cntLatencies;
           }
+          stat.pendingRequestsCount += pdstn->getPendingRequestCount();
+          stat.inflightRequestsCount += pdstn->getInflightRequestCount();
         }
       });
     for (const auto& it : serverStats) {
