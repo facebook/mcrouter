@@ -119,6 +119,11 @@ class McParser {
     ClientParseCallback* clientParseCallback_;
   };
 
+  /* For Umbrella protocol, if the read buffer is empty and
+   * its capacity is above this value we drop the buffer to
+   * reduce memory footprint. */
+  constexpr static size_t kReadBufferShrinkWaterMark{1024};
+
   size_t messagesPerRead_{0};
   size_t minBufferSize_{256};
   size_t maxBufferSize_{4096};

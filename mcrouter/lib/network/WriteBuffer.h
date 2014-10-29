@@ -9,6 +9,7 @@
 #pragma once
 
 #include <folly/Optional.h>
+#include <folly/ThreadLocal.h>
 
 #include "mcrouter/lib/mc/ascii_response.h"
 #include "mcrouter/lib/mc/protocol.h"
@@ -64,16 +65,22 @@ class WriteBuffer {
 class WriteBufferQueue {
  public:
   WriteBuffer& push() {
-    if (freeQueue_.empty()) {
+    auto& freeQ = freeQueue();
+    if (freeQ.empty()) {
       return queue_.pushBack(folly::make_unique<WriteBuffer>());
     } else {
-      return queue_.pushBack(freeQueue_.popFront());
+      return queue_.pushBack(freeQ.popFront());
     }
   }
 
   void pop() {
-    auto& wb = freeQueue_.pushBack(queue_.popFront());
-    wb.clear();
+    auto& freeQ = freeQueue();
+    if (freeQ.size() < kMaxFreeQueueSz) {
+      auto& wb = freeQ.pushBack(queue_.popFront());
+      wb.clear();
+    } else {
+      queue_.popFront();
+    }
   }
 
   bool empty() {
@@ -81,8 +88,12 @@ class WriteBufferQueue {
   }
 
  private:
+  WriteBuffer::Queue& freeQueue() {
+    static folly::ThreadLocal<WriteBuffer::Queue> freeQ;
+    return *freeQ;
+  }
   WriteBuffer::Queue queue_;
-  WriteBuffer::Queue freeQueue_;
+  constexpr static size_t kMaxFreeQueueSz = 50;
 };
 
 }}  // facebook::memcache

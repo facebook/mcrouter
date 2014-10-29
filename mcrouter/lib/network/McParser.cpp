@@ -68,7 +68,7 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
                           umMsgInfo_.body_size - umBodyBuffer_->length());
   } else {
     readBuffer_.unshare();
-    if (!readBuffer_.length()) {
+    if (!readBuffer_.length() && readBuffer_.capacity() > 0) {
       /* If we read everything, reset pointers to 0 and re-use the buffer */
       readBuffer_.clear();
     } else if (readBuffer_.headroom() > 0) {
@@ -241,6 +241,14 @@ bool McParser::readUmbrellaData() {
     }
     /* 3) else header is incomplete */
     return true;
+  }
+
+  /* If the buffer is too large drop the buffer. This is important
+   * reduce memory foot-print on servers that get occasional large
+   * requests */
+  if (readBuffer_.length() == 0 &&
+      readBuffer_.capacity() > kReadBufferShrinkWaterMark) {
+    readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, 0);
   }
   return true;
 }
