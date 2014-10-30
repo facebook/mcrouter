@@ -99,7 +99,7 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
         if (len > FBTRACE_METADATA_SZ) {
           throw std::runtime_error("Fbtrace metadata too large");
         }
-        if (off + len > nbody) {
+        if (off + len > nbody || off + len < off) {
           throw std::runtime_error("Fbtrace metadata field invalid");
         }
         auto fbtraceInfo = new_mc_fbtrace_info(0);
