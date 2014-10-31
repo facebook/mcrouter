@@ -25,6 +25,7 @@
 #include <folly/Random.h>
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
+#include <folly/File.h>
 
 #include "mcrouter/_router.h"
 #include "mcrouter/async.h"
@@ -246,10 +247,6 @@ void proxy_t::stopAwriterThreads() {
 
 /** drain and delete proxy object */
 proxy_t::~proxy_t() {
-  if (async_fd) {
-    countedfd_decref(async_fd);
-  }
-
   destinationMap.reset();
 
   being_destroyed = true;

@@ -46,7 +46,8 @@
 #define MOVING_AVERAGE_BIN_SIZE_IN_SECOND (1)
 
 namespace folly {
-class dynamic;
+  class dynamic;
+  class File;
 }
 
 class fb_timer_s;
@@ -391,11 +392,6 @@ class ProxyMigratedPool : public ProxyGenericPool {
   uint32_t warmup_exptime;
 };
 
-struct countedfd_t {
-  int fd;
-  int refcount;
-};
-
 struct proxy_t {
   uint64_t magic;
   mcrouter_t *router{nullptr};
@@ -409,7 +405,7 @@ struct proxy_t {
   std::unique_ptr<ProxyDestinationMap> destinationMap;
 
   // async spool related
-  countedfd_t* async_fd{nullptr};
+  std::shared_ptr<folly::File> async_fd{nullptr};
   time_t async_spool_time{0};
 
   std::mutex stats_lock;
@@ -590,9 +586,8 @@ struct old_config_req_t {
 
 struct writelog_entry_t {
   proxy_request_t *preq;
-  countedfd_t *fd;
-  const void *buf;
-  size_t size;
+  std::shared_ptr<folly::File> file;
+  std::string buf;
   int write_result;
   awriter_entry_t awentry;
   asox_queue_entry_t qentry;

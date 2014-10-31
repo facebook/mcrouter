@@ -16,6 +16,7 @@
 #include <folly/experimental/TestUtil.h>
 #include <folly/FileUtil.h>
 #include <folly/Memory.h>
+#include <folly/File.h>
 
 #include "mcrouter/awriter.h"
 #include "mcrouter/proxy.h"
@@ -103,10 +104,12 @@ static int test_entry_writer(awriter_entry_t* e) {
   int ret;
   writelog_entry_t *entry = &((testing_context_t*)e->context)->log_context;
   ssize_t size =
-    folly::writeFull(entry->fd->fd, entry->buf, entry->size);
+    folly::writeFull(entry->file->fd(),
+                     entry->buf.data(),
+                     entry->buf.size());
   if (size == -1) {
     ret = errno;
-  } else if (size < entry->size) {
+  } else if (size < entry->buf.size()) {
     ret = EIO;
   } else {
     ret = 0;
@@ -145,9 +148,7 @@ TEST(awriter, sanity) {
   const int num_entries = 3;
   testing_context_t e[num_entries];
   struct stat s;
-  countedfd_t cfd;
-  cfd.fd = f.fd();
-  cfd.refcount = 1;
+  auto fd = std::make_shared<folly::File>(f.fd());
 
   w = folly::make_unique<awriter_t>(0);
   EXPECT_TRUE(w != nullptr);
@@ -157,9 +158,8 @@ TEST(awriter, sanity) {
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
-    e[i].log_context.fd = &cfd;
-    e[i].log_context.buf = WRITE_STRING;
-    e[i].log_context.size = WRITE_STRING_LEN;
+    e[i].log_context.file = fd;
+    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     ret = awriter_queue(w.get(), &e[i].log_context.awentry);
@@ -194,8 +194,7 @@ TEST(awriter, flush_queue) {
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
-    e[i].log_context.buf = WRITE_STRING;
-    e[i].log_context.size = WRITE_STRING_LEN;
+    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     ret = awriter_queue(w.get(), &e[i].log_context.awentry);
@@ -223,18 +222,15 @@ TEST(awriter, max_queue_length) {
   const int maxlen = 5;
   const int num_entries = maxlen + 5;
   testing_context_t e[num_entries];
-  countedfd_t cfd;
-  cfd.fd = f.fd();
-  cfd.refcount = 1;
+  auto fd = std::make_shared<folly::File>(f.fd());
 
   w = folly::make_unique<awriter_t>(maxlen);
   EXPECT_TRUE(w != nullptr);
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
-    e[i].log_context.fd = &cfd;
-    e[i].log_context.buf = WRITE_STRING;
-    e[i].log_context.size = WRITE_STRING_LEN;
+    e[i].log_context.file = fd;
+    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     ret = awriter_queue(w.get(), &e[i].log_context.awentry);
@@ -271,9 +267,7 @@ TEST(awriter, invalid_fd) {
   std::unique_ptr<awriter_t> w;
   const int num_entries = 3;
   testing_context_t e[num_entries];
-  countedfd_t cfd;
-  cfd.fd = -1;
-  cfd.refcount = 1;
+  auto fd = std::make_shared<folly::File>(-1);
 
   w = folly::make_unique<awriter_t>(0);
   EXPECT_TRUE(w != nullptr);
@@ -283,9 +277,8 @@ TEST(awriter, invalid_fd) {
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
-    e[i].log_context.fd = &cfd;
-    e[i].log_context.buf = WRITE_STRING;
-    e[i].log_context.size = WRITE_STRING_LEN;
+    e[i].log_context.file = fd;
+    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     ret = awriter_queue(w.get(), &e[i].log_context.awentry);

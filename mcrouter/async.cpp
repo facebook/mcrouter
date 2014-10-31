@@ -36,6 +36,8 @@
 #include "folly/Conv.h"
 #include "folly/FileUtil.h"
 #include "folly/json.h"
+#include "folly/File.h"
+
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/_router.h"
@@ -108,10 +110,12 @@ static int file_entry_writer(awriter_entry_t* e) {
   int ret;
   writelog_entry_t *entry = (writelog_entry_t*)e->context;
   ssize_t size =
-    folly::writeFull(entry->fd->fd, entry->buf, entry->size);
+    folly::writeFull(entry->file->fd(),
+                     entry->buf.data(),
+                     entry->buf.size());
   if (size == -1) {
     ret = errno;
-  } else if (size_t(size) < entry->size) {
+  } else if (size_t(size) < entry->buf.size()) {
     ret = EIO;
   } else {
     ret = 0;
@@ -170,31 +174,15 @@ int awriter_queue(awriter_t *w, awriter_entry_t *e) {
   return 0;
 }
 
-static void countedfd_incref(countedfd_t *cfd) {
-  __sync_add_and_fetch(&cfd->refcount, 1);
-}
-
-void countedfd_decref(countedfd_t *cfd) {
-  if (!__sync_sub_and_fetch(&cfd->refcount, 1)) {
-    close(cfd->fd);
-    free(cfd);
-  }
-}
-
-static countedfd_t *countedfd_new(int fd) {
-  countedfd_t *cfd = (countedfd_t*)malloc(sizeof(*cfd));
-  if (!cfd) {
+static std::shared_ptr<folly::File> countedfd_new(int fd) {
+  if (fd < 0) {
     return nullptr;
   }
-
-  cfd->fd = fd;
-  cfd->refcount = 1;
-
-  return cfd;
+  return std::make_shared<folly::File>(fd, true);
 }
 
 /** Opens the asynchronous request store.  */
-static countedfd_t *asynclog_open(proxy_t *proxy) {
+static std::shared_ptr<folly::File> asynclog_open(proxy_t *proxy) {
   char path[PATH_MAX + 1];
   time_t now = time(nullptr);
   pid_t tid = syscall(SYS_gettid);
@@ -209,7 +197,6 @@ static countedfd_t *asynclog_open(proxy_t *proxy) {
   }
 
   if (proxy->async_fd) {
-    countedfd_decref(proxy->async_fd);
     proxy->async_fd = nullptr;
   }
 
@@ -316,7 +303,6 @@ epilogue:
       close(fd);
     }
     if (proxy->async_fd) {
-      countedfd_decref(proxy->async_fd);
       proxy->async_fd = nullptr;
     }
   }
@@ -341,29 +327,21 @@ static void file_write_completed(awriter_entry_t *awe, int result) {
 }
 
 static writelog_entry_t* writelog_entry_new(proxy_request_t *preq,
-                                            countedfd_t *fd,
-                                            const void *buf,
-                                            ssize_t size) {
+                                            std::shared_ptr<folly::File> fd,
+                                            std::string buf) {
   static const awriter_callbacks_t file_callbacks = {
     &file_write_completed,
     &file_entry_writer
   };
 
-  writelog_entry_t *e = (writelog_entry_t *)malloc(sizeof(*e) + size);
-  if (!e) {
-    return nullptr;
-  }
+  writelog_entry_t *e = new writelog_entry_t();
 
   e->preq = preq;
   proxy_request_incref(e->preq);
 
-  e->fd = fd;
-  countedfd_incref(e->fd);
+  e->file = std::move(fd);
 
-  memcpy(e + 1, buf, size);
-
-  e->buf = e + 1;
-  e->size = size;
+  e->buf = std::move(buf);
 
   e->awentry.context = e;
   e->awentry.callbacks = &file_callbacks;
@@ -376,8 +354,7 @@ static writelog_entry_t* writelog_entry_new(proxy_request_t *preq,
 void writelog_entry_free(writelog_entry_t *e) {
   e->preq->delay_reply--;
   proxy_request_decref(e->preq);
-  countedfd_decref(e->fd);
-  free(e);
+  delete e;
 }
 
 static void asynclog_event(proxy_request_t *preq,
@@ -385,7 +362,7 @@ static void asynclog_event(proxy_request_t *preq,
                            const asynclog_event_type_t type,
                            const dynamic& event) {
 
-  countedfd_t *fd = asynclog_open(proxy);
+  auto fd = asynclog_open(proxy);
   if (!fd) {
     throw AsyncLogException("asynclog_open() failed");
   }
@@ -419,8 +396,7 @@ static void asynclog_event(proxy_request_t *preq,
 
   writelog_entry_t *e = writelog_entry_new(preq,
                                            fd,
-                                           jstr.c_str(),
-                                           jstr.length());
+                                           jstr.toStdString());
   if (!e) {
     throw AsyncLogException("Unable to allocate writelog entry");
   }

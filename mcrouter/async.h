@@ -43,6 +43,4 @@ int async_write_file(awriter_t* awriter,
 
 void writelog_entry_free(writelog_entry_t *e);
 
-void countedfd_decref(struct countedfd_t *cfd);
-
 }}} // facebook::memcache::mcrouter
