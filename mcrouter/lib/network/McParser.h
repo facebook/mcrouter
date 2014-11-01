@@ -104,6 +104,10 @@ class McParser {
  private:
   bool seenFirstByte_{false};
   bool outOfOrder_{false};
+
+  /* We shrink the read buffer if we grow it beyond bufferSize_ */
+  bool bufferShrinkRequired_{false};
+
   mc_protocol_t protocol_{mc_unknown_protocol};
   mc_parser_t mcParser_;
 
@@ -118,11 +122,6 @@ class McParser {
     ServerParseCallback* serverParseCallback_;
     ClientParseCallback* clientParseCallback_;
   };
-
-  /* For Umbrella protocol, if the read buffer is empty and
-   * its capacity is above this value we drop the buffer to
-   * reduce memory footprint. */
-  constexpr static size_t kReadBufferShrinkWaterMark{1024};
 
   size_t messagesPerRead_{0};
   size_t minBufferSize_{256};
@@ -169,6 +168,11 @@ class McParser {
   void replyReadyHelper(McReply reply, mc_op_t operation, uint64_t reqid);
   void recalculateBufferSize(size_t read);
   void errorHelper(McReply reply);
+
+  /**
+   * Shrink all buffers used if possible to reduce memory footprint.
+   */
+  void shrinkBuffers();
 
   /* mc_parser callbacks */
   void msgReady(McMsgRef msg, uint64_t reqid);

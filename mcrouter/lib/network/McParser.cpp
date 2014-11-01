@@ -29,6 +29,7 @@ McParser::McParser(ServerParseCallback* callback,
       messagesPerRead_(requestsPerRead),
       minBufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
+      bufferSize_(maxBufferSize),
       readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
   assert(serverParseCallback_ != nullptr);
   mc_parser_init(&mcParser_,
@@ -47,6 +48,7 @@ McParser::McParser(ClientParseCallback* callback,
       messagesPerRead_(repliesPerRead),
       minBufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
+      bufferSize_(maxBufferSize),
       readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
   assert(clientParseCallback_ != nullptr);
   mc_parser_init(&mcParser_,
@@ -58,6 +60,13 @@ McParser::McParser(ClientParseCallback* callback,
 
 McParser::~McParser() {
   mc_parser_reset(&mcParser_);
+}
+
+void McParser::shrinkBuffers() {
+  if (readBuffer_.length() == 0 && bufferShrinkRequired_) {
+    readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, bufferSize_);
+    bufferShrinkRequired_ = false;
+  }
 }
 
 std::pair<void*, size_t> McParser::getReadBuffer() {
@@ -76,6 +85,7 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
       readBuffer_.retreat(readBuffer_.headroom());
     } else {
       /* Reallocate more space if necessary */
+      bufferShrinkRequired_ = true;
       readBuffer_.reserve(0, bufferSize_);
     }
     return std::make_pair(readBuffer_.writableTail(),
@@ -242,14 +252,6 @@ bool McParser::readUmbrellaData() {
     /* 3) else header is incomplete */
     return true;
   }
-
-  /* If the buffer is too large drop the buffer. This is important
-   * reduce memory foot-print on servers that get occasional large
-   * requests */
-  if (readBuffer_.length() == 0 &&
-      readBuffer_.capacity() > kReadBufferShrinkWaterMark) {
-    readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, 0);
-  }
   return true;
 }
 
@@ -291,7 +293,9 @@ bool McParser::readDataAvailable(size_t len) {
     }
 
     if (protocol_ == mc_umbrella_protocol) {
-      return readUmbrellaData();
+      const bool ret = readUmbrellaData();
+      shrinkBuffers(); /* no-op if buffer is not large */
+      return ret;
     } else {
       /* mc_parser only works with contiguous blocks */
       auto bytes = readBuffer_.coalesce();
