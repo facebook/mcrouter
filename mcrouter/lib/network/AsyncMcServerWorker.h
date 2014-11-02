@@ -88,13 +88,14 @@ class AsyncMcServerWorker {
   }
 
   /**
-   * Will be called when reply is successfuly written out to the transport.
-   * The callback is passed the McServerSession object that wrote the reply.
+   * Will be called when all pending replies are successfuly written out to the
+   * transport. The callback is passed the McServerSession object that wrote the
+   * reply as the argument.
    *
    * Note: This doesn't apply to already open connections
    */
-  void setOnWriteSuccess(std::function<void(McServerSession&)> cb) {
-    onWriteSuccess_ = std::move(cb);
+  void setOnWriteQuiescence(std::function<void(McServerSession&)> cb) {
+    onWriteQuiescence_ = std::move(cb);
   }
 
   /**
@@ -143,7 +144,7 @@ class AsyncMcServerWorker {
   folly::EventBase& eventBase_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
-  std::function<void(McServerSession&)> onWriteSuccess_;
+  std::function<void(McServerSession&)> onWriteQuiescence_;
   std::function<void(McServerSession&)> onClosed_;
   std::function<void()> onShutdown_;
 

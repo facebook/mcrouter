@@ -105,7 +105,7 @@ void AsyncMcServerWorker::addClientSocket(
     McServerSession::create(
       std::move(socket),
       onRequest_,
-      onWriteSuccess_,
+      onWriteQuiescence_,
       [this] (McServerSession& session) {
         if (onClosed_) {
           onClosed_(session);

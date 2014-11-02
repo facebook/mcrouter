@@ -41,7 +41,7 @@ bool isPartOfMultiget(mc_protocol_t protocol, mc_op_t operation) {
 McServerSession& McServerSession::create(
   apache::thrift::async::TAsyncTransport::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
-  std::function<void(McServerSession&)> onWriteSuccess,
+  std::function<void(McServerSession&)> onWriteQuiescence,
   std::function<void(McServerSession&)> onTerminated,
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
@@ -50,7 +50,7 @@ McServerSession& McServerSession::create(
   auto ptr = new McServerSession(
     std::move(transport),
     std::move(cb),
-    std::move(onWriteSuccess),
+    std::move(onWriteQuiescence),
     std::move(onTerminated),
     std::move(onShutdown),
     std::move(options),
@@ -63,14 +63,14 @@ McServerSession& McServerSession::create(
 McServerSession::McServerSession(
   apache::thrift::async::TAsyncTransport::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
-  std::function<void(McServerSession&)> onWriteSuccess,
+  std::function<void(McServerSession&)> onWriteQuiescence,
   std::function<void(McServerSession&)> onTerminated,
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
   void* userCtxt)
     : transport_(std::move(transport)),
       onRequest_(std::move(cb)),
-      onWriteSuccess_(std::move(onWriteSuccess)),
+      onWriteQuiescence_(std::move(onWriteQuiescence)),
       onTerminated_(std::move(onTerminated)),
       onShutdown_(std::move(onShutdown)),
       options_(std::move(options)),
@@ -375,12 +375,11 @@ void McServerSession::writeSuccess() noexcept {
   DestructorGuard dg(this);
   completeWrite();
 
-  if (onWriteSuccess_) {
-    onWriteSuccess_(*this);
-  }
-
   assert(writeBufs_.hasValue());
   if (writeBufs_->empty()) {
+    if (onWriteQuiescence_) {
+      onWriteQuiescence_(*this);
+    }
     /* No-op if not paused */
     resume(PAUSE_WRITE);
   }

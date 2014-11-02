@@ -44,6 +44,7 @@ class McServerSession :
    *      writes have been completed/errored out.
    *   2) The outgoing connection is closed, either via an explicit close()
    *      call or due to some error.
+   *
    * The application may use onTerminated() callback as the point in
    * time after which the session is considered done, and no event loop
    * iteration is necessary.
@@ -51,13 +52,16 @@ class McServerSession :
    * but this is the last time the application can safely assume that
    * the session is alive.
    *
+   * The onWriteQuiescence() callback is invoked when all pending writes are
+   * done, rather than invoking it for each write.
+   *
    * @param transport  Connected transport; transfers ownership inside
    *                   this session.
    */
   static McServerSession& create(
     apache::thrift::async::TAsyncTransport::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
-    std::function<void(McServerSession&)> onWriteSuccess,
+    std::function<void(McServerSession&)> onWriteQuiescence,
     std::function<void(McServerSession&)> onTerminated,
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
@@ -97,7 +101,7 @@ class McServerSession :
  private:
   apache::thrift::async::TAsyncTransport::UniquePtr transport_;
   std::shared_ptr<McServerOnRequest> onRequest_;
-  std::function<void(McServerSession&)> onWriteSuccess_;
+  std::function<void(McServerSession&)> onWriteQuiescence_;
   std::function<void(McServerSession&)> onTerminated_;
   std::function<void()> onShutdown_;
   AsyncMcServerWorkerOptions options_;
