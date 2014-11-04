@@ -11,6 +11,8 @@
 #include <sys/wait.h>
 
 #include <algorithm>
+#include <condition_variable>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -53,11 +55,19 @@ McMsgRef new_del_req(const char *key) {
   return std::move(msg);
 }
 
+namespace {
+std::atomic<size_t> gReplies;
+std::mutex gMutex;
+std::condition_variable gCv;
+}
+
 void on_reply(mcrouter_client_t *client,
               mcrouter_msg_t *router_req,
               void* context) {
   mcrouter_msg_t *r_msg = static_cast<mcrouter_msg_t*>(router_req->context);
   r_msg->reply = std::move(router_req->reply);
+  ++gReplies;
+  gCv.notify_one();
 }
 
 void mcrouter_send_helper(mcrouter_client_t *client,
@@ -73,17 +83,15 @@ void mcrouter_send_helper(mcrouter_client_t *client,
     r_msgs[i].reply = McReply(mc_res_unknown);
     r_msgs[i].context = &r_msgs[i];
   }
+
+  gReplies = 0;
   mcrouter_send(client, r_msgs, n);
-  int i = 0;
-  folly::EventBase* eventBase = mcrouter_client_get_base(client);
-  while (i < n) {
-    mcrouterLoopOnce(eventBase);
-    while (i < n) {
-      if (r_msgs[i].reply.result() != mc_res_unknown) {
-        replies.push_back(std::move(r_msgs[i].reply));
-        i++;
-      } else break;
-    }
+  std::unique_lock<std::mutex> lk(gMutex);
+  gCv.wait(lk, [n] () { return gReplies == n; });
+
+  for (size_t i = 0; i < n; ++i) {
+    CHECK(r_msgs[i].reply.result() != mc_res_unknown);
+    replies.push_back(std::move(r_msgs[i].reply));
   }
   delete [] r_msgs;
 }
@@ -96,10 +104,8 @@ TEST(mcrouter, start_and_stop) {
     mcrouter_t *router = mcrouter_new(opts);
     EXPECT_FALSE(router == nullptr);
 
-    folly::EventBase eventBase;
     mcrouter_client_t *client = mcrouter_client_new(
       router,
-      &eventBase,
       (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
       nullptr,
       0, false);
@@ -114,7 +120,30 @@ void on_disconnect(void* context) {
   sem_post((sem_t*)context);
 }
 
-void test_disconnect_callback(bool thread_safe_callbacks) {
+TEST(mcrouter, test_zeroreqs_mcroutersend) {
+  sem_t sem_disconnect;
+  sem_init(&sem_disconnect, 0, 0);
+  auto opts = defaultTestOptions();
+  opts.config_file = MEMCACHE_CONFIG;
+  opts.default_route = MEMCACHE_ROUTE;
+  mcrouter_t *router = mcrouter_new(opts);
+  mcrouter_client_t *client = mcrouter_client_new(
+    router,
+    (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
+    &sem_disconnect,
+    0, false);
+
+  vector<mcrouter_msg_t> reqs(0);
+
+  mcrouter_send(client, reqs.data(), reqs.size());
+  mcrouter_send(client, nullptr, 0);
+
+  mcrouter_client_disconnect(client);
+
+  mcrouter_free(router);
+}
+
+TEST(mcrouter, disconnect_callback) {
   sem_t sem_disconnect;
   sem_init(&sem_disconnect, 0, 0);
 
@@ -124,10 +153,8 @@ void test_disconnect_callback(bool thread_safe_callbacks) {
   mcrouter_t *router = mcrouter_new(opts);
   EXPECT_FALSE(router == nullptr);
 
-  folly::EventBase eventBase;
   mcrouter_client_t *client = mcrouter_client_new(
     router,
-    thread_safe_callbacks ? nullptr : &eventBase,
     (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
     &sem_disconnect,
     0, false);
@@ -148,38 +175,6 @@ void test_disconnect_callback(bool thread_safe_callbacks) {
   mcrouter_free(router);
 }
 
-TEST(mcrouter, test_zeroreqs_mcroutersend) {
-  sem_t sem_disconnect;
-  sem_init(&sem_disconnect, 0, 0);
-  auto opts = defaultTestOptions();
-  opts.config_file = MEMCACHE_CONFIG;
-  opts.default_route = MEMCACHE_ROUTE;
-  mcrouter_t *router = mcrouter_new(opts);
-  mcrouter_client_t *client = mcrouter_client_new(
-    router,
-    nullptr,
-    (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
-    &sem_disconnect,
-    0, false);
-
-  vector<mcrouter_msg_t> reqs(0);
-
-  mcrouter_send(client, reqs.data(), reqs.size());
-  mcrouter_send(client, nullptr, 0);
-
-  mcrouter_client_disconnect(client);
-
-  mcrouter_free(router);
-}
-
-TEST(mcrouter, disconnect_callback) {
-  test_disconnect_callback(false);
-}
-
-TEST(mcrouter, disconnect_callback_ts_callbacks) {
-  test_disconnect_callback(true);
-}
-
 TEST(mcrouter, fork) {
   const char persistence_id[] = "fork";
   auto opts = defaultTestOptions();
@@ -188,10 +183,8 @@ TEST(mcrouter, fork) {
   mcrouter_t *router = mcrouter_init(persistence_id, opts);
   EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
 
-  auto eventBase = std::make_shared<folly::EventBase>();
   mcrouter_client_t *client = mcrouter_client_new(
     router,
-    eventBase.get(),
     (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
     nullptr,
     0, false);
@@ -216,10 +209,8 @@ TEST(mcrouter, fork) {
   router = mcrouter_init(persistence_id, opts);
   EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
 
-  eventBase = std::make_shared<folly::EventBase>();
   client = mcrouter_client_new(
     router,
-    eventBase.get(),
     (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
     nullptr,
     0, false);
@@ -267,8 +258,7 @@ TEST(mcrouter, already_replied_failed_delete) {
   mcrouter_t *router = mcrouter_new(opts);
   EXPECT_TRUE(router != nullptr);
 
-  folly::EventBase eventBase;
-  mcrouter_client_t *client = mcrouter_client_new(router, &eventBase, cb,
+  mcrouter_client_t *client = mcrouter_client_new(router, cb,
       nullptr, 0, false);
   EXPECT_TRUE(client != nullptr);
 

@@ -84,7 +84,6 @@ void serverLoop(
 
   auto routerClient =
     mcrouter_client_new(&router,
-                        &evb,
                         server_callbacks,
                         &worker,
                         0, false);

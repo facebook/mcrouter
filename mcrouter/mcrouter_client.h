@@ -29,13 +29,11 @@ struct mcrouter_client_stats_t {
 
 struct mcrouter_client_t {
   mcrouter_t *router;
-  folly::EventBase* eventBase;
 
   mcrouter_client_callbacks_t callbacks;
   void *arg;
 
   proxy_t *proxy;
-  asox_queue_t reply_queue;
 
   mcrouter_client_stats_t stats;
 
@@ -49,8 +47,6 @@ struct mcrouter_client_t {
   // only updated by mcrouter thread, so we don't need any fancy atomic refcount
   int num_pending;
 
-  // if the callbacks associated with this client can be invoked from any thread
-  int threadsafe_callbacks;
   TAILQ_ENTRY(mcrouter_client_t) entry;
 
   int _refcount;
@@ -70,7 +66,6 @@ struct mcrouter_client_t {
 
   mcrouter_client_t(
     mcrouter_t* router,
-    folly::EventBase* eventBase,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding,
@@ -78,8 +73,6 @@ struct mcrouter_client_t {
 
   mcrouter_client_t(const mcrouter_client_t&) = delete;
   mcrouter_client_t& operator=(const mcrouter_client_t&) = delete;
-
-  ~mcrouter_client_t();
 };
 
 mcrouter_client_t* mcrouter_client_incref(mcrouter_client_t* client);

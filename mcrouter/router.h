@@ -89,10 +89,6 @@ struct mcrouter_client_callbacks_t {
 /**
  * Create a handle to talk to mcrouter
  * The context will be passed back to the callbacks
- * Use asox_loop_once() instead of event_base_loop() on the event base.
- * If nullptr is passed for the event base the library will invoke the
- * callbacks on an arbitrary thread that it chooses and assumes that the
- * callbacks are threadsafe
  *
  * maximum_outstanding_requests: if nonzero, at most this many requests
  *   will be allowed to be in flight at any single point in time.
@@ -103,7 +99,6 @@ struct mcrouter_client_callbacks_t {
  * mcrouter_client_disconnect().
  */
 mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
-                                       folly::EventBase* eventBase,
                                        mcrouter_client_callbacks_t callbacks,
                                        void *context,
                                        size_t maximum_outstanding_requests,

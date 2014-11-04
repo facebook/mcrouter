@@ -108,10 +108,6 @@ static int precheck_request(mcrouter_queue_entry_t *mcreq) {
   return 1;
 }
 
-void mcrouter_reply_ready_cb(asox_queue_t q,
-                             asox_queue_entry_t *entry,
-                             void *arg);
-
 void router_entry_destroy(mcrouter_queue_entry_t *router_entry) {
   FBI_ASSERT(router_entry->request);
   mc_msg_decref(router_entry->request);
@@ -120,26 +116,44 @@ void router_entry_destroy(mcrouter_queue_entry_t *router_entry) {
 
 static inline void router_client_on_reply(mcrouter_client_t *client,
                                           asox_queue_entry_t *entry) {
-
   if (client->max_outstanding != 0) {
     counting_sem_post(&client->outstanding_reqs_sem, 1);
   }
 
-  if (client->router->opts.standalone ||
-      client->router->opts.sync ||
-      client->threadsafe_callbacks) {
-    /*
-     * Skip the extra asox queue hop and directly call the queue callback,
-     * since we're standalone and thus staying in the same thread
-     */
-    mcrouter_reply_ready_cb(nullptr, entry, client);
-  } else {
-    int rv = asox_queue_enqueue(client->reply_queue, entry);
-    if (rv == 0) {
-      FBI_ASSERT(asox_queue_is_disconnected(client->reply_queue));
-      router_entry_destroy((mcrouter_queue_entry_t*)entry->data);
-    }
+  mcrouter_queue_entry_t* router_entry = (mcrouter_queue_entry_t*) entry->data;
+  mcrouter_msg_t router_reply;
+
+  // Don't increment refcounts, because these are transient stack
+  // references, and are guaranteed to be shorted lived than router_entry's
+  // reference.  This is a premature optimization.
+  router_reply.req = router_entry->request;
+  router_reply.reply = std::move(router_entry->reply);
+
+  router_reply.context = router_entry->context;
+
+  if (router_reply.reply.result() == mc_res_timeout ||
+      router_reply.reply.result() == mc_res_connect_timeout) {
+    __sync_fetch_and_add(&client->stats.ntmo, 1);
   }
+
+  __sync_fetch_and_add(&client->stats.op_value_bytes[router_entry->request->op],
+                       router_reply.reply.value().length());
+
+  if (LIKELY(client->callbacks.on_reply && !client->disconnected)) {
+      client->callbacks.on_reply(client,
+                                 &router_reply,
+                                 client->arg);
+  } else if (client->callbacks.on_cancel && client->disconnected) {
+    // This should be called for all canceled requests, when cancellation is
+    // implemented properly.
+    client->callbacks.on_cancel(client,
+                                router_entry->context,
+                                client->arg);
+  }
+
+  stat_decr_safe(router_entry->proxy,
+                 mcrouter_queue_entry_num_outstanding_stat);
+  router_entry_destroy(router_entry);
 
   client->num_pending--;
   if (client->num_pending == 0 && client->disconnected) {
@@ -618,14 +632,6 @@ bool mcrouter_t::wantRealtimeThreads() const {
 }
 
 static void mcrouter_client_cleanup(mcrouter_client_t *client) {
-  if (!(client->router->opts.standalone ||
-        client->router->opts.sync ||
-        client->threadsafe_callbacks)) {
-    /* Wait until the queue is flushed; this is required before asox_queue_del()
-       from another thread - otherwise there might be unprocessed events
-       for the already deleted queue */
-    asox_queue_remote_disconnect(client->reply_queue);
-  }
   {
     std::lock_guard<std::mutex> guard(client->router->client_list_lock);
     TAILQ_REMOVE(&client->router->client_list, client, entry);
@@ -755,57 +761,6 @@ void mcrouter_enqueue_reply(proxy_request_t *preq) {
   FBI_ASSERT(preq->_refcount >= 1);
 }
 
-void mcrouter_reply_ready_cb(asox_queue_t q,
-                             asox_queue_entry_t *entry,
-                             void *arg) {
-  mcrouter_client_t* client = (mcrouter_client_t*)arg;
-  mcrouter_queue_entry_t* router_entry = (mcrouter_queue_entry_t*) entry->data;
-  mcrouter_msg_t router_reply;
-
-  // Don't increment refcounts, because these are transient stack
-  // references, and are guaranteed to be shorted lived than router_entry's
-  // reference.  This is a premature optimization.
-  router_reply.req = router_entry->request;
-  router_reply.reply = std::move(router_entry->reply);
-
-  router_reply.context = router_entry->context;
-
-  if (router_reply.reply.result() == mc_res_timeout ||
-      router_reply.reply.result() == mc_res_connect_timeout) {
-    __sync_fetch_and_add(&client->stats.ntmo, 1);
-  }
-
-  __sync_fetch_and_add(&client->stats.op_value_bytes[router_entry->request->op],
-                       router_reply.reply.value().length());
-
-  if (LIKELY(client->callbacks.on_reply && !client->disconnected)) {
-      client->callbacks.on_reply(client,
-                                 &router_reply,
-                                 client->arg);
-  } else if (client->callbacks.on_cancel && client->disconnected) {
-    // This should be called for all canceled requests, when cancellation is
-    // implemented properly.
-    client->callbacks.on_cancel(client,
-                                router_entry->context,
-                                client->arg);
-  }
-
-  stat_decr_safe(router_entry->proxy,
-                 mcrouter_queue_entry_num_outstanding_stat);
-  router_entry_destroy(router_entry);
-}
-
-void mcrouter_reply_sweep_cb(asox_queue_t q,
-                             asox_queue_entry_t *entry,
-                             void *arg) {
-  router_entry_destroy((mcrouter_queue_entry_t*)entry->data);
-}
-
-static asox_queue_callbacks_t const mcrouter_reply_queue_cb  = {
-  mcrouter_reply_ready_cb,
-  mcrouter_reply_sweep_cb
-};
-
 void mcrouter_client_assign_proxy(mcrouter_client_t *client) {
   mcrouter_t *router = client->router;
   std::lock_guard<std::mutex> guard(router->next_proxy_mutex);
@@ -841,7 +796,6 @@ void mcrouter_client_decref(mcrouter_client_t* client) {
 }
 
 mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
-                                       folly::EventBase* eventBase,
                                        mcrouter_client_callbacks_t callbacks,
                                        void *arg,
                                        size_t max_outstanding,
@@ -854,7 +808,6 @@ mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
   }
 
   mcrouter_client_t* client = new mcrouter_client_t(router,
-                                                    eventBase,
                                                     callbacks,
                                                     arg,
                                                     max_outstanding,
@@ -863,45 +816,25 @@ mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
   return client;
 }
 
-mcrouter_client_t::~mcrouter_client_t() {
-  asox_queue_del(reply_queue);
-}
-
 mcrouter_client_t::mcrouter_client_t(
     mcrouter_t* router_,
-    folly::EventBase* eventBase_,
     mcrouter_client_callbacks_t callbacks_,
     void *arg_,
     size_t max_outstanding_,
     bool nonblocking_) :
       router(router_),
-      eventBase(eventBase_),
       callbacks(callbacks_),
       arg(arg_),
       proxy(nullptr),
-      reply_queue(nullptr),
       max_outstanding(max_outstanding_),
       disconnected(0),
       num_pending(0),
-      threadsafe_callbacks(0),
       _refcount(1),
       nonblocking(nonblocking_),
       isZombie(false) {
 
   static uint64_t nextClientId = 0ULL;
   clientId = __sync_fetch_and_add(&nextClientId, 1);
-
-  if (eventBase) {
-    int priority = router ? get_event_priority(router->opts, SERVER_REPLY) : -1;
-    reply_queue = asox_queue_init(eventBase->getLibeventBase(), priority, 1, 0,
-                                  0, &mcrouter_reply_queue_cb,
-                                  ASOX_QUEUE_INTRA_PROCESS, this);
-    if (!reply_queue) {
-      throw mcrouter_exception("Failed to initialize reply_queue asox queue");
-    }
-  } else {
-    threadsafe_callbacks = 1;
-  }
 
   if (max_outstanding != 0) {
     counting_sem_init(&outstanding_reqs_sem, max_outstanding);
@@ -917,10 +850,6 @@ mcrouter_client_t::mcrouter_client_t(
 }
 
 void mcrouter_client_disconnect(mcrouter_client_t *client) {
-  if (!client->threadsafe_callbacks) {
-    asox_queue_disconnect(client->reply_queue);
-  }
-
   if (!client->isZombie) {
     if (client->proxy->opts.sync) {
       // we process request_queue on the same thread, so it is safe
@@ -1129,34 +1058,11 @@ std::unordered_map<std::string, int64_t> mcrouter_client_stats(
   return ret;
 }
 
-void mcrouter_client_move(mcrouter_client_t *client, mcrouter_t *new_router) {
-  {
-    std::lock_guard<std::mutex> guard(client->router->client_list_lock);
-    TAILQ_REMOVE(&client->router->client_list, client, entry);
-  }
-
-  {
-    std::lock_guard<std::mutex> guard(client->router->client_list_lock);
-    TAILQ_INSERT_HEAD(&new_router->client_list, client, entry);
-  }
-  client->router = new_router;
-
-  if (!client->threadsafe_callbacks) {
-    event_reinit(client->eventBase->getLibeventBase());
-    asox_queue_del(client->reply_queue);
-    client->reply_queue = asox_queue_init(client->eventBase->getLibeventBase(),
-                                          0, 1, 0, 0,
-                                          &mcrouter_reply_queue_cb,
-                                          ASOX_QUEUE_INTRA_PROCESS, client);
-  }
-  mcrouter_client_assign_proxy(client);
-}
-
 folly::EventBase* mcrouter_client_get_base(mcrouter_client_t *client) {
   if (client->router->opts.standalone || client->router->opts.sync) {
     return client->proxy->eventBase;
   } else {
-    return client->eventBase;
+    return nullptr;
   }
 }
 

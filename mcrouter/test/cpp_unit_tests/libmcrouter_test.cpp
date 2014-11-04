@@ -183,22 +183,19 @@ void on_cancel(mcrouter_client_t* client,
 
 }
 
-static void premature_disconnect_common(bool use_client_event_base) {
+TEST(libmcrouter, premature_disconnect) {
   auto opts = defaultTestOptions();
   opts.config_str = configString;
   opts.default_route = kDefaultRoute;
   mcrouter_t *router = mcrouter_new(opts);
-
 
   for (int i = 0; i < 10; i++) {
     on_reply_count = 0;
     on_cancel_count = 0;
 
     int myint;
-    folly::EventBase eventBase;
     mcrouter_client_t *client = mcrouter_client_new(
       router,
-      use_client_event_base ? &eventBase : nullptr,
       {on_reply, on_cancel, nullptr},
       (void*) &myint, 0, false);
 
@@ -217,31 +214,13 @@ static void premature_disconnect_common(bool use_client_event_base) {
     // pretend to free by setting the value to 0;
     myint = 0;
 
-    if (use_client_event_base) {
-      // event_base_loop() returns 1 only when there is no event attached to
-      // the event_base_loope
-      EXPECT_TRUE(1 == event_base_loop(
-        eventBase.getLibeventBase(), EVLOOP_ONCE));
-    } else {
-      usleep(5000);
-    }
-
+    sleep(1);
     EXPECT_EQ(0, on_reply_count);
-    if (!use_client_event_base) {
-      EXPECT_EQ(1, on_cancel_count);
-    }
+    EXPECT_EQ(1, on_cancel_count);
   }
 
   sleep(2);
   mcrouter_free(router);
-}
-
-TEST(libmcrouter, premature_disconnect) {
-  premature_disconnect_common(true);
-}
-
-TEST(libmcrouter, premature_disconnect_no_event_base) {
-  premature_disconnect_common(false);
 }
 
 TEST(libmcrouter, invalid_pools) {
@@ -267,7 +246,6 @@ TEST(libmcrouter, standalone) {
   }
 
   mcrouter_client_t *client = mcrouter_client_new(router,
-                                                  nullptr,
                                                   {on_reply, nullptr},
                                                   nullptr,
                                                   0, false);
