@@ -303,7 +303,6 @@ void ProxyDestination::on_up() {
   stat_incr(proxy, num_servers_up_stat, 1);
 
   stats_.is_up = true;
-  gettimeofday(&up_time, 0);
 
   VLOG(1) << "server " << pdstnKey << " up (" <<
       stat_get_uint64(proxy, num_servers_up_stat) << " of " <<
@@ -339,7 +338,6 @@ void ProxyDestination::on_down() {
       stat_decr(proxy, num_servers_up_stat, 1);
     }
     stats_.is_up = false;
-    gettimeofday(&down_time, 0);
 
     /* Record on_down as a mc_res_connect_error; note we pass failure_until_tko
        to force TKO for the deprecated per-proxy logic */

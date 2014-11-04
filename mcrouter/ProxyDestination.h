@@ -127,9 +127,6 @@ struct ProxyDestination {
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
                      // mc_client_reset and not a remote connection failure.
 
-  timeval_t up_time{0};
-  timeval_t down_time{0};
-
   // tko behaviour
   char marked_tko{0};
 
