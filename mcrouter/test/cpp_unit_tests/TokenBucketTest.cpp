@@ -9,17 +9,20 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/TokenBucket.h"
+#include "mcrouter/AtomicTokenBucket.h"
 
 namespace {
 
+using facebook::memcache::mcrouter::AtomicTokenBucket;
 using facebook::memcache::mcrouter::TokenBucket;
 
+template <typename TokenBucketType>
 void doTokenBucketTest(double maxQps, double consumeSize) {
   const double tenMillisecondBurst = maxQps * 0.010;
   // Select a burst size of 10 milliseconds at the max rate or the consume size
   // if 10 ms at maxQps is too small.
   const double burstSize = std::max(consumeSize, tenMillisecondBurst);
-  TokenBucket tokenBucket(maxQps, burstSize, 0);
+  TokenBucketType tokenBucket(maxQps, burstSize, 0);
   double tokenCounter = 0;
   double currentTime = 0;
   // Simulate time advancing 10 seconds
@@ -33,21 +36,14 @@ void doTokenBucketTest(double maxQps, double consumeSize) {
     // is somewhat fudged. The upper bound is accurate however.
     EXPECT_LE(maxQps * currentTime * 0.9 - 1, tokenCounter);
     // Tokens consumed should not exceed some upper bound based on maxQps.
-    EXPECT_GE(maxQps * currentTime, tokenCounter);
+    EXPECT_GE(maxQps * currentTime + 1e-6, tokenCounter);
   }
 }
 
-TEST(TokenBucket, sanity) {
-  doTokenBucketTest(100, 1);
-  doTokenBucketTest(1000, 1);
-  doTokenBucketTest(10000, 1);
-  // Consume more than one at a time.
-  doTokenBucketTest(10000, 5);
-}
-
-TEST(TokenBucket, ReverseTime) {
+template <typename TokenBucketType>
+void doReverseTimeTest() {
   const double rate = 1000;
-  TokenBucket tokenBucket(rate, rate * 0.01, 0);
+  TokenBucketType tokenBucket(rate, rate * 0.01 + 1e-6, 0);
   size_t count = 0;
   while (tokenBucket.consume(1, 0.1)) {
     count += 1;
@@ -58,6 +54,30 @@ TEST(TokenBucket, ReverseTime) {
   double tokensBefore = tokenBucket.available();
   EXPECT_FALSE(tokenBucket.consume(1, 0.09999999));
   EXPECT_EQ(tokensBefore, tokenBucket.available());
+}
+
+TEST(TokenBucket, sanity) {
+  doTokenBucketTest<TokenBucket>(100, 1);
+  doTokenBucketTest<TokenBucket>(1000, 1);
+  doTokenBucketTest<TokenBucket>(10000, 1);
+  // Consume more than one at a time.
+  doTokenBucketTest<TokenBucket>(10000, 5);
+}
+
+TEST(TokenBucket, ReverseTime) {
+  doReverseTimeTest<TokenBucket>();
+}
+
+TEST(AtomicTokenBucket, sanity) {
+  doTokenBucketTest<AtomicTokenBucket>(100, 1);
+  doTokenBucketTest<AtomicTokenBucket>(1000, 1);
+  doTokenBucketTest<AtomicTokenBucket>(10000, 1);
+  // Consume more than one at a time.
+  doTokenBucketTest<AtomicTokenBucket>(10000, 5);
+}
+
+TEST(AtomicTokenBucket, ReverseTime) {
+  doReverseTimeTest<AtomicTokenBucket>();
 }
 
 } // anonymous namespace
