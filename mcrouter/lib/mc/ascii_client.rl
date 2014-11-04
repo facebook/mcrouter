@@ -188,7 +188,7 @@ command_error = 'ERROR'
     parser->msg->value.str = "unexpected ERROR reply";
     parser->msg->value.len = strlen(parser->msg->value.str);
     dbg_error("%s", parser->msg->value.str);
-    FBI_ASSERT(0);
+    isError = true;
   } fin;
 
 error = server_error | client_error | command_error;
@@ -517,6 +517,7 @@ int _on_ascii_rx(mc_parser_t* parser, char* buf, size_t nbuf) {
   dbg_fentry("parser=%p nbuf=%lu", parser, nbuf);
 
   int success = 0;
+  bool isError = false;
 
   // ragel variables
   int cs = ascii_error; // current state
@@ -599,6 +600,11 @@ int _on_ascii_rx(mc_parser_t* parser, char* buf, size_t nbuf) {
 
       /* this is where ragel emits the state machine code */
       %% write exec;
+
+      // If we encountered 'ERROR' reply, fail all further data.
+      if (isError) {
+        goto epilogue;
+      }
 
       /* if msg == NULL, we finished the msg */
       if (parser->msg) {

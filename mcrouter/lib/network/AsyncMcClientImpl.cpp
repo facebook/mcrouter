@@ -487,6 +487,35 @@ void AsyncMcClientImpl::replyReady(McReply mcReply, mc_op_t operation,
                                    uint64_t reqId) {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
+
+  // Local error in ascii protocol means that there was a protocol level error,
+  // e.g. we sent some command that server didn't understand. We need to log
+  // the original request and close the connection.
+  if (mcReply.result() == mc_res_local_error &&
+      connectionOptions_.protocol == mc_ascii_protocol) {
+    if (!pendingReplyQueue_.empty()) {
+      std::string requestData;
+      auto& request = pendingReplyQueue_.front().reqContext;
+      auto iovs = request.getIovs();
+      auto iovsCount = request.getIovsCount();
+      for (size_t i = 0; i < iovsCount; ++i) {
+        requestData += folly::cEscape<std::string>(
+          folly::StringPiece(
+            reinterpret_cast<const char*>(iovs[i].iov_base), iovs[i].iov_len));
+      }
+      failure::log("AsyncMcClient", failure::Category::kOther,
+                   "Received ERROR reply from server, original request was: "
+                   "\"{}\" and the operation was {}", requestData,
+                   mc_op_to_string(pendingReplyQueue_.front().op));
+    } else {
+      failure::log("AsyncMcClient", failure::Category::kOther,
+                   "Received ERROR reply from server, but there're no "
+                   "outstanding requests.");
+    }
+    processShutdown();
+    return;
+  }
+
   if (!outOfOrder_) {
     reqId = nextInflightMsgId_;
     incMsgId(nextInflightMsgId_);
