@@ -78,15 +78,6 @@ public:
   int del(const folly::dynamic &keys, bool local,
           folly::dynamic &results);
 
-  /**
-   * get the stats from libmcrouter and optionally clear them
-   *
-   * @param: out_stats a folly::dynamic::object that will contain key value
-   *                   pairs of all the stats
-   * @param: clear set to true if you want to clear the stats after fetching
-   */
-  void stats(folly::dynamic& out_stats, bool clear);
-
 private:
   facebook::memcache::mcrouter::mcrouter_client_t *client_;
   facebook::memcache::mcrouter::mcrouter_t *router_;

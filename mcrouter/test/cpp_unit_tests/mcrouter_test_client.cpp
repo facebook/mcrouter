@@ -216,35 +216,3 @@ int MCRouterTestClient::del(const dynamic &keys, bool local,
   }
   return ret;
 }
-
-
-#pragma GCC diagnostic push // stats shadows a member
-#pragma GCC diagnostic ignored "-Wshadow"
-void MCRouterTestClient::stats(dynamic& out_stats, bool clear) {
-  stat_t *stats;
-  size_t num_stats;
-  mcrouter_get_stats(router_, (int) clear, ods_stats, &stats, &num_stats);
-
-  for (int i = 0; i < num_stats; i ++) {
-    auto key = stats[i].name.str();
-    switch (stats[i].type) {
-      case stat_string:
-        out_stats[key] = std::string(stats[i].data.string);
-        break;
-      case stat_uint64:
-        out_stats[key] = stats[i].data.uint64;
-        break;
-      case stat_int64:
-        out_stats[key] = stats[i].data.int64;
-        break;
-      case stat_double:
-        out_stats[key] = stats[i].data.dbl;
-        break;
-      default:
-        break;
-    }
-  }
-
-  free(stats);
-}
-#pragma GCC diagnostic pop

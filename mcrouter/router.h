@@ -118,17 +118,6 @@ std::unordered_map<std::string, int64_t> mcrouter_client_stats(
 int mcrouter_send(mcrouter_client_t *router_client,
                   const mcrouter_msg_t *requests, size_t nreqs);
 
-int mcrouter_get_stats_age(mcrouter_t *router);
-
-int mcrouter_get_stats(mcrouter_t *router,
-                       int clear,
-                       stat_group_t group,
-                       stat_t **stats,
-                       size_t *num_stats);
-
-void mcrouter_free_stats(stat_t *stats,
-                         size_t num_stats);
-
 void free_all_libmcrouters();
 
 }}} // facebook::memcache::mcrouter

@@ -153,10 +153,6 @@ TEST(libmcrouter, sanity) {
   for (auto& res : delete_results.values()) {
     EXPECT_FALSE(res.asBool());
   }
-
-  // make sure the stats command works after all the operations
-  dynamic stats = dynamic::object;
-  client.stats(stats, false);
 }
 
 static std::atomic<int> on_reply_count{0};

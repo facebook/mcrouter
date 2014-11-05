@@ -45,7 +45,6 @@
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
-#include "mcrouter/stats.h"
 
 using std::string;
 using std::unordered_map;
@@ -979,54 +978,6 @@ int mcrouter_send(mcrouter_client_t *client,
 const McrouterOptions& mcrouter_get_opts(mcrouter_t *router) {
   return router->opts;
 }
-
-int mcrouter_get_stats_age(mcrouter_t *router) {
-  stat_t *stats = router->getProxy(0)->stats;
-  return time(nullptr) - stats[start_time_stat].data.int64;
-}
-
-int mcrouter_get_stats(mcrouter_t *router,
-                       int clear,
-                       stat_group_t group,
-                       stat_t **stats_ret,
-                       size_t *num_stats_ret) {
-  stat_t stats[num_stats];
-  auto proxy = router->getProxy(0);
-
-  {
-    std::lock_guard<std::mutex> guard(proxy->stats_lock);
-    prepare_stats(proxy, stats);
-  }
-
-  *num_stats_ret = 0;
-  for (int i = 0; i < (int) num_stats; i++) {
-    if (group & stats[i].group) (*num_stats_ret)++;
-  }
-
-  *stats_ret = (stat_t*) malloc(sizeof(stat_t) * (*num_stats_ret));
-  int j = 0;
-  for (int i = 0; i < num_stats; i++) {
-    if (group & stats[i].group) {
-      memcpy((*stats_ret)+j, &stats[i], sizeof(stat_t));
-      j++;
-    }
-  }
-
-  if (clear) {
-    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
-      auto pr = router->getProxy(i);
-      std::lock_guard<std::mutex> guard(pr->stats_lock);
-      init_stats(pr->stats);
-    }
-  }
-
-  return 0;
-}
-
-void mcrouter_free_stats(stat_t *stats, size_t num_stats) {
-  free(stats);
-}
-
 
 std::unordered_map<std::string, int64_t> mcrouter_client_stats(
   mcrouter_client_t *client,
