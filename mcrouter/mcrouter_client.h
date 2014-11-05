@@ -51,9 +51,6 @@ struct mcrouter_client_t {
 
   int _refcount;
 
-  // flag that indicates if the client can block or not
-  bool nonblocking;
-
   // If true implies that the underlying mcrouter has already been
   // freed. A zombie client can not serve any more requests.
   bool isZombie;
@@ -68,8 +65,7 @@ struct mcrouter_client_t {
     mcrouter_t* router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
-    size_t maximum_outstanding,
-    bool nonblocking);
+    size_t maximum_outstanding);
 
   mcrouter_client_t(const mcrouter_client_t&) = delete;
   mcrouter_client_t& operator=(const mcrouter_client_t&) = delete;

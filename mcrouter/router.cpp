@@ -797,9 +797,7 @@ void mcrouter_client_decref(mcrouter_client_t* client) {
 mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
                                        mcrouter_client_callbacks_t callbacks,
                                        void *arg,
-                                       size_t max_outstanding,
-                                       bool nonblocking) {
-
+                                       size_t max_outstanding) {
   if (router->is_transient && router->live_clients.fetch_add(1) > 0) {
     router->live_clients--;
     throw mcrouter_exception(
@@ -809,9 +807,7 @@ mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
   mcrouter_client_t* client = new mcrouter_client_t(router,
                                                     callbacks,
                                                     arg,
-                                                    max_outstanding,
-                                                    nonblocking);
-
+                                                    max_outstanding);
   return client;
 }
 
@@ -819,8 +815,7 @@ mcrouter_client_t::mcrouter_client_t(
     mcrouter_t* router_,
     mcrouter_client_callbacks_t callbacks_,
     void *arg_,
-    size_t max_outstanding_,
-    bool nonblocking_) :
+    size_t max_outstanding_) :
       router(router_),
       callbacks(callbacks_),
       arg(arg_),
@@ -829,7 +824,6 @@ mcrouter_client_t::mcrouter_client_t(
       disconnected(0),
       num_pending(0),
       _refcount(1),
-      nonblocking(nonblocking_),
       isZombie(false) {
 
   static uint64_t nextClientId = 0ULL;
@@ -952,16 +946,7 @@ int mcrouter_send(mcrouter_client_t *client,
     size_t n = 0;
 
     while (i < nreqs) {
-      if (client->nonblocking) {
-        n += counting_sem_lazy_nonblocking(
-            &client->outstanding_reqs_sem, nreqs - n);
-        if (n == i) {
-          return n;
-        }
-      } else {
-        n += counting_sem_lazy_wait(&client->outstanding_reqs_sem, nreqs - n);
-      }
-
+      n += counting_sem_lazy_wait(&client->outstanding_reqs_sem, nreqs - n);
       asox_queue_multi_enqueue(client->proxy->request_queue, &entries[i],
                                n - i);
       i = n;

@@ -86,7 +86,7 @@ void serverLoop(
     mcrouter_client_new(&router,
                         server_callbacks,
                         &worker,
-                        0, false);
+                        0);
   auto proxy = router.getProxy(threadId);
   proxy->attachEventBase(&evb);
   // Manually override proxy assignment

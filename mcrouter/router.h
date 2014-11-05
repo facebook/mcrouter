@@ -101,8 +101,7 @@ struct mcrouter_client_callbacks_t {
 mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
                                        mcrouter_client_callbacks_t callbacks,
                                        void *context,
-                                       size_t maximum_outstanding_requests,
-                                       bool nonblocking);
+                                       size_t maximum_outstanding_requests);
 
 // Mark client for cleanup.  This call releases the client reference.
 void mcrouter_client_disconnect(mcrouter_client_t *client);

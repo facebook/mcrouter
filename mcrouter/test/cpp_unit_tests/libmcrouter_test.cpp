@@ -193,7 +193,7 @@ TEST(libmcrouter, premature_disconnect) {
     mcrouter_client_t *client = mcrouter_client_new(
       router,
       {on_reply, on_cancel, nullptr},
-      (void*) &myint, 0, false);
+      (void*) &myint, 0);
 
     const char key[] = "adi:unit_test:key";
     mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
@@ -244,7 +244,7 @@ TEST(libmcrouter, standalone) {
   mcrouter_client_t *client = mcrouter_client_new(router,
                                                   {on_reply, nullptr},
                                                   nullptr,
-                                                  0, false);
+                                                  0);
 
   const char key[] = "mcrouter_test:standalone:key:1";
   mc_msg_t *mc_msg = mc_msg_new(sizeof(key));

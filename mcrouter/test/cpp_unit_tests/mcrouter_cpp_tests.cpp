@@ -108,7 +108,7 @@ TEST(mcrouter, start_and_stop) {
       router,
       (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
       nullptr,
-      0, false);
+      0);
     EXPECT_FALSE(client == nullptr);
 
     mcrouter_client_disconnect(client);
@@ -131,7 +131,7 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
     router,
     (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
     &sem_disconnect,
-    0, false);
+    0);
 
   vector<mcrouter_msg_t> reqs(0);
 
@@ -157,7 +157,7 @@ TEST(mcrouter, disconnect_callback) {
     router,
     (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
     &sem_disconnect,
-    0, false);
+    0);
   EXPECT_FALSE(client == nullptr);
 
   const char test_key[] = "test_key_disconnect";
@@ -187,7 +187,7 @@ TEST(mcrouter, fork) {
     router,
     (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
     nullptr,
-    0, false);
+    0);
   EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
 
   const char parent_key[] = "libmcrouter_test:fork:parent";
@@ -213,7 +213,7 @@ TEST(mcrouter, fork) {
     router,
     (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
     nullptr,
-    0, false);
+    0);
   EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
 
   vector<McMsgRef> reqs;
@@ -259,7 +259,7 @@ TEST(mcrouter, already_replied_failed_delete) {
   EXPECT_TRUE(router != nullptr);
 
   mcrouter_client_t *client = mcrouter_client_new(router, cb,
-      nullptr, 0, false);
+      nullptr, 0);
   EXPECT_TRUE(client != nullptr);
 
   vector<McMsgRef> reqs;
