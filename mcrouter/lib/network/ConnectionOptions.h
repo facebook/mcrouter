@@ -37,6 +37,15 @@ struct ConnectionOptions {
   }
 
   /**
+   * For performance testing only.
+   * If this flag is set, each request won't be sent over network, instead it
+   * will be processed by fake transport, that will reply each request with some
+   * basic reply (e.g. STORED, DELETED, or some random string for get requests).
+   * Currently has no effect if protocol is mc_umbrella_protocol.
+   */
+  bool noNetwork{false};
+
+  /**
    * Access point of the destination.
    */
   AccessPoint accessPoint;

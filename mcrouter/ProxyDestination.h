@@ -145,9 +145,6 @@ struct ProxyDestination {
                    const ProxyClientCommon& ro,
                    std::string pdstnKey);
 
-  // for no-network mode (debug/performance measurement only)
-  void sendFakeReply(const McMsgRef& request, void* req_ctx);
-
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
   void* stateList_{nullptr};

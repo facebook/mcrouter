@@ -159,6 +159,8 @@ libmcrouter_a_SOURCES = \
   network/McServerRequestContext.h \
   network/McServerSession.cpp \
   network/McServerSession.h \
+  network/MockMcClientTransport.cpp \
+  network/MockMcClientTransport.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
   network/ThreadLocalSSLContextProvider.cpp \

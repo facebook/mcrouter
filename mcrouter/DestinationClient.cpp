@@ -111,6 +111,7 @@ void DestinationClient::initializeAsyncMcClient() {
   assert(pdstn != nullptr);
 
   ConnectionOptions options(pdstn->accessPoint);
+  options.noNetwork = proxy_->opts.no_network;
   options.tcpKeepAliveCount = proxy_->opts.keepalive_cnt;
   options.tcpKeepAliveIdle = proxy_->opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = proxy_->opts.keepalive_interval_s;

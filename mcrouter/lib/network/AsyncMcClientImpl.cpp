@@ -15,6 +15,7 @@
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/MockMcClientTransport.h"
 
 namespace facebook { namespace memcache {
 
@@ -88,6 +89,12 @@ AsyncMcClientImpl::AsyncMcClientImpl(
 std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
     folly::EventBase& eventBase,
     ConnectionOptions options) {
+  if (options.accessPoint.getProtocol() == mc_umbrella_protocol &&
+      options.noNetwork) {
+    throw std::logic_error("No network mode is not supported for umbrella "
+                           "protocol yet!");
+  }
+
   auto client = std::shared_ptr<AsyncMcClientImpl>(
     new AsyncMcClientImpl(eventBase, std::move(options)), Destructor());
   client->selfPtr_ = client;
@@ -320,6 +327,12 @@ void AsyncMcClientImpl::attemptConnection() {
 
   connectionState_ = ConnectionState::CONNECTING;
 
+  if (connectionOptions_.noNetwork) {
+    socket_.reset(new MockMcClientTransport(eventBase_));
+    connectSuccess();
+    return;
+  }
+
   if (connectionOptions_.sslContextProvider) {
     auto sslContext = connectionOptions_.sslContextProvider();
     if (!sslContext) {
@@ -336,6 +349,8 @@ void AsyncMcClientImpl::attemptConnection() {
     socket_.reset(new apache::thrift::async::TAsyncSocket(&eventBase_));
   }
 
+  auto& socket = dynamic_cast<apache::thrift::async::TAsyncSocket&>(*socket_);
+
   auto address = folly::SocketAddress(
     connectionOptions_.accessPoint.getHost().str(),
     connectionOptions_.accessPoint.getPort(),
@@ -345,9 +360,9 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionOptions_.tcpKeepAliveCount, connectionOptions_.tcpKeepAliveIdle,
     connectionOptions_.tcpKeepAliveInterval);
 
-  socket_->setSendTimeout(connectionOptions_.timeout.count());
-  socket_->connect(this, address, connectionOptions_.timeout.count(),
-                   socketOptions);
+  socket.setSendTimeout(connectionOptions_.timeout.count());
+  socket.connect(this, address, connectionOptions_.timeout.count(),
+                 socketOptions);
 }
 
 void AsyncMcClientImpl::connectSuccess() noexcept {
@@ -486,6 +501,11 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
   DestructorGuard dg(this);
   pendingReplyQueue_.pushBack(writeQueue_.popFront());
   scheduleNextTimeout();
+
+  // In case of no-network we need to provide fake reply.
+  if (connectionOptions_.noNetwork) {
+    sendFakeReply(pendingReplyQueue_.back());
+  }
 }
 
 void AsyncMcClientImpl::writeError(
@@ -552,6 +572,38 @@ void AsyncMcClientImpl::parseError(McReply errorReply) {
   }
   DestructorGuard dg(this);
   processShutdown();
+}
+
+void AsyncMcClientImpl::sendFakeReply(ReqInfo& request) {
+  auto& transport = dynamic_cast<MockMcClientTransport&>(*socket_);
+  switch (request.op) {
+    case mc_op_delete: {
+      static const char* msg = "DELETED\r\n";
+      static auto msgLen = strlen(msg);
+      transport.fakeDataRead(msg, msgLen);
+      break;
+    }
+    case mc_op_get:
+    case mc_op_lease_get: {
+      static const char* msg = "VALUE we:always:ignore:key:here 0 15\r\n"
+                               "veryRandomValue\r\nEND\r\n";
+      static auto msgLen = strlen(msg);
+      transport.fakeDataRead(msg, msgLen);
+      break;
+    }
+    case mc_op_set:
+    case mc_op_lease_set: {
+      static const char* msg = "STORED\r\n";
+      static auto msgLen = strlen(msg);
+      transport.fakeDataRead(msg, msgLen);
+      break;
+    }
+    default: {
+      static const char* msg = "CLIENT_ERROR unsupported operation\r\n";
+      static auto msgLen = strlen(msg);
+      transport.fakeDataRead(msg, msgLen);
+    }
+  }
 }
 
 void AsyncMcClientImpl::incMsgId(size_t& msgId) {

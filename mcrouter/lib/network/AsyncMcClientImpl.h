@@ -169,7 +169,7 @@ class AsyncMcClientImpl :
   ConnectionState connectionState_{ConnectionState::DOWN};
   folly::IOBufQueue buffer_;
   ConnectionOptions connectionOptions_;
-  apache::thrift::async::TAsyncSocket::UniquePtr socket_;
+  apache::thrift::async::TAsyncTransport::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
 
   bool outOfOrder_{false};
@@ -243,6 +243,8 @@ class AsyncMcClientImpl :
   // McParser::ClientParseCallback overrides
   void replyReady(McReply mcReply, mc_op_t operation, uint64_t reqid) override;
   void parseError(McReply errorReply) override;
+
+  void sendFakeReply(ReqInfo& request);
 
   static void incMsgId(size_t& msgId);
 };

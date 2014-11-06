@@ -339,38 +339,11 @@ int ProxyDestination::may_send(const McMsgRef& req) {
   return state() != PROXY_CLIENT_TKO;
 }
 
-void ProxyDestination::sendFakeReply(const McMsgRef& request, void* req_ctx) {
-  mc_res_t result;
-  std::string replyStr;
-  switch (request->op) {
-    case mc_op_get:
-      replyStr = "VERYRANDOMSTRING";
-      result = mc_res_found;
-      break;
-    case mc_op_set:
-      result = mc_res_stored;
-      break;
-    case mc_op_delete:
-      result = mc_res_deleted;
-      break;
-    default:
-      result = mc_res_ok;
-  }
-
-  on_reply(request, McReply(result, replyStr), req_ctx);
-}
-
 int ProxyDestination::send(McMsgRef request, void* req_ctx,
                            uint64_t senderId) {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
   proxy->destinationMap->markAsActive(*this);
-
-  // Do not communicate with memcache at all
-  if (UNLIKELY(proxy->opts.no_network)) {
-    sendFakeReply(request, req_ctx);
-    return 0;
-  }
 
   return client_->send(std::move(request), req_ctx, senderId);
 }
