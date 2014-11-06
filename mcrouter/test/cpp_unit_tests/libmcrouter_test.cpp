@@ -161,10 +161,6 @@ void on_reply(mcrouter_client_t *client,
               void* context) {
   on_reply_count++;
   mc_msg_decref(router_req->req);
-  if (context) {
-    EXPECT_TRUE(*((int*) context) == 42);
-    free(context);
-  }
 }
 
 static std::atomic<int> on_cancel_count{0};
@@ -172,11 +168,6 @@ void on_cancel(mcrouter_client_t* client,
                void* request_context,
                void* client_context) {
   on_cancel_count++;
-  if (request_context) {
-    EXPECT_TRUE(*((int*) request_context) == 42);
-    free(request_context);
-  }
-
 }
 
 TEST(libmcrouter, premature_disconnect) {
@@ -189,11 +180,10 @@ TEST(libmcrouter, premature_disconnect) {
     on_reply_count = 0;
     on_cancel_count = 0;
 
-    int myint;
     mcrouter_client_t *client = mcrouter_client_new(
       router,
       {on_reply, on_cancel, nullptr},
-      (void*) &myint, 0);
+      nullptr, 0);
 
     const char key[] = "adi:unit_test:key";
     mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
@@ -203,14 +193,12 @@ TEST(libmcrouter, premature_disconnect) {
     mc_msg->op = mc_op_get;
     mcrouter_msg_t router_msg;
     router_msg.req = mc_msg;
-    myint = 42;
     mcrouter_send(client, &router_msg, 1);
     mc_msg_decref(mc_msg);
     mcrouter_client_disconnect(client);
-    // pretend to free by setting the value to 0;
-    myint = 0;
 
-    sleep(1);
+    usleep(50000);
+
     EXPECT_EQ(0, on_reply_count);
     EXPECT_EQ(1, on_cancel_count);
   }
