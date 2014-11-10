@@ -192,6 +192,13 @@ mcrouter_option_integer(
   " per target per thread.  Requests that would exceed this limit are dropped"
   " immediately.")
 
+mcrouter_option_integer(
+  size_t, target_max_shadow_requests, 1000,
+  "target-max-shadow-requests", no_short,
+  "Hard limit on the number of shadow requests allowed in the queue"
+  " per target per thread.  Requests that would exceed this limit are dropped"
+  " immediately.")
+
 mcrouter_option_toggle(
   no_network, false, "no-network", no_short,
   "Debug only. Return random generated replies, do not use network.")

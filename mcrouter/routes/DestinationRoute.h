@@ -15,6 +15,7 @@
 
 #include <folly/Format.h>
 #include <folly/Memory.h>
+#include <folly/ScopeGuard.h>
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
@@ -114,6 +115,7 @@ class DestinationRoute {
  private:
   std::shared_ptr<const ProxyClientCommon> client_;
   std::shared_ptr<ProxyDestination> destination_;
+  size_t pendingShadowReqs_{0};
 
   template <class Request, int M>
   McMsgRef generateMsg(const Request& req, McOperation<M>) const {
@@ -128,14 +130,32 @@ class DestinationRoute {
   ProxyMcReply routeImpl(const ProxyMcRequest& req, Operation) const {
     auto msg = generateMsg(req, Operation());
 
+    auto proxy = req.context().ctx().proxyRequest().proxy;
     if (!destination_->may_send(msg)) {
-      update_send_stats(req.context().ctx().proxyRequest().proxy,
-                        msg,
-                        PROXY_SEND_REMOTE_ERROR);
+      update_send_stats(proxy, msg, PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
       return reply;
     }
+
+    if (req.getRequestClass() == RequestClass::SHADOW) {
+      if (proxy->opts.target_max_shadow_requests > 0 &&
+          pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
+        update_send_stats(proxy, msg, PROXY_SEND_LOCAL_ERROR);
+        ProxyMcReply reply(ErrorReply);
+        reply.setDestination(client_);
+        return reply;
+      }
+      auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
+      ++mutableCounter;
+    }
+
+    auto shadowReqsCountGuard = folly::makeGuard([this, &req]() {
+      if (req.getRequestClass() == RequestClass::SHADOW) {
+        auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
+        --mutableCounter;
+      }
+    });
 
     auto& destination = destination_;
 
