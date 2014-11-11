@@ -609,7 +609,7 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isBool(), "and: A is not bool");
     checkLogic(B.isBool(), "and: B is not bool");
-    return A.asBool() && B.asBool();
+    return A.getBool() && B.getBool();
   }
 
   /**
@@ -621,7 +621,17 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isBool(), "or: A is not bool");
     checkLogic(B.isBool(), "or: B is not bool");
-    return A.asBool() || B.asBool();
+    return A.getBool() || B.getBool();
+  }
+
+  /**
+   * Returns true if !A. A should be boolean.
+   * Usage: @not(A)
+   */
+  static dynamic notMacro(const Context& ctx) {
+    const auto& A = ctx.at("A");
+    checkLogic(A.isBool(), "not: A is not bool");
+    return !A.getBool();
   }
 
   /**
@@ -644,7 +654,7 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "add: A is not an integer");
     checkLogic(B.isInt(), "add: B is not an integer");
-    return A.asInt() + B.asInt();
+    return A.getInt() + B.getInt();
   }
 
   /**
@@ -656,7 +666,7 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "sub: A is not an integer");
     checkLogic(B.isInt(), "sub: B is not an integer");
-    return A.asInt() - B.asInt();
+    return A.getInt() - B.getInt();
   }
 
   /**
@@ -668,7 +678,7 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "mul: A is not an integer");
     checkLogic(B.isInt(), "mul: B is not an integer");
-    return A.asInt() * B.asInt();
+    return A.getInt() * B.getInt();
   }
 
   /**
@@ -680,8 +690,8 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "div: A is not an integer");
     checkLogic(B.isInt(), "div: B is not an integer");
-    checkLogic(B.asInt() != 0, "div: B == 0");
-    return A.asInt() / B.asInt();
+    checkLogic(B.getInt() != 0, "div: B == 0");
+    return A.getInt() / B.getInt();
   }
 
   /**
@@ -693,8 +703,8 @@ class ConfigPreprocessor::BuiltIns {
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "mod: A is not an integer");
     checkLogic(B.isInt(), "mod: B is not an integer");
-    checkLogic(B.asInt() != 0, "mod: B == 0");
-    return A.asInt() % B.asInt();
+    checkLogic(B.getInt() != 0, "mod: B == 0");
+    return A.getInt() % B.getInt();
   }
 
   /**
@@ -946,6 +956,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   addBuiltInMacro("and", { "A", "B" }, &BuiltIns::andMacro);
 
   addBuiltInMacro("or", { "A", "B" }, &BuiltIns::orMacro);
+
+  addBuiltInMacro("not", { "A" }, &BuiltIns::notMacro);
 
   addBuiltInMacro("size", { "dictionary" }, &BuiltIns::sizeMacro);
 

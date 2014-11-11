@@ -45,6 +45,10 @@
       "range": {
         "orig": "@range(@int(-1),@int(5))",
         "expand": [ -1, 0, 1, 2, 3, 4, 5 ]
+      },
+      "booleans": {
+        "orig": "@and(@not(@or(@bool(false),@bool(1))),@not(@bool(false)))",
+        "expand": false
       }
     }
   },
