@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include <folly/experimental/TestUtil.h>
+#include <folly/experimental/Singleton.h>
 #include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
 
@@ -200,11 +201,11 @@ TEST(mcrouter, fork) {
 
   mcrouter_client_disconnect(client);
 
-  free_all_libmcrouters();
-
   int fds[2];
   pipe(fds);
+  folly::SingletonVault::singleton()->destroyInstances();
   pid_t pid = fork();
+  folly::SingletonVault::singleton()->reenableInstances();
 
   router = mcrouter_init(persistence_id, opts);
   EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
@@ -228,8 +229,6 @@ TEST(mcrouter, fork) {
     mcrouter_send_helper(client, reqs, replies);
   }
   mcrouter_client_disconnect(client);
-
-  mcrouter_free(router);
 
   if (pid) { // parent
     char buf[100];

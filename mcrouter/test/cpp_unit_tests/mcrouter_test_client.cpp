@@ -80,7 +80,6 @@ MCRouterTestClient::MCRouterTestClient(const std::string& name,
 MCRouterTestClient::~MCRouterTestClient() {
   delete rs_;
   mcrouter_client_disconnect(client_);
-  mcrouter_free(router_);
 }
 
 static inline mcrouter_msg_t

@@ -71,11 +71,6 @@ struct mcrouter_t {
   std::mutex client_list_lock;
   mcrouter_client_list_t client_list;
 
-  // router_list
-  int is_linked;
-  SLIST_ENTRY(mcrouter_t) entry;
-  std::string persistence_id;
-
   // If true, allow only one mcrouter client and shutdown mcrouter
   // after it disconnects
   bool is_transient;

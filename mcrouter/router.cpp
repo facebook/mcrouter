@@ -25,9 +25,11 @@
 
 #include <folly/Conv.h>
 #include <folly/DynamicConverter.h>
+#include <folly/experimental/Singleton.h>
 #include <folly/Format.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/json.h>
+#include <folly/MapUtil.h>
 #include <folly/Memory.h>
 #include <folly/ThreadName.h>
 
@@ -65,10 +67,48 @@ struct mcrouter_queue_entry_t {
 /* Default thread stack size if RLIMIT_STACK is unlimited */
 const size_t DEFAULT_STACK_SIZE = 8192 * 1024;
 
-typedef SLIST_HEAD(mcrouter_list_t, mcrouter_t) mcrouter_list_t;
-static mcrouter_list_t router_list;
-std::mutex* router_list_lock = new std::mutex;
-size_t gNumRouters{0};
+class McrouterManager {
+ public:
+  ~McrouterManager() {
+    freeAllMcrouters();
+  }
+
+  mcrouter_t* mcrouterGetCreate(const std::string& persistence_id,
+                                const McrouterOptions& options) {
+    std::lock_guard<std::mutex> lg(mutex_);
+
+    auto mcrouter = folly::get_default(mcrouters_, persistence_id, nullptr);
+    if (!mcrouter) {
+      mcrouter = mcrouter_new(options);
+      if (mcrouter) {
+        mcrouters_[persistence_id] = mcrouter;
+      }
+    }
+    return mcrouter;
+  }
+
+  mcrouter_t* mcrouterGet(const std::string& persistence_id) {
+    std::lock_guard<std::mutex> lg(mutex_);
+
+    return folly::get_default(mcrouters_, persistence_id, nullptr);
+  }
+
+  void freeAllMcrouters() {
+    std::lock_guard<std::mutex> lg(mutex_);
+
+    for (auto& mcrouter: mcrouters_) {
+      mcrouter_free(mcrouter.second);
+    }
+
+    mcrouters_.clear();
+  }
+
+ private:
+  std::unordered_map<std::string, mcrouter_t*> mcrouters_;
+  std::mutex mutex_;
+};
+
+folly::Singleton<McrouterManager> mcrouterManager;
 
 }  // anonymous namespace
 
@@ -378,7 +418,6 @@ mcrouter_t::mcrouter_t(const McrouterOptions& input_options) :
     config_failures(0),
     stat_updater_thread_handle(0),
     stat_updater_thread_stack(nullptr),
-    is_linked(0),
     is_transient(false),
     live_clients(0),
     startupLock(opts.sync ? 0 : opts.num_proxies + 1),
@@ -671,31 +710,7 @@ void mcrouter_free(mcrouter_t *router) {
   router->proxies_.clear();
   router->proxyThreads_.clear();
 
-  if (router->is_linked) {
-    {
-      std::lock_guard<std::mutex> guard(*router_list_lock);
-      SLIST_REMOVE(&router_list, router, mcrouter_t, entry);
-    }
-  }
-
   delete router;
-}
-
-static inline mcrouter_t *mcrouter_get_ext(const std::string& persistence_id,
-                                           int need_to_lock) {
-  mcrouter_t *router = nullptr;
-  if (need_to_lock) {
-    router_list_lock->lock();
-  }
-  SLIST_FOREACH(router, &router_list, entry) {
-    if (router->persistence_id == persistence_id) {
-      break;
-    }
-  }
-  if (need_to_lock) {
-    router_list_lock->unlock();
-  }
-  return router;
 }
 
 /*
@@ -711,25 +726,11 @@ mcrouter_t* mcrouter_init(const std::string& persistence_id,
     return mcrouter_new(options);
   }
 
-  std::lock_guard<std::mutex> guard(*router_list_lock);
-  mcrouter_t *router = mcrouter_get_ext(persistence_id, 0);
-  if (!router) {
-    router = mcrouter_new(options);
-    if (router) {
-      SLIST_INSERT_HEAD(&router_list, router, entry);
-      router->is_linked = 1;
-      router->persistence_id = persistence_id;
-      if (!gNumRouters) {
-        PCHECK(!::atexit(&free_all_libmcrouters));
-      }
-      ++gNumRouters;
-    }
-  }
-  return router;
+  return mcrouterManager.get()->mcrouterGetCreate(persistence_id, options);
 }
 
 mcrouter_t* mcrouter_get(const std::string& persistence_id) {
-  return mcrouter_get_ext(persistence_id, 1);
+  return mcrouterManager.get()->mcrouterGet(persistence_id);
 }
 
 mcrouter_t* mcrouter_new_transient(const McrouterOptions& options) {
@@ -1007,23 +1008,7 @@ void mcrouter_client_set_context(mcrouter_client_t* client, void* context) {
 }
 
 void free_all_libmcrouters() {
-  mcrouter_t *router, *next_it;
-
-  std::lock_guard<std::mutex> guard(*router_list_lock);
-  router = SLIST_FIRST(&router_list);
-  for (next_it =
-          (router) ? SLIST_NEXT(router, entry) : nullptr;
-      router;
-      router=next_it,
-        next_it = (next_it) ? SLIST_NEXT(next_it, entry): nullptr) {
-
-    // Unlink before free to avoid deadlock
-    SLIST_REMOVE(&router_list, router, mcrouter_t, entry);
-    router->is_linked = 0;
-    mcrouter_free(router);
-    assert(gNumRouters > 0);
-    --gNumRouters;
-  }
+  mcrouterManager.get()->freeAllMcrouters();
 }
 
 }}} // facebook::memcache::mcrouter
