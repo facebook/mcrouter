@@ -24,8 +24,21 @@ class MockAsyncSocket;
 
 class SessionTestHarness {
  public:
-  explicit SessionTestHarness(AsyncMcServerWorkerOptions opts =
-                              AsyncMcServerWorkerOptions());
+  /**
+   * Create a SessionTestHarness
+   *
+   * @param opts                Options to use while creating McServerSession
+   * @param onTerminated        The callback to be invoked when session is
+   *                            closed.
+   * @param onWriteQuiescence   The callback to be invoked when all pending
+   *                            writes are flushed out.
+   *
+   * NOTE: Look at McServerSession.h for info about the above callbacks
+   */
+  explicit SessionTestHarness(
+      AsyncMcServerWorkerOptions opts = AsyncMcServerWorkerOptions(),
+      std::function<void(McServerSession&)> onWriteQuiescence = nullptr,
+      std::function<void(McServerSession&)> onTerminated = nullptr);
 
   /**
    * Input packets in order into the socket.
@@ -80,6 +93,13 @@ class SessionTestHarness {
     }
     fulfillTransactions();
     flushSavedInputs();
+  }
+
+  /**
+   * Initiate session close
+   */
+  void closeSession() {
+    session_.close();
   }
 
   /**

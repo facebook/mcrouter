@@ -135,3 +135,33 @@ TEST(Session, quit) {
     vector<string>({"VALUE key 0 9\r\nkey_value\r\nEND\r\n"}),
     t.flushWrites());
 }
+
+TEST(Session, closeBeforeReply) {
+  struct Callbacks {
+    void onWriteQuiescence(McServerSession& session) {
+      EXPECT_EQ(state_, ACTIVE);
+    }
+    void onTerminate(McServerSession& session) {
+      EXPECT_EQ(state_, ACTIVE);
+      state_ = CLOSED;
+    }
+   private:
+    enum State {
+      ACTIVE,
+      CLOSED
+    };
+    State state_{ACTIVE};
+  } callbacks;
+
+  using std::placeholders::_1;
+
+  AsyncMcServerWorkerOptions opts;
+  SessionTestHarness t(opts,
+                       std::bind(&Callbacks::onWriteQuiescence, &callbacks, _1),
+                       std::bind(&Callbacks::onTerminate, &callbacks, _1));
+
+  // input packets, close session and then reply
+  t.inputPackets("get key\r\n");
+  t.closeSession();
+  t.resume();
+}

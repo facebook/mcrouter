@@ -376,7 +376,7 @@ void McServerSession::writeSuccess() noexcept {
   completeWrite();
 
   assert(writeBufs_.hasValue());
-  if (writeBufs_->empty()) {
+  if (writeBufs_->empty() && state_ == STREAMING) {
     if (onWriteQuiescence_) {
       onWriteQuiescence_(*this);
     }

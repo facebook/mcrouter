@@ -114,20 +114,20 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
   std::string corkedOutput_;
 };
 
-SessionTestHarness::SessionTestHarness(AsyncMcServerWorkerOptions opts)
-    : session_(
-      McServerSession::create(
-        apache::thrift::async::TAsyncTransport::UniquePtr(
-          new MockAsyncSocket(*this)
-        ),
-        std::make_shared<McServerOnRequestWrapper<OnRequest>>(
-          OnRequest(*this)),
-        nullptr,
-        nullptr,
-        nullptr,
-        std::move(opts),
-        nullptr)) {
-}
+SessionTestHarness::SessionTestHarness(
+    AsyncMcServerWorkerOptions opts,
+    std::function<void(McServerSession&)> onWriteQuiescence,
+    std::function<void(McServerSession&)> onTerminate)
+    : session_(McServerSession::create(
+          apache::thrift::async::TAsyncTransport::UniquePtr(
+              new MockAsyncSocket(*this)),
+          std::make_shared<McServerOnRequestWrapper<OnRequest>>(
+              OnRequest(*this)),
+          std::move(onWriteQuiescence),
+          std::move(onTerminate),
+          nullptr,
+          std::move(opts),
+          nullptr)) {}
 
 void SessionTestHarness::inputPacket(folly::StringPiece p) {
   savedInputs_.push_back(p.str());
