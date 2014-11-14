@@ -179,8 +179,8 @@ bool UmbrellaSerializedReply::prepare(const McReply& reply,
 
   /* TODO: if we intend to pass chained IOBufs as values,
      we can optimize this to write multiple iovs directly */
-  auto valueRange = reply.valueRangeSlow();
-  if (!valueRange.empty()) {
+  if (reply.hasValue()) {
+    auto valueRange = reply.valueRangeSlow();
     appendString(msg_value,
                  reinterpret_cast<const uint8_t*>(valueRange.begin()),
                  valueRange.size());

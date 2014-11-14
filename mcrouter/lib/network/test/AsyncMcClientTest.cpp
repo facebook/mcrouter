@@ -51,8 +51,9 @@ class ServerOnRequest {
       processReply(std::move(ctx), McReply(mc_res_ok));
       flushQueue();
     } else {
+      std::string value = req.fullKey() == "empty" ? "" : req.fullKey().str();
       McReply foundReply = McReply(mc_res_found, createMcMsgRef(req.fullKey(),
-                                                                req.fullKey()));
+                                                                value));
       if (req.fullKey() == "hold") {
         waitingReplies_.emplace_back(std::move(ctx), std::move(foundReply));
       } else if (req.fullKey() == "flush") {
@@ -211,7 +212,12 @@ class TestClient {
                     McOperation<mc_op_get>(),
                     [expectedResult, req, this] (McReply&& reply) {
                       if (reply.result() == mc_res_found) {
-                        EXPECT_EQ(toString(reply.value()), req->fullKey());
+                        if (req->fullKey() == "empty") {
+                          EXPECT_TRUE(reply.hasValue());
+                          EXPECT_EQ("", toString(reply.value()));
+                        } else {
+                          EXPECT_EQ(toString(reply.value()), req->fullKey());
+                        }
                       }
                       EXPECT_EQ(expectedResult, reply.result());
                     });
@@ -474,6 +480,7 @@ void umbrellaTest(bool useSsl = false) {
                     mc_umbrella_protocol, useSsl);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
+  client.sendGet("empty", mc_res_found);
   client.sendGet("hold", mc_res_found);
   client.sendGet("test3", mc_res_found);
   client.sendGet("test4", mc_res_found);
