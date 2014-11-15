@@ -102,8 +102,19 @@ void Fiber::fiberFuncHelper(intptr_t fiber) {
   reinterpret_cast<Fiber*>(fiber)->fiberFunc();
 }
 
+/*
+ * Some weird bug in ASAN causes fiberFunc to allocate boundless amounts of
+ * memory inside __asan_handle_no_return.  Work around this in ASAN builds by
+ * tricking the compiler into thinking it may, someday, return.
+ */
+#ifdef FOLLY_SANITIZE_ADDRESS
+volatile bool loopForever = true;
+#else
+static constexpr bool loopForever = true;
+#endif
+
 void Fiber::fiberFunc() {
-  while (1) {
+  while (loopForever) {
     assert(state_ == NOT_STARTED);
 
     threadId_ = localThreadId();
