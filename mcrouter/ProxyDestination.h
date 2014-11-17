@@ -107,9 +107,6 @@ struct ProxyDestination {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  void start_sending_probes();
-  void stop_sending_probes();
-
  private:
   std::unique_ptr<DestinationMcClient> client_;
 
@@ -127,6 +124,9 @@ struct ProxyDestination {
 
   // tko behaviour
   char marked_tko{0};
+
+  void start_sending_probes();
+  void stop_sending_probes();
 
   void schedule_next_probe();
 

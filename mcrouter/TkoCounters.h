@@ -18,6 +18,10 @@ namespace facebook { namespace memcache { namespace mcrouter {
 struct TkoCounters {
   std::atomic<size_t> softTkos{0};
   std::atomic<size_t> hardTkos{0};
+
+  size_t totalTko() const {
+    return softTkos + hardTkos;
+  }
 };
 
 }}}  // facebook::memcache::mcrouter
