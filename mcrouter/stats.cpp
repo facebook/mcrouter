@@ -446,6 +446,8 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
     return timer_stats;
   } else if (str == "servers") {
     return server_stats;
+  } else if (str == "suspect_servers") {
+    return suspect_server_stats;
   } else if (str == "memory") {
     return memory_stats;
   } else if (str == "count") {
@@ -525,6 +527,15 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
       });
     for (const auto& it : serverStats) {
       reply.addStat(it.first, it.second.toString());
+    }
+  }
+
+  if (groups & suspect_server_stats) {
+    auto suspectServers = proxy->router->getSuspectServers();
+    for (const auto& it : suspectServers) {
+      reply.addStat(it.first, folly::format("status:{} num_failures:{}",
+                                            it.second.first ? "tko" : "down",
+                                            it.second.second).str());
     }
   }
 

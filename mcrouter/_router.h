@@ -12,6 +12,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 #include <folly/Range.h>
 
@@ -40,10 +41,7 @@ class ProxyThread;
 
 struct mcrouter_t {
   const McrouterOptions opts;
-  /**
-   * A port we're running on if standalone. For informational purposes only.
-   * For non-standalone mcrouter, set to 0.
-   */
+
   char* command_args;
   void (*prepare_proxy_server_stats)(proxy_t*);
   pid_t pid;
@@ -141,6 +139,14 @@ struct mcrouter_t {
    */
   proxy_t* getProxy(size_t index);
 
+  /**
+   * @return  servers that recently received error replies.
+   *          Format: {
+   *            server ip => ( is server marked as TKO?, number of failures )
+   *          }
+   *          Only servers with positive number of failures will be returned.
+   */
+  std::unordered_map<std::string, std::pair<bool, size_t>> getSuspectServers();
  private:
   ShutdownLock shutdownLock_;
 

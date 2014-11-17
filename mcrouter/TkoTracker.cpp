@@ -22,10 +22,7 @@ TkoTracker::TkoTracker(size_t tkoThreshold,
                        TkoCounters& globalTkoCounters)
   : tkoThreshold_(tkoThreshold),
     maxSoftTkos_(maxSoftTkos),
-    globalTkos_(globalTkoCounters),
-  /* Internally, when a box is TKO we store a proxy address rather than a
-     count. If the box is soft TKO, the LSB is 0. Otherwise it's 1. */
-    sumFailures_(0) {
+    globalTkos_(globalTkoCounters) {
   }
 
 bool TkoTracker::isHardTko() const {
@@ -74,6 +71,8 @@ bool TkoTracker::setSumFailures(uintptr_t value) {
 }
 
 bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
+  ++consecutiveFailureCount_;
+
   /* We increment soft tko count first before actually taking responsibility
      for the TKO. This means we run the risk that multiple proxies
      increment the count for the same destination, causing us to be overly
@@ -116,6 +115,8 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
 }
 
 bool TkoTracker::recordHardFailure(ProxyDestination* pdstn) {
+  ++consecutiveFailureCount_;
+
   if (isHardTko()) {
     return false;
   }
@@ -158,6 +159,8 @@ void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
   } else {
     setSumFailures(0);
   }
+
+  consecutiveFailureCount_ = 0;
 }
 
 }}} // facebook::memcache::mcrouter

@@ -55,20 +55,21 @@ enum stat_type_t {
 };
 
 enum stat_group_t {
-  mcproxy_stats     =        0x1,
-  detailed_stats    =        0x2,
-  cmd_all_stats     =        0x4,
-  cmd_in_stats      =        0x8,
-  cmd_out_stats     =       0x10,
-  cmd_error_stats   =       0x20,
-  ods_stats         =       0x40,
-  timer_stats       =       0x80,
-  rate_stats        =      0x100,
-  count_stats       =      0x200,
-  all_stats         =     0xffff, // don't want all stats to include server stats?
-  server_stats      =    0x10000,
-  memory_stats      =    0x20000,
-  unknown_stats     = 0x10000000,
+  mcproxy_stats        =        0x1,
+  detailed_stats       =        0x2,
+  cmd_all_stats        =        0x4,
+  cmd_in_stats         =        0x8,
+  cmd_out_stats        =       0x10,
+  cmd_error_stats      =       0x20,
+  ods_stats            =       0x40,
+  timer_stats          =       0x80,
+  rate_stats           =      0x100,
+  count_stats          =      0x200,
+  all_stats            =     0xffff,
+  server_stats         =    0x10000,
+  memory_stats         =    0x20000,
+  suspect_server_stats =    0x40000,
+  unknown_stats        = 0x10000000,
 };
 
 /** defines a statistic: name, type, and data */

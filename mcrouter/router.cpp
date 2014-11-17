@@ -450,6 +450,18 @@ void mcrouter_t::startObservingRuntimeVarsFile() {
   );
 }
 
+unordered_map<string, std::pair<bool, size_t>> mcrouter_t::getSuspectServers() {
+  unordered_map<string, std::pair<bool, size_t>> result;
+  pclient_owner.foreach_shared_synchronized(
+    [&result](const std::string& key, ProxyClientShared& shared) {
+      auto failureCount = shared.tko.consecutiveFailureCount();
+      if (failureCount > 0) {
+        result.emplace(key, std::make_pair(shared.tko.isTko(), failureCount));
+      }
+    });
+  return result;
+}
+
 unordered_map<string, string> mcrouter_t::getStartupOpts() const {
   auto result = opts.toDict();
   result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());

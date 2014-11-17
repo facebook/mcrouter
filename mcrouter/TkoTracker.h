@@ -70,6 +70,15 @@ class TkoTracker {
   }
 
   /**
+   * @return current number of consecutive failures.
+   *         This is basically a number of recordHardFailure/recordSoftFailure
+   *         calls after last recordSuccess.
+   */
+  size_t consecutiveFailureCount() const {
+    return consecutiveFailureCount_;
+  }
+
+  /**
    * @return number of TKO destinations for current router
    */
   const TkoCounters& globalTkos() const;
@@ -130,7 +139,9 @@ class TkoTracker {
      In summary, allowed values are:
        0, 1, .., tkoThreshold_ - 1, pdstn, pdstn | 0x1, where pdstn is the
        address of any of the proxy threads for this destination. */
-  std::atomic<uintptr_t> sumFailures_;
+  std::atomic<uintptr_t> sumFailures_{0};
+
+  std::atomic<size_t> consecutiveFailureCount_{0};
 
   /* Decrement the global counter of current soft TKOs. */
   void decrementSoftTkoCount();
