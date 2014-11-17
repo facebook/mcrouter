@@ -46,16 +46,10 @@ void on_probe_timer(const asox_timer_t timer, void* arg) {
 }
 
 bool is_error_reply(const McReply& reply) {
-  if (reply.result() == mc_res_remote_error) {
-    // mc_res_remote_error with a reply object is an application-level
-    // error, not a network/server level error.
-    return reply.isError() && reply.appSpecificErrorCode() == 0 &&
-           reply.value().length() == 0;
-  } else if (reply.result() == mc_res_try_again) {
+  if (reply.result() == mc_res_try_again) {
     return false;
-  } else {
-    return mc_res_is_err(reply.result());
   }
+  return mc_res_is_err(reply.result());
 }
 
 }  // anonymous namespace

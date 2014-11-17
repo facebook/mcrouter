@@ -28,18 +28,8 @@ bool McReplyBase::isError() const {
     case mc_res_connect_error:
     case mc_res_connect_timeout:
     case mc_res_timeout:
-      return true;
-
     case mc_res_remote_error:
-      /* TAO metadata responses are remote_errors with
-         a non-zero error code and a value data, let them through */
-      if (msg_.get() == nullptr ||
-          msg_->err_code == 0 ||
-          msg_->value.len == 0) {
-        return true;
-      }
-      /* fallthrough */
-
+      return true;
     default:
       return false;
   }
