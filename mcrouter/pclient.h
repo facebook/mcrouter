@@ -66,6 +66,8 @@ struct ProxyClientOwner {
   template<typename F>
   void foreach_shared_synchronized(const F& func);
 
+  std::weak_ptr<ProxyClientShared> getSharedByKey(const std::string& key);
+
  private:
   std::mutex mx;
   std::unordered_map<std::string, std::weak_ptr<ProxyClientShared>>

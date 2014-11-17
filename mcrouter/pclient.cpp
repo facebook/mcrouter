@@ -8,6 +8,8 @@
  */
 #include "pclient.h"
 
+#include <folly/MapUtil.h>
+
 #include "mcrouter/ProxyDestination.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -52,6 +54,13 @@ void ProxyClientOwner::updateProxyClientShared(
     pdstn.shared = std::move(pcs);
   }
   pdstn.owner = this;
+}
+
+std::weak_ptr<ProxyClientShared>
+ProxyClientOwner::getSharedByKey(const std::string& key) {
+  std::lock_guard<std::mutex> lock(mx);
+
+  return folly::get_default(pclient_shared, key);
 }
 
 }}}
