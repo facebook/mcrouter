@@ -259,9 +259,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
   bool is_probe_req = (req.get() == probe_req.get());
 
   if (proxy->monitor) {
-      proxy->monitor->on_response(proxy->monitor, this,
-                                  const_cast<mc_msg_t*>(req.get()),
-                                  reply);
+      proxy->monitor->on_response(proxy->monitor, this, reply);
   } else {
     handle_tko(reply, is_probe_req, consecutiveErrors_);
   }

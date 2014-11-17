@@ -196,7 +196,7 @@ typedef struct proxy_client_monitor proxy_client_monitor_t;
 struct proxy_client_monitor {
   /** Called when libmc.client finishes a request. */
   void (*on_response)(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                      mc_msg_t *req, const McReply& reply);
+                      const McReply& reply);
 
   /** Called when a connection or reconnection attempt fails. */
   void (*on_down)(proxy_client_monitor_t *mon, ProxyDestination* pdstn);

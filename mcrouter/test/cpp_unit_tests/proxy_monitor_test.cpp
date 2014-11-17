@@ -29,7 +29,7 @@ using facebook::memcache::McrouterOptions;
 int response_count, down_count, may_send_count, remove_count;
 
 void on_response(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                 mc_msg_t *req, const McReply& reply) {
+                 const McReply& reply) {
   ++response_count;
 }
 
