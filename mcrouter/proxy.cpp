@@ -257,17 +257,6 @@ proxy_t::~proxy_t() {
   magic = 0xdeadbeefdeadbeefLL;
 }
 
-void proxy_set_monitor(proxy_t *proxy, proxy_client_monitor_t *mon) {
-  if (mon) {
-    FBI_ASSERT(mon->on_response);
-    FBI_ASSERT(mon->on_down);
-    FBI_ASSERT(mon->may_send);
-    FBI_ASSERT(mon->remove_client);
-  }
-
-  proxy->monitor = mon;
-}
-
 proxy_request_t::proxy_request_t(proxy_t* p,
                                  McMsgRef req,
                                  void (*enqReply)(proxy_request_t* preq),

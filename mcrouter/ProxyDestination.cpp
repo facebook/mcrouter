@@ -139,8 +139,7 @@ void ProxyDestination::handle_tko(const McReply& reply,
                                   bool is_probe_req,
                                   int consecutive_errors) {
   if (resetting ||
-      proxy->opts.disable_tko_tracking ||
-      proxy->monitor != nullptr) {
+      proxy->opts.disable_tko_tracking) {
     return;
   }
 
@@ -234,11 +233,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
 
   bool is_probe_req = (req.get() == probe_req.get());
 
-  if (proxy->monitor) {
-      proxy->monitor->on_response(proxy->monitor, this, reply);
-  } else {
-    handle_tko(reply, is_probe_req, consecutiveErrors_);
-  }
+  handle_tko(reply, is_probe_req, consecutiveErrors_);
 
   if (is_probe_req) {
     probe_req = McMsgRef();
@@ -299,10 +294,6 @@ void ProxyDestination::on_down() {
     VLOG(1) << "server " << pdstnKey << " down (" <<
         stat_get_uint64(proxy, num_servers_up_stat) << " of " <<
         stat_get_uint64(proxy, num_servers_stat) << ")";
-
-    if (proxy->monitor) {
-      proxy->monitor->on_down(proxy->monitor, this);
-    }
 
     /* NB stats_.is_up may be 0, there's no guarantee we're up because of
      * the way libasox does auto-connect-on-send */
@@ -368,10 +359,6 @@ ProxyDestination::~ProxyDestination() {
     shared->pdstns.erase(this);
   }
 
-  if (proxy->monitor) {
-    proxy->monitor->remove_client(proxy->monitor, this);
-  }
-
   client_.reset();
 
   if (sending_probes) {
@@ -418,14 +405,7 @@ const ProxyDestinationStats& ProxyDestination::stats() const {
 int ProxyDestination::may_send(const McMsgRef& req) {
   FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
 
-  int rv;
-  if (proxy && proxy->monitor) {
-    rv = proxy->monitor->may_send(proxy->monitor,
-                                  this, const_cast<mc_msg_t*>(req.get()));
-  } else {
-    rv = state() != PROXY_CLIENT_TKO;
-  }
-  return rv;
+  return state() != PROXY_CLIENT_TKO;
 }
 
 void ProxyDestination::sendFakeReply(const McMsgRef& request, void* req_ctx) {

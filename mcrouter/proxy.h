@@ -188,31 +188,6 @@ struct proxy_request_t {
   friend void proxy_request_decref(proxy_request_t* preq);
 };
 
-/** If present, a proxy_t's proxy_client_monitor_t will be informed
- *  of events that may be useful to determine the health of a client,
- *  and will be consulted to determine whether requests may be sent to
- *  a client (whether the client is considered to be tko). */
-typedef struct proxy_client_monitor proxy_client_monitor_t;
-struct proxy_client_monitor {
-  /** Called when libmc.client finishes a request. */
-  void (*on_response)(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                      const McReply& reply);
-
-  /** Called when a connection or reconnection attempt fails. */
-  void (*on_down)(proxy_client_monitor_t *mon, ProxyDestination* pdstn);
-
-  /** Called to determine if req may be sent to pclient. Return false to
-   *  prevent the send, possibly resulting in failover. */
-  int (*may_send)(proxy_client_monitor_t *mon, ProxyDestination* pdstn,
-                  mc_msg_t *req);
-
-  /** Called when a proxy_client_t is freed. */
-  void (*remove_client)(proxy_client_monitor_t *mon, ProxyDestination* pdstn);
-
-  /** For the creator's use */
-  void* context;
-};
-
 enum proxy_pool_failover_t {
   FAILOVER_TKO,
   FAILOVER_CONNECT_TIMEOUT,
@@ -446,8 +421,6 @@ struct proxy_t {
    */
   int num_bins_used{0};
 
-  proxy_client_monitor_t* monitor{nullptr};
-
   /*
    * Asynchronous writer.
    */
@@ -596,9 +569,6 @@ struct writelog_entry_t {
 int router_configure(mcrouter_t *router);
 
 int router_configure(mcrouter_t *router, folly::StringPiece input);
-
-// set the monitor to nullptr to remove an existing one
-void proxy_set_monitor(proxy_t*, proxy_client_monitor_t* monitor);
 
 void proxy_request_decref(proxy_request_t*);
 proxy_request_t* proxy_request_incref(proxy_request_t*);
