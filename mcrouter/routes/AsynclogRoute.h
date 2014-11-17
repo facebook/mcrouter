@@ -64,7 +64,7 @@ class AsynclogRoute {
     typename DeleteLike<Operation>::Type = 0) const {
 
     auto reply = rh_->route(req, Operation());
-    if (!reply.isError()) {
+    if (!reply.isFailoverError()) {
       return reply;
     }
     auto dest = reply.getDestination();

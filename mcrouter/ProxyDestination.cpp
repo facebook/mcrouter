@@ -45,13 +45,6 @@ void on_probe_timer(const asox_timer_t timer, void* arg) {
   pdstn->on_timer(timer);
 }
 
-bool is_error_reply(const McReply& reply) {
-  if (reply.result() == mc_res_try_again) {
-    return false;
-  }
-  return mc_res_is_err(reply.result());
-}
-
 }  // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
@@ -142,17 +135,6 @@ void ProxyDestination::unmark_tko() {
   }
 }
 
-bool ProxyDestination::is_hard_error(mc_res_t result) {
-  switch (result) {
-    case mc_res_connect_error:
-    case mc_res_connect_timeout:
-      return true;
-
-    default:
-      return false;
-  }
-}
-
 void ProxyDestination::handle_tko(const McReply& reply,
                                   bool is_probe_req,
                                   int consecutive_errors) {
@@ -170,13 +152,13 @@ void ProxyDestination::handle_tko(const McReply& reply,
     }
 
     bool responsible = false;
-    if (is_error_reply(reply)) {
-      if (is_hard_error(reply.result())) {
+    if (reply.isError()) {
+      if (reply.isHardTkoError()) {
         responsible = shared->tko.recordHardFailure(this);
         if (responsible) {
           onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
         }
-      } else {
+      } else if (reply.isSoftTkoError()) {
         responsible = shared->tko.recordSoftFailure(this);
         if (responsible) {
           onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
@@ -235,7 +217,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
   // Note: remote error with non-empty reply is not an actual error.
   // mc_res_busy with a code not SERVER_ERROR_BUSY means
   // the server is fine, just can't fulfil the request now
-  if (is_error_reply(reply)) {
+  if (reply.isSoftTkoError() || reply.isHardTkoError()) {
     ++consecutiveErrors_;
   } else {
     consecutiveErrors_ = 0;

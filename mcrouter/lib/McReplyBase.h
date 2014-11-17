@@ -74,9 +74,24 @@ class McReplyBase {
   bool worseThan(const McReplyBase& other) const;
 
   /**
-   * Is this reply an error as far as failover logic is concerned?
+   * Is this reply an error?
    */
   bool isError() const;
+
+  /**
+   * Is this reply an error as far as failover logic is concerned?
+   */
+  bool isFailoverError() const;
+
+  /**
+   * Is this reply a soft TKO error?
+   */
+  bool isSoftTkoError() const;
+
+  /**
+   * Is this reply a hard TKO error?
+   */
+  bool isHardTkoError() const;
 
   /**
    * Did we not even attempt to send request out because at some point
@@ -88,20 +103,6 @@ class McReplyBase {
    */
   bool isTko() const {
     return result_ == mc_res_tko;
-  }
-
-  /**
-   * Did we receieve a mc_res_try_again from the server.
-   */
-  bool isTryAgain() {
-    return result_ == mc_res_try_again;
-  }
-
-  /**
-   * Did we receieve a mc_res_busy from the server.
-   */
-  bool isBusy() {
-    return result_ == mc_res_busy;
   }
 
   /**
@@ -124,10 +125,7 @@ class McReplyBase {
    * if the data reached the server or not.
    */
   bool isDataTimeout() const {
-    /* isError() here is needed because some mc_res_remote_errors are not
-       errors */
-    return isError() && (
-      result_ == mc_res_timeout || result_ == mc_res_remote_error);
+    return result_ == mc_res_timeout || result_ == mc_res_remote_error;
   }
 
   /**

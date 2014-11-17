@@ -64,7 +64,7 @@ class FailoverRoute {
 
     for (size_t i = 0; i + 1 < targets_.size(); ++i) {
       auto reply = targets_[i]->route(req, Operation());
-      if (!reply.isError()) {
+      if (!reply.isFailoverError()) {
         return reply;
       }
     }

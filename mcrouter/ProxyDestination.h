@@ -77,8 +77,6 @@ struct ProxyDestination {
 
   ~ProxyDestination();
 
-  bool is_hard_error(mc_res_t result);
-
   // returns non-zero on error
   int send(McMsgRef request, void* req_ctx, uint64_t senderId);
   // returns 1 if okay to send req using this client

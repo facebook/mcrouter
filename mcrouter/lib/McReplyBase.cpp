@@ -20,6 +20,10 @@ bool McReplyBase::worseThan(const McReplyBase& other) const {
 }
 
 bool McReplyBase::isError() const {
+  return mc_res_is_err(result_);
+}
+
+bool McReplyBase::isFailoverError() const {
   switch (result_) {
     case mc_res_busy:
     case mc_res_tko:
@@ -29,6 +33,27 @@ bool McReplyBase::isError() const {
     case mc_res_connect_timeout:
     case mc_res_timeout:
     case mc_res_remote_error:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool McReplyBase::isSoftTkoError() const {
+  switch (result_) {
+    case mc_res_tko:
+    case mc_res_timeout:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool McReplyBase::isHardTkoError() const {
+  switch (result_) {
+    case mc_res_busy:
+    case mc_res_connect_error:
+    case mc_res_connect_timeout:
       return true;
     default:
       return false;

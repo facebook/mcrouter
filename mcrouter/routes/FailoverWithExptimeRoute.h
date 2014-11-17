@@ -95,21 +95,14 @@ class FailoverWithExptimeRoute {
 
     auto reply = normal_->route(req, Operation());
 
-    if (!reply.isError() ||
+    if (!reply.isFailoverError() ||
         !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
           DeleteLike<Operation>::value) ||
         isFailoverDisabledForRequest(req)) {
       return reply;
     }
 
-    bool is_failable_error =
-        reply.isTko() || reply.isConnectTimeout() || reply.isDataTimeout() ||
-        reply.isTryAgain() || reply.isBusy();
-    if (!is_failable_error) {
-      return reply;
-    }
-
-    if (((reply.isTko() || reply.isTryAgain() || reply.isBusy()) &&
+    if (((reply.isTko() || reply.isConnectError() || reply.isRedirect()) &&
          !settings_.tko.shouldFailover(Operation())) ||
         (reply.isConnectTimeout() &&
          !settings_.connectTimeout.shouldFailover(Operation())) ||

@@ -177,15 +177,9 @@ class DestinationRoute {
                                   ctx.endTime,
                                   Operation());
 
-    if (reply.isError()) {
+    // For AsynclogRoute
+    if (reply.isFailoverError()) {
       reply.setDestination(client_);
-    }
-
-    /* Convert connect errors to TKO for higher levels,
-       since they don't know any better.  TKO result triggers fast failover
-       among other things. */
-    if (reply.isConnectError()) {
-      reply.setResult(mc_res_tko);
     }
 
     return reply;

@@ -80,7 +80,7 @@ class AllFastestRoute {
     auto taskIt = fiber::addTasks(funcs.begin(), funcs.end());
     while (true) {
       auto reply = taskIt.awaitNext();
-      if (!reply.isError() || !taskIt.hasNext()) {
+      if (!reply.isFailoverError() || !taskIt.hasNext()) {
         return reply;
       }
     }
