@@ -23,6 +23,7 @@
 #include "mcrouter/options.h"
 #include "mcrouter/pclient.h"
 #include "mcrouter/PeriodicTaskScheduler.h"
+#include "mcrouter/TkoCounters.h"
 
 class asox_queue_s;
 using asox_queue_t = asox_queue_s*;
@@ -85,8 +86,8 @@ struct mcrouter_t {
   // Currently limited to one.
   std::atomic<int> live_clients;
 
-  // Number of destinations currently in soft TKO state.
-  std::atomic<size_t> current_soft_tkos{0};
+  // Total number of boxes marked as TKO.
+  TkoCounters tkoCounters;
 
   ProxyClientOwner pclient_owner;
 

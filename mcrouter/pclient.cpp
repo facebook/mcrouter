@@ -15,10 +15,10 @@ namespace facebook { namespace memcache { namespace mcrouter {
 ProxyClientShared::ProxyClientShared(const std::string& key_,
                                      const size_t tkoThreshold,
                                      const size_t maxSoftTkos,
-                                     std::atomic<size_t>& currentSoftTkos,
+                                     TkoCounters& globalTkos,
                                      ProxyClientOwner& owner)
     : key(key_),
-      tko(tkoThreshold, maxSoftTkos, currentSoftTkos),
+      tko(tkoThreshold, maxSoftTkos, globalTkos),
       owner_(owner) {
 }
 
@@ -34,7 +34,7 @@ void ProxyClientOwner::updateProxyClientShared(
   ProxyDestination& pdstn,
   const size_t tkoThreshold,
   const size_t maxSoftTkos,
-  std::atomic<size_t>& currentSoftTkos) {
+  TkoCounters& globalTkos) {
   const std::string& key = pdstn.destinationKey;
   {
     std::lock_guard<std::mutex> lock(mx);
@@ -44,7 +44,7 @@ void ProxyClientOwner::updateProxyClientShared(
       pcs = std::make_shared<ProxyClientShared>(key,
                                                 tkoThreshold,
                                                 maxSoftTkos,
-                                                currentSoftTkos,
+                                                globalTkos,
                                                 *this);
       pclient_shared.emplace(key, pcs);
     }

@@ -20,6 +20,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyClientOwner;
 class ProxyDestination;
+class TkoCounters;
 
 /**
  * ProxyDestinations from multiple proxy threads can share this storage.
@@ -37,7 +38,7 @@ struct ProxyClientShared {
   ProxyClientShared(const std::string& key_,
                     const size_t tkoThreshold,
                     const size_t maxSoftTkos,
-                    std::atomic<size_t>& currentSoftTkos,
+                    TkoCounters& globalTkos,
                     ProxyClientOwner& owner);
 
   ~ProxyClientShared();
@@ -57,7 +58,7 @@ struct ProxyClientOwner {
   void updateProxyClientShared(ProxyDestination& pdstn,
                                const size_t tkoThreshold,
                                const size_t maxSoftTkos,
-                               std::atomic<size_t>& currentSoftTkos);
+                               TkoCounters& globalTkos);
   /**
    * Calls func(key, ProxyClientShared*) for each live proxy client
    * shared object.  The whole map will be locked for the duration of the call.

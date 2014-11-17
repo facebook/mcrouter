@@ -93,7 +93,7 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
         *destination,
         proxy_->router->opts.failures_until_tko,
         proxy_->router->opts.maximum_soft_tkos,
-        proxy_->router->current_soft_tkos);
+        proxy_->router->tkoCounters);
   }
 
   return destination;

@@ -505,28 +505,30 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
     return;
   }
 
+  auto logUtil = [this, result](folly::StringPiece eventStr) {
+    VLOG(1) << shared->key << " " << eventStr << " TKO. Total hard TKOs: "
+            << shared->tko.globalTkos().hardTkos << "; soft TKOs: "
+            << shared->tko.globalTkos().softTkos << ". Reply: "
+            << mc_res_to_string(result);
+  };
+
   switch (event) {
     case TkoLogEvent::MarkHardTko:
-      VLOG(1) << shared->key << " marked hard TKO. Reply: "
-              << mc_res_to_string(result);
+      logUtil("marked hard");
       break;
     case TkoLogEvent::MarkSoftTko:
-      VLOG(1) << shared->key << " marked soft TKO. Reply: "
-              << mc_res_to_string(result);
+      logUtil("marked soft");
       break;
     case TkoLogEvent::MarkLatencyTko:
-      VLOG(1) << shared->key << " marked latency TKO. Reply: "
-              << mc_res_to_string(result);
+      logUtil("marked latency");
       break;
     case TkoLogEvent::UnMarkTko:
-      VLOG(1) << shared->key << " unmarked TKO. Reply: "
-              << mc_res_to_string(result);
+      logUtil("unmarked");
       break;
   }
 
-  TkoLog tkoLog(accessPoint);
+  TkoLog tkoLog(accessPoint, shared->tko.globalTkos());
   tkoLog.event = event;
-  tkoLog.globalSoftTkos = shared->tko.globalSoftTkos();
   tkoLog.isHardTko = shared->tko.isHardTko();
   tkoLog.isSoftTko = shared->tko.isSoftTko();
   tkoLog.avgLatency = stats_.avgLatency.value();

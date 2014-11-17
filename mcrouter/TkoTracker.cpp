@@ -13,15 +13,16 @@
 #include <glog/logging.h>
 
 #include "mcrouter/ProxyDestination.h"
+#include "mcrouter/TkoCounters.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 TkoTracker::TkoTracker(size_t tkoThreshold,
                        size_t maxSoftTkos,
-                       std::atomic<size_t>& currentSoftTkos)
+                       TkoCounters& globalTkoCounters)
   : tkoThreshold_(tkoThreshold),
     maxSoftTkos_(maxSoftTkos),
-    currentSoftTkos_(currentSoftTkos),
+    globalTkos_(globalTkoCounters),
   /* Internally, when a box is TKO we store a proxy address rather than a
      count. If the box is soft TKO, the LSB is 0. Otherwise it's 1. */
     sumFailures_(0) {
@@ -37,29 +38,27 @@ bool TkoTracker::isSoftTko() const {
   return (curSumFailures > tkoThreshold_ && curSumFailures % 2 == 0);
 }
 
-size_t TkoTracker::globalSoftTkos() const {
-  return currentSoftTkos_;
+const TkoCounters& TkoTracker::globalTkos() const {
+  return globalTkos_;
 }
 
 bool TkoTracker::incrementSoftTkoCount() {
-  size_t old_soft_tkos = currentSoftTkos_;
+  size_t old_soft_tkos = globalTkos_.softTkos;
   do {
     assert(old_soft_tkos <= maxSoftTkos_);
     if (old_soft_tkos == maxSoftTkos_) {
       /* We've hit the soft TKO limit and can't tko this box. */
       return false;
     }
-  } while (!currentSoftTkos_.compare_exchange_weak(old_soft_tkos,
-                                                   old_soft_tkos + 1));
-  VLOG(1) << old_soft_tkos + 1 << " destinations marked soft TKO";
+  } while (!globalTkos_.softTkos.compare_exchange_weak(old_soft_tkos,
+                                                       old_soft_tkos + 1));
   return true;
 }
 
 void TkoTracker::decrementSoftTkoCount() {
   // Decrement the counter and ensure we haven't gone below 0
-  size_t old_soft_tkos = currentSoftTkos_.fetch_sub(1);
+  size_t old_soft_tkos = globalTkos_.softTkos.fetch_sub(1);
   assert(old_soft_tkos != 0);
-  VLOG(1) << old_soft_tkos - 1 << " destinations marked soft TKO";
 }
 
 bool TkoTracker::setSumFailures(uintptr_t value) {
@@ -127,16 +126,20 @@ bool TkoTracker::recordHardFailure(ProxyDestination* pdstn) {
     /* convert to hard failure */
     sumFailures_ |= 1;
     decrementSoftTkoCount();
+    ++globalTkos_.hardTkos;
     /* We've already been marked responsible */
     return false;
   }
 
-  /* If the call below succeeds we marked the box TKO and took responsibility.
-  */
-  return setSumFailures(reinterpret_cast<uintptr_t>(pdstn) | 1);
+  // If the call below succeeds we marked the box TKO and took responsibility.
+  bool success = setSumFailures(reinterpret_cast<uintptr_t>(pdstn) | 1);
+  if (success) {
+    ++globalTkos_.hardTkos;
+  }
+  return success;
 }
 
-bool TkoTracker::isResponsible(ProxyDestination* pdstn) {
+bool TkoTracker::isResponsible(ProxyDestination* pdstn) const {
   return (sumFailures_ & ~1) == reinterpret_cast<uintptr_t>(pdstn);
 }
 
@@ -144,12 +147,14 @@ void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
   /* If we're responsible, no one else can change any state and we're
      effectively under mutex. */
   if (isResponsible(pdstn)) {
-    /* If we're coming out of softTKO, we need to decrement the counter */
-    bool unmark = isSoftTko();
-    sumFailures_ = 0;
-    if (unmark) {
+    /* Coming out of TKO, we need to decrement counters */
+    if (isSoftTko()) {
        decrementSoftTkoCount();
     }
+    if (isHardTko()) {
+      --globalTkos_.hardTkos;
+    }
+    sumFailures_ = 0;
   } else {
     setSumFailures(0);
   }

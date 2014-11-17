@@ -12,8 +12,9 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-TkoLog::TkoLog(const AccessPoint& ap)
-  : accessPoint(ap) {
+TkoLog::TkoLog(const AccessPoint& ap, const TkoCounters& gt)
+  : accessPoint(ap),
+    globalTkos(gt) {
 }
 
 std::string TkoLog::eventName() const {

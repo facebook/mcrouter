@@ -163,6 +163,7 @@ libmcroutercore_a_SOURCES = \
   stat_list.h \
   stats.cpp \
   stats.h \
+  TkoCounters.h \
   TkoLog.cpp \
   TkoLog.h \
   TkoTracker.cpp \

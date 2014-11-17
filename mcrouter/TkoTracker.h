@@ -14,6 +14,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyDestination;
+class TkoCounters;
 
 /**
  * We record the number of consecutive failures for each destination.
@@ -45,11 +46,11 @@ class TkoTracker {
    *        the destination TKO
    * @param maxSoftTkos the maximum number of concurrent soft TKOs allowed in
    *        the router
-   * @param currentSoftTkos the number of current soft TKOs
+   * @param globalTkoStats number of TKO destination for current router
    */
   TkoTracker(size_t tkoThreshold,
              size_t maxSoftTkos,
-             std::atomic<size_t>& currentSoftTkos);
+             TkoCounters& globalTkoCounters);
 
   /**
    * @return Is the destination currently marked Hard TKO?
@@ -69,9 +70,9 @@ class TkoTracker {
   }
 
   /**
-   * @return number of destinations marked Soft TKO for current router
+   * @return number of TKO destinations for current router
    */
-  size_t globalSoftTkos() const;
+  const TkoCounters& globalTkos() const;
 
   /**
    * Can be called from any proxy thread.
@@ -118,7 +119,7 @@ class TkoTracker {
  private:
   const size_t tkoThreshold_;
   const size_t maxSoftTkos_;
-  std::atomic<size_t>& currentSoftTkos_;
+  TkoCounters& globalTkos_;
   /* sumFailures_ is used for a few things depending on the state of the
      destination. For a destination that is not TKO, it tracks the number of
      consecutive soft failures to a destination.
@@ -142,7 +143,7 @@ class TkoTracker {
      other proxies may not modify state */
   bool setSumFailures(uintptr_t value);
   /* Return true if this thread is responsible for the TKO state */
-  bool isResponsible(ProxyDestination* pdstn);
+  bool isResponsible(ProxyDestination* pdstn) const;
 };
 
 }}} // facebook::memcache::mcrouter

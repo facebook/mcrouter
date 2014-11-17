@@ -11,6 +11,7 @@
 #include <string>
 
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/TkoCounters.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -24,19 +25,19 @@ enum class TkoLogEvent {
 };
 
 struct TkoLog {
-  explicit TkoLog(const AccessPoint& ap);
+  TkoLog(const AccessPoint& ap, const TkoCounters& gt);
 
   std::string eventName() const;
 
   TkoLogEvent event{TkoLogEvent::MarkHardTko};
   uintptr_t curSumFailures{0};
-  size_t globalSoftTkos{0};
   bool isHardTko{false};
   bool isSoftTko{false};
   mc_res_t result;
   size_t probesSent{0};
   double avgLatency{0.0};
   const AccessPoint& accessPoint;
+  const TkoCounters& globalTkos;
 };
 
 }}}  // facebook::memcache::mcrouter
