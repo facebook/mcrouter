@@ -95,6 +95,7 @@ class AsyncMcClientImpl :
     mc_op_t op;
     std::chrono::steady_clock::time_point sentAt;
     std::function<void(McReply&&)> replyCallback;
+    std::function<void(const McReply&)> traceCallback;
 
     ReqInfo(const McRequest& request,
             uint64_t reqid,

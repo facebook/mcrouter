@@ -266,8 +266,8 @@ typedef struct mc_msg_s {
 
 const char* mc_req_to_string(const mc_msg_t* req);
 
-static inline int mc_req_has_key(const mc_msg_t* req) {
-  switch (req->op) {
+static inline int mc_op_has_key(mc_op_t op) {
+  switch (op) {
     case mc_op_get:
     case mc_op_set:
     case mc_op_add:
@@ -291,9 +291,13 @@ static inline int mc_req_has_key(const mc_msg_t* req) {
   }
 }
 
-/** Does request have a value (excluding fixed width integer values) */
-static inline int mc_req_has_value(const mc_msg_t* req) {
-  switch (req->op) {
+static inline int mc_req_has_key(const mc_msg_t* req) {
+  return mc_op_has_key(req->op);
+}
+
+/** Does given op accept value or not */
+static inline int mc_op_has_value(mc_op_t op) {
+  switch (op) {
     case mc_op_set:
     case mc_op_add:
     case mc_op_replace:
@@ -306,6 +310,11 @@ static inline int mc_req_has_value(const mc_msg_t* req) {
     default:
       return 0;
   }
+}
+
+/** Does request have a value (excluding fixed width integer values) */
+static inline int mc_req_has_value(const mc_msg_t* req) {
+  return mc_op_has_value(req->op);
 }
 
 /*

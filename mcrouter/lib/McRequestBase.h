@@ -185,7 +185,7 @@ class McRequestBase {
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
-  const mc_fbtrace_info_s* fbtraceInfo() const {
+  mc_fbtrace_info_s* fbtraceInfo() const {
     return fbtraceInfo_.get();
   }
 

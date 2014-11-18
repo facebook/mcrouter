@@ -283,6 +283,9 @@ void AsyncMcClientImpl::replyReceived(uint64_t id, McReply mcReply) {
     if (value != nullptr) {
       auto req = pendingReplyQueue_.extract(
         pendingReplyQueue_.iterator_to(*value));
+      if (req->traceCallback) {
+        req->traceCallback(mcReply);
+      }
       reply(std::move(req), std::move(mcReply));
     }
   } else {
@@ -290,6 +293,9 @@ void AsyncMcClientImpl::replyReceived(uint64_t id, McReply mcReply) {
     // already removed it).
     if (pendingReplyQueue_.front().id == id) {
       auto req = pendingReplyQueue_.popFront();
+      if (req->traceCallback) {
+        req->traceCallback(mcReply);
+      }
       reply(std::move(req), std::move(mcReply));
     }
   }

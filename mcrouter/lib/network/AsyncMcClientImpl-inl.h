@@ -11,6 +11,7 @@
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/FBTrace.h"
 
 namespace facebook { namespace memcache {
 
@@ -28,10 +29,21 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
     return;
   }
 
+  // We need to send fbtrace before serializing, or otherwise we are going to
+  // miss fbtrace id.
+  std::function<void(const McReply&)> traceCallback;
+  if (fbTraceOnSend(McOperation<Op>(), request,
+                    connectionOptions_.accessPoint)) {
+    traceCallback = [&request] (const McReply& reply) {
+      fbTraceOnReceive(McOperation<Op>(), request, reply);
+    };
+  }
+
   auto op = (mc_op_t)Op;
   auto req = ReqInfo::getFromPool(request, nextMsgId_, op,
                                   connectionOptions_.accessPoint.getProtocol(),
                                   std::move(callback), selfPtr);
+  req->traceCallback = traceCallback;
 
   switch (req->reqContext.serializationResult()) {
     case McSerializedRequest::Result::OK:
