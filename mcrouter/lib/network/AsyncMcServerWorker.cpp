@@ -72,12 +72,13 @@ AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
 
 void AsyncMcServerWorker::addSecureClientSocket(
     int fd,
-    const std::shared_ptr<apache::thrift::transport::SSLContext>& context) {
+    const std::shared_ptr<apache::thrift::transport::SSLContext>& context,
+    void* userCtxt) {
   apache::thrift::async::TAsyncSSLSocket::UniquePtr sslSocket(
       new apache::thrift::async::TAsyncSSLSocket(
           context, &eventBase_, fd, /* server = */ true));
   sslSocket->sslAccept(&simpleHandshakeCallback, /* timeout = */ 0);
-  addClientSocket(std::move(sslSocket), nullptr /* userCtxt */);
+  addClientSocket(std::move(sslSocket), userCtxt);
 }
 
 void AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {

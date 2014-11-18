@@ -50,7 +50,8 @@ class AsyncMcServerWorker {
    */
   void addSecureClientSocket(
       int fd,
-      const std::shared_ptr<folly::SSLContext>& context);
+      const std::shared_ptr<folly::SSLContext>& context,
+      void* userCtxt = nullptr);
 
   /**
    * Install onRequest callback to call for all new connections.
