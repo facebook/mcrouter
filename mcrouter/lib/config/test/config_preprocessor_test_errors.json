@@ -113,5 +113,8 @@
       "A": {},
       "B": {}
     }
+  },
+  "fail": {
+    "ret": "@fail(Custom failure here)"
   }
 }

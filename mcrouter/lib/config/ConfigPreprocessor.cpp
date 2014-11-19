@@ -708,6 +708,16 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Throw an exception with custom message
+   * Usage: @fail(Your message here)
+   */
+  static dynamic failMacro(const Context& ctx) {
+    const auto& A = ctx.at("msg");
+    checkLogic(A.isString(), "fail: msg is not a string");
+    throw std::logic_error(A.data());
+  }
+
+  /**
    * Special built-in that prevents expanding 'macroDef' and 'constDef' objects
    * unless we parse them. For internal use only, nobody should call it
    * explicitly.
@@ -970,6 +980,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   addBuiltInMacro("div", { "A", "B" }, &BuiltIns::divMacro);
 
   addBuiltInMacro("mod", { "A", "B" }, &BuiltIns::modMacro);
+
+  addBuiltInMacro("fail", { "msg" }, &BuiltIns::failMacro);
 
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
