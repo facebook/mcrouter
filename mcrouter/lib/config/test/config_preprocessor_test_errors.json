@@ -45,7 +45,7 @@
   "invalidTransform": {
     "ret": {
       "type": "transform",
-      "dictionary": {}
+      "dictionary": [ 1 ]
     }
   },
   "invalidTransformNames": {

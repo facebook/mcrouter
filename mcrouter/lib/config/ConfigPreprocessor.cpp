@@ -731,14 +731,14 @@ class ConfigPreprocessor::BuiltIns {
    * Usage:
    * "type": "transform",
    * "dictionary": obj,
-   * "itemTransform": macro with extended context
+   * "itemTransform": macro with extended context (optional)
    * "keyTranform": macro with extended context (optional)
    * "itemName": string (optional, default: item)
    * "keyName": string (optional, default: key)
    * or
    * "type": "transform",
    * "dictionary": list,
-   * "itemTranform": macro with extended context
+   * "itemTranform": macro with extended context (required)
    * "keyName": string (optional, default: key)
    * "itemName": string (optional, default: item)
    *
@@ -750,12 +750,15 @@ class ConfigPreprocessor::BuiltIns {
                            const Context& ctx) {
     auto dictionary =
       p->expandMacros(tryGet(json, "dictionary", "Transform"), ctx);
-    // item transform is required
-    const auto& itemTransform = tryGet(json, "itemTransform", "Transform");
 
     checkLogic(dictionary.isObject() || dictionary.isArray(),
                "Transform: dictionary is not array/object");
 
+    if (dictionary.empty()) {
+      return dictionary;
+    }
+
+    auto itemTransform = json.find("itemTransform");
     auto itemName = json.find("itemName");
     string itemNameStr = itemName == json.items().end()
       ? "item" : asString(itemName->second, "Transform: itemName");
@@ -772,27 +775,33 @@ class ConfigPreprocessor::BuiltIns {
         extContext.erase(keyNameStr);
         extContext.erase(itemNameStr);
         extContext.emplace(keyNameStr, item.first);
-        extContext.emplace(itemNameStr, std::move(item.second));
+        extContext.emplace(itemNameStr, item.second);
 
         auto nKey = keyTransform == json.items().end()
-          ? item.first
+          ? std::move(item.first)
           : p->expandMacros(keyTransform->second, extContext);
         checkLogic(nKey.isArray() || nKey.isString(),
                    "Transformed key is not array/string");
-
-        auto nItem = p->expandMacros(itemTransform, extContext);
+        if (nKey.isArray() && nKey.empty()) {
+          continue;
+        }
+        auto nItem = itemTransform == json.items().end()
+          ? std::move(item.second)
+          : p->expandMacros(itemTransform->second, extContext);
         if (nKey.isString()) {
           res.insert(std::move(nKey), std::move(nItem));
         } else { // array
-          for (const auto& keyIt : nKey) {
+          for (auto& keyIt : nKey) {
             checkLogic(keyIt.isString(),
                        "Transformed key list item is not a string");
-            res.insert(keyIt, nItem);
+            res.insert(std::move(keyIt), nItem);
           }
         }
       }
       return res;
     } else { // array
+      checkLogic(itemTransform != json.items().end(),
+                 "Transform: itemTransform is required for array");
       auto extContext = ctx;
       for (size_t index = 0; index < dictionary.size(); ++index) {
         auto& item = dictionary[index];
@@ -801,7 +810,7 @@ class ConfigPreprocessor::BuiltIns {
         extContext.erase(itemNameStr);
         extContext.emplace(keyNameStr, index);
         extContext.emplace(itemNameStr, std::move(item));
-        item = p->expandMacros(itemTransform, extContext);
+        item = p->expandMacros(itemTransform->second, extContext);
       }
       return dictionary;
     }
