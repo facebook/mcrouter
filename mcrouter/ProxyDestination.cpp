@@ -220,15 +220,6 @@ void ProxyDestination::on_reply(const McMsgRef& req,
     ++consecutiveErrors_;
   } else {
     consecutiveErrors_ = 0;
-    /**
-     * HACK: It's possible that we missed an on_up callback for this pdstn
-     * if it happened right during a reconfigure request, but a successful
-     * on_reply was still delivered.  So we just manually call on_up here.
-     * Ideally we wouldn't miss on_up callbacks, but it's not easy to do.
-     */
-    if (!stats_.is_up) {
-      on_up();
-    }
   }
 
   bool is_probe_req = (req.get() == probe_req.get());
