@@ -105,7 +105,7 @@ class MCProcess(object):
             try:
                 self.connect()
                 return
-            except Exception, e:
+            except Exception as e:
                 if e.errno == errno.ECONNREFUSED:
                     pass
                 else:
@@ -522,7 +522,7 @@ class Mcrouter(MCProcess):
         else:
             args.extend(['-p', str(port)])
 
-        if (default_route):
+        if default_route:
             args.extend(['-R', default_route])
 
         if extra_args:
@@ -534,6 +534,9 @@ class Mcrouter(MCProcess):
 
         if listen_sock is not None:
             listen_sock.close()
+
+    def get_async_spool_dir(self):
+        return self.async_spool
 
 class McrouterClient(MCProcess):
     def __init__(self, port):

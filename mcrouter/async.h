@@ -17,7 +17,7 @@ using mc_msg_t = mc_msg_s;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class awriter_t;
+class AsyncWriter;
 class writelog_entry_t;
 class proxy_request_t;
 class ProxyClientCommon;
@@ -37,7 +37,7 @@ void asynclog_command(proxy_request_t *preq,
 // File or parent directories will be created if necessary.
 // File write is atomic (write to tempfile and rename)
 // Returns 0 on success, -1 on error.
-int async_write_file(awriter_t* awriter,
+int async_write_file(AsyncWriter* awriter,
                      const std::string& path,
                      const std::string& contents);
 

@@ -424,8 +424,8 @@ struct proxy_t {
   /*
    * Asynchronous writer.
    */
-  std::unique_ptr<awriter_t> awriter;
-  std::unique_ptr<awriter_t> stats_log_writer;
+  std::unique_ptr<AsyncWriter> awriter;
+  std::unique_ptr<AsyncWriter> stats_log_writer;
 
   std::mt19937 randomGenerator;
 
@@ -485,11 +485,9 @@ struct proxy_t {
    * These include the asynclog thread (if needed) and threads
    * for other less critical writes, like stats collection.
    *
-   * realtime: if true, schedule the threads with realtime priority
-   *
-   * Returns -1 on error, 0 on success.
+   * Returns false on error, true on success.
    */
-  int startAwriterThreads(bool realtime);
+  bool startAwriterThreads();
 
   /**
    * Must be called before destroying the proxy if awriter threads were started.
@@ -500,12 +498,6 @@ struct proxy_t {
   /** Read/write lock for config pointer */
   SFRLock configLock_;
   std::shared_ptr<ProxyConfigIf> config_;
-
-  pthread_t awriterThreadHandle_{0};
-  void* awriterThreadStack_{nullptr};
-
-  pthread_t statsLogWriterThreadHandle_{0};
-  void* statsLogWriterThreadStack_{nullptr};
 
   /**
    * Logs mcrouter stats to disk every opts->stats_logging_interval

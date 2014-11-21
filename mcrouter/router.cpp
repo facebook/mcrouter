@@ -568,9 +568,7 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   }
 
   for (size_t i = 0; i < router->opts.num_proxies; ++i) {
-    int rc = router->getProxy(i)->startAwriterThreads(
-      router->wantRealtimeThreads());
-    if (rc != 0) {
+    if (!router->getProxy(i)->startAwriterThreads()) {
       mcrouter_free(router);
       return nullptr;
     }

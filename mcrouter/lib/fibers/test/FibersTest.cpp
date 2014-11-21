@@ -1055,8 +1055,6 @@ TEST(FiberManager, remoteFiberBasic) {
 
 TEST(FiberManager, addTaskRemoteBasic) {
   FiberManager manager(folly::make_unique<SimpleLoopController>());
-  auto& loopController =
-    dynamic_cast<SimpleLoopController&>(manager.loopController());
 
   int result[2];
   result[0] = result[1] = 0;
@@ -1101,6 +1099,56 @@ TEST(FiberManager, addTaskRemoteBasic) {
   manager.loopUntilNoReady();
   EXPECT_EQ(42, result[0]);
   EXPECT_EQ(43, result[1]);
+}
+
+TEST(FiberManager, remoteHasTasks) {
+  size_t counter = 0;
+  FiberManager fm(folly::make_unique<SimpleLoopController>());
+  std::thread remote([&]() {
+    fm.addTaskRemote([&]() {
+      ++counter;
+    });
+  });
+
+  remote.join();
+
+  while (fm.hasTasks()) {
+    fm.loopUntilNoReady();
+  }
+
+  EXPECT_FALSE(fm.hasTasks());
+  EXPECT_EQ(counter, 1);
+}
+
+TEST(FiberManager, remoteHasReadyTasks) {
+  int result = 0;
+  folly::Optional<FiberPromise<int>> savedPromise;
+  FiberManager fm(folly::make_unique<SimpleLoopController>());
+  std::thread remote([&]() {
+    fm.addTaskRemote([&]() {
+      result = fiber::await([&](FiberPromise<int> promise) {
+        savedPromise = std::move(promise);
+      });
+      EXPECT_TRUE(fm.hasTasks());
+    });
+  });
+
+  remote.join();
+  EXPECT_TRUE(fm.hasTasks());
+
+  fm.loopUntilNoReady();
+  EXPECT_TRUE(fm.hasTasks());
+
+  std::thread remote2([&](){
+    savedPromise->setValue(47);
+  });
+  remote2.join();
+  EXPECT_TRUE(fm.hasTasks());
+
+  fm.loopUntilNoReady();
+  EXPECT_FALSE(fm.hasTasks());
+
+  EXPECT_EQ(result, 47);
 }
 
 static size_t sNumAwaits;

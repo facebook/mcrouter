@@ -123,8 +123,8 @@ proxy_t::proxy_t(mcrouter_t *router_,
   init_stats(stats);
 
   /* TODO: Determine what the maximum queue length should be. */
-  awriter = folly::make_unique<awriter_t>(0);
-  stats_log_writer = folly::make_unique<awriter_t>(
+  awriter = folly::make_unique<AsyncWriter>();
+  stats_log_writer = folly::make_unique<AsyncWriter>(
       opts.stats_async_queue_length);
 
   if (eventBase != nullptr) {
@@ -169,32 +169,17 @@ void proxy_t::onEventBaseAttached() {
   }
 }
 
-int proxy_t::startAwriterThreads(bool realtime) {
+bool proxy_t::startAwriterThreads() {
   if (!opts.asynclog_disable) {
-    int rc = spawn_thread(&awriterThreadHandle_,
-                          &awriterThreadStack_, &awriter_thread_run,
-                          awriter.get(), realtime);
-    if (!rc) {
-      logFailure(router, failure::Category::kSystemError,
-                 "Failed to start asynclog awriter thread");
-      return -1;
+    if (!awriter->start("mcrtr-awriter")) {
+      return false;
     }
-    folly::setThreadName(awriterThreadHandle_, "mcrtr-awriter");
   }
 
-  int rc = spawn_thread(&statsLogWriterThreadHandle_,
-                        &statsLogWriterThreadStack_,
-                        &awriter_thread_run,
-                        stats_log_writer.get(), realtime);
-  if (!rc) {
-    logFailure(router, failure::Category::kSystemError,
-               "Failed to start async stats_log_writer thread");
-    return -1;
+  if (!stats_log_writer->start("mcrtr-statsw")) {
+    return false;
   }
-
-  folly::setThreadName(statsLogWriterThreadHandle_, "mcrtr-statsw");
-
-  return 0;
+  return true;
 }
 
 std::shared_ptr<ProxyConfigIf> proxy_t::getConfig() const {
@@ -228,21 +213,8 @@ void proxy_t::foreachPossibleClient(
 }
 
 void proxy_t::stopAwriterThreads() {
-  if (awriterThreadHandle_ && router->pid == getpid()) {
-    awriter_stop(awriter.get());
-    pthread_join(awriterThreadHandle_, nullptr);
-  }
-
-  if (statsLogWriterThreadHandle_ && router->pid == getpid()) {
-    awriter_stop(stats_log_writer.get());
-    pthread_join(statsLogWriterThreadHandle_, nullptr);
-  }
-
-  free(awriterThreadStack_);
-  awriterThreadStack_ = nullptr;
-
-  free(statsLogWriterThreadStack_);
-  statsLogWriterThreadStack_ = nullptr;
+  awriter->stop();
+  stats_log_writer->stop();
 }
 
 /** drain and delete proxy object */

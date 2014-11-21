@@ -127,12 +127,11 @@ static const awriter_callbacks_t test_callbacks = {
 // then destroys them.
 TEST(awriter, create_destroy) {
   const int num_entries = 20;
-  std::unique_ptr<awriter_t> w[num_entries];
+  std::unique_ptr<AsyncWriter> w[num_entries];
   size_t i;
 
   for (i = 0; i < num_entries; i++) {
-    w[i] = folly::make_unique<awriter_t>(i);
-    EXPECT_TRUE(w[i] != nullptr);
+    w[i] = folly::make_unique<AsyncWriter>(i);
   }
 }
 
@@ -142,19 +141,13 @@ TEST(awriter, create_destroy) {
 TEST(awriter, sanity) {
   counts testCounter;
   TemporaryFile f("awriter_test");
-  int ret;
-  pthread_t thread;
-  std::unique_ptr<awriter_t> w;
   const int num_entries = 3;
   testing_context_t e[num_entries];
   struct stat s;
   auto fd = std::make_shared<folly::File>(f.fd());
 
-  w = folly::make_unique<awriter_t>(0);
-  EXPECT_TRUE(w != nullptr);
-
-  ret = pthread_create(&thread, nullptr, awriter_thread_run, w.get());
-  EXPECT_EQ(ret, 0);
+  auto w = folly::make_unique<AsyncWriter>();
+  EXPECT_TRUE(w->start("awriter:test"));
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
@@ -162,18 +155,15 @@ TEST(awriter, sanity) {
     e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
-    ret = awriter_queue(w.get(), &e[i].log_context.awentry);
-    EXPECT_EQ(ret, 0);
+    EXPECT_TRUE(awriter_queue(w.get(), &e[i].log_context.awentry));
   }
 
   testCounter.cnt.wait([](int v) { return v >= num_entries; });
 
-  awriter_stop(w.get());
-  pthread_join(thread, nullptr);
+  w.reset();
   EXPECT_EQ(testCounter.success, num_entries);
 
-  ret = fstat(f.fd(), &s);
-  EXPECT_EQ(ret, 0);
+  EXPECT_EQ(fstat(f.fd(), &s), 0);
 
   EXPECT_EQ(s.st_size, num_entries * WRITE_STRING_LEN);
 }
@@ -183,31 +173,21 @@ TEST(awriter, sanity) {
 TEST(awriter, flush_queue) {
   counts testCounter;
   TemporaryFile f("awriter_test");
-  int ret;
-  pthread_t thread;
-  std::unique_ptr<awriter_t> w;
   const int num_entries = 10;
   testing_context_t e[num_entries];
 
-  w = folly::make_unique<awriter_t>(0);
-  EXPECT_TRUE(w != nullptr);
+  auto w = folly::make_unique<AsyncWriter>(0);
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
     e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
-    ret = awriter_queue(w.get(), &e[i].log_context.awentry);
-    EXPECT_EQ(ret, 0);
+    EXPECT_TRUE(awriter_queue(w.get(), &e[i].log_context.awentry));
   }
 
-  // Stop the queue even before we start the thread.
-  awriter_stop(w.get());
-
-  ret = pthread_create(&thread, nullptr, awriter_thread_run, w.get());
-  EXPECT_EQ(ret, 0);
-
-  pthread_join(thread, nullptr);
+  // Stop the writer even before we start the thread.
+  w->stop();
 
   EXPECT_EQ(testCounter.failure, num_entries);
 }
@@ -216,15 +196,12 @@ TEST(awriter, flush_queue) {
 TEST(awriter, max_queue_length) {
   counts testCounter;
   TemporaryFile f("awriter_test");
-  int ret;
-  pthread_t thread;
-  std::unique_ptr<awriter_t> w;
   const int maxlen = 5;
   const int num_entries = maxlen + 5;
   testing_context_t e[num_entries];
   auto fd = std::make_shared<folly::File>(f.fd());
 
-  w = folly::make_unique<awriter_t>(maxlen);
+  auto w = folly::make_unique<AsyncWriter>(maxlen);
   EXPECT_TRUE(w != nullptr);
 
   for (int i = 0; i < num_entries; i++) {
@@ -233,47 +210,36 @@ TEST(awriter, max_queue_length) {
     e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
-    ret = awriter_queue(w.get(), &e[i].log_context.awentry);
+    bool ret = awriter_queue(w.get(), &e[i].log_context.awentry);
     if (i < maxlen) {
-      EXPECT_EQ(ret, 0);
+      EXPECT_TRUE(ret);
     } else {
-      EXPECT_EQ(ret, ENOSPC);
+      EXPECT_FALSE(ret);
     }
   }
 
   // Create the thread to process the requests and wait for all
   // of them to be completed.
-  ret = pthread_create(&thread, nullptr, awriter_thread_run, w.get());
-  EXPECT_EQ(ret, 0);
+  EXPECT_TRUE(w->start("awriter:test"));
 
   testCounter.cnt.wait([](int v) { return v >= maxlen; });
 
   EXPECT_EQ(testCounter.success, maxlen);
 
   // Make sure we can submit an entry again.
-  ret = awriter_queue(w.get(), &e[0].log_context.awentry);
-  EXPECT_EQ(ret, 0);
-
-  // Stop everything.
-  awriter_stop(w.get());
-  pthread_join(thread, nullptr);
+  EXPECT_TRUE(awriter_queue(w.get(), &e[0].log_context.awentry));
 }
 
 // Test that passes invalid fd and expect errors when writing.
 TEST(awriter, invalid_fd) {
   counts testCounter;
-  int ret;
   pthread_t thread;
-  std::unique_ptr<awriter_t> w;
   const int num_entries = 3;
   testing_context_t e[num_entries];
   auto fd = std::make_shared<folly::File>(-1);
 
-  w = folly::make_unique<awriter_t>(0);
-  EXPECT_TRUE(w != nullptr);
-
-  ret = pthread_create(&thread, nullptr, awriter_thread_run, w.get());
-  EXPECT_EQ(ret, 0);
+  auto w = folly::make_unique<AsyncWriter>(0);
+  EXPECT_TRUE(w->start("awriter:test"));
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
@@ -281,14 +247,12 @@ TEST(awriter, invalid_fd) {
     e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
-    ret = awriter_queue(w.get(), &e[i].log_context.awentry);
-    EXPECT_EQ(ret, 0);
+    EXPECT_TRUE(awriter_queue(w.get(), &e[i].log_context.awentry));
   }
 
   testCounter.cnt.wait([](int v) { return v >= num_entries; });
 
-  awriter_stop(w.get());
-  pthread_join(thread, nullptr);
+  w->stop();
 
   EXPECT_EQ(testCounter.failure, num_entries);
 }

@@ -33,16 +33,19 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "folly/Conv.h"
-#include "folly/FileUtil.h"
-#include "folly/json.h"
-#include "folly/File.h"
+#include <folly/Conv.h>
+#include <folly/File.h>
+#include <folly/FileUtil.h>
+#include <folly/json.h>
+#include <folly/ThreadName.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/_router.h"
 #include "mcrouter/awriter.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fibers/EventBaseLoopController.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/stats.h"
 
 #define ASYNCLOG_MAGIC  "AS1.0"
@@ -51,6 +54,8 @@
 using folly::dynamic;
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+namespace {
 
 struct write_file_entry_t {
   std::string path;
@@ -65,48 +70,7 @@ public:
     : runtime_error(msg) {}
 };
 
-void *awriter_thread_run(void *arg) {
-  awriter_t *w = (awriter_t*)arg;
-  awriter_entry_t *e;
-
-  for (;;) {
-    /*
-     * Wait for work to become available or for the writer to be
-     * deactivated.
-     */
-    {
-      std::unique_lock<std::mutex> ulock(w->lock);
-      while (w->is_active && TAILQ_EMPTY(&w->entries)) {
-        w->cond.wait(ulock);
-      }
-
-      if (!w->is_active) {
-        break;
-      }
-
-      e = TAILQ_FIRST(&w->entries);
-      TAILQ_REMOVE(&w->entries, e, links);
-      w->qsize--;
-    }
-    /*
-     * Now that the lock is released, perform the write and inform the
-     * requestor about the result.
-     */
-    int ret = e->callbacks->perform_write(e);
-    e->callbacks->completed(e, ret);
-  }
-
-  /* The writer is inactive, so complete all pending requests with error. */
-  while (!TAILQ_EMPTY(&w->entries)) {
-    e = TAILQ_FIRST(&w->entries);
-    TAILQ_REMOVE(&w->entries, e, links);
-    e->callbacks->completed(e, EPIPE);
-  }
-
-  return nullptr;
-}
-
-static int file_entry_writer(awriter_entry_t* e) {
+int file_entry_writer(awriter_entry_t* e) {
   int ret;
   writelog_entry_t *entry = (writelog_entry_t*)e->context;
   ssize_t size =
@@ -124,54 +88,92 @@ static int file_entry_writer(awriter_entry_t* e) {
   return ret;
 }
 
-awriter_t::awriter_t(unsigned limit)
-  : qsize(0),
-    qlimit(limit),
-    is_active(1) {
+}  // anonymous namespace
 
-  TAILQ_INIT(&entries);
+AsyncWriter::AsyncWriter(size_t maxQueueSize)
+    : maxQueueSize_(maxQueueSize),
+      pid_(getpid()),
+      fiberManager_(folly::make_unique<EventBaseLoopController>()) {
+  auto& c = fiberManager_.loopController();
+  dynamic_cast<EventBaseLoopController&>(c).attachEventBase(eventBase_);
 }
 
-awriter_t::~awriter_t() {
-  /* The writer is inactive, so complete all pending requests with error. */
-  while (!TAILQ_EMPTY(&entries)) {
-    auto e = TAILQ_FIRST(&entries);
-    TAILQ_REMOVE(&entries, e, links);
-    e->callbacks->completed(e, EPIPE);
-  }
+AsyncWriter::~AsyncWriter() {
+  stop();
+  assert(!fiberManager_.hasTasks());
 }
 
-void awriter_stop(awriter_t *w) {
-  if (!w) {
-    return;
-  }
-
-  {
-    std::lock_guard<std::mutex> guard(w->lock);
-    w->is_active = 0;
-  }
-
-  w->cond.notify_one();
-}
-
-int awriter_queue(awriter_t *w, awriter_entry_t *e) {
-  {
-    std::lock_guard<std::mutex> guard(w->lock);
-    if (w->qlimit && w->qlimit == w->qsize) {
-      return ENOSPC;
+void AsyncWriter::stop() {
+  if (thread_.joinable()) {
+    eventBase_.terminateLoopSoon();
+    if (pid_ == getpid()) {
+      thread_.join();
+    } else {
+      // fork workaround
+      thread_.detach();
     }
-
-    if (!w->is_active) {
-      return EPIPE;
+  } else {
+    while (fiberManager_.hasTasks()) {
+      fiberManager_.loopUntilNoReady();
     }
+  }
+}
 
-    w->qsize++;
-    TAILQ_INSERT_TAIL(&w->entries, e, links);
+bool AsyncWriter::start(folly::StringPiece threadName) {
+  if (thread_.joinable()) {
+    return false;
   }
 
-  w->cond.notify_one();
+  try {
+    thread_ = std::thread([this]() {
+      // will return after terminateLoopSoon is called
+      eventBase_.loopForever();
 
-  return 0;
+      while (fiberManager_.hasTasks()) {
+        fiberManager_.loopUntilNoReady();
+      }
+    });
+    folly::setThreadName(thread_.native_handle(), threadName);
+  } catch (const std::system_error& e) {
+    logFailure(memcache::failure::Category::kSystemError,
+               "Can not start AsyncWriter thread {}: {}", threadName, e.what());
+    return false;
+  }
+
+  return true;
+}
+
+bool AsyncWriter::run(std::function<void()> f) {
+  if (maxQueueSize_ != 0) {
+    auto size = queueSize_.load();
+    do {
+      if (maxQueueSize_ == size) {
+        return false;
+      }
+    } while (!queueSize_.compare_exchange_weak(size, size + 1));
+  }
+
+  auto fWrapper = folly::makeMoveWrapper(std::move(f));
+  fiberManager_.addTaskRemote([this, fWrapper]() {
+    fiberManager_.runInMainContext([fWrapper]() {
+      (*fWrapper)();
+    });
+    if (maxQueueSize_ != 0) {
+      --queueSize_;
+    }
+  });
+  return true;
+}
+
+bool awriter_queue(AsyncWriter* w, awriter_entry_t *e) {
+  return w->run([e, w] () {
+    if (!w->isActive()) {
+      e->callbacks->completed(e, EPIPE);
+      return;
+    }
+    int r = e->callbacks->perform_write(e);
+    e->callbacks->completed(e, r);
+  });
 }
 
 static std::shared_ptr<folly::File> countedfd_new(int fd) {
@@ -401,7 +403,7 @@ static void asynclog_event(proxy_request_t *preq,
     throw AsyncLogException("Unable to allocate writelog entry");
   }
 
-  if (awriter_queue(preq->proxy->awriter.get(), &e->awentry)) {
+  if (!awriter_queue(preq->proxy->awriter.get(), &e->awentry)) {
     writelog_entry_free(e);
     throw AsyncLogException("Unable to queue writelog entry");
   }
@@ -420,6 +422,7 @@ ssize_t mc_ascii_req_to_string(const mc_msg_t* req, char* buf, size_t nbuf) {
                     (int)req->key.len, req->key.str, req->delta);
   } else {
     LOG(FATAL) << "don't know how to serialize " << mc_op_to_string(req->op);
+    return 0;
   }
 }
 
@@ -438,7 +441,7 @@ static int process_write_file(awriter_entry_t* awe) {
   return 0;
 }
 
-int async_write_file(awriter_t* awriter,
+int async_write_file(AsyncWriter* awriter,
                      const std::string& path,
                      const std::string& contents) {
   static const awriter_callbacks_t cb = {
@@ -452,7 +455,7 @@ int async_write_file(awriter_t* awriter,
   e->awentry.context = e;
   e->awentry.callbacks = &cb;
 
-  if (awriter_queue(awriter, &e->awentry)) {
+  if (!awriter_queue(awriter, &e->awentry)) {
     delete e;
     return -1;
   }

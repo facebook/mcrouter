@@ -55,7 +55,9 @@ const LoopController& FiberManager::loopController() const {
 }
 
 bool FiberManager::hasTasks() const {
-  return fibersActive_ > 0;
+  return fibersActive_ > 0 ||
+         !remoteReadyQueue_.empty() ||
+         !remoteTaskQueue_.empty();
 }
 
 Fiber* FiberManager::getFiber() {

@@ -43,6 +43,10 @@ class AtomicLinkedList {
     assert(head_ == nullptr);
   }
 
+  bool empty() const {
+    return head_ == nullptr;
+  }
+
   /**
    * Atomically insert t at the head of the list.
    * @return True if the inserted element is the only one in the list
