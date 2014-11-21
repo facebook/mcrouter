@@ -21,6 +21,7 @@
 
 #include <folly/FileUtil.h>
 #include <folly/Random.h>
+#include <folly/ScopeGuard.h>
 #include <folly/SpookyHashV2.h>
 
 namespace facebook { namespace memcache {
@@ -104,14 +105,22 @@ bool appendStringToFile(folly::StringPiece contents, const std::string& path) {
 
 bool atomicallyWriteFileToDisk(folly::StringPiece contents,
                                const std::string& absFilename) {
+  boost::filesystem::path tempFilePath;
+  auto tempFileGuard = folly::makeGuard([&tempFilePath]() {
+    if (!tempFilePath.empty()) {
+      boost::system::error_code ec;
+      boost::filesystem::remove(tempFilePath.c_str(), ec);
+    }
+  });
+
   try {
-    boost::filesystem::path filePath(absFilename);
+    const boost::filesystem::path filePath(absFilename);
     auto fileDir = filePath.parent_path();
     if (fileDir.empty()) {
       return false;
     }
     auto tempFileTempl = filePath.filename().string() + ".temp-%%%%%%%%%%";
-    auto tempFilePath = fileDir / boost::filesystem::unique_path(tempFileTempl);
+    tempFilePath = fileDir / boost::filesystem::unique_path(tempFileTempl);
 
     boost::filesystem::create_directories(fileDir);
 
@@ -119,7 +128,8 @@ bool atomicallyWriteFileToDisk(folly::StringPiece contents,
       return false;
     }
 
-    return rename(tempFilePath.c_str(), absFilename.data()) == 0;
+    boost::filesystem::rename(tempFilePath, filePath);
+    return true;
   } catch (const boost::filesystem::filesystem_error& e) {
     return false;
   } catch (const boost::system::system_error& e) {

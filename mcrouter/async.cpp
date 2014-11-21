@@ -431,7 +431,11 @@ static void write_file_completed(awriter_entry_t* awe, int result) {
 static int process_write_file(awriter_entry_t* awe) {
   write_file_entry_t* e = reinterpret_cast<write_file_entry_t*>(awe->context);
 
-  return atomicallyWriteFileToDisk(e->contents, e->path) ? 0 : -1;
+  if (!atomicallyWriteFileToDisk(e->contents, e->path)) {
+    VLOG(1) << "Can not atomically write '" << e->path << "'";
+    return -1;
+  }
+  return 0;
 }
 
 int async_write_file(awriter_t* awriter,
