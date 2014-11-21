@@ -20,6 +20,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/queue.h"
+#include "mcrouter/lib/fbi/cpp/sfrlock.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -66,7 +67,7 @@ class AsyncWriter {
    * @return true if writer can process requests, false otherwise.
    */
   bool isActive() const {
-    return thread_.joinable();
+    return !stopped_;
   }
 
   /**
@@ -84,6 +85,8 @@ class AsyncWriter {
  private:
   const size_t maxQueueSize_;
   std::atomic<size_t> queueSize_{0};
+  std::atomic<bool> stopped_{false};
+  SFRLock runLock_;
   // process id of the parent thread (before fork)
   const pid_t pid_;
 

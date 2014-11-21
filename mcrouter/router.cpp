@@ -421,7 +421,10 @@ mcrouter_t::mcrouter_t(const McrouterOptions& input_options) :
     is_transient(false),
     live_clients(0),
     startupLock(opts.sync ? 0 : opts.num_proxies + 1),
-    logger(createRouterLogger()) {
+    logger(createRouterLogger()),
+    awriter(folly::make_unique<AsyncWriter>()),
+    stats_log_writer(folly::make_unique<AsyncWriter>(
+        opts.stats_async_queue_length)) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);
@@ -567,13 +570,6 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
     }
   }
 
-  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
-    if (!router->getProxy(i)->startAwriterThreads()) {
-      mcrouter_free(router);
-      return nullptr;
-    }
-  }
-
   try {
     router->configApi->startObserving();
     router->subscribeToConfigUpdate();
@@ -600,6 +596,7 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
 }
 
 void mcrouter_t::spawnAuxiliaryThreads() {
+  startAwriterThreads();
   startObservingRuntimeVarsFile();
   spawnStatUpdaterThread();
 }
@@ -614,6 +611,23 @@ void mcrouter_t::spawnStatUpdaterThread() {
   }
 
   folly::setThreadName(stat_updater_thread_handle, "mcrtr-stats");
+}
+
+void mcrouter_t::startAwriterThreads() {
+  if (!opts.asynclog_disable) {
+    if (!awriter->start("mcrtr-awriter")) {
+      throw std::runtime_error("failed to spawn mcrouter awriter thread");
+    }
+  }
+
+  if (!stats_log_writer->start("mcrtr-statsw")) {
+    throw std::runtime_error("failed to spawn mcrouter stats writer thread");
+  }
+}
+
+void mcrouter_t::stopAwriterThreads() {
+  awriter->stop();
+  stats_log_writer->stop();
 }
 
 void mcrouter_t::subscribeToConfigUpdate() {
@@ -656,6 +670,8 @@ void mcrouter_t::joinAuxiliaryThreads() {
     free(stat_updater_thread_stack);
     stat_updater_thread_stack = nullptr;
   }
+
+  stopAwriterThreads();
 }
 
 void mcrouter_t::startShutdown() {

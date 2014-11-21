@@ -122,11 +122,6 @@ proxy_t::proxy_t(mcrouter_t *router_,
 
   init_stats(stats);
 
-  /* TODO: Determine what the maximum queue length should be. */
-  awriter = folly::make_unique<AsyncWriter>();
-  stats_log_writer = folly::make_unique<AsyncWriter>(
-      opts.stats_async_queue_length);
-
   if (eventBase != nullptr) {
     onEventBaseAttached();
   }
@@ -169,19 +164,6 @@ void proxy_t::onEventBaseAttached() {
   }
 }
 
-bool proxy_t::startAwriterThreads() {
-  if (!opts.asynclog_disable) {
-    if (!awriter->start("mcrtr-awriter")) {
-      return false;
-    }
-  }
-
-  if (!stats_log_writer->start("mcrtr-statsw")) {
-    return false;
-  }
-  return true;
-}
-
 std::shared_ptr<ProxyConfigIf> proxy_t::getConfig() const {
   std::lock_guard<SFRReadLock> lg(
     const_cast<SFRLock&>(configLock_).readLock());
@@ -210,11 +192,6 @@ void proxy_t::foreachPossibleClient(
   for (const auto& it : children) {
     foreachPossibleClientHelper(*it, req, key);
   }
-}
-
-void proxy_t::stopAwriterThreads() {
-  awriter->stop();
-  stats_log_writer->stop();
 }
 
 /** drain and delete proxy object */

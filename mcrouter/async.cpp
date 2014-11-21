@@ -104,6 +104,14 @@ AsyncWriter::~AsyncWriter() {
 }
 
 void AsyncWriter::stop() {
+  {
+    std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+    if (stopped_) {
+      return;
+    }
+    stopped_ = true;
+  }
+
   if (thread_.joinable()) {
     eventBase_.terminateLoopSoon();
     if (pid_ == getpid()) {
@@ -120,7 +128,8 @@ void AsyncWriter::stop() {
 }
 
 bool AsyncWriter::start(folly::StringPiece threadName) {
-  if (thread_.joinable()) {
+  std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+  if (thread_.joinable() || stopped_) {
     return false;
   }
 
@@ -144,6 +153,11 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
 }
 
 bool AsyncWriter::run(std::function<void()> f) {
+  std::lock_guard<SFRReadLock> lock(runLock_.readLock());
+  if (stopped_) {
+    return false;
+  }
+
   if (maxQueueSize_ != 0) {
     auto size = queueSize_.load();
     do {
@@ -403,7 +417,7 @@ static void asynclog_event(proxy_request_t *preq,
     throw AsyncLogException("Unable to allocate writelog entry");
   }
 
-  if (!awriter_queue(preq->proxy->awriter.get(), &e->awentry)) {
+  if (!awriter_queue(preq->proxy->router->awriter.get(), &e->awentry)) {
     writelog_entry_free(e);
     throw AsyncLogException("Unable to queue writelog entry");
   }

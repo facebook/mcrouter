@@ -16,6 +16,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/awriter.h"
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
 #include "mcrouter/lib/fbi/cpp/StartupLock.h"
@@ -96,6 +97,12 @@ struct mcrouter_t {
 
   std::shared_ptr<RouterLogger> logger;
 
+  /*
+   * Asynchronous writer.
+   */
+  std::unique_ptr<AsyncWriter> awriter;
+  std::unique_ptr<AsyncWriter> stats_log_writer;
+
   explicit mcrouter_t(const McrouterOptions& input_options);
 
   mcrouter_t(const mcrouter_t&) = delete;
@@ -111,6 +118,9 @@ struct mcrouter_t {
 
   void startShutdown();
   bool shutdownStarted();
+
+  void startAwriterThreads();
+  void stopAwriterThreads();
 
   void spawnAuxiliaryThreads();
   void shutdownAndJoinAuxiliaryThreads();

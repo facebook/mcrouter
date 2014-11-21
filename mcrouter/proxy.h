@@ -421,12 +421,6 @@ struct proxy_t {
    */
   int num_bins_used{0};
 
-  /*
-   * Asynchronous writer.
-   */
-  std::unique_ptr<AsyncWriter> awriter;
-  std::unique_ptr<AsyncWriter> stats_log_writer;
-
   std::mt19937 randomGenerator;
 
   /**
@@ -479,20 +473,6 @@ struct proxy_t {
    * before spawning the proxy.
    */
   void attachEventBase(folly::EventBase* eventBase);
-
-  /**
-   * Spawns the required async writer threads.
-   * These include the asynclog thread (if needed) and threads
-   * for other less critical writes, like stats collection.
-   *
-   * Returns false on error, true on success.
-   */
-  bool startAwriterThreads();
-
-  /**
-   * Must be called before destroying the proxy if awriter threads were started.
-   */
-  void stopAwriterThreads();
 
  private:
   /** Read/write lock for config pointer */

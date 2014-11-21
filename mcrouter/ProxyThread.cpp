@@ -64,7 +64,6 @@ void ProxyThread::proxyThreadRun() {
     mcrouterLoopOnce(proxy_->eventBase);
   }
 
-  proxy_->stopAwriterThreads();
   // Delete the proxy from the proxy thread so that the clients get
   // deleted from the same thread where they were created.
   std::unique_lock<std::mutex> lk(mux);

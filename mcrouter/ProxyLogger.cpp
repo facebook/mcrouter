@@ -93,7 +93,7 @@ void proxy_write_file(proxy_t* proxy,
 
     auto path = proxy_stats_file_path(proxy, suffix);
 
-    async_write_file(proxy->stats_log_writer.get(), path, str);
+    async_write_file(proxy->router->stats_log_writer.get(), path, str);
   } catch (...) {
     // Do nothing
   }
@@ -151,7 +151,7 @@ void write_config_sources_info_to_disk(const proxy_t* proxy) {
   try {
     boost::filesystem::path path(proxy->opts.stats_root);
     path /= get_stats_key(proxy) + "." + kConfigSourcesInfoFileName;
-    async_write_file(proxy->stats_log_writer.get(), path.string(),
+    async_write_file(proxy->router->stats_log_writer.get(), path.string(),
                      folly::toPrettyJson(config_info_json).toStdString());
   } catch (...) {
     LOG(ERROR) << "Error occured while writing configuration info to disk";
