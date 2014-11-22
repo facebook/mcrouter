@@ -44,18 +44,9 @@ ConfigApi::CallbackHandle ConfigApi::subscribe(Callback callback) {
 
 void ConfigApi::startObserving() {
   assert(!finish_);
-  if (needConfigThread()) {
+  if (!opts_.disable_reload_configs) {
     configThread_ = std::thread(std::bind(&ConfigApi::configThreadRun, this));
   }
-}
-
-bool ConfigApi::needConfigThread() {
-  if (opts_.disable_reload_configs) {
-    return false;
-  }
-
-  // no auto-config if we were only given a str
-  return !opts_.config_file.empty() || opts_.constantly_reload_configs;
 }
 
 void ConfigApi::stopObserving(pid_t pid) {

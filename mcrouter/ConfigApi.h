@@ -115,10 +115,6 @@ class ConfigApi {
    * @return true, if files have update since last call, false otherwise
    */
   virtual bool checkFileUpdate();
-  /**
-   * @return true, if we need to create configuration thread, false otherwise.
-   */
-  virtual bool needConfigThread();
 
  private:
   struct FileInfo {
