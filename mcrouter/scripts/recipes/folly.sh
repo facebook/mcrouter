@@ -5,12 +5,10 @@ source common.sh
 [ -d folly ] || git clone https://github.com/facebook/folly
 
 mkdir -p double-conversion && cd double-conversion
-grab https://double-conversion.googlecode.com/files/double-conversion-2.0.1.tar.gz
-
-# Careful - tar has no containing dir, files flying everywhere
-tar xzvf double-conversion-2.0.1.tar.gz
-cp "$PKG_DIR/folly/folly/SConstruct.double-conversion" .
-scons -f SConstruct.double-conversion
+# The project has migrated to https://github.com/floitsch/double-conversion
+git clone https://github.com/floitsch/double-conversion
+cd "$PKG_DIR/double-conversion/double-conversion/SConstruct" 
+scons -f SConstruct
 # Folly looks for double-conversion/double-conversion.h
 ln -sf src double-conversion
 # Folly looks for -ldouble-conversion (dash, not underscore)
