@@ -36,8 +36,8 @@ class DevNullRoute {
   template <class Operation>
   static ProxyMcReply route(const ProxyMcRequest& req, Operation) {
 
-    stat_incr(req.context().ctx().proxyRequest().proxy, dev_null_requests_stat,
-              1);
+    stat_incr(req.context().ctx().proxyRequest().proxy->stats,
+              dev_null_requests_stat, 1);
     return NullRoute<RouteHandleIf>::route(req, Operation());
   }
 

@@ -96,36 +96,36 @@ bool match_routing_key_hash(uint32_t routingKeyHash,
 #define STAT_UPDATE(CATEGORY)                                       \
   do {switch (req->op) {                                            \
       case mc_op_get:                                               \
-        stat_incr(proxy, cmd_get_ ## CATEGORY, 1);                  \
+        stat_incr(proxy->stats, cmd_get_ ## CATEGORY, 1);           \
         break;                                                      \
       case mc_op_metaget:                                           \
-        stat_incr(proxy, cmd_meta_ ## CATEGORY, 1);                 \
+        stat_incr(proxy->stats, cmd_meta_ ## CATEGORY, 1);          \
       case mc_op_add:                                               \
-        stat_incr(proxy, cmd_add_ ## CATEGORY, 1);                  \
+        stat_incr(proxy->stats, cmd_add_ ## CATEGORY, 1);           \
         break;                                                      \
       case mc_op_replace:                                           \
-        stat_incr(proxy, cmd_replace_ ## CATEGORY, 1);              \
+        stat_incr(proxy->stats, cmd_replace_ ## CATEGORY, 1);       \
         break;                                                      \
       case mc_op_set:                                               \
-        stat_incr(proxy, cmd_set_ ## CATEGORY, 1);                  \
+        stat_incr(proxy->stats, cmd_set_ ## CATEGORY, 1);           \
         break;                                                      \
       case mc_op_incr:                                              \
-        stat_incr(proxy, cmd_incr_ ## CATEGORY, 1);                 \
+        stat_incr(proxy->stats, cmd_incr_ ## CATEGORY, 1);          \
         break;                                                      \
       case mc_op_decr:                                              \
-        stat_incr(proxy, cmd_decr_ ## CATEGORY, 1);                 \
+        stat_incr(proxy->stats, cmd_decr_ ## CATEGORY, 1);          \
         break;                                                      \
       case mc_op_delete:                                            \
-        stat_incr(proxy, cmd_delete_ ## CATEGORY, 1);               \
+        stat_incr(proxy->stats, cmd_delete_ ## CATEGORY, 1);        \
         break;                                                      \
       case mc_op_lease_set:                                         \
-        stat_incr(proxy, cmd_lease_set_ ## CATEGORY, 1);            \
+        stat_incr(proxy->stats, cmd_lease_set_ ## CATEGORY, 1);     \
         break;                                                      \
       case mc_op_lease_get:                                         \
-        stat_incr(proxy, cmd_lease_get_ ## CATEGORY, 1);            \
+        stat_incr(proxy->stats, cmd_lease_get_ ## CATEGORY, 1);     \
         break;                                                      \
       default:                                                      \
-        stat_incr(proxy, cmd_other_ ## CATEGORY, 1);                \
+        stat_incr(proxy->stats, cmd_other_ ## CATEGORY, 1);         \
         break;}} while(0)
 
 void update_send_stats(proxy_t *proxy, const McMsgRef& req,

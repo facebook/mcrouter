@@ -208,7 +208,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   commands_.emplace("config_age",
     [proxy] (const std::vector<folly::StringPiece>& args) {
       /* capturing this and accessing proxy_ crashes gcc-4.7 */
-      return std::to_string(stat_get_config_age(proxy, time(nullptr)));
+      return std::to_string(stat_get_config_age(proxy->stats, time(nullptr)));
     }
   );
 

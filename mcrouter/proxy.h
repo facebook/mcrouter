@@ -69,7 +69,6 @@ class ProxyClientShared;
 class ProxyClientOwner;
 class ProxyDestination;
 class ProxyDestinationMap;
-class ProxyLogger;
 class ProxyPool;
 class RateLimiter;
 class RuntimeVarsData;
@@ -432,15 +431,9 @@ struct proxy_t {
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
-  /**
-   * perform_stats_logging: if true, this proxy thread will log mcrouter
-   *                        stats to disk every opts->stats_logging_interval
-   *                        milliseconds
-   */
   proxy_t(mcrouter_t *router,
           folly::EventBase* eventBase,
-          const McrouterOptions& opts,
-          bool perform_stats_logging);
+          const McrouterOptions& opts);
 
   ~proxy_t();
 
@@ -479,11 +472,11 @@ struct proxy_t {
   SFRLock configLock_;
   std::shared_ptr<ProxyConfigIf> config_;
 
-  /**
-   * Logs mcrouter stats to disk every opts->stats_logging_interval
-   * milliseconds
-   */
-  std::unique_ptr<ProxyLogger> logger_;
+  pthread_t awriterThreadHandle_{0};
+  void* awriterThreadStack_{nullptr};
+
+  pthread_t statsLogWriterThreadHandle_{0};
+  void* statsLogWriterThreadStack_{nullptr};
 
   void routeHandlesProcessRequest(proxy_request_t* preq);
   void processRequest(proxy_request_t* preq);
@@ -506,8 +499,6 @@ struct proxy_t {
   /** Queue of requests we didn't start processing yet */
   TAILQ_HEAD(RequestTailqHead, proxy_request_t);
   RequestTailqHead waitingRequests_;
-
-  bool performStatsLogging_{false};
 
   /** If true, we can't start processing this request right now */
   bool rateLimited(const proxy_request_t* preq) const;

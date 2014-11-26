@@ -42,6 +42,7 @@
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/McrouterLogger.h"
 #include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -190,7 +191,7 @@ static inline void router_client_on_reply(mcrouter_client_t *client,
                                 client->arg);
   }
 
-  stat_decr_safe(router_entry->proxy,
+  stat_decr_safe(router_entry->proxy->stats,
                  mcrouter_queue_entry_num_outstanding_stat);
   router_entry_destroy(router_entry);
 
@@ -484,7 +485,7 @@ void mcrouter_t::addNonownedProxy(proxy_t* proxy) {
   nonownedProxies_.push_back(proxy);
 }
 
-proxy_t* mcrouter_t::getProxy(size_t index) {
+proxy_t* mcrouter_t::getProxy(size_t index) const {
   if (!nonownedProxies_.empty()) {
     return index < nonownedProxies_.size() ?
                    nonownedProxies_[index] : nullptr;
@@ -532,8 +533,7 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
   for (size_t i = 0; i < router->opts.num_proxies; i++) {
     try {
       auto proxy =
-        folly::make_unique<proxy_t>(router, nullptr, router->opts,
-                                    /* perform_stats_logging */ i == 0);
+        folly::make_unique<proxy_t>(router, nullptr, router->opts);
       if (!router->opts.standalone) {
         router->proxyThreads_.emplace_back(
           folly::make_unique<ProxyThread>(std::move(proxy)));
@@ -599,6 +599,7 @@ void mcrouter_t::spawnAuxiliaryThreads() {
   startAwriterThreads();
   startObservingRuntimeVarsFile();
   spawnStatUpdaterThread();
+  spawnStatLoggerThread();
 }
 
 void mcrouter_t::spawnStatUpdaterThread() {
@@ -628,6 +629,11 @@ void mcrouter_t::startAwriterThreads() {
 void mcrouter_t::stopAwriterThreads() {
   awriter->stop();
   stats_log_writer->stop();
+}
+
+void mcrouter_t::spawnStatLoggerThread() {
+  mcrouterLogger = createMcrouterLogger(this);
+  mcrouterLogger->start();
 }
 
 void mcrouter_t::subscribeToConfigUpdate() {
@@ -664,6 +670,10 @@ void mcrouter_t::joinAuxiliaryThreads() {
     }
   } else {
     taskScheduler_.forkWorkAround();
+  }
+
+  if (mcrouterLogger) {
+    mcrouterLogger->stop();
   }
 
   if (stat_updater_thread_stack) {
@@ -771,7 +781,7 @@ void mcrouter_enqueue_reply(proxy_request_t *preq) {
   asox_queue_entry_t entry;
   mcrouter_queue_entry_t *router_entry = new mcrouter_queue_entry_t();
 
-  stat_incr_safe(preq->proxy, mcrouter_queue_entry_num_outstanding_stat);
+  stat_incr_safe(preq->proxy->stats, mcrouter_queue_entry_num_outstanding_stat);
   router_entry->request = mc_msg_incref(const_cast<mc_msg_t*>(
                                           preq->orig_req.get()));
 

@@ -91,7 +91,7 @@ int DestinationClient::send(McMsgRef requestMsg, void* req_ctx,
       if (reply.result() == mc_res_local_error) {
         update_send_stats(proxy, req, PROXY_SEND_LOCAL_ERROR);
       } else {
-        stat_incr(proxy, sum_server_queue_length_stat, 1);
+        stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
         update_send_stats(proxy, req, PROXY_SEND_OK);
       }
 

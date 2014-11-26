@@ -44,7 +44,6 @@
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyLogger.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyThread.h"
@@ -99,8 +98,7 @@ FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
 
 proxy_t::proxy_t(mcrouter_t *router_,
                  folly::EventBase* eventBase_,
-                 const McrouterOptions& opts_,
-                 bool perform_stats_logging)
+                 const McrouterOptions& opts_)
     : router(router_),
       opts(opts_),
       eventBase(eventBase_),
@@ -108,8 +106,7 @@ proxy_t::proxy_t(mcrouter_t *router_,
       durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
       fiberManager(folly::make_unique<EventBaseLoopController>(),
-                   getFiberManagerOptions(opts_)),
-      performStatsLogging_(perform_stats_logging) {
+                   getFiberManagerOptions(opts_)) {
   TAILQ_INIT(&waitingRequests_);
 
   memset(stats, 0, sizeof(stats));
@@ -151,11 +148,6 @@ void proxy_t::onEventBaseAttached() {
   request_queue = asox_queue_init(eventBase->getLibeventBase(), priority,
                                   1, 0, 0, &proxy_request_queue_cb,
                                   ASOX_QUEUE_INTRA_PROCESS, this);
-
-  if (performStatsLogging_ && router != nullptr
-      && opts.stats_logging_interval != 0) {
-    logger_ = createProxyLogger(this);
-  }
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
 
@@ -243,14 +235,14 @@ proxy_request_t::proxy_request_t(proxy_t* p,
     orig_req = std::move(req);
   }
 
-  stat_incr_safe(proxy, proxy_request_num_outstanding_stat);
+  stat_incr_safe(proxy->stats, proxy_request_num_outstanding_stat);
 }
 
 proxy_request_t::~proxy_request_t() {
   if (processing_) {
     assert(proxy);
     --proxy->numRequestsProcessing_;
-    stat_decr(proxy, proxy_reqs_processing_stat, 1);
+    stat_decr(proxy->stats, proxy_reqs_processing_stat, 1);
     proxy->pump();
   }
 
@@ -280,7 +272,7 @@ void proxy_request_decref(proxy_request_t* preq) {
 
   delete preq;
 
-  stat_decr_safe(proxy, proxy_request_num_outstanding_stat);
+  stat_decr_safe(proxy->stats, proxy_request_num_outstanding_stat);
 }
 
 proxy_request_t* proxy_request_incref(proxy_request_t* preq) {
@@ -358,7 +350,7 @@ void proxy_t::processRequest(proxy_request_t* preq) {
   assert(!preq->processing_);
   preq->processing_ = true;
   ++numRequestsProcessing_;
-  stat_incr(this, proxy_reqs_processing_stat, 1);
+  stat_incr(stats, proxy_reqs_processing_stat, 1);
 
   static fb_timer_t *on_request_timer = nullptr;
 
@@ -373,58 +365,58 @@ void proxy_t::processRequest(proxy_request_t* preq) {
 
   switch (preq->orig_req->op) {
     case mc_op_stats:
-      stat_incr(this, cmd_stats_stat, 1);
-      stat_incr(this, cmd_stats_count_stat, 1);
+      stat_incr(stats, cmd_stats_stat, 1);
+      stat_incr(stats, cmd_stats_count_stat, 1);
       break;
     case mc_op_get:
-      stat_incr(this, cmd_get_stat, 1);
-      stat_incr(this, cmd_get_count_stat, 1);
+      stat_incr(stats, cmd_get_stat, 1);
+      stat_incr(stats, cmd_get_count_stat, 1);
       break;
     case mc_op_metaget:
-      stat_incr(this, cmd_meta_stat, 1);
+      stat_incr(stats, cmd_meta_stat, 1);
       break;
     case mc_op_add:
-      stat_incr(this, cmd_add_stat, 1);
-      stat_incr(this, cmd_add_count_stat, 1);
+      stat_incr(stats, cmd_add_stat, 1);
+      stat_incr(stats, cmd_add_count_stat, 1);
       break;
     case mc_op_replace:
-      stat_incr(this, cmd_replace_stat, 1);
-      stat_incr(this, cmd_replace_count_stat, 1);
+      stat_incr(stats, cmd_replace_stat, 1);
+      stat_incr(stats, cmd_replace_count_stat, 1);
       break;
     case mc_op_set:
-      stat_incr(this, cmd_set_stat, 1);
-      stat_incr(this, cmd_set_count_stat, 1);
+      stat_incr(stats, cmd_set_stat, 1);
+      stat_incr(stats, cmd_set_count_stat, 1);
       break;
     case mc_op_incr:
-      stat_incr(this, cmd_incr_stat, 1);
-      stat_incr(this, cmd_incr_count_stat, 1);
+      stat_incr(stats, cmd_incr_stat, 1);
+      stat_incr(stats, cmd_incr_count_stat, 1);
       break;
     case mc_op_decr:
-      stat_incr(this, cmd_decr_stat, 1);
-      stat_incr(this, cmd_decr_count_stat, 1);
+      stat_incr(stats, cmd_decr_stat, 1);
+      stat_incr(stats, cmd_decr_count_stat, 1);
       break;
     case mc_op_delete:
-      stat_incr(this, cmd_delete_stat, 1);
-      stat_incr(this, cmd_delete_count_stat, 1);
+      stat_incr(stats, cmd_delete_stat, 1);
+      stat_incr(stats, cmd_delete_count_stat, 1);
       break;
     case mc_op_lease_set:
-      stat_incr(this, cmd_lease_set_stat, 1);
-      stat_incr(this, cmd_lease_set_count_stat, 1);
+      stat_incr(stats, cmd_lease_set_stat, 1);
+      stat_incr(stats, cmd_lease_set_count_stat, 1);
       break;
     case mc_op_lease_get:
-      stat_incr(this, cmd_lease_get_stat, 1);
-      stat_incr(this, cmd_lease_get_count_stat, 1);
+      stat_incr(stats, cmd_lease_get_stat, 1);
+      stat_incr(stats, cmd_lease_get_count_stat, 1);
       break;
     default:
-      stat_incr(this, cmd_other_stat, 1);
-      stat_incr(this, cmd_other_count_stat, 1);
+      stat_incr(stats, cmd_other_stat, 1);
+      stat_incr(stats, cmd_other_count_stat, 1);
       break;
   }
 
   routeHandlesProcessRequest(preq);
 
-  stat_incr(this, request_sent_stat, 1);
-  stat_incr(this, request_sent_count_stat, 1);
+  stat_incr(stats, request_sent_stat, 1);
+  stat_incr(stats, request_sent_count_stat, 1);
   if (!opts.disable_dynamic_stats) {
     fb_timer_finish(on_request_timer);
   }
@@ -441,7 +433,7 @@ void proxy_t::dispatchRequest(proxy_request_t* preq) {
     // TODO(bwatling): replace waitingRequests_ with folly::CountedIntrusiveList
     TAILQ_INSERT_TAIL(&waitingRequests_, preq, entry_);
     numRequestsWaiting_ += 1;
-    stat_incr(this, proxy_reqs_waiting_stat, 1);
+    stat_incr(stats, proxy_reqs_waiting_stat, 1);
   } else {
     processRequest(preq);
   }
@@ -473,7 +465,7 @@ void proxy_t::pump() {
     auto preq = TAILQ_FIRST(&waitingRequests_);
     TAILQ_REMOVE(&waitingRequests_, preq, entry_);
     numRequestsWaiting_ -= 1;
-    stat_decr(this, proxy_reqs_waiting_stat, 1);
+    stat_decr(stats, proxy_reqs_waiting_stat, 1);
     processRequest(preq);
     proxy_request_decref(preq);
   }
@@ -508,14 +500,14 @@ void proxy_request_t::continueSendReply() {
     enqueueReply_(this);
   }
 
-  stat_incr(proxy, request_replied_stat, 1);
-  stat_incr(proxy, request_replied_count_stat, 1);
+  stat_incr(proxy->stats, request_replied_stat, 1);
+  stat_incr(proxy->stats, request_replied_count_stat, 1);
   if (mc_res_is_err(reply.result())) {
-    stat_incr(proxy, request_error_stat, 1);
-    stat_incr(proxy, request_error_count_stat, 1);
+    stat_incr(proxy->stats, request_error_stat, 1);
+    stat_incr(proxy->stats, request_error_count_stat, 1);
   } else {
-    stat_incr(proxy, request_success_stat, 1);
-    stat_incr(proxy, request_success_count_stat, 1);
+    stat_incr(proxy->stats, request_success_stat, 1);
+    stat_incr(proxy->stats, request_success_count_stat, 1);
   }
 }
 
@@ -703,7 +695,7 @@ void proxy_pool_shadowing_policy_t::registerOnUpdateCallback(
 static void proxy_config_swap(proxy_t* proxy,
                               std::shared_ptr<ProxyConfig> config) {
   /* Update the number of server stat for this proxy. */
-  stat_set_uint64(proxy, num_servers_stat, 0);
+  stat_set_uint64(proxy->stats, num_servers_stat, 0);
   for (auto& it : config->poolsMap()) {
     auto pool = it.second;
 
@@ -712,7 +704,7 @@ static void proxy_config_swap(proxy_t* proxy,
     case REGIONAL_POOL: {
       auto proxy_pool = std::dynamic_pointer_cast<const ProxyPool>(pool);
       FBI_ASSERT(proxy_pool);
-      stat_incr(proxy, num_servers_stat, proxy_pool->clients.size());
+      stat_incr(proxy->stats, num_servers_stat, proxy_pool->clients.size());
       break;
     }
     default:;
@@ -720,7 +712,7 @@ static void proxy_config_swap(proxy_t* proxy,
   }
 
   auto oldConfig = proxy->swapConfig(std::move(config));
-  stat_set_uint64(proxy, config_last_success_stat, time(nullptr));
+  stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
 
   if (oldConfig) {
     if (!proxy->opts.sync) {

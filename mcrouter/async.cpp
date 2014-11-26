@@ -526,7 +526,7 @@ void asynclog_command(proxy_request_t *preq,
     return;
   }
 
-  stat_incr(preq->proxy, asynclog_requests_stat, 1);
+  stat_incr(preq->proxy->stats, asynclog_requests_stat, 1);
 }
 
 }}} // facebook::memcache::mcrouter

@@ -41,6 +41,8 @@ libmcroutercore_a_SOURCES = \
   mcrouter_config.h \
   mcrouter_options_list.h \
   McrouterLogFailure.h \
+  McrouterLogger.cpp \
+  McrouterLogger.h \
   Observable-inl.h \
   Observable.h \
   options-template.h \
@@ -69,8 +71,6 @@ libmcroutercore_a_SOURCES = \
   ProxyDestination.h \
   ProxyDestinationMap.cpp \
   ProxyDestinationMap.h \
-  ProxyLogger.cpp \
-  ProxyLogger.h \
   ProxyMcReply.cpp \
   ProxyMcReply.h \
   ProxyMcRequest.cpp \

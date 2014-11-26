@@ -36,7 +36,7 @@ enum stat_name_t {
 #undef STSS
 
 // Forward declarations
-struct proxy_request_t;
+struct mcrouter_t;
 struct proxy_t;
 
 /** statistics ftw */
@@ -89,24 +89,22 @@ struct stat_t {
 };
 
 /** prototypes are stupid */
-void init_stats(stat_t *stats);
-void stat_incr(proxy_t*, stat_name_t, int64_t);
-void stat_decr(proxy_t*, stat_name_t, int64_t);
-void stat_incr_safe(proxy_t*, stat_name_t);
-void stat_decr_safe(proxy_t*, stat_name_t);
+void init_stats(stat_t* stats);
+void stat_incr(stat_t*, stat_name_t, int64_t);
+void stat_decr(stat_t*, stat_name_t, int64_t);
+void stat_incr_safe(stat_t*, stat_name_t);
+void stat_decr_safe(stat_t*, stat_name_t);
 
 /**
- * Current rate of proxy->stats[idx] (which must be a rate stat),
- * units will be per second.
- *
- * Caller must have obtained stats_lock.
+ * Current aggregation of rate of stats[idx] (which must be an aggregated
+ * rate stat), units will be per second.
  */
-double stats_rate_value(proxy_t* proxy, int idx);
+double stats_aggregate_rate_value(const mcrouter_t* router, int idx);
 
-void stat_set_uint64(proxy_t*, stat_name_t, uint64_t);
-uint64_t stat_get_uint64(proxy_t*, stat_name_t);
-uint64_t stat_get_config_age(const proxy_t* proxy, uint64_t now);
+void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
+uint64_t stat_get_uint64(stat_t*, stat_name_t);
+uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
 McReply stats_reply(proxy_t*, folly::StringPiece);
-void prepare_stats(proxy_t *proxy, stat_t *stats);
+void prepare_stats(mcrouter_t* router, stat_t* stats);
 
 }}} // facebook::memcache::mcrouter

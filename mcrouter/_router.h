@@ -97,6 +97,12 @@ struct mcrouter_t {
 
   std::shared_ptr<RouterLogger> logger;
 
+  /**
+   * Logs mcrouter stats to disk every opts->stats_logging_interval
+   * milliseconds
+   */
+  std::unique_ptr<McrouterLogger> mcrouterLogger;
+
   /*
    * Asynchronous writer.
    */
@@ -147,7 +153,7 @@ struct mcrouter_t {
    * @return  nullptr if index is >= opts.num_proxies,
    *          pointer to the proxy otherwise.
    */
-  proxy_t* getProxy(size_t index);
+  proxy_t* getProxy(size_t index) const;
 
   /**
    * @return  servers that recently received error replies.
@@ -184,6 +190,7 @@ struct mcrouter_t {
   std::vector<proxy_t*> nonownedProxies_;
 
   void spawnStatUpdaterThread();
+  void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
 
   friend mcrouter_t* mcrouter_new(const McrouterOptions&);

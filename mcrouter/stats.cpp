@@ -90,6 +90,32 @@ struct ServerStat {
   }
 };
 
+int get_num_bins_used(const mcrouter_t* router) {
+  if (router->opts.num_proxies > 0) {
+    const proxy_t* anyProxy = router->getProxy(0);
+    if (anyProxy) {
+      return anyProxy->num_bins_used;
+    }
+  }
+  return 0;
+}
+
+double stats_rate_value(proxy_t* proxy, int idx) {
+  const stat_t* stat = &proxy->stats[idx];
+  double rate = 0;
+
+  if (proxy->num_bins_used != 0) {
+    if (stat->aggregate) {
+      rate = stats_aggregate_rate_value(proxy->router, idx);
+    } else {
+      rate = (double)proxy->stats_num_within_window[idx] /
+        (proxy->num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
+    }
+  }
+
+  return rate;
+}
+
 }  // anonymous namespace
 
 // This is a subset of what's in proc(5).
@@ -102,30 +128,24 @@ struct proc_stat_data_t {
   unsigned long rss;
 };
 
-double stats_rate_value(proxy_t* proxy, int idx) {
-  const stat_t* stat = &proxy->stats[idx];
+double stats_aggregate_rate_value(const mcrouter_t* router, int idx) {
   double rate = 0;
+  int num_bins_used = get_num_bins_used(router);
 
-  if (proxy->num_bins_used != 0) {
-    if (stat->aggregate) {
-      mcrouter_t* router = proxy->router;
-      uint64_t num = 0;
-      for (size_t i = 0; i < router->opts.num_proxies; ++i) {
-        num += router->getProxy(i)->stats_num_within_window[idx];
-      }
-      rate = (double)num / (proxy->num_bins_used *
-                            MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
-    } else {
-      rate = (double)proxy->stats_num_within_window[idx] /
-        (proxy->num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
+  if (num_bins_used != 0) {
+    uint64_t num = 0;
+    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+      num += router->getProxy(i)->stats_num_within_window[idx];
     }
+    rate = (double)num / (num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
   }
 
   return rate;
 }
 
-static std::string rate_stat_to_str(proxy_t * proxy,
-                                    int idx) {
+
+
+static std::string rate_stat_to_str(proxy_t * proxy, int idx) {
   return folly::stringPrintf("%g", stats_rate_value(proxy, idx));
 }
 
@@ -180,7 +200,7 @@ static std::string stat_get_rusage(void* ptr) {
 
 // define all data structs for stats here [median, percentile, etc]
 
-void init_stats(stat_t *stats) {
+void init_stats(stat_t* stats) {
 #define STAT(_name, _type, _aggregate, _data_assignment)                \
   {                                                                     \
     stat_t& s = stats[_name##_stat];                                    \
@@ -203,8 +223,8 @@ void init_stats(stat_t *stats) {
 #undef STSS
 }
 
-uint64_t stat_get_config_age(const proxy_t *proxy, uint64_t now) {
-  uint64_t lct = proxy->stats[config_last_success_stat].data.uint64;
+uint64_t stat_get_config_age(const stat_t* stats, uint64_t now) {
+  uint64_t lct = stats[config_last_success_stat].data.uint64;
   return now - lct;
 }
 
@@ -292,25 +312,15 @@ static bool getOpenFDCount(size_t& openFD) {
   return true;
 }
 
-void prepare_stats(proxy_t *proxy, stat_t *stats) {
-  mcrouter_t *router = proxy->router;
+void prepare_stats(mcrouter_t* router, stat_t* stats) {
   init_stats(stats);
 
-  if (router->prepare_proxy_server_stats) {
-    router->prepare_proxy_server_stats(proxy);
-  }
-
-  uint64_t total_mcc_txbuf_reqs = 0;
-  uint64_t total_mcc_waiting_replies = 0;
+  uint64_t config_last_success = 0;
   for (size_t i = 0; i < router->opts.num_proxies; ++i) {
-    auto cnt = router->getProxy(i)->destinationMap
-      ->getOutstandingRequestStats();
-    total_mcc_txbuf_reqs += cnt.first;
-    total_mcc_waiting_replies += cnt.second;
+    auto proxy = router->getProxy(i);
+    config_last_success = std::max(config_last_success,
+      proxy->stats[config_last_success_stat].data.uint64);
   }
-
-  stat_set_uint64(proxy, mcc_txbuf_reqs_stat, total_mcc_txbuf_reqs);
-  stat_set_uint64(proxy, mcc_waiting_replies_stat, total_mcc_waiting_replies);
 
   stats[commandargs_stat].data.string = router->command_args;
 
@@ -321,9 +331,8 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
   stats[start_time_stat].data.uint64 = start_time;
   stats[uptime_stat].data.uint64 = now - start_time;
 
-  stats[config_age_stat].data.uint64 = stat_get_config_age(proxy, now);
-  stats[config_last_success_stat].data.uint64 =
-    proxy->stats[config_last_success_stat].data.uint64;
+  stats[config_age_stat].data.uint64 = now - config_last_success;
+  stats[config_last_success_stat].data.uint64 = config_last_success;
   stats[config_last_attempt_stat].data.uint64 = router->last_config_attempt;
   stats[config_failures_stat].data.uint64 = router->config_failures;
 
@@ -347,7 +356,7 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
   stats[ps_rss_stat].data.uint64 = ps_data.rss;
   stats[ps_vsize_stat].data.uint64 = ps_data.vsize;
   size_t open_fd = 0;
-  if (proxy->opts.track_open_fds) {
+  if (router->opts.track_open_fds) {
     getOpenFDCount(open_fd);
   }
   stats[ps_open_fd_stat].data.uint64 = open_fd;
@@ -397,33 +406,33 @@ void prepare_stats(proxy_t *proxy, stat_t *stats) {
     stats[num_servers_up_stat].data.uint64;
 }
 
-void stat_incr(proxy_t *proxy, stat_name_t stat_num, int64_t amount) {
-  proxy->stats[stat_num].data.uint64 += amount;
+void stat_incr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+  stats[stat_num].data.uint64 += amount;
 }
 
-void stat_decr(proxy_t *proxy, stat_name_t stat_num, int64_t amount) {
-  stat_incr(proxy, stat_num, -amount);
+void stat_decr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+  stat_incr(stats, stat_num, -amount);
 }
 
 // Thread-safe increment of the given counter
-void stat_incr_safe(proxy_t *proxy, stat_name_t stat_name) {
-  __sync_fetch_and_add(&proxy->stats[stat_name].data.uint64, 1);
+void stat_incr_safe(stat_t* stats, stat_name_t stat_name) {
+  __sync_fetch_and_add(&stats[stat_name].data.uint64, 1);
 }
 
-void stat_decr_safe(proxy_t *proxy, stat_name_t stat_name) {
-  __sync_fetch_and_add(&proxy->stats[stat_name].data.uint64, -1);
+void stat_decr_safe(stat_t* stats, stat_name_t stat_name) {
+  __sync_fetch_and_add(&stats[stat_name].data.uint64, -1);
 }
 
-void stat_set_uint64(proxy_t *proxy,
-                            stat_name_t stat_num,
-                            uint64_t value) {
-  stat_t* stat = &proxy->stats[stat_num];
+void stat_set_uint64(stat_t* stats,
+                     stat_name_t stat_num,
+                     uint64_t value) {
+  stat_t* stat = &stats[stat_num];
   FBI_ASSERT(stat->type == stat_uint64);
   stat->data.uint64 = value;
 }
 
-uint64_t stat_get_uint64(proxy_t *proxy, stat_name_t stat_num) {
-  stat_t* stat = &proxy->stats[stat_num];
+uint64_t stat_get_uint64(stat_t* stats, stat_name_t stat_num) {
+  stat_t* stat = &stats[stat_num];
   return stat->data.uint64;
 }
 
@@ -479,7 +488,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
 
   stat_t stats[num_stats];
 
-  prepare_stats(proxy, stats);
+  prepare_stats(proxy->router, stats);
 
   for (unsigned int ii = 0; ii < num_stats; ii++) {
     stat_t* stat = &stats[ii];

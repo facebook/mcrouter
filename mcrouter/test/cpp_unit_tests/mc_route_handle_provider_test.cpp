@@ -68,9 +68,7 @@ getRoute(const folly::dynamic& d) {
   McrouterOptions opts;
   folly::EventBase eventBase;
   auto router = folly::make_unique<mcrouter_t>(opts);
-  auto proxy = folly::make_unique<proxy_t>(router.get(), &eventBase,
-                                           opts,
-                                           /* perform_stats_logging */ false);
+  auto proxy = folly::make_unique<proxy_t>(router.get(), &eventBase, opts);
   MockPoolFactory pf;
   McRouteHandleProvider provider(proxy.get(), *proxy->destinationMap, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);

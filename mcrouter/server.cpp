@@ -94,11 +94,11 @@ void serverLoop(
 
   worker.setOnRequest(ServerOnRequest(routerClient));
   worker.setOnConnectionAccepted([proxy] () {
-      stat_incr(proxy, successful_client_connections_stat, 1);
-      stat_incr(proxy, num_clients_stat, 1);
+      stat_incr(proxy->stats, successful_client_connections_stat, 1);
+      stat_incr(proxy->stats, num_clients_stat, 1);
     });
   worker.setOnConnectionClosed([proxy] (facebook::memcache::McServerSession&) {
-      stat_decr(proxy, num_clients_stat, 1);
+      stat_decr(proxy->stats, num_clients_stat, 1);
     });
 
   /* TODO(libevent): the only reason this is not simply evb.loop() is

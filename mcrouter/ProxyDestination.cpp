@@ -247,7 +247,7 @@ void ProxyDestination::on_reply(const McMsgRef& req,
   }
 
   if (preq) {
-    stat_decr(proxy, sum_server_queue_length_stat, 1);
+    stat_decr(proxy->stats, sum_server_queue_length_stat, 1);
   }
 
   if (!proxy->opts.disable_dynamic_stats) {
@@ -259,14 +259,14 @@ void ProxyDestination::on_up() {
   FBI_ASSERT(proxy->magic == proxy_magic);
   FBI_ASSERT(!stats_.is_up);
 
-  stat_incr(proxy, server_up_events_stat, 1);
-  stat_incr(proxy, num_servers_up_stat, 1);
+  stat_incr(proxy->stats, server_up_events_stat, 1);
+  stat_incr(proxy->stats, num_servers_up_stat, 1);
 
   stats_.is_up = true;
 
   VLOG(1) << "server " << pdstnKey << " up (" <<
-      stat_get_uint64(proxy, num_servers_up_stat) << " of " <<
-      stat_get_uint64(proxy, num_servers_stat) << ")";
+      stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
+      stat_get_uint64(proxy->stats, num_servers_stat) << ")";
 }
 
 void ProxyDestination::on_down() {
@@ -274,24 +274,24 @@ void ProxyDestination::on_down() {
 
   if (resetting) {
     VLOG(1) << "server " << pdstnKey << " inactive (" <<
-        stat_get_uint64(proxy, num_servers_up_stat) << " of " <<
-        stat_get_uint64(proxy, num_servers_stat) << ")";
-    stat_incr(proxy, closed_inactive_connections_stat, 1);
+        stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
+        stat_get_uint64(proxy->stats, num_servers_stat) << ")";
+    stat_incr(proxy->stats, closed_inactive_connections_stat, 1);
     if (stats_.is_up) {
-      stat_decr(proxy, num_servers_up_stat, 1);
+      stat_decr(proxy->stats, num_servers_up_stat, 1);
       stats_.is_up = false;
     }
   } else {
     VLOG(1) << "server " << pdstnKey << " down (" <<
-        stat_get_uint64(proxy, num_servers_up_stat) << " of " <<
-        stat_get_uint64(proxy, num_servers_stat) << ")";
+        stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
+        stat_get_uint64(proxy->stats, num_servers_stat) << ")";
 
     /* NB stats_.is_up may be 0, there's no guarantee we're up because of
      * the way libasox does auto-connect-on-send */
 
-    stat_incr(proxy, server_down_events_stat, 1);
+    stat_incr(proxy->stats, server_down_events_stat, 1);
     if (stats_.is_up) {
-      stat_decr(proxy, num_servers_up_stat, 1);
+      stat_decr(proxy->stats, num_servers_up_stat, 1);
     }
     stats_.is_up = false;
 
