@@ -20,6 +20,7 @@
 #include "mcrouter/_router.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -304,6 +305,12 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       jsonOpts.sort_keys = true;
       return folly::json::serialize(builder.preprocessedConfig(),
                                     jsonOpts).toStdString();
+    }
+  );
+
+  commands_.emplace("hostid",
+    [] (const std::vector<folly::StringPiece>& args) {
+      return folly::to<std::string>(globals::hostid());
     }
   );
 }

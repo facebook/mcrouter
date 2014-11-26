@@ -32,3 +32,9 @@ class TestServiceInfo(McrouterTestCase):
             host, port = part.split(":")
             self.assertEqual(host, "127.0.0.1")
             self.assertEqual(port, str(ports[i]))
+
+    def test_hostid(self):
+        mcrouter = self.get_mcrouter()
+        hostid = mcrouter.get("__mcrouter__.hostid")
+        self.assertEqual(str(int(hostid)), hostid)
+        self.assertEqual(hostid, mcrouter.get("__mcrouter__.hostid"))
