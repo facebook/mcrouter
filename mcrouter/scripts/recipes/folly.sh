@@ -4,18 +4,12 @@ source common.sh
 
 [ -d folly ] || git clone https://github.com/facebook/folly
 
-mkdir -p double-conversion && cd double-conversion
-grab https://double-conversion.googlecode.com/files/double-conversion-2.0.1.tar.gz
+git clone https://github.com/floitsch/double-conversion
+cd "$PKG_DIR/double-conversion/"
+scons prefix="$INSTALL_DIR" install
 
-# Careful - tar has no containing dir, files flying everywhere
-tar xzvf double-conversion-2.0.1.tar.gz
-cp "$PKG_DIR/folly/folly/SConstruct.double-conversion" .
-scons -f SConstruct.double-conversion
 # Folly looks for double-conversion/double-conversion.h
 ln -sf src double-conversion
-# Folly looks for -ldouble-conversion (dash, not underscore)
-# Must be PIC, since folly also builds a shared library
-ln -sf libdouble_conversion_pic.a libdouble-conversion.a
 
 cd "$PKG_DIR/folly/folly/test/"
 grab http://googletest.googlecode.com/files/gtest-1.6.0.zip
