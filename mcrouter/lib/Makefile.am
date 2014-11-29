@@ -137,6 +137,8 @@ libmcrouter_a_SOURCES = \
   mc/umbrella_protocol.c \
   mc/umbrella_protocol.h \
   mc/util.h \
+  network/AccessPoint.cpp \
+  network/AccessPoint.h \
   network/AsyncMcClient-inl.h \
   network/AsyncMcClient.h \
   network/AsyncMcClientImpl-inl.h \

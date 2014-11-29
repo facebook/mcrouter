@@ -12,7 +12,7 @@
 
 #include <string>
 
-#include "mcrouter/AccessPoint.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

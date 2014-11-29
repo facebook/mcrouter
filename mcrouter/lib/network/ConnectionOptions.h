@@ -13,6 +13,7 @@
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 
 namespace folly {
 class SSLContext;
@@ -28,26 +29,17 @@ struct ConnectionOptions {
 
   ConnectionOptions(folly::StringPiece host_,
                     uint16_t port_,
-                    mc_protocol_t protocol_) :
-      host(host_.begin(), host_.end()),
-      port(port_),
-      protocol(protocol_) {
+                    mc_protocol_t protocol_)
+    : accessPoint(host_.str(), port_, protocol_) {
+  }
+
+  explicit ConnectionOptions(AccessPoint ap) : accessPoint(std::move(ap)) {
   }
 
   /**
-   * Hostname of the peer to connect to.
+   * Access point of the destination.
    */
-  std::string host;
-
-  /**
-   * Port of the peer to connect to.
-   */
-  uint16_t port{0};
-
-  /**
-   * Type of protocol that should be used.
-   */
-  mc_protocol_t protocol{mc_unknown_protocol};
+  AccessPoint accessPoint;
 
   /**
    * Number of TCP KeepAlive probes to send before considering connection dead.

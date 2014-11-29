@@ -165,15 +165,14 @@ class FailoverWithExptimeRoute {
     const size_t tagLength =
       kFailoverTagStart.size() +
       proxyClient->ap.getHost().size() +
-      proxyClient->ap.getPort().size() +
-      1; // kFailoverHostPortSeparator
+      6; // 1 for kFailoverHostPortSeparator + 5 for port.
     std::string failoverTag;
     failoverTag.reserve(tagLength);
     failoverTag = kFailoverTagStart;
-    failoverTag += proxyClient->ap.getHost();
-    if (!proxyClient->ap.getPort().empty()) {
+    failoverTag += proxyClient->ap.getHost().str();
+    if (proxyClient->ap.getPort() != 0) {
       failoverTag += kFailoverHostPortSeparator;
-      failoverTag += proxyClient->ap.getPort();
+      failoverTag += folly::to<std::string>(proxyClient->ap.getPort());
     }
 
     // Safety check: scrub the host and port for ':' to avoid appending

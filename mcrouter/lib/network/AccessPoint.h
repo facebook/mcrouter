@@ -14,45 +14,27 @@
 
 #include "mcrouter/lib/mc/protocol.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
 
 struct AccessPoint {
-  explicit AccessPoint(std::string host = "",
-                       std::string port = "",
-                       mc_protocol_t protocol = mc_unknown_protocol,
-                       mc_transport_t transport = mc_unknown_transport);
-
-  AccessPoint(const AccessPoint& other);
-
-  AccessPoint(AccessPoint&& other) noexcept;
-
-  AccessPoint& operator=(const AccessPoint& other);
-
-  AccessPoint& operator=(AccessPoint&& other);
+  explicit AccessPoint(folly::StringPiece host = "",
+                       uint16_t port = 0,
+                       mc_protocol_t protocol = mc_unknown_protocol);
 
   static bool create(folly::StringPiece host_port_protocol,
                      mc_protocol_t default_protocol,
-                     mc_transport_t default_transport,
                      AccessPoint& ap);
 
-  const mc_accesspoint_t& mc_accesspoint() const {
-    return ap_;
-  }
-
-  std::string getHost() const {
+  const folly::StringPiece getHost() const {
     return host_;
   }
 
-  std::string getPort() const {
+  uint16_t getPort() const {
     return port_;
   }
 
   mc_protocol_t getProtocol() const {
-    return ap_.protocol;
-  }
-
-  mc_transport_t getTransport() const {
-    return ap_.transport;
+    return protocol_;
   }
 
   /**
@@ -66,9 +48,9 @@ struct AccessPoint {
   std::string toString() const;
 
  private:
-  mc_accesspoint_t ap_;
   std::string host_;
-  std::string port_;
+  uint16_t port_;
+  mc_protocol_t protocol_;
 };
 
-}}}  // facebook::memcache::mcrouter
+}}  // facebook::memcache

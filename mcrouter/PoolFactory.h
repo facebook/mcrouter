@@ -26,11 +26,11 @@ class dynamic;
 
 namespace facebook { namespace memcache {
 
+class AccessPoint;
 class McrouterOptions;
 
 namespace mcrouter {
 
-class AccessPoint;
 class ConfigApi;
 class ProxyClientCommon;
 class ProxyGenericPool;

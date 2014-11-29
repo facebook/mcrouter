@@ -9,6 +9,7 @@
 #include "ProxyClientCommon.h"
 
 #include <folly/Conv.h>
+#include <folly/Format.h>
 
 #include "mcrouter/proxy.h"
 
@@ -36,9 +37,7 @@ ProxyClientCommon::ProxyClientCommon(unsigned index,
       server_timeout(std::move(timeout)),
       indexInPool(indexInPool_),
       useSsl(useSsl_) {
-  FBI_ASSERT(ap.getTransport() == mc_stream); /* here there be clowns */
-
-  destination_key = ap.getHost() + ":" + ap.getPort();
+  destination_key = folly::sformat("{}:{}", ap.getHost(), ap.getPort());
 }
 
 std::string ProxyClientCommon::genProxyDestinationKey() const {

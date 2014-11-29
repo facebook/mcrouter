@@ -550,8 +550,7 @@ PoolFactory::parsePool(const string& pool_name_str,
         auto jhostnameStr = jserver.asString();
 
         // we support both host:port and host:port:protocol
-        if (!AccessPoint::create(jhostnameStr, pool->protocol, pool->transport,
-                                 ap)) {
+        if (!AccessPoint::create(jhostnameStr, pool->protocol, ap)) {
           goto epilogue;
         }
       } else if (jserver.isObject()) {
@@ -563,15 +562,14 @@ PoolFactory::parsePool(const string& pool_name_str,
         serverUseSsl = jServerUseSsl.asBool();
 
         auto jhostnameStr = jhostname.asString();
-        if (!AccessPoint::create(jhostnameStr,
+        if (parse_transport(jserver, pool->transport) == mc_unknown_transport ||
+            !AccessPoint::create(jhostnameStr,
                                  parse_protocol(jserver, pool->protocol),
-                                 parse_transport(jserver, pool->transport),
                                  ap)) {
           goto epilogue;
         }
 
-        if (ap.getTransport() == mc_unknown_transport ||
-            ap.getProtocol() == mc_unknown_protocol) {
+        if (ap.getProtocol() == mc_unknown_protocol) {
           goto epilogue;
         }
       } else {

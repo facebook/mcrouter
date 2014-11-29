@@ -110,11 +110,7 @@ void DestinationClient::initializeAsyncMcClient() {
   auto pdstn = pdstn_.lock();
   assert(pdstn != nullptr);
 
-  auto& accessPoint = pdstn->accessPoint;
-  auto port = folly::to<uint32_t>(accessPoint.getPort());
-
-  ConnectionOptions options(accessPoint.getHost(), port,
-                            accessPoint.getProtocol());
+  ConnectionOptions options(pdstn->accessPoint);
   options.tcpKeepAliveCount = proxy_->opts.keepalive_cnt;
   options.tcpKeepAliveIdle = proxy_->opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = proxy_->opts.keepalive_interval_s;

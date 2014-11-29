@@ -16,7 +16,7 @@
 
 #include <folly/IntrusiveList.h>
 
-#include "mcrouter/AccessPoint.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/McMsgRef.h"

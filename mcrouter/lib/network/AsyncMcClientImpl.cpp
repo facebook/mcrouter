@@ -75,7 +75,8 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     ConnectionOptions options)
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
-      outOfOrder_(connectionOptions_.protocol == mc_umbrella_protocol),
+      outOfOrder_(connectionOptions_.accessPoint.getProtocol() ==
+                  mc_umbrella_protocol),
       timeoutCallback_(folly::make_unique<TimeoutCallback>(*this)),
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
@@ -304,8 +305,8 @@ void AsyncMcClientImpl::attemptConnection() {
     if (!sslContext) {
       failure::log("AsyncMcClient", failure::Category::kBadEnvironment,
         "SSLContext provider returned nullptr, check SSL certificates. Any "
-        "further request to [{}]:{} will fail.", connectionOptions_.host,
-        connectionOptions_.port);
+        "further request to {} will fail.",
+        connectionOptions_.accessPoint.toHostPortString());
       connectError(TransportException(TransportException::SSL_ERROR));
       return;
     }
@@ -316,7 +317,8 @@ void AsyncMcClientImpl::attemptConnection() {
   }
 
   auto address = folly::SocketAddress(
-    connectionOptions_.host, connectionOptions_.port,
+    connectionOptions_.accessPoint.getHost().str(),
+    connectionOptions_.accessPoint.getPort(),
     /* allowNameLookup */ true);
 
   auto socketOptions = createTCPKeepAliveOptions(
@@ -454,7 +456,7 @@ void AsyncMcClientImpl::readEOF() noexcept {
 void AsyncMcClientImpl::readError(const TransportException& ex) noexcept {
   assert(connectionState_ == ConnectionState::UP);
   VLOG(1) << "Failed to read from socket with remote endpoint \""
-          << connectionOptions_.host << ":" << connectionOptions_.port
+          << connectionOptions_.accessPoint.toString()
           << "\". Exception: " << ex.what();
   processShutdown();
 }
@@ -473,7 +475,7 @@ void AsyncMcClientImpl::writeError(
          connectionState_ == ConnectionState::ERROR);
 
   VLOG(1) << "Failed to write into socket with remote endpoint \""
-          << connectionOptions_.host << ":" << connectionOptions_.port
+          << connectionOptions_.accessPoint.toString()
           << "\", wrote " << bytesWritten
           << " bytes. Exception: " << ex.what();
 
@@ -492,7 +494,7 @@ void AsyncMcClientImpl::replyReady(McReply mcReply, mc_op_t operation,
   // e.g. we sent some command that server didn't understand. We need to log
   // the original request and close the connection.
   if (mcReply.result() == mc_res_local_error &&
-      connectionOptions_.protocol == mc_ascii_protocol) {
+      connectionOptions_.accessPoint.getProtocol() == mc_ascii_protocol) {
     if (!pendingReplyQueue_.empty()) {
       std::string requestData;
       auto& request = pendingReplyQueue_.front().reqContext;

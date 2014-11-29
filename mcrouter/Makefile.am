@@ -15,8 +15,6 @@ CLEANFILES = \
 
 libmcroutercore_a_SOURCES = \
   _router.h \
-  AccessPoint.cpp \
-  AccessPoint.h \
   async.cpp \
   async.h \
   awriter.h \

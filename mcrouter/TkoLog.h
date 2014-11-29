@@ -13,9 +13,11 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/TkoCounters.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
 
 class AccessPoint;
+
+namespace mcrouter {
 
 enum class TkoLogEvent {
   MarkHardTko,

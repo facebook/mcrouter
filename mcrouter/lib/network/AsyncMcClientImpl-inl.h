@@ -30,7 +30,7 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
 
   auto op = (mc_op_t)Op;
   auto req = ReqInfo::getFromPool(request, nextMsgId_, op,
-                                  connectionOptions_.protocol,
+                                  connectionOptions_.accessPoint.getProtocol(),
                                   std::move(callback), selfPtr);
 
   switch (req->reqContext.serializationResult()) {

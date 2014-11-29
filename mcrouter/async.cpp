@@ -496,7 +496,7 @@ void asynclog_command(proxy_request_t *preq,
 
   dynamic json = {};
   auto host = pclient->ap.getHost();
-  auto port = folly::to<int>(pclient->ap.getPort());
+  auto port = pclient->ap.getPort();
   char command[IOV_MAX];
   ssize_t command_len = mc_ascii_req_to_string(req, command, IOV_MAX);
 
