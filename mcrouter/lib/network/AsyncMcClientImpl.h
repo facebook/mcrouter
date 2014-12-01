@@ -69,6 +69,7 @@ class AsyncMcClientImpl :
 
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
+  std::pair<uint64_t, uint64_t> getBatchingStat() const;
 
  private:
   class TimeoutCallback;
@@ -152,6 +153,10 @@ class AsyncMcClientImpl :
   ReqInfo::RequestQueue writeQueue_;
   // Queue of requests, that are already sent and are waiting for replies.
   ReqInfo::RequestQueue pendingReplyQueue_;
+
+  // Stats.
+  std::pair<uint64_t, uint16_t> batchStatPrevious{0, 0};
+  std::pair<uint64_t, uint16_t> batchStatCurrent{0, 0};
 
   // Id to request map. Used only in case of out-of-order protocol for fast
   // request lookup.

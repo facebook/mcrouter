@@ -30,6 +30,13 @@ class DestinationClient {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
+  /**
+   * Get average request batch size that is sent over network in one write.
+   *
+   * See AsyncMcClient::getBatchingStat() for more details.
+   */
+  std::pair<uint64_t, uint64_t> getBatchingStat() const;
+
   int send(McMsgRef requestMsg, void* req_ctx, uint64_t senderId);
 
   ~DestinationClient();

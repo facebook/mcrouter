@@ -45,4 +45,8 @@ inline size_t AsyncMcClient::getInflightRequestCount() const {
   return base_->getInflightRequestCount();
 }
 
+inline std::pair<uint64_t, uint64_t> AsyncMcClient::getBatchingStat() const {
+  return base_->getBatchingStat();
+}
+
 }} // facebook::memcache

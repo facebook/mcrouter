@@ -172,6 +172,11 @@ size_t DestinationClient::getInflightRequestCount() const {
   return asyncMcClient_ ? asyncMcClient_->getInflightRequestCount() : 0;
 }
 
+std::pair<uint64_t, uint64_t> DestinationClient::getBatchingStat() const {
+  return asyncMcClient_ ? asyncMcClient_->getBatchingStat()
+                        : std::make_pair(0UL, 0UL);
+}
+
 DestinationClient::~DestinationClient() {
   if (asyncMcClient_) {
     asyncMcClient_->setStatusCallbacks(nullptr, nullptr);

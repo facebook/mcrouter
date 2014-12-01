@@ -99,16 +99,17 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
   return destination;
 }
 
-std::pair<uint64_t, uint64_t>
-ProxyDestinationMap::getOutstandingRequestStats() {
+AggregatedDestinationStats ProxyDestinationMap::getDestinationsStats() {
   std::lock_guard<std::mutex> lck(destinationsLock_);
-  uint64_t pending = 0;
-  uint64_t inflight = 0;
+  AggregatedDestinationStats stats;
   for (const auto& it : destinations_) {
-    pending += it.second->getPendingRequestCount();
-    inflight += it.second->getInflightRequestCount();
+    stats.pendingRequests += it.second->getPendingRequestCount();
+    stats.inflightRequests += it.second->getInflightRequestCount();
+    auto batch = it.second->getBatchingStat();
+    stats.batches.first += batch.first;
+    stats.batches.second += batch.second;
   }
-  return std::make_pair(pending, inflight);
+  return std::move(stats);
 }
 
 void ProxyDestinationMap::markAsActive(ProxyDestination& destination) {

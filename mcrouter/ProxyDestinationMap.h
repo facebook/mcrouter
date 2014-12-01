@@ -24,6 +24,21 @@ class ProxyDestination;
 class proxy_t;
 
 /**
+ * Represents a set of aggregated stats across all destinations in a map.
+ */
+struct AggregatedDestinationStats {
+  // Number of requests pending to be sent over network.
+  uint64_t pendingRequests{0};
+  // Number of requests been sent over network or already waiting for reply.
+  uint64_t inflightRequests{0};
+  // Average batches size in form of (num_request, num_batches).
+  // This value is based on some subset of most recent requests (each
+  // destination maintains its own window).
+  // See AsyncMcClient::getBatchingStat() for more details.
+  std::pair<uint64_t, uint64_t> batches{0, 0};
+};
+
+/**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same
  * ProxyDestinations (thus do not close opened connecitons) during
  * router reconfigururation.
@@ -54,9 +69,10 @@ class ProxyDestinationMap {
   std::shared_ptr<ProxyDestination> fetch(const ProxyClientCommon& client);
 
   /**
-   * @return a pair (pending request count, inflight request count).
+   * @return  a set of stats across all destinations (see
+   *          AggregatedDestinationStats).
    */
-  std::pair<uint64_t, uint64_t> getOutstandingRequestStats();
+  AggregatedDestinationStats getDestinationsStats();
 
   /**
    * Mark destination as 'active', so it won't be closed on next

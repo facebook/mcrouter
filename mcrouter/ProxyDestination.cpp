@@ -311,6 +311,10 @@ size_t ProxyDestination::getInflightRequestCount() const {
   return client_->getInflightRequestCount();
 }
 
+std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
+  return client_->getBatchingStat();
+}
+
 void ProxyDestination::reset_fields() {
   /* This all goes away once global TKO is rolled out */
   FBI_ASSERT(!proxy || proxy->magic == proxy_magic);

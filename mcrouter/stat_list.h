@@ -29,6 +29,7 @@
   STUI(mcc_txbuf_reqs, 0, 1)
   /* Total reqs waiting for reply from memcache. */
   STUI(mcc_waiting_replies, 0, 1)
+  STAT(destination_batch_size, stat_double, 0, .dbl = 0.0)
   STUI(asynclog_requests, 0, 1)
   STUI(sum_server_queue_length, 0, 1)
   /* Proxy requests we started routing */

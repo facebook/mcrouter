@@ -316,11 +316,27 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
   init_stats(stats);
 
   uint64_t config_last_success = 0;
+  AggregatedDestinationStats destStats;
   for (size_t i = 0; i < router->opts.num_proxies; ++i) {
     auto proxy = router->getProxy(i);
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
+
+    auto stat = router->getProxy(i)->destinationMap->getDestinationsStats();
+    destStats.pendingRequests += stat.pendingRequests;
+    destStats.inflightRequests += stat.inflightRequests;
+    destStats.batches.first += stat.batches.first;
+    destStats.batches.second += stat.batches.second;
   }
+
+  stat_set_uint64(stats, mcc_txbuf_reqs_stat, destStats.pendingRequests);
+  stat_set_uint64(stats, mcc_waiting_replies_stat, destStats.inflightRequests);
+
+  double avgBatchSize = 0;
+  if (destStats.batches.second != 0) {
+    avgBatchSize = destStats.batches.first / (double)destStats.batches.second;
+  }
+  stats[destination_batch_size_stat].data.dbl = avgBatchSize;
 
   stats[commandargs_stat].data.string = router->command_args;
 
