@@ -20,7 +20,7 @@ class TestShardSplits(McrouterTestCase):
     extra_args = []
 
     def setUp(self):
-        for i in range(7):
+        for i in range(3):
             self.add_server(Memcached())
 
     def test_shard_splits_basic(self):
@@ -28,19 +28,18 @@ class TestShardSplits(McrouterTestCase):
             self.config,
             extra_args=self.extra_args)
 
-        # Test set, get, direct get (by split shard id)
+        # Test set, get, direct get (by split shard id). Vanilla set goes to the
+        # primary host by default
         self.assertTrue(mcrouter.set('a:1:blah', 'value'))
+        self.assertTrue(mcrouter.set('a:1aa:blah', 'value_aa'))
+        self.assertTrue(mcrouter.set('a:1ba:blah', 'value_ba'))
         time.sleep(0.1)
-        self.assertEqual(mcrouter.get('a:1:blah'), 'value')
-        self.assertEqual(mcrouter.get('a:1aa:blah'), 'value')
-        self.assertEqual(mcrouter.get('a:1ba:blah'), 'value')
+        # Get without specifying shard copy goes to a random copy
+        r = mcrouter.get('a:1:blah')
+        self.assertTrue(r == 'value' or r == 'value_aa' or r == 'value_ba')
+        self.assertEqual(mcrouter.get('a:1aa:blah'), 'value_aa')
+        self.assertEqual(mcrouter.get('a:1ba:blah'), 'value_ba')
         self.assertIsNone(mcrouter.get('a:1ca:blah'))
-
-        self.assertTrue(mcrouter.set('b:1:blah', 'value2'))
-        time.sleep(0.1)
-        self.assertEqual(mcrouter.get('b:1:blah'), 'value2')
-        self.assertEqual(mcrouter.get('b:1aa:blah'), 'value2')
-        self.assertIsNone(mcrouter.get('b:1ba:blah'))
 
     def test_shard_splits_update(self):
         mcrouter = self.add_mcrouter(
@@ -49,6 +48,8 @@ class TestShardSplits(McrouterTestCase):
 
         # set & delete with splits
         self.assertTrue(mcrouter.set('a:1:foo', 'value'))
+        self.assertTrue(mcrouter.set('a:1aa:foo', 'value'))
+        self.assertTrue(mcrouter.set('a:1ba:foo', 'value'))
         time.sleep(0.1)
         self.assertEqual(mcrouter.get('a:1:foo'), 'value')
         self.assertEqual(mcrouter.get('a:1aa:foo'), 'value')
@@ -70,8 +71,12 @@ class TestShardSplits(McrouterTestCase):
 
         # Arithmetic operations with splits
         self.assertTrue(mcrouter.set('a:1:counter', '5'))
+        self.assertTrue(mcrouter.set('a:1aa:counter', '5'))
+        self.assertTrue(mcrouter.set('a:1ba:counter', '5'))
         time.sleep(0.1)
         self.assertEqual(mcrouter.incr('a:1:counter'), 6)
+        self.assertEqual(mcrouter.incr('a:1aa:counter'), 6)
+        self.assertEqual(mcrouter.incr('a:1ba:counter'), 6)
         time.sleep(0.1)
         self.assertEqual(mcrouter.get('a:1:counter'), '6')
         self.assertEqual(mcrouter.get('a:1aa:counter'), '6')
@@ -79,6 +84,8 @@ class TestShardSplits(McrouterTestCase):
         self.assertIsNone(mcrouter.get('a:1ca:counter'))
 
         self.assertEqual(mcrouter.decr('a:1:counter', 3), 3)
+        self.assertEqual(mcrouter.decr('a:1aa:counter', 3), 3)
+        self.assertEqual(mcrouter.decr('a:1ba:counter', 3), 3)
         time.sleep(0.1)
         self.assertEqual(mcrouter.get('a:1:counter'), '3')
         self.assertEqual(mcrouter.get('a:1aa:counter'), '3')

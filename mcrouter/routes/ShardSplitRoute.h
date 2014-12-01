@@ -44,6 +44,10 @@ class ShardSplitRoute {
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
     const Request& req, Operation) const {
 
+    if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
+      return rh_->couldRouteTo(req, Operation());
+    }
+
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     if (cnt == 1) {
@@ -57,6 +61,7 @@ class ShardSplitRoute {
       return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation());
     }
 
+    assert(DeleteLike<Operation>::value);
     auto result = rh_->couldRouteTo(req, Operation());
     for (size_t i = 0; i < cnt - 1; ++i) {
       auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation());
@@ -71,6 +76,7 @@ class ShardSplitRoute {
     const Request& req, Operation,
     typename GetLike<Operation>::Type = 0) const {
 
+    // Gets are routed to one of the splits.
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     size_t i = globals::hostid() % cnt;
@@ -85,6 +91,13 @@ class ShardSplitRoute {
     const Request& req, Operation,
     OtherThanT(Operation, GetLike<>) = 0) const {
 
+    // Anything that is not a Get or Delete goes to the primary split.
+    static_assert(!GetLike<Operation>::value, "");
+    if (!DeleteLike<Operation>::value) {
+      return rh_->route(req, Operation());
+    }
+
+    // Deletes are broadcast to all splits.
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     auto r = rh_;
