@@ -1,20 +1,3 @@
-#ifdef LIBMC_FBTRACE_DISABLE
-
-namespace facebook { namespace memcache {
-
-template<class Operation, class Request>
-bool fbTraceOnSend(Operation, const Request& request, const AccessPoint& ap) {
-  return false;
-}
-
-template<class Operation, class Request, class Reply>
-void fbTraceOnReceive(Operation, const Request& request, const Reply& reply) {
-}
-
-}}  // facebook::memcache
-
-#else
-
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
@@ -86,16 +69,15 @@ bool fbTraceOnSend(McOperation<McOp>, const Request& request,
   return true;
 }
 
-template<class Operation, class Request, class Reply>
-void fbTraceOnReceive(Operation, const Request& request, const Reply& reply) {
+template<class Operation, class Reply>
+void fbTraceOnReceive(Operation, const mc_fbtrace_info_s* fbtraceInfo,
+                      const Reply& reply) {
   // Do nothing by default.
 }
 
-template<int McOp, class Request, class Reply>
-void fbTraceOnReceive(McOperation<McOp>, const Request& request,
+template<int McOp, class Reply>
+void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
                       const Reply& reply) {
-  const mc_fbtrace_info_s* fbtraceInfo = request.fbtraceInfo();
-
   if (fbtraceInfo == nullptr) {
     return;
   }
@@ -114,5 +96,3 @@ void fbTraceOnReceive(McOperation<McOp>, const Request& request,
 }
 
 }}  // facebook::memcache
-
-#endif

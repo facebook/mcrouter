@@ -11,7 +11,10 @@
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+
+#ifndef LIBMC_FBTRACE_DISABLE
 #include "mcrouter/lib/network/FBTrace.h"
+#endif
 
 namespace facebook { namespace memcache {
 
@@ -32,12 +35,15 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
   std::function<void(const McReply&)> traceCallback;
+#ifndef LIBMC_FBTRACE_DISABLE
   if (fbTraceOnSend(McOperation<Op>(), request,
                     connectionOptions_.accessPoint)) {
-    traceCallback = [&request] (const McReply& reply) {
-      fbTraceOnReceive(McOperation<Op>(), request, reply);
+    const mc_fbtrace_info_s* traceInfo = request.fbtraceInfo();
+    traceCallback = [traceInfo] (const McReply& reply) {
+      fbTraceOnReceive(McOperation<Op>(), traceInfo, reply);
     };
   }
+#endif
 
   auto op = (mc_op_t)Op;
   auto req = ReqInfo::getFromPool(request, nextMsgId_, op,
