@@ -62,7 +62,7 @@ class TestSlowBoxTko(McrouterTestCase):
                   '--latency-window-size', '3',
                   '--latency-threshold-us', '80000',
                   '-r', '140']
-    additional_args = ['--global-tko-tracking']
+    additional_args = []
 
     def setUp(self):
         # Keys that correspond to the various indeces in the A pool.

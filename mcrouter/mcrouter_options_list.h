@@ -306,13 +306,14 @@ mcrouter_option_group("TKO probes")
 mcrouter_option_toggle(
   global_tko_tracking, false,
   "global-tko-tracking", no_short,
-  "If enabled, track TKO per-router instead of per-proxy."
-  " This will become the default after testing in production")
+  "DEPRECATED, global TKO tracking is always on")
 
-mcrouter_option_integer(
-  int, disable_tko_tracking, 0,
-  no_long, no_short,
-  "")
+mcrouter_option_toggle(
+  disable_tko_tracking, false,
+  "disable-tko-tracking", no_short,
+  "Disable TKO tracker (marking a host down for fast failover after"
+  " a number of failures, and sending probes to check if the server"
+  " came back up).")
 
 mcrouter_option_integer(
   int, probe_delay_initial_ms, 10000,

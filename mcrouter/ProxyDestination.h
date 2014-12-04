@@ -123,7 +123,6 @@ struct ProxyDestination {
   bool sending_probes{false};
   McMsgRef probe_req;
   asox_timer_t probe_timer{nullptr};
-  size_t consecutiveErrors_{0};
   size_t probesSent_{0};
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
@@ -137,14 +136,8 @@ struct ProxyDestination {
 
   void schedule_next_probe();
 
-  void reset_fields();
-
-  void handle_tko(const McReply& reply,
-                  bool is_probe_req,
-                  int consecutive_errors);
-
-  void mark_tko();
-  void unmark_tko();
+  void handle_tko(const McReply& reply, bool is_probe_req);
+  void unmark_tko(const McReply& reply);
 
   void initializeClient();
 

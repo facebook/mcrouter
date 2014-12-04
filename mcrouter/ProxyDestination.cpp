@@ -114,85 +114,51 @@ void ProxyDestination::stop_sending_probes() {
   }
 }
 
-void ProxyDestination::mark_tko() {
-  FBI_ASSERT(proxy->magic == proxy_magic);
+void ProxyDestination::unmark_tko(const McReply& reply) {
   FBI_ASSERT(!proxy->opts.disable_tko_tracking);
-  if (!marked_tko) {
-    VLOG(1) << pdstnKey << " marked TKO";
-
-    marked_tko = 1;
-
-    start_sending_probes();
-  }
-}
-
-void ProxyDestination::unmark_tko() {
-  FBI_ASSERT(!proxy->opts.disable_tko_tracking);
-  if (marked_tko) {
-    VLOG(1) << pdstnKey << " marked up";
-    marked_tko = 0;
+  shared->tko.recordSuccess(this);
+  if (sending_probes) {
+    onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
     stop_sending_probes();
   }
 }
 
-void ProxyDestination::handle_tko(const McReply& reply,
-                                  bool is_probe_req,
-                                  int consecutive_errors) {
+void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
   if (resetting ||
       proxy->opts.disable_tko_tracking) {
     return;
   }
 
-  if (proxy->router &&
-      proxy->router->opts.global_tko_tracking) {
-
-    if (!shared) {
-      return;
-    }
-
-    bool responsible = false;
-    if (reply.isError()) {
-      if (reply.isHardTkoError()) {
-        responsible = shared->tko.recordHardFailure(this);
-        if (responsible) {
-          onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
-        }
-      } else if (reply.isSoftTkoError()) {
-        responsible = shared->tko.recordSoftFailure(this);
-        if (responsible) {
-          onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
-        }
+  bool responsible = false;
+  if (reply.isError()) {
+    if (reply.isHardTkoError()) {
+      responsible = shared->tko.recordHardFailure(this);
+      if (responsible) {
+        onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
       }
-    } else if (proxy->opts.latency_threshold_us != 0 &&
-               !sending_probes &&
-               stats_.avgLatency.value() > proxy->opts.latency_threshold_us) {
+    } else if (reply.isSoftTkoError()) {
+      responsible = shared->tko.recordSoftFailure(this);
+      if (responsible) {
+        onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
+      }
+    }
+  } else if (proxy->opts.latency_threshold_us != 0 &&
+             !sending_probes &&
+             stats_.avgLatency.value() > proxy->opts.latency_threshold_us) {
     /* Even if it's not an error, if we've gone above our latency SLA we count
        that as a soft failure. We also check current latency to ensure that
        if things get better we don't keep TKOing the box */
-      responsible = shared->tko.recordSoftFailure(this);
-      if (responsible) {
-        onTkoEvent(TkoLogEvent::MarkLatencyTko, reply.result());
-      }
-    } else {
-      /* If we're sending probes, only a probe request should be considered
-         successful to avoid outstanding requests from unmarking the box */
-      if (!sending_probes || is_probe_req) {
-        shared->tko.recordSuccess(this);
-        if (sending_probes) {
-          onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
-          stop_sending_probes();
-        }
-      }
-    }
+    responsible = shared->tko.recordSoftFailure(this);
     if (responsible) {
-      start_sending_probes();
+      onTkoEvent(TkoLogEvent::MarkLatencyTko, reply.result());
     }
-  } else {
-    if (consecutive_errors >= proxy->opts.failures_until_tko) {
-      mark_tko();
-    } else if (consecutive_errors == 0) {
-      unmark_tko();
-    }
+  /* If we're sending probes, only a probe request should be considered
+     successful to avoid outstanding requests from unmarking the box */
+  } else if (!sending_probes || is_probe_req) {
+    unmark_tko(reply);
+  }
+  if (responsible) {
+    start_sending_probes();
   }
 }
 
@@ -213,18 +179,9 @@ void ProxyDestination::on_reply(const McMsgRef& req,
     fb_timer_start(on_reply_timer);
   }
 
-  // Note: remote error with non-empty reply is not an actual error.
-  // mc_res_busy with a code not SERVER_ERROR_BUSY means
-  // the server is fine, just can't fulfil the request now
-  if (reply.isSoftTkoError() || reply.isHardTkoError()) {
-    ++consecutiveErrors_;
-  } else {
-    consecutiveErrors_ = 0;
-  }
-
   bool is_probe_req = (req.get() == probe_req.get());
 
-  handle_tko(reply, is_probe_req, consecutiveErrors_);
+  handle_tko(reply, is_probe_req);
 
   if (is_probe_req) {
     probe_req = McMsgRef();
@@ -295,11 +252,8 @@ void ProxyDestination::on_down() {
     }
     stats_.is_up = false;
 
-    /* Record on_down as a mc_res_connect_error; note we pass failure_until_tko
-       to force TKO for the deprecated per-proxy logic */
     handle_tko(McReply(mc_res_connect_error),
-               /* is_probe_req= */ false,
-               proxy->opts.failures_until_tko);
+               /* is_probe_req= */ false);
   }
 }
 
@@ -313,22 +267,6 @@ size_t ProxyDestination::getInflightRequestCount() const {
 
 std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
   return client_->getBatchingStat();
-}
-
-void ProxyDestination::reset_fields() {
-  /* This all goes away once global TKO is rolled out */
-  FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
-  if (!proxy || proxy->opts.disable_tko_tracking) {
-    return;
-  }
-
-  /* Reset TKO state */
-  consecutiveErrors_ = 0;
-
-  if (!proxy->router ||
-      !proxy->router->opts.global_tko_tracking) {
-    unmark_tko();
-  }
 }
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
@@ -382,9 +320,7 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
 }
 
 proxy_client_state_t ProxyDestination::state() const {
-  // We don't need to check if global tracking is disabled. If it is
-  // isTko will always be false
-  if ((shared && shared->tko.isTko()) || marked_tko) {
+  if (shared->tko.isTko()) {
     return PROXY_CLIENT_TKO;
   } else if (stats_.is_up) {
     return PROXY_CLIENT_UP;
@@ -445,15 +381,10 @@ void ProxyDestination::resetInactive() {
 
   resetting = 1;
   client_->resetInactive();
-  reset_fields();
   resetting = 0;
 }
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
-  if (!shared) {
-    return;
-  }
-
   auto logUtil = [this, result](folly::StringPiece eventStr) {
     VLOG(1) << shared->key << " " << eventStr << " TKO. Total hard TKOs: "
             << shared->tko.globalTkos().hardTkos << "; soft TKOs: "
