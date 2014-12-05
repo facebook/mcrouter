@@ -95,7 +95,7 @@ class ConfigPreprocessor {
    * @return json object without macros
    */
   folly::dynamic
-  expandMacros(const folly::dynamic& json, const Context& context) const;
+  expandMacros(folly::dynamic json, const Context& context) const;
 
   /**
    * Parses parameters passed to macro call inside string like in
@@ -122,7 +122,7 @@ class ConfigPreprocessor {
   expandStringMacro(folly::StringPiece str, const Context& params) const;
 
   void addBuiltInMacro(std::string name, std::vector<folly::dynamic> params,
-                       std::function<folly::dynamic(const Context&)> func);
+                       std::function<folly::dynamic(Context)> func);
 };
 
 }}  // facebook::memcache

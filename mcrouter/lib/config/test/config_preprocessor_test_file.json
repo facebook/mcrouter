@@ -17,15 +17,15 @@
         "expand": "string"
       },
       "emptyParam": {
-        "orig": "@sParam()",
+        "orig": "@sParam(  )",
         "expand": ""
       },
       "normalParam": {
-        "orig": "@sParam(a)",
-        "expand": "a"
+        "orig": "@sParam(a\\ )",
+        "expand": "a "
       },
       "escapedParam": {
-        "orig": "@sParam(\\))",
+        "orig": "@sParam(  \\)  )",
         "expand": ")"
       },
       "keys": {
@@ -43,11 +43,11 @@
         "expand": [ 1 ]
       },
       "range": {
-        "orig": "@range(@int(-1),@int(5))",
+        "orig": "@range( @int(-1), @int(5) )",
         "expand": [ -1, 0, 1, 2, 3, 4, 5 ]
       },
       "booleans": {
-        "orig": "@and(@not(@or(@bool(false),@bool(1))),@not(@bool(false)))",
+        "orig": "@and(@not(@or(@bool(false),@bool(1))), @not(@bool(false)))",
         "expand": false
       }
     }
@@ -64,15 +64,15 @@
         "expand": false
       },
       "0toBool": {
-        "orig": "@bool(@int(0))",
+        "orig": "@bool(@int(0) )",
         "expand": false
       },
       "1toBool": {
-        "orig": "@bool(@int(1))",
+        "orig": "@bool( @int(1))",
         "expand": true
       },
       "strToInt": {
-        "orig": "@int(-1)",
+        "orig": "@int( -1 )",
         "expand": -1
       },
       "intToStr": {
@@ -285,6 +285,11 @@
           "\\@b": "@%a%%b%",
           "@a": "\\%a\\%%amp%"
         }
+      },
+      "c": {
+        "type": "macroDef",
+        "params": [ "a" ],
+        "result": "%a%"
       }
     },
     "cases": {
@@ -338,6 +343,18 @@
           "dictionary": [ "\\@", "\\\\" ]
         },
         "expand": [ "%@", "%\\" ]
+      },
+      "trim": {
+        "orig": "@c(  \\   \\\\ \\   )",
+        "expand": "   \\  "
+      },
+      "trim2": {
+        "orig": "@c(\\\\\\ )",
+        "expand": "\\ "
+      },
+      "trim3": {
+        "orig": "@c( )",
+        "expand": ""
       }
     }
   },
