@@ -61,7 +61,8 @@ mcrouter_t* mcrouter_init(const std::string& persistence_id,
                           const McrouterOptions& options);
 mcrouter_t* mcrouter_get(const std::string& persistence_id);
 
-mcrouter_t* mcrouter_new(const McrouterOptions& input_options);
+mcrouter_t* mcrouter_new(const McrouterOptions& input_options,
+                         bool spawnProxyThreads = true);
 void mcrouter_free(mcrouter_t *router);
 
 mcrouter_t* mcrouter_new_transient(const McrouterOptions& options);

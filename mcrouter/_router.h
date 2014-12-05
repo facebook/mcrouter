@@ -52,6 +52,7 @@ struct mcrouter_t {
 
   // Config stuff
   std::unique_ptr<ConfigApi> configApi;
+  CallbackPool<> onReconfigureSuccess;
 
   // These next three fields are used for stats
   uint64_t start_time;
@@ -109,6 +110,8 @@ struct mcrouter_t {
   std::unique_ptr<AsyncWriter> awriter;
   std::unique_ptr<AsyncWriter> stats_log_writer;
 
+  std::function<void(size_t, proxy_t*)> onDestroyProxy;
+
   explicit mcrouter_t(const McrouterOptions& input_options);
 
   mcrouter_t(const mcrouter_t&) = delete;
@@ -122,7 +125,6 @@ struct mcrouter_t {
 
   std::string routerName() const;
 
-  void startShutdown();
   bool shutdownStarted();
 
   void startAwriterThreads();
@@ -142,12 +144,6 @@ struct mcrouter_t {
 
   void subscribeToConfigUpdate();
   void unsubscribeFromConfigUpdate();
-
-  /**
-   * DEPRECATED. Register a proxy with the router;
-   * the router is not responsible for deleting the proxy.
-   */
-  void addNonownedProxy(proxy_t* proxy);
 
   /**
    * @return  nullptr if index is >= opts.num_proxies,
@@ -182,18 +178,15 @@ struct mcrouter_t {
    *
    * Embedded mode: mcrouter_t owns ProxyThreads, which managed the lifetime
    * of proxies on their own threads.
-   *
-   * Nonowned proxies is a deprecated mode.
    */
   std::vector<std::unique_ptr<proxy_t>> proxies_;
   std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
-  std::vector<proxy_t*> nonownedProxies_;
 
   void spawnStatUpdaterThread();
   void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
 
-  friend mcrouter_t* mcrouter_new(const McrouterOptions&);
+  friend mcrouter_t* mcrouter_new(const McrouterOptions&, bool);
   friend void mcrouter_free(mcrouter_t*);
 };
 

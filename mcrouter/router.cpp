@@ -480,26 +480,19 @@ std::string mcrouter_t::routerName() const {
   return "libmcrouter." + opts.service_name + "." + opts.router_name;
 }
 
-void mcrouter_t::addNonownedProxy(proxy_t* proxy) {
-  assert(proxies_.empty() && proxyThreads_.empty());
-  nonownedProxies_.push_back(proxy);
-}
-
 proxy_t* mcrouter_t::getProxy(size_t index) const {
-  if (!nonownedProxies_.empty()) {
-    return index < nonownedProxies_.size() ?
-                   nonownedProxies_[index] : nullptr;
-  } else if (opts.standalone) {
-    assert(!proxies_.empty() && proxyThreads_.empty());
+  if (!proxies_.empty()) {
+    assert(proxyThreads_.empty());
     return index < proxies_.size() ? proxies_[index].get() : nullptr;
   } else {
-    assert(proxies_.empty() && !proxyThreads_.empty());
+    assert(proxies_.empty());
     return index < proxyThreads_.size() ?
                    &proxyThreads_[index]->proxy() : nullptr;
   }
 }
 
-mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
+mcrouter_t *mcrouter_new(const McrouterOptions& input_options,
+                         bool spawnProxyThreads) {
   if (!is_valid_router_name(input_options.service_name) ||
       !is_valid_router_name(input_options.router_name)) {
     throw mcrouter_exception(
@@ -534,7 +527,7 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
     try {
       auto proxy =
         folly::make_unique<proxy_t>(router, nullptr, router->opts);
-      if (!router->opts.standalone) {
+      if (!router->opts.standalone && spawnProxyThreads) {
         router->proxyThreads_.emplace_back(
           folly::make_unique<ProxyThread>(std::move(proxy)));
       } else {
@@ -559,7 +552,7 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options) {
    * If we're standalone, someone else will decide how to run the proxy
    * Specifically, we'll run them under proxy servers in main()
    */
-  if (!(router->opts.standalone || router->opts.sync)) {
+  if (!router->opts.standalone && !router->opts.sync && spawnProxyThreads) {
     for (auto& pt : router->proxyThreads_) {
       int rc = pt->spawn();
       if (!rc) {
@@ -642,8 +635,11 @@ void mcrouter_t::subscribeToConfigUpdate() {
     // we need to wait until all proxies have event base attached
     rtr->startupLock.wait();
 
-    LOG_IF(ERROR, !router_configure(rtr)) <<
-        "Error while reconfiguring mcrouter after config change";
+    if (router_configure(rtr)) {
+      rtr->onReconfigureSuccess.notify();
+    } else {
+      LOG(ERROR) << "Error while reconfiguring mcrouter after config change";
+    }
   });
 }
 
@@ -682,15 +678,6 @@ void mcrouter_t::joinAuxiliaryThreads() {
   }
 
   stopAwriterThreads();
-}
-
-void mcrouter_t::startShutdown() {
-  /* TODO: It might look like we want a cleaner API like shutdown() here,
-     but this is broken anyway.
-     We want to move all cleanup into the function called here,
-     so that there's a single shutdownOnce call in the codebase.
-     This is blocked by tcc usage. */
-  shutdownLock_.shutdownOnce([](){});
 }
 
 bool mcrouter_t::shutdownStarted() {
@@ -732,17 +719,21 @@ void mcrouter_free(mcrouter_t *router) {
   }
 
   router->unsubscribeFromConfigUpdate();
-
-  router->startShutdown();
   router->configApi->stopObserving(router->pid);
 
-  router->joinAuxiliaryThreads();
+  router->shutdownAndJoinAuxiliaryThreads();
 
   if (!router->opts.sync) {
     for (auto& pt : router->proxyThreads_) {
       pt->stopAndJoin();
     }
   }
+  if (router->onDestroyProxy) {
+    for (size_t i = 0; i < router->proxies_.size(); ++i) {
+      router->onDestroyProxy(i, router->proxies_[i].release());
+    }
+  }
+
   router->proxies_.clear();
   router->proxyThreads_.clear();
 
