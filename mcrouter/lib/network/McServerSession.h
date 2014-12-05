@@ -208,6 +208,12 @@ class McServerSession :
 
   void reply(McServerRequestContext&& ctx, McReply&& reply);
 
+  /**
+   * Called on mc_op_end or connection close to close out an in flight
+   * multop request.
+   */
+  void processMultiOpEnd();
+
   /* TAsyncTransport's readCallback */
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
   void readDataAvailable(size_t len) noexcept override;

@@ -175,7 +175,18 @@ void McServerSession::reply(McServerRequestContext&& ctx, McReply&& reply) {
   }
 }
 
+void McServerSession::processMultiOpEnd() {
+  currentMultiop_->recordEnd(tailReqid_++);
+  currentMultiop_.reset();
+}
+
 void McServerSession::close() {
+  if (currentMultiop_) {
+    /* If we got closed in the middle of a multiop request,
+       process it as if we saw mc_op_end */
+    processMultiOpEnd();
+  }
+
   state_ = CLOSING;
   checkClosed();
 }
@@ -224,13 +235,12 @@ void McServerSession::requestReady(McRequest&& req,
       currentMultiop_ = std::make_shared<MultiOpParent>(*this, tailReqid_++);
     }
 
-    reqid = tailReqid_++;
-
     if (operation == mc_op_end) {
-      currentMultiop_->recordEnd(reqid);
-      currentMultiop_.reset();
+      processMultiOpEnd();
       return;
     }
+
+    reqid = tailReqid_++;
   }
 
   McServerRequestContext ctx(*this, operation, reqid, noreply, currentMultiop_);
