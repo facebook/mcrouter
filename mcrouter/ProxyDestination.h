@@ -71,6 +71,8 @@ struct ProxyDestination {
 
   const bool use_ssl{false};
 
+  const uint64_t qos{0};
+
   static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
                                                   const ProxyClientCommon& ro,
                                                   std::string pdstnKey);

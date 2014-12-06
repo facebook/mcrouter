@@ -118,6 +118,10 @@ void DestinationClient::initializeAsyncMcClient() {
   options.timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::seconds(pdstn->server_timeout.tv_sec) +
     std::chrono::microseconds(pdstn->server_timeout.tv_usec));
+  if (proxy_->opts.enable_qos) {
+    options.enableQoS = true;
+    options.qos = pdstn->qos;
+  }
 
   if (pdstn->use_ssl) {
     auto& opts = proxy_->opts;

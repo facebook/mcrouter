@@ -74,6 +74,16 @@ struct ConnectionOptions {
   std::chrono::milliseconds timeout{0};
 
   /**
+   * Informs whether QoS is enabled.
+   */
+  bool enableQoS{false};
+
+  /*
+   * QoS class to use in packages.
+   */
+  unsigned int qos{0};
+
+  /**
    * SSLContext provider callback. If null, then unsecured connections will be
    * established, else it will be called for each attempt to establish
    * connection.

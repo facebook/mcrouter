@@ -313,6 +313,7 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
     pdstnKey(std::move(pdstnKey_)),
     proxy_magic(proxy->magic),
     use_ssl(ro_.useSsl),
+    qos(ro_.qos),
     stats_(proxy_->opts) {
 
   static uint64_t next_magic = 0x12345678900000LL;

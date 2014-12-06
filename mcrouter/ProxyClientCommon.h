@@ -41,6 +41,8 @@ struct ProxyClientCommon {
   size_t indexInPool;
   bool useSsl;
 
+  uint64_t qos;
+
   std::string genProxyDestinationKey() const;
 
   ProxyClientCommon(unsigned index,
@@ -53,7 +55,8 @@ struct ProxyClientCommon {
                     int rxpri,
                     int txpri,
                     size_t indexInPool,
-                    bool useSsl);
+                    bool useSsl,
+                    uint64_t qos);
 };
 
 }}}  // facebook::memcache::mcrouter

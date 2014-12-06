@@ -238,9 +238,9 @@ T round_up(std::chrono::duration<Rep, Period> d) {
   return result;
 }
 
-apache::thrift::async::TAsyncSocket::OptionMap createTCPKeepAliveOptions(
+void createTCPKeepAliveOptions(
+    apache::thrift::async::TAsyncSocket::OptionMap& options,
     int cnt, int idle, int interval) {
-  apache::thrift::async::TAsyncSocket::OptionMap options;
   // 0 means KeepAlive is disabled.
   if (cnt != 0) {
 #ifdef SO_KEEPALIVE
@@ -268,11 +268,78 @@ apache::thrift::async::TAsyncSocket::OptionMap createTCPKeepAliveOptions(
 
 #endif // SO_KEEPALIVE
   }
+}
+
+const apache::thrift::async::TAsyncSocket::OptionKey getQoSOptionKey(
+    sa_family_t addressFamily) {
+  static const apache::thrift::async::TAsyncSocket::OptionKey kIpv4OptKey =
+    {IPPROTO_IP, IP_TOS};
+  static const apache::thrift::async::TAsyncSocket::OptionKey kIpv6OptKey =
+    {IPPROTO_IPV6, IPV6_TCLASS};
+  return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
+}
+
+uint64_t getQoSClass(int qosLevel) {
+  static const uint64_t kDefaultClass = 0x00;
+  static const uint64_t kLowestClass = 0x04;
+  static const uint64_t kMediumClass = 0x40;
+  static const uint64_t kHighestClass = 0x80;
+  static const uint64_t kQoSClasses[] = {
+    kDefaultClass, kLowestClass, kMediumClass, kHighestClass, kHighestClass
+  };
+
+  if (qosLevel < 0 || qosLevel > 4) {
+    qosLevel = 0;
+    failure::log("AsyncMcClient", failure::Category::kSystemError,
+               "Invalid QoS value in AsyncMcClient");
+  }
+
+  return kQoSClasses[qosLevel];
+}
+
+void createQoSClassOption(
+    apache::thrift::async::TAsyncSocket::OptionMap& options,
+    const sa_family_t addressFamily, uint64_t qos) {
+  const auto& optkey = getQoSOptionKey(addressFamily);
+  options[optkey] = getQoSClass(qos);
+}
+
+void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
+                              int socketFd,
+                              const ConnectionOptions& connectionOptions) {
+  const auto& optkey = getQoSOptionKey(address.getFamily());
+
+  static const int expectedRv = 0;
+  const uint64_t expectedValue = getQoSClass(connectionOptions.qos);
+
+  int val;
+  socklen_t len = sizeof(expectedValue);
+  int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
+  if (rv != expectedRv || val != expectedValue) {
+    failure::log("AsyncMcClient", failure::Category::kSystemError,
+                 "Failed to apply QoS! "
+                 "Return Value: {} (expected: {}). "
+                 "QoS Value: {} (expected: {}).",
+                 rv, expectedRv, val, expectedValue);
+  }
+}
+
+apache::thrift::async::TAsyncSocket::OptionMap createSocketOptions(
+    const folly::SocketAddress& address,
+    const ConnectionOptions& connectionOptions) {
+  apache::thrift::async::TAsyncSocket::OptionMap options;
+
+  createTCPKeepAliveOptions(options,
+    connectionOptions.tcpKeepAliveCount, connectionOptions.tcpKeepAliveIdle,
+    connectionOptions.tcpKeepAliveInterval);
+  if (connectionOptions.enableQoS) {
+    createQoSClassOption(options, address.getFamily(), connectionOptions.qos);
+  }
 
   return std::move(options);
 }
 
-} // namespace
+} // anonymous namespace
 
 void AsyncMcClientImpl::scheduleNextTimeout() {
   if (!timeoutScheduled_ && connectionOptions_.timeout.count() > 0 &&
@@ -356,13 +423,15 @@ void AsyncMcClientImpl::attemptConnection() {
     connectionOptions_.accessPoint.getPort(),
     /* allowNameLookup */ true);
 
-  auto socketOptions = createTCPKeepAliveOptions(
-    connectionOptions_.tcpKeepAliveCount, connectionOptions_.tcpKeepAliveIdle,
-    connectionOptions_.tcpKeepAliveInterval);
+  auto socketOptions = createSocketOptions(address, connectionOptions_);
 
   socket.setSendTimeout(connectionOptions_.timeout.count());
   socket.connect(this, address, connectionOptions_.timeout.count(),
                  socketOptions);
+
+  if (connectionOptions_.enableQoS) {
+    checkWhetherQoSIsApplied(address, socket.getFd(), connectionOptions_);
+  }
 }
 
 void AsyncMcClientImpl::connectSuccess() noexcept {

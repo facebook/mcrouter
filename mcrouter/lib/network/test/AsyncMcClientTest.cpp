@@ -181,7 +181,9 @@ class TestClient {
              bool useSsl = false,
              std::function<
                std::shared_ptr<apache::thrift::transport::SSLContext>()
-             > contextProvider = nullptr) {
+             > contextProvider = nullptr,
+             bool enableQoS = false,
+             uint64_t qos = 0) {
     ConnectionOptions opts(host, port, protocol);
     opts.timeout = std::chrono::milliseconds(timeoutMs);
     if (useSsl) {
@@ -191,6 +193,10 @@ class TestClient {
       opts.sslContextProvider = contextProvider
         ? contextProvider
         : defaultContextProvider;
+    }
+    if (enableQoS) {
+      opts.enableQoS = true;
+      opts.qos = qos;
     }
     client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
     client_->setStatusCallbacks([] { LOG(INFO) << "Client UP."; },
@@ -474,10 +480,13 @@ TEST(AsyncMcClient, connectionErrorSsl) {
   connectionErrorTest(true);
 }
 
-void umbrellaTest(bool useSsl = false) {
+void basicTest(mc_protocol_e protocol = mc_ascii_protocol,
+               bool useSsl = false,
+               bool enableQoS = false,
+               uint64_t qos = 0) {
   TestServer server(true, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
-                    mc_umbrella_protocol, useSsl);
+                    protocol, useSsl, nullptr, enableQoS, qos);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
   client.sendGet("empty", mc_res_found);
@@ -491,12 +500,38 @@ void umbrellaTest(bool useSsl = false) {
   EXPECT_EQ(server.getStats().accepted.load(), 1);
 }
 
+void umbrellaTest(bool useSsl = false) {
+  basicTest(mc_umbrella_protocol, useSsl);
+}
+
 TEST(AsyncMcClient, umbrella) {
   umbrellaTest();
 }
 
 TEST(AsyncMcClient, umbrellaSsl) {
   umbrellaTest(true);
+}
+
+void qosTest(mc_protocol_e protocol = mc_ascii_protocol,
+             bool useSsl = false,
+             uint64_t qos = 0) {
+  basicTest(protocol, useSsl, true, qos);
+}
+
+TEST(AsyncMcClient, qosClass1) {
+  qosTest(mc_umbrella_protocol, false, 1);
+}
+
+TEST(AsyncMcClient, qosClass2) {
+  qosTest(mc_ascii_protocol, false, 2);
+}
+
+TEST(AsyncMcClient, qosClass3) {
+  qosTest(mc_umbrella_protocol, true, 3);
+}
+
+TEST(AsyncMcClient, qosClass4) {
+  qosTest(mc_ascii_protocol, true, 4);
 }
 
 void reconnectTest(mc_protocol_t protocol) {

@@ -25,7 +25,8 @@ ProxyClientCommon::ProxyClientCommon(unsigned index,
                                      int rxpri,
                                      int txpri,
                                      size_t indexInPool_,
-                                     bool useSsl_)
+                                     bool useSsl_,
+                                     uint64_t qos_)
     : pool(pool_),
       idx(index),
       ap(std::move(ap_)),
@@ -36,7 +37,8 @@ ProxyClientCommon::ProxyClientCommon(unsigned index,
       txpriority(txpri),
       server_timeout(std::move(timeout)),
       indexInPool(indexInPool_),
-      useSsl(useSsl_) {
+      useSsl(useSsl_),
+      qos(qos_) {
   destination_key = folly::sformat("{}:{}", ap.getHost(), ap.getPort());
 }
 

@@ -91,6 +91,7 @@ class PoolFactory : public PoolFactoryIf {
     uint32_t cross_region_timeout_ms{0};
     uint32_t cross_cluster_timeout_ms{0};
     uint32_t within_cluster_timeout_ms{0};
+    uint64_t default_qos_class{0};
   };
 
   std::unordered_map<std::string, std::shared_ptr<ProxyGenericPool>> pools_;

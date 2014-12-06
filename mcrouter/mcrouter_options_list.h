@@ -239,6 +239,16 @@ mcrouter_option_toggle(
   "destination-rate-limiting", no_short,
   "If not enabled, ignore \"rates\" in pool configs.")
 
+mcrouter_option_toggle(
+  enable_qos, false,
+  "enable-qos", no_short,
+  "If enabled, sets the spacified qos level in the ip packages. ")
+
+mcrouter_option_integer(
+  unsigned int, default_qos_class, 0,
+  "default-qos-class", no_short,
+  "Default qos class to use if qos is enabled and not specified.")
+
 
 mcrouter_option_group("Routing configuration")
 

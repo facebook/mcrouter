@@ -18,6 +18,7 @@
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
@@ -96,7 +97,21 @@ epilogue:
   return mc_unknown_protocol;
 }
 
-} // namespace
+bool isQosValid(uint64_t qos) {
+  return (qos <= 4);
+}
+bool isQosValid(folly::dynamic& jQos) {
+  DYNAMIC_EXPECT(jQos, dynamic::Type::INT64, "qos");
+  {
+    uint64_t qos = (uint64_t) jQos.asInt();
+    return isQosValid(qos);
+  }
+
+epilogue:
+  return false;
+}
+
+} // anonymous namespace
 
 PoolFactory::PoolFactory(const folly::dynamic& config,
                          ConfigApi* configApi,
@@ -124,6 +139,14 @@ PoolFactory::PoolFactory(const folly::dynamic& config,
   opts_.cross_region_timeout_ms = mcOpts.cross_region_timeout_ms;
   opts_.cross_cluster_timeout_ms = mcOpts.cross_cluster_timeout_ms;
   opts_.within_cluster_timeout_ms = mcOpts.within_cluster_timeout_ms;
+
+  if (isQosValid(mcOpts.default_qos_class)) {
+    opts_.default_qos_class = mcOpts.default_qos_class;
+  } else {
+    opts_.default_qos_class = 0;
+    logFailure(memcache::failure::Category::kInvalidConfig,
+               "Invalid defaul-qos-class config");
+  }
 
   // parse the clusters
   if (!parseClusters(config)) {
@@ -539,6 +562,16 @@ PoolFactory::parsePool(const string& pool_name_str,
     size_t nclients = jservers.size();
     pool->clients.reserve(nclients);
 
+    uint64_t qosDefault = 0;
+    auto jPoolQos = jpool.getDefault("qos", opts_.default_qos_class);
+    if (isQosValid(jPoolQos)) {
+      qosDefault = jPoolQos.asInt();
+    } else {
+      qosDefault = opts_.default_qos_class;
+      logFailure(memcache::failure::Category::kInvalidConfig,
+                 "Invalid qos config for pool {}", pool_name_str);
+    }
+
     auto jPoolUseSsl = jpool.getDefault("use_ssl", false);
     DYNAMIC_EXPECT(jPoolUseSsl, dynamic::Type::BOOL, "use_ssl");
     bool useSslDefault = jPoolUseSsl.asBool();
@@ -546,6 +579,7 @@ PoolFactory::parsePool(const string& pool_name_str,
     for (size_t i = 0; i < nclients; i++) {
       const dynamic jserver = jservers[i];
       bool serverUseSsl = useSslDefault;
+      uint64_t serverQos = qosDefault;
       if (jserver.isString()) {
         auto jhostnameStr = jserver.asString();
 
@@ -556,6 +590,16 @@ PoolFactory::parsePool(const string& pool_name_str,
       } else if (jserver.isObject()) {
         dynamic jhostname = jserver["hostname"];
         DYNAMIC_EXPECT(jhostname, dynamic::Type::STRING, "hostname");
+
+        auto jServerQos = jserver.getDefault("qos", qosDefault);
+        if (isQosValid(jServerQos)) {
+          serverQos = jServerQos.asInt();
+        } else {
+          serverQos = qosDefault;
+          logFailure(memcache::failure::Category::kInvalidConfig,
+                     "Invalid qos config for host {} in pool {}",
+                     jhostname.asString(), pool_name_str);
+        }
 
         auto jServerUseSsl = jserver.getDefault("use_ssl", jPoolUseSsl);
         DYNAMIC_EXPECT(jServerUseSsl, dynamic::Type::BOOL, "use_ssl");
@@ -588,7 +632,8 @@ PoolFactory::parsePool(const string& pool_name_str,
         opts_.rxpriority,
         opts_.txpriority,
         i,
-        serverUseSsl);
+        serverUseSsl,
+        serverQos);
 
       FBI_ASSERT(proxy_client_key == client->proxy_client_key);
 
