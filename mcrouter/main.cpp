@@ -339,23 +339,11 @@ void daemonize() {
   }
   switch (fork()) {
   case 0:
-    setsid();
-    int i;
-    // close all descriptors
-    for (i = getdtablesize(); i >= 0; i--) {
-      close(i);
-    }
-    i = open("/dev/null", O_RDWR);
-    dup2(i, 1);
-    dup2(i, 2);
-
-    // oops! we closed the log file too
-    if (standaloneOpts.log_file != "") {
-      nstring_t log_file =
-        NSTRING_INIT((char*)standaloneOpts.log_file.c_str());
-      fbi_set_debug_logfile(&log_file);
-    }
-
+    PCHECK(setsid() != -1);
+    /* stdin and stdout redirected to /dev/null; we use stderr for logging */
+    close(0);
+    PCHECK(open("/dev/null", O_RDWR) != -1);
+    PCHECK(dup2(0, 1) != -1);
     break;
   case -1:
     fprintf(stderr, "Can't fork background process\n");

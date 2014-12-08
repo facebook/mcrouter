@@ -528,6 +528,17 @@ class Mcrouter(MCProcess):
         if extra_args:
             args.extend(extra_args)
 
+        if '-b' in args:
+            pid_file = os.path.join(self.base_dir.path, 'mcrouter.pid')
+            args.extend(['-P', pid_file])
+
+            def get_pid():
+                with open(pid_file, 'r') as pid_f:
+                    return int(pid_f.read().strip())
+
+            self.terminate = lambda: os.kill(get_pid(), signal.SIGTERM)
+            self.is_alive = lambda: os.path.exists("/proc/%d" % (get_pid()))
+
         args = McrouterGlobals.preprocessArgs(args)
 
         MCProcess.__init__(self, args, port, self.base_dir, junk_fill=True)
