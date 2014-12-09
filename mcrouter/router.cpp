@@ -139,8 +139,9 @@ static int precheck_request(mcrouter_queue_entry_t *mcreq) {
 
     // Everything else is supported
     default:
-      if (!mc_client_req_is_valid(mcreq->request)) {
-        mcreq->reply = McReply(mc_res_remote_error, "Invalid key");
+      auto err = mc_client_req_check(mcreq->request);
+      if (err != mc_req_err_valid) {
+        mcreq->reply = McReply(mc_res_remote_error, mc_req_err_to_string(err));
         break;
       }
       return 0;

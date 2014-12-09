@@ -545,30 +545,45 @@ mc_op_t mc_op_from_string(const char* str) {
  * Returns whether the given request has a valid memcache key (if it should).
  * must satisfy:
  *   1) The length should be nonzero.
- *   2) The length should be at most MCC_KEY_MAX_LEN.
+ *   2) The length should be at most MC_KEY_MAX_LEN.
  *   3) There should be no spaces or control characters.
  *
  * @param req                The request to verify
- * @return                   Whether or not the key is valid.
+ * @return                   validation result
  */
-int mc_client_req_is_valid(const mc_msg_t* req) {
+mc_req_err_t mc_client_req_check(const mc_msg_t* req) {
   if (!mc_req_has_key(req)) {
-    return 1;
+    return mc_req_err_valid;
   }
 
   const char* key_str = req->key.str;
   size_t len = req->key.len;
   size_t i;
 
-  if (len < 1 || len > MC_KEY_MAX_LEN) {
-    return 0;
+  if (len < 1) {
+    return mc_req_err_no_key;
+  }
+
+  if (len > MC_KEY_MAX_LEN) {
+    return mc_req_err_key_too_long;
   }
 
   for (i = 0; i < len; ++i) {
     if (iscntrl(key_str[i]) || isspace(key_str[i])) {
-      return 0;
+      return mc_req_err_space_or_ctrl;
     }
   }
 
-  return 1;
+  return mc_req_err_valid;
+}
+
+const char* mc_req_err_to_string(const mc_req_err_t err) {
+  switch (err) {
+    case mc_req_err_valid: return "valid";
+    case mc_req_err_no_key: return "invalid key: missing";
+    case mc_req_err_key_too_long: return "invalid key: too long";
+    case mc_req_err_space_or_ctrl:
+      return "invalid key: space or control character";
+  }
+  return "unknown";
 }

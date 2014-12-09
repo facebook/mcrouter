@@ -95,6 +95,10 @@ enum reply_state_t {
   REPLY_STATE_REPLY_DELAYED,
 };
 
+class BadKeyException : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 /**
  * @struct proxy_request_t
  * @brief Stores a proxy request

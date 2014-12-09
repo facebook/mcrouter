@@ -218,8 +218,9 @@ proxy_request_t::proxy_request_t(proxy_t* p,
     reqComplete_(reqComplete),
     processing_(false) {
 
-  if (!mc_client_req_is_valid(req.get())) {
-    throw std::runtime_error("Invalid request");
+  auto reqError = mc_client_req_check(req.get());
+  if (reqError != mc_req_err_valid) {
+    throw BadKeyException(mc_req_err_to_string(reqError));
   }
 
   if (req->op == mc_op_get && !strncmp(req->key.str, kInternalGetPrefix.c_str(),

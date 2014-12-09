@@ -20,7 +20,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
   : protocol_(protocol), result_(Result::OK) {
 
   auto msg = req.dependentMsg(operation);
-  if (!mc_client_req_is_valid(msg.get()) ||
+  if (mc_client_req_check(msg.get()) != mc_req_err_valid ||
       (protocol_ == mc_ascii_protocol && msg->key.len > MC_KEY_MAX_LEN_ASCII)) {
     result_ = Result::BAD_KEY;
     return;

@@ -217,6 +217,15 @@ enum mc_msg_flags_t {
     MC_MSG_FLAG_USER_16 = 0x800000000000LL
 };
 
+typedef enum mc_req_err_s {
+  mc_req_err_valid,
+  mc_req_err_no_key,
+  mc_req_err_key_too_long,
+  mc_req_err_space_or_ctrl
+} mc_req_err_t;
+
+const char* mc_req_err_to_string(const mc_req_err_t err);
+
 /*
  * memcache request/reply.
  *
@@ -411,8 +420,7 @@ uint64_t mc_msg_num_outstanding();
  */
 int mc_msg_contains(const mc_msg_t *msg, void *p, size_t n);
 
-/** Returns true if req has no key, or if that key is valid */
-int mc_client_req_is_valid(const mc_msg_t* req);
+mc_req_err_t mc_client_req_check(const mc_msg_t* req);
 
 __END_DECLS
 
