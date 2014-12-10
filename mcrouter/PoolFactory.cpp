@@ -508,6 +508,14 @@ PoolFactory::parsePool(const string& pool_name_str,
     }
     pool->keep_routing_prefix = keep_routing_prefix;
 
+    pool->attach_default_routing_prefix = false;
+    it = jpool.find("attach_default_routing_prefix");
+    if (it != jpool.items().end()) {
+      DYNAMIC_EXPECT(it->second, dynamic::Type::BOOL,
+          "attach_default_routing_prefix");
+      pool->attach_default_routing_prefix = it->second.getBool();
+    }
+
     // devnull_asynclog
     it = jpool.find("devnull_asynclog");
     if (it != jpool.items().end()) {
@@ -627,6 +635,7 @@ PoolFactory::parsePool(const string& pool_name_str,
         pool->timeout,
         ap,
         pool->keep_routing_prefix,
+        pool->attach_default_routing_prefix,
         pool->devnull_asynclog,
         pool.get(), proxy_client_key,
         opts_.rxpriority,

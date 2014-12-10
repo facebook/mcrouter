@@ -303,6 +303,7 @@ class ProxyPool : public ProxyGenericPool {
   std::unique_ptr<ShardSplitter> shardSplitter;
   timeval_t timeout;
   int keep_routing_prefix;
+  bool attach_default_routing_prefix{false};
 
   /**
    * If true, don't write failed requests to asynclog (regardless of

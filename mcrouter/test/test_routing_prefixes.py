@@ -10,11 +10,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
-import threading
 import time
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestMcrouterRoutingPrefixAscii(McrouterTestCase):

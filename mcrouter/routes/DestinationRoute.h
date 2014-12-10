@@ -117,15 +117,6 @@ class DestinationRoute {
   std::shared_ptr<ProxyDestination> destination_;
   size_t pendingShadowReqs_{0};
 
-  template <class Request, int M>
-  McMsgRef generateMsg(const Request& req, McOperation<M>) const {
-    if (client_->keep_routing_prefix) {
-      return req.dependentMsg((mc_op_t)M);
-    }
-
-    return req.dependentMsgStripRoutingPrefix((mc_op_t)M);
-  }
-
   template <int Op>
   ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
 
@@ -160,7 +151,14 @@ class DestinationRoute {
 
     DestinationRequestCtx ctx(&req.context().ctx().proxyRequest());
     uint64_t senderId = req.context().ctx().senderId();
-    auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
+    folly::StringPiece attachPrefix;
+    if (client_->keep_routing_prefix &&
+        client_->attach_default_routing_prefix) {
+      attachPrefix = proxy->opts.default_route;
+    }
+    auto newReq = McRequest::cloneFrom(req,
+                                       !client_->keep_routing_prefix,
+                                       attachPrefix);
 
     fiber::await(
       [&destination, &newReq, senderId, &ctx](FiberPromise<void> promise) {

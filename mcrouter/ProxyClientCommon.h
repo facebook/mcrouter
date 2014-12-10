@@ -33,6 +33,7 @@ struct ProxyClientCommon {
   std::string proxy_client_key;
 
   int keep_routing_prefix;
+  bool attach_default_routing_prefix;
   bool devnull_asynclog;
   int rxpriority;
   int txpriority;
@@ -49,6 +50,7 @@ struct ProxyClientCommon {
                     timeval_t timeout,
                     AccessPoint ap,
                     int keep_routing_prefix,
+                    bool attach_default_routing_prefix,
                     bool devnull_asynclog,
                     ProxyPool* pool,
                     std::string key,

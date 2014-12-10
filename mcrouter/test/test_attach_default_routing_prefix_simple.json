@@ -1,0 +1,10 @@
+{
+  "pools": {
+    "A": {
+      "keep_routing_prefix": true,
+      "attach_default_routing_prefix": true,
+      "servers": [ "localhost:12345" ]
+    }
+  },
+  "route": "PoolRoute|A"
+}
