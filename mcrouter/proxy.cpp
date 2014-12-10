@@ -353,17 +353,6 @@ void proxy_t::processRequest(proxy_request_t* preq) {
   ++numRequestsProcessing_;
   stat_incr(stats, proxy_reqs_processing_stat, 1);
 
-  static fb_timer_t *on_request_timer = nullptr;
-
-  if (!opts.disable_dynamic_stats) {
-    if (!on_request_timer) {
-      nstring_t name = NSTRING_LIT("router_on_request");
-      on_request_timer = fb_timer_alloc(name, 0, 0);
-      fb_timer_register(on_request_timer);
-    }
-    fb_timer_start(on_request_timer);
-  }
-
   switch (preq->orig_req->op) {
     case mc_op_stats:
       stat_incr(stats, cmd_stats_stat, 1);
@@ -418,9 +407,6 @@ void proxy_t::processRequest(proxy_request_t* preq) {
 
   stat_incr(stats, request_sent_stat, 1);
   stat_incr(stats, request_sent_count_stat, 1);
-  if (!opts.disable_dynamic_stats) {
-    fb_timer_finish(on_request_timer);
-  }
 }
 
 void proxy_t::dispatchRequest(proxy_request_t* preq) {

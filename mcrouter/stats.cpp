@@ -467,8 +467,6 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
     return cmd_error_stats;
   } else if (str == "ods") {
     return ods_stats;
-  } else if (str == "timers") {
-    return timer_stats;
   } else if (str == "servers") {
     return server_stats;
   } else if (str == "suspect_servers") {
@@ -513,20 +511,6 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
         reply.addStat(stat->name, rate_stat_to_str(proxy, ii));
       } else {
         reply.addStat(stat->name, stat_to_str(stat, nullptr));
-      }
-    }
-  }
-
-  if (groups & timer_stats) {
-    fb_timer_list_t timer_list = fb_timer_get_all_timers();
-    fb_timer_t* timer;
-    TAILQ_FOREACH(timer, &timer_list, entry) {
-      nstring_t timers[NUM_TIMER_OUTPUT_TYPES];
-      fb_timer_to_nstring(timer, timers);
-      for (int i = 0; i < NUM_TIMER_OUTPUT_TYPES; ++i) {
-        reply.addStat(to<folly::StringPiece>(timer->names[i]),
-                      to<folly::StringPiece>(timers[i]));
-        free(timers[i].str);
       }
     }
   }

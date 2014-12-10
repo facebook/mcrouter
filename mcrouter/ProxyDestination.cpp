@@ -165,16 +165,6 @@ void ProxyDestination::on_reply(McReply reply,
 
   proxy_request_t* preq = nullptr;
 
-  static fb_timer_t *on_reply_timer = nullptr;
-  if (!proxy->opts.disable_dynamic_stats) {
-    if (!on_reply_timer) {
-      nstring_t name = NSTRING_LIT("router_on_reply");
-      on_reply_timer = fb_timer_alloc(name, 0, 0);
-      fb_timer_register(on_reply_timer);
-    }
-    fb_timer_start(on_reply_timer);
-  }
-
   // When we send a regular request, we pass a pointer to DestinationRequestCtx
   // as a req_ctx. In case of probes we don't have that context and use nullptr
   // to distinguish it from regular requests.
@@ -204,10 +194,6 @@ void ProxyDestination::on_reply(McReply reply,
 
   if (preq) {
     stat_decr(proxy->stats, sum_server_queue_length_stat, 1);
-  }
-
-  if (!proxy->opts.disable_dynamic_stats) {
-    fb_timer_finish(on_reply_timer);
   }
 }
 

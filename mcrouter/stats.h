@@ -62,7 +62,6 @@ enum stat_group_t {
   cmd_out_stats        =       0x10,
   cmd_error_stats      =       0x20,
   ods_stats            =       0x40,
-  timer_stats          =       0x80,
   rate_stats           =      0x100,
   count_stats          =      0x200,
   all_stats            =     0xffff,
