@@ -28,6 +28,11 @@ inline void AsyncMcClient::setStatusCallbacks(
 }
 
 template <typename Operation>
+McReply AsyncMcClient::sendSync(const McRequest& request, Operation) {
+  return base_->sendSync(request, Operation());
+}
+
+template <typename Operation>
 void AsyncMcClient::send(const McRequest& request, Operation,
                          std::function<void(McReply&&)> callback) {
   base_->send(request, Operation(), std::move(callback));

@@ -20,8 +20,8 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-DestinationClient::DestinationClient(std::shared_ptr<ProxyDestination> pdstn)
-    : proxy_(pdstn->proxy),
+DestinationClient::DestinationClient(ProxyDestination& pdstn)
+    : proxy_(pdstn.proxy),
       pdstn_(pdstn) {
 }
 
@@ -33,46 +33,23 @@ void DestinationClient::resetInactive() {
   }
 }
 
-void DestinationClient::onReply(McReply reply, mc_op_t op, void* req_ctx,
-                                std::weak_ptr<ProxyDestination> pdstn) {
-  auto pdstnPtr = pdstn.lock();
-  // ProxyDestination is already dead, just return.
-  if (!pdstnPtr) {
-    return;
-  }
-  auto proxy = pdstnPtr->proxy;
-
-  if (reply.result() == mc_res_local_error) {
-    update_send_stats(proxy, op, PROXY_SEND_LOCAL_ERROR);
-  } else {
-    stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
-    update_send_stats(proxy, op, PROXY_SEND_OK);
-  }
-
-  pdstnPtr->on_reply(std::move(reply),
-                     req_ctx);
-}
-
 void DestinationClient::initializeAsyncMcClient() {
   FBI_ASSERT(proxy_->eventBase);
 
-  auto pdstn = pdstn_.lock();
-  assert(pdstn != nullptr);
-
-  ConnectionOptions options(pdstn->accessPoint);
+  ConnectionOptions options(pdstn_.accessPoint);
   options.noNetwork = proxy_->opts.no_network;
   options.tcpKeepAliveCount = proxy_->opts.keepalive_cnt;
   options.tcpKeepAliveIdle = proxy_->opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = proxy_->opts.keepalive_interval_s;
   options.timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-    std::chrono::seconds(pdstn->server_timeout.tv_sec) +
-    std::chrono::microseconds(pdstn->server_timeout.tv_usec));
+    std::chrono::seconds(pdstn_.server_timeout.tv_sec) +
+    std::chrono::microseconds(pdstn_.server_timeout.tv_usec));
   if (proxy_->opts.enable_qos) {
     options.enableQoS = true;
-    options.qos = pdstn->qos;
+    options.qos = pdstn_.qos;
   }
 
-  if (pdstn->use_ssl) {
+  if (pdstn_.use_ssl) {
     auto& opts = proxy_->opts;
     checkLogic(!opts.pem_cert_path.empty() &&
                !opts.pem_key_path.empty() &&
@@ -87,21 +64,13 @@ void DestinationClient::initializeAsyncMcClient() {
   asyncMcClient_ = folly::make_unique<AsyncMcClient>(*proxy_->eventBase,
                                                      std::move(options));
 
-  auto pdstnWeakPtr = pdstn_;
+  ProxyDestination& pdstn = pdstn_;
   asyncMcClient_->setStatusCallbacks(
-    [pdstnWeakPtr] () {
-      auto pdstnPtr = pdstnWeakPtr.lock();
-      if (!pdstnPtr) {
-        return;
-      }
-      pdstnPtr->on_up();
+    [&pdstn] () mutable {
+      pdstn.on_up();
     },
-    [pdstnWeakPtr] (const apache::thrift::transport::TTransportException&) {
-      auto pdstnPtr = pdstnWeakPtr.lock();
-      if (!pdstnPtr) {
-        return;
-      }
-      pdstnPtr->on_down();
+    [&pdstn] (const apache::thrift::transport::TTransportException&) mutable {
+      pdstn.on_down();
     });
 
   if (proxy_->opts.target_max_inflight_requests > 0) {
@@ -111,11 +80,19 @@ void DestinationClient::initializeAsyncMcClient() {
 }
 
 AsyncMcClient& DestinationClient::getAsyncMcClient() {
-  assert(!pdstn_.expired());
   if (!asyncMcClient_) {
     initializeAsyncMcClient();
   }
   return *asyncMcClient_;
+}
+
+void DestinationClient::updateStats(mc_res_t result, mc_op_t op) {
+  if (result == mc_res_local_error) {
+    update_send_stats(proxy_, op, PROXY_SEND_LOCAL_ERROR);
+  } else {
+    stat_incr(proxy_->stats, sum_server_queue_length_stat, 1);
+    update_send_stats(proxy_, op, PROXY_SEND_OK);
+  }
 }
 
 size_t DestinationClient::getPendingRequestCount() const {

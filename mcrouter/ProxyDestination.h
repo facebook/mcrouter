@@ -32,6 +32,7 @@ class McRequest;
 
 namespace mcrouter {
 
+class DestinationRequestCtx;
 class ProxyClientCommon;
 class ProxyClientOwner;
 class ProxyClientShared;
@@ -81,10 +82,11 @@ struct ProxyDestination {
 
   ~ProxyDestination();
 
-  // returns non-zero on error
-  template <class Operation>
-  int send(const McRequest &request, Operation, void* req_ctx,
-           uint64_t senderId);
+  // This is a blocking call that will return reply, once it's ready.
+  template <int Op, class Request>
+  typename ReplyType<McOperation<Op>, Request>::type
+  send(const Request& request, McOperation<Op>, DestinationRequestCtx& req_ctx,
+       uint64_t senderId);
   // returns true if okay to send req using this client
   bool may_send();
 
@@ -105,7 +107,6 @@ struct ProxyDestination {
 
   void on_up();
   void on_down();
-  void on_reply(McReply reply, void* req_ctx);
 
   // on probe timer
   void on_timer(const asox_timer_t timer);
@@ -144,6 +145,9 @@ struct ProxyDestination {
 
   void handle_tko(const McReply& reply, bool is_probe_req);
   void unmark_tko(const McReply& reply);
+
+  // Process tko, stats and duration timer.
+  void onReply(const McReply& reply, DestinationRequestCtx& destreqCtx);
 
   void initializeClient();
 

@@ -17,6 +17,7 @@
 #include <thrift/lib/cpp/transport/TTransportException.h>
 
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
+#include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
@@ -62,6 +63,9 @@ class AsyncMcClientImpl :
     std::function<void(const TransportException&)> onDown);
 
   template <int Op>
+  McReply sendSync(const McRequest& request, McOperation<Op>);
+
+  template <int Op>
   void send(const McRequest& request, McOperation<Op>,
             std::function<void(McReply&&)> callback);
 
@@ -95,8 +99,38 @@ class AsyncMcClientImpl :
     uint64_t id;
     mc_op_t op;
     std::chrono::steady_clock::time_point sentAt;
-    std::function<void(McReply&&)> replyCallback;
+
+    struct SyncContext {
+      Baton baton;
+      McReply reply;
+    };
+
+    struct AsyncContext {
+      std::function<void(McReply&&)> replyCallback;
+      explicit AsyncContext(std::function<void(McReply&&)> replyCallback_)
+        : replyCallback(replyCallback_) {
+      }
+    };
+
+    union {
+      SyncContext syncContext;
+      AsyncContext asyncContext;
+    };
+
     std::function<void(const McReply&)> traceCallback;
+
+    ReqInfo(const McRequest& request,
+            uint64_t reqid,
+            mc_op_t operation,
+            mc_protocol_t protocol,
+            std::shared_ptr<AsyncMcClientImpl> client)
+      : reqContext(request, operation, reqid, protocol),
+        id(reqid),
+        op(operation),
+        syncContext(),
+        client_(client),
+        isSync_(true) {
+    }
 
     ReqInfo(const McRequest& request,
             uint64_t reqid,
@@ -107,12 +141,25 @@ class AsyncMcClientImpl :
       : reqContext(request, operation, reqid, protocol),
         id(reqid),
         op(operation),
-        replyCallback(std::move(callback)),
-        client_(client) {
+        asyncContext(std::move(callback)),
+        client_(client),
+        isSync_(false) {
+    }
+
+    ~ReqInfo() {
+      if (isSync()) {
+        syncContext.~SyncContext();
+      } else {
+        asyncContext.~AsyncContext();
+      }
     }
 
     ReqInfo(const ReqInfo&) = delete;
     ReqInfo& operator=(const ReqInfo& other) = delete;
+
+    bool isSync() const {
+      return isSync_;
+    }
 
    private:
     static ObjectPool<ReqInfo>& getPool() {
@@ -123,7 +170,10 @@ class AsyncMcClientImpl :
     class Deleter {
      public:
       void operator()(ReqInfo* ptr) const {
-        getPool().free(ptr);
+        // Sync requests are allocated on stack, thus we can't destroy them.
+        if (!ptr->isSync()) {
+          getPool().free(ptr);
+        }
       }
     };
 
@@ -132,12 +182,21 @@ class AsyncMcClientImpl :
 
     template <typename... Args>
     static UniquePtr getFromPool(Args&&... args) {
-      return UniquePtr(getPool().alloc(std::forward<Args>(args)...), Deleter());
+      auto ptr =
+        UniquePtr(getPool().alloc(std::forward<Args>(args)...), Deleter());
+      assert(!ptr->isSync_);
+      return ptr;
+    }
+
+    UniquePtr createDummyPtr() {
+      assert(isSync_);
+      return UniquePtr(this, Deleter());
     }
 
    private:
     std::shared_ptr<AsyncMcClientImpl> client_;
     UniqueIntrusiveListHook hook_;
+    bool isSync_{false};
 
    public:
     using RequestQueue = UniqueIntrusiveList<ReqInfo, &ReqInfo::hook_, Deleter>;
@@ -201,6 +260,9 @@ class AsyncMcClientImpl :
   AsyncMcClientImpl(folly::EventBase& eventBase, ConnectionOptions options);
 
   ~AsyncMcClientImpl();
+
+  // Common part for send/sendSync.
+  void sendCommon(ReqInfo::UniquePtr req);
 
   // Write some requests from sendQueue_ to the socket, until max inflight limit
   // is reached or queue is empty.

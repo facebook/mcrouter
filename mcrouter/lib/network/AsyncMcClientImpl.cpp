@@ -160,6 +160,33 @@ void AsyncMcClientImpl::setThrottle(size_t maxInflight, size_t maxPending) {
   maxPending_ = maxPending;
 }
 
+void AsyncMcClientImpl::sendCommon(ReqInfo::UniquePtr req) {
+  switch (req->reqContext.serializationResult()) {
+    case McSerializedRequest::Result::OK:
+      incMsgId(nextMsgId_);
+
+      if (outOfOrder_) {
+        idMap_[req->id] = req.get();
+      }
+      sendQueue_.pushBack(std::move(req));
+      scheduleNextWriterLoop();
+      if (connectionState_ == ConnectionState::DOWN) {
+        // attempConnection may use a lot of stack memory, thus we need to run
+        // it on a main context.
+        fiber::runInMainContext([this] {
+          attemptConnection();
+        });
+      }
+      return;
+    case McSerializedRequest::Result::BAD_KEY:
+      reply(std::move(req), McReply(mc_res_bad_key));
+      return;
+    case McSerializedRequest::Result::ERROR:
+      reply(std::move(req), McReply(mc_res_local_error));
+      return;
+  }
+}
+
 void AsyncMcClientImpl::scheduleNextWriterLoop() {
   if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
       !sendQueue_.empty()) {
@@ -355,7 +382,12 @@ void AsyncMcClientImpl::scheduleNextTimeout() {
 
 void AsyncMcClientImpl::reply(ReqInfo::UniquePtr req, McReply mcReply) {
   idMap_.erase(req->id);
-  req->replyCallback(std::move(mcReply));
+  if (req->isSync()) {
+    req->syncContext.reply = std::move(mcReply);
+    req->syncContext.baton.post();
+  } else {
+    req->asyncContext.replyCallback(std::move(mcReply));
+  }
 }
 
 void AsyncMcClientImpl::replyReceived(uint64_t id, McReply mcReply) {

@@ -12,6 +12,8 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/_router.h"
+#include "mcrouter/config-impl.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/timer.h"
@@ -88,8 +90,19 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
       mutReq->op = mc_op_version;
       probe_req = folly::make_unique<McRequest>(std::move(mutReq));
       ++probesSent_;
-      send(*probe_req, McOperation<mc_op_version>(), /* context */ nullptr,
-           /* senderId= */ 0);
+      auto selfPtr = selfPtr_;
+      proxy->fiberManager.addTask([selfPtr]() mutable {
+        auto pdstn = selfPtr.lock();
+        if (pdstn == nullptr) {
+          return;
+        }
+        pdstn->proxy->destinationMap->markAsActive(*pdstn);
+        McReply reply = pdstn->client_->send(*pdstn->probe_req,
+                                             McOperation<mc_op_version>(),
+                                             0);
+        pdstn->handle_tko(reply, true);
+        pdstn->probe_req.reset();
+      });
     }
     schedule_next_probe();
   }
@@ -159,42 +172,21 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
   }
 }
 
-void ProxyDestination::on_reply(McReply reply,
-                                void* req_ctx) {
+void ProxyDestination::onReply(const McReply& reply,
+                               DestinationRequestCtx& destreqCtx) {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
-  proxy_request_t* preq = nullptr;
+  handle_tko(reply, false);
 
-  // When we send a regular request, we pass a pointer to DestinationRequestCtx
-  // as a req_ctx. In case of probes we don't have that context and use nullptr
-  // to distinguish it from regular requests.
-  bool is_probe_req = (req_ctx == nullptr);
+  stats_.results[reply.result()]++;
+  destreqCtx.endTime = nowUs();
 
-  handle_tko(reply, is_probe_req);
+  /* For code simplicity we look at latency for making TKO decisions with a
+     1 request delay */
+  int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
+  stats_.avgLatency.insertSample(latency);
 
-  if (is_probe_req) {
-    probe_req.reset();
-  } else {
-    stats_.results[reply.result()]++;
-
-    auto destreqCtx = reinterpret_cast<DestinationRequestCtx*>(req_ctx);
-    preq = destreqCtx->preq;
-
-    destreqCtx->endTime = nowUs();
-    destreqCtx->reply = std::move(reply);
-
-    /* For code simplicity we look at latency for making TKO decisions with a
-       1 request delay */
-    int64_t latency = destreqCtx->endTime - destreqCtx->startTime;
-    stats_.avgLatency.insertSample(latency);
-
-    auto promise = std::move(destreqCtx->promise.value());
-    promise.setValue();
-  }
-
-  if (preq) {
-    stat_decr(proxy->stats, sum_server_queue_length_stat, 1);
-  }
+  stat_decr(proxy->stats, sum_server_queue_length_stat, 1);
 }
 
 void ProxyDestination::on_up() {
@@ -262,7 +254,7 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
   auto ptr = std::shared_ptr<ProxyDestination>(
     new ProxyDestination(proxy, ro, std::move(pdstnKey)));
   ptr->selfPtr_ = ptr;
-  ptr->client_ = folly::make_unique<DestinationMcClient>(ptr);
+  ptr->client_ = folly::make_unique<DestinationMcClient>(*ptr);
   return ptr;
 }
 

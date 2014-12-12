@@ -56,6 +56,14 @@ class AsyncMcClient {
     std::function<void(const TransportException&)> onDown);
 
   /**
+   * Send request synchronously (i.e. blocking call).
+   * Note: it must be called only from fiber context. It will block the current
+   *       stack and will send request only when we loop EventBase.
+   */
+  template <typename Operation>
+  McReply sendSync(const McRequest& request, Operation);
+
+  /**
    * Send request with given Op and call callback on reply.
    *
    * @param callback  will be called when reply is received or request failed.

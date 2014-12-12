@@ -36,16 +36,10 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 struct DestinationRequestCtx {
-  folly::Optional<FiberPromise<void>> promise;
-  proxy_request_t* preq{nullptr};
   int64_t startTime{0};
   int64_t endTime{0};
-  McReply reply;
 
-  explicit DestinationRequestCtx(proxy_request_t* proxyReq)
-      : preq(proxyReq),
-        startTime(nowUs()),
-        reply(mc_res_unknown) {
+  explicit DestinationRequestCtx() : startTime(nowUs()) {
   }
 };
 
@@ -149,7 +143,7 @@ class DestinationRoute {
 
     auto& destination = destination_;
 
-    DestinationRequestCtx ctx(&req.context().ctx().proxyRequest());
+    DestinationRequestCtx ctx;
     uint64_t senderId = req.context().ctx().senderId();
     folly::StringPiece attachPrefix;
     if (client_->keep_routing_prefix &&
@@ -160,16 +154,9 @@ class DestinationRoute {
                                        !client_->keep_routing_prefix,
                                        attachPrefix);
 
-    fiber::await(
-      [&destination, &newReq, senderId, &ctx](FiberPromise<void> promise) {
-        ctx.promise = std::move(promise);
-        destination->send(newReq,
-                          McOperation<Op>(),
-                          &ctx,
-                          senderId);
-      });
-    auto reply = ProxyMcReply(std::move(ctx.reply));
-
+    auto reply = ProxyMcReply(
+      destination->send(newReq, McOperation<Op>(), ctx,
+                        req.context().ctx().senderId()));
     req.context().onReplyReceived(*client_,
                                   req,
                                   reply,

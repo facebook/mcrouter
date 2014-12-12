@@ -18,6 +18,52 @@
 
 namespace facebook { namespace memcache {
 
+namespace {
+
+template <int Op>
+std::function<void(const McReply&)> traceOnSend(const McRequest& request,
+                                                McOperation<Op>,
+                                                const AccessPoint& ap) {
+#ifndef LIBMC_FBTRACE_DISABLE
+  if (fbTraceOnSend(McOperation<Op>(), request, ap)) {
+    const mc_fbtrace_info_s* traceInfo = request.fbtraceInfo();
+    return [traceInfo] (const McReply& reply) {
+      fbTraceOnReceive(McOperation<Op>(), traceInfo, reply);
+    };
+  }
+#endif
+  return nullptr;
+}
+
+} // anonymous namespace
+
+template <int Op>
+McReply AsyncMcClientImpl::sendSync(const McRequest& request, McOperation<Op>) {
+  auto selfPtr = selfPtr_.lock();
+  // shouldn't happen.
+  assert(selfPtr);
+  assert(fiber::onFiber());
+
+  if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
+    return McReply(mc_res_local_error);
+  }
+
+  // We need to send fbtrace before serializing, or otherwise we are going to
+  // miss fbtrace id.
+  std::function<void(const McReply&)> traceCallback =
+    traceOnSend(request, McOperation<Op>(), connectionOptions_.accessPoint);
+
+  auto op = (mc_op_t)Op;
+  ReqInfo req(request, nextMsgId_, op,
+              connectionOptions_.accessPoint.getProtocol(), selfPtr);
+  req.traceCallback = traceCallback;
+  sendCommon(req.createDummyPtr());
+
+  // We sent request successfully, wait for the result.
+  req.syncContext.baton.wait();
+  return std::move(req.syncContext.reply);
+}
+
 template <int Op>
 void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
     std::function<void(McReply&&)> callback) {
@@ -34,16 +80,8 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
 
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
-  std::function<void(const McReply&)> traceCallback;
-#ifndef LIBMC_FBTRACE_DISABLE
-  if (fbTraceOnSend(McOperation<Op>(), request,
-                    connectionOptions_.accessPoint)) {
-    const mc_fbtrace_info_s* traceInfo = request.fbtraceInfo();
-    traceCallback = [traceInfo] (const McReply& reply) {
-      fbTraceOnReceive(McOperation<Op>(), traceInfo, reply);
-    };
-  }
-#endif
+  std::function<void(const McReply&)> traceCallback =
+    traceOnSend(request, McOperation<Op>(), connectionOptions_.accessPoint);
 
   auto op = (mc_op_t)Op;
   auto req = ReqInfo::getFromPool(request, nextMsgId_, op,
@@ -51,26 +89,7 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
                                   std::move(callback), selfPtr);
   req->traceCallback = traceCallback;
 
-  switch (req->reqContext.serializationResult()) {
-    case McSerializedRequest::Result::OK:
-      incMsgId(nextMsgId_);
-
-      if (outOfOrder_) {
-        idMap_[req->id] = req.get();
-      }
-      sendQueue_.pushBack(std::move(req));
-      scheduleNextWriterLoop();
-      if (connectionState_ == ConnectionState::DOWN) {
-        attemptConnection();
-      }
-      return;
-    case McSerializedRequest::Result::BAD_KEY:
-      reply(std::move(req), McReply(mc_res_bad_key));
-      return;
-    case McSerializedRequest::Result::ERROR:
-      reply(std::move(req), McReply(mc_res_local_error));
-      return;
-  }
+  sendCommon(std::move(req));
 }
 
 }} // facebook::memcache

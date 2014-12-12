@@ -25,7 +25,7 @@ class proxy_t;
 
 class DestinationClient {
  public:
-  explicit DestinationClient(std::shared_ptr<ProxyDestination> pdstn);
+  explicit DestinationClient(ProxyDestination& pdstn);
 
   void resetInactive();
 
@@ -39,23 +39,20 @@ class DestinationClient {
    */
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
 
-  template <int Op>
-  int send(const McRequest& request, McOperation<Op>, void* req_ctx,
-           uint64_t senderId);
+  template <int Op, class Request>
+  typename ReplyType<McOperation<Op>, Request>::type
+  send(const Request& request, McOperation<Op>, uint64_t senderId);
 
   ~DestinationClient();
 
  private:
   proxy_t* proxy_;
   std::unique_ptr<AsyncMcClient> asyncMcClient_;
-  std::weak_ptr<ProxyDestination> pdstn_;
+  ProxyDestination& pdstn_;
 
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
-
-  // Callback that would forward reply to the ProxyDestination.
-  static void onReply(McReply reply, mc_op_t op, void* req_ctx,
-                      std::weak_ptr<ProxyDestination> pdstn);
+  void updateStats(mc_res_t result, mc_op_t op);
 };
 
 }}}  // facebook::memcache::mcrouter

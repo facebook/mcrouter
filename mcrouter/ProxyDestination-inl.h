@@ -12,14 +12,16 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-template <class Operation>
-int ProxyDestination::send(const McRequest &request, Operation, void* req_ctx,
-                           uint64_t senderId) {
+template <int Op, class Request>
+typename ReplyType<McOperation<Op>, Request>::type
+ProxyDestination::send(const Request& request, McOperation<Op>,
+                       DestinationRequestCtx& req_ctx, uint64_t senderId) {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
   proxy->destinationMap->markAsActive(*this);
-
-  return client_->send(request, Operation(), req_ctx, senderId);
+  auto reply = client_->send(request, McOperation<Op>(), senderId);
+  onReply(reply, req_ctx);
+  return reply;
 }
 
 }}}  // facebook::memcache::mcrouter
