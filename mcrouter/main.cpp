@@ -637,7 +637,7 @@ int main(int argc, char **argv) {
 
   LOG(INFO) << MCROUTER_PACKAGE_STRING << " startup (" << getpid() << ")";
 
-  if (standaloneOpts.background) {
+  if (standaloneOpts.background && !validate_configs) {
     daemonize();
   }
 
