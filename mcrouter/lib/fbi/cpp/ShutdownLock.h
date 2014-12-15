@@ -12,6 +12,8 @@
 #include <atomic>
 #include <mutex>
 
+#include <folly/detail/CacheLocality.h>
+
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
 namespace facebook { namespace memcache {
@@ -51,17 +53,7 @@ struct shutdown_started_exception : std::runtime_error {
  */
 class ShutdownLock {
  public:
-  ShutdownLock()
-      : shutdownStarted_(false) {
-  }
-
   void lock() {
-    /* TODO: if a shutdown is in progress, this blocks until after it's done.
-       This is unnecessary (we don't have to block here at all), but
-       sfrlock doesn't provide a try_lock() method.
-
-       This is not a big deal since we can afford being blocked here
-       on shutdown. */
     lock_.readLock().lock();
     if (shutdownStarted_) {
       lock_.readLock().unlock();
@@ -80,9 +72,12 @@ class ShutdownLock {
    */
   template <class F>
   bool shutdownOnce(F&& func) {
-    std::lock_guard<SFRWriteLock> lg(lock_.writeLock());
-    if (shutdownStarted_.exchange(true)) {
-      return false;
+    {
+      std::lock_guard<SFRWriteLock> lg(lock_.writeLock());
+      if (shutdownStarted_) {
+        return false;
+      }
+      shutdownStarted_ = true;
     }
     func();
     return true;
@@ -97,7 +92,7 @@ class ShutdownLock {
 
  private:
   SFRLock lock_;
-  std::atomic<bool> shutdownStarted_;
+  std::atomic<bool> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING shutdownStarted_{false};
 };
 
 }}  // facebook::memcache
