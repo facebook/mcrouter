@@ -15,7 +15,7 @@
 #include <vector>
 
 #include <folly/Likely.h>
-#include <folly/wangle/Try.h>
+#include <folly/wangle/futures/Try.h>
 
 #include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
 #include "mcrouter/lib/fbi/cpp/traits.h"

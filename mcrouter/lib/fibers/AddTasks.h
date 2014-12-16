@@ -11,7 +11,7 @@
 #include <queue>
 
 #include <folly/Optional.h>
-#include <folly/wangle/Try.h>
+#include <folly/wangle/futures/Try.h>
 
 #include "mcrouter/lib/fibers/FiberPromise.h"
 

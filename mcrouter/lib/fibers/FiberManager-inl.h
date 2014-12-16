@@ -15,7 +15,7 @@
 #include <folly/Optional.h>
 #include <folly/Portability.h>
 #include <folly/ScopeGuard.h>
-#include <folly/wangle/Try.h>
+#include <folly/wangle/futures/Try.h>
 
 #include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/fibers/Fiber.h"
