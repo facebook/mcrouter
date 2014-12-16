@@ -83,7 +83,7 @@ getRoute(const folly::dynamic& d) {
 TEST(McRouteHandleProviderTest, sanity) {
   auto rh = getRoute(folly::parseJson(kConstShard));
   EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "hash");
+  EXPECT_EQ(rh->routeName(), "hash:ConstShard");
 }
 
 TEST(McRouteHandleProviderTest, invalid_func) {

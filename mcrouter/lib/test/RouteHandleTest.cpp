@@ -294,6 +294,8 @@ class HashFunc {
     return std::stoi(key.str()) % n_;
   }
 
+  static std::string type() { return "HashFunc"; }
+
  private:
   size_t n_;
 };

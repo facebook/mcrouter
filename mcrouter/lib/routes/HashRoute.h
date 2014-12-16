@@ -28,7 +28,7 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf, typename HashFunc>
 class HashRoute {
  public:
-  static std::string routeName() { return "hash"; }
+  static std::string routeName() { return "hash:" + HashFunc::type(); }
 
   HashRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh,
             std::string salt,
