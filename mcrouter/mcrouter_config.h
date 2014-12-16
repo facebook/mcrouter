@@ -51,8 +51,6 @@ typedef LoggingProxyRequestContext GenericProxyRequestContext;
 struct ProxyStatsContainer {
   explicit ProxyStatsContainer(proxy_t*) {}
 };
-struct RouterLogger {
-};
 
 /**
  * Implementation of unordered_map with string keys that accepts StringPiece
@@ -163,8 +161,6 @@ inline bool mcrouterLoopOnce(folly::EventBase* eventBase) {
 McrouterOptions defaultTestOptions();
 
 std::vector<std::string> defaultTestCommandLineArgs();
-
-std::shared_ptr<RouterLogger> createRouterLogger();
 
 void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog);
 

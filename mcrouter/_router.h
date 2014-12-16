@@ -96,8 +96,6 @@ struct mcrouter_t {
 
   StartupLock startupLock;
 
-  std::shared_ptr<RouterLogger> logger;
-
   /**
    * Logs mcrouter stats to disk every opts->stats_logging_interval
    * milliseconds

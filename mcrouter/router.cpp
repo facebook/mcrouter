@@ -423,7 +423,6 @@ mcrouter_t::mcrouter_t(const McrouterOptions& input_options) :
     is_transient(false),
     live_clients(0),
     startupLock(opts.sync ? 0 : opts.num_proxies + 1),
-    logger(createRouterLogger()),
     awriter(folly::make_unique<AsyncWriter>()),
     stats_log_writer(folly::make_unique<AsyncWriter>(
         opts.stats_async_queue_length)) {
