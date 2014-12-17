@@ -286,32 +286,6 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
   return 0;
 }
 
-/**
- * Sets openFD to number of opened file descriptors in current process
- * on success, otherwise the value of openFD is not changed
- *
- * @return true on success, false on failure
- */
-static bool getOpenFDCount(size_t& openFD) {
-  char procfd_path[32];
-  snprintf(procfd_path, 32, "/proc/%d/fd", getpid());
-
-  DIR *dir = opendir(procfd_path);
-  if (dir == nullptr) {
-    LOG(ERROR) << "Can't open process file descriptor directory: " <<
-                  procfd_path << ": " << strerror(errno);
-    return false;
-  }
-  size_t res = 0;
-  while (readdir(dir) != nullptr) {
-    ++res;
-  }
-  closedir(dir);
-  // subtract 3 to exclude '.', '..' and currently opened dir
-  openFD = res - 3;
-  return true;
-}
-
 void prepare_stats(mcrouter_t* router, stat_t* stats) {
   init_stats(stats);
 
@@ -371,11 +345,6 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
   stats[ps_system_time_sec_stat].data.dbl = ps_data.system_time_sec;
   stats[ps_rss_stat].data.uint64 = ps_data.rss;
   stats[ps_vsize_stat].data.uint64 = ps_data.vsize;
-  size_t open_fd = 0;
-  if (router->opts.track_open_fds) {
-    getOpenFDCount(open_fd);
-  }
-  stats[ps_open_fd_stat].data.uint64 = open_fd;
 
   stats[fibers_allocated_stat].data.uint64 = 0;
   stats[fibers_pool_size_stat].data.uint64 = 0;

@@ -88,17 +88,6 @@ mcrouter_option_toggle(
   "when run as root")
 
 mcrouter_option_integer(
-  int, disable_dynamic_stats, 0,
-  no_long, no_short,
-  "")
-
-mcrouter_option_toggle(
-  disable_global_dynamic_stats, false,
-  no_long, no_short,
-  "FIXME: Mcrouter global dynamic stat list is badly broken - it doesn't work"
-  " with multiple mcrouter instances in a process.")
-
-mcrouter_option_integer(
   size_t, big_value_split_threshold, 0,
   "big-value-split-threshold", no_short,
   "If 0, big value route handle is not part of route handle tree,"
@@ -278,11 +267,6 @@ mcrouter_option(
   "default routing prefix (ex. /oregon/prn1c16/)", routing_prefix)
 
 mcrouter_option_toggle(
-  async, false,
-  "async", 'A',
-  "enable asynchronous forwarding of deletes")
-
-mcrouter_option_toggle(
   miss_on_get_errors, true,
   "disable-miss-on-get-errors", no_short,
   "Disable reporting get errors as misses")
@@ -293,18 +277,6 @@ mcrouter_option_integer(
   "0 means that we will use the L2 exptime. Otherwise, when upgrading"
   " this value is used as the exptime for all requests")
 
-mcrouter_option_integer(
-  size_t, l1_ncache_exptime, 0,
-  "l1-ncache-exptime", no_short,
-  "If L1 negative cache is enabled, the TTL on the negative cache entries."
-  " 0 means no TTL - entries will live until evicted")
-
-mcrouter_option_integer(
-  size_t, l1_ncache_update_period, 0,
-  "l1-ncache-update-period", no_short,
-  "If nonzero, L1 negative cache is enabled and roughly 1 out of N L1 misses"
-  " result in an async update request to L2 where N is this period.")
-
 mcrouter_option_toggle(
   send_invalid_route_to_default, false,
   "send-invalid-route-to-default", no_short,
@@ -312,11 +284,6 @@ mcrouter_option_toggle(
 
 
 mcrouter_option_group("TKO probes")
-
-mcrouter_option_toggle(
-  global_tko_tracking, false,
-  "global-tko-tracking", no_short,
-  "DEPRECATED, global TKO tracking is always on")
 
 mcrouter_option_toggle(
   disable_tko_tracking, false,
@@ -420,12 +387,6 @@ mcrouter_option_integer(
   unsigned int, stats_async_queue_length, 50,
   "stats-async-queue-length", no_short,
   "Asynchronous queue size for logging.")
-
-mcrouter_option_toggle(
-  track_open_fds, false,
-  "track-open-fds", no_short,
-  "Log number of file descriptors opened by mcrouter process. This might cause "
-  "performance regression in case number of mcrouter clients is huge.")
 
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE

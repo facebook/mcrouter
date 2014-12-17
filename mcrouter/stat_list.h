@@ -48,7 +48,6 @@
   STAT(ps_system_time_sec, stat_double, 0, .dbl = 0.0)
   STUI(ps_vsize, 0, 0)
   STUI(ps_rss, 0, 0)
-  STUI(ps_open_fd, 0, 0)
   STUI(fibers_allocated, 0, 0)
   STUI(fibers_pool_size, 0, 0)
   STUI(fibers_stack_high_watermark, 0, 0)
