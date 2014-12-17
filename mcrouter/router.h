@@ -120,4 +120,6 @@ int mcrouter_send(mcrouter_client_t *router_client,
 
 void free_all_libmcrouters();
 
+bool mcrouter_client_is_zombie(mcrouter_client_t* router_client);
+
 }}} // facebook::memcache::mcrouter

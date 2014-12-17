@@ -1038,4 +1038,8 @@ void free_all_libmcrouters() {
   mcrouterManager.get()->freeAllMcrouters();
 }
 
+bool mcrouter_client_is_zombie(mcrouter_client_t* client) {
+  return client->isZombie;
+}
+
 }}} // facebook::memcache::mcrouter
