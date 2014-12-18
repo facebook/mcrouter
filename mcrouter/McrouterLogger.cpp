@@ -169,7 +169,7 @@ McrouterLogger::~McrouterLogger() {
 }
 
 bool McrouterLogger::start() {
-  if (running_) {
+  if (running_ || router_->opts.stats_logging_interval == 0) {
     return false;
   }
 
