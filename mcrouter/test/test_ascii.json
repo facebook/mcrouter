@@ -202,7 +202,7 @@
           "delete": "policy-bar",
           "incr": "policy-bar"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "ci": {
         "default_policy": "PoolRoute|A-ci",
@@ -211,7 +211,7 @@
           "delete": "policy-ci",
           "incr": "policy-ci"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "datamiss": {
         "type": "MissFailoverRoute",
@@ -227,7 +227,7 @@
           "delete": "PoolRoute|A-down",
           "incr": "PoolRoute|A-down"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "failover": {
         "type": "FailoverWithExptimeRoute",
@@ -246,7 +246,7 @@
           "delete": "policy-foo",
           "incr": "policy-foo"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "gut": {
         "default_policy": "hash:A-gut",
@@ -255,7 +255,7 @@
           "delete": "hash:A-gut",
           "incr": "hash:A-gut"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "lat": {
         "default_policy": {
@@ -268,7 +268,7 @@
           "delete": "policy-lat",
           "incr": "policy-lat"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "rej": {
         "default_policy": "ErrorRoute|reject",
@@ -277,7 +277,7 @@
           "delete": "policy-rej",
           "incr": "policy-rej"
         },
-        "type": "PrefixPolicyRoute"
+        "type": "OperationSelectorRoute"
       },
       "tmo": {
         "failover": "hash:A-gut",
@@ -296,7 +296,7 @@
         "delete": "policy-wildcard",
         "incr": "policy-wildcard"
       },
-      "type": "PrefixPolicyRoute"
+      "type": "OperationSelectorRoute"
     }
   }
 }

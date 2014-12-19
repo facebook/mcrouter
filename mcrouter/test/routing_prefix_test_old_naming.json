@@ -4,7 +4,7 @@
       "type": "macroDef",
       "params": [ "cluster" ],
       "result": {
-        "type": "OperationSelectorRoute",
+        "type": "PrefixPolicyRoute",
         "default_policy": "PoolRoute|%cluster%.wildcard",
         "operation_policies": {
           "delete": {
@@ -23,22 +23,22 @@
   },
   "pools": {
     "A.wildcard": {
-      "protocol": "umbrella",
+      "protocol": "ascii",
       "keep_routing_prefix": false,
       "servers": [ "localhost:12345" ]
     },
     "B.wildcard": {
-      "protocol": "umbrella",
+      "protocol": "ascii",
       "keep_routing_prefix": true,
       "servers": [ "localhost:12346" ]
     },
     "C.wildcard": {
-      "protocol": "umbrella",
+      "protocol": "ascii",
       "keep_routing_prefix": true,
       "servers": [ "localhost:12347" ]
     },
     "D.wildcard": {
-      "protocol": "umbrella",
+      "protocol": "ascii",
       "keep_routing_prefix": true,
       "servers": [ "localhost:12348" ]
     }

@@ -23,19 +23,19 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 /* RouteHandle that can send to a different target based on McOperation id */
 template <class RouteHandleIf>
-class PrefixPolicyRoute {
+class OperationSelectorRoute {
  public:
-  static std::string routeName() { return "prefix-policy"; }
+  static std::string routeName() { return "operation-selector"; }
 
-  PrefixPolicyRoute(
+  OperationSelectorRoute(
     std::vector<std::shared_ptr<RouteHandleIf>> operationPolicies,
     std::shared_ptr<RouteHandleIf>&& defaultPolicy)
       : operationPolicies_(std::move(operationPolicies)),
         defaultPolicy_(std::move(defaultPolicy)) {
   }
 
-   PrefixPolicyRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                     const folly::dynamic& json) {
+   OperationSelectorRoute(RouteHandleFactory<RouteHandleIf>& factory,
+                          const folly::dynamic& json) {
     if (!json.isObject()) {
       defaultPolicy_ = factory.create(json);
       return;
@@ -49,12 +49,13 @@ class PrefixPolicyRoute {
     if (json.count("operation_policies")) {
       const auto& policies = json["operation_policies"];
       checkLogic(policies.isObject(),
-                 "PrefixPolicyRoute: operation_policies is not object");
+                 "OperationSelectorRoute: operation_policies is not object");
 
       std::map<std::string, folly::dynamic> orderedPolicies;
       for (const auto& it : policies.items()) {
         checkLogic(it.first.isString(),
-                   "PrefixPolicyRoute: operation_policies key is not a string");
+                   "OperationSelectorRoute: operation_policies "
+                   "key is not a string");
         auto key = it.first.asString().toStdString();
         orderedPolicies.insert({ key, it.second });
       }

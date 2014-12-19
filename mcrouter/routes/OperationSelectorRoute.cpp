@@ -6,29 +6,29 @@
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
  */
-#include "PrefixPolicyRoute.h"
+#include "OperationSelectorRoute.h"
 
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makePrefixPolicyRoute(
+McrouterRouteHandlePtr makeOperationSelectorRoute(
   std::string name,
   std::vector<McrouterRouteHandlePtr> operationPolicies,
   McrouterRouteHandlePtr defaultPolicy) {
 
-  return makeMcrouterRouteHandle<PrefixPolicyRoute>(
+  return makeMcrouterRouteHandle<OperationSelectorRoute>(
     std::move(name),
     std::move(operationPolicies),
     std::move(defaultPolicy));
 }
 
-McrouterRouteHandlePtr makePrefixPolicyRoute(
+McrouterRouteHandlePtr makeOperationSelectorRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json) {
 
-  return makeMcrouterRouteHandle<PrefixPolicyRoute>(factory, json);
+  return makeMcrouterRouteHandle<OperationSelectorRoute>(factory, json);
 }
 
 }}}

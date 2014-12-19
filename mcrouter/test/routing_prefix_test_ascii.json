@@ -4,7 +4,7 @@
       "type": "macroDef",
       "params": [ "cluster" ],
       "result": {
-        "type": "PrefixPolicyRoute",
+        "type": "OperationSelectorRoute",
         "default_policy": "PoolRoute|%cluster%.wildcard",
         "operation_policies": {
           "delete": {

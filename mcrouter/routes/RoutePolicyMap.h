@@ -27,11 +27,11 @@ class PrefixRouteSelector;
  * Sometimes we want to route to multiple clusters in one request.
  * This happens if routing prefix contains some '*'. Most common cases are
  * /star/star/ and /region/star/. On the other hand different clusters can have
- * same PrefixPolicyRoutes and we don't want to route to same PrefixPolicyRoute
- * twice.
+ * same OperationSelectorRoutes and we don't want to route to same
+ * OperationSelectorRoute twice.
  *
  * Before to achieve this we iterated through all clusters that match
- * given routing prefix and built a set of unique PrefixPolicyRoutes
+ * given routing prefix and built a set of unique OperationSelectorRoutes
  * on each request. This class precalculates these sets for some routing prefix.
  *
  * To use this class one should:
@@ -61,7 +61,7 @@ class RoutePolicyMap {
    * This Trie contains targets for each key prefix. It is built like this:
    * 1) targets for empty string are wildcards.
    * 2) targets for string of length n+1 S[0..n] are targets for S[0..n-1] with
-   *    PrefixPolicyRoutes for key prefix == S[0..n] overridden.
+   *    OperationSelectorRoutes for key prefix == S[0..n] overridden.
    */
   Trie<std::vector<McrouterRouteHandlePtr>> ut_;
 };

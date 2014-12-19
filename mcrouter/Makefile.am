@@ -125,8 +125,8 @@ libmcroutercore_a_SOURCES = \
   routes/MigrateRoute.cpp \
   routes/MissFailoverRoute.cpp \
   routes/NullRoute.cpp \
-  routes/PrefixPolicyRoute.cpp \
-  routes/PrefixPolicyRoute.h \
+  routes/OperationSelectorRoute.cpp \
+  routes/OperationSelectorRoute.h \
   routes/PrefixRouteSelector.cpp \
   routes/PrefixRouteSelector.h \
   routes/ProxyRoute.h \

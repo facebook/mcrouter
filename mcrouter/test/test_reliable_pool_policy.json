@@ -14,7 +14,7 @@
       "type": "macroDef",
       "params": [ "pool-name", "initial-salt" ],
       "result": {
-        "type": "PrefixPolicyRoute",
+        "type": "OperationSelectorRoute",
         "operation_policies": {
           "delete": "AllSyncRoute|Pool|%pool-name%",
           "get": {

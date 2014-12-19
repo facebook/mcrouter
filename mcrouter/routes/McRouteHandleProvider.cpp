@@ -48,7 +48,7 @@ McrouterRouteHandlePtr makeMigrateRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json);
 
-McrouterRouteHandlePtr makePrefixPolicyRoute(
+McrouterRouteHandlePtr makeOperationSelectorRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json);
 
@@ -246,8 +246,10 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     const std::string& type,
     const folly::dynamic& json) {
 
-  if (type == "PrefixPolicyRoute") {
-    return { makePrefixPolicyRoute(factory, json) };
+  // PrefixPolicyRoute if deprecated, but must be preserved for backwards
+  // compatibility.
+  if (type == "OperationSelectorRoute" || type == "PrefixPolicyRoute") {
+    return { makeOperationSelectorRoute(factory, json) };
   } else if (type == "DevNullRoute") {
     return { makeDevNullRoute("devnull") };
   } else if (type == "FailoverWithExptimeRoute") {
