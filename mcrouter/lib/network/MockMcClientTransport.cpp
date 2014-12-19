@@ -22,28 +22,28 @@ void MockMcClientTransport::fakeDataRead(const uint8_t* buf, size_t bytes) {
   readDataQueue_.push(std::make_pair(buf, bytes));
 }
 
-void MockMcClientTransport::setReadCallback(ReadCallback* callback) {
+void MockMcClientTransport::setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) {
   readCallback_ = callback;
 }
 
 MockMcClientTransport::ReadCallback*
 MockMcClientTransport::getReadCallback() const {
-  return readCallback_;
+  return dynamic_cast<MockMcClientTransport::ReadCallback*>(readCallback_);
 }
 
-void MockMcClientTransport::write(WriteCallback* callback, const void* buf,
+void MockMcClientTransport::write(folly::AsyncTransportWrapper::WriteCallback* callback, const void* buf,
                                   size_t bytes, WriteFlags flags) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
 
-void MockMcClientTransport::writev(WriteCallback* callback, const iovec* vec,
+void MockMcClientTransport::writev(folly::AsyncTransportWrapper::WriteCallback* callback, const iovec* vec,
                                    size_t count, WriteFlags flags) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
 
-void MockMcClientTransport::writeChain(WriteCallback* callback,
+void MockMcClientTransport::writeChain(folly::AsyncTransportWrapper::WriteCallback* callback,
                                        std::unique_ptr<folly::IOBuf>&& buf,
                                        WriteFlags flags) {
   writeCallbacks_.push(callback);

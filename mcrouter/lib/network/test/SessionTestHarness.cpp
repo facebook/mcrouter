@@ -23,15 +23,17 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
   }
 
   // Methods inherited from TAsyncTransport
-  void setReadCallback(ReadCallback* callback) override {
-    harness_.setReadCallback(callback);
+  void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override {
+    harness_.setReadCallback(
+      dynamic_cast<apache::thrift::async::TAsyncTransport::ReadCallback*>(
+        callback));
   }
 
   ReadCallback* getReadCallback() const override {
     return harness_.getReadCallback();
   }
 
-  void write(WriteCallback* callback, const void* buf, size_t bytes,
+  void write(folly::AsyncTransportWrapper::WriteCallback* callback, const void* buf, size_t bytes,
              WriteFlags flags = WriteFlags::NONE) override {
     iovec op;
     op.iov_base = const_cast<void*>(buf);
@@ -39,7 +41,7 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
     writev(callback, &op, 1, flags);
   }
 
-  void writev(WriteCallback* callback, const iovec* vec, size_t count,
+  void writev(folly::AsyncTransportWrapper::WriteCallback* callback, const iovec* vec, size_t count,
               WriteFlags flags = WriteFlags::NONE) override {
     std::string out;
     for (size_t i = 0; i < count; ++i) {
@@ -54,7 +56,7 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
     }
   }
 
-  void writeChain(WriteCallback* callback,
+  void writeChain(folly::AsyncTransportWrapper::WriteCallback* callback,
                   std::unique_ptr<folly::IOBuf>&& buf,
                   WriteFlags flags = WriteFlags::NONE) override {
     throw std::runtime_error("not implemented");

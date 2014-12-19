@@ -35,14 +35,14 @@ class MockMcClientTransport : public apache::thrift::async::TAsyncTransport,
 
   // apache::thrift::async::TAsyncTransport overrides
 
-  void setReadCallback(ReadCallback* callback) override;
+  void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override;
   ReadCallback* getReadCallback() const override;
 
-  void write(WriteCallback* callback, const void* buf, size_t bytes,
+  void write(folly::AsyncTransportWrapper::WriteCallback* callback, const void* buf, size_t bytes,
              WriteFlags flags = WriteFlags::NONE) override;
-  void writev(WriteCallback* callback, const iovec* vec, size_t count,
+  void writev(folly::AsyncTransportWrapper::WriteCallback* callback, const iovec* vec, size_t count,
               WriteFlags flags = WriteFlags::NONE) override;
-  void writeChain(WriteCallback* callback, std::unique_ptr<folly::IOBuf>&& buf,
+  void writeChain(folly::AsyncTransportWrapper::WriteCallback* callback, std::unique_ptr<folly::IOBuf>&& buf,
                   WriteFlags flags = WriteFlags::NONE) override;
 
   // folly::AsyncTransport overrides
@@ -75,9 +75,9 @@ class MockMcClientTransport : public apache::thrift::async::TAsyncTransport,
 
   folly::EventBase& eventBase_;
   bool loopCallbackScheduled_{false};
-  ReadCallback* readCallback_{nullptr};
+  folly::AsyncTransportWrapper::ReadCallback* readCallback_{nullptr};
   std::queue<std::pair<const uint8_t*,size_t>> readDataQueue_;
-  std::queue<WriteCallback*> writeCallbacks_;
+  std::queue<folly::AsyncTransportWrapper::WriteCallback*> writeCallbacks_;
 };
 
 }}  // facebook::memcache
