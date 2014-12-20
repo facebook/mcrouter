@@ -10,7 +10,7 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
+#include <vector>
 
 namespace facebook { namespace memcache {
 
@@ -31,8 +31,8 @@ class ProxyConfigIf {
 
   virtual std::shared_ptr<ServiceInfo> serviceInfo() const = 0;
 
-  virtual const std::unordered_map<std::string,
-      std::shared_ptr<const ProxyClientCommon>>& clientsMap() const = 0;
+  virtual const std::vector<std::shared_ptr<const ProxyClientCommon>>&
+  getClients() const = 0;
 
   virtual std::shared_ptr<McrouterRouteHandleIf>
   getRouteHandleForProxyPool(const std::string& poolName) const = 0;

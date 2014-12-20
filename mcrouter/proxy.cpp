@@ -743,7 +743,7 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
 
   VLOG_IF(0, !router->opts.constantly_reload_configs) <<
       "reconfigured " << proxyCount << " proxies with " <<
-      newConfigs[0]->clientsMap().size() << " clients and " <<
+      newConfigs[0]->getClients().size() << " clients and " <<
       newConfigs[0]->poolsMap().size() << " pools (" <<
       newConfigs[0]->getConfigMd5Digest() << ")";
 

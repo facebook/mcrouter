@@ -75,9 +75,7 @@ class PoolFactory : public PoolFactoryIf {
   /**
    * @return All clients created.
    */
-  const std::unordered_map<std::string,
-                           std::shared_ptr<const ProxyClientCommon>>&
-  clients() const;
+  const std::vector<std::shared_ptr<const ProxyClientCommon>>& clients() const;
 
  private:
 
@@ -93,16 +91,13 @@ class PoolFactory : public PoolFactoryIf {
   };
 
   std::unordered_map<std::string, std::shared_ptr<ProxyGenericPool>> pools_;
-  std::unordered_map<std::string,
-                     std::shared_ptr<const ProxyClientCommon>> clients_;
+  std::vector<std::shared_ptr<const ProxyClientCommon>> clients_;
 
   ConfigApi* configApi_;
 
   Options opts_;
 
   int addPoolToConfig(std::shared_ptr<ProxyGenericPool> pool);
-
-  std::string genProxyClientKey(const AccessPoint& ap);
 
   int parseClusters(const folly::dynamic& json);
 

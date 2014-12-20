@@ -172,38 +172,9 @@ PoolFactory::pools() const {
   return pools_;
 }
 
-const std::unordered_map<std::string,
-                           std::shared_ptr<const ProxyClientCommon>>&
+const std::vector<std::shared_ptr<const ProxyClientCommon>>&
 PoolFactory::clients() const {
   return clients_;
-}
-
-string PoolFactory::genProxyClientKey(const AccessPoint& ap) {
-    /* Once upon a time, ProxyClient's could be reused at will within
-     * a configuration, and times were good.  Unfortunately, we needed to
-     * have failover, and the one reasonable way to implement that was by
-     * having ProxyClient's aware of which pool they were in.  This
-     * change forced us to use ProxyClient's only once, which
-     * completely broke sharing ProxyClient's within a single config
-     * (but not from an old config into a new one -- we only have a brief
-     * moment of failover vulnerability before we're up and running).
-     * For that reason, we actually need to maintain N connections for a
-     * particular endpoint if it's used N times.  To do this in a
-     * semi-reasonable fashion, we key into the hosts dictionary in the
-     * normal way (using the accesspoint hash) for the first one, and
-     * then we begin appending -2, -3, -4 and so on for subsequent ones.
-     * This has O(n^2) behavior, but that shouldn't be that big of a deal
-     * (if you have a whole lot of duplicate connections, you're probably
-     * doing something wrong).
-     */
-
-    auto keyBase = ap.toString();
-    auto key = keyBase;
-    unsigned int keyNum = 1;
-    while (clients_.find(key) != clients_.end()) {
-      key = folly::stringPrintf("%s-%u", keyBase.c_str(), ++keyNum);
-    }
-    return key;
 }
 
 int PoolFactory::addPoolToConfig(std::shared_ptr<ProxyGenericPool> pool) {
@@ -626,21 +597,16 @@ PoolFactory::parsePool(const string& pool_name_str,
           goto epilogue;
       }
 
-      auto proxy_client_key = genProxyClientKey(ap);
-
-      auto client = make_shared<ProxyClientCommon>(clients_.size(),
+      auto client = make_shared<ProxyClientCommon>(
         pool->timeout,
         ap,
         pool->keep_routing_prefix,
         pool->attach_default_routing_prefix,
-        pool.get(), proxy_client_key,
-        i,
+        pool.get(),
         serverUseSsl,
         serverQos);
 
-      FBI_ASSERT(proxy_client_key == client->proxy_client_key);
-
-      clients_.emplace(client->proxy_client_key, client);
+      clients_.push_back(client);
 
       pool->clients.push_back(std::move(client));
     } // servers

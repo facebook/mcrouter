@@ -48,9 +48,8 @@ class ProxyConfig : public ProxyConfigIf {
     return poolFactory_->pools();
   }
 
-  const std::unordered_map<std::string,
-                           std::shared_ptr<const ProxyClientCommon>>&
-  clientsMap() const {
+  const std::vector<std::shared_ptr<const ProxyClientCommon>>&
+  getClients() const {
     return poolFactory_->clients();
   }
 

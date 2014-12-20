@@ -20,37 +20,27 @@ class ProxyPool;
 
 struct ProxyClientCommon {
   ProxyPool* pool;
-  size_t idx;
-  AccessPoint ap;
+  const AccessPoint ap;
 
   /// Always the same for a given (host, port)
-  std::string destination_key;
+  const std::string destination_key;
 
-  /// Identifies this particular proxy client.
-  /// It's possible to have multiple proxy_clients to the same destination.
-  /// In that case, each proxy_client will have a unique proxy_client_key
-  /// but destination_key will be the same.
-  std::string proxy_client_key;
+  const int keep_routing_prefix;
+  const bool attach_default_routing_prefix;
+  const timeval_t server_timeout;
 
-  int keep_routing_prefix;
-  bool attach_default_routing_prefix;
-  timeval_t server_timeout;
+  const size_t indexInPool;
+  const bool useSsl;
 
-  size_t indexInPool;
-  bool useSsl;
-
-  uint64_t qos;
+  const uint64_t qos;
 
   std::string genProxyDestinationKey() const;
 
-  ProxyClientCommon(unsigned index,
-                    timeval_t timeout,
+  ProxyClientCommon(timeval_t timeout,
                     AccessPoint ap,
                     int keep_routing_prefix,
                     bool attach_default_routing_prefix,
                     ProxyPool* pool,
-                    std::string key,
-                    size_t indexInPool,
                     bool useSsl,
                     uint64_t qos);
 };

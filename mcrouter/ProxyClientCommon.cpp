@@ -8,39 +8,34 @@
  */
 #include "ProxyClientCommon.h"
 
-#include <folly/Conv.h>
 #include <folly/Format.h>
 
 #include "mcrouter/proxy.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyClientCommon::ProxyClientCommon(unsigned index,
-                                     timeval_t timeout,
+ProxyClientCommon::ProxyClientCommon(timeval_t timeout,
                                      AccessPoint ap_,
                                      int keep_routing_prefix_,
                                      bool attach_default_routing_prefix_,
                                      ProxyPool* pool_,
-                                     std::string key,
-                                     size_t indexInPool_,
                                      bool useSsl_,
                                      uint64_t qos_)
     : pool(pool_),
-      idx(index),
       ap(std::move(ap_)),
-      proxy_client_key(std::move(key)),
+      destination_key(folly::sformat("{}:{}", ap.getHost(), ap.getPort())),
       keep_routing_prefix(keep_routing_prefix_),
       attach_default_routing_prefix(attach_default_routing_prefix_),
       server_timeout(std::move(timeout)),
-      indexInPool(indexInPool_),
+      indexInPool(pool->clients.size()),
       useSsl(useSsl_),
       qos(qos_) {
-  destination_key = folly::sformat("{}:{}", ap.getHost(), ap.getPort());
 }
 
 std::string ProxyClientCommon::genProxyDestinationKey() const {
-  return ap.toString() + "-" + folly::to<std::string>(server_timeout.tv_sec)
-         + "-" + folly::to<std::string>(server_timeout.tv_usec);
+  return folly::sformat("{}-{}", ap.toString(),
+                        to<std::chrono::milliseconds>(server_timeout).count());
 }
 
 }}}  // facebook::memcache::mcrouter
