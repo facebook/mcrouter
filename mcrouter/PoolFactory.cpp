@@ -20,7 +20,6 @@
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
-#include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/routes/RateLimiter.h"
@@ -131,8 +130,6 @@ PoolFactory::PoolFactory(const folly::dynamic& config,
     opts_.cluster_pools_timeout =
       to<timeval_t>(mcOpts.cluster_pools_timeout_ms);
   }
-  opts_.rxpriority = get_event_priority(mcOpts, CLIENT_REPLY);
-  opts_.txpriority = get_event_priority(mcOpts, CLIENT_REQUEST);
 
   opts_.region = mcOpts.default_route.getRegion().str();
   opts_.cluster = mcOpts.default_route.getCluster().str();
@@ -637,8 +634,6 @@ PoolFactory::parsePool(const string& pool_name_str,
         pool->keep_routing_prefix,
         pool->attach_default_routing_prefix,
         pool.get(), proxy_client_key,
-        opts_.rxpriority,
-        opts_.txpriority,
         i,
         serverUseSsl,
         serverQos);

@@ -62,8 +62,6 @@ struct ProxyDestination {
   proxy_t* proxy{nullptr}; ///< for convenience
   const AccessPoint accessPoint;
   const std::string destinationKey;///< always the same for a given (host, port)
-  const int rxpriority{0};
-  const int txpriority{0};
   const timeval_t server_timeout{0};
   const std::string pdstnKey;///< consists of ap, server_timeout
   uint64_t magic{0}; ///< to allow asserts that pdstn is still alive

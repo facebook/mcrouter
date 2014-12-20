@@ -82,8 +82,6 @@ class PoolFactory : public PoolFactoryIf {
  private:
 
   struct Options {
-    int rxpriority{0};
-    int txpriority{0};
     timeval_t regional_pools_timeout{0};
     timeval_t cluster_pools_timeout{0};
     std::string region;

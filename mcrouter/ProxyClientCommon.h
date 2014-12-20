@@ -34,8 +34,6 @@ struct ProxyClientCommon {
 
   int keep_routing_prefix;
   bool attach_default_routing_prefix;
-  int rxpriority;
-  int txpriority;
   timeval_t server_timeout;
 
   size_t indexInPool;
@@ -52,8 +50,6 @@ struct ProxyClientCommon {
                     bool attach_default_routing_prefix,
                     ProxyPool* pool,
                     std::string key,
-                    int rxpri,
-                    int txpri,
                     size_t indexInPool,
                     bool useSsl,
                     uint64_t qos);
