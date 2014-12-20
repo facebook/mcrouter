@@ -3,7 +3,7 @@
     "A": {
       "servers": [ "127.0.0.1:10001" ],
       "rates": {
-        "sets_rate": 2.0
+        "sets_rate": 10.0
       }
     }
   },
@@ -18,8 +18,8 @@
         "type": "PoolRoute",
         "pool": "A",
         "rates": {
-          "sets_rate": 4.0,
-          "sets_burst": 3.0
+          "sets_rate": 50.0,
+          "sets_burst": 10.0
         }
       }
     }

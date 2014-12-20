@@ -20,7 +20,6 @@ class TestRates(McrouterTestCase):
     extra_args = ['--destination-rate-limiting']
 
     def setUp(self):
-        # The order here must corresponds to the order of hosts in the .json
         self.mc = self.add_server(Memcached())
 
     def get_mcrouter(self):
@@ -30,30 +29,42 @@ class TestRates(McrouterTestCase):
 
     def test_basic(self):
         mcrouter = self.get_mcrouter()
-        time.sleep(1.1)
+        time.sleep(2)
 
         key = "basic"
 
-        # 2 pass, 3rd rate limited
-        mcrouter.set(key, "1")
-        self.assertEqual(self.mc.get(key), "1")
-        mcrouter.set(key, "2")
-        self.assertEqual(self.mc.get(key), "2")
-        mcrouter.set(key, "3")
-        self.assertEqual(self.mc.get(key), "2")
+        # 10 pass for sure
+        for i in range(10):
+            value = str(i)
+            mcrouter.set(key, value)
+            self.assertEqual(self.mc.get(key), value)
+        # next 20 ideally should all fail (due to difference in time
+        # measurement in Python and mcrouter we make it less restrictive)
+        failed = 0
+        for i in range(10, 30):
+            value = str(i)
+            mcrouter.set(key, value)
+            if self.mc.get(key) != value:
+                failed = failed + 1
+        self.assertGreater(failed, 10)
 
     def test_burst(self):
         mcrouter = self.get_mcrouter()
-        time.sleep(1.1)
+        time.sleep(2)
 
         key = "burst"
 
-        # even though rate is 4/s, only 3 pass (max burst)
-        mcrouter.set(key, "1")
-        self.assertEqual(self.mc.get(key), "1")
-        mcrouter.set(key, "2")
-        self.assertEqual(self.mc.get(key), "2")
-        mcrouter.set(key, "3")
-        self.assertEqual(self.mc.get(key), "3")
-        mcrouter.set(key, "4")
-        self.assertEqual(self.mc.get(key), "3")
+        # even though rate is 50/s, around 10 pass (max burst)
+
+        # 10 pass for sure
+        for i in range(10):
+            value = str(i)
+            mcrouter.set(key, value)
+            self.assertEqual(self.mc.get(key), value)
+        failed = 0
+        for i in range(10, 50):
+            value = str(i)
+            mcrouter.set(key, value)
+            if self.mc.get(key) != value:
+                failed = failed + 1
+        self.assertGreater(failed, 25)
