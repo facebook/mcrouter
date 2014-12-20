@@ -22,8 +22,8 @@ namespace facebook { namespace memcache { namespace test {
 
 // constants
 const std::string MemcacheLocal::kHostName = "localhost";
-const int MemcacheLocal::kPortSearchOut = 20;
-const int MemcacheLocal::kPortRangeBegin = 40000;
+const int MemcacheLocal::kPortSearchOut = 100;
+const int MemcacheLocal::kPortRangeBegin = 30000;
 const int MemcacheLocal::kPortRangeEnd = 50000;
 const int MemcacheLocal::kTimeout = 10;
 const std::string MemcacheLocal::kMemcachedPath

@@ -55,7 +55,6 @@ using facebook::memcache::McrouterOptions;
  *
  */
 
-std::string kDefaultRoute = "/oregon/prn2c07";
 std::string configString;
 std::unique_ptr<MemcacheLocal> memcacheLocal = nullptr; // local memcached
 std::string kInvalidPoolConfig =
@@ -105,7 +104,6 @@ void checkRequestReply(int fd,
 TEST(libmcrouter, sanity) {
   auto opts = defaultTestOptions();
   opts.config_str = configString;
-  opts.default_route = kDefaultRoute;
 
   MCRouterTestClient client("sanity", opts);
 
@@ -173,7 +171,6 @@ void on_cancel(mcrouter_client_t* client,
 TEST(libmcrouter, premature_disconnect) {
   auto opts = defaultTestOptions();
   opts.config_str = configString;
-  opts.default_route = kDefaultRoute;
   mcrouter_t *router = mcrouter_new(opts);
 
   for (int i = 0; i < 10; i++) {
@@ -185,7 +182,7 @@ TEST(libmcrouter, premature_disconnect) {
       {on_reply, on_cancel, nullptr},
       nullptr, 0);
 
-    const char key[] = "adi:unit_test:key";
+    const char key[] = "__mockmc__.want_timeout(50)";
     mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
     mc_msg->key.str = (char*) &mc_msg[1];
     strcpy(mc_msg->key.str, key);
@@ -197,13 +194,14 @@ TEST(libmcrouter, premature_disconnect) {
     mc_msg_decref(mc_msg);
     mcrouter_client_disconnect(client);
 
-    usleep(50000);
+    for (size_t j = 0; on_cancel_count + on_reply_count == 0 && j < 20; ++j) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     EXPECT_EQ(0, on_reply_count);
     EXPECT_EQ(1, on_cancel_count);
   }
 
-  sleep(2);
   mcrouter_free(router);
 }
 
@@ -221,7 +219,6 @@ TEST(libmcrouter, standalone) {
   auto opts = defaultTestOptions();
   opts.standalone = true;
   opts.config_str = configString;
-  opts.default_route = kDefaultRoute;
   mcrouter_t *router = mcrouter_init("standalone_test", opts);
 
   folly::EventBase evb;
@@ -267,8 +264,7 @@ TEST(libmcrouter, listenSock) {
 
   std::vector<std::string> args{MCROUTER_INSTALL_PATH "mcrouter/mcrouter",
         "--listen-sock-fd", folly::to<std::string>(listen_socket),
-        "--config-str", configString,
-        "-R", kDefaultRoute};
+        "--config-str", configString };
   auto testArgs = defaultTestCommandLineArgs();
   args.insert(args.end(), testArgs.begin(), testArgs.end());
   folly::Subprocess mcr(args);

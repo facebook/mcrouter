@@ -8,6 +8,8 @@
  */
 #include <signal.h>
 
+#include <thread>
+
 #include <glog/logging.h>
 
 #include "mcrouter/lib/McOperation.h"
@@ -79,7 +81,7 @@ class MockMcOnRequest {
   void onRequest(McServerRequestContext&& ctx,
                  McRequest&& req,
                  McOperation<mc_op_get>) {
-    auto key = req.fullKey().str();
+    auto key = req.fullKey();
 
     if (key == "__mockmc__.want_busy") {
       auto msg = createMcMsgRef();
@@ -90,6 +92,16 @@ class MockMcOnRequest {
       return;
     } else if (key == "__mockmc__.want_try_again") {
       McServerRequestContext::reply(std::move(ctx), McReply(mc_res_try_again));
+      return;
+    } else if (key.startsWith("__mockmc__.want_timeout")) {
+      size_t timeout = 500;
+      auto argStart = key.find('(');
+      if (argStart != std::string::npos) {
+        timeout = folly::to<size_t>(key.subpiece(argStart + 1,
+                                                 key.size() - argStart - 2));
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_timeout));
       return;
     }
 
