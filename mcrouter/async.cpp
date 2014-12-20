@@ -7,10 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-/**
-  @file asynchronous request logging (to /var/spool/mcproxy)
-  for later replay by mcreplay
-*/
 // for printing PRIu64 in c++
 #define __STDC_FORMAT_MACROS
 
@@ -55,41 +51,6 @@
 using folly::dynamic;
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-namespace {
-
-struct write_file_entry_t {
-  std::string path;
-  std::string contents;
-  awriter_entry_t awentry;
-};
-
-// will be moved to async.h once all users of async.h are c++ code
-class AsyncLogException : public std::runtime_error {
-public:
-  explicit AsyncLogException(const std::string& msg)
-    : runtime_error(msg) {}
-};
-
-int file_entry_writer(awriter_entry_t* e) {
-  int ret;
-  writelog_entry_t *entry = (writelog_entry_t*)e->context;
-  ssize_t size =
-    folly::writeFull(entry->file->fd(),
-                     entry->buf.data(),
-                     entry->buf.size());
-  if (size == -1) {
-    ret = errno;
-  } else if (size_t(size) < entry->buf.size()) {
-    ret = EIO;
-  } else {
-    ret = 0;
-  }
-
-  return ret;
-}
-
-}  // anonymous namespace
 
 AsyncWriter::AsyncWriter(size_t maxQueueSize)
     : maxQueueSize_(maxQueueSize),
@@ -326,208 +287,65 @@ epilogue:
   return proxy->async_fd;
 }
 
-static void file_write_completed(awriter_entry_t *awe, int result) {
-  writelog_entry_t *e = (writelog_entry_t*)awe->context;
+/** Adds an asynchronous request to the event log. */
+void asynclog_delete(proxy_t* proxy,
+                     std::shared_ptr<const ProxyClientCommon> pclient,
+                     folly::StringPiece key,
+                     folly::StringPiece poolName) {
+  dynamic json = {};
+  const auto& host = pclient->ap.getHost();
+  const auto& port = pclient->ap.getPort();
 
-  e->write_result = result;
-  e->qentry.type = request_type_continue_reply_error;
-  e->qentry.data = e;
-  e->qentry.priority = 0;
-
-  /*
-   * Add the write completion to the proxy thread request queue.
-   *
-   * N.B. The enqueue below can only fail if we exceed the maximum queue
-   *      length. Given that we haven't set a max, it cannot fail.
-   */
-  asox_queue_enqueue_nocopy(e->preq->proxy->request_queue, &e->qentry);
-}
-
-static writelog_entry_t* writelog_entry_new(proxy_request_t *preq,
-                                            std::shared_ptr<folly::File> fd,
-                                            std::string buf) {
-  static const awriter_callbacks_t file_callbacks = {
-    &file_write_completed,
-    &file_entry_writer
-  };
-
-  writelog_entry_t *e = new writelog_entry_t();
-
-  e->preq = preq;
-  proxy_request_incref(e->preq);
-
-  e->file = std::move(fd);
-
-  e->buf = std::move(buf);
-
-  e->awentry.context = e;
-  e->awentry.callbacks = &file_callbacks;
-
-  preq->delay_reply++;
-
-  return e;
-}
-
-void writelog_entry_free(writelog_entry_t *e) {
-  e->preq->delay_reply--;
-  proxy_request_decref(e->preq);
-  delete e;
-}
-
-static void asynclog_event(proxy_request_t *preq,
-                           proxy_t *proxy,
-                           const asynclog_event_type_t type,
-                           const dynamic& event) {
+  if (proxy->opts.use_asynclog_version2) {
+    json = dynamic::object;
+    json["f"] = proxy->opts.router_name;
+    json["h"] = folly::sformat("[{}]:{}", host, port);
+    json["p"] = poolName.str();
+    json["k"] = key.str();
+  } else {
+    /* ["host", port, escaped_command] */
+    json.push_back(host);
+    json.push_back(port);
+    json.push_back(folly::sformat("delete {}\r\n", key));
+  }
 
   auto fd = asynclog_open(proxy);
   if (!fd) {
-    throw AsyncLogException("asynclog_open() failed");
+    logFailure(proxy->router, memcache::failure::Category::kSystemError,
+               "asynclog_open() failed (key {}, pool {})",
+               key, poolName);
+    return;
   }
 
   // ["AS1.0", 1289416829.836, "C", ["10.0.0.1", 11302, "delete foo\r\n"]]
   // OR ["AS2.0", 1289416829.836, "C", {"f":"flavor","h":"[10.0.0.1]:11302",
   //                                    "p":"pool_name","k":"foo\r\n"}]
-  dynamic json = {};
+  dynamic jsonOut = {};
   if (proxy->opts.use_asynclog_version2) {
-    json.push_back(ASYNCLOG_MAGIC2);
+    jsonOut.push_back(ASYNCLOG_MAGIC2);
   } else {
-    json.push_back(ASYNCLOG_MAGIC);
+    jsonOut.push_back(ASYNCLOG_MAGIC);
   }
 
   struct timeval timestamp;
-  if (gettimeofday(&timestamp, nullptr) == -1) {
-    throw AsyncLogException("gettimeofday");
+  CHECK(gettimeofday(&timestamp, nullptr) == 0);
+
+  auto timestamp_ms =
+    facebook::memcache::to<std::chrono::milliseconds>(timestamp).count();
+
+  jsonOut.push_back(1e-3 * timestamp_ms);
+  jsonOut.push_back(std::string("C"));
+
+  jsonOut.push_back(json);
+
+  auto jstr = folly::toJson(jsonOut) + "\n";
+
+  ssize_t size = folly::writeFull(fd->fd(), jstr.data(), jstr.size());
+  if (size == -1 || size_t(size) < jstr.size()) {
+    logFailure(proxy->router, memcache::failure::Category::kSystemError,
+               "Error fully writing asynclog request (key {}, pool {})",
+               key, poolName);
   }
-
-  int timestamp_ms = timestamp.tv_usec / 1000;
-  json.push_back(1e-3 * timestamp_ms + timestamp.tv_sec);
-
-  std::string typestr(1, (char)type);
-  json.push_back(typestr);
-
-  if (!event.empty()) {
-    json.push_back(event);
-  }
-
-  auto jstr = folly::toJson(json) + "\n";
-
-  writelog_entry_t *e = writelog_entry_new(preq,
-                                           fd,
-                                           jstr.toStdString());
-  if (!e) {
-    throw AsyncLogException("Unable to allocate writelog entry");
-  }
-
-  if (!awriter_queue(preq->proxy->router->awriter.get(), &e->awentry)) {
-    writelog_entry_free(e);
-    throw AsyncLogException("Unable to queue writelog entry");
-  }
-}
-
-/** stub, until I get marc's ascii protocol stuff into libmc */
-ssize_t mc_ascii_req_to_string(const mc_msg_t* req, char* buf, size_t nbuf) {
-  if (req->op == mc_op_delete) {
-    return snprintf(buf, nbuf, "delete %.*s\r\n",
-                    (int)req->key.len, req->key.str);
-  } else if (req->op == mc_op_incr) {
-    return snprintf(buf, nbuf, "incr %.*s %" PRIu64 "\r\n",
-                    (int)req->key.len, req->key.str, req->delta);
-  } else if (req->op == mc_op_decr) {
-    return snprintf(buf, nbuf, "decr %.*s %" PRIu64 "\r\n",
-                    (int)req->key.len, req->key.str, req->delta);
-  } else {
-    LOG(FATAL) << "don't know how to serialize " << mc_op_to_string(req->op);
-    return 0;
-  }
-}
-
-static void write_file_completed(awriter_entry_t* awe, int result) {
-  write_file_entry_t* e = reinterpret_cast<write_file_entry_t*>(awe->context);
-  delete e;
-}
-
-static int process_write_file(awriter_entry_t* awe) {
-  write_file_entry_t* e = reinterpret_cast<write_file_entry_t*>(awe->context);
-
-  if (!atomicallyWriteFileToDisk(e->contents, e->path)) {
-    VLOG(1) << "Can not atomically write '" << e->path << "'";
-    return -1;
-  }
-  return 0;
-}
-
-int async_write_file(AsyncWriter* awriter,
-                     const std::string& path,
-                     const std::string& contents) {
-  static const awriter_callbacks_t cb = {
-    &write_file_completed,
-    &process_write_file
-  };
-
-  write_file_entry_t* e = new write_file_entry_t();
-  e->path = path;
-  e->contents = contents;
-  e->awentry.context = e;
-  e->awentry.callbacks = &cb;
-
-  if (!awriter_queue(awriter, &e->awentry)) {
-    delete e;
-    return -1;
-  }
-
-  return 0;
-}
-
-/** Adds an asynchronous request to the event log. */
-void asynclog_command(proxy_request_t *preq,
-                      std::shared_ptr<const ProxyClientCommon> pclient,
-                      const mc_msg_t* req,
-                      folly::StringPiece poolName) {
-
-  /* TODO: These two checks should be handled by the callers,
-     but we have them here just in case for historical reasons. */
-
-  if (req->op != mc_op_delete) {
-    return;
-  }
-
-  if (preq->proxy->opts.asynclog_disable) {
-    return;
-  }
-
-  dynamic json = {};
-  auto host = pclient->ap.getHost();
-  auto port = pclient->ap.getPort();
-  char command[IOV_MAX];
-  ssize_t command_len = mc_ascii_req_to_string(req, command, IOV_MAX);
-
-  FBI_ASSERT(port > 0);
-  if (command_len <= 0) {
-    LOG(ERROR) << "mc_ascii_req_to_string";
-    return;
-  }
-
-  if (preq->proxy->opts.use_asynclog_version2) {
-    json = dynamic::object;
-    json["f"] = preq->proxy->opts.router_name;
-    json["h"] = folly::format("[{}]:{}", host, port).str();
-    json["p"] = poolName.str();
-    json["k"] = facebook::memcache::to<std::string>(req->key);
-  } else {
-    /* ["host", port, escaped_command] */
-    json.push_back(host);
-    json.push_back(port);
-    json.push_back(std::string(command));
-  }
-
-  try {
-    asynclog_event(preq, preq->proxy, asynclog_event_command, json);
-  } catch (const AsyncLogException& e) {
-    LOG(ERROR) << "asynclog_event() failed: " << e.what();
-    return;
-  }
-
-  stat_incr(preq->proxy->stats, asynclog_requests_stat, 1);
 }
 
 }}} // facebook::memcache::mcrouter

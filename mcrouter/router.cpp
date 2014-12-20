@@ -262,9 +262,6 @@ void mcrouter_request_ready_cb(asox_queue_t q,
 
     delete router_entry;
     proxy_request_decref(preq);
-  } else if (entry->type == request_type_continue_reply_error) {
-    proxy_on_continue_reply_error((proxy_t*)arg,
-                                  (writelog_entry_t*)entry->data);
   } else if (entry->type == request_type_old_config) {
     auto proxy = (proxy_t*) arg;
     auto oldConfig = (old_config_req_t*) entry->data;

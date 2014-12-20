@@ -210,7 +210,6 @@ proxy_request_t::proxy_request_t(proxy_t* p,
   : proxy(p),
     reply(mc_res_unknown),
     reply_state(REPLY_STATE_NO_REPLY),
-    delay_reply(0),
     failover_disabled(0),
     _refcount(1),
     sender_id(senderId),
@@ -483,7 +482,16 @@ MutableMcMsgRef new_reply(const char* str) {
   return reply;
 }
 
-void proxy_request_t::continueSendReply() {
+void proxy_request_t::sendReply(McReply newReply) {
+  FBI_ASSERT(reply.result() == mc_res_unknown);
+  FBI_ASSERT(newReply.result() != mc_res_unknown);
+
+  reply = std::move(newReply);
+
+  if (reply_state != REPLY_STATE_NO_REPLY) {
+    return;
+  }
+
   reply_state = REPLY_STATE_REPLIED;
 
   if (!proxy->opts.sync) {
@@ -499,33 +507,6 @@ void proxy_request_t::continueSendReply() {
     stat_incr(proxy->stats, request_success_stat, 1);
     stat_incr(proxy->stats, request_success_count_stat, 1);
   }
-}
-
-void proxy_request_t::sendReply(McReply newReply) {
-  // Make sure we don't set the reply twice for a reply
-  FBI_ASSERT(reply.result() == mc_res_unknown);
-  FBI_ASSERT(newReply.result() != mc_res_unknown);
-
-  reply = std::move(newReply);
-
-  if (reply_state != REPLY_STATE_NO_REPLY) {
-    return;
-  }
-
-  if (delay_reply == 0) {
-    continueSendReply();
-  } else {
-    reply_state = REPLY_STATE_REPLY_DELAYED;
-  }
-}
-
-void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e) {
-  if (e->preq->reply_state == REPLY_STATE_REPLY_DELAYED &&
-      e->preq->delay_reply == 1) {
-    e->preq->continueSendReply();
-  }
-
-  writelog_entry_free(e);
 }
 
 ShadowSettings::Data::Data(const folly::dynamic& json) {

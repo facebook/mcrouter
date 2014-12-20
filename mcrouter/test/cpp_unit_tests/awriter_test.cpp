@@ -85,6 +85,12 @@ struct counts {
   }
 };
 
+struct writelog_entry_t {
+  std::shared_ptr<folly::File> file;
+  std::string buf;
+  awriter_entry_t awentry;
+};
+
 struct testing_context_t {
   counts *counter;
   writelog_entry_t log_context;

@@ -9,39 +9,23 @@
  */
 #pragma once
 
-#include <string>
+#include <memory>
 
 #include <folly/Range.h>
 
-class mc_msg_s;
-using mc_msg_t = mc_msg_s;
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class AsyncWriter;
-class writelog_entry_t;
-class proxy_request_t;
+class proxy_t;
 class ProxyClientCommon;
 
-enum asynclog_event_type_t {
-  asynclog_event_unknown = 0,
-  asynclog_event_command = 'C',
-};
-
-// Appends an entry for file writes
-void asynclog_command(proxy_request_t *preq,
-                      std::shared_ptr<const ProxyClientCommon> pclient,
-                      const mc_msg_t* req,
-                      folly::StringPiece poolName);
-
-// Write contents to file 'path' asynchronously.
-// File or parent directories will be created if necessary.
-// File write is atomic (write to tempfile and rename)
-// Returns 0 on success, -1 on error.
-int async_write_file(AsyncWriter* awriter,
-                     const std::string& path,
-                     const std::string& contents);
-
-void writelog_entry_free(writelog_entry_t *e);
+/**
+ * Appends a 'delete' request entry to the asynclog.
+ * This call blocks until the entry is written to the file
+ * or an error occurs.
+ */
+void asynclog_delete(proxy_t* proxy,
+                     std::shared_ptr<const ProxyClientCommon> pclient,
+                     folly::StringPiece key,
+                     folly::StringPiece poolName);
 
 }}} // facebook::memcache::mcrouter

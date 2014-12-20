@@ -194,7 +194,6 @@ enum request_entry_type_t {
   request_type_disconnect,
   request_type_old_config,
   request_type_router_shutdown,
-  request_type_continue_reply_error,
 };
 
 // Bridge from mcrouter client to proxies. Putting this here is the lesser

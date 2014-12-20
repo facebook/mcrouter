@@ -9,11 +9,13 @@
  */
 #pragma once
 
+#include "mcrouter/_router.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyMcReply.h"
@@ -58,13 +60,28 @@ class AsynclogRoute {
     if (!dest) {
       return reply;
     }
-    auto msg = generateMsg(dest, req, Operation());
-    auto& asynclogName = asynclogName_;
-    proxy_request_t* preq = &req.context().ctx().proxyRequest();
-    fiber::runInMainContext(
-      [preq, dest, &msg, &asynclogName] () {
-        asynclog_command(preq, dest, msg.get(), asynclogName);
-      });
+    folly::StringPiece key = dest->keep_routing_prefix ?
+      req.fullKey() :
+      req.keyWithoutRoute();
+    folly::StringPiece asynclogName = asynclogName_;
+
+    auto proxy = req.context().ctx().proxyRequest().proxy;
+    Baton b;
+    auto res = proxy->router->awriter->run(
+      [&b, proxy, &dest, key, asynclogName] () {
+        asynclog_delete(proxy, dest, key, asynclogName);
+        b.post();
+      }
+    );
+    if (!res) {
+      logFailure(proxy->router, memcache::failure::Category::kOutOfResources,
+                 "Could not enqueue asynclog request (key {}, pool {})",
+                 key, asynclogName);
+    } else {
+      /* Don't reply to the user until we safely logged the request to disk */
+      b.wait();
+      stat_incr(proxy->stats, asynclog_requests_stat, 1);
+    }
     return NullRoute<RouteHandleIf>::route(req, Operation());
   }
 
@@ -78,17 +95,6 @@ class AsynclogRoute {
  private:
   const std::shared_ptr<RouteHandleIf> rh_;
   const std::string asynclogName_;
-
-  template <class Request, int M>
-  McMsgRef generateMsg(std::shared_ptr<const ProxyClientCommon> dest,
-                       const Request& req, McOperation<M>) const {
-    if (dest->keep_routing_prefix) {
-      return req.dependentMsg((mc_op_t)M);
-    }
-
-    return req.dependentMsgStripRoutingPrefix((mc_op_t)M);
-  }
-
 };
 
 }}}  // facebook::memcache::mcrouter

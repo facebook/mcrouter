@@ -23,7 +23,6 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/awriter.h"
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
@@ -75,7 +74,6 @@ typedef Observable<std::shared_ptr<const RuntimeVarsData>>
 enum reply_state_t {
   REPLY_STATE_NO_REPLY,
   REPLY_STATE_REPLIED,
-  REPLY_STATE_REPLY_DELAYED,
 };
 
 class BadKeyException : public std::runtime_error {
@@ -97,7 +95,6 @@ struct proxy_request_t {
 
   /** Whether we have replied, and therefore have handed the request back */
   reply_state_t reply_state;
-  int delay_reply;
 
   int failover_disabled; ///< true if no failover allowed
 
@@ -146,8 +143,6 @@ struct proxy_request_t {
    *        for the request we are currently handling
    */
   void sendReply(McReply newReply);
-
-  void continueSendReply();
 
  private:
   /**
@@ -355,22 +350,11 @@ struct old_config_req_t {
   std::shared_ptr<ProxyConfigIf> config_;
 };
 
-struct writelog_entry_t {
-  proxy_request_t *preq;
-  std::shared_ptr<folly::File> file;
-  std::string buf;
-  int write_result;
-  awriter_entry_t awentry;
-  asox_queue_entry_t qentry;
-};
-
 int router_configure(mcrouter_t *router);
 
 int router_configure(mcrouter_t *router, folly::StringPiece input);
 
 void proxy_request_decref(proxy_request_t*);
 proxy_request_t* proxy_request_incref(proxy_request_t*);
-
-void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e);
 
 }}} // facebook::memcache::mcrouter
