@@ -490,7 +490,7 @@ void asynclog_command(proxy_request_t *preq,
     return;
   }
 
-  if (preq->proxy->opts.asynclog_disable || pclient->devnull_asynclog) {
+  if (preq->proxy->opts.asynclog_disable) {
     return;
   }
 
