@@ -57,7 +57,7 @@ class MockServer(threading.Thread):
                 client.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 self.runServer(client, address)
                 client.close()
-            except IOError, e:
+            except IOError as e:
                 if e.errno == errno.EWOULDBLOCK:
                     time.sleep(0.1)
                 else:
@@ -92,3 +92,39 @@ class StoreServer(MockServer):
         f.read(self.expected_bytes)
         f.close()
         client_socket.send('STORED\r\n')
+
+class TkoServer(MockServer):
+    def __init__(self, period, phase=0, tmo=0.5, hitcmd='hit'):
+        """Simple server stub that alternatively responds to requests
+        with or withoud a delay.
+
+        On startup, 'period' - 'phase' requests will be fast initially,
+        then next 'period' requests will be slow; and so on.
+        Always responds to 'version' requests without changing state.
+        """
+        super(TkoServer, self).__init__()
+        self.period = period
+        self.step = phase
+        self.tmo = tmo
+        self.hitcmd = hitcmd
+
+    def runServer(self, client_socket, client_address):
+        while not self.is_stopped():
+            f = client_socket.makefile()
+            cmd = f.readline()
+            f.close()
+            if not cmd:
+                continue
+            if cmd == 'version\r\n':
+                client_socket.send('VERSION TKO_SERVER\r\n')
+                continue
+            # fast 'period' times in a row, then slow 'period' times in a row
+            if self.step % (2 * self.period) >= self.period:
+                time.sleep(self.tmo)
+            self.step += 1
+            if cmd.startswith('get {}\r\n'.format(self.hitcmd)):
+                client_socket.send(
+                    'VALUE hit 0 %d\r\n%s\r\nEND\r\n' % (
+                        len(str(self.port)), str(self.port)))
+            elif cmd.startswith('get'):
+                client_socket.send('END\r\n')

@@ -23,8 +23,6 @@ std::string TkoLog::eventName() const {
       return "mark_hard_tko";
     case TkoLogEvent::MarkSoftTko:
       return "mark_soft_tko";
-    case TkoLogEvent::MarkLatencyTko:
-      return "mark_latency_tko";
     case TkoLogEvent::UnMarkTko:
       return "unmark_tko";
     default:

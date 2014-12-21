@@ -152,19 +152,9 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
         onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
       }
     }
-  } else if (proxy->opts.latency_threshold_us != 0 &&
-             !sending_probes &&
-             stats_.avgLatency.value() > proxy->opts.latency_threshold_us) {
-    /* Even if it's not an error, if we've gone above our latency SLA we count
-       that as a soft failure. We also check current latency to ensure that
-       if things get better we don't keep TKOing the box */
-    responsible = shared->tko.recordSoftFailure(this);
-    if (responsible) {
-      onTkoEvent(TkoLogEvent::MarkLatencyTko, reply.result());
-    }
-  /* If we're sending probes, only a probe request should be considered
-     successful to avoid outstanding requests from unmarking the box */
   } else if (!sending_probes || is_probe_req) {
+    /* If we're sending probes, only a probe request should be considered
+       successful to avoid outstanding requests from unmarking the box */
     unmark_tko(reply);
   }
   if (responsible) {
@@ -338,9 +328,6 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
       break;
     case TkoLogEvent::MarkSoftTko:
       logUtil("marked soft");
-      break;
-    case TkoLogEvent::MarkLatencyTko:
-      logUtil("marked latency");
       break;
     case TkoLogEvent::UnMarkTko:
       logUtil("unmarked");

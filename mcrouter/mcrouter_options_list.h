@@ -319,13 +319,6 @@ mcrouter_option_integer(
   "The number of samples to track when computing moving average latency for"
   " a proxy destination.")
 
-mcrouter_option_integer(
-  int64_t, latency_threshold_us, 0,
-  "latency-threshold-us", no_short,
-  "The maximum average destination latency (in us) that is considered"
-  " acceptable. Destinations above this threshold will begin recording soft"
-  " failures. If 0, TKO decisions based on latency are disabled.")
-
 mcrouter_option_group("Timeouts")
 
 mcrouter_option_integer(

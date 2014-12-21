@@ -22,7 +22,6 @@ namespace mcrouter {
 enum class TkoLogEvent {
   MarkHardTko,
   MarkSoftTko,
-  MarkLatencyTko,
   UnMarkTko
 };
 
