@@ -545,13 +545,12 @@ int main(int argc, char **argv) {
     st_option_dict = cmdline_st_option_dict;
   } else {
     read_standalone_flavor(flavor, option_dict, st_option_dict);
-  }
-
-  for (auto& it : cmdline_option_dict) {
-    option_dict[it.first] = it.second;
-  }
-  for (auto& it : cmdline_st_option_dict) {
-    st_option_dict[it.first] = it.second;
+    for (auto& it : cmdline_option_dict) {
+      option_dict[it.first] = it.second;
+    }
+    for (auto& it : cmdline_st_option_dict) {
+      st_option_dict[it.first] = it.second;
+    }
   }
   auto log_file = st_option_dict.find("log_file");
   if (log_file != st_option_dict.end()
@@ -593,6 +592,20 @@ int main(int argc, char **argv) {
   check_errors(errors);
   errors = opts.updateFromDict(option_dict);
   check_errors(errors);
+
+  auto check_deprecated =
+    [](const std::vector<McrouterOptionData>& options,
+       const std::unordered_map<string, string>& dict) {
+      for (const auto& opt : options) {
+        if (opt.group == "DEPRECATED" && dict.find(opt.name) != dict.end()) {
+          logFailure(failure::Category::kInvalidOption,
+                     "Deprecated option: {}", opt.name);
+        }
+      }
+    };
+
+  check_deprecated(McrouterOptions::getOptionData(), option_dict);
+  check_deprecated(McrouterStandaloneOptions::getOptionData(), st_option_dict);
 
   for (const auto& option : unrecognized_options) {
     logFailure(failure::Category::kInvalidOption, "Unrecognized option: {}",
