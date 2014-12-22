@@ -14,16 +14,16 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/PoolFactory.h"
 #include "mcrouter/ProxyConfigIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
-  class dynamic;
+class dynamic;
 }
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+class PoolFactory;
 class ProxyClientCommon;
 class ProxyGenericPool;
 class ProxyRoute;
@@ -39,21 +39,14 @@ class ProxyConfig : public ProxyConfigIf {
     return *proxyRoute_;
   }
 
-  std::shared_ptr<ServiceInfo> serviceInfo() const {
+  std::shared_ptr<ServiceInfo> serviceInfo() const override {
     return serviceInfo_;
   }
 
-  const std::unordered_map<std::string, std::shared_ptr<ProxyGenericPool>>&
-  poolsMap() const {
-    return poolFactory_->pools();
-  }
-
   const std::vector<std::shared_ptr<const ProxyClientCommon>>&
-  getClients() const {
-    return poolFactory_->clients();
-  }
+  getClients() const override;
 
-  std::string getConfigMd5Digest() const {
+  std::string getConfigMd5Digest() const override {
     return configMd5Digest_;
   }
 

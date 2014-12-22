@@ -682,21 +682,7 @@ void proxy_pool_shadowing_policy_t::registerOnUpdateCallback(
 static void proxy_config_swap(proxy_t* proxy,
                               std::shared_ptr<ProxyConfig> config) {
   /* Update the number of server stat for this proxy. */
-  stat_set_uint64(proxy->stats, num_servers_stat, 0);
-  for (auto& it : config->poolsMap()) {
-    auto pool = it.second;
-
-    switch (pool->getType()) {
-    case REGULAR_POOL:
-    case REGIONAL_POOL: {
-      auto proxy_pool = std::dynamic_pointer_cast<const ProxyPool>(pool);
-      FBI_ASSERT(proxy_pool);
-      stat_incr(proxy->stats, num_servers_stat, proxy_pool->clients.size());
-      break;
-    }
-    default:;
-    }
-  }
+  stat_set_uint64(proxy->stats, num_servers_stat, config->getClients().size());
 
   auto oldConfig = proxy->swapConfig(std::move(config));
   stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
@@ -743,8 +729,7 @@ int router_configure(mcrouter_t* router, folly::StringPiece input) {
 
   VLOG_IF(0, !router->opts.constantly_reload_configs) <<
       "reconfigured " << proxyCount << " proxies with " <<
-      newConfigs[0]->getClients().size() << " clients and " <<
-      newConfigs[0]->poolsMap().size() << " pools (" <<
+      newConfigs[0]->getClients().size() << " clients (" <<
       newConfigs[0]->getConfigMd5Digest() << ")";
 
   return 1;

@@ -15,6 +15,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
+#include "mcrouter/PoolFactory.h"
 #include "mcrouter/routes/PrefixRouteSelector.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
@@ -102,6 +103,11 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
 std::shared_ptr<McrouterRouteHandleIf>
 ProxyConfig::getRouteHandleForProxyPool(const std::string& poolName) const {
   return tryGet(byPoolName_, poolName);
+}
+
+const std::vector<std::shared_ptr<const ProxyClientCommon>>&
+ProxyConfig::getClients() const {
+  return poolFactory_->clients();
 }
 
 }}} // facebook::memcache::mcrouter
