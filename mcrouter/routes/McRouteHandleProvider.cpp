@@ -163,16 +163,12 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
         json.count("rates") &&
         json["rates"].isObject()) {
       route = makeRateLimitRoute(std::move(route), RateLimiter(json["rates"]));
-    } else if (pool->rate_limiter) {
-      route = makeRateLimitRoute(std::move(route), *pool->rate_limiter);
     }
   }
 
   if (json.isObject() && json.count("shard_splits")) {
     route = makeShardSplitRoute(std::move(route),
                                 ShardSplitter(json["shard_splits"]));
-  } else if (pool->shardSplitter) {
-    route = makeShardSplitRoute(std::move(route), *pool->shardSplitter);
   }
 
   if (!proxy_->opts.asynclog_disable) {

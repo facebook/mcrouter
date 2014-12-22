@@ -1,10 +1,7 @@
 {
   "pools": {
     "A": {
-      "servers": [ "127.0.0.1:10001" ],
-      "rates": {
-        "sets_rate": 10.0
-      }
+      "servers": [ "127.0.0.1:10001" ]
     }
   },
   "route": {
@@ -12,7 +9,10 @@
     "policies": {
       "basic": {
         "type": "PoolRoute",
-        "pool": "A"
+        "pool": "A",
+        "rates": {
+          "sets_rate": 10.0
+        }
       },
       "burst": {
         "type": "PoolRoute",

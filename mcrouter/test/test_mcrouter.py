@@ -45,36 +45,6 @@ class TestDevNull(McrouterTestCase):
         self.assertEqual(mcr.delete("null:key2"), None)
         self.assertEqual(int(mcr.stats('ods')['dev_null_requests']), 2)
 
-class TestServerListFromAnotherPool(McrouterTestCase):
-    config = './mcrouter/test/test_server_list_from_another_pool.json'
-    extra_args = []
-
-    def setUp(self):
-        self.mc_pri = self.add_server(Memcached())
-
-    def get_mcrouter(self):
-        return self.add_mcrouter(self.config, extra_args=self.extra_args)
-
-    def test_server_list_from_another_pool(self):
-        mcr = self.get_mcrouter()
-        # first try to set keys via the router to the "alt" pool
-        for k in range(0, 100):
-            mcr.set('alt:key-' + str(k), str(k))
-
-        # since both pri and alt share the same pool we should be able
-        # to pull the values out of the pri pool directly
-        for k in range(0, 100):
-            self.assertEqual(mcr.get('alt:key-' + str(k)), str(k))
-            self.assertEqual(self.mc_pri.get('alt:key-' + str(k)), str(k))
-
-        # set the alt keys to pri directly
-        for k in range(1000, 1100):
-            self.mc_pri.set('alt:key-' + str(k), str(k))
-
-        # make sure mcrouter can fetch the values via the router to the alt pool
-        for k in range(1000, 1100):
-            self.assertEqual(mcr.get('alt:key-' + str(k)), str(k))
-
 class TestMigratedPools(McrouterTestCase):
     config = './mcrouter/test/test_migrated_pools.json'
     extra_args = []
