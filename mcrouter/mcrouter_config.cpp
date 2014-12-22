@@ -57,10 +57,6 @@ bool standaloneInit(const McrouterOptions& opts) {
   return true;
 }
 
-bool preprocessGetErrors(const McrouterOptions& opts, McReplyBase& reply) {
-  return false;
-}
-
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
   return folly::make_unique<McExtraRouteHandleProvider>();
 }

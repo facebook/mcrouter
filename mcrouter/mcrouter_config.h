@@ -148,8 +148,6 @@ std::string performOptionSubstitution(std::string str);
 
 bool standaloneInit(const McrouterOptions& opts);
 
-bool preprocessGetErrors(const McrouterOptions& opts, McReplyBase& reply);
-
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(mcrouter_t* router);

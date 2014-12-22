@@ -69,7 +69,7 @@ class RootRoute {
       return reply;
     }
 
-    if (!preprocessGetErrors(opts_, reply) && opts_.miss_on_get_errors) {
+    if (opts_.miss_on_get_errors) {
       reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
     }
 
