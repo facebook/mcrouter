@@ -27,7 +27,7 @@ RouteHandleFactory<RouteHandleIf>::create(const folly::dynamic& json) {
   checkLogic(result.size() == 1, "{} RouteHandles in list, expected 1",
              result.size());
 
-  return result.back();
+  return std::move(result.back());
 }
 
 template <class RouteHandleIf>
@@ -42,20 +42,20 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
     }
     return ret;
   } else if (json.isObject()) {
-    checkLogic(json.count("type"), "No type field in RouteHandle json object");
-    checkLogic(json["type"].isString(),
-               "Type field in RouteHandle is not string");
+    auto typeIt = json.find("type");
+    checkLogic(typeIt != json.items().end(),
+               "No type field in RouteHandle json object");
+    checkLogic(typeIt->second.isString(),
+               "Type field in RouteHandle is not a string");
+    auto type = typeIt->second.stringPiece();
 
-    auto type = json["type"].asString().toStdString();
-    auto name = (json.count("name") && json["name"].isString())
-      ? json["name"].asString().toStdString()
-      : "";
-
-    if (!name.empty()) {
+    auto nameIt = json.find("name");
+    if (nameIt != json.items().end() && nameIt->second.isString()) {
       // got named handle
+      auto name = nameIt->second.stringPiece().str();
       auto it = seen_.find(name);
       if (it != seen_.end()) {
-        // we had same named handle already. Reuse it.
+        // we had the same named handle already. Reuse it.
         return it->second;
       }
 
@@ -66,29 +66,29 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
       return provider_.create(*this, type, json);
     }
   } else if (json.isString()) {
-    auto handleString = json.asString().toStdString();
-
-    if (handleString.empty()) {
+    if (json.empty()) {
       // useful for routes with optional children
       return {};
     }
 
     // check if we already parsed same string. It can be named handle or short
     // form of handle.
+    auto handlePiece = json.stringPiece();
+    auto handleString = handlePiece.str();
     auto it = seen_.find(handleString);
     if (it != seen_.end()) {
       return it->second;
     }
 
     std::vector<std::shared_ptr<RouteHandleIf>> ret;
-    auto pipeId = handleString.find("|");
-    if (pipeId != -1) { // short form (e.g. HashRoute|ErrorRoute)
-      auto type = handleString.substr(0, pipeId); // split by first '|'
-      auto def = handleString.substr(pipeId + 1);
+    auto pipeId = handlePiece.find("|");
+    if (pipeId != std::string::npos) { // short form (e.g. HashRoute|ErrorRoute)
+      auto type = handlePiece.subpiece(0, pipeId); // split by first '|'
+      auto def = handlePiece.subpiece(pipeId + 1);
       ret = provider_.create(*this, type, def);
     } else {
-      // assume it is short form of route without children (e.g. ErrorRoute)
-      ret = provider_.create(*this, handleString, nullptr);
+      // assume it is a short form of route without children (e.g. ErrorRoute)
+      ret = provider_.create(*this, handlePiece, nullptr);
     }
 
     seen_.emplace(handleString, ret);

@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <folly/Range.h>
+
 namespace folly {
 class dynamic;
 }
@@ -37,7 +39,7 @@ class RouteHandleProviderIf {
    * @param json JSON object with RouteHandle representation.
    */
   virtual std::vector<std::shared_ptr<RouteHandleIf>>
-  create(RouteHandleFactory<RouteHandleIf>& factory, const std::string& type,
+  create(RouteHandleFactory<RouteHandleIf>& factory, folly::StringPiece type,
          const folly::dynamic& json) = 0;
 
   virtual ~RouteHandleProviderIf() {};

@@ -42,10 +42,10 @@ class McRouteHandleProvider :
 
   std::vector<McrouterRouteHandlePtr>
   create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-         const std::string& type, const folly::dynamic& json) override;
+         folly::StringPiece type, const folly::dynamic& json) override;
 
   McrouterRouteHandlePtr
-  createHash(const std::string& funcType,
+  createHash(folly::StringPiece funcType,
              const folly::dynamic& json,
              std::vector<McrouterRouteHandlePtr> children) override;
 

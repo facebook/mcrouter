@@ -26,7 +26,7 @@ template <class RouteHandleIf>
 class RouteHandleProvider : public RouteHandleProviderIf<RouteHandleIf> {
  public:
   virtual std::vector<std::shared_ptr<RouteHandleIf>>
-  create(RouteHandleFactory<RouteHandleIf>& factory, const std::string& type,
+  create(RouteHandleFactory<RouteHandleIf>& factory, folly::StringPiece type,
          const folly::dynamic& json);
 
   virtual ~RouteHandleProvider() {};
@@ -41,7 +41,7 @@ class RouteHandleProvider : public RouteHandleProviderIf<RouteHandleIf> {
    * @param children route handles HashRoute will route to.
    */
   virtual std::shared_ptr<RouteHandleIf>
-  createHash(const std::string& funcType,
+  createHash(folly::StringPiece funcType,
              const folly::dynamic& json,
              std::vector<std::shared_ptr<RouteHandleIf>> children);
 

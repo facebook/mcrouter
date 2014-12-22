@@ -62,7 +62,7 @@ template <class RouteHandleIf>
 std::vector<std::shared_ptr<RouteHandleIf>>
 RouteHandleProvider<RouteHandleIf>::create(
     RouteHandleFactory<RouteHandleIf>& factory,
-    const std::string& type,
+    folly::StringPiece type,
     const folly::dynamic& json) {
 
   if (type == "AllAsyncRoute") {
@@ -114,7 +114,7 @@ RouteHandleProvider<RouteHandleIf>::create(
 template <class RouteHandleIf>
 std::shared_ptr<RouteHandleIf>
 RouteHandleProvider<RouteHandleIf>::createHash(
-    const std::string& funcType,
+    folly::StringPiece funcType,
     const folly::dynamic& json,
     std::vector<std::shared_ptr<RouteHandleIf>> children) {
 
@@ -145,11 +145,12 @@ RouteHandleProvider<RouteHandleIf>::makeHash(
     std::vector<std::shared_ptr<RouteHandleIf>> children) {
 
   // Ch3 is default
-  auto funcType = Ch3HashFunc::type();
+  auto defaultFunc = Ch3HashFunc::type();
+  folly::StringPiece funcType = defaultFunc;
   if (json.isObject() && json.count("hash_func")) {
     const auto& func = json["hash_func"];
     checkLogic(func.isString(), "HashRoute: hash_func is not string");
-    funcType = func.asString().toStdString();
+    funcType = func.stringPiece();
   }
 
   return createHash(funcType, json, std::move(children));

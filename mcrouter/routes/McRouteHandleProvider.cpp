@@ -229,7 +229,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
 
 std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
-    const std::string& type,
+    folly::StringPiece type,
     const folly::dynamic& json) {
 
   // PrefixPolicyRoute if deprecated, but must be preserved for backwards
@@ -258,7 +258,7 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
 }
 
 McrouterRouteHandlePtr McRouteHandleProvider::createHash(
-    const std::string& funcType,
+    folly::StringPiece funcType,
     const folly::dynamic& json,
     std::vector<McrouterRouteHandlePtr> children) {
 
