@@ -34,6 +34,8 @@ struct ProxyClientCommon {
 
   const uint64_t qos;
 
+  const int deleteTime;
+
   std::string genProxyDestinationKey() const;
 
   ProxyClientCommon(timeval_t timeout,
@@ -42,7 +44,8 @@ struct ProxyClientCommon {
                     bool attach_default_routing_prefix,
                     ProxyPool* pool,
                     bool useSsl,
-                    uint64_t qos);
+                    uint64_t qos,
+                    int deleteTime);
 };
 
 }}}  // facebook::memcache::mcrouter

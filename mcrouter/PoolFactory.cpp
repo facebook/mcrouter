@@ -604,7 +604,8 @@ PoolFactory::parsePool(const string& pool_name_str,
         pool->attach_default_routing_prefix,
         pool.get(),
         serverUseSsl,
-        serverQos);
+        serverQos,
+        pool->delete_time);
 
       clients_.push_back(client);
 

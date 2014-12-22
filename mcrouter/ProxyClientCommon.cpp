@@ -21,7 +21,8 @@ ProxyClientCommon::ProxyClientCommon(timeval_t timeout,
                                      bool attach_default_routing_prefix_,
                                      ProxyPool* pool_,
                                      bool useSsl_,
-                                     uint64_t qos_)
+                                     uint64_t qos_,
+                                     int deleteTime_)
     : pool(pool_),
       ap(std::move(ap_)),
       destination_key(folly::sformat("{}:{}", ap.getHost(), ap.getPort())),
@@ -30,7 +31,8 @@ ProxyClientCommon::ProxyClientCommon(timeval_t timeout,
       server_timeout(std::move(timeout)),
       indexInPool(pool->clients.size()),
       useSsl(useSsl_),
-      qos(qos_) {
+      qos(qos_),
+      deleteTime(deleteTime_) {
 }
 
 std::string ProxyClientCommon::genProxyDestinationKey() const {

@@ -51,12 +51,12 @@ template <class RouteHandleIf>
 class DestinationRoute {
  public:
   std::string routeName() const {
-    return folly::format("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
+    return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
       client_->pool ? client_->pool->getName() : "NOPOOL",
       client_->indexInPool,
       client_->useSsl,
       client_->ap.toString(),
-      to<std::chrono::milliseconds>(client_->server_timeout).count()).str();
+      to<std::chrono::milliseconds>(client_->server_timeout).count());
   }
 
   /**
@@ -97,7 +97,7 @@ class DestinationRoute {
     const Request& req, Operation,
     typename DeleteLike<Operation>::Type = 0) const {
 
-    auto deleteTime = client_->pool ? client_->pool->delete_time : 0;
+    auto deleteTime = client_->deleteTime;
     if (deleteTime != 0 && (req.exptime() == 0 || req.exptime() > deleteTime)) {
       auto mutReq = req.clone();
       mutReq.setExptime(deleteTime);
