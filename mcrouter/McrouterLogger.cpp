@@ -86,8 +86,7 @@ void write_file(const McrouterOptions& opts,
       return;
     }
 
-    auto path = stats_file_path(opts, suffix);
-
+    std::string path = stats_file_path(opts, suffix);
     atomicallyWriteFileToDisk(str, path);
   } catch (...) {
     // Do nothing
