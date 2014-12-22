@@ -23,7 +23,7 @@ class dynamic;
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ExtraRouteHandleProviderIf;
-class PoolFactoryIf;
+class PoolFactory;
 class ProxyClientCommon;
 class ProxyDestinationMap;
 class ProxyPool;
@@ -38,7 +38,7 @@ class McRouteHandleProvider :
  public:
   McRouteHandleProvider(proxy_t* proxy,
                         ProxyDestinationMap& destinationMap,
-                        PoolFactoryIf& poolFactory);
+                        PoolFactory& poolFactory);
 
   std::vector<McrouterRouteHandlePtr>
   create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -62,7 +62,7 @@ class McRouteHandleProvider :
  private:
   proxy_t* proxy_;
   ProxyDestinationMap& destinationMap_;
-  PoolFactoryIf& poolFactory_;
+  PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
   /// ProxyPool -> vector of DestinationRoutes
   std::unordered_map<std::shared_ptr<const ProxyPool>,

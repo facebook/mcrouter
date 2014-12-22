@@ -18,29 +18,12 @@
 #include "mcrouter/_router.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/options.h"
-#include "mcrouter/PoolFactoryIf.h"
+#include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
-
-class MockPoolFactory : public PoolFactoryIf {
-public:
-  std::shared_ptr<ProxyGenericPool> fetchPool(folly::StringPiece poolName) {
-    if (poolName == "mock") {
-      return std::make_shared<ProxyRegularPool>("mock");
-    }
-    return nullptr;
-  }
-
-  std::shared_ptr<ProxyGenericPool>
-  parsePool(const std::string& pool_name_str,
-            const folly::dynamic& jpool,
-            const folly::dynamic& jpools) {
-    return nullptr;
-  }
-};
 
 static const std::string kConstShard =
  R"({
@@ -59,7 +42,7 @@ static const std::string kWarmUp =
 static const std::string kPoolRoute =
  R"({
    "type": "PoolRoute",
-   "pool": "mock",
+   "pool": { "name": "mock", "servers": [ ] },
    "hash": { "hash_func": "Crc32" }
  })";
 
@@ -69,7 +52,7 @@ getRoute(const folly::dynamic& d) {
   folly::EventBase eventBase;
   auto router = folly::make_unique<mcrouter_t>(opts);
   auto proxy = folly::make_unique<proxy_t>(router.get(), &eventBase, opts);
-  MockPoolFactory pf;
+  PoolFactory pf(folly::dynamic::object(), router->configApi.get(), opts);
   McRouteHandleProvider provider(proxy.get(), *proxy->destinationMap, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
   auto res = factory.create(d);
@@ -101,12 +84,6 @@ TEST(McRouteHandleProvider, warmup) {
   auto rh = getRoute(folly::parseJson(kWarmUp));
   EXPECT_TRUE(rh != nullptr);
   EXPECT_EQ(rh->routeName(), "warm-up");
-}
-
-TEST(McRouteHandleProvider, pool) {
-  auto rh = getRoute("AllInitialRoute|Pool|mock");
-  EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "all-initial");
 }
 
 TEST(McRouteHandleProvider, pool_route) {

@@ -13,7 +13,7 @@
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/PoolFactoryIf.h"
+#include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -67,7 +67,7 @@ McrouterRouteHandlePtr makeWarmUpRoute(
 McRouteHandleProvider::McRouteHandleProvider(
   proxy_t* proxy,
   ProxyDestinationMap& destinationMap,
-  PoolFactoryIf& poolFactory)
+  PoolFactory& poolFactory)
     : RouteHandleProvider<McrouterRouteHandleIf>(),
       proxy_(proxy),
       destinationMap_(destinationMap),

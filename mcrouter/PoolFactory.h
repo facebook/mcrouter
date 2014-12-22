@@ -16,8 +16,6 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/PoolFactoryIf.h"
-
 using timeval_t = struct timeval;
 
 namespace folly {
@@ -38,7 +36,7 @@ class ProxyGenericPool;
 /**
  * Parses mcrouter pools from mcrouter config.
  */
-class PoolFactory : public PoolFactoryIf {
+class PoolFactory {
  public:
   /**
    * @param config JSON object with clusters/pools properties (both optional).
