@@ -37,10 +37,10 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   TestFiberManager fm;
 
-  auto data = make_shared<proxy_pool_shadowing_policy_t::Data>();
-  vector<std::shared_ptr<proxy_pool_shadowing_policy_t>> settings {
-    make_shared<proxy_pool_shadowing_policy_t>(data, nullptr),
-    make_shared<proxy_pool_shadowing_policy_t>(data, nullptr),
+  auto data = make_shared<ShadowSettings::Data>();
+  vector<std::shared_ptr<ShadowSettings>> settings {
+    make_shared<ShadowSettings>(data, nullptr),
+    make_shared<ShadowSettings>(data, nullptr),
   };
 
   auto shadowRhs = get_route_handles(shadowHandles);

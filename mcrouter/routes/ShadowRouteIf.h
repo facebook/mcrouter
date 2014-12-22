@@ -15,12 +15,12 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterRouteHandleIf;
-class proxy_pool_shadowing_policy_t;
+class ShadowSettings;
 
 template <class RouteHandleIf>
 using ShadowData = std::vector<std::pair<
           std::shared_ptr<RouteHandleIf>,
-          std::shared_ptr<proxy_pool_shadowing_policy_t>>>;
+          std::shared_ptr<ShadowSettings>>>;
 
 using McrouterShadowData = ShadowData<McrouterRouteHandleIf>;
 

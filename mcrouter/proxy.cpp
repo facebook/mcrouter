@@ -525,24 +525,7 @@ void proxy_on_continue_reply_error(proxy_t* proxy, writelog_entry_t* e) {
   writelog_entry_free(e);
 }
 
-proxy_pool_shadowing_policy_t::Data::Data()
-    : start_index(0),
-      end_index(0),
-      start_key_fraction(0.0),
-      end_key_fraction(0.0),
-      shadow_pool(nullptr),
-      shadow_type(DEFAULT_SHADOW_POLICY),
-      validate_replies(false) {
-}
-
-proxy_pool_shadowing_policy_t::Data::Data(const folly::dynamic& json)
-    : start_index(0),
-      end_index(0),
-      start_key_fraction(0.0),
-      end_key_fraction(0.0),
-      shadow_pool(nullptr),
-      shadow_type(DEFAULT_SHADOW_POLICY),
-      validate_replies(false) {
+ShadowSettings::Data::Data(const folly::dynamic& json) {
   checkLogic(json.isObject(), "shadowing_policy is not object");
   if (json.count("index_range")) {
     checkLogic(json["index_range"].isArray(),
@@ -580,8 +563,7 @@ proxy_pool_shadowing_policy_t::Data::Data(const folly::dynamic& json)
   }
 }
 
-proxy_pool_shadowing_policy_t::proxy_pool_shadowing_policy_t(
-  const folly::dynamic& json, mcrouter_t* router)
+ShadowSettings::ShadowSettings(const folly::dynamic& json, mcrouter_t* router)
     : data_(std::make_shared<Data>(json)) {
 
   if (router) {
@@ -589,9 +571,7 @@ proxy_pool_shadowing_policy_t::proxy_pool_shadowing_policy_t(
   }
 }
 
-proxy_pool_shadowing_policy_t::proxy_pool_shadowing_policy_t(
-  std::shared_ptr<Data> data,
-  mcrouter_t* router)
+ShadowSettings::ShadowSettings(std::shared_ptr<Data> data, mcrouter_t* router)
     : data_(std::move(data)) {
 
   if (router) {
@@ -599,19 +579,17 @@ proxy_pool_shadowing_policy_t::proxy_pool_shadowing_policy_t(
   }
 }
 
-proxy_pool_shadowing_policy_t::~proxy_pool_shadowing_policy_t() {
+ShadowSettings::~ShadowSettings() {
   /* We must unregister from updates before starting to destruct other
      members, like variable name strings */
   handle_.reset();
 }
 
-std::shared_ptr<const proxy_pool_shadowing_policy_t::Data>
-proxy_pool_shadowing_policy_t::getData() {
+std::shared_ptr<const ShadowSettings::Data> ShadowSettings::getData() {
   return data_.get();
 }
 
-void proxy_pool_shadowing_policy_t::registerOnUpdateCallback(
-    mcrouter_t* router) {
+void ShadowSettings::registerOnUpdateCallback(mcrouter_t* router) {
   handle_ = router->rtVarsData.subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {

@@ -240,29 +240,23 @@ enum shadow_policy_t {
 };
 #define NO_SHADOW_POLICY NUM_SHADOW_POLICIES
 
-struct proxy_pool_shadowing_policy_t {
+struct ShadowSettings {
   struct Data {
-    size_t start_index;
-    size_t end_index;
-    double start_key_fraction;
-    double end_key_fraction;
+    size_t start_index{0};
+    size_t end_index{0};
+    double start_key_fraction{0};
+    double end_key_fraction{0};
     std::string index_range_rv;
     std::string key_fraction_range_rv;
-    ProxyPool* shadow_pool;
-    shadow_policy_t shadow_type;
-    bool validate_replies;
 
-    Data();
+    Data() = default;
 
     explicit Data(const folly::dynamic& json);
   };
 
-  proxy_pool_shadowing_policy_t(const folly::dynamic& json,
-                                mcrouter_t* router);
-
-  proxy_pool_shadowing_policy_t(std::shared_ptr<Data> data,
-                                mcrouter_t* router);
-  ~proxy_pool_shadowing_policy_t();
+  ShadowSettings(const folly::dynamic& json, mcrouter_t* router);
+  ShadowSettings(std::shared_ptr<Data> data, mcrouter_t* router);
+  ~ShadowSettings();
 
   std::shared_ptr<const Data> getData();
 
@@ -323,8 +317,9 @@ class ProxyPool : public ProxyGenericPool {
   /**
    * If nonempty, describes how to shadow requests sent to this pool.
    */
-  std::vector<std::shared_ptr<proxy_pool_shadowing_policy_t>>
-      shadowing_policies;
+  std::vector<std::pair<std::shared_ptr<ShadowSettings>,
+                        std::pair<shadow_policy_t, ProxyPool*>>>
+    shadowing_policies;
 
   std::unique_ptr<RateLimiter> rate_limiter;
 

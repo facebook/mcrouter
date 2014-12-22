@@ -170,8 +170,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     for (auto& shadow : json["shadows"]) {
       checkLogic(shadow.count("target"),
                  "PoolRoute shadows: no target for shadow");
-      auto policy = std::make_shared<proxy_pool_shadowing_policy_t>(
-          shadow, proxy_->router);
+      auto policy = std::make_shared<ShadowSettings>(shadow, proxy_->router);
       data.emplace_back(factory.create(shadow["target"]), std::move(policy));
     }
 

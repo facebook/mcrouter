@@ -66,7 +66,7 @@ class ShadowRoute {
     std::shared_ptr<Request> adjustedReq;
     folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
     for (auto iter: shadowData_) {
-      if (shouldShadow(req, iter.second)) {
+      if (shouldShadow(req, iter.second.get())) {
         if (!adjustedReq) {
           adjustedReq = std::make_shared<Request>(
             shadowPolicy_.updateRequestForShadowing(req, Operation()));
@@ -106,9 +106,8 @@ class ShadowRoute {
   }
 
   template <class Request>
-  bool shouldShadow(const Request& req,
-      std::shared_ptr<proxy_pool_shadowing_policy_t> shadowingSettings) const {
-    auto data = shadowingSettings->getData();
+  bool shouldShadow(const Request& req, ShadowSettings* settings) const {
+    auto data = settings->getData();
 
     if (normalIndex_ < data->start_index ||
         normalIndex_ >= data->end_index) {
