@@ -126,11 +126,11 @@ TEST(FiberManager, batonTimedWaitTimeoutEvb) {
 
     EXPECT_FALSE(res);
 
-    auto duration_ms = std::chrono::duration_cast<
-    std::chrono::milliseconds>(finish - start);
+    auto duration_ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
 
-    EXPECT_TRUE(duration_ms.count() > timeout_ms - 5 &&
-                duration_ms.count() < timeout_ms + 10);
+    EXPECT_GT(duration_ms.count(), timeout_ms - 50);
+    EXPECT_LT(duration_ms.count(), timeout_ms + 50);
 
     if (++tasksComplete == 2) {
       evb.terminateLoopSoon();
@@ -140,12 +140,12 @@ TEST(FiberManager, batonTimedWaitTimeoutEvb) {
   evb.runInEventBaseThread([&]() {
     manager.addTask(
       [&]() {
-        task(230);
+        task(500);
       }
     );
     manager.addTask(
       [&]() {
-        task(130);
+        task(250);
       }
     );
   });
