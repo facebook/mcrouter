@@ -51,11 +51,10 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
   : poolFactory_(std::move(poolFactory)),
     configMd5Digest_(std::move(configMd5Digest)) {
 
-  McRouteHandleProvider provider(proxy, *proxy->destinationMap,
-                                 *poolFactory_);
+  McRouteHandleProvider provider(proxy, *proxy->destinationMap, *poolFactory_);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 
-  checkLogic(json.isObject(), "Config is not object");
+  checkLogic(json.isObject(), "Config is not an object");
 
   if (json.count("named_handles")) {
     checkLogic(json["named_handles"].isArray(), "named_handles is not array");
@@ -86,23 +85,15 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
     throw std::logic_error("No route/routes in config");
   }
 
-  for (const auto& it : poolFactory_->pools()) {
-    const auto& pool = it.second;
-    if (pool->getType() == REGIONAL_POOL || pool->getType() == REGULAR_POOL) {
-      auto handle = provider.getPoolHandle(pool->getName());
-      if (handle) {
-        byPoolName_.emplace(pool->getName(), std::move(handle));
-      }
-    }
-  }
 
+  asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
   proxyRoute_ = std::make_shared<ProxyRoute>(proxy, routeSelectors);
   serviceInfo_ = std::make_shared<ServiceInfo>(proxy, *this);
 }
 
-std::shared_ptr<McrouterRouteHandleIf>
-ProxyConfig::getRouteHandleForProxyPool(const std::string& poolName) const {
-  return tryGet(byPoolName_, poolName);
+McrouterRouteHandlePtr
+ProxyConfig::getRouteHandleForAsyncLog(const std::string& asyncLogName) const {
+  return tryGet(asyncLogRoutes_, asyncLogName);
 }
 
 const std::vector<std::shared_ptr<const ProxyClientCommon>>&

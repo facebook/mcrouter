@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
@@ -22,33 +23,18 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
- * Callback that will be called on delete errors.
- *
- * @param preq The proxy request
- * @param pclient The proxy client we tried sending to
- * @param req The raw request we tried to send out.
- */
-typedef std::function<void(proxy_request_t*,
-                           std::shared_ptr<const ProxyClientCommon>,
-                           const mc_msg_t*,
-                           folly::StringPiece)> AsynclogFunc;
-
-/**
  * Async logs a failed request. It assumes the required data is available in
  * the reply.
  */
 template <class RouteHandleIf>
 class AsynclogRoute {
  public:
-  static std::string routeName() { return "asynclog"; }
+  std::string routeName() const { return "asynclog:" + asynclogName_; }
 
   AsynclogRoute(std::shared_ptr<RouteHandleIf> rh,
-                std::string poolName,
-                AsynclogFunc asyncLog)
+                std::string asynclogName)
       : rh_(std::move(rh)),
-        poolName_(std::move(poolName)),
-        asyncLog_(std::move(asyncLog)) {
-    assert(asyncLog_ != nullptr);
+        asynclogName_(std::move(asynclogName)) {
   }
 
   template <class Operation, class Request>
@@ -72,12 +58,11 @@ class AsynclogRoute {
       return reply;
     }
     auto msg = generateMsg(dest, req, Operation());
-    auto& asyncLog = asyncLog_;
-    auto& poolName = poolName_;
+    auto& asynclogName = asynclogName_;
     proxy_request_t* preq = &req.context().ctx().proxyRequest();
     fiber::runInMainContext(
-      [&asyncLog, preq, dest, &msg, &poolName] () {
-        asyncLog(preq, dest, msg.get(), poolName);
+      [preq, dest, &msg, &asynclogName] () {
+        asynclog_command(preq, dest, msg.get(), asynclogName);
       });
     return NullRoute<RouteHandleIf>::route(req, Operation());
   }
@@ -91,8 +76,7 @@ class AsynclogRoute {
 
  private:
   const std::shared_ptr<RouteHandleIf> rh_;
-  const std::string poolName_;
-  AsynclogFunc asyncLog_;
+  const std::string asynclogName_;
 
   template <class Request, int M>
   McMsgRef generateMsg(std::shared_ptr<const ProxyClientCommon> dest,

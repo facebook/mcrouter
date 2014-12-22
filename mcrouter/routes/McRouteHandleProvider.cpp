@@ -10,7 +10,6 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/PoolFactory.h"
@@ -25,14 +24,8 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-typedef std::function<void(proxy_request_t*,
-                           std::shared_ptr<const ProxyClientCommon>,
-                           const mc_msg_t*,
-                           folly::StringPiece poolName)> AsynclogFunc;
-
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
-                                         std::string poolName,
-                                         AsynclogFunc asyncLog);
+                                         std::string poolName);
 
 McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
@@ -77,11 +70,6 @@ McRouteHandleProvider::McRouteHandleProvider(
 
 McRouteHandleProvider::~McRouteHandleProvider() {
   /* Needed for forward declaration of ExtraRouteHandleProviderIf in .h */
-}
-
-McrouterRouteHandlePtr McRouteHandleProvider::getPoolHandle(
-    const std::string& poolName) const {
-  return tryGet(poolNameToHandles_, poolName, nullptr);
 }
 
 McrouterRouteHandlePtr McRouteHandleProvider::makeDestinationHandle(
@@ -229,14 +217,13 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       needAsynclog = json["asynclog"].asBool();
     }
     if (needAsynclog) {
-      route = makeAsynclogRoute(std::move(route), proxyPool->getName(),
-                                &asynclog_command);
+      route = makeAsynclogRoute(std::move(route), proxyPool->getName());
     }
   }
   // NOTE: we assume PoolRoute is unique for each ProxyPool.
   // Once we have multiple PoolRoutes for same ProxyPool
   // we need to change logic here.
-  poolNameToHandles_.emplace(proxyPool->getName(), route);
+  asyncLogRoutes_.emplace(proxyPool->getName(), route);
 
   return route;
 }

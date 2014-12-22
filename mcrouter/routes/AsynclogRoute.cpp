@@ -14,12 +14,10 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
-                                         std::string poolName,
-                                         AsynclogFunc asyncLog) {
+                                         std::string asynclogName) {
   return makeMcrouterRouteHandle<AsynclogRoute>(
     std::move(rh),
-    std::move(poolName),
-    std::move(asyncLog));
+    std::move(asynclogName));
 }
 
 }}}

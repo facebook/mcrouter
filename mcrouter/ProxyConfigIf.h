@@ -35,7 +35,7 @@ class ProxyConfigIf {
   getClients() const = 0;
 
   virtual std::shared_ptr<McrouterRouteHandleIf>
-  getRouteHandleForProxyPool(const std::string& poolName) const = 0;
+  getRouteHandleForAsyncLog(const std::string& asynclogName) const = 0;
 
   virtual ~ProxyConfigIf() {}
 };

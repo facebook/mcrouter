@@ -89,5 +89,5 @@ TEST(McRouteHandleProvider, warmup) {
 TEST(McRouteHandleProvider, pool_route) {
   auto rh = getRoute(folly::parseJson(kPoolRoute));
   EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "asynclog");
+  EXPECT_EQ(rh->routeName(), "asynclog:mock");
 }

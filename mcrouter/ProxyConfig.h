@@ -51,14 +51,14 @@ class ProxyConfig : public ProxyConfigIf {
   }
 
   McrouterRouteHandlePtr
-  getRouteHandleForProxyPool(const std::string& poolName) const;
+  getRouteHandleForAsyncLog(const std::string& asyncLogName) const;
 
  private:
   std::shared_ptr<ProxyRoute> proxyRoute_;
   std::shared_ptr<ServiceInfo> serviceInfo_;
   std::shared_ptr<PoolFactory> poolFactory_;
   std::string configMd5Digest_;
-  std::unordered_map<std::string, McrouterRouteHandlePtr> byPoolName_;
+  std::unordered_map<std::string, McrouterRouteHandlePtr> asyncLogRoutes_;
 
   /**
    * Parses config and creates ProxyRoute

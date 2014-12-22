@@ -49,13 +49,10 @@ class McRouteHandleProvider :
              const folly::dynamic& json,
              std::vector<McrouterRouteHandlePtr> children) override;
 
-  /**
-   * Returns PoolRoute by given pool name.
-   *
-   * @param poolName Name of ProxyPool
-   * @return PoolRoute for given pool name or nullptr if not found
-   */
-  McrouterRouteHandlePtr getPoolHandle(const std::string& poolName) const;
+  std::unordered_map<std::string, McrouterRouteHandlePtr>
+  releaseAsyncLogRoutes() {
+    return std::move(asyncLogRoutes_);
+  }
 
   ~McRouteHandleProvider();
 
@@ -64,15 +61,15 @@ class McRouteHandleProvider :
   ProxyDestinationMap& destinationMap_;
   PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
-  /// ProxyPool -> vector of DestinationRoutes
+  // ProxyPool -> vector of DestinationRoutes
   std::unordered_map<std::shared_ptr<const ProxyPool>,
                      std::vector<McrouterRouteHandlePtr>> poolHandles_;
   // ProxyClientCommon -> DestinationRoute
   std::unordered_map<std::shared_ptr<const ProxyClientCommon>,
                      McrouterRouteHandlePtr> destinationHandles_;
 
-  /// poolName -> AsynclogRoute
-  std::unordered_map<std::string, McrouterRouteHandlePtr> poolNameToHandles_;
+  // poolName -> AsynclogRoute
+  std::unordered_map<std::string, McrouterRouteHandlePtr> asyncLogRoutes_;
 
   McrouterRouteHandlePtr
   makeDestinationHandle(std::shared_ptr<const ProxyClientCommon> client);
