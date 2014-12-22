@@ -61,23 +61,16 @@ class McRouteHandleProvider :
   ProxyDestinationMap& destinationMap_;
   PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
-  // ProxyPool -> vector of DestinationRoutes
-  std::unordered_map<std::shared_ptr<const ProxyPool>,
-                     std::vector<McrouterRouteHandlePtr>> poolHandles_;
-  // ProxyClientCommon -> DestinationRoute
-  std::unordered_map<std::shared_ptr<const ProxyClientCommon>,
-                     McrouterRouteHandlePtr> destinationHandles_;
+  // pool name => { ProxyPool, destinations }
+  std::unordered_map<std::string,
+    std::pair<std::shared_ptr<ProxyPool>,
+              std::vector<McrouterRouteHandlePtr>>> pools_;
 
   // poolName -> AsynclogRoute
   std::unordered_map<std::string, McrouterRouteHandlePtr> asyncLogRoutes_;
 
-  McrouterRouteHandlePtr
-  makeDestinationHandle(std::shared_ptr<const ProxyClientCommon> client);
-
-  std::vector<McrouterRouteHandlePtr>
-  getDestinationHandlesForPool(std::shared_ptr<const ProxyPool> pool);
-
-  std::vector<McrouterRouteHandlePtr> makePool(const folly::dynamic& json);
+  std::pair<std::shared_ptr<ProxyPool>, std::vector<McrouterRouteHandlePtr>>
+  makePool(const folly::dynamic& json);
 
   McrouterRouteHandlePtr makePoolRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,

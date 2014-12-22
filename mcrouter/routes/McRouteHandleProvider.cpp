@@ -72,50 +72,39 @@ McRouteHandleProvider::~McRouteHandleProvider() {
   /* Needed for forward declaration of ExtraRouteHandleProviderIf in .h */
 }
 
-McrouterRouteHandlePtr McRouteHandleProvider::makeDestinationHandle(
-    std::shared_ptr<const ProxyClientCommon> client) {
-  assert(client);
-
-  auto pdstn = destinationMap_.fetch(*client);
-
-  auto route = makeDestinationRoute(client, std::move(pdstn));
-  return destinationHandles_[std::move(client)] = std::move(route);
-}
-
-std::vector<McrouterRouteHandlePtr>
-McRouteHandleProvider::getDestinationHandlesForPool(
-    std::shared_ptr<const ProxyPool> pool) {
-
+std::pair<std::shared_ptr<ProxyPool>, std::vector<McrouterRouteHandlePtr>>
+McRouteHandleProvider::makePool(const folly::dynamic& json) {
+  checkLogic(json.isString() || json.isObject(),
+             "Pool should be a string (name of pool) or an object");
+  std::string poolName;
+  if (json.isString()) {
+    poolName = json.stringPiece().str();
+  } else { // object
+    auto jname = json.get_ptr("name");
+    checkLogic(jname, "Pool: 'name' not found or is not a string");
+    poolName = jname->stringPiece().str();
+  }
+  auto genPool = json.isString()
+    ? poolFactory_.fetchPool(poolName)
+    : poolFactory_.parsePool(poolName, json, folly::dynamic::object());
+  checkLogic(genPool != nullptr, "Can not parse pool {}", poolName);
+  auto pool = std::dynamic_pointer_cast<ProxyPool>(genPool);
   assert(pool);
 
+  auto seenIt = pools_.find(pool->getName());
+  if (seenIt != pools_.end()) {
+    return seenIt->second;
+  }
+
   std::vector<McrouterRouteHandlePtr> destinations;
-  for (auto& client : pool->clients) {
-    auto poolClient = client.lock();
-    auto it = destinationHandles_.find(poolClient);
-    auto destination = (it == destinationHandles_.end())
-      ? makeDestinationHandle(poolClient)
-      : it->second;
-
-    destinations.push_back(destination);
-  }
-  return destinations;
-}
-
-std::vector<McrouterRouteHandlePtr>
-McRouteHandleProvider::makePool(const folly::dynamic& json) {
-  checkLogic(json.isString(), "Pool should be a string (name of pool)");
-  auto pool = poolFactory_.fetchPool(json.asString());
-  checkLogic(pool != nullptr, "Pool not found: {}", json.asString());
-
-  auto proxyPool = std::dynamic_pointer_cast<ProxyPool>(pool);
-  checkLogic(proxyPool != nullptr, "Only regional/regular pools are supported");
-
-  auto existingIt = poolHandles_.find(proxyPool);
-  if (existingIt != poolHandles_.end()) {
-    return existingIt->second;
+  for (const auto& it : pool->clients) {
+    auto client = it.lock();
+    auto pdstn = destinationMap_.fetch(*client);
+    auto route = makeDestinationRoute(std::move(client), std::move(pdstn));
+    destinations.push_back(std::move(route));
   }
 
-  return poolHandles_[proxyPool] = getDestinationHandlesForPool(proxyPool);
+  return std::make_pair(std::move(pool), std::move(destinations));
 }
 
 McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
@@ -124,39 +113,16 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
 
   checkLogic(json.isObject() || json.isString(),
              "PoolRoute should be object or string");
-  std::string poolName;
-  std::shared_ptr<ProxyGenericPool> pool;
+  const folly::dynamic* jpool;
   if (json.isObject()) {
-    checkLogic(json.count("pool"), "PoolRoute: no pool");
-    const auto& jPool = json["pool"];
-    if (jPool.isString()) {
-      poolName = jPool.asString().toStdString();
-      pool = poolFactory_.fetchPool(poolName);
-    } else {
-      checkLogic(jPool.count("name") && jPool["name"].isString(),
-                 "PoolRoute: no/invalid pool name");
-      poolName = jPool["name"].asString().toStdString();
-      pool = poolFactory_.fetchPool(poolName);
-      if (!pool) {
-        pool = poolFactory_.parsePool(poolName, jPool, {});
-      }
-    }
+    jpool = json.get_ptr("pool");
+    checkLogic(jpool, "PoolRoute: pool not found");
   } else {
-    poolName = json.asString().toStdString();
-    pool = poolFactory_.fetchPool(poolName);
+    jpool = &json;
   }
-  checkLogic(pool != nullptr, "Pool not found: {}", poolName);
-  auto proxyPool = std::dynamic_pointer_cast<ProxyPool>(pool);
-  checkLogic(proxyPool != nullptr, "Only regional/regular pools are supported");
-
-  std::vector<McrouterRouteHandlePtr> destinations;
-  auto existingIt = poolHandles_.find(proxyPool);
-  if (existingIt != poolHandles_.end()) {
-    destinations = existingIt->second;
-  } else {
-    destinations = getDestinationHandlesForPool(proxyPool);
-    poolHandles_[proxyPool] = destinations;
-  }
+  auto p = makePool(*jpool);
+  auto pool = std::move(p.first);
+  auto destinations = std::move(p.second);
 
   if (json.isObject() && json.count("shadows")) {
     std::string shadowPolicy = "default";
@@ -197,32 +163,32 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
         json.count("rates") &&
         json["rates"].isObject()) {
       route = makeRateLimitRoute(std::move(route), RateLimiter(json["rates"]));
-    } else if (proxyPool->rate_limiter) {
-      route = makeRateLimitRoute(std::move(route), *proxyPool->rate_limiter);
+    } else if (pool->rate_limiter) {
+      route = makeRateLimitRoute(std::move(route), *pool->rate_limiter);
     }
   }
 
   if (json.isObject() && json.count("shard_splits")) {
     route = makeShardSplitRoute(std::move(route),
                                 ShardSplitter(json["shard_splits"]));
-  } else if (proxyPool->shardSplitter) {
-    route = makeShardSplitRoute(std::move(route), *proxyPool->shardSplitter);
+  } else if (pool->shardSplitter) {
+    route = makeShardSplitRoute(std::move(route), *pool->shardSplitter);
   }
 
   if (!proxy_->opts.asynclog_disable) {
-    bool needAsynclog = !proxyPool->devnull_asynclog;
+    bool needAsynclog = !pool->devnull_asynclog;
     if (json.isObject() && json.count("asynclog")) {
       checkLogic(json["asynclog"].isBool(), "PoolRoute: asynclog is not bool");
       needAsynclog = json["asynclog"].asBool();
     }
     if (needAsynclog) {
-      route = makeAsynclogRoute(std::move(route), proxyPool->getName());
+      route = makeAsynclogRoute(std::move(route), pool->getName());
     }
   }
   // NOTE: we assume PoolRoute is unique for each ProxyPool.
   // Once we have multiple PoolRoutes for same ProxyPool
   // we need to change logic here.
-  asyncLogRoutes_.emplace(proxyPool->getName(), route);
+  asyncLogRoutes_.emplace(pool->getName(), route);
 
   return route;
 }
@@ -246,7 +212,7 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
   } else if (type == "MigrateRoute") {
     return { makeMigrateRoute(factory, json) };
   } else if (type == "Pool") {
-    return makePool(json);
+    return makePool(json).second;
   } else if (type == "PoolRoute") {
     return { makePoolRoute(factory, json) };
   }
