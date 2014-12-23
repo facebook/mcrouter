@@ -16,10 +16,10 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class ProxyPool;
+class ClientPool;
 
 struct ProxyClientCommon {
-  ProxyPool* pool;
+  const ClientPool* pool;
   const AccessPoint ap;
 
   /// Always the same for a given (host, port)
@@ -38,14 +38,17 @@ struct ProxyClientCommon {
 
   std::string genProxyDestinationKey() const;
 
-  ProxyClientCommon(timeval_t timeout,
+ private:
+  ProxyClientCommon(const ClientPool* pool,
+                    timeval_t timeout,
                     AccessPoint ap,
                     int keep_routing_prefix,
                     bool attach_default_routing_prefix,
-                    ProxyPool* pool,
                     bool useSsl,
                     uint64_t qos,
                     int deleteTime);
+
+  friend class ClientPool;
 };
 
 }}}  // facebook::memcache::mcrouter

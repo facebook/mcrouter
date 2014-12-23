@@ -52,7 +52,7 @@ getRoute(const folly::dynamic& d) {
   folly::EventBase eventBase;
   auto router = folly::make_unique<mcrouter_t>(opts);
   auto proxy = folly::make_unique<proxy_t>(router.get(), &eventBase, opts);
-  PoolFactory pf(folly::dynamic::object(), router->configApi.get(), opts);
+  PoolFactory pf(folly::dynamic::object(), *router->configApi, opts);
   McRouteHandleProvider provider(proxy.get(), *proxy->destinationMap, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
   auto res = factory.create(d);

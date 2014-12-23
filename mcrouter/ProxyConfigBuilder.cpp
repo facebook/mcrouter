@@ -36,7 +36,7 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
       { "default-cluster", opts.default_route.getCluster().str() },
     });
 
-  poolFactory_ = std::make_shared<PoolFactory>(json_, configApi, opts);
+  poolFactory_ = std::make_shared<PoolFactory>(json_, *configApi, opts);
 
   configMd5Digest_ = Md5Hash(jsonC);
 }

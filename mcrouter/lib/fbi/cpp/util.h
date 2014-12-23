@@ -133,6 +133,19 @@ bool determineIfSampleKeyForViolet(uint32_t routingKeyHash,
 std::string Md5Hash(folly::StringPiece input);
 
 /**
+ * @param Cmp  comparator used to compare characters
+ *
+ * @return  true if two strings are equal
+ */
+template <class Cmp>
+bool equalStr(folly::StringPiece A, folly::StringPiece B, Cmp&& cmp) {
+  if (A.size() != B.size()) {
+    return false;
+  }
+  return std::equal(A.begin(), A.end(), B.begin(), std::forward<Cmp>(cmp));
+}
+
+/**
  * Writes 'contents' to the file, overwriting any existing contents
  * (will create if file doesn't exist)
  *

@@ -10,16 +10,16 @@
 
 #include <folly/Format.h>
 
-#include "mcrouter/proxy.h"
+#include "mcrouter/ClientPool.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyClientCommon::ProxyClientCommon(timeval_t timeout,
+ProxyClientCommon::ProxyClientCommon(const ClientPool* pool_,
+                                     timeval_t timeout,
                                      AccessPoint ap_,
                                      int keep_routing_prefix_,
                                      bool attach_default_routing_prefix_,
-                                     ProxyPool* pool_,
                                      bool useSsl_,
                                      uint64_t qos_,
                                      int deleteTime_)
@@ -29,7 +29,7 @@ ProxyClientCommon::ProxyClientCommon(timeval_t timeout,
       keep_routing_prefix(keep_routing_prefix_),
       attach_default_routing_prefix(attach_default_routing_prefix_),
       server_timeout(std::move(timeout)),
-      indexInPool(pool->clients.size()),
+      indexInPool(pool->getClients().size()),
       useSsl(useSsl_),
       qos(qos_),
       deleteTime(deleteTime_) {

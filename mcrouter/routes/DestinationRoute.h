@@ -17,6 +17,7 @@
 #include <folly/Memory.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/ClientPool.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"

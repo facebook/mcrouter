@@ -10,6 +10,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/ClientPool.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/PoolFactory.h"
@@ -72,35 +73,20 @@ McRouteHandleProvider::~McRouteHandleProvider() {
   /* Needed for forward declaration of ExtraRouteHandleProviderIf in .h */
 }
 
-std::pair<std::shared_ptr<ProxyPool>, std::vector<McrouterRouteHandlePtr>>
+std::pair<std::shared_ptr<ClientPool>, std::vector<McrouterRouteHandlePtr>>
 McRouteHandleProvider::makePool(const folly::dynamic& json) {
   checkLogic(json.isString() || json.isObject(),
              "Pool should be a string (name of pool) or an object");
-  std::string poolName;
-  if (json.isString()) {
-    poolName = json.stringPiece().str();
-  } else { // object
-    auto jname = json.get_ptr("name");
-    checkLogic(jname, "Pool: 'name' not found or is not a string");
-    poolName = jname->stringPiece().str();
-  }
-  auto genPool = json.isString()
-    ? poolFactory_.fetchPool(poolName)
-    : poolFactory_.parsePool(poolName, json, folly::dynamic::object());
-  checkLogic(genPool != nullptr, "Can not parse pool {}", poolName);
-  auto pool = std::dynamic_pointer_cast<ProxyPool>(genPool);
-  assert(pool);
-
+  auto pool = poolFactory_.parsePool(json);
   auto seenIt = pools_.find(pool->getName());
   if (seenIt != pools_.end()) {
     return seenIt->second;
   }
 
   std::vector<McrouterRouteHandlePtr> destinations;
-  for (const auto& it : pool->clients) {
-    auto client = it.lock();
+  for (const auto& client : pool->getClients()) {
     auto pdstn = destinationMap_.fetch(*client);
-    auto route = makeDestinationRoute(std::move(client), std::move(pdstn));
+    auto route = makeDestinationRoute(client, std::move(pdstn));
     destinations.push_back(std::move(route));
   }
 
@@ -172,10 +158,10 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   }
 
   if (!proxy_->opts.asynclog_disable) {
-    bool needAsynclog = !pool->devnull_asynclog;
+    bool needAsynclog = true;
     if (json.isObject() && json.count("asynclog")) {
       checkLogic(json["asynclog"].isBool(), "PoolRoute: asynclog is not bool");
-      needAsynclog = json["asynclog"].asBool();
+      needAsynclog = json["asynclog"].getBool();
     }
     if (needAsynclog) {
       route = makeAsynclogRoute(std::move(route), pool->getName());

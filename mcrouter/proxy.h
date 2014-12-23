@@ -55,39 +55,20 @@ typedef class fb_timer_s fb_timer_t;
 
 namespace facebook { namespace memcache {
 
-class AsyncMcClient;
 class McReply;
-class WeightedCh3HashFunc;
 
 namespace mcrouter {
 // forward declaration
-class dynamic_stat_t;
 class mcrouter_t;
 class ProxyConfigIf;
 class ProxyClientCommon;
-class ProxyClientShared;
-class ProxyClientOwner;
 class ProxyDestination;
 class ProxyDestinationMap;
-class ProxyPool;
-class RateLimiter;
 class RuntimeVarsData;
-class ShardSplitter;
 
 typedef Observable<std::shared_ptr<const RuntimeVarsData>>
   ObservableRuntimeVars;
 
-
-/** server selection policy for each pool */
-enum proxy_hash_policy_t {
-  proxy_hash_crc32 = 0,
-  proxy_hash_ch2 = 1,
-  proxy_hash_ch3 = 2,
-  proxy_hash_latest = 3,
-  proxy_hash_const_shard = 4,
-  proxy_hash_wch3 = 5,
-  proxy_hash_unknown = 6,
-};
 
 enum reply_state_t {
   REPLY_STATE_NO_REPLY,
@@ -191,55 +172,6 @@ struct proxy_request_t {
   friend void proxy_request_decref(proxy_request_t* preq);
 };
 
-enum proxy_pool_failover_t {
-  FAILOVER_TKO,
-  FAILOVER_CONNECT_TIMEOUT,
-  FAILOVER_DATA_TIMEOUT,
-  FAILOVER_DATA_MISS,
-  FAILOVER_MAX            // Must be last
-};
-#define FAILOVER_NONE   FAILOVER_MAX
-
-enum proxy_pool_type_t {
-  REGULAR_POOL = 0,
-  REGIONAL_POOL,
-  MIGRATED_POOL,
-  NUM_POOL_TYPES
-};
-
-enum proxy_pool_failover_type_t {
-  /**
-   * Use region config failover policy.
-   */
-  POOL_FAILOVER_NO_OVERRIDE = 0,  // Must be 0 for memset to work!
-
-  /**
-   * Always failover for this failover type/op; ignore region config.
-   */
-  POOL_FAILOVER_ALWAYS,
-
-  /**
-   * Never failover for this failover type/op; ignore region config.
-   */
-  POOL_FAILOVER_NEVER,
-
-  POOL_FAILOVER_NUM_TYPES
-};
-
-struct proxy_pool_failover_policy_t {
-  proxy_pool_failover_type_t op[FAILOVER_MAX][mc_nops];
-
-  proxy_pool_failover_policy_t();
-};
-
-enum shadow_policy_t {
-  DEFAULT_SHADOW_POLICY = 0,
-  MEMCACHE_SHADOW_POLICY,
-  TAO_SHADOW_POLICY,
-  NUM_SHADOW_POLICIES // Must be the last entry
-};
-#define NO_SHADOW_POLICY NUM_SHADOW_POLICIES
-
 struct ShadowSettings {
   struct Data {
     size_t start_index{0};
@@ -264,106 +196,6 @@ struct ShadowSettings {
   AtomicSharedPtr<Data> data_;
   ObservableRuntimeVars::CallbackHandle handle_;
   void registerOnUpdateCallback(mcrouter_t* router);
-};
-
-class ProxyGenericPool {
- public:
-  virtual proxy_pool_type_t getType() const = 0;
-
-  std::string getName() const {
-    return name_;
-  }
-
-  explicit ProxyGenericPool(std::string name)
-  : name_(std::move(name)) {
-  }
-
-  virtual ~ProxyGenericPool() {
-  }
-
- private:
-  std::string name_;
-};
-
-class ProxyPool : public ProxyGenericPool {
- public:
-  std::vector<std::weak_ptr<ProxyClientCommon>> clients;
-  proxy_hash_policy_t hash;
-  mc_protocol_t protocol;
-  mc_transport_t transport;
-  int delete_time;
-  std::string hash_salt;
-  std::unique_ptr<WeightedCh3HashFunc> wch3_func;
-  std::unique_ptr<ShardSplitter> shardSplitter;
-  timeval_t timeout;
-  int keep_routing_prefix;
-  bool attach_default_routing_prefix{false};
-
-  /**
-   * If true, don't write failed requests to asynclog (regardless of
-   * global asynclog_disable setting).
-   */
-  bool devnull_asynclog;
-
-  /** List of pools to failover to for various scenarios */
-  std::vector<ProxyGenericPool*> failover[FAILOVER_MAX];
-  int failover_exptime;
-
-  /**
-   * If non-null, overrides proxy failover policy for this pool.
-   */
-  proxy_pool_failover_policy_t* pool_failover_policy;
-
-  /**
-   * If nonempty, describes how to shadow requests sent to this pool.
-   */
-  std::vector<std::pair<std::shared_ptr<ShadowSettings>,
-                        std::pair<shadow_policy_t, ProxyPool*>>>
-    shadowing_policies;
-
-  std::unique_ptr<RateLimiter> rate_limiter;
-
-  explicit ProxyPool(std::string name);
-
-  virtual ~ProxyPool();
-};
-
-class ProxyRegionalPool : public ProxyPool {
- public:
-  virtual proxy_pool_type_t getType() const {
-    return REGIONAL_POOL;
-  }
-
-  explicit ProxyRegionalPool(std::string name)
-      : ProxyPool(std::move(name)) {
-  }
-};
-
-class ProxyRegularPool : public ProxyPool {
- public:
-  virtual proxy_pool_type_t getType() const {
-    return REGULAR_POOL;
-  }
-
-  explicit ProxyRegularPool(std::string name)
-      : ProxyPool(std::move(name)) {
-  }
-};
-
-class ProxyMigratedPool : public ProxyGenericPool {
- public:
-  virtual proxy_pool_type_t getType() const {
-    return MIGRATED_POOL;
-  }
-
-  explicit ProxyMigratedPool(std::string name);
-
-  ProxyPool* from_pool;
-  ProxyPool* to_pool;
-  uint64_t migration_start_ts;
-  uint64_t migration_interval_sec;
-  bool warming_up;
-  uint32_t warmup_exptime;
 };
 
 struct proxy_t {
