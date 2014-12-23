@@ -121,7 +121,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     McrouterShadowData data;
     for (auto& shadow : json["shadows"]) {
       checkLogic(shadow.count("target"),
-                 "PoolRoute shadows: no target for shadow");
+                 "PoolRoute {} shadows: no target for shadow", pool->getName());
       auto policy = std::make_shared<ShadowSettings>(shadow, proxy_->router);
       data.emplace_back(factory.create(shadow["target"]), std::move(policy));
     }
@@ -132,17 +132,28 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     }
   }
 
-  McrouterRouteHandlePtr route;
-  if (json.isObject() && json.count("hash")) {
-    if (json["hash"].isString()) {
-      route = makeHash(folly::dynamic::object("hash_func", json["hash"]),
-                       std::move(destinations));
-    } else {
-      route = makeHash(json["hash"], std::move(destinations));
-    }
-  } else {
-    route = makeHash(folly::dynamic::object(), std::move(destinations));
+  // add weights and override whatever we have in PoolRoute::hash
+  folly::dynamic jhashWithWeights = folly::dynamic::object();
+  if (pool->getWeights()) {
+    jhashWithWeights = folly::dynamic::object
+      ("hash_func", WeightedCh3HashFunc::type())
+      ("weights", *pool->getWeights());
   }
+
+  if (json.isObject()) {
+    if (auto jhash = json.get_ptr("hash")) {
+      checkLogic(jhash->isObject() || jhash->isString(),
+                 "PoolRoute {}: hash is not object/string", pool->getName());
+      if (jhash->isString()) {
+        jhashWithWeights["hash_func"] = *jhash;
+      } else { // object
+        for (const auto& it : jhash->items()) {
+          jhashWithWeights[it.first] = it.second;
+        }
+      }
+    }
+  }
+  auto route = makeHash(jhashWithWeights, std::move(destinations));
 
   if (proxy_->opts.destination_rate_limiting) {
     if (json.isObject() &&

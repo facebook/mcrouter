@@ -275,6 +275,11 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     clients_.push_back(std::move(client));
   } // servers
 
+  // weights
+  if (auto jweights = json.get_ptr("weights")) {
+    clientPool->setWeights(*jweights);
+  }
+
   pools_.emplace(name, clientPool);
   return clientPool;
 }

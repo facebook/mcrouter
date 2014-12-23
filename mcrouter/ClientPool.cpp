@@ -8,10 +8,23 @@
  */
 #include "ClientPool.h"
 
+#include <folly/dynamic.h>
+#include <folly/Memory.h>
+
+#include "mcrouter/ProxyClientCommon.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ClientPool::ClientPool(std::string name)
   : name_(std::move(name)) {
+}
+
+void ClientPool::setWeights(folly::dynamic weights) {
+  weights_ = folly::make_unique<folly::dynamic>(std::move(weights));
+}
+
+folly::dynamic* ClientPool::getWeights() const  {
+  return weights_.get();
 }
 
 }}}  // facebook::memcache::mcrouter
