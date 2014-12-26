@@ -15,6 +15,7 @@
 #include <folly/json.h>
 #include <folly/Range.h>
 
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/debug.h"
 
 using std::string;
@@ -68,7 +69,7 @@ bool read_and_fill_from_standalone_flavor_file(
       return false;
     }
 
-    auto json = folly::parseJson(flavor_config_json);
+    auto json = parseJsonString(flavor_config_json);
     if (!parse_json_options(json, "standalone_options", standalone_opts)) {
       return false;
     }

@@ -3,12 +3,12 @@
     "macros": {
       "s": {
         "type": "macroDef",
-        "result": "string"
+        "result": "string",
       },
       "sParam": {
         "type": "macroDef",
         "params": [ "a" ],
-        "result": "%a%"
+        "result": "%a%",
       }
     },
     "cases": {
@@ -44,7 +44,7 @@
       },
       "range": {
         "orig": "@range( @int(-1), @int(5) )",
-        "expand": [ -1, 0, 1, 2, 3, 4, 5 ]
+        "expand": [ -1, 0, 1, 2, 3, 4, 5, ]
       },
       "booleans": {
         "orig": "@and(@not(@or(@bool(false),@bool(1))), @not(@bool(false)))",
@@ -591,8 +591,8 @@
       "notContainsList": {
         "orig": {
           "type": "contains",
-          "dictionary": [ 0, 1, 2, 3 ],
-          "key": 5
+          "dictionary": [ 0, 1, 2, 3, ],
+          "key": 5,
         },
         "expand": false
       },
@@ -607,8 +607,8 @@
       "notContainsObj": {
         "orig": {
           "type": "contains",
-          "dictionary": { "a": 1, "b": 2},
-          "key": "c"
+          "dictionary": { "a": 1, "b": 2, },
+          "key": "c",
         },
         "expand": false
       }

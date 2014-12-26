@@ -64,13 +64,13 @@ getRoute(const folly::dynamic& d) {
 }
 
 TEST(McRouteHandleProviderTest, sanity) {
-  auto rh = getRoute(folly::parseJson(kConstShard));
+  auto rh = getRoute(parseJsonString(kConstShard));
   EXPECT_TRUE(rh != nullptr);
   EXPECT_EQ(rh->routeName(), "hash:ConstShard");
 }
 
 TEST(McRouteHandleProviderTest, invalid_func) {
-  auto d = folly::parseJson(kConstShard);
+  auto d = parseJsonString(kConstShard);
   d["hash_func"] = "SomeNotExistingFunc";
   try {
     auto rh = getRoute(d);
@@ -81,13 +81,13 @@ TEST(McRouteHandleProviderTest, invalid_func) {
 }
 
 TEST(McRouteHandleProvider, warmup) {
-  auto rh = getRoute(folly::parseJson(kWarmUp));
+  auto rh = getRoute(parseJsonString(kWarmUp));
   EXPECT_TRUE(rh != nullptr);
   EXPECT_EQ(rh->routeName(), "warm-up");
 }
 
 TEST(McRouteHandleProvider, pool_route) {
-  auto rh = getRoute(folly::parseJson(kPoolRoute));
+  auto rh = getRoute(parseJsonString(kPoolRoute));
   EXPECT_TRUE(rh != nullptr);
   EXPECT_EQ(rh->routeName(), "asynclog:mock");
 }

@@ -20,6 +20,7 @@
 #include <openssl/md5.h>
 
 #include <folly/FileUtil.h>
+#include <folly/json.h>
 #include <folly/Random.h>
 #include <folly/ScopeGuard.h>
 #include <folly/SpookyHashV2.h>
@@ -162,6 +163,13 @@ std::string getThreadName() {
 #endif
 
   return "unknown";
+}
+
+folly::dynamic parseJsonString(folly::StringPiece s,
+                               bool allow_trailing_comma) {
+  folly::json::serialization_opts opts;
+  opts.allow_trailing_comma = allow_trailing_comma;
+  return folly::parseJson(s, opts);
 }
 
 }} // facebook::memcache

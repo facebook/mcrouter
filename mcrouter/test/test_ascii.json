@@ -41,7 +41,7 @@
       "servers": [
         "127.0.0.1:11510",
         "127.0.0.1:11511",
-        "127.0.0.1:11512"
+        "127.0.0.1:11512", // we can use trailing comma and comment
       ]
     },
     "B-bar": {
@@ -177,7 +177,7 @@
         {
           "type": "PoolRoute",
           "pool": "A-wildcard",
-          "hash": "Crc32"
+          "hash": "Crc32", /* we can use trailing comma and comment */
         },
         {
           "type": "PoolRoute",

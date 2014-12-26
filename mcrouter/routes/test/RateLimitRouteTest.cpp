@@ -38,7 +38,7 @@ void test(Data data, Operation,
   };
   auto normalRh = get_route_handles(normalHandle)[0];
 
-  auto json = folly::parseJson(
+  auto json = parseJsonString(
     (burst ?
      string("{\"") + type + "_rate\": 4.0, \"" + type + "_burst\": 3.0}" :
      string("{\"") + type + "_rate\": 2.0}"));

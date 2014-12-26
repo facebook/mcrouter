@@ -90,7 +90,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     std::string jsonStr;
     checkLogic(configApi_.get(ConfigType::Pool, name, jsonStr),
                "Can not read pool: {}", name);
-    return parsePool(name, folly::parseJson(jsonStr));
+    return parsePool(name, parseJsonString(jsonStr));
   } else {
     // one day we may add inheriting from local pool
     if (auto jinherit = json.get_ptr("inherit")) {
@@ -100,7 +100,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       std::string jsonStr;
       checkLogic(configApi_.get(ConfigType::Pool, path, jsonStr),
                  "Can not read pool from: {}", path);
-      auto newJson = folly::parseJson(jsonStr);
+      auto newJson = parseJsonString(jsonStr);
       for (auto& it : json.items()) {
         newJson.insert(it.first, it.second);
       }

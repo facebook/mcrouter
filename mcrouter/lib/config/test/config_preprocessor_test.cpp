@@ -18,9 +18,11 @@
 
 #include "mcrouter/lib/config/ConfigPreprocessor.h"
 #include "mcrouter/lib/config/ImportResolverIf.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 
 using facebook::memcache::ConfigPreprocessor;
 using facebook::memcache::ImportResolverIf;
+using facebook::memcache::parseJsonString;
 
 const std::string kTestFile =
   "mcrouter/lib/config/test/config_preprocessor_test_file.json";
@@ -98,7 +100,7 @@ TEST(ConfigPreprocessorTest, macros) {
     FAIL() << "can not read test file " << kTestFile;
   }
 
-  auto json = folly::parseJson(jsonStr);
+  auto json = parseJsonString(jsonStr);
 
   for (auto& test : json.items()) {
     auto testName = test.first.asString().toStdString();
@@ -116,7 +118,7 @@ TEST(ConfigPreprocessorTest, errors) {
     FAIL() << "can not read test file " << kTestFileErrors;
   }
 
-  auto json = folly::parseJson(jsonStr);
+  auto json = parseJsonString(jsonStr);
 
   for (auto testCase : json.items()) {
     LOG(INFO) << "Case: " << testCase.first.asString();

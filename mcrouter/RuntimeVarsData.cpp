@@ -8,12 +8,12 @@
  */
 #include "RuntimeVarsData.h"
 
-#include <folly/json.h>
+#include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 RuntimeVarsData::RuntimeVarsData(folly::StringPiece json) {
-  auto data = folly::parseJson(json);
+  auto data = parseJsonString(json);
   for (const auto& jiter: data.items()) {
     auto& key = jiter.first;
     auto& value = jiter.second;

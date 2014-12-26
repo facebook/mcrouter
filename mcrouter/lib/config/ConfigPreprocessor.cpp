@@ -303,7 +303,7 @@ class ConfigPreprocessor::BuiltIns {
     try {
       auto jsonC = importResolver.import(path);
       // result may contain comments, macros, etc.
-      result = p->expandMacros(folly::parseJson(stripComments(jsonC)),
+      result = p->expandMacros(parseJsonString(stripComments(jsonC)),
                                ConfigPreprocessor::emptyContext_);
     } catch (const std::exception& e) {
       throw std::logic_error("Import '" + path + "':\n" + e.what());
@@ -1274,7 +1274,7 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
     std::unordered_map<string, dynamic> globalParams,
     size_t nestedLimit) {
 
-  auto config = folly::parseJson(stripComments(jsonC));
+  auto config = parseJsonString(stripComments(jsonC));
   checkLogic(config.isObject(), "config is not an object");
 
   ConfigPreprocessor prep(importResolver, std::move(globalParams), nestedLimit);

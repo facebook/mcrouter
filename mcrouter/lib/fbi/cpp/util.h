@@ -18,6 +18,10 @@
 
 #include "mcrouter/lib/fbi/nstring.h"
 
+namespace folly {
+class dynamic;
+}
+
 namespace facebook { namespace memcache {
 
 /**
@@ -206,6 +210,12 @@ randomInt64(RNG& rng) {
  * @return name of current thread
  */
 std::string getThreadName();
+
+/**
+ * Parse json string with `allow_trailing_comma` enabled by default
+ */
+folly::dynamic parseJsonString(folly::StringPiece s,
+                               bool allow_trailing_comma = true);
 
 }}  // facebook::memcache
 
