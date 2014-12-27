@@ -14,11 +14,14 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/ProxyClientCommon.h"
+#include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-RecordingContext::RecordingContext(OnRecordCallback callback)
-    : callback_(std::move(callback)) {
+RecordingContext::RecordingContext(ClientCallback clientCallback,
+                                   ShardSplitCallback shardSplitCallback)
+    : clientCallback_(std::move(clientCallback)),
+      shardSplitCallback_(std::move(shardSplitCallback)) {
 }
 
 RecordingContext::~RecordingContext() {
@@ -27,9 +30,15 @@ RecordingContext::~RecordingContext() {
   }
 }
 
+void RecordingContext::recordShardSplitter(const ShardSplitter& splitter) {
+  if (shardSplitCallback_) {
+    shardSplitCallback_(splitter);
+  }
+}
+
 void RecordingContext::recordDestination(const ProxyClientCommon& destination) {
-  if (callback_) {
-    callback_(destination);
+  if (clientCallback_) {
+    clientCallback_(destination);
   }
 }
 

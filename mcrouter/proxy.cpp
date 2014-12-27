@@ -173,9 +173,11 @@ std::shared_ptr<ProxyConfigIf> proxy_t::swapConfig(
 
 void proxy_t::foreachPossibleClient(
     const std::string& key,
-    std::function<void(const ProxyClientCommon&)> callback) const {
+    std::function<void(const ProxyClientCommon&)> clientCallback,
+    std::function<void(const ShardSplitter&)> spCallback) const {
 
-  auto ctx = std::make_shared<RecordingContext>(std::move(callback));
+  auto ctx = std::make_shared<RecordingContext>(std::move(clientCallback),
+                                                std::move(spCallback));
   RecordingMcRequest req(ctx, key);
 
   auto config = getConfig();

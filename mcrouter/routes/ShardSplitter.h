@@ -30,6 +30,10 @@ class ShardSplitter {
    */
   size_t getShardSplitCnt(folly::StringPiece key,
                           folly::StringPiece& shardId) const;
+
+  const StringKeyedUnorderedMap<size_t>& getShardSplits() const {
+    return shardSplits_;
+  }
  private:
   StringKeyedUnorderedMap<size_t> shardSplits_;
 };

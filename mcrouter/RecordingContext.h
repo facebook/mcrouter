@@ -24,6 +24,7 @@ class McReply;
 namespace mcrouter {
 
 class ProxyClientCommon;
+class ShardSplitter;
 
 /**
  * With this context, the requests are not actually sent out
@@ -31,22 +32,26 @@ class ProxyClientCommon;
  */
 class RecordingContext {
  public:
-  typedef std::function<void(const ProxyClientCommon&)> OnRecordCallback;
+  typedef std::function<void(const ProxyClientCommon&)> ClientCallback;
+  typedef std::function<void(const ShardSplitter&)> ShardSplitCallback;
 
-  explicit RecordingContext(OnRecordCallback callback);
+  explicit RecordingContext(ClientCallback clientCallback,
+                            ShardSplitCallback shardSplitCallback = nullptr);
 
   ~RecordingContext();
+
+  void recordShardSplitter(const ShardSplitter& shardSplitter);
 
   void recordDestination(const ProxyClientCommon& destination);
 
   /**
-   * Waits until all owners (i.e. requests) of ctx expire on other
-   * fibers and returns the resulting vector of recorded destinations.
+   * Waits until all owners (i.e. requests) of ctx expire on other fibers
    */
   static void waitForRecorded(std::shared_ptr<RecordingContext>&& ctx);
 
  private:
-  OnRecordCallback callback_;
+  ClientCallback clientCallback_;
+  ShardSplitCallback shardSplitCallback_;
   folly::Optional<FiberPromise<void>> promise_;
 };
 

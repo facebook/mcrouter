@@ -65,6 +65,7 @@ class ProxyClientCommon;
 class ProxyDestination;
 class ProxyDestinationMap;
 class RuntimeVarsData;
+class ShardSplitter;
 
 typedef Observable<std::shared_ptr<const RuntimeVarsData>>
   ObservableRuntimeVars;
@@ -291,7 +292,8 @@ struct proxy_t {
    */
   void foreachPossibleClient(
     const std::string& key,
-    std::function<void(const ProxyClientCommon&)> callback) const;
+    std::function<void(const ProxyClientCommon&)> clientCallback,
+    std::function<void(const ShardSplitter&)> spCallback = nullptr) const;
 
   /**
    * If no event base was provided on construction, this must be called

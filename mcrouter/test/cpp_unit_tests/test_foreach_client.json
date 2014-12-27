@@ -1,0 +1,25 @@
+{
+  "pools": {
+    "A": { "servers": [ "localhost:12345" ] },
+    "B": { "servers": [ "localhost:12346" ] }
+  },
+  "route": {
+    "type": "PrefixSelectorRoute",
+    "policies": {
+      "a": {
+        "type": "PoolRoute",
+        "pool": "A",
+        "shard_splits": { "1": 3 }
+      },
+      "b": {
+        "type": "FailoverWithExptimeRoute",
+        "normal": {
+          "type": "PoolRoute",
+          "pool": "B",
+          "shard_splits": { "2": 10 }
+        },
+        "failover": "PoolRoute|A"
+      }
+    }
+  }
+}

@@ -25,9 +25,13 @@
 #include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/options.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/router.h"
+#include "mcrouter/routes/ShardSplitter.h"
 
 using namespace boost::filesystem;
 using namespace facebook::memcache::mcrouter;
@@ -297,4 +301,35 @@ TEST(mcrouter, already_replied_failed_delete) {
 
   auto s = mismatch(suffix.rbegin(), suffix.rend(), contents.rbegin());
   EXPECT_TRUE(s.first == suffix.rend());
+}
+
+TEST(mcrouter, foreach_client) {
+  auto opts = defaultTestOptions();
+  opts.config_file = "mcrouter/test/cpp_unit_tests/test_foreach_client.json";
+  auto mcrouter = mcrouter_new(opts);
+  auto proxy = mcrouter->getProxy(0);
+  proxy->foreachPossibleClient("a",
+    [](const ProxyClientCommon& client) {
+      EXPECT_EQ(client.ap.toHostPortString(), "localhost:12345");
+    },
+    [](const ShardSplitter& splitter) {
+      EXPECT_EQ(splitter.getShardSplits().find("1")->second, 3);
+    });
+
+  size_t clientId = 0;
+  proxy->foreachPossibleClient("b",
+    [&clientId](const ProxyClientCommon& client) {
+      if (clientId == 0) {
+        EXPECT_EQ(client.ap.toHostPortString(), "localhost:12346");
+      } else {
+        EXPECT_EQ(client.ap.toHostPortString(), "localhost:12345");
+      }
+      ++clientId;
+    },
+    [](const ShardSplitter& splitter) {
+      EXPECT_EQ(splitter.getShardSplits().find("2")->second, 10);
+    });
+  EXPECT_EQ(clientId, 2);
+
+  mcrouter_free(mcrouter);
 }
