@@ -22,3 +22,4 @@
 #include "mcrouter/lib/routes/LatestRoute.h"
 #include "mcrouter/lib/routes/MissFailoverRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/lib/routes/RandomRoute.h"

@@ -91,4 +91,11 @@ TEST(RouteHandleFactoryTest, sanity) {
     auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
+
+  rh = factory.create("RandomRoute|ErrorRoute");
+  EXPECT_TRUE(rh != nullptr);
+  fm.run([&rh]() {
+    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    EXPECT_TRUE(reply.isError());
+  });
 }

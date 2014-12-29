@@ -8,6 +8,7 @@ mcrouter_lib_test_SOURCES = \
   Main.cpp \
   MigrateRouteTest.cpp \
   MissFailoverRouteTest.cpp \
+  RandomRouteTest.cpp \
   RequestReplyTest.cpp \
   RouteHandleTest.cpp \
   WarmUpRouteTest.cpp \

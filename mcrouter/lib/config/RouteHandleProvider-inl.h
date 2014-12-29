@@ -59,6 +59,9 @@ template <class RouteHandleIf>
 class NullRoute;
 
 template <class RouteHandleIf>
+class RandomRoute;
+
+template <class RouteHandleIf>
 std::vector<std::shared_ptr<RouteHandleIf>>
 RouteHandleProvider<RouteHandleIf>::create(
     RouteHandleFactory<RouteHandleIf>& factory,
@@ -106,6 +109,8 @@ RouteHandleProvider<RouteHandleIf>::create(
     return { makeRouteHandle<RouteHandleIf, MissFailoverRoute>(factory, json) };
   } else if (type == "NullRoute") {
     return { makeRouteHandle<RouteHandleIf, NullRoute>() };
+  } else if (type == "RandomRoute") {
+    return { makeRouteHandle<RouteHandleIf, RandomRoute>(factory, json) };
   }
 
   return {};

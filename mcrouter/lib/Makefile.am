@@ -184,6 +184,7 @@ libmcrouter_a_SOURCES = \
   routes/MigrateRoute.h \
   routes/MissFailoverRoute.h \
   routes/NullRoute.h \
+  routes/RandomRoute.h \
   routes/WarmUpRoute.h
 
 libmcrouter_a_CPPFLAGS = -I$(top_srcdir)/oss_include
