@@ -23,7 +23,7 @@ inline void AsyncMcClient::closeNow() {
 
 inline void AsyncMcClient::setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const TransportException&)> onDown) {
+    std::function<void(const folly::AsyncSocketException&)> onDown) {
   base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
 }
 

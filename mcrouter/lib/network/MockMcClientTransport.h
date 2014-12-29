@@ -11,7 +11,7 @@
 #include <queue>
 
 #include <folly/io/async/EventBase.h>
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
+#include <folly/io/async/AsyncTransport.h>
 
 namespace facebook { namespace memcache {
 
@@ -20,10 +20,10 @@ namespace facebook { namespace memcache {
  * interface to send data back (e.g. loopback comunication of caller with
  * itself).
  */
-class MockMcClientTransport : public apache::thrift::async::TAsyncTransport,
+class MockMcClientTransport : public folly::AsyncTransportWrapper,
                               private folly::EventBase::LoopCallback {
  public:
-  using WriteFlags = apache::thrift::async::WriteFlags;
+  using WriteFlags = folly::WriteFlags;
 
   explicit MockMcClientTransport(folly::EventBase& eventBase);
 
@@ -33,7 +33,7 @@ class MockMcClientTransport : public apache::thrift::async::TAsyncTransport,
   void fakeDataRead(const char* buf, size_t bytes);
   void fakeDataRead(const uint8_t* buf, size_t bytes);
 
-  // apache::thrift::async::TAsyncTransport overrides
+  // folly::AsyncTransportWrapper overrides
 
   void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override;
   ReadCallback* getReadCallback() const override;

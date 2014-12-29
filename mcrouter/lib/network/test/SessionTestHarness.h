@@ -12,7 +12,7 @@
 
 #include <folly/io/async/EventBase.h>
 #include <folly/Range.h>
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
+#include <folly/io/async/AsyncTransport.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
@@ -118,7 +118,7 @@ class SessionTestHarness {
   McServerSession& session_;
   std::deque<std::string> savedInputs_;
   std::vector<std::string> output_;
-  apache::thrift::async::TAsyncTransport::ReadCallback* read_;
+  folly::AsyncTransportWrapper::ReadCallback* read_;
 
   /* Paused state. -1 means reply to everything; >= 0 means
      reply only to that many requests */
@@ -143,11 +143,11 @@ class SessionTestHarness {
   }
 
   void setReadCallback(
-      apache::thrift::async::TAsyncTransport::ReadCallback* read) {
+      folly::AsyncTransportWrapper::ReadCallback* read) {
     read_ = read;
   }
 
-  apache::thrift::async::TAsyncTransport::ReadCallback* getReadCallback() {
+  folly::AsyncTransportWrapper::ReadCallback* getReadCallback() {
     return read_;
   }
 

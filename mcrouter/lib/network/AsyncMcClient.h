@@ -27,7 +27,6 @@ class AsyncMcClientImpl;
  */
 class AsyncMcClient {
  public:
-  using TransportException = apache::thrift::transport::TTransportException;
 
   AsyncMcClient(folly::EventBase& eventBase,
                 ConnectionOptions options);
@@ -53,7 +52,7 @@ class AsyncMcClient {
    */
   void setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const TransportException&)> onDown);
+    std::function<void(const folly::AsyncSocketException&)> onDown);
 
   /**
    * Send request synchronously (i.e. blocking call).

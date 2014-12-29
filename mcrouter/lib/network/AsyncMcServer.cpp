@@ -16,16 +16,14 @@
 #include <thread>
 
 #include <folly/io/async/EventBase.h>
+#include <folly/io/async/SSLContext.h>
 #include <folly/Memory.h>
-#include <thrift/lib/cpp/async/TAsyncServerSocket.h>
-#include <thrift/lib/cpp/transport/TSSLSocket.h>
+#include <folly/io/async/AsyncServerSocket.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook { namespace memcache {
-
-using apache::thrift::transport::SSLContext;
 
 namespace {
 /* Global pointer to the server for signal handlers */
@@ -154,20 +152,20 @@ class McServerThread {
 
  private:
   class AcceptCallback :
-      public apache::thrift::async::TAsyncServerSocket::AcceptCallback {
+      public folly::AsyncServerSocket::AcceptCallback {
    public:
     AcceptCallback(McServerThread* mcServerThread, bool secure)
         : mcServerThread_(mcServerThread), secure_(secure) { }
     void connectionAccepted(
         int fd,
-        const apache::thrift::transport::TSocketAddress& clientAddr) noexcept {
+        const folly::SocketAddress& clientAddr) noexcept {
       if (secure_) {
         auto& opts = mcServerThread_->server_.opts_;
         auto sslCtx = getSSLContext(opts.pemCertPath, opts.pemKeyPath,
                                     opts.pemCaPath);
         if (sslCtx) {
           sslCtx->setVerificationOption(
-              SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
+            folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
           mcServerThread_->worker_.addSecureClientSocket(fd, std::move(sslCtx));
         } else {
           ::close(fd);
@@ -199,8 +197,8 @@ class McServerThread {
   bool acceptorSetup_{false};
   std::exception_ptr spawnException_;
 
-  apache::thrift::async::TAsyncServerSocket::UniquePtr socket_;
-  apache::thrift::async::TAsyncServerSocket::UniquePtr sslSocket_;
+  folly::AsyncServerSocket::UniquePtr socket_;
+  folly::AsyncServerSocket::UniquePtr sslSocket_;
   std::unique_ptr<ShutdownPipe> shutdownPipe_;
 
   void startAccepting() {
@@ -219,10 +217,10 @@ class McServerThread {
             "All of pemCertPath, pemKeyPath and pemCaPath are required "
             "if at least one of them set");
 
-          sslSocket_.reset(new apache::thrift::async::TAsyncServerSocket());
+          sslSocket_.reset(new folly::AsyncServerSocket());
           sslSocket_->useExistingSocket(opts.existingSocketFd);
         } else {
-          socket_.reset(new apache::thrift::async::TAsyncServerSocket());
+          socket_.reset(new folly::AsyncServerSocket());
           socket_->useExistingSocket(opts.existingSocketFd);
         }
       } else {
@@ -230,7 +228,7 @@ class McServerThread {
                    !server_.opts_.sslPorts.empty(),
                    "At least one port (plain or SSL) must be speicified");
         if (!server_.opts_.ports.empty()) {
-          socket_.reset(new apache::thrift::async::TAsyncServerSocket());
+          socket_.reset(new folly::AsyncServerSocket());
           for (auto port : server_.opts_.ports) {
             socket_->bind(port);
           }
@@ -242,7 +240,7 @@ class McServerThread {
                      "All of pemCertPath, pemKeyPath, pemCaPath required"
                      " with sslPorts");
 
-          sslSocket_.reset(new apache::thrift::async::TAsyncServerSocket());
+          sslSocket_.reset(new folly::AsyncServerSocket());
           for (auto sslPort : server_.opts_.sslPorts) {
             sslSocket_->bind(sslPort);
           }

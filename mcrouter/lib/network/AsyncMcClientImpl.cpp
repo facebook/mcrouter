@@ -10,7 +10,7 @@
 
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
-#include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
+#include <folly/io/async/AsyncSSLSocket.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/McReply.h"
@@ -117,7 +117,7 @@ void AsyncMcClientImpl::closeNow() {
 
 void AsyncMcClientImpl::setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const TransportException&)> onDown) {
+    std::function<void(const folly::AsyncSocketException&)> onDown) {
   DestructorGuard dg(this);
 
   statusCallbacks_ = ConnectionStatusCallbacks {
@@ -229,8 +229,8 @@ void AsyncMcClientImpl::pushMessages() {
 
     socket_->writev(this, req.reqContext.getIovs(),
       req.reqContext.getIovsCount(),
-      numToSend == 1 ? apache::thrift::async::WriteFlags::NONE
-                     : apache::thrift::async::WriteFlags::CORK);
+      numToSend == 1 ? folly::WriteFlags::NONE
+                     : folly::WriteFlags::CORK);
     --numToSend;
   }
   writeScheduled_ = false;
@@ -266,12 +266,12 @@ T round_up(std::chrono::duration<Rep, Period> d) {
 }
 
 void createTCPKeepAliveOptions(
-    apache::thrift::async::TAsyncSocket::OptionMap& options,
+    folly::AsyncSocket::OptionMap& options,
     int cnt, int idle, int interval) {
   // 0 means KeepAlive is disabled.
   if (cnt != 0) {
 #ifdef SO_KEEPALIVE
-    apache::thrift::async::TAsyncSocket::OptionMap::key_type key;
+    folly::AsyncSocket::OptionMap::key_type key;
     key.level = SOL_SOCKET;
     key.optname = SO_KEEPALIVE;
     options[key] = 1;
@@ -297,11 +297,11 @@ void createTCPKeepAliveOptions(
   }
 }
 
-const apache::thrift::async::TAsyncSocket::OptionKey getQoSOptionKey(
+const folly::AsyncSocket::OptionKey getQoSOptionKey(
     sa_family_t addressFamily) {
-  static const apache::thrift::async::TAsyncSocket::OptionKey kIpv4OptKey =
+  static const folly::AsyncSocket::OptionKey kIpv4OptKey =
     {IPPROTO_IP, IP_TOS};
-  static const apache::thrift::async::TAsyncSocket::OptionKey kIpv6OptKey =
+  static const folly::AsyncSocket::OptionKey kIpv6OptKey =
     {IPPROTO_IPV6, IPV6_TCLASS};
   return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
 }
@@ -325,7 +325,7 @@ uint64_t getQoSClass(int qosLevel) {
 }
 
 void createQoSClassOption(
-    apache::thrift::async::TAsyncSocket::OptionMap& options,
+    folly::AsyncSocket::OptionMap& options,
     const sa_family_t addressFamily, uint64_t qos) {
   const auto& optkey = getQoSOptionKey(addressFamily);
   options[optkey] = getQoSClass(qos);
@@ -351,10 +351,10 @@ void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
   }
 }
 
-apache::thrift::async::TAsyncSocket::OptionMap createSocketOptions(
+folly::AsyncSocket::OptionMap createSocketOptions(
     const folly::SocketAddress& address,
     const ConnectionOptions& connectionOptions) {
-  apache::thrift::async::TAsyncSocket::OptionMap options;
+  folly::AsyncSocket::OptionMap options;
 
   createTCPKeepAliveOptions(options,
     connectionOptions.tcpKeepAliveCount, connectionOptions.tcpKeepAliveIdle,
@@ -439,16 +439,17 @@ void AsyncMcClientImpl::attemptConnection() {
         "SSLContext provider returned nullptr, check SSL certificates. Any "
         "further request to {} will fail.",
         connectionOptions_.accessPoint.toHostPortString());
-      connectError(TransportException(TransportException::SSL_ERROR));
+      connectErr(folly::AsyncSocketException(
+                   folly::AsyncSocketException::SSL_ERROR, ""));
       return;
     }
-    socket_.reset(new apache::thrift::async::TAsyncSSLSocket(
+    socket_.reset(new folly::AsyncSSLSocket(
       sslContext, &eventBase_));
   } else {
-    socket_.reset(new apache::thrift::async::TAsyncSocket(&eventBase_));
+    socket_.reset(new folly::AsyncSocket(&eventBase_));
   }
 
-  auto& socket = dynamic_cast<apache::thrift::async::TAsyncSocket&>(*socket_);
+  auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
 
   auto address = folly::SocketAddress(
     connectionOptions_.accessPoint.getHost().str(),
@@ -485,16 +486,17 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   parser_ = folly::make_unique<McParser>(
     static_cast<McParser::ClientParseCallback*>(this), 0,
     kReadBufferSizeMin, kReadBufferSizeMax);
-  socket_->setReadCallback(this);
+  socket_->setReadCB(this);
 }
 
-void AsyncMcClientImpl::connectError(const TransportException& ex) noexcept {
+void AsyncMcClientImpl::connectErr(
+    const folly::AsyncSocketException& ex) noexcept {
   assert(connectionState_ == ConnectionState::CONNECTING);
   DestructorGuard dg(this);
 
   mc_res_t error;
 
-  if (ex.getType() == TransportException::TIMED_OUT) {
+  if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
     error = mc_res_connect_timeout;
   } else if (isAborting_) {
     error = mc_res_aborted;
@@ -529,7 +531,7 @@ void AsyncMcClientImpl::processShutdown() {
       }
       connectionState_ = ConnectionState::ERROR;
       // We're already in ERROR state, no need to listen for reads.
-      socket_->setReadCallback(nullptr);
+      socket_->setReadCB(nullptr);
       // We can safely close connection, it will stop all writes.
       socket_->close();
 
@@ -551,7 +553,9 @@ void AsyncMcClientImpl::processShutdown() {
         // This is a last processShutdown() for this error and it is safe
         // to go DOWN.
         if (statusCallbacks_.onDown) {
-          statusCallbacks_.onDown(TransportException::INTERNAL_ERROR);
+          statusCallbacks_.onDown(
+            folly::AsyncSocketException(
+              folly::AsyncSocketException::INTERNAL_ERROR, ""));
         }
 
         connectionState_ = ConnectionState::DOWN;
@@ -589,7 +593,8 @@ void AsyncMcClientImpl::readEOF() noexcept {
   processShutdown();
 }
 
-void AsyncMcClientImpl::readError(const TransportException& ex) noexcept {
+void AsyncMcClientImpl::readErr(
+    const folly::AsyncSocketException& ex) noexcept {
   assert(connectionState_ == ConnectionState::UP);
   VLOG(1) << "Failed to read from socket with remote endpoint \""
           << connectionOptions_.accessPoint.toString()
@@ -609,8 +614,8 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
   }
 }
 
-void AsyncMcClientImpl::writeError(
-    size_t bytesWritten, const TransportException& ex) noexcept {
+void AsyncMcClientImpl::writeErr(
+    size_t bytesWritten, const folly::AsyncSocketException& ex) noexcept {
 
   assert(connectionState_ == ConnectionState::UP ||
          connectionState_ == ConnectionState::ERROR);

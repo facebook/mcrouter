@@ -91,7 +91,7 @@ class AsyncMcServer {
    * Spawn the required number of threads, and run the loop function in each
    * of them.
    *
-   * @throws apache::thrift::transport::TTransportException
+   * @throws folly::AsyncSocketException
    *   If bind or listen fails.
    */
   void spawn(LoopFn fn);

@@ -12,9 +12,8 @@
 #include <string>
 
 #include <folly/io/IOBufQueue.h>
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
-#include <thrift/lib/cpp/async/TDelayedDestruction.h>
-#include <thrift/lib/cpp/transport/TTransportException.h>
+#include <folly/io/async/AsyncTransport.h>
+#include <folly/io/async/DelayedDestruction.h>
 
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/fibers/Baton.h"
@@ -40,14 +39,13 @@ class OnEventBaseDestructionCallback;
  * This is an impl class, user should use AsyncMcClient.
  */
 class AsyncMcClientImpl :
-      public apache::thrift::async::TDelayedDestruction,
-      private apache::thrift::async::TAsyncSocket::ConnectCallback,
-      private apache::thrift::async::TAsyncTransport::ReadCallback,
-      private apache::thrift::async::TAsyncTransport::WriteCallback,
+      public folly::DelayedDestruction,
+      private folly::AsyncSocket::ConnectCallback,
+      private folly::AsyncTransportWrapper::ReadCallback,
+      private folly::AsyncTransportWrapper::WriteCallback,
       private McParser::ClientParseCallback {
 
  public:
-  using TransportException = apache::thrift::transport::TTransportException;
 
   static std::shared_ptr<AsyncMcClientImpl> create(folly::EventBase& eventBase,
                                                    ConnectionOptions options);
@@ -60,7 +58,7 @@ class AsyncMcClientImpl :
 
   void setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const TransportException&)> onDown);
+    std::function<void(const folly::AsyncSocketException&)> onDown);
 
   template <int Op>
   McReply sendSync(const McRequest& request, McOperation<Op>);
@@ -87,7 +85,7 @@ class AsyncMcClientImpl :
 
   struct ConnectionStatusCallbacks {
     std::function<void()> onUp;
-    std::function<void(const TransportException&)>
+    std::function<void(const folly::AsyncSocketException&)>
       onDown;
   };
 
@@ -228,7 +226,7 @@ class AsyncMcClientImpl :
   ConnectionState connectionState_{ConnectionState::DOWN};
   folly::IOBufQueue buffer_;
   ConnectionOptions connectionOptions_;
-  apache::thrift::async::TAsyncTransport::UniquePtr socket_;
+  folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
 
   bool outOfOrder_{false};
@@ -285,22 +283,22 @@ class AsyncMcClientImpl :
 
   // TAsyncSocket::ConnectCallback overrides
   void connectSuccess() noexcept override;
-  void connectError(const TransportException& ex) noexcept override;
+  void connectErr(const folly::AsyncSocketException& ex) noexcept override;
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
   void processShutdown();
 
-  // TAsyncTransport::ReadCallback overrides
+  // AsyncTransportWrapper::ReadCallback overrides
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
   void readDataAvailable(size_t len) noexcept override;
   void readEOF() noexcept override;
-  void readError(const TransportException& ex) noexcept override;
+  void readErr(const folly::AsyncSocketException& ex) noexcept override;
 
-  // TAsyncTransport::WriteCallback overrides
+  // AsyncTransportWrapper::WriteCallback overrides
   void writeSuccess() noexcept override;
-  void writeError(size_t bytesWritten,
-                  const TransportException& ex) noexcept override;
+  void writeErr(size_t bytesWritten,
+                const folly::AsyncSocketException& ex) noexcept override;
 
   // McParser::ClientParseCallback overrides
   void replyReady(McReply mcReply, mc_op_t operation, uint64_t reqid) override;

@@ -12,7 +12,7 @@
 #include <memory>
 #include <unordered_set>
 
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
+#include <folly/io/async/AsyncSocket.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
@@ -138,7 +138,7 @@ class AsyncMcServerWorker {
 
  private:
   void addClientSocket(
-      apache::thrift::async::TAsyncSocket::UniquePtr&& socket,
+      folly::AsyncSocket::UniquePtr&& socket,
       void* userCtxt);
 
   AsyncMcServerWorkerOptions opts_;

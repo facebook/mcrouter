@@ -9,7 +9,6 @@
 #include <gtest/gtest.h>
 
 #include <folly/io/async/EventBase.h>
-#include <thrift/lib/cpp/transport/TSSLSocket.h>
 
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
@@ -153,7 +152,7 @@ class TestServer {
         });
 
       return true;
-    } catch (const apache::thrift::transport::TTransportException& e) {
+    } catch (const folly::AsyncSocketException& e) {
       LOG(ERROR) << e.what();
       return false;
     }
@@ -180,7 +179,7 @@ class TestClient {
              mc_protocol_t protocol = mc_ascii_protocol,
              bool useSsl = false,
              std::function<
-               std::shared_ptr<apache::thrift::transport::SSLContext>()
+               std::shared_ptr<folly::SSLContext>()
              > contextProvider = nullptr,
              bool enableQoS = false,
              uint64_t qos = 0) {
@@ -200,7 +199,7 @@ class TestClient {
     }
     client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
     client_->setStatusCallbacks([] { LOG(INFO) << "Client UP."; },
-                                [] (const AsyncMcClient::TransportException&) {
+                                [] (const folly::AsyncSocketException&) {
                                   LOG(INFO) << "Client DOWN.";
                                 });
   }
@@ -613,7 +612,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
         [&up, &wasUp] {
           up = wasUp = true;
         },
-        [&up] (const AsyncMcClient::TransportException&) {
+        [&up] (const folly::AsyncSocketException&) {
           up = false;
         });
       client->send(req, McOperation<mc_op_get>(),

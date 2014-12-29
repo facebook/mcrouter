@@ -11,21 +11,21 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
-#include <thrift/lib/cpp/async/TAsyncSSLSocket.h>
-#include <thrift/lib/cpp/ssl/SSLUtils.h>
+#include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncSSLSocket.h>
+#include <folly/io/async/SSLContext.h>
 
 #include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook { namespace memcache {
 namespace {
-using apache::thrift::async::TAsyncSSLSocket;
+using folly::AsyncSSLSocket;
 
-class SimpleHandshakeCallback : public TAsyncSSLSocket::HandshakeCallback {
+class SimpleHandshakeCallback : public AsyncSSLSocket::HandshakeCB {
  public:
-  bool handshakeVerify(TAsyncSSLSocket* sock,
-                       bool preverifyOk,
-                       X509_STORE_CTX* ctx) noexcept override {
+  bool handshakeVer(AsyncSSLSocket* sock,
+                    bool preverifyOk,
+                    X509_STORE_CTX* ctx) noexcept override {
     if (!preverifyOk) {
       return false;
     }
@@ -48,17 +48,17 @@ class SimpleHandshakeCallback : public TAsyncSSLSocket::HandshakeCallback {
     auto cert = X509_STORE_CTX_get_current_cert(ctx);
     sockaddr_storage addrStorage;
     socklen_t addrLen = 0;
-    if (!apache::thrift::ssl::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
+    if (!folly::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
             ctx, &addrStorage, &addrLen)) {
       return false;
     }
-    return apache::thrift::ssl::OpenSSLUtils::validatePeerCertNames(
+    return folly::OpenSSLUtils::validatePeerCertNames(
         cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
   }
-  void handshakeSuccess(TAsyncSSLSocket *sock) noexcept override { }
-  void handshakeError(
-      TAsyncSSLSocket *sock,
-      const apache::thrift::transport::TTransportException& ex)
+  void handshakeSuc(AsyncSSLSocket *sock) noexcept override { }
+  void handshakeErr(
+      AsyncSSLSocket *sock,
+      const folly::AsyncSocketException& ex)
     noexcept override { }
 };
 SimpleHandshakeCallback simpleHandshakeCallback;
@@ -72,23 +72,23 @@ AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
 
 void AsyncMcServerWorker::addSecureClientSocket(
     int fd,
-    const std::shared_ptr<apache::thrift::transport::SSLContext>& context,
+    const std::shared_ptr<folly::SSLContext>& context,
     void* userCtxt) {
-  apache::thrift::async::TAsyncSSLSocket::UniquePtr sslSocket(
-      new apache::thrift::async::TAsyncSSLSocket(
+  folly::AsyncSSLSocket::UniquePtr sslSocket(
+      new folly::AsyncSSLSocket(
           context, &eventBase_, fd, /* server = */ true));
   sslSocket->sslAccept(&simpleHandshakeCallback, /* timeout = */ 0);
   addClientSocket(std::move(sslSocket), userCtxt);
 }
 
 void AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
-  auto socket = apache::thrift::async::TAsyncSocket::UniquePtr(
-      new apache::thrift::async::TAsyncSocket(&eventBase_, fd));
+  auto socket = folly::AsyncSocket::UniquePtr(
+      new folly::AsyncSocket(&eventBase_, fd));
   addClientSocket(std::move(socket), userCtxt);
 }
 
 void AsyncMcServerWorker::addClientSocket(
-    apache::thrift::async::TAsyncSocket::UniquePtr&& socket,
+    folly::AsyncSocket::UniquePtr&& socket,
     void* userCtxt) {
   if (!onRequest_) {
     throw std::logic_error("can't add a socket without onRequest callback");

@@ -9,8 +9,9 @@
 #pragma once
 
 #include <folly/IntrusiveList.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
-#include <thrift/lib/cpp/async/TAsyncTransport.h>
+#include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/McParser.h"
@@ -26,8 +27,8 @@ class McServerOnRequest;
  */
 class McServerSession :
       public folly::DelayedDestruction,
-      private apache::thrift::async::TAsyncTransport::ReadCallback,
-      private apache::thrift::async::TAsyncTransport::WriteCallback,
+      private folly::AsyncTransportWrapper::ReadCallback,
+      private folly::AsyncTransportWrapper::WriteCallback,
       private McParser::ServerParseCallback {
  private:
   folly::SafeIntrusiveListHook hook_;
@@ -59,7 +60,7 @@ class McServerSession :
    *                   this session.
    */
   static McServerSession& create(
-    apache::thrift::async::TAsyncTransport::UniquePtr transport,
+    folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     std::function<void(McServerSession&)> onWriteQuiescence,
     std::function<void(McServerSession&)> onTerminated,
@@ -99,7 +100,7 @@ class McServerSession :
   }
 
  private:
-  apache::thrift::async::TAsyncTransport::UniquePtr transport_;
+  folly::AsyncTransportWrapper::UniquePtr transport_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
   std::function<void(McServerSession&)> onTerminated_;
@@ -218,7 +219,7 @@ class McServerSession :
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
   void readDataAvailable(size_t len) noexcept override;
   void readEOF() noexcept override;
-  void readError(const apache::thrift::transport::TTransportException& ex)
+  void readErr(const folly::AsyncSocketException& ex)
     noexcept override;
 
   /* McParser's parseCallback */
@@ -243,15 +244,15 @@ class McServerSession :
 
   /* TAsyncTransport's writeCallback */
   void writeSuccess() noexcept override;
-  void writeError(size_t bytesWritten,
-                  const apache::thrift::transport::TTransportException& ex)
+  void writeErr(size_t bytesWritten,
+                const folly::AsyncSocketException& ex)
     noexcept override;
 
   void onTransactionStarted(bool isSubRequest);
   void onTransactionCompleted(bool isSubRequest);
 
   McServerSession(
-    apache::thrift::async::TAsyncTransport::UniquePtr transport,
+    folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     std::function<void(McServerSession&)> onWriteSuccess,
     std::function<void(McServerSession&)> onTerminated,

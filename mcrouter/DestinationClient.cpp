@@ -69,7 +69,7 @@ void DestinationClient::initializeAsyncMcClient() {
     [&pdstn] () mutable {
       pdstn.on_up();
     },
-    [&pdstn] (const apache::thrift::transport::TTransportException&) mutable {
+    [&pdstn] (const folly::AsyncSocketException&) mutable {
       pdstn.on_down();
     });
 

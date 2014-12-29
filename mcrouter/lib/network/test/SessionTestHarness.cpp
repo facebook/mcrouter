@@ -8,15 +8,15 @@
  */
 #include "SessionTestHarness.h"
 
-#include <thrift/lib/cpp/transport/TSocketAddress.h>
+#include <folly/SocketAddress.h>
 
 #include "mcrouter/lib/network/McServerSession.h"
 
-using apache::thrift::async::WriteFlags;
+using folly::WriteFlags;
 
 namespace facebook { namespace memcache {
 
-class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
+class MockAsyncSocket : public folly::AsyncTransportWrapper {
  public:
   explicit MockAsyncSocket(SessionTestHarness& harness)
       : harness_(harness) {
@@ -24,9 +24,7 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
 
   // Methods inherited from TAsyncTransport
   void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override {
-    harness_.setReadCallback(
-      dynamic_cast<apache::thrift::async::TAsyncTransport::ReadCallback*>(
-        callback));
+    harness_.setReadCallback(callback);
   }
 
   ReadCallback* getReadCallback() const override {
@@ -82,10 +80,8 @@ class MockAsyncSocket : public apache::thrift::async::TAsyncTransport {
 
   bool isDetachable() const override { return false; }
 
-  void getLocalAddress(
-    apache::thrift::transport::TSocketAddress* address) const override {}
-  void getPeerAddress(
-    apache::thrift::transport::TSocketAddress* address) const override {}
+  void getLocalAddress(folly::SocketAddress* address) const override {}
+  void getPeerAddress(folly::SocketAddress* address) const override {}
 
   bool isEorTrackingEnabled() const override { return false; }
 
@@ -121,7 +117,7 @@ SessionTestHarness::SessionTestHarness(
     std::function<void(McServerSession&)> onWriteQuiescence,
     std::function<void(McServerSession&)> onTerminate)
     : session_(McServerSession::create(
-          apache::thrift::async::TAsyncTransport::UniquePtr(
+          folly::AsyncTransportWrapper::UniquePtr(
               new MockAsyncSocket(*this)),
           std::make_shared<McServerOnRequestWrapper<OnRequest>>(
               OnRequest(*this)),

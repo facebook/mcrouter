@@ -39,7 +39,7 @@ bool isPartOfMultiget(mc_protocol_t protocol, mc_op_t operation) {
 }  // namespace
 
 McServerSession& McServerSession::create(
-  apache::thrift::async::TAsyncTransport::UniquePtr transport,
+  folly::AsyncTransportWrapper::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
   std::function<void(McServerSession&)> onWriteQuiescence,
   std::function<void(McServerSession&)> onTerminated,
@@ -61,7 +61,7 @@ McServerSession& McServerSession::create(
 }
 
 McServerSession::McServerSession(
-  apache::thrift::async::TAsyncTransport::UniquePtr transport,
+  folly::AsyncTransportWrapper::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
   std::function<void(McServerSession&)> onWriteQuiescence,
   std::function<void(McServerSession&)> onTerminated,
@@ -81,13 +81,13 @@ McServerSession::McServerSession(
               options_.maxBufferSize),
       sendWritesCallback_(*this) {
 
-  transport_->setReadCallback(this);
+  transport_->setReadCB(this);
 }
 
 void McServerSession::pause(PauseReason reason) {
   pauseState_ |= static_cast<uint64_t>(reason);
 
-  transport_->setReadCallback(nullptr);
+  transport_->setReadCB(nullptr);
 }
 
 void McServerSession::resume(PauseReason reason) {
@@ -98,7 +98,7 @@ void McServerSession::resume(PauseReason reason) {
   if (!pauseState_ &&
       state_ == STREAMING &&
       transport_->good()) {
-    transport_->setReadCallback(this);
+    transport_->setReadCB(this);
   }
 }
 
@@ -122,7 +122,7 @@ void McServerSession::checkClosed() {
 
     if (state_ == CLOSING) {
       /* prevent readEOF() from being called */
-      transport_->setReadCallback(nullptr);
+      transport_->setReadCB(nullptr);
       transport_.reset();
       if (onTerminated_) {
         onTerminated_(*this);
@@ -211,8 +211,7 @@ void McServerSession::readEOF() noexcept {
   close();
 }
 
-void McServerSession::readError(
-  const apache::thrift::transport::TTransportException& ex) noexcept {
+void McServerSession::readErr(const folly::AsyncSocketException& ex) noexcept {
   DestructorGuard dg(this);
 
   close();
@@ -395,9 +394,9 @@ void McServerSession::writeSuccess() noexcept {
   }
 }
 
-void McServerSession::writeError(
+void McServerSession::writeErr(
   size_t bytesWritten,
-  const apache::thrift::transport::TTransportException& ex) noexcept {
+  const folly::AsyncSocketException& ex) noexcept {
 
   DestructorGuard dg(this);
   completeWrite();

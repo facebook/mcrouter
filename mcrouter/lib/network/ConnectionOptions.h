@@ -10,7 +10,7 @@
 
 #include <chrono>
 
-#include <thrift/lib/cpp/async/TAsyncSocket.h>
+#include <folly/io/async/AsyncSocket.h>
 
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
@@ -25,7 +25,7 @@ namespace facebook { namespace memcache {
  * A struct for storing all connection related options.
  */
 struct ConnectionOptions {
-  typedef apache::thrift::async::TAsyncSocket::OptionMap SocketOptions;
+  typedef folly::AsyncSocket::OptionMap SocketOptions;
 
   ConnectionOptions(folly::StringPiece host_,
                     uint16_t port_,

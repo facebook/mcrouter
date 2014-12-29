@@ -10,8 +10,6 @@
 
 #include <signal.h>
 
-#include <thrift/lib/cpp/transport/TTransportException.h>
-
 #include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
