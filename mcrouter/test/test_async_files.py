@@ -10,6 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import hashlib
 import json
 import os
 import shutil
@@ -91,3 +92,37 @@ class TestAsyncFiles(McrouterTestCase):
         self.assertGreater(os.path.getmtime(file_stat), now)
         self.assertGreater(os.path.getmtime(file_startup_options), now)
         self.assertGreater(os.path.getmtime(file_config_sources), now)
+
+    def test_async_log_config_sources(self):
+        # create a copy of the config file to use.
+        config_file = os.path.join(self.stats_dir, 'mcrouter_config.json')
+        shutil.copy2(self.config, config_file)
+
+        mcrouter = self.add_mcrouter(config_file, extra_args=self.extra_args +
+            ['--stats-root', self.stats_dir])
+        self.assertIsNone(mcrouter.delete('key'))
+
+        # wait for files
+        time.sleep(1)
+
+        # check config_sources file exists
+        stat_prefix = 'libmcrouter.mcrouter.0.'
+        file_config_sources = \
+            os.path.join(self.stats_dir, stat_prefix + 'config_sources_info')
+        self.assertTrue(os.path.exists(file_config_sources),
+                        "{} doesn't exist".format(file_config_sources))
+
+        def gen_checksum(path):
+            return hashlib.md5(open(path, 'rb').read()).hexdigest()
+
+        # assert config_source won't get logged again.
+        checksum = gen_checksum(file_config_sources)
+        time.sleep(5)
+        self.assertEqual(gen_checksum(file_config_sources), checksum)
+
+        # change config file and assert it is gonna get logged again.
+        checksum = gen_checksum(file_config_sources)
+        with open(config_file, 'a') as f:
+            f.write("\n \n")
+        time.sleep(5)
+        self.assertNotEqual(gen_checksum(file_config_sources), checksum)

@@ -140,20 +140,6 @@ void write_stats_to_disk(const McrouterOptions& opts,
   }
 }
 
-void write_config_sources_info_to_disk(const mcrouter_t* router) {
-  auto config_info_json = router->configApi->getConfigSourcesInfo();
-
-  try {
-    boost::filesystem::path path(router->opts.stats_root);
-    path /= get_stats_key(router->opts) + "." + kConfigSourcesInfoFileName;
-    atomicallyWriteFileToDisk(
-      folly::toPrettyJson(config_info_json).toStdString(),
-      path.string());
-  } catch (...) {
-    LOG(ERROR) << "Error occured while writing configuration info to disk";
-  }
-}
-
 }  // anonymous namespace
 
 McrouterLogger::McrouterLogger(mcrouter_t* router,
@@ -220,6 +206,38 @@ bool McrouterLogger::running() const {
   return running_;
 }
 
+void McrouterLogger::dirtyConfig() {
+  configDirty_ = true;
+}
+
+void McrouterLogger::writeConfigSourcesInfo() {
+  boost::filesystem::path path;
+  try {
+    path = boost::filesystem::path(router_->opts.stats_root);
+    path /= get_stats_key(router_->opts) + "." + kConfigSourcesInfoFileName;
+  } catch (const std::exception& e) {
+    logFailure(router_, memcache::failure::Category::kSystemError,
+               "Could not obtain the path of config sources info file: {}",
+               e.what());
+    return;
+  }
+
+  // If the file is not dirty, we just touch it.
+  if (!configDirty_.exchange(false)) {
+    touchFile(path.string());
+    return;
+  }
+
+  auto config_info_json = router_->configApi->getConfigSourcesInfo();
+  if (!atomicallyWriteFileToDisk(
+        folly::toPrettyJson(config_info_json).toStdString(),
+        path.string())) {
+    dirtyConfig();
+    logFailure(router_, memcache::failure::Category::kSystemError,
+        "Could not write config sources info file to disk");
+  }
+}
+
 void McrouterLogger::loggerThreadRun() {
   logStartupOptions();
   loggerThreadSleep();
@@ -263,7 +281,7 @@ void McrouterLogger::log() {
   }
 
   write_stats_to_disk(router_->opts, stats);
-  write_config_sources_info_to_disk(router_);
+  writeConfigSourcesInfo();
 
   for (const auto& filepath : touchStatsFilepaths_) {
     touchFile(filepath);
