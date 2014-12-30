@@ -10,10 +10,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import atexit
 import errno
 import os
-import random
 import re
 import select
 import shutil
@@ -22,9 +20,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-import time
-import unittest
-import pdb
 
 from mcrouter.test.config import McrouterGlobals
 
@@ -87,10 +82,12 @@ class MCProcess(object):
         self.others = 0
 
     def pause(self):
-        self.proc.send_signal(signal.SIGSTOP)
+        if self.proc:
+            self.proc.send_signal(signal.SIGSTOP)
 
-    def unpause(self):
-        self.proc.send_signal(signal.SIGCONT)
+    def resume(self):
+        if self.proc:
+            self.proc.send_signal(signal.SIGCONT)
 
     def getport(self):
         return self.port
@@ -173,7 +170,6 @@ class MCProcess(object):
             print("%s stdout:\n%s" % (self, stderr))
 
     def __del__(self):
-        total = self.gets + self.sets + self.deletes + self.others
         if self.proc:
             self.proc.terminate()
 
@@ -365,7 +361,7 @@ class MCProcess(object):
 
         s = {}
         l = None
-        fds = select.select([self.fd], [], [], 1.0)
+        fds = select.select([self.fd], [], [], 2.0)
         if len(fds[0]) == 0:
             return None
         while l != 'END':
@@ -385,14 +381,6 @@ class MCProcess(object):
     def version(self):
         self.socket.sendall("version\r\n")
         return self.fd.readline()
-
-    def pause(self):
-        if self.proc:
-            self.proc.send_signal(signal.SIGSTOP)
-
-    def resume(self):
-        if self.proc:
-            self.proc.send_signal(signal.SIGCONT)
 
 
 def sub_port(s, substitute_ports, port_map):

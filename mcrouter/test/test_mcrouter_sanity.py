@@ -15,6 +15,8 @@ import time
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+from mcrouter.test.mock_servers import DeadServer
+from mcrouter.test.mock_servers import SleepServer
 
 def randstring(n):
     s = "0123456789abcdef"
@@ -24,7 +26,6 @@ def randstring(n):
     return ans
 
 class TestMcrouterSanity(McrouterTestCase):
-    mcrouter_time = 0
     config = './mcrouter/test/test_ascii.json'
 
     def setUp(self):
@@ -34,6 +35,7 @@ class TestMcrouterSanity(McrouterTestCase):
             11530, 11531, 11532, 11533,
             11541]
         mc_gut_port = 11540
+        tmo_port = 11555
 
         # have to do these before starting mcrouter
         self.mcs = [self.add_server(Memcached(), logical_port=port)
@@ -41,8 +43,10 @@ class TestMcrouterSanity(McrouterTestCase):
         self.mc_gut = self.add_server(Memcached(), logical_port=mc_gut_port)
         self.mcs.append(self.mc_gut)
 
-        for port in [65532, 65522, 11302]:
-            self.add_down_server(Memcached(), logical_port=port)
+        self.add_server(SleepServer(), logical_port=tmo_port)
+
+        for port in [65532, 65522]:
+            self.add_server(DeadServer(), logical_port=port)
 
         self.mcrouter = self.add_mcrouter(self.config)
 
@@ -65,16 +69,13 @@ class TestMcrouterSanity(McrouterTestCase):
     def test_getset(self):
         """
         This test extends on the idea of test_basic() by doing a bunch more
-        in  mcrouter, and printing out the elapsed time.
+        in  mcrouter
         """
         data = self.data(5000)
-        t1 = time.time()
         for k, v in data:
             self.mcrouter.set(k, v)
             got = self.mcrouter.get(k)
             self.assertEqual(v, got)
-        t2 = time.time()
-        self.mcrouter_time = (t2 - t1)
 
     def test_ops(self):
         mcr = self.mcrouter
@@ -175,22 +176,16 @@ class TestMcrouterSanity(McrouterTestCase):
         mcr = self.mcrouter
         mcd_gut = self.mc_gut
 
-        # The first tmo: key should time out
-        # (take longer than a second, including failover time)
+        # request should time out
         t1 = time.time()
         self.assertTrue(mcr.set("tmo:tko", "should time out"))
-        self.assertGreater(time.time() - 1, t1, "didn't time out")
-        # The second tmo: key within the server reconnect time should failover
-        # immediately, and take <1s
-        t1 = time.time()
-        self.assertTrue(mcr.set("tmo:tko", "should fail over immediately"))
-        self.assertLess(time.time() - 1, t1, "didn't time out")
+        self.assertGreater(time.time() - 0.5, t1)
 
         s = {}
         s['failover:'] = 100
         s['tmo:'] = 5
-        for key, max in s.iteritems():
-            for i in range(1, max):
+        for key, mx in s.iteritems():
+            for i in range(1, mx):
                 k = key + str(i)
                 v = randstring(random.randint(3, 10))
 
@@ -198,13 +193,13 @@ class TestMcrouterSanity(McrouterTestCase):
                 self.assertEqual(mcr.get(k), v)
                 self.assertEqual(mcd_gut.get(k), v)
 
-            for i in range(1, max):
+            for i in range(1, mx):
                 k = key + str(i)
-                # rerouting deletes is not supported
+                # delete failover is not enabled by default
                 self.assertFalse(mcr.delete(k))
 
         # The sets being failed over should have a max expiration time
-        # set of a few seconds a for failover.  The tmo pool should not
+        # set of a few seconds for failover.  The tmo pool should not
         # have an expiration time.
         k = "failover:expires"
         v = "failover:expires_value"

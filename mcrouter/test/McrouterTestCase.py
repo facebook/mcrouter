@@ -36,13 +36,6 @@ class McrouterTestCase(unittest.TestCase):
 
         return server
 
-    def add_down_server(self, server, logical_port=None):
-        self.ensureClassVariables()
-        self.add_server(server, logical_port)
-        server.terminate()
-        self.open_servers = self.open_servers[:-1]
-        return server
-
     def add_mcrouter(self, config, route=None, extra_args=[], replace_map=None,
                      bg_mcrouter=False):
         self.ensureClassVariables()

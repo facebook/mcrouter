@@ -34,7 +34,7 @@
     },
     "A-tmo": {
       "protocol": "ascii",
-      "servers": [ "10.1.1.1:11302" ]
+      "servers": [ "127.0.0.1:11555" ]
     },
     "A-wildcard": {
       "protocol": "ascii",

@@ -93,6 +93,11 @@ class StoreServer(MockServer):
         f.close()
         client_socket.send('STORED\r\n')
 
+class DeadServer(MockServer):
+    """ Simple server that hard fails all the time """
+    def runServer(self, client_socket, client_address):
+        client_socket.close()
+
 class TkoServer(MockServer):
     def __init__(self, period, phase=0, tmo=0.5, hitcmd='hit'):
         """Simple server stub that alternatively responds to requests

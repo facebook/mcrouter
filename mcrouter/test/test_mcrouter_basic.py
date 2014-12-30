@@ -10,10 +10,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
-import threading
+from threading import Thread
+import time
 
-from mcrouter.test.MCProcess import *
+from mcrouter.test.MCProcess import McrouterClient, Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestMcrouterBasic(McrouterTestCase):
@@ -62,21 +62,21 @@ class TestMcrouterBasic(McrouterTestCase):
     def test_stats_deadlock(self):
         mcr = self.get_mcrouter(['--proxy-threads=8'])
 
-        def run_client():
-            global failures
-            mc = McrouterClient(mcr.port)
+        def run_client(fail, port):
+            mc = McrouterClient(port)
             mc.connect()
-            for i in xrange(1000):
+            for i in range(1000):
                 s = mc.stats()
-                if s is None:
-                    run_client.failed = True
+                if not s:
+                    fail[0] = True
                     return
-        run_client.failed = False
-        ts = [threading.Thread(target=run_client) for i in xrange(8)]
+
+        f = [False]
+        ts = [Thread(target=run_client, args=(f, mcr.port)) for i in range(8)]
         [t.start() for t in ts]
         [t.join() for t in ts]
 
-        self.assertFalse(run_client.failed)
+        self.assertFalse(f[0])
 
 class TestMcrouterInvalidRoute(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
