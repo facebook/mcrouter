@@ -1,7 +1,6 @@
 check_PROGRAMS = mcrouter_test mcrouter_libmc_test
 
 mcrouter_test_SOURCES = \
-  AccessPointTest.cpp \
   awriter_test.cpp \
   config_api_test.cpp \
   file_observer_test.cpp \

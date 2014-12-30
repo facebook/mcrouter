@@ -1,6 +1,7 @@
 check_PROGRAMS = mcrouter_network_test
 
 mcrouter_network_test_SOURCES = \
+  AccessPointTest.cpp \
   AsyncMcClientTest.cpp
 
 # TODO: enable when new thrift is pushed
