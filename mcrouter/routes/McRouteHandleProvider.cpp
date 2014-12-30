@@ -111,11 +111,11 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   auto destinations = std::move(p.second);
 
   if (json.isObject() && json.count("shadows")) {
-    std::string shadowPolicy = "default";
-    if (json.count("shadow_policy")) {
-      checkLogic(json["shadow_policy"].isString(),
-                 "PoolRoute: shadow_policy is not string");
-      shadowPolicy = json["shadow_policy"].asString().toStdString();
+    folly::StringPiece shadowPolicy = "default";
+    if (auto jshadow_policy = json.get_ptr("shadow_policy")) {
+      checkLogic(jshadow_policy->isString(),
+                 "PoolRoute: shadow_policy is not a string");
+      shadowPolicy = jshadow_policy->stringPiece();
     }
 
     McrouterShadowData data;
@@ -128,7 +128,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
 
     for (size_t i = 0; i < destinations.size(); ++i) {
       destinations[i] = extraProvider_->makeShadow(
-        proxy_, destinations[i], data, i, shadowPolicy);
+        proxy_, std::move(destinations[i]), data, i, shadowPolicy);
     }
   }
 
@@ -155,17 +155,16 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   }
   auto route = makeHash(jhashWithWeights, std::move(destinations));
 
-  if (proxy_->opts.destination_rate_limiting) {
-    if (json.isObject() &&
-        json.count("rates") &&
-        json["rates"].isObject()) {
-      route = makeRateLimitRoute(std::move(route), RateLimiter(json["rates"]));
+  if (json.isObject()) {
+    if (proxy_->opts.destination_rate_limiting) {
+      if (auto jrates = json.get_ptr("rates")) {
+        route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
+      }
     }
-  }
 
-  if (json.isObject() && json.count("shard_splits")) {
-    route = makeShardSplitRoute(std::move(route),
-                                ShardSplitter(json["shard_splits"]));
+    if (auto jsplits = json.get_ptr("shard_splits")) {
+      route = makeShardSplitRoute(std::move(route), ShardSplitter(*jsplits));
+    }
   }
 
   if (!proxy_->opts.asynclog_disable) {
