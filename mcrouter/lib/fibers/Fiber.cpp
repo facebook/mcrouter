@@ -28,7 +28,7 @@ namespace {
 static const uint64_t kMagic8Bytes = 0xfaceb00cfaceb00c;
 
 pid_t localThreadId() {
-  static __thread pid_t threadId = syscall(SYS_gettid);
+  static thread_local pid_t threadId = syscall(SYS_gettid);
   return threadId;
 }
 
