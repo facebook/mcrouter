@@ -1,10 +1,11 @@
-/**
- *  Copyright (c) 2014, Facebook, Inc.
+/*
+ *  Copyright (c) 2015, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
+ *
  */
 #include "util.h"
 
@@ -23,4 +24,3 @@ uint64_t fbi_test_swap_uint64_t(uint64_t u64) {
 uint64_t fbi_test_htonll(uint64_t u64) {
   return fbi_htonll(u64);
 }
-

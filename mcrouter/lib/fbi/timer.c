@@ -1,10 +1,11 @@
-/**
- *  Copyright (c) 2014, Facebook, Inc.
+/*
+ *  Copyright (c) 2015, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
  *  LICENSE file in the root directory of this source tree. An additional grant
  *  of patent rights can be found in the PATENTS file in the same directory.
+ *
  */
 #include "timer.h"
 
@@ -180,5 +181,3 @@ void fb_timer_to_nstring(fb_timer_t* timer, nstring_t* vals) {
   fb_timer_to_nstring_helper(&vals[TIMER_ABS_MIN],
                              fb_timer_get_abs_min(timer));
 }
-
-
