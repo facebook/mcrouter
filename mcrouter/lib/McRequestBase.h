@@ -194,6 +194,10 @@ class McRequestBase {
     return valueData_;
   }
 
+  folly::StringPiece valueRangeSlow() const {
+    return folly::StringPiece(valueData_.coalesce());
+  }
+
   const folly::IOBuf& key() const {
     return keyData_;
   }
@@ -218,7 +222,7 @@ class McRequestBase {
   folly::IOBuf keyData_;
 
   /* May be chained */
-  folly::IOBuf valueData_;
+  mutable folly::IOBuf valueData_;
 
   /**
    * Holds all the references to the various parts of the key.

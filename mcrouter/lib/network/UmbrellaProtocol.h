@@ -13,6 +13,7 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella.h"
+#include "mcrouter/lib/McOperation.h"
 
 namespace folly {
 class IOBuf;
@@ -42,11 +43,15 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
                                const uint8_t* body, size_t nbody,
                                mc_op_t& opOut, uint64_t& reqidOut);
 
-class UmbrellaSerializedReply {
+class UmbrellaSerializedMessage {
  public:
-  UmbrellaSerializedReply();
-  void clear() {}
+  UmbrellaSerializedMessage();
+  void clear();
   bool prepare(const McReply& reply, mc_op_t op, uint64_t reqid,
+               struct iovec*& iovOut, size_t& niovOut);
+
+  template<int Op>
+  bool prepare(const McRequest& request, McOperation<Op>, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut);
 
  private:
@@ -71,10 +76,20 @@ class UmbrellaSerializedReply {
   void appendString(int32_t tag, const uint8_t* data, size_t len,
                     entry_type_t type = BSTRING);
 
-  UmbrellaSerializedReply(const UmbrellaSerializedReply&) = delete;
-  UmbrellaSerializedReply& operator=(const UmbrellaSerializedReply&) = delete;
-  UmbrellaSerializedReply(UmbrellaSerializedReply&&) noexcept = delete;
-  UmbrellaSerializedReply& operator=(UmbrellaSerializedReply&&) = delete;
+  /**
+   * Put message header and all added entries/strings into iovecs.
+   *
+   * @return  number of iovecs that contain a complete message.
+   */
+  size_t finalizeMessage();
+
+  UmbrellaSerializedMessage(const UmbrellaSerializedMessage&) = delete;
+  UmbrellaSerializedMessage& operator=(
+    const UmbrellaSerializedMessage&) = delete;
+  UmbrellaSerializedMessage(UmbrellaSerializedMessage&&) noexcept = delete;
+  UmbrellaSerializedMessage& operator=(UmbrellaSerializedMessage&&) = delete;
 };
 
-}}
+}} // facebook::memcache
+
+#include "UmbrellaProtocol-inl.h"

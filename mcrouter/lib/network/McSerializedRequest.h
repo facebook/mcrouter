@@ -13,9 +13,8 @@
 
 #include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/mc/umbrella.h"
-#include "mcrouter/lib/mc/umbrella_protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 
@@ -36,9 +35,10 @@ class McSerializedRequest {
    * Creates serialized representation of request for a given mc_protocol.
    *
    * @param req  request to serialize, caller is responsible to keep it alive
-   *             for the whole lifecycle of of serialized request.
+   *             for the whole lifecycle of this serialized request.
    */
-  McSerializedRequest(const McRequest& req, mc_op_t operation, size_t reqId,
+  template<int Op>
+  McSerializedRequest(const McRequest& req, McOperation<Op>, size_t reqId,
                       mc_protocol_t protocol);
   ~McSerializedRequest();
 
@@ -47,19 +47,32 @@ class McSerializedRequest {
 
   Result serializationResult() const;
   size_t getIovsCount() { return iovsCount_; }
-  struct iovec* getIovs() { return iovs_; }
+  struct iovec* getIovs() { return iovsBegin_; }
 
  private:
   static const size_t kMaxIovs = 20;
-  struct iovec iovs_[kMaxIovs];
-  size_t iovsCount_;
-  mc_protocol_t protocol_;
-  um_backing_msg_t umBackingMsg_;
-  std::unique_ptr<char[]> asciiBuffer_;
-  Result result_;
+  /**
+   * Temporary structure for holding iovecs for ascii request.
+   * Will be replaced by AsciiSerializedMessage
+   */
+  struct AsciiSerializedRequest {
+    struct iovec iovs[kMaxIovs];
+    std::unique_ptr<char[]> asciiBuffer;
+  };
+
+  union {
+    AsciiSerializedRequest asciiRequest_;
+    UmbrellaSerializedMessage umbrellaMessage_;
+  };
+
+  struct iovec* iovsBegin_{nullptr};
+  size_t iovsCount_{0};
+  mc_protocol_t protocol_{mc_unknown_protocol};
+  Result result_{Result::OK};
 
   void serializeMcMsgAscii(const McMsgRef& req);
-  void serializeMcMsgUmbrella(const McMsgRef& req, size_t reqId);
 };
 
 }} // facebook::memcache
+
+#include "McSerializedRequest-inl.h"

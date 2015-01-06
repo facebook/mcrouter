@@ -118,28 +118,30 @@ class AsyncMcClientImpl :
 
     std::function<void(const McReply&)> traceCallback;
 
+    template <int Op>
     ReqInfo(const McRequest& request,
             uint64_t reqid,
-            mc_op_t operation,
+            McOperation<Op>,
             mc_protocol_t protocol,
             std::shared_ptr<AsyncMcClientImpl> client)
-      : reqContext(request, operation, reqid, protocol),
+      : reqContext(request, McOperation<Op>(), reqid, protocol),
         id(reqid),
-        op(operation),
+        op((mc_op_t)Op),
         syncContext(),
         client_(client),
         isSync_(true) {
     }
 
+    template <int Op>
     ReqInfo(const McRequest& request,
             uint64_t reqid,
-            mc_op_t operation,
+            McOperation<Op>,
             mc_protocol_t protocol,
             std::function<void(McReply&&)> callback,
             std::shared_ptr<AsyncMcClientImpl> client)
-      : reqContext(request, operation, reqid, protocol),
+      : reqContext(request, McOperation<Op>(), reqid, protocol),
         id(reqid),
-        op(operation),
+        op((mc_op_t)Op),
         asyncContext(std::move(callback)),
         client_(client),
         isSync_(false) {

@@ -78,7 +78,7 @@ class WriteBuffer {
   /* Write buffers */
   union {
     AsciiSerializedReply asciiReply_;
-    UmbrellaSerializedReply umbrellaReply_;
+    UmbrellaSerializedMessage umbrellaReply_;
   };
 
   folly::Optional<McServerRequestContext> ctx_;

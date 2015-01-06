@@ -54,8 +54,7 @@ McReply AsyncMcClientImpl::sendSync(const McRequest& request, McOperation<Op>) {
   std::function<void(const McReply&)> traceCallback =
     traceOnSend(request, McOperation<Op>(), connectionOptions_.accessPoint);
 
-  auto op = (mc_op_t)Op;
-  ReqInfo req(request, nextMsgId_, op,
+  ReqInfo req(request, nextMsgId_, McOperation<Op>(),
               connectionOptions_.accessPoint.getProtocol(), selfPtr);
   req.traceCallback = traceCallback;
   sendCommon(req.createDummyPtr());
@@ -84,8 +83,7 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
   std::function<void(const McReply&)> traceCallback =
     traceOnSend(request, McOperation<Op>(), connectionOptions_.accessPoint);
 
-  auto op = (mc_op_t)Op;
-  auto req = ReqInfo::getFromPool(request, nextMsgId_, op,
+  auto req = ReqInfo::getFromPool(request, nextMsgId_, McOperation<Op>(),
                                   connectionOptions_.accessPoint.getProtocol(),
                                   std::move(callback), selfPtr);
   req->traceCallback = traceCallback;

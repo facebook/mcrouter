@@ -128,7 +128,7 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
   return req;
 }
 
-UmbrellaSerializedReply::UmbrellaSerializedReply() {
+UmbrellaSerializedMessage::UmbrellaSerializedMessage() {
   /* These will not change from message to message */
   msg_.msg_header.magic_byte = ENTRY_LIST_MAGIC_BYTE;
   msg_.msg_header.version = UMBRELLA_VERSION_BASIC;
@@ -139,14 +139,14 @@ UmbrellaSerializedReply::UmbrellaSerializedReply() {
   iovs_[1].iov_base = entries_;
 }
 
-bool UmbrellaSerializedReply::prepare(const McReply& reply,
-                                      mc_op_t op, uint64_t reqid,
-                                      struct iovec*& iovOut, size_t& niovOut) {
-  static char nul = '\0';
-
-  /* We can reuse this struct multiple times, reset the counters */
+void UmbrellaSerializedMessage::clear() {
   nEntries_ = nStrings_ = offset_ = 0;
   error_ = false;
+}
+
+bool UmbrellaSerializedMessage::prepare(const McReply& reply, mc_op_t op,
+                                        uint64_t reqid, struct iovec*& iovOut,
+                                        size_t& niovOut) {
   niovOut = 0;
 
   appendInt(I32, msg_op, umbrella_op_from_mc[op]);
@@ -192,31 +192,12 @@ bool UmbrellaSerializedReply::prepare(const McReply& reply,
     return false;
   }
 
-  size_t size = sizeof(entry_list_msg_t) +
-    sizeof(um_elist_entry_t) * nEntries_ +
-    offset_;
-
-  msg_.total_size = folly::Endian::big((uint32_t)size);
-  msg_.nentries = folly::Endian::big((uint16_t)nEntries_);
-
-  iovs_[1].iov_len = sizeof(um_elist_entry_t) * nEntries_;
-  niovOut = 2;
-
-  for (size_t i = 0; i < nStrings_; i++) {
-    iovs_[niovOut].iov_base = (char *)strings_[i].begin();
-    iovs_[niovOut].iov_len = strings_[i].size();
-    niovOut++;
-
-    iovs_[niovOut].iov_base = &nul;
-    iovs_[niovOut].iov_len = 1;
-    niovOut++;
-  }
-
+  niovOut = finalizeMessage();
   iovOut = iovs_;
   return true;
 }
 
-void UmbrellaSerializedReply::appendInt(
+void UmbrellaSerializedMessage::appendInt(
   entry_type_t type, int32_t tag, uint64_t val) {
 
   if (nEntries_ >= kInlineEntries) {
@@ -230,7 +211,7 @@ void UmbrellaSerializedReply::appendInt(
   entry.data.val = folly::Endian::big((uint64_t)val);
 }
 
-void UmbrellaSerializedReply::appendDouble(double val) {
+void UmbrellaSerializedMessage::appendDouble(double val) {
   if (nEntries_ >= kInlineEntries) {
     error_ = true;
     return;
@@ -245,7 +226,7 @@ void UmbrellaSerializedReply::appendDouble(double val) {
   entry.data.val = folly::Endian::big(doubleBits);
 }
 
-void UmbrellaSerializedReply::appendString(
+void UmbrellaSerializedMessage::appendString(
   int32_t tag, const uint8_t* data, size_t len, entry_type_t type) {
 
   if (nStrings_ >= kInlineStrings) {
@@ -261,6 +242,31 @@ void UmbrellaSerializedReply::appendString(
   entry.data.str.offset = folly::Endian::big((uint32_t)offset_);
   entry.data.str.len = folly::Endian::big((uint32_t)(len + 1));
   offset_ += len + 1;
+}
+
+size_t UmbrellaSerializedMessage::finalizeMessage() {
+  static char nul = '\0';
+
+  size_t size = sizeof(entry_list_msg_t) +
+    sizeof(um_elist_entry_t) * nEntries_ +
+    offset_;
+
+  msg_.total_size = folly::Endian::big((uint32_t)size);
+  msg_.nentries = folly::Endian::big((uint16_t)nEntries_);
+
+  iovs_[1].iov_len = sizeof(um_elist_entry_t) * nEntries_;
+  size_t niovOut = 2;
+
+  for (size_t i = 0; i < nStrings_; i++) {
+    iovs_[niovOut].iov_base = (char *)strings_[i].begin();
+    iovs_[niovOut].iov_len = strings_[i].size();
+    niovOut++;
+
+    iovs_[niovOut].iov_base = &nul;
+    iovs_[niovOut].iov_len = 1;
+    niovOut++;
+  }
+  return niovOut;
 }
 
 }}

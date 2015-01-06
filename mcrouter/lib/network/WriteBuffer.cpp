@@ -21,7 +21,7 @@ WriteBuffer::WriteBuffer(mc_protocol_t protocol)
       break;
 
     case mc_umbrella_protocol:
-      new (&umbrellaReply_) UmbrellaSerializedReply();
+      new (&umbrellaReply_) UmbrellaSerializedMessage();
       break;
 
     default:
@@ -36,7 +36,7 @@ WriteBuffer::~WriteBuffer() {
       break;
 
     case mc_umbrella_protocol:
-      umbrellaReply_.~UmbrellaSerializedReply();
+      umbrellaReply_.~UmbrellaSerializedMessage();
       break;
 
     default:
