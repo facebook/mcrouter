@@ -322,7 +322,7 @@ class MCProcess(object):
 
         answer = self.fd.readline()
 
-        assert re.match("DELETED|NOT_FOUND", answer), answer
+        assert re.match("DELETED|NOT_FOUND|SERVER_ERROR", answer), answer
         return re.match("DELETED", answer)
 
     def incr(self, key, value=1, noreply=False):
