@@ -161,6 +161,43 @@
       }
     }
   },
+  "select": {
+    "macros": {},
+    "cases": {
+      "dict": {
+        "orig": {
+          "type": "select",
+          "dictionary": { "a": 1, "b": 2 },
+          "key": "a"
+        },
+        "expand": 1
+      },
+      "dictList": {
+        "orig": {
+          "type": "select",
+          "dictionary": { "a": 1, "b": 2, "c": 3 },
+          "key": [ "a", "c" ]
+        },
+        "expand": { "a": 1, "c": 3 }
+      },
+      "array": {
+        "orig": {
+          "type": "select",
+          "dictionary": [ "a", "b", "c" ],
+          "key": 1
+        },
+        "expand": "b"
+      },
+      "arrayList": {
+        "orig": {
+          "type": "select",
+          "dictionary": [ "a", "b", "c", "d" ],
+          "key": [ 2, 0, 3 ]
+        },
+        "expand": [ "c", "a", "d" ]
+      }
+    }
+  },
   "shuffle": {
     "macros": {
     },

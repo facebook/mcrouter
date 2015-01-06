@@ -42,6 +42,20 @@
       "dictionary": { "a": 1 }
     }
   },
+  "invalidSelectDictList": {
+    "ret": {
+      "type": "select",
+      "key": [ "a", "a" ],
+      "dictionary": { "a": 1 }
+    }
+  },
+  "invalidSelectArrayList": {
+    "ret": {
+      "type": "select",
+      "key": [ 0, 1, 0 ],
+      "dictionary": [ "a", "b" ]
+    }
+  },
   "invalidTransform": {
     "ret": {
       "type": "transform",
