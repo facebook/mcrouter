@@ -47,6 +47,12 @@ struct ConnectionOptions {
   bool noNetwork{false};
 
   /**
+   * Temporary field for rolling out a new ASCII parser.
+   * If true, the new ASCII protocol parser will be used.
+   */
+  bool useNewAsciiParser{false};
+
+  /**
    * Access point of the destination.
    */
   AccessPoint accessPoint;

@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook { namespace memcache {
 
@@ -14,35 +15,56 @@ template <class Callback>
 ClientMcParser<Callback>::ClientMcParser(Callback& cb,
                                          size_t requestsPerRead,
                                          size_t minBufferSize,
-                                         size_t maxBufferSize)
+                                         size_t maxBufferSize,
+                                         bool useNewAsciiParser)
   : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
+    useNewParser_(useNewAsciiParser),
     callback_(cb) {
-  mc_parser_init(&mcParser_,
-                 reply_parser,
-                 &parserMsgReady,
-                 &parserParseError,
-                 this);
+  if (!useNewParser_) {
+    mc_parser_init(&mcParser_,
+                   reply_parser,
+                   &parserMsgReady,
+                   &parserParseError,
+                   this);
+  }
 }
 
 template <class Callback>
 ClientMcParser<Callback>::~ClientMcParser() {
-  mc_parser_reset(&mcParser_);
+  if (!useNewParser_) {
+    mc_parser_reset(&mcParser_);
+  }
 }
 
 template <class Callback>
 std::pair<void*, size_t> ClientMcParser<Callback>::getReadBuffer() {
-  return parser_.getReadBuffer();
+  if (useNewParser_ && parser_.protocol() == mc_ascii_protocol &&
+      asciiParser_.hasReadBuffer()) {
+    return asciiParser_.getReadBuffer();
+  } else {
+    return parser_.getReadBuffer();
+  }
 }
 
 template <class Callback>
 bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
-  return parser_.readDataAvailable(len);
+  if (useNewParser_ && parser_.protocol() == mc_ascii_protocol &&
+      asciiParser_.hasReadBuffer()) {
+    asciiParser_.readDataAvailable(len);
+    return true;
+  } else {
+    return parser_.readDataAvailable(len);
+  }
 }
 
 template <class Callback>
 template <class Operation, class Request>
 void ClientMcParser<Callback>::expectNext() {
-  // No-op for now.
+  if (useNewParser_ && parser_.protocol() == mc_ascii_protocol) {
+    asciiParser_.initializeReplyParser<Operation, Request>();
+    replyForwarder_ =
+      &ClientMcParser<Callback>::forwardAsciiReply<Operation, Request>;
+  }
 }
 
 template <class Callback>
@@ -50,6 +72,16 @@ void ClientMcParser<Callback>::replyReadyHelper(McReply&& reply,
                                                 uint64_t reqid) {
   parser_.reportMsgRead();
   callback_.replyReady(std::move(reply), reqid);
+}
+
+template <class Callback>
+template <class Operation, class Request>
+void ClientMcParser<Callback>::forwardAsciiReply() {
+  parser_.reportMsgRead();
+  callback_.replyReady(
+    asciiParser_.getReply<typename ReplyType<Operation,
+                                             Request>::type>(), 0 /* reqId */);
+  replyForwarder_ = nullptr;
 }
 
 template <class Callback>
@@ -89,10 +121,51 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
 
 template <class Callback>
 void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
-  /* mc_parser only works with contiguous blocks */
-  auto bytes = readBuffer.coalesce();
-  mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
-  readBuffer.clear();
+  if (useNewParser_) {
+    while (readBuffer.length()) {
+      if (asciiParser_.getCurrentState() == McAsciiParser::State::UNINIT) {
+        // Ask the client to initialize parser.
+        if (!callback_.nextReplyAvailable(0 /* reqId */)) {
+          auto data = reinterpret_cast<const char*>(readBuffer.data());
+          failure::log("AsyncMcClient", failure::Category::kOther,
+                       "Received unexpected data from remote endpoint: '{}'!",
+                       folly::cEscape<std::string>(folly::StringPiece(
+                         data, data + std::min(readBuffer.length(),
+                                               static_cast<size_t>(128)))));
+          callback_.parseError(mc_res_local_error,
+                               "Received unexpected ASCII data");
+          return;
+        }
+      }
+      switch (asciiParser_.consume(readBuffer)) {
+        case McAsciiParser::State::COMPLETE:
+          (this->*replyForwarder_)();
+          break;
+        case McAsciiParser::State::ERROR:
+          callback_.parseError(mc_res_local_error,
+                               "Error parsing ASCII protocol");
+          return;
+          break;
+        case McAsciiParser::State::PARTIAL:
+          // Buffer was completely consumed.
+          break;
+        case McAsciiParser::State::UNINIT:
+          // We fed parser some data, it shouldn't remain in State::NONE.
+          failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
+                       "Sent data to AsciiParser but it remained in UNINIT "
+                       "state!");
+          callback_.parseError(mc_res_local_error,
+                               "Internal AsciiParser error.");
+          return;
+          break;
+      }
+    }
+  } else {
+    /* mc_parser only works with contiguous blocks */
+    auto bytes = readBuffer.coalesce();
+    mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
+    readBuffer.clear();
+  }
 }
 
 template <class Callback>

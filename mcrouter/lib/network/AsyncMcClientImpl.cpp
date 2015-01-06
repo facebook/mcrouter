@@ -381,7 +381,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
 
   scheduleNextWriterLoop();
   parser_ = folly::make_unique<ParserT>(*this, 0, kReadBufferSizeMin,
-                                        kReadBufferSizeMax);
+                                        kReadBufferSizeMax,
+                                        connectionOptions_.useNewAsciiParser);
   socket_->setReadCB(this);
 }
 
@@ -515,27 +516,6 @@ void AsyncMcClientImpl::writeErr(
   // be replied with an error.
   queue_.markNextAsSent();
   processShutdown();
-}
-
-void AsyncMcClientImpl::logCriticalAsciiError() {
-  if (queue_.hasPendingReply()) {
-    std::string requestData;
-    auto& request = queue_.getFirstPendingReply().reqContext;
-    auto iovs = request.getIovs();
-    auto iovsCount = request.getIovsCount();
-    for (size_t i = 0; i < iovsCount; ++i) {
-      requestData += folly::cEscape<std::string>(
-        folly::StringPiece(
-          reinterpret_cast<const char*>(iovs[i].iov_base), iovs[i].iov_len));
-    }
-    failure::log("AsyncMcClient", failure::Category::kOther,
-                 "Received ERROR reply from server, original request was: "
-                 "\"{}\"", requestData);
-  } else {
-    failure::log("AsyncMcClient", failure::Category::kOther,
-                 "Received ERROR reply from server, but there're no "
-                 "outstanding requests.");
-  }
 }
 
 void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {

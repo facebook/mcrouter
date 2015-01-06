@@ -100,7 +100,7 @@ class CustomErrorServer(MockServer):
         f = client_socket.makefile()
         f.read(self.expected_bytes)
         f.close()
-        client_socket.send(self.error_message + '\r\nEND')
+        client_socket.send(self.error_message + '\r\n')
 
 class StoreServer(MockServer):
     """A server that responds to requests with 'STORED' after reading expected

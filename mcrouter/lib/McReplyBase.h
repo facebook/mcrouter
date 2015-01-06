@@ -319,6 +319,8 @@ class McReplyBase {
    */
   using CUniquePtr = std::unique_ptr<void, void(*)(void*)>;
   folly::Optional<CUniquePtr> destructor_;
+
+  friend class McAsciiParser;
 };
 
 }}  // facebook::memcache

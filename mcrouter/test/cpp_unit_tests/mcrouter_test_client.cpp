@@ -130,9 +130,9 @@ bool MCRouterTestClient::issueRequests(const mcrouter_msg_t* msgs,
       no_errors = false;
     } else {
       dynamic result = dynamic::object("result", (int) reply.result());
-      if (reply.value().length() > 0) {
-        result["value"] = std::string(reinterpret_cast<const char*>(
-          reply.value().data()), reply.value().length());
+      auto value = reply.valueRangeSlow();
+      if (value.size() > 0) {
+        result["value"] = std::string(value.begin(), value.end());
       }
       results[to<string>(req->key)] = result;
 

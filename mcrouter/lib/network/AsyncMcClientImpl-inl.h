@@ -8,7 +8,6 @@
  *
  */
 #include <folly/Memory.h>
-#include <folly/MoveWrapper.h>
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"

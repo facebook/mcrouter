@@ -141,9 +141,6 @@ class AsyncMcClientImpl :
   void scheduleNextWriterLoop();
   void cancelWriterCallback();
 
-  // Log critical ascii error reply (e.g. server reply that starts with ERROR).
-  void logCriticalAsciiError();
-
   void attemptConnection();
 
   // TAsyncSocket::ConnectCallback overrides

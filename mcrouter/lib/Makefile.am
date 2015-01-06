@@ -7,6 +7,7 @@ libmcrouter_a_SOURCES = \
   Crc32HashFunc.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
+  MessageStorage.h \
   McMsgRef.h \
   McOpList.h \
   McOperation.h \
@@ -151,6 +152,9 @@ libmcrouter_a_SOURCES = \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
   network/ConnectionOptions.h \
+  network/McAsciiParser-gen.cpp \
+  network/McAsciiParser.cpp \
+  network/McAsciiParser.h \
   network/McClientRequestContext-inl.h \
   network/McClientRequestContext.cpp \
   network/McClientRequestContext.h \

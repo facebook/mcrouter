@@ -10,6 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/network/McAsciiParser.h"
 
 namespace facebook { namespace memcache {
 
@@ -19,7 +20,8 @@ class ClientMcParser : private McParser::ParserCallback {
   ClientMcParser(Callback& cb,
                  size_t requestsPerRead,
                  size_t minBufferSize,
-                 size_t maxBufferSize);
+                 size_t maxBufferSize,
+                 bool useNewAsciiParser);
 
   ~ClientMcParser() override;
 
@@ -51,11 +53,17 @@ class ClientMcParser : private McParser::ParserCallback {
   void expectNext();
  private:
   McParser parser_;
+  McAsciiParser asciiParser_;
   mc_parser_t mcParser_;
+  void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
+  bool useNewParser_{false};
 
   Callback& callback_;
 
   void replyReadyHelper(McReply&& reply, uint64_t reqid);
+
+  template <class Operation, class Request>
+  void forwardAsciiReply();
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,

@@ -47,10 +47,10 @@ class ServerOnRequest {
                  McOperation<mc_op_get>) {
     if (req.fullKey() == "sleep") {
       /* sleep override */ usleep(1000000);
-      processReply(std::move(ctx), McReply(mc_res_ok));
+      processReply(std::move(ctx), McReply(mc_res_notfound));
     } else if (req.fullKey() == "shutdown") {
       shutdown_ = true;
-      processReply(std::move(ctx), McReply(mc_res_ok));
+      processReply(std::move(ctx), McReply(mc_res_notfound));
       flushQueue();
     } else {
       std::string value = req.fullKey() == "empty" ? "" : req.fullKey().str();
@@ -297,7 +297,7 @@ void serverShutdownTest(bool useSsl = false) {
   TestServer server(false, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -319,7 +319,7 @@ void simpleAsciiTimeoutTest(bool useSsl = false) {
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_timeout);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -341,7 +341,7 @@ void simpleUmbrellaTimeoutTest(bool useSsl = false) {
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_found);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -397,7 +397,7 @@ TEST(AsyncMcClient, invalidCerts) {
   brokenClient.waitForReplies();
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -412,7 +412,7 @@ void inflightThrottleTest(bool useSsl = false) {
     client.sendGet("hold", mc_res_timeout);
   }
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -436,7 +436,7 @@ void inflightThrottleFlushTest(bool useSsl = false) {
   }
   client.sendGet("flush", mc_res_found);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -460,7 +460,7 @@ void outstandingThrottleTest(bool useSsl = false) {
   }
   client.sendGet("flush", mc_res_local_error);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -480,7 +480,7 @@ void connectionErrorTest(bool useSsl = false) {
                     mc_ascii_protocol, useSsl);
   TestClient client2("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
-  client1.sendGet("shutdown", mc_res_ok);
+  client1.sendGet("shutdown", mc_res_notfound);
   client1.waitForReplies();
   /* sleep override */ usleep(10000);
   client2.sendGet("test", mc_res_connect_error);
@@ -511,7 +511,7 @@ void basicTest(mc_protocol_e protocol = mc_ascii_protocol,
   client.sendGet("test3", mc_res_found);
   client.sendGet("test4", mc_res_found);
   client.waitForReplies(3);
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
@@ -572,7 +572,7 @@ void reconnectTest(mc_protocol_t protocol) {
   // Allow server some time to wake up.
   /* sleep override */ usleep(1000000);
   client.sendGet("test2", mc_res_found);
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 2);
@@ -597,7 +597,7 @@ void bigKeyTest(mc_protocol_t protocol) {
   }
   client.sendGet(key, mc_res_bad_key);
   client.waitForReplies();
-  client.sendGet("shutdown", mc_res_ok);
+  client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);

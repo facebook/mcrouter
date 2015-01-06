@@ -147,8 +147,10 @@ template <class Reply>
 void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
   if (pendingReplyQueue_.empty()) {
     assert(idMap_.find(id) == idMap_.end());
-    assert(!initializers_.empty());
-    initializers_.pop();
+    // TODO: remove once new ascii parser is rolled out.
+    if (!initializers_.empty()) {
+      initializers_.pop();
+    }
     return;
   }
 
