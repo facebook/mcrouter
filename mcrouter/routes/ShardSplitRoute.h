@@ -29,6 +29,21 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
+ * Create a key which matches 'fullKey' except has a suffix on the shard
+ * portion which will make the key route to the n'th shard split as specified in
+ * 'index'.
+ *
+ * @param fullKey The key to re-route to a split shard.
+ * @param offset Which split the new key should route to.
+ * @param shard The shard portion of fullKey. Must be a substring of 'fullKey'
+ *              and can be obtained via getShardId().
+ * @return A new key which routes to the n'th shard split for 'shard'.
+ */
+std::string createSplitKey(folly::StringPiece fullKey,
+                           size_t offset,
+                           folly::StringPiece shard);
+
+/**
  * Splits given request according to shard splits provided by ShardSplitter
  */
 template <class RouteHandleIf>
@@ -104,14 +119,8 @@ class ShardSplitRoute {
   template <class Request>
   Request splitReq(const Request& req, size_t offset,
                    folly::StringPiece shard) const {
-    std::string newKey;
-    newKey.reserve(req.fullKey().size() + 2);
-    newKey.append(req.fullKey().begin(), shard.end());
-    newKey.push_back('a' + (offset % 26));
-    newKey.push_back('a' + (offset / 26));
-    newKey.append(shard.end(), req.fullKey().end());
     auto reqCopy = req.clone();
-    reqCopy.setKey(newKey);
+    reqCopy.setKey(createSplitKey(req.fullKey(), offset, shard));
     return reqCopy;
   }
 
