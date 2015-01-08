@@ -304,11 +304,7 @@ FiberManager::runInMainContextHelper(F&& func) {
 
   folly::wangle::Try<Result> result;
   auto f = [&func, &result]() mutable {
-    try {
-      result = folly::wangle::Try<Result>(func());
-    } catch (...) {
-      result = folly::wangle::Try<Result>(std::current_exception());
-    }
+    result = folly::wangle::makeTryFunction(std::forward<F>(func));
   };
 
   immediateFunc_ = std::ref(f);

@@ -40,14 +40,13 @@ void FiberPromise<T>::throwIfFulfilled() const {
 template <class T>
 FiberPromise<T>::~FiberPromise() {
   if (value_) {
-    setException(
-      std::make_exception_ptr(
-        std::logic_error("promise not fulfilled")));
+    setException(folly::make_exception_wrapper<std::logic_error>(
+        "promise not fulfilled"));
   }
 }
 
 template <class T>
-void FiberPromise<T>::setException(std::exception_ptr e) {
+void FiberPromise<T>::setException(folly::exception_wrapper e) {
   fulfilTry(folly::wangle::Try<T>(e));
 }
 
@@ -82,35 +81,7 @@ void FiberPromise<T>::setValue() {
 template <class T>
 template <class F>
 void FiberPromise<T>::fulfil(F&& func) {
-  fulfilHelper(func);
+  fulfilTry(makeTryFunction(std::forward<F>(func)));
 }
-
-template <class T>
-template <class F>
-typename std::enable_if<
-  std::is_convertible<typename std::result_of<F()>::type, T>::value &&
-  !std::is_same<T, void>::value>::type
-inline FiberPromise<T>::fulfilHelper(F&& func) {
-  try {
-    setValue(func());
-  } catch (...) {
-    setException(std::current_exception());
-  }
-}
-
-template <class T>
-template <class F>
-typename std::enable_if<
-  std::is_same<typename std::result_of<F()>::type, void>::value &&
-  std::is_same<T, void>::value>::type
-inline FiberPromise<T>::fulfilHelper(F&& func) {
-  try {
-    func();
-    setValue();
-  } catch (...) {
-    setException(std::current_exception());
-  }
-}
-
 
 }}

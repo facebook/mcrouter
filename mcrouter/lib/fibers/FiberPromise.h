@@ -54,14 +54,13 @@ class FiberPromise {
   template <class F>
   void fulfil(F&& func);
 
-  /** Fulfil the Promise with an exception_ptr, e.g.
-    try {
-      ...
-    } catch (...) {
-      p.setException(std::current_exception());
+  /** Fulfil the Promise with an exception_wrapper, e.g.
+    auto ew = folly::try_and_catch<std::exception>([]{ ... });
+    if (ew) {
+      p.setException(std::move(ew));
     }
     */
-  void setException(std::exception_ptr);
+  void setException(folly::exception_wrapper);
 
  private:
   friend class FiberManager;
