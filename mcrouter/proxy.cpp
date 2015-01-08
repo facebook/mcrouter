@@ -65,15 +65,6 @@ inline void shift_nstring_inplace(nstring_t* nstr, int pos) {
   nstr->len -= pos;
 }
 
-void foreachPossibleClientHelper(const McrouterRouteHandleIf& rh,
-                                 const RecordingMcRequest& req,
-                                 const std::string& key) {
-  auto children = rh.couldRouteTo(req, McOperation<mc_op_get>());
-  for (const auto& it : children) {
-    foreachPossibleClientHelper(*it, req, key);
-  }
-}
-
 }  // anonymous namespace
 
 const std::string kInternalGetPrefix = "__mcrouter__.";
@@ -170,23 +161,6 @@ std::shared_ptr<ProxyConfigIf> proxy_t::swapConfig(
   auto old = std::move(config_);
   config_ = std::move(newConfig);
   return old;
-}
-
-void proxy_t::foreachPossibleClient(
-    const std::string& key,
-    std::function<void(const ProxyClientCommon&)> clientCallback,
-    std::function<void(const ShardSplitter&)> spCallback) const {
-
-  auto ctx = std::make_shared<RecordingContext>(std::move(clientCallback),
-                                                std::move(spCallback));
-  RecordingMcRequest req(ctx, key);
-
-  auto config = getConfig();
-  auto children =
-    config->proxyRoute().couldRouteTo(req, McOperation<mc_op_get>());
-  for (const auto& it : children) {
-    foreachPossibleClientHelper(*it, req, key);
-  }
 }
 
 /** drain and delete proxy object */
