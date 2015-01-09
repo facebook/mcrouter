@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include <folly/wangle/futures/Try.h>
+#include <folly/futures/Try.h>
 
 namespace facebook { namespace memcache {
 
