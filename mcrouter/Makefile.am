@@ -36,11 +36,12 @@ libmcroutercore_a_SOURCES = \
   flavor.cpp \
   flavor.h \
   LoggingProxyRequestContext.h \
-  mcrouter_client.h \
   mcrouter_config-impl.h \
   mcrouter_config.cpp \
   mcrouter_config.h \
   mcrouter_options_list.h \
+  McrouterClient.cpp \
+  McrouterClient.h \
   McrouterLogFailure.h \
   McrouterLogger.cpp \
   McrouterLogger.h \

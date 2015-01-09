@@ -12,7 +12,7 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/config.h"
-#include "mcrouter/mcrouter_client.h"
+#include "mcrouter/McrouterClient.h"
 #include "mcrouter/proxy.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -32,7 +32,7 @@ ProxyRequestContext::~ProxyRequestContext() {
 uint64_t ProxyRequestContext::senderId() const {
   uint64_t id = 0;
   if (preq_->requester) {
-    id = preq_->requester->clientId;
+    id = preq_->requester->clientId();
   }
 
   return id;

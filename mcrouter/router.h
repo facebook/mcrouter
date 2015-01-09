@@ -30,18 +30,10 @@ class McrouterOptions;
 namespace mcrouter {
 
 class mcrouter_t;
-class mcrouter_client_t;
 
 struct mcrouter_exception : std::runtime_error {
   explicit mcrouter_exception(const std::string& e)
       : std::runtime_error(e) {}
-};
-
-struct mcrouter_msg_t {
-  mc_msg_t* req;
-  McReply reply{mc_res_unknown};
-  void *context;
-  folly::Optional<McRequest> saved_request;
 };
 
 /**
@@ -70,57 +62,6 @@ mcrouter_t* mcrouter_new_transient(const McrouterOptions& options);
 
 const McrouterOptions& mcrouter_get_opts(mcrouter_t *router);
 
-typedef void (mcrouter_on_reply_t)(mcrouter_client_t *client,
-                                   mcrouter_msg_t *router_req,
-                                   void* client_context);
-
-typedef void (mcrouter_on_cancel_t)(mcrouter_client_t *client,
-                                    void* request_context,
-                                    void* client_context);
-
-typedef void (mcrouter_on_disconnect_ts_t)(void *client_context);
-
-typedef void (mcrouter_on_request_sweep_t)(mcrouter_msg_t *router_req);
-
-struct mcrouter_client_callbacks_t {
-  mcrouter_on_reply_t* on_reply;
-  mcrouter_on_cancel_t* on_cancel;
-  mcrouter_on_disconnect_ts_t* on_disconnect;
-};
-
-/**
- * Create a handle to talk to mcrouter
- * The context will be passed back to the callbacks
- *
- * maximum_outstanding_requests: if nonzero, at most this many requests
- *   will be allowed to be in flight at any single point in time.
- *   mcrouter_send will block until the number of outstanding requests
- *   is less than this limit.
- *
- * The reference obtained through this call must be surrendered back to
- * mcrouter_client_disconnect().
- */
-mcrouter_client_t *mcrouter_client_new(mcrouter_t *router,
-                                       mcrouter_client_callbacks_t callbacks,
-                                       void *context,
-                                       size_t maximum_outstanding_requests);
-
-// Mark client for cleanup.  This call releases the client reference.
-void mcrouter_client_disconnect(mcrouter_client_t *client);
-
-folly::EventBase* mcrouter_client_get_base(mcrouter_client_t *client);
-
-void mcrouter_client_set_context(mcrouter_client_t* client, void* context);
-
-std::unordered_map<std::string, int64_t> mcrouter_client_stats(
-  mcrouter_client_t* client,
-  bool clear);
-
-int mcrouter_send(mcrouter_client_t *router_client,
-                  const mcrouter_msg_t *requests, size_t nreqs);
-
 void free_all_libmcrouters();
-
-bool mcrouter_client_is_zombie(mcrouter_client_t* router_client);
 
 }}} // facebook::memcache::mcrouter

@@ -16,8 +16,8 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/ManagedModeUtil.h"
+#include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/mcrouter_client.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/standalone_options.h"
@@ -31,7 +31,7 @@ namespace {
  */
 class ServerOnRequest {
  public:
-  explicit ServerOnRequest(mcrouter_client_t* client)
+  explicit ServerOnRequest(McrouterClient* client)
       : client_(client) {
   }
 
@@ -51,17 +51,16 @@ class ServerOnRequest {
     auto msg = router_msg.saved_request->dependentMsg(op);
     router_msg.req = const_cast<mc_msg_t*>(msg.get());
     /* mcrouter_send will incref req, it's ok to destroy msg after this call */
-    mcrouter_send(client_, &router_msg, 1);
+    client_->send(&router_msg, 1);
     p.release();
   }
 
  private:
-  mcrouter_client_t* client_;
+  McrouterClient* client_;
 };
 
-void router_on_reply(mcrouter_client_t *client,
-                     mcrouter_msg_t* msg,
-                     void *context) {
+void router_on_reply(mcrouter_msg_t* msg,
+                     void* context) {
   std::unique_ptr<McServerRequestContext> p(
     reinterpret_cast<McServerRequestContext*>(msg->context));
 
@@ -84,17 +83,17 @@ void serverLoop(
   AsyncMcServerWorker& worker,
   bool managedMode) {
 
-  auto routerClient =
-    mcrouter_client_new(&router,
-                        server_callbacks,
-                        &worker,
-                        0);
+  auto routerClient = McrouterClient::create(
+    &router,
+    server_callbacks,
+    &worker,
+    0);
   auto proxy = router.getProxy(threadId);
   proxy->attachEventBase(&evb);
   // Manually override proxy assignment
-  routerClient->proxy = proxy;
+  routerClient->setProxy(proxy);
 
-  worker.setOnRequest(ServerOnRequest(routerClient));
+  worker.setOnRequest(ServerOnRequest(routerClient.get()));
   worker.setOnConnectionAccepted([proxy] () {
       stat_incr(proxy->stats, successful_client_connections_stat, 1);
       stat_incr(proxy->stats, num_clients_stat, 1);
@@ -117,8 +116,6 @@ void serverLoop(
   while (worker.isAlive() || worker.writesPending()) {
     mcrouterLoopOnce(&evb);
   }
-
-  mcrouter_client_disconnect(routerClient);
 }
 
 }  // namespace

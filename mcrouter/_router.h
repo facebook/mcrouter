@@ -21,7 +21,7 @@
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
 #include "mcrouter/lib/fbi/cpp/StartupLock.h"
-#include "mcrouter/mcrouter_client.h"
+#include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
 #include "mcrouter/pclient.h"
@@ -71,7 +71,6 @@ struct mcrouter_t {
   std::condition_variable statUpdaterCv;
 
   std::mutex client_list_lock;
-  mcrouter_client_list_t client_list;
 
   // If true, allow only one mcrouter client and shutdown mcrouter
   // after it disconnects
@@ -181,12 +180,16 @@ struct mcrouter_t {
   std::vector<std::unique_ptr<proxy_t>> proxies_;
   std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
 
+  McrouterClient::Queue clientList_;
+
   void spawnStatUpdaterThread();
   void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
+  void onClientDestroyed();
 
   friend mcrouter_t* mcrouter_new(const McrouterOptions&, bool);
   friend void mcrouter_free(mcrouter_t*);
+  friend class McrouterClient;
 };
 
 enum request_entry_type_t {
@@ -194,6 +197,15 @@ enum request_entry_type_t {
   request_type_disconnect,
   request_type_old_config,
   request_type_router_shutdown,
+};
+
+struct mcrouter_queue_entry_t {
+  mc_msg_t* request;
+  McReply reply{mc_res_unknown};
+  folly::Optional<McRequest> saved_request;
+  McrouterClient* router_client;
+  proxy_t *proxy;
+  void* context;
 };
 
 // Bridge from mcrouter client to proxies. Putting this here is the lesser

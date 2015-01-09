@@ -103,7 +103,7 @@ struct proxy_request_t {
   uint64_t sender_id;
 
   /// Reference to the client that issued this
-  struct mcrouter_client_t *requester;
+  struct McrouterClient* requester;
 
   /**
    * For compatibility, we support (get, __mcrouter__.key) as an alias for

@@ -155,16 +155,14 @@ TEST(libmcrouter, sanity) {
 }
 
 static std::atomic<int> on_reply_count{0};
-void on_reply(mcrouter_client_t *client,
-              mcrouter_msg_t *router_req,
+void on_reply(mcrouter_msg_t* router_req,
               void* context) {
   on_reply_count++;
   mc_msg_decref(router_req->req);
 }
 
 static std::atomic<int> on_cancel_count{0};
-void on_cancel(mcrouter_client_t* client,
-               void* request_context,
+void on_cancel(void* request_context,
                void* client_context) {
   on_cancel_count++;
 }
@@ -178,22 +176,23 @@ TEST(libmcrouter, premature_disconnect) {
     on_reply_count = 0;
     on_cancel_count = 0;
 
-    mcrouter_client_t *client = mcrouter_client_new(
-      router,
-      {on_reply, on_cancel, nullptr},
-      nullptr, 0);
+    {
+      auto client = McrouterClient::create(
+        router,
+        {on_reply, on_cancel, nullptr},
+        nullptr, 0);
 
-    const char key[] = "__mockmc__.want_timeout(50)";
-    mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
-    mc_msg->key.str = (char*) &mc_msg[1];
-    strcpy(mc_msg->key.str, key);
-    mc_msg->key.len = strlen(key);
-    mc_msg->op = mc_op_get;
-    mcrouter_msg_t router_msg;
-    router_msg.req = mc_msg;
-    mcrouter_send(client, &router_msg, 1);
-    mc_msg_decref(mc_msg);
-    mcrouter_client_disconnect(client);
+      const char key[] = "__mockmc__.want_timeout(50)";
+      mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
+      mc_msg->key.str = (char*) &mc_msg[1];
+      strcpy(mc_msg->key.str, key);
+      mc_msg->key.len = strlen(key);
+      mc_msg->op = mc_op_get;
+      mcrouter_msg_t router_msg;
+      router_msg.req = mc_msg;
+      client->send(&router_msg, 1);
+      mc_msg_decref(mc_msg);
+    }
 
     for (size_t j = 0; on_cancel_count + on_reply_count == 0 && j < 20; ++j) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -220,39 +219,39 @@ TEST(libmcrouter, standalone) {
   auto opts = defaultTestOptions();
   opts.standalone = true;
   opts.config_str = configString;
-  mcrouter_t *router = mcrouter_init("standalone_test", opts);
-
+  mcrouter_t* router = mcrouter_init("standalone_test", opts);
+  mcrouter_t* router2 = nullptr;
   folly::EventBase evb;
   for (size_t i = 0; i < router->opts.num_proxies; ++i) {
     router->getProxy(i)->attachEventBase(&evb);
   }
 
-  mcrouter_client_t *client = mcrouter_client_new(router,
-                                                  {on_reply, nullptr},
-                                                  nullptr,
-                                                  0);
+  {
+    auto client = McrouterClient::create(router,
+                                         {on_reply, nullptr},
+                                         nullptr,
+                                         0);
 
-  const char key[] = "mcrouter_test:standalone:key:1";
-  mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
-  mc_msg->key.str = (char*) &mc_msg[1];
-  strcpy(mc_msg->key.str, key);
-  mc_msg->key.len = strlen(key);
-  mc_msg->op = mc_op_get;
-  mcrouter_msg_t msg;
-  msg.req = mc_msg;
+    const char key[] = "mcrouter_test:standalone:key:1";
+    mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
+    mc_msg->key.str = (char*) &mc_msg[1];
+    strcpy(mc_msg->key.str, key);
+    mc_msg->key.len = strlen(key);
+    mc_msg->op = mc_op_get;
+    mcrouter_msg_t msg;
+    msg.req = mc_msg;
 
-  on_reply_count = 0;
-  mcrouter_send(client, &msg, 1);
-  while (on_reply_count == 0) {
-    mcrouterLoopOnce(&evb);
+    on_reply_count = 0;
+    client->send(&msg, 1);
+    while (on_reply_count == 0) {
+      mcrouterLoopOnce(&evb);
+    }
+    EXPECT_TRUE(on_reply_count == 1);
+
+    /* Allocating a new router in standalone mode should return a new router! */
+    router2 = mcrouter_init("standalone_test", opts);
+    EXPECT_TRUE(router != router2);
   }
-  EXPECT_TRUE(on_reply_count == 1);
-
-  /* Allocating a new router in standalone mode should return a new router! */
-  mcrouter_t *router2 = mcrouter_init("standalone_test", opts);
-  EXPECT_TRUE(router != router2);
-
-  mcrouter_client_disconnect(client);
   mcrouter_free(router);
   mcrouter_free(router2);
 }

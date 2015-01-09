@@ -59,9 +59,8 @@ private:
 
 using namespace facebook::memcache::test;
 
-static void on_reply(mcrouter_client_t *client,
-                     mcrouter_msg_t *router_req,
-                     void *context) {
+static void on_reply(mcrouter_msg_t* router_req,
+                     void* context) {
   facebook::memcache::test::ResultsSet *rs =
     (facebook::memcache::test::ResultsSet*) context;
   rs->push(std::make_pair(router_req->req, std::move(router_req->reply)));
@@ -70,17 +69,18 @@ static void on_reply(mcrouter_client_t *client,
 
 MCRouterTestClient::MCRouterTestClient(const std::string& name,
                                        const McrouterOptions& opts) {
-  rs_ = new ResultsSet();
+  rs_ = folly::make_unique<ResultsSet>();
   router_ = mcrouter_init(name, opts);
-  client_ = mcrouter_client_new(router_,
-                                {on_reply, nullptr, nullptr},
-                                rs_,
-                                0);
+  client_ = McrouterClient::create(
+    router_,
+    {on_reply, nullptr, nullptr},
+    rs_.get(),
+    0);
 }
 
+/* This must be here to destroy the unique_ptr<ResultsSet>, since ResultsSet
+   is only defined in this unit. */
 MCRouterTestClient::~MCRouterTestClient() {
-  delete rs_;
-  mcrouter_client_disconnect(client_);
 }
 
 static inline mcrouter_msg_t
@@ -117,7 +117,7 @@ bool MCRouterTestClient::issueRequests(const mcrouter_msg_t* msgs,
                                        size_t nreqs,
                                        dynamic &results) {
   bool no_errors = true;
-  mcrouter_send(client_, msgs, nreqs);
+  client_->send(msgs, nreqs);
   int outstanding = nreqs;
   while (outstanding > 0) {
     std::pair<mc_msg_t*, McReply> pr(nullptr, McReply(mc_res_unknown));

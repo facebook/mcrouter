@@ -67,8 +67,7 @@ std::mutex gMutex;
 std::condition_variable gCv;
 }
 
-void on_reply(mcrouter_client_t *client,
-              mcrouter_msg_t *router_req,
+void on_reply(mcrouter_msg_t* router_req,
               void* context) {
   mcrouter_msg_t *r_msg = static_cast<mcrouter_msg_t*>(router_req->context);
   r_msg->reply = std::move(router_req->reply);
@@ -76,7 +75,7 @@ void on_reply(mcrouter_client_t *client,
   gCv.notify_one();
 }
 
-void mcrouter_send_helper(mcrouter_client_t *client,
+void mcrouter_send_helper(McrouterClient& client,
                           const vector<McMsgRef>& reqs,
                           vector<McReply> &replies) {
   vector<mc_msg_t*> ret;
@@ -91,7 +90,7 @@ void mcrouter_send_helper(mcrouter_client_t *client,
   }
 
   gReplies = 0;
-  mcrouter_send(client, r_msgs, n);
+  client.send(r_msgs, n);
   std::unique_lock<std::mutex> lk(gMutex);
   gCv.wait(lk, [n] () { return gReplies == n; });
 
@@ -110,14 +109,13 @@ TEST(mcrouter, start_and_stop) {
     mcrouter_t *router = mcrouter_new(opts);
     EXPECT_FALSE(router == nullptr);
 
-    mcrouter_client_t *client = mcrouter_client_new(
-      router,
-      (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
-      nullptr,
-      0);
-    EXPECT_FALSE(client == nullptr);
-
-    mcrouter_client_disconnect(client);
+    {
+      auto client = McrouterClient::create(
+        router,
+        (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
+        nullptr,
+        0);
+    }
     mcrouter_free(router);
   }
 }
@@ -133,19 +131,18 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
   opts.config_file = MEMCACHE_CONFIG;
   opts.default_route = MEMCACHE_ROUTE;
   mcrouter_t *router = mcrouter_new(opts);
-  mcrouter_client_t *client = mcrouter_client_new(
-    router,
-    (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
-    &sem_disconnect,
-    0);
+  {
+    auto client = McrouterClient::create(
+      router,
+      (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
+      &sem_disconnect,
+      0);
 
-  vector<mcrouter_msg_t> reqs(0);
+    vector<mcrouter_msg_t> reqs(0);
 
-  mcrouter_send(client, reqs.data(), reqs.size());
-  mcrouter_send(client, nullptr, 0);
-
-  mcrouter_client_disconnect(client);
-
+    client->send(reqs.data(), reqs.size());
+    client->send(nullptr, 0);
+  }
   mcrouter_free(router);
 }
 
@@ -159,23 +156,23 @@ TEST(mcrouter, disconnect_callback) {
   mcrouter_t *router = mcrouter_new(opts);
   EXPECT_FALSE(router == nullptr);
 
-  mcrouter_client_t *client = mcrouter_client_new(
-    router,
-    (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
-    &sem_disconnect,
-    0);
-  EXPECT_FALSE(client == nullptr);
+  {
+    auto client = McrouterClient::create(
+      router,
+      (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
+      &sem_disconnect,
+      0);
 
-  const char test_key[] = "test_key_disconnect";
-  vector<mcrouter_msg_t> reqs(1);
-  auto msg = new_get_req(test_key);
-  reqs.back().req = const_cast<mc_msg_t*>(msg.get());
-  reqs.back().reply = McReply(mc_res_unknown);
+    const char test_key[] = "test_key_disconnect";
+    vector<mcrouter_msg_t> reqs(1);
+    auto msg = new_get_req(test_key);
+    reqs.back().req = const_cast<mc_msg_t*>(msg.get());
+    reqs.back().reply = McReply(mc_res_unknown);
 
-  mcrouter_send(client, reqs.data(), reqs.size());
+    client->send(reqs.data(), reqs.size());
 
-  EXPECT_NE(0, sem_trywait(&sem_disconnect));
-  mcrouter_client_disconnect(client);
+    EXPECT_NE(0, sem_trywait(&sem_disconnect));
+  }
   EXPECT_EQ(0, sem_wait(&sem_disconnect));
 
   mcrouter_free(router);
@@ -189,22 +186,21 @@ TEST(mcrouter, fork) {
   mcrouter_t *router = mcrouter_init(persistence_id, opts);
   EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
 
-  mcrouter_client_t *client = mcrouter_client_new(
-    router,
-    (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
-    nullptr,
-    0);
-  EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
-
   const char parent_key[] = "libmcrouter_test:fork:parent";
   const char child_key[] = "libmcrouter_test:fork:child";
 
-  vector<McMsgRef> preqs;
-  vector<McReply> preplies;
-  preqs.push_back(new_get_req(parent_key));
-  mcrouter_send_helper(client, preqs, preplies);
+  {
+    auto client = McrouterClient::create(
+      router,
+      (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
+      nullptr,
+      0);
 
-  mcrouter_client_disconnect(client);
+    vector<McMsgRef> preqs;
+    vector<McReply> preplies;
+    preqs.push_back(new_get_req(parent_key));
+    mcrouter_send_helper(*client, preqs, preplies);
+  }
 
   int fds[2];
   pipe(fds);
@@ -215,25 +211,25 @@ TEST(mcrouter, fork) {
   router = mcrouter_init(persistence_id, opts);
   EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
 
-  client = mcrouter_client_new(
-    router,
-    (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
-    nullptr,
-    0);
-  EXPECT_NE(static_cast<mcrouter_client_t*>(nullptr), client);
+  {
+    auto client = McrouterClient::create(
+      router,
+      (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
+      nullptr,
+      0);
 
-  vector<McMsgRef> reqs;
-  vector<McReply> replies;
-  if (pid) { // parent
-    close(fds[1]);
-    reqs.push_back(new_get_req(parent_key));
-    mcrouter_send_helper(client, reqs, replies);
-  } else {
-    router = mcrouter_get(persistence_id);
-    reqs.push_back(new_get_req(child_key));
-    mcrouter_send_helper(client, reqs, replies);
+    vector<McMsgRef> reqs;
+    vector<McReply> replies;
+    if (pid) { // parent
+      close(fds[1]);
+      reqs.push_back(new_get_req(parent_key));
+      mcrouter_send_helper(*client, reqs, replies);
+    } else {
+      router = mcrouter_get(persistence_id);
+      reqs.push_back(new_get_req(child_key));
+      mcrouter_send_helper(*client, reqs, replies);
+    }
   }
-  mcrouter_client_disconnect(client);
 
   if (pid) { // parent
     char buf[100];
@@ -262,20 +258,18 @@ TEST(mcrouter, already_replied_failed_delete) {
   mcrouter_t *router = mcrouter_new(opts);
   EXPECT_TRUE(router != nullptr);
 
-  mcrouter_client_t *client = mcrouter_client_new(router, cb,
-      nullptr, 0);
-  EXPECT_TRUE(client != nullptr);
+  {
+    auto client = McrouterClient::create(router, cb, nullptr, 0);
 
-  vector<McMsgRef> reqs;
-  vector<McReply> replies;
-  reqs.push_back(new_del_req("abc"));
-  mcrouter_send_helper(client, reqs, replies);
+    vector<McMsgRef> reqs;
+    vector<McReply> replies;
+    reqs.push_back(new_del_req("abc"));
+    mcrouter_send_helper(*client, reqs, replies);
 
-  // Give mcrouter a chance to write the log -- we don't really know when
-  // the write completes because we receive the response right away.
-  sleep(1);
-
-  mcrouter_client_disconnect(client);
+    // Give mcrouter a chance to write the log -- we don't really know when
+    // the write completes because we receive the response right away.
+    sleep(1);
+  }
   mcrouter_free(router);
 
   // Verify the existance and contents of the file.

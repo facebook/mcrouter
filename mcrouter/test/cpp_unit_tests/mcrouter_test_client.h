@@ -12,6 +12,7 @@
 
 #include <folly/dynamic.h>
 
+#include "mcrouter/McrouterClient.h"
 #include "mcrouter/router.h"
 
 /**
@@ -38,7 +39,6 @@ public:
    */
   MCRouterTestClient(const std::string& name,
                      const McrouterOptions& opts);
-
   ~MCRouterTestClient();
 
   /**
@@ -80,9 +80,9 @@ public:
           folly::dynamic &results);
 
 private:
-  facebook::memcache::mcrouter::mcrouter_client_t *client_;
+  facebook::memcache::mcrouter::McrouterClient::Pointer client_;
   facebook::memcache::mcrouter::mcrouter_t *router_;
-  ResultsSet *rs_;
+  std::unique_ptr<ResultsSet> rs_;
 
   bool issueRequests(const facebook::memcache::mcrouter::mcrouter_msg_t* msgs,
                      size_t nreqs,

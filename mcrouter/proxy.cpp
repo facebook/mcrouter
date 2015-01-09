@@ -224,7 +224,7 @@ proxy_request_t::~proxy_request_t() {
   }
 
   if (requester) {
-    mcrouter_client_decref(requester);
+    requester->decref();
   }
 }
 
