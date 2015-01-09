@@ -28,8 +28,7 @@ bool read_standalone_flavor(
     std::unordered_map<std::string, std::string>& option_dict,
     std::unordered_map<std::string, std::string>& st_option_dict) {
 
-  if (!read_and_fill_from_standalone_flavor_file(flavor, option_dict,
-                                                 st_option_dict)) {
+  if (!readFlavor(flavor, st_option_dict, option_dict)) {
     LOG(ERROR) << "CRITICAL: Couldn't initialize from standalone flavor file "
                << flavor;
     return false;

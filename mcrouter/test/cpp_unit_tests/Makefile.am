@@ -4,6 +4,7 @@ mcrouter_test_SOURCES = \
   awriter_test.cpp \
   config_api_test.cpp \
   file_observer_test.cpp \
+  flavor_test.cpp \
   mc_route_handle_provider_test.cpp \
   mcrouter_cpp_tests.cpp \
   observable_test.cpp \

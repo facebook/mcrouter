@@ -12,77 +12,152 @@
 #include <string>
 #include <unordered_map>
 
+#include <boost/filesystem/path.hpp>
+
 #include <folly/FileUtil.h>
 #include <folly/json.h>
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/debug.h"
-
-using std::string;
-using std::unordered_map;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-folly::StringPiece flavorNameFromFile(folly::StringPiece file) {
-  auto lastSlash = file.rfind('/');
-  if (lastSlash != string::npos) {
-    file.advance(lastSlash + 1);
-  }
-  file.removeSuffix(".json");
-  return file;
-}
+const char kStandaloneSuffix[] = "-standalone";
 
-}
-
-bool parse_json_options(const folly::dynamic& json,
-                        const string& field_name,
-                        unordered_map<string, string>& opts) {
-  auto it = json.find(field_name);
-  if (it == json.items().end()) {
-    return false;
-  }
-
-  auto jopts = it->second;
-  if (jopts.type() != folly::dynamic::Type::OBJECT) {
-    LOG(ERROR) << "Error parsing flavor config: " << field_name <<
-                  " is not an object";
-    return false;
-  }
-
-  for (auto& jiter: jopts.items()) {
-    opts[jiter.first.asString().toStdString()] =
-      jiter.second.asString().toStdString();
-  }
-
-  return true;
-}
-
-bool read_and_fill_from_standalone_flavor_file(
-    const string& flavor_file,
-    unordered_map<string, string>& libmcrouter_opts,
-    unordered_map<string, string>& standalone_opts) {
+std::string getRouterNameFromFlavor(const std::string& flavor) {
   try {
-    string flavor_config_json;
-    if (!folly::readFile(flavor_file.data(), flavor_config_json)) {
-      return false;
-    }
+    boost::filesystem::path path(flavor);
+    return path.replace_extension().filename().string();
+  } catch (...) {
+    return flavor;
+  }
+}
 
-    auto json = parseJsonString(flavor_config_json);
+/**
+ * Gets the standalone flavor filename from the specified flavor. The
+ * standalone flavor filename has the following formart:
+ * [flavor_file_without_extension]-standalone[flavor_file_extension].
+ */
+std::string getStandaloneFlavor(const std::string& flavor) {
+  try {
+    boost::filesystem::path path(flavor);
+    auto extension = path.extension();
+    path.replace_extension();
+
+    return path.string() + kStandaloneSuffix + extension.string();
+  } catch (...) {
+    return flavor;
+  }
+}
+
+/**
+ * Reads a libmcrouter flavor file and fills the given dictionary.
+ *
+ * @param flavor_json Json of the libmcrouter flavor.
+ * @param opts        Output parameter the options in the flavor file.
+ *
+ * @returns           True if the config was successfully loaded.
+ *                    False otherwise.
+ */
+bool readLibmcrouterFlavor(
+    const std::string& flavor_json,
+    std::unordered_map<std::string, std::string>& opts) {
+  try {
+    auto json = parseJsonString(flavor_json);
+    return parse_json_options(json, "options", opts);
+  } catch (...) {
+    return false;
+  }
+}
+
+/**
+ * Fills the given dictionaries with the standalone json file.
+ *
+ * @param standalone_flavor_json  Json of the standalone flavor file.
+ * @param standalone_opts         Output parameter for standalone_options.
+ * @param libmcrouter_opts        Output parameter for libmcrouter_options.
+ *
+ * @returns                       True if the config was successfully loaded.
+ *                                False otherwise.
+ */
+bool readStandaloneFlavor(
+    const std::string& standalone_flavor_json,
+    std::unordered_map<std::string, std::string>& standalone_opts,
+    std::unordered_map<std::string, std::string>& libmcrouter_opts) {
+  try {
+    auto json = parseJsonString(standalone_flavor_json);
+
     if (!parse_json_options(json, "standalone_options", standalone_opts)) {
       return false;
     }
-    if (!parse_json_options(json, "libmcrouter_options", libmcrouter_opts)) {
-      return false;
+
+    const char kLibmcrouterOptions[] = "libmcrouter_options";
+    if (json.count(kLibmcrouterOptions) > 0) {
+      return parse_json_options(json, kLibmcrouterOptions, libmcrouter_opts);
     }
-    libmcrouter_opts["router_name"] = flavorNameFromFile(flavor_file).str();
 
     return true;
   } catch (...) {
     return false;
   }
+}
+
+} // anonymous namespace
+
+bool readFlavor(
+    const std::string& flavor,
+    std::unordered_map<std::string, std::string>& standalone_opts,
+    std::unordered_map<std::string, std::string>& libmcrouter_opts) {
+  // Reads libmcrouter flavor.
+  std::string libmcrouterFlavorJson;
+  if (folly::readFile(flavor.data(), libmcrouterFlavorJson)) {
+    if (!readLibmcrouterFlavor(libmcrouterFlavorJson, libmcrouter_opts)) {
+      return false;
+    }
+  }
+
+  // Reads standalone mcrouter flavor.
+  std::string standaloneFlavor = getStandaloneFlavor(flavor);
+  std::string standaloneFlavorJson;
+  if (folly::readFile(standaloneFlavor.data(), standaloneFlavorJson)) {
+    if (!readStandaloneFlavor(standaloneFlavorJson, standalone_opts,
+                              libmcrouter_opts)) {
+      return false;
+    }
+  }
+
+  libmcrouter_opts["router_name"] = getRouterNameFromFlavor(flavor);
+
+  return true;
+}
+
+bool parse_json_options(const folly::dynamic& json,
+                        const std::string& field_name,
+                        std::unordered_map<std::string, std::string>& opts) {
+  auto it = json.find(field_name);
+  if (it == json.items().end()) {
+    return false;
+  }
+
+  const auto& jopts = it->second;
+  if (!jopts.isObject()) {
+    LOG(ERROR) << "Error parsing flavor config: " << field_name <<
+                  " is not an object";
+    return false;
+  }
+
+  try {
+    for (auto& jiter: jopts.items()) {
+      opts[jiter.first.asString().toStdString()] =
+        jiter.second.asString().toStdString();
+    }
+  } catch (...) {
+    return false;
+  }
+
+  return true;
 }
 
 }}}  // facebook::memcache::mcrouter
