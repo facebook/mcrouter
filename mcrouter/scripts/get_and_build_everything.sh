@@ -21,6 +21,4 @@ for script in $(ls "order_$ORDER/" | egrep '^[0-9]+_.*[^~]$' | sort -n); do
 	"./order_$ORDER/$script" "$PKG_DIR" "$INSTALL_DIR" "$MAKE_ARGS"
 done
 
-sudo rm -rf "$PKG_DIR/"
-
 printf "%s\n" "Mcrouter installed in $INSTALL_DIR/bin/mcrouter"
