@@ -15,6 +15,8 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/ManagedModeUtil.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/mcrouter_client.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
@@ -98,6 +100,12 @@ void serverLoop(
     });
   worker.setOnConnectionClosed([proxy] (facebook::memcache::McServerSession&) {
       stat_decr(proxy->stats, num_clients_stat, 1);
+    });
+  worker.setOnShutdownOperation([&router] () {
+      if (!shutdownFromChild()) {
+        logFailure(&router, failure::Category::kSystemError,
+                   "Could not shutdown mcrouter on user command.");
+      }
     });
 
   /* TODO(libevent): the only reason this is not simply evb.loop() is

@@ -44,6 +44,7 @@
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/fb_cpu_util.h"
+#include "mcrouter/ManagedModeUtil.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
@@ -63,8 +64,6 @@ using std::vector;
 #define EXIT_STATUS_TRANSIENT_ERROR 2
 #define EXIT_STATUS_UNRECOVERABLE_ERROR 3
 
-// how many seconds between failed spawns in managed mode
-#define SPAWN_WAIT 10
 static McrouterOptions opts;
 static McrouterStandaloneOptions standaloneOpts;
 
@@ -355,54 +354,6 @@ void daemonize() {
   }
 }
 
-/* Forks off child process and watches for its death if we're running in
-   managed mode. */
-static void manage_children() {
-  char c;
-  int res;
-  pid_t pid;
-  int pipefds[2];
-
-#ifdef SIGCHLD
-  signal(SIGCHLD, SIG_IGN);
-#endif
-
-  while (1) {
-    if (pipe(pipefds)) {
-      fprintf(stderr, "Can't open parent-child pipe\n");
-      exit(EXIT_STATUS_TRANSIENT_ERROR);
-    }
-    switch (pid = fork()) {
-    case 0:
-      /* Child process. Continue with the startup logic. */
-      signal(SIGTERM, SIG_DFL);
-      signal(SIGINT, SIG_DFL);
-
-      close(pipefds[0]);
-      return;
-
-    case -1:
-      close(pipefds[0]);
-      close(pipefds[1]);
-      fprintf(stderr, "Can't spawn child process, sleeping\n");
-      sleep(SPAWN_WAIT);
-      break;
-
-    default:
-      close(pipefds[1]);
-      LOG(INFO) << "Spawned child process " << pid;
-      while ((res = read(pipefds[0], &c, 1)) == -1) {}
-
-      close(pipefds[0]);
-      LOG(INFO) << "Child process " << pid << " exited";
-      if (res == 1 && c == 'q') {
-        LOG(INFO) << "It was terminated; terminating parent";
-        exit(0);
-      }
-    }
-  }
-}
-
 /** @return 0 on failure */
 static int validate_options() {
   if (opts.num_proxies <= 0) {
@@ -443,9 +394,9 @@ void write_pidfile(FILE* pidfile) {
   fflush(pidfile);
 }
 
-void truncate_pidfile(int fd) {
-  ftruncate(fd, 0);
-  close(fd);
+void truncate_pidfile() {
+  ftruncate(pidfile_fd, 0);
+  close(pidfile_fd);
 }
 
 /** Set the fdlimit before any libevent setup because libevent uses the fd
@@ -482,15 +433,9 @@ static void raise_fdlimit() {
   }
 }
 
-
-/* Signal handler to kill child process in managed mode, and truncate pidfile. */
+/* Truncate pidfile. */
 static void sigterm_handler(int signum) {
-  /* If we are in managed mode, we kill our process group to reap the child or
-     parent too. This is dangerous outside of managed mode, e.g. under runit. */
-  if (standaloneOpts.managed) {
-    kill(0, signum);
-  }
-  truncate_pidfile(pidfile_fd);
+  truncate_pidfile();
   exit(0);
 }
 
@@ -661,9 +606,11 @@ int main(int argc, char **argv) {
   }
   signal(SIGTERM, sigterm_handler);
   signal(SIGINT, sigterm_handler);
+  signal(SIGQUIT, sigterm_handler);
 
-  if (standaloneOpts.managed) {
-    manage_children();
+  // Managed mode
+  if (standaloneOpts.managed && !validate_configs) {
+    spawnManagedChild(truncate_pidfile);
     LOG(INFO) << "forked (" << getpid() << ")";
   }
 

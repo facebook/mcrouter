@@ -81,6 +81,9 @@ class MCProcess(object):
         self.deletes = 0
         self.others = 0
 
+    def getprocess(self):
+        return self.proc
+
     def pause(self):
         if self.proc:
             self.proc.send_signal(signal.SIGSTOP)
@@ -129,7 +132,8 @@ class MCProcess(object):
 
         proc = self.proc
         if self.proc:
-            self.proc.terminate()
+            if self.proc.returncode is None:
+                self.proc.terminate()
             self.proc.wait()
             self.proc = None
 
@@ -382,6 +386,9 @@ class MCProcess(object):
         self.socket.sendall("version\r\n")
         return self.fd.readline()
 
+    def shutdown(self):
+        self.socket.sendall("shutdown\r\n")
+        return self.fd.readline()
 
 def sub_port(s, substitute_ports, port_map):
     parts = s.split(':')
