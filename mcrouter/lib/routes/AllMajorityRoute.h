@@ -88,6 +88,7 @@ class AllMajorityRoute {
     Reply majorityReply = Reply(DefaultReply, Operation());
 
     auto taskIt = fiber::addTasks(funcs.begin(), funcs.end());
+    taskIt.reserve(children_.size() / 2 + 1);
     while (taskIt.hasNext() &&
            majorityCount < children_.size() / 2 + 1) {
 
