@@ -317,7 +317,7 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
         return McReply(mc_res_local_error, err);
       }
     },
-    [finally_ctx](folly::wangle::Try<McReply>&& reply) {
+    [finally_ctx](folly::Try<McReply>&& reply) {
       (*finally_ctx)->ctx().proxyRequest().sendReply(std::move(*reply));
     }
   );

@@ -161,7 +161,7 @@ void FiberManager::addTaskRemote(F&& func) {
 template <typename X>
 struct IsRvalueRefTry { static const bool value = false; };
 template <typename T>
-struct IsRvalueRefTry<folly::wangle::Try<T>&&> { static const bool value = true; };
+struct IsRvalueRefTry<folly::Try<T>&&> { static const bool value = true; };
 
 // We need this to be in a struct, not inlined in addTaskFinally, because clang
 // crashes otherwise.
@@ -201,7 +201,7 @@ struct FiberManager::AddTaskFinallyHelper {
     friend class Func;
 
     G finally_;
-    folly::Optional<folly::wangle::Try<Result>> result_;
+    folly::Optional<folly::Try<Result>> result_;
     FiberManager& fm_;
   };
 
@@ -211,7 +211,7 @@ struct FiberManager::AddTaskFinallyHelper {
         func_(std::move(func)), result_(finally.result_) {}
 
     void operator()() {
-      result_ = folly::wangle::makeTryFunction(std::move(func_));
+      result_ = folly::makeTryFunction(std::move(func_));
 
       if (allocateInBuffer) {
         this->~Func();
@@ -222,7 +222,7 @@ struct FiberManager::AddTaskFinallyHelper {
 
    private:
     F func_;
-    folly::Optional<folly::wangle::Try<Result>>& result_;
+    folly::Optional<folly::Try<Result>>& result_;
   };
 };
 
@@ -275,14 +275,14 @@ FiberManager::await(F&& func) {
 
   typedef typename FirstArgOf<F>::type::value_type Result;
 
-  folly::wangle::Try<Result> result;
+  folly::Try<Result> result;
 
   Baton baton;
   baton.wait([&func, &result, &baton]() mutable {
       func(FiberPromise<Result>(result, baton));
     });
 
-  return folly::wangle::moveFromTry(std::move(result));
+  return folly::moveFromTry(std::move(result));
 }
 
 template <typename F>
@@ -302,9 +302,9 @@ FiberManager::runInMainContextHelper(F&& func) {
 
   typedef typename std::result_of<F()>::type Result;
 
-  folly::wangle::Try<Result> result;
+  folly::Try<Result> result;
   auto f = [&func, &result]() mutable {
-    result = folly::wangle::makeTryFunction(std::forward<F>(func));
+    result = folly::makeTryFunction(std::forward<F>(func));
   };
 
   immediateFunc_ = std::ref(f);

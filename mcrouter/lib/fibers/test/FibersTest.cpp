@@ -26,7 +26,7 @@
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
-using folly::wangle::Try;
+using folly::Try;
 
 TEST(FiberManager, batonTimedWaitTimeout) {
   bool taskAdded = false;

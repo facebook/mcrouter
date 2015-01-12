@@ -93,7 +93,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
       RecordingContext::waitForRecorded(std::move(ctx));
       return destinations;
     },
-    [reqCopy](folly::wangle::Try<
+    [reqCopy](folly::Try<
               std::unique_ptr<std::vector<std::string>>>&& data) {
       std::string str;
       const auto& destinations = *data;

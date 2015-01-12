@@ -100,7 +100,7 @@ class TaskIterator {
   addTasks(InputIterator first, InputIterator last);
 
   struct Context {
-    std::queue<std::pair<size_t, folly::wangle::Try<T>>> results;
+    std::queue<std::pair<size_t, folly::Try<T>>> results;
     folly::Optional<FiberPromise<void>> promise;
     size_t tasksLeft{0};
     size_t tasksToFulfillPromise{0};
@@ -111,7 +111,7 @@ class TaskIterator {
 
   explicit TaskIterator(std::shared_ptr<Context> context);
 
-  folly::wangle::Try<T> awaitNextResult();
+  folly::Try<T> awaitNextResult();
 };
 
 }}}

@@ -12,7 +12,7 @@
 namespace facebook { namespace memcache {
 
 template <class T>
-FiberPromise<T>::FiberPromise(folly::wangle::Try<T>& value, Baton& baton) :
+FiberPromise<T>::FiberPromise(folly::Try<T>& value, Baton& baton) :
     value_(&value), baton_(&baton)
 {}
 
@@ -47,11 +47,11 @@ FiberPromise<T>::~FiberPromise() {
 
 template <class T>
 void FiberPromise<T>::setException(folly::exception_wrapper e) {
-  fulfilTry(folly::wangle::Try<T>(e));
+  fulfilTry(folly::Try<T>(e));
 }
 
 template <class T>
-void FiberPromise<T>::fulfilTry(folly::wangle::Try<T>&& t) {
+void FiberPromise<T>::fulfilTry(folly::Try<T>&& t) {
   throwIfFulfilled();
 
   *value_ = std::move(t);
@@ -67,7 +67,7 @@ void FiberPromise<T>::setValue(M&& v) {
   static_assert(!std::is_same<T, void>::value,
                 "Use setValue() instead");
 
-  fulfilTry(folly::wangle::Try<T>(std::forward<M>(v)));
+  fulfilTry(folly::Try<T>(std::forward<M>(v)));
 }
 
 template <class T>
@@ -75,7 +75,7 @@ void FiberPromise<T>::setValue() {
   static_assert(std::is_same<T, void>::value,
                 "Use setValue(value) instead");
 
-  fulfilTry(folly::wangle::Try<void>());
+  fulfilTry(folly::Try<void>());
 }
 
 template <class T>

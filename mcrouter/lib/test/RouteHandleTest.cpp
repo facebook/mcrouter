@@ -31,8 +31,6 @@
 
 using namespace facebook::memcache;
 
-namespace wangle = folly::wangle;
-
 using folly::make_unique;
 using std::make_shared;
 using std::string;

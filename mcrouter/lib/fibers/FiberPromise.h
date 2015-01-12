@@ -43,7 +43,7 @@ class FiberPromise {
    *
    * @param t
    */
-  void fulfilTry(folly::wangle::Try<T>&& t);
+  void fulfilTry(folly::Try<T>&& t);
 
   /** Fulfil this promise with the result of a function that takes no
     arguments and returns something implicitly convertible to T.
@@ -65,8 +65,8 @@ class FiberPromise {
  private:
   friend class FiberManager;
 
-  FiberPromise(folly::wangle::Try<T>& value, Baton& baton);
-  folly::wangle::Try<T>* value_;
+  FiberPromise(folly::Try<T>& value, Baton& baton);
+  folly::Try<T>* value_;
   Baton* baton_;
 
   void throwIfFulfilled() const;

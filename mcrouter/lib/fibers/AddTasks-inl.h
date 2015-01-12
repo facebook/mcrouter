@@ -45,7 +45,7 @@ inline bool TaskIterator<T>::hasNext() const {
 }
 
 template <typename T>
-folly::wangle::Try<T> TaskIterator<T>::awaitNextResult() {
+folly::Try<T> TaskIterator<T>::awaitNextResult() {
   assert(hasCompleted() || hasPending());
   reserve(1);
 
@@ -105,7 +105,7 @@ addTasks(InputIterator first, InputIterator last) {
 
     fiber::addTask(
       [i, context, fm]() {
-        context->results.emplace(i, folly::wangle::makeTryFunction(*fm));
+        context->results.emplace(i, folly::makeTryFunction(*fm));
         --context->tasksLeft;
 
         // Check for awaiting iterator.
