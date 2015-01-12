@@ -17,7 +17,7 @@
 namespace facebook { namespace memcache { namespace fiber {
 
 template <typename T>
-TaskIterator<T>::TaskIterator(TaskIterator&& other)
+TaskIterator<T>::TaskIterator(TaskIterator&& other) noexcept
     : context_(std::move(other.context_)),
       id_(other.id_) {
 }
@@ -30,24 +30,24 @@ TaskIterator<T>::TaskIterator(std::shared_ptr<Context> context)
 }
 
 template <typename T>
+inline bool TaskIterator<T>::hasCompleted() const {
+  return !context_->results.empty();
+}
+
+template <typename T>
+inline bool TaskIterator<T>::hasPending() const {
+  return !context_.unique();
+}
+
+template <typename T>
 inline bool TaskIterator<T>::hasNext() const {
-  return !context_.unique() || !context_->results.empty();
+  return hasPending() || hasCompleted();
 }
 
 template <typename T>
 folly::wangle::Try<T> TaskIterator<T>::awaitNextResult() {
-  if (context_->results.empty()) {
-    if (context_.unique()) {
-      throw std::logic_error(
-          "nothing owns the context, thus the promise won't be fulfilled");
-    }
-
-    fiber::await(
-      [this](FiberPromise<void> promise) {
-        context_->promise.assign(std::move(promise));
-      }
-    );
-  }
+  assert(hasCompleted() || hasPending());
+  reserve(1);
 
   id_ = context_->results.front().first;
   auto result = std::move(context_->results.front().second);
@@ -58,14 +58,28 @@ folly::wangle::Try<T> TaskIterator<T>::awaitNextResult() {
 
 template <typename T>
 inline T TaskIterator<T>::awaitNext() {
-  auto result = std::move(awaitNextResult());
-  return std::move(result.value());
+  return std::move(awaitNextResult().value());
 }
 
 template <>
 inline void TaskIterator<void>::awaitNext() {
-  auto result = std::move(awaitNextResult());
-  return result.value();
+  awaitNextResult().value();
+}
+
+template <typename T>
+inline void TaskIterator<T>::reserve(size_t n) {
+  if (context_->results.size() >= n) {
+    return;
+  }
+  n -= context_->results.size();
+
+  n = std::min(n, context_->tasksLeft);
+
+  fiber::await(
+    [this, n](FiberPromise<void> promise) {
+      context_->tasksToFulfillPromise = n;
+      context_->promise.assign(std::move(promise));
+    });
 }
 
 template <typename T>
@@ -87,16 +101,19 @@ addTasks(InputIterator first, InputIterator last) {
 
   for (size_t i = 0; first != last; ++i, ++first) {
     auto fm = folly::makeMoveWrapper(std::move(*first));
+    ++context->tasksLeft;
 
     fiber::addTask(
       [i, context, fm]() {
-        auto result = std::move(folly::wangle::makeTryFunction(*fm));
-        context->results.emplace(i, std::move(result));
+        context->results.emplace(i, folly::wangle::makeTryFunction(*fm));
+        --context->tasksLeft;
 
         // Check for awaiting iterator.
         if (context->promise.hasValue()) {
-          context->promise->setValue();
-          context->promise.clear();
+          if (--context->tasksToFulfillPromise == 0) {
+            context->promise->setValue();
+            context->promise.clear();
+          }
         }
       }
     );

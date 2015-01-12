@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <functional>
 #include <queue>
 
 #include <folly/Optional.h>
@@ -48,9 +49,23 @@ class TaskIterator {
   TaskIterator& operator=(const TaskIterator& other) = delete;
 
   // movable
-  TaskIterator(TaskIterator&& other);
+  TaskIterator(TaskIterator&& other) noexcept;
   TaskIterator& operator=(TaskIterator&& other) = delete;
 
+  /**
+   * @return True if there are tasks immediately available to be consumed (no
+   *         need to await on them).
+   */
+  bool hasCompleted() const;
+
+  /**
+   * @return True if there are tasks pending execution (need to awaited on).
+   */
+  bool hasPending() const;
+
+  /**
+   * @return True if there are any tasks (hasCompleted() || hasPending()).
+   */
   bool hasNext() const;
 
   /**
@@ -61,6 +76,16 @@ class TaskIterator {
    * @throw exception thrown by the task.
    */
   T awaitNext();
+
+  /**
+   * Await until the specified number of tasks completes or there are no
+   * tasks left to await for.
+   * Note: Will not await if there are already the specified number of tasks
+   * available.
+   *
+   * @param n   Number of tasks to await for completition.
+   */
+  void reserve(size_t n);
 
   /**
    * @return id of the last task that was processed by awaitNext().
@@ -77,6 +102,8 @@ class TaskIterator {
   struct Context {
     std::queue<std::pair<size_t, folly::wangle::Try<T>>> results;
     folly::Optional<FiberPromise<void>> promise;
+    size_t tasksLeft{0};
+    size_t tasksToFulfillPromise{0};
   };
 
   std::shared_ptr<Context> context_;

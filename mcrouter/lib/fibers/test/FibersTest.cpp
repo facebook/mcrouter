@@ -491,6 +491,64 @@ TEST(FiberManager, addTasksVoidThrow) {
   loopController.loop(std::move(loopFunc));
 }
 
+TEST(FiberManager, reserve) {
+  std::vector<FiberPromise<int>> pendingFibers;
+  bool taskAdded = false;
+
+  FiberManager manager(folly::make_unique<SimpleLoopController>());
+  auto& loopController =
+    dynamic_cast<SimpleLoopController&>(manager.loopController());
+
+  auto loopFunc = [&]() {
+    if (!taskAdded) {
+      manager.addTask(
+        [&]() {
+          std::vector<std::function<void()>> funcs;
+          for (size_t i = 0; i < 3; ++i) {
+            funcs.push_back(
+              [&pendingFibers]() {
+                fiber::await([&pendingFibers](FiberPromise<int> promise) {
+                    pendingFibers.push_back(std::move(promise));
+                  });
+              }
+            );
+          }
+
+          auto iter = fiber::addTasks(funcs.begin(), funcs.end());
+
+          iter.reserve(2);
+          EXPECT_TRUE(iter.hasCompleted());
+          EXPECT_TRUE(iter.hasPending());
+          EXPECT_TRUE(iter.hasNext());
+
+          iter.awaitNext();
+          EXPECT_TRUE(iter.hasCompleted());
+          EXPECT_TRUE(iter.hasPending());
+          EXPECT_TRUE(iter.hasNext());
+
+          iter.awaitNext();
+          EXPECT_FALSE(iter.hasCompleted());
+          EXPECT_TRUE(iter.hasPending());
+          EXPECT_TRUE(iter.hasNext());
+
+          iter.awaitNext();
+          EXPECT_FALSE(iter.hasCompleted());
+          EXPECT_FALSE(iter.hasPending());
+          EXPECT_FALSE(iter.hasNext());
+        }
+      );
+      taskAdded = true;
+    } else if (pendingFibers.size()) {
+      pendingFibers.back().setValue(0);
+      pendingFibers.pop_back();
+    } else {
+      loopController.stop();
+    }
+  };
+
+  loopController.loop(std::move(loopFunc));
+}
+
 TEST(FiberManager, forEach) {
   std::vector<FiberPromise<int>> pendingFibers;
   bool taskAdded = false;
