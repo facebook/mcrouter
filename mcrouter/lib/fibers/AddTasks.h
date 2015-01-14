@@ -10,7 +10,7 @@
 #pragma once
 
 #include <functional>
-#include <queue>
+#include <vector>
 
 #include <folly/Optional.h>
 #include <folly/futures/Try.h>
@@ -100,9 +100,10 @@ class TaskIterator {
   addTasks(InputIterator first, InputIterator last);
 
   struct Context {
-    std::queue<std::pair<size_t, folly::Try<T>>> results;
+    std::vector<std::pair<size_t, folly::Try<T>>> results;
     folly::Optional<FiberPromise<void>> promise;
-    size_t tasksLeft{0};
+    size_t totalTasks{0};
+    size_t tasksConsumed{0};
     size_t tasksToFulfillPromise{0};
   };
 

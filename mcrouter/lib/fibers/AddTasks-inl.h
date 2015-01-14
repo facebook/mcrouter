@@ -31,7 +31,7 @@ TaskIterator<T>::TaskIterator(std::shared_ptr<Context> context)
 
 template <typename T>
 inline bool TaskIterator<T>::hasCompleted() const {
-  return !context_->results.empty();
+  return context_->tasksConsumed < context_->results.size();
 }
 
 template <typename T>
@@ -49,11 +49,9 @@ folly::Try<T> TaskIterator<T>::awaitNextResult() {
   assert(hasCompleted() || hasPending());
   reserve(1);
 
-  id_ = context_->results.front().first;
-  auto result = std::move(context_->results.front().second);
-  context_->results.pop();
-
-  return std::move(result);
+  size_t i = context_->tasksConsumed++;
+  id_ = context_->results[i].first;
+  return std::move(context_->results[i].second);
 }
 
 template <typename T>
@@ -68,12 +66,17 @@ inline void TaskIterator<void>::awaitNext() {
 
 template <typename T>
 inline void TaskIterator<T>::reserve(size_t n) {
-  if (context_->results.size() >= n) {
+  size_t tasksReady = context_->results.size() - context_->tasksConsumed;
+
+  // we don't need to do anything if there are already n or more tasks complete
+  // or if we have no tasks left to execute.
+  if (!hasPending() || tasksReady >= n) {
     return;
   }
-  n -= context_->results.size();
 
-  n = std::min(n, context_->tasksLeft);
+  n -= tasksReady;
+  size_t tasksLeft = context_->totalTasks - context_->results.size();
+  n = std::min(n, tasksLeft);
 
   fiber::await(
     [this, n](FiberPromise<void> promise) {
@@ -98,15 +101,15 @@ addTasks(InputIterator first, InputIterator last) {
   typedef TaskIterator<ResultType> IteratorType;
 
   auto context = std::make_shared<typename IteratorType::Context>();
+  context->totalTasks = std::distance(first, last);
+  context->results.reserve(context->totalTasks);
 
   for (size_t i = 0; first != last; ++i, ++first) {
     auto fm = folly::makeMoveWrapper(std::move(*first));
-    ++context->tasksLeft;
 
     fiber::addTask(
       [i, context, fm]() {
-        context->results.emplace(i, folly::makeTryFunction(*fm));
-        --context->tasksLeft;
+        context->results.emplace_back(i, folly::makeTryFunction(*fm));
 
         // Check for awaiting iterator.
         if (context->promise.hasValue()) {
