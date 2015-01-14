@@ -42,7 +42,6 @@ bool McReplyBase::isFailoverError() const {
 
 bool McReplyBase::isSoftTkoError() const {
   switch (result_) {
-    case mc_res_tko:
     case mc_res_timeout:
       return true;
     default:
