@@ -635,9 +635,6 @@ void mcrouter_t::subscribeToConfigUpdate() {
 
     if (router_configure(rtr)) {
       rtr->onReconfigureSuccess.notify();
-      if (rtr->mcrouterLogger) {
-        rtr->mcrouterLogger->dirtyConfig();
-      }
     } else {
       LOG(ERROR) << "Error while reconfiguring mcrouter after config change";
     }

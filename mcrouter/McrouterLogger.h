@@ -59,12 +59,6 @@ class McrouterLogger {
   bool running() const;
 
   /**
-   * Dirty the config, which means the config will be written to disk next
-   * time the logger runs.
-   */
-  void dirtyConfig();
-
-  /**
    * Stops the logger thread and join it.
    * Note: this is a blocking call.
    */
@@ -85,10 +79,8 @@ class McrouterLogger {
   std::mutex loggerThreadMutex_;
   std::condition_variable loggerThreadCv_;
   std::atomic<bool> running_{false};
-  std::atomic<bool> configDirty_{true};
   void loggerThreadRun();
   void loggerThreadSleep();
-  void writeConfigSourcesInfo();
 
   /**
    * Writes router's logs.
