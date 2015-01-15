@@ -78,6 +78,13 @@ class TestMcrouterBasic(McrouterTestCase):
 
         self.assertFalse(f[0])
 
+    def test_shutdown(self):
+        mcr = self.get_mcrouter()
+
+        mcr.shutdown()
+        time.sleep(2)
+        self.assertFalse(mcr.is_alive())
+
 class TestMcrouterInvalidRoute(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--send-invalid-route-to-default']

@@ -81,7 +81,8 @@ void serverLoop(
   mcrouter_t& router,
   size_t threadId,
   folly::EventBase& evb,
-  AsyncMcServerWorker& worker) {
+  AsyncMcServerWorker& worker,
+  bool managedMode) {
 
   auto routerClient =
     mcrouter_client_new(&router,
@@ -101,12 +102,14 @@ void serverLoop(
   worker.setOnConnectionClosed([proxy] (facebook::memcache::McServerSession&) {
       stat_decr(proxy->stats, num_clients_stat, 1);
     });
-  worker.setOnShutdownOperation([&router] () {
-      if (!shutdownFromChild()) {
-        logFailure(&router, failure::Category::kSystemError,
-                   "Could not shutdown mcrouter on user command.");
-      }
-    });
+  if (managedMode) {
+    worker.setOnShutdownOperation([&router] () {
+        if (!shutdownFromChild()) {
+          logFailure(&router, failure::Category::kSystemError,
+                     "Could not shutdown mcrouter on user command.");
+        }
+      });
+  }
 
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
@@ -151,10 +154,10 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
 
     AsyncMcServer server(opts);
     server.spawn(
-      [&router] (size_t threadId,
-                 folly::EventBase& evb,
-                 AsyncMcServerWorker& worker) {
-        serverLoop(router, threadId, evb, worker);
+      [&router, &standaloneOpts] (size_t threadId,
+                                  folly::EventBase& evb,
+                                  AsyncMcServerWorker& worker) {
+        serverLoop(router, threadId, evb, worker, standaloneOpts.managed);
       }
     );
 
