@@ -14,8 +14,7 @@ See https://github.com/facebook/mcrouter/wiki to get started.
 See https://github.com/facebook/mcrouter/wiki/mcrouter-installation for more
 detailed installation instructions.
 
-Mcrouter depends on folly (https://github.com/facebook/folly) and
-FBThrift (https://github.com/facebook/fbthrift).
+Mcrouter depends on folly (https://github.com/facebook/folly).
 
 The installation is a standard autotools flow:
 
