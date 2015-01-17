@@ -91,6 +91,21 @@ struct ServerStat {
   }
 };
 
+/**
+ * Represents a set of aggregated stats across all destinations in a map.
+ */
+struct AggregatedDestinationStats {
+  // Number of requests pending to be sent over network.
+  uint64_t pendingRequests{0};
+  // Number of requests been sent over network or already waiting for reply.
+  uint64_t inflightRequests{0};
+  // Average batches size in form of (num_request, num_batches).
+  // This value is based on some subset of most recent requests (each
+  // destination maintains its own window).
+  // See AsyncMcClient::getBatchingStat() for more details.
+  std::pair<uint64_t, uint64_t> batches{0, 0};
+};
+
 int get_num_bins_used(const mcrouter_t* router) {
   if (router->opts.num_proxies > 0) {
     const proxy_t* anyProxy = router->getProxy(0);
@@ -291,18 +306,22 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
   init_stats(stats);
 
   uint64_t config_last_success = 0;
-  AggregatedDestinationStats destStats;
   for (size_t i = 0; i < router->opts.num_proxies; ++i) {
     auto proxy = router->getProxy(i);
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
-
-    auto stat = router->getProxy(i)->destinationMap->getDestinationsStats();
-    destStats.pendingRequests += stat.pendingRequests;
-    destStats.inflightRequests += stat.inflightRequests;
-    destStats.batches.first += stat.batches.first;
-    destStats.batches.second += stat.batches.second;
   }
+  AggregatedDestinationStats destStats;
+  router->pclient_owner.foreach_shared_synchronized(
+    [&destStats](const std::string& key, ProxyClientShared& shared) {
+      for (const auto& it : shared.getDestinations()) {
+        destStats.pendingRequests += it->getPendingRequestCount();
+        destStats.inflightRequests += it->getInflightRequestCount();
+        auto batch = it->getBatchingStat();
+        destStats.batches.first += batch.first;
+        destStats.batches.second += batch.second;
+      }
+    });
 
   stat_set_uint64(stats, mcc_txbuf_reqs_stat, destStats.pendingRequests);
   stat_set_uint64(stats, mcc_waiting_replies_stat, destStats.inflightRequests);

@@ -77,10 +77,8 @@ void ProxyDestination::schedule_next_probe() {
 }
 
 void ProxyDestination::on_timer(const asox_timer_t timer) {
-  // Some unit tests create pdstn with null proxy.  This assert checks
-  // for use-after-free, so allowing null proxy for functions that don't
-  // obviously crash with null proxy doesn't reduce its effectiveness
-  FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
+  // This assert checks for use-after-free
+  FBI_ASSERT(proxy->magic == proxy_magic);
   FBI_ASSERT(timer == probe_timer);
   asox_remove_timer(timer);
   probe_timer = nullptr;
@@ -250,16 +248,14 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
 }
 
 ProxyDestination::~ProxyDestination() {
-  if (proxy == nullptr) {
-    // created for a unit test
-    return;
-  }
-
   client_.reset();
 
   // should be called after client_.reset() to avoid making this
   // ProxyDestination responsible for sending probes
   shared->removeDestination(this);
+  if (proxy->destinationMap) {
+    proxy->destinationMap->removeDestination(*this);
+  }
 
   if (sending_probes) {
     onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
@@ -301,14 +297,13 @@ const ProxyDestinationStats& ProxyDestination::stats() const {
 }
 
 bool ProxyDestination::may_send() {
-  FBI_ASSERT(!proxy || proxy->magic == proxy_magic);
+  FBI_ASSERT(proxy->magic == proxy_magic);
 
   return state() != PROXY_CLIENT_TKO;
 }
 
 void ProxyDestination::resetInactive() {
   FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(proxy);
 
   resetting = 1;
   client_->resetInactive();

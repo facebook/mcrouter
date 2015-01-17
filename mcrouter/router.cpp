@@ -263,14 +263,8 @@ void mcrouter_request_ready_cb(asox_queue_t q,
     delete router_entry;
     proxy_request_decref(preq);
   } else if (entry->type == request_type_old_config) {
-    auto proxy = (proxy_t*) arg;
     auto oldConfig = (old_config_req_t*) entry->data;
     delete oldConfig;
-
-    if (!proxy->being_destroyed) {
-      // if proxy being_destroyed the destinationMap is destroyed already
-      proxy->destinationMap->removeAllUnused();
-    }
   } else if (entry->type == request_type_disconnect) {
     mcrouter_client_t *client = (mcrouter_client_t*) entry->data;
     client->disconnected = 1;

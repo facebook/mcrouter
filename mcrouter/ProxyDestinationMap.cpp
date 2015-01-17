@@ -18,7 +18,6 @@
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
-#include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -44,33 +43,6 @@ ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
     resetTimer_(nullptr) {
 }
 
-void ProxyDestinationMap::removeAllUnused() {
-  /* We don't want to destroy any ProxyDestinations while holding
-     the destinationsLock_, since the destruction obtains other locks */
-  std::vector<std::shared_ptr<ProxyDestination>> toRemove;
-
-  {
-    std::lock_guard<std::mutex> lck(destinationsLock_);
-
-    auto cur = destinations_.begin();
-    while (cur != destinations_.end()) {
-      auto& dest = cur->second;
-      if (dest.unique()) {
-        if (dest->stateList_ == active_.get()) {
-          active_->list.erase(StateList::List::s_iterator_to(*dest));
-        } else if (dest->stateList_ == inactive_.get()) {
-          inactive_->list.erase(StateList::List::s_iterator_to(*dest));
-        }
-        dest->stateList_ = nullptr;
-        toRemove.emplace_back(std::move(dest));
-        cur = destinations_.erase(cur);
-      } else {
-        ++cur;
-      }
-    }
-  }
-}
-
 std::shared_ptr<ProxyDestination>
 ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
   auto key = client.genProxyDestinationKey();
@@ -80,10 +52,11 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
 
     auto it = destinations_.find(key);
     if (it != destinations_.end()) {
-      destination = it->second;
-    } else {
+      destination = it->second.lock();
+    }
+    if (!destination) {
       destination = ProxyDestination::create(proxy_, client, key);
-      destinations_.emplace(std::move(key), destination);
+      destinations_[std::move(key)] = destination;
     }
   }
 
@@ -100,17 +73,16 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
   return destination;
 }
 
-AggregatedDestinationStats ProxyDestinationMap::getDestinationsStats() {
-  std::lock_guard<std::mutex> lck(destinationsLock_);
-  AggregatedDestinationStats stats;
-  for (const auto& it : destinations_) {
-    stats.pendingRequests += it.second->getPendingRequestCount();
-    stats.inflightRequests += it.second->getInflightRequestCount();
-    auto batch = it.second->getBatchingStat();
-    stats.batches.first += batch.first;
-    stats.batches.second += batch.second;
+void ProxyDestinationMap::removeDestination(ProxyDestination& destination) {
+  if (destination.stateList_ == active_.get()) {
+    active_->list.erase(StateList::List::s_iterator_to(destination));
+  } else if (destination.stateList_ == inactive_.get()) {
+    inactive_->list.erase(StateList::List::s_iterator_to(destination));
   }
-  return std::move(stats);
+  {
+    std::lock_guard<std::mutex> lck(destinationsLock_);
+    destinations_.erase(destination.pdstnKey);
+  }
 }
 
 void ProxyDestinationMap::markAsActive(ProxyDestination& destination) {
