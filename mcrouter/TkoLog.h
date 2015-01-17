@@ -23,6 +23,7 @@ namespace mcrouter {
 enum class TkoLogEvent {
   MarkHardTko,
   MarkSoftTko,
+  RemoveFromConfig,
   UnMarkTko
 };
 

@@ -24,6 +24,8 @@ std::string TkoLog::eventName() const {
       return "mark_hard_tko";
     case TkoLogEvent::MarkSoftTko:
       return "mark_soft_tko";
+    case TkoLogEvent::RemoveFromConfig:
+      return "remove_from_config";
     case TkoLogEvent::UnMarkTko:
       return "unmark_tko";
     default:

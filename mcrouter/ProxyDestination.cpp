@@ -255,14 +255,14 @@ ProxyDestination::~ProxyDestination() {
     return;
   }
 
-  if (owner != nullptr) {
-    std::lock_guard<std::mutex> lock(owner->mx);
-    shared->pdstns.erase(this);
-  }
-
   client_.reset();
 
+  // should be called after client_.reset() to avoid making this
+  // ProxyDestination responsible for sending probes
+  shared->removeDestination(this);
+
   if (sending_probes) {
+    onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
     stop_sending_probes();
   }
 
@@ -317,7 +317,7 @@ void ProxyDestination::resetInactive() {
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(1) << shared->key << " " << eventStr << " TKO. Total hard TKOs: "
+    VLOG(1) << shared->key << " " << eventStr << ". Total hard TKOs: "
             << shared->tko.globalTkos().hardTkos << "; soft TKOs: "
             << shared->tko.globalTkos().softTkos << ". Reply: "
             << mc_res_to_string(result);
@@ -325,13 +325,16 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
 
   switch (event) {
     case TkoLogEvent::MarkHardTko:
-      logUtil("marked hard");
+      logUtil("marked hard TKO");
       break;
     case TkoLogEvent::MarkSoftTko:
-      logUtil("marked soft");
+      logUtil("marked soft TKO");
       break;
     case TkoLogEvent::UnMarkTko:
-      logUtil("unmarked");
+      logUtil("unmarked TKO");
+      break;
+    case TkoLogEvent::RemoveFromConfig:
+      logUtil("was TKO, removed from config");
       break;
   }
 

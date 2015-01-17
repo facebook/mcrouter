@@ -489,7 +489,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
     std::unordered_map<std::string, ServerStat> serverStats;
     proxy->router->pclient_owner.foreach_shared_synchronized(
       [&serverStats](const std::string& key, ProxyClientShared& shared) {
-        for (auto pdstn : shared.pdstns) {
+        for (auto pdstn : shared.getDestinations()) {
           auto& stat = serverStats[pdstn->pdstnKey];
           for (size_t i = 0; i < mc_nres; ++i) {
             stat.results[i] += pdstn->stats().results[i];

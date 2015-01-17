@@ -126,6 +126,11 @@ class TkoTracker {
    */
   void recordSuccess(ProxyDestination* pdstn);
 
+  /**
+   * Should be called when ProxyDestination is going to be destroyed
+   */
+  void removeDestination(ProxyDestination* pdstn);
+
  private:
   const size_t tkoThreshold_;
   const size_t maxSoftTkos_;

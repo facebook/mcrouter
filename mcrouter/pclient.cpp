@@ -25,6 +25,13 @@ ProxyClientShared::ProxyClientShared(const std::string& key_,
       owner_(owner) {
 }
 
+void ProxyClientShared::removeDestination(ProxyDestination* pdstn) {
+  tko.removeDestination(pdstn);
+
+  std::lock_guard<std::mutex> lock(owner_.mx);
+  pdstns_.erase(pdstn);
+}
+
 ProxyClientShared::~ProxyClientShared() {
   std::lock_guard<std::mutex> guard(owner_.mx);
   auto it = owner_.pclient_shared.find(key);
@@ -51,10 +58,9 @@ void ProxyClientOwner::updateProxyClientShared(
                                                 *this);
       pclient_shared.emplace(key, pcs);
     }
-    pcs->pdstns.insert(&pdstn);
+    pcs->pdstns_.insert(&pdstn);
     pdstn.shared = std::move(pcs);
   }
-  pdstn.owner = this;
 }
 
 std::weak_ptr<ProxyClientShared>

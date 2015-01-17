@@ -164,4 +164,11 @@ void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
   consecutiveFailureCount_ = 0;
 }
 
+void TkoTracker::removeDestination(ProxyDestination* pdstn) {
+  // we should clear the TKO state if pdstn is responsible
+  if (isResponsible(pdstn)) {
+    recordSuccess(pdstn);
+  }
+}
+
 }}} // facebook::memcache::mcrouter

@@ -68,7 +68,6 @@ struct ProxyDestination {
   uint64_t magic{0}; ///< to allow asserts that pdstn is still alive
   const uint64_t proxy_magic{0}; ///< to allow asserts that proxy is still alive
 
-  ProxyClientOwner* owner{nullptr};
   std::shared_ptr<ProxyClientShared> shared;
 
   const bool use_ssl{false};

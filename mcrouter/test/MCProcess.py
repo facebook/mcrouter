@@ -544,6 +544,12 @@ class Mcrouter(MCProcess):
     def get_async_spool_dir(self):
         return self.async_spool
 
+    def change_config(self, new_config_path):
+        shutil.copyfile(new_config_path, self.config)
+
+    def check_in_log(self, needle):
+        return needle in open(self.log).read()
+
 class McrouterClient(MCProcess):
     def __init__(self, port):
         MCProcess.__init__(self, None, str(port))

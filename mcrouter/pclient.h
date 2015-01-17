@@ -33,19 +33,30 @@ struct ProxyClientShared {
   std::string key;
   TkoTracker tko;
 
-  /// ProxyDestinations that reference this shared object
-  std::unordered_set<ProxyDestination*> pdstns;
-
   ProxyClientShared(const std::string& key_,
                     const size_t tkoThreshold,
                     const size_t maxSoftTkos,
                     TkoCounters& globalTkos,
                     ProxyClientOwner& owner);
 
+  /**
+   * Should be called only under ProxyClientOwner::mx lock, e.g. from
+   * foreach_shared_synchronized
+   */
+  const std::unordered_set<ProxyDestination*>& getDestinations() const {
+    return pdstns_;
+  }
+
+  void removeDestination(ProxyDestination* pdstn);
+
   ~ProxyClientShared();
 
  private:
   ProxyClientOwner& owner_;
+  /// ProxyDestinations that reference this shared object
+  std::unordered_set<ProxyDestination*> pdstns_;
+
+  friend class ProxyClientOwner;
 };
 
 /**
@@ -74,9 +85,7 @@ struct ProxyClientOwner {
   std::unordered_map<std::string, std::weak_ptr<ProxyClientShared>>
     pclient_shared;
 
-  friend class ProxyDestination;
-
-  friend ProxyClientShared::~ProxyClientShared();
+  friend class ProxyClientShared;
 };
 
 }}}
