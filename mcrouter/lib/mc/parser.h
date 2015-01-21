@@ -135,8 +135,7 @@ void mc_parser_cleanup_tbuf(mc_parser_t *parser);
  *
  * @param first_byte  The first byte from a newly opened stream
  */
-mc_protocol_t mc_parser_determine_protocol(mc_parser_t *parser,
-                                           uint8_t first_byte);
+mc_protocol_t mc_parser_determine_protocol(uint8_t first_byte);
 
 /**
  * Process [buf, buf+len). Will call msg_ready callback on any complete messages

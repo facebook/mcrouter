@@ -106,8 +106,7 @@ void mc_parser_cleanup_tbuf(mc_parser_t *parser) {
   parser->tbuf_len = 0;
 }
 
-mc_protocol_t mc_parser_determine_protocol(mc_parser_t *parser,
-                                           uint8_t first_byte) {
+mc_protocol_t mc_parser_determine_protocol(uint8_t first_byte) {
   return (first_byte == ENTRY_LIST_MAGIC_BYTE)
     ? mc_umbrella_protocol
     : mc_ascii_protocol;
@@ -117,10 +116,7 @@ void mc_parser_parse(mc_parser_t *parser, const uint8_t *buf, size_t len) {
   FBI_ASSERT(len > 0);
 
   if (parser->known_protocol == mc_unknown_protocol) {
-    parser->known_protocol =
-      (buf[0] == ENTRY_LIST_MAGIC_BYTE)
-      ? mc_umbrella_protocol
-      : mc_ascii_protocol;
+    parser->known_protocol = mc_parser_determine_protocol(buf[0]);
   }
 
   int success = 0;
