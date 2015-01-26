@@ -17,7 +17,7 @@
 #include <folly/Conv.h>
 #include <folly/String.h>
 
-#include "mcrouter/lib/fbi/debug.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 
 using std::string;
@@ -193,11 +193,8 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
 
   for (const auto& kv : new_opts) {
     if (seen.find(kv.first) == seen.end()) {
-      McrouterOptionError e;
-      e.requestedName = kv.first;
-      e.requestedValue = kv.second;
-      e.errorMsg = "Unknown option name";
-      errors.push_back(e);
+      mcrouter::logFailure(failure::Category::kInvalidOption,
+                           "Unknown option name: {}={}", kv.first, kv.second);
     }
   }
 

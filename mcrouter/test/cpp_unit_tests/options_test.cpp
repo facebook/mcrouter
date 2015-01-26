@@ -48,9 +48,7 @@ TEST(OptionsSetFromDictTest, sanity) {
   dict.clear();
   dict["blah"] = "a";
   e = opts.updateFromDict(dict);
-  EXPECT_EQ(e.size(), 1);
-  EXPECT_EQ(e[0].requestedName, "blah");
-  EXPECT_EQ(e[0].requestedValue, "a");
+  EXPECT_EQ(e.size(), 0);
   /* unchanged */
   EXPECT_TRUE(opts.num_proxies == 4);
 }
