@@ -76,6 +76,9 @@ class McRouteHandleProvider :
   McrouterRouteHandlePtr makePoolRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json);
+
+  McrouterRouteHandlePtr
+  createAsynclogRoute(McrouterRouteHandlePtr route, std::string asynclogName);
 };
 
 }}} // facebook::memcache::mcrouter

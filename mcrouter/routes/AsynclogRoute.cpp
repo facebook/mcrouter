@@ -9,6 +9,7 @@
  */
 #include "AsynclogRoute.h"
 
+#include "mcrouter/async.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 

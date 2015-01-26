@@ -27,7 +27,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
-                                         std::string poolName);
+                                         std::string asynclogName);
 
 McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
@@ -92,6 +92,16 @@ McRouteHandleProvider::makePool(const folly::dynamic& json) {
   }
 
   return std::make_pair(std::move(pool), std::move(destinations));
+}
+
+McrouterRouteHandlePtr
+McRouteHandleProvider::createAsynclogRoute(McrouterRouteHandlePtr target,
+                                           std::string asynclogName) {
+  if (!proxy_->opts.asynclog_disable) {
+    target = makeAsynclogRoute(std::move(target), asynclogName);
+  }
+  asyncLogRoutes_.emplace(std::move(asynclogName), target);
+  return target;
 }
 
 McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
@@ -168,20 +178,23 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     }
   }
 
-  if (!proxy_->opts.asynclog_disable) {
-    bool needAsynclog = true;
-    if (json.isObject() && json.count("asynclog")) {
-      checkLogic(json["asynclog"].isBool(), "PoolRoute: asynclog is not bool");
-      needAsynclog = json["asynclog"].getBool();
+  auto asynclogName = pool->getName();
+  bool needAsynclog = true;
+  if (json.isObject()) {
+    if (auto jasynclog = json.get_ptr("asynclog")) {
+      checkLogic(jasynclog->isBool(), "PoolRoute: asynclog is not bool");
+      needAsynclog = jasynclog->getBool();
     }
-    if (needAsynclog) {
-      route = makeAsynclogRoute(std::move(route), pool->getName());
+    if (proxy_->opts.asynclog_route_name) {
+      if (auto jname = json.get_ptr("name")) {
+        checkLogic(jname->isString(), "PoolRoute: name is not a string");
+        asynclogName = jname->stringPiece().str();
+      }
     }
   }
-  // NOTE: we assume PoolRoute is unique for each ProxyPool.
-  // Once we have multiple PoolRoutes for same ProxyPool
-  // we need to change logic here.
-  asyncLogRoutes_.emplace(pool->getName(), route);
+  if (needAsynclog) {
+    route = createAsynclogRoute(std::move(route), asynclogName);
+  }
 
   return route;
 }
@@ -191,9 +204,27 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     folly::StringPiece type,
     const folly::dynamic& json) {
 
-  // PrefixPolicyRoute if deprecated, but must be preserved for backwards
-  // compatibility.
-  if (type == "OperationSelectorRoute" || type == "PrefixPolicyRoute") {
+  if (type == "AsynclogRoute") {
+    std::string asynclogName;
+    McrouterRouteHandlePtr target;
+    checkLogic(json.isObject() || json.isString(),
+               "AsynclogRoute should be object or string");
+    if (json.isString()) {
+      asynclogName = json.stringPiece().str();
+      target = factory.create(json);
+    } else { // object
+      auto jname = json.get_ptr("name");
+      checkLogic(jname && jname->isString(),
+                 "AsynclogRoute: required string name");
+      auto jtarget = json.get_ptr("target");
+      checkLogic(jtarget, "AsynclogRoute: target not found");
+      asynclogName = jname->stringPiece().str();
+      target = factory.create(*jtarget);
+    }
+    return { createAsynclogRoute(std::move(target), std::move(asynclogName)) };
+  } else if (type == "OperationSelectorRoute" || type == "PrefixPolicyRoute") {
+    // PrefixPolicyRoute is deprecated, but must be preserved for backwards
+    // compatibility.
     return { makeOperationSelectorRoute(factory, json) };
   } else if (type == "DevNullRoute") {
     return { makeDevNullRoute("devnull") };

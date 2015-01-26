@@ -71,6 +71,11 @@ mcrouter_option_toggle(
   "use-asynclog-version2", no_short,
   "Enable using the asynclog version 2.0")
 
+mcrouter_option_toggle(
+  asynclog_route_name, false,
+  no_long, no_short,
+  "Rollout logging AsynclogRoute::name to spool for asynclog_version2")
+
 mcrouter_option_integer(
   int, num_proxies, 1,
   "num-proxies", no_short,
