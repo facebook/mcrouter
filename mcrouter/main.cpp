@@ -655,7 +655,7 @@ int main(int argc, char **argv) {
   router->prepare_proxy_server_stats = nullptr;
 
 #ifdef EXTRA_STARTUP_STOP_HEADER
-  extraStartup(opts);
+  extraStartup(standaloneOpts);
 #endif
 
   facebook::memcache::mcrouter::runServer(standaloneOpts,

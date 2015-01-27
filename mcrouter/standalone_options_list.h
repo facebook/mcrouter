@@ -89,6 +89,10 @@ mcrouter_option_toggle(
   "disable-failure-logging", no_short,
   "Disable failure logging.")
 
+#ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
+#include ADDITIONAL_STANDALONE_OPTIONS_FILE
+#endif
+
 #undef no_short
 #undef no_long
 #undef mcrouter_option_group
