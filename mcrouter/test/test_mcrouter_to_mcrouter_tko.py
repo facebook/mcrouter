@@ -31,4 +31,4 @@ class TestMcrouterToMcrouterTko(McrouterTestCase):
 
         stats = mcr.stats("suspect_servers")
         self.assertEqual(1, len(stats))
-        self.assertTrue(re.match("status:[tko|down]", stats.values()[0]))
+        self.assertTrue(re.match("status:(tko|down)", stats.values()[0]))
