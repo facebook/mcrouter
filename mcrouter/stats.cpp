@@ -20,12 +20,12 @@
 #include <folly/json.h>
 #include <folly/Range.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/StatsReply.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -44,6 +44,8 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
+
+char* gStandaloneArgs = nullptr;
 
 const char* clientStateToStr(proxy_client_state_t state) {
   switch (state) {
@@ -106,8 +108,8 @@ struct AggregatedDestinationStats {
   std::pair<uint64_t, uint64_t> batches{0, 0};
 };
 
-int get_num_bins_used(const mcrouter_t* router) {
-  if (router->opts.num_proxies > 0) {
+int get_num_bins_used(const McrouterInstance* router) {
+  if (router->opts().num_proxies > 0) {
     const proxy_t* anyProxy = router->getProxy(0);
     if (anyProxy) {
       return anyProxy->num_bins_used;
@@ -144,13 +146,13 @@ struct proc_stat_data_t {
   unsigned long rss;
 };
 
-double stats_aggregate_rate_value(const mcrouter_t* router, int idx) {
+double stats_aggregate_rate_value(const McrouterInstance* router, int idx) {
   double rate = 0;
   int num_bins_used = get_num_bins_used(router);
 
   if (num_bins_used != 0) {
     uint64_t num = 0;
-    for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+    for (size_t i = 0; i < router->opts().num_proxies; ++i) {
       num += router->getProxy(i)->stats_num_within_window[idx];
     }
     rate = (double)num / (num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
@@ -302,17 +304,17 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
   return 0;
 }
 
-void prepare_stats(mcrouter_t* router, stat_t* stats) {
+void prepare_stats(McrouterInstance* router, stat_t* stats) {
   init_stats(stats);
 
   uint64_t config_last_success = 0;
-  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+  for (size_t i = 0; i < router->opts().num_proxies; ++i) {
     auto proxy = router->getProxy(i);
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
   }
   AggregatedDestinationStats destStats;
-  router->pclient_owner.foreach_shared_synchronized(
+  router->pclientOwner().foreach_shared_synchronized(
     [&destStats](const std::string& key, ProxyClientShared& shared) {
       for (const auto& it : shared.getDestinations()) {
         destStats.pendingRequests += it->getPendingRequestCount();
@@ -332,19 +334,19 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
   }
   stats[destination_batch_size_stat].data.dbl = avgBatchSize;
 
-  stats[commandargs_stat].data.string = router->command_args;
+  stats[commandargs_stat].data.string = gStandaloneArgs;
 
   uint64_t now = time(nullptr);
   stats[time_stat].data.uint64 = now;
 
-  uint64_t start_time = router->start_time;
+  uint64_t start_time = router->startTime();
   stats[start_time_stat].data.uint64 = start_time;
   stats[uptime_stat].data.uint64 = now - start_time;
 
   stats[config_age_stat].data.uint64 = now - config_last_success;
   stats[config_last_success_stat].data.uint64 = config_last_success;
-  stats[config_last_attempt_stat].data.uint64 = router->last_config_attempt;
-  stats[config_failures_stat].data.uint64 = router->config_failures;
+  stats[config_last_attempt_stat].data.uint64 = router->lastConfigAttempt();
+  stats[config_failures_stat].data.uint64 = router->configFailures();
 
   stats[child_pid_stat].data.int64 = getpid();
   stats[parent_pid_stat].data.int64 = getppid();
@@ -369,7 +371,7 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
   stats[fibers_allocated_stat].data.uint64 = 0;
   stats[fibers_pool_size_stat].data.uint64 = 0;
   stats[fibers_stack_high_watermark_stat].data.uint64 = 0;
-  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
+  for (size_t i = 0; i < router->opts().num_proxies; ++i) {
     auto pr = router->getProxy(i);
     stats[fibers_allocated_stat].data.uint64 +=
       pr->fiberManager.fibersAllocated();
@@ -380,8 +382,8 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
                pr->fiberManager.stackHighWatermark());
     stats[duration_us_stat].data.dbl += pr->durationUs.value();
   }
-  if (router->opts.num_proxies > 0) {
-    stats[duration_us_stat].data.dbl /= router->opts.num_proxies;
+  if (router->opts().num_proxies > 0) {
+    stats[duration_us_stat].data.dbl /= router->opts().num_proxies;
   }
 #ifndef FBCODE_OPT_BUILD
   stats[mc_msg_num_outstanding_stat].data.uint64 =
@@ -390,7 +392,7 @@ void prepare_stats(mcrouter_t* router, stat_t* stats) {
 
   for (int i = 0; i < num_stats; i++) {
     if (stats[i].aggregate && !(stats[i].group & rate_stats)) {
-      for (size_t j = 0; j < router->opts.num_proxies; ++j) {
+      for (size_t j = 0; j < router->opts().num_proxies; ++j) {
         auto pr = router->getProxy(j);
         if (stats[i].type == stat_uint64) {
           stats[i].data.uint64 += pr->stats[i].data.uint64;
@@ -506,7 +508,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
 
   if (groups & server_stats) {
     std::unordered_map<std::string, ServerStat> serverStats;
-    proxy->router->pclient_owner.foreach_shared_synchronized(
+    proxy->router->pclientOwner().foreach_shared_synchronized(
       [&serverStats](const std::string& key, ProxyClientShared& shared) {
         for (auto pdstn : shared.getDestinations()) {
           auto& stat = serverStats[pdstn->pdstnKey];
@@ -538,6 +540,13 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   }
 
   return reply.getMcReply();
+}
+
+void set_standalone_args(folly::StringPiece args) {
+  assert(gStandaloneArgs == nullptr);
+  gStandaloneArgs = new char[args.size() + 1];
+  ::memcpy(gStandaloneArgs, args.begin(), args.size());
+  gStandaloneArgs[args.size()] = 0;
 }
 
 }}} // facebook::memcache::mcrouter

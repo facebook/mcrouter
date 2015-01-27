@@ -19,7 +19,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class mcrouter_t;
+class McrouterInstance;
 class stat_t;
 
 class AdditionalLoggerIf {
@@ -39,7 +39,7 @@ class McrouterLogger {
    *                         is written.
    */
   explicit McrouterLogger(
-    mcrouter_t* router,
+    McrouterInstance* router,
     std::unique_ptr<AdditionalLoggerIf> additionalLogger = nullptr);
 
   ~McrouterLogger();
@@ -65,7 +65,7 @@ class McrouterLogger {
   void stop();
 
  private:
-  mcrouter_t* router_;
+  McrouterInstance* router_;
 
   std::unique_ptr<AdditionalLoggerIf> additionalLogger_;
 

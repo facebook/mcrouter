@@ -15,11 +15,12 @@
 #include <folly/FileUtil.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/FileDataProvider.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
+#include "mcrouter/ThreadUtil.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -88,7 +89,7 @@ bool ConfigApi::checkFileUpdate() {
 }
 
 void ConfigApi::configThreadRun() {
-  mcrouter_set_thread_name(pthread_self(), opts_, "mcrcfg");
+  mcrouterSetThreadName(pthread_self(), opts_, "mcrcfg");
   if (opts_.constantly_reload_configs) {
     while (!finish_) {
       LOG(INFO) << "Reload config due to constantly_reload_configs";

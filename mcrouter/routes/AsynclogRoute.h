@@ -9,8 +9,8 @@
  */
 #pragma once
 
-#include "mcrouter/_router.h"
 #include "mcrouter/async.h"
+#include "mcrouter/awriter.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
@@ -67,7 +67,7 @@ class AsynclogRoute {
 
     auto proxy = req.context().proxyRequest().proxy;
     Baton b;
-    auto res = proxy->router->awriter->run(
+    auto res = proxy->router->asyncWriter().run(
       [&b, proxy, &dest, key, asynclogName] () {
         asynclog_delete(proxy, dest, key, asynclogName);
         b.post();

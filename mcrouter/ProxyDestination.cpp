@@ -12,7 +12,6 @@
 #include <folly/Conv.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"

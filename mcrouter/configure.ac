@@ -2,7 +2,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT(mcrouter, 1.0, mcrouter@fb.com)
-AC_CONFIG_SRCDIR([router.h])
+AC_CONFIG_SRCDIR([McrouterInstance.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])
 AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])

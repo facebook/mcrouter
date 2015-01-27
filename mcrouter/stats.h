@@ -37,7 +37,7 @@ enum stat_name_t {
 #undef STSS
 
 // Forward declarations
-struct mcrouter_t;
+class McrouterInstance;
 struct proxy_t;
 
 /** statistics ftw */
@@ -99,12 +99,14 @@ void stat_decr_safe(stat_t*, stat_name_t);
  * Current aggregation of rate of stats[idx] (which must be an aggregated
  * rate stat), units will be per second.
  */
-double stats_aggregate_rate_value(const mcrouter_t* router, int idx);
+double stats_aggregate_rate_value(const McrouterInstance* router, int idx);
 
 void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
 uint64_t stat_get_uint64(stat_t*, stat_name_t);
 uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
 McReply stats_reply(proxy_t*, folly::StringPiece);
-void prepare_stats(mcrouter_t* router, stat_t* stats);
+void prepare_stats(McrouterInstance* router, stat_t* stats);
+
+void set_standalone_args(folly::StringPiece args);
 
 }}} // facebook::memcache::mcrouter

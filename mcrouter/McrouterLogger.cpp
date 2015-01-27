@@ -22,10 +22,10 @@
 #include <folly/json.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/debug.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/stats.h"
 
@@ -141,12 +141,12 @@ void write_stats_to_disk(const McrouterOptions& opts,
   }
 }
 
-void write_config_sources_info_to_disk(const mcrouter_t* router) {
-  auto config_info_json = router->configApi->getConfigSourcesInfo();
+void write_config_sources_info_to_disk(McrouterInstance* router) {
+  auto config_info_json = router->configApi().getConfigSourcesInfo();
 
   try {
-    boost::filesystem::path path(router->opts.stats_root);
-    path /= get_stats_key(router->opts) + "." + kConfigSourcesInfoFileName;
+    boost::filesystem::path path(router->opts().stats_root);
+    path /= get_stats_key(router->opts()) + "." + kConfigSourcesInfoFileName;
     atomicallyWriteFileToDisk(
       folly::toPrettyJson(config_info_json).toStdString(),
       path.string());
@@ -157,7 +157,7 @@ void write_config_sources_info_to_disk(const mcrouter_t* router) {
 
 }  // anonymous namespace
 
-McrouterLogger::McrouterLogger(mcrouter_t* router,
+McrouterLogger::McrouterLogger(McrouterInstance* router,
   std::unique_ptr<AdditionalLoggerIf> additionalLogger)
     : router_(router),
       additionalLogger_(std::move(additionalLogger)),
@@ -169,17 +169,17 @@ McrouterLogger::~McrouterLogger() {
 }
 
 bool McrouterLogger::start() {
-  if (running_ || router_->opts.stats_logging_interval == 0) {
+  if (running_ || router_->opts().stats_logging_interval == 0) {
     return false;
   }
 
-  if (!ensure_dir_exists_and_writeable(router_->opts.stats_root)) {
-    LOG(ERROR) << "Can't create or chmod " << router_->opts.stats_root <<
+  if (!ensure_dir_exists_and_writeable(router_->opts().stats_root)) {
+    LOG(ERROR) << "Can't create or chmod " << router_->opts().stats_root <<
                   ", disabling stats logging";
     return false;
   }
 
-  auto path = stats_file_path(router_->opts, kStatsStartupOptionsSfx);
+  auto path = stats_file_path(router_->opts(), kStatsStartupOptionsSfx);
   if (std::find(touchStatsFilepaths_.begin(), touchStatsFilepaths_.end(), path)
       == touchStatsFilepaths_.end()) {
     touchStatsFilepaths_.push_back(std::move(path));
@@ -235,20 +235,20 @@ void McrouterLogger::loggerThreadSleep() {
   std::unique_lock<std::mutex> lock(loggerThreadMutex_);
   loggerThreadCv_.wait_for(
     lock,
-    std::chrono::milliseconds(router_->opts.stats_logging_interval),
+    std::chrono::milliseconds(router_->opts().stats_logging_interval),
     [this]() { return !running_; });
 }
 
 void McrouterLogger::logStartupOptions() {
   auto json_options = folly::toDynamic(router_->getStartupOpts());
   json_options["pid"] = folly::to<std::string>(getpid());
-  write_stats_file(router_->opts, kStatsStartupOptionsSfx, json_options);
+  write_stats_file(router_->opts(), kStatsStartupOptionsSfx, json_options);
 }
 
 void McrouterLogger::log() {
   std::vector<stat_t> stats(num_stats);
   try {
-    router_->startupLock.wait();
+    router_->startupLock().wait();
     std::lock_guard<ShutdownLock> lg(router_->shutdownLock());
 
     prepare_stats(router_, stats.data());
@@ -263,7 +263,7 @@ void McrouterLogger::log() {
     }
   }
 
-  write_stats_to_disk(router_->opts, stats);
+  write_stats_to_disk(router_->opts(), stats);
   write_config_sources_info_to_disk(router_);
 
   for (const auto& filepath : touchStatsFilepaths_) {

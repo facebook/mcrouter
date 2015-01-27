@@ -59,7 +59,8 @@ class McReply;
 
 namespace mcrouter {
 // forward declaration
-class mcrouter_t;
+class McrouterInstance;
+class ProxyConfig;
 class ProxyConfigIf;
 class ProxyClientCommon;
 class ProxyDestination;
@@ -183,8 +184,8 @@ struct ShadowSettings {
     explicit Data(const folly::dynamic& json);
   };
 
-  ShadowSettings(const folly::dynamic& json, mcrouter_t* router);
-  ShadowSettings(std::shared_ptr<Data> data, mcrouter_t* router);
+  ShadowSettings(const folly::dynamic& json, McrouterInstance* router);
+  ShadowSettings(std::shared_ptr<Data> data, McrouterInstance* router);
   ~ShadowSettings();
 
   std::shared_ptr<const Data> getData();
@@ -192,12 +193,12 @@ struct ShadowSettings {
  private:
   AtomicSharedPtr<Data> data_;
   ObservableRuntimeVars::CallbackHandle handle_;
-  void registerOnUpdateCallback(mcrouter_t* router);
+  void registerOnUpdateCallback(McrouterInstance* router);
 };
 
 struct proxy_t {
   uint64_t magic;
-  mcrouter_t *router{nullptr};
+  McrouterInstance* router{nullptr};
 
   /** Note: will go away once the router pointer above is guaranteed to exist */
   const McrouterOptions opts;
@@ -260,7 +261,7 @@ struct proxy_t {
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
-  proxy_t(mcrouter_t *router,
+  proxy_t(McrouterInstance* router,
           folly::EventBase* eventBase,
           const McrouterOptions& opts);
 
@@ -340,11 +341,17 @@ struct old_config_req_t {
   std::shared_ptr<ProxyConfigIf> config_;
 };
 
-int router_configure(mcrouter_t *router);
-
-int router_configure(mcrouter_t *router, folly::StringPiece input);
+enum request_entry_type_t {
+  request_type_request,
+  request_type_disconnect,
+  request_type_old_config,
+  request_type_router_shutdown,
+};
 
 void proxy_request_decref(proxy_request_t*);
 proxy_request_t* proxy_request_incref(proxy_request_t*);
+
+void proxy_config_swap(proxy_t* proxy,
+                       std::shared_ptr<ProxyConfig> config);
 
 }}} // facebook::memcache::mcrouter

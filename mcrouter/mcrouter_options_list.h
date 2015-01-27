@@ -72,7 +72,7 @@ mcrouter_option_toggle(
   "Rollout logging AsynclogRoute::name to spool for asynclog_version2")
 
 mcrouter_option_integer(
-  int, num_proxies, 1,
+  size_t, num_proxies, 1,
   "num-proxies", no_short,
   "adjust how many proxy threads to run")
 

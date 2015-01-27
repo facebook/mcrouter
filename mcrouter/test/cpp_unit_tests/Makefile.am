@@ -7,6 +7,7 @@ mcrouter_test_SOURCES = \
   flavor_test.cpp \
   mc_route_handle_provider_test.cpp \
   mcrouter_cpp_tests.cpp \
+  mcrouter_cpp_tests.h \
   observable_test.cpp \
   options_test.cpp \
   periodic_task_scheduler_test.cpp \

@@ -31,7 +31,7 @@ class ProxyThread {
   /**
    * Spawns a new proxy thread for execution.
    */
-  int spawn();
+  bool spawn();
 
   proxy_t& proxy() { return *proxy_; }
   folly::EventBase& eventBase() { return evb_; }

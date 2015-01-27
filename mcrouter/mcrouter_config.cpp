@@ -9,9 +9,9 @@
  */
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogger.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
@@ -19,8 +19,9 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-int router_configure_from_string(mcrouter_t* router, folly::StringPiece input) {
-  return router_configure(router, input);
+int router_configure_from_string(McrouterInstance* router,
+                                 folly::StringPiece input) {
+  return router->configure(input);
 }
 
 bool read_standalone_flavor(
@@ -61,7 +62,7 @@ std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
   return folly::make_unique<McExtraRouteHandleProvider>();
 }
 
-std::unique_ptr<McrouterLogger> createMcrouterLogger(mcrouter_t* router) {
+std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router) {
   return folly::make_unique<McrouterLogger>(router);
 }
 

@@ -19,11 +19,10 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/router.h"
 #include "mcrouter/lib/network/test/TestUtil.h"
 #include "mcrouter/test/cpp_unit_tests/mcrouter_test_client.h"
 #include "mcrouter/test/cpp_unit_tests/MemcacheLocal.h"
@@ -170,15 +169,14 @@ void on_cancel(void* request_context,
 TEST(libmcrouter, premature_disconnect) {
   auto opts = defaultTestOptions();
   opts.config_str = configString;
-  mcrouter_t *router = mcrouter_new(opts);
+  auto router = McrouterInstance::init("test_premature_disconnect", opts);
 
   for (int i = 0; i < 10; i++) {
     on_reply_count = 0;
     on_cancel_count = 0;
 
     {
-      auto client = McrouterClient::create(
-        router,
+      auto client = router->createClient(
         {on_reply, on_cancel, nullptr},
         nullptr, 0);
 
@@ -201,8 +199,6 @@ TEST(libmcrouter, premature_disconnect) {
     EXPECT_EQ(0, on_reply_count);
     EXPECT_EQ(1, on_cancel_count);
   }
-
-  mcrouter_free(router);
 }
 
 TEST(libmcrouter, invalid_pools) {
@@ -211,7 +207,7 @@ TEST(libmcrouter, invalid_pools) {
   EXPECT_TRUE(folly::readFile(kInvalidPoolConfig.data(), configStr));
   opts.config_str = configStr;
   opts.default_route = "/a/b/";
-  mcrouter_t *router = mcrouter_new(opts);
+  auto router = McrouterInstance::init("test_invalid_pools", opts);
   EXPECT_TRUE(router == nullptr);
 }
 

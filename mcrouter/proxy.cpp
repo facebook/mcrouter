@@ -28,7 +28,6 @@
 #include <folly/ThreadName.h>
 #include <folly/File.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
@@ -38,6 +37,7 @@
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/fibers/EventBaseLoopController.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/priorities.h"
@@ -72,8 +72,8 @@ const std::string kInternalGetPrefix = "__mcrouter__.";
 static asox_queue_callbacks_t const proxy_request_queue_cb =  {
   /* Note that we want to drain the queue on cleanup,
      so we register both regular and sweep callbacks */
-  mcrouter_request_ready_cb,
-  mcrouter_request_ready_cb,
+  McrouterClient::requestReady,
+  McrouterClient::requestReady,
 };
 
 namespace {
@@ -88,7 +88,7 @@ FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
 
 }
 
-proxy_t::proxy_t(mcrouter_t *router_,
+proxy_t::proxy_t(McrouterInstance* router_,
                  folly::EventBase* eventBase_,
                  const McrouterOptions& opts_)
     : router(router_),
@@ -144,7 +144,7 @@ void proxy_t::onEventBaseAttached() {
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
 
   if (router != nullptr) {
-    router->startupLock.notify();
+    router->startupLock().notify();
   }
 }
 
@@ -515,7 +515,8 @@ ShadowSettings::Data::Data(const folly::dynamic& json) {
   }
 }
 
-ShadowSettings::ShadowSettings(const folly::dynamic& json, mcrouter_t* router)
+ShadowSettings::ShadowSettings(const folly::dynamic& json,
+                               McrouterInstance* router)
     : data_(std::make_shared<Data>(json)) {
 
   if (router) {
@@ -523,7 +524,8 @@ ShadowSettings::ShadowSettings(const folly::dynamic& json, mcrouter_t* router)
   }
 }
 
-ShadowSettings::ShadowSettings(std::shared_ptr<Data> data, mcrouter_t* router)
+ShadowSettings::ShadowSettings(std::shared_ptr<Data> data,
+                               McrouterInstance* router)
     : data_(std::move(data)) {
 
   if (router) {
@@ -541,8 +543,8 @@ std::shared_ptr<const ShadowSettings::Data> ShadowSettings::getData() {
   return data_.get();
 }
 
-void ShadowSettings::registerOnUpdateCallback(mcrouter_t* router) {
-  handle_ = router->rtVarsData.subscribeAndCall(
+void ShadowSettings::registerOnUpdateCallback(McrouterInstance* router) {
+  handle_ = router->rtVarsData().subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {
       if (!newVars) {
@@ -609,8 +611,8 @@ void ShadowSettings::registerOnUpdateCallback(mcrouter_t* router) {
     });
 }
 
-static void proxy_config_swap(proxy_t* proxy,
-                              std::shared_ptr<ProxyConfig> config) {
+void proxy_config_swap(proxy_t* proxy,
+                       std::shared_ptr<ProxyConfig> config) {
   /* Update the number of server stat for this proxy. */
   stat_set_uint64(proxy->stats, num_servers_stat, config->getClients().size());
 
@@ -627,73 +629,6 @@ static void proxy_config_swap(proxy_t* proxy,
     oldConfigEntry.time_enqueued = time(nullptr);
     asox_queue_enqueue(proxy->request_queue, &oldConfigEntry);
   }
-}
-
-int router_configure(mcrouter_t* router, folly::StringPiece input) {
-  FBI_ASSERT(router);
-
-  size_t proxyCount = router->opts.num_proxies;
-  std::vector<std::shared_ptr<ProxyConfig>> newConfigs;
-  try {
-    // assume default_route, default_region and default_cluster are same for
-    // each proxy
-    ProxyConfigBuilder builder(
-      router->opts,
-      router->configApi.get(),
-      input);
-
-    for (size_t i = 0; i < proxyCount; i++) {
-      newConfigs.push_back(builder.buildConfig(router->getProxy(i)));
-    }
-  } catch (const std::exception& e) {
-    logFailure(router, failure::Category::kInvalidConfig,
-               "Failed to reconfigure: {}", e.what());
-    return 0;
-  }
-
-  for (size_t i = 0; i < proxyCount; i++) {
-    proxy_config_swap(router->getProxy(i), newConfigs[i]);
-  }
-
-  VLOG_IF(0, !router->opts.constantly_reload_configs) <<
-      "reconfigured " << proxyCount << " proxies with " <<
-      newConfigs[0]->getClients().size() << " clients (" <<
-      newConfigs[0]->getConfigMd5Digest() << ")";
-
-  return 1;
-}
-
-/** (re)configure the proxy. 1 on success, 0 on error.
-    NB file-based configuration is synchronous
-    but server-based configuration is asynchronous */
-int router_configure(mcrouter_t *router) {
-  int success = 0;
-
-  {
-    std::lock_guard<std::mutex> lg(router->config_reconfig_lock);
-    /* mark config attempt before, so that
-       successful config is always >= last config attempt. */
-    router->last_config_attempt = time(nullptr);
-
-    router->configApi->trackConfigSources();
-    std::string config;
-    success = router->configApi->getConfigFile(config);
-    if (success) {
-      success = router_configure_from_string(router, config);
-    } else {
-      logFailure(router, failure::Category::kBadEnvironment,
-                 "Can not read config file");
-    }
-
-    if (!success) {
-      router->config_failures++;
-      router->configApi->abandonTrackedSources();
-    } else {
-      router->configApi->subscribeToTrackedSources();
-    }
-  }
-
-  return success;
 }
 
 }}} // facebook::memcache::mcrouter
