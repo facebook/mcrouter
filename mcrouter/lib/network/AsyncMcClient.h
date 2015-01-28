@@ -60,20 +60,22 @@ class AsyncMcClient {
    * Note: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.
    */
-  template <typename Operation>
-  McReply sendSync(const McRequest& request, Operation);
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type
+  sendSync(const Request& request, Operation);
 
   /**
    * Send request with given Op and call callback on reply.
    *
-   * @param callback  will be called when reply is received or request failed.
-   *                  Guaranteed to be called exactly once.
+   * @param f  callback that will be called when reply is received or request
+   *           failed. Guaranteed to be called exactly once.
+   *           Should be callable
+   *           f(typename ReplyType<Operation, Request>::type&&)
    * Note: caller is responsible for keeping request alive until the callback
    *       is called.
    */
-  template <typename Operation>
-  void send(const McRequest& request, Operation,
-            std::function<void(McReply&&)> callback);
+  template <class Operation, class Request, class F>
+  void send(const Request& request, Operation, F&& f);
 
   /**
    * Set throttling options.

@@ -15,6 +15,10 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/McReply.h"
 
+// Forward declare struct, we wouldn't use it if it wasn't enabled.
+struct mc_fbtrace_info_s;
+typedef mc_fbtrace_info_s mc_fbtrace_info_t;
+
 namespace facebook { namespace memcache {
 
 /**
@@ -25,7 +29,7 @@ class RequestHasFbTraceInfo {
   template <class T> static char check(decltype(&T::fbtraceInfo));
   template <class T> static int check(...);
  public:
-  static const bool value = sizeof(check<Request>(0)) == sizeof(char);
+  static constexpr bool value = sizeof(check<Request>(0)) == sizeof(char);
 };
 
 template<class Operation, class Request>

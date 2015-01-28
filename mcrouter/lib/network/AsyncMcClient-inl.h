@@ -28,15 +28,15 @@ inline void AsyncMcClient::setStatusCallbacks(
   base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
 }
 
-template <typename Operation>
-McReply AsyncMcClient::sendSync(const McRequest& request, Operation) {
+template <class Operation, class Request>
+typename ReplyType<Operation, Request>::type
+AsyncMcClient::sendSync(const Request& request, Operation) {
   return base_->sendSync(request, Operation());
 }
 
-template <typename Operation>
-void AsyncMcClient::send(const McRequest& request, Operation,
-                         std::function<void(McReply&&)> callback) {
-  base_->send(request, Operation(), std::move(callback));
+template <class Operation, class Request, class F>
+void AsyncMcClient::send(const Request& request, Operation, F&& f) {
+  base_->send(request, Operation(), std::forward<F>(f));
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {

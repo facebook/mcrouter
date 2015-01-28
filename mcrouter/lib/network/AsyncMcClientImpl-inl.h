@@ -13,60 +13,38 @@
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 
-#ifndef LIBMC_FBTRACE_DISABLE
 #include "mcrouter/lib/network/FBTrace.h"
-#endif
 
 namespace facebook { namespace memcache {
 
-namespace {
-
-template <int Op>
-std::function<void(const McReply&)> traceOnSend(const McRequest& request,
-                                                McOperation<Op>,
-                                                const AccessPoint& ap) {
-#ifndef LIBMC_FBTRACE_DISABLE
-  if (fbTraceOnSend(McOperation<Op>(), request, ap)) {
-    const mc_fbtrace_info_s* traceInfo = request.fbtraceInfo();
-    return [traceInfo] (const McReply& reply) {
-      fbTraceOnReceive(McOperation<Op>(), traceInfo, reply);
-    };
-  }
-#endif
-  return nullptr;
-}
-
-} // anonymous namespace
-
-template <int Op>
-McReply AsyncMcClientImpl::sendSync(const McRequest& request, McOperation<Op>) {
+template <class Operation, class Request>
+typename ReplyType<Operation, Request>::type
+AsyncMcClientImpl::sendSync(const Request& request, Operation) {
   auto selfPtr = selfPtr_.lock();
   // shouldn't happen.
   assert(selfPtr);
   assert(fiber::onFiber());
 
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    return McReply(mc_res_local_error);
+    return typename ReplyType<Operation, Request>::type(mc_res_local_error);
   }
 
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
-  std::function<void(const McReply&)> traceCallback =
-    traceOnSend(request, McOperation<Op>(), connectionOptions_.accessPoint);
+  fbTraceOnSend(Operation(), request, connectionOptions_.accessPoint);
 
-  ReqInfo req(request, nextMsgId_, McOperation<Op>(),
-              connectionOptions_.accessPoint.getProtocol(), selfPtr);
-  req.traceCallback = traceCallback;
-  sendCommon(req.createDummyPtr());
+  McClientRequestContextSync<Operation, Request> ctx(
+    Operation(), request, nextMsgId_,
+    connectionOptions_.accessPoint.getProtocol(), selfPtr);
+  sendCommon(ctx.createDummyPtr());
 
   // We sent request successfully, wait for the result.
-  req.syncContext.baton.wait();
-  return std::move(req.syncContext.reply);
+  ctx.wait();
+  return ctx.getReply();
 }
 
-template <int Op>
-void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
-    std::function<void(McReply&&)> callback) {
+template <class Operation, class Request, class F>
+void AsyncMcClientImpl::send(const Request& request, Operation, F&& f) {
   DestructorGuard dg(this);
 
   auto selfPtr = selfPtr_.lock();
@@ -74,21 +52,55 @@ void AsyncMcClientImpl::send(const McRequest& request, McOperation<Op>,
   assert(selfPtr);
 
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    callback(McReply(mc_res_local_error));
+    f(typename ReplyType<Operation, Request>::type(mc_res_local_error));
     return;
   }
 
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
-  std::function<void(const McReply&)> traceCallback =
-    traceOnSend(request, McOperation<Op>(), connectionOptions_.accessPoint);
+  fbTraceOnSend(Operation(), request, connectionOptions_.accessPoint);
 
-  auto req = ReqInfo::getFromPool(request, nextMsgId_, McOperation<Op>(),
-                                  connectionOptions_.accessPoint.getProtocol(),
-                                  std::move(callback), selfPtr);
-  req->traceCallback = traceCallback;
+  auto ctx = McClientRequestContextBase::createAsync(
+    Operation(), request, std::forward<F>(f), nextMsgId_,
+    connectionOptions_.accessPoint.getProtocol(), selfPtr);
+  sendCommon(std::move(ctx));
+}
 
-  sendCommon(std::move(req));
+template <class Reply>
+void AsyncMcClientImpl::reply(McClientRequestContextBase::UniquePtr req,
+                              Reply&& r) {
+  idMap_.erase(req->id);
+  if (!req->reply(std::move(r))) {
+    req->replyError(mc_res_local_error);
+  }
+}
+
+template <class Reply>
+void AsyncMcClientImpl::replyReady(Reply&& r, uint64_t reqId) {
+  assert(connectionState_ == ConnectionState::UP);
+  DestructorGuard dg(this);
+
+  // Local error in ascii protocol means that there was a protocol level error,
+  // e.g. we sent some command that server didn't understand. We need to log
+  // the original request and close the connection.
+  if (r.result() == mc_res_local_error &&
+      connectionOptions_.accessPoint.getProtocol() == mc_ascii_protocol) {
+    logCriticalAsciiError();
+    processShutdown();
+    return;
+  }
+
+  if (!outOfOrder_) {
+    reqId = nextInflightMsgId_;
+    incMsgId(nextInflightMsgId_);
+  }
+
+  auto ctx = getRequestContext(reqId);
+
+  // We might have already replied this request with an error.
+  if (ctx) {
+    reply(std::move(ctx), std::move(r));
+  }
 }
 
 }} // facebook::memcache
