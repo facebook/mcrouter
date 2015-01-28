@@ -17,6 +17,17 @@
 
 namespace facebook { namespace memcache {
 
+/**
+ * Class that uses SFINAE to check if Request type provides fbtraceInfo method.
+ */
+template <class Request>
+class RequestHasFbTraceInfo {
+  template <class T> static char check(decltype(&T::fbtraceInfo));
+  template <class T> static int check(...);
+ public:
+  static const bool value = sizeof(check<Request>(0)) == sizeof(char);
+};
+
 template<class Operation, class Request>
 bool fbTraceOnSend(Operation, const McRequest& request, const AccessPoint& ap);
 
