@@ -64,6 +64,10 @@ const size_t DEFAULT_STACK_SIZE = 8192 * 1024;
 
 class McrouterManager {
  public:
+  McrouterManager() {
+    scheduleSingletonCleanup();
+  }
+
   ~McrouterManager() {
     freeAllMcrouters();
   }

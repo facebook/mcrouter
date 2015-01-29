@@ -165,6 +165,8 @@ void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog);
 
 void initFailureLogger();
 
+void scheduleSingletonCleanup();
+
 #ifdef PACKAGE_STRING
   #define MCROUTER_PACKAGE_STRING PACKAGE_STRING
 #else

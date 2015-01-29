@@ -77,4 +77,6 @@ void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog) { }
 
 void initFailureLogger() { }
 
+void scheduleSingletonCleanup() { }
+
 }}}  // facebook::memcache::mcrouter
