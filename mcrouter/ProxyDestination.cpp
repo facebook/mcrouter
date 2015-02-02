@@ -248,14 +248,14 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
 }
 
 ProxyDestination::~ProxyDestination() {
-  client_.reset();
-
-  // should be called after client_.reset() to avoid making this
-  // ProxyDestination responsible for sending probes
   shared->removeDestination(this);
   if (proxy->destinationMap) {
     proxy->destinationMap->removeDestination(*this);
   }
+
+  // should not call 'handle_tko'
+  resetting = 1;
+  client_.reset();
 
   if (sending_probes) {
     onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
