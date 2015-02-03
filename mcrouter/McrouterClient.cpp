@@ -79,7 +79,7 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
     entries[i].type = request_type_request;
   }
 
-  if (router_->opts.standalone || router_->opts.sync) {
+  if (router_->opts.standalone) {
     /*
      * Skip the extra asox queue hop and directly call the queue callback,
      * since we're standalone and thus staying in the same thread
@@ -129,7 +129,7 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
 }
 
 folly::EventBase* McrouterClient::getBase() const {
-  if (router_->opts.standalone || router_->opts.sync) {
+  if (router_->opts.standalone) {
     return proxy_->eventBase;
   } else {
     return nullptr;
@@ -215,24 +215,15 @@ void McrouterClient::disconnect() {
   if (isZombie_) {
     return;
   }
-  if (router_->opts.sync) {
-    // we process request_queue on the same thread, so it is safe
-    // to disconnect here
-    disconnected_ = true;
-    if (numPending_ == 0) {
-      cleanup();
-    }
-  } else {
-    asox_queue_entry_t entry;
-    entry.type = request_type_disconnect;
-    // the libevent priority for disconnect must be greater than or equal to
-    // normal request to avoid race condition. (In libevent,
-    // higher priority value means lower priority)
-    entry.priority = 0;
-    entry.data = this;
-    entry.nbytes = sizeof(*this);
-    asox_queue_enqueue(proxy_->request_queue, &entry);
-  }
+  asox_queue_entry_t entry;
+  entry.type = request_type_disconnect;
+  // the libevent priority for disconnect must be greater than or equal to
+  // normal request to avoid race condition. (In libevent,
+  // higher priority value means lower priority)
+  entry.priority = 0;
+  entry.data = this;
+  entry.nbytes = sizeof(*this);
+  asox_queue_enqueue(proxy_->request_queue, &entry);
 }
 
 void McrouterClient::cleanup() {

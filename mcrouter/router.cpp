@@ -356,7 +356,7 @@ mcrouter_t::mcrouter_t(const McrouterOptions& input_options) :
     stat_updater_thread_stack(nullptr),
     is_transient(false),
     live_clients(0),
-    startupLock(opts.sync ? 0 : opts.num_proxies + 1),
+    startupLock(opts.num_proxies + 1),
     awriter(folly::make_unique<AsyncWriter>()),
     stats_log_writer(folly::make_unique<AsyncWriter>(
         opts.stats_async_queue_length)) {
@@ -485,7 +485,7 @@ mcrouter_t *mcrouter_new(const McrouterOptions& input_options,
    * If we're standalone, someone else will decide how to run the proxy
    * Specifically, we'll run them under proxy servers in main()
    */
-  if (!router->opts.standalone && !router->opts.sync && spawnProxyThreads) {
+  if (!router->opts.standalone && spawnProxyThreads) {
     for (auto& pt : router->proxyThreads_) {
       int rc = pt->spawn();
       if (!rc) {
@@ -643,10 +643,8 @@ void mcrouter_free(mcrouter_t *router) {
 
   router->shutdownAndJoinAuxiliaryThreads();
 
-  if (!router->opts.sync) {
-    for (auto& pt : router->proxyThreads_) {
-      pt->stopAndJoin();
-    }
+  for (auto& pt : router->proxyThreads_) {
+    pt->stopAndJoin();
   }
   if (router->onDestroyProxy) {
     for (size_t i = 0; i < router->proxies_.size(); ++i) {

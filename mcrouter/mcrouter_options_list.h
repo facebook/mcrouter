@@ -52,11 +52,6 @@ mcrouter_option_integer(
   "")
 
 mcrouter_option_toggle(
-  sync, false,
-  no_long, no_short,
-  "Sync mode: don't start proxy threads, don't fire off async requests")
-
-mcrouter_option_toggle(
   asynclog_disable, false,
   "asynclog-disable", no_short,
   "disable async log file spooling")

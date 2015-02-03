@@ -234,10 +234,6 @@ void proxy_request_decref(proxy_request_t* preq) {
   proxy_t* proxy = preq->proxy;
 
   if (preq->_refcount == 1) {
-    if (proxy->opts.sync &&
-        preq->reply_state == REPLY_STATE_REPLIED) {
-      preq->enqueueReply_(preq);
-    }
     if (preq->reqComplete_) {
       preq->reqComplete_(preq);
     }
@@ -468,9 +464,7 @@ void proxy_request_t::sendReply(McReply newReply) {
 
   reply_state = REPLY_STATE_REPLIED;
 
-  if (!proxy->opts.sync) {
-    enqueueReply_(this);
-  }
+  enqueueReply_(this);
 
   stat_incr(proxy->stats, request_replied_stat, 1);
   stat_incr(proxy->stats, request_replied_count_stat, 1);
@@ -624,16 +618,14 @@ static void proxy_config_swap(proxy_t* proxy,
   stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
 
   if (oldConfig) {
-    if (!proxy->opts.sync) {
-      auto configReq = new old_config_req_t(std::move(oldConfig));
-      asox_queue_entry_t oldConfigEntry;
-      oldConfigEntry.data = configReq;
-      oldConfigEntry.nbytes = sizeof(*configReq);
-      oldConfigEntry.priority = 0;
-      oldConfigEntry.type = request_type_old_config;
-      oldConfigEntry.time_enqueued = time(nullptr);
-      asox_queue_enqueue(proxy->request_queue, &oldConfigEntry);
-    }
+    auto configReq = new old_config_req_t(std::move(oldConfig));
+    asox_queue_entry_t oldConfigEntry;
+    oldConfigEntry.data = configReq;
+    oldConfigEntry.nbytes = sizeof(*configReq);
+    oldConfigEntry.priority = 0;
+    oldConfigEntry.type = request_type_old_config;
+    oldConfigEntry.time_enqueued = time(nullptr);
+    asox_queue_enqueue(proxy->request_queue, &oldConfigEntry);
   }
 }
 
