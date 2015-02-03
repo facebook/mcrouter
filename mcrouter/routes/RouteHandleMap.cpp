@@ -104,6 +104,9 @@ RouteHandleMap::RouteHandleMap(
   for (const auto& it : byRoute) {
     byRoute_.emplace(it.first, makePolicyMap(uniqueVectors, it.second));
   }
+
+  assert(byRoute_.find(defaultRoute_) != byRoute_.end());
+  defaultRouteMap_ = byRoute_[defaultRoute_];
 }
 
 void RouteHandleMap::foreachRoutePolicy(folly::StringPiece prefix,
@@ -142,7 +145,7 @@ RouteHandleMap::getTargetsForKeySlow(folly::StringPiece prefix,
     Ctx(const RouteHandleMap* rhMap_) : rhMap(rhMap_) {}
   } c(this);
 
-  return fiber::runInMainContext(
+  auto result = fiber::runInMainContext(
     [&c, prefix, key] () -> std::vector<McrouterRouteHandlePtr> {
       c.rhMap->foreachRoutePolicy(prefix,
         [&c, key] (const std::shared_ptr<RoutePolicyMap>& r) {
@@ -169,64 +172,43 @@ RouteHandleMap::getTargetsForKeySlow(folly::StringPiece prefix,
       return rh;
     }
   );
-}
-
-const std::vector<McrouterRouteHandlePtr>&
-RouteHandleMap::getBySingleRoute(folly::StringPiece route,
-                                 folly::StringPiece key) const {
-  auto it = byRoute_.find(route);
-  if (it == byRoute_.end()) {
-    return emptyV_;
+  if (result.empty() && sendInvalidRouteToDefault_) {
+    return defaultRouteMap_->getTargetsForKey(key);
   }
-  return it->second->getTargetsForKey(key);
+  return result;
 }
 
 const std::vector<McrouterRouteHandlePtr>*
 RouteHandleMap::getTargetsForKeyFast(folly::StringPiece prefix,
                                      folly::StringPiece key) const {
-  // empty prefix => route to default route
+  const std::vector<McrouterRouteHandlePtr>* result = nullptr;
   if (prefix.empty()) {
-    return &getBySingleRoute(defaultRoute_, key);
-  }
-
-  // route to all routes
-  if (prefix == "/*/*/") {
-    return &allRoutes_->getTargetsForKey(key);
-  }
-
-  auto starPos = prefix.find("*");
-  if (starPos == std::string::npos) {
-    // no stars at all
-    return &getBySingleRoute(prefix, key);
-  }
-
-  if (prefix.endsWith("/*/") && starPos == prefix.size() - 2) {
-    // route to all clusters of some region (/region/*/)
-    auto region = prefix.subpiece(1, prefix.size() - 4);
-    auto it = byRegion_.find(region);
-    if (it == byRegion_.end()) {
-      return &emptyV_;
+    // empty prefix => route to default route
+    result = &defaultRouteMap_->getTargetsForKey(key);
+  } else if (prefix == "/*/*/") {
+    // route to all routes
+    result = &allRoutes_->getTargetsForKey(key);
+  } else {
+    auto starPos = prefix.find("*");
+    if (starPos == std::string::npos) {
+      // no stars at all
+      auto it = byRoute_.find(prefix);
+      result = it == byRoute_.end()
+        ? &emptyV_
+        : &it->second->getTargetsForKey(key);
+    } else if (prefix.endsWith("/*/") && starPos == prefix.size() - 2) {
+      // route to all clusters of some region (/region/*/)
+      auto region = prefix.subpiece(1, prefix.size() - 4);
+      auto it = byRegion_.find(region);
+      result = it == byRegion_.end()
+        ? &emptyV_
+        : &it->second->getTargetsForKey(key);
     }
-    return &it->second->getTargetsForKey(key);
   }
-
-  // no other types supported
-  return nullptr;
-}
-
-const std::vector<McrouterRouteHandlePtr>& RouteHandleMap::getTargetsForKey(
-  folly::StringPiece prefix,
-  folly::StringPiece key) const {
-
-  auto rhPtr = getTargetsForKeyFast(prefix, key);
-  if (UNLIKELY(rhPtr == nullptr)) {
-    auto rh = getTargetsForKeySlow(prefix, key);
-    rhPtr = &rh;
+  if (sendInvalidRouteToDefault_ && result != nullptr && result->empty()) {
+    return &defaultRouteMap_->getTargetsForKey(key);
   }
-  if (UNLIKELY(sendInvalidRouteToDefault_ && rhPtr->empty())) {
-    return getBySingleRoute(defaultRoute_, key);
-  }
-  return *rhPtr;
+  return result;
 }
 
 }}}  // facebook::memcache::mcrouter

@@ -33,27 +33,6 @@ class RouteHandleMap {
                  const RoutingPrefix& defaultRoute,
                  bool sendInvalidRouteToDefault);
 
-  const std::vector<McrouterRouteHandlePtr>& getTargetsForKey(
-    folly::StringPiece prefix,
-    folly::StringPiece key) const;
-
- private:
-  const RoutingPrefix& defaultRoute_;
-  bool sendInvalidRouteToDefault_;
-
-  const std::vector<McrouterRouteHandlePtr> emptyV_;
-
-  std::shared_ptr<RoutePolicyMap> allRoutes_;
-  StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRegion_;
-  StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRoute_;
-
-  const std::vector<McrouterRouteHandlePtr>& getBySingleRoute(
-    folly::StringPiece route,
-    folly::StringPiece key) const;
-
-  void foreachRoutePolicy(folly::StringPiece prefix,
-    std::function<void(const std::shared_ptr<RoutePolicyMap>&)> f) const;
-
   /**
    * @return pointer to a precalculated vector of route handles that a request
    * with the given prefix and key should be forwarded to. nullptr if vector for
@@ -71,6 +50,19 @@ class RouteHandleMap {
   std::vector<McrouterRouteHandlePtr> getTargetsForKeySlow(
     folly::StringPiece prefix,
     folly::StringPiece key) const;
+
+ private:
+  const std::vector<McrouterRouteHandlePtr> emptyV_;
+  const RoutingPrefix& defaultRoute_;
+  bool sendInvalidRouteToDefault_;
+  std::shared_ptr<RoutePolicyMap> defaultRouteMap_;
+
+  std::shared_ptr<RoutePolicyMap> allRoutes_;
+  StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRegion_;
+  StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRoute_;
+
+  void foreachRoutePolicy(folly::StringPiece prefix,
+    std::function<void(const std::shared_ptr<RoutePolicyMap>&)> f) const;
 };
 
 }}}  // facebook::memcache::mcrouter

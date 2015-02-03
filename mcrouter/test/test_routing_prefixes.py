@@ -56,3 +56,40 @@ class TestMcrouterRoutingPrefixUmbrella(TestMcrouterRoutingPrefixAscii):
 
 class TestMcrouterRoutingPrefixOldNaming(TestMcrouterRoutingPrefixAscii):
     config = './mcrouter/test/routing_prefix_test_old_naming.json'
+
+class TestCustomRoutingPrefixes(McrouterTestCase):
+    config = './mcrouter/test/routing_prefix_test_custom.json'
+    extra_args = []
+
+    def setUp(self):
+        self.aa = self.add_server(Memcached())
+        self.ab = self.add_server(Memcached())
+        self.ba = self.add_server(Memcached())
+        self.bb = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(
+            self.config, '/a/a/', extra_args=self.extra_args)
+
+    def test_custom_routing_prefix(self):
+        mcr = self.get_mcrouter()
+
+        key = "/*/a/key"
+        value = "value"
+
+        mcr.set(key, value)
+        time.sleep(1)
+        self.assertEqual(self.aa.get('key'), value)
+        self.assertEqual(self.ba.get('key'), value)
+
+        key = "/b*/*/key"
+        value = "value2"
+        mcr.set(key, value)
+        time.sleep(1)
+        self.assertEqual(self.ba.get('key'), value)
+        self.assertEqual(self.bb.get('key'), value)
+
+        key = "/b/*b*/key"
+        value = "value3"
+        mcr.set(key, value)
+        self.assertEqual(self.bb.get('key'), value)

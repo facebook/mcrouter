@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include <folly/Likely.h>
+
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
@@ -37,7 +39,12 @@ class RootRoute {
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation) const {
 
-    return rhMap_.getTargetsForKey(req.routingPrefix(), req.routingKey());
+    const auto* rhPtr =
+      rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
+    if (UNLIKELY(rhPtr == nullptr)) {
+      return rhMap_.getTargetsForKeySlow(req.routingPrefix(), req.routingKey());
+    }
+    return *rhPtr;
   }
 
   template <class Operation, class Request>
@@ -48,9 +55,14 @@ class RootRoute {
        run in the background.
 
        This is a good default for /star/star/ requests. */
-    const auto& rh =
-      rhMap_.getTargetsForKey(req.routingPrefix(), req.routingKey());
-    return routeImpl(rh, req, Operation());
+    const auto* rhPtr =
+      rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
+    if (UNLIKELY(rhPtr == nullptr)) {
+      auto rh = rhMap_.getTargetsForKeySlow(req.routingPrefix(),
+                                            req.routingKey());
+      return routeImpl(rh, req, Operation());
+    }
+    return routeImpl(*rhPtr, req, Operation());
   }
 
  private:
