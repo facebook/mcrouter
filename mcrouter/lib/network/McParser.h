@@ -138,7 +138,7 @@ class McParser {
   /**
    * If we've read an umbrella header, this will contain header/body sizes.
    */
-  um_message_info_t umMsgInfo_{0};
+  um_message_info_t umMsgInfo_{0, 0, 0};
 
   /**
    * If this is nonempty, we're currently reading in umbrella message body.
