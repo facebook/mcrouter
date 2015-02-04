@@ -116,7 +116,7 @@ class DestinationRoute {
   template <int Op>
   ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
 
-    auto proxy = req.context().ctx().proxyRequest().proxy;
+    auto proxy = req.context().proxyRequest().proxy;
     if (!destination_->may_send()) {
       update_send_stats(proxy, (mc_op_t)Op, PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);
@@ -146,7 +146,7 @@ class DestinationRoute {
     auto& destination = destination_;
 
     DestinationRequestCtx ctx;
-    uint64_t senderId = req.context().ctx().senderId();
+    uint64_t senderId = req.context().senderId();
     folly::StringPiece attachPrefix;
     if (client_->keep_routing_prefix &&
         client_->attach_default_routing_prefix) {
@@ -158,7 +158,7 @@ class DestinationRoute {
 
     auto reply = ProxyMcReply(
       destination->send(newReq, McOperation<Op>(), ctx,
-                        req.context().ctx().senderId()));
+                        req.context().senderId()));
     req.context().onReplyReceived(*client_,
                                   req,
                                   reply,

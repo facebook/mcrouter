@@ -104,7 +104,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         }
         str.append(d);
       }
-      reqCopy->context().ctx().proxyRequest().sendReply(
+      reqCopy->context().proxyRequest().sendReply(
         McReply(mc_res_found, str));
     }
   );
@@ -366,7 +366,7 @@ void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
     replyStr = std::string("ERROR: ") + e.what();
   }
 
-  req.context().ctx().proxyRequest().sendReply(
+  req.context().proxyRequest().sendReply(
     McReply(mc_res_found, replyStr));
 }
 

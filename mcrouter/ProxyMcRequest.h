@@ -16,6 +16,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyMcReply;
+class ProxyRequestContext;
 
 enum class RequestClass {
   NORMAL,
@@ -23,15 +24,15 @@ enum class RequestClass {
   SHADOW,
 };
 
-class ProxyMcRequest : public McRequestWithContext<GenericProxyRequestContext> {
+class ProxyMcRequest : public McRequestWithContext<ProxyRequestContext> {
  public:
   template<typename... Args>
   explicit ProxyMcRequest(Args&&... args)
-    : McRequestWithContext<GenericProxyRequestContext>(
+    : McRequestWithContext<ProxyRequestContext>(
     std::forward<Args>(args)...) {}
   /* implicit */ ProxyMcRequest(
-  McRequestWithContext<GenericProxyRequestContext> req)
-    : McRequestWithContext<GenericProxyRequestContext>(std::move(req)) {}
+  McRequestWithContext<ProxyRequestContext> req)
+    : McRequestWithContext<ProxyRequestContext>(std::move(req)) {}
 
   ProxyMcRequest clone() const;
   void setRequestClass(RequestClass type) {

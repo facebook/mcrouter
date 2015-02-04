@@ -32,7 +32,7 @@ class ProxyRoute {
  private:
   ProxyMcReply dispatchMcMsgHelper(
     McMsgRef&& msg,
-    std::shared_ptr<GenericProxyRequestContext> ctx,
+    std::shared_ptr<ProxyRequestContext> ctx,
     McOpList::Item<0>) const {
 
     throw std::runtime_error("dispatch for requested op not implemented");
@@ -41,7 +41,7 @@ class ProxyRoute {
   template <int op_id>
   ProxyMcReply dispatchMcMsgHelper(
     McMsgRef&& msg,
-    std::shared_ptr<GenericProxyRequestContext> ctx,
+    std::shared_ptr<ProxyRequestContext> ctx,
     McOpList::Item<op_id>) const {
 
     if (msg->op == McOpList::Item<op_id>::op::mc_op) {
@@ -68,7 +68,7 @@ class ProxyRoute {
 
   ProxyMcReply dispatchMcMsg(
     McMsgRef&& msg,
-    std::shared_ptr<GenericProxyRequestContext> ctx) const {
+    std::shared_ptr<ProxyRequestContext> ctx) const {
 
     return dispatchMcMsgHelper(std::move(msg), std::move(ctx),
                                McOpList::LastItem());

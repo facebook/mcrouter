@@ -65,7 +65,7 @@ class AsynclogRoute {
       req.keyWithoutRoute();
     folly::StringPiece asynclogName = asynclogName_;
 
-    auto proxy = req.context().ctx().proxyRequest().proxy;
+    auto proxy = req.context().proxyRequest().proxy;
     Baton b;
     auto res = proxy->router->awriter->run(
       [&b, proxy, &dest, key, asynclogName] () {

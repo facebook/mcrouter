@@ -258,7 +258,7 @@ proxy_request_t* proxy_request_incref(proxy_request_t* preq) {
  * Deleter that deletes the object on the main context
  */
 struct MainContextDeleter {
-  void operator() (GenericProxyRequestContext* ctx) const {
+  void operator() (ProxyRequestContext* ctx) const {
     fiber::runInMainContext(
       [ctx] () {
         delete ctx;
@@ -282,11 +282,11 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
      can do complicated things, like finalize stats entry and
      destroy a stale config.  We assume that there's not enough
      stack space for these operations. */
-  std::shared_ptr<GenericProxyRequestContext> ctx(
-    new GenericProxyRequestContext(preq, config), MainContextDeleter());
+  std::shared_ptr<ProxyRequestContext> ctx(
+    new ProxyRequestContext(preq, config), MainContextDeleter());
 
   if (preq->orig_req->op == mc_op_get_service_info) {
-    auto orig = ctx->ctx().proxyRequest().orig_req.clone();
+    auto orig = ctx->proxyRequest().orig_req.clone();
     ProxyMcRequest req(std::move(ctx), std::move(orig));
 
     /* Will answer request for us */
@@ -295,14 +295,14 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   }
 
   auto func_ctx = folly::makeMoveWrapper(
-    std::shared_ptr<GenericProxyRequestContext>(ctx));
+    std::shared_ptr<ProxyRequestContext>(ctx));
   auto finally_ctx = folly::makeMoveWrapper(std::move(ctx));
 
   fiberManager.addTaskFinally(
     [func_ctx]() {
-      auto& origReq = (*func_ctx)->ctx().proxyRequest().orig_req;
+      auto& origReq = (*func_ctx)->proxyRequest().orig_req;
       try {
-        auto& proute = (*func_ctx)->ctx().proxyRoute();
+        auto& proute = (*func_ctx)->proxyRoute();
         auto reply = proute.dispatchMcMsg(origReq.clone(),
                                           std::move(*func_ctx));
         return ProxyMcReply::moveToMcReply(std::move(reply));
@@ -314,7 +314,7 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
       }
     },
     [finally_ctx](folly::Try<McReply>&& reply) {
-      (*finally_ctx)->ctx().proxyRequest().sendReply(std::move(*reply));
+      (*finally_ctx)->proxyRequest().sendReply(std::move(*reply));
     }
   );
 }

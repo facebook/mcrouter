@@ -14,4 +14,3 @@ static_assert(false, "mcrouter: invalid build");
 #endif
 
 #include "mcrouter/DestinationClient.h"
-#include "mcrouter/LoggingProxyRequestContext.h"

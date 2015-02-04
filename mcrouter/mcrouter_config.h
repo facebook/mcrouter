@@ -41,16 +41,24 @@ namespace mcrouter {
 class ConfigApi;
 class DestinationClient;
 class ExtraRouteHandleProviderIf;
-class LoggingProxyRequestContext;
 class mcrouter_t;
 class McrouterLogger;
 class proxy_t;
 class TkoLog;
 
 typedef DestinationClient DestinationMcClient;
-typedef LoggingProxyRequestContext GenericProxyRequestContext;
 struct ProxyStatsContainer {
   explicit ProxyStatsContainer(proxy_t*) {}
+};
+
+struct AdditionalProxyRequestLogger {
+  explicit AdditionalProxyRequestLogger(proxy_t*) {}
+  /**
+   * Called once a reply is received to record a stats sample if required.
+   */
+  template <typename... Args>
+  void log(Args&&...) {
+  }
 };
 
 /**

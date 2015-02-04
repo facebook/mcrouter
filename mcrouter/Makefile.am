@@ -35,7 +35,6 @@ libmcroutercore_a_SOURCES = \
   FileObserver.h \
   flavor.cpp \
   flavor.h \
-  LoggingProxyRequestContext.h \
   mcrouter_config-impl.h \
   mcrouter_config.cpp \
   mcrouter_config.h \
