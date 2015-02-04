@@ -668,7 +668,6 @@ mcrouter_t* mcrouter_init(const std::string& persistence_id,
   // For the standalone case in libmcrouter, create a new router and return it.
   if (options.standalone) {
     LOG(INFO) << "Constructing standalone mcrouter";
-    return mcrouter_new(options);
   }
 
   return mcrouterManager.get()->mcrouterGetCreate(persistence_id, options);

@@ -635,11 +635,7 @@ int main(int argc, char **argv) {
    */
   mc_msg_use_atomic_refcounts(0);
 
-  /*
-   * We don't care about persistence. Skip mcrouter_init
-   * and go straight to mcrouter_new
-   */
-  auto router = mcrouter_new(opts);
+  auto router = mcrouter_init("standalone", opts);
   if (router == nullptr) {
     LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
     exit(EXIT_STATUS_TRANSIENT_ERROR);
