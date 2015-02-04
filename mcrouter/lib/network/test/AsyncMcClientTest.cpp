@@ -624,7 +624,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
     }
     // This will be triggered before the timeout of client (i.e. it will be
     // processed earlier).
-    eventBase.runAfterDelay([&eventBase] {
+    eventBase.tryRunAfterDelay([&eventBase] {
                               eventBase.terminateLoopSoon();
                             }, 100);
     // Trigger pushMessages() callback.

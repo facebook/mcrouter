@@ -169,7 +169,7 @@ TEST(FiberManager, batonTimedWaitPostEvb) {
       manager.addTask([&]() {
           Baton baton;
 
-          evb.runAfterDelay([&]() {
+          evb.tryRunAfterDelay([&]() {
               baton.post();
             },
             100);

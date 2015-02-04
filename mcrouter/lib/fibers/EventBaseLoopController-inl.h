@@ -94,7 +94,7 @@ inline void EventBaseLoopController::timedSchedule(std::function<void()> func,
     std::chrono::milliseconds>(time - Clock::now()).count() + 1;
   // If clock is not monotonic
   delay_ms = std::max(delay_ms, 0L);
-  eventBase_->runAfterDelay(func, delay_ms);
+  eventBase_->tryRunAfterDelay(func, delay_ms);
 }
 
 }}}  // facebook::memcache::mcrouter
