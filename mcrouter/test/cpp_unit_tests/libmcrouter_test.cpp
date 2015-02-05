@@ -215,47 +215,6 @@ TEST(libmcrouter, invalid_pools) {
   EXPECT_TRUE(router == nullptr);
 }
 
-TEST(libmcrouter, standalone) {
-  auto opts = defaultTestOptions();
-  opts.standalone = true;
-  opts.config_str = configString;
-  mcrouter_t* router = mcrouter_init("standalone_test", opts);
-  mcrouter_t* router2 = nullptr;
-  folly::EventBase evb;
-  for (size_t i = 0; i < router->opts.num_proxies; ++i) {
-    router->getProxy(i)->attachEventBase(&evb);
-  }
-
-  {
-    auto client = McrouterClient::create(router,
-                                         {on_reply, nullptr},
-                                         nullptr,
-                                         0);
-
-    const char key[] = "mcrouter_test:standalone:key:1";
-    mc_msg_t *mc_msg = mc_msg_new(sizeof(key));
-    mc_msg->key.str = (char*) &mc_msg[1];
-    strcpy(mc_msg->key.str, key);
-    mc_msg->key.len = strlen(key);
-    mc_msg->op = mc_op_get;
-    mcrouter_msg_t msg;
-    msg.req = mc_msg;
-
-    on_reply_count = 0;
-    client->send(&msg, 1);
-    while (on_reply_count == 0) {
-      mcrouterLoopOnce(&evb);
-    }
-    EXPECT_TRUE(on_reply_count == 1);
-
-    /* Allocating a new router in standalone mode should return a new router! */
-    router2 = mcrouter_init("standalone_test", opts);
-    EXPECT_TRUE(router != router2);
-  }
-  mcrouter_free(router);
-  mcrouter_free(router2);
-}
-
 TEST(libmcrouter, listenSock) {
   /* Create a listen socket, pass it to a child mcrouter and
      check that communication through the socket works */
