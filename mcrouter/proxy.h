@@ -122,8 +122,8 @@ struct proxy_request_t {
    * @param enqReply the function we will use to enqueue the reply when done
    * @param con the context for this request
    * @param reqComplete if non-null, will be called when all replies
-   * @param senderId the id to distinguish the request from different caller
    *   (even async) complete.
+   * @param senderId the id to distinguish the request from different caller
    */
   proxy_request_t(proxy_t* p,
                   McMsgRef req,
