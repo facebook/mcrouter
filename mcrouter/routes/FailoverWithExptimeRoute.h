@@ -145,7 +145,7 @@ class FailoverWithExptimeRoute {
   }
 
   bool isFailoverDisabledForRequest(const ProxyMcRequest& req) const {
-    return req.context().proxyRequest().failover_disabled;
+    return req.context().failoverDisabled();
   }
 
   template <class Request>

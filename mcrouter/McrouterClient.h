@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <folly/detail/CacheLocality.h>
 #include <folly/IntrusiveList.h>
 #include <folly/Optional.h>
 
@@ -40,8 +41,8 @@ struct mcrouter_client_stats_t {
 
 class McrouterClient;
 class McrouterInstance;
-class proxy_request_t;
 class proxy_t;
+class ProxyRequestContext;
 
 struct mcrouter_msg_t {
   mc_msg_t* req;
@@ -162,8 +163,6 @@ class McrouterClient {
   // only updated by mcrouter thread, so we don't need any fancy atomic refcount
   int numPending_{0};
 
-  size_t refcount_{1};
-
   // If true implies that the underlying mcrouter has already been
   // freed. A zombie client can not serve any more requests.
   std::atomic<bool> isZombie_{false};
@@ -174,20 +173,20 @@ class McrouterClient {
    */
   uint64_t clientId_;
 
+  std::atomic<size_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING refcount_{1};
+
   McrouterClient(
     McrouterInstance* router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding);
 
-  void onReply(asox_queue_entry_t*);
+  void onReply(ProxyRequestContext& preq);
   void disconnect();
   void cleanup();
   McrouterClient* incref();
   void decref();
   std::unordered_map<std::string, int64_t> getStatsHelper(bool clear);
-
-  static void enqueueReply(proxy_request_t *preq);
 
  public:
   /* Note: this is only public due to legacy code in proxy.cpp.
@@ -203,7 +202,7 @@ class McrouterClient {
   McrouterClient& operator=(McrouterClient&&) = delete;
 
   friend class McrouterInstance;
-  friend class proxy_request_t;
+  friend class ProxyRequestContext;
 };
 
 }}} // facebook::memcache::mcrouter

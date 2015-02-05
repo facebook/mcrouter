@@ -116,7 +116,7 @@ class DestinationRoute {
   template <int Op>
   ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
 
-    auto proxy = req.context().proxyRequest().proxy;
+    auto proxy = &req.context().proxy();
     if (!destination_->may_send()) {
       update_send_stats(proxy, (mc_op_t)Op, PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);

@@ -12,34 +12,21 @@
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyRequestContext.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-struct mcrouter_queue_entry_t {
-  mc_msg_t* request;
-  McReply reply{mc_res_unknown};
-  folly::Optional<McRequest> saved_request;
-  McrouterClient* router_client;
-  proxy_t *proxy;
-  void* context;
-};
-
 /**
  * @return true  If precheck finds an interesting request and has the reply
  *   set up otherwise this request needs to go through normal flow.
  */
-bool precheckRequest(mcrouter_queue_entry_t* mcreq) {
-  FBI_ASSERT(mcreq &&
-             mcreq->request &&
-             mcreq->request->op >= 0 &&
-             mcreq->request->op < mc_nops);
-
-  switch (mcreq->request->op) {
+bool precheckRequest(ProxyRequestContext& preq) {
+  switch (preq.origReq()->op) {
     // Return error (pretend to not even understand the protocol)
     case mc_op_shutdown:
-      mcreq->reply = McReply(mc_res_bad_command);
+      preq.sendReply(McReply(mc_res_bad_command));
       break;
 
     // Return 'Not supported' message
@@ -47,14 +34,14 @@ bool precheckRequest(mcrouter_queue_entry_t* mcreq) {
     case mc_op_prepend:
     case mc_op_flushall:
     case mc_op_flushre:
-      mcreq->reply = McReply(mc_res_remote_error, "Command not supported");
+      preq.sendReply(McReply(mc_res_remote_error, "Command not supported"));
       break;
 
     // Everything else is supported
     default:
-      auto err = mc_client_req_check(mcreq->request);
+      auto err = mc_client_req_check(preq.origReq().get());
       if (err != mc_req_err_valid) {
-        mcreq->reply = McReply(mc_res_remote_error, mc_req_err_to_string(err));
+        preq.sendReply(McReply(mc_res_remote_error, mc_req_err_to_string(err)));
         break;
       }
       return false;
@@ -85,25 +72,27 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
 
   __sync_fetch_and_add(&stats_.nreq, nreqs);
   for (size_t i = 0; i < nreqs; i++) {
-    mcrouter_queue_entry_t* router_entry = new mcrouter_queue_entry_t();
-    FBI_ASSERT(requests[i].req->_refcount > 0);
-    router_entry->request = requests[i].req;
-    mc_msg_incref(router_entry->request);
+    auto preq = ProxyRequestContext::create(
+      *proxy_,
+      McMsgRef::cloneRef(requests[i].req),
+      [] (ProxyRequestContext& prq) {
+        prq.requester_->onReply(prq);
+      },
+      requests[i].context);
+    preq->requester_ = incref();
+    if (requests[i].saved_request.hasValue()) {
+      preq->savedRequest_.emplace(
+        std::move(*requests[i].saved_request));
+    }
+
     __sync_fetch_and_add(&stats_.op_count[requests[i].req->op], 1);
     __sync_fetch_and_add(&stats_.op_value_bytes[requests[i].req->op],
                          requests[i].req->value.len);
     __sync_fetch_and_add(&stats_.op_key_bytes[requests[i].req->op],
                          requests[i].req->key.len);
 
-    router_entry->context = requests[i].context;
-    router_entry->router_client = this;
-    router_entry->proxy = proxy_;
-    if (requests[i].saved_request.hasValue()) {
-      router_entry->saved_request.emplace(
-        std::move(*requests[i].saved_request));
-    }
-    entries[i].data = router_entry;
-    entries[i].nbytes = sizeof(mcrouter_queue_entry_t*);
+    entries[i].data = preq.release();
+    entries[i].nbytes = sizeof(ProxyRequestContext*);
     entries[i].priority = 0;
     entries[i].type = request_type_request;
   }
@@ -195,28 +184,26 @@ McrouterClient::McrouterClient(
   }
 }
 
-void McrouterClient::onReply(asox_queue_entry_t* entry) {
+void McrouterClient::onReply(ProxyRequestContext& preq) {
   if (maxOutstanding_ != 0) {
     counting_sem_post(&outstandingReqsSem_, 1);
   }
 
-  mcrouter_queue_entry_t* router_entry = (mcrouter_queue_entry_t*) entry->data;
   mcrouter_msg_t router_reply;
 
   // Don't increment refcounts, because these are transient stack
   // references, and are guaranteed to be shorted lived than router_entry's
   // reference.  This is a premature optimization.
-  router_reply.req = router_entry->request;
-  router_reply.reply = std::move(router_entry->reply);
-
-  router_reply.context = router_entry->context;
+  router_reply.req = const_cast<mc_msg_t*>(preq.origReq().get());
+  router_reply.reply = std::move(preq.reply_.value());
+  router_reply.context = preq.context_;
 
   if (router_reply.reply.result() == mc_res_timeout ||
       router_reply.reply.result() == mc_res_connect_timeout) {
     __sync_fetch_and_add(&stats_.ntmo, 1);
   }
 
-  __sync_fetch_and_add(&stats_.op_value_bytes[router_entry->request->op],
+  __sync_fetch_and_add(&stats_.op_value_bytes[preq.origReq()->op],
                        router_reply.reply.value().length());
 
   if (LIKELY(callbacks_.on_reply && !disconnected_)) {
@@ -224,14 +211,8 @@ void McrouterClient::onReply(asox_queue_entry_t* entry) {
   } else if (callbacks_.on_cancel && disconnected_) {
     // This should be called for all canceled requests, when cancellation is
     // implemented properly.
-    callbacks_.on_cancel(router_entry->context, arg_);
+    callbacks_.on_cancel(preq.context_, arg_);
   }
-
-  stat_decr_safe(router_entry->proxy->stats,
-                 mcrouter_queue_entry_num_outstanding_stat);
-
-  mc_msg_decref(router_entry->request);
-  delete router_entry;
 
   numPending_--;
   if (numPending_ == 0 && disconnected_) {
@@ -308,41 +289,19 @@ McrouterClient::getStatsHelper(bool clear) {
   return ret;
 }
 
-void McrouterClient::enqueueReply(proxy_request_t *preq) {
-  asox_queue_entry_t entry;
-  mcrouter_queue_entry_t *router_entry = new mcrouter_queue_entry_t();
-
-  stat_incr_safe(preq->proxy->stats, mcrouter_queue_entry_num_outstanding_stat);
-  router_entry->request = mc_msg_incref(const_cast<mc_msg_t*>(
-                                          preq->orig_req.get()));
-
-  router_entry->reply = std::move(preq->reply);
-
-  router_entry->context = preq->context;
-  router_entry->proxy = preq->proxy;
-
-  entry.data = router_entry;
-  entry.nbytes = sizeof(router_entry);
-  entry.type = entry.priority = 0;
-  preq->requester->onReply(&entry);
-  FBI_ASSERT(preq->_refcount >= 1);
-}
-
 void McrouterClient::requestReady(asox_queue_t q,
                                   asox_queue_entry_t* entry,
                                   void* arg) {
   if (entry->type == request_type_request) {
     proxy_t* proxy = (proxy_t*)arg;
-    proxy_request_t* preq = nullptr;
-    mcrouter_queue_entry_t* router_entry = (mcrouter_queue_entry_t*)entry->data;
-    auto client = router_entry->router_client;
+    auto preq =
+      std::unique_ptr<ProxyRequestContext>(
+        reinterpret_cast<ProxyRequestContext*>(entry->data));
+    auto client = preq->requester_;
 
     client->numPending_++;
 
-    FBI_ASSERT(entry->nbytes == sizeof(mcrouter_queue_entry_t*));
-
-    if (precheckRequest(router_entry)) {
-      client->onReply(entry);
+    if (precheckRequest(*preq)) {
       return;
     }
 
@@ -351,40 +310,10 @@ void McrouterClient::requestReady(asox_queue_t q,
          and 2) the clients are winding down, so we wouldn't get any
          meaningful response back anyway. */
       LOG(ERROR) << "Outstanding request on a proxy that's being destroyed";
-      client->onReply(entry);
+      preq->sendReply(McReply(mc_res_unknown));
       return;
     }
-
-    // this will also grab a reference to the router_entry->request
-    // so free the reference from the enqueue below
-    try {
-      /* steal router_entry->request, so we don't need to mc_msg_decref() */
-      preq = new proxy_request_t(proxy,
-                                 McMsgRef::moveRef(router_entry->request),
-                                 &McrouterClient::enqueueReply,
-                                 router_entry->context,
-                                 /* reqComplete= */ nullptr,
-                                 client->clientId_);
-      if (router_entry->saved_request.hasValue()) {
-        preq->saved_request.emplace(std::move(*router_entry->saved_request));
-      }
-    } catch (...) {
-      preq = nullptr;
-      LOG(ERROR) << "Failed to create proxy_request";
-    }
-    // we weren't able to construct a preq so pass it back
-    // to the client as an error
-    if (!preq) {
-      router_entry->reply = McReply(mc_res_local_error,
-                                    "Couldn't create proxy_request_t");
-      client->onReply(entry);
-      return;
-    }
-    preq->requester = client->incref();
-    proxy->dispatchRequest(preq);
-
-    delete router_entry;
-    proxy_request_decref(preq);
+    proxy->dispatchRequest(std::move(preq));
   } else if (entry->type == request_type_old_config) {
     auto oldConfig = (old_config_req_t*) entry->data;
     delete oldConfig;
