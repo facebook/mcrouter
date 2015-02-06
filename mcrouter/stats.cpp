@@ -47,14 +47,16 @@ namespace {
 
 char* gStandaloneArgs = nullptr;
 
-const char* clientStateToStr(proxy_client_state_t state) {
+const char* clientStateToStr(ProxyDestinationState state) {
   switch (state) {
-    case PROXY_CLIENT_TKO:
+    case ProxyDestinationState::kTko:
       return "tko";
-    case PROXY_CLIENT_UP:
+    case ProxyDestinationState::kUp:
       return "up";
-    case PROXY_CLIENT_NEW:
+    case ProxyDestinationState::kNew:
       return "new";
+    case ProxyDestinationState::kClosed:
+      return "closed";
     default:
       return "unknown";
   }
@@ -62,7 +64,7 @@ const char* clientStateToStr(proxy_client_state_t state) {
 
 struct ServerStat {
   uint64_t results[mc_nres] = {0};
-  size_t states[PROXY_CLIENT_NUM_STATES] = {0};
+  size_t states[(size_t) ProxyDestinationState::kNumStates] = {0};
   double sumLatencies{0.0};
   size_t cntLatencies{0};
   size_t pendingRequestsCount{0};
@@ -73,9 +75,9 @@ struct ServerStat {
     auto res = folly::format("avg_latency_us:{:.3f}", avgLatency).str();
     folly::format(" pending_reqs:{}", pendingRequestsCount).appendTo(res);
     folly::format(" inflight_reqs:{}", inflightRequestsCount).appendTo(res);
-    for (size_t i = 0; i < PROXY_CLIENT_NUM_STATES; ++i) {
+    for (size_t i = 0; i < (size_t) ProxyDestinationState::kNumStates; ++i) {
       if (states[i] > 0) {
-        auto state = clientStateToStr(static_cast<proxy_client_state_t>(i));
+        auto state = clientStateToStr(static_cast<ProxyDestinationState>(i));
         folly::format(" {}:{}", state, states[i]).appendTo(res);
       }
     }
@@ -406,11 +408,6 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
       }
     }
   }
-
-  // num_servers_down is the inverse of num_servers_up wrt num_servers
-  stats[num_servers_down_stat].data.uint64 =
-    stats[num_servers_stat].data.uint64 -
-    stats[num_servers_up_stat].data.uint64;
 }
 
 void stat_incr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
@@ -515,7 +512,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
           for (size_t i = 0; i < mc_nres; ++i) {
             stat.results[i] += pdstn->stats().results[i];
           }
-          ++stat.states[pdstn->state()];
+          ++stat.states[(size_t) pdstn->state()];
 
           if (pdstn->stats().avgLatency.hasValue()) {
             stat.sumLatencies += pdstn->stats().avgLatency.value();

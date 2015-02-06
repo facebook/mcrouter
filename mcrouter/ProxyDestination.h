@@ -41,16 +41,16 @@ class ProxyDestinationMap;
 class dynamic_stat_t;
 class proxy_t;
 
-enum proxy_client_state_t {
-  PROXY_CLIENT_UNKNOWN = 0,   // bug
-  PROXY_CLIENT_NEW,           // never connected
-  PROXY_CLIENT_UP,            // currently connected
-  PROXY_CLIENT_TKO,           // waiting for retry timeout
-  PROXY_CLIENT_NUM_STATES
+enum class ProxyDestinationState {
+  kNew,           // never connected
+  kUp,            // currently connected
+  kTko,           // waiting for retry timeout
+  kClosed,        // closed due to inactive
+  kNumStates
 };
 
 struct ProxyDestinationStats {
-  bool is_up{false};
+  ProxyDestinationState state{ProxyDestinationState::kNew};
   ExponentialSmoothData avgLatency;
   uint64_t results[mc_nres] = {0};
 
@@ -89,12 +89,12 @@ struct ProxyDestination {
   bool may_send();
 
   /**
-   * Returns one of the three states that the server could be in:
-   * new, up, or total knockout (tko): means we're out for the count,
+   * Returns one of the four states that the server could be in:
+   * new, up, closed or total knockout (tko): means we're out for the count,
    * i.e. we had a timeout or connection failure and haven't had time
    * to recover.
    */
-  proxy_client_state_t state() const;
+  ProxyDestinationState state() const;
 
   /**
    * @return stats for ProxyDestination
@@ -132,6 +132,8 @@ struct ProxyDestination {
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
                      // mc_client_reset and not a remote connection failure.
+
+  void setState(ProxyDestinationState st);
 
   // tko behaviour
   char marked_tko{0};
