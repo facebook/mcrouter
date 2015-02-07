@@ -13,6 +13,7 @@
 
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/lib/config/ConfigPreprocessor.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/priorities.h"
@@ -35,6 +36,7 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
       { "default-route", opts.default_route.str() },
       { "default-region", opts.default_route.getRegion().str() },
       { "default-cluster", opts.default_route.getCluster().str() },
+      { "hostid", globals::hostid() },
     });
 
   poolFactory_ = std::make_shared<PoolFactory>(json_, *configApi, opts);
