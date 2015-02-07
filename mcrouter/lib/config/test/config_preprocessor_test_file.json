@@ -234,7 +234,15 @@
       "string": {
         "orig": "@slice(abcd,@int(2),@int(3))",
         "expand": "cd"
-      }
+      },
+      "out_of_range": {
+        "orig": "@slice(abcd, @int(0), @int(-1))",
+        "expand": ""
+      },
+      "out_of_range2": {
+        "orig": "@slice(abcd, @int(-10), @int(10000))",
+        "expand": "abcd"
+      },
     }
   },
   "transform": {
@@ -396,36 +404,44 @@
     }
   },
   "consts_in_consts": {
-    "macros": {
-      "type": "merge",
-      "params": [
+    "macros": [
+      {
+        "a": {
+          "type": "constDef",
+          "result": "A"
+        }
+      },
+      [
         {
-          "a": {
-            "type": "constDef",
-            "result": "A"
-          }
+          "type": "merge",
+          "params": [
+            {
+              "A": {
+                "type": "macroDef",
+                "params": [ "param" ],
+                "result": "%c%%param%"
+              },
+              "b": {
+                "type": "constDef",
+                "result": "%a%b"
+              },
+            },
+            {
+              "c": {
+                "type": "constDef",
+                "result": "%b%c"
+              }
+            }
+          ]
         },
         {
-          "A": {
-            "type": "macroDef",
-            "params": [ "param" ],
-            "result": "%c%%param%"
-          },
-          "b": {
-            "type": "constDef",
-            "result": "%a%b"
-          },
-          "c": {
-            "type": "constDef",
-            "result": "%b%c"
-          },
           "d": {
             "type": "constDef",
             "result": "@A(d)"
           }
         }
       ]
-    },
+    ],
     "cases": {
       "a": {
         "orig": "%a%",

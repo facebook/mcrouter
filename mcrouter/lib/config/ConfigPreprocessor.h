@@ -124,6 +124,12 @@ class ConfigPreprocessor {
 
   void addBuiltInMacro(std::string name, std::vector<folly::dynamic> params,
                        std::function<folly::dynamic(Context)> func);
+
+  void parseConstDefs(folly::dynamic jconsts);
+
+  void parseMacroDef(const folly::dynamic& key, const folly::dynamic& obj);
+
+  void parseMacroDefs(folly::dynamic jmacros);
 };
 
 }}  // facebook::memcache
