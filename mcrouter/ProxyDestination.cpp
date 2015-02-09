@@ -179,7 +179,7 @@ void ProxyDestination::onReply(const McReply& reply,
 
 void ProxyDestination::on_up() {
   FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(state() != ProxyDestinationState::kUp);
+  FBI_ASSERT(stats_.state != ProxyDestinationState::kUp);
 
   stat_incr(proxy->stats, server_up_events_stat, 1);
   setState(ProxyDestinationState::kUp);
@@ -327,7 +327,7 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
 }
 
 void ProxyDestination::setState(ProxyDestinationState new_st) {
-  auto old_st = state();
+  auto old_st = stats_.state;
 
   if (old_st != new_st) {
     auto getStatName = [](ProxyDestinationState st) {
