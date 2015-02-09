@@ -44,8 +44,9 @@ class proxy_t;
 enum class ProxyDestinationState {
   kNew,           // never connected
   kUp,            // currently connected
-  kTko,           // waiting for retry timeout
+  kDown,          // currently down
   kClosed,        // closed due to inactive
+  kTko,           // global tko: waiting for retry timeout
   kNumStates
 };
 

@@ -201,7 +201,7 @@ void ProxyDestination::on_down() {
     VLOG(1) << "server " << pdstnKey << " down (" <<
         stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
         stat_get_uint64(proxy->stats, num_servers_stat) << ")";
-    setState(ProxyDestinationState::kTko);
+    setState(ProxyDestinationState::kDown);
     handle_tko(McReply(mc_res_connect_error),
                /* is_probe_req= */ false);
   }
@@ -281,7 +281,7 @@ const ProxyDestinationStats& ProxyDestination::stats() const {
 bool ProxyDestination::may_send() {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
-  return state() != ProxyDestinationState::kTko;
+  return !shared->tko.isTko();
 }
 
 void ProxyDestination::resetInactive() {
@@ -338,7 +338,7 @@ void ProxyDestination::setState(ProxyDestinationState new_st) {
           return num_servers_up_stat;
         case ProxyDestinationState::kClosed:
           return num_servers_closed_stat;
-        case ProxyDestinationState::kTko:
+        case ProxyDestinationState::kDown:
           return num_servers_down_stat;
         default:
           CHECK(false);
