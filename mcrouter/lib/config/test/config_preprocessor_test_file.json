@@ -49,6 +49,27 @@
       "booleans": {
         "orig": "@and(@not(@or(@bool(false),@bool(1))), @not(@bool(false)))",
         "expand": false
+      },
+      "sortInts": {
+        "orig": {
+          "type": "sort",
+          "dictionary": [ 2, 1, 5, 3, 10 ]
+        },
+        "expand": [ 1, 2, 3, 5, 10 ]
+      },
+      "sortStrings": {
+        "orig": {
+          "type": "sort",
+          "dictionary": [ "a", "c", "b" ]
+        },
+        "expand": [ "a", "b", "c" ]
+      },
+      "sortMix": {
+        "orig": {
+          "type": "sort",
+          "dictionary": [ "2", "99", 10, 99 ]
+        },
+        "expand": [ 10, 99, "2", "99" ]
       }
     }
   },
@@ -664,6 +685,102 @@
           "key": "c",
         },
         "expand": false
+      }
+    }
+  },
+  "foreach": {
+    "macros": {},
+    "cases": {
+      "simple": {
+        "orig": [
+          {
+            "type": "foreach",
+            "from": [ "a", "b" ],
+            "use": [ "%item%1" ]
+          },
+          {
+            "type": "foreach",
+            "from": [ "a", "b" ],
+            "top": 1
+          },
+          {
+            "type": "foreach",
+            "from": { },
+            "top": 1
+          },
+          {
+            "type": "foreach",
+            "from": [ "a" ]
+          },
+          {
+            "type": "foreach",
+            "from": [ 1, 2 ],
+            "where": "@less(@int(1), %item%)",
+            "use": { "@str(%key%)": "%item%" }
+          },
+          {
+            "type": "foreach",
+            "from": [ 1, 2, 3, 4, 5, 6, ],
+            "where": "@equals(@mod(%item%, @int(2)), @int(0))",
+            "top": 2,
+            "use": {
+              "type": "define",
+              "vars": {
+                "item2": "@mul(%item%, @int(2))"
+              },
+              "result": {
+                "@str(%item%)": "%item%",
+                "@str(%item2%)": "%item2%"
+              }
+            }
+          },
+          {
+            "type": "foreach",
+            "from": { "\\@": "b" },
+            "use": [ "%key%%item%", "%item%%key%" ]
+          },
+          {
+            "type": "foreach",
+            "key": "k",
+            "item": "v",
+            "from": { "a": "b", "d": "c", "z": "\\@a" },
+            "where": "@less(%v%, %k%)",
+          },
+          {
+            "type": "foreach",
+            "from": {},
+            "use": [],
+            "noMatchResult": {}
+          },
+          {
+            "type": "foreach",
+            "from": { "a": "b" },
+            "use": [],
+            "noMatchResult": {}
+          },
+          {
+            "type": "foreach",
+            "from": [ 1, 2, 3 ],
+            "top": "@add(@int(1), @int(1))"
+          }
+        ],
+        "expand": [
+          [ "a1", "b1" ],
+          [ "a" ],
+          {},
+          [ "a" ],
+          { "1": 2 },
+          {
+            "2": 2,
+            "4": 4,
+            "8": 8
+          },
+          [ "@b", "b@" ],
+          { "d": "c", "z": "@a" },
+          {},
+          [],
+          [ 1, 2 ]
+        ]
       }
     }
   }

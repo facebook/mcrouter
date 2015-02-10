@@ -801,6 +801,25 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Sort an array of strings/integers
+   * Usage: @sort(array)
+   */
+  static dynamic sortMacro(Context ctx) {
+    auto dict = std::move(ctx.at("dictionary"));
+    checkLogic(dict.isArray(), "sort: dictionary is not an array");
+    vector<dynamic> v;
+    v.reserve(dict.size());
+    for (size_t i = 0; i < dict.size(); ++i) {
+      v.push_back(std::move(dict[i]));
+    }
+    std::sort(v.begin(), v.end());
+    for (size_t i = 0; i < v.size(); ++i) {
+      dict[i] = std::move(v[i]);
+    }
+    return dict;
+  }
+
+  /**
    * Special built-in that prevents expanding 'macroDef' and 'constDef' objects
    * unless we parse them. For internal use only, nobody should call it
    * explicitly.
@@ -976,6 +995,186 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * foreach (key, item) from <from> where <where> use <use> top <int>
+   * for top <top> items from dictionary "from" which satisfy "where"
+   * condition merge <use> expansions into one dictionary.
+   *
+   * Usage:
+   *  "type": "foreach",
+   *  "key": string (optional, default: key)
+   *  "item": string (optional, default: item)
+   *  "from": object or list
+   *  "where": macro with extended context (optional, %key% and %item%)
+   *  "use": macro with extended context (optional, %key% and %item%)
+   *  "top": int (optional)
+   *  "noMatchResult": any value (optional)
+   *
+   * Example:
+   * filter dictionary:
+   *  "type": "foreach",
+   *  "from": <dictionary>,
+   *  "where": <condition>
+   *
+   * Convert object to list:
+   *  "type": "foreach",
+   *  "from": <object>,
+   *  "use": [ <list item> ]
+   *  "noMatchResult": []
+   *
+   * Grab at most 2 items from <dictionary> that satisfy <condition>:
+   *  "type": "foreach",
+   *  "from": <dictionary>
+   *  "where": <condition>
+   *  "top": 2
+   */
+  static dynamic foreach(ConfigPreprocessor* p,
+                         dynamic json,
+                         const Context& ctx) {
+    auto from = p->expandMacros(moveGet(json, "from", "Foreach"), ctx);
+    checkLogic(from.isObject() || from.isArray(),
+               "Foreach: from is not object/array");
+    auto itemIt = json.find("item");
+    string itemStr = itemIt == json.items().end()
+      ? "item" : asString(itemIt->second, "Foreach: item");
+    auto keyIt = json.find("key");
+    string keyStr = keyIt == json.items().end()
+      ? "key" : asString(keyIt->second, "Foreach: key");
+    size_t top = from.size();
+    if (json.find("top") != json.items().end()) {
+      auto jtop = p->expandMacros(moveGet(json, "top", "Foreach"), ctx);
+      checkLogic(jtop.isInt() && jtop.getInt() >= 0,
+                 "Foreach: top should be a non-negative integer");
+      top = jtop.getInt();
+    }
+    auto useIt = json.find("use");
+    auto whereIt = json.find("where");
+
+    folly::dynamic result = nullptr;
+    auto extContext = ctx;
+
+    auto appendUseToResult = [&]() {
+      auto use = p->expandMacros(useIt->second, extContext);
+      if (result.isNull()) {
+        checkLogic(use.isObject() || use.isArray(),
+                   "Foreach: expanded item is not object/array");
+        result = std::move(use);
+      } else {
+        if (result.isObject()) {
+          checkLogic(use.isObject(), "Foreach: expanded item is not an object");
+          for (auto& it : use.items()) {
+            auto& key = const_cast<dynamic&>(it.first);
+            auto& value = const_cast<dynamic&>(it.second);
+            result.insert(std::move(key), std::move(value));
+          }
+        } else if (result.isArray()) {
+          checkLogic(use.isArray(), "Foreach: expanded item is not an array");
+          for (size_t i = 0; i < use.size(); ++i) {
+            result.push_back(std::move(use[i]));
+          }
+        }
+      }
+    };
+
+    auto satisfiesWhere = [&]() {
+      if (whereIt == json.items().end()) {
+        return true;
+      }
+      auto where = p->expandMacros(whereIt->second, extContext);
+      checkLogic(where.isBool(), "Foreach: expanded 'where' is not boolean");
+      return where.getBool();
+    };
+
+    if (from.isArray()) {
+      for (size_t i = 0; i < from.size() && top > 0; ++i) {
+        extContext.erase(keyStr);
+        extContext.erase(itemStr);
+        extContext.emplace(keyStr, i);
+        auto itemIt = extContext.emplace(itemStr, std::move(from[i])).first;
+        if (!satisfiesWhere()) {
+          continue;
+        }
+
+        if (useIt == json.items().end()) {
+          if (result.isNull()) {
+            result = { std::move(itemIt->second) };
+          } else {
+            result.push_back(std::move(itemIt->second));
+          }
+        } else {
+          appendUseToResult();
+        }
+        --top;
+      }
+    } else { // object
+      for (auto& curIt : from.items()) {
+        if (top == 0) {
+          break;
+        }
+        auto& curKey = const_cast<dynamic&>(curIt.first);
+        auto& curItem = const_cast<dynamic&>(curIt.second);
+
+        extContext.erase(keyStr);
+        extContext.erase(itemStr);
+        auto keyIt = extContext.emplace(keyStr, std::move(curKey)).first;
+        auto itemIt = extContext.emplace(itemStr, std::move(curItem)).first;
+        if (!satisfiesWhere()) {
+          continue;
+        }
+
+        if (useIt == json.items().end()) {
+          if (result.isNull()) {
+            result = dynamic::object(std::move(keyIt->second),
+                                     std::move(itemIt->second));
+          } else {
+            result.insert(std::move(keyIt->second), std::move(itemIt->second));
+          }
+        } else {
+          appendUseToResult();
+        }
+        --top;
+      }
+    }
+    if (result.isNull()) {
+      if (auto jnoMatchResult = json.get_ptr("noMatchResult")) {
+        return p->expandMacros(std::move(*jnoMatchResult), ctx);
+      }
+      return from.isObject() ? dynamic::object() : dynamic{};
+    }
+    return result;
+  }
+
+  /**
+   * Add values to the context
+   * Usage:
+   *  "type": "define",
+   *  "vars": { "A": "B" },
+   *  "result": "%A%"
+   * => "B"
+   */
+  static dynamic define(ConfigPreprocessor* p,
+                        dynamic json,
+                        const Context& ctx) {
+    auto vars = p->expandMacros(moveGet(json, "vars", "Define"), ctx);
+    checkLogic(vars.isObject(), "Define: vars is not an object");
+    auto& mutContext = const_cast<Context&>(ctx);
+    std::vector<Context::iterator> added;
+    added.reserve(vars.size());
+    for (const auto& it : vars.items()) {
+      auto name = asString(it.first, "Define: vars key");
+      checkLogic(ctx.find(name) == ctx.end(),
+                 "Define: '{}' already exists", name);
+      auto value = const_cast<dynamic&>(it.second);
+      added.push_back(mutContext.emplace(std::move(name),
+                                         std::move(value)).first);
+    }
+    auto result = p->expandMacros(moveGet(json, "result", "Define"), ctx);
+    for (const auto& it : added) {
+      mutContext.erase(it);
+    }
+    return result;
+  }
+
+  /**
    * If condition is true, returns "is_true", otherwise "is_false"
    * Usage:
    * "type": "if",
@@ -1079,6 +1278,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
 
   addBuiltInMacro("fail", { "msg" }, &BuiltIns::failMacro);
 
+  addBuiltInMacro("sort", { "dictionary" }, &BuiltIns::sortMacro);
+
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
@@ -1086,10 +1287,13 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   builtInCalls_.emplace("transform",
     std::bind(&BuiltIns::transform, this, _1, _2));
 
-  builtInCalls_.emplace("process",
-    std::bind(&BuiltIns::process, this, _1, _2));
+  builtInCalls_.emplace("process", std::bind(&BuiltIns::process, this, _1, _2));
 
   builtInCalls_.emplace("if", std::bind(&BuiltIns::if_, this, _1, _2));
+
+  builtInCalls_.emplace("foreach", std::bind(&BuiltIns::foreach, this, _1, _2));
+
+  builtInCalls_.emplace("define", std::bind(&BuiltIns::define, this, _1, _2));
 }
 
 void ConfigPreprocessor::addBuiltInMacro(string name, vector<dynamic> params,
