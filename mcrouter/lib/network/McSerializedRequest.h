@@ -14,6 +14,7 @@
 #include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
@@ -51,14 +52,6 @@ class McSerializedRequest {
 
  private:
   static const size_t kMaxIovs = 20;
-  /**
-   * Temporary structure for holding iovecs for ascii request.
-   * Will be replaced by AsciiSerializedMessage
-   */
-  struct AsciiSerializedRequest {
-    struct iovec iovs[kMaxIovs];
-    std::unique_ptr<char[]> asciiBuffer;
-  };
 
   union {
     AsciiSerializedRequest asciiRequest_;
@@ -69,8 +62,6 @@ class McSerializedRequest {
   size_t iovsCount_{0};
   mc_protocol_t protocol_{mc_unknown_protocol};
   Result result_{Result::OK};
-
-  void serializeMcMsgAscii(const McMsgRef& req);
 };
 
 }} // facebook::memcache

@@ -151,6 +151,13 @@ class McRequestBase {
   uint32_t exptime() const;
 
   /**
+   * Access flush_all delay interval.
+   */
+  uint32_t number() const {
+    return msg_.get() ? msg_->number : 0;
+  }
+
+  /**
    * Access flags
    */
   uint64_t flags() const;

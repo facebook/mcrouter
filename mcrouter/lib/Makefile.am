@@ -139,6 +139,9 @@ libmcrouter_a_SOURCES = \
   mc/util.h \
   network/AccessPoint.cpp \
   network/AccessPoint.h \
+  network/AsciiSerialized-inl.h \
+  network/AsciiSerialized.cpp \
+  network/AsciiSerialized.h \
   network/AsyncMcClient-inl.h \
   network/AsyncMcClient.h \
   network/AsyncMcClientImpl-inl.h \
