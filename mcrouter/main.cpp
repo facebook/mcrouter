@@ -647,7 +647,7 @@ int main(int argc, char **argv) {
   router->addStartupOpts(standaloneOpts.toDict());
 
 #ifdef EXTRA_STARTUP_STOP_HEADER
-  extraStartup(standaloneOpts);
+  extraStartup(standaloneOpts, opts);
 #endif
 
   runServer(standaloneOpts, *router);
