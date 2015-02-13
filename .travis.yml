@@ -1,0 +1,10 @@
+language: cpp
+
+compiler:
+  - gcc
+
+script: ./mcrouter/scripts/install_ubuntu_12.04.sh "$(pwd)"/mcrouter-install
+
+notifications:
+  email:
+    - mcrouter@fb.com
