@@ -52,7 +52,11 @@ void ConfigApi::startObserving() {
 }
 
 void ConfigApi::stopObserving(pid_t pid) {
-  finish_ = true;
+  {
+    std::lock_guard<std::mutex> lk(finishMutex_);
+    finish_ = true;
+    finishCV_.notify_one();
+  }
   if (configThread_.joinable()) {
     if (getpid() == pid) {
       configThread_.join();
@@ -94,7 +98,12 @@ void ConfigApi::configThreadRun() {
     while (!finish_) {
       LOG(INFO) << "Reload config due to constantly_reload_configs";
       callbacks_.notify();
-      usleep(10000);
+      {
+        std::unique_lock<std::mutex> lk(finishMutex_);
+        finishCV_.wait_for(lk, std::chrono::milliseconds(10),
+                           [this] { return finish_.load(); });
+
+      }
     }
     return;
   }
@@ -119,7 +128,13 @@ void ConfigApi::configThreadRun() {
     // but that error does happen. Race 1 can be fixed by changing the
     // watch for IN_MODIFY to IN_CLOSE_WRITE, but Race 2 has no apparent
     // elegant solution. The following jankiness fixes both.
-    sleep(1);
+
+    {
+      std::unique_lock<std::mutex> lk(finishMutex_);
+      finishCV_.wait_for(lk, std::chrono::seconds(1),
+                         [this] { return finish_.load(); });
+
+    }
 
     if (hasUpdate) {
       callbacks_.notify();

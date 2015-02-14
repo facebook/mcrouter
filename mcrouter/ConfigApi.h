@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -133,6 +134,9 @@ class ConfigApi {
 
   std::thread configThread_;
   std::mutex fileInfoMutex_;
+
+  std::mutex finishMutex_;
+  std::condition_variable finishCV_;
   std::atomic<bool> finish_;
 
   void configThreadRun();
