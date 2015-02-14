@@ -514,6 +514,7 @@ int main(int argc, char **argv) {
   auto commandArgs = construct_arg_string(argc, argv);
   failure::setServiceContext("mcrouter",
                              std::string(argv[0]) + " " + commandArgs);
+  failure::setHandler(failure::handlers::logToStdError());
 
   auto check_errors =
   [&] (const vector<McrouterOptionError>& errors) {
@@ -523,20 +524,20 @@ int main(int argc, char **argv) {
                    "Option parse error: {}={}, {}",
                    e.requestedName, e.requestedValue, e.errorMsg);
       }
-      print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
     }
   };
 
-  auto errors = standaloneOpts.updateFromDict(st_option_dict);
-  standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
-    standaloneOpts);
-  if (standaloneOpts.enable_failure_logging) {
+  auto standaloneErrors = standaloneOpts.updateFromDict(st_option_dict);
+  auto errors = opts.updateFromDict(option_dict);
+
+  if (opts.enable_failure_logging) {
     initFailureLogger();
   }
 
+  check_errors(standaloneErrors);
   check_errors(errors);
-  errors = opts.updateFromDict(option_dict);
-  check_errors(errors);
+  standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
+    standaloneOpts);
 
   auto check_deprecated =
     [](const std::vector<McrouterOptionData>& options,

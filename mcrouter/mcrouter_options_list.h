@@ -382,6 +382,11 @@ mcrouter_option_integer(
   "stats-async-queue-length", no_short,
   "Asynchronous queue size for logging.")
 
+mcrouter_option_toggle(
+  enable_failure_logging, true,
+  "disable-failure-logging", no_short,
+  "Disable failure logging.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

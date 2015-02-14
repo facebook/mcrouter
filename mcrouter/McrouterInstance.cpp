@@ -133,6 +133,10 @@ McrouterInstance* McrouterInstance::create(const McrouterOptions& input_options,
                             input_options.async_spool << ")";
   }
 
+  if (input_options.enable_failure_logging) {
+    initFailureLogger();
+  }
+
   auto router = new McrouterInstance(input_options);
 
   folly::json::serialization_opts jsonOpts;

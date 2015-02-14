@@ -67,7 +67,9 @@ std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router) {
 }
 
 McrouterOptions defaultTestOptions() {
-  return McrouterOptions();
+  auto opts = McrouterOptions();
+  opts.enable_failure_logging = false;
+  return opts;
 }
 
 std::vector<std::string> defaultTestCommandLineArgs() {

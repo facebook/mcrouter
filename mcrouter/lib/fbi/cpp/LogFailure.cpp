@@ -49,6 +49,13 @@ std::string createMessage(folly::StringPiece service,
   return result;
 }
 
+void vlogErrorImpl(folly::StringPiece service,
+                   folly::StringPiece category,
+                   folly::StringPiece msg,
+                   const std::map<std::string, std::string>& contexts) {
+  VLOG(1) << createMessage(service, category, msg, contexts);
+}
+
 void logToStdErrorImpl(folly::StringPiece service,
                        folly::StringPiece category,
                        folly::StringPiece msg,
@@ -72,7 +79,7 @@ struct StaticContainer {
 
   // { handler name, handler func }
   std::vector<std::pair<std::string, HandlerFunc>> handlers = {
-    handlers::logToStdError()
+    handlers::verboseLogToStdError()
   };
 };
 
@@ -81,6 +88,11 @@ folly::Singleton<StaticContainer> containerSingleton;
 }  // anonymous namespace
 
 namespace handlers {
+
+std::pair<std::string, HandlerFunc> verboseLogToStdError() {
+  return std::make_pair<std::string, HandlerFunc>(
+    "logToStdError", &vlogErrorImpl);
+}
 
 std::pair<std::string, HandlerFunc> logToStdError() {
   return std::make_pair<std::string, HandlerFunc>(
@@ -108,6 +120,21 @@ bool addHandler(std::pair<std::string, HandlerFunc> handler) {
     for (const auto& it : container->handlers) {
       if (it.first == handler.first) {
         return false;
+      }
+    }
+    container->handlers.push_back(std::move(handler));
+    return true;
+  }
+  return false;
+}
+
+bool setHandler(std::pair<std::string, HandlerFunc> handler) {
+  if (auto container = containerSingleton.get_weak().lock()) {
+    std::lock_guard<std::mutex> lock(container->lock);
+    for (auto& it : container->handlers) {
+      if (it.first == handler.first) {
+        it.second = std::move(handler.second);
+        return true;
       }
     }
     container->handlers.push_back(std::move(handler));
