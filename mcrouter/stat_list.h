@@ -61,10 +61,15 @@
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | cmd_all_stats | \
   cmd_in_stats | count_stats
+  STUI(cmd_cas_count, 0, 1)
   STUI(cmd_delete_count, 0, 1)
   STUI(cmd_get_count, 0, 1)
   STUI(cmd_gets_count, 0, 1)
   STUI(cmd_set_count, 0, 1)
+  STUI(cmd_cas_outlier_count, 0, 1)
+  STUI(cmd_cas_outlier_failover_count, 0, 1)
+  STUI(cmd_cas_outlier_shadow_count, 0, 1)
+  STUI(cmd_cas_outlier_all_count, 0, 1)
   STUI(cmd_delete_outlier_count, 0, 1)
   STUI(cmd_delete_outlier_failover_count, 0, 1)
   STUI(cmd_delete_outlier_shadow_count, 0, 1)
@@ -88,10 +93,15 @@
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | detailed_stats | cmd_all_stats | \
   cmd_in_stats | rate_stats
+  STUIR(cmd_cas, 0, 1)
   STUIR(cmd_delete, 0, 1)
   STUIR(cmd_get, 0, 1)
   STUIR(cmd_gets, 0, 1)
   STUIR(cmd_set, 0, 1)
+  STUIR(cmd_cas_outlier, 0, 1)
+  STUIR(cmd_cas_outlier_failover, 0, 1)
+  STUIR(cmd_cas_outlier_shadow, 0, 1)
+  STUIR(cmd_cas_outlier_all, 0, 1)
   STUIR(cmd_delete_outlier, 0, 1)
   STUIR(cmd_delete_outlier_failover, 0, 1)
   STUIR(cmd_delete_outlier_shadow, 0, 1)
@@ -139,6 +149,10 @@
   STUIR(cmd_stats, 0, 1)
 #undef GROUP
 #define GROUP cmd_all_stats | cmd_out_stats | count_stats
+  STUI(cmd_cas_out_count, 0, 1)
+  STUI(cmd_cas_out_failover_count, 0, 1)
+  STUI(cmd_cas_out_shadow_count, 0, 1)
+  STUI(cmd_cas_out_all_count, 0, 1)
   STUI(cmd_delete_out_count, 0, 1)
   STUI(cmd_delete_out_failover_count, 0, 1)
   STUI(cmd_delete_out_shadow_count, 0, 1)
@@ -194,6 +208,10 @@
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | cmd_all_stats | cmd_out_stats | \
   rate_stats
+  STUIR(cmd_cas_out, 0, 1)
+  STUIR(cmd_cas_out_failover, 0, 1)
+  STUIR(cmd_cas_out_shadow, 0, 1)
+  STUIR(cmd_cas_out_all, 0, 1)
   STUIR(cmd_delete_out, 0, 1)
   STUIR(cmd_delete_out_failover, 0, 1)
   STUIR(cmd_delete_out_shadow, 0, 1)
@@ -248,6 +266,7 @@
   STUIR(cmd_replace_out_all, 0, 1)
 #undef GROUP
 #define GROUP cmd_all_stats | cmd_error_stats | count_stats
+  STUI(cmd_cas_local_error_count, 0, 1)
   STUI(cmd_delete_local_error_count, 0, 1)
   STUI(cmd_get_local_error_count, 0, 1)
   STUI(cmd_gets_local_error_count, 0, 1)
@@ -261,6 +280,7 @@
   STUI(cmd_meta_local_error_count, 0, 1)
   STUI(cmd_other_local_error_count, 0, 1)
   STUI(cmd_replace_local_error_count, 0, 1)
+  STUI(cmd_cas_remote_error_count, 0, 1)
   STUI(cmd_delete_remote_error_count, 0, 1)
   STUI(cmd_get_remote_error_count, 0, 1)
   STUI(cmd_gets_remote_error_count, 0, 1)
@@ -277,6 +297,7 @@
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | cmd_all_stats | cmd_error_stats | \
   rate_stats
+  STUIR(cmd_cas_local_error, 0, 1)
   STUIR(cmd_delete_local_error, 0, 1)
   STUIR(cmd_get_local_error, 0, 1)
   STUIR(cmd_gets_local_error, 0, 1)
@@ -290,6 +311,7 @@
   STUIR(cmd_meta_local_error, 0, 1)
   STUIR(cmd_other_local_error, 0, 1)
   STUIR(cmd_replace_local_error, 0, 1)
+  STUIR(cmd_cas_remote_error, 0, 1)
   STUIR(cmd_delete_remote_error, 0, 1)
   STUIR(cmd_get_remote_error, 0, 1)
   STUIR(cmd_gets_remote_error, 0, 1)

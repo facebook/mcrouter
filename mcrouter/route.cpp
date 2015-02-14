@@ -96,11 +96,14 @@ bool match_routing_key_hash(uint32_t routingKeyHash,
 
 #define STAT_UPDATE(CATEGORY)                                       \
   do {switch (op) {                                                 \
+      case mc_op_cas:                                               \
+        stat_incr(proxy->stats, cmd_cas_ ## CATEGORY, 1);           \
+        break;                                                      \
       case mc_op_get:                                               \
         stat_incr(proxy->stats, cmd_get_ ## CATEGORY, 1);           \
         break;                                                      \
-      case mc_op_gets:                                               \
-        stat_incr(proxy->stats, cmd_gets_ ## CATEGORY, 1);           \
+      case mc_op_gets:                                              \
+        stat_incr(proxy->stats, cmd_gets_ ## CATEGORY, 1);          \
         break;                                                      \
       case mc_op_metaget:                                           \
         stat_incr(proxy->stats, cmd_meta_ ## CATEGORY, 1);          \

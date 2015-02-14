@@ -330,6 +330,10 @@ void proxy_t::processRequest(proxy_request_t* preq) {
       stat_incr(stats, cmd_stats_stat, 1);
       stat_incr(stats, cmd_stats_count_stat, 1);
       break;
+    case mc_op_cas:
+      stat_incr(stats, cmd_cas_stat, 1);
+      stat_incr(stats, cmd_cas_count_stat, 1);
+      break;
     case mc_op_get:
       stat_incr(stats, cmd_get_stat, 1);
       stat_incr(stats, cmd_get_count_stat, 1);
