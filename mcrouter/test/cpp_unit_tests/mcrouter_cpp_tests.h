@@ -9,14 +9,4 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache { namespace mcrouter {
-
-class McrouterInstance;
-class McrouterStandaloneOptions;
-
-void runServer(const McrouterStandaloneOptions& standaloneOpts,
-               McrouterInstance& router);
-
-}  // facebook::memcache::mcrouter
-
-}}  // facebook::memcache
+const char* const kMemcacheConfig = "mcrouter/test/test_ascii.json";

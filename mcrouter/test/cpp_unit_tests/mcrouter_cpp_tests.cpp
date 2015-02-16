@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter_cpp_tests.h"
+
 #include <semaphore.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -26,12 +28,12 @@
 #include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
+#include "mcrouter/McrouterClient.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/router.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 using namespace boost::filesystem;
@@ -46,7 +48,6 @@ using facebook::memcache::McrouterOptions;
 const std::string kAlreadyRepliedConfig =
   "mcrouter/test/cpp_unit_tests/files/already_replied.json";
 
-#define MEMCACHE_CONFIG "mcrouter/test/test_ascii.json"
 #define MEMCACHE_ROUTE "/././"
 
 McMsgRef new_get_req(const char *key) {
@@ -104,19 +105,17 @@ void mcrouter_send_helper(McrouterClient& client,
 TEST(mcrouter, start_and_stop) {
   for (int i = 0; i < 2; i++) {
     auto opts = defaultTestOptions();
-    opts.config_file = MEMCACHE_CONFIG;
+    opts.config_file = kMemcacheConfig;
     opts.default_route = MEMCACHE_ROUTE;
-    mcrouter_t *router = mcrouter_new(opts);
+    auto router = McrouterInstance::init("test_start_and_stop", opts);
     EXPECT_FALSE(router == nullptr);
 
     {
-      auto client = McrouterClient::create(
-        router,
+      auto client = router->createClient(
         (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
         nullptr,
         0);
     }
-    mcrouter_free(router);
   }
 }
 
@@ -128,12 +127,11 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
   sem_t sem_disconnect;
   sem_init(&sem_disconnect, 0, 0);
   auto opts = defaultTestOptions();
-  opts.config_file = MEMCACHE_CONFIG;
+  opts.config_file = kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
-  mcrouter_t *router = mcrouter_new(opts);
+  auto router = McrouterInstance::init("test_zeroreqs_mcroutersend", opts);
   {
-    auto client = McrouterClient::create(
-      router,
+    auto client = router->createClient(
       (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
       &sem_disconnect,
       0);
@@ -143,7 +141,6 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
     client->send(reqs.data(), reqs.size());
     client->send(nullptr, 0);
   }
-  mcrouter_free(router);
 }
 
 TEST(mcrouter, disconnect_callback) {
@@ -151,14 +148,13 @@ TEST(mcrouter, disconnect_callback) {
   sem_init(&sem_disconnect, 0, 0);
 
   auto opts = defaultTestOptions();
-  opts.config_file = MEMCACHE_CONFIG;
+  opts.config_file = kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
-  mcrouter_t *router = mcrouter_new(opts);
+  auto router = McrouterInstance::init("test_disconnect_callback", opts);
   EXPECT_FALSE(router == nullptr);
 
   {
-    auto client = McrouterClient::create(
-      router,
+    auto client = router->createClient(
       (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
       &sem_disconnect,
       0);
@@ -174,24 +170,21 @@ TEST(mcrouter, disconnect_callback) {
     EXPECT_NE(0, sem_trywait(&sem_disconnect));
   }
   EXPECT_EQ(0, sem_wait(&sem_disconnect));
-
-  mcrouter_free(router);
 }
 
 TEST(mcrouter, fork) {
   const char persistence_id[] = "fork";
   auto opts = defaultTestOptions();
-  opts.config_file = MEMCACHE_CONFIG;
+  opts.config_file = kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
-  mcrouter_t *router = mcrouter_init(persistence_id, opts);
-  EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
+  auto router = McrouterInstance::init(persistence_id, opts);
+  EXPECT_NE(static_cast<McrouterInstance*>(nullptr), router);
 
   const char parent_key[] = "libmcrouter_test:fork:parent";
   const char child_key[] = "libmcrouter_test:fork:child";
 
   {
-    auto client = McrouterClient::create(
-      router,
+    auto client = router->createClient(
       (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
       nullptr,
       0);
@@ -208,12 +201,11 @@ TEST(mcrouter, fork) {
   pid_t pid = fork();
   folly::SingletonVault::singleton()->reenableInstances();
 
-  router = mcrouter_init(persistence_id, opts);
-  EXPECT_NE(static_cast<mcrouter_t*>(nullptr), router);
+  router = McrouterInstance::init(persistence_id, opts);
+  EXPECT_NE(static_cast<McrouterInstance*>(nullptr), router);
 
   {
-    auto client = McrouterClient::create(
-      router,
+    auto client = router->createClient(
       (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
       nullptr,
       0);
@@ -225,7 +217,7 @@ TEST(mcrouter, fork) {
       reqs.push_back(new_get_req(parent_key));
       mcrouter_send_helper(*client, reqs, replies);
     } else {
-      router = mcrouter_get(persistence_id);
+      router = McrouterInstance::get(persistence_id);
       reqs.push_back(new_get_req(child_key));
       mcrouter_send_helper(*client, reqs, replies);
     }
@@ -255,11 +247,12 @@ TEST(mcrouter, already_replied_failed_delete) {
   EXPECT_TRUE(folly::readFile(kAlreadyRepliedConfig.data(), configStr));
   opts.config_str = configStr;
   opts.async_spool = tmpdir.path().string();
-  mcrouter_t *router = mcrouter_new(opts);
+  auto router = McrouterInstance::init("test_already_replied_failed_delete",
+                                       opts);
   EXPECT_TRUE(router != nullptr);
 
   {
-    auto client = McrouterClient::create(router, cb, nullptr, 0);
+    auto client = router->createClient(cb, nullptr, 0);
 
     vector<McMsgRef> reqs;
     vector<McReply> replies;
@@ -270,7 +263,6 @@ TEST(mcrouter, already_replied_failed_delete) {
     // the write completes because we receive the response right away.
     sleep(1);
   }
-  mcrouter_free(router);
 
   // Verify the existance and contents of the file.
   vector<string> files;

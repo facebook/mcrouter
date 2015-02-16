@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <folly/detail/CacheLocality.h>
 #include <folly/IntrusiveList.h>
 #include <folly/Optional.h>
 
@@ -38,10 +39,10 @@ struct mcrouter_client_stats_t {
   uint32_t nremote_errors;    // number of remote errors
 };
 
-class mcrouter_t;
 class McrouterClient;
-class proxy_request_t;
+class McrouterInstance;
 class proxy_t;
+class ProxyRequestContext;
 
 struct mcrouter_msg_t {
   mc_msg_t* req;
@@ -68,6 +69,8 @@ struct mcrouter_client_callbacks_t {
  * A mcrouter client is used to communicate with a mcrouter instance.
  * Typically a client is long lived. Request sent through a single client
  * will be sent to the same mcrouter thread that's determined once on creation.
+ *
+ * Create via McrouterInstance::createClient().
  */
 class McrouterClient {
  private:
@@ -82,20 +85,6 @@ class McrouterClient {
   using Pointer = std::unique_ptr<McrouterClient, Disconnecter>;
   using Queue = folly::IntrusiveList<McrouterClient,
                                      &McrouterClient::hook_>;
-
-  /**
-   * Create a handle to talk to mcrouter.
-   * The context will be passed back to the callbacks.
-   *
-   * @param maximum_outstanding_requests  If nonzero, at most this many requests
-   *   will be allowed to be in flight at any single point in time.
-   *   send() will block until the number of outstanding requests
-   *   is less than this limit.
-   */
-  static Pointer create(mcrouter_t *router,
-                        mcrouter_client_callbacks_t callbacks,
-                        void* client_context,
-                        size_t maximum_outstanding_requests);
 
   /**
    * Asynchronously send `nreqs' requests from the array started at `requests'.
@@ -155,7 +144,7 @@ class McrouterClient {
   }
 
  private:
-  mcrouter_t* router_;
+  McrouterInstance* router_;
 
   mcrouter_client_callbacks_t callbacks_;
   void* arg_;
@@ -174,8 +163,6 @@ class McrouterClient {
   // only updated by mcrouter thread, so we don't need any fancy atomic refcount
   int numPending_{0};
 
-  size_t refcount_{1};
-
   // If true implies that the underlying mcrouter has already been
   // freed. A zombie client can not serve any more requests.
   std::atomic<bool> isZombie_{false};
@@ -186,29 +173,36 @@ class McrouterClient {
    */
   uint64_t clientId_;
 
+  std::atomic<size_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING refcount_{1};
+
   McrouterClient(
-    mcrouter_t* router,
+    McrouterInstance* router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding);
 
-  void onReply(asox_queue_entry_t*);
+  void onReply(ProxyRequestContext& preq);
   void disconnect();
   void cleanup();
   McrouterClient* incref();
   void decref();
   std::unordered_map<std::string, int64_t> getStatsHelper(bool clear);
 
+ public:
+  /* Note: this is only public due to legacy code in proxy.cpp.
+     Will fix. */
+  static void requestReady(asox_queue_t q,
+                           asox_queue_entry_t *entry,
+                           void *arg);
+
+ private:
   McrouterClient(const McrouterClient&) = delete;
   McrouterClient(McrouterClient&&) noexcept = delete;
   McrouterClient& operator=(const McrouterClient&) = delete;
   McrouterClient& operator=(McrouterClient&&) = delete;
 
-  friend void mcrouter_request_ready_cb(
-    asox_queue_t q, asox_queue_entry_t *entry, void *arg);
-  friend void mcrouter_free(mcrouter_t* router);
-  friend void mcrouter_enqueue_reply(proxy_request_t* preq);
-  friend class proxy_request_t;
+  friend class McrouterInstance;
+  friend class ProxyRequestContext;
 };
 
 }}} // facebook::memcache::mcrouter

@@ -18,10 +18,10 @@
 #include <folly/Memory.h>
 #include <folly/Range.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -104,7 +104,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         }
         str.append(d);
       }
-      reqCopy->context().proxyRequest().sendReply(
+      reqCopy->context().sendReply(
         McReply(mc_res_found, str));
     }
   );
@@ -287,7 +287,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("config_sources_info",
     [this] (const std::vector<folly::StringPiece>& args) {
-      auto configInfo = proxy_->router->configApi->getConfigSourcesInfo();
+      auto configInfo = proxy_->router->configApi().getConfigSourcesInfo();
       return folly::toPrettyJson(configInfo).toStdString();
     }
   );
@@ -295,11 +295,11 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   commands_.emplace("preprocessed_config",
     [this] (const std::vector<folly::StringPiece>& args) {
       std::string confFile;
-      if (!proxy_->router->configApi->getConfigFile(confFile)) {
+      if (!proxy_->router->configApi().getConfigFile(confFile)) {
         throw std::runtime_error("can not load config");
       }
       ProxyConfigBuilder builder(proxy_->opts,
-                                 proxy_->router->configApi.get(),
+                                 &proxy_->router->configApi(),
                                  confFile);
       folly::json::serialization_opts jsonOpts;
       jsonOpts.pretty_formatting = true;
@@ -366,7 +366,7 @@ void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
     replyStr = std::string("ERROR: ") + e.what();
   }
 
-  req.context().proxyRequest().sendReply(
+  req.context().sendReply(
     McReply(mc_res_found, replyStr));
 }
 

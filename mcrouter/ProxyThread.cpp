@@ -11,9 +11,10 @@
 
 #include <folly/io/async/EventBase.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ThreadUtil.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -25,15 +26,15 @@ ProxyThread::ProxyThread(std::unique_ptr<proxy_t> pr)
   proxy_->attachEventBase(&evb_);
 }
 
-int ProxyThread::spawn() {
-  return spawn_thread(&thread_handle,
-                      &thread_stack,
-                      proxyThreadRunHandler, this,
-                      proxy_->router->wantRealtimeThreads());
+bool ProxyThread::spawn() {
+  return spawnThread(&thread_handle,
+                     &thread_stack,
+                     proxyThreadRunHandler, this,
+                     proxy_->router->wantRealtimeThreads());
 }
 
 void ProxyThread::stopAndJoin() {
-  if (thread_handle && proxy_->router->pid == getpid()) {
+  if (thread_handle && proxy_->router->pid() == getpid()) {
     FBI_ASSERT(proxy_->request_queue != nullptr);
     asox_queue_entry_t entry;
     entry.type = request_type_router_shutdown;
@@ -55,7 +56,7 @@ void ProxyThread::stopAndJoin() {
 
 void ProxyThread::proxyThreadRun() {
   FBI_ASSERT(proxy_->router != nullptr);
-  mcrouter_set_thread_name(pthread_self(), proxy_->router->opts, "mcrpxy");
+  mcrouterSetThreadName(pthread_self(), proxy_->router->opts(), "mcrpxy");
 
   while (!proxy_->router->shutdownStarted()) {
     mcrouterLoopOnce(proxy_->eventBase);

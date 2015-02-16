@@ -68,6 +68,8 @@ HandlerFunc;
 
 namespace handlers {
 
+std::pair<std::string, HandlerFunc> verboseLogToStdError();
+
 std::pair<std::string, HandlerFunc> logToStdError();
 
 std::pair<std::string, HandlerFunc> throwLogicError();
@@ -84,6 +86,17 @@ std::pair<std::string, HandlerFunc> throwLogicError();
  * @return  true, if handler was added, false if the name is not unique
  */
 bool addHandler(std::pair<std::string, HandlerFunc> handler);
+
+/**
+ * Add/replace failure handler.
+ * Before adding your own handler, consider using functions from 'handlers'
+ * namespace.
+ *
+ * @param handler  pair { handler name, handler func }
+ *
+ * @return  true, if handler was added or replaced
+ */
+bool setHandler(std::pair<std::string, HandlerFunc> handler);
 
 /**
  * Set debug information about your service: version, options,

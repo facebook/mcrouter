@@ -12,9 +12,9 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
@@ -63,11 +63,11 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
   // Update shared area of ProxyDestinations with same key from different
   // threads. This shared area is represented with ProxyClientShared class.
   if (proxy_->router != nullptr) {
-    proxy_->router->pclient_owner.updateProxyClientShared(
+    proxy_->router->pclientOwner_.updateProxyClientShared(
         *destination,
-        proxy_->router->opts.failures_until_tko,
-        proxy_->router->opts.maximum_soft_tkos,
-        proxy_->router->tkoCounters);
+        proxy_->router->opts().failures_until_tko,
+        proxy_->router->opts().maximum_soft_tkos,
+        proxy_->router->tkoCounters_);
   }
 
   return destination;

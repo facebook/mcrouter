@@ -16,12 +16,13 @@
 #include <folly/json.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
+#include "mcrouter/test/cpp_unit_tests/mcrouter_cpp_tests.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -49,11 +50,12 @@ static const std::string kPoolRoute =
 
 static std::shared_ptr<McrouterRouteHandleIf>
 getRoute(const folly::dynamic& d) {
-  McrouterOptions opts;
+  McrouterOptions opts = defaultTestOptions();
+  opts.config_file = kMemcacheConfig;
   folly::EventBase eventBase;
-  auto router = folly::make_unique<mcrouter_t>(opts);
-  auto proxy = folly::make_unique<proxy_t>(router.get(), &eventBase, opts);
-  PoolFactory pf(folly::dynamic::object(), *router->configApi, opts);
+  auto router = McrouterInstance::init("test_get_route", opts);
+  auto proxy = folly::make_unique<proxy_t>(router, &eventBase, opts);
+  PoolFactory pf(folly::dynamic::object(), router->configApi(), opts);
   McRouteHandleProvider provider(proxy.get(), *proxy->destinationMap, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
   auto res = factory.create(d);

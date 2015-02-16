@@ -193,8 +193,11 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
 
   for (const auto& kv : new_opts) {
     if (seen.find(kv.first) == seen.end()) {
-      mcrouter::logFailure(failure::Category::kInvalidOption,
-                           "Unknown option name: {}={}", kv.first, kv.second);
+      McrouterOptionError e;
+      e.requestedName = kv.first;
+      e.requestedValue = kv.second;
+      e.errorMsg = "Unknown option name";
+      errors.push_back(e);
     }
   }
 

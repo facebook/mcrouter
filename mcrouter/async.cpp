@@ -36,10 +36,10 @@
 #include <folly/json.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/awriter.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fibers/EventBaseLoopController.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -220,9 +220,9 @@ static std::shared_ptr<folly::File> asynclog_open(proxy_t *proxy) {
                date.tm_min,
                date.tm_sec,
                (long long) now,
-               (proxy->router ? proxy->router->opts.service_name.c_str() :
+               (proxy->router ? proxy->router->opts().service_name.c_str() :
                 "unknown"),
-               (proxy->router ? proxy->router->opts.router_name.c_str() :
+               (proxy->router ? proxy->router->opts().router_name.c_str() :
                 "unknown"),
                tid,
                proxy) > PATH_MAX) {

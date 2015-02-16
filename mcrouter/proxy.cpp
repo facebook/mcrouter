@@ -28,7 +28,6 @@
 #include <folly/ThreadName.h>
 #include <folly/File.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
@@ -38,6 +37,7 @@
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/fibers/EventBaseLoopController.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/priorities.h"
@@ -60,20 +60,14 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-inline void shift_nstring_inplace(nstring_t* nstr, int pos) {
-  nstr->str += pos;
-  nstr->len -= pos;
-}
 
 }  // anonymous namespace
-
-const std::string kInternalGetPrefix = "__mcrouter__.";
 
 static asox_queue_callbacks_t const proxy_request_queue_cb =  {
   /* Note that we want to drain the queue on cleanup,
      so we register both regular and sweep callbacks */
-  mcrouter_request_ready_cb,
-  mcrouter_request_ready_cb,
+  McrouterClient::requestReady,
+  McrouterClient::requestReady,
 };
 
 namespace {
@@ -88,7 +82,7 @@ FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
 
 }
 
-proxy_t::proxy_t(mcrouter_t *router_,
+proxy_t::proxy_t(McrouterInstance* router_,
                  folly::EventBase* eventBase_,
                  const McrouterOptions& opts_)
     : router(router_),
@@ -99,8 +93,6 @@ proxy_t::proxy_t(mcrouter_t *router_,
       randomGenerator(folly::randomNumberSeed()),
       fiberManager(folly::make_unique<EventBaseLoopController>(),
                    getFiberManagerOptions(opts_)) {
-  TAILQ_INIT(&waitingRequests_);
-
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
@@ -144,7 +136,7 @@ void proxy_t::onEventBaseAttached() {
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
 
   if (router != nullptr) {
-    router->startupLock.notify();
+    router->startupLock().notify();
   }
 }
 
@@ -175,119 +167,20 @@ proxy_t::~proxy_t() {
   magic = 0xdeadbeefdeadbeefLL;
 }
 
-proxy_request_t::proxy_request_t(proxy_t* p,
-                                 McMsgRef req,
-                                 void (*enqReply)(proxy_request_t* preq),
-                                 void *con,
-                                 void (*reqComplete)(proxy_request_t* preq),
-                                 uint64_t senderId)
-  : proxy(p),
-    reply(mc_res_unknown),
-    reply_state(REPLY_STATE_NO_REPLY),
-    failover_disabled(0),
-    _refcount(1),
-    sender_id(senderId),
-    requester(nullptr),
-    legacy_get_service_info(false),
-    context(con),
-    enqueueReply_(enqReply),
-    reqComplete_(reqComplete),
-    processing_(false) {
+void proxy_t::routeHandlesProcessRequest(
+  std::unique_ptr<ProxyRequestContext> upreq) {
 
-  auto reqError = mc_client_req_check(req.get());
-  if (reqError != mc_req_err_valid) {
-    throw BadKeyException(mc_req_err_to_string(reqError));
-  }
-
-  if (req->op == mc_op_get && !strncmp(req->key.str, kInternalGetPrefix.c_str(),
-                                       kInternalGetPrefix.size())) {
-    /* HACK: for backwards compatibility, convert (get, "__mcrouter__.key")
-       into (get-service-info, "key") */
-    legacy_get_service_info = true;
-    auto copy = MutableMcMsgRef(mc_msg_dup(req.get()));
-    copy->op = mc_op_get_service_info;
-    shift_nstring_inplace(&copy->key, kInternalGetPrefix.size());
-    orig_req = std::move(copy);
-  } else {
-    orig_req = std::move(req);
-  }
-
-  stat_incr_safe(proxy->stats, proxy_request_num_outstanding_stat);
-}
-
-proxy_request_t::~proxy_request_t() {
-  if (processing_) {
-    assert(proxy);
-    --proxy->numRequestsProcessing_;
-    stat_decr(proxy->stats, proxy_reqs_processing_stat, 1);
-    proxy->pump();
-  }
-
-  if (requester) {
-    requester->decref();
-  }
-}
-
-void proxy_request_decref(proxy_request_t* preq) {
-  FBI_ASSERT(preq && preq->_refcount > 0);
-
-  proxy_t* proxy = preq->proxy;
-
-  if (preq->_refcount == 1) {
-    if (preq->reqComplete_) {
-      preq->reqComplete_(preq);
-    }
-  }
-
-  if (--preq->_refcount > 0) {
-    return;
-  }
-
-  delete preq;
-
-  stat_decr_safe(proxy->stats, proxy_request_num_outstanding_stat);
-}
-
-proxy_request_t* proxy_request_incref(proxy_request_t* preq) {
-  FBI_ASSERT(preq->_refcount > 0);
-  preq->_refcount++;
-  return preq;
-}
-
-/**
- * Deleter that deletes the object on the main context
- */
-struct MainContextDeleter {
-  void operator() (ProxyRequestContext* ctx) const {
-    fiber::runInMainContext(
-      [ctx] () {
-        delete ctx;
-      }
-    );
-  }
-};
-
-void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
-  FBI_ASSERT(preq);
-  FBI_ASSERT(preq->proxy);
-
-  if (preq->orig_req->op == mc_op_stats) {
-    preq->sendReply(
-      stats_reply(this, to<folly::StringPiece>(preq->orig_req->key)));
+  if (upreq->origReq()->op == mc_op_stats) {
+    upreq->sendReply(
+      stats_reply(this, to<folly::StringPiece>(upreq->origReq()->key)));
     return;
   }
 
   auto config = getConfig();
-  /* Note: we want MainContextDeleter here since the destructor
-     can do complicated things, like finalize stats entry and
-     destroy a stale config.  We assume that there's not enough
-     stack space for these operations. */
-  std::shared_ptr<ProxyRequestContext> ctx(
-    new ProxyRequestContext(preq, config), MainContextDeleter());
-
-  if (preq->orig_req->op == mc_op_get_service_info) {
-    auto orig = ctx->proxyRequest().orig_req.clone();
-    ProxyMcRequest req(std::move(ctx), std::move(orig));
+  auto preq = ProxyRequestContext::process(std::move(upreq), config);
+  if (preq->origReq()->op == mc_op_get_service_info) {
+    auto orig = preq->origReq().clone();
+    ProxyMcRequest req(std::move(preq), std::move(orig));
 
     /* Will answer request for us */
     config->serviceInfo()->handleRequest(req);
@@ -295,12 +188,12 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
   }
 
   auto func_ctx = folly::makeMoveWrapper(
-    std::shared_ptr<ProxyRequestContext>(ctx));
-  auto finally_ctx = folly::makeMoveWrapper(std::move(ctx));
+    std::shared_ptr<ProxyRequestContext>(preq));
+  auto finally_ctx = folly::makeMoveWrapper(std::move(preq));
 
   fiberManager.addTaskFinally(
     [func_ctx]() {
-      auto& origReq = (*func_ctx)->proxyRequest().orig_req;
+      auto& origReq = (*func_ctx)->origReq();
       try {
         auto& proute = (*func_ctx)->proxyRoute();
         auto reply = proute.dispatchMcMsg(origReq.clone(),
@@ -314,18 +207,18 @@ void proxy_t::routeHandlesProcessRequest(proxy_request_t* preq) {
       }
     },
     [finally_ctx](folly::Try<McReply>&& reply) {
-      (*finally_ctx)->proxyRequest().sendReply(std::move(*reply));
+      (*finally_ctx)->sendReply(std::move(*reply));
     }
   );
 }
 
-void proxy_t::processRequest(proxy_request_t* preq) {
+void proxy_t::processRequest(std::unique_ptr<ProxyRequestContext> preq) {
   assert(!preq->processing_);
   preq->processing_ = true;
   ++numRequestsProcessing_;
   stat_incr(stats, proxy_reqs_processing_stat, 1);
 
-  switch (preq->orig_req->op) {
+  switch (preq->origReq()->op) {
     case mc_op_stats:
       stat_incr(stats, cmd_stats_stat, 1);
       stat_incr(stats, cmd_stats_count_stat, 1);
@@ -383,42 +276,40 @@ void proxy_t::processRequest(proxy_request_t* preq) {
       break;
   }
 
-  routeHandlesProcessRequest(preq);
+  routeHandlesProcessRequest(std::move(preq));
 
   stat_incr(stats, request_sent_stat, 1);
   stat_incr(stats, request_sent_count_stat, 1);
 }
 
-void proxy_t::dispatchRequest(proxy_request_t* preq) {
-  if (rateLimited(preq)) {
+void proxy_t::dispatchRequest(std::unique_ptr<ProxyRequestContext> preq) {
+  if (rateLimited(*preq)) {
     if (opts.proxy_max_throttled_requests > 0 &&
-        numRequestsWaiting_ >= opts.proxy_max_throttled_requests) {
+        waitingRequests_.size() >= opts.proxy_max_throttled_requests) {
       preq->sendReply(McReply(mc_res_local_error, "Max throttled exceeded"));
       return;
     }
-    proxy_request_incref(preq);
-    // TODO(bwatling): replace waitingRequests_ with folly::CountedIntrusiveList
-    TAILQ_INSERT_TAIL(&waitingRequests_, preq, entry_);
-    numRequestsWaiting_ += 1;
+    auto w = folly::make_unique<WaitingRequest>(std::move(preq));
+    waitingRequests_.pushBack(std::move(w));
     stat_incr(stats, proxy_reqs_waiting_stat, 1);
   } else {
-    processRequest(preq);
+    processRequest(std::move(preq));
   }
 }
 
-bool proxy_t::rateLimited(const proxy_request_t* preq) const {
+bool proxy_t::rateLimited(const ProxyRequestContext& preq) const {
   if (!opts.proxy_max_inflight_requests) {
     return false;
   }
 
   /* Always let through certain requests */
-  if (preq->orig_req->op == mc_op_stats ||
-      preq->orig_req->op == mc_op_version ||
-      preq->orig_req->op == mc_op_get_service_info) {
+  if (preq.origReq()->op == mc_op_stats ||
+      preq.origReq()->op == mc_op_version ||
+      preq.origReq()->op == mc_op_get_service_info) {
     return false;
   }
 
-  if (TAILQ_EMPTY(&waitingRequests_) &&
+  if (waitingRequests_.empty() &&
       numRequestsProcessing_ < opts.proxy_max_inflight_requests) {
     return false;
   }
@@ -426,15 +317,16 @@ bool proxy_t::rateLimited(const proxy_request_t* preq) const {
   return true;
 }
 
+proxy_t::WaitingRequest::WaitingRequest(std::unique_ptr<ProxyRequestContext> r)
+    : request(std::move(r)) {}
+
 void proxy_t::pump() {
   while (numRequestsProcessing_ < opts.proxy_max_inflight_requests &&
-         !TAILQ_EMPTY(&waitingRequests_)) {
-    auto preq = TAILQ_FIRST(&waitingRequests_);
-    TAILQ_REMOVE(&waitingRequests_, preq, entry_);
-    numRequestsWaiting_ -= 1;
+         !waitingRequests_.empty()) {
+    auto w = waitingRequests_.popFront();
     stat_decr(stats, proxy_reqs_waiting_stat, 1);
-    processRequest(preq);
-    proxy_request_decref(preq);
+
+    processRequest(std::move(w->request));
   }
 }
 
@@ -458,31 +350,6 @@ MutableMcMsgRef new_reply(const char* str) {
   reply->value.str[n] = '\0';
 
   return reply;
-}
-
-void proxy_request_t::sendReply(McReply newReply) {
-  FBI_ASSERT(reply.result() == mc_res_unknown);
-  FBI_ASSERT(newReply.result() != mc_res_unknown);
-
-  reply = std::move(newReply);
-
-  if (reply_state != REPLY_STATE_NO_REPLY) {
-    return;
-  }
-
-  reply_state = REPLY_STATE_REPLIED;
-
-  enqueueReply_(this);
-
-  stat_incr(proxy->stats, request_replied_stat, 1);
-  stat_incr(proxy->stats, request_replied_count_stat, 1);
-  if (mc_res_is_err(reply.result())) {
-    stat_incr(proxy->stats, request_error_stat, 1);
-    stat_incr(proxy->stats, request_error_count_stat, 1);
-  } else {
-    stat_incr(proxy->stats, request_success_stat, 1);
-    stat_incr(proxy->stats, request_success_count_stat, 1);
-  }
 }
 
 ShadowSettings::Data::Data(const folly::dynamic& json) {
@@ -523,7 +390,8 @@ ShadowSettings::Data::Data(const folly::dynamic& json) {
   }
 }
 
-ShadowSettings::ShadowSettings(const folly::dynamic& json, mcrouter_t* router)
+ShadowSettings::ShadowSettings(const folly::dynamic& json,
+                               McrouterInstance* router)
     : data_(std::make_shared<Data>(json)) {
 
   if (router) {
@@ -531,7 +399,8 @@ ShadowSettings::ShadowSettings(const folly::dynamic& json, mcrouter_t* router)
   }
 }
 
-ShadowSettings::ShadowSettings(std::shared_ptr<Data> data, mcrouter_t* router)
+ShadowSettings::ShadowSettings(std::shared_ptr<Data> data,
+                               McrouterInstance* router)
     : data_(std::move(data)) {
 
   if (router) {
@@ -549,8 +418,8 @@ std::shared_ptr<const ShadowSettings::Data> ShadowSettings::getData() {
   return data_.get();
 }
 
-void ShadowSettings::registerOnUpdateCallback(mcrouter_t* router) {
-  handle_ = router->rtVarsData.subscribeAndCall(
+void ShadowSettings::registerOnUpdateCallback(McrouterInstance* router) {
+  handle_ = router->rtVarsData().subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {
       if (!newVars) {
@@ -617,8 +486,8 @@ void ShadowSettings::registerOnUpdateCallback(mcrouter_t* router) {
     });
 }
 
-static void proxy_config_swap(proxy_t* proxy,
-                              std::shared_ptr<ProxyConfig> config) {
+void proxy_config_swap(proxy_t* proxy,
+                       std::shared_ptr<ProxyConfig> config) {
   /* Update the number of server stat for this proxy. */
   stat_set_uint64(proxy->stats, num_servers_stat, config->getClients().size());
 
@@ -635,73 +504,6 @@ static void proxy_config_swap(proxy_t* proxy,
     oldConfigEntry.time_enqueued = time(nullptr);
     asox_queue_enqueue(proxy->request_queue, &oldConfigEntry);
   }
-}
-
-int router_configure(mcrouter_t* router, folly::StringPiece input) {
-  FBI_ASSERT(router);
-
-  size_t proxyCount = router->opts.num_proxies;
-  std::vector<std::shared_ptr<ProxyConfig>> newConfigs;
-  try {
-    // assume default_route, default_region and default_cluster are same for
-    // each proxy
-    ProxyConfigBuilder builder(
-      router->opts,
-      router->configApi.get(),
-      input);
-
-    for (size_t i = 0; i < proxyCount; i++) {
-      newConfigs.push_back(builder.buildConfig(router->getProxy(i)));
-    }
-  } catch (const std::exception& e) {
-    logFailure(router, failure::Category::kInvalidConfig,
-               "Failed to reconfigure: {}", e.what());
-    return 0;
-  }
-
-  for (size_t i = 0; i < proxyCount; i++) {
-    proxy_config_swap(router->getProxy(i), newConfigs[i]);
-  }
-
-  VLOG_IF(0, !router->opts.constantly_reload_configs) <<
-      "reconfigured " << proxyCount << " proxies with " <<
-      newConfigs[0]->getClients().size() << " clients (" <<
-      newConfigs[0]->getConfigMd5Digest() << ")";
-
-  return 1;
-}
-
-/** (re)configure the proxy. 1 on success, 0 on error.
-    NB file-based configuration is synchronous
-    but server-based configuration is asynchronous */
-int router_configure(mcrouter_t *router) {
-  int success = 0;
-
-  {
-    std::lock_guard<std::mutex> lg(router->config_reconfig_lock);
-    /* mark config attempt before, so that
-       successful config is always >= last config attempt. */
-    router->last_config_attempt = time(nullptr);
-
-    router->configApi->trackConfigSources();
-    std::string config;
-    success = router->configApi->getConfigFile(config);
-    if (success) {
-      success = router_configure_from_string(router, config);
-    } else {
-      logFailure(router, failure::Category::kBadEnvironment,
-                 "Can not read config file");
-    }
-
-    if (!success) {
-      router->config_failures++;
-      router->configApi->abandonTrackedSources();
-    } else {
-      router->configApi->subscribeToTrackedSources();
-    }
-  }
-
-  return success;
 }
 
 }}} // facebook::memcache::mcrouter

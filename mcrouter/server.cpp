@@ -11,7 +11,6 @@
 
 #include <signal.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -77,14 +76,13 @@ mcrouter_client_callbacks_t const server_callbacks = {
 };
 
 void serverLoop(
-  mcrouter_t& router,
+  McrouterInstance& router,
   size_t threadId,
   folly::EventBase& evb,
   AsyncMcServerWorker& worker,
   bool managedMode) {
 
-  auto routerClient = McrouterClient::create(
-    &router,
+  auto routerClient = router.createClient(
     server_callbacks,
     &worker,
     0);
@@ -121,7 +119,7 @@ void serverLoop(
 }  // namespace
 
 void runServer(const McrouterStandaloneOptions& standaloneOpts,
-               mcrouter_t& router) {
+               McrouterInstance& router) {
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {
@@ -129,17 +127,17 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
   } else {
     opts.ports = standaloneOpts.ports;
     opts.sslPorts = standaloneOpts.ssl_ports;
-    opts.pemCertPath = router.opts.pem_cert_path;
-    opts.pemKeyPath = router.opts.pem_key_path;
-    opts.pemCaPath = router.opts.pem_ca_path;
+    opts.pemCertPath = router.opts().pem_cert_path;
+    opts.pemKeyPath = router.opts().pem_key_path;
+    opts.pemCaPath = router.opts().pem_ca_path;
   }
 
-  opts.numThreads = router.opts.num_proxies;
+  opts.numThreads = router.opts().num_proxies;
 
   opts.worker.versionString = MCROUTER_PACKAGE_STRING;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;
   opts.worker.sendTimeout = std::chrono::milliseconds{
-    router.opts.server_timeout_ms};
+    router.opts().server_timeout_ms};
 
   /* Default to one read per event to help latency-sensitive workloads.
      We can make this an option if this needs to be adjusted. */

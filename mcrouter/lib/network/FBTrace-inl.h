@@ -36,8 +36,10 @@ bool fbTraceOnSend(Operation, const Request& request, const AccessPoint& ap) {
 }
 
 template<int McOp, class Request>
-bool fbTraceOnSend(McOperation<McOp>, const Request& request,
-                   const AccessPoint& ap) {
+typename std::enable_if<RequestHasFbTraceInfo<Request>::value, bool>::type
+fbTraceOnSend(McOperation<McOp>, const Request& request,
+              const AccessPoint& ap) {
+
   mc_fbtrace_info_s* fbtraceInfo = request.fbtraceInfo();
 
   if (fbtraceInfo == nullptr) {

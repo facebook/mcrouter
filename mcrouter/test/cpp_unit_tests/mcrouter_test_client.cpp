@@ -15,7 +15,7 @@
 
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/router.h"
+#include "mcrouter/McrouterInstance.h"
 
 using namespace facebook::memcache::mcrouter;
 
@@ -70,9 +70,8 @@ static void on_reply(mcrouter_msg_t* router_req,
 MCRouterTestClient::MCRouterTestClient(const std::string& name,
                                        const McrouterOptions& opts) {
   rs_ = folly::make_unique<ResultsSet>();
-  router_ = mcrouter_init(name, opts);
-  client_ = McrouterClient::create(
-    router_,
+  router_ = McrouterInstance::init(name, opts);
+  client_ = router_->createClient(
     {on_reply, nullptr, nullptr},
     rs_.get(),
     0);

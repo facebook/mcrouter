@@ -41,7 +41,7 @@ namespace mcrouter {
 class ConfigApi;
 class DestinationClient;
 class ExtraRouteHandleProviderIf;
-class mcrouter_t;
+class McrouterInstance;
 class McrouterLogger;
 class proxy_t;
 class TkoLog;
@@ -144,7 +144,8 @@ inline time_t nowWallSec() {
   return time(nullptr);
 }
 
-int router_configure_from_string(mcrouter_t* router, folly::StringPiece input);
+int router_configure_from_string(McrouterInstance* router,
+                                 folly::StringPiece input);
 
 bool read_standalone_flavor(
     const std::string& flavor,
@@ -159,7 +160,7 @@ bool standaloneInit(const McrouterOptions& opts);
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 
-std::unique_ptr<McrouterLogger> createMcrouterLogger(mcrouter_t* router);
+std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router);
 
 inline bool mcrouterLoopOnce(folly::EventBase* eventBase) {
   return eventBase->loopOnce();

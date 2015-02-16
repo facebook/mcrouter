@@ -38,17 +38,16 @@
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/fb_cpu_util.h"
 #include "mcrouter/ManagedModeUtil.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/router.h"
 #include "mcrouter/server.h"
 #include "mcrouter/standalone_options.h"
 #include "mcrouter/stats.h"
@@ -356,7 +355,7 @@ void daemonize() {
 
 /** @return 0 on failure */
 static int validate_options() {
-  if (opts.num_proxies <= 0) {
+  if (opts.num_proxies == 0) {
     LOG(ERROR) << "invalid number of proxy threads";
     return 0;
   }
@@ -515,6 +514,7 @@ int main(int argc, char **argv) {
   auto commandArgs = construct_arg_string(argc, argv);
   failure::setServiceContext("mcrouter",
                              std::string(argv[0]) + " " + commandArgs);
+  failure::setHandler(failure::handlers::logToStdError());
 
   auto check_errors =
   [&] (const vector<McrouterOptionError>& errors) {
@@ -524,20 +524,20 @@ int main(int argc, char **argv) {
                    "Option parse error: {}={}, {}",
                    e.requestedName, e.requestedValue, e.errorMsg);
       }
-      print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
     }
   };
 
-  auto errors = standaloneOpts.updateFromDict(st_option_dict);
-  standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
-    standaloneOpts);
-  if (standaloneOpts.enable_failure_logging) {
+  auto standaloneErrors = standaloneOpts.updateFromDict(st_option_dict);
+  auto errors = opts.updateFromDict(option_dict);
+
+  if (opts.enable_failure_logging) {
     initFailureLogger();
   }
 
+  check_errors(standaloneErrors);
   check_errors(errors);
-  errors = opts.updateFromDict(option_dict);
-  check_errors(errors);
+  standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
+    standaloneOpts);
 
   auto check_deprecated =
     [](const std::vector<McrouterOptionData>& options,
@@ -635,7 +635,7 @@ int main(int argc, char **argv) {
    */
   mc_msg_use_atomic_refcounts(0);
 
-  auto router = mcrouter_init("standalone", opts);
+  auto router = McrouterInstance::init("standalone", opts);
   if (router == nullptr) {
     LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
     exit(EXIT_STATUS_TRANSIENT_ERROR);
@@ -644,18 +644,14 @@ int main(int argc, char **argv) {
     _exit(0);
   }
 
-  router->command_args = commandArgs;
+  set_standalone_args(commandArgs);
   router->addStartupOpts(standaloneOpts.toDict());
 
-  /* TODO(server): real AsyncMcServer stats */
-  router->prepare_proxy_server_stats = nullptr;
-
 #ifdef EXTRA_STARTUP_STOP_HEADER
-  extraStartup(standaloneOpts);
+  extraStartup(standaloneOpts, opts);
 #endif
 
-  facebook::memcache::mcrouter::runServer(standaloneOpts,
-                                          *router);
+  runServer(standaloneOpts, *router);
 #ifdef EXTRA_STARTUP_STOP_HEADER
   extraStop();
 #endif

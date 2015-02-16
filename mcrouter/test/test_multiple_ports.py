@@ -22,7 +22,7 @@ from mcrouter.test.config import McrouterGlobals
 # sure basic communication is ok
 class TestMultiplePorts(unittest.TestCase):
     def test_multiple_ports(self):
-        first_port = 11106
+        first_port = 11108
         num_ports = 3
         num_passes = 100
         ports = range(first_port, first_port + num_ports)

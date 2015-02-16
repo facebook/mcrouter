@@ -21,9 +21,9 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ConfigApi;
+class McrouterInstance;
 class PoolFactory;
 class ProxyConfig;
-class mcrouter_t;
 class proxy_t;
 
 class ProxyConfigBuilder {

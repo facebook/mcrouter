@@ -84,11 +84,6 @@ mcrouter_option_integer(
   "Adjusts server buffer size to process this many requests per read."
   " Smaller values may improve latency.")
 
-mcrouter_option_toggle(
-  enable_failure_logging, true,
-  "disable-failure-logging", no_short,
-  "Disable failure logging.")
-
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif

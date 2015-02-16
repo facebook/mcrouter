@@ -9,8 +9,8 @@
  */
 #pragma once
 
-#include "mcrouter/_router.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/McrouterInstance.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -22,7 +22,7 @@ void logFailure(folly::StringPiece category, folly::StringPiece msg,
 }
 
 template <typename... Args>
-void logFailure(mcrouter_t* router,
+void logFailure(McrouterInstance* router,
                 folly::StringPiece category,
                 folly::StringPiece msg,
                 Args&&... args) {

@@ -14,7 +14,6 @@ CLEANFILES = \
   lib/mc/ascii_client.c
 
 libmcroutercore_a_SOURCES = \
-  _router.h \
   async.cpp \
   async.h \
   awriter.h \
@@ -44,6 +43,8 @@ libmcroutercore_a_SOURCES = \
   McrouterLogFailure.h \
   McrouterLogger.cpp \
   McrouterLogger.h \
+  McrouterInstance.cpp \
+  McrouterInstance.h \
   Observable-inl.h \
   Observable.h \
   options-template.h \
@@ -86,8 +87,6 @@ libmcroutercore_a_SOURCES = \
   RecordingContext.h \
   route.cpp \
   route.h \
-  router.cpp \
-  router.h \
   routes/AllAsyncRoute.cpp \
   routes/AllFastestRoute.cpp \
   routes/AllInitialRoute.cpp \
@@ -165,6 +164,8 @@ libmcroutercore_a_SOURCES = \
   stat_list.h \
   stats.cpp \
   stats.h \
+  ThreadUtil.cpp \
+  ThreadUtil.h \
   TkoCounters.h \
   TkoLog.cpp \
   TkoLog.h \

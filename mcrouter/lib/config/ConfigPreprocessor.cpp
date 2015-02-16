@@ -548,7 +548,7 @@ class ConfigPreprocessor::BuiltIns {
       return res;
     } else if (dict.isArray()) {
       dynamic res = {};
-      checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not int");
+      checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not an int");
       auto fromId = std::max(0L, from.asInt());
       auto toId = std::min(to.asInt() + 1, (int64_t)dict.size());
       for (auto i = fromId; i < toId; ++i) {
@@ -558,9 +558,9 @@ class ConfigPreprocessor::BuiltIns {
     } else { // string
       string res;
       auto dictStr = dict.stringPiece();
-      checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not int");
-      size_t fromId = std::max(0L, from.asInt());
-      size_t toId = std::min(to.asInt() + 1, (int64_t)dict.size());
+      checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not an int");
+      auto fromId = std::max(0L, from.asInt());
+      auto toId = std::min(to.asInt() + 1, (int64_t)dict.size());
       for (auto i = fromId; i < toId; ++i) {
         res += dictStr[i];
       }
@@ -801,6 +801,25 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Sort an array of strings/integers
+   * Usage: @sort(array)
+   */
+  static dynamic sortMacro(Context ctx) {
+    auto dict = std::move(ctx.at("dictionary"));
+    checkLogic(dict.isArray(), "sort: dictionary is not an array");
+    vector<dynamic> v;
+    v.reserve(dict.size());
+    for (size_t i = 0; i < dict.size(); ++i) {
+      v.push_back(std::move(dict[i]));
+    }
+    std::sort(v.begin(), v.end());
+    for (size_t i = 0; i < v.size(); ++i) {
+      dict[i] = std::move(v[i]);
+    }
+    return dict;
+  }
+
+  /**
    * Special built-in that prevents expanding 'macroDef' and 'constDef' objects
    * unless we parse them. For internal use only, nobody should call it
    * explicitly.
@@ -976,6 +995,186 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * foreach (key, item) from <from> where <where> use <use> top <int>
+   * for top <top> items from dictionary "from" which satisfy "where"
+   * condition merge <use> expansions into one dictionary.
+   *
+   * Usage:
+   *  "type": "foreach",
+   *  "key": string (optional, default: key)
+   *  "item": string (optional, default: item)
+   *  "from": object or list
+   *  "where": macro with extended context (optional, %key% and %item%)
+   *  "use": macro with extended context (optional, %key% and %item%)
+   *  "top": int (optional)
+   *  "noMatchResult": any value (optional)
+   *
+   * Example:
+   * filter dictionary:
+   *  "type": "foreach",
+   *  "from": <dictionary>,
+   *  "where": <condition>
+   *
+   * Convert object to list:
+   *  "type": "foreach",
+   *  "from": <object>,
+   *  "use": [ <list item> ]
+   *  "noMatchResult": []
+   *
+   * Grab at most 2 items from <dictionary> that satisfy <condition>:
+   *  "type": "foreach",
+   *  "from": <dictionary>
+   *  "where": <condition>
+   *  "top": 2
+   */
+  static dynamic foreach(ConfigPreprocessor* p,
+                         dynamic json,
+                         const Context& ctx) {
+    auto from = p->expandMacros(moveGet(json, "from", "Foreach"), ctx);
+    checkLogic(from.isObject() || from.isArray(),
+               "Foreach: from is not object/array");
+    auto itemIt = json.find("item");
+    string itemStr = itemIt == json.items().end()
+      ? "item" : asString(itemIt->second, "Foreach: item");
+    auto keyIt = json.find("key");
+    string keyStr = keyIt == json.items().end()
+      ? "key" : asString(keyIt->second, "Foreach: key");
+    size_t top = from.size();
+    if (json.find("top") != json.items().end()) {
+      auto jtop = p->expandMacros(moveGet(json, "top", "Foreach"), ctx);
+      checkLogic(jtop.isInt() && jtop.getInt() >= 0,
+                 "Foreach: top should be a non-negative integer");
+      top = jtop.getInt();
+    }
+    auto useIt = json.find("use");
+    auto whereIt = json.find("where");
+
+    folly::dynamic result = nullptr;
+    auto extContext = ctx;
+
+    auto appendUseToResult = [&]() {
+      auto use = p->expandMacros(useIt->second, extContext);
+      if (result.isNull()) {
+        checkLogic(use.isObject() || use.isArray(),
+                   "Foreach: expanded item is not object/array");
+        result = std::move(use);
+      } else {
+        if (result.isObject()) {
+          checkLogic(use.isObject(), "Foreach: expanded item is not an object");
+          for (auto& it : use.items()) {
+            auto& key = const_cast<dynamic&>(it.first);
+            auto& value = const_cast<dynamic&>(it.second);
+            result.insert(std::move(key), std::move(value));
+          }
+        } else if (result.isArray()) {
+          checkLogic(use.isArray(), "Foreach: expanded item is not an array");
+          for (size_t i = 0; i < use.size(); ++i) {
+            result.push_back(std::move(use[i]));
+          }
+        }
+      }
+    };
+
+    auto satisfiesWhere = [&]() {
+      if (whereIt == json.items().end()) {
+        return true;
+      }
+      auto where = p->expandMacros(whereIt->second, extContext);
+      checkLogic(where.isBool(), "Foreach: expanded 'where' is not boolean");
+      return where.getBool();
+    };
+
+    if (from.isArray()) {
+      for (size_t i = 0; i < from.size() && top > 0; ++i) {
+        extContext.erase(keyStr);
+        extContext.erase(itemStr);
+        extContext.emplace(keyStr, i);
+        auto itemIt = extContext.emplace(itemStr, std::move(from[i])).first;
+        if (!satisfiesWhere()) {
+          continue;
+        }
+
+        if (useIt == json.items().end()) {
+          if (result.isNull()) {
+            result = { std::move(itemIt->second) };
+          } else {
+            result.push_back(std::move(itemIt->second));
+          }
+        } else {
+          appendUseToResult();
+        }
+        --top;
+      }
+    } else { // object
+      for (auto& curIt : from.items()) {
+        if (top == 0) {
+          break;
+        }
+        auto& curKey = const_cast<dynamic&>(curIt.first);
+        auto& curItem = const_cast<dynamic&>(curIt.second);
+
+        extContext.erase(keyStr);
+        extContext.erase(itemStr);
+        auto keyIt = extContext.emplace(keyStr, std::move(curKey)).first;
+        auto itemIt = extContext.emplace(itemStr, std::move(curItem)).first;
+        if (!satisfiesWhere()) {
+          continue;
+        }
+
+        if (useIt == json.items().end()) {
+          if (result.isNull()) {
+            result = dynamic::object(std::move(keyIt->second),
+                                     std::move(itemIt->second));
+          } else {
+            result.insert(std::move(keyIt->second), std::move(itemIt->second));
+          }
+        } else {
+          appendUseToResult();
+        }
+        --top;
+      }
+    }
+    if (result.isNull()) {
+      if (auto jnoMatchResult = json.get_ptr("noMatchResult")) {
+        return p->expandMacros(std::move(*jnoMatchResult), ctx);
+      }
+      return from.isObject() ? dynamic::object() : dynamic{};
+    }
+    return result;
+  }
+
+  /**
+   * Add values to the context
+   * Usage:
+   *  "type": "define",
+   *  "vars": { "A": "B" },
+   *  "result": "%A%"
+   * => "B"
+   */
+  static dynamic define(ConfigPreprocessor* p,
+                        dynamic json,
+                        const Context& ctx) {
+    auto vars = p->expandMacros(moveGet(json, "vars", "Define"), ctx);
+    checkLogic(vars.isObject(), "Define: vars is not an object");
+    auto& mutContext = const_cast<Context&>(ctx);
+    std::vector<Context::iterator> added;
+    added.reserve(vars.size());
+    for (const auto& it : vars.items()) {
+      auto name = asString(it.first, "Define: vars key");
+      checkLogic(ctx.find(name) == ctx.end(),
+                 "Define: '{}' already exists", name);
+      auto value = const_cast<dynamic&>(it.second);
+      added.push_back(mutContext.emplace(std::move(name),
+                                         std::move(value)).first);
+    }
+    auto result = p->expandMacros(moveGet(json, "result", "Define"), ctx);
+    for (const auto& it : added) {
+      mutContext.erase(it);
+    }
+    return result;
+  }
+
+  /**
    * If condition is true, returns "is_true", otherwise "is_false"
    * Usage:
    * "type": "if",
@@ -1079,6 +1278,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
 
   addBuiltInMacro("fail", { "msg" }, &BuiltIns::failMacro);
 
+  addBuiltInMacro("sort", { "dictionary" }, &BuiltIns::sortMacro);
+
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
@@ -1086,10 +1287,13 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   builtInCalls_.emplace("transform",
     std::bind(&BuiltIns::transform, this, _1, _2));
 
-  builtInCalls_.emplace("process",
-    std::bind(&BuiltIns::process, this, _1, _2));
+  builtInCalls_.emplace("process", std::bind(&BuiltIns::process, this, _1, _2));
 
   builtInCalls_.emplace("if", std::bind(&BuiltIns::if_, this, _1, _2));
+
+  builtInCalls_.emplace("foreach", std::bind(&BuiltIns::foreach, this, _1, _2));
+
+  builtInCalls_.emplace("define", std::bind(&BuiltIns::define, this, _1, _2));
 }
 
 void ConfigPreprocessor::addBuiltInMacro(string name, vector<dynamic> params,
@@ -1124,7 +1328,8 @@ dynamic ConfigPreprocessor::replaceParams(StringPiece str,
       return substitution;
     } else {
       // param inside string e.g. a%param%b
-      checkLogic(substitution.isString(), "Param in string is not a string");
+      checkLogic(substitution.isString(),
+                 "Param in string '{}' is not a string", paramName);
       auto sp = substitution.stringPiece();
       buf.append(sp.begin(), sp.end());
     }
@@ -1302,6 +1507,70 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
   }
 }
 
+void ConfigPreprocessor::parseConstDefs(dynamic jconsts) {
+  auto consts = expandMacros(std::move(jconsts), emptyContext_);
+  checkLogic(consts.isArray(), "config consts is not an array");
+  for (const auto& it : consts) {
+    checkLogic(it.isObject(), "constDef is not an object");
+    auto type = asString(tryGet(it, "type", "constDef"), "constDef type");
+    checkLogic(type == "constDef", "constDef has invalid type: {}", type);
+    auto name = asString(tryGet(it, "name", "constDef"), "constDef name");
+    const auto& result = tryGet(it, "result", "constDef");
+    try {
+      consts_.emplace(name, make_unique<Const>(*this, name, result));
+    } catch (const std::logic_error& e) {
+      throw std::logic_error("'" + name + "' const:\n" + e.what());
+    }
+  }
+}
+
+void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
+                                       const dynamic& obj) {
+  auto key = asString(jkey, "macro definition key");
+  checkLogic(obj.isObject(), "'{}' macro definition is not an object", key);
+  auto objType = asString(tryGet(obj, "type", "macro definition"),
+                          "macro definition type");
+
+  if (objType == "macroDef") {
+    const auto& res = tryGet(obj, "result", "Macro definition");
+    vector<dynamic> params;
+    auto paramsIt = obj.find("params");
+    if (paramsIt != obj.items().end()) {
+      checkLogic(paramsIt->second.isArray(),
+                 "'{}' macroDef params is not an array", key);
+      for (auto& paramObj : paramsIt->second) {
+        params.push_back(paramObj);
+      }
+    }
+    auto f = [res, this](const Context& ctx) {
+      return expandMacros(res, ctx);
+    };
+    macros_.emplace(key, make_unique<Macro>(key, params, std::move(f)));
+  } else if (objType == "constDef") {
+    checkLogic(obj.isObject(), "constDef is not an object");
+    const auto& result = tryGet(obj, "result", "constDef");
+    consts_.emplace(key, make_unique<Const>(*this, key, result));
+  } else {
+    throw std::logic_error("Unknown macro definition type: " + objType);
+  }
+}
+
+void ConfigPreprocessor::parseMacroDefs(dynamic jmacros) {
+  auto macros = expandMacros(std::move(jmacros), emptyContext_);
+  checkLogic(macros.isObject() || macros.isArray(),
+             "config macros is not an array/object");
+
+  if (macros.isObject()) {
+    for (const auto& it : macros.items()) {
+      parseMacroDef(it.first, it.second);
+    }
+  } else { // array
+    for (const auto& it : macros) {
+      parseMacroDefs(it);
+    }
+  }
+}
+
 dynamic ConfigPreprocessor::getConfigWithoutMacros(
     StringPiece jsonC,
     ImportResolverIf& importResolver,
@@ -1314,63 +1583,17 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
   ConfigPreprocessor prep(importResolver, std::move(globalParams), nestedLimit);
 
   // parse and add consts. DEPRECATED.
-  auto constsIt = config.get_ptr("consts");
-  if (constsIt) {
-    auto consts = prep.expandMacros(std::move(*constsIt), emptyContext_);
-    checkLogic(consts.isArray(), "config consts is not an array");
-    for (const auto& it : consts) {
-      checkLogic(it.isObject(), "constDef is not an object");
-      auto type = asString(tryGet(it, "type", "constDef"), "constDef type");
-      checkLogic(type == "constDef", "constDef has invalid type: {}", type);
-      auto name = asString(tryGet(it, "name", "constDef"), "constDef name");
-      const auto& result = tryGet(it, "result", "constDef");
-      try {
-        prep.consts_.emplace(name, make_unique<Const>(prep, name, result));
-      } catch (const std::logic_error& e) {
-        throw std::logic_error("'" + name + "' const:\n" + e.what());
-      }
-    }
+  auto jconsts = config.get_ptr("consts");
+  if (jconsts) {
+    prep.parseConstDefs(std::move(*jconsts));
     config.erase("consts");
   }
 
   // parse and add macros
-  auto macrosIt = config.get_ptr("macros");
-  if (macrosIt) {
-    auto macros = prep.expandMacros(std::move(*macrosIt), emptyContext_);
-    checkLogic(macros.isObject(), "config macros is not an object");
+  auto jmacros = config.get_ptr("macros");
+  if (jmacros) {
+    prep.parseMacroDefs(std::move(*jmacros));
     config.erase("macros");
-
-    for (const auto& it : macros.items()) {
-      auto key = asString(it.first, "macro definition key");
-      const auto& obj = it.second;
-      checkLogic(obj.isObject(), "'{}' macro definition is not an object", key);
-      auto objType = asString(tryGet(obj, "type", "macro definition"),
-                              "macro definition type");
-
-      if (objType == "macroDef") {
-        const auto& res = tryGet(obj, "result", "Macro definition");
-        vector<dynamic> params;
-        auto paramsIt = obj.find("params");
-        if (paramsIt != obj.items().end()) {
-          checkLogic(paramsIt->second.isArray(),
-                     "'{}' macroDef params is not an array", key);
-          for (auto& paramObj : paramsIt->second) {
-            params.push_back(paramObj);
-          }
-        }
-        auto f = [res, &prep](const Context& ctx) {
-          return prep.expandMacros(res, ctx);
-        };
-        prep.macros_.emplace(
-          key, make_unique<Macro>(key, params, std::move(f)));
-      } else if (objType == "constDef") {
-        checkLogic(it.second.isObject(), "constDef is not an object");
-        const auto& result = tryGet(it.second, "result", "constDef");
-        prep.consts_.emplace(key, make_unique<Const>(prep, key, result));
-      } else {
-        throw std::logic_error("Unknown macro definition type: " + objType);
-      }
-    }
   }
 
   return prep.expandMacros(std::move(config), emptyContext_);

@@ -12,7 +12,6 @@
 #include <folly/Conv.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/_router.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
@@ -180,12 +179,10 @@ void ProxyDestination::onReply(const McReply& reply,
 
 void ProxyDestination::on_up() {
   FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(!stats_.is_up);
+  FBI_ASSERT(stats_.state != ProxyDestinationState::kUp);
 
   stat_incr(proxy->stats, server_up_events_stat, 1);
-  stat_incr(proxy->stats, num_servers_up_stat, 1);
-
-  stats_.is_up = true;
+  setState(ProxyDestinationState::kUp);
 
   VLOG(1) << "server " << pdstnKey << " up (" <<
       stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
@@ -199,25 +196,12 @@ void ProxyDestination::on_down() {
     VLOG(1) << "server " << pdstnKey << " inactive (" <<
         stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
         stat_get_uint64(proxy->stats, num_servers_stat) << ")";
-    stat_incr(proxy->stats, closed_inactive_connections_stat, 1);
-    if (stats_.is_up) {
-      stat_decr(proxy->stats, num_servers_up_stat, 1);
-      stats_.is_up = false;
-    }
+    setState(ProxyDestinationState::kClosed);
   } else {
     VLOG(1) << "server " << pdstnKey << " down (" <<
         stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
         stat_get_uint64(proxy->stats, num_servers_stat) << ")";
-
-    /* NB stats_.is_up may be 0, there's no guarantee we're up because of
-     * the way libasox does auto-connect-on-send */
-
-    stat_incr(proxy->stats, server_down_events_stat, 1);
-    if (stats_.is_up) {
-      stat_decr(proxy->stats, num_servers_up_stat, 1);
-    }
-    stats_.is_up = false;
-
+    setState(ProxyDestinationState::kDown);
     handle_tko(McReply(mc_res_connect_error),
                /* is_probe_req= */ false);
   }
@@ -280,16 +264,14 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
 
   static uint64_t next_magic = 0x12345678900000LL;
   magic = __sync_fetch_and_add(&next_magic, 1);
+  stat_incr(proxy->stats, num_servers_new_stat, 1);
 }
 
-proxy_client_state_t ProxyDestination::state() const {
+ProxyDestinationState ProxyDestination::state() const {
   if (shared->tko.isTko()) {
-    return PROXY_CLIENT_TKO;
-  } else if (stats_.is_up) {
-    return PROXY_CLIENT_UP;
-  } else {
-    return PROXY_CLIENT_NEW;
+    return ProxyDestinationState::kTko;
   }
+  return stats_.state;
 }
 
 const ProxyDestinationStats& ProxyDestination::stats() const {
@@ -299,7 +281,7 @@ const ProxyDestinationStats& ProxyDestination::stats() const {
 bool ProxyDestination::may_send() {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
-  return state() != PROXY_CLIENT_TKO;
+  return !shared->tko.isTko();
 }
 
 void ProxyDestination::resetInactive() {
@@ -342,6 +324,34 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   tkoLog.result = result;
 
   logTkoEvent(proxy, tkoLog);
+}
+
+void ProxyDestination::setState(ProxyDestinationState new_st) {
+  auto old_st = stats_.state;
+
+  if (old_st != new_st) {
+    auto getStatName = [](ProxyDestinationState st) {
+      switch (st) {
+        case ProxyDestinationState::kNew:
+          return num_servers_new_stat;
+        case ProxyDestinationState::kUp:
+          return num_servers_up_stat;
+        case ProxyDestinationState::kClosed:
+          return num_servers_closed_stat;
+        case ProxyDestinationState::kDown:
+          return num_servers_down_stat;
+        default:
+          CHECK(false);
+          return num_stats; // shouldnt reach here
+      }
+    };
+
+    auto old_name = getStatName(old_st);
+    auto new_name = getStatName(new_st);
+    stat_decr(proxy->stats, old_name, 1);
+    stat_incr(proxy->stats, new_name, 1);
+    stats_.state = new_st;
+  }
 }
 
 ProxyDestinationStats::ProxyDestinationStats(const McrouterOptions& opts)

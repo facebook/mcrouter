@@ -33,6 +33,7 @@
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
 #include "mcrouter/stats.h"
@@ -59,115 +60,19 @@ class McReply;
 
 namespace mcrouter {
 // forward declaration
-class mcrouter_t;
+class McrouterClient;
+class McrouterInstance;
+class ProxyConfig;
 class ProxyConfigIf;
 class ProxyClientCommon;
 class ProxyDestination;
 class ProxyDestinationMap;
+class ProxyRequestContext;
 class RuntimeVarsData;
 class ShardSplitter;
 
 typedef Observable<std::shared_ptr<const RuntimeVarsData>>
   ObservableRuntimeVars;
-
-
-enum reply_state_t {
-  REPLY_STATE_NO_REPLY,
-  REPLY_STATE_REPLIED,
-};
-
-class BadKeyException : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-/**
- * @struct proxy_request_t
- * @brief Stores a proxy request
- */
-struct proxy_request_t {
-  proxy_t* proxy; ///< For convenience
-
-  McMsgRef orig_req; ///< Reference to the incoming request
-
-  McReply reply; /**< The reply that has been sent out for this request */
-
-  folly::Optional<McRequest> saved_request;
-
-  /** Whether we have replied, and therefore have handed the request back */
-  reply_state_t reply_state;
-
-  int failover_disabled; ///< true if no failover allowed
-
-  int _refcount;
-
-  uint64_t sender_id;
-
-  /// Reference to the client that issued this
-  struct McrouterClient* requester;
-
-  /**
-   * For compatibility, we support (get, __mcrouter__.key) as an alias for
-   * (get-service-info, key).  If this flag is set, we must undo this op
-   * munging when returning a reply.
-   */
-  bool legacy_get_service_info;
-
-  void *context;
-
-  /**
-   * Constructor
-   *
-   * @param p proxy that is satisfying the request
-   * @param req the original request
-   * @param enqReply the function we will use to enqueue the reply when done
-   * @param con the context for this request
-   * @param reqComplete if non-null, will be called when all replies
-   *   (even async) complete.
-   * @param senderId the id to distinguish the request from different caller
-   */
-  proxy_request_t(proxy_t* p,
-                  McMsgRef req,
-                  void (*enqReply)(proxy_request_t* preq),
-                  void *con,
-                  void (*reqComplete)(proxy_request_t* preq) = nullptr,
-                  uint64_t senderId = 0);
-
-  /**
-   * Destructor
-   */
-  ~proxy_request_t();
-
-  /**
-   * Sets the reply for this proxy request and sends it out
-   * @param newReply the message that we are sending out as the reply
-   *        for the request we are currently handling
-   */
-  void sendReply(McReply newReply);
-
- private:
-  /**
-   * The function that will be called when the reply is ready
-   */
-  void (*enqueueReply_)(proxy_request_t* preq);
-
-  /**
-   * The function that will be called when all replies (including async)
-   * come back.
-   * Guaranteed to be called after enqueueReply_ (right after in sync mode).
-   */
-  void (*reqComplete_)(proxy_request_t* preq);
-
-  /** Links this proxy_request into proxy's waiting queue */
-  TAILQ_ENTRY(proxy_request_t) entry_;
-
-  /** If true, this is currently being processed by a proxy and
-      we want to notify we're done on destruction. */
-  bool processing_;
-
-  friend class proxy_t;
-
-  friend void proxy_request_decref(proxy_request_t* preq);
-};
 
 struct ShadowSettings {
   struct Data {
@@ -183,8 +88,8 @@ struct ShadowSettings {
     explicit Data(const folly::dynamic& json);
   };
 
-  ShadowSettings(const folly::dynamic& json, mcrouter_t* router);
-  ShadowSettings(std::shared_ptr<Data> data, mcrouter_t* router);
+  ShadowSettings(const folly::dynamic& json, McrouterInstance* router);
+  ShadowSettings(std::shared_ptr<Data> data, McrouterInstance* router);
   ~ShadowSettings();
 
   std::shared_ptr<const Data> getData();
@@ -192,12 +97,12 @@ struct ShadowSettings {
  private:
   AtomicSharedPtr<Data> data_;
   ObservableRuntimeVars::CallbackHandle handle_;
-  void registerOnUpdateCallback(mcrouter_t* router);
+  void registerOnUpdateCallback(McrouterInstance* router);
 };
 
 struct proxy_t {
   uint64_t magic;
-  mcrouter_t *router{nullptr};
+  McrouterInstance* router{nullptr};
 
   /** Note: will go away once the router pointer above is guaranteed to exist */
   const McrouterOptions opts;
@@ -260,7 +165,7 @@ struct proxy_t {
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
-  proxy_t(mcrouter_t *router,
+  proxy_t(McrouterInstance* router,
           folly::EventBase* eventBase,
           const McrouterOptions& opts);
 
@@ -279,7 +184,7 @@ struct proxy_t {
     std::shared_ptr<ProxyConfigIf> newConfig);
 
   /** Queue up and route the new incoming request */
-  void dispatchRequest(proxy_request_t* preq);
+  void dispatchRequest(std::unique_ptr<ProxyRequestContext> preq);
 
   /**
    * If no event base was provided on construction, this must be called
@@ -298,8 +203,8 @@ struct proxy_t {
   pthread_t statsLogWriterThreadHandle_{0};
   void* statsLogWriterThreadStack_{nullptr};
 
-  void routeHandlesProcessRequest(proxy_request_t* preq);
-  void processRequest(proxy_request_t* preq);
+  void routeHandlesProcessRequest(std::unique_ptr<ProxyRequestContext> preq);
+  void processRequest(std::unique_ptr<ProxyRequestContext> preq);
 
   /**
    * Incoming request rate limiting.
@@ -313,15 +218,26 @@ struct proxy_t {
 
   /** Number of requests processing */
   size_t numRequestsProcessing_{0};
-  /** Number of requests queued in waitingRequests_ */
-  size_t numRequestsWaiting_{0};
+
+  /**
+   * We use this wrapper instead of putting 'hook' inside ProxyRequestContext
+   * directly due to an include cycle:
+   * proxy.h -> ProxyRequestContext.h -> ProxyRequestLogger.h ->
+   * ProxyRequestLogger-inl.h -> proxy.h
+   */
+  struct WaitingRequest {
+    UniqueIntrusiveListHook hook;
+    using Queue = UniqueIntrusiveList<WaitingRequest,
+                                      &WaitingRequest::hook>;
+    std::unique_ptr<ProxyRequestContext> request;
+    explicit WaitingRequest(std::unique_ptr<ProxyRequestContext> r);
+  };
 
   /** Queue of requests we didn't start processing yet */
-  TAILQ_HEAD(RequestTailqHead, proxy_request_t);
-  RequestTailqHead waitingRequests_;
+  WaitingRequest::Queue waitingRequests_;
 
   /** If true, we can't start processing this request right now */
-  bool rateLimited(const proxy_request_t* preq) const;
+  bool rateLimited(const ProxyRequestContext& preq) const;
 
   /** Will let through requests from the above queue if we have capacity */
   void pump();
@@ -329,7 +245,7 @@ struct proxy_t {
   /** Called once after a valid eventBase has been provided */
   void onEventBaseAttached();
 
-  friend class proxy_request_t;
+  friend class ProxyRequestContext;
 };
 
 struct old_config_req_t {
@@ -340,11 +256,14 @@ struct old_config_req_t {
   std::shared_ptr<ProxyConfigIf> config_;
 };
 
-int router_configure(mcrouter_t *router);
+enum request_entry_type_t {
+  request_type_request,
+  request_type_disconnect,
+  request_type_old_config,
+  request_type_router_shutdown,
+};
 
-int router_configure(mcrouter_t *router, folly::StringPiece input);
-
-void proxy_request_decref(proxy_request_t*);
-proxy_request_t* proxy_request_incref(proxy_request_t*);
+void proxy_config_swap(proxy_t* proxy,
+                       std::shared_ptr<ProxyConfig> config);
 
 }}} // facebook::memcache::mcrouter
