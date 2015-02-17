@@ -7,9 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-// for printing PRIu64 in c++
-#define __STDC_FORMAT_MACROS
-
 #include "async.h"
 
 #include <limits.h>
