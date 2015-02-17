@@ -73,11 +73,34 @@ class MockServer(threading.Thread):
 
 
 class SleepServer(MockServer):
-    """A mock server that listens on a port, but always times out on connections
-    """
+    """A mock server that listens on a port, but always times out"""
     def runServer(self, client_socket, client_address):
         self.wait_until_stopped()
 
+class ConnectionErrorServer(MockServer):
+    """A mock server that returns error on connections"""
+    def ensure_connected(self):
+        self.start()
+
+class CustomErrorServer(MockServer):
+    """A server that responds with a custom message after reading expected
+    amount of bytes"""
+    def __init__(self, expected_bytes=0, error_message='SERVER_ERROR'):
+        super(CustomErrorServer, self).__init__()
+        self.expected_bytes = expected_bytes
+        self.error_message = error_message
+
+    def setExpectedBytes(self, expected_bytes):
+        self.expected_bytes = expected_bytes
+
+    def setError(self, error_message):
+        self.error_message = error_message
+
+    def runServer(self, client_socket, client_address):
+        f = client_socket.makefile()
+        f.read(self.expected_bytes)
+        f.close()
+        client_socket.send(self.error_message + '\r\nEND')
 
 class StoreServer(MockServer):
     """A server that responds to requests with 'STORED' after reading expected
