@@ -228,8 +228,8 @@ class McServerSession :
                     mc_op_t operation,
                     uint64_t reqid,
                     mc_res_t result,
-                    bool noreply);
-  void parseError(McReply reply);
+                    bool noreply) override;
+  void parseError(McReply reply) override;
 
   /**
    * Must be called after parser has detected the protocol (i.e.

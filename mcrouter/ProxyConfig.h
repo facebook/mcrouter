@@ -52,7 +52,7 @@ class ProxyConfig : public ProxyConfigIf {
   }
 
   McrouterRouteHandlePtr
-  getRouteHandleForAsyncLog(const std::string& asyncLogName) const;
+  getRouteHandleForAsyncLog(const std::string& asyncLogName) const override;
 
  private:
   std::shared_ptr<ProxyRoute> proxyRoute_;
