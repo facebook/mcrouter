@@ -103,7 +103,7 @@ bool isValidRouterName(folly::StringPiece name) {
 
 McrouterInstance* McrouterInstance::init(folly::StringPiece persistence_id,
                                          const McrouterOptions& options) {
-  if (auto manager = gMcrouterManager.get_weak_fast().lock()) {
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
     return manager->mcrouterGetCreate(persistence_id, options);
   }
 
@@ -111,7 +111,7 @@ McrouterInstance* McrouterInstance::init(folly::StringPiece persistence_id,
 }
 
 McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
-  if (auto manager = gMcrouterManager.get_weak_fast().lock()) {
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
     return manager->mcrouterGet(persistence_id);
   }
 
@@ -241,7 +241,7 @@ McrouterInstance* McrouterInstance::createTransient(
 }
 
 void McrouterInstance::freeAllMcrouters() {
-  if (auto manager = gMcrouterManager.get_weak_fast().lock()) {
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
     manager->freeAllMcrouters();
   }
 }
