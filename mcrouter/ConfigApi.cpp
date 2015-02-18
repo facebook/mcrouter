@@ -215,6 +215,7 @@ void ConfigApi::subscribeToTrackedSources() {
   std::lock_guard<std::mutex> lock(fileInfoMutex_);
   assert(tracking_);
   tracking_ = false;
+  isFirstConfig_ = false;
 
   if (!opts_.disable_reload_configs) {
     // start watching for updates
@@ -283,6 +284,10 @@ folly::dynamic ConfigApi::getConfigSourcesInfo() {
   }
 
   return reply_val;
+}
+
+bool ConfigApi::isFirstConfig() const {
+  return isFirstConfig_;
 }
 
 }}} // facebook::memcache::mcrouter

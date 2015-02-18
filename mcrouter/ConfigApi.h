@@ -114,6 +114,11 @@ class ConfigApi {
   std::atomic<bool> tracking_;
 
   /**
+   * Informs whether this is the first time mcrouter is being configured.
+   */
+  bool isFirstConfig() const;
+
+  /**
    * @return true, if files have update since last call, false otherwise
    */
   virtual bool checkFileUpdate();
@@ -138,6 +143,8 @@ class ConfigApi {
   std::mutex finishMutex_;
   std::condition_variable finishCV_;
   std::atomic<bool> finish_;
+
+  bool isFirstConfig_{true};
 
   void configThreadRun();
 };
