@@ -141,9 +141,7 @@ McrouterInstance* McrouterInstance::create(const McrouterOptions& input_options,
 
   folly::json::serialization_opts jsonOpts;
   jsonOpts.sort_keys = true;
-  folly::dynamic dict = folly::dynamic::object
-    ("opts", folly::toDynamic(router->getStartupOpts()))
-    ("version", MCROUTER_PACKAGE_STRING);
+  auto dict = folly::toDynamic(router->getStartupOpts());
   auto jsonStr = folly::json::serialize(dict, jsonOpts);
   failure::setServiceContext(router->routerName(), jsonStr.toStdString());
 
@@ -255,6 +253,7 @@ std::unordered_map<std::string, std::string>
 McrouterInstance::getStartupOpts() const {
   auto result = opts_.toDict();
   result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
+  result.emplace("version", MCROUTER_PACKAGE_STRING);
   return result;
 }
 
