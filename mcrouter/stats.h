@@ -65,6 +65,7 @@ enum stat_group_t {
   ods_stats            =       0x40,
   rate_stats           =      0x100,
   count_stats          =      0x200,
+  outlier_stats        =      0x400,
   all_stats            =     0xffff,
   server_stats         =    0x10000,
   memory_stats         =    0x20000,

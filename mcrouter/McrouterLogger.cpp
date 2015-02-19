@@ -113,6 +113,11 @@ void write_stats_to_disk(const McrouterOptions& opts,
     folly::dynamic jstats = folly::dynamic::object;
 
     for (size_t i = 0; i < stats.size(); ++i) {
+      if (opts.logging_rtt_outlier_threshold_us == 0 &&
+          (stats[i].group & outlier_stats)) {
+        // outlier detection is disabled
+        continue;
+      }
       if (stats[i].group & ods_stats) {
         auto key = prefix + stats[i].name.str();
 
