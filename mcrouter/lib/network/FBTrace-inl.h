@@ -73,8 +73,7 @@ fbTraceOnSend(McOperation<McOp>, const Request& request,
                            &fbtraceInfo->child_node, fbtraceInfo->metadata,
                            FBTRACE_METADATA_SZ, op, remote_service,
                            info) != 0) {
-    failure::log("FBTrace", failure::Category::kOther,
-                 "Error in fbtrace_request_send: {}", fbtrace_error());
+    VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
     return false;
   }
   return true;
@@ -101,8 +100,7 @@ void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
   fbtrace_add_item(info, &idx, "result", mc_res_to_string(reply.result()));
   fbtrace_add_item(info, &idx, nullptr, nullptr);
   if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
-    failure::log("FBTrace", failure::Category::kOther,
-                 "Error in fbtrace_reply_receive: {}", fbtrace_error());
+    VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();
   }
 }
 
