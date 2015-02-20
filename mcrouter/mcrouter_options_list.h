@@ -272,6 +272,12 @@ mcrouter_option_toggle(
   "disable-miss-on-get-errors", no_short,
   "Disable reporting get errors as misses")
 
+mcrouter_option_toggle(
+  group_remote_errors, false,
+  "group-remote-errors", no_short,
+  "Groups all remote (i.e. non-local) errors together, returning a single "
+  "result for all of them: mc_res_remote_error")
+
 mcrouter_option_integer(
   unsigned int, upgrading_l1_exptime, 0,
   "upgrading-l1-exptime", no_short,

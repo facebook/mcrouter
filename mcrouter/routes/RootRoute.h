@@ -50,6 +50,10 @@ class RootRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
+
+    typedef typename ReplyType<Operation, Request>::type Reply;
+
+    Reply reply;
     /* If we have to send to more than one prefix,
        wait for the first in the list to reply and let others
        run in the background.
@@ -60,9 +64,16 @@ class RootRoute {
     if (UNLIKELY(rhPtr == nullptr)) {
       auto rh = rhMap_.getTargetsForKeySlow(req.routingPrefix(),
                                             req.routingKey());
-      return routeImpl(rh, req, Operation());
+      reply = routeImpl(rh, req, Operation());
+    } else {
+      reply = routeImpl(*rhPtr, req, Operation());
     }
-    return routeImpl(*rhPtr, req, Operation());
+
+    if (reply.isError() && opts_.group_remote_errors) {
+      reply = Reply(mc_res_remote_error);
+    }
+
+    return reply;
   }
 
  private:
@@ -85,7 +96,6 @@ class RootRoute {
     if (opts_.miss_on_get_errors) {
       reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
     }
-
     return reply;
   }
 
