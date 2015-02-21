@@ -13,12 +13,12 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-/* Parent cleanup function */
-typedef std::function<void()> ParentCleanupFn;
+/* Child cleanup function */
+typedef std::function<void()> ChildCleanupFn;
 
 /* Forks off child process and watches for its death if we're running in
    managed mode. */
-void spawnManagedChild(ParentCleanupFn cleanupFn);
+void spawnManagedChild(ChildCleanupFn cleanupFn);
 
 /* Shutdown parent and child process'.
  * Can only be called after spawnManagedChild(). */

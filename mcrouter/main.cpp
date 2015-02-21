@@ -13,7 +13,6 @@
 #include <pthread.h>
 #include <sched.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fcntl.h>
@@ -26,6 +25,7 @@
 #include <time.h>
 
 #include <algorithm>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -35,6 +35,7 @@
 #include <glog/logging.h>
 
 #include <folly/Format.h>
+#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
@@ -373,30 +374,44 @@ static int validate_options() {
   return 1;
 }
 
-FILE* open_pidfile(const char* pidfile) {
-  pidfile_fd = open(pidfile, O_WRONLY | O_CREAT, 0644);
+struct PidFile {
+  explicit PidFile(const char* path) {
+    pidfile_ = ::open(path, O_WRONLY | O_CREAT, 0644);
 
-  if (pidfile_fd == -1) {
-    return 0;
+    if (pidfile_ == -1) {
+      LOG(ERROR) << "Couldn't open pidfile " << path << ": " << strerror(errno);
+      exit(EXIT_STATUS_TRANSIENT_ERROR);
+    }
+
+    if (flock(pidfile_, LOCK_EX | LOCK_NB) == -1) {
+      ::close(pidfile_);
+      LOG(ERROR) << "Couldn't lock pidfile " << path << ": " << strerror(errno);
+      exit(EXIT_STATUS_TRANSIENT_ERROR);
+    }
   }
 
-  if (flock(pidfile_fd, LOCK_EX | LOCK_NB) == -1) {
-    close(pidfile_fd);
-    return 0;
+  void write() const {
+    auto pidString = std::to_string(getpid());
+    ::write(pidfile_, pidString.data(), pidString.size());
+    ::fsync(pidfile_);
   }
 
-  return fdopen(pidfile_fd, "w");
-}
+  void detach() {
+    ::close(pidfile_);
+    pidfile_ = -1;
+  }
 
-void write_pidfile(FILE* pidfile) {
-  fprintf(pidfile, "%d\n", getpid());
-  fflush(pidfile);
-}
+  ~PidFile() {
+    if (pidfile_ >= 0) {
+      ::ftruncate(pidfile_, 0);
+      ::close(pidfile_);
+    }
+  }
 
-void truncate_pidfile() {
-  ftruncate(pidfile_fd, 0);
-  close(pidfile_fd);
-}
+ private:
+  int pidfile_;
+};
+static std::unique_ptr<PidFile> pidFile;
 
 /** Set the fdlimit before any libevent setup because libevent uses the fd
     limit as a initial allocation buffer and if the limit is too low, then
@@ -430,12 +445,6 @@ static void raise_fdlimit() {
       exit(EXIT_STATUS_TRANSIENT_ERROR);
     }
   }
-}
-
-/* Truncate pidfile. */
-static void sigterm_handler(int signum) {
-  truncate_pidfile();
-  exit(0);
 }
 
 static void error_flush_cb(const fbi_err_t *err) {
@@ -584,14 +593,8 @@ int main(int argc, char **argv) {
     failure::addHandler(failure::handlers::throwLogicError());
   }
 
-  FILE *pidfile = nullptr;
   if (standaloneOpts.pidfile != "") {
-    pidfile = open_pidfile(standaloneOpts.pidfile.c_str());
-    if (pidfile == nullptr) {
-      LOG(ERROR) << "Couldn't open pidfile " << standaloneOpts.pidfile <<
-                    ": " << strerror(errno);
-      exit(EXIT_STATUS_TRANSIENT_ERROR);
-    }
+    pidFile = folly::make_unique<PidFile>(standaloneOpts.pidfile.c_str());
   }
 
   LOG(INFO) << MCROUTER_PACKAGE_STRING << " startup (" << getpid() << ")";
@@ -601,16 +604,18 @@ int main(int argc, char **argv) {
   }
 
   /* this has to happen between background and managed */
-  if (pidfile != nullptr) {
-    write_pidfile(pidfile);
+  if (pidFile) {
+    pidFile->write();
   }
-  signal(SIGTERM, sigterm_handler);
-  signal(SIGINT, sigterm_handler);
-  signal(SIGQUIT, sigterm_handler);
 
   // Managed mode
   if (standaloneOpts.managed && !validate_configs) {
-    spawnManagedChild(truncate_pidfile);
+    spawnManagedChild([] {
+      if (pidFile) {
+        pidFile->detach();
+        pidFile.reset();
+      }
+    });
     LOG(INFO) << "forked (" << getpid() << ")";
   }
 

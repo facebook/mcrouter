@@ -84,7 +84,7 @@ void uninstallSignalHandlers() {
 
 } // anonymous namsepace
 
-void spawnManagedChild(ParentCleanupFn cleanupFn) {
+void spawnManagedChild(ChildCleanupFn cleanupFn) {
   installSignalHandlers();
 
   // Loops forever to make sure the parent process never leaves.
@@ -100,6 +100,9 @@ void spawnManagedChild(ParentCleanupFn cleanupFn) {
     case 0:
       // child process. cleanup and continue with the startup logic.
       uninstallSignalHandlers();
+      if (cleanupFn) {
+        cleanupFn();
+      }
       return;
 
     default:
@@ -122,9 +125,6 @@ void spawnManagedChild(ParentCleanupFn cleanupFn) {
               "Child process did not exit in {} microseconds. Sending SIGKILL.",
               TermSignalTimeout);
           kill(childPid, SIGKILL);
-        }
-        if (cleanupFn) {
-          cleanupFn();
         }
         exit(0);
       }
