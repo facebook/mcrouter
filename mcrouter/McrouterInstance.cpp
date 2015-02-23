@@ -251,9 +251,14 @@ void McrouterInstance::addStartupOpts(
 
 std::unordered_map<std::string, std::string>
 McrouterInstance::getStartupOpts() const {
+  const size_t kMaxOptionValueLength = 256;
+
   auto result = opts_.toDict();
   result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
   result.emplace("version", MCROUTER_PACKAGE_STRING);
+  for (auto& it : result) {
+    it.second = shorten(it.second, kMaxOptionValueLength);
+  }
   return result;
 }
 

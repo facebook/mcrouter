@@ -173,4 +173,11 @@ folly::dynamic parseJsonString(folly::StringPiece s,
   return folly::parseJson(s, opts);
 }
 
+std::string shorten(folly::StringPiece s, size_t maxLength) {
+  if (s.size() <= maxLength || s.size() <= 3) {
+    return s.str();
+  }
+  return s.subpiece(0, maxLength - 3).str() + "...";
+}
+
 }} // facebook::memcache

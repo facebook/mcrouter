@@ -218,6 +218,12 @@ std::string getThreadName();
 folly::dynamic parseJsonString(folly::StringPiece s,
                                bool allow_trailing_comma = true);
 
+/**
+ * @return returns a prefix of `s` with '...' appended if s is longer than
+ *         `maxLength`.
+ */
+std::string shorten(folly::StringPiece s, size_t maxLength);
+
 }}  // facebook::memcache
 
 #endif
