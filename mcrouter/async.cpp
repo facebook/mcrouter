@@ -52,7 +52,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 AsyncWriter::AsyncWriter(size_t maxQueueSize)
     : maxQueueSize_(maxQueueSize),
       pid_(getpid()),
-      fiberManager_(folly::make_unique<EventBaseLoopController>()) {
+      fiberManager_(folly::make_unique<EventBaseLoopController>()),
+      eventBase_(/* enableTimeMeasurement */ false) {
   auto& c = fiberManager_.loopController();
   dynamic_cast<EventBaseLoopController&>(c).attachEventBase(eventBase_);
 }
