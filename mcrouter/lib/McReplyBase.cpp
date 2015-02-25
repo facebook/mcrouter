@@ -79,11 +79,9 @@ McReplyBase::McReplyBase(mc_res_t res)
     : result_(res) {
 }
 
-McReplyBase::McReplyBase(mc_res_t res, folly::IOBuf val,
-                         void (*destructor)(void*), void* ctx)
+McReplyBase::McReplyBase(mc_res_t res, folly::IOBuf val)
     : result_(res),
-      valueData_(std::move(val)),
-      destructor_(CUniquePtr(ctx, destructor)) {
+      valueData_(std::move(val)) {
 }
 
 McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)

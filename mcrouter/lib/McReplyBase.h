@@ -265,6 +265,16 @@ class McReplyBase {
    */
   McMsgRef releasedMsg(mc_op_t op) const;
 
+
+  /**
+   * Set the destructor. If destructor/ctx are non-null, will call
+   * destructor(ctx) when this reply is destroyed.
+   */
+  void setDestructor(void (*destructor) (void*), void* ctx) {
+    assert(!destructor_.hasValue());
+    destructor_.assign(CUniquePtr(ctx, destructor));
+  }
+
  protected:
   ~McReplyBase() {};
 
@@ -272,12 +282,7 @@ class McReplyBase {
   McReplyBase();
   McReplyBase(mc_res_t result, McMsgRef&& reply);
 
-  /**
-   * If destructor/ctx are non-null, will call destructor(ctx)
-   * when this reply is destroyed.
-   */
-  McReplyBase(mc_res_t result, folly::IOBuf value,
-              void (*destructor)(void*) = nullptr, void* ctx = nullptr);
+  McReplyBase(mc_res_t result, folly::IOBuf value);
   McReplyBase(mc_res_t result, folly::StringPiece value);
   McReplyBase(mc_res_t result, const char* value);
   McReplyBase(mc_res_t result, const std::string& value);
