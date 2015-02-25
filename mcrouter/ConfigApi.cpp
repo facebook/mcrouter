@@ -19,6 +19,7 @@
 #include "mcrouter/FileDataProvider.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ThreadUtil.h"
 
@@ -109,15 +110,15 @@ void ConfigApi::configThreadRun() {
   }
 
   while (!finish_) {
-    bool hasUpdate;
+    bool hasUpdate = false;
     try {
       hasUpdate = checkFileUpdate();
     } catch (const std::exception& e) {
-      LOG(ERROR) << "Check for config update failed: " << e.what();
-      return;
+      logFailure(memcache::failure::Category::kOther,
+                 "Check for config update failed: {}", e.what());
     } catch (...) {
-      LOG(ERROR) << "Check for config update failed with unknown error";
-      return;
+      logFailure(memcache::failure::Category::kOther,
+                 "Check for config update failed with unknown error");
     }
     // There are a couple of races that can happen here
     // First, the IN_MODIFY event can be fired before the write is complete,
