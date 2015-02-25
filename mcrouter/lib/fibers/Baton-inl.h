@@ -85,7 +85,8 @@ bool Baton::timed_wait(const std::chrono::time_point<C,D>& timeout) {
   auto now = C::now();
 
   if (LIKELY(now <= timeout)) {
-    return timed_wait(timeout - now);
+    return timed_wait(
+        std::chrono::duration_cast<std::chrono::milliseconds>(timeout - now));
   } else {
     return timed_wait(TimeoutController::Duration(0));
   }
