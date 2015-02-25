@@ -32,16 +32,22 @@ bool precheckRequest(ProxyRequestContext& preq) {
     // Return 'Not supported' message
     case mc_op_append:
     case mc_op_prepend:
-    case mc_op_flushall:
     case mc_op_flushre:
-      preq.sendReply(McReply(mc_res_remote_error, "Command not supported"));
+      preq.sendReply(McReply(mc_res_local_error, "Command not supported"));
       break;
+
+    case mc_op_flushall:
+      if (!preq.proxy().opts.enable_flush_cmd) {
+        preq.sendReply(McReply(mc_res_local_error, "Command disabled"));
+        break;
+      }
+      /* fallthrough */
 
     // Everything else is supported
     default:
       auto err = mc_client_req_check(preq.origReq().get());
       if (err != mc_req_err_valid) {
-        preq.sendReply(McReply(mc_res_remote_error, mc_req_err_to_string(err)));
+        preq.sendReply(McReply(mc_res_local_error, mc_req_err_to_string(err)));
         break;
       }
       return false;

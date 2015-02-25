@@ -289,6 +289,10 @@ mcrouter_option_toggle(
   "send-invalid-route-to-default", no_short,
   "Send request to default route if routing prefix is not present in config")
 
+mcrouter_option_toggle(
+  enable_flush_cmd, false,
+  "enable-flush-cmd", no_short,
+  "Enable flush_all command")
 
 mcrouter_option_group("TKO probes")
 

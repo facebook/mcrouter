@@ -390,6 +390,13 @@ class MCProcess(object):
         self.socket.sendall("shutdown\r\n")
         return self.fd.readline()
 
+    def flush_all(self, delay=None):
+        if delay is None:
+            self.socket.sendall("flush_all\r\n")
+        else:
+            self.socket.sendall("flush_all {}\r\n".format(delay))
+        return self.fd.readline().rstrip()
+
 def sub_port(s, substitute_ports, port_map):
     parts = s.split(':')
     if len(parts) < 2:

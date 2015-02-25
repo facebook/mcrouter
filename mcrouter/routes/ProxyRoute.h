@@ -13,7 +13,12 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
 #include "mcrouter/routes/McOpList.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -24,6 +29,10 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr ch,
                                          BigValueRouteOptions options);
+
+McrouterRouteHandlePtr
+makeDestinationRoute(std::shared_ptr<const ProxyClientCommon> client,
+                     std::shared_ptr<ProxyDestination> destination);
 
 /**
  * This is the top-most level of Mcrouter's RouteHandle tree.
@@ -85,6 +94,26 @@ class ProxyRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
     return root_->route(req, Operation());
+  }
+
+  template <class Request>
+  typename ReplyType<McOperation<mc_op_flushall>, Request>::type route(
+    const Request& req, McOperation<mc_op_flushall> op) const {
+
+    if (!proxy_->opts.enable_flush_cmd) {
+      using Reply =
+        typename ReplyType<McOperation<mc_op_flushall>, Request>::type;
+      return Reply(ErrorReply, "Command disabled");
+    }
+
+    // route to all clients in the config
+    std::vector<McrouterRouteHandlePtr> rh;
+    auto clients = proxy_->getConfig()->getClients();
+    for (auto& client : clients) {
+      auto dest = proxy_->destinationMap->fetch(*client);
+      rh.push_back(makeDestinationRoute(std::move(client), std::move(dest)));
+    }
+    return AllSyncRoute<McrouterRouteHandleIf>(std::move(rh)).route(req, op);
   }
 
  private:

@@ -160,4 +160,8 @@ MockMc::findUnexpired(folly::StringPiece key) {
   return it;
 }
 
+void MockMc::flushAll() {
+  citems_.clear();
+}
+
 }}  // facebook::memcache

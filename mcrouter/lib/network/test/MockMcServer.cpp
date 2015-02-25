@@ -238,6 +238,15 @@ class MockMcOnRequest {
     }
   }
 
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
+                 McOperation<mc_op_flushall>) {
+    std::this_thread::sleep_for(std::chrono::seconds(req.number()));
+    mc_.flushAll();
+    McReply reply(mc_res_ok);
+    McServerRequestContext::reply(std::move(ctx), std::move(reply));
+  }
+
  private:
   MockMc mc_;
 };

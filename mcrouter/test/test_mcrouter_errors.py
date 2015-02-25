@@ -231,4 +231,4 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
         mcrouter = self.getMcrouter(Memcached())
         cmd = 'flush_all\r\n'
         res = mcrouter.issue_command(cmd)
-        self.assertEqual('SERVER_ERROR Command not supported\r\n', res)
+        self.assertEqual('SERVER_ERROR Command disabled\r\n', res)

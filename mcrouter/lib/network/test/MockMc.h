@@ -108,6 +108,11 @@ class MockMc {
    */
   LeaseSetResult leaseSet(folly::StringPiece key, Item item, uint64_t token);
 
+  /**
+   * clear all items
+   */
+  void flushAll();
+
  private:
   struct CacheItem {
     Item item;
