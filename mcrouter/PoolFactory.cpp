@@ -198,13 +198,6 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     keep_routing_prefix = jkeep_routing_prefix->getBool();
   }
 
-  bool attach_default_routing_prefix = false;
-  if (auto jattach = json.get_ptr("attach_default_routing_prefix")) {
-    checkLogic(jattach->isBool(),
-               "Pool {}: attach_default_routing_prefix is not a bool");
-    attach_default_routing_prefix = jattach->getBool();
-  }
-
   uint64_t qos = opts_.default_qos_class;
   if (auto jqos = json.get_ptr("qos")) {
     if (isQosValid(*jqos)) {
@@ -268,7 +261,6 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       timeout,
       std::move(ap),
       keep_routing_prefix,
-      attach_default_routing_prefix,
       serverUseSsl,
       serverQos,
       deleteTime);

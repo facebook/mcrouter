@@ -542,35 +542,27 @@ mc_op_t mc_op_from_string(const char* str) {
   return mc_op_unknown;
 }
 
-/**
- * Returns whether the given request has a valid memcache key (if it should).
- * must satisfy:
- *   1) The length should be nonzero.
- *   2) The length should be at most MC_KEY_MAX_LEN.
- *   3) There should be no spaces or control characters.
- *
- * @param req                The request to verify
- * @return                   validation result
- */
 mc_req_err_t mc_client_req_check(const mc_msg_t* req) {
   if (!mc_req_has_key(req)) {
     return mc_req_err_valid;
   }
 
-  const char* key_str = req->key.str;
-  size_t len = req->key.len;
+  return mc_client_req_key_check(req->key);
+}
+
+mc_req_err_t mc_client_req_key_check(nstring_t key) {
   size_t i;
 
-  if (len < 1) {
+  if (key.len < 1) {
     return mc_req_err_no_key;
   }
 
-  if (len > MC_KEY_MAX_LEN) {
+  if (key.len > MC_KEY_MAX_LEN) {
     return mc_req_err_key_too_long;
   }
 
-  for (i = 0; i < len; ++i) {
-    if (iscntrl(key_str[i]) || isspace(key_str[i])) {
+  for (i = 0; i < key.len; ++i) {
+    if (iscntrl(key.str[i]) || isspace(key.str[i])) {
       return mc_req_err_space_or_ctrl;
     }
   }

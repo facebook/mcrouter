@@ -27,13 +27,10 @@ class McRequest : public McRequestBase {
     return McRequest(*this);
   }
   static McRequest cloneFrom(const McRequestBase& other,
-                             bool stripRoutingPrefix = false,
-                             folly::StringPiece attachPrefix = "") {
+                             bool stripRoutingPrefix = false) {
     McRequest result(other);
     if (stripRoutingPrefix) {
       result.stripRoutingPrefix();
-    } else if (!attachPrefix.empty()) {
-      result.attachRoutingPrefix(attachPrefix);
     }
     return result;
   }

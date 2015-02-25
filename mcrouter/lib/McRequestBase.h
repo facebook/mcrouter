@@ -87,15 +87,6 @@ class McRequestBase {
     keyData_.trimStart(keys_.routingPrefix.size());
     keys_.routingPrefix.clear();
   }
-  void attachRoutingPrefix(folly::StringPiece prefix) {
-    if (keys_.routingPrefix.empty()) {
-      keyData_.unshare();
-      keyData_.reserve(prefix.size(), 0);
-      keyData_.prepend(prefix.size());
-      ::memcpy(keyData_.writableData(), prefix.data(), prefix.size());
-      keys_.update(getRange(keyData_));
-    }
-  }
   void setValue(folly::IOBuf valueData) {
     valueData_ = std::move(valueData);
   }

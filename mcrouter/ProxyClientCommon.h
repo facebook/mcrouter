@@ -27,7 +27,6 @@ struct ProxyClientCommon {
   const std::string destination_key;
 
   const int keep_routing_prefix;
-  const bool attach_default_routing_prefix;
   const timeval_t server_timeout;
 
   const size_t indexInPool;
@@ -44,7 +43,6 @@ struct ProxyClientCommon {
                     timeval_t timeout,
                     AccessPoint ap,
                     int keep_routing_prefix,
-                    bool attach_default_routing_prefix,
                     bool useSsl,
                     uint64_t qos,
                     int deleteTime);

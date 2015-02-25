@@ -147,14 +147,7 @@ class DestinationRoute {
 
     DestinationRequestCtx ctx;
     uint64_t senderId = req.context().senderId();
-    folly::StringPiece attachPrefix;
-    if (client_->keep_routing_prefix &&
-        client_->attach_default_routing_prefix) {
-      attachPrefix = proxy->opts.default_route;
-    }
-    auto newReq = McRequest::cloneFrom(req,
-                                       !client_->keep_routing_prefix,
-                                       attachPrefix);
+    auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
 
     auto reply = ProxyMcReply(
       destination->send(newReq, McOperation<Op>(), ctx,

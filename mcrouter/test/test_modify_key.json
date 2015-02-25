@@ -1,0 +1,44 @@
+{
+  "pools": {
+    "A": {
+      "keep_routing_prefix": true,
+      "servers": [ "localhost:12345" ]
+    }
+  },
+  "routes": [
+    {
+      "aliases": [ "/a/a/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_routing_prefix": "/a/b/",
+        "ensure_key_prefix": "foo:"
+      }
+    },
+    {
+      "aliases": [ "/b/c/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "ensure_key_prefix": "foo:"
+      }
+    },
+    {
+      "aliases": [ "/c/d/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_routing_prefix": ""
+      }
+    },
+    {
+      "aliases": [ "/d/e/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_routing_prefix": "",
+        "ensure_key_prefix": ""
+      }
+    }
+  ]
+}
