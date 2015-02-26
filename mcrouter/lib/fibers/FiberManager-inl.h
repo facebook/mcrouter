@@ -49,7 +49,7 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
       try {
         immediateFunc_();
       } catch (...) {
-        exceptionCallback_(std::current_exception());
+        exceptionCallback_(std::current_exception(), "running immediateFunc_");
       }
       immediateFunc_ = nullptr;
       fiber->state_ = Fiber::READY_TO_RUN;
@@ -71,7 +71,7 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
       try {
         fiber->finallyFunc_();
       } catch (...) {
-        exceptionCallback_(std::current_exception());
+        exceptionCallback_(std::current_exception(), "running finallyFunc_");
       }
       fiber->finallyFunc_ = nullptr;
     }
@@ -187,7 +187,8 @@ struct FiberManager::AddTaskFinallyHelper {
       try {
         finally_(std::move(*result_));
       } catch (...) {
-        fm_.exceptionCallback_(std::current_exception());
+        fm_.exceptionCallback_(std::current_exception(),
+                               "running Finally functor");
       }
 
       if (allocateInBuffer) {

@@ -81,7 +81,8 @@ class FiberManager {
     constexpr Options() {}
   };
 
-  typedef std::function<void(std::exception_ptr)> ExceptionCallback;
+  typedef std::function<void(std::exception_ptr, std::string)>
+  ExceptionCallback;
 
   /**
    * Initializes, but doesn't start FiberManager loop
