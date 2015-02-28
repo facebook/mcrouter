@@ -29,7 +29,7 @@ class TkoCounters;
  * that's shared for all the clients with the same destination_key
  */
 struct ProxyClientShared {
-  /// "host:port" uniquely identifying this shared object
+  /// Canonical IP address "[host]:port" uniquely identifying this shared object
   std::string key;
   TkoTracker tko;
 

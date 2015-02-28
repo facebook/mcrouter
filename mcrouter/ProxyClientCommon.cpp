@@ -25,7 +25,7 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool* pool_,
                                      int deleteTime_)
     : pool(pool_),
       ap(std::move(ap_)),
-      destination_key(folly::sformat("{}:{}", ap.getHost(), ap.getPort())),
+      destination_key(ap.toHostPortString()),
       keep_routing_prefix(keep_routing_prefix_),
       server_timeout(std::move(timeout)),
       indexInPool(pool->getClients().size()),
