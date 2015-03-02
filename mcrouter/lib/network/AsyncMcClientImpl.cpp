@@ -734,12 +734,16 @@ void AsyncMcClientImpl::incMsgId(size_t& msgId) {
 }
 
 void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
-  if (timeout.count()) {
+  if (!timeout.count()) {
     return;
   }
-  auto currentTimeout = socket_->getSendTimeout();
-  if (currentTimeout == 0 || currentTimeout > timeout.count()) {
-    socket_->setSendTimeout(timeout.count());
+  if (!connectionOptions_.writeTimeout.count() ||
+      connectionOptions_.writeTimeout > timeout) {
+    connectionOptions_.writeTimeout = timeout;
+  }
+
+  if (socket_) {
+    socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
   }
 }
 
