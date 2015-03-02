@@ -306,7 +306,7 @@ class FiberManager {
 
   AtomicLinkedList<RemoteTask, &RemoteTask::nextRemoteTask> remoteTaskQueue_;
 
-  TimeoutController timeoutManager_;
+  std::shared_ptr<TimeoutController> timeoutManager_;
 
   void runReadyFiber(Fiber* fiber);
   void remoteReadyInsert(Fiber* fiber);

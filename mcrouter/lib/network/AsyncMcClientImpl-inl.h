@@ -25,8 +25,10 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation) {
   assert(selfPtr);
   assert(fiber::onFiber());
 
+  using Reply = typename ReplyType<Operation, Request>::type;
+
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    return typename ReplyType<Operation, Request>::type(mc_res_local_error);
+    return Reply(mc_res_local_error);
   }
 
   // We need to send fbtrace before serializing, or otherwise we are going to
@@ -39,8 +41,31 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation) {
   sendCommon(ctx.createDummyPtr());
 
   // We sent request successfully, wait for the result.
-  ctx.wait();
-  return ctx.getReply();
+  ctx.wait(connectionOptions_.timeout);
+  switch (ctx.state) {
+    case ReqState::COMPLETE:
+      return ctx.getReply();
+    case ReqState::PENDING_QUEUE:
+    {
+      idMap_.erase(ctx.id);
+      auto it = pendingReplyQueue_.iterator_to(ctx);
+      pendingReplyQueue_.extract(it);
+      return Reply(mc_res_timeout);
+    }
+    case ReqState::SEND_QUEUE:
+    {
+      auto it = sendQueue_.iterator_to(ctx);
+      sendQueue_.extract(it);
+      return Reply(mc_res_timeout);
+    }
+    case ReqState::WRITE_QUEUE:
+    {
+      ctx.cancelAndWait();
+      return Reply(mc_res_timeout);
+    }
+    default:
+      throw std::logic_error("Unexpected request state");
+  }
 }
 
 template <class Operation, class Request, class F>

@@ -169,6 +169,8 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase::UniquePtr req) {
       if (outOfOrder_) {
         idMap_[req->id] = req.get();
       }
+      assert(req->state == ReqState::NONE);
+      req->state = ReqState::SEND_QUEUE;
       sendQueue_.pushBack(std::move(req));
       scheduleNextWriterLoop();
       if (connectionState_ == ConnectionState::DOWN) {
@@ -226,12 +228,16 @@ void AsyncMcClientImpl::pushMessages() {
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
     auto& req = writeQueue_.pushBack(sendQueue_.popFront());
-    req.sentAt = std::chrono::steady_clock::now();
+    if (connectionOptions_.sendTimeout.count()) {
+      req.sentAt = std::chrono::steady_clock::now();
+    }
+    assert(req.state == ReqState::SEND_QUEUE);
+    req.state = ReqState::WRITE_QUEUE;
 
     socket_->writev(this, req.reqContext.getIovs(),
-      req.reqContext.getIovsCount(),
-      numToSend == 1 ? folly::WriteFlags::NONE
-                     : folly::WriteFlags::CORK);
+                    req.reqContext.getIovsCount(),
+                    numToSend == 1 ? folly::WriteFlags::NONE
+                    : folly::WriteFlags::CORK);
     --numToSend;
   }
   writeScheduled_ = false;
@@ -246,7 +252,7 @@ void AsyncMcClientImpl::timeoutExpired() {
   // process all requests that were replied/timed out.
   while (!pendingReplyQueue_.empty()) {
     if (currentTime - pendingReplyQueue_.front().sentAt >=
-        connectionOptions_.timeout) {
+        connectionOptions_.sendTimeout) {
       replyError(pendingReplyQueue_.popFront(), mc_res_timeout);
     } else {
       scheduleNextTimeout();
@@ -370,14 +376,14 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 } // anonymous namespace
 
 void AsyncMcClientImpl::scheduleNextTimeout() {
-  if (!timeoutScheduled_ && connectionOptions_.timeout.count() > 0 &&
+  if (!timeoutScheduled_ && connectionOptions_.sendTimeout.count() > 0 &&
       !pendingReplyQueue_.empty()) {
     timeoutScheduled_ = true;
     const auto& req = pendingReplyQueue_.front();
     // Rount up, or otherwise we might get stuck processing timeouts of 0ms.
     timeoutCallback_->scheduleTimeout(
       round_up<std::chrono::milliseconds>(req.sentAt +
-        connectionOptions_.timeout - std::chrono::steady_clock::now()));
+        connectionOptions_.sendTimeout - std::chrono::steady_clock::now()));
   }
 }
 
@@ -593,8 +599,17 @@ void AsyncMcClientImpl::readErr(
 void AsyncMcClientImpl::writeSuccess() noexcept {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
-  pendingReplyQueue_.pushBack(writeQueue_.popFront());
-  scheduleNextTimeout();
+  auto req = writeQueue_.popFront();
+  if (req->state == ReqState::CANCELED) {
+    req->canceled();
+    return;
+  }
+  assert(req->state == ReqState::WRITE_QUEUE);
+  req->state = ReqState::PENDING_QUEUE;
+  pendingReplyQueue_.pushBack(std::move(req));
+  if (connectionOptions_.sendTimeout.count()) {
+    scheduleNextTimeout();
+  }
 
   // In case of no-network we need to provide fake reply.
   if (connectionOptions_.noNetwork) {
@@ -615,7 +630,14 @@ void AsyncMcClientImpl::writeErr(
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
-  pendingReplyQueue_.pushBack(writeQueue_.popFront());
+  auto req = writeQueue_.popFront();
+  if (req->state == ReqState::CANCELED) {
+    req->canceled();
+  } else {
+    assert(req->state == ReqState::WRITE_QUEUE);
+    req->state = ReqState::PENDING_QUEUE;
+    pendingReplyQueue_.pushBack(std::move(req));
+  }
   processShutdown();
 }
 

@@ -44,7 +44,7 @@ FiberManager::FiberManager(std::unique_ptr<LoopController> loopController,
           throw;
         }
       }),
-    timeoutManager_(*loopController_) {
+    timeoutManager_(std::make_shared<TimeoutController>(*loopController_)) {
   TAILQ_INIT(&readyFibers_);
   TAILQ_INIT(&fibersPool_);
 

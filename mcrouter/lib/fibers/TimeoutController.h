@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <functional>
+#include <queue>
 
 #include <boost/intrusive/list.hpp>
 
@@ -20,54 +21,40 @@
 
 namespace facebook { namespace memcache {
 
-class TimeoutController;
-
-class TimeoutHandle {
+class TimeoutController :
+      public std::enable_shared_from_this<TimeoutController> {
  public:
   typedef std::chrono::steady_clock Clock;
   typedef std::chrono::time_point<Clock> TimePoint;
-
-  typedef boost::intrusive::list_member_hook<
-    boost::intrusive::link_mode<boost::intrusive::auto_unlink>> ListHook;
-
-  explicit TimeoutHandle(std::function<void()> timeoutFunc);
-  bool tryCancel();
-
- private:
-  friend class TimeoutController;
-
-  void onTimeout();
-
-  ListHook listHook_;
-  std::function<void()> timeoutFunc_;
-  TimePoint timeout_;
-};
-
-class TimeoutController {
- public:
-  typedef TimeoutHandle::Clock Clock;
-  typedef TimeoutHandle::TimePoint TimePoint;
   typedef Clock::duration Duration;
 
   explicit TimeoutController(LoopController& loopController);
 
-  void registerTimeout(TimeoutHandle& timeoutHandle, Duration duration);
+  intptr_t registerTimeout(std::function<void()> f, Duration duration);
+  void cancel(intptr_t id);
 
   void runTimeouts(TimePoint time);
 
  private:
   void scheduleRun();
 
-  typedef boost::intrusive::member_hook<
-    TimeoutHandle,
-    TimeoutHandle::ListHook,
-    &TimeoutHandle::listHook_> TimeoutHandleListHook;
-  typedef boost::intrusive::list<
-    TimeoutHandle,
-    TimeoutHandleListHook,
-    boost::intrusive::constant_time_size<false>> TimeoutHandleList;
+  class TimeoutHandle;
+  typedef std::queue<TimeoutHandle> TimeoutHandleList;
+  typedef std::unique_ptr<TimeoutHandleList> TimeoutHandleListPtr;
 
-  std::vector<std::pair<Duration, TimeoutHandleList>> timeoutHandleBuckets_;
+  struct TimeoutHandle {
+    TimeoutHandle(std::function<void()> func_,
+                  TimePoint timeout_,
+                  TimeoutHandleList& list_) :
+        func(std::move(func_)), timeout(timeout_), list(list_) {}
+
+    std::function<void()> func;
+    bool canceled{false};
+    TimePoint timeout;
+    TimeoutHandleList& list;
+  };
+
+  std::vector<std::pair<Duration, TimeoutHandleListPtr>> timeoutHandleBuckets_;
   TimePoint nextTimeout_;
   LoopController& loopController_;
 };

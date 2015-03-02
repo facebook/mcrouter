@@ -17,6 +17,8 @@
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/TestUtil.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/lib/fibers/EventBaseLoopController.h"
+#include "mcrouter/lib/fibers/FiberManager.h"
 
 using namespace facebook::memcache;
 
@@ -183,9 +185,11 @@ class TestClient {
                std::shared_ptr<folly::SSLContext>()
              > contextProvider = nullptr,
              bool enableQoS = false,
-             uint64_t qos = 0) {
+             uint64_t qos = 0) :
+      fm_(folly::make_unique<mcrouter::EventBaseLoopController>()) {
+    dynamic_cast<mcrouter::EventBaseLoopController&>(fm_.loopController()).
+      attachEventBase(eventBase_);
     ConnectionOptions opts(host, port, protocol);
-    opts.sendTimeout = std::chrono::milliseconds(timeoutMs);
     opts.timeout = std::chrono::milliseconds(timeoutMs);
     if (useSsl) {
       auto defaultContextProvider = [] () {
@@ -211,43 +215,51 @@ class TestClient {
   }
 
   void sendGet(const char* key, mc_res_t expectedResult) {
-    auto msg = createMcMsgRef(key);
-    msg->op = mc_op_get;
-    auto req = std::make_shared<McRequest>(std::move(msg));
-    try {
-      client_->send(*req,
-                    McOperation<mc_op_get>(),
-                    [expectedResult, req, this] (McReply&& reply) {
-                      if (reply.result() == mc_res_found) {
-                        if (req->fullKey() == "empty") {
-                          EXPECT_TRUE(reply.hasValue());
-                          EXPECT_EQ("", toString(reply.value()));
-                        } else {
-                          EXPECT_EQ(toString(reply.value()), req->fullKey());
-                        }
-                      }
-                      EXPECT_EQ(expectedResult, reply.result());
-                    });
-    } catch (const std::exception& e) {
-      LOG(ERROR) << e.what();
-      CHECK(false);
-    }
+    inflight_++;
+    std::string K(key);
+    fm_.addTask([K, expectedResult, this]() {
+        auto msg = createMcMsgRef(K.c_str());
+        msg->op = mc_op_get;
+        McRequest req{std::move(msg)};
+        try {
+          auto reply = client_->sendSync(req, McOperation<mc_op_get>());
+          if (reply.result() == mc_res_found) {
+            if (req.fullKey() == "empty") {
+              EXPECT_TRUE(reply.hasValue());
+              EXPECT_EQ("", toString(reply.value()));
+            } else {
+              EXPECT_EQ(toString(reply.value()), req.fullKey());
+            }
+          }
+          EXPECT_EQ(expectedResult, reply.result());
+        } catch (const std::exception& e) {
+          LOG(ERROR) << e.what();
+          CHECK(false);
+        }
+        inflight_--;
+      });
   }
 
   void sendSet(const char* key, const char* value, mc_res_t expectedResult) {
-    auto msg = createMcMsgRef(key, value);
-    msg->op = mc_op_set;
-    auto req = std::make_shared<McRequest>(std::move(msg));
-    client_->send(*req,
-                  McOperation<mc_op_set>(),
-                  [expectedResult, req, this] (McReply&& reply) {
-                    EXPECT_EQ(expectedResult, reply.result());
-                  });
+    inflight_++;
+    std::string K(key);
+    std::string V(value);
+    fm_.addTask([K, V, expectedResult, this]() {
+        auto msg = createMcMsgRef(K.c_str(), V.c_str());
+        msg->op = mc_op_set;
+        McRequest req{std::move(msg)};
+
+        auto reply = client_->sendSync(req, McOperation<mc_op_set>());
+
+        EXPECT_EQ(expectedResult, reply.result());
+
+        inflight_--;
+      });
+
   }
 
   size_t getOutstandingCount() const {
-    return client_->getPendingRequestCount() +
-           client_->getInflightRequestCount();
+    return inflight_;
   }
 
   /**
@@ -272,7 +284,9 @@ class TestClient {
 
   EventBase eventBase_;
  private:
+  size_t inflight_{0};
   std::unique_ptr<AsyncMcClient> client_;
+  FiberManager fm_;
 };
 
 }  // namespace
@@ -625,7 +639,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
     }
     // This will be triggered before the timeout of client (i.e. it will be
     // processed earlier).
-    eventBase.tryRunAfterDelay([&eventBase] {
+    eventBase.runAfterDelay([&eventBase] {
                               eventBase.terminateLoopSoon();
                             }, 100);
     // Trigger pushMessages() callback.

@@ -70,6 +70,11 @@ struct ConnectionOptions {
   int tcpKeepAliveInterval{0};
 
   /**
+   * Send timeout in ms. Shoud be used only for async (non-fiber) mode.
+   */
+  std::chrono::milliseconds sendTimeout{0};
+
+  /**
    * Send/connect timeout in ms.
    */
   std::chrono::milliseconds timeout{0};

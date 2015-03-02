@@ -114,13 +114,36 @@ void McClientRequestContextCommon<Operation, Request>::sendTraceOnReply() {
 }
 
 template <class Operation, class Request>
-void McClientRequestContextSync<Operation, Request>::wait() {
+void McClientRequestContextSync<Operation, Request>::wait(
+    std::chrono::milliseconds timeout) {
+  if (timeout.count()) {
+    baton_.timed_wait(timeout);
+  } else {
+    baton_.wait();
+  }
+}
+
+template <class Operation, class Request>
+void McClientRequestContextSync<Operation, Request>::cancelAndWait() {
+  this->state = ReqState::CANCELED;
+  baton_.reset();
   baton_.wait();
+}
+
+template <class Operation, class Request>
+void McClientRequestContextSync<Operation, Request>::canceled() {
+  baton_.post();
+}
+
+template <class Operation, class Request, class F>
+void McClientRequestContextAsync<Operation, Request, F>::canceled() {
+  throw std::logic_error("canceled() should never be called for async mode");
 }
 
 template <class Operation, class Request>
 void McClientRequestContextSync<Operation, Request>::forwardReply() {
   this->sendTraceOnReply();
+  this->state = ReqState::COMPLETE;
   baton_.post();
 }
 

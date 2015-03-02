@@ -21,6 +21,15 @@ namespace facebook { namespace memcache {
 
 class AsyncMcClientImpl;
 
+enum class ReqState {
+  NONE,
+  SEND_QUEUE,
+  WRITE_QUEUE,
+  PENDING_QUEUE,
+  COMPLETE,
+  CANCELED
+};
+
 /**
  * Class for storing per request data that is required for proper requests
  * processing inside of AsyncMcClient.
@@ -30,6 +39,7 @@ class McClientRequestContextBase {
   McSerializedRequest reqContext;
   uint64_t id;
   std::chrono::steady_clock::time_point sentAt;
+  ReqState state{ReqState::NONE};
 
   McClientRequestContextBase(const McClientRequestContextBase&) = delete;
   McClientRequestContextBase& operator=(const McClientRequestContextBase& other)
@@ -58,6 +68,11 @@ class McClientRequestContextBase {
    * to simulate a reply from network
    */
   virtual const char* fakeReply() const = 0;
+
+  /**
+   * Notify context that request was canceled in AsyncMcClientImpl
+   */
+  virtual void canceled() = 0;
 
  protected:
   class Deleter {
@@ -139,7 +154,9 @@ class McClientRequestContextSync :
         Operation(), request, reqid, protocol, std::move(client), true) {
   }
 
-  void wait();
+  void wait(std::chrono::milliseconds timeout);
+  void cancelAndWait();
+  void canceled() override;
   void forwardReply() override;
  private:
   Baton baton_;
@@ -158,6 +175,7 @@ class McClientRequestContextAsync :
       f_(std::forward<G>(g)) {
   }
 
+  void canceled() override;
   void forwardReply() override;
  private:
   F f_;

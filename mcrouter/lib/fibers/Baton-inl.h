@@ -31,6 +31,11 @@ void Baton::wait(F&& mainContextFunc) {
     return waitThread();
   }
 
+  return waitFiber(*fm, std::forward<F>(mainContextFunc));
+}
+
+template <typename F>
+void Baton::waitFiber(FiberManager& fm, F&& mainContextFunc) {
   auto& waitingFiber = waitingFiber_;
   auto f = [&mainContextFunc, &waitingFiber](Fiber& fiber) mutable {
     auto baton_fiber = waitingFiber.load();
@@ -50,8 +55,8 @@ void Baton::wait(F&& mainContextFunc) {
     mainContextFunc();
   };
 
-  fm->awaitFunc_ = std::ref(f);
-  fm->activeFiber_->preempt(Fiber::AWAITING);
+  fm.awaitFunc_ = std::ref(f);
+  fm.activeFiber_->preempt(Fiber::AWAITING);
 }
 
 template <typename F>
@@ -69,15 +74,18 @@ bool Baton::timed_wait(TimeoutController::Duration timeout,
     baton.postHelper(TIMEOUT);
   };
 
-  TimeoutHandle timeout_handle(std::ref(timeoutFunc));
+  auto id = fm->timeoutManager_->registerTimeout(
+    std::ref(timeoutFunc), timeout);
 
-  fm->timeoutManager_.registerTimeout(timeout_handle, timeout);
+  waitFiber(*fm, std::move(mainContextFunc));
 
-  wait(std::move(mainContextFunc));
+  auto posted = waitingFiber_ == POSTED;
 
-  timeout_handle.tryCancel();
+  if (posted) {
+    fm->timeoutManager_->cancel(id);
+  }
 
-  return waitingFiber_ == POSTED;
+  return posted;
 }
 
 template<typename C, typename D>
