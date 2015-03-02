@@ -62,7 +62,8 @@ class AsyncMcClient {
    */
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  sendSync(const Request& request, Operation);
+  sendSync(const Request& request, Operation,
+           std::chrono::milliseconds timeout);
 
   /**
    * Send request with given Op and call callback on reply.
@@ -120,6 +121,12 @@ class AsyncMcClient {
    * This statistic is collected over certain number of most recent batches.
    */
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
+
+  /**
+   * Update send and connect timeout. If new value is larger than current
+   * it is ignored.
+   */
+  void updateWriteTimeout(std::chrono::milliseconds timeout);
 
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;

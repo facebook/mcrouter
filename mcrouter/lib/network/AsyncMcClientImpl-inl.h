@@ -19,7 +19,8 @@ namespace facebook { namespace memcache {
 
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
-AsyncMcClientImpl::sendSync(const Request& request, Operation) {
+AsyncMcClientImpl::sendSync(const Request& request, Operation,
+                            std::chrono::milliseconds timeout) {
   auto selfPtr = selfPtr_.lock();
   // shouldn't happen.
   assert(selfPtr);
@@ -41,7 +42,7 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation) {
   sendCommon(ctx.createDummyPtr());
 
   // We sent request successfully, wait for the result.
-  ctx.wait(connectionOptions_.timeout);
+  ctx.wait(timeout);
   switch (ctx.state) {
     case ReqState::COMPLETE:
       return ctx.getReply();

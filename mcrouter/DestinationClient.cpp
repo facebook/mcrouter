@@ -42,9 +42,7 @@ void DestinationClient::initializeAsyncMcClient() {
   options.tcpKeepAliveCount = proxy_->opts.keepalive_cnt;
   options.tcpKeepAliveIdle = proxy_->opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = proxy_->opts.keepalive_interval_s;
-  options.timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-    std::chrono::seconds(pdstn_.server_timeout.tv_sec) +
-    std::chrono::microseconds(pdstn_.server_timeout.tv_usec));
+  options.writeTimeout = pdstn_.shortestTimeout;
   if (proxy_->opts.enable_qos) {
     options.enableQoS = true;
     options.qos = pdstn_.qos;
@@ -115,5 +113,12 @@ DestinationClient::~DestinationClient() {
     asyncMcClient_->closeNow();
   }
 }
+
+void DestinationClient::updateWriteTimeout() {
+  if (asyncMcClient_) {
+    asyncMcClient_->updateWriteTimeout(pdstn_.shortestTimeout);
+  }
+}
+
 
 }}}  // facebook::memcache::mcrouter

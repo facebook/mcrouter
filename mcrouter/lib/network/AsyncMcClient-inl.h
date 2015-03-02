@@ -30,8 +30,9 @@ inline void AsyncMcClient::setStatusCallbacks(
 
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
-AsyncMcClient::sendSync(const Request& request, Operation) {
-  return base_->sendSync(request, Operation());
+AsyncMcClient::sendSync(const Request& request, Operation,
+                        std::chrono::milliseconds timeout) {
+  return base_->sendSync(request, Operation(), timeout);
 }
 
 template <class Operation, class Request, class F>
@@ -53,6 +54,11 @@ inline size_t AsyncMcClient::getInflightRequestCount() const {
 
 inline std::pair<uint64_t, uint64_t> AsyncMcClient::getBatchingStat() const {
   return base_->getBatchingStat();
+}
+
+inline void AsyncMcClient::updateWriteTimeout(
+    std::chrono::milliseconds timeout) {
+  base_->updateWriteTimeout(timeout);
 }
 
 }} // facebook::memcache

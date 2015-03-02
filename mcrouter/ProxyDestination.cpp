@@ -97,7 +97,8 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
         pdstn->proxy->destinationMap->markAsActive(*pdstn);
         McReply reply = pdstn->client_->send(*pdstn->probe_req,
                                              McOperation<mc_op_version>(),
-                                             0);
+                                             0,
+                                             pdstn->shortestTimeout);
         pdstn->handle_tko(reply, true);
         pdstn->probe_req.reset();
       });
@@ -255,7 +256,7 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
   : proxy(proxy_),
     accessPoint(ro_.ap),
     destinationKey(ro_.destination_key),
-    server_timeout(ro_.server_timeout),
+    shortestTimeout(ro_.server_timeout),
     pdstnKey(std::move(pdstnKey_)),
     proxy_magic(proxy->magic),
     use_ssl(ro_.useSsl),
@@ -356,6 +357,17 @@ void ProxyDestination::setState(ProxyDestinationState new_st) {
 
 ProxyDestinationStats::ProxyDestinationStats(const McrouterOptions& opts)
   : avgLatency(1.0 / opts.latency_window_size) {
+}
+
+void ProxyDestination::updateShortestTimeout(
+    std::chrono::milliseconds timeout) {
+  if (!timeout.count()) {
+    return;
+  }
+  if (shortestTimeout.count() == 0 || shortestTimeout > timeout) {
+    shortestTimeout = timeout;
+  }
+  client_->updateWriteTimeout();
 }
 
 }}}  // facebook::memcache::mcrouter

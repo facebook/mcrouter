@@ -452,8 +452,8 @@ void AsyncMcClientImpl::attemptConnection() {
 
   auto socketOptions = createSocketOptions(address, connectionOptions_);
 
-  socket.setSendTimeout(connectionOptions_.timeout.count());
-  socket.connect(this, address, connectionOptions_.timeout.count(),
+  socket.setSendTimeout(connectionOptions_.writeTimeout.count());
+  socket.connect(this, address, connectionOptions_.writeTimeout.count(),
                  socketOptions);
 
   if (connectionOptions_.enableQoS) {
@@ -732,5 +732,16 @@ void AsyncMcClientImpl::incMsgId(size_t& msgId) {
     msgId = 1;
   }
 }
+
+void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
+  if (timeout.count()) {
+    return;
+  }
+  auto currentTimeout = socket_->getSendTimeout();
+  if (currentTimeout == 0 || currentTimeout > timeout.count()) {
+    socket_->setSendTimeout(timeout.count());
+  }
+}
+
 
 }} // facebook::memcache

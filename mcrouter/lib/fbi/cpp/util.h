@@ -81,6 +81,15 @@ inline timeval_t to<timeval_t>(const unsigned int& ms) {
   return r;
 }
 
+/** milliseconds to timeval_t */
+template <>
+inline timeval_t to<timeval_t>(const std::chrono::milliseconds& ms) {
+  timeval_t r;
+  r.tv_sec = ms.count() / 1000;
+  r.tv_usec = ms.count() % 1000 * 1000;
+  return r;
+}
+
 /** timeval_t to milliseconds */
 template <>
 inline std::chrono::milliseconds

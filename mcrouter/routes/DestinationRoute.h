@@ -58,7 +58,7 @@ class DestinationRoute {
       client_->indexInPool,
       client_->useSsl,
       client_->ap.toString(),
-      to<std::chrono::milliseconds>(client_->server_timeout).count());
+      client_->server_timeout.count());
   }
 
   /**
@@ -151,7 +151,8 @@ class DestinationRoute {
 
     auto reply = ProxyMcReply(
       destination->send(newReq, McOperation<Op>(), ctx,
-                        req.context().senderId()));
+                        req.context().senderId(),
+                        client_->server_timeout));
     req.context().onReplyReceived(*client_,
                                   req,
                                   reply,

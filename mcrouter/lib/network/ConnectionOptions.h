@@ -75,9 +75,9 @@ struct ConnectionOptions {
   std::chrono::milliseconds sendTimeout{0};
 
   /**
-   * Send/connect timeout in ms.
+   * Write/connect timeout in ms.
    */
-  std::chrono::milliseconds timeout{0};
+  std::chrono::milliseconds writeTimeout{0};
 
   /**
    * Informs whether QoS is enabled.

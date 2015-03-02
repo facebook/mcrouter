@@ -111,7 +111,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
   }
 
   // pool_locality
-  auto timeout = to<timeval_t>(opts_.server_timeout_ms);
+  std::chrono::milliseconds timeout{opts_.server_timeout_ms};
   if (auto jlocality = json.get_ptr("pool_locality")) {
     if (!jlocality->isString()) {
       logFailure(memcache::failure::Category::kInvalidConfig,
@@ -120,11 +120,11 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       auto str = jlocality->stringPiece();
       if (str == "cluster") {
         if (opts_.cluster_pools_timeout_ms != 0) {
-          timeout = to<timeval_t>(opts_.cluster_pools_timeout_ms);
+          timeout = std::chrono::milliseconds(opts_.cluster_pools_timeout_ms);
         }
       } else if (str == "region") {
         if (opts_.regional_pools_timeout_ms != 0) {
-          timeout = to<timeval_t>(opts_.regional_pools_timeout_ms);
+          timeout = std::chrono::milliseconds(opts_.regional_pools_timeout_ms);
         }
       } else {
         logFailure(memcache::failure::Category::kInvalidConfig,
@@ -168,7 +168,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       logFailure(memcache::failure::Category::kInvalidConfig,
                  "Pool {}: server_timeout is not an int", name);
     } else {
-      timeout = to<timeval_t>(static_cast<unsigned int>(jtimeout->getInt()));
+      timeout = std::chrono::milliseconds(jtimeout->getInt());
     }
   }
 
@@ -176,15 +176,15 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     auto& route = opts_.default_route;
     if (region == route.getRegion() && cluster == route.getCluster()) {
       if (opts_.within_cluster_timeout_ms != 0) {
-        timeout = to<timeval_t>(opts_.within_cluster_timeout_ms);
+        timeout = std::chrono::milliseconds(opts_.within_cluster_timeout_ms);
       }
     } else if (region == route.getRegion()) {
       if (opts_.cross_cluster_timeout_ms != 0) {
-        timeout = to<timeval_t>(opts_.cross_cluster_timeout_ms);
+        timeout = std::chrono::milliseconds(opts_.cross_cluster_timeout_ms);
       }
     } else {
       if (opts_.cross_region_timeout_ms != 0) {
-        timeout = to<timeval_t>(opts_.cross_region_timeout_ms);
+        timeout = std::chrono::milliseconds(opts_.cross_region_timeout_ms);
       }
     }
   }

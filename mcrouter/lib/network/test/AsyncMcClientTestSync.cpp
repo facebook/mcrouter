@@ -190,7 +190,7 @@ class TestClient {
     dynamic_cast<mcrouter::EventBaseLoopController&>(fm_.loopController()).
       attachEventBase(eventBase_);
     ConnectionOptions opts(host, port, protocol);
-    opts.timeout = std::chrono::milliseconds(timeoutMs);
+    opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
     if (useSsl) {
       auto defaultContextProvider = [] () {
         return getSSLContext(kPemCertPath, kPemKeyPath, kPemCaPath);
@@ -222,7 +222,8 @@ class TestClient {
         msg->op = mc_op_get;
         McRequest req{std::move(msg)};
         try {
-          auto reply = client_->sendSync(req, McOperation<mc_op_get>());
+          auto reply = client_->sendSync(req, McOperation<mc_op_get>(),
+                                         std::chrono::milliseconds(200));
           if (reply.result() == mc_res_found) {
             if (req.fullKey() == "empty") {
               EXPECT_TRUE(reply.hasValue());
@@ -249,7 +250,8 @@ class TestClient {
         msg->op = mc_op_set;
         McRequest req{std::move(msg)};
 
-        auto reply = client_->sendSync(req, McOperation<mc_op_set>());
+        auto reply = client_->sendSync(req, McOperation<mc_op_set>(),
+                                       std::chrono::milliseconds(200));
 
         EXPECT_EQ(expectedResult, reply.result());
 
@@ -622,7 +624,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
     {
       ConnectionOptions opts("localhost", server.getListenPort(),
                              mc_ascii_protocol);
-      opts.timeout = std::chrono::milliseconds(200);
+      opts.writeTimeout = std::chrono::milliseconds(200);
       auto client = folly::make_unique<AsyncMcClient>(eventBase, opts);
       client->setStatusCallbacks(
         [&up, &wasUp] {
@@ -670,7 +672,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   bool replied = false;
 
   ConnectionOptions opts("10.1.1.1", 11302, mc_ascii_protocol);
-  opts.timeout = std::chrono::milliseconds(200);
+  opts.writeTimeout = std::chrono::milliseconds(200);
   auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
     [&wasUp] {

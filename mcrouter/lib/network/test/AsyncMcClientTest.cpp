@@ -186,7 +186,7 @@ class TestClient {
              uint64_t qos = 0) {
     ConnectionOptions opts(host, port, protocol);
     opts.sendTimeout = std::chrono::milliseconds(timeoutMs);
-    opts.timeout = std::chrono::milliseconds(timeoutMs);
+    opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
     if (useSsl) {
       auto defaultContextProvider = [] () {
         return getSSLContext(kPemCertPath, kPemKeyPath, kPemCaPath);
@@ -608,7 +608,7 @@ TEST(AsyncMcClient, eventBaseDestruction) {
     {
       ConnectionOptions opts("localhost", server.getListenPort(),
                              mc_ascii_protocol);
-      opts.timeout = std::chrono::milliseconds(200);
+      opts.writeTimeout = std::chrono::milliseconds(200);
       auto client = folly::make_unique<AsyncMcClient>(eventBase, opts);
       client->setStatusCallbacks(
         [&up, &wasUp] {
@@ -656,7 +656,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   bool replied = false;
 
   ConnectionOptions opts("10.1.1.1", 11302, mc_ascii_protocol);
-  opts.timeout = std::chrono::milliseconds(200);
+  opts.writeTimeout = std::chrono::milliseconds(200);
   auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
     [&wasUp] {

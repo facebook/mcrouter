@@ -15,8 +15,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <int Op, class Request>
 typename ReplyType<McOperation<Op>, Request>::type
 DestinationClient::send(const Request& request, McOperation<Op>,
-                        uint64_t senderId) {
-  auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>());
+                        uint64_t senderId, std::chrono::milliseconds timeout) {
+  auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>(), timeout);
   updateStats(reply.result(), (mc_op_t)Op);
   return reply;
 }

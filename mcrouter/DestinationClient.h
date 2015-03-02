@@ -42,7 +42,10 @@ class DestinationClient {
 
   template <int Op, class Request>
   typename ReplyType<McOperation<Op>, Request>::type
-  send(const Request& request, McOperation<Op>, uint64_t senderId);
+  send(const Request& request, McOperation<Op>, uint64_t senderId,
+       std::chrono::milliseconds timeout);
+
+  void updateWriteTimeout();
 
   ~DestinationClient();
 

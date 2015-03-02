@@ -62,7 +62,8 @@ class AsyncMcClientImpl :
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  sendSync(const Request& request, Operation);
+  sendSync(const Request& request, Operation,
+           std::chrono::milliseconds timeout);
 
   template <class Operation, class Request, class F>
   void send(const Request& request, Operation, F&& f);
@@ -72,6 +73,8 @@ class AsyncMcClientImpl :
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
+
+  void updateWriteTimeout(std::chrono::milliseconds timeout);
 
  private:
   class TimeoutCallback;

@@ -17,7 +17,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyClientCommon::ProxyClientCommon(const ClientPool* pool_,
-                                     timeval_t timeout,
+                                     std::chrono::milliseconds timeout,
                                      AccessPoint ap_,
                                      int keep_routing_prefix_,
                                      bool useSsl_,
@@ -34,9 +34,13 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool* pool_,
       deleteTime(deleteTime_) {
 }
 
-std::string ProxyClientCommon::genProxyDestinationKey() const {
-  return folly::sformat("{}-{}", ap.toString(),
-                        to<std::chrono::milliseconds>(server_timeout).count());
+std::string ProxyClientCommon::genProxyDestinationKey(
+    bool include_timeout) const {
+  if (include_timeout) {
+    return folly::sformat("{}-{}", ap.toString(), server_timeout.count());
+  } else {
+    return ap.toString();
+  }
 }
 
 }}}  // facebook::memcache::mcrouter
