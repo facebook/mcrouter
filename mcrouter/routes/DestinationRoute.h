@@ -146,7 +146,6 @@ class DestinationRoute {
     auto& destination = destination_;
 
     DestinationRequestCtx ctx;
-    uint64_t senderId = req.context().senderId();
     auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
 
     auto reply = ProxyMcReply(

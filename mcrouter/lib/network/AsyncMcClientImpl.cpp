@@ -343,18 +343,17 @@ void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
                               const ConnectionOptions& connectionOptions) {
   const auto& optkey = getQoSOptionKey(address.getFamily());
 
-  static const int expectedRv = 0;
   const uint64_t expectedValue = getQoSClass(connectionOptions.qos);
 
-  int val;
+  uint64_t val;
   socklen_t len = sizeof(expectedValue);
   int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
-  if (rv != expectedRv || val != expectedValue) {
+  if (rv != 0 || val != expectedValue) {
     failure::log("AsyncMcClient", failure::Category::kSystemError,
                  "Failed to apply QoS! "
                  "Return Value: {} (expected: {}). "
                  "QoS Value: {} (expected: {}).",
-                 rv, expectedRv, val, expectedValue);
+                 rv, 0, val, expectedValue);
   }
 }
 

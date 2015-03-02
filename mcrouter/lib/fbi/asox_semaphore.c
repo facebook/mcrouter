@@ -152,7 +152,9 @@ int asox_sem_signal(asox_sem_t asox_sem, uint64_t num_signals) {
     }
   } else {
     __sync_add_and_fetch(&sem->num_pending_signals, num_signals);
-    write(sem->write_fd, " ", 1);
+    if (write(sem->write_fd, " ", 1) <= 0) {
+      dbg_error("Unexpected write failure on asox_sem_signal()");
+    }
   }
 
   return ret;

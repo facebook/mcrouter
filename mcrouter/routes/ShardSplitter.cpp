@@ -33,7 +33,7 @@ ShardSplitter::ShardSplitter(const folly::dynamic& json) {
     if (splitCnt <= 0) {
       LOG(ERROR) << "ShardSplitter: shard_splits value <= 0 '"
                  << it.first.asString() << "': " << splitCnt;
-    } else if (splitCnt > kMaxSplits) {
+    } else if (static_cast<size_t>(splitCnt) > kMaxSplits) {
       LOG(ERROR) << "ShardSplitter: shard_splits value > " << kMaxSplits
                  << " '" << it.first.asString() << "': " << splitCnt;
       shardSplits_.emplace(it.first.c_str(), kMaxSplits);
