@@ -176,14 +176,14 @@ void proxy_t::routeHandlesProcessRequest(
     return;
   }
 
-  auto config = getConfig();
-  auto preq = ProxyRequestContext::process(std::move(upreq), config);
+  auto preq = ProxyRequestContext::process(std::move(upreq), getConfig());
   if (preq->origReq()->op == mc_op_get_service_info) {
     auto orig = preq->origReq().clone();
+    const auto& config = preq->proxyConfig();
     ProxyMcRequest req(std::move(preq), std::move(orig));
 
     /* Will answer request for us */
-    config->serviceInfo()->handleRequest(req);
+    config.serviceInfo()->handleRequest(req);
     return;
   }
 

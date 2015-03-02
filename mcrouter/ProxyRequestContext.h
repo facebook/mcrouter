@@ -78,6 +78,10 @@ public:
     return config_->proxyRoute();
   }
 
+  const ProxyConfigIf& proxyConfig() const {
+    return *config_;
+  }
+
   bool failoverDisabled() const {
     return failoverDisabled_;
   }
