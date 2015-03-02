@@ -70,8 +70,10 @@ bool Baton::timed_wait(TimeoutController::Duration timeout,
   }
 
   auto& baton = *this;
-  auto timeoutFunc = [&baton]() mutable {
+  bool canceled = false;
+  auto timeoutFunc = [&baton, &canceled]() mutable {
     baton.postHelper(TIMEOUT);
+    canceled = true;
   };
 
   auto id = fm->timeoutManager_->registerTimeout(
@@ -81,7 +83,7 @@ bool Baton::timed_wait(TimeoutController::Duration timeout,
 
   auto posted = waitingFiber_ == POSTED;
 
-  if (posted) {
+  if (!canceled) {
     fm->timeoutManager_->cancel(id);
   }
 
