@@ -736,14 +736,20 @@ void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
   if (!timeout.count()) {
     return;
   }
-  if (!connectionOptions_.writeTimeout.count() ||
-      connectionOptions_.writeTimeout > timeout) {
-    connectionOptions_.writeTimeout = timeout;
-  }
+  auto selfWeak = selfPtr_;
+  eventBase_.runInEventBaseThread([selfWeak, timeout]() {
+      if (auto self = selfWeak.lock()) {
+        if (!self->connectionOptions_.writeTimeout.count() ||
+            self->connectionOptions_.writeTimeout > timeout) {
+          self->connectionOptions_.writeTimeout = timeout;
+        }
 
-  if (socket_) {
-    socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
-  }
+        if (self->socket_) {
+          self->socket_->setSendTimeout(
+            self->connectionOptions_.writeTimeout.count());
+        }
+      }
+    });
 }
 
 
