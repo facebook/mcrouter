@@ -366,8 +366,8 @@ void ProxyDestination::updateShortestTimeout(
   }
   if (shortestTimeout.count() == 0 || shortestTimeout > timeout) {
     shortestTimeout = timeout;
+    client_->updateWriteTimeout();
   }
-  client_->updateWriteTimeout();
 }
 
 }}}  // facebook::memcache::mcrouter
