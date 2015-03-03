@@ -19,6 +19,7 @@
 #include "mcrouter/FileDataProvider.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ThreadUtil.h"
 
@@ -52,7 +53,11 @@ void ConfigApi::startObserving() {
 }
 
 void ConfigApi::stopObserving(pid_t pid) {
-  finish_ = true;
+  {
+    std::lock_guard<std::mutex> lk(finishMutex_);
+    finish_ = true;
+    finishCV_.notify_one();
+  }
   if (configThread_.joinable()) {
     if (getpid() == pid) {
       configThread_.join();
@@ -94,21 +99,26 @@ void ConfigApi::configThreadRun() {
     while (!finish_) {
       LOG(INFO) << "Reload config due to constantly_reload_configs";
       callbacks_.notify();
-      usleep(10000);
+      {
+        std::unique_lock<std::mutex> lk(finishMutex_);
+        finishCV_.wait_for(lk, std::chrono::milliseconds(10),
+                           [this] { return finish_.load(); });
+
+      }
     }
     return;
   }
 
   while (!finish_) {
-    bool hasUpdate;
+    bool hasUpdate = false;
     try {
       hasUpdate = checkFileUpdate();
     } catch (const std::exception& e) {
-      LOG(ERROR) << "Check for config update failed: " << e.what();
-      return;
+      logFailure(memcache::failure::Category::kOther,
+                 "Check for config update failed: {}", e.what());
     } catch (...) {
-      LOG(ERROR) << "Check for config update failed with unknown error";
-      return;
+      logFailure(memcache::failure::Category::kOther,
+                 "Check for config update failed with unknown error");
     }
     // There are a couple of races that can happen here
     // First, the IN_MODIFY event can be fired before the write is complete,
@@ -119,7 +129,13 @@ void ConfigApi::configThreadRun() {
     // but that error does happen. Race 1 can be fixed by changing the
     // watch for IN_MODIFY to IN_CLOSE_WRITE, but Race 2 has no apparent
     // elegant solution. The following jankiness fixes both.
-    sleep(1);
+
+    {
+      std::unique_lock<std::mutex> lk(finishMutex_);
+      finishCV_.wait_for(lk, std::chrono::seconds(1),
+                         [this] { return finish_.load(); });
+
+    }
 
     if (hasUpdate) {
       callbacks_.notify();
@@ -200,6 +216,7 @@ void ConfigApi::subscribeToTrackedSources() {
   std::lock_guard<std::mutex> lock(fileInfoMutex_);
   assert(tracking_);
   tracking_ = false;
+  isFirstConfig_ = false;
 
   if (!opts_.disable_reload_configs) {
     // start watching for updates
@@ -268,6 +285,10 @@ folly::dynamic ConfigApi::getConfigSourcesInfo() {
   }
 
   return reply_val;
+}
+
+bool ConfigApi::isFirstConfig() const {
+  return isFirstConfig_;
 }
 
 }}} // facebook::memcache::mcrouter

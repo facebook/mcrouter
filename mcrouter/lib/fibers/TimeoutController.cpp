@@ -8,48 +8,37 @@
  *
  */
 #include "TimeoutController.h"
+#include <folly/Memory.h>
 
 namespace facebook { namespace memcache {
-
-TimeoutHandle::TimeoutHandle(std::function<void()> timeoutFunc) :
-    timeoutFunc_(std::move(timeoutFunc)) {
-}
-
-bool TimeoutHandle::tryCancel() {
-  if (listHook_.is_linked()) {
-    listHook_.unlink();
-    return true;
-  }
-  return false;
-}
-
-void TimeoutHandle::onTimeout() {
-  timeoutFunc_();
-}
 
 TimeoutController::TimeoutController(LoopController& loopController) :
     nextTimeout_(TimePoint::max()),
     loopController_(loopController) {}
 
-void TimeoutController::registerTimeout(TimeoutHandle& th, Duration duration) {
+intptr_t TimeoutController::registerTimeout(std::function<void()> f,
+                                            Duration duration) {
   auto& list = [&]() -> TimeoutHandleList& {
     for (auto& bucket : timeoutHandleBuckets_) {
       if (bucket.first == duration) {
-        return bucket.second;
+        return *bucket.second;
       }
     }
 
-    timeoutHandleBuckets_.emplace_back(duration, TimeoutHandleList());
-    return timeoutHandleBuckets_.back().second;
+    timeoutHandleBuckets_.emplace_back(duration,
+                                       folly::make_unique<TimeoutHandleList>());
+    return *timeoutHandleBuckets_.back().second;
   }();
 
-  list.push_back(th);
+  auto timeout = Clock::now() + duration;
+  list.emplace(std::move(f), timeout, list);
 
-  th.timeout_ = Clock::now() + duration;
-  if (th.timeout_ < nextTimeout_) {
-    nextTimeout_ = th.timeout_;
+  if (timeout < nextTimeout_) {
+    nextTimeout_ = timeout;
     scheduleRun();
   }
+
+  return reinterpret_cast<intptr_t>(&list.back());
 }
 
 void TimeoutController::runTimeouts(TimePoint time) {
@@ -65,16 +54,18 @@ void TimeoutController::runTimeouts(TimePoint time) {
   nextTimeout_ = TimePoint::max();
 
   for (auto& bucket : timeoutHandleBuckets_) {
-    auto& list = bucket.second;
+    auto& list = *bucket.second;
 
-    for (auto it = list.begin(); it != list.end();) {
-      if (it->timeout_ > time) {
-        nextTimeout_ = std::min(nextTimeout_, it->timeout_);
-        break;
+    while (!list.empty()) {
+      if (!list.front().canceled) {
+        if (list.front().timeout > time) {
+          nextTimeout_ = std::min(nextTimeout_, list.front().timeout);
+          break;
+        }
+
+        list.front().func();
       }
-
-      it->onTimeout();
-      it = list.erase(it);
+      list.pop();
     }
   }
 
@@ -85,11 +76,24 @@ void TimeoutController::runTimeouts(TimePoint time) {
 
 void TimeoutController::scheduleRun() {
   auto time = nextTimeout_;
-  auto timeoutController = this;
+  std::weak_ptr<TimeoutController> timeoutControllerWeak = shared_from_this();
 
-  loopController_.timedSchedule([timeoutController, time]() {
-      timeoutController->runTimeouts(time);
+  loopController_.timedSchedule([timeoutControllerWeak, time]() {
+      if (auto timeoutController = timeoutControllerWeak.lock()) {
+        timeoutController->runTimeouts(time);
+      }
     }, time);
+}
+
+void TimeoutController::cancel(intptr_t p) {
+  auto handle = reinterpret_cast<TimeoutHandle*>(p);
+  handle->canceled = true;
+
+  auto& list = handle->list;
+
+  while (!list.empty() && list.front().canceled) {
+    list.pop();
+  }
 }
 
 }}

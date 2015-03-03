@@ -161,7 +161,7 @@ void AsyncMcClientImpl::setThrottle(size_t maxInflight, size_t maxPending) {
   maxPending_ = maxPending;
 }
 
-void AsyncMcClientImpl::sendCommon(ReqInfo::UniquePtr req) {
+void AsyncMcClientImpl::sendCommon(McClientRequestContextBase::UniquePtr req) {
   switch (req->reqContext.serializationResult()) {
     case McSerializedRequest::Result::OK:
       incMsgId(nextMsgId_);
@@ -169,6 +169,8 @@ void AsyncMcClientImpl::sendCommon(ReqInfo::UniquePtr req) {
       if (outOfOrder_) {
         idMap_[req->id] = req.get();
       }
+      assert(req->state == ReqState::NONE);
+      req->state = ReqState::SEND_QUEUE;
       sendQueue_.pushBack(std::move(req));
       scheduleNextWriterLoop();
       if (connectionState_ == ConnectionState::DOWN) {
@@ -180,10 +182,10 @@ void AsyncMcClientImpl::sendCommon(ReqInfo::UniquePtr req) {
       }
       return;
     case McSerializedRequest::Result::BAD_KEY:
-      reply(std::move(req), McReply(mc_res_bad_key));
+      req->replyError(mc_res_bad_key);
       return;
     case McSerializedRequest::Result::ERROR:
-      reply(std::move(req), McReply(mc_res_local_error));
+      req->replyError(mc_res_local_error);
       return;
   }
 }
@@ -226,12 +228,16 @@ void AsyncMcClientImpl::pushMessages() {
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
     auto& req = writeQueue_.pushBack(sendQueue_.popFront());
-    req.sentAt = std::chrono::steady_clock::now();
+    if (connectionOptions_.sendTimeout.count()) {
+      req.sentAt = std::chrono::steady_clock::now();
+    }
+    assert(req.state == ReqState::SEND_QUEUE);
+    req.state = ReqState::WRITE_QUEUE;
 
     socket_->writev(this, req.reqContext.getIovs(),
-      req.reqContext.getIovsCount(),
-      numToSend == 1 ? folly::WriteFlags::NONE
-                     : folly::WriteFlags::CORK);
+                    req.reqContext.getIovsCount(),
+                    numToSend == 1 ? folly::WriteFlags::NONE
+                    : folly::WriteFlags::CORK);
     --numToSend;
   }
   writeScheduled_ = false;
@@ -246,8 +252,8 @@ void AsyncMcClientImpl::timeoutExpired() {
   // process all requests that were replied/timed out.
   while (!pendingReplyQueue_.empty()) {
     if (currentTime - pendingReplyQueue_.front().sentAt >=
-        connectionOptions_.timeout) {
-      reply(pendingReplyQueue_.popFront(), McReply(mc_res_timeout));
+        connectionOptions_.sendTimeout) {
+      replyError(pendingReplyQueue_.popFront(), mc_res_timeout);
     } else {
       scheduleNextTimeout();
       break;
@@ -337,18 +343,17 @@ void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
                               const ConnectionOptions& connectionOptions) {
   const auto& optkey = getQoSOptionKey(address.getFamily());
 
-  static const int expectedRv = 0;
   const uint64_t expectedValue = getQoSClass(connectionOptions.qos);
 
-  int val;
+  uint64_t val;
   socklen_t len = sizeof(expectedValue);
   int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
-  if (rv != expectedRv || val != expectedValue) {
+  if (rv != 0 || val != expectedValue) {
     failure::log("AsyncMcClient", failure::Category::kSystemError,
                  "Failed to apply QoS! "
                  "Return Value: {} (expected: {}). "
                  "QoS Value: {} (expected: {}).",
-                 rv, expectedRv, val, expectedValue);
+                 rv, 0, val, expectedValue);
   }
 }
 
@@ -370,56 +375,43 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 } // anonymous namespace
 
 void AsyncMcClientImpl::scheduleNextTimeout() {
-  if (!timeoutScheduled_ && connectionOptions_.timeout.count() > 0 &&
+  if (!timeoutScheduled_ && connectionOptions_.sendTimeout.count() > 0 &&
       !pendingReplyQueue_.empty()) {
     timeoutScheduled_ = true;
     const auto& req = pendingReplyQueue_.front();
     // Rount up, or otherwise we might get stuck processing timeouts of 0ms.
     timeoutCallback_->scheduleTimeout(
       round_up<std::chrono::milliseconds>(req.sentAt +
-        connectionOptions_.timeout - std::chrono::steady_clock::now()));
+        connectionOptions_.sendTimeout - std::chrono::steady_clock::now()));
   }
 }
 
-void AsyncMcClientImpl::reply(ReqInfo::UniquePtr req, McReply mcReply) {
+void AsyncMcClientImpl::replyError(McClientRequestContextBase::UniquePtr req,
+                                   mc_res_t result) {
   idMap_.erase(req->id);
-  if (req->isSync()) {
-    req->syncContext.reply = std::move(mcReply);
-    req->syncContext.baton.post();
-  } else {
-    req->asyncContext.replyCallback(std::move(mcReply));
-  }
+  req->replyError(result);
 }
 
-void AsyncMcClientImpl::replyReceived(uint64_t id, McReply mcReply) {
+McClientRequestContextBase::UniquePtr AsyncMcClientImpl::getRequestContext(
+    uint64_t id) {
   // We could have already timed out all request.
   if (pendingReplyQueue_.empty()) {
-    return;
+    return nullptr;
   }
 
   if (outOfOrder_) {
-    ReqInfo* value = idMap_[id];
-    // Check that it wasn't previously replied with timeout (e.g. we hadn't
-    // already removed it).
-    if (value != nullptr) {
-      auto req = pendingReplyQueue_.extract(
-        pendingReplyQueue_.iterator_to(*value));
-      if (req->traceCallback) {
-        req->traceCallback(mcReply);
-      }
-      reply(std::move(req), std::move(mcReply));
+    auto iter = idMap_.find(id);
+    if (iter != idMap_.end()) {
+      return pendingReplyQueue_.extract(
+        pendingReplyQueue_.iterator_to(*iter->second));
     }
   } else {
-    // Check that it wasn't previously replied with timeout (e.g. we hadn't
-    // already removed it).
     if (pendingReplyQueue_.front().id == id) {
-      auto req = pendingReplyQueue_.popFront();
-      if (req->traceCallback) {
-        req->traceCallback(mcReply);
-      }
-      reply(std::move(req), std::move(mcReply));
+      return pendingReplyQueue_.popFront();
     }
   }
+
+  return nullptr;
 }
 
 void AsyncMcClientImpl::attemptConnection() {
@@ -459,8 +451,8 @@ void AsyncMcClientImpl::attemptConnection() {
 
   auto socketOptions = createSocketOptions(address, connectionOptions_);
 
-  socket.setSendTimeout(connectionOptions_.timeout.count());
-  socket.connect(this, address, connectionOptions_.timeout.count(),
+  socket.setSendTimeout(connectionOptions_.writeTimeout.count());
+  socket.connect(this, address, connectionOptions_.writeTimeout.count(),
                  socketOptions);
 
   if (connectionOptions_.enableQoS) {
@@ -506,7 +498,7 @@ void AsyncMcClientImpl::connectErr(
   }
 
   while (!sendQueue_.empty()) {
-    reply(sendQueue_.popFront(), McReply(error));
+    replyError(sendQueue_.popFront(), error);
   }
 
   assert(writeQueue_.empty());
@@ -540,14 +532,14 @@ void AsyncMcClientImpl::processShutdown() {
 
     case ConnectionState::ERROR:
       while (!pendingReplyQueue_.empty()) {
-        reply(pendingReplyQueue_.popFront(),
-              McReply(isAborting_ ? mc_res_aborted : mc_res_remote_error));
+        replyError(pendingReplyQueue_.popFront(),
+                   isAborting_ ? mc_res_aborted : mc_res_remote_error);
       }
       if (writeQueue_.empty()) {
         // No need to send any of remaining requests if we're aborting.
         if (isAborting_) {
           while (!sendQueue_.empty()) {
-            reply(sendQueue_.popFront(), McReply(mc_res_aborted));
+            replyError(sendQueue_.popFront(), mc_res_aborted);
           }
         }
 
@@ -606,8 +598,17 @@ void AsyncMcClientImpl::readErr(
 void AsyncMcClientImpl::writeSuccess() noexcept {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
-  pendingReplyQueue_.pushBack(writeQueue_.popFront());
-  scheduleNextTimeout();
+  auto req = writeQueue_.popFront();
+  if (req->state == ReqState::CANCELED) {
+    req->canceled();
+    return;
+  }
+  assert(req->state == ReqState::WRITE_QUEUE);
+  req->state = ReqState::PENDING_QUEUE;
+  pendingReplyQueue_.pushBack(std::move(req));
+  if (connectionOptions_.sendTimeout.count()) {
+    scheduleNextTimeout();
+  }
 
   // In case of no-network we need to provide fake reply.
   if (connectionOptions_.noNetwork) {
@@ -628,48 +629,42 @@ void AsyncMcClientImpl::writeErr(
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
-  pendingReplyQueue_.pushBack(writeQueue_.popFront());
+  auto req = writeQueue_.popFront();
+  if (req->state == ReqState::CANCELED) {
+    req->canceled();
+  } else {
+    assert(req->state == ReqState::WRITE_QUEUE);
+    req->state = ReqState::PENDING_QUEUE;
+    pendingReplyQueue_.pushBack(std::move(req));
+  }
   processShutdown();
 }
 
-void AsyncMcClientImpl::replyReady(McReply mcReply, mc_op_t operation,
-                                   uint64_t reqId) {
-  assert(connectionState_ == ConnectionState::UP);
-  DestructorGuard dg(this);
-
-  // Local error in ascii protocol means that there was a protocol level error,
-  // e.g. we sent some command that server didn't understand. We need to log
-  // the original request and close the connection.
-  if (mcReply.result() == mc_res_local_error &&
-      connectionOptions_.accessPoint.getProtocol() == mc_ascii_protocol) {
-    if (!pendingReplyQueue_.empty()) {
-      std::string requestData;
-      auto& request = pendingReplyQueue_.front().reqContext;
-      auto iovs = request.getIovs();
-      auto iovsCount = request.getIovsCount();
-      for (size_t i = 0; i < iovsCount; ++i) {
-        requestData += folly::cEscape<std::string>(
-          folly::StringPiece(
-            reinterpret_cast<const char*>(iovs[i].iov_base), iovs[i].iov_len));
-      }
-      failure::log("AsyncMcClient", failure::Category::kOther,
-                   "Received ERROR reply from server, original request was: "
-                   "\"{}\" and the operation was {}", requestData,
-                   mc_op_to_string(pendingReplyQueue_.front().op));
-    } else {
-      failure::log("AsyncMcClient", failure::Category::kOther,
-                   "Received ERROR reply from server, but there're no "
-                   "outstanding requests.");
+void AsyncMcClientImpl::logCriticalAsciiError() {
+  if (!pendingReplyQueue_.empty()) {
+    std::string requestData;
+    auto& request = pendingReplyQueue_.front().reqContext;
+    auto iovs = request.getIovs();
+    auto iovsCount = request.getIovsCount();
+    for (size_t i = 0; i < iovsCount; ++i) {
+      requestData += folly::cEscape<std::string>(
+        folly::StringPiece(
+          reinterpret_cast<const char*>(iovs[i].iov_base), iovs[i].iov_len));
     }
-    processShutdown();
-    return;
+    failure::log("AsyncMcClient", failure::Category::kOther,
+                 "Received ERROR reply from server, original request was: "
+                 "\"{}\"", requestData);
+  } else {
+    failure::log("AsyncMcClient", failure::Category::kOther,
+                 "Received ERROR reply from server, but there're no "
+                 "outstanding requests.");
   }
+}
 
-  if (!outOfOrder_) {
-    reqId = nextInflightMsgId_;
-    incMsgId(nextInflightMsgId_);
-  }
-  replyReceived(reqId, std::move(mcReply));
+// Note: this is a temporary proxy method between McParser and AsyncMcClient.
+void AsyncMcClientImpl::replyReady(McReply mcReply, mc_op_t operation,
+                                   uint64_t reqid) {
+  replyReady(std::move(mcReply), reqid);
 }
 
 void AsyncMcClientImpl::parseError(McReply errorReply) {
@@ -681,36 +676,53 @@ void AsyncMcClientImpl::parseError(McReply errorReply) {
   processShutdown();
 }
 
-void AsyncMcClientImpl::sendFakeReply(ReqInfo& request) {
+namespace {
+const char* DELETED = "DELETED\r\n";
+const char* FOUND = "VALUE we:always:ignore:key:here 0 15\r\n"
+                    "veryRandomValue\r\nEND\r\n";
+const char* STORED = "STORED\r\n";
+};
+
+template <>
+const char*
+McClientRequestContextCommon<McOperation<mc_op_get>, McRequest>::
+fakeReply() const {
+  return FOUND;
+}
+
+template <>
+const char*
+McClientRequestContextCommon<McOperation<mc_op_lease_get>, McRequest>::
+fakeReply() const {
+  return FOUND;
+}
+
+template <>
+const char*
+McClientRequestContextCommon<McOperation<mc_op_set>, McRequest>::
+fakeReply() const {
+  return STORED;
+}
+
+template <>
+const char*
+McClientRequestContextCommon<McOperation<mc_op_lease_set>, McRequest>::
+fakeReply() const {
+  return STORED;
+}
+
+template <>
+const char*
+McClientRequestContextCommon<McOperation<mc_op_delete>, McRequest>::
+fakeReply() const {
+  return DELETED;
+}
+
+void AsyncMcClientImpl::sendFakeReply(McClientRequestContextBase& request) {
   auto& transport = dynamic_cast<MockMcClientTransport&>(*socket_);
-  switch (request.op) {
-    case mc_op_delete: {
-      static const char* msg = "DELETED\r\n";
-      static auto msgLen = strlen(msg);
-      transport.fakeDataRead(msg, msgLen);
-      break;
-    }
-    case mc_op_get:
-    case mc_op_lease_get: {
-      static const char* msg = "VALUE we:always:ignore:key:here 0 15\r\n"
-                               "veryRandomValue\r\nEND\r\n";
-      static auto msgLen = strlen(msg);
-      transport.fakeDataRead(msg, msgLen);
-      break;
-    }
-    case mc_op_set:
-    case mc_op_lease_set: {
-      static const char* msg = "STORED\r\n";
-      static auto msgLen = strlen(msg);
-      transport.fakeDataRead(msg, msgLen);
-      break;
-    }
-    default: {
-      static const char* msg = "CLIENT_ERROR unsupported operation\r\n";
-      static auto msgLen = strlen(msg);
-      transport.fakeDataRead(msg, msgLen);
-    }
-  }
+  auto msg = request.fakeReply();
+  auto msgLen = strlen(msg);
+  transport.fakeDataRead(msg, msgLen);
 }
 
 void AsyncMcClientImpl::incMsgId(size_t& msgId) {
@@ -719,5 +731,26 @@ void AsyncMcClientImpl::incMsgId(size_t& msgId) {
     msgId = 1;
   }
 }
+
+void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
+  if (!timeout.count()) {
+    return;
+  }
+  auto selfWeak = selfPtr_;
+  eventBase_.runInEventBaseThread([selfWeak, timeout]() {
+      if (auto self = selfWeak.lock()) {
+        if (!self->connectionOptions_.writeTimeout.count() ||
+            self->connectionOptions_.writeTimeout > timeout) {
+          self->connectionOptions_.writeTimeout = timeout;
+        }
+
+        if (self->socket_) {
+          self->socket_->setSendTimeout(
+            self->connectionOptions_.writeTimeout.count());
+        }
+      }
+    });
+}
+
 
 }} // facebook::memcache

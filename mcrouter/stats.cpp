@@ -463,6 +463,8 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
     return memory_stats;
   } else if (str == "count") {
     return count_stats;
+  } else if (str == "outlier") {
+    return outlier_stats;
   } else if (str.empty()) {
     return mcproxy_stats;
   } else {

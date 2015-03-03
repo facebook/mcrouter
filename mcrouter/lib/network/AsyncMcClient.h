@@ -60,20 +60,23 @@ class AsyncMcClient {
    * Note: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.
    */
-  template <typename Operation>
-  McReply sendSync(const McRequest& request, Operation);
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type
+  sendSync(const Request& request, Operation,
+           std::chrono::milliseconds timeout);
 
   /**
    * Send request with given Op and call callback on reply.
    *
-   * @param callback  will be called when reply is received or request failed.
-   *                  Guaranteed to be called exactly once.
+   * @param f  callback that will be called when reply is received or request
+   *           failed. Guaranteed to be called exactly once.
+   *           Should be callable
+   *           f(typename ReplyType<Operation, Request>::type&&)
    * Note: caller is responsible for keeping request alive until the callback
    *       is called.
    */
-  template <typename Operation>
-  void send(const McRequest& request, Operation,
-            std::function<void(McReply&&)> callback);
+  template <class Operation, class Request, class F>
+  void send(const Request& request, Operation, F&& f);
 
   /**
    * Set throttling options.
@@ -118,6 +121,12 @@ class AsyncMcClient {
    * This statistic is collected over certain number of most recent batches.
    */
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
+
+  /**
+   * Update send and connect timeout. If new value is larger than current
+   * it is ignored.
+   */
+  void updateWriteTimeout(std::chrono::milliseconds timeout);
 
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;

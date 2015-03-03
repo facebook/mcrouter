@@ -7,11 +7,27 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifndef LIBMC_FBTRACE_DISABLE
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
+#endif
 
 namespace facebook { namespace memcache {
+
+template<class Operation, class Request>
+bool fbTraceOnSend(Operation, const Request& request, const AccessPoint& ap) {
+  // Do nothing for non-mc operations.
+  return false;
+}
+
+template<class Operation, class Reply>
+void fbTraceOnReceive(Operation, const mc_fbtrace_info_s* fbtraceInfo,
+                      const Reply& reply) {
+  // Do nothing by default.
+}
+
+#ifndef LIBMC_FBTRACE_DISABLE
 
 namespace {
 
@@ -28,12 +44,6 @@ inline void fbtraceAddItem(fbtrace_item_t* info, size_t& idx,
 }
 
 }  // namespace
-
-template<class Operation, class Request>
-bool fbTraceOnSend(Operation, const Request& request, const AccessPoint& ap) {
-  // Do nothing for non-mc operations.
-  return false;
-}
 
 template<int McOp, class Request>
 typename std::enable_if<RequestHasFbTraceInfo<Request>::value, bool>::type
@@ -73,17 +83,10 @@ fbTraceOnSend(McOperation<McOp>, const Request& request,
                            &fbtraceInfo->child_node, fbtraceInfo->metadata,
                            FBTRACE_METADATA_SZ, op, remote_service,
                            info) != 0) {
-    failure::log("FBTrace", failure::Category::kOther,
-                 "Error in fbtrace_request_send: {}", fbtrace_error());
+    VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
     return false;
   }
   return true;
-}
-
-template<class Operation, class Reply>
-void fbTraceOnReceive(Operation, const mc_fbtrace_info_s* fbtraceInfo,
-                      const Reply& reply) {
-  // Do nothing by default.
 }
 
 template<int McOp, class Reply>
@@ -101,9 +104,10 @@ void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
   fbtrace_add_item(info, &idx, "result", mc_res_to_string(reply.result()));
   fbtrace_add_item(info, &idx, nullptr, nullptr);
   if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
-    failure::log("FBTrace", failure::Category::kOther,
-                 "Error in fbtrace_reply_receive: {}", fbtrace_error());
+    VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();
   }
 }
+
+#endif
 
 }}  // facebook::memcache

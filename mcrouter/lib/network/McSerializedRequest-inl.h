@@ -22,7 +22,10 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
         result_ = Result::BAD_KEY;
         return;
       }
-      serializeMcMsgAscii(req.dependentMsg((mc_op_t)Op));
+      if (!asciiRequest_.prepare(req, McOperation<Op>(), iovsBegin_,
+                                 iovsCount_)) {
+        result_ = Result::ERROR;
+      }
       break;
     case mc_umbrella_protocol:
       new (&umbrellaMessage_) UmbrellaSerializedMessage();

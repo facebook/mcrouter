@@ -74,6 +74,7 @@ class McServerThread {
     AcceptorT,
     AsyncMcServer& server)
       : server_(server),
+        evb_(/* enableTimeMeasurement */ false),
         worker_(server.opts_.worker, evb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),

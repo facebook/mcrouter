@@ -28,15 +28,16 @@ inline void AsyncMcClient::setStatusCallbacks(
   base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
 }
 
-template <typename Operation>
-McReply AsyncMcClient::sendSync(const McRequest& request, Operation) {
-  return base_->sendSync(request, Operation());
+template <class Operation, class Request>
+typename ReplyType<Operation, Request>::type
+AsyncMcClient::sendSync(const Request& request, Operation,
+                        std::chrono::milliseconds timeout) {
+  return base_->sendSync(request, Operation(), timeout);
 }
 
-template <typename Operation>
-void AsyncMcClient::send(const McRequest& request, Operation,
-                         std::function<void(McReply&&)> callback) {
-  base_->send(request, Operation(), std::move(callback));
+template <class Operation, class Request, class F>
+void AsyncMcClient::send(const Request& request, Operation, F&& f) {
+  base_->send(request, Operation(), std::forward<F>(f));
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {
@@ -53,6 +54,11 @@ inline size_t AsyncMcClient::getInflightRequestCount() const {
 
 inline std::pair<uint64_t, uint64_t> AsyncMcClient::getBatchingStat() const {
   return base_->getBatchingStat();
+}
+
+inline void AsyncMcClient::updateWriteTimeout(
+    std::chrono::milliseconds timeout) {
+  base_->updateWriteTimeout(timeout);
 }
 
 }} // facebook::memcache

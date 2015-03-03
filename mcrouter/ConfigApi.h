@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <string>
@@ -113,6 +114,11 @@ class ConfigApi {
   std::atomic<bool> tracking_;
 
   /**
+   * Informs whether this is the first time mcrouter is being configured.
+   */
+  bool isFirstConfig() const;
+
+  /**
    * @return true, if files have update since last call, false otherwise
    */
   virtual bool checkFileUpdate();
@@ -133,7 +139,12 @@ class ConfigApi {
 
   std::thread configThread_;
   std::mutex fileInfoMutex_;
+
+  std::mutex finishMutex_;
+  std::condition_variable finishCV_;
   std::atomic<bool> finish_;
+
+  bool isFirstConfig_{true};
 
   void configThreadRun();
 };

@@ -272,6 +272,12 @@ mcrouter_option_toggle(
   "disable-miss-on-get-errors", no_short,
   "Disable reporting get errors as misses")
 
+mcrouter_option_toggle(
+  group_remote_errors, false,
+  "group-remote-errors", no_short,
+  "Groups all remote (i.e. non-local) errors together, returning a single "
+  "result for all of them: mc_res_remote_error")
+
 mcrouter_option_integer(
   unsigned int, upgrading_l1_exptime, 0,
   "upgrading-l1-exptime", no_short,
@@ -283,6 +289,10 @@ mcrouter_option_toggle(
   "send-invalid-route-to-default", no_short,
   "Send request to default route if routing prefix is not present in config")
 
+mcrouter_option_toggle(
+  enable_flush_cmd, false,
+  "enable-flush-cmd", no_short,
+  "Enable flush_all command")
 
 mcrouter_option_group("TKO probes")
 
@@ -357,6 +367,12 @@ mcrouter_option_integer(
   "within-cluster-timeout-ms", no_short,
   "Timeouts for talking to pools within same cluster. "
   "If specified (non 0) takes precedence over every other timeout.")
+
+mcrouter_option_toggle(
+  same_connection_any_timeout, false,
+  "same-connection-any-timeout", no_short,
+  "If enabled - same connection to a destination may be used for requests "
+  "with different timeouts.")
 
 
 mcrouter_option_group("Logging")

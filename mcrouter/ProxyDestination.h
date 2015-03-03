@@ -64,7 +64,8 @@ struct ProxyDestination {
   proxy_t* proxy{nullptr}; ///< for convenience
   const AccessPoint accessPoint;
   const std::string destinationKey;///< always the same for a given (host, port)
-  const timeval_t server_timeout{0};
+  // Shortest timeout among all ProxyClientCommon's using this destination
+  std::chrono::milliseconds shortestTimeout{0};
   const std::string pdstnKey;///< consists of ap, server_timeout
   uint64_t magic{0}; ///< to allow asserts that pdstn is still alive
   const uint64_t proxy_magic{0}; ///< to allow asserts that proxy is still alive
@@ -85,7 +86,7 @@ struct ProxyDestination {
   template <int Op, class Request>
   typename ReplyType<McOperation<Op>, Request>::type
   send(const Request& request, McOperation<Op>, DestinationRequestCtx& req_ctx,
-       uint64_t senderId);
+       uint64_t senderId, std::chrono::milliseconds timeout);
   // returns true if okay to send req using this client
   bool may_send();
 
@@ -119,6 +120,8 @@ struct ProxyDestination {
    * See AsyncMcClient::getBatchingStat for more details.
    */
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
+
+  void updateShortestTimeout(std::chrono::milliseconds timeout);
 
  private:
   std::unique_ptr<DestinationMcClient> client_;

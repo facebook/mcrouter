@@ -124,6 +124,8 @@ libmcroutercore_a_SOURCES = \
   routes/McrouterRouteHandle.h \
   routes/MigrateRoute.cpp \
   routes/MissFailoverRoute.cpp \
+  routes/ModifyKeyRoute.cpp \
+  routes/ModifyKeyRoute.h \
   routes/NullRoute.cpp \
   routes/OperationSelectorRoute.cpp \
   routes/OperationSelectorRoute.h \

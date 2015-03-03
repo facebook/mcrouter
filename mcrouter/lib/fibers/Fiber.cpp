@@ -132,7 +132,8 @@ void Fiber::fiberFunc() {
         func_();
       }
     } catch (...) {
-      fiberManager_.exceptionCallback_(std::current_exception());
+      fiberManager_.exceptionCallback_(std::current_exception(),
+                                       "running Fiber func_/resultFunc_");
     }
 
     if (UNLIKELY(fiberManager_.options_.debugRecordStackUsed)) {

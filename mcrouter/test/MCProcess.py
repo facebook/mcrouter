@@ -390,6 +390,13 @@ class MCProcess(object):
         self.socket.sendall("shutdown\r\n")
         return self.fd.readline()
 
+    def flush_all(self, delay=None):
+        if delay is None:
+            self.socket.sendall("flush_all\r\n")
+        else:
+            self.socket.sendall("flush_all {}\r\n".format(delay))
+        return self.fd.readline().rstrip()
+
 def sub_port(s, substitute_ports, port_map):
     parts = s.split(':')
     if len(parts) < 2:
@@ -529,10 +536,24 @@ class Mcrouter(MCProcess):
 
             def get_pid():
                 with open(pid_file, 'r') as pid_f:
-                    return int(pid_f.read().strip())
+                    pid = pid_f.read().strip()
+                    if not pid:
+                        return pid
+                    return int(pid)
 
-            self.terminate = lambda: os.kill(get_pid(), signal.SIGTERM)
-            self.is_alive = lambda: os.path.exists("/proc/%d" % (get_pid()))
+            def terminate():
+                pid = get_pid()
+                if pid:
+                    os.kill(pid, signal.SIGTERM)
+
+            def is_alive():
+                pid = get_pid()
+                if pid:
+                    return os.path.exists("/proc/{}".format(pid))
+                return False
+
+            self.terminate = terminate
+            self.is_alive = is_alive
 
         args = McrouterGlobals.preprocessArgs(args)
 

@@ -259,7 +259,6 @@ class TestMcrouterSanity(McrouterTestCase):
         m = self.mcrouter
         exp = "SERVER_ERROR Command not supported\r\n"
         bad_commands = [
-            'flush_all\r\n',
             'flush_regex .*\r\n',
             'prepend a 0 0 3\r\nabc\r\n',
             'append a 0 0 3\r\nabc\r\n',

@@ -9,8 +9,7 @@
  */
 #pragma once
 
-#include <sys/time.h>
-
+#include <chrono>
 #include <string>
 
 #include "mcrouter/lib/network/AccessPoint.h"
@@ -27,8 +26,7 @@ struct ProxyClientCommon {
   const std::string destination_key;
 
   const int keep_routing_prefix;
-  const bool attach_default_routing_prefix;
-  const timeval_t server_timeout;
+  const std::chrono::milliseconds server_timeout;
 
   const size_t indexInPool;
   const bool useSsl;
@@ -37,14 +35,13 @@ struct ProxyClientCommon {
 
   const int deleteTime;
 
-  std::string genProxyDestinationKey() const;
+  std::string genProxyDestinationKey(bool include_timeout) const;
 
  private:
   ProxyClientCommon(const ClientPool* pool,
-                    timeval_t timeout,
+                    std::chrono::milliseconds timeout,
                     AccessPoint ap,
                     int keep_routing_prefix,
-                    bool attach_default_routing_prefix,
                     bool useSsl,
                     uint64_t qos,
                     int deleteTime);

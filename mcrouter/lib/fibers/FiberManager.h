@@ -81,7 +81,8 @@ class FiberManager {
     constexpr Options() {}
   };
 
-  typedef std::function<void(std::exception_ptr)> ExceptionCallback;
+  typedef std::function<void(std::exception_ptr, std::string)>
+  ExceptionCallback;
 
   /**
    * Initializes, but doesn't start FiberManager loop
@@ -305,7 +306,7 @@ class FiberManager {
 
   AtomicLinkedList<RemoteTask, &RemoteTask::nextRemoteTask> remoteTaskQueue_;
 
-  TimeoutController timeoutManager_;
+  std::shared_ptr<TimeoutController> timeoutManager_;
 
   void runReadyFiber(Fiber* fiber);
   void remoteReadyInsert(Fiber* fiber);

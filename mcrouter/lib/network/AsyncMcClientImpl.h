@@ -19,9 +19,8 @@
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
+#include "mcrouter/lib/network/McClientRequestContext.h"
 #include "mcrouter/lib/network/McParser.h"
-#include "mcrouter/lib/network/McSerializedRequest.h"
-#include "mcrouter/lib/network/UniqueIntrusiveList.h"
 
 namespace facebook { namespace memcache {
 
@@ -61,18 +60,21 @@ class AsyncMcClientImpl :
     std::function<void()> onUp,
     std::function<void(const folly::AsyncSocketException&)> onDown);
 
-  template <int Op>
-  McReply sendSync(const McRequest& request, McOperation<Op>);
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type
+  sendSync(const Request& request, Operation,
+           std::chrono::milliseconds timeout);
 
-  template <int Op>
-  void send(const McRequest& request, McOperation<Op>,
-            std::function<void(McReply&&)> callback);
+  template <class Operation, class Request, class F>
+  void send(const Request& request, Operation, F&& f);
 
   void setThrottle(size_t maxInflight, size_t maxPending);
 
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
+
+  void updateWriteTimeout(std::chrono::milliseconds timeout);
 
  private:
   class TimeoutCallback;
@@ -90,129 +92,16 @@ class AsyncMcClientImpl :
       onDown;
   };
 
-  // Class for storing internal data for each request.
-  class ReqInfo {
-   public:
-    McSerializedRequest reqContext;
-
-    uint64_t id;
-    mc_op_t op;
-    std::chrono::steady_clock::time_point sentAt;
-
-    struct SyncContext {
-      Baton baton;
-      McReply reply;
-    };
-
-    struct AsyncContext {
-      std::function<void(McReply&&)> replyCallback;
-      explicit AsyncContext(std::function<void(McReply&&)> replyCallback_)
-        : replyCallback(replyCallback_) {
-      }
-    };
-
-    union {
-      SyncContext syncContext;
-      AsyncContext asyncContext;
-    };
-
-    std::function<void(const McReply&)> traceCallback;
-
-    template <int Op>
-    ReqInfo(const McRequest& request,
-            uint64_t reqid,
-            McOperation<Op>,
-            mc_protocol_t protocol,
-            std::shared_ptr<AsyncMcClientImpl> client)
-      : reqContext(request, McOperation<Op>(), reqid, protocol),
-        id(reqid),
-        op((mc_op_t)Op),
-        syncContext(),
-        client_(client),
-        isSync_(true) {
-    }
-
-    template <int Op>
-    ReqInfo(const McRequest& request,
-            uint64_t reqid,
-            McOperation<Op>,
-            mc_protocol_t protocol,
-            std::function<void(McReply&&)> callback,
-            std::shared_ptr<AsyncMcClientImpl> client)
-      : reqContext(request, McOperation<Op>(), reqid, protocol),
-        id(reqid),
-        op((mc_op_t)Op),
-        asyncContext(std::move(callback)),
-        client_(client),
-        isSync_(false) {
-    }
-
-    ~ReqInfo() {
-      if (isSync()) {
-        syncContext.~SyncContext();
-      } else {
-        asyncContext.~AsyncContext();
-      }
-    }
-
-    ReqInfo(const ReqInfo&) = delete;
-    ReqInfo& operator=(const ReqInfo& other) = delete;
-
-    bool isSync() const {
-      return isSync_;
-    }
-
-   private:
-    static ObjectPool<ReqInfo>& getPool() {
-      static thread_local ObjectPool<ReqInfo> pool(1024);
-      return pool;
-    }
-
-    class Deleter {
-     public:
-      void operator()(ReqInfo* ptr) const {
-        // Sync requests are allocated on stack, thus we can't destroy them.
-        if (!ptr->isSync()) {
-          getPool().free(ptr);
-        }
-      }
-    };
-
-   public:
-    using UniquePtr = std::unique_ptr<ReqInfo, Deleter>;
-
-    template <typename... Args>
-    static UniquePtr getFromPool(Args&&... args) {
-      auto ptr =
-        UniquePtr(getPool().alloc(std::forward<Args>(args)...), Deleter());
-      assert(!ptr->isSync_);
-      return ptr;
-    }
-
-    UniquePtr createDummyPtr() {
-      assert(isSync_);
-      return UniquePtr(this, Deleter());
-    }
-
-   private:
-    std::shared_ptr<AsyncMcClientImpl> client_;
-    UniqueIntrusiveListHook hook_;
-    bool isSync_{false};
-
-   public:
-    using RequestQueue = UniqueIntrusiveList<ReqInfo, &ReqInfo::hook_, Deleter>;
-  };
-
   // We need to be able to get shared_ptr to ourself and shared_from_this()
   // doesn't work correctly with TDelayedDestruction.
   std::weak_ptr<AsyncMcClientImpl> selfPtr_;
 
   // Queue of requests, that are queued to be sent.
-  ReqInfo::RequestQueue sendQueue_;
+  McClientRequestContextBase::Queue sendQueue_;
   // Queue of requests, that are currently being written to the socket.
-  ReqInfo::RequestQueue writeQueue_;
+  McClientRequestContextBase::Queue writeQueue_;
   // Queue of requests, that are already sent and are waiting for replies.
-  ReqInfo::RequestQueue pendingReplyQueue_;
+  McClientRequestContextBase::Queue pendingReplyQueue_;
 
   // Stats.
   std::pair<uint64_t, uint16_t> batchStatPrevious{0, 0};
@@ -220,7 +109,7 @@ class AsyncMcClientImpl :
 
   // Id to request map. Used only in case of out-of-order protocol for fast
   // request lookup.
-  std::unordered_map<uint64_t, ReqInfo*> idMap_;
+  std::unordered_map<uint64_t, McClientRequestContextBase*> idMap_;
 
   folly::EventBase& eventBase_;
   std::unique_ptr<McParser> parser_;
@@ -263,7 +152,7 @@ class AsyncMcClientImpl :
   ~AsyncMcClientImpl();
 
   // Common part for send/sendSync.
-  void sendCommon(ReqInfo::UniquePtr req);
+  void sendCommon(McClientRequestContextBase::UniquePtr req);
 
   // Write some requests from sendQueue_ to the socket, until max inflight limit
   // is reached or queue is empty.
@@ -276,11 +165,22 @@ class AsyncMcClientImpl :
   void scheduleNextWriterLoop();
   void cancelWriterCallback();
 
-  // call reply callback for the request and remove it from requests map
-  void reply(ReqInfo::UniquePtr req, McReply mcReply);
+  // call reply callback for the request and remove it from requests map.
+  template <class Reply>
+  void reply(McClientRequestContextBase::UniquePtr req, Reply&& r);
 
-  // reply request with the reply received from network
-  void replyReceived(uint64_t id, McReply mcReply);
+  // Reply given request with an error reply.
+  void replyError(McClientRequestContextBase::UniquePtr req, mc_res_t result);
+
+  // Finds request context with given id, removes it from queues and returns it
+  // to the caller.
+  McClientRequestContextBase::UniquePtr getRequestContext(uint64_t id);
+
+  // Log critical ascii error reply (e.g. server reply that starts with ERROR).
+  void logCriticalAsciiError();
+
+  template <class Reply>
+  void replyReady(Reply&& reply, uint64_t reqId);
 
   void attemptConnection();
 
@@ -307,7 +207,7 @@ class AsyncMcClientImpl :
   void replyReady(McReply mcReply, mc_op_t operation, uint64_t reqid) override;
   void parseError(McReply errorReply) override;
 
-  void sendFakeReply(ReqInfo& request);
+  void sendFakeReply(McClientRequestContextBase& request);
 
   static void incMsgId(size_t& msgId);
 };

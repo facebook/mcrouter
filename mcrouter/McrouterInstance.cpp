@@ -103,7 +103,7 @@ bool isValidRouterName(folly::StringPiece name) {
 
 McrouterInstance* McrouterInstance::init(folly::StringPiece persistence_id,
                                          const McrouterOptions& options) {
-  if (auto manager = gMcrouterManager.get_weak_fast().lock()) {
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
     return manager->mcrouterGetCreate(persistence_id, options);
   }
 
@@ -111,7 +111,7 @@ McrouterInstance* McrouterInstance::init(folly::StringPiece persistence_id,
 }
 
 McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
-  if (auto manager = gMcrouterManager.get_weak_fast().lock()) {
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
     return manager->mcrouterGet(persistence_id);
   }
 
@@ -141,9 +141,7 @@ McrouterInstance* McrouterInstance::create(const McrouterOptions& input_options,
 
   folly::json::serialization_opts jsonOpts;
   jsonOpts.sort_keys = true;
-  folly::dynamic dict = folly::dynamic::object
-    ("opts", folly::toDynamic(router->getStartupOpts()))
-    ("version", MCROUTER_PACKAGE_STRING);
+  auto dict = folly::toDynamic(router->getStartupOpts());
   auto jsonStr = folly::json::serialize(dict, jsonOpts);
   failure::setServiceContext(router->routerName(), jsonStr.toStdString());
 
@@ -241,7 +239,7 @@ McrouterInstance* McrouterInstance::createTransient(
 }
 
 void McrouterInstance::freeAllMcrouters() {
-  if (auto manager = gMcrouterManager.get_weak_fast().lock()) {
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
     manager->freeAllMcrouters();
   }
 }
@@ -253,8 +251,14 @@ void McrouterInstance::addStartupOpts(
 
 std::unordered_map<std::string, std::string>
 McrouterInstance::getStartupOpts() const {
+  const size_t kMaxOptionValueLength = 256;
+
   auto result = opts_.toDict();
   result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
+  result.emplace("version", MCROUTER_PACKAGE_STRING);
+  for (auto& it : result) {
+    it.second = shorten(it.second, kMaxOptionValueLength);
+  }
   return result;
 }
 

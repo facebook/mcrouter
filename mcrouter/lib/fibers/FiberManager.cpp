@@ -17,6 +17,7 @@
 
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/fibers/LoopController.h"
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook { namespace memcache {
 
@@ -26,7 +27,24 @@ FiberManager::FiberManager(std::unique_ptr<LoopController> loopController,
                            Options options) :
     loopController_(std::move(loopController)),
     options_(options),
-    timeoutManager_(*loopController_) {
+    exceptionCallback_([](std::exception_ptr e, std::string context) {
+        try {
+          std::rethrow_exception(e);
+        } catch (const std::exception& e) {
+          failure::log("FiberManager", failure::Category::kOther,
+                       "Exception {} with message '{}' was thrown in "
+                       "FiberManager with context '{}'",
+                       typeid(e).name(), e.what(), context);
+          throw;
+        } catch (...) {
+          failure::log("FiberManager", failure::Category::kOther,
+                       "Unknown exception was thrown in FiberManager with "
+                       "context '{}'",
+                       context);
+          throw;
+        }
+      }),
+    timeoutManager_(std::make_shared<TimeoutController>(*loopController_)) {
   TAILQ_INIT(&readyFibers_);
   TAILQ_INIT(&fibersPool_);
 
@@ -78,6 +96,7 @@ Fiber* FiberManager::getFiber() {
 }
 
 void FiberManager::setExceptionCallback(FiberManager::ExceptionCallback ec) {
+  assert(ec);
   exceptionCallback_ = std::move(ec);
 }
 

@@ -43,6 +43,10 @@ McrouterRouteHandlePtr makeMigrateRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json);
 
+McrouterRouteHandlePtr makeModifyKeyRoute(
+  RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  const folly::dynamic& json);
+
 McrouterRouteHandlePtr makeOperationSelectorRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json);
@@ -235,6 +239,8 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
                              proxy_->opts.upgrading_l1_exptime) };
   } else if (type == "MigrateRoute") {
     return { makeMigrateRoute(factory, json) };
+  } else if (type == "ModifyKeyRoute") {
+    return { makeModifyKeyRoute(factory, json) };
   } else if (type == "Pool") {
     return makePool(json).second;
   } else if (type == "PoolRoute") {

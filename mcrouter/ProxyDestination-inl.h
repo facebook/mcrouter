@@ -16,11 +16,12 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <int Op, class Request>
 typename ReplyType<McOperation<Op>, Request>::type
 ProxyDestination::send(const Request& request, McOperation<Op>,
-                       DestinationRequestCtx& req_ctx, uint64_t senderId) {
+                       DestinationRequestCtx& req_ctx, uint64_t senderId,
+                       std::chrono::milliseconds timeout) {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
   proxy->destinationMap->markAsActive(*this);
-  auto reply = client_->send(request, McOperation<Op>(), senderId);
+  auto reply = client_->send(request, McOperation<Op>(), senderId, timeout);
   onReply(reply, req_ctx);
   return reply;
 }

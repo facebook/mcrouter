@@ -33,20 +33,4 @@ McSerializedRequest::Result McSerializedRequest::serializationResult() const {
   return result_;
 }
 
-void McSerializedRequest::serializeMcMsgAscii(const McMsgRef& req) {
-  size_t hdrLength = mc_ascii_req_max_hdr_length(req.get());
-
-  asciiRequest_.asciiBuffer = std::unique_ptr<char[]>(new char[hdrLength]);
-
-  int r = mc_serialize_req_ascii(req.get(), asciiRequest_.asciiBuffer.get(),
-                                 hdrLength, asciiRequest_.iovs, kMaxIovs);
-
-  if (r <= 0) {
-    result_ = Result::ERROR;
-  } else {
-    iovsBegin_ = asciiRequest_.iovs;
-    iovsCount_ = r;
-  }
-}
-
 }} // facebook::memcache

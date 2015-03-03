@@ -58,7 +58,7 @@ class DestinationRoute {
       client_->indexInPool,
       client_->useSsl,
       client_->ap.toString(),
-      to<std::chrono::milliseconds>(client_->server_timeout).count());
+      client_->server_timeout.count());
   }
 
   /**
@@ -146,19 +146,12 @@ class DestinationRoute {
     auto& destination = destination_;
 
     DestinationRequestCtx ctx;
-    uint64_t senderId = req.context().senderId();
-    folly::StringPiece attachPrefix;
-    if (client_->keep_routing_prefix &&
-        client_->attach_default_routing_prefix) {
-      attachPrefix = proxy->opts.default_route;
-    }
-    auto newReq = McRequest::cloneFrom(req,
-                                       !client_->keep_routing_prefix,
-                                       attachPrefix);
+    auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
 
     auto reply = ProxyMcReply(
       destination->send(newReq, McOperation<Op>(), ctx,
-                        req.context().senderId()));
+                        req.context().senderId(),
+                        client_->server_timeout));
     req.context().onReplyReceived(*client_,
                                   req,
                                   reply,

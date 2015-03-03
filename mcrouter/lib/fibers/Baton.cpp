@@ -145,4 +145,8 @@ void Baton::postThread() {
   futex_.futex.futexWake(1);
 }
 
+void Baton::reset() {
+  waitingFiber_.store(NO_WAITER, std::memory_order_relaxed);;
+}
+
 }}

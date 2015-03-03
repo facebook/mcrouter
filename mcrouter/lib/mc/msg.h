@@ -421,7 +421,29 @@ uint64_t mc_msg_num_outstanding();
  */
 int mc_msg_contains(const mc_msg_t *msg, void *p, size_t n);
 
+/**
+ * Returns whether the given request has a valid memcache key (if it should).
+ * must satisfy:
+ *   1) The length should be nonzero.
+ *   2) The length should be at most MC_KEY_MAX_LEN.
+ *   3) There should be no spaces or control characters.
+ *
+ * @param req  The request to verify
+ * @return     validation result
+ */
 mc_req_err_t mc_client_req_check(const mc_msg_t* req);
+
+/**
+ * Returns whether the given memcache key is valid.
+ * The key must satisfy:
+ *   1) The length should be nonzero.
+ *   2) The length should be at most MC_KEY_MAX_LEN.
+ *   3) There should be no spaces or control characters.
+ *
+ * @param key  The key to verify
+ * @return     validation result
+ */
+mc_req_err_t mc_client_req_key_check(nstring_t key);
 
 __END_DECLS
 

@@ -1049,7 +1049,7 @@ class ConfigPreprocessor::BuiltIns {
     auto useIt = json.find("use");
     auto whereIt = json.find("where");
 
-    folly::dynamic result = nullptr;
+    dynamic result = nullptr;
     auto extContext = ctx;
 
     auto appendUseToResult = [&]() {
@@ -1096,7 +1096,7 @@ class ConfigPreprocessor::BuiltIns {
 
         if (useIt == json.items().end()) {
           if (result.isNull()) {
-            result = { std::move(itemIt->second) };
+            result = dynamic{ std::move(itemIt->second) };
           } else {
             result.push_back(std::move(itemIt->second));
           }

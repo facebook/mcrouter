@@ -7,9 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-// for printing PRIu64 in c++
-#define __STDC_FORMAT_MACROS
-
 #include "async.h"
 
 #include <limits.h>
@@ -55,7 +52,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 AsyncWriter::AsyncWriter(size_t maxQueueSize)
     : maxQueueSize_(maxQueueSize),
       pid_(getpid()),
-      fiberManager_(folly::make_unique<EventBaseLoopController>()) {
+      fiberManager_(folly::make_unique<EventBaseLoopController>()),
+      eventBase_(/* enableTimeMeasurement */ false) {
   auto& c = fiberManager_.loopController();
   dynamic_cast<EventBaseLoopController&>(c).attachEventBase(eventBase_);
 }

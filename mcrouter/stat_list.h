@@ -67,6 +67,9 @@
   STUI(cmd_get_count, 0, 1)
   STUI(cmd_gets_count, 0, 1)
   STUI(cmd_set_count, 0, 1)
+#undef GROUP
+#define GROUP ods_stats | mcproxy_stats | cmd_all_stats | \
+  cmd_out_stats | count_stats | outlier_stats
   STUI(cmd_cas_outlier_count, 0, 1)
   STUI(cmd_cas_outlier_failover_count, 0, 1)
   STUI(cmd_cas_outlier_shadow_count, 0, 1)
@@ -99,6 +102,9 @@
   STUIR(cmd_get, 0, 1)
   STUIR(cmd_gets, 0, 1)
   STUIR(cmd_set, 0, 1)
+#undef GROUP
+#define GROUP ods_stats | mcproxy_stats | detailed_stats | cmd_all_stats | \
+  cmd_out_stats | rate_stats | outlier_stats
   STUIR(cmd_cas_outlier, 0, 1)
   STUIR(cmd_cas_outlier_failover, 0, 1)
   STUIR(cmd_cas_outlier_shadow, 0, 1)

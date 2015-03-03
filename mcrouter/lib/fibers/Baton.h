@@ -85,6 +85,14 @@ class Baton {
    */
   void post();
 
+  /**
+   * Reset's the baton (equivalent to destroying the object and constructing
+   * another one in place).
+   * Caller is responsible for making sure no one is waiting on/posting the
+   * baton when reset() is called.
+   */
+  void reset();
+
  private:
   enum {
     /**
@@ -110,6 +118,9 @@ class Baton {
   void postHelper(intptr_t new_value);
   void postThread();
   void waitThread();
+
+  template <typename F>
+  inline void waitFiber(FiberManager& fm, F&& mainContextFunc);
   /**
    * Spin for "some time" (see discussion on PreBlockAttempts) waiting
    * for a post.

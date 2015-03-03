@@ -81,6 +81,15 @@ inline timeval_t to<timeval_t>(const unsigned int& ms) {
   return r;
 }
 
+/** milliseconds to timeval_t */
+template <>
+inline timeval_t to<timeval_t>(const std::chrono::milliseconds& ms) {
+  timeval_t r;
+  r.tv_sec = ms.count() / 1000;
+  r.tv_usec = ms.count() % 1000 * 1000;
+  return r;
+}
+
 /** timeval_t to milliseconds */
 template <>
 inline std::chrono::milliseconds
@@ -217,6 +226,12 @@ std::string getThreadName();
  */
 folly::dynamic parseJsonString(folly::StringPiece s,
                                bool allow_trailing_comma = true);
+
+/**
+ * @return returns a prefix of `s` with '...' appended if s is longer than
+ *         `maxLength`.
+ */
+std::string shorten(folly::StringPiece s, size_t maxLength);
 
 }}  // facebook::memcache
 
