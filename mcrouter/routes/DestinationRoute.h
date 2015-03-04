@@ -54,7 +54,7 @@ class DestinationRoute {
  public:
   std::string routeName() const {
     return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
-      client_->pool ? client_->pool->getName() : "NOPOOL",
+      client_->pool.getName(),
       client_->indexInPool,
       client_->useSsl,
       client_->ap.toString(),

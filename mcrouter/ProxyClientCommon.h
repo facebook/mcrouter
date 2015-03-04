@@ -19,7 +19,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class ClientPool;
 
 struct ProxyClientCommon {
-  const ClientPool* pool;
+  const ClientPool& pool;
   const AccessPoint ap;
 
   /// Always the same for a given (host, port)
@@ -38,7 +38,7 @@ struct ProxyClientCommon {
   std::string genProxyDestinationKey(bool include_timeout) const;
 
  private:
-  ProxyClientCommon(const ClientPool* pool,
+  ProxyClientCommon(const ClientPool& pool,
                     std::chrono::milliseconds timeout,
                     AccessPoint ap,
                     int keep_routing_prefix,

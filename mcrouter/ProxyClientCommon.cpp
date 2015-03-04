@@ -16,7 +16,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyClientCommon::ProxyClientCommon(const ClientPool* pool_,
+ProxyClientCommon::ProxyClientCommon(const ClientPool& pool_,
                                      std::chrono::milliseconds timeout,
                                      AccessPoint ap_,
                                      int keep_routing_prefix_,
@@ -28,7 +28,7 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool* pool_,
       destination_key(ap.toHostPortString()),
       keep_routing_prefix(keep_routing_prefix_),
       server_timeout(std::move(timeout)),
-      indexInPool(pool->getClients().size()),
+      indexInPool(pool.getClients().size()),
       useSsl(useSsl_),
       qos(qos_),
       deleteTime(deleteTime_) {

@@ -38,7 +38,7 @@ class ClientPool {
   template <typename... Args>
   std::shared_ptr<ProxyClientCommon> emplaceClient(Args&&... args) {
     auto client = std::shared_ptr<ProxyClientCommon>(
-      new ProxyClientCommon(this, std::forward<Args>(args)...));
+      new ProxyClientCommon(*this, std::forward<Args>(args)...));
     clients_.push_back(client);
     return client;
   }
