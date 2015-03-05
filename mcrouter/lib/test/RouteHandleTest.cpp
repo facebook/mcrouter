@@ -14,7 +14,6 @@
 #include <gtest/gtest.h>
 
 #include <folly/Memory.h>
-#include <folly/futures/Future.h>
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McReply.h"
