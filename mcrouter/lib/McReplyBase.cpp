@@ -51,7 +51,6 @@ bool McReplyBase::isSoftTkoError() const {
 
 bool McReplyBase::isHardTkoError() const {
   switch (result_) {
-    case mc_res_busy:
     case mc_res_connect_error:
     case mc_res_connect_timeout:
       return true;

@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <functional>
+#include <memory>
 #include <queue>
 
 #include <boost/intrusive/list.hpp>

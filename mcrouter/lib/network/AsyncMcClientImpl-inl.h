@@ -55,12 +55,14 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
     }
     case ReqState::SEND_QUEUE:
     {
+      idMap_.erase(ctx.id);
       auto it = sendQueue_.iterator_to(ctx);
       sendQueue_.extract(it);
       return Reply(mc_res_timeout);
     }
     case ReqState::WRITE_QUEUE:
     {
+      idMap_.erase(ctx.id);
       ctx.cancelAndWait();
       return Reply(mc_res_timeout);
     }
