@@ -23,8 +23,6 @@
   STUI(num_servers_down, 0, 1)
   STUI(num_servers_closed, 0, 1)
   STUI(num_clients, 0, 1)
-  STUI(server_up_events, 0, 1)
-  STUI(server_down_events, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats
   /* Total reqs in mc client yet to be sent to memcache. */

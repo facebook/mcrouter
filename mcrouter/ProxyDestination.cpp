@@ -182,7 +182,6 @@ void ProxyDestination::on_up() {
   FBI_ASSERT(proxy->magic == proxy_magic);
   FBI_ASSERT(stats_.state != ProxyDestinationState::kUp);
 
-  stat_incr(proxy->stats, server_up_events_stat, 1);
   setState(ProxyDestinationState::kUp);
 
   VLOG(1) << "server " << pdstnKey << " up (" <<
