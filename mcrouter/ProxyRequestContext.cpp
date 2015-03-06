@@ -83,7 +83,9 @@ void ProxyRequestContext::sendReply(McReply newReply) {
   reply_ = std::move(newReply);
   replied_ = true;
 
-  enqueueReply_(*this);
+  if (LIKELY(enqueueReply_ != nullptr)) {
+    enqueueReply_(*this);
+  }
 
   stat_incr(proxy_.stats, request_replied_stat, 1);
   stat_incr(proxy_.stats, request_replied_count_stat, 1);
