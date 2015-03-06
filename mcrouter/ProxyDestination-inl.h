@@ -21,7 +21,8 @@ ProxyDestination::send(const Request& request, McOperation<Op>,
   FBI_ASSERT(proxy->magic == proxy_magic);
 
   proxy->destinationMap->markAsActive(*this);
-  auto reply = client_->send(request, McOperation<Op>(), senderId, timeout);
+  auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>(), timeout);
+  updateStats(reply.result(), (mc_op_t)Op);
   onReply(reply, req_ctx);
   return reply;
 }

@@ -18,6 +18,7 @@
 #include <folly/IntrusiveList.h>
 
 #include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/McMsgRef.h"
@@ -124,7 +125,7 @@ struct ProxyDestination {
   void updateShortestTimeout(std::chrono::milliseconds timeout);
 
  private:
-  std::unique_ptr<DestinationMcClient> client_;
+  std::unique_ptr<AsyncMcClient> client_;
 
   ProxyDestinationStats stats_;
 
@@ -153,7 +154,9 @@ struct ProxyDestination {
   // Process tko, stats and duration timer.
   void onReply(const McReply& reply, DestinationRequestCtx& destreqCtx);
 
-  void initializeClient();
+  AsyncMcClient& getAsyncMcClient();
+  void initializeAsyncMcClient();
+  void updateStats(mc_res_t result, mc_op_t op);
 
   ProxyDestination(proxy_t* proxy,
                    const ProxyClientCommon& ro,

@@ -39,14 +39,12 @@ class McrouterOptions;
 namespace mcrouter {
 
 class ConfigApi;
-class DestinationClient;
 class ExtraRouteHandleProviderIf;
 class McrouterInstance;
 class McrouterLogger;
 class proxy_t;
 class TkoLog;
 
-typedef DestinationClient DestinationMcClient;
 struct ProxyStatsContainer {
   explicit ProxyStatsContainer(proxy_t*) {}
 };

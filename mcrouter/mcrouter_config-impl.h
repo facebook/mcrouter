@@ -12,5 +12,3 @@
 #ifndef HAVE_CONFIG_H
 static_assert(false, "mcrouter: invalid build");
 #endif
-
-#include "mcrouter/DestinationClient.h"

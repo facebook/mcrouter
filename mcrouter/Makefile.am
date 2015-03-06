@@ -23,9 +23,6 @@ libmcroutercore_a_SOURCES = \
   ClientPool.h \
   ConfigApi.cpp \
   ConfigApi.h \
-  DestinationClient-inl.h \
-  DestinationClient.cpp \
-  DestinationClient.h \
   ExponentialSmoothData.cpp \
   ExponentialSmoothData.h \
   FileDataProvider.cpp \

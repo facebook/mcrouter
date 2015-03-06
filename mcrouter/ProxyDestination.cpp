@@ -20,6 +20,7 @@
 #include "mcrouter/lib/fbi/util.h"
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/pclient.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/routes/DestinationRoute.h"
@@ -95,10 +96,10 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
           return;
         }
         pdstn->proxy->destinationMap->markAsActive(*pdstn);
-        McReply reply = pdstn->client_->send(*pdstn->probe_req,
-                                             McOperation<mc_op_version>(),
-                                             0,
-                                             pdstn->shortestTimeout);
+        McReply reply = pdstn->client_->sendSync(*pdstn->probe_req,
+                                                 McOperation<mc_op_version>(),
+                                                 pdstn->shortestTimeout);
+        pdstn->updateStats(reply.result(), mc_op_version);
         pdstn->handle_tko(reply, true);
         pdstn->probe_req.reset();
       });
@@ -208,15 +209,15 @@ void ProxyDestination::on_down() {
 }
 
 size_t ProxyDestination::getPendingRequestCount() const {
-  return client_->getPendingRequestCount();
+  return client_ ? client_->getPendingRequestCount() : 0;
 }
 
 size_t ProxyDestination::getInflightRequestCount() const {
-  return client_->getInflightRequestCount();
+  return client_ ? client_->getInflightRequestCount() : 0;
 }
 
 std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
-  return client_->getBatchingStat();
+  return client_ ? client_->getBatchingStat() : std::make_pair(0UL, 0UL);
 }
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
@@ -227,7 +228,6 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
   auto ptr = std::shared_ptr<ProxyDestination>(
     new ProxyDestination(proxy, ro, std::move(pdstnKey)));
   ptr->selfPtr_ = ptr;
-  ptr->client_ = folly::make_unique<DestinationMcClient>(*ptr);
   return ptr;
 }
 
@@ -237,9 +237,10 @@ ProxyDestination::~ProxyDestination() {
     proxy->destinationMap->removeDestination(*this);
   }
 
-  // should not call 'handle_tko'
-  resetting = 1;
-  client_.reset();
+  if (client_) {
+    client_->setStatusCallbacks(nullptr, nullptr);
+    client_->closeNow();
+  }
 
   if (sending_probes) {
     onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
@@ -287,9 +288,73 @@ bool ProxyDestination::may_send() {
 void ProxyDestination::resetInactive() {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
-  resetting = 1;
-  client_->resetInactive();
-  resetting = 0;
+  // No need to reset non-existing client.
+  if (client_) {
+    resetting = 1;
+    client_->closeNow();
+    client_.reset();
+    resetting = 0;
+  }
+}
+
+void ProxyDestination::initializeAsyncMcClient() {
+  CHECK(proxy->eventBase);
+  assert(!client_);
+
+  ConnectionOptions options(accessPoint);
+  auto& opts = proxy->opts;
+  options.noNetwork = opts.no_network;
+  options.tcpKeepAliveCount = opts.keepalive_cnt;
+  options.tcpKeepAliveIdle = opts.keepalive_idle_s;
+  options.tcpKeepAliveInterval = opts.keepalive_interval_s;
+  options.writeTimeout = shortestTimeout;
+  if (proxy->opts.enable_qos) {
+    options.enableQoS = true;
+    options.qos = qos;
+  }
+
+  if (use_ssl) {
+    checkLogic(!opts.pem_cert_path.empty() &&
+               !opts.pem_key_path.empty() &&
+               !opts.pem_ca_path.empty(),
+               "Some of ssl key paths are not set!");
+    options.sslContextProvider = [&opts] {
+      return getSSLContext(opts.pem_cert_path, opts.pem_key_path,
+                           opts.pem_ca_path);
+    };
+  }
+
+  client_ = folly::make_unique<AsyncMcClient>(*proxy->eventBase,
+                                              std::move(options));
+
+  client_->setStatusCallbacks(
+    [this] () mutable {
+      on_up();
+    },
+    [this] (const folly::AsyncSocketException&) mutable {
+      on_down();
+    });
+
+  if (opts.target_max_inflight_requests > 0) {
+    client_->setThrottle(opts.target_max_inflight_requests,
+                         opts.target_max_pending_requests);
+  }
+}
+
+AsyncMcClient& ProxyDestination::getAsyncMcClient() {
+  if (!client_) {
+    initializeAsyncMcClient();
+  }
+  return *client_;
+}
+
+void ProxyDestination::updateStats(mc_res_t result, mc_op_t op) {
+  if (result == mc_res_local_error) {
+    update_send_stats(proxy, op, PROXY_SEND_LOCAL_ERROR);
+  } else {
+    stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
+    update_send_stats(proxy, op, PROXY_SEND_OK);
+  }
 }
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
@@ -365,7 +430,9 @@ void ProxyDestination::updateShortestTimeout(
   }
   if (shortestTimeout.count() == 0 || shortestTimeout > timeout) {
     shortestTimeout = timeout;
-    client_->updateWriteTimeout();
+    if (client_) {
+      client_->updateWriteTimeout(shortestTimeout);
+    }
   }
 }
 
