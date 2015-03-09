@@ -58,7 +58,8 @@ typedef struct _parse_info_s {
 #endif
 #define store_req (msg_key | msg_flags | msg_exptime | msg_value)
 #define arith_req (msg_key | msg_delta)
-#define delete_req (msg_key | OPT(msg_exptime) | OPT(msg_flags))
+#define delete_req (msg_key | OPT(msg_exptime) | OPT(msg_flags) | \
+                    OPT(msg_value))
 
 /* query masks */
 #define QMASKS {                                             \
