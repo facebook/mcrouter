@@ -83,6 +83,7 @@ UM_RES(mc_res_bad_cas_id,      26)
 UM_RES(mc_res_try_again,       27)
 UM_RES(mc_res_foundstale,      28)
 UM_RES(mc_res_notfoundhot,     29)
+UM_RES(mc_res_shutdown,        30)
 
 #undef UM_OP
 #undef UM_RES

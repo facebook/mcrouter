@@ -71,6 +71,7 @@ static inline const char* mc_res_to_response_string(const mc_res_t result) {
     [mc_res_connect_timeout] = "SERVER_ERROR connection timeout\r\n",
     [mc_res_connect_error] = "SERVER_ERROR connection error\r\n",
     [mc_res_busy] = "SERVER_ERROR 307 busy\r\n",
+    [mc_res_shutdown] = "SERVER_ERROR 301 shutdown\r\n",
     [mc_res_try_again] = "SERVER_ERROR 302 try again\r\n",
     [mc_res_tko] = "SERVER_ERROR unavailable\r\n",
     /* hard errors -- */

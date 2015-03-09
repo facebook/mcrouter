@@ -128,6 +128,7 @@ typedef enum mc_res_e {
   mc_res_busy, /* the request was refused for load shedding */
   mc_res_try_again, /* this request was refused, but we should keep sending
                        requests to this box */
+  mc_res_shutdown, /* Server is shutting down. Use failover destination. */
   mc_res_tko, /* total knock out - the peer is down for the count */
   /* hard errors -- */
   mc_res_bad_command,
@@ -170,6 +171,7 @@ static inline const char* mc_res_to_string(const mc_res_t result) {
     "mc_res_connect_error",
     "mc_res_busy",
     "mc_res_try_again",
+    "mc_res_shutdown",
     "mc_res_tko",
     /* hard errors -- */
     "mc_res_bad_command",

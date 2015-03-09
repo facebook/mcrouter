@@ -36,6 +36,7 @@ inline int awfulness(mc_res_t result) {
     case mc_res_connect_timeout:
     case mc_res_connect_error:
     case mc_res_busy:
+    case mc_res_shutdown:
     case mc_res_try_again:
     case mc_res_tko:
       return 5;

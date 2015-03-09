@@ -27,6 +27,7 @@ bool McReplyBase::isError() const {
 bool McReplyBase::isFailoverError() const {
   switch (result_) {
     case mc_res_busy:
+    case mc_res_shutdown:
     case mc_res_tko:
     case mc_res_try_again:
     case mc_res_local_error:
@@ -53,6 +54,7 @@ bool McReplyBase::isHardTkoError() const {
   switch (result_) {
     case mc_res_connect_error:
     case mc_res_connect_timeout:
+    case mc_res_shutdown:
       return true;
     default:
       return false;
