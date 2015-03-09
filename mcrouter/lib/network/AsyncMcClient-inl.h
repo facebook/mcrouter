@@ -35,11 +35,6 @@ AsyncMcClient::sendSync(const Request& request, Operation,
   return base_->sendSync(request, Operation(), timeout);
 }
 
-template <class Operation, class Request, class F>
-void AsyncMcClient::send(const Request& request, Operation, F&& f) {
-  base_->send(request, Operation(), std::forward<F>(f));
-}
-
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {
   base_->setThrottle(maxInflight, maxPending);
 }

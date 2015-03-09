@@ -46,7 +46,7 @@ class ServerOnRequest {
                  McRequest&& req,
                  McOperation<mc_op_get>) {
     if (req.fullKey() == "sleep") {
-      usleep(1000000);
+      /* sleep override */ usleep(1000000);
       processReply(std::move(ctx), McReply(mc_res_ok));
     } else if (req.fullKey() == "shutdown") {
       shutdown_ = true;
@@ -122,7 +122,7 @@ class TestServer {
     }
     EXPECT_TRUE(run());
     // allow server some time to startup
-    usleep(100000);
+    /* sleep override */ usleep(100000);
   }
 
   uint16_t getListenPort() const {
@@ -484,7 +484,7 @@ void connectionErrorTest(bool useSsl = false) {
                     mc_ascii_protocol, useSsl);
   client1.sendGet("shutdown", mc_res_ok);
   client1.waitForReplies();
-  usleep(10000);
+  /* sleep override */ usleep(10000);
   client2.sendGet("test", mc_res_connect_error);
   client2.waitForReplies();
   server.join();
@@ -572,7 +572,7 @@ void reconnectTest(mc_protocol_t protocol) {
   client.sendSet("testKey", bigValue.data(), mc_res_remote_error);
   client.waitForReplies();
   // Allow server some time to wake up.
-  usleep(1000000);
+  /* sleep override */ usleep(1000000);
   client.sendGet("test2", mc_res_found);
   client.sendGet("shutdown", mc_res_ok);
   client.waitForReplies();
@@ -609,90 +609,52 @@ TEST(AsyncMcClient, badKey) {
   bigKeyTest(mc_ascii_protocol);
 }
 
-// Test that we won't leave zombie AsyncMcClientImpl after EventBase is
-// destroyed.
-TEST(AsyncMcClient, eventBaseDestruction) {
-  TestServer server(false, false);
-  bool wasUp = false;
-  bool up = false;
-  bool replied = false;
-
-  auto msg = createMcMsgRef("sleep");
-  msg->op = mc_op_get;
-  McRequest req(std::move(msg));
-
-  {
-    EventBase eventBase;
-    {
-      ConnectionOptions opts("localhost", server.getListenPort(),
-                             mc_ascii_protocol);
-      opts.writeTimeout = std::chrono::milliseconds(200);
-      auto client = folly::make_unique<AsyncMcClient>(eventBase, opts);
-      client->setStatusCallbacks(
-        [&up, &wasUp] {
-          up = wasUp = true;
-        },
-        [&up] (const folly::AsyncSocketException&) {
-          up = false;
-        });
-      client->send(req, McOperation<mc_op_get>(),
-                   [&replied] (McReply&& reply) {
-                     EXPECT_EQ(reply.result(), mc_res_aborted);
-                     replied = true;
-                   });
-    }
-    // This will be triggered before the timeout of client (i.e. it will be
-    // processed earlier).
-    eventBase.runAfterDelay([&eventBase] {
-                              eventBase.terminateLoopSoon();
-                            }, 100);
-    // Trigger pushMessages() callback.
-    eventBase.runInLoop([] {});
-    eventBase.loopOnce();
-    // Sleep for 300ms, we would have 2 active timeout events in event_base.
-    // The first one will case event_base to terminate and will leave one
-    // unprocessed active event in queue.
-    usleep(300000);
-    eventBase.loopOnce();
-  }
-  EXPECT_TRUE(wasUp);
-  EXPECT_FALSE(up);
-  EXPECT_TRUE(replied);
-  // Wait for server to wake-up.
-  usleep(700000);
-
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol);
-  client.sendGet("shutdown", mc_res_ok);
-  client.waitForReplies();
-  server.join();
-}
-
 TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
-  auto eventBase = new EventBase();
+  // In this test we're going to hit next scenario:
+  //  1. Try to connect to non-existing server with timeout of 1s.
+  //  2. Fail the request because of timeout.
+  //  3. Delete EventBase, this in turn should case proper cleanup
+  //     in AsyncMcClient.
+  auto eventBase = folly::make_unique<EventBase>();
+  auto fiberManager =
+    folly::make_unique<FiberManager>(
+      folly::make_unique<mcrouter::EventBaseLoopController>());
+  dynamic_cast<mcrouter::EventBaseLoopController&>(
+    fiberManager->loopController()).attachEventBase(*eventBase);
   bool wasUp = false;
   bool replied = false;
+  bool wentDown = false;
 
   ConnectionOptions opts("10.1.1.1", 11302, mc_ascii_protocol);
-  opts.writeTimeout = std::chrono::milliseconds(200);
+  opts.writeTimeout = std::chrono::milliseconds(1000);
   auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
     [&wasUp] {
       wasUp = true;
-    }, nullptr);
+    },
+    [&wentDown] (const folly::AsyncSocketException&) {
+      wentDown = true;
+    });
 
-  auto msg = createMcMsgRef("hold");
-  msg->op = mc_op_get;
-  McRequest req(std::move(msg));
+  fiberManager->addTask([&client, &replied] {
+    McRequest req("hold");
+    auto reply = client->sendSync(req, McOperation<mc_op_get>(),
+                                  std::chrono::milliseconds(100));
+    EXPECT_EQ(mc_res_to_string(reply.result()),
+              mc_res_to_string(mc_res_timeout));
+    replied = true;
+  });
 
-  client->send(req, McOperation<mc_op_get>(),
-               [&replied] (McReply&& reply) {
-                 EXPECT_EQ(reply.result(), mc_res_aborted);
-                 replied = true;
-               });
-
-  delete eventBase;
+  while (fiberManager->hasTasks()) {
+    eventBase->loopOnce();
+  }
 
   EXPECT_FALSE(wasUp);
   EXPECT_TRUE(replied);
+
+  fiberManager.reset();
+  eventBase.reset();
+
+  EXPECT_FALSE(wasUp);
+  EXPECT_TRUE(wentDown);
 }

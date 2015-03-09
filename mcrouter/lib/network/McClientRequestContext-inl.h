@@ -48,18 +48,6 @@ bool McClientRequestContextBase::reply(Reply&& r) {
   return true;
 }
 
-template <class Operation, class Request, class F, class... Args>
-McClientRequestContextBase::UniquePtr McClientRequestContextBase::createAsync(
-  Operation, const Request& request, F&& f, Args&&... args) {
-
-  using CallbackType = typename std::remove_reference<F>::type;
-  using Type = McClientRequestContextAsync<Operation, Request, CallbackType>;
-  return McClientRequestContextBase::UniquePtr(
-    new Type(Operation(), request, std::forward<Args>(args)...,
-             std::forward<F>(f)),
-    McClientRequestContextBase::Deleter());
-}
-
 template <class Operation, class Request>
 McClientRequestContextBase::McClientRequestContextBase(
   Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
@@ -74,7 +62,7 @@ McClientRequestContextBase::McClientRequestContextBase(
 }
 
 template <class Operation, class Request>
-void McClientRequestContextCommon<Operation, Request>::replyError(
+void McClientRequestContext<Operation, Request>::replyError(
     mc_res_t result) {
   assert(!replyStorage_.hasValue());
   replyStorage_.emplace(result);
@@ -83,23 +71,23 @@ void McClientRequestContextCommon<Operation, Request>::replyError(
 
 template <class Operation, class Request>
 const char*
-McClientRequestContextCommon<Operation, Request>::fakeReply() const {
+McClientRequestContext<Operation, Request>::fakeReply() const {
   return "CLIENT_ERROR unsupported operation\r\n";
 }
 
 template <class Operation, class Request>
-typename McClientRequestContextCommon<Operation, Request>::Reply
-McClientRequestContextCommon<Operation, Request>::getReply() {
+typename McClientRequestContext<Operation, Request>::Reply
+McClientRequestContext<Operation, Request>::getReply() {
   assert(replyStorage_.hasValue());
   return std::move(replyStorage_.value());
 }
 
 template <class Operation, class Request>
-McClientRequestContextCommon<Operation, Request>::McClientRequestContextCommon(
+McClientRequestContext<Operation, Request>::McClientRequestContext(
   Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
-  std::shared_ptr<AsyncMcClientImpl> client, bool issync)
+  std::shared_ptr<AsyncMcClientImpl> client)
   : McClientRequestContextBase(Operation(), request, reqid, protocol,
-                               std::move(client), issync, replyStorage_)
+                               std::move(client), true, replyStorage_)
 #ifndef LIBMC_FBTRACE_DISABLE
     , fbtraceInfo_(getFbTraceInfo(request))
 #endif
@@ -107,14 +95,7 @@ McClientRequestContextCommon<Operation, Request>::McClientRequestContextCommon(
 }
 
 template <class Operation, class Request>
-void McClientRequestContextCommon<Operation, Request>::sendTraceOnReply() {
-#ifndef LIBMC_FBTRACE_DISABLE
-  fbTraceOnReceive(Operation(), fbtraceInfo_, replyStorage_.value());
-#endif
-}
-
-template <class Operation, class Request>
-void McClientRequestContextSync<Operation, Request>::wait(
+void McClientRequestContext<Operation, Request>::wait(
     std::chrono::milliseconds timeout) {
   if (timeout.count()) {
     baton_.timed_wait(timeout);
@@ -124,33 +105,24 @@ void McClientRequestContextSync<Operation, Request>::wait(
 }
 
 template <class Operation, class Request>
-void McClientRequestContextSync<Operation, Request>::cancelAndWait() {
+void McClientRequestContext<Operation, Request>::cancelAndWait() {
   this->state = ReqState::CANCELED;
   baton_.reset();
   baton_.wait();
 }
 
 template <class Operation, class Request>
-void McClientRequestContextSync<Operation, Request>::canceled() {
+void McClientRequestContext<Operation, Request>::canceled() {
   baton_.post();
-}
-
-template <class Operation, class Request, class F>
-void McClientRequestContextAsync<Operation, Request, F>::canceled() {
-  throw std::logic_error("canceled() should never be called for async mode");
 }
 
 template <class Operation, class Request>
-void McClientRequestContextSync<Operation, Request>::forwardReply() {
-  this->sendTraceOnReply();
+void McClientRequestContext<Operation, Request>::forwardReply() {
+#ifndef LIBMC_FBTRACE_DISABLE
+  fbTraceOnReceive(Operation(), fbtraceInfo_, replyStorage_.value());
+#endif
   this->state = ReqState::COMPLETE;
   baton_.post();
-}
-
-template <class Operation, class Request, class F>
-void McClientRequestContextAsync<Operation, Request, F>::forwardReply() {
-  this->sendTraceOnReply();
-  f_(this->getReply());
 }
 
 }}  // facebook::memcache

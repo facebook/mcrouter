@@ -65,9 +65,6 @@ class AsyncMcClientImpl :
   sendSync(const Request& request, Operation,
            std::chrono::milliseconds timeout);
 
-  template <class Operation, class Request, class F>
-  void send(const Request& request, Operation, F&& f);
-
   void setThrottle(size_t maxInflight, size_t maxPending);
 
   size_t getPendingRequestCount() const;
@@ -77,8 +74,6 @@ class AsyncMcClientImpl :
   void updateWriteTimeout(std::chrono::milliseconds timeout);
 
  private:
-  class TimeoutCallback;
-
   enum class ConnectionState {
     UP, // Connection is open and we can write into it.
     DOWN, // Connection is not open (or close), we need to reconnect.
@@ -134,10 +129,6 @@ class AsyncMcClientImpl :
   size_t maxPending_{0};
   size_t maxInflight_{0};
 
-  // Timeout for sending requests.
-  bool timeoutScheduled_{false};
-  std::unique_ptr<TimeoutCallback> timeoutCallback_;
-
   // Writer loop related variables.
   class WriterLoop;
   bool writeScheduled_{false};
@@ -157,10 +148,6 @@ class AsyncMcClientImpl :
   // Write some requests from sendQueue_ to the socket, until max inflight limit
   // is reached or queue is empty.
   void pushMessages();
-  // Callback for request timeout event.
-  void timeoutExpired();
-  // Schedule timeout event for the next request in the queue.
-  void scheduleNextTimeout();
   // Schedule next writer loop if it's not scheduled.
   void scheduleNextWriterLoop();
   void cancelWriterCallback();

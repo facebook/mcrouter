@@ -36,7 +36,7 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
   // miss fbtrace id.
   fbTraceOnSend(Operation(), request, connectionOptions_.accessPoint);
 
-  McClientRequestContextSync<Operation, Request> ctx(
+  McClientRequestContext<Operation, Request> ctx(
     Operation(), request, nextMsgId_,
     connectionOptions_.accessPoint.getProtocol(), selfPtr);
   sendCommon(ctx.createDummyPtr());
@@ -69,29 +69,6 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
     default:
       throw std::logic_error("Unexpected request state");
   }
-}
-
-template <class Operation, class Request, class F>
-void AsyncMcClientImpl::send(const Request& request, Operation, F&& f) {
-  DestructorGuard dg(this);
-
-  auto selfPtr = selfPtr_.lock();
-  // shouldn't happen.
-  assert(selfPtr);
-
-  if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    f(typename ReplyType<Operation, Request>::type(mc_res_local_error));
-    return;
-  }
-
-  // We need to send fbtrace before serializing, or otherwise we are going to
-  // miss fbtrace id.
-  fbTraceOnSend(Operation(), request, connectionOptions_.accessPoint);
-
-  auto ctx = McClientRequestContextBase::createAsync(
-    Operation(), request, std::forward<F>(f), nextMsgId_,
-    connectionOptions_.accessPoint.getProtocol(), selfPtr);
-  sendCommon(std::move(ctx));
 }
 
 template <class Reply>

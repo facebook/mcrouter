@@ -38,7 +38,6 @@ class McClientRequestContextBase {
  public:
   McSerializedRequest reqContext;
   uint64_t id;
-  std::chrono::steady_clock::time_point sentAt;
   ReqState state{ReqState::NONE};
 
   McClientRequestContextBase(const McClientRequestContextBase&) = delete;
@@ -103,10 +102,6 @@ class McClientRequestContextBase {
     return UniquePtr(this, Deleter());
   }
 
-  template <class Operation, class Request, class F, class... Args>
-  static UniquePtr createAsync(Operation, const Request& request, F&& f,
-                               Args&&... args);
-
  private:
   std::shared_ptr<AsyncMcClientImpl> client_;
   std::type_index replyType_;
@@ -121,38 +116,18 @@ class McClientRequestContextBase {
 };
 
 template <class Operation, class Request>
-class McClientRequestContextCommon : public McClientRequestContextBase {
+class McClientRequestContext : public McClientRequestContextBase {
  public:
   using Reply = typename ReplyType<Operation, Request>::type;
+
+  McClientRequestContext(
+    Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
+    std::shared_ptr<AsyncMcClientImpl> client);
 
   void replyError(mc_res_t result) override;
   const char* fakeReply() const override;
 
   Reply getReply();
- protected:
-  McClientRequestContextCommon(
-    Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
-    std::shared_ptr<AsyncMcClientImpl> client, bool issync);
-
-  void sendTraceOnReply();
- private:
-  folly::Optional<Reply> replyStorage_;
-
-#ifndef LIBMC_FBTRACE_DISABLE
-  const mc_fbtrace_info_s* fbtraceInfo_;
-#endif
-};
-
-template <class Operation, class Request>
-class McClientRequestContextSync :
-      public McClientRequestContextCommon<Operation, Request> {
- public:
-  McClientRequestContextSync(Operation, const Request& request,
-                             uint64_t reqid, mc_protocol_t protocol,
-                             std::shared_ptr<AsyncMcClientImpl> client)
-    : McClientRequestContextCommon<Operation, Request>(
-        Operation(), request, reqid, protocol, std::move(client), true) {
-  }
 
   void wait(std::chrono::milliseconds timeout);
   void cancelAndWait();
@@ -160,25 +135,11 @@ class McClientRequestContextSync :
   void forwardReply() override;
  private:
   Baton baton_;
-};
+  folly::Optional<Reply> replyStorage_;
 
-template <class Operation, class Request, class F>
-class McClientRequestContextAsync :
-      public McClientRequestContextCommon<Operation, Request> {
- public:
-  template <class G>
-  McClientRequestContextAsync(Operation, const Request& request,
-                              uint64_t reqid, mc_protocol_t protocol,
-                              std::shared_ptr<AsyncMcClientImpl> client, G&& g)
-    : McClientRequestContextCommon<Operation, Request>(
-        Operation(), request, reqid, protocol, std::move(client), false),
-      f_(std::forward<G>(g)) {
-  }
-
-  void canceled() override;
-  void forwardReply() override;
- private:
-  F f_;
+#ifndef LIBMC_FBTRACE_DISABLE
+  const mc_fbtrace_info_s* fbtraceInfo_;
+#endif
 };
 
 }}  // facebook::memcache

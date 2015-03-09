@@ -66,19 +66,6 @@ class AsyncMcClient {
            std::chrono::milliseconds timeout);
 
   /**
-   * Send request with given Op and call callback on reply.
-   *
-   * @param f  callback that will be called when reply is received or request
-   *           failed. Guaranteed to be called exactly once.
-   *           Should be callable
-   *           f(typename ReplyType<Operation, Request>::type&&)
-   * Note: caller is responsible for keeping request alive until the callback
-   *       is called.
-   */
-  template <class Operation, class Request, class F>
-  void send(const Request& request, Operation, F&& f);
-
-  /**
    * Set throttling options.
    *
    * @param maxInflight  max number of requests that can be waiting for the

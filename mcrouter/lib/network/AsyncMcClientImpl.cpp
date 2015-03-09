@@ -56,23 +56,6 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
   AsyncMcClientImpl& client_;
 };
 
-/**
- * A callback class for handling timeouts.
- */
-class AsyncMcClientImpl::TimeoutCallback : public folly::AsyncTimeout {
- public:
-  TimeoutCallback(AsyncMcClientImpl& client) : client_(client) {
-    attachEventBase(&client_.eventBase_,
-                    folly::TimeoutManager::InternalEnum::NORMAL);
-  }
-
-  void timeoutExpired() noexcept override {
-    client_.timeoutExpired();
-  }
- private:
-  AsyncMcClientImpl& client_;
-};
-
 AsyncMcClientImpl::AsyncMcClientImpl(
     folly::EventBase& eventBase,
     ConnectionOptions options)
@@ -80,7 +63,6 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       connectionOptions_(std::move(options)),
       outOfOrder_(connectionOptions_.accessPoint.getProtocol() ==
                   mc_umbrella_protocol),
-      timeoutCallback_(folly::make_unique<TimeoutCallback>(*this)),
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
         folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
@@ -112,8 +94,6 @@ void AsyncMcClientImpl::closeNow() {
     socket_.reset();
     isAborting_ = false;
   }
-
-  timeoutCallback_->cancelTimeout();
 }
 
 void AsyncMcClientImpl::setStatusCallbacks(
@@ -228,9 +208,6 @@ void AsyncMcClientImpl::pushMessages() {
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
     auto& req = writeQueue_.pushBack(sendQueue_.popFront());
-    if (connectionOptions_.sendTimeout.count()) {
-      req.sentAt = std::chrono::steady_clock::now();
-    }
     assert(req.state == ReqState::SEND_QUEUE);
     req.state = ReqState::WRITE_QUEUE;
 
@@ -244,33 +221,7 @@ void AsyncMcClientImpl::pushMessages() {
   scheduleNextWriterLoop();
 }
 
-void AsyncMcClientImpl::timeoutExpired() {
-  DestructorGuard dg(this);
-
-  timeoutScheduled_ = false;
-  auto currentTime = std::chrono::steady_clock::now();
-  // process all requests that were replied/timed out.
-  while (!pendingReplyQueue_.empty()) {
-    if (currentTime - pendingReplyQueue_.front().sentAt >=
-        connectionOptions_.sendTimeout) {
-      replyError(pendingReplyQueue_.popFront(), mc_res_timeout);
-    } else {
-      scheduleNextTimeout();
-      break;
-    }
-  }
-}
-
 namespace {
-// Chrono round up duration_cast
-template <class T, class Rep, class Period>
-T round_up(std::chrono::duration<Rep, Period> d) {
-  T result = std::chrono::duration_cast<T>(d);
-  if (result < d) {
-    ++result;
-  }
-  return result;
-}
 
 void createTCPKeepAliveOptions(
     folly::AsyncSocket::OptionMap& options,
@@ -373,18 +324,6 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 }
 
 } // anonymous namespace
-
-void AsyncMcClientImpl::scheduleNextTimeout() {
-  if (!timeoutScheduled_ && connectionOptions_.sendTimeout.count() > 0 &&
-      !pendingReplyQueue_.empty()) {
-    timeoutScheduled_ = true;
-    const auto& req = pendingReplyQueue_.front();
-    // Rount up, or otherwise we might get stuck processing timeouts of 0ms.
-    timeoutCallback_->scheduleTimeout(
-      round_up<std::chrono::milliseconds>(req.sentAt +
-        connectionOptions_.sendTimeout - std::chrono::steady_clock::now()));
-  }
-}
 
 void AsyncMcClientImpl::replyError(McClientRequestContextBase::UniquePtr req,
                                    mc_res_t result) {
@@ -606,9 +545,6 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
   assert(req->state == ReqState::WRITE_QUEUE);
   req->state = ReqState::PENDING_QUEUE;
   pendingReplyQueue_.pushBack(std::move(req));
-  if (connectionOptions_.sendTimeout.count()) {
-    scheduleNextTimeout();
-  }
 
   // In case of no-network we need to provide fake reply.
   if (connectionOptions_.noNetwork) {
@@ -685,35 +621,35 @@ const char* STORED = "STORED\r\n";
 
 template <>
 const char*
-McClientRequestContextCommon<McOperation<mc_op_get>, McRequest>::
+McClientRequestContext<McOperation<mc_op_get>, McRequest>::
 fakeReply() const {
   return FOUND;
 }
 
 template <>
 const char*
-McClientRequestContextCommon<McOperation<mc_op_lease_get>, McRequest>::
+McClientRequestContext<McOperation<mc_op_lease_get>, McRequest>::
 fakeReply() const {
   return FOUND;
 }
 
 template <>
 const char*
-McClientRequestContextCommon<McOperation<mc_op_set>, McRequest>::
+McClientRequestContext<McOperation<mc_op_set>, McRequest>::
 fakeReply() const {
   return STORED;
 }
 
 template <>
 const char*
-McClientRequestContextCommon<McOperation<mc_op_lease_set>, McRequest>::
+McClientRequestContext<McOperation<mc_op_lease_set>, McRequest>::
 fakeReply() const {
   return STORED;
 }
 
 template <>
 const char*
-McClientRequestContextCommon<McOperation<mc_op_delete>, McRequest>::
+McClientRequestContext<McOperation<mc_op_delete>, McRequest>::
 fakeReply() const {
   return DELETED;
 }
