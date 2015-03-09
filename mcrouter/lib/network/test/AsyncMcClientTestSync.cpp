@@ -232,7 +232,8 @@ class TestClient {
               EXPECT_EQ(toString(reply.value()), req.fullKey());
             }
           }
-          EXPECT_EQ(expectedResult, reply.result());
+          EXPECT_EQ(std::string(mc_res_to_string(expectedResult)),
+                    std::string(mc_res_to_string(reply.result())));
         } catch (const std::exception& e) {
           LOG(ERROR) << e.what();
           CHECK(false);
@@ -253,7 +254,8 @@ class TestClient {
         auto reply = client_->sendSync(req, McOperation<mc_op_set>(),
                                        std::chrono::milliseconds(200));
 
-        EXPECT_EQ(expectedResult, reply.result());
+        EXPECT_EQ(std::string(mc_res_to_string(expectedResult)),
+                  std::string(mc_res_to_string(reply.result())));
 
         inflight_--;
       });
@@ -559,13 +561,13 @@ void reconnectTest(mc_protocol_t protocol) {
   }
 
   TestServer server(protocol == mc_umbrella_protocol, false);
-  TestClient client("localhost", server.getListenPort(), 200,
+  TestClient client("localhost", server.getListenPort(), 100,
                     protocol);
   client.sendGet("test1", mc_res_found);
   client.sendSet("test", "testValue", mc_res_stored);
   client.waitForReplies();
   client.sendGet("sleep", mc_res_timeout);
-  // Wait for the reply, we will still have ~800ms for the write to fail.
+  // Wait for the reply, we will still have ~900ms for the write to fail.
   client.waitForReplies();
   client.sendSet("testKey", bigValue.data(), mc_res_remote_error);
   client.waitForReplies();

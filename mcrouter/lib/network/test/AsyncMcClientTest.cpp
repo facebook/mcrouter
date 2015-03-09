@@ -226,7 +226,8 @@ class TestClient {
                           EXPECT_EQ(toString(reply.value()), req->fullKey());
                         }
                       }
-                      EXPECT_EQ(expectedResult, reply.result());
+                      EXPECT_EQ(std::string(mc_res_to_string(expectedResult)),
+                                std::string(mc_res_to_string(reply.result())));
                     });
     } catch (const std::exception& e) {
       LOG(ERROR) << e.what();
@@ -241,7 +242,8 @@ class TestClient {
     client_->send(*req,
                   McOperation<mc_op_set>(),
                   [expectedResult, req, this] (McReply&& reply) {
-                    EXPECT_EQ(expectedResult, reply.result());
+                    EXPECT_EQ(std::string(mc_res_to_string(expectedResult)),
+                              std::string(mc_res_to_string(reply.result())));
                   });
   }
 
