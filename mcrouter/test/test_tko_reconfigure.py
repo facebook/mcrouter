@@ -45,5 +45,5 @@ class TestTkoReconfigure(McrouterTestCase):
         # no servers should be marked as TKO
         self.assertEqual(self.mcrouter.stats('suspect_servers'), {})
         # one was removed from config
-        self.assertTrue(self.mcrouter.check_in_log('127.0.0.1:12345 was TKO, '
-                                                   'removed from config'))
+        self.assertTrue(self.mcrouter.check_in_log(
+            '127.0.0.1:12345 (A) was TKO, removed from config'))

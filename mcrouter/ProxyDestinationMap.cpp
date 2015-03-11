@@ -12,6 +12,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/ClientPool.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/McrouterInstance.h"
@@ -59,6 +60,7 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
       destination = ProxyDestination::create(proxy_, client, key);
       destinations_[std::move(key)] = destination;
     } else {
+      destination->updatePoolName(client.pool.getName());
       destination->updateShortestTimeout(client.server_timeout);
     }
   }

@@ -134,8 +134,7 @@ void ProxyDestination::unmark_tko(const McReply& reply) {
 }
 
 void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
-  if (resetting ||
-      proxy->opts.disable_tko_tracking) {
+  if (resetting || proxy->opts.disable_tko_tracking) {
     return;
   }
 
@@ -171,8 +170,6 @@ void ProxyDestination::onReply(const McReply& reply,
   stats_.results[reply.result()]++;
   destreqCtx.endTime = nowUs();
 
-  /* For code simplicity we look at latency for making TKO decisions with a
-     1 request delay */
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats_.avgLatency.insertSample(latency);
 
@@ -261,7 +258,8 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
     proxy_magic(proxy->magic),
     use_ssl(ro_.useSsl),
     qos(ro_.qos),
-    stats_(proxy_->opts) {
+    stats_(proxy_->opts),
+    poolName_(ro_.pool.getName()) {
 
   static uint64_t next_magic = 0x12345678900000LL;
   magic = __sync_fetch_and_add(&next_magic, 1);
@@ -354,7 +352,8 @@ void ProxyDestination::updateStats(mc_res_t result, mc_op_t op) {
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(1) << shared->key << " " << eventStr << ". Total hard TKOs: "
+    VLOG(1) << shared->key << " (" << poolName_ << ") "
+            << eventStr << ". Total hard TKOs: "
             << shared->tko.globalTkos().hardTkos << "; soft TKOs: "
             << shared->tko.globalTkos().softTkos << ". Reply: "
             << mc_res_to_string(result);
@@ -381,6 +380,7 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   tkoLog.isSoftTko = shared->tko.isSoftTko();
   tkoLog.avgLatency = stats_.avgLatency.value();
   tkoLog.probesSent = probesSent_;
+  tkoLog.poolName = poolName_;
   tkoLog.result = result;
 
   logTkoEvent(proxy, tkoLog);

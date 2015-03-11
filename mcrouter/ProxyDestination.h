@@ -124,6 +124,10 @@ struct ProxyDestination {
 
   void updateShortestTimeout(std::chrono::milliseconds timeout);
 
+  void updatePoolName(std::string poolName) {
+    poolName_ = std::move(poolName);
+  }
+
  private:
   std::unique_ptr<AsyncMcClient> client_;
 
@@ -134,6 +138,7 @@ struct ProxyDestination {
   std::unique_ptr<McRequest> probe_req;
   asox_timer_t probe_timer{nullptr};
   size_t probesSent_{0};
+  std::string poolName_;
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
                      // mc_client_reset and not a remote connection failure.

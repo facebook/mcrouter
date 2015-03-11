@@ -41,7 +41,7 @@ struct DestinationRequestCtx {
   int64_t startTime{0};
   int64_t endTime{0};
 
-  explicit DestinationRequestCtx() : startTime(nowUs()) {
+  DestinationRequestCtx() : startTime(nowUs()) {
   }
 };
 

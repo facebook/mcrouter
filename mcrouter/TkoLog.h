@@ -11,6 +11,8 @@
 
 #include <string>
 
+#include <folly/Range.h>
+
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/TkoCounters.h"
 
@@ -41,6 +43,7 @@ struct TkoLog {
   double avgLatency{0.0};
   const AccessPoint& accessPoint;
   const TkoCounters& globalTkos;
+  folly::StringPiece poolName;
 };
 
 }}}  // facebook::memcache::mcrouter
