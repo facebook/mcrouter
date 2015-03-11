@@ -10,6 +10,7 @@
 #ifndef LIBMC_FBTRACE_DISABLE
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
 #endif
 
@@ -79,14 +80,20 @@ fbTraceOnSend(McOperation<McOp>, const Request& request,
   const char *op = mc_op_to_string((mc_op_t)McOp);
   const char *remote_service =
     request.routingKey().startsWith("tao") ? FBTRACE_TAO : FBTRACE_MC;
-  if (fbtrace_request_send(&fbtraceInfo->fbtrace->node,
-                           &fbtraceInfo->child_node, fbtraceInfo->metadata,
-                           FBTRACE_METADATA_SZ, op, remote_service,
-                           info) != 0) {
-    VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
-    return false;
-  }
-  return true;
+
+  /* fbtrace talks to scribe via thrift,
+     which can use up too much stack space */
+  return fiber::runInMainContext(
+    [fbtraceInfo, op, remote_service, &info] {
+      if (fbtrace_request_send(&fbtraceInfo->fbtrace->node,
+                               &fbtraceInfo->child_node, fbtraceInfo->metadata,
+                               FBTRACE_METADATA_SZ, op, remote_service,
+                               info) != 0) {
+        VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
+        return false;
+      }
+      return true;
+    });
 }
 
 template<int McOp, class Reply>
@@ -103,9 +110,15 @@ void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
 
   fbtrace_add_item(info, &idx, "result", mc_res_to_string(reply.result()));
   fbtrace_add_item(info, &idx, nullptr, nullptr);
-  if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
-    VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();
-  }
+
+  /* fbtrace talks to scribe via thrift,
+     which can use up too much stack space */
+  fiber::runInMainContext(
+    [fbtraceInfo, &info] {
+      if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
+        VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();
+      }
+    });
 }
 
 #endif
