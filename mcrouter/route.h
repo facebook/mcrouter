@@ -11,21 +11,7 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/McMsgRef.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
-
-class proxy_t;
-
-enum proxy_send_stat_result_t {
-  PROXY_SEND_OK = 0,
-  PROXY_SEND_LOCAL_ERROR,
-  PROXY_SEND_REMOTE_ERROR,
-  PROXY_SEND_NUM_ERROR_TYPES
-};
-
-void update_send_stats(proxy_t *proxy, mc_op_t op,
-                       proxy_send_stat_result_t res);
 
 /**
  * True if pattern (like "/foo/a*c/") matches a route (like "/foo/abc")

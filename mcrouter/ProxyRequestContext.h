@@ -92,10 +92,16 @@ public:
                        const int64_t startTimeUs,
                        const int64_t endTimeUs,
                        Operation) {
-    logger_.log(pclient, request, reply, startTimeUs, endTimeUs, Operation());
+    logger_.log(request, reply, startTimeUs, endTimeUs, Operation());
     additionalLogger_.log(
       pclient, request, reply, startTimeUs, endTimeUs, Operation());
   }
+
+  /**
+   * Called once a request is refused due to rate limiting/TKO logic
+   */
+  void onRequestRefused(const ProxyMcRequest& request,
+                        const ProxyMcReply& reply);
 
   const McMsgRef& origReq() const {
     return origReq_;

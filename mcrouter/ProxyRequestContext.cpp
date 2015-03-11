@@ -76,6 +76,11 @@ uint64_t ProxyRequestContext::senderId() const {
   return id;
 }
 
+void ProxyRequestContext::onRequestRefused(const ProxyMcRequest& request,
+                                           const ProxyMcReply& reply) {
+  logger_.logError(request, reply);
+}
+
 void ProxyRequestContext::sendReply(McReply newReply) {
   if (replied_) {
     return;

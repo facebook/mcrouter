@@ -107,6 +107,14 @@ class McReplyBase {
   }
 
   /**
+   * Did we not even attempt to send request out because it is invalid/we hit
+   * per-destination rate limit
+   */
+  bool isLocalError() const {
+    return result_ == mc_res_local_error;
+  }
+
+  /**
    * Was the connection attempt refused?
    */
   bool isConnectError() const {

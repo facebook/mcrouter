@@ -12,7 +12,6 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class proxy_t;
-class ProxyClientCommon;
 class ProxyMcReply;
 class ProxyMcRequest;
 
@@ -23,12 +22,14 @@ class ProxyRequestLogger {
   }
 
   template <class Operation>
-  void log(const ProxyClientCommon& pclient,
-           const ProxyMcRequest& request,
+  void log(const ProxyMcRequest& request,
            const ProxyMcReply& reply,
            const int64_t startTimeUs,
            const int64_t endTimeUs,
            Operation);
+
+  inline void logError(const ProxyMcRequest& request, const McReplyBase& reply);
+
  protected:
   proxy_t* proxy_;
 };

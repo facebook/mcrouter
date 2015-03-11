@@ -34,7 +34,12 @@ namespace {
                     cmd_ ## OP ## _ ## SUFFIX ## _shadow_stat, 1);             \
           stat_incr(proxy.stats,                                               \
                     cmd_ ## OP ## _ ## SUFFIX ## _shadow_count_stat, 1);       \
-          break;}} while(0)
+          break;                                                               \
+        }                                                                      \
+        stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_stat, 1);     \
+        stat_incr(proxy.stats,                                                 \
+                  cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat, 1);            \
+    } while(0)
 
 template <int operation>
 inline void logOutlier(proxy_t& proxy, McOperation<operation>,
@@ -98,47 +103,52 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>,
 #define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)                      \
     do{ switch (reqClass) {                                                    \
           case RequestClass::NORMAL:                                           \
-            stat_incr(proxy.stats, result_ ## ERROR ## _stat, 1);              \
-            stat_incr(proxy.stats, result_ ## ERROR ## _count_stat, 1);        \
+            stat_incr(proxy->stats, result_ ## ERROR ## _stat, 1);             \
+            stat_incr(proxy->stats, result_ ## ERROR ## _count_stat, 1);       \
             break;                                                             \
           case RequestClass::FAILOVER:                                         \
-            stat_incr(proxy.stats, result_ ## ERROR ## _failover_stat, 1);     \
-            stat_incr(proxy.stats,                                             \
+            stat_incr(proxy->stats, result_ ## ERROR ## _failover_stat, 1);    \
+            stat_incr(proxy->stats,                                            \
                       result_ ## ERROR ## _failover_count_stat, 1);            \
             break;                                                             \
           case RequestClass::SHADOW:                                           \
-            stat_incr(proxy.stats, result_ ## ERROR ## _shadow_stat, 1);       \
-            stat_incr(proxy.stats, result_ ## ERROR ## _shadow_count_stat, 1); \
+            stat_incr(proxy->stats, result_ ## ERROR ## _shadow_stat, 1);      \
+            stat_incr(proxy->stats, result_ ## ERROR ## _shadow_count_stat, 1);\
             break;                                                             \
         }                                                                      \
-        stat_incr(proxy.stats, result_ ## ERROR ## _all_stat, 1);              \
-        stat_incr(proxy.stats, result_ ## ERROR ## _all_count_stat, 1);        \
+        stat_incr(proxy->stats, result_ ## ERROR ## _all_stat, 1);             \
+        stat_incr(proxy->stats, result_ ## ERROR ## _all_count_stat, 1);       \
       } while(0)
 
-inline void logError(proxy_t& proxy, const McReplyBase& reply,
-                     RequestClass reqClass) {
-  if (reply.isError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy, error, reqClass);
-  }
-  if (reply.isConnectError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy, connect_error, reqClass);
-  }
-  if (reply.isConnectTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy, connect_timeout, reqClass);
-  }
-  if (reply.isDataTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy, data_timeout, reqClass);
-  }
-  if (reply.isRedirect()) {
-    REQUEST_CLASS_ERROR_STATS(proxy, busy, reqClass);
-  }
 }
 
+void ProxyRequestLogger::logError(const ProxyMcRequest& req,
+                                  const McReplyBase& reply) {
+  if (reply.isError()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, error, req.getRequestClass());
+  }
+  if (reply.isConnectError()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, connect_error, req.getRequestClass());
+  }
+  if (reply.isConnectTimeout()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, connect_timeout, req.getRequestClass());
+  }
+  if (reply.isDataTimeout()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, data_timeout, req.getRequestClass());
+  }
+  if (reply.isRedirect()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, busy, req.getRequestClass());
+  }
+  if (reply.isTko()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, tko, req.getRequestClass());
+  }
+  if (reply.isLocalError()) {
+    REQUEST_CLASS_ERROR_STATS(proxy_, local_error, req.getRequestClass());
+  }
 }
 
 template <class Operation>
-void ProxyRequestLogger::log(const ProxyClientCommon& pclient,
-                             const ProxyMcRequest& request,
+void ProxyRequestLogger::log(const ProxyMcRequest& request,
                              const ProxyMcReply& reply,
                              const int64_t startTimeUs,
                              const int64_t endTimeUs,
@@ -148,7 +158,7 @@ void ProxyRequestLogger::log(const ProxyClientCommon& pclient,
   bool isOutlier = proxy_->opts.logging_rtt_outlier_threshold_us > 0 &&
     durationUs >= proxy_->opts.logging_rtt_outlier_threshold_us;
 
-  logError(*proxy_, reply, request.getRequestClass());
+  logError(request, reply);
   logRequestClass(*proxy_, Operation(), request.getRequestClass());
   proxy_->durationUs.insertSample(durationUs);
 

@@ -349,12 +349,7 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
 }
 
 void ProxyDestination::updateStats(mc_res_t result, mc_op_t op) {
-  if (result == mc_res_local_error) {
-    update_send_stats(proxy, op, PROXY_SEND_LOCAL_ERROR);
-  } else {
-    stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
-    update_send_stats(proxy, op, PROXY_SEND_OK);
-  }
+  stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
 }
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {

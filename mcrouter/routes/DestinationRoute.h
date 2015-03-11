@@ -118,18 +118,18 @@ class DestinationRoute {
 
     auto proxy = &req.context().proxy();
     if (!destination_->may_send()) {
-      update_send_stats(proxy, (mc_op_t)Op, PROXY_SEND_REMOTE_ERROR);
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
+      req.context().onRequestRefused(req, reply);
       return reply;
     }
 
     if (req.getRequestClass() == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
-        update_send_stats(proxy, (mc_op_t)Op, PROXY_SEND_LOCAL_ERROR);
         ProxyMcReply reply(ErrorReply);
         reply.setDestination(client_);
+        req.context().onRequestRefused(req, reply);
         return reply;
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
