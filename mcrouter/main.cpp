@@ -69,10 +69,6 @@ static McrouterStandaloneOptions standaloneOpts;
 
 #define print_usage(opt, desc) fprintf(stderr, "\t%*s%s\n", -49, opt, desc)
 
-#ifdef EXTRA_STARTUP_STOP_HEADER
-#include EXTRA_STARTUP_STOP_HEADER
-#endif
-
 static int pidfile_fd;
 
 static void print_usage_and_die(char* progname, int errorCode) {
@@ -652,12 +648,5 @@ int main(int argc, char **argv) {
   set_standalone_args(commandArgs);
   router->addStartupOpts(standaloneOpts.toDict());
 
-#ifdef EXTRA_STARTUP_STOP_HEADER
-  extraStartup(standaloneOpts, opts);
-#endif
-
   runServer(standaloneOpts, *router);
-#ifdef EXTRA_STARTUP_STOP_HEADER
-  extraStop();
-#endif
 }
