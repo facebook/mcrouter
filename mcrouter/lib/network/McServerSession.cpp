@@ -122,9 +122,14 @@ void McServerSession::checkClosed() {
     assert(pendingWrites_.empty());
 
     if (state_ == CLOSING) {
-      /* prevent readEOF() from being called */
-      transport_->setReadCB(nullptr);
-      transport_.reset();
+      /* It's possible to call close() more than once from the same stack.
+         Prevent second close() from doing anything */
+      state_ = CLOSED;
+      if (transport_) {
+        /* prevent readEOF() from being called */
+        transport_->setReadCB(nullptr);
+        transport_.reset();
+      }
       if (onTerminated_) {
         onTerminated_(*this);
       }
@@ -188,7 +193,9 @@ void McServerSession::close() {
     processMultiOpEnd();
   }
 
-  state_ = CLOSING;
+  if (state_ == STREAMING) {
+    state_ = CLOSING;
+  }
   checkClosed();
 }
 

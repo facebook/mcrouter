@@ -110,8 +110,12 @@ class McServerSession :
   void* userCtxt_{nullptr};
 
   enum State {
-    STREAMING,
-    CLOSING,
+    STREAMING,  /* close() was not called */
+    CLOSING,    /* close() was called, waiting on pending requests */
+    CLOSED,     /* close() was called and connection was torn down.
+                   This is a short lived state to prevent another close()
+                   between the first close() and McServerSession destruction
+                   from doing anything */
   };
   State state_{STREAMING};
 
