@@ -60,12 +60,18 @@
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | cmd_all_stats | \
   cmd_in_stats | count_stats
+  STUI(cmd_cas_count, 0, 1)
   STUI(cmd_delete_count, 0, 1)
   STUI(cmd_get_count, 0, 1)
+  STUI(cmd_gets_count, 0, 1)
   STUI(cmd_set_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | cmd_all_stats | \
   cmd_out_stats | count_stats | outlier_stats
+  STUI(cmd_cas_outlier_count, 0, 1)
+  STUI(cmd_cas_outlier_failover_count, 0, 1)
+  STUI(cmd_cas_outlier_shadow_count, 0, 1)
+  STUI(cmd_cas_outlier_all_count, 0, 1)
   STUI(cmd_delete_outlier_count, 0, 1)
   STUI(cmd_delete_outlier_failover_count, 0, 1)
   STUI(cmd_delete_outlier_shadow_count, 0, 1)
@@ -74,6 +80,10 @@
   STUI(cmd_get_outlier_failover_count, 0, 1)
   STUI(cmd_get_outlier_shadow_count, 0, 1)
   STUI(cmd_get_outlier_all_count, 0, 1)
+  STUI(cmd_gets_outlier_count, 0, 1)
+  STUI(cmd_gets_outlier_failover_count, 0, 1)
+  STUI(cmd_gets_outlier_shadow_count, 0, 1)
+  STUI(cmd_gets_outlier_all_count, 0, 1)
   STUI(cmd_set_outlier_count, 0, 1)
   STUI(cmd_set_outlier_failover_count, 0, 1)
   STUI(cmd_set_outlier_shadow_count, 0, 1)
@@ -85,12 +95,18 @@
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | detailed_stats | cmd_all_stats | \
   cmd_in_stats | rate_stats
+  STUIR(cmd_cas, 0, 1)
   STUIR(cmd_delete, 0, 1)
   STUIR(cmd_get, 0, 1)
+  STUIR(cmd_gets, 0, 1)
   STUIR(cmd_set, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats | detailed_stats | cmd_all_stats | \
   cmd_out_stats | rate_stats | outlier_stats
+  STUIR(cmd_cas_outlier, 0, 1)
+  STUIR(cmd_cas_outlier_failover, 0, 1)
+  STUIR(cmd_cas_outlier_shadow, 0, 1)
+  STUIR(cmd_cas_outlier_all, 0, 1)
   STUIR(cmd_delete_outlier, 0, 1)
   STUIR(cmd_delete_outlier_failover, 0, 1)
   STUIR(cmd_delete_outlier_shadow, 0, 1)
@@ -99,6 +115,10 @@
   STUIR(cmd_get_outlier_failover, 0, 1)
   STUIR(cmd_get_outlier_shadow, 0, 1)
   STUIR(cmd_get_outlier_all, 0, 1)
+  STUIR(cmd_gets_outlier, 0, 1)
+  STUIR(cmd_gets_outlier_failover, 0, 1)
+  STUIR(cmd_gets_outlier_shadow, 0, 1)
+  STUIR(cmd_gets_outlier_all, 0, 1)
   STUIR(cmd_set_outlier, 0, 1)
   STUIR(cmd_set_outlier_failover, 0, 1)
   STUIR(cmd_set_outlier_shadow, 0, 1)
@@ -132,6 +152,10 @@
   STUIR(cmd_stats, 0, 1)
 #undef GROUP
 #define GROUP cmd_all_stats | cmd_out_stats | count_stats
+  STUI(cmd_cas_out_count, 0, 1)
+  STUI(cmd_cas_out_failover_count, 0, 1)
+  STUI(cmd_cas_out_shadow_count, 0, 1)
+  STUI(cmd_cas_out_all_count, 0, 1)
   STUI(cmd_delete_out_count, 0, 1)
   STUI(cmd_delete_out_failover_count, 0, 1)
   STUI(cmd_delete_out_shadow_count, 0, 1)
@@ -140,6 +164,10 @@
   STUI(cmd_get_out_failover_count, 0, 1)
   STUI(cmd_get_out_shadow_count, 0, 1)
   STUI(cmd_get_out_all_count, 0, 1)
+  STUI(cmd_gets_out_count, 0, 1)
+  STUI(cmd_gets_out_failover_count, 0, 1)
+  STUI(cmd_gets_out_shadow_count, 0, 1)
+  STUI(cmd_gets_out_all_count, 0, 1)
   STUI(cmd_set_out_count, 0, 1)
   STUI(cmd_set_out_failover_count, 0, 1)
   STUI(cmd_set_out_shadow_count, 0, 1)
@@ -179,6 +207,10 @@
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | cmd_all_stats | cmd_out_stats | \
   rate_stats
+  STUIR(cmd_cas_out, 0, 1)
+  STUIR(cmd_cas_out_failover, 0, 1)
+  STUIR(cmd_cas_out_shadow, 0, 1)
+  STUIR(cmd_cas_out_all, 0, 1)
   STUIR(cmd_delete_out, 0, 1)
   STUIR(cmd_delete_out_failover, 0, 1)
   STUIR(cmd_delete_out_shadow, 0, 1)
@@ -187,6 +219,10 @@
   STUIR(cmd_get_out_failover, 0, 1)
   STUIR(cmd_get_out_shadow, 0, 1)
   STUIR(cmd_get_out_all, 0, 1)
+  STUIR(cmd_gets_out, 0, 1)
+  STUIR(cmd_gets_out_failover, 0, 1)
+  STUIR(cmd_gets_out_shadow, 0, 1)
+  STUIR(cmd_gets_out_all, 0, 1)
   STUIR(cmd_set_out, 0, 1)
   STUIR(cmd_set_out_failover, 0, 1)
   STUIR(cmd_set_out_shadow, 0, 1)

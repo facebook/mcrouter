@@ -73,6 +73,12 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>,
     case mc_op_add:
       REQUEST_CLASS_STATS(proxy, add, out, reqClass);
       break;
+    case mc_op_cas:
+      REQUEST_CLASS_STATS(proxy, cas, out, reqClass);
+      break;
+    case mc_op_gets:
+      REQUEST_CLASS_STATS(proxy, gets, out, reqClass);
+      break;
     case mc_op_replace:
       REQUEST_CLASS_STATS(proxy, replace, out, reqClass);
       break;
