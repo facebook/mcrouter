@@ -95,6 +95,9 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
         if (pdstn == nullptr) {
           return;
         }
+        if (pdstn->client_ == nullptr) {
+          return;
+        }
         pdstn->proxy->destinationMap->markAsActive(*pdstn);
         McReply reply = pdstn->client_->sendSync(*pdstn->probe_req,
                                                  McOperation<mc_op_version>(),
@@ -292,6 +295,13 @@ void ProxyDestination::resetInactive() {
     client_->closeNow();
     client_.reset();
     resetting = 0;
+  }
+
+  shared->tko.removeDestination(this);
+  if (sending_probes) {
+    // hacky way to report this
+    onTkoEvent(TkoLogEvent::UnMarkTko, mc_res_aborted);
+    stop_sending_probes();
   }
 }
 
