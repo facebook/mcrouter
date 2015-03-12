@@ -101,9 +101,11 @@ int mc_parser_ensure_tbuf(mc_parser_t *parser, int n) {
 
 void mc_parser_cleanup_tbuf(mc_parser_t *parser) {
   FBI_ASSERT(parser != NULL);
-  free(parser->tbuf);
-  parser->tbuf = parser->te = NULL;
-  parser->tbuf_len = 0;
+  if (parser->tbuf) {
+    free(parser->tbuf);
+    parser->tbuf = parser->te = NULL;
+    parser->tbuf_len = 0;
+  }
 }
 
 mc_protocol_t mc_parser_determine_protocol(uint8_t first_byte) {
@@ -157,6 +159,7 @@ void mc_parser_reset(mc_parser_t *parser) {
   parser->off = 0;
   parser->resid = 0;
   parser->known_protocol = mc_unknown_protocol;
+  mc_parser_cleanup_tbuf(parser);
 
   um_parser_reset(&parser->um_parser);
 }
