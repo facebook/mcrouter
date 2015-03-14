@@ -154,7 +154,7 @@ class McrouterClient {
   mcrouter_client_stats_t stats_;
 
   /// Maximum allowed requests in flight (unlimited if 0)
-  unsigned int maxOutstanding_;
+  const unsigned int maxOutstanding_;
   counting_sem_t outstandingReqsSem_;
 
   // whether the routing thread has received disconnect notification.

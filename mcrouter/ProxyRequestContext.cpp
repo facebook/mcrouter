@@ -61,6 +61,9 @@ ProxyRequestContext::~ProxyRequestContext() {
   }
 
   if (requester_) {
+    if (requester_->maxOutstanding_ != 0) {
+      counting_sem_post(&requester_->outstandingReqsSem_, 1);
+    }
     requester_->decref();
   }
 

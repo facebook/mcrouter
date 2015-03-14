@@ -191,10 +191,6 @@ McrouterClient::McrouterClient(
 }
 
 void McrouterClient::onReply(ProxyRequestContext& preq) {
-  if (maxOutstanding_ != 0) {
-    counting_sem_post(&outstandingReqsSem_, 1);
-  }
-
   mcrouter_msg_t router_reply;
 
   // Don't increment refcounts, because these are transient stack
