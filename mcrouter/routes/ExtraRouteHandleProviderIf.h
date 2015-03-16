@@ -11,6 +11,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 
@@ -29,6 +30,11 @@ class ExtraRouteHandleProviderIf {
              const McrouterShadowData& data,
              size_t indexInPool,
              folly::StringPiece shadowPolicy) = 0;
+
+  virtual std::vector<McrouterRouteHandlePtr>
+  tryCreate(RouteHandleFactory<McrouterRouteHandleIf>& factory,
+            folly::StringPiece type,
+            const folly::dynamic& json) = 0;
 
   virtual ~ExtraRouteHandleProviderIf() {}
 };

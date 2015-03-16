@@ -245,6 +245,12 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     return makePool(json).second;
   } else if (type == "PoolRoute") {
     return { makePoolRoute(factory, json) };
+  } else {
+    /* returns empty vector if type unknown */
+    auto ret = extraProvider_->tryCreate(factory, type, json);
+    if (!ret.empty()) {
+      return ret;
+    }
   }
 
   auto ret = RouteHandleProvider<McrouterRouteHandleIf>::create(factory, type,

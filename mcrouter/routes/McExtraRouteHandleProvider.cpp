@@ -37,4 +37,11 @@ McrouterRouteHandlePtr McExtraRouteHandleProvider::makeShadow(
   }
 }
 
+std::vector<McrouterRouteHandlePtr> McExtraRouteHandleProvider::tryCreate(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    folly::StringPiece type,
+    const folly::dynamic& json) {
+  return {};
+}
+
 }}}  // facebook::memcache::mcrouter

@@ -38,6 +38,9 @@ struct GetLike {
   static const bool value = false;
 };
 
+template <typename Operation = void>
+using GetLikeT = typename GetLike<Operation>::Type;
+
 /**
  * @class UpdateLike
  * @tparam Operation operation type
