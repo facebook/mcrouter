@@ -160,7 +160,7 @@ class McServerThread {
         : mcServerThread_(mcServerThread), secure_(secure) { }
     void connectionAccepted(
         int fd,
-        const folly::SocketAddress& clientAddr) noexcept {
+        const folly::SocketAddress& clientAddr) noexcept override {
       if (secure_) {
         auto& opts = mcServerThread_->server_.opts_;
         auto sslCtx = getSSLContext(opts.pemCertPath, opts.pemKeyPath,
@@ -176,7 +176,7 @@ class McServerThread {
         mcServerThread_->worker_.addClientSocket(fd);
       }
     }
-    void acceptError(const std::exception& ex) noexcept {
+    void acceptError(const std::exception& ex) noexcept override {
       LOG(ERROR) << "Connection accept error: " << ex.what();
     }
    private:

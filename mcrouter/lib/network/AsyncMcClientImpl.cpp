@@ -66,7 +66,7 @@ class AsyncMcClientImpl::TimeoutCallback : public folly::AsyncTimeout {
                     folly::TimeoutManager::InternalEnum::NORMAL);
   }
 
-  void timeoutExpired() noexcept {
+  void timeoutExpired() noexcept override {
     client_.timeoutExpired();
   }
  private:
