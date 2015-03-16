@@ -11,10 +11,17 @@
 
 #include <folly/futures/Try.h>
 
+#include "mcrouter/lib/fbi/cpp/traits.h"
+
 namespace facebook { namespace memcache {
 
 class Baton;
-class FiberManager;
+
+namespace fiber {
+template <typename F>
+typename FirstArgOf<F>::type::value_type
+inline await(F&& func);
+}
 
 template <typename T>
 class FiberPromise {
@@ -63,7 +70,8 @@ class FiberPromise {
   void setException(folly::exception_wrapper);
 
  private:
-  friend class FiberManager;
+  template <typename F>
+  friend typename FirstArgOf<F>::type::value_type fiber::await(F&&);
 
   FiberPromise(folly::Try<T>& value, Baton& baton);
   folly::Try<T>* value_;

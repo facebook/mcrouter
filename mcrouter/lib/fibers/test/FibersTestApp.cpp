@@ -43,7 +43,7 @@ struct Application {
       fiberManager.addTask([this, id]() {
           std::cout << "Executing fiber with id = " << id << std::endl;
 
-          auto result1 = fiberManager.await(
+          auto result1 = fiber::await(
             [this](FiberPromise<int> fiber) {
               pendingRequests.push(std::move(fiber));
             });
@@ -51,7 +51,7 @@ struct Application {
           std::cout << "Fiber id = " << id
                     << " got result1 = " << result1 << std::endl;
 
-          auto result2 = fiberManager.await
+          auto result2 = fiber::await
             ([this](FiberPromise<int> fiber) {
               pendingRequests.push(std::move(fiber));
             });

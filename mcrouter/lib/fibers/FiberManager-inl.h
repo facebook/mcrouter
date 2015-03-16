@@ -271,22 +271,6 @@ void FiberManager::addTaskFinally(F&& func, G&& finally) {
 }
 
 template <typename F>
-typename FirstArgOf<F>::type::value_type
-FiberManager::await(F&& func) {
-
-  typedef typename FirstArgOf<F>::type::value_type Result;
-
-  folly::Try<Result> result;
-
-  Baton baton;
-  baton.wait([&func, &result, &baton]() mutable {
-      func(FiberPromise<Result>(result, baton));
-    });
-
-  return folly::moveFromTry(std::move(result));
-}
-
-template <typename F>
 typename std::result_of<F()>::type
 FiberManager::runInMainContext(F&& func) {
   return runInMainContextHelper(std::forward<F>(func));
@@ -339,6 +323,25 @@ inline FiberManager* FiberManager::getFiberManagerUnsafe() {
 
 inline bool FiberManager::hasActiveFiber() {
   return activeFiber_ != nullptr;
+}
+
+namespace fiber {
+
+template <typename F>
+typename FirstArgOf<F>::type::value_type
+inline await(F&& func) {
+  typedef typename FirstArgOf<F>::type::value_type Result;
+
+  folly::Try<Result> result;
+
+  Baton baton;
+  baton.wait([&func, &result, &baton]() mutable {
+      func(FiberPromise<Result>(result, baton));
+    });
+
+  return folly::moveFromTry(std::move(result));
+}
+
 }
 
 }}

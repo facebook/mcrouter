@@ -163,17 +163,6 @@ class FiberManager {
   void addTaskFinally(F&& func, G&& finally);
 
   /**
-   * Blocks task execution until given promise is fulfilled.
-   *
-   * Calls function passing in a FiberPromise<T>, which has to be fulfilled.
-   *
-   * @return data which was used to fulfill the promise.
-   */
-  template <typename F>
-  typename FirstArgOf<F>::type::value_type
-  await(F&& func);
-
-  /**
    * If called from a fiber, immediately switches to the FiberManager's context
    * and runs func(), going back to the Fiber's context after completion.
    * Outside a fiber, just calls func() directly.
@@ -359,9 +348,7 @@ inline void addTaskFinally(F&& func, G&& finally) {
  */
 template <typename F>
 typename FirstArgOf<F>::type::value_type
-inline await(F&& func) {
-  return FiberManager::getFiberManager().await(std::forward<F>(func));
-}
+inline await(F&& func);
 
 /**
  * If called from a fiber, immediately switches to the FiberManager's context
