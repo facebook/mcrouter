@@ -17,6 +17,7 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestMcrouterStates(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
+    config2 = './mcrouter/test/mcrouter_test_basic_2_1_1.json'
 
     # 2 proxy threads with initial probe delay time 0.1s
     extra_args = ['--num-proxies', '2', '-r', '100']
@@ -47,6 +48,15 @@ class TestMcrouterStates(McrouterTestCase):
             self.assertEqual(stat['num_servers_up'], '2')
             self.assertEqual(stat['num_servers_down'], '0')
 
+        def check_invariant():
+            stat = mcr.stats()
+            self.assertEqual(int(stat['num_servers']),
+                             int(stat['num_servers_new'])
+                             + int(stat['num_servers_up'])
+                             + int(stat['num_servers_down'])
+                             + int(stat['num_servers_closed']))
+
+        check_invariant()
         check_all_up()
 
         # down aka hard tko
@@ -56,12 +66,20 @@ class TestMcrouterStates(McrouterTestCase):
         stat = mcr.stats()
         self.assertEqual(stat['num_servers_up'], '0')
         self.assertEqual(stat['num_servers_down'], '2')
+        check_invariant()
 
         # up again
         self.mc = Memcached(self.mc.port)
         # wait for unmarking tko
         time.sleep(1)
+        check_invariant()
         check_all_up()
+
+        # change config
+        mcr.change_config(self.config2)
+        # wait for mcrouter to reconfigure
+        time.sleep(2)
+        check_invariant()
 
         # make sure we dont crash
         self.assertTrue(mcr.is_alive())

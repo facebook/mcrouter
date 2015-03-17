@@ -44,6 +44,22 @@ void on_probe_timer(const asox_timer_t timer, void* arg) {
   pdstn->on_timer(timer);
 }
 
+stat_name_t getStatName(ProxyDestinationState st) {
+  switch (st) {
+    case ProxyDestinationState::kNew:
+      return num_servers_new_stat;
+    case ProxyDestinationState::kUp:
+      return num_servers_up_stat;
+    case ProxyDestinationState::kClosed:
+      return num_servers_closed_stat;
+    case ProxyDestinationState::kDown:
+      return num_servers_down_stat;
+    default:
+      CHECK(false);
+      return num_stats; // shouldnt reach here
+  }
+}
+
 }  // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
@@ -247,6 +263,7 @@ ProxyDestination::~ProxyDestination() {
     stop_sending_probes();
   }
 
+  stat_decr(proxy->stats, getStatName(stats_.state), 1);
   magic = kDeadBeef;
 }
 
@@ -400,22 +417,6 @@ void ProxyDestination::setState(ProxyDestinationState new_st) {
   auto old_st = stats_.state;
 
   if (old_st != new_st) {
-    auto getStatName = [](ProxyDestinationState st) {
-      switch (st) {
-        case ProxyDestinationState::kNew:
-          return num_servers_new_stat;
-        case ProxyDestinationState::kUp:
-          return num_servers_up_stat;
-        case ProxyDestinationState::kClosed:
-          return num_servers_closed_stat;
-        case ProxyDestinationState::kDown:
-          return num_servers_down_stat;
-        default:
-          CHECK(false);
-          return num_stats; // shouldnt reach here
-      }
-    };
-
     auto old_name = getStatName(old_st);
     auto new_name = getStatName(new_st);
     stat_decr(proxy->stats, old_name, 1);
