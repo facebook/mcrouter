@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
@@ -32,11 +33,11 @@ class ShardSplitter {
   size_t getShardSplitCnt(folly::StringPiece key,
                           folly::StringPiece& shardId) const;
 
-  const StringKeyedUnorderedMap<size_t>& getShardSplits() const {
+  const folly::StringKeyedUnorderedMap<size_t>& getShardSplits() const {
     return shardSplits_;
   }
  private:
-  StringKeyedUnorderedMap<size_t> shardSplits_;
+  folly::StringKeyedUnorderedMap<size_t> shardSplits_;
 };
 
 }}}  // facebook::memcache::mcrouter

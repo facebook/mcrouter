@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
@@ -58,8 +59,8 @@ class RouteHandleMap {
   std::shared_ptr<RoutePolicyMap> defaultRouteMap_;
 
   std::shared_ptr<RoutePolicyMap> allRoutes_;
-  StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRegion_;
-  StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRoute_;
+  folly::StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRegion_;
+  folly::StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRoute_;
 
   void foreachRoutePolicy(folly::StringPiece prefix,
     std::function<void(const std::shared_ptr<RoutePolicyMap>&)> f) const;

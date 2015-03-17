@@ -60,67 +60,6 @@ struct AdditionalProxyRequestLogger {
 };
 
 /**
- * Implementation of unordered_map with string keys that accepts StringPiece
- * as arguments. It may be implemented more efficiently when needed. Also
- * it should be totally redundant in C++14.
- */
-template <class Value>
-class StringKeyedUnorderedMap : public std::unordered_map<std::string, Value> {
- private:
-  using Base = std::unordered_map<std::string, Value>;
- public:
-  using iterator = typename Base::iterator;
-  using const_iterator = typename Base::const_iterator;
-  using size_type = typename Base::size_type;
-  using value_type = typename Base::value_type;
-  using mapped_type = typename Base::mapped_type;
-
-  explicit StringKeyedUnorderedMap(size_type n = 0)
-      : Base(n) { }
-
-  StringKeyedUnorderedMap(const StringKeyedUnorderedMap& other)
-      : Base(other) { }
-
-  StringKeyedUnorderedMap(StringKeyedUnorderedMap&& other) noexcept
-      : Base(std::move(other)) {
-  }
-
-  // no need for copy/move overload as StringPiece is small struct
-  mapped_type& operator[](folly::StringPiece key) {
-    return Base::operator[](key.str());
-  }
-
-  mapped_type& at(folly::StringPiece key) {
-    return Base::at(key.str());
-  }
-
-  const mapped_type& at(folly::StringPiece key) const {
-    return Base::at(key.str());
-  }
-
-  iterator find(folly::StringPiece key) {
-    return Base::find(key.str());
-  }
-
-  const_iterator find(folly::StringPiece key) const {
-    return Base::find(key.str());
-  }
-
-  template <class... Args>
-  std::pair<iterator, bool> emplace(folly::StringPiece key, Args&&... args) {
-    return Base::emplace(key.str(), std::forward<Args>(args)...);
-  }
-
-  std::pair<iterator, bool> insert(std::pair<folly::StringPiece, Value> val) {
-    return Base::insert(std::make_pair(val.first.str(), std::move(val.second)));
-  }
-
-  size_type erase(folly::StringPiece key) {
-    return Base::erase(key.str());
-  }
-};
-
-/**
  * @return monotonic time suitable for measuring intervals in microseconds.
  */
 inline int64_t nowUs() {
