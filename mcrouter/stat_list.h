@@ -31,7 +31,6 @@
   STUI(mcc_waiting_replies, 0, 1)
   STAT(destination_batch_size, stat_double, 0, .dbl = 0.0)
   STUI(asynclog_requests, 0, 1)
-  STUI(sum_server_queue_length, 0, 1)
   /* Proxy requests we started routing */
   STUI(proxy_reqs_processing, 0, 1)
   /* Proxy requests queued up and not routed yet */

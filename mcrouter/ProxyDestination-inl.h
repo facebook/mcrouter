@@ -22,7 +22,6 @@ ProxyDestination::send(const Request& request, McOperation<Op>,
 
   proxy->destinationMap->markAsActive(*this);
   auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>(), timeout);
-  updateStats(reply.result(), (mc_op_t)Op);
   onReply(reply, req_ctx);
   return reply;
 }

@@ -117,7 +117,6 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
           *pdstn->probe_req,
           McOperation<mc_op_version>(),
           pdstn->shortestTimeout);
-        pdstn->updateStats(reply.result(), mc_op_version);
         pdstn->handle_tko(reply, true);
         pdstn->probe_req.reset();
       });
@@ -190,8 +189,6 @@ void ProxyDestination::onReply(const McReply& reply,
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats_.avgLatency.insertSample(latency);
-
-  stat_decr(proxy->stats, sum_server_queue_length_stat, 1);
 }
 
 void ProxyDestination::on_up() {
@@ -363,10 +360,6 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
     initializeAsyncMcClient();
   }
   return *client_;
-}
-
-void ProxyDestination::updateStats(mc_res_t result, mc_op_t op) {
-  stat_incr(proxy->stats, sum_server_queue_length_stat, 1);
 }
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {

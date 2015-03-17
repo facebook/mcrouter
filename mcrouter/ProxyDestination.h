@@ -161,7 +161,6 @@ struct ProxyDestination {
 
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
-  void updateStats(mc_res_t result, mc_op_t op);
 
   ProxyDestination(proxy_t* proxy,
                    const ProxyClientCommon& ro,
