@@ -29,6 +29,9 @@ class RouteHandleProviderIf;
 template <class RouteHandleIf>
 class RouteHandleFactory {
  public:
+  RouteHandleFactory(const RouteHandleFactory&) = delete;
+  RouteHandleFactory& operator=(const RouteHandleFactory&) = delete;
+
   /**
    * @param provider that can create single node of RouteHandle tree.
    */

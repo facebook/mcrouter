@@ -74,7 +74,7 @@ class MigrateRoute {
     assert(to_ != nullptr);
   }
 
-  MigrateRoute(RouteHandleFactory<RouteHandleIf> factory,
+  MigrateRoute(RouteHandleFactory<RouteHandleIf>& factory,
                const folly::dynamic& json,
                TimeProvider tp)
       : intervalSec_(3600),
