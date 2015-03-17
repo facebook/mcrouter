@@ -146,6 +146,15 @@ std::shared_ptr<ProxyConfigIf> proxy_t::getConfig() const {
   return config_;
 }
 
+std::pair<std::unique_lock<SFRReadLock>, ProxyConfigIf&>
+proxy_t::getConfigLocked() const {
+  std::unique_lock<SFRReadLock> lock(
+    const_cast<SFRLock&>(configLock_).readLock());
+  /* make_pair strips the reference, so construct directly */
+  return std::pair<std::unique_lock<SFRReadLock>, ProxyConfigIf&>(
+    std::move(lock), *config_);
+}
+
 std::shared_ptr<ProxyConfigIf> proxy_t::swapConfig(
   std::shared_ptr<ProxyConfigIf> newConfig) {
 

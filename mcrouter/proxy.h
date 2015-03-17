@@ -177,6 +177,14 @@ struct proxy_t {
   std::shared_ptr<ProxyConfigIf> getConfig() const;
 
   /**
+   * Returns a lock and a reference to the config.
+   * The caller may only access the config through the reference
+   * while the lock is held.
+   */
+  std::pair<std::unique_lock<SFRReadLock>, ProxyConfigIf&>
+  getConfigLocked() const;
+
+  /**
    * Thread-safe config swap; returns the previous contents of
    * the config pointer
    */
