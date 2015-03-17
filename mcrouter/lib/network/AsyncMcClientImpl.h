@@ -90,32 +90,21 @@ class AsyncMcClientImpl :
   // doesn't work correctly with TDelayedDestruction.
   std::weak_ptr<AsyncMcClientImpl> selfPtr_;
 
-  // Queue of requests, that are queued to be sent.
-  McClientRequestContextBase::Queue sendQueue_;
-  // Queue of requests, that are currently being written to the socket.
-  McClientRequestContextBase::Queue writeQueue_;
-  // Queue of requests, that are already sent and are waiting for replies.
-  McClientRequestContextBase::Queue pendingReplyQueue_;
-
   // Stats.
   std::pair<uint64_t, uint16_t> batchStatPrevious{0, 0};
   std::pair<uint64_t, uint16_t> batchStatCurrent{0, 0};
-
-  // Id to request map. Used only in case of out-of-order protocol for fast
-  // request lookup.
-  std::unordered_map<uint64_t, McClientRequestContextBase*> idMap_;
 
   folly::EventBase& eventBase_;
   std::unique_ptr<McParser> parser_;
 
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
-  folly::IOBufQueue buffer_;
   ConnectionOptions connectionOptions_;
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
 
   bool outOfOrder_{false};
+  McClientRequestContextQueue queue_;
 
   // Id for the next message that will be used by the next sendMsg() call.
   uint64_t nextMsgId_{1};
@@ -142,7 +131,7 @@ class AsyncMcClientImpl :
   ~AsyncMcClientImpl();
 
   // Common part for send/sendSync.
-  void sendCommon(McClientRequestContextBase::UniquePtr req);
+  void sendCommon(McClientRequestContextBase& req);
 
   // Write some requests from sendQueue_ to the socket, until max inflight limit
   // is reached or queue is empty.
@@ -150,17 +139,6 @@ class AsyncMcClientImpl :
   // Schedule next writer loop if it's not scheduled.
   void scheduleNextWriterLoop();
   void cancelWriterCallback();
-
-  // call reply callback for the request and remove it from requests map.
-  template <class Reply>
-  void reply(McClientRequestContextBase::UniquePtr req, Reply&& r);
-
-  // Reply given request with an error reply.
-  void replyError(McClientRequestContextBase::UniquePtr req, mc_res_t result);
-
-  // Finds request context with given id, removes it from queues and returns it
-  // to the caller.
-  McClientRequestContextBase::UniquePtr getRequestContext(uint64_t id);
 
   // Log critical ascii error reply (e.g. server reply that starts with ERROR).
   void logCriticalAsciiError();

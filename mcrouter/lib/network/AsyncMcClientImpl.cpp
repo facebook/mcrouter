@@ -63,6 +63,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       connectionOptions_(std::move(options)),
       outOfOrder_(connectionOptions_.accessPoint.getProtocol() ==
                   mc_umbrella_protocol),
+      queue_(outOfOrder_),
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
         folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
@@ -112,9 +113,8 @@ void AsyncMcClientImpl::setStatusCallbacks(
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
-  assert(sendQueue_.empty());
-  assert(writeQueue_.empty());
-  assert(pendingReplyQueue_.empty());
+  assert(getPendingRequestCount() == 0);
+  assert(getInflightRequestCount() == 0);
   if (socket_) {
     // Close the socket immediately. We need to process all callbacks, such as
     // readEOF and connectError, before we exit destructor.
@@ -124,11 +124,11 @@ AsyncMcClientImpl::~AsyncMcClientImpl() {
 }
 
 size_t AsyncMcClientImpl::getPendingRequestCount() const {
-  return sendQueue_.size();
+  return queue_.getPendingRequestCount();
 }
 
 size_t AsyncMcClientImpl::getInflightRequestCount() const {
-  return writeQueue_.size() + pendingReplyQueue_.size();
+  return queue_.getInflightRequestCount();
 }
 
 std::pair<uint64_t, uint64_t> AsyncMcClientImpl::getBatchingStat() const {
@@ -141,17 +141,12 @@ void AsyncMcClientImpl::setThrottle(size_t maxInflight, size_t maxPending) {
   maxPending_ = maxPending;
 }
 
-void AsyncMcClientImpl::sendCommon(McClientRequestContextBase::UniquePtr req) {
-  switch (req->reqContext.serializationResult()) {
+void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
+  switch (req.reqContext.serializationResult()) {
     case McSerializedRequest::Result::OK:
       incMsgId(nextMsgId_);
 
-      if (outOfOrder_) {
-        idMap_[req->id] = req.get();
-      }
-      assert(req->state == ReqState::NONE);
-      req->state = ReqState::SEND_QUEUE;
-      sendQueue_.pushBack(std::move(req));
+      queue_.markAsPending(req);
       scheduleNextWriterLoop();
       if (connectionState_ == ConnectionState::DOWN) {
         // attempConnection may use a lot of stack memory, thus we need to run
@@ -162,17 +157,17 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase::UniquePtr req) {
       }
       return;
     case McSerializedRequest::Result::BAD_KEY:
-      req->replyError(mc_res_bad_key);
+      req.replyError(mc_res_bad_key);
       return;
     case McSerializedRequest::Result::ERROR:
-      req->replyError(mc_res_local_error);
+      req.replyError(mc_res_local_error);
       return;
   }
 }
 
 void AsyncMcClientImpl::scheduleNextWriterLoop() {
   if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
-      !sendQueue_.empty()) {
+      getPendingRequestCount() != 0) {
     writeScheduled_ = true;
     eventBase_.runInLoop(writer_.get());
   }
@@ -187,7 +182,7 @@ void AsyncMcClientImpl::pushMessages() {
   DestructorGuard dg(this);
 
   assert(connectionState_ == ConnectionState::UP);
-  size_t numToSend = sendQueue_.size();
+  size_t numToSend = queue_.getPendingRequestCount();
   if (maxInflight_ != 0) {
     if (maxInflight_ <= getInflightRequestCount()) {
       numToSend = 0;
@@ -204,12 +199,10 @@ void AsyncMcClientImpl::pushMessages() {
     batchStatCurrent = {0, 0};
   }
 
-  while (!sendQueue_.empty() && numToSend > 0 &&
+  while (getPendingRequestCount() != 0 && numToSend > 0 &&
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
-    auto& req = writeQueue_.pushBack(sendQueue_.popFront());
-    assert(req.state == ReqState::SEND_QUEUE);
-    req.state = ReqState::WRITE_QUEUE;
+    auto& req = queue_.markNextAsSending();
 
     socket_->writev(this, req.reqContext.getIovs(),
                     req.reqContext.getIovsCount(),
@@ -325,34 +318,6 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 
 } // anonymous namespace
 
-void AsyncMcClientImpl::replyError(McClientRequestContextBase::UniquePtr req,
-                                   mc_res_t result) {
-  idMap_.erase(req->id);
-  req->replyError(result);
-}
-
-McClientRequestContextBase::UniquePtr AsyncMcClientImpl::getRequestContext(
-    uint64_t id) {
-  // We could have already timed out all request.
-  if (pendingReplyQueue_.empty()) {
-    return nullptr;
-  }
-
-  if (outOfOrder_) {
-    auto iter = idMap_.find(id);
-    if (iter != idMap_.end()) {
-      return pendingReplyQueue_.extract(
-        pendingReplyQueue_.iterator_to(*iter->second));
-    }
-  } else {
-    if (pendingReplyQueue_.front().id == id) {
-      return pendingReplyQueue_.popFront();
-    }
-  }
-
-  return nullptr;
-}
-
 void AsyncMcClientImpl::attemptConnection() {
   assert(connectionState_ == ConnectionState::DOWN);
 
@@ -409,10 +374,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   }
 
   // We would never attempt to connect without having any messages to send.
-  assert(!sendQueue_.empty());
+  assert(getPendingRequestCount());
   // We might have successfuly reconnected after error, so we need to restart
   // our msg id counter.
-  nextInflightMsgId_ = sendQueue_.front().id;
+  nextInflightMsgId_ = queue_.getFirstId();
 
   scheduleNextWriterLoop();
   parser_ = folly::make_unique<McParser>(
@@ -436,13 +401,8 @@ void AsyncMcClientImpl::connectErr(
     error = mc_res_connect_error;
   }
 
-  while (!sendQueue_.empty()) {
-    replyError(sendQueue_.popFront(), error);
-  }
-
-  assert(writeQueue_.empty());
-  assert(pendingReplyQueue_.empty());
-
+  assert(getInflightRequestCount() == 0);
+  queue_.failAllPending(error);
   connectionState_ = ConnectionState::DOWN;
   // We don't need it anymore, so let it perform complete cleanup.
   socket_.reset();
@@ -470,16 +430,11 @@ void AsyncMcClientImpl::processShutdown() {
       /* fallthrough */
 
     case ConnectionState::ERROR:
-      while (!pendingReplyQueue_.empty()) {
-        replyError(pendingReplyQueue_.popFront(),
-                   isAborting_ ? mc_res_aborted : mc_res_remote_error);
-      }
-      if (writeQueue_.empty()) {
+      queue_.failAllSent(isAborting_ ? mc_res_aborted : mc_res_remote_error);
+      if (queue_.getInflightRequestCount() == 0) {
         // No need to send any of remaining requests if we're aborting.
         if (isAborting_) {
-          while (!sendQueue_.empty()) {
-            replyError(sendQueue_.popFront(), mc_res_aborted);
-          }
+          queue_.failAllPending(mc_res_aborted);
         }
 
         // This is a last processShutdown() for this error and it is safe
@@ -494,7 +449,7 @@ void AsyncMcClientImpl::processShutdown() {
 
         // In case we still have some pending requests, then try reconnecting
         // immediately.
-        if (!sendQueue_.empty()) {
+        if (getPendingRequestCount() != 0) {
           attemptConnection();
         }
       }
@@ -535,18 +490,11 @@ void AsyncMcClientImpl::readErr(
 void AsyncMcClientImpl::writeSuccess() noexcept {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
-  auto req = writeQueue_.popFront();
-  if (req->state == ReqState::CANCELED) {
-    req->canceled();
-    return;
-  }
-  assert(req->state == ReqState::WRITE_QUEUE);
-  req->state = ReqState::PENDING_QUEUE;
-  pendingReplyQueue_.pushBack(std::move(req));
+  auto& req = queue_.markNextAsSent();
 
   // In case of no-network we need to provide fake reply.
   if (connectionOptions_.noNetwork) {
-    sendFakeReply(pendingReplyQueue_.back());
+    sendFakeReply(req);
   }
 }
 
@@ -563,21 +511,14 @@ void AsyncMcClientImpl::writeErr(
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
-  auto req = writeQueue_.popFront();
-  if (req->state == ReqState::CANCELED) {
-    req->canceled();
-  } else {
-    assert(req->state == ReqState::WRITE_QUEUE);
-    req->state = ReqState::PENDING_QUEUE;
-    pendingReplyQueue_.pushBack(std::move(req));
-  }
+  queue_.markNextAsSent();
   processShutdown();
 }
 
 void AsyncMcClientImpl::logCriticalAsciiError() {
-  if (!pendingReplyQueue_.empty()) {
+  if (queue_.hasPendingReply()) {
     std::string requestData;
-    auto& request = pendingReplyQueue_.front().reqContext;
+    auto& request = queue_.getFirstPendingReply().reqContext;
     auto iovs = request.getIovs();
     auto iovsCount = request.getIovsCount();
     for (size_t i = 0; i < iovsCount; ++i) {

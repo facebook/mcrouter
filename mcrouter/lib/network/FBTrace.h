@@ -14,6 +14,7 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 
 // Forward declare struct, we wouldn't use it if it wasn't enabled.
 struct mc_fbtrace_info_s;

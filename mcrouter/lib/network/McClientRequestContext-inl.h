@@ -33,6 +33,7 @@ inline getFbTraceInfo(const Request& request) {
 
 template <class Reply>
 bool McClientRequestContextBase::reply(Reply&& r) {
+  assert(state_ == ReqState::PENDING_REPLY_QUEUE);
   if (replyType_ != typeid(Reply)) {
     failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
                  "Attempt to forward a reply of a wrong type. Expected '{}', "
@@ -44,29 +45,34 @@ bool McClientRequestContextBase::reply(Reply&& r) {
   auto* storage = reinterpret_cast<folly::Optional<Reply>*>(replyStorage_);
   assert(!storage->hasValue());
   storage->emplace(std::move(r));
-  forwardReply();
+  sendTraceOnReply();
+  state_ = ReqState::COMPLETE;
+  baton_.post();
   return true;
 }
 
 template <class Operation, class Request>
 McClientRequestContextBase::McClientRequestContextBase(
   Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
-  std::shared_ptr<AsyncMcClientImpl> client, bool issync,
-  folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage)
+  std::shared_ptr<AsyncMcClientImpl> client,
+  folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage,
+  McClientRequestContextQueue& queue)
   : reqContext(request, Operation(), reqid, protocol),
     id(reqid),
+    queue_(queue),
     client_(std::move(client)),
     replyType_(typeid(typename ReplyType<Operation, Request>::type)),
-    replyStorage_(reinterpret_cast<void*>(&replyStorage)),
-    isSync_(issync) {
+    replyStorage_(reinterpret_cast<void*>(&replyStorage)) {
 }
 
 template <class Operation, class Request>
 void McClientRequestContext<Operation, Request>::replyError(
     mc_res_t result) {
+  assert(state_ == ReqState::NONE);
   assert(!replyStorage_.hasValue());
   replyStorage_.emplace(result);
-  forwardReply();
+  state_ = ReqState::COMPLETE;
+  baton_.post();
 }
 
 template <class Operation, class Request>
@@ -77,17 +83,50 @@ McClientRequestContext<Operation, Request>::fakeReply() const {
 
 template <class Operation, class Request>
 typename McClientRequestContext<Operation, Request>::Reply
-McClientRequestContext<Operation, Request>::getReply() {
-  assert(replyStorage_.hasValue());
-  return std::move(replyStorage_.value());
+McClientRequestContext<Operation, Request>::waitForReply(
+    std::chrono::milliseconds timeout) {
+
+  if (timeout.count()) {
+    baton_.timed_wait(timeout);
+  } else {
+    baton_.wait();
+  }
+
+  switch (state_) {
+    case ReqState::WRITE_QUEUE:
+      // Request is being written into socket, we need to wait for it to be
+      // completely written, then reply with timeout.
+      state_ = ReqState::WRITE_QUEUE_CANCELED;
+      baton_.reset();
+      baton_.wait();
+      return Reply(mc_res_timeout);
+    case ReqState::PENDING_QUEUE:
+      // Request wasn't sent to the network yet, reply with timeout.
+      queue_.removePending(*this);
+      return Reply(mc_res_timeout);
+    case ReqState::PENDING_REPLY_QUEUE:
+      // Request was sent to the network yet, but wasn't replied yet,
+      // reply with timeout.
+      queue_.removePendingReply(*this);
+      return Reply(mc_res_timeout);
+    case ReqState::COMPLETE:
+      assert(replyStorage_.hasValue());
+      return std::move(replyStorage_.value());
+    case ReqState::WRITE_QUEUE_CANCELED:
+    case ReqState::NONE:
+      failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
+                   "Unexpected state of request: {}!",
+                   static_cast<uint64_t>(state_));
+  }
+  return Reply(mc_res_local_error);
 }
 
 template <class Operation, class Request>
 McClientRequestContext<Operation, Request>::McClientRequestContext(
-  Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
-  std::shared_ptr<AsyncMcClientImpl> client)
+  const Request& request, uint64_t reqid, mc_protocol_t protocol,
+  std::shared_ptr<AsyncMcClientImpl> client, McClientRequestContextQueue& queue)
   : McClientRequestContextBase(Operation(), request, reqid, protocol,
-                               std::move(client), true, replyStorage_)
+                               std::move(client), replyStorage_, queue)
 #ifndef LIBMC_FBTRACE_DISABLE
     , fbtraceInfo_(getFbTraceInfo(request))
 #endif
@@ -95,34 +134,40 @@ McClientRequestContext<Operation, Request>::McClientRequestContext(
 }
 
 template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::wait(
-    std::chrono::milliseconds timeout) {
-  if (timeout.count()) {
-    baton_.timed_wait(timeout);
-  } else {
-    baton_.wait();
-  }
-}
-
-template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::cancelAndWait() {
-  this->state = ReqState::CANCELED;
-  baton_.reset();
-  baton_.wait();
-}
-
-template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::canceled() {
-  baton_.post();
-}
-
-template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::forwardReply() {
+void McClientRequestContext<Operation, Request>::sendTraceOnReply() {
 #ifndef LIBMC_FBTRACE_DISABLE
   fbTraceOnReceive(Operation(), fbtraceInfo_, replyStorage_.value());
 #endif
-  this->state = ReqState::COMPLETE;
-  baton_.post();
+}
+
+template <class Reply>
+void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
+  if (pendingReplyQueue_.empty()) {
+    assert(idMap_.find(id) == idMap_.end());
+    return;
+  }
+
+  // Get the context and erase it from the queue and map.
+  McClientRequestContextBase* ctx{nullptr};
+  if (outOfOrder_) {
+    auto iter = idMap_.find(id);
+    if (iter != idMap_.end()) {
+      ctx = iter->second;
+      assert(ctx->state_ == State::PENDING_REPLY_QUEUE);
+      pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(*iter->second));
+      idMap_.erase(iter);
+    }
+  } else {
+    if (pendingReplyQueue_.front().id == id) {
+      ctx = &pendingReplyQueue_.front();
+      pendingReplyQueue_.pop_front();
+    }
+  }
+
+  if (ctx && !ctx->reply(std::move(r))) {
+    ctx->state_ = State::NONE;
+    ctx->replyError(mc_res_local_error);
+  }
 }
 
 }}  // facebook::memcache

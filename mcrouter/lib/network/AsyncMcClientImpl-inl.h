@@ -36,47 +36,12 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
   fbTraceOnSend(Operation(), request, connectionOptions_.accessPoint);
 
   McClientRequestContext<Operation, Request> ctx(
-    Operation(), request, nextMsgId_,
-    connectionOptions_.accessPoint.getProtocol(), selfPtr);
-  sendCommon(ctx.createDummyPtr());
+    request, nextMsgId_, connectionOptions_.accessPoint.getProtocol(), selfPtr,
+    queue_);
+  sendCommon(ctx);
 
-  // We sent request successfully, wait for the result.
-  ctx.wait(timeout);
-  switch (ctx.state) {
-    case ReqState::COMPLETE:
-      return ctx.getReply();
-    case ReqState::PENDING_QUEUE:
-    {
-      idMap_.erase(ctx.id);
-      auto it = pendingReplyQueue_.iterator_to(ctx);
-      pendingReplyQueue_.extract(it);
-      return Reply(mc_res_timeout);
-    }
-    case ReqState::SEND_QUEUE:
-    {
-      idMap_.erase(ctx.id);
-      auto it = sendQueue_.iterator_to(ctx);
-      sendQueue_.extract(it);
-      return Reply(mc_res_timeout);
-    }
-    case ReqState::WRITE_QUEUE:
-    {
-      idMap_.erase(ctx.id);
-      ctx.cancelAndWait();
-      return Reply(mc_res_timeout);
-    }
-    default:
-      throw std::logic_error("Unexpected request state");
-  }
-}
-
-template <class Reply>
-void AsyncMcClientImpl::reply(McClientRequestContextBase::UniquePtr req,
-                              Reply&& r) {
-  idMap_.erase(req->id);
-  if (!req->reply(std::move(r))) {
-    req->replyError(mc_res_local_error);
-  }
+  // Wait for the reply.
+  return ctx.waitForReply(timeout);
 }
 
 template <class Reply>
@@ -99,12 +64,7 @@ void AsyncMcClientImpl::replyReady(Reply&& r, uint64_t reqId) {
     incMsgId(nextInflightMsgId_);
   }
 
-  auto ctx = getRequestContext(reqId);
-
-  // We might have already replied this request with an error.
-  if (ctx) {
-    reply(std::move(ctx), std::move(r));
-  }
+  queue_.reply(reqId, std::move(r));
 }
 
 }} // facebook::memcache

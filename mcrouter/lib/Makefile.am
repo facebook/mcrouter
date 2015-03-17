@@ -151,8 +151,9 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
   network/ConnectionOptions.h \
-  network/McClientRequestContext.h \
   network/McClientRequestContext-inl.h \
+  network/McClientRequestContext.cpp \
+  network/McClientRequestContext.h \
   network/McParser.cpp \
   network/McParser.h \
   network/McSerializedRequest.cpp \
