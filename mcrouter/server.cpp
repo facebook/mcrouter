@@ -111,7 +111,9 @@ void serverLoop(
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
      We can clean this up once we convert everything to EventBase */
-  while (worker.isAlive() || worker.writesPending()) {
+  while (worker.isAlive() ||
+         worker.writesPending() ||
+         proxy->fiberManager.hasTasks()) {
     mcrouterLoopOnce(&evb);
   }
 }
@@ -160,6 +162,9 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
     server.join();
 
     LOG(INFO) << "Shutting down";
+
+    McrouterInstance::freeAllMcrouters();
+
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
   }
