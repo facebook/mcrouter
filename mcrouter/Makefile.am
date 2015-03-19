@@ -47,9 +47,6 @@ libmcroutercore_a_SOURCES = \
   options-template.h \
   options.cpp \
   options.h \
-  pclient-inl.h \
-  pclient.cpp \
-  pclient.h \
   PeriodicTaskScheduler.cpp \
   PeriodicTaskScheduler.h \
   PoolFactory.cpp \

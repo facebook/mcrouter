@@ -317,23 +317,22 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
 void prepare_stats(McrouterInstance* router, stat_t* stats) {
   init_stats(stats);
 
+  AggregatedDestinationStats destStats;
   uint64_t config_last_success = 0;
   for (size_t i = 0; i < router->opts().num_proxies; ++i) {
     auto proxy = router->getProxy(i);
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
-  }
-  AggregatedDestinationStats destStats;
-  router->pclientOwner().foreach_shared_synchronized(
-    [&destStats](const std::string& key, ProxyClientShared& shared) {
-      for (const auto& it : shared.getDestinations()) {
-        destStats.pendingRequests += it->getPendingRequestCount();
-        destStats.inflightRequests += it->getInflightRequestCount();
-        auto batch = it->getBatchingStat();
+    proxy->destinationMap->foreachDestinationSynced(
+      [&destStats](const ProxyDestination& destination) {
+        destStats.pendingRequests += destination.getPendingRequestCount();
+        destStats.inflightRequests += destination.getInflightRequestCount();
+        auto batch = destination.getBatchingStat();
         destStats.batches.first += batch.first;
         destStats.batches.second += batch.second;
       }
-    });
+    );
+  }
 
   stat_set_uint64(stats, mcc_txbuf_reqs_stat, destStats.pendingRequests);
   stat_set_uint64(stats, mcc_waiting_replies_stat, destStats.inflightRequests);
@@ -515,32 +514,34 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
 
   if (groups & server_stats) {
     std::unordered_map<std::string, ServerStat> serverStats;
-    proxy->router->pclientOwner().foreach_shared_synchronized(
-      [&serverStats](const std::string& key, ProxyClientShared& shared) {
-        for (auto pdstn : shared.getDestinations()) {
-          auto& stat = serverStats[pdstn->pdstnKey];
-          stat.isHardTko = shared.tko.isHardTko();
-          stat.isSoftTko = shared.tko.isSoftTko();
-          for (size_t i = 0; i < mc_nres; ++i) {
-            stat.results[i] += pdstn->stats().results[i];
+    auto router = proxy->router;
+    for (size_t i = 0; i < router->opts().num_proxies; ++i) {
+      router->getProxy(i)->destinationMap->foreachDestinationSynced(
+        [&serverStats](const ProxyDestination& pdstn) {
+          auto& stat = serverStats[pdstn.pdstnKey];
+          stat.isHardTko = pdstn.tracker->isHardTko();
+          stat.isSoftTko = pdstn.tracker->isSoftTko();
+          for (size_t j = 0; j < mc_nres; ++j) {
+            stat.results[j] += pdstn.stats().results[j];
           }
-          ++stat.states[(size_t)pdstn->stats().state];
+          ++stat.states[(size_t)pdstn.stats().state];
 
-          if (pdstn->stats().avgLatency.hasValue()) {
-            stat.sumLatencies += pdstn->stats().avgLatency.value();
+          if (pdstn.stats().avgLatency.hasValue()) {
+            stat.sumLatencies += pdstn.stats().avgLatency.value();
             ++stat.cntLatencies;
           }
-          stat.pendingRequestsCount += pdstn->getPendingRequestCount();
-          stat.inflightRequestsCount += pdstn->getInflightRequestCount();
+          stat.pendingRequestsCount += pdstn.getPendingRequestCount();
+          stat.inflightRequestsCount += pdstn.getInflightRequestCount();
         }
-      });
+      );
+    }
     for (const auto& it : serverStats) {
       reply.addStat(it.first, it.second.toString());
     }
   }
 
   if (groups & suspect_server_stats) {
-    auto suspectServers = proxy->router->getSuspectServers();
+    auto suspectServers = proxy->router->tkoTrackerMap().getSuspectServers();
     for (const auto& it : suspectServers) {
       reply.addStat(it.first, folly::format("status:{} num_failures:{}",
                                             it.second.first ? "tko" : "down",

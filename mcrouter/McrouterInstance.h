@@ -22,9 +22,8 @@
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
-#include "mcrouter/pclient.h"
 #include "mcrouter/PeriodicTaskScheduler.h"
-#include "mcrouter/TkoCounters.h"
+#include "mcrouter/TkoTracker.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -124,15 +123,6 @@ class McrouterInstance {
    */
   proxy_t* getProxy(size_t index) const;
 
-  /**
-   * @return  servers that recently received error replies.
-   *   Format: {
-   *     server ip => ( is server marked as TKO?, number of failures )
-   *   }
-   *   Only servers with positive number of failures will be returned.
-   */
-  std::unordered_map<std::string, std::pair<bool, size_t>> getSuspectServers();
-
   pid_t pid() const {
     return pid_;
   }
@@ -156,8 +146,8 @@ class McrouterInstance {
     return configFailures_;
   }
 
-  ProxyClientOwner& pclientOwner() {
-    return pclientOwner_;
+  TkoTrackerMap& tkoTrackerMap() {
+    return tkoTrackerMap_;
   }
 
   ObservableRuntimeVars& rtVarsData() {
@@ -222,10 +212,7 @@ class McrouterInstance {
   // Currently limited to one.
   std::atomic<int> liveClients_{0};
 
-  // Total number of boxes marked as TKO.
-  TkoCounters tkoCounters_;
-
-  ProxyClientOwner pclientOwner_;
+  TkoTrackerMap tkoTrackerMap_;
 
   // Stores data for runtime variables.
   ObservableRuntimeVars rtVarsData_;
@@ -332,11 +319,6 @@ class McrouterInstance {
     static std::function<void(size_t, proxy_t*)>&
     onDestroyProxy(McrouterInstance& mcrouter) {
       return mcrouter.onDestroyProxy_;
-    }
-
-    static TkoCounters&
-    tkoCounters(McrouterInstance& mcrouter) {
-      return mcrouter.tkoCounters_;
     }
   };
 

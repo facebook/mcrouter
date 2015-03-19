@@ -14,7 +14,6 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 
 using asox_timer_t = void*;
 
@@ -70,6 +69,22 @@ class ProxyDestinationMap {
    * @param interval timer interval, should be greater than zero.
    */
   void setResetTimer(std::chrono::milliseconds interval);
+
+  /**
+   * Calls f(const ProxyDestination&) for each destination stored
+   * in ProxyDestinationMap. The whole map is locked during the call.
+   *
+   * TODO: replace with getStats()
+   */
+  template <typename Func>
+  void foreachDestinationSynced(Func&& f) {
+    std::lock_guard<std::mutex> lock(destinationsLock_);
+    for (auto& it : destinations_) {
+      if (std::shared_ptr<const ProxyDestination> d = it.second.lock()) {
+        f(*d);
+      }
+    }
+  }
 
   ~ProxyDestinationMap();
 

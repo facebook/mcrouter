@@ -32,8 +32,8 @@ namespace mcrouter {
 
 class DestinationRequestCtx;
 class ProxyClientCommon;
-class ProxyClientShared;
 class ProxyDestinationMap;
+class TkoTracker;
 class proxy_t;
 
 class ProxyDestination {
@@ -59,7 +59,7 @@ class ProxyDestination {
   const AccessPoint accessPoint;
   const std::string pdstnKey;///< consists of ap, server_timeout
 
-  std::shared_ptr<ProxyClientShared> shared;
+  std::shared_ptr<TkoTracker> tracker;
 
   static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
                                                   const ProxyClientCommon& ro,

@@ -13,18 +13,22 @@
 
 #include <glog/logging.h>
 
+#include <folly/MapUtil.h>
+
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/TkoCounters.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-TkoTracker::TkoTracker(size_t tkoThreshold,
+TkoTracker::TkoTracker(std::string key,
+                       size_t tkoThreshold,
                        size_t maxSoftTkos,
-                       TkoCounters& globalTkoCounters)
-  : tkoThreshold_(tkoThreshold),
+                       TkoTrackerMap& trackerMap)
+  : key_(std::move(key)),
+    tkoThreshold_(tkoThreshold),
     maxSoftTkos_(maxSoftTkos),
-    globalTkos_(globalTkoCounters) {
-  }
+    trackerMap_(trackerMap) {
+}
 
 bool TkoTracker::isHardTko() const {
   uintptr_t curSumFailures = sumFailures_;
@@ -37,25 +41,25 @@ bool TkoTracker::isSoftTko() const {
 }
 
 const TkoCounters& TkoTracker::globalTkos() const {
-  return globalTkos_;
+  return trackerMap_.globalTkos_;
 }
 
 bool TkoTracker::incrementSoftTkoCount() {
-  size_t old_soft_tkos = globalTkos_.softTkos;
+  auto& softTkos = trackerMap_.globalTkos_.softTkos;
+  size_t old_soft_tkos = softTkos;
   do {
     assert(old_soft_tkos <= maxSoftTkos_);
     if (old_soft_tkos == maxSoftTkos_) {
       /* We've hit the soft TKO limit and can't tko this box. */
       return false;
     }
-  } while (!globalTkos_.softTkos.compare_exchange_weak(old_soft_tkos,
-                                                       old_soft_tkos + 1));
+  } while (!softTkos.compare_exchange_weak(old_soft_tkos, old_soft_tkos + 1));
   return true;
 }
 
 void TkoTracker::decrementSoftTkoCount() {
   // Decrement the counter and ensure we haven't gone below 0
-  size_t old_soft_tkos = globalTkos_.softTkos.fetch_sub(1);
+  size_t old_soft_tkos = trackerMap_.globalTkos_.softTkos.fetch_sub(1);
   assert(old_soft_tkos != 0);
 }
 
@@ -128,7 +132,7 @@ bool TkoTracker::recordHardFailure(ProxyDestination* pdstn) {
     /* convert to hard failure */
     sumFailures_ |= 1;
     decrementSoftTkoCount();
-    ++globalTkos_.hardTkos;
+    ++trackerMap_.globalTkos_.hardTkos;
     /* We've already been marked responsible */
     return false;
   }
@@ -136,7 +140,7 @@ bool TkoTracker::recordHardFailure(ProxyDestination* pdstn) {
   // If the call below succeeds we marked the box TKO and took responsibility.
   bool success = setSumFailures(reinterpret_cast<uintptr_t>(pdstn) | 1);
   if (success) {
-    ++globalTkos_.hardTkos;
+    ++trackerMap_.globalTkos_.hardTkos;
   }
   return success;
 }
@@ -154,7 +158,7 @@ void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
        decrementSoftTkoCount();
     }
     if (isHardTko()) {
-      --globalTkos_.hardTkos;
+      --trackerMap_.globalTkos_.hardTkos;
     }
     sumFailures_ = 0;
   } else {
@@ -168,6 +172,55 @@ void TkoTracker::removeDestination(ProxyDestination* pdstn) {
   // we should clear the TKO state if pdstn is responsible
   if (isResponsible(pdstn)) {
     recordSuccess(pdstn);
+  }
+}
+
+TkoTracker::~TkoTracker() {
+  trackerMap_.removeTracker(key_);
+}
+
+void TkoTrackerMap::updateTracker(
+  ProxyDestination& pdstn,
+  const size_t tkoThreshold,
+  const size_t maxSoftTkos) {
+  auto key = pdstn.accessPoint.toHostPortString();
+  {
+    std::lock_guard<std::mutex> lock(mx_);
+    auto it = trackers_.find(key);
+    std::shared_ptr<TkoTracker> tracker;
+    if (it == trackers_.end() || (tracker = it->second.lock()) == nullptr) {
+      tracker.reset(new TkoTracker(key, tkoThreshold, maxSoftTkos, *this));
+      trackers_.emplace(std::move(key), tracker);
+    }
+    pdstn.tracker = std::move(tracker);
+  }
+}
+
+std::unordered_map<std::string, std::pair<bool, size_t>>
+TkoTrackerMap::getSuspectServers() {
+  std::unordered_map<std::string, std::pair<bool, size_t>> result;
+  std::lock_guard<std::mutex> lock(mx_);
+  for (const auto& it : trackers_) {
+    if (auto tracker = it.second.lock()) {
+      auto failures = tracker->consecutiveFailureCount();
+      if (failures > 0) {
+        result.emplace(it.first, std::make_pair(tracker->isTko(), failures));
+      }
+    }
+  }
+  return result;
+}
+
+std::weak_ptr<TkoTracker> TkoTrackerMap::getTracker(const std::string& key) {
+  std::lock_guard<std::mutex> lock(mx_);
+  return folly::get_default(trackers_, key);
+}
+
+void TkoTrackerMap::removeTracker(const std::string& key) noexcept {
+  std::lock_guard<std::mutex> lock(mx_);
+  auto it = trackers_.find(key);
+  if (it != trackers_.end()) {
+    trackers_.erase(it);
   }
 }
 

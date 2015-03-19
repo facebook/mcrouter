@@ -277,19 +277,6 @@ std::string McrouterInstance::routerName() const {
   return "libmcrouter." + opts_.service_name + "." + opts_.router_name;
 }
 
-std::unordered_map<std::string, std::pair<bool, size_t>>
-McrouterInstance::getSuspectServers() {
-  std::unordered_map<std::string, std::pair<bool, size_t>> result;
-  pclientOwner_.foreach_shared_synchronized(
-    [&result](const std::string& key, ProxyClientShared& shared) {
-      auto failureCount = shared.tko.consecutiveFailureCount();
-      if (failureCount > 0) {
-        result.emplace(key, std::make_pair(shared.tko.isTko(), failureCount));
-      }
-    });
-  return result;
-}
-
 void McrouterInstance::onClientDestroyed() {
   if (isTransient_ && liveClients_ > 0) {
     std::thread shutdown_thread{

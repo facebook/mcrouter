@@ -18,7 +18,6 @@
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
-#include "mcrouter/pclient.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
@@ -137,7 +136,7 @@ void ProxyDestination::stop_sending_probes() {
 
 void ProxyDestination::unmark_tko(const McReply& reply) {
   FBI_ASSERT(!proxy->opts.disable_tko_tracking);
-  shared->tko.recordSuccess(this);
+  tracker->recordSuccess(this);
   if (sending_probes) {
     onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
     stop_sending_probes();
@@ -152,12 +151,12 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
   bool responsible = false;
   if (reply.isError()) {
     if (reply.isHardTkoError()) {
-      responsible = shared->tko.recordHardFailure(this);
+      responsible = tracker->recordHardFailure(this);
       if (responsible) {
         onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
       }
     } else if (reply.isSoftTkoError()) {
-      responsible = shared->tko.recordSoftFailure(this);
+      responsible = tracker->recordSoftFailure(this);
       if (responsible) {
         onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
       }
@@ -207,7 +206,12 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
 }
 
 ProxyDestination::~ProxyDestination() {
-  shared->removeDestination(this);
+  if (sending_probes) {
+    onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
+    stop_sending_probes();
+  }
+  tracker->removeDestination(this);
+
   if (proxy->destinationMap) {
     proxy->destinationMap->removeDestination(*this);
   }
@@ -215,11 +219,6 @@ ProxyDestination::~ProxyDestination() {
   if (client_) {
     client_->setStatusCallbacks(nullptr, nullptr);
     client_->closeNow();
-  }
-
-  if (sending_probes) {
-    onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
-    stop_sending_probes();
   }
 
   stat_decr(proxy->stats, getStatName(stats_.state), 1);
@@ -244,7 +243,7 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
 }
 
 bool ProxyDestination::may_send() const {
-  return !shared->tko.isTko();
+  return !tracker->isTko();
 }
 
 void ProxyDestination::resetInactive() {
@@ -315,10 +314,10 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(1) << shared->key << " (" << poolName_ << ") "
+    VLOG(1) << accessPoint.toHostPortString() << " (" << poolName_ << ") "
             << eventStr << ". Total hard TKOs: "
-            << shared->tko.globalTkos().hardTkos << "; soft TKOs: "
-            << shared->tko.globalTkos().softTkos << ". Reply: "
+            << tracker->globalTkos().hardTkos << "; soft TKOs: "
+            << tracker->globalTkos().softTkos << ". Reply: "
             << mc_res_to_string(result);
   };
 
@@ -337,10 +336,10 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
       break;
   }
 
-  TkoLog tkoLog(accessPoint, shared->tko.globalTkos());
+  TkoLog tkoLog(accessPoint, tracker->globalTkos());
   tkoLog.event = event;
-  tkoLog.isHardTko = shared->tko.isHardTko();
-  tkoLog.isSoftTko = shared->tko.isSoftTko();
+  tkoLog.isHardTko = tracker->isHardTko();
+  tkoLog.isSoftTko = tracker->isSoftTko();
   tkoLog.avgLatency = stats_.avgLatency.value();
   tkoLog.probesSent = stats_.probesSent;
   tkoLog.poolName = poolName_;

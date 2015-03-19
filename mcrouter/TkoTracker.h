@@ -10,12 +10,18 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <mutex>
+#include <string>
+#include <unordered_map>
+#include <utility>
+
+#include "mcrouter/TkoCounters.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyDestination;
-class TkoCounters;
+class TkoTrackerMap;
 
 /**
  * We record the number of consecutive failures for each destination.
@@ -42,17 +48,6 @@ class TkoCounters;
  */
 class TkoTracker {
  public:
-  /**
-   * @param tkoThreshold require this many soft failures to mark
-   *        the destination TKO
-   * @param maxSoftTkos the maximum number of concurrent soft TKOs allowed in
-   *        the router
-   * @param globalTkoStats number of TKO destination for current router
-   */
-  TkoTracker(size_t tkoThreshold,
-             size_t maxSoftTkos,
-             TkoCounters& globalTkoCounters);
-
   /**
    * @return Is the destination currently marked Hard TKO?
    */
@@ -131,10 +126,13 @@ class TkoTracker {
    */
   void removeDestination(ProxyDestination* pdstn);
 
+  ~TkoTracker();
  private:
+  std::string key_;
   const size_t tkoThreshold_;
   const size_t maxSoftTkos_;
-  TkoCounters& globalTkos_;
+  TkoTrackerMap& trackerMap_;
+
   /* sumFailures_ is used for a few things depending on the state of the
      destination. For a destination that is not TKO, it tracks the number of
      consecutive soft failures to a destination.
@@ -159,8 +157,65 @@ class TkoTracker {
      in the case that another proxy takes responsibility, in which case all
      other proxies may not modify state */
   bool setSumFailures(uintptr_t value);
+
   /* Return true if this thread is responsible for the TKO state */
   bool isResponsible(ProxyDestination* pdstn) const;
+
+  /**
+   * @param tkoThreshold require this many soft failures to mark
+   *        the destination TKO
+   * @param maxSoftTkos the maximum number of concurrent soft TKOs allowed in
+   *        the router
+   * @param globalTkoStats number of TKO destination for current router
+   */
+  TkoTracker(std::string key,
+             size_t tkoThreshold,
+             size_t maxSoftTkos,
+             TkoTrackerMap& trackerMap);
+
+  friend class TkoTrackerMap;
+};
+
+/**
+ * Manages the TkoTrackers for all servers
+ */
+class TkoTrackerMap {
+ public:
+  TkoTrackerMap() = default;
+  TkoTrackerMap(const TkoTrackerMap&) = delete;
+  TkoTrackerMap(TkoTrackerMap&&) = delete;
+
+  /**
+   * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
+   */
+  void updateTracker(ProxyDestination& pdstn,
+                     const size_t tkoThreshold,
+                     const size_t maxSoftTkos);
+
+  /**
+   * @return  servers that recently received error replies.
+   *   Format: {
+   *     server ip => ( is server marked as TKO?, number of failures )
+   *   }
+   *   Only servers with positive number of failures will be returned.
+   */
+  std::unordered_map<std::string, std::pair<bool, size_t>> getSuspectServers();
+
+  const TkoCounters& globalTkos() const {
+    return globalTkos_;
+  }
+
+  std::weak_ptr<TkoTracker> getTracker(const std::string& key);
+ private:
+  std::mutex mx_;
+  std::unordered_map<std::string, std::weak_ptr<TkoTracker>> trackers_;
+
+  // Total number of boxes marked as TKO.
+  TkoCounters globalTkos_;
+
+  void removeTracker(const std::string& key) noexcept;
+
+  friend class TkoTracker;
 };
 
 }}} // facebook::memcache::mcrouter
