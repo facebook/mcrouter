@@ -15,7 +15,7 @@ from mcrouter.test.mock_servers import SleepServer
 
 class TestServerStatsOutstandingRequests(McrouterTestCase):
     config = './mcrouter/test/test_server_stats_pending.json'
-    extra_args = ['-t', '1000000']
+    extra_args = ['--server-timeout', '5000']
 
     def setUp(self):
         # The order here must corresponds to the order of hosts in the .json
