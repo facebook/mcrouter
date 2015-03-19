@@ -75,8 +75,6 @@ libmcrouter_a_SOURCES = \
   fbi/hash.h \
   fbi/lfcalloc.c \
   fbi/lfcalloc.h \
-  fbi/log_limit.c \
-  fbi/log_limit.h \
   fbi/network.c \
   fbi/network.h \
   fbi/nstring.c \

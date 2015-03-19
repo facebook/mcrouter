@@ -17,7 +17,6 @@
 #include <string.h>
 
 #include "mcrouter/lib/fbi/decls.h"
-#include "mcrouter/lib/fbi/log_limit.h"
 #include "mcrouter/lib/fbi/time.h"
 
 __BEGIN_DECLS

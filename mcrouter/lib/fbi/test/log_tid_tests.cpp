@@ -137,38 +137,3 @@ TEST(log_tid, MultiThreadedTest) {
   EXPECT_EQ(0, pthread_join(t2, nullptr));
   cleanup_stderr_redir(saved_stderr);
 }
-
-TEST(log_tid, LogLimit) {
-  char *logfile_string = (char*)"/tmp/Log";
-  unlink(logfile_string);
-
-  nstring_t logfile_name = { logfile_string, sizeof(logfile_string) };
-  fbi_set_debug_logfile(&logfile_name);
-  EXPECT_EQ(0, set_log_limit(10, 10));
-  for (int i = 0; i < 60; ++i) {
-    dbg_critical("log %d", i);
-    usleep(rand() % 1000000);
-  }
-  dbg_exit();
-
-  FILE *logfile = fopen(logfile_string, "r");
-  EXPECT_FALSE(logfile == nullptr);
-  int cur[2], queue[10][2];
-  int i = 0;
-  while(fscanf(logfile, "%*s [ %d . %d ] %*[^\n]", &cur[0], &cur[1]) != EOF) {
-    if(!(cur[0] == queue[(i + 9) % 10][0] &&
-         cur[1] == queue[(i + 9) % 10][1])) {
-      if(i >= 10) {
-        EXPECT_LE(queue[i % 10][0] + 10, cur[0]);
-        if(queue[i % 10][0] + 10 == cur[0]) {
-          EXPECT_LE(queue[i % 10][1], cur[1]);
-        }
-      }
-      queue[i % 10][0] = cur[0];
-      queue[i % 10][1] = cur[1];
-      ++i;
-    }
-  }
-
-  fclose(logfile);
-}

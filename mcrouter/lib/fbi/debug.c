@@ -227,12 +227,6 @@ static int ratelimit(struct msg_info *info, timeval_t *now, int same_loc,
 
   info->repeated += repeat;
 
-  // don't log if we've hit our limit
-  if (check_log_limit(now)) {
-    ++info->suppressed;
-    return 1;
-  }
-
   return repeat;
 #undef msec
 #undef usec
