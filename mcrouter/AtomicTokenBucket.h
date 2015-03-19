@@ -54,18 +54,55 @@ class DynamicAtomicTokenBucket {
     assert(rate > 0);
     assert(burstSize >= 1);
 
-    auto zeroTime = zeroTime_.load();
-    double zeroTimeNew;
-    do {
-      auto tokens = std::min((nowInSeconds - zeroTime) * rate, burstSize);
-      if (tokens < toConsume) {
-        return false;
-      }
-      tokens -= toConsume;
-      zeroTimeNew = nowInSeconds - tokens / rate;
-    } while (!zeroTime_.compare_exchange_weak(zeroTime, zeroTimeNew));
+    return consumeImpl(
+      rate,
+      burstSize,
+      nowInSeconds,
+      [&] (double& tokens) {
+        if (tokens < toConsume) {
+          return false;
+        }
+        tokens -= toConsume;
+        return true;
+      });
+  }
 
-    return true;
+  /**
+   * Similar to consume, but always consumes some number of tokens.  If the
+   * bucket contains enough tokens - consumes toConsume tokens.  Otherwise the
+   * bucket is drained.
+   *
+   * @param toConsume The number of tokens to consume.
+   * @param rate Number of tokens to generate per second.
+   * @param burstSize Maximum burst size. Must be at least 1.
+   * @param nowInSeconds Current time in seconds. Should be monotonically
+   *                     increasing from the nowInSeconds specified in
+   *                     this token bucket's constructor.
+   * @return number of tokens that were consumed.
+   */
+  double consumeOrDrain(double toConsume,
+                        double rate,
+                        double burstSize,
+                        double nowInSeconds = defaultClockNow()) {
+    assert(rate > 0);
+    assert(burstSize >= 1);
+
+    double consumed;
+    consumeImpl(
+      rate,
+      burstSize,
+      nowInSeconds,
+      [&] (double& tokens) {
+        if (tokens < toConsume) {
+          consumed = tokens;
+          tokens = 0.0;
+        } else {
+          consumed = toConsume;
+          tokens -= toConsume;
+        }
+        return true;
+      });
+    return consumed;
   }
 
   /**
@@ -85,6 +122,24 @@ class DynamicAtomicTokenBucket {
   }
 
  private:
+  template<typename TCallback>
+  bool consumeImpl(double rate,
+                   double burstSize,
+                   double nowInSeconds,
+                   TCallback callback) {
+    auto zeroTime = zeroTime_.load();
+    double zeroTimeNew;
+    do {
+      auto tokens = std::min((nowInSeconds - zeroTime) * rate, burstSize);
+      if (!callback(tokens)) {
+        return false;
+      }
+      zeroTimeNew = nowInSeconds - tokens / rate;
+    } while (!zeroTime_.compare_exchange_weak(zeroTime, zeroTimeNew));
+
+    return true;
+  }
+
   // Stores the point in time when number of tokens in the bucket was zero, if
   // we assume that consume was never called after it. This is enough to know
   // the current state of the bucket (see available() implementation).

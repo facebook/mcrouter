@@ -15,6 +15,7 @@
 namespace {
 
 using facebook::memcache::mcrouter::AtomicTokenBucket;
+using facebook::memcache::mcrouter::DynamicAtomicTokenBucket;
 using facebook::memcache::mcrouter::TokenBucket;
 
 template <typename TokenBucketType>
@@ -79,6 +80,21 @@ TEST(AtomicTokenBucket, sanity) {
 
 TEST(AtomicTokenBucket, ReverseTime) {
   doReverseTimeTest<AtomicTokenBucket>();
+}
+
+TEST(AtomicTokenBucket, drainOnFail) {
+  DynamicAtomicTokenBucket tokenBucket;
+
+  // Almost empty the bucket
+  EXPECT_TRUE(tokenBucket.consume(9, 10, 10, 1));
+
+  // Request more tokens than available
+  EXPECT_FALSE(tokenBucket.consume(5, 10, 10, 1));
+  EXPECT_DOUBLE_EQ(1.0, tokenBucket.available(10, 10, 1));
+
+  // Again request more tokens than available, but ask to drain
+  EXPECT_DOUBLE_EQ(1.0, tokenBucket.consumeOrDrain(5, 10, 10, 1));
+  EXPECT_DOUBLE_EQ(0.0, tokenBucket.consumeOrDrain(1, 10, 10, 1));
 }
 
 } // anonymous namespace
