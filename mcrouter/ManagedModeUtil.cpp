@@ -84,7 +84,7 @@ void uninstallSignalHandlers() {
 
 } // anonymous namsepace
 
-void spawnManagedChild(ChildCleanupFn cleanupFn) {
+void spawnManagedChild() {
   installSignalHandlers();
 
   // Loops forever to make sure the parent process never leaves.
@@ -100,9 +100,6 @@ void spawnManagedChild(ChildCleanupFn cleanupFn) {
     case 0:
       // child process. cleanup and continue with the startup logic.
       uninstallSignalHandlers();
-      if (cleanupFn) {
-        cleanupFn();
-      }
       return;
 
     default:

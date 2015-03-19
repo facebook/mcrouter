@@ -69,8 +69,6 @@ static McrouterStandaloneOptions standaloneOpts;
 
 #define print_usage(opt, desc) fprintf(stderr, "\t%*s%s\n", -49, opt, desc)
 
-static int pidfile_fd;
-
 static void print_usage_and_die(char* progname, int errorCode) {
 
   fprintf(stderr, "%s\n"
@@ -370,45 +368,6 @@ static int validate_options() {
   return 1;
 }
 
-struct PidFile {
-  explicit PidFile(const char* path) {
-    pidfile_ = ::open(path, O_WRONLY | O_CREAT, 0644);
-
-    if (pidfile_ == -1) {
-      LOG(ERROR) << "Couldn't open pidfile " << path << ": " << strerror(errno);
-      exit(EXIT_STATUS_TRANSIENT_ERROR);
-    }
-
-    if (flock(pidfile_, LOCK_EX | LOCK_NB) == -1) {
-      ::close(pidfile_);
-      LOG(ERROR) << "Couldn't lock pidfile " << path << ": " << strerror(errno);
-      exit(EXIT_STATUS_TRANSIENT_ERROR);
-    }
-  }
-
-  void write() const {
-    auto pidString = std::to_string(getpid());
-    ::write(pidfile_, pidString.data(), pidString.size());
-    ::fsync(pidfile_);
-  }
-
-  void detach() {
-    ::close(pidfile_);
-    pidfile_ = -1;
-  }
-
-  ~PidFile() {
-    if (pidfile_ >= 0) {
-      ::ftruncate(pidfile_, 0);
-      ::close(pidfile_);
-    }
-  }
-
- private:
-  int pidfile_;
-};
-static std::unique_ptr<PidFile> pidFile;
-
 /** Set the fdlimit before any libevent setup because libevent uses the fd
     limit as a initial allocation buffer and if the limit is too low, then
     libevent realloc's the buffer which may cause epoll to copy out to the
@@ -589,29 +548,15 @@ int main(int argc, char **argv) {
     failure::addHandler(failure::handlers::throwLogicError());
   }
 
-  if (standaloneOpts.pidfile != "") {
-    pidFile = folly::make_unique<PidFile>(standaloneOpts.pidfile.c_str());
-  }
-
   LOG(INFO) << MCROUTER_PACKAGE_STRING << " startup (" << getpid() << ")";
 
   if (standaloneOpts.background && !validate_configs) {
     daemonize();
   }
 
-  /* this has to happen between background and managed */
-  if (pidFile) {
-    pidFile->write();
-  }
-
   // Managed mode
   if (standaloneOpts.managed && !validate_configs) {
-    spawnManagedChild([] {
-      if (pidFile) {
-        pidFile->detach();
-        pidFile.reset();
-      }
-    });
+    spawnManagedChild();
     LOG(INFO) << "forked (" << getpid() << ")";
   }
 

@@ -18,7 +18,7 @@ typedef std::function<void()> ChildCleanupFn;
 
 /* Forks off child process and watches for its death if we're running in
    managed mode. */
-void spawnManagedChild(ChildCleanupFn cleanupFn);
+void spawnManagedChild();
 
 /* Shutdown parent and child process'.
  * Can only be called after spawnManagedChild(). */

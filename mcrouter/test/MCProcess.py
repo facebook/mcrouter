@@ -531,15 +531,11 @@ class Mcrouter(MCProcess):
             args.extend(extra_args)
 
         if '-b' in args:
-            pid_file = os.path.join(self.base_dir.path, 'mcrouter.pid')
-            args.extend(['-P', pid_file])
-
             def get_pid():
-                with open(pid_file, 'r') as pid_f:
-                    pid = pid_f.read().strip()
-                    if not pid:
-                        return pid
-                    return int(pid)
+                stats = self.stats()
+                if stats:
+                    return int(stats['child_pid'])
+                return None
 
             def terminate():
                 pid = get_pid()

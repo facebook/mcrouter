@@ -48,11 +48,6 @@ mcrouter_option_integer(
   "listen-sock-fd", no_short,
   "Listen socket to take over")
 
-mcrouter_option_string(
-  pidfile, "",
-  "pid-file", 'P',
-  "PID file")
-
 mcrouter_option_toggle(
   background, false,
   "background", 'b',
