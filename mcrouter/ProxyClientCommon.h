@@ -22,9 +22,6 @@ struct ProxyClientCommon {
   const ClientPool& pool;
   const AccessPoint ap;
 
-  /// Always the same for a given (host, port)
-  const std::string destination_key;
-
   const int keep_routing_prefix;
   const std::chrono::milliseconds server_timeout;
 

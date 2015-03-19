@@ -18,8 +18,6 @@ typename ReplyType<McOperation<Op>, Request>::type
 ProxyDestination::send(const Request& request, McOperation<Op>,
                        DestinationRequestCtx& req_ctx, uint64_t senderId,
                        std::chrono::milliseconds timeout) {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-
   proxy->destinationMap->markAsActive(*this);
   auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>(), timeout);
   onReply(reply, req_ctx);

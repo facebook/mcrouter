@@ -9,9 +9,6 @@
  */
 #pragma once
 
-#include <sys/time.h>
-
-#include <atomic>
 #include <memory>
 #include <string>
 
@@ -21,7 +18,6 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
-#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/TkoLog.h"
 
@@ -59,22 +55,11 @@ class ProxyDestination {
     explicit Stats(const McrouterOptions& opts);
   };
 
-  static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
-
   proxy_t* proxy{nullptr}; ///< for convenience
   const AccessPoint accessPoint;
-  const std::string destinationKey;///< always the same for a given (host, port)
-  // Shortest timeout among all ProxyClientCommon's using this destination
-  std::chrono::milliseconds shortestTimeout{0};
   const std::string pdstnKey;///< consists of ap, server_timeout
-  uint64_t magic{0}; ///< to allow asserts that pdstn is still alive
-  const uint64_t proxy_magic{0}; ///< to allow asserts that proxy is still alive
 
   std::shared_ptr<ProxyClientShared> shared;
-
-  const bool use_ssl{false};
-
-  const uint64_t qos{0};
 
   static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
                                                   const ProxyClientCommon& ro,
@@ -88,7 +73,7 @@ class ProxyDestination {
   send(const Request& request, McOperation<Op>, DestinationRequestCtx& req_ctx,
        uint64_t senderId, std::chrono::milliseconds timeout);
   // returns true if okay to send req using this client
-  bool may_send();
+  bool may_send() const;
 
   /**
    * @return stats for ProxyDestination
@@ -98,9 +83,6 @@ class ProxyDestination {
   }
 
   void resetInactive();
-
-  // on probe timer
-  void on_timer(const asox_timer_t timer);
 
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
@@ -119,7 +101,15 @@ class ProxyDestination {
   }
 
  private:
+  static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
+
   std::unique_ptr<AsyncMcClient> client_;
+
+  // Shortest timeout among all ProxyClientCommon's using this destination
+  std::chrono::milliseconds shortestTimeout_{0};
+  const bool useSsl_{false};
+  const uint64_t qos_{0};
+  uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
 
   Stats stats_;
 
@@ -134,9 +124,6 @@ class ProxyDestination {
 
   void setState(State st);
 
-  // tko behaviour
-  char marked_tko{0};
-
   void start_sending_probes();
   void stop_sending_probes();
 
@@ -144,6 +131,9 @@ class ProxyDestination {
 
   void handle_tko(const McReply& reply, bool is_probe_req);
   void unmark_tko(const McReply& reply);
+
+  // on probe timer
+  void on_timer(const asox_timer_t timer);
 
   // Process tko, stats and duration timer.
   void onReply(const McReply& reply, DestinationRequestCtx& destreqCtx);

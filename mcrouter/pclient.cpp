@@ -45,7 +45,7 @@ void ProxyClientOwner::updateProxyClientShared(
   const size_t tkoThreshold,
   const size_t maxSoftTkos,
   TkoCounters& globalTkos) {
-  const std::string& key = pdstn.destinationKey;
+  auto key = pdstn.accessPoint.toHostPortString();
   {
     std::lock_guard<std::mutex> lock(mx);
     auto it = pclient_shared.find(key);

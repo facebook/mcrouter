@@ -9,16 +9,13 @@
  */
 #include "ProxyDestination.h"
 
-#include <folly/Conv.h>
 #include <folly/Memory.h>
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
-#include "mcrouter/lib/fbi/nstring.h"
-#include "mcrouter/lib/fbi/timer.h"
-#include "mcrouter/lib/fbi/util.h"
 #include "mcrouter/lib/fibers/Fiber.h"
+#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/pclient.h"
@@ -39,11 +36,6 @@ constexpr double kProbeJitterDelta = kProbeJitterMax - kProbeJitterMin;
 static_assert(kProbeJitterMax >= kProbeJitterMin,
               "ProbeJitterMax should be greater or equal tham ProbeJitterMin");
 
-void on_probe_timer(const asox_timer_t timer, void* arg) {
-  ProxyDestination* pdstn = (ProxyDestination*)arg;
-  pdstn->on_timer(timer);
-}
-
 stat_name_t getStatName(ProxyDestination::State st) {
   switch (st) {
     case ProxyDestination::State::kNew:
@@ -63,7 +55,6 @@ stat_name_t getStatName(ProxyDestination::State st) {
 }  // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
-  FBI_ASSERT(proxy->magic == proxy_magic);
   FBI_ASSERT(!proxy->opts.disable_tko_tracking);
 
   int delay_ms = probe_delay_next_ms;
@@ -88,13 +79,16 @@ void ProxyDestination::schedule_next_probe() {
   delay.tv_usec = (delay_us % 1000000);
 
   FBI_ASSERT(probe_timer == nullptr);
-  probe_timer = asox_add_timer(proxy->eventBase->getLibeventBase(), delay,
-                               on_probe_timer, this);
+  probe_timer = asox_add_timer(
+    proxy->eventBase->getLibeventBase(),
+    delay,
+    [](const asox_timer_t timer, void* arg) {
+      reinterpret_cast<ProxyDestination*>(arg)->on_timer(timer);
+    }, this);
 }
 
 void ProxyDestination::on_timer(const asox_timer_t timer) {
   // This assert checks for use-after-free
-  FBI_ASSERT(proxy->magic == proxy_magic);
   FBI_ASSERT(timer == probe_timer);
   asox_remove_timer(timer);
   probe_timer = nullptr;
@@ -116,7 +110,7 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
         McReply reply = pdstn->getAsyncMcClient().sendSync(
           *pdstn->probe_req,
           McOperation<mc_op_version>(),
-          pdstn->shortestTimeout);
+          pdstn->shortestTimeout_);
         pdstn->handle_tko(reply, true);
         pdstn->probe_req.reset();
       });
@@ -180,8 +174,6 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
 
 void ProxyDestination::onReply(const McReply& reply,
                                DestinationRequestCtx& destreqCtx) {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-
   handle_tko(reply, false);
 
   stats_.results[reply.result()]++;
@@ -231,7 +223,7 @@ ProxyDestination::~ProxyDestination() {
   }
 
   stat_decr(proxy->stats, getStatName(stats_.state), 1);
-  magic = kDeadBeef;
+  magic_ = kDeadBeef;
 }
 
 ProxyDestination::ProxyDestination(proxy_t* proxy_,
@@ -239,29 +231,23 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
                                    std::string pdstnKey_)
   : proxy(proxy_),
     accessPoint(ro_.ap),
-    destinationKey(ro_.destination_key),
-    shortestTimeout(ro_.server_timeout),
     pdstnKey(std::move(pdstnKey_)),
-    proxy_magic(proxy->magic),
-    use_ssl(ro_.useSsl),
-    qos(ro_.qos),
+    shortestTimeout_(ro_.server_timeout),
+    useSsl_(ro_.useSsl),
+    qos_(ro_.qos),
     stats_(proxy_->opts),
     poolName_(ro_.pool.getName()) {
 
   static uint64_t next_magic = 0x12345678900000LL;
-  magic = __sync_fetch_and_add(&next_magic, 1);
+  magic_ = __sync_fetch_and_add(&next_magic, 1);
   stat_incr(proxy->stats, num_servers_new_stat, 1);
 }
 
-bool ProxyDestination::may_send() {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-
+bool ProxyDestination::may_send() const {
   return !shared->tko.isTko();
 }
 
 void ProxyDestination::resetInactive() {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-
   // No need to reset non-existing client.
   if (client_) {
     resetting = 1;
@@ -281,13 +267,13 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveCount = opts.keepalive_cnt;
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
-  options.writeTimeout = shortestTimeout;
+  options.writeTimeout = shortestTimeout_;
   if (proxy->opts.enable_qos) {
     options.enableQoS = true;
-    options.qos = qos;
+    options.qos = qos_;
   }
 
-  if (use_ssl) {
+  if (useSsl_) {
     checkLogic(!opts.pem_cert_path.empty() &&
                !opts.pem_key_path.empty() &&
                !opts.pem_ca_path.empty(),
@@ -402,10 +388,10 @@ void ProxyDestination::updateShortestTimeout(
   if (!timeout.count()) {
     return;
   }
-  if (shortestTimeout.count() == 0 || shortestTimeout > timeout) {
-    shortestTimeout = timeout;
+  if (shortestTimeout_.count() == 0 || shortestTimeout_ > timeout) {
+    shortestTimeout_ = timeout;
     if (client_) {
-      client_->updateWriteTimeout(shortestTimeout);
+      client_->updateWriteTimeout(shortestTimeout_);
     }
   }
 }
