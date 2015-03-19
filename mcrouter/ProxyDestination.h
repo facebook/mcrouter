@@ -118,9 +118,6 @@ class ProxyDestination {
   asox_timer_t probe_timer{nullptr};
   std::string poolName_;
 
-  char resetting{0}; // If 1 when inside on_down, the call was due to a forced
-                     // mc_client_reset and not a remote connection failure.
-
   void setState(State st);
 
   void start_sending_probes();

@@ -205,9 +205,7 @@ class TestClient {
     }
     client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
     client_->setStatusCallbacks([] { LOG(INFO) << "Client UP."; },
-                                [] (const folly::AsyncSocketException&) {
-                                  LOG(INFO) << "Client DOWN.";
-                                });
+                                [] (bool) { LOG(INFO) << "Client DOWN."; });
   }
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
@@ -632,7 +630,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
     [&wasUp] {
       wasUp = true;
     },
-    [&wentDown] (const folly::AsyncSocketException&) {
+    [&wentDown] (bool) {
       wentDown = true;
     });
 

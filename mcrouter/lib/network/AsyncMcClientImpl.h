@@ -58,7 +58,7 @@ class AsyncMcClientImpl :
 
   void setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const folly::AsyncSocketException&)> onDown);
+    std::function<void(bool)> onDown);
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
@@ -83,8 +83,7 @@ class AsyncMcClientImpl :
 
   struct ConnectionStatusCallbacks {
     std::function<void()> onUp;
-    std::function<void(const folly::AsyncSocketException&)>
-      onDown;
+    std::function<void(bool)> onDown;
   };
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()

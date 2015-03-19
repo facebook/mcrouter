@@ -98,7 +98,7 @@ void AsyncMcClientImpl::closeNow() {
 
 void AsyncMcClientImpl::setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const folly::AsyncSocketException&)> onDown) {
+    std::function<void(bool)> onDown) {
   DestructorGuard dg(this);
 
   statusCallbacks_ = ConnectionStatusCallbacks {
@@ -448,7 +448,7 @@ void AsyncMcClientImpl::connectErr(
   socket_.reset();
 
   if (statusCallbacks_.onDown) {
-    statusCallbacks_.onDown(ex);
+    statusCallbacks_.onDown(isAborting_);
   }
 }
 
@@ -485,9 +485,7 @@ void AsyncMcClientImpl::processShutdown() {
         // This is a last processShutdown() for this error and it is safe
         // to go DOWN.
         if (statusCallbacks_.onDown) {
-          statusCallbacks_.onDown(
-            folly::AsyncSocketException(
-              folly::AsyncSocketException::INTERNAL_ERROR, ""));
+          statusCallbacks_.onDown(isAborting_);
         }
 
         connectionState_ = ConnectionState::DOWN;

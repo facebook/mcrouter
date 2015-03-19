@@ -43,9 +43,8 @@ class AsyncMcClient {
    * @param onUp  will be called whenever client successfully connects to the
    *              server. Will be called immediately if we're already connected.
    *              Can be nullptr.
-   * @param onDown  will be called whenever connection goes down with exception
-   *                that describes the reason of disconnect. Will not be called
-   *                if the connection is already DOWN.
+   * @param onDown  will be called whenever connection goes down. Will not be
+   *                called if the connection is already DOWN.
    *                Can be nullptr.
    * Note: those callbacks may be called even after the client was destroyed.
    *       This will happen in case when the client is destroyed and there are
@@ -53,7 +52,7 @@ class AsyncMcClient {
    */
   void setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(const folly::AsyncSocketException&)> onDown);
+    std::function<void(bool aborting)> onDown);
 
   /**
    * Send request synchronously (i.e. blocking call).

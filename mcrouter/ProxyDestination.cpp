@@ -130,7 +130,7 @@ void ProxyDestination::stop_sending_probes() {
 }
 
 void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
-  if (resetting || proxy->opts.disable_tko_tracking) {
+  if (proxy->opts.disable_tko_tracking) {
     return;
   }
 
@@ -237,10 +237,8 @@ bool ProxyDestination::may_send() const {
 void ProxyDestination::resetInactive() {
   // No need to reset non-existing client.
   if (client_) {
-    resetting = 1;
     client_->closeNow();
     client_.reset();
-    resetting = 0;
   }
 }
 
@@ -278,8 +276,8 @@ void ProxyDestination::initializeAsyncMcClient() {
     [this] () mutable {
       setState(State::kUp);
     },
-    [this] (const folly::AsyncSocketException&) mutable {
-      if (resetting) {
+    [this] (bool aborting) mutable {
+      if (aborting) {
         setState(State::kClosed);
       } else {
         setState(State::kDown);
@@ -358,7 +356,7 @@ void ProxyDestination::setState(State new_st) {
       logUtil("up");
       break;
     case State::kClosed:
-      logUtil("inactive");
+      logUtil("closed");
       break;
     case State::kDown:
       logUtil("down");
