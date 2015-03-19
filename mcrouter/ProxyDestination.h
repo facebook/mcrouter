@@ -114,7 +114,6 @@ class ProxyDestination {
   Stats stats_;
 
   int probe_delay_next_ms{0};
-  bool sending_probes{false};
   std::unique_ptr<McRequest> probe_req;
   asox_timer_t probe_timer{nullptr};
   std::string poolName_;
@@ -130,7 +129,6 @@ class ProxyDestination {
   void schedule_next_probe();
 
   void handle_tko(const McReply& reply, bool is_probe_req);
-  void unmark_tko(const McReply& reply);
 
   // on probe timer
   void on_timer(const asox_timer_t timer);

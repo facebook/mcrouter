@@ -118,13 +118,16 @@ class TkoTracker {
    * @param pdstn  a pointer to the calling proxydestination for tracking
    *               responsibility.
    *
+   * @return true if `pdstn` was responsible for sending probes
    */
-  void recordSuccess(ProxyDestination* pdstn);
+  bool recordSuccess(ProxyDestination* pdstn);
 
   /**
    * Should be called when ProxyDestination is going to be destroyed
+   *
+   * @return true if `pdstn` was responsible for sending probes
    */
-  void removeDestination(ProxyDestination* pdstn);
+  bool removeDestination(ProxyDestination* pdstn);
 
   ~TkoTracker();
  private:

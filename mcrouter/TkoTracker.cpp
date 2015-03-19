@@ -149,7 +149,7 @@ bool TkoTracker::isResponsible(ProxyDestination* pdstn) const {
   return (sumFailures_ & ~1) == reinterpret_cast<uintptr_t>(pdstn);
 }
 
-void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
+bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
   /* If we're responsible, no one else can change any state and we're
      effectively under mutex. */
   if (isResponsible(pdstn)) {
@@ -161,18 +161,21 @@ void TkoTracker::recordSuccess(ProxyDestination* pdstn) {
       --trackerMap_.globalTkos_.hardTkos;
     }
     sumFailures_ = 0;
-  } else {
-    setSumFailures(0);
+    consecutiveFailureCount_ = 0;
+    return true;
   }
-
-  consecutiveFailureCount_ = 0;
+  if (setSumFailures(0)) {
+    consecutiveFailureCount_ = 0;
+  }
+  return false;
 }
 
-void TkoTracker::removeDestination(ProxyDestination* pdstn) {
+bool TkoTracker::removeDestination(ProxyDestination* pdstn) {
   // we should clear the TKO state if pdstn is responsible
   if (isResponsible(pdstn)) {
-    recordSuccess(pdstn);
+    return recordSuccess(pdstn);
   }
+  return false;
 }
 
 TkoTracker::~TkoTracker() {

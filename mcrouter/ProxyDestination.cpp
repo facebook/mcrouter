@@ -91,55 +91,41 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
   FBI_ASSERT(timer == probe_timer);
   asox_remove_timer(timer);
   probe_timer = nullptr;
-  if (sending_probes) {
-    // Note that the previous probe might still be in flight
-    if (!probe_req) {
-      auto mutReq = createMcMsgRef();
-      mutReq->op = mc_op_version;
-      probe_req = folly::make_unique<McRequest>(std::move(mutReq));
-      ++stats_.probesSent;
-      auto selfPtr = selfPtr_;
-      proxy->fiberManager.addTask([selfPtr]() mutable {
-        auto pdstn = selfPtr.lock();
-        if (pdstn == nullptr) {
-          return;
-        }
-        pdstn->proxy->destinationMap->markAsActive(*pdstn);
-        // will reconnect if connection was closed
-        McReply reply = pdstn->getAsyncMcClient().sendSync(
-          *pdstn->probe_req,
-          McOperation<mc_op_version>(),
-          pdstn->shortestTimeout_);
-        pdstn->handle_tko(reply, true);
-        pdstn->probe_req.reset();
-      });
-    }
-    schedule_next_probe();
+  // Note that the previous probe might still be in flight
+  if (!probe_req) {
+    auto mutReq = createMcMsgRef();
+    mutReq->op = mc_op_version;
+    probe_req = folly::make_unique<McRequest>(std::move(mutReq));
+    ++stats_.probesSent;
+    auto selfPtr = selfPtr_;
+    proxy->fiberManager.addTask([selfPtr]() mutable {
+      auto pdstn = selfPtr.lock();
+      if (pdstn == nullptr) {
+        return;
+      }
+      pdstn->proxy->destinationMap->markAsActive(*pdstn);
+      // will reconnect if connection was closed
+      McReply reply = pdstn->getAsyncMcClient().sendSync(
+        *pdstn->probe_req,
+        McOperation<mc_op_version>(),
+        pdstn->shortestTimeout_);
+      pdstn->handle_tko(reply, true);
+      pdstn->probe_req.reset();
+    });
   }
+  schedule_next_probe();
 }
 
 void ProxyDestination::start_sending_probes() {
-  FBI_ASSERT(!sending_probes);
-  sending_probes = true;
   probe_delay_next_ms = proxy->opts.probe_delay_initial_ms;
   schedule_next_probe();
 }
 
 void ProxyDestination::stop_sending_probes() {
   stats_.probesSent = 0;
-  sending_probes = false;
   if (probe_timer) {
     asox_remove_timer(probe_timer);
     probe_timer = nullptr;
-  }
-}
-
-void ProxyDestination::unmark_tko(const McReply& reply) {
-  FBI_ASSERT(!proxy->opts.disable_tko_tracking);
-  tracker->recordSuccess(this);
-  if (sending_probes) {
-    onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
-    stop_sending_probes();
   }
 }
 
@@ -148,27 +134,30 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
     return;
   }
 
-  bool responsible = false;
   if (reply.isError()) {
     if (reply.isHardTkoError()) {
-      responsible = tracker->recordHardFailure(this);
-      if (responsible) {
+      if (tracker->recordHardFailure(this)) {
         onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
+        start_sending_probes();
       }
     } else if (reply.isSoftTkoError()) {
-      responsible = tracker->recordSoftFailure(this);
-      if (responsible) {
+      if (tracker->recordSoftFailure(this)) {
         onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
+        start_sending_probes();
       }
     }
-  } else if (!sending_probes || is_probe_req) {
-    /* If we're sending probes, only a probe request should be considered
-       successful to avoid outstanding requests from unmarking the box */
-    unmark_tko(reply);
+    return;
   }
-  if (responsible) {
-    start_sending_probes();
+
+  if (tracker->isTko()) {
+    if (is_probe_req && tracker->recordSuccess(this)) {
+      onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
+      stop_sending_probes();
+    }
+    return;
   }
+
+  tracker->recordSuccess(this);
 }
 
 void ProxyDestination::onReply(const McReply& reply,
@@ -206,11 +195,10 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
 }
 
 ProxyDestination::~ProxyDestination() {
-  if (sending_probes) {
+  if (tracker->removeDestination(this)) {
     onTkoEvent(TkoLogEvent::RemoveFromConfig, mc_res_ok);
     stop_sending_probes();
   }
-  tracker->removeDestination(this);
 
   if (proxy->destinationMap) {
     proxy->destinationMap->removeDestination(*this);
