@@ -47,24 +47,27 @@ namespace {
 
 char* gStandaloneArgs = nullptr;
 
-const char* clientStateToStr(ProxyDestinationState state) {
+const char* clientStateToStr(ProxyDestination::State state) {
   switch (state) {
-    case ProxyDestinationState::kTko:
-      return "tko";
-    case ProxyDestinationState::kUp:
+    case ProxyDestination::State::kUp:
       return "up";
-    case ProxyDestinationState::kNew:
+    case ProxyDestination::State::kNew:
       return "new";
-    case ProxyDestinationState::kClosed:
+    case ProxyDestination::State::kClosed:
       return "closed";
-    default:
-      return "unknown";
+    case ProxyDestination::State::kDown:
+      return "down";
+    case ProxyDestination::State::kNumStates:
+      assert(false);
   }
+  return "unknown";
 }
 
 struct ServerStat {
   uint64_t results[mc_nres] = {0};
-  size_t states[(size_t) ProxyDestinationState::kNumStates] = {0};
+  size_t states[(size_t)ProxyDestination::State::kNumStates] = {0};
+  bool isHardTko{false};
+  bool isSoftTko{false};
   double sumLatencies{0.0};
   size_t cntLatencies{0};
   size_t pendingRequestsCount{0};
@@ -75,9 +78,14 @@ struct ServerStat {
     auto res = folly::format("avg_latency_us:{:.3f}", avgLatency).str();
     folly::format(" pending_reqs:{}", pendingRequestsCount).appendTo(res);
     folly::format(" inflight_reqs:{}", inflightRequestsCount).appendTo(res);
-    for (size_t i = 0; i < (size_t) ProxyDestinationState::kNumStates; ++i) {
+    if (isHardTko) {
+      folly::format(" hard_tko; ").appendTo(res);
+    } else if (isSoftTko) {
+      folly::format(" soft_tko; ").appendTo(res);
+    }
+    for (size_t i = 0; i < (size_t)ProxyDestination::State::kNumStates; ++i) {
       if (states[i] > 0) {
-        auto state = clientStateToStr(static_cast<ProxyDestinationState>(i));
+        auto state = clientStateToStr(static_cast<ProxyDestination::State>(i));
         folly::format(" {}:{}", state, states[i]).appendTo(res);
       }
     }
@@ -511,10 +519,12 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
       [&serverStats](const std::string& key, ProxyClientShared& shared) {
         for (auto pdstn : shared.getDestinations()) {
           auto& stat = serverStats[pdstn->pdstnKey];
+          stat.isHardTko = shared.tko.isHardTko();
+          stat.isSoftTko = shared.tko.isSoftTko();
           for (size_t i = 0; i < mc_nres; ++i) {
             stat.results[i] += pdstn->stats().results[i];
           }
-          ++stat.states[(size_t) pdstn->state()];
+          ++stat.states[(size_t)pdstn->stats().state];
 
           if (pdstn->stats().avgLatency.hasValue()) {
             stat.sumLatencies += pdstn->stats().avgLatency.value();

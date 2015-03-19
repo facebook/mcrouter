@@ -44,20 +44,20 @@ void on_probe_timer(const asox_timer_t timer, void* arg) {
   pdstn->on_timer(timer);
 }
 
-stat_name_t getStatName(ProxyDestinationState st) {
+stat_name_t getStatName(ProxyDestination::State st) {
   switch (st) {
-    case ProxyDestinationState::kNew:
+    case ProxyDestination::State::kNew:
       return num_servers_new_stat;
-    case ProxyDestinationState::kUp:
+    case ProxyDestination::State::kUp:
       return num_servers_up_stat;
-    case ProxyDestinationState::kClosed:
+    case ProxyDestination::State::kClosed:
       return num_servers_closed_stat;
-    case ProxyDestinationState::kDown:
+    case ProxyDestination::State::kDown:
       return num_servers_down_stat;
-    default:
+    case ProxyDestination::State::kNumStates:
       CHECK(false);
-      return num_stats; // shouldnt reach here
   }
+  return num_stats; // shouldn't reach here
 }
 
 }  // anonymous namespace
@@ -104,7 +104,7 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
       auto mutReq = createMcMsgRef();
       mutReq->op = mc_op_version;
       probe_req = folly::make_unique<McRequest>(std::move(mutReq));
-      ++probesSent_;
+      ++stats_.probesSent;
       auto selfPtr = selfPtr_;
       proxy->fiberManager.addTask([selfPtr]() mutable {
         auto pdstn = selfPtr.lock();
@@ -133,7 +133,7 @@ void ProxyDestination::start_sending_probes() {
 }
 
 void ProxyDestination::stop_sending_probes() {
-  probesSent_ = 0;
+  stats_.probesSent = 0;
   sending_probes = false;
   if (probe_timer) {
     asox_remove_timer(probe_timer);
@@ -189,35 +189,6 @@ void ProxyDestination::onReply(const McReply& reply,
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats_.avgLatency.insertSample(latency);
-}
-
-void ProxyDestination::on_up() {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-  FBI_ASSERT(stats_.state != ProxyDestinationState::kUp);
-
-  setState(ProxyDestinationState::kUp);
-
-  VLOG(1) << "server " << pdstnKey << " up (" <<
-      stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
-      stat_get_uint64(proxy->stats, num_servers_stat) << ")";
-}
-
-void ProxyDestination::on_down() {
-  FBI_ASSERT(proxy->magic == proxy_magic);
-
-  if (resetting) {
-    VLOG(1) << "server " << pdstnKey << " inactive (" <<
-        stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
-        stat_get_uint64(proxy->stats, num_servers_stat) << ")";
-    setState(ProxyDestinationState::kClosed);
-  } else {
-    VLOG(1) << "server " << pdstnKey << " down (" <<
-        stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
-        stat_get_uint64(proxy->stats, num_servers_stat) << ")";
-    setState(ProxyDestinationState::kDown);
-    handle_tko(McReply(mc_res_connect_error),
-               /* is_probe_req= */ false);
-  }
 }
 
 size_t ProxyDestination::getPendingRequestCount() const {
@@ -282,17 +253,6 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
   stat_incr(proxy->stats, num_servers_new_stat, 1);
 }
 
-ProxyDestinationState ProxyDestination::state() const {
-  if (shared->tko.isTko()) {
-    return ProxyDestinationState::kTko;
-  }
-  return stats_.state;
-}
-
-const ProxyDestinationStats& ProxyDestination::stats() const {
-  return stats_;
-}
-
 bool ProxyDestination::may_send() {
   FBI_ASSERT(proxy->magic == proxy_magic);
 
@@ -343,10 +303,15 @@ void ProxyDestination::initializeAsyncMcClient() {
 
   client_->setStatusCallbacks(
     [this] () mutable {
-      on_up();
+      setState(State::kUp);
     },
     [this] (const folly::AsyncSocketException&) mutable {
-      on_down();
+      if (resetting) {
+        setState(State::kClosed);
+      } else {
+        setState(State::kDown);
+        handle_tko(McReply(mc_res_connect_error), /* is_probe_req= */ false);
+      }
     });
 
   if (opts.target_max_inflight_requests > 0) {
@@ -391,27 +356,45 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   tkoLog.isHardTko = shared->tko.isHardTko();
   tkoLog.isSoftTko = shared->tko.isSoftTko();
   tkoLog.avgLatency = stats_.avgLatency.value();
-  tkoLog.probesSent = probesSent_;
+  tkoLog.probesSent = stats_.probesSent;
   tkoLog.poolName = poolName_;
   tkoLog.result = result;
 
   logTkoEvent(proxy, tkoLog);
 }
 
-void ProxyDestination::setState(ProxyDestinationState new_st) {
-  auto old_st = stats_.state;
-
-  if (old_st != new_st) {
-    auto old_name = getStatName(old_st);
-    auto new_name = getStatName(new_st);
-    stat_decr(proxy->stats, old_name, 1);
-    stat_incr(proxy->stats, new_name, 1);
-    stats_.state = new_st;
+void ProxyDestination::setState(State new_st) {
+  if (stats_.state == new_st) {
+    return;
   }
-}
 
-ProxyDestinationStats::ProxyDestinationStats(const McrouterOptions& opts)
-  : avgLatency(1.0 / opts.latency_window_size) {
+  auto logUtil = [this](const char* s) {
+    VLOG(1) << "server " << pdstnKey << " " << s << " (" <<
+        stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
+        stat_get_uint64(proxy->stats, num_servers_stat) << ")";
+  };
+
+  auto old_name = getStatName(stats_.state);
+  auto new_name = getStatName(new_st);
+  stat_decr(proxy->stats, old_name, 1);
+  stat_incr(proxy->stats, new_name, 1);
+  stats_.state = new_st;
+
+  switch (stats_.state) {
+    case State::kUp:
+      logUtil("up");
+      break;
+    case State::kClosed:
+      logUtil("inactive");
+      break;
+    case State::kDown:
+      logUtil("down");
+      break;
+    case State::kNew:
+    case State::kNumStates:
+      assert(false);
+      break;
+  }
 }
 
 void ProxyDestination::updateShortestTimeout(
@@ -425,6 +408,10 @@ void ProxyDestination::updateShortestTimeout(
       client_->updateWriteTimeout(shortestTimeout);
     }
   }
+}
+
+ProxyDestination::Stats::Stats(const McrouterOptions& opts)
+  : avgLatency(1.0 / opts.latency_window_size) {
 }
 
 }}}  // facebook::memcache::mcrouter

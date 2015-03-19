@@ -36,30 +36,29 @@ namespace mcrouter {
 
 class DestinationRequestCtx;
 class ProxyClientCommon;
-class ProxyClientOwner;
 class ProxyClientShared;
 class ProxyDestinationMap;
-class dynamic_stat_t;
 class proxy_t;
 
-enum class ProxyDestinationState {
-  kNew,           // never connected
-  kUp,            // currently connected
-  kDown,          // currently down
-  kClosed,        // closed due to inactive
-  kTko,           // global tko: waiting for retry timeout
-  kNumStates
-};
+class ProxyDestination {
+ public:
+  enum class State {
+    kNew,           // never connected
+    kUp,            // currently connected
+    kDown,          // currently down
+    kClosed,        // closed due to inactive
+    kNumStates
+  };
 
-struct ProxyDestinationStats {
-  ProxyDestinationState state{ProxyDestinationState::kNew};
-  ExponentialSmoothData avgLatency;
-  uint64_t results[mc_nres] = {0};
+  struct Stats {
+    State state{State::kNew};
+    ExponentialSmoothData avgLatency;
+    uint64_t results[mc_nres] = {0};
+    size_t probesSent{0};
 
-  explicit ProxyDestinationStats(const McrouterOptions& opts);
-};
+    explicit Stats(const McrouterOptions& opts);
+  };
 
-struct ProxyDestination {
   static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
 
   proxy_t* proxy{nullptr}; ///< for convenience
@@ -92,22 +91,13 @@ struct ProxyDestination {
   bool may_send();
 
   /**
-   * Returns one of the four states that the server could be in:
-   * new, up, closed or total knockout (tko): means we're out for the count,
-   * i.e. we had a timeout or connection failure and haven't had time
-   * to recover.
-   */
-  ProxyDestinationState state() const;
-
-  /**
    * @return stats for ProxyDestination
    */
-  const ProxyDestinationStats& stats() const;
+  const Stats& stats() const {
+    return stats_;
+  }
 
   void resetInactive();
-
-  void on_up();
-  void on_down();
 
   // on probe timer
   void on_timer(const asox_timer_t timer);
@@ -131,19 +121,18 @@ struct ProxyDestination {
  private:
   std::unique_ptr<AsyncMcClient> client_;
 
-  ProxyDestinationStats stats_;
+  Stats stats_;
 
   int probe_delay_next_ms{0};
   bool sending_probes{false};
   std::unique_ptr<McRequest> probe_req;
   asox_timer_t probe_timer{nullptr};
-  size_t probesSent_{0};
   std::string poolName_;
 
   char resetting{0}; // If 1 when inside on_down, the call was due to a forced
                      // mc_client_reset and not a remote connection failure.
 
-  void setState(ProxyDestinationState st);
+  void setState(State st);
 
   // tko behaviour
   char marked_tko{0};
