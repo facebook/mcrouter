@@ -113,21 +113,24 @@ class WarmUpRoute {
 
     /* else */
     auto warmReply = warm_->route(req, Operation());
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
     if (warmReply.isHit()) {
-      auto wrappedAddReq = folly::makeMoveWrapper(
-        coldUpdateFromWarm(req, warmReply, exptime_));
-      auto cold = cold_;
-      fiber::addTask([cold, wrappedAddReq]() {
-        cold->route(*wrappedAddReq, AddOperation());
+      fiber::addTask([cold = cold_,
+                      addReq = coldUpdateFromWarm(req, warmReply, exptime_)]() {
+        cold->route(addReq, AddOperation());
       });
     } else if (warmReply.isMiss() && ncacheUpdatePeriod_) {
-      auto wrappedAddReq = folly::makeMoveWrapper(
-        coldNcache(req, ncacheExptime_));
-      auto cold = cold_;
-      fiber::addTask([cold, wrappedAddReq]() {
-        cold->route(*wrappedAddReq, AddOperation());
+      fiber::addTask([cold = cold_,
+                      addReq = coldNcache(req, ncacheExptime_)]() {
+        cold->route(addReq, AddOperation());
       });
     }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
     return warmReply;
   }
 
@@ -172,25 +175,31 @@ class WarmUpRoute {
 
   template <class Request, class Operation>
   void updateColdNcache(const Request& req, Operation) {
-    auto cold = cold_;
-    auto warm = warm_;
-    auto creq = folly::makeMoveWrapper(Request(req.clone()));
-    auto exptime = exptime_;
-    auto ncacheExptime = ncacheExptime_;
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
     fiber::addTask(
-      [cold, warm, creq, exptime, ncacheExptime]() {
-        auto warmReply = warm->route(*creq, Operation());
+      [cold = cold_,
+       warm = warm_,
+       creq = Request(req.clone()),
+       exptime = exptime_,
+       ncacheExptime = ncacheExptime_]() {
+        auto warmReply = warm->route(creq, Operation());
         if (warmReply.isHit()) {
-          cold->route(coldUpdateFromWarm(*creq, warmReply, exptime),
+          cold->route(coldUpdateFromWarm(creq, warmReply, exptime),
                       McOperation<mc_op_set>());
         } else {
           /* bump TTL on the ncache entry */
-          cold->route(coldNcache(*creq, ncacheExptime),
+          cold->route(coldNcache(creq, ncacheExptime),
                       McOperation<mc_op_set>());
         }
       }
     );
   }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 };
 
 }}

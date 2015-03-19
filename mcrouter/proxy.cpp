@@ -196,17 +196,19 @@ void proxy_t::routeHandlesProcessRequest(
     return;
   }
 
-  auto func_ctx = folly::makeMoveWrapper(
-    std::shared_ptr<ProxyRequestContext>(preq));
-  auto finally_ctx = folly::makeMoveWrapper(std::move(preq));
+  auto func_ctx = preq;
 
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
   fiberManager.addTaskFinally(
-    [func_ctx]() {
-      auto& origReq = (*func_ctx)->origReq();
+    [ctx = func_ctx]() {
+      auto& origReq = ctx->origReq();
       try {
-        auto& proute = (*func_ctx)->proxyRoute();
+        auto& proute = ctx->proxyRoute();
         auto reply = proute.dispatchMcMsg(origReq.clone(),
-                                          std::move(*func_ctx));
+                                          std::move(ctx));
         return ProxyMcReply::moveToMcReply(std::move(reply));
       } catch (const std::exception& e) {
         std::string err = "error routing "
@@ -215,10 +217,13 @@ void proxy_t::routeHandlesProcessRequest(
         return McReply(mc_res_local_error, err);
       }
     },
-    [finally_ctx](folly::Try<McReply>&& reply) {
-      (*finally_ctx)->sendReply(std::move(*reply));
+    [ctx = std::move(preq)](folly::Try<McReply>&& reply) {
+      ctx->sendReply(std::move(*reply));
     }
   );
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 void proxy_t::processRequest(std::unique_ptr<ProxyRequestContext> preq) {

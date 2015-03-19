@@ -49,14 +49,14 @@ whenN(InputIterator first, InputIterator last, size_t n) {
     [first, last, context](FiberPromise<void> promise) mutable {
       context->promise = std::move(promise);
       for (size_t i = 0; first != last; ++i, ++first) {
-        folly::MoveWrapper<
-          typename std::iterator_traits<InputIterator>::value_type> fm(
-            std::move(*first));
-
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
         fiber::addTask(
-          [i, context, fm]() {
+          [i, context, f = std::move(*first)]() {
             try {
-              auto result = (*fm)();
+              auto result = f();
               if (context->tasksTodo == 0) {
                 return;
               }
@@ -71,6 +71,9 @@ whenN(InputIterator first, InputIterator last, size_t n) {
               context->promise->setValue();
             }
           });
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
       }
     });
 
@@ -107,14 +110,14 @@ whenN(InputIterator first, InputIterator last, size_t n) {
     [first, last, context](FiberPromise<void> promise) mutable {
       context->promise = std::move(promise);
       for (size_t i = 0; first != last; ++i, ++first) {
-        folly::MoveWrapper<
-          typename std::iterator_traits<InputIterator>::value_type> fm(
-            std::move(*first));
-
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
         fiber::addTask(
-          [i, context, fm]() {
+          [i, context, f = std::move(*first)]() {
             try {
-              (*fm)();
+              f();
               if (context->tasksTodo == 0) {
                 return;
               }
@@ -129,6 +132,9 @@ whenN(InputIterator first, InputIterator last, size_t n) {
               context->promise->setValue();
             }
           });
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
       }
     });
 

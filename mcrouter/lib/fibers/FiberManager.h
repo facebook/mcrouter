@@ -200,6 +200,8 @@ class FiberManager {
  private:
   friend class Baton;
   friend class Fiber;
+  template <typename F>
+  struct AddTaskHelper;
   template <typename F, typename G>
   struct AddTaskFinallyHelper;
 

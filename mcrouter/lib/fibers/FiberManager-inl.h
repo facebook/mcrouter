@@ -12,7 +12,6 @@
 #include <cassert>
 
 #include <folly/Memory.h>
-#include <folly/MoveWrapper.h>
 #include <folly/Optional.h>
 #include <folly/Portability.h>
 #include <folly/ScopeGuard.h>
@@ -127,10 +126,56 @@ inline bool FiberManager::loopUntilNoReady() {
   return fibersActive_ > 0;
 }
 
+// We need this to be in a struct, not inlined in addTask, because clang crashes
+// otherwise.
+template <typename F>
+struct FiberManager::AddTaskHelper {
+  class Func;
+
+  static constexpr bool allocateInBuffer =
+    sizeof(Func) <= Fiber::kUserBufferSize;
+
+  class Func {
+   public:
+    Func(F&& func, FiberManager& fm) :
+        func_(std::forward<F>(func)), fm_(fm) {}
+
+    void operator()() {
+      try {
+        func_();
+      } catch (...) {
+        fm_.exceptionCallback_(std::current_exception(),
+                               "running Func functor");
+      }
+      if (allocateInBuffer) {
+        this->~Func();
+      } else {
+        delete this;
+      }
+    }
+
+   private:
+    F func_;
+    FiberManager& fm_;
+  };
+};
+
 template <typename F>
 void FiberManager::addTask(F&& func) {
+  typedef AddTaskHelper<F> Helper;
+
   auto fiber = getFiber();
-  fiber->setFunction(std::forward<F>(func));
+
+  if (Helper::allocateInBuffer) {
+    auto funcLoc = static_cast<typename Helper::Func*>(fiber->getUserBuffer());
+    new (funcLoc) typename Helper::Func(std::forward<F>(func), *this);
+
+    fiber->setFunction(std::ref(*funcLoc));
+  } else {
+    auto funcLoc = new typename Helper::Func(std::forward<F>(func), *this);
+
+    fiber->setFunction(std::ref(*funcLoc));
+  }
 
   fiber->data_ = reinterpret_cast<intptr_t>(fiber);
   TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);

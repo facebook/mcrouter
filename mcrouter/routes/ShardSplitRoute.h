@@ -14,7 +14,6 @@
 #include <vector>
 
 #include <folly/dynamic.h>
-#include <folly/MoveWrapper.h>
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
@@ -99,13 +98,18 @@ class ShardSplitRoute {
     // Deletes are broadcast to all splits.
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
-    auto r = rh_;
     for (size_t i = 0; i < cnt - 1; ++i) {
-      auto wrappedReq = folly::makeMoveWrapper(splitReq(req, i, shard));
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
       fiber::addTask(
-        [r, wrappedReq]() {
-          r->route(*wrappedReq, Operation());
+        [r = rh_, req_ = splitReq(req, i, shard)]() {
+          r->route(req_, Operation());
         });
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
     }
     return rh_->route(req, Operation());
   }

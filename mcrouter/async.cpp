@@ -127,15 +127,19 @@ bool AsyncWriter::run(std::function<void()> f) {
     } while (!queueSize_.compare_exchange_weak(size, size + 1));
   }
 
-  auto fWrapper = folly::makeMoveWrapper(std::move(f));
-  fiberManager_.addTaskRemote([this, fWrapper]() {
-    fiberManager_.runInMainContext([fWrapper]() {
-      (*fWrapper)();
-    });
-    if (maxQueueSize_ != 0) {
-      --queueSize_;
-    }
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
+  fiberManager_.addTaskRemote([this, f_ = std::move(f)]() {
+      fiberManager_.runInMainContext(std::move(f_));
+      if (maxQueueSize_ != 0) {
+        --queueSize_;
+      }
   });
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
   return true;
 }
 

@@ -42,12 +42,16 @@ inline void forEach(InputIterator first, InputIterator last, F&& f) {
   std::exception_ptr e;
   Baton baton;
 
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
   auto taskFunc =
     [&tasksTodo, &e, &f, &baton] (size_t id, FuncType&& func) {
-      auto fm = folly::makeMoveWrapper(std::move(func));
-      return [id, &tasksTodo, &e, &f, &baton, fm]() {
+    return [id, &tasksTodo, &e, &f, &baton,
+            func_ = std::forward<FuncType>(func)]() mutable {
         try {
-          callFuncs(*fm, f, id);
+          callFuncs(std::forward<FuncType>(func_), f, id);
         } catch (...) {
           e = std::current_exception();
         }
@@ -56,6 +60,9 @@ inline void forEach(InputIterator first, InputIterator last, F&& f) {
         }
       };
     };
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
   auto firstTask = first;
   ++first;

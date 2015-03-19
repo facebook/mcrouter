@@ -71,13 +71,12 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
   const ProxyMcRequest& req,
   std::string keyStr,
   Operation) const {
-
-  auto reqCopy = folly::makeMoveWrapper(req.clone());
-  auto proxy = proxy_;
-  auto proxyRoute = &proxyRoute_;
-
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
   proxy_->fiberManager.addTaskFinally(
-    [keyStr, proxy, proxyRoute]() {
+    [keyStr, proxy = proxy_, &proxyRoute = proxyRoute_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
       auto ctx = std::make_shared<RecordingContext>(
         [&destinations](const ProxyClientCommon& client) {
@@ -88,13 +87,13 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         RecordingMcRequest recordingReq(ctx, keyStr);
 
         /* ignore the reply */
-        proxyRoute->route(recordingReq, Operation());
+        proxyRoute.route(recordingReq, Operation());
       }
       RecordingContext::waitForRecorded(std::move(ctx));
       return destinations;
     },
-    [reqCopy](folly::Try<
-              std::unique_ptr<std::vector<std::string>>>&& data) {
+    [reqCopy = req.clone()]
+    (folly::Try<std::unique_ptr<std::vector<std::string>>>&& data) {
       std::string str;
       const auto& destinations = *data;
       for (const auto& d : *destinations) {
@@ -104,10 +103,13 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         }
         str.append(d);
       }
-      reqCopy->context().sendReply(
+      reqCopy.context().sendReply(
         McReply(mc_res_found, str));
     }
   );
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
 
 namespace {

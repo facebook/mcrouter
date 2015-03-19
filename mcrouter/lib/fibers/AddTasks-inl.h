@@ -10,8 +10,6 @@
 #include <memory>
 #include <vector>
 
-#include <folly/MoveWrapper.h>
-
 #include "mcrouter/lib/fibers/FiberManager.h"
 
 namespace facebook { namespace memcache { namespace fiber {
@@ -105,11 +103,13 @@ addTasks(InputIterator first, InputIterator last) {
   context->results.reserve(context->totalTasks);
 
   for (size_t i = 0; first != last; ++i, ++first) {
-    auto fm = folly::makeMoveWrapper(std::move(*first));
-
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
     fiber::addTask(
-      [i, context, fm]() {
-        context->results.emplace_back(i, folly::makeTryFunction(*fm));
+      [i, context, f = std::move(*first)]() {
+        context->results.emplace_back(i, folly::makeTryFunction(std::move(f)));
 
         // Check for awaiting iterator.
         if (context->promise.hasValue()) {
@@ -120,6 +120,9 @@ addTasks(InputIterator first, InputIterator last) {
         }
       }
     );
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
   }
 
   return IteratorType(std::move(context));

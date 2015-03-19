@@ -11,7 +11,6 @@
 
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
-#include <folly/MoveWrapper.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/SSLContext.h>
