@@ -27,18 +27,35 @@
 namespace facebook { namespace memcache {
 
 /**
- * This route handle is intended to be used as the 'to' route in a Migrate
- * route. It allows for substantial changes in the number of boxes in a pool
- * without increasing the miss rate and, subsequently, the load on the
+ * This route handle allows for substantial changes in the number of boxes in
+ * a pool without increasing the miss rate and, subsequently, the load on the
  * underlying storage or service.
- * All sets and deletes go to the target ("cold") route handle.
- * Gets are attempted on the "cold" route handle and in case of a miss, data is
- * fetched from the "warm" route handle (where the request is likely to result
- * in a cache hit). If "warm" returns an hit, the response is then forwarded to
- * the client and an asynchronous request, with the configured expiration time,
- * updates the value in the "cold" route handle.
+ *
+ * get: send the request to "cold" route handle and in case of a miss,
+ *     fetch data from the "warm" route handle. If "warm" returns a hit,
+ *     the response is then forwarded to the client and an asynchronous 'add'
+ *     request updates the value in the "cold" route handle.
+ * gets: send the request to "cold" route handle and in case of a miss,
+ *     fetch data from the "warm" route handle with simple 'get' request.
+ *     If "warm" returns a hit, synchronously try to add value to "cold"
+ *     using 'add' operation and send original 'gets' request to "cold" one
+ *     more time.
+ * lease get: send the request to "cold" route and in case of a miss
+ *     (not hot miss!) fetch data from the "warm" using simple 'get' request.
+ *     If "warm" returns a hit, the response is forwarded to the client and
+ *     an asynchronous lease set updates the value in the cold route handle.
+ * metaget: send the request to "cold" route and in case of a miss, send
+ *     request to "warm".
+ * set/delete/incr/decr/etc.: send to the "cold" route, do not modify "warm".
+ *     Client is responsible for "warm" consistency.
+ *
+ * Expiration time (TTL) for automatic warm -> cold update requests is
+ * configured with "exptime" field. If the field is not present, exptime is
+ * fetched from "warm" on every update operation with additional 'metaget'
+ * request.
+ * NOTE: Make sure memcached supports 'metaget' before omitting "exptime" field.
  */
-template <class RouteHandleIf, typename AddOperation>
+template <class RouteHandleIf>
 class WarmUpRoute {
  public:
   static std::string routeName() { return "warm-up"; }
@@ -50,82 +67,53 @@ class WarmUpRoute {
     return {cold_, warm_};
   }
 
-  WarmUpRoute(std::shared_ptr<RouteHandleIf> warmh,
-              std::shared_ptr<RouteHandleIf> coldh,
-              uint32_t exptime,
-              size_t ncacheExptime = 0,
-              size_t ncacheUpdatePeriod = 0)
-  : warm_(std::move(warmh)),
-    cold_(std::move(coldh)),
-    exptime_(exptime),
-    ncacheExptime_(ncacheExptime),
-    ncacheUpdatePeriod_(ncacheUpdatePeriod),
-    ncacheUpdateCounter_(ncacheUpdatePeriod) {
+  WarmUpRoute(std::shared_ptr<RouteHandleIf> warm,
+              std::shared_ptr<RouteHandleIf> cold,
+              uint32_t exptime)
+  : warm_(std::move(warm)),
+    cold_(std::move(cold)),
+    exptime_(exptime) {
 
     assert(warm_ != nullptr);
     assert(cold_ != nullptr);
   }
 
   WarmUpRoute(RouteHandleFactory<RouteHandleIf>& factory,
-              const folly::dynamic& json,
-              uint32_t exptime)
-      : exptime_(exptime) {
+              const folly::dynamic& json) {
 
     checkLogic(json.isObject(), "WarmUpRoute should be object");
     checkLogic(json.count("cold"), "WarmUpRoute: no cold route");
     checkLogic(json.count("warm"), "WarmUpRoute: no warm route");
     if (json.count("exptime")) {
       checkLogic(json["exptime"].isInt(),
-                 "WarmUpRoute: exptime is not integer");
-      exptime_ = json["exptime"].asInt();
+                 "WarmUpRoute: exptime is not an integer");
+      exptime_ = json["exptime"].getInt();
     }
 
     cold_ = factory.create(json["cold"]);
     warm_ = factory.create(json["warm"]);
-
-    assert(cold_ != nullptr);
-    assert(warm_ != nullptr);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0) {
-
-    using Reply = typename ReplyType<Operation, Request>::type;
-
-    auto coldReply = cold_->route(req, Operation());
+  ////////////////////////////////mc_op_get/////////////////////////////////////
+  template <class Request>
+  typename ReplyType<McOperation<mc_op_get>, Request>::type
+  route(const Request& req, McOperation<mc_op_get> op) {
+    auto coldReply = cold_->route(req, op);
     if (coldReply.isHit()) {
-      if (coldReply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
-        if (ncacheUpdatePeriod_) {
-          if (ncacheUpdateCounter_ == 1) {
-            updateColdNcache(req, Operation());
-            ncacheUpdateCounter_ = ncacheUpdatePeriod_;
-          } else {
-            --ncacheUpdateCounter_;
-          }
-        }
-
-        /* return a miss */
-        coldReply = Reply(DefaultReply, Operation());
-      }
       return coldReply;
     }
 
     /* else */
-    auto warmReply = warm_->route(req, Operation());
+    auto warmReply = warm_->route(req, op);
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
-    if (warmReply.isHit()) {
+    uint32_t exptime;
+    if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
       fiber::addTask([cold = cold_,
-                      addReq = coldUpdateFromWarm(req, warmReply, exptime_)]() {
-        cold->route(addReq, AddOperation());
-      });
-    } else if (warmReply.isMiss() && ncacheUpdatePeriod_) {
-      fiber::addTask([cold = cold_,
-                      addReq = coldNcache(req, ncacheExptime_)]() {
-        cold->route(addReq, AddOperation());
+                      addReq = coldUpdateFromWarm(req, warmReply, exptime)]() {
+        cold->route(addReq, McOperation<mc_op_add>());
       });
     }
 #ifdef __clang__
@@ -134,25 +122,89 @@ class WarmUpRoute {
     return warmReply;
   }
 
+  ///////////////////////////////mc_op_metaget//////////////////////////////////
+  template <class Request>
+  typename ReplyType<McOperation<mc_op_metaget>, Request>::type
+  route(const Request& req, McOperation<mc_op_metaget> op) {
+    auto coldReply = cold_->route(req, op);
+    if (coldReply.isHit()) {
+      return coldReply;
+    }
+    return warm_->route(req, op);
+  }
+
+  /////////////////////////////mc_op_lease_get//////////////////////////////////
+  template <class Request>
+  typename ReplyType<McOperation<mc_op_lease_get>, Request>::type
+  route(const Request& req, McOperation<mc_op_lease_get> op) {
+    auto coldReply = cold_->route(req, op);
+    if (coldReply.isHit() || coldReply.isHotMiss()) {
+      // in case of a hot miss somebody else will set the value
+      return coldReply;
+    }
+
+    // miss with lease token from cold route: send simple get to warm route
+    auto warmReply = warm_->route(req, McOperation<mc_op_get>());
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
+    uint32_t exptime;
+    if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
+      // update cold route with lease set
+      auto setReq = coldUpdateFromWarm(req, warmReply, exptime);
+      setReq.setLeaseToken(coldReply.leaseToken());
+
+      fiber::addTask([cold = cold_, req = std::move(setReq)]() {
+        cold->route(req, McOperation<mc_op_lease_set>());
+      });
+      return warmReply;
+    }
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+    return coldReply;
+  }
+
+  ////////////////////////////////mc_op_gets////////////////////////////////////
+  template <class Request>
+  typename ReplyType<McOperation<mc_op_gets>, Request>::type
+  route(const Request& req, McOperation<mc_op_gets> op) {
+    auto coldReply = cold_->route(req, op);
+    if (coldReply.isHit()) {
+      return coldReply;
+    }
+
+    // miss: send simple get to warm route
+    auto warmReply = warm_->route(req, McOperation<mc_op_get>());
+    uint32_t exptime;
+    if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
+      // update cold route if we have the value
+      auto addReq = coldUpdateFromWarm(req, warmReply, exptime);
+      cold_->route(addReq, McOperation<mc_op_add>());
+      // and grab cas token again
+      return cold_->route(req, op);
+    }
+    return coldReply;
+  }
+
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, OtherThanT(Operation, GetLike<>) = 0) const {
-
+    const Request& req, Operation) const {
+    // client is responsible for consistency of warm route, do not replicate
+    // any update/delete operations
     return cold_->route(req, Operation());
   }
 
  private:
   std::shared_ptr<RouteHandleIf> warm_;
   std::shared_ptr<RouteHandleIf> cold_;
-  uint32_t exptime_{0};
-  size_t ncacheExptime_{0};
-  size_t ncacheUpdatePeriod_{0};
-  size_t ncacheUpdateCounter_{0};
+  folly::Optional<uint32_t> exptime_;
 
   template <class Request, class Reply>
   static Request coldUpdateFromWarm(const Request& origReq,
                                     const Reply& reply,
-                                    size_t exptime) {
+                                    uint32_t exptime) {
     auto req = origReq.clone();
     folly::IOBuf cloned;
     reply.value().cloneInto(cloned);
@@ -163,43 +215,25 @@ class WarmUpRoute {
   }
 
   template <class Request>
-  static Request coldNcache(const Request& origReq, size_t ncacheExptime) {
-    auto req = origReq.clone();
-    req.setValue(
-      folly::IOBuf(
-        folly::IOBuf::COPY_BUFFER, "ncache"));
-    req.setFlags(MC_MSG_FLAG_NEGATIVE_CACHE);
-    req.setExptime(ncacheExptime);
-    return std::move(req);
-  }
-
-  template <class Request, class Operation>
-  void updateColdNcache(const Request& req, Operation) {
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
-    fiber::addTask(
-      [cold = cold_,
-       warm = warm_,
-       creq = Request(req.clone()),
-       exptime = exptime_,
-       ncacheExptime = ncacheExptime_]() {
-        auto warmReply = warm->route(creq, Operation());
-        if (warmReply.isHit()) {
-          cold->route(coldUpdateFromWarm(creq, warmReply, exptime),
-                      McOperation<mc_op_set>());
-        } else {
-          /* bump TTL on the ncache entry */
-          cold->route(coldNcache(creq, ncacheExptime),
-                      McOperation<mc_op_set>());
+  bool getExptimeForCold(const Request& req, uint32_t& exptime) {
+    if (exptime_.hasValue()) {
+      exptime = *exptime_;
+      return true;
+    }
+    auto warmMeta = warm_->route(req, McOperation<mc_op_metaget>());
+    if (warmMeta.isHit()) {
+      exptime = warmMeta.exptime();
+      if (exptime != 0) {
+        auto curTime = time(nullptr);
+        if (curTime >= exptime) {
+          return false;
         }
+        exptime -= curTime;
       }
-    );
+      return true;
+    }
+    return false;
   }
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 };
 
 }}

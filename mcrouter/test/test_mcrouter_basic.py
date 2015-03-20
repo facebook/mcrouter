@@ -394,6 +394,7 @@ class TestBasicFailoverOverride(McrouterTestCase):
 
 class TestMcrouterBasicL1L2(McrouterTestCase):
     config = './mcrouter/test/test_basic_l1_l2.json'
+    config_ncache = './mcrouter/test/test_basic_l1_l2_ncache.json'
     extra_args = []
 
     def setUp(self):
@@ -401,14 +402,14 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         self.l1 = self.add_server(Memcached())
         self.l2 = self.add_server(Memcached())
 
-    def get_mcrouter(self):
-        return self.add_mcrouter(self.config, extra_args=self.extra_args)
+    def get_mcrouter(self, config):
+        return self.add_mcrouter(config, extra_args=self.extra_args)
 
     def test_l1_l2_get(self):
         """
         Tests that gets using l1/l2 caching and result upgrading is working
         """
-        mcr = self.get_mcrouter()
+        mcr = self.get_mcrouter(self.config)
 
         # get a non-existent key
         self.assertFalse(mcr.get("key1"))
@@ -438,7 +439,7 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         """
         Tests that gets using l1/l2 caching is working when l1 is down
         """
-        mcr = self.get_mcrouter()
+        mcr = self.get_mcrouter(self.config)
 
         # set key in l1 and l2 pools
         self.l1.set("key1", "value1")
@@ -455,7 +456,7 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         """
         Tests that gets using l1/l2 caching is working when l2 is down
         """
-        mcr = self.get_mcrouter()
+        mcr = self.get_mcrouter(self.config)
 
         # set key in l1 and l2 pools
         self.l1.set("key1", "value1")
@@ -472,3 +473,24 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         self.l1.terminate()
         # we should get nothing back
         self.assertFalse(mcr.get("key1"))
+
+    def test_l1_l2_get_ncache(self):
+        mcr = self.get_mcrouter(self.config_ncache)
+
+        # get a non-existent key
+        self.assertFalse(mcr.get("key1"))
+
+        time.sleep(1)
+
+        self.assertEqual(self.l1.get("key1"), "ncache")
+        self.assertTrue(self.l2.set("key1", "value1"))
+
+        self.assertFalse(mcr.get("key1"))
+        self.assertFalse(mcr.get("key1"))
+        self.assertFalse(mcr.get("key1"))
+        self.assertFalse(mcr.get("key1"))
+        self.assertFalse(mcr.get("key1"))
+        time.sleep(1)
+
+        self.assertEqual(mcr.get("key1"), "value1")
+        self.assertEqual(self.l1.get("key1"), "value1")

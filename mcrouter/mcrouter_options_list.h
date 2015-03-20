@@ -278,12 +278,6 @@ mcrouter_option_toggle(
   "Groups all remote (i.e. non-local) errors together, returning a single "
   "result for all of them: mc_res_remote_error")
 
-mcrouter_option_integer(
-  unsigned int, upgrading_l1_exptime, 0,
-  "upgrading-l1-exptime", no_short,
-  "0 means that we will use the L2 exptime. Otherwise, when upgrading"
-  " this value is used as the exptime for all requests")
-
 mcrouter_option_toggle(
   send_invalid_route_to_default, false,
   "send-invalid-route-to-default", no_short,

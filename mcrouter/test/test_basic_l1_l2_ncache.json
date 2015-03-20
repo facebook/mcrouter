@@ -11,6 +11,8 @@
     "type": "L1L2CacheRoute",
     "l1": "PoolRoute|A",
     "l2": "PoolRoute|B",
-    "upgradingL1Exptime": 0
+    "upgradingL1Exptime": 0,
+    "ncacheExptime": 3600,
+    "ncacheUpdatePeriod": 5
   }
 }

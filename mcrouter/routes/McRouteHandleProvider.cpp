@@ -39,6 +39,10 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json);
 
+McrouterRouteHandlePtr makeL1L2CacheRoute(
+  RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  const folly::dynamic& json);
+
 McrouterRouteHandlePtr makeMigrateRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json);
@@ -60,8 +64,7 @@ McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
 
 McrouterRouteHandlePtr makeWarmUpRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json,
-  uint32_t exptime);
+  const folly::dynamic& json);
 
 McRouteHandleProvider::McRouteHandleProvider(
   proxy_t* proxy,
@@ -234,9 +237,10 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     return { makeDevNullRoute("devnull") };
   } else if (type == "FailoverWithExptimeRoute") {
     return { makeFailoverWithExptimeRoute(factory, json) };
+  } else if (type == "L1L2CacheRoute") {
+    return { makeL1L2CacheRoute(factory, json) };
   } else if (type == "WarmUpRoute") {
-    return { makeWarmUpRoute(factory, json,
-                             proxy_->opts.upgrading_l1_exptime) };
+    return { makeWarmUpRoute(factory, json) };
   } else if (type == "MigrateRoute") {
     return { makeMigrateRoute(factory, json) };
   } else if (type == "ModifyKeyRoute") {

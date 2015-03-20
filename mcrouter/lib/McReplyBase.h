@@ -160,6 +160,13 @@ class McReplyBase {
   }
 
   /**
+   * Lease hot miss?
+   */
+  bool isHotMiss() const {
+    return result_ == mc_res_foundstale || result_ == mc_res_notfoundhot;
+  }
+
+  /**
    * Was the data stored?
    */
   bool isStored() const {

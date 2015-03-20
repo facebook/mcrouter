@@ -7,25 +7,31 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/routes/WarmUpRoute.h"
+#include "mcrouter/lib/routes/L1L2CacheRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeWarmUpRoute(
+McrouterRouteHandlePtr makeL1L2CacheRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json) {
 
-  return makeMcrouterRouteHandle<WarmUpRoute>(factory, json);
+  return makeMcrouterRouteHandle<L1L2CacheRoute>(factory, json);
 }
 
-McrouterRouteHandlePtr makeWarmUpRoute(
-  McrouterRouteHandlePtr warm,
-  McrouterRouteHandlePtr cold,
-  uint32_t exptime) {
-  return makeMcrouterRouteHandle<WarmUpRoute>(
-    std::move(warm), std::move(cold), exptime);
+McrouterRouteHandlePtr makeL1L2CacheRoute(
+  McrouterRouteHandlePtr l1,
+  McrouterRouteHandlePtr l2,
+  uint32_t upgradingL1Exptime,
+  size_t ncacheExptime,
+  size_t ncacheUpdatePeriod) {
+  return makeMcrouterRouteHandle<L1L2CacheRoute>(
+    std::move(l1),
+    std::move(l2),
+    upgradingL1Exptime,
+    ncacheExptime,
+    ncacheUpdatePeriod);
 }
 
 }}}

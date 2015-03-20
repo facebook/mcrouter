@@ -41,8 +41,7 @@ TEST(warmUpRouteTest, warmUp) {
   TestFiberManager fm;
 
   fm.run([&]() {
-    TestRouteHandle<WarmUpRoute<TestRouteHandleIf,
-                                McOperation<mc_op_add>>> rh(
+    TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[1], 1);
 
     auto reply_get = rh.route(McRequest("key_get"),
@@ -60,8 +59,7 @@ TEST(warmUpRouteTest, warmUp) {
     EXPECT_TRUE(vector<string>{"key_del"} == test_handles[1]->saw_keys);
   });
   fm.run([&]() {
-    TestRouteHandle<WarmUpRoute<TestRouteHandleIf,
-                                McOperation<mc_op_add>>> rh(
+    TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[2], 1);
 
     auto reply_get = rh.route(McRequest("key_get"),
@@ -78,8 +76,7 @@ TEST(warmUpRouteTest, warmUp) {
               test_handles[2]->sawOperations);
   });
   fm.run([&]() {
-    TestRouteHandle<WarmUpRoute<TestRouteHandleIf,
-                                McOperation<mc_op_add>>> rh(
+    TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[2], 1);
 
     auto reply_del = rh.route(McRequest("key_del"),
