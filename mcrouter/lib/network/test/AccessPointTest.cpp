@@ -33,7 +33,7 @@ TEST(AccessPoint, host_port) {
   EXPECT_FALSE(AccessPoint::create("127.0.0.1", proto, ap));
   EXPECT_FALSE(AccessPoint::create("127.0.0.1::", proto, ap));
   EXPECT_TRUE(AccessPoint::create("[::1]:12345", proto, ap));
-  EXPECT_EQ(ap.getHost(), "::1");
+  EXPECT_EQ(ap.getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
   EXPECT_EQ(ap.getPort(), 12345);
   EXPECT_EQ(ap.getProtocol(), proto);
   EXPECT_FALSE(AccessPoint::create("[::1]", proto, ap));
@@ -55,7 +55,7 @@ TEST(AccessPoint, host_port_proto) {
   EXPECT_EQ(ap.getPort(), 12345);
   EXPECT_EQ(ap.getProtocol(), mc_binary_protocol);
   EXPECT_TRUE(AccessPoint::create("[::1]:12345:fhgsdg", proto, ap));
-  EXPECT_EQ(ap.getHost(), "::1");
+  EXPECT_EQ(ap.getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
   EXPECT_EQ(ap.getPort(), 12345);
   EXPECT_EQ(ap.getProtocol(), proto);
   EXPECT_FALSE(AccessPoint::create("[::1]", proto, ap));

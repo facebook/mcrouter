@@ -52,6 +52,9 @@ struct AccessPoint {
   std::string host_;
   uint16_t port_;
   mc_protocol_t protocol_;
+  bool isV6_;
+
+  void initialize();
 };
 
 }}  // facebook::memcache

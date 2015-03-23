@@ -9,6 +9,7 @@
  */
 #include "AccessPoint.h"
 
+#include <folly/Conv.h>
 #include <folly/IPAddress.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -20,6 +21,7 @@ AccessPoint::AccessPoint(folly::StringPiece host, uint16_t port,
     : host_(host.str()),
       port_(port),
       protocol_(protocol) {
+  initialize();
 }
 
 bool AccessPoint::create(folly::StringPiece host_port_protocol,
@@ -76,27 +78,33 @@ bool AccessPoint::create(folly::StringPiece host_port_protocol,
     return false;
   }
 
+  ap.initialize();
+
   return true;
 }
 
 std::string AccessPoint::toHostPortString() const {
+  if (isV6_) {
+    return folly::to<std::string>("[", host_, "]:", port_);
+  }
+  return folly::to<std::string>(host_, ":", port_);
+}
+
+void AccessPoint::initialize() {
+  isV6_ = false;
   try {
     folly::IPAddress ip(host_);
-    auto hostPort = ip.toFullyQualified();
-    if (ip.isV6()) {
-      hostPort = "[" + hostPort + "]";
-    }
-    return hostPort + ":" + folly::to<std::string>(port_);
+    host_ = ip.toFullyQualified();
+    isV6_ = ip.isV6();
   } catch (const folly::IPAddressFormatException& e) {
-    // host is not IP address (e.g. 'localhost')
-    return host_ + ":" + folly::to<std::string>(port_);
+    // host is not an IP address (e.g. 'localhost')
   }
 }
 
 std::string AccessPoint::toString() const {
   assert(protocol_ != mc_unknown_protocol);
-  return folly::stringPrintf("%s:TCP:%s", toHostPortString().data(),
-                             mc_protocol_to_string(protocol_));
+  return folly::to<std::string>(toHostPortString(), ":TCP:",
+                                mc_protocol_to_string(protocol_));
 }
 
 }}  // facebook::memcache
