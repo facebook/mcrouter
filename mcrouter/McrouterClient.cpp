@@ -294,7 +294,11 @@ McrouterClient::getStatsHelper(bool clear) {
 void McrouterClient::requestReady(asox_queue_t q,
                                   asox_queue_entry_t* entry,
                                   void* arg) {
-  if (entry->type == request_type_request) {
+  switch(entry->type)
+  {
+
+  case request_type_request:
+  {
     proxy_t* proxy = (proxy_t*)arg;
     auto preq =
       std::unique_ptr<ProxyRequestContext>(
@@ -316,21 +320,27 @@ void McrouterClient::requestReady(asox_queue_t q,
       return;
     }
     proxy->dispatchRequest(std::move(preq));
-  } else if (entry->type == request_type_old_config) {
+    break;
+  }
+  case request_type_old_config:
+  {
     auto oldConfig = (old_config_req_t*) entry->data;
     delete oldConfig;
-  } else if (entry->type == request_type_disconnect) {
+    break;
+  }
+  case request_type_disconnect:
+  {
     auto client = (McrouterClient*) entry->data;
     client->disconnected_ = true;
     if (client->numPending_ == 0) client->cleanup();
-  } else if (entry->type == request_type_router_shutdown) {
+    break;
+  }
+  case request_type_router_shutdown:
     /*
      * No-op. We just wanted to wake this event base up so that
      * it can exit event loop and check router->shutdown
      */
-  } else {
-    LOG(ERROR) << "CRITICAL: Unrecognized request type " << entry->type << "!";
-    FBI_ASSERT(0);
+    break;
   }
 }
 

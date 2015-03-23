@@ -36,7 +36,7 @@ bool ProxyThread::spawn() {
 
 void ProxyThread::stopAndJoin() {
   if (thread_handle && proxy_->router->pid() == getpid()) {
-    FBI_ASSERT(proxy_->request_queue != nullptr);
+    CHECK(proxy_->request_queue != nullptr);
     asox_queue_entry_t entry;
     entry.type = request_type_router_shutdown;
     entry.priority = 0;
@@ -56,7 +56,7 @@ void ProxyThread::stopAndJoin() {
 }
 
 void ProxyThread::proxyThreadRun() {
-  FBI_ASSERT(proxy_->router != nullptr);
+  CHECK(proxy_->router != nullptr);
   mcrouterSetThreadName(pthread_self(), proxy_->router->opts(), "mcrpxy");
 
   while (!proxy_->router->shutdownStarted()) {

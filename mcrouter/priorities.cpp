@@ -34,7 +34,7 @@ int get_event_priority(const McrouterOptions& opts,
 
   int priority = PRIORITIES[type];
 
-  FBI_ASSERT(priority >= 0);
+  assert(priority >= 0);
   return priority;
 }
 

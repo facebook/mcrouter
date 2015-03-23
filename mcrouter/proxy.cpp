@@ -109,8 +109,8 @@ proxy_t::proxy_t(McrouterInstance* router_,
 }
 
 void proxy_t::attachEventBase(folly::EventBase* eventBase_) {
-  FBI_ASSERT(eventBase == nullptr);
-  FBI_ASSERT(eventBase_ != nullptr);
+  assert(eventBase == nullptr);
+  assert(eventBase_ != nullptr);
   eventBase = eventBase_;
   onEventBaseAttached();
 }

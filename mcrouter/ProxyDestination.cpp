@@ -54,7 +54,7 @@ stat_name_t getStatName(ProxyDestination::State st) {
 }  // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
-  FBI_ASSERT(!proxy->opts.disable_tko_tracking);
+  assert(!proxy->opts.disable_tko_tracking);
 
   int delay_ms = probe_delay_next_ms;
   if (probe_delay_next_ms < 2) {
@@ -71,13 +71,13 @@ void ProxyDestination::schedule_next_probe() {
   double r = (double)rand() / (double)RAND_MAX;
   double tmo_jitter_pct = r * kProbeJitterDelta + kProbeJitterMin;
   uint64_t delay_us = (double)delay_ms * 1000 * (1.0 + tmo_jitter_pct);
-  FBI_ASSERT(delay_us > 0);
+  assert(delay_us > 0);
 
   timeval_t delay;
   delay.tv_sec = (delay_us / 1000000);
   delay.tv_usec = (delay_us % 1000000);
 
-  FBI_ASSERT(probe_timer == nullptr);
+  assert(probe_timer == nullptr);
   probe_timer = asox_add_timer(
     proxy->eventBase->getLibeventBase(),
     delay,
@@ -88,7 +88,7 @@ void ProxyDestination::schedule_next_probe() {
 
 void ProxyDestination::on_timer(const asox_timer_t timer) {
   // This assert checks for use-after-free
-  FBI_ASSERT(timer == probe_timer);
+  assert(timer == probe_timer);
   asox_remove_timer(timer);
   probe_timer = nullptr;
   // Note that the previous probe might still be in flight

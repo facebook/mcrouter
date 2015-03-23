@@ -438,7 +438,7 @@ void stat_set_uint64(stat_t* stats,
                      stat_name_t stat_num,
                      uint64_t value) {
   stat_t* stat = &stats[stat_num];
-  FBI_ASSERT(stat->type == stat_uint64);
+  assert(stat->type == stat_uint64);
   stat->data.uint64 = value;
 }
 
