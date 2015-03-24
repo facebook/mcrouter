@@ -66,19 +66,65 @@ public:
       });
   }
 
+  using ClientCallback = std::function<void(const ProxyClientCommon&)>;
+  using ShardSplitCallback = std::function<void(const ShardSplitter&)>;
+
+  /**
+   * A request with this context will not be sent/logged anywhere.
+   *
+   * @param clientCallback  If non-nullptr, called by DestinationRoute when
+   *   the request would normally be sent to destination;
+   *   also in couldRouteTo() of DestinationRoute.
+   * @param shardSplitCallback  If non-nullptr, called by ShardSplitRoute
+   *   in couldRouteTo() with itself as the argument.
+   */
+  static std::shared_ptr<ProxyRequestContext> createRecording(
+    proxy_t& proxy,
+    ClientCallback clientCallback,
+    ShardSplitCallback shardSplitCallback = nullptr);
+
+  /**
+   * Same as createRecording(), but also notifies the baton
+   * when this context is destroyed (i.e. all requests referencing it
+   * finish executing).
+   */
+  static std::shared_ptr<ProxyRequestContext> createRecordingNotify(
+    proxy_t& proxy,
+    Baton& baton,
+    ClientCallback clientCallback,
+    ShardSplitCallback shardSplitCallback = nullptr);
+
   ~ProxyRequestContext();
 
   proxy_t& proxy() const {
     return proxy_;
   }
 
+  bool recording() const noexcept {
+    return recording_;
+  }
+
+  void recordDestination(const ProxyClientCommon& destination) {
+    if (recording_ && recordingState_->clientCallback) {
+      recordingState_->clientCallback(destination);
+    }
+  }
+
+  void recordShardSplitter(const ShardSplitter& splitter) {
+    if (recording_ && recordingState_->shardSplitCallback) {
+      recordingState_->shardSplitCallback(splitter);
+    }
+  }
+
   uint64_t senderId() const;
 
   ProxyRoute& proxyRoute() const {
+    assert(!recording_);
     return config_->proxyRoute();
   }
 
   const ProxyConfigIf& proxyConfig() const {
+    assert(!recording_);
     return *config_;
   }
 
@@ -96,8 +142,14 @@ public:
                        const int64_t startTimeUs,
                        const int64_t endTimeUs,
                        Operation) {
-    logger_.log(request, reply, startTimeUs, endTimeUs, Operation());
-    additionalLogger_.log(
+    if (recording_) {
+      return;
+    }
+
+    assert(logger_.hasValue());
+    logger_->log(request, reply, startTimeUs, endTimeUs, Operation());
+    assert(additionalLogger_.hasValue());
+    additionalLogger_->log(
       pclient, request, reply, startTimeUs, endTimeUs, Operation());
   }
 
@@ -130,8 +182,19 @@ public:
       we want to notify we're done on destruction. */
   bool processing_{false};
 
+  bool recording_{false};
+
   McrouterClient* requester_{nullptr};
-  void* context_{nullptr};
+
+  struct RecordingState {
+    ClientCallback clientCallback;
+    ShardSplitCallback shardSplitCallback;
+  };
+
+  union {
+    void* context_{nullptr};
+    std::unique_ptr<RecordingState> recordingState_;
+  };
 
   /**
    * The function that will be called when the reply is ready
@@ -147,8 +210,8 @@ public:
 
   std::shared_ptr<const ProxyConfigIf> config_;
 
-  ProxyRequestLogger logger_;
-  AdditionalProxyRequestLogger additionalLogger_;
+  folly::Optional<ProxyRequestLogger> logger_;
+  folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;
 
   ProxyRequestContext(
     proxy_t& pr,
@@ -156,6 +219,13 @@ public:
     void (*enqReply)(ProxyRequestContext& preq),
     void* context,
     void (*reqComplete)(ProxyRequestContext& preq) = nullptr);
+
+  enum RecordingT { Recording };
+  ProxyRequestContext(
+    RecordingT,
+    proxy_t& pr,
+    ClientCallback clientCallback,
+    ShardSplitCallback shardSplitCallback);
 
   ProxyRequestContext(const ProxyRequestContext&) = delete;
   ProxyRequestContext(ProxyRequestContext&&) noexcept = delete;
@@ -167,6 +237,7 @@ public:
   class LegacyPrivateAccessor {
    public:
     static void*& context(ProxyRequestContext& preq) {
+      assert(!preq.recording_);
       return preq.context_;
     }
 

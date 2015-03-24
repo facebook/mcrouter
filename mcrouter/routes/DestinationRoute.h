@@ -32,7 +32,6 @@
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/RecordingContext.h"
 #include "mcrouter/route.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -71,18 +70,11 @@ class DestinationRoute {
       destination_(std::move(destination)) {
   }
 
-  template <class Operation>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const RecordingMcRequest& req, Operation) const {
-    req.context().recordDestination(*client_);
-    return {};
-  }
-
   template <class Operation, class Request>
-  static
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) {
+    const Request& req, Operation) const {
 
+    req.context().recordDestination(*client_);
     return {};
   }
 
@@ -116,7 +108,6 @@ class DestinationRoute {
   template <int Op>
   ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
 
-    auto proxy = &req.context().proxy();
     if (!destination_->may_send()) {
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
@@ -124,6 +115,12 @@ class DestinationRoute {
       return reply;
     }
 
+    if (req.context().recording()) {
+      req.context().recordDestination(*client_);
+      return NullRoute<RouteHandleIf>::route(req, McOperation<Op>());
+    }
+
+    auto proxy = &req.context().proxy();
     if (req.getRequestClass() == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
@@ -165,16 +162,6 @@ class DestinationRoute {
     }
 
     return reply;
-  }
-
-  template <typename Operation>
-  McReply routeImpl(const RecordingMcRequest& req, Operation) const {
-    if (!destination_->may_send()) {
-      return McReply(TkoReply);
-    }
-
-    req.context().recordDestination(*client_);
-    return NullRoute<RouteHandleIf>::route(req, Operation());
   }
 };
 

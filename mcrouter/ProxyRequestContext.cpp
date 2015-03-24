@@ -26,9 +26,10 @@ ProxyRequestContext::ProxyRequestContext(
     : proxy_(pr),
       context_(context),
       enqueueReply_(enqReply),
-      reqComplete_(reqComplete),
-      logger_(&pr),
-      additionalLogger_(&pr) {
+      reqComplete_(reqComplete) {
+
+  logger_.emplace(&proxy_);
+  additionalLogger_.emplace(&proxy_);
 
   static const char* const kInternalGetPrefix = "__mcrouter__.";
 
@@ -49,6 +50,11 @@ ProxyRequestContext::ProxyRequestContext(
 }
 
 ProxyRequestContext::~ProxyRequestContext() {
+  if (recording_) {
+    recordingState_.~unique_ptr<RecordingState>();
+    return;
+  }
+
   assert(replied_);
   if (reqComplete_) {
     reqComplete_(*this);
@@ -81,10 +87,18 @@ uint64_t ProxyRequestContext::senderId() const {
 
 void ProxyRequestContext::onRequestRefused(const ProxyMcRequest& request,
                                            const ProxyMcReply& reply) {
-  logger_.logError(request, reply);
+  if (recording_) {
+    return;
+  }
+  assert(logger_.hasValue());
+  logger_->logError(request, reply);
 }
 
 void ProxyRequestContext::sendReply(McReply newReply) {
+  if (recording_) {
+    return;
+  }
+
   if (replied_) {
     return;
   }
@@ -104,6 +118,49 @@ void ProxyRequestContext::sendReply(McReply newReply) {
     stat_incr(proxy_.stats, request_success_stat, 1);
     stat_incr(proxy_.stats, request_success_count_stat, 1);
   }
+}
+
+std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
+  proxy_t& proxy,
+  ClientCallback clientCallback,
+  ShardSplitCallback shardSplitCallback) {
+
+  return std::shared_ptr<ProxyRequestContext>(
+    new ProxyRequestContext(Recording,
+                            proxy,
+                            std::move(clientCallback),
+                            std::move(shardSplitCallback))
+  );
+}
+
+std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
+  proxy_t& proxy,
+  Baton& baton,
+  ClientCallback clientCallback,
+  ShardSplitCallback shardSplitCallback) {
+
+  return std::shared_ptr<ProxyRequestContext>(
+    new ProxyRequestContext(Recording,
+                            proxy,
+                            std::move(clientCallback),
+                            std::move(shardSplitCallback)),
+    [&baton] (ProxyRequestContext* ctx) {
+      delete ctx;
+      baton.post();
+    });
+}
+
+ProxyRequestContext::ProxyRequestContext(
+  RecordingT,
+  proxy_t& pr,
+  ClientCallback clientCallback,
+  ShardSplitCallback shardSplitCallback)
+    : proxy_(pr),
+      recording_(true) {
+  new (&recordingState_) std::unique_ptr<RecordingState>(
+    folly::make_unique<RecordingState>());
+  recordingState_->clientCallback = std::move(clientCallback);
+  recordingState_->shardSplitCallback = std::move(shardSplitCallback);
 }
 
 }}}

@@ -78,18 +78,21 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
   proxy_->fiberManager.addTaskFinally(
     [keyStr, proxy = proxy_, &proxyRoute = proxyRoute_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
-      auto ctx = std::make_shared<RecordingContext>(
-        [&destinations](const ProxyClientCommon& client) {
-          destinations->push_back(client.ap.toHostPortString());
-        }
-      );
+      Baton baton;
       {
-        RecordingMcRequest recordingReq(ctx, keyStr);
+        auto ctx = ProxyRequestContext::createRecordingNotify(
+          *proxy,
+          baton,
+          [&destinations](const ProxyClientCommon& client) {
+            destinations->push_back(client.ap.toHostPortString());
+          }
+        );
+        ProxyMcRequest recordingReq(std::move(ctx), keyStr);
 
         /* ignore the reply */
         proxyRoute.route(recordingReq, Operation());
       }
-      RecordingContext::waitForRecorded(std::move(ctx));
+      baton.wait();
       return destinations;
     },
     [reqCopy = req.clone()]
@@ -117,7 +120,7 @@ template <class RouteHandle, class Operation>
 inline void dumpTree(std::string& tree,
                      int level,
                      const RouteHandle& rh,
-                     const RecordingMcRequest& req,
+                     const ProxyMcRequest& req,
                      Operation) {
   tree.append(std::string(level, ' ') + rh.routeName() + '\n');
   auto targets = rh.couldRouteTo(req, Operation());
@@ -130,7 +133,7 @@ inline void dumpTree(std::string& tree,
 template <int op_id>
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
-  const RecordingMcRequest& req,
+  const ProxyMcRequest& req,
   const ProxyRoute& proxyRoute,
   McOpList::Item<op_id>) {
 
@@ -146,7 +149,7 @@ inline std::string routeHandlesCommandHelper(
 
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
-  const RecordingMcRequest& req,
+  const ProxyMcRequest& req,
   const ProxyRoute& proxyRoute,
   McOpList::Item<0>) {
 
@@ -270,8 +273,10 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       }
       auto op = args[0];
       auto key = args[1];
-      auto ctx = std::make_shared<RecordingContext>(nullptr);
-      RecordingMcRequest req(ctx, key.str());
+      auto ctx = ProxyRequestContext::createRecording(
+        *proxy_,
+        nullptr);
+      ProxyMcRequest req(std::move(ctx), key.str());
 
       return routeHandlesCommandHelper(op, req, proxyRoute_,
                                        McOpList::LastItem());

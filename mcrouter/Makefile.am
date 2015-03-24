@@ -77,8 +77,6 @@ libmcroutercore_a_SOURCES = \
   ProxyRequestLogger.h \
   ProxyThread.cpp \
   ProxyThread.h \
-  RecordingContext.cpp \
-  RecordingContext.h \
   route.cpp \
   route.h \
   routes/AllAsyncRoute.cpp \

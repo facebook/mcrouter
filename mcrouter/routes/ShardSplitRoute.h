@@ -22,7 +22,7 @@
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
-#include "mcrouter/RecordingContext.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -56,17 +56,37 @@ class ShardSplitRoute {
       shardSplitter_(std::move(shardSplitter)) {
   }
 
-  template <class Operation>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const RecordingMcRequest& req, Operation) const {
-    req.context().recordShardSplitter(shardSplitter_);
-    return couldRouteToImpl(req, Operation());
-  }
-
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
     const Request& req, Operation) const {
-    return couldRouteToImpl(req, Operation());
+
+    req.context().recordShardSplitter(shardSplitter_);
+
+    if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
+      return rh_->couldRouteTo(req, Operation());
+    }
+
+    folly::StringPiece shard;
+    auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
+    if (cnt == 1) {
+      return rh_->couldRouteTo(req, Operation());
+    }
+    if (GetLike<Operation>::value) {
+      size_t i = globals::hostid() % cnt;
+      if (i == 0) {
+        return rh_->couldRouteTo(req, Operation());
+      }
+      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation());
+    }
+
+    assert(DeleteLike<Operation>::value);
+    auto result = rh_->couldRouteTo(req, Operation());
+    for (size_t i = 0; i < cnt - 1; ++i) {
+      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation());
+      result.insert(result.end(), nx.begin(), nx.end());
+    }
+
+    return result;
   }
 
   template <class Operation, class Request>
@@ -126,37 +146,6 @@ class ShardSplitRoute {
     auto reqCopy = req.clone();
     reqCopy.setKey(createSplitKey(req.fullKey(), offset, shard));
     return reqCopy;
-  }
-
-  template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteToImpl(
-    const Request& req, Operation) const {
-
-    if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
-      return rh_->couldRouteTo(req, Operation());
-    }
-
-    folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
-    if (cnt == 1) {
-      return rh_->couldRouteTo(req, Operation());
-    }
-    if (GetLike<Operation>::value) {
-      size_t i = globals::hostid() % cnt;
-      if (i == 0) {
-        return rh_->couldRouteTo(req, Operation());
-      }
-      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation());
-    }
-
-    assert(DeleteLike<Operation>::value);
-    auto result = rh_->couldRouteTo(req, Operation());
-    for (size_t i = 0; i < cnt - 1; ++i) {
-      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation());
-      result.insert(result.end(), nx.begin(), nx.end());
-    }
-
-    return result;
   }
 };
 
