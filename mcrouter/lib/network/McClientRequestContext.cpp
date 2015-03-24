@@ -51,6 +51,12 @@ void McClientRequestContextQueue::failAllPending(mc_res_t error) {
   failQueue(pendingQueue_, error);
 }
 
+void McClientRequestContextQueue::clearStoredInitializers() {
+  while (!initializers_.empty()) {
+    initializers_.pop();
+  }
+}
+
 size_t McClientRequestContextQueue::getFirstId() const {
   assert(getPendingRequestCount());
   return pendingQueue_.front().id;
@@ -118,9 +124,29 @@ void McClientRequestContextQueue::removePending(
 void McClientRequestContextQueue::removePendingReply(
     McClientRequestContextBase& req) {
   assert(req.state_ == State::PENDING_REPLY_QUEUE);
+  assert(&req == &pendingReplyQueue_.front());
   removeFromMap(req.id);
   pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(req));
   req.state_ = State::NONE;
+  initializers_.push(req.initializer_);
+}
+
+McClientRequestContextBase::InitializerFuncPtr
+McClientRequestContextQueue::getParserInitializer(uint64_t reqId) {
+  if (outOfOrder_) {
+    auto it = idMap_.find(reqId);
+    if (it != idMap_.end()) {
+      return it->second->initializer_;
+    }
+  } else {
+    // In inorder protocol we expect to receive timedout requests first.
+    if (!initializers_.empty()) {
+      return initializers_.front();
+    } else if (!pendingReplyQueue_.empty()) {
+      return pendingReplyQueue_.front().initializer_;
+    }
+  }
+  return nullptr;
 }
 
 }}  // facebook::memcache

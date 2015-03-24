@@ -21,46 +21,19 @@ const size_t kAdjustBufferSizeInterval = 10000;
 /* Decay previous bytes per request value with this constant */
 const double kBprDecay = 0.9;
 
-McParser::McParser(ServerParseCallback* callback,
+McParser::McParser(ParserCallback& callback,
                    size_t requestsPerRead,
                    size_t minBufferSize,
                    size_t maxBufferSize)
-    : type_(ParserType::SERVER),
-      serverParseCallback_(callback),
+    : callback_(callback),
       messagesPerRead_(requestsPerRead),
       minBufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
       bufferSize_(maxBufferSize),
       readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
-  assert(serverParseCallback_ != nullptr);
-  mc_parser_init(&mcParser_,
-                 request_parser,
-                 &parserMsgReady,
-                 &parserParseError,
-                 this);
-}
-
-McParser::McParser(ClientParseCallback* callback,
-                   size_t repliesPerRead,
-                   size_t minBufferSize,
-                   size_t maxBufferSize)
-    : type_(ParserType::CLIENT),
-      clientParseCallback_(callback),
-      messagesPerRead_(repliesPerRead),
-      minBufferSize_(minBufferSize),
-      maxBufferSize_(maxBufferSize),
-      bufferSize_(maxBufferSize),
-      readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
-  assert(clientParseCallback_ != nullptr);
-  mc_parser_init(&mcParser_,
-                 reply_parser,
-                 &parserMsgReady,
-                 &parserParseError,
-                 this);
 }
 
 McParser::~McParser() {
-  mc_parser_reset(&mcParser_);
 }
 
 void McParser::shrinkBuffers() {
@@ -113,100 +86,6 @@ void McParser::recalculateBufferSize(size_t read) {
   readBytes_ = 0;
 }
 
-void McParser::errorHelper(McReply reply) {
-  switch (type_) {
-    case ParserType::SERVER:
-      serverParseCallback_->parseError(std::move(reply));
-      break;
-    case ParserType::CLIENT:
-      clientParseCallback_->parseError(std::move(reply));
-      break;
-  }
-}
-
-void McParser::requestReadyHelper(McRequest&& req,
-                                  mc_op_t operation,
-                                  uint64_t reqid,
-                                  mc_res_t result,
-                                  bool noreply) {
-  ++parsedMessages_;
-  serverParseCallback_->requestReady(std::move(req), operation, reqid, result,
-                                     noreply);
-}
-
-void McParser::replyReadyHelper(McReply reply,
-                                mc_op_t operation,
-                                uint64_t reqid) {
-  ++parsedMessages_;
-  clientParseCallback_->replyReady(std::move(reply), operation, reqid);
-}
-
-bool McParser::umMessageReady(
-  const uint8_t* header,
-  const uint8_t* body,
-  const folly::IOBuf& bodyBuffer) {
-
-  switch (type_) {
-    case ParserType::SERVER:
-      {
-        try {
-          mc_op_t op;
-          uint64_t reqid;
-          auto req = umbrellaParseRequest(bodyBuffer,
-                                          header, umMsgInfo_.header_size,
-                                          body, umMsgInfo_.body_size,
-                                          op, reqid);
-          /* Umbrella requests never include a result and are never 'noreply' */
-          requestReadyHelper(std::move(req), op, reqid,
-                             /* result= */ mc_res_unknown,
-                             /* noreply= */ false);
-        } catch (const std::runtime_error& e) {
-          errorHelper(
-            McReply(mc_res_remote_error,
-                    std::string("Error parsing Umbrella message: ")
-                    + e.what()));
-          return false;
-        }
-      }
-      break;
-    case ParserType::CLIENT:
-      {
-        auto mutMsg = createMcMsgRef();
-        uint64_t reqid;
-        auto st = um_consume_no_copy(header, umMsgInfo_.header_size,
-                                     body, umMsgInfo_.body_size,
-                                     &reqid, mutMsg.get());
-        if (st != um_ok) {
-          errorHelper(McReply(mc_res_remote_error,
-                              "Error parsing Umbrella message"));
-          return false;
-        }
-
-        folly::IOBuf value;
-        if (mutMsg->value.len != 0) {
-          if (!cloneInto(value, bodyBuffer,
-                         reinterpret_cast<uint8_t*>(mutMsg->value.str),
-                         mutMsg->value.len)) {
-            errorHelper(McReply(mc_res_remote_error,
-                                "Error parsing Umbrella value"));
-            return false;
-          }
-          // Reset msg->value, or it will confuse McReply::releasedMsg
-          mutMsg->value.str = nullptr;
-          mutMsg->value.len = 0;
-        }
-        McMsgRef msg(std::move(mutMsg));
-        auto reply = McReply(msg->result, msg.clone());
-        if (value.length() != 0) {
-          reply.setValue(std::move(value));
-        }
-        replyReadyHelper(std::move(reply), msg->op, reqid);
-      }
-      break;
-  }
-  return true;
-}
-
 bool McParser::readUmbrellaData() {
   while (!readBuffer_.empty()) {
     auto st = um_parse_header(readBuffer_.data(),
@@ -217,17 +96,19 @@ bool McParser::readUmbrellaData() {
     }
 
     if (st != um_ok) {
-      errorHelper(McReply(mc_res_remote_error,
-                          "Error parsing Umbrella header"));
+      callback_.parseError(mc_res_remote_error,
+                           "Error parsing Umbrella header");
       return false;
     }
 
     /* Three cases: */
     if (readBuffer_.length() >= umMsgInfo_.message_size) {
       /* 1) we already have the entire message */
-      if (!umMessageReady(
+      if (!callback_.umMessageReady(
             readBuffer_.data(),
+            umMsgInfo_.header_size,
             readBuffer_.data() + umMsgInfo_.header_size,
+            umMsgInfo_.body_size,
             readBuffer_)) {
         readBuffer_.clear();
         return false;
@@ -266,9 +147,11 @@ bool McParser::readDataAvailable(size_t len) {
   if (umBodyBuffer_) {
     umBodyBuffer_->append(len);
     if (umBodyBuffer_->length() == umMsgInfo_.body_size) {
-      auto res = umMessageReady(readBuffer_.data(),
-                                umBodyBuffer_->data(),
-                                *umBodyBuffer_);
+      auto res = callback_.umMessageReady(readBuffer_.data(),
+                                          umMsgInfo_.header_size,
+                                          umBodyBuffer_->data(),
+                                          umMsgInfo_.body_size,
+                                          *umBodyBuffer_);
       readBuffer_.clear();
       umBodyBuffer_.reset();
       return res;
@@ -297,58 +180,10 @@ bool McParser::readDataAvailable(size_t len) {
       shrinkBuffers(); /* no-op if buffer is not large */
       return ret;
     } else {
-      /* mc_parser only works with contiguous blocks */
-      auto bytes = readBuffer_.coalesce();
-      mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
-      readBuffer_.clear();
+      callback_.handleAscii(readBuffer_);
       return true;
     }
   }
-}
-
-void McParser::msgReady(McMsgRef msg, uint64_t reqid) {
-  auto operation = msg->op;
-  auto result = msg->result;
-  auto noreply = msg->noreply;
-
-  switch (type_) {
-    case ParserType::SERVER:
-      requestReadyHelper(McRequest(std::move(msg)), operation, reqid, result,
-                         noreply);
-      break;
-    case ParserType::CLIENT:
-      replyReadyHelper(McReply(result, std::move(msg)), operation, reqid);
-      break;
-  }
-}
-
-void McParser::parserMsgReady(void* context,
-                              uint64_t reqid,
-                              mc_msg_t* msg) {
-  auto parser = reinterpret_cast<McParser*>(context);
-  parser->msgReady(McMsgRef::moveRef(msg), reqid);
-}
-
-void McParser::parseError(parser_error_t error) {
-  std::string err;
-
-  switch (error) {
-    case parser_unspecified_error:
-    case parser_malformed_request:
-      err = "malformed request";
-      break;
-    case parser_out_of_memory:
-      err = "out of memory";
-      break;
-  }
-
-  errorHelper(McReply(mc_res_client_error, std::move(err)));
-}
-
-void McParser::parserParseError(void* context,
-                                parser_error_t error) {
-  auto parser = reinterpret_cast<McParser*>(context);
-  parser->parseError(error);
 }
 
 }}  // facebook::memcache

@@ -15,7 +15,7 @@
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
-#include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
@@ -29,8 +29,7 @@ class McServerOnRequest;
 class McServerSession :
       public folly::DelayedDestruction,
       private folly::AsyncTransportWrapper::ReadCallback,
-      private folly::AsyncTransportWrapper::WriteCallback,
-      private McParser::ServerParseCallback {
+      private folly::AsyncTransportWrapper::WriteCallback {
  private:
   folly::SafeIntrusiveListHook hook_;
 
@@ -119,7 +118,7 @@ class McServerSession :
   };
   State state_{STREAMING};
 
-  McParser parser_;
+  ServerMcParser<McServerSession> parser_;
 
   /* In-order protocol state */
 
@@ -232,8 +231,8 @@ class McServerSession :
                     mc_op_t operation,
                     uint64_t reqid,
                     mc_res_t result,
-                    bool noreply) override;
-  void parseError(McReply reply) override;
+                    bool noreply);
+  void parseError(mc_res_t result, folly::StringPiece reason);
 
   /**
    * Must be called after parser has detected the protocol (i.e.
@@ -269,6 +268,7 @@ class McServerSession :
   McServerSession& operator=(const McServerSession&) = delete;
 
   friend class McServerRequestContext;
+  friend class ServerMcParser<McServerSession>;
 };
 
 

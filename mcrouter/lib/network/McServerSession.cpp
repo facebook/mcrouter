@@ -76,7 +76,7 @@ McServerSession::McServerSession(
       onShutdown_(std::move(onShutdown)),
       options_(std::move(options)),
       userCtxt_(userCtxt),
-      parser_(this,
+      parser_(*this,
               options_.requestsPerRead,
               options_.minBufferSize,
               options_.maxBufferSize),
@@ -275,7 +275,7 @@ void McServerSession::requestReady(McRequest&& req,
   }
 }
 
-void McServerSession::parseError(McReply reply) {
+void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   DestructorGuard dg(this);
 
   if (state_ != STREAMING) {
@@ -284,7 +284,7 @@ void McServerSession::parseError(McReply reply) {
 
   McServerRequestContext::reply(
     McServerRequestContext(*this, mc_op_unknown, tailReqid_++),
-    std::move(reply));
+    McReply(result, reason));
   close();
 }
 

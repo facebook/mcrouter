@@ -150,6 +150,8 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
+  network/ClientMcParser-inl.h \
+  network/ClientMcParser.h \
   network/ConnectionOptions.h \
   network/McClientRequestContext-inl.h \
   network/McClientRequestContext.cpp \
@@ -167,6 +169,8 @@ libmcrouter_a_SOURCES = \
   network/MockMcClientTransport.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
+  network/ServerMcParser-inl.h \
+  network/ServerMcParser.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
   network/UmbrellaProtocol.cpp \

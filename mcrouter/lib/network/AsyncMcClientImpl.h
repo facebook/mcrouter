@@ -20,7 +20,7 @@
 #include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
-#include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/network/ClientMcParser.h"
 
 namespace facebook { namespace memcache {
 
@@ -42,8 +42,7 @@ class AsyncMcClientImpl :
       public folly::DelayedDestruction,
       private folly::AsyncSocket::ConnectCallback,
       private folly::AsyncTransportWrapper::ReadCallback,
-      private folly::AsyncTransportWrapper::WriteCallback,
-      private McParser::ClientParseCallback {
+      private folly::AsyncTransportWrapper::WriteCallback {
 
  public:
 
@@ -72,8 +71,10 @@ class AsyncMcClientImpl :
   std::pair<uint64_t, uint64_t> getBatchingStat() const;
 
   void updateWriteTimeout(std::chrono::milliseconds timeout);
-
  private:
+  using ParserT = ClientMcParser<AsyncMcClientImpl>;
+  friend ParserT;
+
   enum class ConnectionState {
     UP, // Connection is open and we can write into it.
     DOWN, // Connection is not open (or close), we need to reconnect.
@@ -95,7 +96,7 @@ class AsyncMcClientImpl :
   std::pair<uint64_t, uint16_t> batchStatCurrent{0, 0};
 
   folly::EventBase& eventBase_;
-  std::unique_ptr<McParser> parser_;
+  std::unique_ptr<ParserT> parser_;
 
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
@@ -143,9 +144,6 @@ class AsyncMcClientImpl :
   // Log critical ascii error reply (e.g. server reply that starts with ERROR).
   void logCriticalAsciiError();
 
-  template <class Reply>
-  void replyReady(Reply&& reply, uint64_t reqId);
-
   void attemptConnection();
 
   // TAsyncSocket::ConnectCallback overrides
@@ -167,9 +165,11 @@ class AsyncMcClientImpl :
   void writeErr(size_t bytesWritten,
                 const folly::AsyncSocketException& ex) noexcept override;
 
-  // McParser::ClientParseCallback overrides
-  void replyReady(McReply mcReply, mc_op_t operation, uint64_t reqid) override;
-  void parseError(McReply errorReply) override;
+  // Callbacks for McParser.
+  template <class Reply>
+  void replyReady(Reply&& reply, uint64_t reqId);
+  void parseError(mc_res_t result, folly::StringPiece reason);
+  bool nextReplyAvailable(uint64_t reqId);
 
   void sendFakeReply(McClientRequestContextBase& request);
 

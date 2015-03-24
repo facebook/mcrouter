@@ -56,13 +56,14 @@ McClientRequestContextBase::McClientRequestContextBase(
   Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
   std::shared_ptr<AsyncMcClientImpl> client,
   folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage,
-  McClientRequestContextQueue& queue)
+  McClientRequestContextQueue& queue, InitializerFuncPtr initializer)
   : reqContext(request, Operation(), reqid, protocol),
     id(reqid),
     queue_(queue),
     client_(std::move(client)),
     replyType_(typeid(typename ReplyType<Operation, Request>::type)),
-    replyStorage_(reinterpret_cast<void*>(&replyStorage)) {
+    replyStorage_(reinterpret_cast<void*>(&replyStorage)),
+    initializer_(std::move(initializer)) {
 }
 
 template <class Operation, class Request>
@@ -124,9 +125,11 @@ McClientRequestContext<Operation, Request>::waitForReply(
 template <class Operation, class Request>
 McClientRequestContext<Operation, Request>::McClientRequestContext(
   const Request& request, uint64_t reqid, mc_protocol_t protocol,
-  std::shared_ptr<AsyncMcClientImpl> client, McClientRequestContextQueue& queue)
+  std::shared_ptr<AsyncMcClientImpl> client, McClientRequestContextQueue& queue,
+  McClientRequestContextBase::InitializerFuncPtr func)
   : McClientRequestContextBase(Operation(), request, reqid, protocol,
-                               std::move(client), replyStorage_, queue)
+                               std::move(client), replyStorage_, queue,
+                               std::move(func))
 #ifndef LIBMC_FBTRACE_DISABLE
     , fbtraceInfo_(getFbTraceInfo(request))
 #endif
@@ -144,6 +147,8 @@ template <class Reply>
 void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
   if (pendingReplyQueue_.empty()) {
     assert(idMap_.find(id) == idMap_.end());
+    assert(!initializers_.empty());
+    initializers_.pop();
     return;
   }
 
@@ -164,9 +169,14 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
     }
   }
 
-  if (ctx && !ctx->reply(std::move(r))) {
-    ctx->state_ = State::NONE;
-    ctx->replyError(mc_res_local_error);
+  if (ctx) {
+    if (!ctx->reply(std::move(r))) {
+      ctx->state_ = State::NONE;
+      ctx->replyError(mc_res_local_error);
+    }
+  } else {
+    assert(!initializers_.empty());
+    initializers_.pop();
   }
 }
 

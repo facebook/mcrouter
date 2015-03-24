@@ -16,6 +16,7 @@
 #include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/FBTrace.h"
+#include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
 
 namespace facebook { namespace memcache {
@@ -29,6 +30,9 @@ class McClientRequestContextQueue;
  */
 class McClientRequestContextBase {
  public:
+  using InitializerFuncPtr =
+    void (*)(ClientMcParser<AsyncMcClientImpl>&);
+
   McSerializedRequest reqContext;
   uint64_t id;
 
@@ -69,7 +73,8 @@ class McClientRequestContextBase {
     Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
     std::shared_ptr<AsyncMcClientImpl> client,
     folly::Optional<typename ReplyType<Operation,Request>::type>& replyStorage,
-    McClientRequestContextQueue& queue);
+    McClientRequestContextQueue& queue, InitializerFuncPtr initializer);
+
 
   virtual void sendTraceOnReply() = 0;
 
@@ -84,6 +89,7 @@ class McClientRequestContextBase {
   std::type_index replyType_;
   folly::SafeIntrusiveListHook hook_;
   void* replyStorage_;
+  InitializerFuncPtr initializer_;
 
   void cancelAndWait();
 
@@ -115,7 +121,8 @@ class McClientRequestContext : public McClientRequestContextBase {
   McClientRequestContext(
     const Request& request, uint64_t reqid, mc_protocol_t protocol,
     std::shared_ptr<AsyncMcClientImpl> client,
-    McClientRequestContextQueue& queue);
+    McClientRequestContextQueue& queue,
+    McClientRequestContextBase::InitializerFuncPtr);
 
   void replyError(mc_res_t result) override;
   const char* fakeReply() const override;
@@ -160,6 +167,11 @@ class McClientRequestContextQueue {
   void failAllPending(mc_res_t error);
 
   /**
+   * Should be called whenever the network communication channel gets closed.
+   */
+  void clearStoredInitializers();
+
+  /**
    * Return an id of the first pending request.
    *
    * Note: it's the caller responsibility to ensure that there's at least one
@@ -198,6 +210,18 @@ class McClientRequestContextQueue {
   template <class Reply>
   void reply(uint64_t id, Reply&& reply);
 
+  /**
+   * Obtain a function that should be used to initialize parser for given
+   * request.
+   *
+   * @param reqId  id of request to lookup, ignored for in order protocol.
+   *
+   * Note: for out of order may return nullptr in case a request with given id
+   *       was cancelled.
+   */
+  McClientRequestContextBase::InitializerFuncPtr
+  getParserInitializer(uint64_t reqId = 0);
+
  private:
   // Friend to allow access to remove* mothods.
   template<class Operation, class Request>
@@ -216,6 +240,9 @@ class McClientRequestContextQueue {
   // request lookup.
   std::unordered_map<uint64_t, McClientRequestContextBase*> idMap_;
 
+  // Storage for parser initializers for timed out requests.
+  std::queue<McClientRequestContextBase::InitializerFuncPtr> initializers_;
+
   void failQueue(McClientRequestContextBase::Queue& queue, mc_res_t error);
 
   void removeFromMap(uint64_t id);
@@ -227,6 +254,9 @@ class McClientRequestContextQueue {
 
   /**
    * Removes given request from pending reply queue and from id map.
+   *
+   * Calling this method indicates that this request wasn't replied, but
+   * we should expect a reply from network.
    */
   void removePendingReply(McClientRequestContextBase& req);
 };

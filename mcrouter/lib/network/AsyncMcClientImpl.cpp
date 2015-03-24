@@ -380,9 +380,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   nextInflightMsgId_ = queue_.getFirstId();
 
   scheduleNextWriterLoop();
-  parser_ = folly::make_unique<McParser>(
-    static_cast<McParser::ClientParseCallback*>(this), 0,
-    kReadBufferSizeMin, kReadBufferSizeMax);
+  parser_ = folly::make_unique<ParserT>(*this, 0, kReadBufferSizeMin,
+                                        kReadBufferSizeMax);
   socket_->setReadCB(this);
 }
 
@@ -446,6 +445,9 @@ void AsyncMcClientImpl::processShutdown() {
         connectionState_ = ConnectionState::DOWN;
         // We don't need it anymore, so let it perform complete cleanup.
         socket_.reset();
+        // Cleanup parser initializers for timedout requests, since we're not
+        // not going to use them.
+        queue_.clearStoredInitializers();
 
         // In case we still have some pending requests, then try reconnecting
         // immediately.
@@ -536,19 +538,26 @@ void AsyncMcClientImpl::logCriticalAsciiError() {
   }
 }
 
-// Note: this is a temporary proxy method between McParser and AsyncMcClient.
-void AsyncMcClientImpl::replyReady(McReply mcReply, mc_op_t operation,
-                                   uint64_t reqid) {
-  replyReady(std::move(mcReply), reqid);
-}
-
-void AsyncMcClientImpl::parseError(McReply errorReply) {
+void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {
   // mc_parser can call the parseError multiple times, process only first.
   if (connectionState_ != ConnectionState::UP) {
     return;
   }
   DestructorGuard dg(this);
   processShutdown();
+}
+
+bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
+  assert(connectionState_ == ConnectionState::UP);
+
+  auto initializer = queue_.getParserInitializer(reqId);
+
+  if (initializer) {
+    (*initializer)(*parser_);
+    return true;
+  }
+
+  return false;
 }
 
 namespace {

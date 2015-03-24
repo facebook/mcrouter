@@ -21,57 +21,45 @@ namespace facebook { namespace memcache {
 
 class McParser {
  public:
-
-  class ServerParseCallback {
+  class ParserCallback {
    public:
-    virtual ~ServerParseCallback() {}
+    virtual ~ParserCallback() {};
 
     /**
-     * Called on every new request.
-     * @param result  Some requests come in with a pre-filled result,
-     *                one example is mc_res_bad_key.
-     *                ParseError is not appropriate in this case since
-     *                we usually can keep parsing, but we need to notify
-     *                that the request is invalid.
-     * @param noreply  If true, the server should not serialize and send
-     *                 a reply for this request.
+     * We fully parsed an umbrella message and want to call RequestReady or
+     * ReplyReady callback.
+     *
+     * @param umMsgInfo
+     * @param header      Pointer to a contigous block of headerSize bytes
+     * @param headerSize
+     * @param body        Pointer to a contigous block of bodySize bytes,
+     *                    must point inside bodyBuffer.
+     * @param bodySize
+     * @param bodyBuffer  Cloneable buffer that holds body bytes.
+     * @return            False on any parse errors.
      */
-    virtual void requestReady(McRequest&& req,
-                              mc_op_t operation,
-                              uint64_t reqid,
-                              mc_res_t result,
-                              bool noreply) = 0;
+    virtual bool umMessageReady(const uint8_t* header,
+                                size_t headerSize,
+                                const uint8_t* body,
+                                size_t bodySize,
+                                const folly::IOBuf& bodyBuffer) = 0;
+
+    /**
+     * Handle ascii data read.
+     * The user is responsible for clearing or advancing the readBuffer.
+     *
+     * @param readBuffer  buffer with newly read data that needs to be parsed.
+     */
+    virtual void handleAscii(folly::IOBuf& readBuffer) = 0;
 
     /**
      * Called on fatal parse error (the stream should normally be closed)
      */
-    virtual void parseError(McReply errorReply) = 0;
+    virtual void parseError(mc_res_t result, folly::StringPiece reason) = 0;
   };
 
-  class ClientParseCallback {
-   public:
-    virtual ~ClientParseCallback() {}
-
-    /**
-     * Called on every new reply.
-     */
-    virtual void replyReady(McReply reply,
-                            mc_op_t operation,
-                            uint64_t reqid) = 0;
-
-    /**
-     * Called on fatal parse error (the stream should normally be closed)
-     */
-    virtual void parseError(McReply errorReply) = 0;
-  };
-
-  McParser(ServerParseCallback* cb,
+  McParser(ParserCallback& cb,
            size_t requestsPerRead,
-           size_t minBufferSize,
-           size_t maxBufferSize);
-
-  McParser(ClientParseCallback* cb,
-           size_t repliesPerRead,
            size_t minBufferSize,
            size_t maxBufferSize);
 
@@ -102,6 +90,9 @@ class McParser {
    */
   bool readDataAvailable(size_t len);
 
+  void reportMsgRead() {
+    ++parsedMessages_;
+  }
  private:
   bool seenFirstByte_{false};
   bool outOfOrder_{false};
@@ -110,20 +101,8 @@ class McParser {
   bool bufferShrinkRequired_{false};
 
   mc_protocol_t protocol_{mc_unknown_protocol};
-  mc_parser_t mcParser_;
 
-  enum class ParserType {
-    SERVER,
-    CLIENT
-  };
-
-  ParserType type_;
-
-  union {
-    ServerParseCallback* serverParseCallback_;
-    ClientParseCallback* clientParseCallback_;
-  };
-
+  ParserCallback& callback_;
   size_t messagesPerRead_{0};
   size_t minBufferSize_{256};
   size_t maxBufferSize_{4096};
@@ -146,40 +125,14 @@ class McParser {
    */
   std::unique_ptr<folly::IOBuf> umBodyBuffer_;
 
-  /**
-   * We fully parsed an umbrella message and want to call RequestReady or
-   * ReplyReady callback.
-   * umMsgInfo_ must be filled out.
-   *
-   * @param header      Pointer to a contigous block of header_size bytes
-   * @param body        Pointer to a contigous block of body_size bytes,
-   *                    must point inside bodyBuffer.
-   * @param bodyBuffer  Cloneable buffer that holds body bytes.
-   * @return            False on any parse errors.
-   */
-  bool umMessageReady(
-    const uint8_t* header,
-    const uint8_t* body,
-    const folly::IOBuf& bodyBuffer);
-
   bool readUmbrellaData();
 
-  void requestReadyHelper(McRequest&& req, mc_op_t operation, uint64_t reqid,
-                          mc_res_t result, bool noreply);
-  void replyReadyHelper(McReply reply, mc_op_t operation, uint64_t reqid);
   void recalculateBufferSize(size_t read);
-  void errorHelper(McReply reply);
 
   /**
    * Shrink all buffers used if possible to reduce memory footprint.
    */
   void shrinkBuffers();
-
-  /* mc_parser callbacks */
-  void msgReady(McMsgRef msg, uint64_t reqid);
-  void parseError(parser_error_t error);
-  static void parserMsgReady(void* context, uint64_t reqid, mc_msg_t* req);
-  static void parserParseError(void* context, parser_error_t error);
 };
 
 }}  // facebook::memcache

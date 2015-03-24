@@ -8,6 +8,7 @@
  *
  */
 #include <folly/Memory.h>
+#include <folly/MoveWrapper.h>
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
@@ -37,7 +38,9 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
 
   McClientRequestContext<Operation, Request> ctx(
     request, nextMsgId_, connectionOptions_.accessPoint.getProtocol(), selfPtr,
-    queue_);
+    queue_, [] (ParserT& parser) {
+      parser.expectNext<Operation, Request>();
+    });
   sendCommon(ctx);
 
   // Wait for the reply.
@@ -48,16 +51,6 @@ template <class Reply>
 void AsyncMcClientImpl::replyReady(Reply&& r, uint64_t reqId) {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
-
-  // Local error in ascii protocol means that there was a protocol level error,
-  // e.g. we sent some command that server didn't understand. We need to log
-  // the original request and close the connection.
-  if (r.result() == mc_res_local_error &&
-      connectionOptions_.accessPoint.getProtocol() == mc_ascii_protocol) {
-    logCriticalAsciiError();
-    processShutdown();
-    return;
-  }
 
   if (!outOfOrder_) {
     reqId = nextInflightMsgId_;
