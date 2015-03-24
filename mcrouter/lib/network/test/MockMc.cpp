@@ -15,9 +15,14 @@
 
 namespace facebook { namespace memcache {
 
-void MockMc::CacheItem::updateToken() {
+void MockMc::CacheItem::updateLeaseToken() {
   static uint64_t leaseCounter = 100;
-  token = leaseCounter++;
+  leaseToken = leaseCounter++;
+}
+
+void MockMc::CacheItem::updateCasToken() {
+  static uint64_t casCounter = 100;
+  casToken = casCounter++;
 }
 
 MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v)
@@ -30,7 +35,7 @@ MockMc::Item::Item(const McRequest& req)
       flags(req.flags()) {
 }
 
-MockMc::Item* MockMc::get(folly::StringPiece key) {
+const MockMc::Item* MockMc::get(folly::StringPiece key) {
   auto it = findUnexpired(key);
   if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
     return nullptr;
@@ -60,14 +65,15 @@ bool MockMc::replace(folly::StringPiece key, Item item) {
 }
 
 std::pair<bool, int64_t> MockMc::arith(folly::StringPiece key, int64_t delta) {
-  auto item = get(key);
-  if (!item) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
     return std::make_pair(false, 0);
   }
 
-  auto oldval = folly::to<uint64_t>(coalesceAndGetRange(item->value));
+  auto oldval = folly::to<uint64_t>(coalesceAndGetRange(it->second.item.value));
   auto newval = folly::to<std::string>(oldval + delta);
-  item->value = folly::IOBuf::copyBuffer(newval);
+  it->second.updateCasToken();
+  it->second.item.value = folly::IOBuf::copyBuffer(newval);
   return std::make_pair(true, oldval + delta);
 }
 
@@ -80,7 +86,8 @@ bool MockMc::del(folly::StringPiece key) {
       deleted = true;
       it->second.state = CacheItem::TLRU;
     }
-    it->second.updateToken();
+    it->second.updateLeaseToken();
+    it->second.updateCasToken();
     return deleted;
   }
   return false;
@@ -91,7 +98,8 @@ bool MockMc::del(folly::StringPiece key) {
  *           (stale_item, token)  On a miss.
  *           (stale_item, 1)      On a hot miss (another lease outstanding).
  */
-std::pair<MockMc::Item*, uint64_t> MockMc::leaseGet(folly::StringPiece key) {
+std::pair<const MockMc::Item*, uint64_t>
+MockMc::leaseGet(folly::StringPiece key) {
   auto it = findUnexpired(key);
   if (it == citems_.end()) {
     /* Lease get on a non-existing item: create a new empty item and
@@ -100,7 +108,8 @@ std::pair<MockMc::Item*, uint64_t> MockMc::leaseGet(folly::StringPiece key) {
       std::make_pair(key.str(),
                      CacheItem(Item(folly::IOBuf::copyBuffer(""))))).first;
     it->second.state = CacheItem::TLRU;
-    it->second.updateToken();
+    it->second.updateLeaseToken();
+    it->second.updateCasToken();
   }
 
   auto& citem = it->second;
@@ -111,7 +120,7 @@ std::pair<MockMc::Item*, uint64_t> MockMc::leaseGet(folly::StringPiece key) {
     case CacheItem::TLRU:
       /* First lease-get for a TLRU item, return with a valid token */
       citem.state = CacheItem::TLRU_HOT;
-      return std::make_pair(&citem.item, citem.token);
+      return std::make_pair(&citem.item, citem.leaseToken);
     case CacheItem::TLRU_HOT:
       /* TLRU item with other lease-gets pending, return a hot miss token
          (special value 1). Note: in real memcached this state would
@@ -127,21 +136,42 @@ MockMc::LeaseSetResult MockMc::leaseSet(folly::StringPiece key, Item item,
   auto it = findUnexpired(key);
   if (it == citems_.end()) {
     /* Item doesn't exist in cache or TLRU */
-    return NOT_STORED;
+    return LeaseSetResult::NOT_STORED;
   }
 
   auto& citem = it->second;
   if (citem.state == CacheItem::CACHE ||
-      citem.token == token) {
+      citem.leaseToken == token) {
     /* Either the item is a hit, or the token is valid. Regular set */
     set(key, std::move(item));
-    return STORED;
+    return LeaseSetResult::STORED;
   } else {
     /* The token is not valid (expired or wrong), but the value is in TLRU.
        Update the value but don't promote to cache. */
     citem.item = std::move(item);
-    return STALE_STORED;
+    return LeaseSetResult::STALE_STORED;
   }
+}
+
+std::pair<const MockMc::Item*, uint64_t> MockMc::gets(folly::StringPiece key) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return std::make_pair<Item*, uint64_t>(nullptr, 0);
+  }
+  return std::make_pair(&it->second.item, it->second.casToken);
+}
+
+MockMc::CasResult MockMc::cas(folly::StringPiece key, Item item,
+                              uint64_t token) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return CasResult::NOT_FOUND;
+  }
+  if (it->second.casToken != token) {
+    return CasResult::EXISTS;
+  }
+  set(key, std::move(item));
+  return CasResult::STORED;
 }
 
 std::unordered_map<std::string, MockMc::CacheItem>::iterator

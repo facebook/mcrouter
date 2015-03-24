@@ -42,7 +42,7 @@ class MockMc {
    * @return  nullptr if the item doesn't exist in the cache
    *          (expired/evicted/was never set); pointer to the item otherwise.
    */
-  Item* get(folly::StringPiece key);
+  const Item* get(folly::StringPiece key);
 
   /**
    * Store item with the given key.
@@ -88,9 +88,9 @@ class MockMc {
    *                            because another caller already got a token
    *                            (stale value might still be useful though).
    */
-  std::pair<Item*, uint64_t> leaseGet(folly::StringPiece key);
+  std::pair<const Item*, uint64_t> leaseGet(folly::StringPiece key);
 
-  enum LeaseSetResult {
+  enum class LeaseSetResult {
     NOT_STORED,
     STORED,
     STALE_STORED,
@@ -108,6 +108,16 @@ class MockMc {
    */
   LeaseSetResult leaseSet(folly::StringPiece key, Item item, uint64_t token);
 
+  std::pair<const Item*, uint64_t> gets(folly::StringPiece key);
+
+  enum class CasResult {
+    NOT_FOUND,
+    STORED,
+    EXISTS
+  };
+
+  CasResult cas(folly::StringPiece key, Item item, uint64_t token);
+
   /**
    * clear all items
    */
@@ -123,12 +133,16 @@ class MockMc {
       TLRU_HOT,
     };
     TLRUState state{CACHE};
-    uint64_t token{0};
+    uint64_t leaseToken{0};
+    uint64_t casToken{0};
 
     explicit CacheItem(Item it)
-        : item(std::move(it)) {}
+        : item(std::move(it)) {
+      updateCasToken();
+    }
 
-    void updateToken();
+    void updateLeaseToken();
+    void updateCasToken();
   };
   std::unordered_map<std::string, CacheItem> citems_;
 

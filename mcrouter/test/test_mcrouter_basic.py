@@ -78,6 +78,23 @@ class TestMcrouterBasic(McrouterTestCase):
 
         self.assertFalse(f[0])
 
+    def test_basic_cas(self):
+        mcr = self.get_mcrouter()
+        self.assertIsNone(mcr.cas('key', 'value', 1))
+        self.assertIsNone(mcr.gets('key'))
+        self.assertTrue(mcr.add('key', 'value'))
+        ret = mcr.gets('key')
+        self.assertIsNotNone(ret)
+        old_cas = ret['cas']
+        self.assertEqual(ret['value'], 'value')
+        self.assertTrue(mcr.cas('key', 'value2', ret["cas"]))
+        ret = mcr.gets('key')
+        self.assertEqual(ret['value'], 'value2')
+        self.assertNotEqual(old_cas, ret['cas'])
+        self.assertTrue(mcr.set('key', 'value2'))
+        self.assertFalse(mcr.cas('key', 'value3', ret['cas']))
+        self.assertEqual(mcr.gets('key')['value'], 'value2')
+
     def test_shutdown(self):
         mcr = self.get_mcrouter()
 

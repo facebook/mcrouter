@@ -76,8 +76,8 @@ class MCProcess(object):
 
         self.addr = ('localhost', port)
         self.port = port
-        self.sets = 0
-        self.gets = 0
+        self.setCnt = 0
+        self.getCnt = 0
         self.deletes = 0
         self.others = 0
 
@@ -177,13 +177,13 @@ class MCProcess(object):
         if self.proc:
             self.proc.terminate()
 
-    def get(self, keys, return_all_info=False):
+    def _get(self, cmd, keys, expect_cas, return_all_info):
         multi = True
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
-        self.gets += len(keys)
-        self.socket.sendall("get %s\r\n" % " ".join(keys))
+        self.getCnt += len(keys)
+        self.socket.sendall("{} {}\r\n".format(cmd, " ".join(keys)))
         res = dict([(key, None) for key in keys])
 
         while True:
@@ -195,15 +195,20 @@ class MCProcess(object):
                     assert len(res) == 1
                     return res.values()[0]
             elif l.startswith("VALUE"):
-                v, k, f, n = l.split()
+                parts = l.split()
+                k = parts[1]
+                f = int(parts[2])
+                n = int(parts[3])
                 assert k in keys
-                payload = self.fd.read(int(n))
+                payload = self.fd.read(n)
                 self.fd.read(2)
-                if (return_all_info):
+                if return_all_info:
                     res[k] = dict({"key": k,
-                                  "flags": int(f),
-                                  "size": int(n),
+                                  "flags": f,
+                                  "size": n,
                                   "value": payload})
+                    if expect_cas:
+                        res[k]["cas"] = int(parts[4])
                 else:
                     res[k] = payload
             elif l.startswith("SERVER_ERROR"):
@@ -212,15 +217,22 @@ class MCProcess(object):
                 self.connect()
                 raise Exception('Unexpected response "%s" (%s)' % (l, keys))
 
+    def get(self, keys, return_all_info=False):
+        return self._get('get', keys, expect_cas=False,
+                         return_all_info=return_all_info)
+
+    def gets(self, keys):
+        return self._get('gets', keys, expect_cas=True, return_all_info=True)
+
     def metaget(self, keys):
         ## FIXME: Not supporting multi-metaget yet
         #multi = True
         #if not instance(keys, list):
         #    multi = False
         #    keys = [keys]
-        #self.gets += len(keys)
+        #self.getCnt += len(keys)
         res = {}
-        self.gets += 1
+        self.getCnt += 1
         self.socket.sendall("metaget %s\r\n" % keys)
 
         while True:
@@ -238,7 +250,7 @@ class MCProcess(object):
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
-        self.gets += len(keys)
+        self.getCnt += len(keys)
         self.socket.sendall("lease-get %s\r\n" % " ".join(keys))
         res = dict([(key, None) for key in keys])
 
@@ -274,7 +286,7 @@ class MCProcess(object):
 
     def _set(self, command, key, value, replicate=False, noreply=False,
              exptime=0):
-        self.sets += 1
+        self.setCnt += 1
         value = str(value)
         flags = 1024 if replicate else 0
         self.socket.sendall("%s %s %d %d %d%s\r\n%s\r\n" %
@@ -291,7 +303,7 @@ class MCProcess(object):
         return re.match("STORED", answer)
 
     def leaseSet(self, key, value_token, is_stalestored=False):
-        self.sets += 1
+        self.setCnt += 1
         value = str(value_token["value"])
         token = int(value_token["token"])
         flags = 0
@@ -330,10 +342,10 @@ class MCProcess(object):
         assert re.match("DELETED|NOT_FOUND|SERVER_ERROR", answer), answer
         return re.match("DELETED", answer)
 
-    def incr(self, key, value=1, noreply=False):
-        self.socket.sendall("incr %s %d%s\r\n" %
-                            (key, value, (' noreply' if noreply else '')))
-        self.sets += 1
+    def _arith(self, cmd, key, value, noreply):
+        self.socket.sendall("%s %s %d%s\r\n" %
+                            (cmd, key, value, (' noreply' if noreply else '')))
+        self.setCnt += 1
 
         if noreply:
             return self.expectNoReply()
@@ -343,20 +355,24 @@ class MCProcess(object):
             return None
         else:
             return int(answer)
+
+    def incr(self, key, value=1, noreply=False):
+        return self._arith('incr', key, value, noreply)
 
     def decr(self, key, value=1, noreply=False):
-        self.socket.sendall("decr %s %d%s\r\n" %
-                            (key, value, (' noreply' if noreply else '')))
-        self.sets += 1
+        return self._arith('decr', key, value, noreply)
 
-        if noreply:
-            return self.expectNoReply()
+    def cas(self, key, value, cas_token):
+        value = str(value)
+        self.socket.sendall("cas %s 0 0 %d %d\r\n%s\r\n" %
+                            (key, len(value), cas_token, value))
 
-        answer = self.fd.readline()
-        if re.match("NOT_FOUND", answer):
+        answer = self.fd.readline().strip()
+        if re.search('ERROR', answer):
+            print(answer)
+            self.connect()
             return None
-        else:
-            return int(answer)
+        return re.match("STORED", answer)
 
     def stats(self, spec=None):
         q = 'stats\r\n'

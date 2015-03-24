@@ -142,16 +142,16 @@ class MockMcOnRequest {
     auto key = req.fullKey().str();
 
     switch (mc_.leaseSet(key, MockMc::Item(req), req.leaseToken())) {
-      case MockMc::NOT_STORED:
+      case MockMc::LeaseSetResult::NOT_STORED:
         McServerRequestContext::reply(std::move(ctx),
                                       McReply(mc_res_notstored));
         return;
 
-      case MockMc::STORED:
+      case MockMc::LeaseSetResult::STORED:
         McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
         return;
 
-      case MockMc::STALE_STORED:
+      case MockMc::LeaseSetResult::STALE_STORED:
         McServerRequestContext::reply(std::move(ctx),
                                       McReply(mc_res_stalestored));
         return;
@@ -245,6 +245,42 @@ class MockMcOnRequest {
     mc_.flushAll();
     McReply reply(mc_res_ok);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
+                 McOperation<mc_op_gets>) {
+    auto key = req.fullKey().str();
+    auto p = mc_.gets(key);
+    if (!p.first) {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
+    } else {
+      McReply reply(mc_res_found);
+      folly::IOBuf cloned;
+      p.first->value->cloneInto(cloned);
+      reply.setValue(std::move(cloned));
+      reply.setFlags(p.first->flags);
+      reply.setCas(p.second);
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
+                 McOperation<mc_op_cas>) {
+    auto key = req.fullKey().str();
+    auto ret = mc_.cas(key, MockMc::Item(req), req.cas());
+    switch (ret) {
+      case MockMc::CasResult::NOT_FOUND:
+        McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
+        break;
+      case MockMc::CasResult::EXISTS:
+        McServerRequestContext::reply(std::move(ctx), McReply(mc_res_exists));
+        break;
+      case MockMc::CasResult::STORED:
+        McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
+        break;
+    }
   }
 
  private:
