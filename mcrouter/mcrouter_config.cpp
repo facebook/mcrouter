@@ -69,11 +69,12 @@ std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router) {
 McrouterOptions defaultTestOptions() {
   auto opts = McrouterOptions();
   opts.enable_failure_logging = false;
+  opts.stats_logging_interval = 0;
   return opts;
 }
 
 std::vector<std::string> defaultTestCommandLineArgs() {
-  return {};
+  return { "--disable-failure-logging", "--stats-logging-interval=0" };
 }
 
 void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog) { }

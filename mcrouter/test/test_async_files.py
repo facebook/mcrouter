@@ -21,18 +21,9 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 class TestAsyncFiles(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--stats-logging-interval', '100', '--use-asynclog-version2']
-    stats_dir = ''
-
-    def setUp(self):
-        self.stats_dir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        McrouterTestCase.tearDown(self)
-        shutil.rmtree(self.stats_dir)
 
     def test_async_files(self):
-        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args +
-            ['--stats-root', self.stats_dir])
+        mcrouter = self.add_mcrouter(self.config, extra_args=self.extra_args)
         self.assertIsNone(mcrouter.delete('key'))
 
         # wait for files
@@ -58,11 +49,11 @@ class TestAsyncFiles(McrouterTestCase):
 
         # check stats
         stat_prefix = 'libmcrouter.mcrouter.0.'
-        file_stat = os.path.join(self.stats_dir, stat_prefix + 'stats')
-        file_startup_options = \
-            os.path.join(self.stats_dir, stat_prefix + 'startup_options')
-        file_config_sources = \
-            os.path.join(self.stats_dir, stat_prefix + 'config_sources_info')
+        file_stat = os.path.join(mcrouter.stats_dir, stat_prefix + 'stats')
+        file_startup_options = os.path.join(mcrouter.stats_dir,
+                                            stat_prefix + 'startup_options')
+        file_config_sources = os.path.join(mcrouter.stats_dir,
+                                           stat_prefix + 'config_sources_info')
 
         self.assertTrue(os.path.exists(file_stat),
                         "{} doesn't exist".format(file_stat))

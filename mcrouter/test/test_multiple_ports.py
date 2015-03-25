@@ -31,7 +31,8 @@ class TestMultiplePorts(unittest.TestCase):
             '-L', '/tmp/test.log',
             '-f', 'mcrouter/test/test_ascii.json',
             '-p', ','.join(map(str, ports)),
-            '--proxy-threads', '2'
+            '--proxy-threads', '2',
+            '--stats-logging-interval', '0'
         ])
         proc = Popen(cmd)
         time.sleep(1)  # magic

@@ -31,6 +31,7 @@ class TestValidateConfig(unittest.TestCase):
             '-L', '/tmp/test.log',
             '-f', config,
             '--listen-sock-fd', str(listen_sock.fileno()),
+            '--stats-logging-interval', '0',
             '--validate-config'
         ] + self.extra_args)
         proc = Popen(cmd)

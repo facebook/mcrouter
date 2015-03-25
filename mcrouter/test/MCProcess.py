@@ -511,6 +511,8 @@ class Mcrouter(MCProcess):
 
         self.async_spool = os.path.join(self.base_dir.path, 'spool')
         os.mkdir(self.async_spool)
+        self.stats_dir = os.path.join(self.base_dir.path, 'stats')
+        os.mkdir(self.stats_dir)
         if replace_map:
             with open(config, 'r') as config_file:
                 replaced_config = replace_strings(config_file.read(),
@@ -531,7 +533,8 @@ class Mcrouter(MCProcess):
         args = [McrouterGlobals.InstallDir + '/mcrouter/mcrouter', '-d',
                 '-f', config,
                 '-L', self.log,
-                '-a', self.async_spool]
+                '-a', self.async_spool,
+                '--stats-root', self.stats_dir]
 
         listen_sock = None
         if port is None:
