@@ -60,47 +60,6 @@ std::unique_ptr<MemcacheLocal> memcacheLocal = nullptr; // local memcached
 std::string kInvalidPoolConfig =
   "mcrouter/test/cpp_unit_tests/files/libmcrouter_invalid_pools.json";
 
-namespace {
-
-/**
- * @return File descriptor
- */
-int connectToLocalPort(uint16_t port) {
-  struct addrinfo hints;
-  struct addrinfo* res;
-
-  memset(&hints, 0, sizeof hints);
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = SOCK_STREAM;
-
-  CHECK(!getaddrinfo("localhost", folly::to<std::string>(port).data(),
-                     &hints, &res));
-  auto client_socket =
-    socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-  CHECK(client_socket >= 0);
-  CHECK(!connect(client_socket, res->ai_addr, res->ai_addrlen));
-
-  freeaddrinfo(res);
-
-  return client_socket;
-}
-
-void checkRequestReply(int fd,
-                       folly::StringPiece request,
-                       folly::StringPiece reply) {
-  size_t n = folly::writeFull(fd, request.data(), request.size());
-  CHECK(n == request.size());
-
-  char replyBuf[1000];
-  n = folly::readFull(fd, replyBuf, reply.size());
-  CHECK(n == reply.size());
-
-  EXPECT_TRUE(folly::StringPiece(replyBuf, n) == reply);
-}
-
-}  // namespace
-
 TEST(libmcrouter, sanity) {
   auto opts = defaultTestOptions();
   opts.config_str = configString;
@@ -229,13 +188,14 @@ TEST(libmcrouter, listenSock) {
   const std::string kGetRequest = "get testkey\r\n";
   const std::string kGetReply = "VALUE testkey 0 1\r\nv\r\n";
 
-  auto mcr_socket = connectToLocalPort(port);
-  checkRequestReply(mcr_socket, kSetRequest, kStoredReply);
-  checkRequestReply(mcr_socket, kGetRequest, kGetReply);
+  auto mcr_socket = facebook::memcache::connectToLocalPort(port);
+  facebook::memcache::checkRequestReply(mcr_socket, kSetRequest, kStoredReply);
+  facebook::memcache::checkRequestReply(mcr_socket, kGetRequest, kGetReply);
   CHECK(!close(mcr_socket));
 
-  auto mc_socket = connectToLocalPort(memcacheLocal->getPort());
-  checkRequestReply(mc_socket, kGetRequest, kGetReply);
+  auto mc_socket = facebook::memcache::connectToLocalPort(
+    memcacheLocal->getPort());
+  facebook::memcache::checkRequestReply(mc_socket, kGetRequest, kGetReply);
   CHECK(!close(mc_socket));
 
   mcr.terminate();

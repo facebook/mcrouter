@@ -16,6 +16,7 @@
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 
@@ -38,10 +39,9 @@ class McParser {
      * @param bodyBuffer  Cloneable buffer that holds body bytes.
      * @return            False on any parse errors.
      */
-    virtual bool umMessageReady(const uint8_t* header,
-                                size_t headerSize,
+    virtual bool umMessageReady(const UmbrellaMessageInfo& info,
+                                const uint8_t* header,
                                 const uint8_t* body,
-                                size_t bodySize,
                                 const folly::IOBuf& bodyBuffer) = 0;
 
     /**
@@ -117,7 +117,7 @@ class McParser {
   /**
    * If we've read an umbrella header, this will contain header/body sizes.
    */
-  um_message_info_t umMsgInfo_{0, 0, 0};
+  UmbrellaMessageInfo umMsgInfo_;
 
   /**
    * If this is nonempty, we're currently reading in umbrella message body.

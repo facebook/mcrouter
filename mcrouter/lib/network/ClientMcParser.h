@@ -58,10 +58,9 @@ class ClientMcParser : private McParser::ParserCallback {
   void replyReadyHelper(McReply&& reply, uint64_t reqid);
 
   /* McParser callbacks */
-  bool umMessageReady(const uint8_t* header,
-                      size_t headerSize,
+  bool umMessageReady(const UmbrellaMessageInfo& info,
+                      const uint8_t* header,
                       const uint8_t* body,
-                      size_t bodySize,
                       const folly::IOBuf& bodyBuffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;

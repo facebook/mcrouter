@@ -35,6 +35,12 @@ MockMc::Item::Item(const McRequest& req)
       flags(req.flags()) {
 }
 
+MockMc::Item::Item(const folly::IOBuf& v, uint32_t t, uint64_t f)
+    : value(v.clone()),
+      exptime(t > 0 ? t + time(nullptr) : 0),
+      flags(f) {
+}
+
 const MockMc::Item* MockMc::get(folly::StringPiece key) {
   auto it = findUnexpired(key);
   if (it == citems_.end() || it->second.state != CacheItem::CACHE) {

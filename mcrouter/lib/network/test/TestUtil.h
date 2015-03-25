@@ -14,6 +14,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <folly/FileUtil.h>
+
 namespace facebook { namespace memcache {
 
 inline uint16_t getListenPort(int socketFd) {
@@ -49,6 +51,43 @@ inline int createListenSocket() {
   freeaddrinfo(res);
 
   return listen_socket;
+}
+
+/**
+ * @return File descriptor
+ */
+inline int connectToLocalPort(uint16_t port) {
+  struct addrinfo hints;
+  struct addrinfo* res;
+
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  CHECK(!getaddrinfo("localhost", folly::to<std::string>(port).data(),
+                     &hints, &res));
+  auto client_socket =
+    socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+  CHECK(client_socket >= 0);
+  CHECK(!connect(client_socket, res->ai_addr, res->ai_addrlen));
+
+  freeaddrinfo(res);
+
+  return client_socket;
+}
+
+inline void checkRequestReply(int fd,
+                              folly::StringPiece request,
+                              folly::StringPiece reply) {
+  size_t n = folly::writeFull(fd, request.data(), request.size());
+  CHECK(n == request.size());
+
+  char replyBuf[1000];
+  n = folly::readFull(fd, replyBuf, reply.size());
+  CHECK(n == reply.size());
+
+  EXPECT_EQ(reply, folly::StringPiece(replyBuf, n));
 }
 
 }}  // facebook::memcache

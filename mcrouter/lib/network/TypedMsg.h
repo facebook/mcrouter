@@ -9,6 +9,9 @@
  */
 #pragma once
 
+#include <cstddef>
+#include <utility>
+
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 
 namespace facebook { namespace memcache {

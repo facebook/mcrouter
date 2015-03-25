@@ -36,6 +36,8 @@ class MockMc {
 
     explicit Item(std::unique_ptr<folly::IOBuf> v);
     explicit Item(const McRequest& req);
+
+    Item(const folly::IOBuf& v, uint32_t t, uint64_t f);
   };
 
   /**

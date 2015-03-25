@@ -275,6 +275,21 @@ void McServerSession::requestReady(McRequest&& req,
   }
 }
 
+void McServerSession::typedRequestReady(uint64_t typeId,
+                                        const folly::IOBuf& reqBody,
+                                        uint64_t reqid) {
+  DestructorGuard dg(this);
+
+  if (state_ != STREAMING) {
+    return;
+  }
+
+  assert(parser_.outOfOrder());
+
+  McServerRequestContext ctx(*this, mc_op_unknown, reqid);
+  onRequest_->typedRequestReady(typeId, reqBody, std::move(ctx));
+}
+
 void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   DestructorGuard dg(this);
 

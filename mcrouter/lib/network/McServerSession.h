@@ -233,6 +233,9 @@ class McServerSession :
                     mc_res_t result,
                     bool noreply);
   void parseError(mc_res_t result, folly::StringPiece reason);
+  void typedRequestReady(uint64_t typeId,
+                         const folly::IOBuf& reqBody,
+                         uint64_t reqid);
 
   /**
    * Must be called after parser has detected the protocol (i.e.

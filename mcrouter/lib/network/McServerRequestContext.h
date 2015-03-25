@@ -104,6 +104,10 @@ private:
                             McRequest&& req,
                             mc_op_t operation) = 0;
 
+  virtual void typedRequestReady(uint64_t typeId,
+                                 const folly::IOBuf& reqBody,
+                                 McServerRequestContext&& ctx) = 0;
+
   friend class McServerSession;
   template <class OnRequest>
   friend class McServerOnRequestWrapper;
@@ -125,7 +129,25 @@ class McServerOnRequestWrapper : public McServerOnRequest {
   OnRequest onRequest_;
 
   void requestReady(McServerRequestContext&& ctx, McRequest&& req,
-                    mc_op_t operation);
+                    mc_op_t operation) override;
+  void typedRequestReady(uint64_t typeId,
+                         const folly::IOBuf& reqBody,
+                         McServerRequestContext&& ctx) override;
+
+  void dispatchTypedRequestIfDefined(size_t typeId,
+                                     const folly::IOBuf& reqBody,
+                                     McServerRequestContext&& ctx,
+                                     std::true_type) {
+    onRequest_.dispatchTypedRequest(typeId, reqBody, std::move(ctx));
+  }
+  void dispatchTypedRequestIfDefined(size_t typeId,
+                                     const folly::IOBuf& reqBody,
+                                     McServerRequestContext&& ctx,
+                                     std::false_type) {
+    McServerRequestContext::reply(std::move(ctx),
+                                  McReply(mc_res_client_error));
+  }
+
   friend class McServerSession;
 };
 

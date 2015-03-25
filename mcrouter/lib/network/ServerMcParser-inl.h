@@ -9,6 +9,8 @@
  */
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
+#include <folly/Bits.h>
+
 namespace facebook { namespace memcache {
 
 template <class Callback>
@@ -51,23 +53,34 @@ void ServerMcParser<Callback>::requestReadyHelper(McRequest&& req,
 }
 
 template <class Callback>
-bool ServerMcParser<Callback>::umMessageReady(const uint8_t* header,
-                                              size_t headerSize,
+bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
+                                              const uint8_t* header,
                                               const uint8_t* body,
-                                              size_t bodySize,
                                               const folly::IOBuf& bodyBuffer) {
 
   try {
-    mc_op_t op;
-    uint64_t reqid;
-    auto req = umbrellaParseRequest(bodyBuffer,
-                                    header, headerSize,
-                                    body, bodySize,
-                                    op, reqid);
-    /* Umbrella requests never include a result and are never 'noreply' */
-    requestReadyHelper(std::move(req), op, reqid,
-                       /* result= */ mc_res_unknown,
-                       /* noreply= */ false);
+    if (info.version == UmbrellaVersion::TYPED_REQUEST) {
+      uint32_t reqid;
+      ::memcpy(&reqid, header + sizeof(entry_list_msg_t) + sizeof(uint32_t),
+               sizeof(uint32_t));
+      reqid = folly::Endian::little(reqid);
+
+      folly::IOBuf trim;
+      bodyBuffer.cloneOneInto(trim);
+      trim.trimStart(body - bodyBuffer.data());
+      callback_.typedRequestReady(info.typeId, trim, reqid);
+    } else {
+      mc_op_t op;
+      uint64_t reqid;
+      auto req = umbrellaParseRequest(bodyBuffer,
+                                      header, info.headerSize,
+                                      body, info.bodySize,
+                                      op, reqid);
+      /* Umbrella requests never include a result and are never 'noreply' */
+      requestReadyHelper(std::move(req), op, reqid,
+                         /* result= */ mc_res_unknown,
+                         /* noreply= */ false);
+    }
   } catch (const std::runtime_error& e) {
     std::string reason(
       std::string("Error parsing Umbrella message: ") + e.what());

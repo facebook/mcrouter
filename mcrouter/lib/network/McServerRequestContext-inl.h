@@ -31,4 +31,32 @@ void McServerOnRequestWrapper<OnRequest>::requestReady(
   }
 }
 
+template <class T, class Enable = void>
+struct HasDispatchTypedRequest {
+  static constexpr std::false_type value{};
+};
+
+template <class T>
+struct HasDispatchTypedRequest<
+  T,
+  typename std::enable_if<
+    std::is_same<
+      decltype(std::declval<T>().dispatchTypedRequest(
+                 size_t(0),
+                 std::declval<folly::IOBuf>(),
+                 std::declval<McServerRequestContext>())),
+      bool>::value>::type> {
+  static constexpr std::true_type value{};
+};
+
+template <class OnRequest>
+void McServerOnRequestWrapper<OnRequest>::typedRequestReady(
+  uint64_t typeId, const folly::IOBuf& reqBody,
+  McServerRequestContext&& ctx) {
+
+  dispatchTypedRequestIfDefined(
+    typeId, reqBody, std::move(ctx),
+    HasDispatchTypedRequest<OnRequest>::value);
+}
+
 }}  // facebook::memcache

@@ -53,15 +53,14 @@ void ClientMcParser<Callback>::replyReadyHelper(McReply&& reply,
 }
 
 template <class Callback>
-bool ClientMcParser<Callback>::umMessageReady(const uint8_t* header,
-                                              size_t headerSize,
+bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
+                                              const uint8_t* header,
                                               const uint8_t* body,
-                                              size_t bodySize,
                                               const folly::IOBuf& bodyBuffer) {
   auto mutMsg = createMcMsgRef();
   uint64_t reqid;
-  auto st = um_consume_no_copy(header, headerSize, body, bodySize, &reqid,
-                               mutMsg.get());
+  auto st = um_consume_no_copy(header, info.headerSize, body, info.bodySize,
+                               &reqid, mutMsg.get());
   if (st != um_ok) {
     callback_.parseError(mc_res_remote_error, "Error parsing Umbrella message");
     return false;

@@ -21,6 +21,51 @@
 
 namespace facebook { namespace memcache {
 
+UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
+                                        UmbrellaMessageInfo& infoOut) {
+  if (nbuf < sizeof(entry_list_msg_t)) {
+    return UmbrellaParseStatus::NOT_ENOUGH_DATA;
+  }
+
+  entry_list_msg_t* header = (entry_list_msg_t*) buf;
+  if (header->msg_header.magic_byte != ENTRY_LIST_MAGIC_BYTE) {
+    return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+  }
+
+  infoOut.version = static_cast<UmbrellaVersion>(header->msg_header.version);
+  if (infoOut.version == UmbrellaVersion::BASIC) {
+    /* Basic version layout:
+         }0NNSSSS, <um_elist_entry_t>*nentries, body
+       Where N is nentries and S is message size, both big endian */
+    size_t messageSize = folly::Endian::big<uint32_t>(header->total_size);
+    uint16_t nentries = folly::Endian::big<uint16_t>(header->nentries);
+
+    infoOut.headerSize = sizeof(entry_list_msg_t) +
+      sizeof(um_elist_entry_t) * nentries;
+    if (infoOut.headerSize > messageSize) {
+      return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+    }
+    infoOut.bodySize = messageSize - infoOut.headerSize;
+  } else if (infoOut.version == UmbrellaVersion::TYPED_REQUEST) {
+    /* Typed request layout:
+         }1TTSSSSFFFFRRRR, body
+       Where T is type ID, S is message size, F is flags and R is reqid
+       (all little-endian) */
+    size_t messageSize = folly::Endian::little<uint32_t>(header->total_size);
+    infoOut.typeId = folly::Endian::little<uint16_t>(header->nentries);
+    infoOut.headerSize = sizeof(entry_list_msg_t) +
+      sizeof(uint32_t) + sizeof(uint32_t);
+    if (infoOut.headerSize > messageSize) {
+      return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+    }
+    infoOut.bodySize = messageSize - infoOut.headerSize;
+  } else {
+    return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
+  }
+
+  return UmbrellaParseStatus::OK;
+}
+
 McRequest umbrellaParseRequest(const folly::IOBuf& source,
                                const uint8_t* header, size_t nheader,
                                const uint8_t* body, size_t nbody,

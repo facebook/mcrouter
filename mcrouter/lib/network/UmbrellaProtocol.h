@@ -24,6 +24,27 @@ namespace facebook { namespace memcache {
 class McReply;
 class McRequest;
 
+enum class UmbrellaVersion : uint8_t {
+  BASIC = 0,
+  TYPED_REQUEST = 1,
+};
+
+struct UmbrellaMessageInfo {
+  size_t headerSize;
+  size_t bodySize;
+  UmbrellaVersion version;
+  size_t typeId;
+};
+
+enum class UmbrellaParseStatus {
+  OK,
+  MESSAGE_PARSE_ERROR,
+  NOT_ENOUGH_DATA,
+};
+
+UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
+                                        UmbrellaMessageInfo& infoOut);
+
 /**
  * Parse an on-the-wire Umbrella request.
  *

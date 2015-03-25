@@ -9,6 +9,7 @@
  */
 #include "McParser.h"
 
+#include <folly/Bits.h>
 #include <folly/Memory.h>
 
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
@@ -48,7 +49,7 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
       && umBodyBuffer_) {
     /* We're reading in umbrella message body */
     return std::make_pair(umBodyBuffer_->writableTail(),
-                          umMsgInfo_.body_size - umBodyBuffer_->length());
+                          umMsgInfo_.bodySize - umBodyBuffer_->length());
   } else {
     readBuffer_.unshare();
     if (!readBuffer_.length() && readBuffer_.capacity() > 0) {
@@ -88,47 +89,47 @@ void McParser::recalculateBufferSize(size_t read) {
 
 bool McParser::readUmbrellaData() {
   while (!readBuffer_.empty()) {
-    auto st = um_parse_header(readBuffer_.data(),
-                              readBuffer_.length(),
-                              &umMsgInfo_);
-    if (st == um_not_enough_data) {
+    auto st = umbrellaParseHeader(readBuffer_.data(),
+                                  readBuffer_.length(),
+                                  umMsgInfo_);
+    if (st == UmbrellaParseStatus::NOT_ENOUGH_DATA) {
       return true;
     }
 
-    if (st != um_ok) {
+    if (st != UmbrellaParseStatus::OK) {
       callback_.parseError(mc_res_remote_error,
                            "Error parsing Umbrella header");
       return false;
     }
 
     /* Three cases: */
-    if (readBuffer_.length() >= umMsgInfo_.message_size) {
+    auto messageSize = umMsgInfo_.headerSize + umMsgInfo_.bodySize;
+    if (readBuffer_.length() >= messageSize) {
       /* 1) we already have the entire message */
       if (!callback_.umMessageReady(
+            umMsgInfo_,
             readBuffer_.data(),
-            umMsgInfo_.header_size,
-            readBuffer_.data() + umMsgInfo_.header_size,
-            umMsgInfo_.body_size,
+            readBuffer_.data() + umMsgInfo_.headerSize,
             readBuffer_)) {
         readBuffer_.clear();
         return false;
       }
       /* Re-enter the loop */
-      readBuffer_.trimStart(umMsgInfo_.message_size);
+      readBuffer_.trimStart(messageSize);
       continue;
-    } else if (readBuffer_.length() >= umMsgInfo_.header_size &&
-               umMsgInfo_.message_size - readBuffer_.length() >
+    } else if (readBuffer_.length() >= umMsgInfo_.headerSize &&
+               messageSize - readBuffer_.length() >
                minBufferSize_) {
       /* 2) we have the entire header, but body is incomplete.
          Copy the partially read body into the new buffer.
          TODO: this copy could be eliminated, but needs
          some modification of umbrella library. */
-      auto partial = readBuffer_.length() - umMsgInfo_.header_size;
+      auto partial = readBuffer_.length() - umMsgInfo_.headerSize;
       umBodyBuffer_ = folly::IOBuf::copyBuffer(
-        readBuffer_.data() + umMsgInfo_.header_size,
+        readBuffer_.data() + umMsgInfo_.headerSize,
         partial,
         /* headroom= */ 0,
-        /* minTailroom= */ umMsgInfo_.body_size - partial);
+        /* minTailroom= */ umMsgInfo_.bodySize - partial);
       return true;
     }
     /* 3) else header is incomplete */
@@ -146,11 +147,10 @@ bool McParser::readDataAvailable(size_t len) {
 
   if (umBodyBuffer_) {
     umBodyBuffer_->append(len);
-    if (umBodyBuffer_->length() == umMsgInfo_.body_size) {
-      auto res = callback_.umMessageReady(readBuffer_.data(),
-                                          umMsgInfo_.header_size,
+    if (umBodyBuffer_->length() == umMsgInfo_.bodySize) {
+      auto res = callback_.umMessageReady(umMsgInfo_,
+                                          readBuffer_.data(),
                                           umBodyBuffer_->data(),
-                                          umMsgInfo_.body_size,
                                           *umBodyBuffer_);
       readBuffer_.clear();
       umBodyBuffer_.reset();
