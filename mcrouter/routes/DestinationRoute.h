@@ -80,23 +80,8 @@ class DestinationRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, OtherThanT(Operation, DeleteLike<>) = 0)
-    const {
+    const Request& req, Operation) const {
 
-    return routeImpl(req, Operation());
-  }
-
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    typename DeleteLike<Operation>::Type = 0) const {
-
-    auto deleteTime = client_->deleteTime;
-    if (deleteTime != 0 && (req.exptime() == 0 || req.exptime() > deleteTime)) {
-      auto mutReq = req.clone();
-      mutReq.setExptime(deleteTime);
-      return routeImpl(std::move(mutReq), Operation());
-    }
     return routeImpl(req, Operation());
   }
 

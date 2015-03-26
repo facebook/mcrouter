@@ -30,8 +30,6 @@ struct ProxyClientCommon {
 
   const uint64_t qos;
 
-  const int deleteTime;
-
   std::string genProxyDestinationKey(bool include_timeout) const;
 
  private:
@@ -40,8 +38,7 @@ struct ProxyClientCommon {
                     AccessPoint ap,
                     int keep_routing_prefix,
                     bool useSsl,
-                    uint64_t qos,
-                    int deleteTime);
+                    uint64_t qos);
 
   friend class ClientPool;
 };

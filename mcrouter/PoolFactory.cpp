@@ -133,17 +133,6 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     }
   }
 
-  // delete time
-  uint64_t deleteTime = 0;
-  if (auto jdeleteTime = json.get_ptr("delete_time")) {
-    if (!jdeleteTime->isInt()) {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool {}: delete_time is not an int", name);
-    } else {
-      deleteTime = jdeleteTime->getInt();
-    }
-  }
-
   // region & cluster
   std::string region, cluster;
   if (auto jregion = json.get_ptr("region")) {
@@ -262,8 +251,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       std::move(ap),
       keep_routing_prefix,
       serverUseSsl,
-      serverQos,
-      deleteTime);
+      serverQos);
 
     clients_.push_back(std::move(client));
   } // servers
