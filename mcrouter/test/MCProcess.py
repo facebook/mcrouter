@@ -126,7 +126,8 @@ class MCProcess(object):
         if not self.proc:
             return None
 
-        self.disconnect()
+        if hasattr(self, 'socket'):
+            self.disconnect()
 
         self.dump()
 
@@ -509,7 +510,7 @@ class Mcrouter(MCProcess):
 
         self.log = os.path.join(self.base_dir.path, 'mcrouter.log')
 
-        self.async_spool = os.path.join(self.base_dir.path, 'spool')
+        self.async_spool = os.path.join(self.base_dir.path, 'spool.mcrouter')
         os.mkdir(self.async_spool)
         self.stats_dir = os.path.join(self.base_dir.path, 'stats')
         os.mkdir(self.stats_dir)
