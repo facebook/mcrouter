@@ -16,7 +16,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <int Op, class Request>
 typename ReplyType<McOperation<Op>, Request>::type
 ProxyDestination::send(const Request& request, McOperation<Op>,
-                       DestinationRequestCtx& req_ctx, uint64_t senderId,
+                       DestinationRequestCtx& req_ctx,
                        std::chrono::milliseconds timeout) {
   proxy->destinationMap->markAsActive(*this);
   auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>(), timeout);

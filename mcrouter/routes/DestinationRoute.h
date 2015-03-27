@@ -152,7 +152,6 @@ class DestinationRoute {
     DestinationRequestCtx dctx;
     const McRequest& reqToSend = newReq ? *newReq : req;
     auto reply = destination_->send(reqToSend, McOperation<Op>(), dctx,
-                                    ctx->senderId(),
                                     client_->server_timeout);
     ctx->onReplyReceived(*client_,
                          req,

@@ -71,7 +71,7 @@ class ProxyDestination {
   template <int Op, class Request>
   typename ReplyType<McOperation<Op>, Request>::type
   send(const Request& request, McOperation<Op>, DestinationRequestCtx& req_ctx,
-       uint64_t senderId, std::chrono::milliseconds timeout);
+       std::chrono::milliseconds timeout);
   // returns true if okay to send req using this client
   bool may_send() const;
 

@@ -82,7 +82,7 @@ struct TestHandle {
 
   bool isPaused;
 
-  folly::Optional<FiberPromise<void>> promise_;
+  std::vector<FiberPromise<void>> promises_;
 
   explicit TestHandle(GetRouteTestData td)
       : rh(std::make_shared<RecordingRouteHandle>(
@@ -130,14 +130,17 @@ struct TestHandle {
 
   void unpause() {
     fiber::addTask([this]() {
-        promise_->setValue();
+        for (auto& promise: promises_) {
+          promise.setValue();
+        }
+        promises_.clear();
       });
   }
 
   void wait() {
     assert(isPaused);
     fiber::await([this](FiberPromise<void> promise) {
-        promise_ = std::move(promise);
+        promises_.push_back(std::move(promise));
       });
     isPaused = false;
   }
