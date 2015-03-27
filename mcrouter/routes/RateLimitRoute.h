@@ -27,6 +27,7 @@ template <class RouteHandleIf>
 class RateLimitRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "rate-limit"; }
 
@@ -45,9 +46,10 @@ class RateLimitRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation, const ContextPtr& ctx) {
+  route(const Request& req, Operation, const ContextPtr& ctx,
+        StackContext&& sctx) {
     if (LIKELY(rl_.canPassThrough(Operation()))) {
-      return target_->route(req, Operation(), ctx);
+      return target_->route(req, Operation(), ctx, std::move(sctx));
     }
 
     using Reply = typename ReplyType<Operation, Request>::type;

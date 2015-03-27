@@ -30,6 +30,7 @@ template <class RouteHandleIf, typename HashFunc>
 class HashRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "hash:" + HashFunc::type(); }
 
@@ -61,12 +62,15 @@ class HashRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    StackContext&& sctx) const {
 
     if (rh_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
+                                             std::move(sctx));
     } else {
-      return rh_[pickInMainContext(req)]->route(req, Operation(), ctx);
+      return rh_[pickInMainContext(req)]->route(req, Operation(), ctx,
+                                                std::move(sctx));
     }
   }
 

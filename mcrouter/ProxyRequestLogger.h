@@ -9,11 +9,16 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache { namespace mcrouter {
+#include "mcrouter/McrouterStackContext.h"
+
+namespace facebook { namespace memcache {
+
+class McReply;
+class McRequest;
+
+namespace mcrouter {
 
 class proxy_t;
-class ProxyMcReply;
-class ProxyMcRequest;
 
 class ProxyRequestLogger {
  public:
@@ -22,13 +27,16 @@ class ProxyRequestLogger {
   }
 
   template <class Operation>
-  void log(const ProxyMcRequest& request,
-           const ProxyMcReply& reply,
+  void log(const McRequest& request,
+           RequestClass requestClass,
+           const McReply& reply,
            const int64_t startTimeUs,
            const int64_t endTimeUs,
            Operation);
 
-  inline void logError(const ProxyMcRequest& request, const McReplyBase& reply);
+  inline void logError(const McRequest& request,
+                       RequestClass requestClass,
+                       const McReply& reply);
 
  protected:
   proxy_t* proxy_;

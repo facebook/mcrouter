@@ -39,7 +39,7 @@ makeDestinationRoute(std::shared_ptr<const ProxyClientCommon> client,
  */
 class ProxyRoute {
  private:
-  ProxyMcReply dispatchMcMsgHelper(
+  McReply dispatchMcMsgHelper(
     McMsgRef&& msg,
     std::shared_ptr<ProxyRequestContext> ctx,
     McOpList::Item<0>) const {
@@ -48,15 +48,15 @@ class ProxyRoute {
   }
 
   template <int op_id>
-  ProxyMcReply dispatchMcMsgHelper(
+  McReply dispatchMcMsgHelper(
     McMsgRef&& msg,
     const std::shared_ptr<ProxyRequestContext>& ctx,
     McOpList::Item<op_id>) const {
 
     if (msg->op == McOpList::Item<op_id>::op::mc_op) {
-      return route(ProxyMcRequest(std::move(msg)),
+      return route(McRequest(std::move(msg)),
                    typename McOpList::Item<op_id>::op(),
-                   ctx);
+                   ctx, McrouterStackContext());
     }
 
     return dispatchMcMsgHelper(std::move(msg), ctx, McOpList::Item<op_id-1>());
@@ -75,7 +75,7 @@ class ProxyRoute {
     }
   }
 
-  ProxyMcReply dispatchMcMsg(
+  McReply dispatchMcMsg(
     McMsgRef&& msg,
     const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
@@ -93,14 +93,16 @@ class ProxyRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation,
-    const std::shared_ptr<ProxyRequestContext>& ctx) const {
-    return root_->route(req, Operation(), ctx);
+    const std::shared_ptr<ProxyRequestContext>& ctx,
+    McrouterStackContext&& sctx) const {
+    return root_->route(req, Operation(), ctx, std::move(sctx));
   }
 
   template <class Request>
   typename ReplyType<McOperation<mc_op_flushall>, Request>::type route(
     const Request& req, McOperation<mc_op_flushall> op,
-    const std::shared_ptr<ProxyRequestContext>& ctx) const {
+    const std::shared_ptr<ProxyRequestContext>& ctx,
+    McrouterStackContext&& sctx) const {
 
     if (!proxy_->opts.enable_flush_cmd) {
       using Reply =
@@ -115,8 +117,8 @@ class ProxyRoute {
       auto dest = proxy_->destinationMap->fetch(*client);
       rh.push_back(makeDestinationRoute(std::move(client), std::move(dest)));
     }
-    return
-      AllSyncRoute<McrouterRouteHandleIf>(std::move(rh)).route(req, op, ctx);
+    return AllSyncRoute<McrouterRouteHandleIf>(std::move(rh))
+      .route(req, op, ctx, std::move(sctx));
   }
 
  private:

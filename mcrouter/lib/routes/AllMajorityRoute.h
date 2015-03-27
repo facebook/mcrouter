@@ -34,6 +34,7 @@ template <class RouteHandleIf>
 class AllMajorityRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "all-majority"; }
 
@@ -61,27 +62,36 @@ class AllMajorityRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    StackContext&& sctx) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
     if (children_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
+                                             std::move(sctx));
     }
 
     /* Short circuit if one destination */
     if (children_.size() == 1) {
-      return children_.back()->route(req, Operation(), ctx);
+      return children_.back()->route(req, Operation(), ctx, std::move(sctx));
     }
 
     std::vector<std::function<Reply()>> funcs;
     funcs.reserve(children_.size());
     auto reqCopy = std::make_shared<Request>(req.clone());
     for (auto& rh : children_) {
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
       funcs.push_back(
-        [reqCopy, rh, ctx]() {
-          return rh->route(*reqCopy, Operation(), ctx);
+        [reqCopy, rh, ctx, sctx = StackContext(sctx)]() mutable {
+          return rh->route(*reqCopy, Operation(), ctx, std::move(sctx));
         }
       );
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
     }
 
     size_t counts[mc_nres];

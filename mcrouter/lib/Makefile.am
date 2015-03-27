@@ -11,13 +11,11 @@ libmcrouter_a_SOURCES = \
   McOpList.h \
   McOperation.h \
   McOperationTraits.h \
+  McReply-inl.h \
+  McReply.cpp \
   McReply.h \
-  McReplyBase-inl.h \
-  McReplyBase.cpp \
-  McReplyBase.h \
+  McRequest.cpp \
   McRequest.h \
-  McRequestBase.cpp \
-  McRequestBase.h \
   Operation.h \
   OperationTraits.h \
   Reply.h \

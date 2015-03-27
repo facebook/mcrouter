@@ -63,14 +63,14 @@ inline int awfulness(mc_res_t result) {
 }
 
 template <typename Operation>
-McReplyBase::McReplyBase(DefaultReplyT, Operation)
-    : McReplyBase(UpdateLike<Operation>::value ?
-                  mc_res_notstored :
-                  mc_res_notfound) {
+McReply::McReply(DefaultReplyT, Operation)
+    : McReply(UpdateLike<Operation>::value
+                ? mc_res_notstored
+                : mc_res_notfound) {
 }
 
 template <typename InputIterator>
-InputIterator McReplyBase::reduce(InputIterator begin, InputIterator end) {
+InputIterator McReply::reduce(InputIterator begin, InputIterator end) {
   if (begin == end) {
     return end;
   }

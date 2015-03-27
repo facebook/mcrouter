@@ -58,6 +58,7 @@ template <class RouteHandleIf>
 class BigValueRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "big-value"; }
 
@@ -70,17 +71,17 @@ class BigValueRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
     typename GetLike<Operation>::Type = 0) const;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
     typename UpdateLike<Operation>::Type = 0) const;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
     OtherThanT(Operation, GetLike<>, UpdateLike<>) = 0) const;
 
  private:

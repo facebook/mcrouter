@@ -13,9 +13,9 @@
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleIf.h"
-#include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyMcRequest.h"
+#include "mcrouter/McrouterStackContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
 
@@ -28,7 +28,8 @@ class McrouterRouteHandle :
       public RouteHandle<Route,
                          McrouterRouteHandleIf,
                          ProxyRequestContext,
-                         List<ProxyMcRequest>,
+                         McrouterStackContext,
+                         List<McRequest>,
                          McOpList> {
  public:
   template<typename... Args>
@@ -36,7 +37,8 @@ class McrouterRouteHandle :
     : RouteHandle<Route,
                   McrouterRouteHandleIf,
                   ProxyRequestContext,
-                  List<ProxyMcRequest>,
+                  McrouterStackContext,
+                  List<McRequest>,
                   McOpList>(
                     std::forward<Args>(args)...) {
   }
@@ -45,7 +47,8 @@ class McrouterRouteHandle :
 class McrouterRouteHandleIf :
       public RouteHandleIf<McrouterRouteHandleIf,
                            ProxyRequestContext,
-                           List<ProxyMcRequest>,
+                           McrouterStackContext,
+                           List<McRequest>,
                            McOpList> {
  public:
   template <class Route>
@@ -53,8 +56,14 @@ class McrouterRouteHandleIf :
 
   using RouteHandleIf<McrouterRouteHandleIf,
                       ProxyRequestContext,
-                      List<ProxyMcRequest>,
+                      McrouterStackContext,
+                      List<McRequest>,
                       McOpList>::ContextPtr;
+  using RouteHandleIf<McrouterRouteHandleIf,
+                      ProxyRequestContext,
+                      McrouterStackContext,
+                      List<McRequest>,
+                      McOpList>::StackContext;
 };
 
 typedef std::shared_ptr<McrouterRouteHandleIf> McrouterRouteHandlePtr;

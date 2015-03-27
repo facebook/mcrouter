@@ -36,6 +36,7 @@
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/fibers/EventBaseLoopController.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -45,7 +46,6 @@
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/route.h"
@@ -189,7 +189,7 @@ void proxy_t::routeHandlesProcessRequest(
   if (preq->origReq()->op == mc_op_get_service_info) {
     auto orig = preq->origReq().clone();
     const auto& config = preq->proxyConfig();
-    ProxyMcRequest req(std::move(orig));
+    McRequest req(std::move(orig));
 
     /* Will answer request for us */
     config.serviceInfo()->handleRequest(req, preq);
@@ -206,10 +206,7 @@ void proxy_t::routeHandlesProcessRequest(
     [ctx = func_ctx]() {
       auto& origReq = ctx->origReq();
       try {
-        auto& proute = ctx->proxyRoute();
-        auto reply = proute.dispatchMcMsg(origReq.clone(),
-                                          std::move(ctx));
-        return ProxyMcReply::moveToMcReply(std::move(reply));
+        return ctx->proxyRoute().dispatchMcMsg(origReq.clone(), std::move(ctx));
       } catch (const std::exception& e) {
         std::string err = "error routing "
           + to<std::string>(origReq->key) + ": " +

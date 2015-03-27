@@ -24,6 +24,7 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 struct NullRoute {
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() {
     return "null";
@@ -38,7 +39,7 @@ struct NullRoute {
 
   template <class Operation, class Request>
   static typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) {
+    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx) {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 

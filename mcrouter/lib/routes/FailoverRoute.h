@@ -30,6 +30,7 @@ template <class RouteHandleIf>
 class FailoverRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "failover"; }
 
@@ -59,20 +60,23 @@ class FailoverRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    StackContext&& sctx) const {
 
     if (targets_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
+                                             std::move(sctx));
     }
 
     for (size_t i = 0; i + 1 < targets_.size(); ++i) {
-      auto reply = targets_[i]->route(req, Operation(), ctx);
+      auto reply = targets_[i]->route(req, Operation(), ctx,
+                                      StackContext(sctx));
       if (!reply.isFailoverError()) {
         return reply;
       }
     }
 
-    return targets_.back()->route(req, Operation(), ctx);
+    return targets_.back()->route(req, Operation(), ctx, std::move(sctx));
   }
 
  private:

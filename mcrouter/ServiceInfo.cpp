@@ -21,13 +21,14 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterStackContext.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyConfigIf.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
 #include "mcrouter/routes/ProxyRoute.h"
@@ -87,10 +88,11 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
             destinations->push_back(client.ap.toHostPortString());
           }
         );
-        ProxyMcRequest recordingReq(keyStr);
+        McRequest recordingReq(keyStr);
 
         /* ignore the reply */
-        proxyRoute.route(recordingReq, Operation(), rctx);
+        proxyRoute.route(recordingReq, Operation(), rctx,
+                         McrouterStackContext());
       }
       baton.wait();
       return destinations;
@@ -118,7 +120,7 @@ template <class RouteHandle, class Operation>
 inline void dumpTree(std::string& tree,
                      int level,
                      const RouteHandle& rh,
-                     const ProxyMcRequest& req,
+                     const McRequest& req,
                      const std::shared_ptr<ProxyRequestContext>& ctx,
                      Operation) {
   tree.append(std::string(level, ' ') + rh.routeName() + '\n');
@@ -132,7 +134,7 @@ inline void dumpTree(std::string& tree,
 template <int op_id>
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
-  const ProxyMcRequest& req,
+  const McRequest& req,
   const std::shared_ptr<ProxyRequestContext>& ctx,
   const ProxyRoute& proxyRoute,
   McOpList::Item<op_id>) {
@@ -150,7 +152,7 @@ inline std::string routeHandlesCommandHelper(
 
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
-  const ProxyMcRequest& req,
+  const McRequest& req,
   const std::shared_ptr<ProxyRequestContext>& ctx,
   const ProxyRoute& proxyRoute,
   McOpList::Item<0>) {
@@ -278,7 +280,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       auto ctx = ProxyRequestContext::createRecording(
         *proxy_,
         nullptr);
-      ProxyMcRequest req(key);
+      McRequest req(key);
 
       return routeHandlesCommandHelper(op, req, ctx, proxyRoute_,
                                        McOpList::LastItem());
@@ -339,7 +341,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
 }
 
 void ServiceInfo::handleRequest(
-    const ProxyMcRequest& req,
+    const McRequest& req,
     const std::shared_ptr<ProxyRequestContext>& ctx) const {
   auto key = req.keyWithoutRoute();
   auto p = key.find('(');

@@ -43,6 +43,7 @@ template <class RouteHandleIf, typename TimeProvider>
 class MigrateRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "migrate"; }
 
@@ -104,27 +105,28 @@ class MigrateRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    StackContext&& sctx) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
     auto mask = routeMask(req, Operation());
 
     switch (mask) {
-      case kFromMask: return from_->route(req, Operation(), ctx);
-      case kToMask: return to_->route(req, Operation(), ctx);
+      case kFromMask: return from_->route(req, Operation(), ctx,
+                                          std::move(sctx));
+      case kToMask: return to_->route(req, Operation(), ctx, std::move(sctx));
       default: {
         auto& from = from_;
         auto& to = to_;
         std::function<Reply()> fs[2] {
-          [&req, &from, &ctx]() {
-            return from->route(req, Operation(), ctx);
+          [&req, &from, &ctx, &sctx]() {
+            return from->route(req, Operation(), ctx, StackContext(sctx));
           },
-          [&req, &to, &ctx]() {
-            return to->route(req, Operation(), ctx);
+          [&req, &to, &ctx, &sctx]() {
+            return to->route(req, Operation(), ctx, StackContext(sctx));
           }
         };
-
         folly::Optional<Reply> reply;
         fiber::forEach(fs, fs + 2,
           [&reply] (size_t id, Reply newReply) {

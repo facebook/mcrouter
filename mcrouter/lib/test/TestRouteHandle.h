@@ -20,18 +20,26 @@ namespace facebook { namespace memcache {
 
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
                                                void,
+                                               int,
                                                List<McRequest>,
                                                McOpList> {
  public:
   using RouteHandleIf<TestRouteHandleIf,
                       void,
+                      int,
                       List<McRequest>,
                       McOpList>::ContextPtr;
+
+  using RouteHandleIf<TestRouteHandleIf,
+                      void,
+                      int,
+                      List<McRequest>,
+                      McOpList>::StackContext;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
   routeSimple(const Request& req, Operation) {
-    return route(req, Operation(), nullptr);
+    return route(req, Operation(), nullptr, 0);
   }
 
   template <class Operation, class Request>
@@ -47,6 +55,7 @@ template <typename Route>
 using TestRouteHandle = RouteHandle<Route,
                                     TestRouteHandleIf,
                                     void,
+                                    int,
                                     List<McRequest>,
                                     McOpList>;
 

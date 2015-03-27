@@ -14,8 +14,9 @@
 #include <string>
 #include <vector>
 
-#include <folly/Format.h>
 #include <folly/Memory.h>
+#include <folly/Optional.h>
+#include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
 #include "mcrouter/ClientPool.h"
@@ -25,14 +26,12 @@
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/McrouterStackContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
-#include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/route.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -48,19 +47,14 @@ struct DestinationRequestCtx {
  * Routes a request to a single ProxyClient.
  * This is the lowest level in Mcrouter's RouteHandle tree.
  */
-template <class RouteHandleIf>
 class DestinationRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
+  using StackContext = McrouterStackContext;
 
-  std::string routeName() const {
-    return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
-      client_->pool.getName(),
-      client_->indexInPool,
-      client_->useSsl,
-      client_->ap.toString(),
-      client_->server_timeout.count());
-  }
+  std::string routeName() const;
+
+  std::string keyWithFailoverTag(const McRequest& req) const;
 
   /**
    * @param client Client to send request to
@@ -72,8 +66,11 @@ class DestinationRoute {
       destination_(std::move(destination)) {
   }
 
+  bool spool(const McRequest& req, proxy_t* proxy,
+             McrouterStackContext&& sctx) const;
+
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<std::shared_ptr<McrouterRouteHandleIf>> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
     ctx->recordDestination(*client_);
@@ -82,9 +79,22 @@ class DestinationRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
+    OtherThanT(Operation, DeleteLike<>) = 0) const {
 
-    return routeImpl(req, Operation(), ctx);
+    return routeImpl(req, Operation(), ctx, std::move(sctx));
+  }
+
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type route(
+    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
+    typename DeleteLike<Operation>::Type = 0) const {
+
+    auto reply = routeImpl(req, Operation(), ctx, std::move(sctx));
+    if (reply.isFailoverError() && spool(req, &ctx->proxy(), std::move(sctx))) {
+      return McReply(DefaultReply, Operation());;
+    }
+    return reply;
   }
 
  private:
@@ -93,62 +103,64 @@ class DestinationRoute {
   size_t pendingShadowReqs_{0};
 
   template <int Op>
-  ProxyMcReply routeImpl(
-    const ProxyMcRequest& req, McOperation<Op>, const ContextPtr& ctx) const {
+  McReply routeImpl(
+    const McRequest& req, McOperation<Op>, const ContextPtr& ctx,
+    StackContext&& sctx) const {
 
     if (!destination_->may_send()) {
-      ProxyMcReply reply(TkoReply);
-      reply.setDestination(client_);
-      ctx->onRequestRefused(req, reply);
+      McReply reply(TkoReply);
+      ctx->onRequestRefused(req, sctx.requestClass, reply);
       return reply;
     }
 
     if (ctx->recording()) {
       ctx->recordDestination(*client_);
-      return NullRoute<RouteHandleIf>::route(req, McOperation<Op>(), ctx);
+      return McReply(DefaultReply, McOperation<Op>());
     }
 
     auto proxy = &ctx->proxy();
-    if (req.getRequestClass() == RequestClass::SHADOW) {
+    if (sctx.requestClass == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
-        ProxyMcReply reply(ErrorReply);
-        reply.setDestination(client_);
-        ctx->onRequestRefused(req, reply);
+        McReply reply(ErrorReply);
+        ctx->onRequestRefused(req, sctx.requestClass, reply);
         return reply;
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
       ++mutableCounter;
     }
 
-    auto shadowReqsCountGuard = folly::makeGuard([this, &req]() {
-      if (req.getRequestClass() == RequestClass::SHADOW) {
+    auto shadowReqsCountGuard = folly::makeGuard([this, &req, &sctx]() {
+      if (sctx.requestClass == RequestClass::SHADOW) {
         auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
         --mutableCounter;
       }
     });
 
-    auto& destination = destination_;
+    folly::Optional<McRequest> newReq;
+    if (!client_->keep_routing_prefix && !req.routingPrefix().empty()) {
+      newReq.emplace(req.clone());
+      newReq->stripRoutingPrefix();
+    }
+    if (sctx.failoverTag) {
+      if (!newReq) {
+        newReq.emplace(req.clone());
+      }
+      newReq->setKey(keyWithFailoverTag(*newReq));
+    }
 
     DestinationRequestCtx dctx;
-    auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
-
-    auto reply = ProxyMcReply(
-      destination->send(newReq, McOperation<Op>(), dctx,
-                        ctx->senderId(),
-                        client_->server_timeout));
+    const McRequest& reqToSend = newReq ? *newReq : req;
+    auto reply = destination_->send(reqToSend, McOperation<Op>(), dctx,
+                                    ctx->senderId(),
+                                    client_->server_timeout);
     ctx->onReplyReceived(*client_,
                          req,
+                         sctx.requestClass,
                          reply,
                          dctx.startTime,
                          dctx.endTime,
                          McOperation<Op>());
-
-    // For AsynclogRoute
-    if (reply.isFailoverError()) {
-      reply.setDestination(client_);
-    }
-
     return reply;
   }
 };

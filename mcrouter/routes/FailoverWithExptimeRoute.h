@@ -18,23 +18,21 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
-#include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyMcRequest.h"
+#include "mcrouter/McrouterStackContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-const char kFailoverHostPortSeparator = '@';
-const std::string kFailoverTagStart = ":failover=";
-
 template <class RouteHandleIf>
 class FailoverWithExptimeRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "failover-exptime"; }
 
@@ -90,13 +88,15 @@ class FailoverWithExptimeRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    StackContext&& sctx) const {
 
     if (!normal_) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
+                                             std::move(sctx));
     }
 
-    auto reply = normal_->route(req, Operation(), ctx);
+    auto reply = normal_->route(req, Operation(), ctx, StackContext(sctx));
 
     if (!reply.isFailoverError() ||
         !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
@@ -114,17 +114,18 @@ class FailoverWithExptimeRoute {
       return reply;
     }
 
-    auto mutReq = req.clone();
     if (settings_.failoverTagging) {
-      mutReq.setKey(keyWithFailoverTag(mutReq, reply));
+      setFailoverTag(sctx);
     }
     /* 0 means infinite exptime.
        We want to set the smallest of request exptime, failover exptime. */
+    auto mutReq = req.clone();
     if (failoverExptime_ != 0 &&
         (req.exptime() == 0 || req.exptime() > failoverExptime_)) {
       mutReq.setExptime(failoverExptime_);
     }
-    return routeImpl(mutReq, Operation(), ctx);
+    setRequestClass(sctx);
+    return failover_.route(mutReq, Operation(), ctx, std::move(sctx));
   }
 
  private:
@@ -133,71 +134,29 @@ class FailoverWithExptimeRoute {
   uint32_t failoverExptime_;
   FailoverWithExptimeSettings settings_;
 
-  template <class Operation>
-  ProxyMcReply routeImpl(
-    ProxyMcRequest& req, Operation,
-    const ContextPtr& ctx) const {
-    req.setRequestClass(RequestClass::FAILOVER);
-    return failover_.route(req, Operation(), ctx);
-  }
-
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type routeImpl(
-    const Request& req, Operation, const ContextPtr& ctx) const {
-    return failover_.route(req, Operation(), ctx);
-  }
-
-  bool isFailoverDisabledForRequest(
-      const std::shared_ptr<ProxyRequestContext>& ctx) const {
+  static bool isFailoverDisabledForRequest(
+      const std::shared_ptr<ProxyRequestContext>& ctx) {
     return ctx->failoverDisabled();
   }
 
   template <class C>
-  bool isFailoverDisabledForRequest(const C& ctx) const {
+  static bool isFailoverDisabledForRequest(const C& ctx) {
     return false;
   }
 
-  static std::string keyWithFailoverTag(const ProxyMcRequest& req,
-                                        const ProxyMcReply& reply) {
-    if (req.keyWithoutRoute() == req.routingKey()) {
-      // The key doesn't have a hash stop.
-      return req.fullKey().str();
-    }
-    auto proxyClient = reply.getDestination();
-    if (proxyClient == nullptr) {
-      return req.fullKey().str();
-    }
-    const size_t tagLength =
-      kFailoverTagStart.size() +
-      proxyClient->ap.getHost().size() +
-      6; // 1 for kFailoverHostPortSeparator + 5 for port.
-    std::string failoverTag;
-    failoverTag.reserve(tagLength);
-    failoverTag = kFailoverTagStart;
-    failoverTag += proxyClient->ap.getHost().str();
-    if (proxyClient->ap.getPort() != 0) {
-      failoverTag += kFailoverHostPortSeparator;
-      failoverTag += folly::to<std::string>(proxyClient->ap.getPort());
-    }
-
-    // Safety check: scrub the host and port for ':' to avoid appending
-    // more than one field to the key.
-    // Note: we start after the ':failover=' part of the string,
-    // since we need the initial ':' and we know the remainder is safe.
-    for (size_t i = kFailoverTagStart.size(); i < failoverTag.size(); i++) {
-      if (failoverTag[i] == ':') {
-        failoverTag[i] = '$';
-      }
-    }
-
-    return req.fullKey().str() + failoverTag;
+  static void setFailoverTag(McrouterStackContext& sctx) {
+    sctx.failoverTag = true;
   }
 
-  template <class Request, class Reply>
-  static std::string keyWithFailoverTag(const Request& req,
-                                        const Reply& reply) {
-    return req.fullKey().str();
+  template <class C>
+  static void setFailoverTag(C& sctx) { }
+
+  static void setRequestClass(McrouterStackContext& sctx) {
+    sctx.requestClass = RequestClass::FAILOVER;
   }
+
+  template <class C>
+  static void setRequestClass(C& sctx) { }
 };
 
 }}}

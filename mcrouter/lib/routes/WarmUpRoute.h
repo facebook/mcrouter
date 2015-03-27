@@ -59,6 +59,7 @@ template <class RouteHandleIf>
 class WarmUpRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "warm-up"; }
 
@@ -99,24 +100,27 @@ class WarmUpRoute {
   ////////////////////////////////mc_op_get/////////////////////////////////////
   template <class Request>
   typename ReplyType<McOperation<mc_op_get>, Request>::type
-  route(const Request& req, McOperation<mc_op_get> op, const ContextPtr& ctx) {
-    auto coldReply = cold_->route(req, op, ctx);
+  route(const Request& req, McOperation<mc_op_get> op, const ContextPtr& ctx,
+        StackContext&& sctx) {
+    auto coldReply = cold_->route(req, op, ctx, StackContext(sctx));
     if (coldReply.isHit()) {
       return coldReply;
     }
 
     /* else */
-    auto warmReply = warm_->route(req, op, ctx);
+    auto warmReply = warm_->route(req, op, ctx, StackContext(sctx));
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
     uint32_t exptime;
-    if (warmReply.isHit() && getExptimeForCold(req, exptime, ctx)) {
+    if (warmReply.isHit() &&
+        getExptimeForCold(req, exptime, ctx, StackContext(sctx))) {
       fiber::addTask([cold = cold_,
                       addReq = coldUpdateFromWarm(req, warmReply, exptime),
-                      ctx]() {
-        cold->route(addReq, McOperation<mc_op_add>(), ctx);
+                      ctx,
+                      sctx = StackContext(sctx)]() mutable {
+        cold->route(addReq, McOperation<mc_op_add>(), ctx, std::move(sctx));
       });
     }
 #ifdef __clang__
@@ -129,39 +133,44 @@ class WarmUpRoute {
   template <class Request>
   typename ReplyType<McOperation<mc_op_metaget>, Request>::type
   route(const Request& req, McOperation<mc_op_metaget> op,
-        const ContextPtr& ctx) {
-    auto coldReply = cold_->route(req, op, ctx);
+        const ContextPtr& ctx, StackContext&& sctx) {
+    auto coldReply = cold_->route(req, op, ctx, StackContext(sctx));
     if (coldReply.isHit()) {
       return coldReply;
     }
-    return warm_->route(req, op, ctx);
+    return warm_->route(req, op, ctx, std::move(sctx));
   }
 
   /////////////////////////////mc_op_lease_get//////////////////////////////////
   template <class Request>
   typename ReplyType<McOperation<mc_op_lease_get>, Request>::type
   route(const Request& req, McOperation<mc_op_lease_get> op,
-        const ContextPtr& ctx) {
-    auto coldReply = cold_->route(req, op, ctx);
+        const ContextPtr& ctx, StackContext&& sctx) {
+    auto coldReply = cold_->route(req, op, ctx, StackContext(sctx));
     if (coldReply.isHit() || coldReply.isHotMiss()) {
       // in case of a hot miss somebody else will set the value
       return coldReply;
     }
 
     // miss with lease token from cold route: send simple get to warm route
-    auto warmReply = warm_->route(req, McOperation<mc_op_get>(), ctx);
+    auto warmReply = warm_->route(req, McOperation<mc_op_get>(), ctx,
+                                  StackContext(sctx));
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
     uint32_t exptime;
-    if (warmReply.isHit() && getExptimeForCold(req, exptime, ctx)) {
+    if (warmReply.isHit() &&
+        getExptimeForCold(req, exptime, ctx, StackContext(sctx))) {
       // update cold route with lease set
       auto setReq = coldUpdateFromWarm(req, warmReply, exptime);
       setReq.setLeaseToken(coldReply.leaseToken());
 
-      fiber::addTask([cold = cold_, req = std::move(setReq), ctx]() {
-        cold->route(req, McOperation<mc_op_lease_set>(), ctx);
+      fiber::addTask([cold = cold_,
+                      req = std::move(setReq),
+                      ctx,
+                      sctx = StackContext(sctx)]() mutable {
+        cold->route(req, McOperation<mc_op_lease_set>(), ctx, std::move(sctx));
       });
       return warmReply;
     }
@@ -175,32 +184,34 @@ class WarmUpRoute {
   template <class Request>
   typename ReplyType<McOperation<mc_op_gets>, Request>::type
   route(const Request& req, McOperation<mc_op_gets> op,
-        const ContextPtr& ctx) {
-    auto coldReply = cold_->route(req, op, ctx);
+        const ContextPtr& ctx, StackContext&& sctx) {
+    auto coldReply = cold_->route(req, op, ctx, StackContext(sctx));
     if (coldReply.isHit()) {
       return coldReply;
     }
 
     // miss: send simple get to warm route
-    auto warmReply = warm_->route(req, McOperation<mc_op_get>(), ctx);
+    auto warmReply = warm_->route(req, McOperation<mc_op_get>(), ctx,
+                                  StackContext(sctx));
     uint32_t exptime;
-    if (warmReply.isHit() && getExptimeForCold(req, exptime, ctx)) {
+    if (warmReply.isHit() &&
+        getExptimeForCold(req, exptime, ctx, StackContext(sctx))) {
       // update cold route if we have the value
       auto addReq = coldUpdateFromWarm(req, warmReply, exptime);
-      cold_->route(addReq, McOperation<mc_op_add>(), ctx);
+      cold_->route(addReq, McOperation<mc_op_add>(), ctx, StackContext(sctx));
       // and grab cas token again
-      return cold_->route(req, op, ctx);
+      return cold_->route(req, op, ctx, std::move(sctx));
     }
     return coldReply;
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    StackContext&& sctx) const {
     // client is responsible for consistency of warm route, do not replicate
     // any update/delete operations
-    return cold_->route(req, Operation(), ctx);
+    return cold_->route(req, Operation(), ctx, std::move(sctx));
   }
 
  private:
@@ -223,12 +234,13 @@ class WarmUpRoute {
 
   template <class Request>
   bool getExptimeForCold(const Request& req, uint32_t& exptime,
-                         const ContextPtr& ctx) {
+                         const ContextPtr& ctx, StackContext&& sctx) {
     if (exptime_.hasValue()) {
       exptime = *exptime_;
       return true;
     }
-    auto warmMeta = warm_->route(req, McOperation<mc_op_metaget>(), ctx);
+    auto warmMeta = warm_->route(req, McOperation<mc_op_metaget>(), ctx,
+                                 std::move(sctx));
     if (warmMeta.isHit()) {
       exptime = warmMeta.exptime();
       if (exptime != 0) {

@@ -147,6 +147,7 @@ struct TestHandle {
 template <class RouteHandleIf>
 struct RecordingRoute {
   using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "test"; }
 
@@ -169,7 +170,8 @@ struct RecordingRoute {
 
   template <int M, class Request>
   typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>, const ContextPtr& ctx) {
+    const Request& req, McOperation<M>, const ContextPtr& ctx,
+    StackContext sctx) {
 
     if (h_->isTko) {
       return McReply(TkoReply);
