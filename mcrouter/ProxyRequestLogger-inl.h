@@ -8,9 +8,9 @@
  *
  */
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -128,36 +128,34 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>,
 
 }
 
-void ProxyRequestLogger::logError(const McRequest& req,
-                                  RequestClass requestClass,
-                                  const McReply& reply) {
+void ProxyRequestLogger::logError(const ProxyMcRequest& req,
+                                  const McReplyBase& reply) {
   if (reply.isError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, error, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, error, req.getRequestClass());
   }
   if (reply.isConnectError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, connect_error, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, connect_error, req.getRequestClass());
   }
   if (reply.isConnectTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, connect_timeout, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, connect_timeout, req.getRequestClass());
   }
   if (reply.isDataTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, data_timeout, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, data_timeout, req.getRequestClass());
   }
   if (reply.isRedirect()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, busy, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, busy, req.getRequestClass());
   }
   if (reply.isTko()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, tko, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, tko, req.getRequestClass());
   }
   if (reply.isLocalError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, local_error, requestClass);
+    REQUEST_CLASS_ERROR_STATS(proxy_, local_error, req.getRequestClass());
   }
 }
 
 template <class Operation>
-void ProxyRequestLogger::log(const McRequest& request,
-                             RequestClass requestClass,
-                             const McReply& reply,
+void ProxyRequestLogger::log(const ProxyMcRequest& request,
+                             const ProxyMcReply& reply,
                              const int64_t startTimeUs,
                              const int64_t endTimeUs,
                              Operation) {
@@ -166,12 +164,12 @@ void ProxyRequestLogger::log(const McRequest& request,
   bool isOutlier = proxy_->opts.logging_rtt_outlier_threshold_us > 0 &&
     durationUs >= proxy_->opts.logging_rtt_outlier_threshold_us;
 
-  logError(request, requestClass, reply);
-  logRequestClass(*proxy_, Operation(), requestClass);
+  logError(request, reply);
+  logRequestClass(*proxy_, Operation(), request.getRequestClass());
   proxy_->durationUs.insertSample(durationUs);
 
   if (isOutlier) {
-    logOutlier(*proxy_, Operation(), requestClass);
+    logOutlier(*proxy_, Operation(), request.getRequestClass());
   }
 }
 

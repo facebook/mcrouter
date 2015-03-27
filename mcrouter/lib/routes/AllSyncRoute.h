@@ -30,7 +30,6 @@ template <class RouteHandleIf>
 class AllSyncRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "all-sync"; }
 
@@ -58,19 +57,17 @@ class AllSyncRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
     if (children_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
-                                             std::move(sctx));
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     }
 
     /* Short circuit if one destination */
     if (children_.size() == 1) {
-      return children_.back()->route(req, Operation(), ctx, std::move(sctx));
+      return children_.back()->route(req, Operation(), ctx);
     }
 
     std::vector<std::function<Reply()>> fs;
@@ -79,8 +76,8 @@ class AllSyncRoute {
       // no need to copy the child and request, we will not return from method
       // until we get replies
       fs.emplace_back(
-        [&rh, &req, &ctx, &sctx]() {
-          return rh->route(req, Operation(), ctx, StackContext(sctx));
+        [&rh, &req, &ctx]() {
+          return rh->route(req, Operation(), ctx);
         }
       );
     }

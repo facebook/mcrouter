@@ -46,7 +46,6 @@ template <class RouteHandleIf>
 class L1L2CacheRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "l1l2-cache"; }
 
@@ -105,16 +104,16 @@ class L1L2CacheRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx, typename GetLike<Operation>::Type = 0) {
+    typename GetLike<Operation>::Type = 0) {
 
     using Reply = typename ReplyType<Operation, Request>::type;
 
-    auto l1Reply = l1_->route(req, Operation(), ctx, StackContext(sctx));
+    auto l1Reply = l1_->route(req, Operation(), ctx);
     if (l1Reply.isHit()) {
       if (l1Reply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
         if (ncacheUpdatePeriod_) {
           if (ncacheUpdateCounter_ == 1) {
-            updateL1Ncache(req, Operation(), ctx, std::move(sctx));
+            updateL1Ncache(req, Operation(), ctx);
             ncacheUpdateCounter_ = ncacheUpdatePeriod_;
           } else {
             --ncacheUpdateCounter_;
@@ -128,7 +127,7 @@ class L1L2CacheRoute {
     }
 
     /* else */
-    auto l2Reply = l2_->route(req, Operation(), ctx, StackContext(sctx));
+    auto l2Reply = l2_->route(req, Operation(), ctx);
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
@@ -137,15 +136,12 @@ class L1L2CacheRoute {
       fiber::addTask(
         [l1 = l1_,
          addReq = l1UpdateFromL2(req, l2Reply, upgradingL1Exptime_),
-         ctx,
-         sctx = StackContext(sctx)]() mutable {
-          l1->route(addReq, McOperation<mc_op_add>(), ctx, std::move(sctx));
+         ctx]() {
+          l1->route(addReq, McOperation<mc_op_add>(), ctx);
         });
     } else if (l2Reply.isMiss() && ncacheUpdatePeriod_) {
-      fiber::addTask([l1 = l1_,
-                      addReq = l1Ncache(req, ncacheExptime_),
-                      ctx, sctx = StackContext(sctx)]() mutable {
-        l1->route(addReq, McOperation<mc_op_add>(), ctx, std::move(sctx));
+      fiber::addTask([l1 = l1_, addReq = l1Ncache(req, ncacheExptime_), ctx]() {
+        l1->route(addReq, McOperation<mc_op_add>(), ctx);
       });
     }
 #ifdef __clang__
@@ -157,9 +153,9 @@ class L1L2CacheRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx, OtherThanT(Operation, GetLike<>) = 0) const {
+    OtherThanT(Operation, GetLike<>) = 0) const {
 
-    return l1_->route(req, Operation(), ctx, std::move(sctx));
+    return l1_->route(req, Operation(), ctx);
   }
 
  private:
@@ -193,8 +189,7 @@ class L1L2CacheRoute {
   }
 
   template <class Request, class Operation>
-  void updateL1Ncache(const Request& req, Operation, const ContextPtr& ctx,
-                      StackContext&& sctx) {
+  void updateL1Ncache(const Request& req, Operation, const ContextPtr& ctx) {
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
@@ -203,15 +198,15 @@ class L1L2CacheRoute {
       [l1 = l1_, l2 = l2_, creq = Request(req.clone()),
        upgradingL1Exptime = upgradingL1Exptime_,
        ncacheExptime = ncacheExptime_,
-       ctx, sctx = StackContext(sctx)]() mutable {
-        auto l2Reply = l2->route(creq, Operation(), ctx, StackContext(sctx));
+       ctx]() {
+        auto l2Reply = l2->route(creq, Operation(), ctx);
         if (l2Reply.isHit()) {
           l1->route(l1UpdateFromL2(creq, l2Reply, upgradingL1Exptime),
-                    McOperation<mc_op_set>(), ctx, std::move(sctx));
+                    McOperation<mc_op_set>(), ctx);
         } else {
           /* bump TTL on the ncache entry */
           l1->route(l1Ncache(creq, ncacheExptime), McOperation<mc_op_set>(),
-                    ctx, std::move(sctx));
+                    ctx);
         }
       }
     );

@@ -31,7 +31,6 @@ namespace facebook { namespace memcache {
 template<typename Route,
          typename RouteHandleIf,
          typename Context,
-         typename StackContext,
          typename RequestList,
          typename OpList,
          int op_id = OpList::kLastItemId>
@@ -40,16 +39,9 @@ class RouteHandle;
 template<typename Route,
          typename RouteHandleIf,
          typename Context,
-         typename StackContext,
          typename OpList,
          int op_id>
-class RouteHandle<Route,
-                  RouteHandleIf,
-                  Context,
-                  StackContext,
-                  List<>,
-                  OpList,
-                  op_id> :
+class RouteHandle<Route, RouteHandleIf, Context, List<>, OpList, op_id> :
       public RouteHandleIf {
  public:
   template<typename... Args>
@@ -84,21 +76,18 @@ class RouteHandle<Route,
 template<typename Route,
          typename RouteHandleIf,
          typename Context,
-         typename StackContext,
          typename Request,
          typename... Requests,
          typename OpList>
 class RouteHandle<Route,
                   RouteHandleIf,
                   Context,
-                  StackContext,
                   List<Request, Requests...>,
                   OpList,
                   0> :
       public RouteHandle<Route,
                          RouteHandleIf,
                          Context,
-                         StackContext,
                          List<Requests...>,
                          OpList,
                          OpList::kLastItemId>{
@@ -108,7 +97,6 @@ class RouteHandle<Route,
     : RouteHandle<Route,
                   RouteHandleIf,
                   Context,
-                  StackContext,
                   List<Requests...>,
                   OpList,
                   OpList::kLastItemId>(std::forward<Args>(args)...) {
@@ -117,14 +105,12 @@ class RouteHandle<Route,
   using RouteHandle<Route,
                     RouteHandleIf,
                     Context,
-                    StackContext,
                     List<Requests...>,
                     OpList,
                     OpList::kLastItemId>::couldRouteTo;
   using RouteHandle<Route,
                     RouteHandleIf,
                     Context,
-                    StackContext,
                     List<Requests...>,
                     OpList,
                     OpList::kLastItemId>::route;
@@ -133,7 +119,6 @@ class RouteHandle<Route,
 template<typename Route,
          typename RouteHandleIf,
          typename Context,
-         typename StackContext,
          typename Request,
          typename... Requests,
          typename OpList,
@@ -141,14 +126,12 @@ template<typename Route,
 class RouteHandle<Route,
                   RouteHandleIf,
                   Context,
-                  StackContext,
                   List<Request, Requests...>,
                   OpList,
                   op_id> :
       public RouteHandle<Route,
                          RouteHandleIf,
                          Context,
-                         StackContext,
                          List<Request, Requests...>,
                          OpList,
                          op_id-1>{
@@ -158,7 +141,6 @@ class RouteHandle<Route,
     : RouteHandle<Route,
                   RouteHandleIf,
                   Context,
-                  StackContext,
                   List<Request, Requests...>,
                   OpList,
                   op_id-1>(std::forward<Args>(args)...) {
@@ -167,14 +149,12 @@ class RouteHandle<Route,
   using RouteHandle<Route,
                     RouteHandleIf,
                     Context,
-                    StackContext,
                     List<Request, Requests...>,
                     OpList,
                     op_id-1>::couldRouteTo;
   using RouteHandle<Route,
                     RouteHandleIf,
                     Context,
-                    StackContext,
                     List<Request, Requests...>,
                     OpList,
                     op_id-1>::route;
@@ -188,17 +168,15 @@ class RouteHandle<Route,
 
   typename ReplyType<typename OpList::template Item<op_id>::op, Request>::type
   route(const Request& req, typename OpList::template Item<op_id>::op,
-        const std::shared_ptr<Context>& ctx, StackContext&& sctx) {
+        const std::shared_ptr<Context>& ctx) {
     return this->route_.route(req,
                               typename OpList::template Item<op_id>::op(),
-                              ctx,
-                              std::move(sctx));
+                              ctx);
   }
 };
 
 template <typename RouteHandleIf_,
           typename Context,
-          typename StackContext,
           typename RequestList,
           typename OpList,
           int op_id = OpList::kLastItemId>
@@ -206,23 +184,16 @@ class RouteHandleIf;
 
 template <typename RouteHandleIf_,
           typename Context,
-          typename StackContext_,
           typename Request,
           typename OpList>
-class RouteHandleIf<RouteHandleIf_,
-                    Context,
-                    StackContext_,
-                    List<Request>,
-                    OpList, 1> {
+class RouteHandleIf<RouteHandleIf_, Context, List<Request>, OpList, 1> {
  public:
   using ContextPtr = std::shared_ptr<Context>;
-  using StackContext = StackContext_;
 
   template <class Route>
   using Impl = RouteHandle<Route,
                            RouteHandleIf_,
                            Context,
-                           StackContext,
                            List<Request>,
                            OpList, 1>;
 
@@ -246,43 +217,37 @@ class RouteHandleIf<RouteHandleIf_,
                              Request>::type
   route(const Request& req,
         typename OpList::template Item<1>::op,
-        const std::shared_ptr<Context>& ctx, StackContext&& sctx) = 0;
+        const std::shared_ptr<Context>& ctx) = 0;
 
   virtual ~RouteHandleIf() {}
 };
 
 template <typename RouteHandleIf_,
           typename Context,
-          typename StackContext_,
           typename Request,
           typename... Requests,
           typename OpList>
 class RouteHandleIf<RouteHandleIf_,
                     Context,
-                    StackContext_,
                     List<Request, Requests...>,
                     OpList,
                     0> :
       public RouteHandleIf<RouteHandleIf_,
                            Context,
-                           StackContext_,
                            List<Requests...>,
                            OpList,
                            OpList::kLastItemId> {
 
  public:
   using ContextPtr = std::shared_ptr<Context>;
-  using StackContext = StackContext_;
 
   using RouteHandleIf<RouteHandleIf_,
                       Context,
-                      StackContext,
                       List<Requests...>,
                       OpList,
                       OpList::kLastItemId>::couldRouteTo;
   using RouteHandleIf<RouteHandleIf_,
                       Context,
-                      StackContext,
                       List<Requests...>,
                       OpList,
                       OpList::kLastItemId>::route;
@@ -290,45 +255,38 @@ class RouteHandleIf<RouteHandleIf_,
 
 template <typename RouteHandleIf_,
           typename Context,
-          typename StackContext_,
           typename Request,
           typename... Requests,
           typename OpList,
           int op_id>
 class RouteHandleIf<RouteHandleIf_,
                     Context,
-                    StackContext_,
                     List<Request, Requests...>,
                     OpList,
                     op_id> :
       public RouteHandleIf<RouteHandleIf_,
                            Context,
-                           StackContext_,
                            List<Request, Requests...>,
                            OpList,
                            op_id-1> {
  public:
   using ContextPtr = std::shared_ptr<Context>;
-  using StackContext = StackContext_;
 
   template <class Route>
   using Impl = RouteHandle<Route,
                            RouteHandleIf_,
                            Context,
-                           StackContext,
                            List<Request, Requests...>,
                            OpList,
                            op_id>;
 
   using RouteHandleIf<RouteHandleIf_,
                       Context,
-                      StackContext,
                       List<Request, Requests...>,
                       OpList,
                       op_id-1>::couldRouteTo;
   using RouteHandleIf<RouteHandleIf_,
                       Context,
-                      StackContext,
                       List<Request, Requests...>,
                       OpList,
                       op_id-1>::route;
@@ -348,7 +306,7 @@ class RouteHandleIf<RouteHandleIf_,
                              Request>::type
   route(const Request& req,
         typename OpList::template Item<op_id>::op,
-        const std::shared_ptr<Context>& ctx, StackContext&& sctx) = 0;
+        const std::shared_ptr<Context>& ctx) = 0;
 };
 
 }}  // facebook::memcache

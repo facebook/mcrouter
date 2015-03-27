@@ -9,10 +9,19 @@
  */
 #pragma once
 
+#include "mcrouter/async.h"
+#include "mcrouter/awriter.h"
+#include "mcrouter/config-impl.h"
 #include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/ProxyClientCommon.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
+#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/route.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -24,7 +33,6 @@ template <class RouteHandleIf>
 class AsynclogRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   std::string routeName() const { return "asynclog:" + asynclogName_; }
 
@@ -41,21 +49,49 @@ class AsynclogRoute {
     return {rh_};
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx, typename DeleteLike<Operation>::Type = 0) const {
+  template <class Operation>
+  ProxyMcReply route(
+    const ProxyMcRequest& req, Operation, const ContextPtr& ctx,
+    typename DeleteLike<Operation>::Type = 0) const {
 
-    sctx.asynclogName = &asynclogName_;
-    return rh_->route(req, Operation(), ctx, std::move(sctx));
+    auto reply = rh_->route(req, Operation(), ctx);
+    if (!reply.isFailoverError()) {
+      return reply;
+    }
+    auto dest = reply.getDestination();
+    if (!dest) {
+      return reply;
+    }
+    folly::StringPiece key = dest->keep_routing_prefix ?
+      req.fullKey() :
+      req.keyWithoutRoute();
+    folly::StringPiece asynclogName = asynclogName_;
+
+    auto proxy = &ctx->proxy();
+    Baton b;
+    auto res = proxy->router->asyncWriter().run(
+      [&b, proxy, &dest, key, asynclogName] () {
+        asynclog_delete(proxy, dest, key, asynclogName);
+        b.post();
+      }
+    );
+    if (!res) {
+      logFailure(proxy->router, memcache::failure::Category::kOutOfResources,
+                 "Could not enqueue asynclog request (key {}, pool {})",
+                 key, asynclogName);
+    } else {
+      /* Don't reply to the user until we safely logged the request to disk */
+      b.wait();
+      stat_incr(proxy->stats, asynclog_requests_stat, 1);
+    }
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx, OtherThanT(Operation, DeleteLike<>) = 0) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
-    return rh_->route(req, Operation(), ctx, std::move(sctx));
+    return rh_->route(req, Operation(), ctx);
   }
 
  private:

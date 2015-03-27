@@ -49,7 +49,6 @@ template <class RouteHandleIf>
 class ShardSplitRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "shard-split"; }
 
@@ -95,28 +94,27 @@ class ShardSplitRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx, typename GetLike<Operation>::Type = 0) const {
+    typename GetLike<Operation>::Type = 0) const {
 
     // Gets are routed to one of the splits.
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     size_t i = globals::hostid() % cnt;
     if (i == 0) {
-      return rh_->route(req, Operation(), ctx, std::move(sctx));
+      return rh_->route(req, Operation(), ctx);
     }
-    return rh_->route(splitReq(req, i - 1, shard), Operation(), ctx,
-                      std::move(sctx));
+    return rh_->route(splitReq(req, i - 1, shard), Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
+    const Request& req, Operation, const ContextPtr& ctx,
     OtherThanT(Operation, GetLike<>) = 0) const {
 
     // Anything that is not a Get or Delete goes to the primary split.
     static_assert(!GetLike<Operation>::value, "");
     if (!DeleteLike<Operation>::value) {
-      return rh_->route(req, Operation(), ctx, std::move(sctx));
+      return rh_->route(req, Operation(), ctx);
     }
 
     // Deletes are broadcast to all splits.
@@ -128,17 +126,14 @@ class ShardSplitRoute {
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
       fiber::addTask(
-        [r = rh_,
-         req_ = splitReq(req, i, shard),
-         ctx,
-         sctx = StackContext(sctx)]() mutable {
-          r->route(req_, Operation(), ctx, std::move(sctx));
+        [r = rh_, req_ = splitReq(req, i, shard), ctx]() {
+          r->route(req_, Operation(), ctx);
         });
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
     }
-    return rh_->route(req, Operation(), ctx, std::move(sctx));
+    return rh_->route(req, Operation(), ctx);
   }
 
  private:

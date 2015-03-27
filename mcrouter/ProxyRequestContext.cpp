@@ -85,14 +85,13 @@ uint64_t ProxyRequestContext::senderId() const {
   return id;
 }
 
-void ProxyRequestContext::onRequestRefused(const McRequest& request,
-                                           RequestClass requestClass,
-                                           const McReply& reply) {
+void ProxyRequestContext::onRequestRefused(const ProxyMcRequest& request,
+                                           const ProxyMcReply& reply) {
   if (recording_) {
     return;
   }
   assert(logger_.hasValue());
-  logger_->logError(request, requestClass, reply);
+  logger_->logError(request, reply);
 }
 
 void ProxyRequestContext::sendReply(McReply newReply) {

@@ -17,8 +17,8 @@
 
 #include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/McrouterStackContext.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 
@@ -38,7 +38,6 @@ template <class RouteHandleIf, class ShadowPolicy>
 class ShadowRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "shadow"; }
 
@@ -65,8 +64,7 @@ class ShadowRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     std::shared_ptr<Request> adjustedReq;
     folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
@@ -77,14 +75,14 @@ class ShadowRoute {
             shadowPolicy_.updateRequestForShadowing(req, Operation()));
         }
         if (!normalReply && shadowPolicy_.shouldDelayShadow(req, Operation())) {
-          normalReply = normal_->route(*adjustedReq, Operation(), ctx,
-                                       StackContext(sctx));
+          normalReply = normal_->route(*adjustedReq, Operation(), ctx);
         }
         auto shadow = iter.first;
         fiber::addTask(
-          [shadow, adjustedReq, ctx, sctx]() mutable {
-            setRequestClass(sctx);
-            shadow->route(*adjustedReq, Operation(), ctx, std::move(sctx));
+          [shadow, adjustedReq, ctx] () {
+            Request shadowReq(adjustedReq->clone());
+            attachRequestClass(shadowReq);
+            shadow->route(shadowReq, Operation(), ctx);
           });
       }
     }
@@ -92,8 +90,7 @@ class ShadowRoute {
     if (normalReply) {
       return std::move(*normalReply);
     } else {
-      return normal_->route(adjustedReq ? *adjustedReq : req, Operation(),
-                            ctx, std::move(sctx));
+      return normal_->route(adjustedReq ? *adjustedReq : req, Operation(), ctx);
     }
   }
 
@@ -103,12 +100,13 @@ class ShadowRoute {
   const size_t normalIndex_;
   ShadowPolicy shadowPolicy_;
 
-  static void setRequestClass(McrouterStackContext& sctx) {
-    sctx.requestClass = RequestClass::SHADOW;
+  static void attachRequestClass(ProxyMcRequest& req) {
+    req.setRequestClass(RequestClass::SHADOW);
   }
 
-  template <class C>
-  static void setRequestClass(C& sctx) { }
+  template <class Request>
+  static void attachRequestClass(Request& req) {
+  }
 
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
@@ -129,6 +127,7 @@ class ShadowRoute {
       data->start_key_fraction,
       data->end_key_fraction);
   }
+
 };
 
 }}}  // facebook::memcache::mcrouter

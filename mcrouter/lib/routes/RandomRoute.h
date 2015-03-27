@@ -30,7 +30,6 @@ template <class RouteHandleIf>
 class RandomRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "random"; }
 
@@ -65,9 +64,8 @@ class RandomRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx) {
-    return children_[gen_() % children_.size()]->route(
-      req, Operation(), ctx, std::move(sctx));
+    const Request& req, Operation, const ContextPtr& ctx) {
+    return children_[gen_() % children_.size()]->route(req, Operation(), ctx);
   }
 
  private:

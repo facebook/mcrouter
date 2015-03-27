@@ -16,14 +16,11 @@
 #include "mcrouter/ProxyConfigIf.h"
 #include "mcrouter/ProxyRequestLogger.h"
 
-namespace facebook { namespace memcache {
-
-class McReply;
-class McRequest;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyClientCommon;
+class ProxyMcReply;
+class ProxyMcRequest;
 class ProxyRoute;
 
 /**
@@ -140,9 +137,8 @@ public:
    */
   template <typename Operation>
   void onReplyReceived(const ProxyClientCommon& pclient,
-                       const McRequest& request,
-                       RequestClass requestClass,
-                       const McReply& reply,
+                       const ProxyMcRequest& request,
+                       const ProxyMcReply& reply,
                        const int64_t startTimeUs,
                        const int64_t endTimeUs,
                        Operation) {
@@ -151,19 +147,17 @@ public:
     }
 
     assert(logger_.hasValue());
-    logger_->log(request, requestClass, reply, startTimeUs, endTimeUs,
-                 Operation());
+    logger_->log(request, reply, startTimeUs, endTimeUs, Operation());
     assert(additionalLogger_.hasValue());
-    additionalLogger_->log(pclient, request, requestClass, reply, startTimeUs,
-                           endTimeUs, Operation());
+    additionalLogger_->log(
+      pclient, request, reply, startTimeUs, endTimeUs, Operation());
   }
 
   /**
    * Called once a request is refused due to rate limiting/TKO logic
    */
-  void onRequestRefused(const McRequest& request,
-                        RequestClass requestClass,
-                        const McReply& reply);
+  void onRequestRefused(const ProxyMcRequest& request,
+                        const ProxyMcReply& reply);
 
   const McMsgRef& origReq() const {
     return origReq_;

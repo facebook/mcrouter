@@ -47,7 +47,6 @@ template <class RouteHandleIf>
 class ModifyKeyRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "modify-key"; }
 
@@ -87,20 +86,19 @@ class ModifyKeyRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation, const ContextPtr& ctx,
-        StackContext&& sctx) const {
+  route(const Request& req, Operation, const ContextPtr& ctx) const {
     folly::StringPiece rp = routingPrefix_.hasValue()
       ? routingPrefix_.value()
       : req.routingPrefix();
 
     if (!req.keyWithoutRoute().startsWith(keyPrefix_)) {
       auto key = folly::to<std::string>(rp, keyPrefix_, req.keyWithoutRoute());
-      return routeReqWithKey(req, key, Operation(), ctx, std::move(sctx));
+      return routeReqWithKey(req, key, Operation(), ctx);
     } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
       auto key = folly::to<std::string>(rp, req.keyWithoutRoute());
-      return routeReqWithKey(req, key, Operation(), ctx, std::move(sctx));
+      return routeReqWithKey(req, key, Operation(), ctx);
     }
-    return target_->route(req, Operation(), ctx, std::move(sctx));
+    return target_->route(req, Operation(), ctx);
   }
 
  private:
@@ -111,7 +109,7 @@ class ModifyKeyRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
   routeReqWithKey(const Request& req, folly::StringPiece key, Operation,
-                  const ContextPtr& ctx, StackContext&& sctx) const {
+                  const ContextPtr& ctx) const {
     typedef typename ReplyType<Operation, Request>::type Reply;
 
     auto err = mc_client_req_key_check(to<nstring_t>(key));
@@ -121,7 +119,7 @@ class ModifyKeyRoute {
     }
     auto cloneReq = req.clone();
     cloneReq.setKey(key);
-    return target_->route(cloneReq, Operation(), ctx, std::move(sctx));
+    return target_->route(cloneReq, Operation(), ctx);
   }
 };
 

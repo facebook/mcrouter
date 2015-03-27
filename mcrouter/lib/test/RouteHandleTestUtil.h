@@ -82,7 +82,7 @@ struct TestHandle {
 
   bool isPaused;
 
-  std::vector<FiberPromise<void>> promises_;
+  folly::Optional<FiberPromise<void>> promise_;
 
   explicit TestHandle(GetRouteTestData td)
       : rh(std::make_shared<RecordingRouteHandle>(
@@ -130,17 +130,14 @@ struct TestHandle {
 
   void unpause() {
     fiber::addTask([this]() {
-        for (auto& promise: promises_) {
-          promise.setValue();
-        }
-        promises_.clear();
+        promise_->setValue();
       });
   }
 
   void wait() {
     assert(isPaused);
     fiber::await([this](FiberPromise<void> promise) {
-        promises_.push_back(std::move(promise));
+        promise_ = std::move(promise);
       });
     isPaused = false;
   }
@@ -150,7 +147,6 @@ struct TestHandle {
 template <class RouteHandleIf>
 struct RecordingRoute {
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "test"; }
 
@@ -173,8 +169,7 @@ struct RecordingRoute {
 
   template <int M, class Request>
   typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>, const ContextPtr& ctx,
-    StackContext sctx) {
+    const Request& req, McOperation<M>, const ContextPtr& ctx) {
 
     if (h_->isTko) {
       return McReply(TkoReply);

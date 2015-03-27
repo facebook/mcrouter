@@ -34,7 +34,6 @@ template <class RouteHandleIf>
 class LatestRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "latest"; }
 
@@ -66,9 +65,8 @@ class LatestRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation, const ContextPtr& ctx,
-        StackContext&& sctx) {
-    return route_.route(req, Operation(), ctx, std::move(sctx));
+  route(const Request& req, Operation, const ContextPtr& ctx) {
+    return route_.route(req, Operation(), ctx);
   }
 
  private:

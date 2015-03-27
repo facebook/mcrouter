@@ -42,8 +42,6 @@ libmcroutercore_a_SOURCES = \
   McrouterLogger.h \
   McrouterInstance.cpp \
   McrouterInstance.h \
-  McrouterStackContext.cpp \
-  McrouterStackContext.h \
   Observable-inl.h \
   Observable.h \
   options-template.h \
@@ -69,6 +67,10 @@ libmcroutercore_a_SOURCES = \
   ProxyDestination.h \
   ProxyDestinationMap.cpp \
   ProxyDestinationMap.h \
+  ProxyMcReply.cpp \
+  ProxyMcReply.h \
+  ProxyMcRequest.cpp \
+  ProxyMcRequest.h \
   ProxyRequestContext.cpp \
   ProxyRequestContext.h \
   ProxyRequestLogger-inl.h \
@@ -120,8 +122,6 @@ libmcroutercore_a_SOURCES = \
   routes/NullRoute.cpp \
   routes/OperationSelectorRoute.cpp \
   routes/OperationSelectorRoute.h \
-  routes/OutstandingLimitRoute.cpp \
-  routes/OutstandingLimitRoute.h \
   routes/PrefixRouteSelector.cpp \
   routes/PrefixRouteSelector.h \
   routes/ProxyRoute.h \

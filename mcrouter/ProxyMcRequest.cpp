@@ -7,14 +7,18 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "McrouterStackContext.h"
-
-#include <glog/logging.h>
+#include "ProxyMcRequest.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-const char* const requestClassStr(RequestClass requestClass) {
-  switch (requestClass) {
+ProxyMcRequest ProxyMcRequest::clone() const {
+  ProxyMcRequest req(*this);
+  req.reqClass_ = reqClass_;
+  return req;
+}
+
+folly::StringPiece ProxyMcRequest::getRequestClassString() const {
+  switch (reqClass_) {
     case RequestClass::NORMAL:
       return "normal";
     case RequestClass::FAILOVER:

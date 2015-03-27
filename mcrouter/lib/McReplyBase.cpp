@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "McReply.h"
+#include "McReplyBase.h"
 
 #include <folly/io/IOBuf.h>
 
@@ -16,15 +16,15 @@
 
 namespace facebook { namespace memcache {
 
-bool McReply::worseThan(const McReply& other) const {
+bool McReplyBase::worseThan(const McReplyBase& other) const {
   return awfulness(result_) > awfulness(other.result_);
 }
 
-bool McReply::isError() const {
+bool McReplyBase::isError() const {
   return mc_res_is_err(result_);
 }
 
-bool McReply::isFailoverError() const {
+bool McReplyBase::isFailoverError() const {
   switch (result_) {
     case mc_res_busy:
     case mc_res_shutdown:
@@ -41,7 +41,7 @@ bool McReply::isFailoverError() const {
   }
 }
 
-bool McReply::isSoftTkoError() const {
+bool McReplyBase::isSoftTkoError() const {
   switch (result_) {
     case mc_res_timeout:
       return true;
@@ -50,7 +50,7 @@ bool McReply::isSoftTkoError() const {
   }
 }
 
-bool McReply::isHardTkoError() const {
+bool McReplyBase::isHardTkoError() const {
   switch (result_) {
     case mc_res_connect_error:
     case mc_res_connect_timeout:
@@ -61,47 +61,47 @@ bool McReply::isHardTkoError() const {
   }
 }
 
-void McReply::setValue(folly::IOBuf valueData) {
+void McReplyBase::setValue(folly::IOBuf valueData) {
   valueData_ = std::move(valueData);
 }
 
-void McReply::setValue(folly::StringPiece str) {
+void McReplyBase::setValue(folly::StringPiece str) {
   valueData_ = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
 }
 
-void McReply::setResult(mc_res_t res) {
+void McReplyBase::setResult(mc_res_t res) {
   result_ = res;
 }
 
-McReply::McReply() {
+McReplyBase::McReplyBase() {
 }
 
-McReply::McReply(mc_res_t res)
+McReplyBase::McReplyBase(mc_res_t res)
     : result_(res) {
 }
 
-McReply::McReply(mc_res_t res, folly::IOBuf val)
+McReplyBase::McReplyBase(mc_res_t res, folly::IOBuf val)
     : result_(res),
       valueData_(std::move(val)) {
 }
 
-McReply::McReply(mc_res_t res, folly::StringPiece val)
+McReplyBase::McReplyBase(mc_res_t res, folly::StringPiece val)
     : result_(res),
       valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, val)) {
 }
 
-McReply::McReply(mc_res_t res, const char* value)
+McReplyBase::McReplyBase(mc_res_t res, const char* value)
     : result_(res),
       valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, value,
                               strlen(value))) {
 }
 
-McReply::McReply(mc_res_t res, const std::string& value)
+McReplyBase::McReplyBase(mc_res_t res, const std::string& value)
     : result_(res),
       valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, value)) {
 }
 
-McReply::McReply(mc_res_t res, McMsgRef&& msg)
+McReplyBase::McReplyBase(mc_res_t res, McMsgRef&& msg)
     : msg_(std::move(msg)),
       result_(res),
       flags_(msg_.get() ? msg_->flags : 0),
@@ -114,7 +114,7 @@ McReply::McReply(mc_res_t res, McMsgRef&& msg)
   }
 }
 
-void McReply::dependentMsg(mc_op_t op, mc_msg_t* out) const {
+void McReplyBase::dependentMsg(mc_op_t op, mc_msg_t* out) const {
   if (msg_.get() != nullptr) {
     mc_msg_shallow_copy(out, msg_.get());
   }
@@ -134,7 +134,7 @@ void McReply::dependentMsg(mc_op_t op, mc_msg_t* out) const {
   out->err_code = errCode_;
 }
 
-McMsgRef McReply::releasedMsg(mc_op_t op) const {
+McMsgRef McReplyBase::releasedMsg(mc_op_t op) const {
   if (msg_.get() != nullptr &&
       msg_->op == op &&
       msg_->result == result_ &&

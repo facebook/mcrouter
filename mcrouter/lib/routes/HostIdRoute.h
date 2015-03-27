@@ -29,7 +29,6 @@ template <class RouteHandleIf>
 class HostIdRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "hostid"; }
 
@@ -59,10 +58,9 @@ class HostIdRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
-    return target_->route(req, Operation(), ctx, std::move(sctx));
+    return target_->route(req, Operation(), ctx);
   }
 
  private:

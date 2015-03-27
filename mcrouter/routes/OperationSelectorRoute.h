@@ -27,7 +27,6 @@ template <class RouteHandleIf>
 class OperationSelectorRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "operation-selector"; }
 
@@ -89,18 +88,15 @@ class OperationSelectorRoute {
 
   template<int M, class Request>
   typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>, const ContextPtr& ctx,
-    StackContext&& sctx) const {
+    const Request& req, McOperation<M>, const ContextPtr& ctx) const {
 
     if (operationPolicies_[M]) {
-      return operationPolicies_[M]->route(req, McOperation<M>(), ctx,
-                                          std::move(sctx));
+      return operationPolicies_[M]->route(req, McOperation<M>(), ctx);
     } else if (defaultPolicy_) {
-      return defaultPolicy_->route(req, McOperation<M>(), ctx, std::move(sctx));
+      return defaultPolicy_->route(req, McOperation<M>(), ctx);
     }
 
-    return NullRoute<RouteHandleIf>::route(req, McOperation<M>(), ctx,
-                                           std::move(sctx));
+    return NullRoute<RouteHandleIf>::route(req, McOperation<M>(), ctx);
   }
 
 private:

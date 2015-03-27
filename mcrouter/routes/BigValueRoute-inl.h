@@ -82,9 +82,9 @@ template <class RouteHandleIf>
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
 BigValueRoute<RouteHandleIf>::route(
-    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
+    const Request& req, Operation, const ContextPtr& ctx,
     typename GetLike<Operation>::Type) const {
-  auto initialReply = ch_->route(req, Operation(), ctx, StackContext(sctx));
+  auto initialReply = ch_->route(req, Operation(), ctx);
   if (!initialReply.isHit() ||
       !(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE)) {
     return initialReply;
@@ -94,8 +94,7 @@ BigValueRoute<RouteHandleIf>::route(
   auto buf = initialReply.value().clone();
   ChunksInfo chunks_info(coalesceAndGetRange(buf));
   if (!chunks_info.valid()) {
-    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
-                                           std::move(sctx));
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
   auto reqs = chunkGetRequests(req, chunks_info, Operation());
@@ -105,8 +104,8 @@ BigValueRoute<RouteHandleIf>::route(
   auto& target = *ch_;
   for (const auto& req_b : reqs) {
     fs.push_back(
-      [&target, &req_b, &ctx, &sctx]() {
-        return target.route(req_b, ChunkGetOP(), ctx, StackContext(sctx));
+      [&target, &req_b, &ctx]() {
+        return target.route(req_b, ChunkGetOP(), ctx);
       }
     );
   }
@@ -120,12 +119,12 @@ template <class RouteHandleIf>
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
 BigValueRoute<RouteHandleIf>::route(
-  const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
+  const Request& req, Operation, const ContextPtr& ctx,
   typename UpdateLike<Operation>::Type) const {
 
   typedef typename ReplyType<Operation, Request>::type Reply;
   if (req.value().length() <= options_.threshold_) {
-    return ch_->route(req, Operation(), ctx, std::move(sctx));
+    return ch_->route(req, Operation(), ctx);
   }
 
   auto reqs_info_pair = chunkUpdateRequests(req, Operation());
@@ -135,8 +134,8 @@ BigValueRoute<RouteHandleIf>::route(
   auto& target = *ch_;
   for (const auto& req_b : reqs_info_pair.first) {
     fs.push_back(
-      [&target, &req_b, &ctx, &sctx]() {
-        return target.route(req_b, ChunkUpdateOP(), ctx, StackContext(sctx));
+      [&target, &req_b, &ctx]() {
+        return target.route(req_b, ChunkUpdateOP(), ctx);
       }
     );
   }
@@ -150,7 +149,7 @@ BigValueRoute<RouteHandleIf>::route(
     auto new_req = req.clone();
     new_req.setFlags(req.flags() | MC_MSG_FLAG_BIG_VALUE);
     new_req.setValue(reqs_info_pair.second.toStringType());
-    return ch_->route(std::move(new_req), Operation(), ctx, std::move(sctx));
+    return ch_->route(std::move(new_req), Operation(), ctx);
   } else {
     return Reply(reducedReply->result());
   }
@@ -160,10 +159,10 @@ template <class RouteHandleIf>
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
 BigValueRoute<RouteHandleIf>::route(
-  const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx,
+  const Request& req, Operation, const ContextPtr& ctx,
   OtherThanT(Operation, GetLike<>, UpdateLike<>)) const {
 
-  return ch_->route(req, Operation(), ctx, std::move(sctx));
+  return ch_->route(req, Operation(), ctx);
 }
 
 template <class RouteHandleIf>

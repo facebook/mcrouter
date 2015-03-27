@@ -33,7 +33,6 @@ template <class RouteHandleIf>
 class AllInitialRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "all-initial"; }
 
@@ -94,21 +93,19 @@ class AllInitialRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     // no children at all
     if (!firstChild_) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
-                                             std::move(sctx));
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     }
 
     /* Process all children except first asynchronously */
     if (asyncRoute_) {
-      asyncRoute_->route(req, Operation(), ctx, StackContext(sctx));
+      asyncRoute_->route(req, Operation(), ctx);
     }
 
-    return firstChild_->route(req, Operation(), ctx, std::move(sctx));
+    return firstChild_->route(req, Operation(), ctx);
   }
 
  private:

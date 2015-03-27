@@ -10,11 +10,11 @@
 #pragma once
 
 #include "mcrouter/config-impl.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -25,7 +25,6 @@ template <class RouteHandleIf>
 class DevNullRoute {
  public:
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() { return "devnull"; }
 
@@ -37,19 +36,18 @@ class DevNullRoute {
   }
 
   template <class Operation>
-  static McReply route(const McRequest& req, Operation, const ContextPtr& ctx,
-                       StackContext&& sctx) {
+  static ProxyMcReply route(const ProxyMcRequest& req, Operation,
+                            const ContextPtr& ctx) {
+
     stat_incr(ctx->proxy().stats, dev_null_requests_stat, 1);
-    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
-                                           std::move(sctx));
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   static typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx, StackContext&& sctx) {
+    const Request& req, Operation, const ContextPtr& ctx) {
 
-    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx,
-                                           std::move(sctx));
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 };
 

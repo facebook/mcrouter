@@ -11,13 +11,10 @@
 
 #include <memory>
 
-namespace facebook { namespace memcache {
-
-class McRequest;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyConfigIf;
+class ProxyMcRequest;
 class ProxyRequestContext;
 class proxy_t;
 
@@ -29,7 +26,7 @@ class ServiceInfo {
  public:
   ServiceInfo(proxy_t* proxy, const ProxyConfigIf& config);
 
-  void handleRequest(const McRequest& req,
+  void handleRequest(const ProxyMcRequest& req,
                      const std::shared_ptr<ProxyRequestContext>& ctx) const;
 
   ~ServiceInfo();

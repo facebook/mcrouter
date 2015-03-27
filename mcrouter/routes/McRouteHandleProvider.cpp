@@ -59,10 +59,6 @@ McrouterRouteHandlePtr makeRateLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   RateLimiter rateLimiter);
 
-McrouterRouteHandlePtr makeOutstandingLimitRoute(
-  McrouterRouteHandlePtr normalRoute,
-  size_t maxOutstanding);
-
 McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
                                            ShardSplitter);
 
@@ -131,20 +127,6 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   auto p = makePool(*jpool);
   auto pool = std::move(p.first);
   auto destinations = std::move(p.second);
-
-  if (json.isObject()) {
-    if (auto maxOutstandingPtr = json.get_ptr("max_outstanding")) {
-      checkLogic(maxOutstandingPtr->isInt(),
-                 "PoolRoute {}: max_outstanding is not int", pool->getName());
-      auto maxOutstanding = maxOutstandingPtr->asInt();
-      if (maxOutstanding) {
-        for (auto& destination: destinations) {
-          destination = makeOutstandingLimitRoute(std::move(destination),
-                                                  maxOutstanding);
-        }
-      }
-    }
-  }
 
   if (json.isObject() && json.count("shadows")) {
     folly::StringPiece shadowPolicy = "default";

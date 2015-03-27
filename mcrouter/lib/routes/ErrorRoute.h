@@ -27,7 +27,6 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 struct ErrorRoute {
   using ContextPtr = typename RouteHandleIf::ContextPtr;
-  using StackContext = typename RouteHandleIf::StackContext;
 
   static std::string routeName() {
     return "error";
@@ -56,8 +55,7 @@ struct ErrorRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
-    StackContext&& sctx) const {
+    const Request& req, Operation, const ContextPtr& ctx) {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
