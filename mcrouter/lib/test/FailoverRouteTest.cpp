@@ -32,7 +32,7 @@ TEST(failoverRouteTest, success) {
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "a");
 }
 
@@ -46,7 +46,7 @@ TEST(failoverRouteTest, once) {
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
@@ -60,7 +60,7 @@ TEST(failoverRouteTest, twice) {
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
@@ -74,7 +74,7 @@ TEST(failoverRouteTest, fail) {
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
 
   /* Will return the last reply when ran out of targets */
   EXPECT_EQ(toString(reply.value()), "c");

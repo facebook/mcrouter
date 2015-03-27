@@ -29,16 +29,18 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class AllFastestRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "all-fastest"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return children_;
   }
 
-  AllFastestRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
+  explicit AllFastestRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
   }
 
@@ -55,16 +57,16 @@ class AllFastestRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
     if (children_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     }
 
     /* Short circuit if one destination */
     if (children_.size() == 1) {
-      return children_.back()->route(req, Operation());
+      return children_.back()->route(req, Operation(), ctx);
     }
 
     std::vector<std::function<Reply()>> funcs;
@@ -72,8 +74,8 @@ class AllFastestRoute {
     auto reqCopy = std::make_shared<Request>(req.clone());
     for (auto& rh : children_) {
       funcs.push_back(
-        [reqCopy, rh]() {
-          return rh->route(*reqCopy, Operation());
+        [reqCopy, rh, ctx]() {
+          return rh->route(*reqCopy, Operation(), ctx);
         }
       );
     }

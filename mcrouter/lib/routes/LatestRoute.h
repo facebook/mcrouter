@@ -33,12 +33,14 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class LatestRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "latest"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-    return route_.couldRouteTo(req, Operation());
+    const Request& req, Operation, const ContextPtr& ctx) const {
+    return route_.couldRouteTo(req, Operation(), ctx);
   }
 
   LatestRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
@@ -62,9 +64,9 @@ class LatestRoute {
   }
 
   template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(const Request& req,
-                                                     Operation) {
-    return route_.route(req, Operation());
+  typename ReplyType<Operation, Request>::type
+  route(const Request& req, Operation, const ContextPtr& ctx) {
+    return route_.route(req, Operation(), ctx);
   }
 
  private:

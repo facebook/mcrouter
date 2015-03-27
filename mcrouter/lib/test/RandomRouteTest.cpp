@@ -32,7 +32,7 @@ TEST(randomRouteTest, success) {
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(reply.isHit());
 }
 
@@ -48,7 +48,7 @@ TEST(randomRouteTest, cover) {
   int hit = 0, miss = 0;
   const int rounds = 32;
   for (int i = 0; i < rounds; i++) {
-    auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
     hit += reply.isHit();
     miss += reply.isMiss();
   }
@@ -68,7 +68,7 @@ TEST(randomRouteTest, fail) {
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
 
   EXPECT_TRUE(!reply.isHit());
 }

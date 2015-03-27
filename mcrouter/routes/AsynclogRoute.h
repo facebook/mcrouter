@@ -32,6 +32,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf>
 class AsynclogRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   std::string routeName() const { return "asynclog:" + asynclogName_; }
 
   AsynclogRoute(std::shared_ptr<RouteHandleIf> rh,
@@ -42,17 +44,17 @@ class AsynclogRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {rh_};
   }
 
   template <class Operation>
   ProxyMcReply route(
-    const ProxyMcRequest& req, Operation,
+    const ProxyMcRequest& req, Operation, const ContextPtr& ctx,
     typename DeleteLike<Operation>::Type = 0) const {
 
-    auto reply = rh_->route(req, Operation());
+    auto reply = rh_->route(req, Operation(), ctx);
     if (!reply.isFailoverError()) {
       return reply;
     }
@@ -65,7 +67,7 @@ class AsynclogRoute {
       req.keyWithoutRoute();
     folly::StringPiece asynclogName = asynclogName_;
 
-    auto proxy = &req.context().proxy();
+    auto proxy = &ctx->proxy();
     Baton b;
     auto res = proxy->router->asyncWriter().run(
       [&b, proxy, &dest, key, asynclogName] () {
@@ -82,14 +84,14 @@ class AsynclogRoute {
       b.wait();
       stat_incr(proxy->stats, asynclog_requests_stat, 1);
     }
-    return NullRoute<RouteHandleIf>::route(req, Operation());
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
-    return rh_->route(req, Operation());
+    return rh_->route(req, Operation(), ctx);
   }
 
  private:

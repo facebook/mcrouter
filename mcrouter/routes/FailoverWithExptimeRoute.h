@@ -34,14 +34,16 @@ const std::string kFailoverTagStart = ":failover=";
 template <class RouteHandleIf>
 class FailoverWithExptimeRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "failover-exptime"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     std::vector<std::shared_ptr<RouteHandleIf>> rh = {normal_};
-    auto frh = failover_.couldRouteTo(req, Operation());
+    auto frh = failover_.couldRouteTo(req, Operation(), ctx);
     rh.insert(rh.end(), frh.begin(), frh.end());
     return rh;
   }
@@ -88,18 +90,18 @@ class FailoverWithExptimeRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     if (!normal_) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     }
 
-    auto reply = normal_->route(req, Operation());
+    auto reply = normal_->route(req, Operation(), ctx);
 
     if (!reply.isFailoverError() ||
         !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
           DeleteLike<Operation>::value) ||
-        isFailoverDisabledForRequest(req)) {
+        isFailoverDisabledForRequest(ctx)) {
       return reply;
     }
 
@@ -122,7 +124,7 @@ class FailoverWithExptimeRoute {
         (req.exptime() == 0 || req.exptime() > failoverExptime_)) {
       mutReq.setExptime(failoverExptime_);
     }
-    return routeImpl(mutReq, Operation());
+    return routeImpl(mutReq, Operation(), ctx);
   }
 
  private:
@@ -133,23 +135,25 @@ class FailoverWithExptimeRoute {
 
   template <class Operation>
   ProxyMcReply routeImpl(
-    ProxyMcRequest& req, Operation) const {
+    ProxyMcRequest& req, Operation,
+    const ContextPtr& ctx) const {
     req.setRequestClass(RequestClass::FAILOVER);
-    return failover_.route(req, Operation());
+    return failover_.route(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type routeImpl(
-    const Request& req, Operation) const {
-    return failover_.route(req, Operation());
+    const Request& req, Operation, const ContextPtr& ctx) const {
+    return failover_.route(req, Operation(), ctx);
   }
 
-  bool isFailoverDisabledForRequest(const ProxyMcRequest& req) const {
-    return req.context().failoverDisabled();
+  bool isFailoverDisabledForRequest(
+      const std::shared_ptr<ProxyRequestContext>& ctx) const {
+    return ctx->failoverDisabled();
   }
 
-  template <class Request>
-  bool isFailoverDisabledForRequest(const Request& req) const {
+  template <class C>
+  bool isFailoverDisabledForRequest(const C& ctx) const {
     return false;
   }
 

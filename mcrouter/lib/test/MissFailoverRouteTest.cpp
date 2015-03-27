@@ -32,7 +32,7 @@ TEST(missMissFailoverRouteTest, success) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "a");
 }
 
@@ -46,7 +46,7 @@ TEST(missMissFailoverRouteTest, once) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
@@ -60,7 +60,7 @@ TEST(missMissFailoverRouteTest, twice) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
@@ -74,7 +74,7 @@ TEST(missMissFailoverRouteTest, fail) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
 
   // Should get the last reply
   EXPECT_TRUE(toString(reply.value()) == "c");
@@ -92,7 +92,7 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
     get_route_handles(test_handles));
 
   auto msg = createMcMsgRef("0", "a");
-  auto reply = rh.route(McRequest(std::move(msg)),
+  auto reply = rh.routeSimple(McRequest(std::move(msg)),
       McOperation<mc_op_set>());
   EXPECT_TRUE(toString(reply.value()) == "a");
   // only first handle sees the key

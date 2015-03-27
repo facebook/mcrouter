@@ -51,6 +51,8 @@ struct DestinationRequestCtx {
 template <class RouteHandleIf>
 class DestinationRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   std::string routeName() const {
     return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
       client_->pool.getName(),
@@ -72,17 +74,17 @@ class DestinationRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
-    req.context().recordDestination(*client_);
+    ctx->recordDestination(*client_);
     return {};
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
-    return routeImpl(req, Operation());
+    return routeImpl(req, Operation(), ctx);
   }
 
  private:
@@ -91,27 +93,28 @@ class DestinationRoute {
   size_t pendingShadowReqs_{0};
 
   template <int Op>
-  ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
+  ProxyMcReply routeImpl(
+    const ProxyMcRequest& req, McOperation<Op>, const ContextPtr& ctx) const {
 
     if (!destination_->may_send()) {
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
-      req.context().onRequestRefused(req, reply);
+      ctx->onRequestRefused(req, reply);
       return reply;
     }
 
-    if (req.context().recording()) {
-      req.context().recordDestination(*client_);
-      return NullRoute<RouteHandleIf>::route(req, McOperation<Op>());
+    if (ctx->recording()) {
+      ctx->recordDestination(*client_);
+      return NullRoute<RouteHandleIf>::route(req, McOperation<Op>(), ctx);
     }
 
-    auto proxy = &req.context().proxy();
+    auto proxy = &ctx->proxy();
     if (req.getRequestClass() == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
         ProxyMcReply reply(ErrorReply);
         reply.setDestination(client_);
-        req.context().onRequestRefused(req, reply);
+        ctx->onRequestRefused(req, reply);
         return reply;
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
@@ -127,19 +130,19 @@ class DestinationRoute {
 
     auto& destination = destination_;
 
-    DestinationRequestCtx ctx;
+    DestinationRequestCtx dctx;
     auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
 
     auto reply = ProxyMcReply(
-      destination->send(newReq, McOperation<Op>(), ctx,
-                        req.context().senderId(),
+      destination->send(newReq, McOperation<Op>(), dctx,
+                        ctx->senderId(),
                         client_->server_timeout));
-    req.context().onReplyReceived(*client_,
-                                  req,
-                                  reply,
-                                  ctx.startTime,
-                                  ctx.endTime,
-                                  McOperation<Op>());
+    ctx->onReplyReceived(*client_,
+                         req,
+                         reply,
+                         dctx.startTime,
+                         dctx.endTime,
+                         McOperation<Op>());
 
     // For AsynclogRoute
     if (reply.isFailoverError()) {

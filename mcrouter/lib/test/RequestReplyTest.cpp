@@ -21,7 +21,6 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/lib/test/TestRequest.h"
 
 using namespace facebook::memcache;
 
@@ -418,45 +417,6 @@ TEST(requestReply, replyReduce) {
   EXPECT_TRUE(it->result() == mc_res_remote_error);
 }
 
-TEST(requestReply, requestGroupContext) {
-  bool done_called = false;
-  auto done = [&done_called] () { done_called = true; };
-
-  {
-    TestRequest a(std::make_shared<Context>(done), "key");
-    TestRequest c = [](TestRequest&& a) {
-      TestRequest b(std::move(a));
-      TestRequest c(b.clone());
-      return c;
-    }(std::move(a));
-
-    /* c is still outstanding */
-    EXPECT_TRUE(done_called == false);
-  }
-
-  EXPECT_TRUE(done_called == true);
-
-  done_called = false;
-  { // createEmptyRequest
-    TestRequest * a = new TestRequest(
-        std::make_shared<Context>(done), "key");
-    TestRequest b = createEmptyRequest(
-        McOperation<mc_op_get>(), *a);
-    EXPECT_TRUE(b.fullKey() == "");
-    TestRequest d = [](TestRequest&& b) {
-      TestRequest c(std::move(b));
-      TestRequest d(c.clone());
-      return std::move(d);
-    }(std::move(b));
-
-    delete a;
-    /* d is still outstanding */
-    EXPECT_TRUE(done_called == false);
-  }
-
-  EXPECT_TRUE(done_called == true);
-}
-
 TEST(requestReply, mutableRequest) {
   mc_msg_track_num_outstanding(1);
 
@@ -483,13 +443,6 @@ TEST(requestReply, mutableRequest) {
     auto msg_c = req_c.dependentMsg(mc_op_get);
     EXPECT_EQ(msg_c->exptime, 2);
     EXPECT_TRUE(to<string>(msg_c->key) == "test");
-  }
-
-  { // create empty mutable request with void context
-    McRequest req("dummy");
-    McRequest req_new =
-      createEmptyRequest(McOperation<mc_op_set>(), req);
-    EXPECT_EQ(req_new.fullKey(), "");
   }
 
   EXPECT_TRUE(mc_msg_num_outstanding() == 0);

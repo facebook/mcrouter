@@ -10,13 +10,12 @@
 #pragma once
 
 #include "mcrouter/config.h"
-#include "mcrouter/lib/McRequestWithContext.h"
+#include "mcrouter/lib/McRequestBase.h"
 #include "mcrouter/lib/Operation.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyMcReply;
-class ProxyRequestContext;
 
 enum class RequestClass {
   NORMAL,
@@ -24,15 +23,13 @@ enum class RequestClass {
   SHADOW,
 };
 
-class ProxyMcRequest : public McRequestWithContext<ProxyRequestContext> {
+class ProxyMcRequest : public McRequestBase {
  public:
   template<typename... Args>
   explicit ProxyMcRequest(Args&&... args)
-    : McRequestWithContext<ProxyRequestContext>(
-    std::forward<Args>(args)...) {}
-  /* implicit */ ProxyMcRequest(
-  McRequestWithContext<ProxyRequestContext> req)
-    : McRequestWithContext<ProxyRequestContext>(std::move(req)) {}
+    : McRequestBase(std::forward<Args>(args)...) {}
+  /* implicit */ ProxyMcRequest(McRequestBase req)
+    : McRequestBase(std::move(req)) {}
 
   ProxyMcRequest clone() const;
   void setRequestClass(RequestClass type) {

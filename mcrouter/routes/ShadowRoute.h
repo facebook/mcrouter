@@ -37,6 +37,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf, class ShadowPolicy>
 class ShadowRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "shadow"; }
 
   ShadowRoute(std::shared_ptr<RouteHandleIf> normalRoute,
@@ -51,7 +53,7 @@ class ShadowRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     std::vector<std::shared_ptr<RouteHandleIf>> rh = {normal_};
     for (auto& shadowData: shadowData_) {
@@ -62,7 +64,7 @@ class ShadowRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     std::shared_ptr<Request> adjustedReq;
     folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
@@ -73,14 +75,14 @@ class ShadowRoute {
             shadowPolicy_.updateRequestForShadowing(req, Operation()));
         }
         if (!normalReply && shadowPolicy_.shouldDelayShadow(req, Operation())) {
-          normalReply = normal_->route(*adjustedReq, Operation());
+          normalReply = normal_->route(*adjustedReq, Operation(), ctx);
         }
         auto shadow = iter.first;
         fiber::addTask(
-          [shadow, adjustedReq] () {
+          [shadow, adjustedReq, ctx] () {
             Request shadowReq(adjustedReq->clone());
             attachRequestClass(shadowReq);
-            shadow->route(shadowReq, Operation());
+            shadow->route(shadowReq, Operation(), ctx);
           });
       }
     }
@@ -88,7 +90,7 @@ class ShadowRoute {
     if (normalReply) {
       return std::move(*normalReply);
     } else {
-      return normal_->route(adjustedReq ? *adjustedReq : req, Operation());
+      return normal_->route(adjustedReq ? *adjustedReq : req, Operation(), ctx);
     }
   }
 

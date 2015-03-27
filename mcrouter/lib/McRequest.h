@@ -40,16 +40,4 @@ class McRequest : public McRequestBase {
     : McRequestBase(other) {}
 };
 
-
-/**
- * Create empty mutable request
- *
- * @return  empty mutable request with param ctx as context for param Operation.
- */
-template<class Operation>
-McRequest
-createEmptyRequest(Operation, const McRequest& req) {
-  return McRequest(createMcMsgRef());
-}
-
 }}  // facebook::memcache

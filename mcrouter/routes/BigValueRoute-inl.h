@@ -65,8 +65,8 @@ bool BigValueRoute<RouteHandleIf>::ChunksInfo::valid() const {
 template <class RouteHandleIf>
 template <class Operation, class Request>
 std::vector<std::shared_ptr<RouteHandleIf>>
-BigValueRoute<RouteHandleIf>::couldRouteTo(const Request& req,
-                                           Operation) const {
+BigValueRoute<RouteHandleIf>::couldRouteTo(
+  const Request& req, Operation, const ContextPtr& ctx) const {
   return {ch_};
 }
 
@@ -81,10 +81,10 @@ BigValueRoute<RouteHandleIf>::BigValueRoute(std::shared_ptr<RouteHandleIf> ch,
 template <class RouteHandleIf>
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
-BigValueRoute<RouteHandleIf>::route(const Request& req,
-                                    Operation,
-                                    typename GetLike<Operation>::Type) const {
-  auto initialReply = ch_->route(req, Operation());
+BigValueRoute<RouteHandleIf>::route(
+    const Request& req, Operation, const ContextPtr& ctx,
+    typename GetLike<Operation>::Type) const {
+  auto initialReply = ch_->route(req, Operation(), ctx);
   if (!initialReply.isHit() ||
       !(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE)) {
     return initialReply;
@@ -94,7 +94,7 @@ BigValueRoute<RouteHandleIf>::route(const Request& req,
   auto buf = initialReply.value().clone();
   ChunksInfo chunks_info(coalesceAndGetRange(buf));
   if (!chunks_info.valid()) {
-    return NullRoute<RouteHandleIf>::route(req, Operation());
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
   auto reqs = chunkGetRequests(req, chunks_info, Operation());
@@ -104,8 +104,8 @@ BigValueRoute<RouteHandleIf>::route(const Request& req,
   auto& target = *ch_;
   for (const auto& req_b : reqs) {
     fs.push_back(
-      [&target, &req_b]() {
-        return target.route(req_b, ChunkGetOP());
+      [&target, &req_b, &ctx]() {
+        return target.route(req_b, ChunkGetOP(), ctx);
       }
     );
   }
@@ -119,13 +119,12 @@ template <class RouteHandleIf>
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
 BigValueRoute<RouteHandleIf>::route(
-  const Request& req,
-  Operation,
+  const Request& req, Operation, const ContextPtr& ctx,
   typename UpdateLike<Operation>::Type) const {
 
   typedef typename ReplyType<Operation, Request>::type Reply;
   if (req.value().length() <= options_.threshold_) {
-    return ch_->route(req, Operation());
+    return ch_->route(req, Operation(), ctx);
   }
 
   auto reqs_info_pair = chunkUpdateRequests(req, Operation());
@@ -135,8 +134,8 @@ BigValueRoute<RouteHandleIf>::route(
   auto& target = *ch_;
   for (const auto& req_b : reqs_info_pair.first) {
     fs.push_back(
-      [&target, &req_b]() {
-        return target.route(req_b, ChunkUpdateOP());
+      [&target, &req_b, &ctx]() {
+        return target.route(req_b, ChunkUpdateOP(), ctx);
       }
     );
   }
@@ -150,7 +149,7 @@ BigValueRoute<RouteHandleIf>::route(
     auto new_req = req.clone();
     new_req.setFlags(req.flags() | MC_MSG_FLAG_BIG_VALUE);
     new_req.setValue(reqs_info_pair.second.toStringType());
-    return ch_->route(std::move(new_req), Operation());
+    return ch_->route(std::move(new_req), Operation(), ctx);
   } else {
     return Reply(reducedReply->result());
   }
@@ -160,11 +159,10 @@ template <class RouteHandleIf>
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
 BigValueRoute<RouteHandleIf>::route(
-  const Request& req,
-  Operation,
+  const Request& req, Operation, const ContextPtr& ctx,
   OtherThanT(Operation, GetLike<>, UpdateLike<>)) const {
 
-  return ch_->route(req, Operation());
+  return ch_->route(req, Operation(), ctx);
 }
 
 template <class RouteHandleIf>
@@ -190,8 +188,7 @@ BigValueRoute<RouteHandleIf>::chunkUpdateRequests(const Request& req,
     chunk_value.trimStart(i_pos);
     chunk_value.trimEnd(chunk_value.length() -
                         std::min(options_.threshold_, chunk_value.length()));
-    auto req_big = createEmptyRequest(ChunkUpdateOP(), req);
-    req_big.setKey(createChunkKey(base_key, i, info.randSuffix()));
+    Request req_big(createChunkKey(base_key, i, info.randSuffix()));
     req_big.setValue(std::move(chunk_value));
     req_big.setExptime(req.exptime());
     big_set_reqs.push_back(std::move(req_big));
@@ -213,9 +210,7 @@ BigValueRoute<RouteHandleIf>::chunkGetRequests(const Request& req,
   auto base_key = req.fullKey();
   for (int i = 0; i < info.numChunks(); i++) {
     // override key with chunk keys
-    auto req_big = createEmptyRequest(ChunkGetOP(), req);
-    auto chunk_key = createChunkKey(base_key, i, info.randSuffix());
-    req_big.setKey(std::move(chunk_key));
+    Request req_big(createChunkKey(base_key, i, info.randSuffix()));
     big_get_reqs.push_back(std::move(req_big));
   }
 

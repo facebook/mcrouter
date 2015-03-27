@@ -40,7 +40,7 @@ TEST(failoverWithExptimeRouteTest, success) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
 }
@@ -62,7 +62,7 @@ TEST(failoverWithExptimeRouteTest, once) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "b");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -86,7 +86,7 @@ TEST(failoverWithExptimeRouteTest, twice) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "c");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -111,7 +111,7 @@ TEST(failoverWithExptimeRouteTest, fail) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
 
   /* Will return the last reply when ran out of targets */
   EXPECT_TRUE(toString(reply.value()) == "c");
@@ -159,7 +159,7 @@ void testFailoverGet(mc_res_t res) {
     2,
     settings);
 
-  auto reply = rhNoFail.route(McRequest("0"),
+  auto reply = rhNoFail.routeSimple(McRequest("0"),
       McOperation<mc_op_get>());
   EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -172,7 +172,7 @@ void testFailoverGet(mc_res_t res) {
     2,
     settings);
 
-  reply = rhFail.route(McRequest("0"), McOperation<mc_op_get>());
+  reply = rhFail.routeSimple(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_EQ(toString(reply.value()), "b");
 }
 
@@ -199,7 +199,7 @@ void testFailoverUpdate(mc_res_t res) {
     settings);
 
   auto msg = createMcMsgRef("0", "a");
-  auto reply = rhNoFail.route(McRequest(std::move(msg)),
+  auto reply = rhNoFail.routeSimple(McRequest(std::move(msg)),
       McOperation<mc_op_set>());
   EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -217,7 +217,7 @@ void testFailoverUpdate(mc_res_t res) {
     settings);
 
   msg = createMcMsgRef("0", "a");
-  reply = rhFail.route(McRequest(std::move(msg)),
+  reply = rhFail.routeSimple(McRequest(std::move(msg)),
       McOperation<mc_op_set>());
   EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
@@ -247,7 +247,7 @@ void testFailoverDelete(mc_res_t res) {
     settings);
 
   auto msg = createMcMsgRef("0");
-  auto reply = rhNoFail.route(McRequest(std::move(msg)),
+  auto reply = rhNoFail.routeSimple(McRequest(std::move(msg)),
       McOperation<mc_op_delete>());
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   // only normal handle sees the key
@@ -264,7 +264,7 @@ void testFailoverDelete(mc_res_t res) {
     settings);
 
   msg = createMcMsgRef("0");
-  reply = rhFail.route(McRequest(std::move(msg)),
+  reply = rhFail.routeSimple(McRequest(std::move(msg)),
       McOperation<mc_op_delete>());
   EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
   EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
@@ -308,7 +308,7 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
     settings);
 
   auto msg = createMcMsgRef("0", "1");
-  auto reply = rh.route(McRequest(std::move(msg)),
+  auto reply = rh.routeSimple(McRequest(std::move(msg)),
       McOperation<mc_op_incr>());
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   // only normal handle sees the key

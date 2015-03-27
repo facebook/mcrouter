@@ -44,31 +44,31 @@ struct ServiceInfo::ServiceInfoImpl {
 
   ServiceInfoImpl(proxy_t* proxy, const ProxyConfigIf& config);
 
-  void handleRouteCommand(const ProxyMcRequest& req,
+  void handleRouteCommand(const std::shared_ptr<ProxyRequestContext>& ctx,
                           const std::vector<folly::StringPiece>& args) const;
 
   template <typename Operation>
-  void handleRouteCommandForOp(const ProxyMcRequest& req,
+  void handleRouteCommandForOp(const std::shared_ptr<ProxyRequestContext>& ctx,
                                std::string keyStr,
                                Operation) const;
 
   void routeCommandHelper(
     folly::StringPiece op,
     folly::StringPiece key,
-    const ProxyMcRequest& req,
+    const std::shared_ptr<ProxyRequestContext>& ctx,
     McOpList::Item<0>) const;
 
   template <int op_id>
   void routeCommandHelper(
     folly::StringPiece op,
     folly::StringPiece key,
-    const ProxyMcRequest& req,
+    const std::shared_ptr<ProxyRequestContext>& ctx,
     McOpList::Item<op_id>) const;
 };
 
 template <typename Operation>
 void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
-  const ProxyMcRequest& req,
+  const std::shared_ptr<ProxyRequestContext>& ctx,
   std::string keyStr,
   Operation) const {
 #ifdef __clang__
@@ -80,23 +80,22 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
       auto destinations = folly::make_unique<std::vector<std::string>>();
       Baton baton;
       {
-        auto ctx = ProxyRequestContext::createRecordingNotify(
+        auto rctx = ProxyRequestContext::createRecordingNotify(
           *proxy,
           baton,
           [&destinations](const ProxyClientCommon& client) {
             destinations->push_back(client.ap.toHostPortString());
           }
         );
-        ProxyMcRequest recordingReq(std::move(ctx), keyStr);
+        ProxyMcRequest recordingReq(keyStr);
 
         /* ignore the reply */
-        proxyRoute.route(recordingReq, Operation());
+        proxyRoute.route(recordingReq, Operation(), rctx);
       }
       baton.wait();
       return destinations;
     },
-    [reqCopy = req.clone()]
-    (folly::Try<std::unique_ptr<std::vector<std::string>>>&& data) {
+    [ctx](folly::Try<std::unique_ptr<std::vector<std::string>>>&& data) {
       std::string str;
       const auto& destinations = *data;
       for (const auto& d : *destinations) {
@@ -106,8 +105,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         }
         str.append(d);
       }
-      reqCopy.context().sendReply(
-        McReply(mc_res_found, str));
+      ctx->sendReply(McReply(mc_res_found, str));
     }
   );
 #ifdef __clang__
@@ -121,11 +119,12 @@ inline void dumpTree(std::string& tree,
                      int level,
                      const RouteHandle& rh,
                      const ProxyMcRequest& req,
+                     const std::shared_ptr<ProxyRequestContext>& ctx,
                      Operation) {
   tree.append(std::string(level, ' ') + rh.routeName() + '\n');
-  auto targets = rh.couldRouteTo(req, Operation());
+  auto targets = rh.couldRouteTo(req, Operation(), ctx);
   for (auto target : targets) {
-    dumpTree(tree, level + 1, *target.get(), req, Operation());
+    dumpTree(tree, level + 1, *target.get(), req, ctx, Operation());
   }
 }
 }
@@ -134,22 +133,25 @@ template <int op_id>
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
   const ProxyMcRequest& req,
+  const std::shared_ptr<ProxyRequestContext>& ctx,
   const ProxyRoute& proxyRoute,
   McOpList::Item<op_id>) {
 
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
      std::string tree;
-     dumpTree(tree, 0, proxyRoute, req, typename McOpList::Item<op_id>::op());
+     dumpTree(tree, 0, proxyRoute, req, ctx,
+              typename McOpList::Item<op_id>::op());
      return tree;
   }
 
   return routeHandlesCommandHelper(
-    op, req, proxyRoute, McOpList::Item<op_id-1>());
+    op, req, ctx, proxyRoute, McOpList::Item<op_id-1>());
 }
 
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
   const ProxyMcRequest& req,
+  const std::shared_ptr<ProxyRequestContext>& ctx,
   const ProxyRoute& proxyRoute,
   McOpList::Item<0>) {
 
@@ -159,7 +161,7 @@ inline std::string routeHandlesCommandHelper(
 void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
   folly::StringPiece op,
   folly::StringPiece key,
-  const ProxyMcRequest& req,
+  const std::shared_ptr<ProxyRequestContext>& ctx,
   McOpList::Item<0>) const {
 
   throw std::runtime_error("route: unknown op " + op.str());
@@ -169,17 +171,17 @@ template <int op_id>
 void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
   folly::StringPiece op,
   folly::StringPiece key,
-  const ProxyMcRequest& req,
+  const std::shared_ptr<ProxyRequestContext>& ctx,
   McOpList::Item<op_id>) const {
 
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
-    handleRouteCommandForOp(req,
+    handleRouteCommandForOp(ctx,
                             key.str(),
                             typename McOpList::Item<op_id>::op());
     return;
   }
 
-  routeCommandHelper(op, key, req, McOpList::Item<op_id-1>());
+  routeCommandHelper(op, key, ctx, McOpList::Item<op_id-1>());
 }
 
 /* Must be here since unique_ptr destructor needs to know complete
@@ -276,9 +278,9 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       auto ctx = ProxyRequestContext::createRecording(
         *proxy_,
         nullptr);
-      ProxyMcRequest req(std::move(ctx), key.str());
+      ProxyMcRequest req(key);
 
-      return routeHandlesCommandHelper(op, req, proxyRoute_,
+      return routeHandlesCommandHelper(op, req, ctx, proxyRoute_,
                                        McOpList::LastItem());
     }
   );
@@ -324,7 +326,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 }
 
 void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
-  const ProxyMcRequest& req,
+  const std::shared_ptr<ProxyRequestContext>& ctx,
   const std::vector<folly::StringPiece>& args) const {
 
   if (args.size() != 2) {
@@ -333,10 +335,12 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
   auto op = args[0];
   auto key = args[1];
 
-  routeCommandHelper(op, key, req, McOpList::LastItem());
+  routeCommandHelper(op, key, ctx, McOpList::LastItem());
 }
 
-void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
+void ServiceInfo::handleRequest(
+    const ProxyMcRequest& req,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
   auto key = req.keyWithoutRoute();
   auto p = key.find('(');
   auto cmd = key;
@@ -357,7 +361,7 @@ void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
   try {
     if (cmd == "route") {
       /* Route is a special case since it involves background requests */
-      impl_->handleRouteCommand(req, args);
+      impl_->handleRouteCommand(ctx, args);
       return;
     }
 
@@ -373,8 +377,7 @@ void ServiceInfo::handleRequest(const ProxyMcRequest& req) const {
     replyStr = std::string("ERROR: ") + e.what();
   }
 
-  req.context().sendReply(
-    McReply(mc_res_found, replyStr));
+  ctx->sendReply(McReply(mc_res_found, replyStr));
 }
 
 }}}  // facebook::memcache::mcrouter

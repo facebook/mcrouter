@@ -15,7 +15,6 @@
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
-#include "mcrouter/ProxyRequestContext.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -25,28 +24,30 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf>
 class DevNullRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "devnull"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {};
   }
 
   template <class Operation>
-  static ProxyMcReply route(const ProxyMcRequest& req, Operation) {
+  static ProxyMcReply route(const ProxyMcRequest& req, Operation,
+                            const ContextPtr& ctx) {
 
-    stat_incr(req.context().proxy().stats,
-              dev_null_requests_stat, 1);
-    return NullRoute<RouteHandleIf>::route(req, Operation());
+    stat_incr(ctx->proxy().stats, dev_null_requests_stat, 1);
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   static typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) {
+    const Request& req, Operation, const ContextPtr& ctx) {
 
-    return NullRoute<RouteHandleIf>::route(req, Operation());
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 };
 

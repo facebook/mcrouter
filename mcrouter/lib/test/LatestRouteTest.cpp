@@ -58,6 +58,6 @@ TEST(latestRouteTest, one) {
   EXPECT_NE(second, third);
   test_handles[third]->setTko();
   /* three boxes are now TKO, we hit the failover limit */
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("key"), McOperation<mc_op_get>());
   EXPECT_EQ(reply.result(), mc_res_tko);
 }

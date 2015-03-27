@@ -189,10 +189,10 @@ void proxy_t::routeHandlesProcessRequest(
   if (preq->origReq()->op == mc_op_get_service_info) {
     auto orig = preq->origReq().clone();
     const auto& config = preq->proxyConfig();
-    ProxyMcRequest req(std::move(preq), std::move(orig));
+    ProxyMcRequest req(std::move(orig));
 
     /* Will answer request for us */
-    config.serviceInfo()->handleRequest(req);
+    config.serviceInfo()->handleRequest(req, preq);
     return;
   }
 

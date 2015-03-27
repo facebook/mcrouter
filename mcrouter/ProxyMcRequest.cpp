@@ -12,7 +12,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyMcRequest ProxyMcRequest::clone() const {
-  ProxyMcRequest req(McRequestWithContext<ProxyRequestContext>::clone());
+  ProxyMcRequest req(*this);
   req.reqClass_ = reqClass_;
   return req;
 }

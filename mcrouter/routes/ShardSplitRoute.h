@@ -48,6 +48,8 @@ std::string createSplitKey(folly::StringPiece fullKey,
 template <class RouteHandleIf>
 class ShardSplitRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "shard-split"; }
 
   ShardSplitRoute(std::shared_ptr<RouteHandleIf> rh,
@@ -58,31 +60,31 @@ class ShardSplitRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
-    req.context().recordShardSplitter(shardSplitter_);
+    ctx->recordShardSplitter(shardSplitter_);
 
     if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
-      return rh_->couldRouteTo(req, Operation());
+      return rh_->couldRouteTo(req, Operation(), ctx);
     }
 
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     if (cnt == 1) {
-      return rh_->couldRouteTo(req, Operation());
+      return rh_->couldRouteTo(req, Operation(), ctx);
     }
     if (GetLike<Operation>::value) {
       size_t i = globals::hostid() % cnt;
       if (i == 0) {
-        return rh_->couldRouteTo(req, Operation());
+        return rh_->couldRouteTo(req, Operation(), ctx);
       }
-      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation());
+      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation(), ctx);
     }
 
     assert(DeleteLike<Operation>::value);
-    auto result = rh_->couldRouteTo(req, Operation());
+    auto result = rh_->couldRouteTo(req, Operation(), ctx);
     for (size_t i = 0; i < cnt - 1; ++i) {
-      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation());
+      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation(), ctx);
       result.insert(result.end(), nx.begin(), nx.end());
     }
 
@@ -91,7 +93,7 @@ class ShardSplitRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
+    const Request& req, Operation, const ContextPtr& ctx,
     typename GetLike<Operation>::Type = 0) const {
 
     // Gets are routed to one of the splits.
@@ -99,20 +101,20 @@ class ShardSplitRoute {
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     size_t i = globals::hostid() % cnt;
     if (i == 0) {
-      return rh_->route(req, Operation());
+      return rh_->route(req, Operation(), ctx);
     }
-    return rh_->route(splitReq(req, i - 1, shard), Operation());
+    return rh_->route(splitReq(req, i - 1, shard), Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
+    const Request& req, Operation, const ContextPtr& ctx,
     OtherThanT(Operation, GetLike<>) = 0) const {
 
     // Anything that is not a Get or Delete goes to the primary split.
     static_assert(!GetLike<Operation>::value, "");
     if (!DeleteLike<Operation>::value) {
-      return rh_->route(req, Operation());
+      return rh_->route(req, Operation(), ctx);
     }
 
     // Deletes are broadcast to all splits.
@@ -124,14 +126,14 @@ class ShardSplitRoute {
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
       fiber::addTask(
-        [r = rh_, req_ = splitReq(req, i, shard)]() {
-          r->route(req_, Operation());
+        [r = rh_, req_ = splitReq(req, i, shard), ctx]() {
+          r->route(req_, Operation(), ctx);
         });
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
     }
-    return rh_->route(req, Operation());
+    return rh_->route(req, Operation(), ctx);
   }
 
  private:

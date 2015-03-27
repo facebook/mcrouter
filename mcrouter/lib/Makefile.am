@@ -18,8 +18,6 @@ libmcrouter_a_SOURCES = \
   McRequest.h \
   McRequestBase.cpp \
   McRequestBase.h \
-  McRequestWithContext-inl.h \
-  McRequestWithContext.h \
   Operation.h \
   OperationTraits.h \
   Reply.h \

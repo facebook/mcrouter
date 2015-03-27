@@ -37,7 +37,8 @@ class RootRoute {
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
     const auto* rhPtr =
       rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
@@ -49,7 +50,8 @@ class RootRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
@@ -64,9 +66,9 @@ class RootRoute {
     if (UNLIKELY(rhPtr == nullptr)) {
       auto rh = rhMap_.getTargetsForKeySlow(req.routingPrefix(),
                                             req.routingKey());
-      reply = routeImpl(rh, req, Operation());
+      reply = routeImpl(rh, req, Operation(), ctx);
     } else {
-      reply = routeImpl(*rhPtr, req, Operation());
+      reply = routeImpl(*rhPtr, req, Operation(), ctx);
     }
 
     if (reply.isError() && opts_.group_remote_errors) {
@@ -83,10 +85,11 @@ class RootRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type routeImpl(
     const std::vector<McrouterRouteHandlePtr>& rh,
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0)
-    const {
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx,
+    typename GetLike<Operation>::Type = 0) const {
 
-    auto reply = doRoute(rh, req, Operation());
+    auto reply = doRoute(rh, req, Operation(), ctx);
     if (!reply.isError() || rh.empty()) {
       /* rh.empty() case: for backwards compatibility,
          always surface invalid routing errors */
@@ -94,20 +97,7 @@ class RootRoute {
     }
 
     if (opts_.miss_on_get_errors) {
-      reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
-    }
-    return reply;
-  }
-
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type routeImpl(
-    const std::vector<McrouterRouteHandlePtr>& rh,
-    const Request& req, Operation, typename ArithmeticLike<Operation>::Type = 0)
-    const {
-
-    auto reply = doRoute(rh, req, Operation());
-    if (reply.isError()) {
-      return NullRoute<McrouterRouteHandleIf>::route(req, Operation());
+      reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation(), ctx);
     }
     return reply;
   }
@@ -116,19 +106,36 @@ class RootRoute {
   typename ReplyType<Operation, Request>::type routeImpl(
     const std::vector<McrouterRouteHandlePtr>& rh,
     const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx,
+    typename ArithmeticLike<Operation>::Type = 0)
+    const {
+
+    auto reply = doRoute(rh, req, Operation(), ctx);
+    if (reply.isError()) {
+      return NullRoute<McrouterRouteHandleIf>::route(req, Operation(), ctx);
+    }
+    return reply;
+  }
+
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type routeImpl(
+    const std::vector<McrouterRouteHandlePtr>& rh,
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx,
     OtherThanT(Operation, GetLike<>, ArithmeticLike<>) = 0)
     const {
 
-    return doRoute(rh, req, Operation());
+    return doRoute(rh, req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type doRoute(
     const std::vector<McrouterRouteHandlePtr>& rh,
-    const Request& req, Operation) const {
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
     if (rh.empty()) {
-      return ErrorRoute<McrouterRouteHandleIf>().route(req, Operation());
+      return ErrorRoute<McrouterRouteHandleIf>().route(req, Operation(), ctx);
     }
 
     if (rh.size() > 1) {
@@ -136,12 +143,12 @@ class RootRoute {
       for (size_t i = 1; i < rh.size(); ++i) {
         auto r = rh[i];
         fiber::addTask(
-          [r, reqCopy]() {
-            r->route(*reqCopy, Operation());
+          [r, reqCopy, ctx]() {
+            r->route(*reqCopy, Operation(), ctx);
           });
       }
     }
-    return rh[0]->route(req, Operation());
+    return rh[0]->route(req, Operation(), ctx);
   }
 };
 

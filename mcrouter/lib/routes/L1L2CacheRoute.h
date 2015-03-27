@@ -45,11 +45,13 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class L1L2CacheRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "l1l2-cache"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {l1_, l2_};
   }
@@ -101,16 +103,17 @@ class L1L2CacheRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0) {
+    const Request& req, Operation, const ContextPtr& ctx,
+    typename GetLike<Operation>::Type = 0) {
 
     using Reply = typename ReplyType<Operation, Request>::type;
 
-    auto l1Reply = l1_->route(req, Operation());
+    auto l1Reply = l1_->route(req, Operation(), ctx);
     if (l1Reply.isHit()) {
       if (l1Reply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
         if (ncacheUpdatePeriod_) {
           if (ncacheUpdateCounter_ == 1) {
-            updateL1Ncache(req, Operation());
+            updateL1Ncache(req, Operation(), ctx);
             ncacheUpdateCounter_ = ncacheUpdatePeriod_;
           } else {
             --ncacheUpdateCounter_;
@@ -124,7 +127,7 @@ class L1L2CacheRoute {
     }
 
     /* else */
-    auto l2Reply = l2_->route(req, Operation());
+    auto l2Reply = l2_->route(req, Operation(), ctx);
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
@@ -132,12 +135,13 @@ class L1L2CacheRoute {
     if (l2Reply.isHit()) {
       fiber::addTask(
         [l1 = l1_,
-         addReq = l1UpdateFromL2(req, l2Reply, upgradingL1Exptime_)]() {
-          l1->route(addReq, McOperation<mc_op_add>());
+         addReq = l1UpdateFromL2(req, l2Reply, upgradingL1Exptime_),
+         ctx]() {
+          l1->route(addReq, McOperation<mc_op_add>(), ctx);
         });
     } else if (l2Reply.isMiss() && ncacheUpdatePeriod_) {
-      fiber::addTask([l1 = l1_, addReq = l1Ncache(req, ncacheExptime_)]() {
-        l1->route(addReq, McOperation<mc_op_add>());
+      fiber::addTask([l1 = l1_, addReq = l1Ncache(req, ncacheExptime_), ctx]() {
+        l1->route(addReq, McOperation<mc_op_add>(), ctx);
       });
     }
 #ifdef __clang__
@@ -148,9 +152,10 @@ class L1L2CacheRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, OtherThanT(Operation, GetLike<>) = 0) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    OtherThanT(Operation, GetLike<>) = 0) const {
 
-    return l1_->route(req, Operation());
+    return l1_->route(req, Operation(), ctx);
   }
 
  private:
@@ -184,7 +189,7 @@ class L1L2CacheRoute {
   }
 
   template <class Request, class Operation>
-  void updateL1Ncache(const Request& req, Operation) {
+  void updateL1Ncache(const Request& req, Operation, const ContextPtr& ctx) {
 #ifdef __clang__
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
@@ -192,14 +197,16 @@ class L1L2CacheRoute {
     fiber::addTask(
       [l1 = l1_, l2 = l2_, creq = Request(req.clone()),
        upgradingL1Exptime = upgradingL1Exptime_,
-       ncacheExptime = ncacheExptime_]() {
-        auto l2Reply = l2->route(creq, Operation());
+       ncacheExptime = ncacheExptime_,
+       ctx]() {
+        auto l2Reply = l2->route(creq, Operation(), ctx);
         if (l2Reply.isHit()) {
           l1->route(l1UpdateFromL2(creq, l2Reply, upgradingL1Exptime),
-                    McOperation<mc_op_set>());
+                    McOperation<mc_op_set>(), ctx);
         } else {
           /* bump TTL on the ncache entry */
-          l1->route(l1Ncache(creq, ncacheExptime), McOperation<mc_op_set>());
+          l1->route(l1Ncache(creq, ncacheExptime), McOperation<mc_op_set>(),
+                    ctx);
         }
       }
     );

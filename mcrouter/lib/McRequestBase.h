@@ -111,6 +111,11 @@ class McRequestBase {
   explicit McRequestBase(folly::StringPiece key);
 
   /**
+   * Constructs an McRequestBase with the given key data
+   */
+  explicit McRequestBase(folly::IOBuf keyData);
+
+  /**
    * Returns a reference to an mc_msg_t representing this request
    * with the correct op set.
    *

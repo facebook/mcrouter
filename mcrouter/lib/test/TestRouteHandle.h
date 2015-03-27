@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <memory>
+
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleIf.h"
@@ -17,8 +19,26 @@
 namespace facebook { namespace memcache {
 
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
+                                               void,
                                                List<McRequest>,
                                                McOpList> {
+ public:
+  using RouteHandleIf<TestRouteHandleIf,
+                      void,
+                      List<McRequest>,
+                      McOpList>::ContextPtr;
+
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type
+  routeSimple(const Request& req, Operation) {
+    return route(req, Operation(), nullptr);
+  }
+
+  template <class Operation, class Request>
+  std::vector<std::shared_ptr<TestRouteHandleIf>>
+  couldRouteToSimple(const Request& req, Operation) {
+    return couldRouteTo(req, Operation(), nullptr);
+  }
 };
 
 typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
@@ -26,6 +46,7 @@ typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
 template <typename Route>
 using TestRouteHandle = RouteHandle<Route,
                                     TestRouteHandleIf,
+                                    void,
                                     List<McRequest>,
                                     McOpList>;
 

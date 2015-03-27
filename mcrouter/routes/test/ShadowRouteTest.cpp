@@ -59,8 +59,8 @@ TEST(shadowRouteTest, defaultPolicy) {
   fm.runAll(
     {
       [&] () {
-        auto reply = rh.route(McRequest("key"),
-                              McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         EXPECT_TRUE(reply.result() == mc_res_found);
         EXPECT_TRUE(toString(reply.value()) == "a");
@@ -75,8 +75,8 @@ TEST(shadowRouteTest, defaultPolicy) {
   fm.runAll(
     {
       [&] () {
-        auto reply = rh.route(McRequest("key"),
-                              McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         EXPECT_TRUE(reply.result() == mc_res_found);
         EXPECT_TRUE(toString(reply.value()) == "a");

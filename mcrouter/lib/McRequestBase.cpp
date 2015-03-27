@@ -43,6 +43,15 @@ McRequestBase::McRequestBase(folly::StringPiece key)
   msg_ = std::move(msg);
 }
 
+McRequestBase::McRequestBase(folly::IOBuf keyData)
+    : keyData_(std::move(keyData)) {
+  keyData_.coalesce();
+  keys_.update(getRange(keyData_));
+  auto msg = createMcMsgRef();
+  msg->key = to<nstring_t>(getRange(keyData_));
+  msg_ = std::move(msg);
+}
+
 bool McRequestBase::setKeyFrom(const folly::IOBuf& source,
                                const uint8_t* keyBegin, size_t keySize) {
   if (keySize && cloneInto(keyData_, source, keyBegin, keySize)) {

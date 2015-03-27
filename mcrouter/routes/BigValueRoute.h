@@ -57,28 +57,30 @@ struct ChunkUpdateRequest {
 template <class RouteHandleIf>
 class BigValueRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "big-value"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const;
+    const Request& req, Operation, const ContextPtr& ctx) const;
 
- BigValueRoute(std::shared_ptr<RouteHandleIf> ch,
-               BigValueRouteOptions options);
-
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req,
-    Operation, typename GetLike<Operation>::Type = 0) const;
+  BigValueRoute(std::shared_ptr<RouteHandleIf> ch,
+                BigValueRouteOptions options);
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req,
-    Operation, typename UpdateLike<Operation>::Type = 0) const;
+    const Request& req, Operation, const ContextPtr& ctx,
+    typename GetLike<Operation>::Type = 0) const;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
+    const Request& req, Operation, const ContextPtr& ctx,
+    typename UpdateLike<Operation>::Type = 0) const;
+
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type route(
+    const Request& req, Operation, const ContextPtr& ctx,
     OtherThanT(Operation, GetLike<>, UpdateLike<>) = 0) const;
 
  private:

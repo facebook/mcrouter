@@ -146,11 +146,13 @@ struct TestHandle {
 /* Records all the keys we saw */
 template <class RouteHandleIf>
 struct RecordingRoute {
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "test"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
     return {};
   }
 
@@ -167,7 +169,7 @@ struct RecordingRoute {
 
   template <int M, class Request>
   typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>) {
+    const Request& req, McOperation<M>, const ContextPtr& ctx) {
 
     if (h_->isTko) {
       return McReply(TkoReply);
@@ -252,7 +254,7 @@ inline std::string toString(const folly::IOBuf& buf) {
 
 template <class Rh>
 std::string replyFor(Rh& rh, const std::string& key) {
-  auto reply = rh.route(McRequest(key), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest(key), McOperation<mc_op_get>());
   return toString(reply.value());
 }
 
