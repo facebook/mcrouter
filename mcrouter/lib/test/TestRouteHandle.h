@@ -18,13 +18,27 @@
 
 namespace facebook { namespace memcache {
 
+class TestContext {
+ public:
+  void setSenderId(size_t senderId) {
+    senderId_ = senderId;
+  }
+
+  size_t senderId() const {
+    return senderId_;
+  }
+
+ private:
+  size_t senderId_{0};
+};
+
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
-                                               void,
+                                               TestContext,
                                                List<McRequest>,
                                                McOpList> {
  public:
   using RouteHandleIf<TestRouteHandleIf,
-                      void,
+                      TestContext,
                       List<McRequest>,
                       McOpList>::ContextPtr;
 
@@ -46,7 +60,7 @@ typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
 template <typename Route>
 using TestRouteHandle = RouteHandle<Route,
                                     TestRouteHandleIf,
-                                    void,
+                                    TestContext,
                                     List<McRequest>,
                                     McOpList>;
 

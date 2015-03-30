@@ -135,7 +135,6 @@ class DestinationRoute {
 
     auto reply = ProxyMcReply(
       destination->send(newReq, McOperation<Op>(), dctx,
-                        ctx->senderId(),
                         client_->server_timeout));
     ctx->onReplyReceived(*client_,
                          req,
