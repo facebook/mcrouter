@@ -56,6 +56,9 @@ struct UpdateLike {
   static const bool value = false;
 };
 
+template <typename Operation = void>
+using UpdateLikeT = typename UpdateLike<Operation>::Type;
+
 /**
  * @class DeleteLike
  * @tparam Operation operation type
@@ -69,6 +72,9 @@ template <typename Operation = void>
 struct DeleteLike {
   static const bool value = false;
 };
+
+template <typename Operation = void>
+using DeleteLikeT = typename DeleteLike<Operation>::Type;
 
 /**
  * @class ArithmeticLike
@@ -86,18 +92,8 @@ struct ArithmeticLike {
   static const bool value = false;
 };
 
-namespace detail {
-/**
- * Hack to make OtherThan compatible with gcc 4.6
- * See http://stackoverflow.com/questions/11297376/gcc-4-6-and-missing-variadic-templates-expansions
- */
-template<template <typename...> class T, typename... Args>
-struct Join
-{
-  typedef T<Args...> type;
-};
-
-}
+template <typename Operation = void>
+using ArithmeticLikeT = typename ArithmeticLike<Operation>::Type;
 
 /**
  * @class OtherThan
@@ -111,15 +107,9 @@ struct Join
  */
 template <typename Operation, typename OperationTraitOrType, typename... Rest>
 struct OtherThan {
-#ifdef __clang__
   static const bool value =
     OtherThan<Operation, OperationTraitOrType>::value &&
     OtherThan<Operation, Rest...>::value;
-#else
-  static const bool value =
-    OtherThan<Operation, OperationTraitOrType>::value &&
-    detail::Join<OtherThan, Operation, Rest...>::type::value;
-#endif
 };
 
 template <typename Operation, typename OperationTraitOrType>
@@ -145,7 +135,13 @@ struct OtherThan<Operation, ArithmeticLike<>> {
   static const bool value = !ArithmeticLike<Operation>::value;
 };
 
+template <typename Operation, typename... OperationTraitOrType>
+using OtherThanT = typename std::enable_if<
+    OtherThan<Operation, OperationTraitOrType...>::value,
+    void*>::type;
+
 // This should be type alias in GCC >= 4.7
+// TODO(t8000319): migrate everything to OtherThanT template alias.
 #define OtherThanT(_Op,...) typename std::enable_if<OtherThan<_Op, __VA_ARGS__>::value, void*>::type
 
 }}

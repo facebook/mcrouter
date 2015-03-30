@@ -11,6 +11,10 @@
 
 #include <memory>
 
+#include <folly/Range.h>
+
+#include "mcrouter/lib/McOperation.h"
+
 namespace facebook { namespace memcache {
 
 class McRequest;
@@ -18,7 +22,8 @@ class McRequest;
 namespace mcrouter {
 
 class ProxyConfig;
-class ProxyRequestContext;
+template <class Operation, class Request>
+class ProxyRequestContextTyped;
 class proxy_t;
 
 /**
@@ -27,11 +32,12 @@ class proxy_t;
  */
 class ServiceInfo {
  public:
+  using ContextType =
+      ProxyRequestContextTyped<McOperation<mc_op_get>, McRequest>;
   ServiceInfo(proxy_t* proxy, const ProxyConfig& config);
 
-  void handleRequest(const McRequest& req,
-                     const std::shared_ptr<ProxyRequestContext>& ctx) const;
-
+  void handleRequest(folly::StringPiece req,
+                     const std::shared_ptr<ContextType>& ctx) const;
   ~ServiceInfo();
 
  private:

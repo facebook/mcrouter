@@ -39,7 +39,6 @@
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
@@ -50,11 +49,9 @@
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/route.h"
-#include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/RuntimeVarsData.h"
-#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -69,43 +66,6 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
   fmOpts.useGuardPages = opts.fibers_use_guard_pages;
   return fmOpts;
-}
-
-/**
- * @return true  If precheck finds an interesting request and has the reply
- *   set up otherwise this request needs to go through normal flow.
- */
-bool precheckRequest(ProxyRequestContext& preq) {
-  switch (preq.origReq()->op) {
-    // Return error (pretend to not even understand the protocol)
-    case mc_op_shutdown:
-      preq.sendReply(McReply(mc_res_bad_command));
-      break;
-
-    // Return 'Not supported' message
-    case mc_op_append:
-    case mc_op_prepend:
-    case mc_op_flushre:
-      preq.sendReply(McReply(mc_res_local_error, "Command not supported"));
-      break;
-
-    case mc_op_flushall:
-      if (!preq.proxy().router().opts().enable_flush_cmd) {
-        preq.sendReply(McReply(mc_res_local_error, "Command disabled"));
-        break;
-      }
-      /* fallthrough */
-
-    // Everything else is supported
-    default:
-      auto err = mc_client_req_check(preq.origReq().get());
-      if (err != mc_req_err_valid) {
-        preq.sendReply(McReply(mc_res_local_error, mc_req_err_to_string(err)));
-        break;
-      }
-      return false;
-  }
-  return true;
 }
 
 }  // anonymous namespace
@@ -222,24 +182,8 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
   switch (t) {
     case ProxyMessage::Type::REQUEST:
     {
-      auto preq =
-        std::unique_ptr<ProxyRequestContext>(
-          reinterpret_cast<ProxyRequestContext*>(data));
-      auto client = preq->requester_;
-
-      if (precheckRequest(*preq)) {
-        return;
-      }
-
-      if (being_destroyed) {
-        /* We can't process this, since 1) we destroyed the config already,
-           and 2) the clients are winding down, so we wouldn't get any
-           meaningful response back anyway. */
-        LOG(ERROR) << "Outstanding request on a proxy that's being destroyed";
-        preq->sendReply(McReply(mc_res_unknown));
-        return;
-      }
-      dispatchRequest(std::move(preq));
+      auto preq = reinterpret_cast<ProxyRequestContext*>(data);
+      preq->startProcessing();
     }
     break;
 
@@ -259,158 +203,6 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
   }
 }
 
-void proxy_t::routeHandlesProcessRequest(
-  std::unique_ptr<ProxyRequestContext> upreq) {
-
-  if (upreq->origReq()->op == mc_op_stats) {
-    upreq->sendReply(
-      stats_reply(this, to<folly::StringPiece>(upreq->origReq()->key)));
-    return;
-  }
-
-  auto preq = ProxyRequestContext::process(std::move(upreq), getConfig());
-  if (preq->origReq()->op == mc_op_get_service_info) {
-    auto orig = preq->origReq().clone();
-    const auto& config = preq->proxyConfig();
-    McRequest req(std::move(orig));
-
-    /* Will answer request for us */
-    config.serviceInfo()->handleRequest(req, preq);
-    return;
-  }
-
-  auto func_ctx = preq;
-
-  fiberManager.addTaskFinally(
-    [ctx = std::move(func_ctx)]() mutable {
-      auto& origReq = ctx->origReq();
-      try {
-        auto& proute = ctx->proxyRoute();
-        fiber_local::setSharedCtx(std::move(ctx));
-        return proute.dispatchMcMsg(origReq.clone());
-      } catch (const std::exception& e) {
-        std::string err = "error routing "
-          + to<std::string>(origReq->key) + ": " +
-          e.what();
-        return McReply(mc_res_local_error, err);
-      }
-    },
-    [ctx = std::move(preq)](folly::Try<McReply>&& reply) {
-      ctx->sendReply(std::move(*reply));
-    }
-  );
-}
-
-void proxy_t::processRequest(std::unique_ptr<ProxyRequestContext> preq) {
-  assert(!preq->processing_);
-  preq->processing_ = true;
-  ++numRequestsProcessing_;
-  stat_incr(stats, proxy_reqs_processing_stat, 1);
-
-  switch (preq->origReq()->op) {
-    case mc_op_stats:
-      stat_incr(stats, cmd_stats_stat, 1);
-      stat_incr(stats, cmd_stats_count_stat, 1);
-      break;
-    case mc_op_cas:
-      stat_incr(stats, cmd_cas_stat, 1);
-      stat_incr(stats, cmd_cas_count_stat, 1);
-      break;
-    case mc_op_get:
-      stat_incr(stats, cmd_get_stat, 1);
-      stat_incr(stats, cmd_get_count_stat, 1);
-      break;
-    case mc_op_gets:
-      stat_incr(stats, cmd_gets_stat, 1);
-      stat_incr(stats, cmd_gets_count_stat, 1);
-      break;
-    case mc_op_metaget:
-      stat_incr(stats, cmd_meta_stat, 1);
-      break;
-    case mc_op_add:
-      stat_incr(stats, cmd_add_stat, 1);
-      stat_incr(stats, cmd_add_count_stat, 1);
-      break;
-    case mc_op_replace:
-      stat_incr(stats, cmd_replace_stat, 1);
-      stat_incr(stats, cmd_replace_count_stat, 1);
-      break;
-    case mc_op_set:
-      stat_incr(stats, cmd_set_stat, 1);
-      stat_incr(stats, cmd_set_count_stat, 1);
-      break;
-    case mc_op_incr:
-      stat_incr(stats, cmd_incr_stat, 1);
-      stat_incr(stats, cmd_incr_count_stat, 1);
-      break;
-    case mc_op_decr:
-      stat_incr(stats, cmd_decr_stat, 1);
-      stat_incr(stats, cmd_decr_count_stat, 1);
-      break;
-    case mc_op_delete:
-      stat_incr(stats, cmd_delete_stat, 1);
-      stat_incr(stats, cmd_delete_count_stat, 1);
-      break;
-    case mc_op_lease_set:
-      stat_incr(stats, cmd_lease_set_stat, 1);
-      stat_incr(stats, cmd_lease_set_count_stat, 1);
-      break;
-    case mc_op_lease_get:
-      stat_incr(stats, cmd_lease_get_stat, 1);
-      stat_incr(stats, cmd_lease_get_count_stat, 1);
-      break;
-    default:
-      stat_incr(stats, cmd_other_stat, 1);
-      stat_incr(stats, cmd_other_count_stat, 1);
-      break;
-  }
-
-  routeHandlesProcessRequest(std::move(preq));
-
-  stat_incr(stats, request_sent_stat, 1);
-  stat_incr(stats, request_sent_count_stat, 1);
-}
-
-void proxy_t::dispatchRequest(std::unique_ptr<ProxyRequestContext> preq) {
-  if (rateLimited(*preq)) {
-    if (router_.opts().proxy_max_throttled_requests > 0 &&
-        numRequestsWaiting_ >= router_.opts().proxy_max_throttled_requests) {
-      preq->sendReply(McReply(mc_res_local_error, "Max throttled exceeded"));
-      return;
-    }
-    auto& queue = waitingRequests_[static_cast<int>(preq->priority())];
-    auto w = folly::make_unique<WaitingRequest>(std::move(preq));
-    queue.pushBack(std::move(w));
-    ++numRequestsWaiting_;
-    stat_incr(stats, proxy_reqs_waiting_stat, 1);
-  } else {
-    processRequest(std::move(preq));
-  }
-}
-
-bool proxy_t::rateLimited(const ProxyRequestContext& preq) const {
-  if (!router_.opts().proxy_max_inflight_requests) {
-    return false;
-  }
-
-  /* Always let through certain requests */
-  if (preq.origReq()->op == mc_op_stats ||
-      preq.origReq()->op == mc_op_version ||
-      preq.origReq()->op == mc_op_get_service_info) {
-    return false;
-  }
-
-  if (waitingRequests_[static_cast<int>(preq.priority())].empty() &&
-      numRequestsProcessing_ < router_.opts().proxy_max_inflight_requests) {
-    return false;
-  }
-
-  return true;
-}
-
-proxy_t::WaitingRequest::WaitingRequest(std::unique_ptr<ProxyRequestContext> r)
-    : request(std::move(r)) {}
-
 void proxy_t::pump() {
   auto numPriorities = static_cast<int>(ProxyRequestPriority::kNumPriorities);
   for (int i = 0; i < numPriorities; ++i) {
@@ -421,7 +213,7 @@ void proxy_t::pump() {
       auto w = queue.popFront();
       stat_decr(stats, proxy_reqs_waiting_stat, 1);
 
-      processRequest(std::move(w->request));
+      w->process(this);
     }
   }
 }
@@ -430,26 +222,8 @@ uint64_t proxy_t::nextRequestId() {
   return ++nextReqId_;
 }
 
-/** allocate a new reply with piggybacking copy of str and the appropriate
-    fields of the value nstring pointing to it.
-    str may be nullptr for no piggybacking string.
-
-    @return nullptr on failure
-*/
-MutableMcMsgRef new_reply(const char* str) {
-  if (str == nullptr) {
-    return createMcMsgRef();
-  }
-  size_t n = strlen(str);
-
-  auto reply = createMcMsgRef(n + 1);
-  reply->value.str = (char*) &(reply.get()[1]);
-
-  memcpy(reply->value.str, str, n);
-  reply->value.len = n;
-  reply->value.str[n] = '\0';
-
-  return reply;
+const McrouterOptions& proxy_t::getRouterOptions() const {
+  return router_.opts();
 }
 
 std::shared_ptr<ShadowSettings>

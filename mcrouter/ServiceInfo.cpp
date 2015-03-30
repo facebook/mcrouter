@@ -47,33 +47,31 @@ struct ServiceInfo::ServiceInfoImpl {
 
   ServiceInfoImpl(proxy_t* proxy, const ProxyConfig& config);
 
-  void handleRouteCommand(const std::shared_ptr<ProxyRequestContext>& ctx,
+  void handleRouteCommand(const std::shared_ptr<ContextType>& ctx,
                           const std::vector<folly::StringPiece>& args) const;
 
   template <typename Operation>
-  void handleRouteCommandForOp(const std::shared_ptr<ProxyRequestContext>& ctx,
+  void handleRouteCommandForOp(const std::shared_ptr<ContextType>& ctx,
                                std::string keyStr,
                                Operation) const;
 
-  void routeCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece key,
-    const std::shared_ptr<ProxyRequestContext>& ctx,
-    McOpList::Item<0>) const;
+  void routeCommandHelper(folly::StringPiece op,
+                          folly::StringPiece key,
+                          const std::shared_ptr<ContextType>& ctx,
+                          McOpList::Item<0>) const;
 
   template <int op_id>
-  void routeCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece key,
-    const std::shared_ptr<ProxyRequestContext>& ctx,
-    McOpList::Item<op_id>) const;
+  void routeCommandHelper(folly::StringPiece op,
+                          folly::StringPiece key,
+                          const std::shared_ptr<ContextType>& ctx,
+                          McOpList::Item<op_id>) const;
 };
 
 template <typename Operation>
 void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
-  const std::shared_ptr<ProxyRequestContext>& ctx,
-  std::string keyStr,
-  Operation) const {
+    const std::shared_ptr<ContextType>& ctx,
+    std::string keyStr,
+    Operation) const {
   proxy_->fiberManager.addTaskFinally(
     [this, keyStr, proxy = proxy_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
@@ -149,20 +147,20 @@ inline std::string routeHandlesCommandHelper(
 }
 
 void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
-  folly::StringPiece op,
-  folly::StringPiece key,
-  const std::shared_ptr<ProxyRequestContext>& ctx,
-  McOpList::Item<0>) const {
+    folly::StringPiece op,
+    folly::StringPiece key,
+    const std::shared_ptr<ContextType>& ctx,
+    McOpList::Item<0>) const {
 
   throw std::runtime_error("route: unknown op " + op.str());
 }
 
 template <int op_id>
 void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
-  folly::StringPiece op,
-  folly::StringPiece key,
-  const std::shared_ptr<ProxyRequestContext>& ctx,
-  McOpList::Item<op_id>) const {
+    folly::StringPiece op,
+    folly::StringPiece key,
+    const std::shared_ptr<ContextType>& ctx,
+    McOpList::Item<op_id>) const {
 
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
     handleRouteCommandForOp(ctx,
@@ -327,8 +325,8 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 }
 
 void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
-  const std::shared_ptr<ProxyRequestContext>& ctx,
-  const std::vector<folly::StringPiece>& args) const {
+    const std::shared_ptr<ContextType>& ctx,
+    const std::vector<folly::StringPiece>& args) const {
 
   if (args.size() != 2) {
     throw std::runtime_error("route: 2 args expected");
@@ -339,10 +337,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
   routeCommandHelper(op, key, ctx, McOpList::LastItem());
 }
 
-void ServiceInfo::handleRequest(
-    const McRequest& req,
-    const std::shared_ptr<ProxyRequestContext>& ctx) const {
-  auto key = req.keyWithoutRoute();
+void ServiceInfo::handleRequest(folly::StringPiece key,
+                                const std::shared_ptr<ContextType>& ctx) const {
   auto p = key.find('(');
   auto cmd = key;
   folly::StringPiece argsStr(key.end(), key.end());
@@ -378,7 +374,7 @@ void ServiceInfo::handleRequest(
     replyStr = std::string("ERROR: ") + e.what();
   }
 
-  ctx->sendReply(McReply(mc_res_found, replyStr));
+  ctx->sendReply(mc_res_found, replyStr);
 }
 
 }}}  // facebook::memcache::mcrouter

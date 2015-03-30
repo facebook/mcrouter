@@ -27,6 +27,14 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
+struct ServerRequestContext {
+  McServerRequestContext ctx;
+  McRequest req;
+
+  ServerRequestContext(McServerRequestContext&& ctx_, McRequest&& req_)
+      : ctx(std::move(ctx_)), req(std::move(req_)) {}
+};
+
 /**
  * Server callback for standalone Mcrouter
  */
@@ -43,25 +51,20 @@ class ServerOnRequest {
   void onRequest(McServerRequestContext&& ctx,
                  McRequest&& req,
                  McOperation<M>) {
-    mcrouter_msg_t router_msg;
-    auto& session = ctx.session();
-    auto op = mc_op_t(M);
-    /* TODO: nasty C/C++ interface stuff.  We should hand off the McRequest
-       directly here.  For now, hand off the dependentMsg() since we can assume
-       req will stay alive. */
-    auto p = folly::make_unique<McServerRequestContext>(std::move(ctx));
-    router_msg.context = p.get();
-    router_msg.saved_request = std::move(req);
-    auto msg = router_msg.saved_request->dependentMsg(op);
-    router_msg.req = const_cast<mc_msg_t*>(msg.get());
-    /* mcrouter_send will incref req, it's ok to destroy msg after this call */
+    auto rctx = folly::make_unique<ServerRequestContext>(std::move(ctx),
+                                                         std::move(req));
+    auto& reqRef = rctx->req;
+    auto cb =
+      [sctx = std::move(rctx)](McReply&& reply) {
+        McServerRequestContext::reply(std::move(sctx->ctx), std::move(reply));
+      };
+
     if (retainSourceIp_) {
-      auto peerIp = session.getSocketAddress().getAddressStr();
-      client_->send(&router_msg, 1, peerIp);
+      auto peerIp = rctx->ctx.session().getSocketAddress().getAddressStr();
+      client_->send(reqRef, McOperation<M>(), std::move(cb), peerIp);
     } else {
-      client_->send(&router_msg, 1);
+      client_->send(reqRef, McOperation<M>(), std::move(cb));
     }
-    p.release();
   }
 
  private:
@@ -69,22 +72,8 @@ class ServerOnRequest {
   bool retainSourceIp_{false};
 };
 
-void router_on_reply(mcrouter_msg_t* msg,
-                     void* context) {
-  std::unique_ptr<McServerRequestContext> p(
-    reinterpret_cast<McServerRequestContext*>(msg->context));
-
-  assert(p.get());
-  McServerRequestContext::reply(std::move(*p),
-                                std::move(msg->reply));
-  msg->context = nullptr;
-}
-
 mcrouter_client_callbacks_t const server_callbacks = {
-  router_on_reply,  // on_reply callback
-  nullptr,
-  nullptr
-};
+    nullptr, nullptr, nullptr};
 
 void serverLoop(
   McrouterInstance& router,

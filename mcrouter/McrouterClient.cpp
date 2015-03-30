@@ -9,7 +9,6 @@
  */
 #include "McrouterClient.h"
 
-#include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
@@ -29,21 +28,19 @@ size_t McrouterClient::send(
     return 0;
   }
 
-  auto makePreq = [this, &requests, ipAddr] (size_t i) {
-    auto preq = ProxyRequestContext::create(
-      *proxy_,
-      McMsgRef::cloneRef(requests[i].req),
-      [] (ProxyRequestContext& prq) {
-        prq.requester_->onReply(prq);
-      },
-      requests[i].context);
+  auto makePreq = [this, &requests, ipAddr](size_t i) {
+    auto cb =
+      [this, context = requests[i].context,
+       req = McMsgRef::cloneRef(requests[i].req)]
+      (ProxyRequestContext&, McReply&& reply) mutable {
+        this->onReply(std::move(reply), std::move(req), context);
+      };
+    auto preq = createLegacyProxyRequestContext(
+        *proxy_, McMsgRef::cloneRef(requests[i].req), std::move(cb));
     preq->requester_ = self_;
+
     if (!ipAddr.empty()) {
       preq->setUserIpAddress(ipAddr);
-    }
-    if (requests[i].saved_request.hasValue()) {
-      // TODO: remove copy
-      preq->savedRequest_.emplace(requests[i].saved_request->clone());
     }
     return preq;
   };
@@ -56,14 +53,11 @@ size_t McrouterClient::send(
      * Note: maxOutstanding_ is ignored in this case.
      */
     for (size_t i = 0; i < nreqs; i++) {
-      auto preq = makePreq(i);
-      proxy_->messageReady(ProxyMessage::Type::REQUEST, preq.release());
+      sendSameThread(makePreq(i));
     }
   } else if (maxOutstanding_ == 0) {
     for (size_t i = 0; i < nreqs; i++) {
-      auto preq = makePreq(i);
-      proxy_->messageQueue_->blockingWriteRelaxed(ProxyMessage::Type::REQUEST,
-                                                  preq.release());
+      sendRemoteThread(makePreq(i));
     }
   } else {
     size_t i = 0;
@@ -72,9 +66,7 @@ size_t McrouterClient::send(
     while (i < nreqs) {
       n += counting_sem_lazy_wait(&outstandingReqsSem_, nreqs - n);
       for (size_t j = i; j < n; ++j) {
-        auto preq = makePreq(j);
-        proxy_->messageQueue_->blockingWriteRelaxed(ProxyMessage::Type::REQUEST,
-                                                    preq.release());
+        sendRemoteThread(makePreq(j));
       }
 
       i = n;
@@ -82,6 +74,16 @@ size_t McrouterClient::send(
   }
 
   return nreqs;
+}
+
+void McrouterClient::sendRemoteThread(
+    std::unique_ptr<ProxyRequestContext> req) {
+  proxy_->messageQueue_->blockingWriteRelaxed(ProxyMessage::Type::REQUEST,
+                                              req.release());
+}
+
+void McrouterClient::sendSameThread(std::unique_ptr<ProxyRequestContext> req) {
+  proxy_->messageReady(ProxyMessage::Type::REQUEST, req.release());
 }
 
 McrouterClient::McrouterClient(
@@ -128,24 +130,23 @@ McrouterClient::Pointer McrouterClient::create(
   return Pointer(client);
 }
 
-void McrouterClient::onReply(ProxyRequestContext& preq) {
+void McrouterClient::onReply(McReply&& reply, McMsgRef&& req, void* context) {
   mcrouter_msg_t router_reply;
 
   // Don't increment refcounts, because these are transient stack
   // references, and are guaranteed to be shorted lived than router_entry's
   // reference.  This is a premature optimization.
-  router_reply.req = const_cast<mc_msg_t*>(preq.origReq().get());
-  router_reply.reply = std::move(preq.reply_.value());
-  router_reply.context = preq.context_;
+  router_reply.req = const_cast<mc_msg_t*>(req.get());
+  router_reply.reply = std::move(reply);
+  router_reply.context = context;
 
   auto replyBytes = router_reply.reply.value().computeChainDataLength();
 
-  switch (preq.origReq()->op) {
+  switch (req->op) {
     case mc_op_get:
     case mc_op_gets:
     case mc_op_lease_get:
-      stats_.recordFetchRequest(preq.origReq()->key.len, replyBytes);
-      break;
+      stats_.recordFetchRequest(req->key.len, replyBytes);
 
     case mc_op_add:
     case mc_op_set:
@@ -156,12 +157,11 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
     case mc_op_prepend:
     case mc_op_incr:
     case mc_op_decr:
-      stats_.recordUpdateRequest(preq.origReq()->key.len,
-                                 preq.origReq()->value.len);
+      stats_.recordUpdateRequest(req->key.len, req->value.len);
       break;
 
     case mc_op_delete:
-      stats_.recordInvalidateRequest(preq.origReq()->key.len);
+      stats_.recordInvalidateRequest(req->key.len);
       break;
 
     case mc_op_unknown:
@@ -187,7 +187,7 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
   } else if (callbacks_.on_cancel && disconnected_) {
     // This should be called for all canceled requests, when cancellation is
     // implemented properly.
-    callbacks_.on_cancel(preq.context_, arg_);
+    callbacks_.on_cancel(context, arg_);
   }
 }
 

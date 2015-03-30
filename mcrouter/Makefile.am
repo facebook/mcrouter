@@ -43,6 +43,7 @@ libmcroutercore_a_SOURCES = \
   mcrouter_config.cpp \
   mcrouter_config.h \
   mcrouter_options_list.h \
+  McrouterClient-inl.h \
   McrouterClient.cpp \
   McrouterClient.h \
   McrouterFiberContext.cpp \
@@ -60,6 +61,7 @@ libmcroutercore_a_SOURCES = \
   options.h \
   PoolFactory.cpp \
   PoolFactory.h \
+  proxy-inl.h \
   proxy.cpp \
   proxy.h \
   ProxyClientCommon.cpp \
@@ -73,6 +75,7 @@ libmcroutercore_a_SOURCES = \
   ProxyDestination.h \
   ProxyDestinationMap.cpp \
   ProxyDestinationMap.h \
+  ProxyRequestContext-inl.h \
   ProxyRequestContext.cpp \
   ProxyRequestContext.h \
   ProxyRequestLogger-inl.h \
@@ -130,6 +133,7 @@ libmcroutercore_a_SOURCES = \
   routes/OutstandingLimitRoute.h \
   routes/PrefixRouteSelector.cpp \
   routes/PrefixRouteSelector.h \
+  routes/ProxyRoute.cpp \
   routes/ProxyRoute.h \
   routes/RandomRoute.cpp \
   routes/RateLimiter.cpp \

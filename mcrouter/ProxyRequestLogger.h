@@ -9,11 +9,10 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+#include "mcrouter/lib/Operation.h"
 
-class McReply;
-class McRequest;
-
+namespace facebook {
+namespace memcache {
 namespace mcrouter {
 
 class proxy_t;
@@ -24,9 +23,9 @@ class ProxyRequestLogger {
     : proxy_(proxy) {
   }
 
-  template <class Operation>
-  void log(const McRequest& request,
-           const McReply& reply,
+  template <class Operation, class Request>
+  void log(const Request& request,
+           const ReplyT<Operation, Request>& reply,
            const int64_t startTimeUs,
            const int64_t endTimeUs,
            Operation);
@@ -34,7 +33,8 @@ class ProxyRequestLogger {
  protected:
   proxy_t* proxy_;
 
-  inline void logError(const McReply& reply);
+  template <class Reply>
+  inline void logError(const Reply& reply);
 };
 
 }}}  // facebook::memcache::mcrouter
