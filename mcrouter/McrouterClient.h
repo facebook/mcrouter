@@ -41,7 +41,6 @@ struct mcrouter_msg_t {
   mc_msg_t* req;
   McReply reply{mc_res_unknown};
   void* context;
-  folly::Optional<McRequest> saved_request;
 };
 
 typedef void (mcrouter_on_reply_t)(mcrouter_msg_t* router_req,
@@ -88,6 +87,8 @@ class McrouterClient {
                                      &McrouterClient::hook_>;
 
   /**
+   * DEPRECATED, do not use in new code.
+   *
    * Asynchronously send `nreqs' requests from the array started at `requests'.
    * Optionally, `ipAddr` is a StringPiece that contains the IP address of the
    * external client we got the requests from.
@@ -99,6 +100,28 @@ class McrouterClient {
     size_t nreqs,
     folly::StringPiece ipAddr = folly::StringPiece()
   );
+
+  /**
+   * Asynchronously send a single request with the given operation.
+   *
+   * @param callback  the callback to call when request is completed,
+   *                  should accept ReplyT<Operation, Request> as an argument
+   *                  result mc_res_unknown means that the request was canceled.
+   *                  It will be moved into a temporary storage before being
+   *                  called. Will be destroyed only after callback is called,
+   *                  but may be delayed, until all sub-requests are processed.
+   *
+   * @return true iff the request was scheduled to be sent / was sent,
+   *         false if some error happened (e.g. McrouterInstance was destroyed).
+   *
+   * Note: the caller is responsible for keeping the request alive until the
+   *       callback is called.
+   */
+  template <class Operation, class Request, class F>
+  bool send(const Request& req,
+            Operation,
+            F&& callback,
+            folly::StringPiece ipAddr = folly::StringPiece());
 
   /**
    * Change the context passed back to the callbacks.
@@ -179,7 +202,9 @@ class McrouterClient {
     size_t maximum_outstanding,
     bool sameThread);
 
-  void onReply(ProxyRequestContext& preq);
+  void sendRemoteThread(std::unique_ptr<ProxyRequestContext> req);
+  void sendSameThread(std::unique_ptr<ProxyRequestContext> req);
+  void onReply(McReply&& reply, McMsgRef&& req, void* context);
 
  private:
   friend class McrouterInstance;
@@ -187,3 +212,5 @@ class McrouterClient {
 };
 
 }}} // facebook::memcache::mcrouter
+
+#include "McrouterClient-inl.h"

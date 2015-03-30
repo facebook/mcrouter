@@ -12,21 +12,24 @@
 #include <memory>
 #include <string>
 
+#include <folly/experimental/fibers/FiberManager.h>
+
 #include "mcrouter/config.h"
 #include "mcrouter/config-impl.h"
+#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/ProxyRequestLogger.h"
+#include "mcrouter/routes/McOpList.h"
 
-namespace facebook { namespace memcache {
-
-class McReply;
-class McRequest;
-
+namespace facebook {
+namespace memcache {
 namespace mcrouter {
 
+class McrouterClient;
 class ProxyClientCommon;
 class ProxyRoute;
+class ShardSplitter;
 
 /**
  * This object is alive for the duration of user's request,
@@ -41,36 +44,6 @@ class ProxyRoute;
  */
 class ProxyRequestContext {
 public:
-  /**
-   * Creates a new context
-   */
-  template <typename... Args>
-  static std::unique_ptr<ProxyRequestContext> create(Args&&... args) {
-    return std::unique_ptr<ProxyRequestContext>(
-      new ProxyRequestContext(std::forward<Args>(args)...));
-  }
-
-  /**
-   * Internally converts the context into one ready to route.
-   * Config pointer is saved to keep the config alive, and
-   * ownership is changed to shared so that all subrequests
-   * keep track of this context.
-   */
-  static std::shared_ptr<ProxyRequestContext> process(
-    std::unique_ptr<ProxyRequestContext> preq,
-    std::shared_ptr<const ProxyConfig> config) {
-    preq->config_ = std::move(config);
-    return std::shared_ptr<ProxyRequestContext>(
-      preq.release(),
-      /* Note: we want to delete on main context here since the destructor
-         can do complicated things, like finalize stats entry and
-         destroy a stale config.  There might not be enough stack space
-         for these operations. */
-      [] (ProxyRequestContext* ctx) {
-        folly::fibers::runInMainContext([ctx]{ delete ctx; });
-      });
-  }
-
   using ClientCallback = std::function<void(const ProxyClientCommon&)>;
   using ShardSplitCallback = std::function<void(const ShardSplitter&)>;
 
@@ -99,7 +72,7 @@ public:
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback = nullptr);
 
-  ~ProxyRequestContext();
+  virtual ~ProxyRequestContext();
 
   proxy_t& proxy() const {
     return proxy_;
@@ -146,10 +119,10 @@ public:
   /**
    * Called once a reply is received to record a stats sample if required.
    */
-  template <typename Operation>
+  template <class Operation, class Request>
   void onReplyReceived(const ProxyClientCommon& pclient,
-                       const McRequest& request,
-                       const McReply& reply,
+                       const Request& request,
+                       const ReplyT<Operation, Request>& reply,
                        const int64_t startTimeUs,
                        const int64_t endTimeUs,
                        Operation) {
@@ -164,16 +137,15 @@ public:
       pclient, request, reply, startTimeUs, endTimeUs, Operation());
   }
 
-  const McMsgRef& origReq() const {
-    return origReq_;
-  }
-
   /**
-   * Sets the reply for this proxy request and sends it out
-   * @param newReply the message that we are sending out as the reply
-   *   for the request we are currently handling
+   * Continues processing current request.
+   * Should be called only from the attached proxy thread.
    */
-  void sendReply(McReply newReply);
+  virtual void startProcessing() {
+    throw std::logic_error(
+        "Calling startProcessing on an incomplete instance "
+        "of ProxyRequestContext");
+  }
 
   const std::string& userIpAddress() const noexcept {
     return userIpAddr_;
@@ -188,13 +160,15 @@ public:
    */
   uint64_t requestId() const;
 
+ protected:
+  bool replied_{false};
+  std::shared_ptr<const ProxyConfig> config_;
+
+  ProxyRequestContext(proxy_t& pr, ProxyRequestPriority priority__);
+
  private:
   const uint64_t requestId_;
   proxy_t& proxy_;
-  McMsgRef origReq_;
-  folly::Optional<McReply> reply_;
-  folly::Optional<McRequest> savedRequest_;
-  bool replied_{false};
   bool failoverDisabled_{false};
 
   /** If true, this is currently being processed by a proxy and
@@ -216,18 +190,11 @@ public:
   };
 
   /**
-   * The function that will be called when the reply is ready
-   */
-  void (*enqueueReply_)(ProxyRequestContext& preq){nullptr};
-
-  /**
    * The function that will be called when all replies (including async)
    * come back.
    * Guaranteed to be called after enqueueReply_ (right after in sync mode).
    */
   void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
-
-  std::shared_ptr<const ProxyConfig> config_;
 
   folly::Optional<ProxyRequestLogger> logger_;
   folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;
@@ -237,14 +204,6 @@ public:
   ProxyRequestPriority priority_{ProxyRequestPriority::kCritical};
 
   std::string userIpAddr_;
-
-  ProxyRequestContext(
-    proxy_t& pr,
-    McMsgRef req,
-    void (*enqReply)(ProxyRequestContext& preq),
-    void* context,
-    ProxyRequestPriority priority = ProxyRequestPriority::kCritical,
-    void (*reqComplete)(ProxyRequestContext& preq) = nullptr);
 
   enum RecordingT { Recording };
   ProxyRequestContext(
@@ -262,6 +221,12 @@ public:
   /* Do not use for new code */
   class LegacyPrivateAccessor {
    public:
+    using ReqCompleteFunc = void (*)(ProxyRequestContext&);
+
+    static ReqCompleteFunc& reqComplete(ProxyRequestContext& preq) {
+      return preq.reqComplete_;
+    }
+
     static void*& context(ProxyRequestContext& preq) {
       assert(!preq.recording_);
       return preq.context_;
@@ -270,10 +235,6 @@ public:
     static bool& failoverDisabled(ProxyRequestContext& preq) {
       return preq.failoverDisabled_;
     }
-
-    static McReply& reply(ProxyRequestContext& preq) {
-      return preq.reply_.value();
-    }
   };
 
 private:
@@ -281,4 +242,72 @@ private:
   friend class proxy_t;
 };
 
+template <class Operation, class Request>
+class ProxyRequestContextTyped : public ProxyRequestContext {
+ public:
+  using Type = ProxyRequestContextTyped<Operation, Request>;
+  /**
+   * Sends the reply for this proxy request.
+   * @param newReply the message that we are sending out as the reply
+   *   for the request we are currently handling
+   */
+  void sendReply(ReplyT<Operation, Request>&& reply);
+
+  /**
+   * Convenience method, that constructs reply and calls non-template
+   * method.
+   */
+  template <class... Args>
+  void sendReply(Args&&... args) {
+    sendReply(ReplyT<Operation, Request>(std::forward<Args>(args)...));
+  }
+
+  virtual void startProcessing() override;
+
+  /**
+   * Internally converts the context into one ready to route.
+   * Config pointer is saved to keep the config alive, and
+   * ownership is changed to shared so that all subrequests
+   * keep track of this context.
+   */
+  static std::shared_ptr<Type> process(
+      std::unique_ptr<Type> preq, std::shared_ptr<const ProxyConfig> config);
+
+ protected:
+  ProxyRequestContextTyped(proxy_t& pr,
+                           const Request& req,
+                           ProxyRequestPriority priority__)
+      : ProxyRequestContext(pr, priority__), req_(&req) {}
+
+  virtual void sendReplyImpl(ReplyT<Operation, Request>&& reply) = 0;
+
+  // It's guaranteed to point to an existing request until we call user callback
+  // (i.e. replied_ changes to true), after that it's nullptr.
+  const Request* req_;
+};
+
+/**
+ * Creates a new proxy request context
+ */
+template <class Operation, class Request, class F>
+std::unique_ptr<ProxyRequestContextTyped<Operation, Request>>
+createProxyRequestContext(
+    proxy_t& pr,
+    const Request& req,
+    Operation,
+    F&& f,
+    ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
+
+/**
+ * Creates proxy request context along with the request itself.
+ * NOTE: this is a temporary method to support old McrouterClient interface.
+ */
+template <class F>
+std::unique_ptr<ProxyRequestContext> createLegacyProxyRequestContext(
+    proxy_t& pr,
+    McMsgRef req,
+    F&& f,
+    ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
 }}}  // facebook::memcache::mcrouter
+
+#include "ProxyRequestContext-inl.h"

@@ -8,10 +8,7 @@
  *
  */
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/stats.h"
 
@@ -128,7 +125,8 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>) {
 
 }
 
-void ProxyRequestLogger::logError(const McReply& reply) {
+template <class Reply>
+void ProxyRequestLogger::logError(const Reply& reply) {
   auto reqClass = fiber_local::getRequestClass();
   if (reply.isError()) {
     REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);
@@ -153,17 +151,17 @@ void ProxyRequestLogger::logError(const McReply& reply) {
   }
 }
 
-template <class Operation>
-void ProxyRequestLogger::log(const McRequest& request,
-                             const McReply& reply,
+template <class Operation, class Request>
+void ProxyRequestLogger::log(const Request& request,
+                             const ReplyT<Operation, Request>& reply,
                              const int64_t startTimeUs,
                              const int64_t endTimeUs,
                              Operation) {
 
   auto durationUs = endTimeUs - startTimeUs;
   bool isOutlier =
-    proxy_->router().opts().logging_rtt_outlier_threshold_us > 0 &&
-    durationUs >= proxy_->router().opts().logging_rtt_outlier_threshold_us;
+      proxy_->getRouterOptions().logging_rtt_outlier_threshold_us > 0 &&
+      durationUs >= proxy_->getRouterOptions().logging_rtt_outlier_threshold_us;
 
   logError(reply);
   logRequestClass(*proxy_, Operation());

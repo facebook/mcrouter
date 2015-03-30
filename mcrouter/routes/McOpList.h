@@ -24,6 +24,28 @@ struct McOpList {
   typedef Item<kLastItemId> LastItem;
 };
 
+namespace detail {
+template <class Operation, int id = McOpList::kLastItemId>
+struct McOpListContainsImpl;
+
+template <class Operation>
+struct McOpListContainsImpl<Operation, 0> {
+  static constexpr bool value = false;
+};
+
+template <class Operation, int id>
+struct McOpListContainsImpl {
+  static constexpr bool value =
+      std::is_same<Operation, typename McOpList::Item<id>::op>::value ||
+      McOpListContainsImpl<Operation, id - 1>::value;
+};
+} // detail
+
+template <class Operation>
+struct McOpListContains {
+  static constexpr bool value = detail::McOpListContainsImpl<Operation>::value;
+};
+
 /* Note: this list is traversed from end to beginning, so
    put most commonly used operations towards the end */
 

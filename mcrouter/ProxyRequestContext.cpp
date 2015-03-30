@@ -17,38 +17,11 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyRequestContext::ProxyRequestContext(
-  proxy_t& pr,
-  McMsgRef req,
-  void (*enqReply)(ProxyRequestContext& preq),
-  void* context,
-  ProxyRequestPriority priority__,
-  void (*reqComplete)(ProxyRequestContext& preq))
-    : requestId_(pr.nextRequestId()),
-      proxy_(pr),
-      context_(context),
-      enqueueReply_(enqReply),
-      reqComplete_(reqComplete),
-      priority_(priority__) {
-
+ProxyRequestContext::ProxyRequestContext(proxy_t& pr,
+                                         ProxyRequestPriority priority__)
+    : requestId_(pr.nextRequestId()), proxy_(pr), priority_(priority__) {
   logger_.emplace(&proxy_);
   additionalLogger_.emplace(&proxy_);
-
-  static const char* const kInternalGetPrefix = "__mcrouter__.";
-
-  if (req->op == mc_op_get && !strncmp(req->key.str, kInternalGetPrefix,
-                                       strlen(kInternalGetPrefix))) {
-    /* HACK: for backwards compatibility, convert (get, "__mcrouter__.key")
-       into (get-service-info, "key") */
-    auto copy = MutableMcMsgRef(mc_msg_dup(req.get()));
-    copy->op = mc_op_get_service_info;
-    copy->key.str += strlen(kInternalGetPrefix);
-    copy->key.len -= strlen(kInternalGetPrefix);
-    origReq_ = std::move(copy);
-  } else {
-    origReq_ = std::move(req);
-  }
-
   stat_incr_safe(proxy_.stats, proxy_request_num_outstanding_stat);
 }
 
@@ -97,34 +70,6 @@ uint64_t ProxyRequestContext::requestId() const {
 
 void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
   senderIdForTest_ = id;
-}
-
-void ProxyRequestContext::sendReply(McReply newReply) {
-  if (recording_) {
-    return;
-  }
-
-  if (replied_) {
-    return;
-  }
-  reply_ = std::move(newReply);
-  replied_ = true;
-
-  if (LIKELY(enqueueReply_ != nullptr)) {
-    fiber_local::runWithoutLocals([this]() {
-      enqueueReply_(*this);
-    });
-  }
-
-  stat_incr(proxy_.stats, request_replied_stat, 1);
-  stat_incr(proxy_.stats, request_replied_count_stat, 1);
-  if (mc_res_is_err(reply_->result())) {
-    stat_incr(proxy_.stats, request_error_stat, 1);
-    stat_incr(proxy_.stats, request_error_count_stat, 1);
-  } else {
-    stat_incr(proxy_.stats, request_success_stat, 1);
-    stat_incr(proxy_.stats, request_success_count_stat, 1);
-  }
 }
 
 std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(

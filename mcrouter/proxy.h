@@ -31,13 +31,11 @@
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/McMsgRef.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ProxyRequestPriority.h"
+#include "mcrouter/routes/McOpList.h"
 #include "mcrouter/stats.h"
 
 // make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
@@ -58,8 +56,6 @@ typedef class fb_timer_s fb_timer_t;
 
 namespace facebook { namespace memcache {
 
-class McReply;
-
 template <class T>
 class MessageQueue;
 
@@ -72,6 +68,8 @@ class ProxyClientCommon;
 class ProxyDestination;
 class ProxyDestinationMap;
 class ProxyRequestContext;
+template <class Operation, class Request>
+class ProxyRequestContextTyped;
 class RuntimeVarsData;
 class ShardSplitter;
 
@@ -238,7 +236,10 @@ struct proxy_t {
     std::shared_ptr<ProxyConfig> newConfig);
 
   /** Queue up and route the new incoming request */
-  void dispatchRequest(std::unique_ptr<ProxyRequestContext> preq);
+  template <class Operation, class Request>
+  void dispatchRequest(
+      const Request& req,
+      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
 
   /**
    * Put a new proxy message into the queue.
@@ -260,6 +261,13 @@ struct proxy_t {
     return router_;
   }
 
+  /**
+   * This method is equal to router().opts(), with the only difference,
+   * that it doesn't require the caller to know about McrouterInstance.
+   * This allows to break include cycles.
+   */
+  const McrouterOptions& getRouterOptions() const;
+
  private:
   folly::EventBase& eventBase_;
 
@@ -275,8 +283,37 @@ struct proxy_t {
   proxy_t(McrouterInstance& router, folly::EventBase& eventBase);
 
   void messageReady(ProxyMessage::Type t, void* data);
-  void routeHandlesProcessRequest(std::unique_ptr<ProxyRequestContext> preq);
-  void processRequest(std::unique_ptr<ProxyRequestContext> preq);
+
+  /** Process and reply stats request */
+  template <class Request>
+  void routeHandlesProcessRequest(
+      const Request& req,
+      std::unique_ptr<
+          ProxyRequestContextTyped<McOperation<mc_op_stats>, Request>> ctx);
+
+  /** Route request through route handle tree */
+  template <class Operation, class Request>
+  typename std::enable_if<McOpListContains<Operation>::value, void>::type
+  routeHandlesProcessRequest(
+      const Request& req,
+      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+
+  /** Fail all unknown operations */
+  template <class Operation, class Request>
+  typename std::enable_if<!McOpListContains<Operation>::value, void>::type
+  routeHandlesProcessRequest(
+      const Request& req,
+      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+
+  /** Process request (update stats and route the request) */
+  template <class Operation, class Request>
+  void processRequest(
+      const Request& req,
+      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+
+  /** Increase requests sent stats counters for given operation type */
+  template <class Operation>
+  void bumpStats(Operation);
 
   /**
    * Incoming request rate limiting.
@@ -299,20 +336,46 @@ struct proxy_t {
    * proxy.h -> ProxyRequestContext.h -> ProxyRequestLogger.h ->
    * ProxyRequestLogger-inl.h -> proxy.h
    */
-  struct WaitingRequest {
+  class WaitingRequestBase {
     UniqueIntrusiveListHook hook;
-    using Queue = UniqueIntrusiveList<WaitingRequest,
-                                      &WaitingRequest::hook>;
-    std::unique_ptr<ProxyRequestContext> request;
-    explicit WaitingRequest(std::unique_ptr<ProxyRequestContext> r);
+
+   public:
+    using Queue =
+        UniqueIntrusiveList<WaitingRequestBase, &WaitingRequestBase::hook>;
+
+    virtual ~WaitingRequestBase() = default;
+
+    /**
+     * Continue processing proxy request.
+     *
+     * We lose any information about the type when we enqueue request as
+     * waiting. The inheritance allows us to resume where we left and continues
+     * processing requests retaining all the type information
+     * (e.g. Operation and Request).
+     */
+    virtual void process(proxy_t* proxy) = 0;
+  };
+
+  template <class Operation, class Request>
+  class WaitingRequest : public WaitingRequestBase {
+   public:
+    WaitingRequest(
+        const Request& req,
+        std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+    void process(proxy_t* proxy) override;
+
+   private:
+    const Request& req_;
+    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx_;
   };
 
   /** Queue of requests we didn't start processing yet */
-  WaitingRequest::Queue
-    waitingRequests_[static_cast<int>(ProxyRequestPriority::kNumPriorities)];
+  WaitingRequestBase::Queue
+      waitingRequests_[static_cast<int>(ProxyRequestPriority::kNumPriorities)];
 
   /** If true, we can't start processing this request right now */
-  bool rateLimited(const ProxyRequestContext& preq) const;
+  template <class Operation>
+  bool rateLimited(ProxyRequestPriority priority, Operation) const;
 
   /** Will let through requests from the above queue if we have capacity */
   void pump();
@@ -341,3 +404,5 @@ void proxy_config_swap(proxy_t* proxy,
                        std::shared_ptr<ProxyConfig> config);
 
 }}} // facebook::memcache::mcrouter
+
+#include "proxy-inl.h"
