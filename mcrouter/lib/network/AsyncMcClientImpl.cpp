@@ -373,9 +373,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     statusCallbacks_.onUp();
   }
 
-  // We would never attempt to connect without having any messages to send.
-  assert(getPendingRequestCount());
-
   scheduleNextWriterLoop();
   parser_ = folly::make_unique<ParserT>(*this, 0, kReadBufferSizeMin,
                                         kReadBufferSizeMax,
