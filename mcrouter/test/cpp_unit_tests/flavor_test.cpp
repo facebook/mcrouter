@@ -56,7 +56,7 @@ TEST(Flavor, readStandaloneFlavor) {
   EXPECT_EQ(1, libmcrouter_opts.count("router_name"));
   EXPECT_EQ("web", libmcrouter_opts["router_name"]);
   EXPECT_EQ(1, libmcrouter_opts.count("flavor_name"));
-  EXPECT_EQ("web", libmcrouter_opts["flavor_name"]);
+  EXPECT_EQ(flavor, libmcrouter_opts["flavor_name"]);
   EXPECT_EQ(2, standalone_opts.size());
   EXPECT_EQ(1, standalone_opts.count("port"));
   EXPECT_EQ("11001", standalone_opts["port"]);
@@ -90,7 +90,7 @@ TEST(Flavor, readLibmcrouterFlavor) {
   EXPECT_EQ(1, libmcrouter_opts.count("router_name"));
   EXPECT_EQ("web", libmcrouter_opts["router_name"]);
   EXPECT_EQ(1, libmcrouter_opts.count("flavor_name"));
-  EXPECT_EQ("web", libmcrouter_opts["flavor_name"]);
+  EXPECT_EQ(flavorPath, libmcrouter_opts["flavor_name"]);
 }
 
 TEST(Flavor, readFlavorFromTwoFiles) {
@@ -132,7 +132,7 @@ TEST(Flavor, readFlavorFromTwoFiles) {
   EXPECT_EQ(1, libmcrouter_opts.count("router_name"));
   EXPECT_EQ("web", libmcrouter_opts["router_name"]);
   EXPECT_EQ(1, libmcrouter_opts.count("flavor_name"));
-  EXPECT_EQ("web", libmcrouter_opts["flavor_name"]);
+  EXPECT_EQ(flavorPath, libmcrouter_opts["flavor_name"]);
   EXPECT_EQ(2, standalone_opts.size());
   EXPECT_EQ(1, standalone_opts.count("port"));
   EXPECT_EQ("11001", standalone_opts["port"]);
@@ -182,7 +182,7 @@ TEST(Flavor, readFlavorFromTwoFilesShouldOverrideLibmcrouterOptions) {
   EXPECT_EQ(1, libmcrouter_opts.count("router_name"));
   EXPECT_EQ("web", libmcrouter_opts["router_name"]);
   EXPECT_EQ(1, libmcrouter_opts.count("flavor_name"));
-  EXPECT_EQ("web", libmcrouter_opts["flavor_name"]);
+  EXPECT_EQ(flavorPath, libmcrouter_opts["flavor_name"]);
   EXPECT_EQ(2, standalone_opts.size());
   EXPECT_EQ(1, standalone_opts.count("port"));
   EXPECT_EQ("11001", standalone_opts["port"]);
