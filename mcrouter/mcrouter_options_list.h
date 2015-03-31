@@ -51,6 +51,11 @@ mcrouter_option_string(
   "Name for this router instance (should reflect the configuration,"
   " the flavor name is usually a good choice)")
 
+mcrouter_option_string(
+  flavor_name, "unknown",
+  no_long, no_short,
+  "Name of the flavor used to configure this router instance.")
+
 mcrouter_option_integer(
   int, standalone, 0,
   no_long, no_short,

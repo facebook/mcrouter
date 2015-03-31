@@ -12,6 +12,7 @@
 #include <string>
 #include <unordered_map>
 
+#include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <folly/FileUtil.h>
@@ -128,6 +129,8 @@ bool readFlavor(
     }
   }
 
+  libmcrouter_opts["flavor_name"] =
+    boost::filesystem::absolute(flavor).string();
   libmcrouter_opts["router_name"] = getRouterNameFromFlavor(flavor);
 
   return true;
