@@ -106,7 +106,7 @@ McClientRequestContext<Operation, Request>::waitForReply(
       queue_.removePending(*this);
       return Reply(mc_res_timeout);
     case ReqState::PENDING_REPLY_QUEUE:
-      // Request was sent to the network yet, but wasn't replied yet,
+      // Request was sent to the network, but wasn't replied yet,
       // reply with timeout.
       queue_.removePendingReply(*this);
       return Reply(mc_res_timeout);
@@ -145,15 +145,6 @@ void McClientRequestContext<Operation, Request>::sendTraceOnReply() {
 
 template <class Reply>
 void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
-  if (pendingReplyQueue_.empty()) {
-    assert(idMap_.find(id) == idMap_.end());
-    // TODO: remove once new ascii parser is rolled out.
-    if (!initializers_.empty()) {
-      initializers_.pop();
-    }
-    return;
-  }
-
   // Get the context and erase it from the queue and map.
   McClientRequestContextBase* ctx{nullptr};
   if (outOfOrder_) {
@@ -165,10 +156,15 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
       idMap_.erase(iter);
     }
   } else {
-    if (pendingReplyQueue_.front().id == id) {
+    // First we're going to receive replies for timed out requests.
+    if (!timedOutInitializers_.empty()) {
+      timedOutInitializers_.pop();
+    } else if (!pendingReplyQueue_.empty()) {
       ctx = &pendingReplyQueue_.front();
       pendingReplyQueue_.pop_front();
     }
+    // With old mc_parser it's possible to receive unexpected replies, we need
+    // to ignore them.
   }
 
   if (ctx) {
@@ -176,9 +172,6 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
       ctx->state_ = State::NONE;
       ctx->replyError(mc_res_local_error);
     }
-  } else {
-    assert(!initializers_.empty());
-    initializers_.pop();
   }
 }
 

@@ -51,11 +51,6 @@ void AsyncMcClientImpl::replyReady(Reply&& r, uint64_t reqId) {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
 
-  if (!outOfOrder_) {
-    reqId = nextInflightMsgId_;
-    incMsgId(nextInflightMsgId_);
-  }
-
   queue_.reply(reqId, std::move(r));
 }
 

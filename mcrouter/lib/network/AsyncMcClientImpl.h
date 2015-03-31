@@ -110,10 +110,6 @@ class AsyncMcClientImpl :
   // Id for the next message that will be used by the next sendMsg() call.
   uint64_t nextMsgId_{1};
 
-  // Id of the next message pending for reply (request is already sent).
-  // Only for in order protocol.
-  uint64_t nextInflightMsgId_{1};
-
   // Throttle options (disabled by default).
   size_t maxPending_{0};
   size_t maxInflight_{0};

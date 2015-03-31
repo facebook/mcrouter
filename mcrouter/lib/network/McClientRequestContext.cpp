@@ -32,15 +32,6 @@ size_t McClientRequestContextQueue::getInflightRequestCount() const noexcept {
   return writeQueue_.size() + pendingReplyQueue_.size();
 }
 
-bool McClientRequestContextQueue::hasPendingReply() const noexcept {
-  return !pendingReplyQueue_.empty();
-}
-
-McClientRequestContextBase&
-McClientRequestContextQueue::getFirstPendingReply() {
-  return pendingReplyQueue_.front();
-}
-
 void McClientRequestContextQueue::failAllSent(mc_res_t error) {
   failQueue(pendingReplyQueue_, error);
 }
@@ -52,8 +43,8 @@ void McClientRequestContextQueue::failAllPending(mc_res_t error) {
 }
 
 void McClientRequestContextQueue::clearStoredInitializers() {
-  while (!initializers_.empty()) {
-    initializers_.pop();
+  while (!timedOutInitializers_.empty()) {
+    timedOutInitializers_.pop();
   }
 }
 
@@ -87,6 +78,10 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
   writeQueue_.pop_front();
   if (req.state_ == State::WRITE_QUEUE_CANCELED) {
     removeFromMap(req.id);
+    // We already sent this request, so we're going to get a reply in future.
+    if (!outOfOrder_) {
+      timedOutInitializers_.push(req.initializer_);
+    }
     req.canceled();
   } else {
     assert(req.state_ == State::WRITE_QUEUE);
@@ -128,7 +123,10 @@ void McClientRequestContextQueue::removePendingReply(
   removeFromMap(req.id);
   pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(req));
   req.state_ = State::NONE;
-  initializers_.push(req.initializer_);
+  // We need timedOutInitializers_ only for in order protocol.
+  if (!outOfOrder_) {
+    timedOutInitializers_.push(req.initializer_);
+  }
 }
 
 McClientRequestContextBase::InitializerFuncPtr
@@ -140,8 +138,8 @@ McClientRequestContextQueue::getParserInitializer(uint64_t reqId) {
     }
   } else {
     // In inorder protocol we expect to receive timedout requests first.
-    if (!initializers_.empty()) {
-      return initializers_.front();
+    if (!timedOutInitializers_.empty()) {
+      return timedOutInitializers_.front();
     } else if (!pendingReplyQueue_.empty()) {
       return pendingReplyQueue_.front().initializer_;
     }

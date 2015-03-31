@@ -151,9 +151,6 @@ class McClientRequestContextQueue {
   size_t getPendingRequestCount() const noexcept;
   size_t getInflightRequestCount() const noexcept;
 
-  bool hasPendingReply() const noexcept;
-  McClientRequestContextBase& getFirstPendingReply();
-
   /**
    * Fails all requests that were already sent (i.e. pending reply) with a given
    * error code.
@@ -204,6 +201,7 @@ class McClientRequestContextQueue {
 
   /**
    * Reply request with given id with the provided reply.
+   * In case of in order protocol the id is ignored.
    *
    * Does nothing if the request was already removed from the queue.
    */
@@ -241,7 +239,8 @@ class McClientRequestContextQueue {
   std::unordered_map<uint64_t, McClientRequestContextBase*> idMap_;
 
   // Storage for parser initializers for timed out requests.
-  std::queue<McClientRequestContextBase::InitializerFuncPtr> initializers_;
+  std::queue<McClientRequestContextBase::InitializerFuncPtr>
+  timedOutInitializers_;
 
   void failQueue(McClientRequestContextBase::Queue& queue, mc_res_t error);
 

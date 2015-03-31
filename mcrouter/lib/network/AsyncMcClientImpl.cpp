@@ -375,9 +375,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
 
   // We would never attempt to connect without having any messages to send.
   assert(getPendingRequestCount());
-  // We might have successfuly reconnected after error, so we need to restart
-  // our msg id counter.
-  nextInflightMsgId_ = queue_.getFirstId();
 
   scheduleNextWriterLoop();
   parser_ = folly::make_unique<ParserT>(*this, 0, kReadBufferSizeMin,
