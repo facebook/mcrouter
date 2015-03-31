@@ -33,7 +33,7 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool& pool_,
 
 std::string ProxyClientCommon::genProxyDestinationKey(
     bool include_timeout) const {
-  if (include_timeout) {
+  if (include_timeout || ap.getProtocol() == mc_ascii_protocol) {
     return folly::sformat("{}-{}", ap.toString(), server_timeout.count());
   } else {
     return ap.toString();
