@@ -63,7 +63,7 @@ void Fiber::setData(intptr_t data) {
   state_ = READY_TO_RUN;
 
   if (LIKELY(threadId_ == localThreadId())) {
-    TAILQ_INSERT_TAIL(&fiberManager_.readyFibers_, this, entry_);
+    fiberManager_.readyFibers_.push_back(*this);
     fiberManager_.ensureLoopScheduled();
   } else {
     fiberManager_.remoteReadyInsert(this);

@@ -76,7 +76,7 @@ inline void FiberManager::runReadyFiber(Fiber* fiber) {
     }
 
     if (fibersPoolSize_ < options_.maxFibersPoolSize) {
-      TAILQ_INSERT_HEAD(&fibersPool_, fiber, entry_);
+      fibersPool_.push_front(*fiber);
       ++fibersPoolSize_;
     } else {
       delete fiber;
@@ -98,10 +98,10 @@ inline bool FiberManager::loopUntilNoReady() {
   while (hadRemoteFiber) {
     hadRemoteFiber = false;
 
-    while (!TAILQ_EMPTY(&readyFibers_)) {
-      auto fiber = TAILQ_FIRST(&readyFibers_);
-      TAILQ_REMOVE(&readyFibers_, fiber, entry_);
-      runReadyFiber(fiber);
+    while (!readyFibers_.empty()) {
+      auto& fiber = readyFibers_.front();
+      readyFibers_.pop_front();
+      runReadyFiber(&fiber);
     }
 
     remoteReadyQueue_.sweep(
@@ -178,7 +178,7 @@ void FiberManager::addTask(F&& func) {
   }
 
   fiber->data_ = reinterpret_cast<intptr_t>(fiber);
-  TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
+  readyFibers_.push_back(*fiber);
 
   ensureLoopScheduled();
 }
@@ -190,7 +190,7 @@ void FiberManager::addTaskReadyFunc(F&& func, G&& readyFunc) {
   fiber->setReadyFunction(std::forward<G>(readyFunc));
 
   fiber->data_ = reinterpret_cast<intptr_t>(fiber);
-  TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
+  readyFibers_.push_back(*fiber);
 
   ensureLoopScheduled();
 }
@@ -310,7 +310,7 @@ void FiberManager::addTaskFinally(F&& func, G&& finally) {
   }
 
   fiber->data_ = reinterpret_cast<intptr_t>(fiber);
-  TAILQ_INSERT_TAIL(&readyFibers_, fiber, entry_);
+  readyFibers_.push_back(*fiber);
 
   ensureLoopScheduled();
 }

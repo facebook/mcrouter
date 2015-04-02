@@ -45,9 +45,6 @@ FiberManager::FiberManager(std::unique_ptr<LoopController> loopController,
         }
       }),
     timeoutManager_(std::make_shared<TimeoutController>(*loopController_)) {
-  TAILQ_INIT(&readyFibers_);
-  TAILQ_INIT(&fibersPool_);
-
   loopController_->setFiberManager(this);
 }
 
@@ -58,10 +55,12 @@ FiberManager::~FiberManager() {
 
   Fiber* fiberIt;
   Fiber* fiberItNext;
-  TAILQ_FOREACH_SAFE(fiberIt, &fibersPool_, entry_, fiberItNext) {
-    delete fiberIt;
+  while (!fibersPool_.empty()) {
+    fibersPool_.pop_front_and_dispose([] (Fiber* fiber) {
+      delete fiber;
+    });
   }
-  assert(TAILQ_EMPTY(&readyFibers_));
+  assert(readyFibers_.empty());
   assert(fibersActive_ == 0);
 }
 
@@ -81,12 +80,12 @@ bool FiberManager::hasTasks() const {
 
 Fiber* FiberManager::getFiber() {
   Fiber* fiber = nullptr;
-  if (TAILQ_FIRST(&fibersPool_) == nullptr) {
+  if (fibersPool_.empty()) {
     fiber = new Fiber(*this);
     ++fibersAllocated_;
   } else {
-    fiber = TAILQ_FIRST(&fibersPool_);
-    TAILQ_REMOVE(&fibersPool_, fiber, entry_);
+    fiber = &fibersPool_.front();
+    fibersPool_.pop_front();
     assert(fibersPoolSize_ > 0);
     --fibersPoolSize_;
   }

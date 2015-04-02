@@ -17,13 +17,13 @@
 
 #include <folly/Likely.h>
 #include <folly/futures/Try.h>
+#include <folly/IntrusiveList.h>
 
 #include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
-#include "mcrouter/lib/fbi/cpp/traits.h"
-#include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/fibers/TimeoutController.h"
+#include "mcrouter/lib/fibers/traits.h"
 
 #ifdef USE_GUARD_ALLOCATOR
 #include "mcrouter/lib/fibers/GuardPageAllocator.h"
@@ -212,12 +212,12 @@ class FiberManager {
     AtomicLinkedListHook<RemoteTask> nextRemoteTask;
   };
 
-  TAILQ_HEAD(FiberTailQHead, Fiber);
+  typedef folly::IntrusiveList<Fiber, &Fiber::listHook_> FiberTailQueue;
 
   Fiber* activeFiber_{nullptr}; /**< active fiber, nullptr on main context */
 
-  FiberTailQHead readyFibers_;  /**< queue of fibers ready to be executed */
-  FiberTailQHead fibersPool_;   /**< pool of unitialized Fiber objects */
+  FiberTailQueue readyFibers_;  /**< queue of fibers ready to be executed */
+  FiberTailQueue fibersPool_;   /**< pool of unitialized Fiber objects */
 
   size_t fibersAllocated_{0};   /**< total number of fibers allocated */
   size_t fibersPoolSize_{0};    /**< total number of fibers in the free pool */

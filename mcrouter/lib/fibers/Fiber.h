@@ -13,9 +13,9 @@
 
 #include <boost/context/all.hpp>
 #include <boost/version.hpp>
+#include <folly/IntrusiveList.h>
 
 #include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
-#include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 
 namespace facebook { namespace memcache {
@@ -111,8 +111,8 @@ class Fiber {
   std::function<void()> resultFunc_;
   std::function<void()> finallyFunc_;
 
-  TAILQ_ENTRY(Fiber) entry_;    /**< entry for different FiberManager queues */
-
+  folly::IntrusiveListHook listHook_; /**< list hook for different FiberManager
+                                           queues */
   pid_t threadId_{0};
 };
 

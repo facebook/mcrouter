@@ -10,8 +10,7 @@
 #pragma once
 
 #include <folly/futures/Try.h>
-
-#include "mcrouter/lib/fbi/cpp/traits.h"
+#include "mcrouter/lib/fibers/traits.h"
 
 namespace facebook { namespace memcache {
 
