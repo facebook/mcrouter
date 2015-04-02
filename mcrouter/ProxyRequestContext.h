@@ -62,7 +62,7 @@ public:
          destroy a stale config.  There might not be enough stack space
          for these operations. */
       [] (ProxyRequestContext* ctx) {
-        fiber::runInMainContext([ctx]{ delete ctx; });
+        folly::fibers::runInMainContext([ctx]{ delete ctx; });
       });
   }
 
@@ -90,7 +90,7 @@ public:
    */
   static std::shared_ptr<ProxyRequestContext> createRecordingNotify(
     proxy_t& proxy,
-    Baton& baton,
+    folly::fibers::Baton& baton,
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback = nullptr);
 

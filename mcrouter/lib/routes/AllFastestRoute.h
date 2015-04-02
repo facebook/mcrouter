@@ -14,9 +14,9 @@
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/experimental/fibers/AddTasks.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fibers/AddTasks.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -80,7 +80,7 @@ class AllFastestRoute {
       );
     }
 
-    auto taskIt = fiber::addTasks(funcs.begin(), funcs.end());
+    auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
     while (true) {
       auto reply = taskIt.awaitNext();
       if (!reply.isFailoverError() || !taskIt.hasNext()) {

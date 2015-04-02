@@ -14,10 +14,10 @@
 #include <vector>
 
 #include <folly/Memory.h>
+#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/experimental/fibers/SimpleLoopController.h>
+#include <folly/experimental/fibers/WhenN.h>
 
-#include "mcrouter/lib/fibers/FiberManager.h"
-#include "mcrouter/lib/fibers/SimpleLoopController.h"
-#include "mcrouter/lib/fibers/WhenN.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/OperationTraits.h"
@@ -82,7 +82,7 @@ struct TestHandle {
 
   bool isPaused;
 
-  std::vector<FiberPromise<void>> promises_;
+  std::vector<folly::fibers::Promise<void>> promises_;
 
   explicit TestHandle(GetRouteTestData td)
       : rh(std::make_shared<RecordingRouteHandle>(
@@ -129,7 +129,7 @@ struct TestHandle {
   }
 
   void unpause() {
-    fiber::addTask([this]() {
+    folly::fibers::addTask([this]() {
         for (auto& promise: promises_) {
           promise.setValue();
         }
@@ -139,7 +139,7 @@ struct TestHandle {
 
   void wait() {
     assert(isPaused);
-    fiber::await([this](FiberPromise<void> promise) {
+    folly::fibers::await([this](folly::fibers::Promise<void> promise) {
         promises_.push_back(std::move(promise));
       });
     isPaused = false;
@@ -223,7 +223,7 @@ inline std::vector<std::shared_ptr<TestRouteHandleIf>> get_route_handles(
 class TestFiberManager {
  public:
   TestFiberManager()
-      : fm_(folly::make_unique<SimpleLoopController>()) {}
+      : fm_(folly::make_unique<folly::fibers::SimpleLoopController>()) {}
 
   void run(std::function<void()>&& fun) {
     runAll({std::move(fun)});
@@ -232,22 +232,22 @@ class TestFiberManager {
   void runAll(std::vector<std::function<void()>>&& fs) {
     auto& fm = fm_;
     auto& loopController =
-      dynamic_cast<SimpleLoopController&>(fm_.loopController());
+      dynamic_cast<folly::fibers::SimpleLoopController&>(fm_.loopController());
     fm.addTask(
       [&fs, &loopController]() {
-        fiber::whenAll(fs.begin(), fs.end());
+        folly::fibers::whenAll(fs.begin(), fs.end());
         loopController.stop();
       });
 
     loopController.loop([](){});
   }
 
-  FiberManager& getFiberManager() {
+  folly::fibers::FiberManager& getFiberManager() {
     return fm_;
   }
 
  private:
-  FiberManager fm_;
+  folly::fibers::FiberManager fm_;
 };
 
 inline std::string toString(const folly::IOBuf& buf) {

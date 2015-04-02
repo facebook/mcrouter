@@ -13,13 +13,13 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Range.h>
+#include <folly/dynamic.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/ProxyRequestContext.h"
@@ -125,7 +125,7 @@ class ShardSplitRoute {
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
-      fiber::addTask(
+      folly::fibers::addTask(
         [r = rh_, req_ = splitReq(req, i, shard), ctx]() {
           r->route(req_, Operation(), ctx);
         });

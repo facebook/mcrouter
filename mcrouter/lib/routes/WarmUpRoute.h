@@ -13,11 +13,11 @@
 #include <string>
 
 #include <folly/dynamic.h>
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Operation.h"
@@ -113,9 +113,10 @@ class WarmUpRoute {
 #endif
     uint32_t exptime;
     if (warmReply.isHit() && getExptimeForCold(req, exptime, ctx)) {
-      fiber::addTask([cold = cold_,
-                      addReq = coldUpdateFromWarm(req, warmReply, exptime),
-                      ctx]() {
+      folly::fibers::addTask([
+          cold = cold_,
+          addReq = coldUpdateFromWarm(req, warmReply, exptime),
+          ctx]() {
         cold->route(addReq, McOperation<mc_op_add>(), ctx);
       });
     }
@@ -160,7 +161,7 @@ class WarmUpRoute {
       auto setReq = coldUpdateFromWarm(req, warmReply, exptime);
       setReq.setLeaseToken(coldReply.leaseToken());
 
-      fiber::addTask([cold = cold_, req = std::move(setReq), ctx]() {
+      folly::fibers::addTask([cold = cold_, req = std::move(setReq), ctx]() {
         cold->route(req, McOperation<mc_op_lease_set>(), ctx);
       });
       return warmReply;

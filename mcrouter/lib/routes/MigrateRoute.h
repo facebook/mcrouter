@@ -13,13 +13,13 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Optional.h>
+#include <folly/dynamic.h>
+#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/experimental/fibers/WhenN.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
-#include "mcrouter/lib/fibers/WhenN.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 
@@ -126,7 +126,7 @@ class MigrateRoute {
         };
 
         folly::Optional<Reply> reply;
-        fiber::forEach(fs, fs + 2,
+        folly::fibers::forEach(fs, fs + 2,
           [&reply] (size_t id, Reply newReply) {
             if (!reply || newReply.worseThan(reply.value())) {
               reply = std::move(newReply);

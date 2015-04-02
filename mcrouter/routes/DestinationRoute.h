@@ -17,12 +17,12 @@
 #include <folly/Format.h>
 #include <folly/Memory.h>
 #include <folly/ScopeGuard.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/ClientPool.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/routes/NullRoute.h"

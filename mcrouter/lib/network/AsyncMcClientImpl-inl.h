@@ -23,7 +23,7 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
   auto selfPtr = selfPtr_.lock();
   // shouldn't happen.
   assert(selfPtr);
-  assert(fiber::onFiber());
+  assert(folly::fibers::onFiber());
 
   using Reply = typename ReplyType<Operation, Request>::type;
 

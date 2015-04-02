@@ -151,7 +151,7 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
       if (connectionState_ == ConnectionState::DOWN) {
         // attempConnection may use a lot of stack memory, thus we need to run
         // it on a main context.
-        fiber::runInMainContext([this] {
+        folly::fibers::runInMainContext([this] {
           attemptConnection();
         });
       }

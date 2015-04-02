@@ -27,6 +27,7 @@
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 #include <folly/File.h>
+#include <folly/experimental/fibers/EventBaseLoopController.h>
 
 #include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
@@ -35,7 +36,6 @@
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fbi/timer.h"
-#include "mcrouter/lib/fibers/EventBaseLoopController.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -72,8 +72,9 @@ static asox_queue_callbacks_t const proxy_request_queue_cb =  {
 
 namespace {
 
-FiberManager::Options getFiberManagerOptions(const McrouterOptions& opts) {
-  FiberManager::Options fmOpts;
+folly::fibers::FiberManager::Options getFiberManagerOptions(
+    const McrouterOptions& opts) {
+  folly::fibers::FiberManager::Options fmOpts;
   fmOpts.stackSize = opts.fibers_stack_size;
   fmOpts.debugRecordStackUsed = opts.fibers_debug_record_stack_size;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
@@ -91,7 +92,7 @@ proxy_t::proxy_t(McrouterInstance* router_,
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
-      fiberManager(folly::make_unique<EventBaseLoopController>(),
+      fiberManager(folly::make_unique<folly::fibers::EventBaseLoopController>(),
                    getFiberManagerOptions(opts_)) {
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
@@ -116,7 +117,7 @@ void proxy_t::attachEventBase(folly::EventBase* eventBase_) {
 }
 
 void proxy_t::onEventBaseAttached() {
-  dynamic_cast<EventBaseLoopController&>(
+  dynamic_cast<folly::fibers::EventBaseLoopController&>(
     fiberManager.loopController()).attachEventBase(*eventBase);
 
   init_proxy_event_priorities(this);

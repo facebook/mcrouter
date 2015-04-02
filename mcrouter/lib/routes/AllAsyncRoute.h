@@ -14,9 +14,9 @@
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -61,7 +61,7 @@ class AllAsyncRoute {
     if (!children_.empty()) {
       auto reqCopy = std::make_shared<Request>(req.clone());
       for (auto& rh : children_) {
-        fiber::addTask(
+        folly::fibers::addTask(
           [rh, reqCopy, ctx]() {
             rh->route(*reqCopy, Operation(), ctx);
           });

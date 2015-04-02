@@ -8,9 +8,9 @@
  *
  */
 #ifndef LIBMC_FBTRACE_DISABLE
+#include <folly/experimental/fibers/FiberManager.h>
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
 #endif
 
@@ -83,7 +83,7 @@ fbTraceOnSend(McOperation<McOp>, const Request& request,
 
   /* fbtrace talks to scribe via thrift,
      which can use up too much stack space */
-  return fiber::runInMainContext(
+  return folly::fibers::runInMainContext(
     [fbtraceInfo, op, remote_service, &info] {
       if (fbtrace_request_send(&fbtraceInfo->fbtrace->node,
                                &fbtraceInfo->child_node, fbtraceInfo->metadata,
@@ -113,7 +113,7 @@ void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
 
   /* fbtrace talks to scribe via thrift,
      which can use up too much stack space */
-  fiber::runInMainContext(
+  folly::fibers::runInMainContext(
     [fbtraceInfo, &info] {
       if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
         VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();

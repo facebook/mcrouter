@@ -14,9 +14,9 @@
 #include <vector>
 
 #include <folly/Likely.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/config.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/proxy.h"
@@ -142,7 +142,7 @@ class RootRoute {
       auto reqCopy = std::make_shared<Request>(req.clone());
       for (size_t i = 1; i < rh.size(); ++i) {
         auto r = rh[i];
-        fiber::addTask(
+        folly::fibers::addTask(
           [r, reqCopy, ctx]() {
             r->route(*reqCopy, Operation(), ctx);
           });

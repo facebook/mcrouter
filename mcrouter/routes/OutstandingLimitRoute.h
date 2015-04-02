@@ -14,7 +14,8 @@
 #include <vector>
 
 #include <folly/ScopeGuard.h>
-#include "mcrouter/lib/fibers/Baton.h"
+#include <folly/experimental/fibers/Baton.h>
+
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 
@@ -61,7 +62,7 @@ class OutstandingLimitRoute {
         return *blockedRequests_.back();
       }();
 
-      Baton baton;
+      folly::fibers::Baton baton;
       entry.batons.push_back(&baton);
       baton.wait();
     } else {
@@ -104,7 +105,7 @@ class OutstandingLimitRoute {
     explicit QueueEntry(size_t senderId_) : senderId(senderId_) {
     }
     size_t senderId;
-    std::list<Baton*> batons;
+    std::list<folly::fibers::Baton*> batons;
   };
 
   std::list<std::unique_ptr<QueueEntry>> blockedRequests_;

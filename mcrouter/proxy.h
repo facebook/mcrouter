@@ -22,12 +22,12 @@
 #include <string>
 
 #include <folly/Range.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/fbi/cpp/AtomicSharedPtr.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
@@ -161,7 +161,7 @@ struct proxy_t {
    */
   bool being_destroyed{false};
 
-  FiberManager fiberManager;
+  folly::fibers::FiberManager fiberManager;
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 

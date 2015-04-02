@@ -15,9 +15,9 @@
 #include <vector>
 
 #include <folly/Hash.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/PrefixRouteSelector.h"
@@ -145,7 +145,7 @@ RouteHandleMap::getTargetsForKeySlow(folly::StringPiece prefix,
     Ctx(const RouteHandleMap* rhMap_) : rhMap(rhMap_) {}
   } c(this);
 
-  auto result = fiber::runInMainContext(
+  auto result = folly::fibers::runInMainContext(
     [&c, prefix, key] () -> std::vector<McrouterRouteHandlePtr> {
       c.rhMap->foreachRoutePolicy(prefix,
         [&c, key] (const std::shared_ptr<RoutePolicyMap>& r) {

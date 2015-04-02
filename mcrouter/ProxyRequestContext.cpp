@@ -135,7 +135,7 @@ std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
 
 std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
   proxy_t& proxy,
-  Baton& baton,
+  folly::fibers::Baton& baton,
   ClientCallback clientCallback,
   ShardSplitCallback shardSplitCallback) {
 

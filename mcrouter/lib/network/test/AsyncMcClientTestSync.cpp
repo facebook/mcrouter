@@ -9,6 +9,8 @@
  */
 #include <gtest/gtest.h>
 
+#include <folly/experimental/fibers/EventBaseLoopController.h>
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/network/AsyncMcClient.h"
@@ -17,8 +19,6 @@
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/TestUtil.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/lib/fibers/EventBaseLoopController.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 
 using namespace facebook::memcache;
 
@@ -186,8 +186,8 @@ class TestClient {
              > contextProvider = nullptr,
              bool enableQoS = false,
              uint64_t qos = 0) :
-      fm_(folly::make_unique<mcrouter::EventBaseLoopController>()) {
-    dynamic_cast<mcrouter::EventBaseLoopController&>(fm_.loopController()).
+      fm_(folly::make_unique<folly::fibers::EventBaseLoopController>()) {
+    dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController()).
       attachEventBase(eventBase_);
     ConnectionOptions opts(host, port, protocol);
     opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
@@ -288,7 +288,7 @@ class TestClient {
  private:
   size_t inflight_{0};
   std::unique_ptr<AsyncMcClient> client_;
-  FiberManager fm_;
+  folly::fibers::FiberManager fm_;
 };
 
 }  // namespace
@@ -615,9 +615,9 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   //     in AsyncMcClient.
   auto eventBase = folly::make_unique<EventBase>();
   auto fiberManager =
-    folly::make_unique<FiberManager>(
-      folly::make_unique<mcrouter::EventBaseLoopController>());
-  dynamic_cast<mcrouter::EventBaseLoopController&>(
+    folly::make_unique<folly::fibers::FiberManager>(
+      folly::make_unique<folly::fibers::EventBaseLoopController>());
+  dynamic_cast<folly::fibers::EventBaseLoopController&>(
     fiberManager->loopController()).attachEventBase(*eventBase);
   bool wasUp = false;
   bool replied = false;

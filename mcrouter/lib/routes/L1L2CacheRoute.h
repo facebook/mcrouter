@@ -13,11 +13,11 @@
 #include <string>
 
 #include <folly/dynamic.h>
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Operation.h"
@@ -133,14 +133,16 @@ class L1L2CacheRoute {
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
     if (l2Reply.isHit()) {
-      fiber::addTask(
+      folly::fibers::addTask(
         [l1 = l1_,
          addReq = l1UpdateFromL2(req, l2Reply, upgradingL1Exptime_),
          ctx]() {
           l1->route(addReq, McOperation<mc_op_add>(), ctx);
         });
     } else if (l2Reply.isMiss() && ncacheUpdatePeriod_) {
-      fiber::addTask([l1 = l1_, addReq = l1Ncache(req, ncacheExptime_), ctx]() {
+      folly::fibers::addTask([ l1 = l1_,
+                               addReq = l1Ncache(req, ncacheExptime_),
+                               ctx ]() {
         l1->route(addReq, McOperation<mc_op_add>(), ctx);
       });
     }
@@ -194,7 +196,7 @@ class L1L2CacheRoute {
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
-    fiber::addTask(
+    folly::fibers::addTask(
       [l1 = l1_, l2 = l2_, creq = Request(req.clone()),
        upgradingL1Exptime = upgradingL1Exptime_,
        ncacheExptime = ncacheExptime_,

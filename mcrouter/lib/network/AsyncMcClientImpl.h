@@ -12,12 +12,12 @@
 #include <chrono>
 #include <string>
 
+#include <folly/experimental/fibers/Baton.h>
 #include <folly/io/IOBufQueue.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
 
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
-#include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
 #include "mcrouter/lib/network/ClientMcParser.h"

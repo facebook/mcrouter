@@ -13,11 +13,11 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Range.h>
+#include <folly/dynamic.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -104,7 +104,7 @@ class HashRoute {
   size_t pickInMainContext(const Request& req) const {
     /* Hash functions can be stack-intensive,
        so jump back to the main context */
-    return fiber::runInMainContext([this, &req] () {
+    return folly::fibers::runInMainContext([this, &req] () {
         /* this-> here is necessary for gcc-4.7 - it can't find pick()
            without it */
         return this->pick(req);

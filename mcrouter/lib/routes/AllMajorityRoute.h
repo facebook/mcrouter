@@ -14,9 +14,9 @@
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/experimental/fibers/AddTasks.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fibers/AddTasks.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/routes/NullRoute.h"
@@ -89,7 +89,7 @@ class AllMajorityRoute {
     size_t majorityCount = 0;
     Reply majorityReply = Reply(DefaultReply, Operation());
 
-    auto taskIt = fiber::addTasks(funcs.begin(), funcs.end());
+    auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
     taskIt.reserve(children_.size() / 2 + 1);
     while (taskIt.hasNext() &&
            majorityCount < children_.size() / 2 + 1) {

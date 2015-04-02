@@ -23,7 +23,7 @@ std::string makeKey(size_t id) {
   return folly::format("test-key:{}", id).str();
 }
 
-void sendRequest(FiberManager& fm,
+void sendRequest(folly::fibers::FiberManager& fm,
                  TestRouteHandleIf& rh,
                  size_t id,
                  size_t senderId,
@@ -69,7 +69,7 @@ TEST(oustandingLimitRouteTest, basic) {
   sendRequest(fm, rh, 14, 0, replyOrder);
 
   auto& loopController =
-    dynamic_cast<SimpleLoopController&>(fm.loopController());
+    dynamic_cast<folly::fibers::SimpleLoopController&>(fm.loopController());
   loopController.loop([&]() {
       fm.addTask([&]() {
           normalHandle->unpause();

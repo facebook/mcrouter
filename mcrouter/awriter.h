@@ -17,12 +17,12 @@
 #include <memory>
 #include <thread>
 
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
-#include "mcrouter/lib/fibers/FiberManager.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -91,7 +91,7 @@ class AsyncWriter {
   // process id of the parent thread (before fork)
   const pid_t pid_;
 
-  FiberManager fiberManager_;
+  folly::fibers::FiberManager fiberManager_;
   folly::EventBase eventBase_;
   std::thread thread_;
 };

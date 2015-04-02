@@ -13,11 +13,11 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Optional.h>
+#include <folly/dynamic.h>
+#include <folly/experimental/fibers/WhenN.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fibers/WhenN.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -83,7 +83,8 @@ class AllSyncRoute {
     }
 
     folly::Optional<Reply> reply;
-    fiber::forEach(fs.begin(), fs.end(), [&reply] (size_t id, Reply newReply) {
+    folly::fibers::forEach(fs.begin(), fs.end(),
+                           [&reply] (size_t id, Reply newReply) {
       if (!reply || newReply.worseThan(reply.value())) {
         reply = std::move(newReply);
       }

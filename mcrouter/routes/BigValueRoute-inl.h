@@ -10,9 +10,9 @@
 #pragma once
 
 #include <folly/io/IOBuf.h>
+#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/experimental/fibers/WhenN.h>
 
-#include "mcrouter/lib/fibers/FiberManager.h"
-#include "mcrouter/lib/fibers/WhenN.h"
 #include "mcrouter/lib/IOBufUtil.h"
 
 namespace facebook { namespace memcache {
@@ -110,7 +110,7 @@ BigValueRoute<RouteHandleIf>::route(
     );
   }
 
-  auto replies = fiber::whenAll(fs.begin(), fs.end());
+  auto replies = folly::fibers::whenAll(fs.begin(), fs.end());
   return mergeChunkGetReplies(
     replies.begin(), replies.end(), std::move(initialReply));
 }
@@ -140,7 +140,7 @@ BigValueRoute<RouteHandleIf>::route(
     );
   }
 
-  auto replies = fiber::whenAll(fs.begin(), fs.end());
+  auto replies = folly::fibers::whenAll(fs.begin(), fs.end());
 
   // reply for all chunk update requests
   auto reducedReply = Reply::reduce(replies.begin(), replies.end());

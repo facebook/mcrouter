@@ -12,8 +12,8 @@
 #include <typeindex>
 
 #include <folly/IntrusiveList.h>
+#include <folly/experimental/fibers/Baton.h>
 
-#include "mcrouter/lib/fibers/Baton.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
@@ -78,7 +78,7 @@ class McClientRequestContextBase {
 
   virtual void sendTraceOnReply() = 0;
 
-  Baton baton_;
+  folly::fibers::Baton baton_;
   McClientRequestContextQueue& queue_;
   ReqState state_{ReqState::NONE};
 

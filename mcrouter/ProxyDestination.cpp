@@ -10,11 +10,11 @@
 #include "ProxyDestination.h"
 
 #include <folly/Memory.h>
+#include <folly/experimental/fibers/Fiber.h>
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
-#include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"

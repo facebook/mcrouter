@@ -78,7 +78,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
   proxy_->fiberManager.addTaskFinally(
     [keyStr, proxy = proxy_, &proxyRoute = proxyRoute_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
-      Baton baton;
+      folly::fibers::Baton baton;
       {
         auto rctx = ProxyRequestContext::createRecordingNotify(
           *proxy,

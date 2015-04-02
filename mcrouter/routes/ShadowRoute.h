@@ -14,8 +14,8 @@
 #include <vector>
 
 #include <folly/Optional.h>
+#include <folly/experimental/fibers/FiberManager.h>
 
-#include "mcrouter/lib/fibers/FiberManager.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyMcRequest.h"
@@ -78,7 +78,7 @@ class ShadowRoute {
           normalReply = normal_->route(*adjustedReq, Operation(), ctx);
         }
         auto shadow = iter.first;
-        fiber::addTask(
+        folly::fibers::addTask(
           [shadow, adjustedReq, ctx] () {
             Request shadowReq(adjustedReq->clone());
             attachRequestClass(shadowReq);

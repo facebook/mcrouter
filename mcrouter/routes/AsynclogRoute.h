@@ -68,7 +68,7 @@ class AsynclogRoute {
     folly::StringPiece asynclogName = asynclogName_;
 
     auto proxy = &ctx->proxy();
-    Baton b;
+    folly::fibers::Baton b;
     auto res = proxy->router->asyncWriter().run(
       [&b, proxy, &dest, key, asynclogName] () {
         asynclog_delete(proxy, dest, key, asynclogName);

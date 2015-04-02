@@ -32,10 +32,10 @@
 #include <folly/FileUtil.h>
 #include <folly/json.h>
 #include <folly/ThreadName.h>
+#include <folly/experimental/fibers/EventBaseLoopController.h>
 
 #include "mcrouter/awriter.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fibers/EventBaseLoopController.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
@@ -52,10 +52,12 @@ namespace facebook { namespace memcache { namespace mcrouter {
 AsyncWriter::AsyncWriter(size_t maxQueueSize)
     : maxQueueSize_(maxQueueSize),
       pid_(getpid()),
-      fiberManager_(folly::make_unique<EventBaseLoopController>()),
+      fiberManager_(
+          folly::make_unique<folly::fibers::EventBaseLoopController>()),
       eventBase_(/* enableTimeMeasurement */ false) {
   auto& c = fiberManager_.loopController();
-  dynamic_cast<EventBaseLoopController&>(c).attachEventBase(eventBase_);
+  dynamic_cast<folly::fibers::EventBaseLoopController&>(c)
+      .attachEventBase(eventBase_);
 }
 
 AsyncWriter::~AsyncWriter() {
