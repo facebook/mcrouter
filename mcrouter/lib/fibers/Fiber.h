@@ -13,9 +13,9 @@
 
 #include <boost/context/all.hpp>
 #include <boost/version.hpp>
+#include <folly/AtomicLinkedList.h>
 #include <folly/IntrusiveList.h>
 
-#include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
 #include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 
 namespace facebook { namespace memcache {
@@ -101,7 +101,7 @@ class Fiber {
   /**
    * Points to next fiber in remote ready list
    */
-  AtomicLinkedListHook<Fiber> nextRemoteReady_;
+  folly::AtomicLinkedListHook<Fiber> nextRemoteReady_;
 
   static constexpr size_t kUserBufferSize = 256;
   std::aligned_storage<kUserBufferSize>::type userBuffer_;

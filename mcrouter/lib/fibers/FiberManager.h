@@ -15,11 +15,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include <folly/AtomicLinkedList.h>
 #include <folly/Likely.h>
-#include <folly/futures/Try.h>
 #include <folly/IntrusiveList.h>
+#include <folly/futures/Try.h>
 
-#include "mcrouter/lib/fbi/cpp/AtomicLinkedList.h"
 #include "mcrouter/lib/fibers/BoostContextCompatibility.h"
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/fibers/TimeoutController.h"
@@ -209,7 +209,7 @@ class FiberManager {
     template <typename F>
     explicit RemoteTask(F&& f) : func(std::move(f)) {}
     std::function<void()> func;
-    AtomicLinkedListHook<RemoteTask> nextRemoteTask;
+    folly::AtomicLinkedListHook<RemoteTask> nextRemoteTask;
   };
 
   typedef folly::IntrusiveList<Fiber, &Fiber::listHook_> FiberTailQueue;
@@ -293,9 +293,10 @@ class FiberManager {
 
   ExceptionCallback exceptionCallback_; /**< task exception callback */
 
-  AtomicLinkedList<Fiber, &Fiber::nextRemoteReady_> remoteReadyQueue_;
+  folly::AtomicLinkedList<Fiber, &Fiber::nextRemoteReady_> remoteReadyQueue_;
 
-  AtomicLinkedList<RemoteTask, &RemoteTask::nextRemoteTask> remoteTaskQueue_;
+  folly::AtomicLinkedList<RemoteTask, &RemoteTask::nextRemoteTask>
+      remoteTaskQueue_;
 
   std::shared_ptr<TimeoutController> timeoutManager_;
 
