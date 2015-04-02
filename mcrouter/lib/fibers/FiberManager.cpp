@@ -15,9 +15,10 @@
 #include <cassert>
 #include <stdexcept>
 
+#include <glog/logging.h>
+
 #include "mcrouter/lib/fibers/Fiber.h"
 #include "mcrouter/lib/fibers/LoopController.h"
-#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook { namespace memcache {
 
@@ -31,16 +32,13 @@ FiberManager::FiberManager(std::unique_ptr<LoopController> loopController,
         try {
           std::rethrow_exception(e);
         } catch (const std::exception& e) {
-          failure::log("FiberManager", failure::Category::kOther,
-                       "Exception {} with message '{}' was thrown in "
-                       "FiberManager with context '{}'",
-                       typeid(e).name(), e.what(), context);
+          LOG(DFATAL) << "Exception " << typeid(e).name()
+                      << " with message '" << e.what() << "' was thrown in "
+                      << "FiberManager with context '" << context << "'";
           throw;
         } catch (...) {
-          failure::log("FiberManager", failure::Category::kOther,
-                       "Unknown exception was thrown in FiberManager with "
-                       "context '{}'",
-                       context);
+          LOG(DFATAL) << "Unknown exception was thrown in FiberManager with "
+                      << "context '" << context << "'";
           throw;
         }
       }),
