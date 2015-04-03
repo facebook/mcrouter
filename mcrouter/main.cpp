@@ -110,7 +110,7 @@ static void print_usage_and_die(char* progname, int errorCode) {
   print_usage("-d, --debug", "increase debug level (may repeat)");
   print_usage("-h, --help", "help");
   print_usage("-V, --version", "version");
-  print_usage("-v, --verbose", "verbose");
+  print_usage("-v, --verbosity", "Set verbosity of VLOG");
   print_usage("    --validate-config", "Check config and exit immediately"
               " with good or error status");
 
@@ -178,7 +178,7 @@ static void parse_options(int argc,
   vector<option> long_options = {
     { "debug",                       0, nullptr, 'd'},
     { "debug-level",                 1, nullptr, 'D'},
-    { "verbose",                     0, nullptr, 'v'},
+    { "verbosity",                   1, nullptr, 'v'},
     { "help",                        0, nullptr, 'h'},
     { "version",                     0, nullptr, 'V'},
     { "validate-config",             0, nullptr,  0 },
@@ -190,7 +190,7 @@ static void parse_options(int argc,
     { "retry-timeout",               1, nullptr,  0 },
   };
 
-  string optstring = "dD:vhV";
+  string optstring = "dD:v:hV";
 
   // Append auto-generated options to long_options and optstring
   auto option_data = McrouterOptions::getOptionData();
@@ -227,7 +227,7 @@ static void parse_options(int argc,
     case 'D':
       debug_level = strtol(optarg, nullptr, 10);
     case 'v':
-      debug_level = std::max(debug_level, FBI_LOG_INFO);
+      FLAGS_v = folly::to<int>(optarg);
       break;
 
     case 'h':
