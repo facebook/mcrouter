@@ -164,11 +164,6 @@ class McClientRequestContextQueue {
   void failAllPending(mc_res_t error);
 
   /**
-   * Should be called whenever the network communication channel gets closed.
-   */
-  void clearStoredInitializers();
-
-  /**
    * Return an id of the first pending request.
    *
    * Note: it's the caller responsibility to ensure that there's at least one
@@ -258,6 +253,11 @@ class McClientRequestContextQueue {
    * we should expect a reply from network.
    */
   void removePendingReply(McClientRequestContextBase& req);
+
+  /**
+   * Should be called whenever the network communication channel gets closed.
+   */
+  void clearStoredInitializers();
 };
 
 }}  // facebook::memcache

@@ -373,6 +373,9 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     statusCallbacks_.onUp();
   }
 
+  assert(getInflightRequestCount() == 0);
+  assert(queue_.getParserInitializer() == nullptr);
+
   scheduleNextWriterLoop();
   parser_ = folly::make_unique<ParserT>(*this, 0, kReadBufferSizeMin,
                                         kReadBufferSizeMax,
@@ -440,9 +443,6 @@ void AsyncMcClientImpl::processShutdown() {
         connectionState_ = ConnectionState::DOWN;
         // We don't need it anymore, so let it perform complete cleanup.
         socket_.reset();
-        // Cleanup parser initializers for timedout requests, since we're not
-        // not going to use them.
-        queue_.clearStoredInitializers();
 
         // In case we still have some pending requests, then try reconnecting
         // immediately.

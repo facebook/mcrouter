@@ -33,6 +33,7 @@ size_t McClientRequestContextQueue::getInflightRequestCount() const noexcept {
 }
 
 void McClientRequestContextQueue::failAllSent(mc_res_t error) {
+  clearStoredInitializers();
   failQueue(pendingReplyQueue_, error);
 }
 
