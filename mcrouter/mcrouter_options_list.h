@@ -122,10 +122,11 @@ mcrouter_option_integer(
 
 #undef DEFAULT_STACK_SIZE
 
-mcrouter_option_toggle(
-  fibers_debug_record_stack_size, false,
-  "fibers-debug-record-stack-size", no_short,
-  "Record exact amount of fibers stacks used (expensive: debug only!)")
+mcrouter_option_integer(
+  size_t, fibers_record_stack_size_every, 100000,
+  "fibers-record-stack-size-every", no_short,
+  "Record exact amount of fibers stacks used for every N fiber. "
+  "0 disables stack recording.")
 
 mcrouter_option_string(
   runtime_vars_file,

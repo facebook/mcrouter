@@ -76,7 +76,7 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
     const McrouterOptions& opts) {
   folly::fibers::FiberManager::Options fmOpts;
   fmOpts.stackSize = opts.fibers_stack_size;
-  fmOpts.debugRecordStackUsed = opts.fibers_debug_record_stack_size;
+  fmOpts.recordStackEvery = opts.fibers_record_stack_size_every;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
   return fmOpts;
 }
