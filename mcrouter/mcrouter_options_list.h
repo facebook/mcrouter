@@ -111,7 +111,7 @@ mcrouter_option_integer(
    increase RSS, since unused memory is pretty much free. */
 #define DEFAULT_STACK_SIZE (16 * 16 * 1024)
 #else
-#define DEFAULT_STACK_SIZE (16 * 1024)
+#define DEFAULT_STACK_SIZE (24 * 1024)
 #endif
 
 mcrouter_option_integer(
