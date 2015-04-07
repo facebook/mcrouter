@@ -1,4 +1,4 @@
-SUBDIRS = . config fbi fibers network test
+SUBDIRS = . config fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -89,33 +89,6 @@ libmcrouter_a_SOURCES = \
   fbi/util.h \
   fbi/waitable_count.c \
   fbi/waitable_count.h \
-  fibers/AddTasks-inl.h \
-  fibers/AddTasks.h \
-  fibers/Baton.cpp \
-  fibers/Baton.h \
-  fibers/Baton-inl.h \
-  fibers/BoostContextCompatibility.h \
-  fibers/EventBaseLoopController-inl.h \
-  fibers/EventBaseLoopController.h \
-  fibers/Fiber-inl.h \
-  fibers/Fiber.cpp \
-  fibers/Fiber.h \
-  fibers/FiberManager-inl.h \
-  fibers/FiberManager.cpp \
-  fibers/FiberManager.h \
-  fibers/FiberPromise-inl.h \
-  fibers/FiberPromise.h \
-  fibers/ForEach.h \
-  fibers/ForEach-inl.h \
-  fibers/GenericBaton.h \
-  fibers/GuardPageAllocator-inl.h \
-  fibers/GuardPageAllocator.h \
-  fibers/LoopController.h \
-  fibers/TimeoutController.cpp \
-  fibers/TimeoutController.h \
-  fibers/SimpleLoopController.h \
-  fibers/WhenN-inl.h \
-  fibers/WhenN.h \
   mc/_protocol.h \
   mc/ascii_client.c \
   mc/ascii_client.h \
