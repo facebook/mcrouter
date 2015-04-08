@@ -104,13 +104,13 @@ public:
     return recording_;
   }
 
-  void recordDestination(const ProxyClientCommon& destination) {
+  void recordDestination(const ProxyClientCommon& destination) const {
     if (recording_ && recordingState_->clientCallback) {
       recordingState_->clientCallback(destination);
     }
   }
 
-  void recordShardSplitter(const ShardSplitter& splitter) {
+  void recordShardSplitter(const ShardSplitter& splitter) const {
     if (recording_ && recordingState_->shardSplitCallback) {
       recordingState_->shardSplitCallback(splitter);
     }

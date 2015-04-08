@@ -35,8 +35,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf, class HashFunc>
 class ReliablePoolRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
-
   static std::string routeName() { return "reliable-pool"; }
 
   ReliablePoolRoute(std::vector<std::shared_ptr<RouteHandleIf>> destinations,
@@ -52,44 +50,44 @@ class ReliablePoolRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return destinations_;
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename GetLike<Operation>::Type = 0) const {
 
-    return failoverRoute_.route(req, Operation(), ctx);
+    return failoverRoute_.route(req, Operation());
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename UpdateLike<Operation>::Type = 0) const {
 
-    return failoverRoute_.route(req, Operation(), ctx);
+    return failoverRoute_.route(req, Operation());
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename DeleteLike<Operation>::Type = 0) const {
 
-    return allSyncRoute_.route(req, Operation(), ctx);
+    return allSyncRoute_.route(req, Operation());
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     OtherThanT(Operation, GetLike<>, UpdateLike<>, DeleteLike<>) = 0) const {
 
     if (rhs_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation());
     }
-    return rhs_.front()->route(req, Operation(), ctx);
+    return rhs_.front()->route(req, Operation());
   }
 
  private:

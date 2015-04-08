@@ -32,13 +32,11 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class AllInitialRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
-
   static std::string routeName() { return "all-initial"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     std::vector<std::shared_ptr<RouteHandleIf>> children;
 
@@ -47,7 +45,7 @@ class AllInitialRoute {
     }
 
     if (asyncRoute_) {
-      auto asyncChildren = asyncRoute_->couldRouteTo(req, Operation(), ctx);
+      auto asyncChildren = asyncRoute_->couldRouteTo(req, Operation());
       children.insert(children.end(),
           asyncChildren.begin(), asyncChildren.end());
     }
@@ -93,19 +91,19 @@ class AllInitialRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     // no children at all
     if (!firstChild_) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation());
     }
 
     /* Process all children except first asynchronously */
     if (asyncRoute_) {
-      asyncRoute_->route(req, Operation(), ctx);
+      asyncRoute_->route(req, Operation());
     }
 
-    return firstChild_->route(req, Operation(), ctx);
+    return firstChild_->route(req, Operation());
   }
 
  private:

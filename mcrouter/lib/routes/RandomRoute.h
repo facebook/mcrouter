@@ -29,13 +29,11 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class RandomRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
-
   static std::string routeName() { return "random"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return children_;
   }
@@ -64,8 +62,8 @@ class RandomRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) {
-    return children_[gen_() % children_.size()]->route(req, Operation(), ctx);
+    const Request& req, Operation) {
+    return children_[gen_() % children_.size()]->route(req, Operation());
   }
 
  private:

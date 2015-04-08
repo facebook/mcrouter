@@ -19,15 +19,15 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class Operation, class Request>
 std::vector<McrouterRouteHandlePtr> BigValueRoute::couldRouteTo(
-  const Request& req, Operation, const ContextPtr& ctx) const {
+  const Request& req, Operation) const {
   return {ch_};
 }
 
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type BigValueRoute::route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename GetLike<Operation>::Type) const {
-  auto initialReply = ch_->route(req, Operation(), ctx);
+  auto initialReply = ch_->route(req, Operation());
   if (!initialReply.isHit() ||
       !(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE)) {
     return initialReply;
@@ -47,8 +47,8 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
   auto& target = *ch_;
   for (const auto& req_b : reqs) {
     fs.push_back(
-      [&target, &req_b, &ctx]() {
-        return target.route(req_b, ChunkGetOP(), ctx);
+      [&target, &req_b]() {
+        return target.route(req_b, ChunkGetOP());
       }
     );
   }
@@ -60,12 +60,12 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
 
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type BigValueRoute::route(
-  const Request& req, Operation, const ContextPtr& ctx,
+  const Request& req, Operation,
   typename UpdateLike<Operation>::Type) const {
 
   typedef typename ReplyType<Operation, Request>::type Reply;
   if (req.value().length() <= options_.threshold_) {
-    return ch_->route(req, Operation(), ctx);
+    return ch_->route(req, Operation());
   }
 
   auto reqs_info_pair = chunkUpdateRequests(req, Operation());
@@ -75,8 +75,8 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
   auto& target = *ch_;
   for (const auto& req_b : reqs_info_pair.first) {
     fs.push_back(
-      [&target, &req_b, &ctx]() {
-        return target.route(req_b, ChunkUpdateOP(), ctx);
+      [&target, &req_b]() {
+        return target.route(req_b, ChunkUpdateOP());
       }
     );
   }
@@ -90,7 +90,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     auto new_req = req.clone();
     new_req.setFlags(req.flags() | MC_MSG_FLAG_BIG_VALUE);
     new_req.setValue(reqs_info_pair.second.toStringType());
-    return ch_->route(std::move(new_req), Operation(), ctx);
+    return ch_->route(std::move(new_req), Operation());
   } else {
     return Reply(reducedReply->result());
   }
@@ -98,10 +98,10 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
 
 template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type BigValueRoute::route(
-  const Request& req, Operation, const ContextPtr& ctx,
+  const Request& req, Operation,
   OtherThanT(Operation, GetLike<>, UpdateLike<>)) const {
 
-  return ch_->route(req, Operation(), ctx);
+  return ch_->route(req, Operation());
 }
 
 template <class Operation, class Request>

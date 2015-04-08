@@ -24,8 +24,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 /* RouteHandle that can send to a different target based on McOperation id */
 class OperationSelectorRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   static std::string routeName() { return "operation-selector"; }
 
   OperationSelectorRoute(
@@ -40,7 +38,7 @@ class OperationSelectorRoute {
 
   template <int M, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, McOperation<M>, const ContextPtr& ctx) const {
+    const Request& req, McOperation<M>) const {
 
     if (operationPolicies_[M]) {
       return {operationPolicies_[M]};
@@ -53,12 +51,12 @@ class OperationSelectorRoute {
 
   template<int M, class Request>
   typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>, const ContextPtr& ctx) const {
+    const Request& req, McOperation<M>) const {
 
     if (operationPolicies_[M]) {
-      return operationPolicies_[M]->route(req, McOperation<M>(), ctx);
+      return operationPolicies_[M]->route(req, McOperation<M>());
     } else if (defaultPolicy_) {
-      return defaultPolicy_->route(req, McOperation<M>(), ctx);
+      return defaultPolicy_->route(req, McOperation<M>());
     }
 
     using Reply = typename ReplyType<McOperation<M>, Request>::type;

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -21,21 +22,19 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class DevNullRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   static std::string routeName() { return "devnull"; }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return {};
   }
 
   template <class Operation, class Request>
   static typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation, const ContextPtr& ctx) {
-
+  route(const Request& req, Operation) {
+    auto& ctx = fiber_local::getSharedCtx();
     stat_incr(ctx->proxy().stats, dev_null_requests_stat, 1);
     using Reply = typename ReplyType<Operation, Request>::type;
     return Reply(DefaultReply, Operation());

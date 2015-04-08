@@ -42,13 +42,11 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf, typename TimeProvider>
 class MigrateRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
-
   static std::string routeName() { return "migrate"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     auto mask = routeMask(req, Operation());
     std::vector<std::shared_ptr<RouteHandleIf>> ret;
@@ -104,24 +102,24 @@ class MigrateRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
     auto mask = routeMask(req, Operation());
 
     switch (mask) {
-      case kFromMask: return from_->route(req, Operation(), ctx);
-      case kToMask: return to_->route(req, Operation(), ctx);
+      case kFromMask: return from_->route(req, Operation());
+      case kToMask: return to_->route(req, Operation());
       default: {
         auto& from = from_;
         auto& to = to_;
         std::function<Reply()> fs[2] {
-          [&req, &from, &ctx]() {
-            return from->route(req, Operation(), ctx);
+          [&req, &from]() {
+            return from->route(req, Operation());
           },
-          [&req, &to, &ctx]() {
-            return to->route(req, Operation(), ctx);
+          [&req, &to]() {
+            return to->route(req, Operation());
           }
         };
 

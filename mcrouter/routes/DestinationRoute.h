@@ -23,6 +23,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
@@ -46,8 +47,6 @@ struct DestinationRequestCtx {
  */
 class DestinationRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   std::string routeName() const;
 
   /**
@@ -62,16 +61,17 @@ class DestinationRoute {
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
-
-    ctx->recordDestination(*client_);
+    const Request& req, Operation) const {
+    auto& ctx = fiber_local::getSharedCtx();
+    if (ctx) {
+      ctx->recordDestination(*client_);
+    }
     return {};
   }
 
   template <int Op>
-  ProxyMcReply route(
-    const ProxyMcRequest& req, McOperation<Op>, const ContextPtr& ctx) const {
-
+  ProxyMcReply route(const ProxyMcRequest& req, McOperation<Op>) const {
+    auto& ctx = fiber_local::getSharedCtx();
     if (!destination_->may_send()) {
       ProxyMcReply reply(TkoReply);
       reply.setDestination(client_);
