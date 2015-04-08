@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <folly/Format.h>
 #include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/Range.h>
@@ -321,6 +322,20 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   commands_.emplace("hostid",
     [] (const std::vector<folly::StringPiece>& args) {
       return folly::to<std::string>(globals::hostid());
+    }
+  );
+
+  commands_.emplace("verbosity",
+    [] (const std::vector<folly::StringPiece>& args) {
+      if (args.size() == 1) {
+        auto before = FLAGS_v;
+        FLAGS_v = folly::to<int>(args[0]);
+        return folly::sformat("{} -> {}", before, FLAGS_v);
+      } else if (args.empty()) {
+        return folly::to<std::string>(FLAGS_v);
+      }
+      throw std::runtime_error("expected at most 1 argument, got "
+            + folly::to<std::string>(args.size()));
     }
   );
 }
