@@ -13,6 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/ReliablePoolRoute.h"
 
 using namespace facebook::memcache;
@@ -22,6 +23,8 @@ using std::make_shared;
 using std::shared_ptr;
 using std::string;
 using std::vector;
+
+using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 static int counter = 0;
 class HashFunc {

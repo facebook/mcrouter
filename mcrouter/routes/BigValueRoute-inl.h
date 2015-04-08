@@ -15,73 +15,16 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
-template <class RouteHandleIf>
-BigValueRoute<RouteHandleIf>::ChunksInfo::ChunksInfo(
-    folly::StringPiece reply_value)
-  : infoVersion_(1),
-    valid_(true) {
-  // Verify that reply_value is of the form version-numchunks-randSuffix,
-  // where version, numchunks and randsuffix should be numeric
-  int version, chars_read;
-  valid_ &= (sscanf(reply_value.data(), "%d-%u-%u%n",
-        &version, &numChunks_, &randSuffix_, &chars_read) == 3);
-  valid_ &= (chars_read == reply_value.size());
-  valid_ &= (version == infoVersion_);
-}
-
-template <class RouteHandleIf>
-BigValueRoute<RouteHandleIf>::ChunksInfo::ChunksInfo(uint32_t num_chunks)
-  : infoVersion_(1),
-    numChunks_(num_chunks),
-    randSuffix_(rand()),
-    valid_(true) {}
-
-template <class RouteHandleIf>
-folly::IOBuf
-BigValueRoute<RouteHandleIf>::ChunksInfo::toStringType() const {
-  return folly::IOBuf(
-    folly::IOBuf::COPY_BUFFER,
-    folly::format("{}-{}-{}", infoVersion_, numChunks_, randSuffix_).str()
-  );
-}
-
-template <class RouteHandleIf>
-uint32_t BigValueRoute<RouteHandleIf>::ChunksInfo::numChunks() const {
-  return numChunks_;
-}
-
-template <class RouteHandleIf>
-uint32_t BigValueRoute<RouteHandleIf>::ChunksInfo::randSuffix() const {
-  return randSuffix_;
-}
-
-template <class RouteHandleIf>
-bool BigValueRoute<RouteHandleIf>::ChunksInfo::valid() const {
-  return valid_;
-}
-
-template <class RouteHandleIf>
 template <class Operation, class Request>
-std::vector<std::shared_ptr<RouteHandleIf>>
-BigValueRoute<RouteHandleIf>::couldRouteTo(
+std::vector<McrouterRouteHandlePtr> BigValueRoute::couldRouteTo(
   const Request& req, Operation, const ContextPtr& ctx) const {
   return {ch_};
 }
 
-template <class RouteHandleIf>
-BigValueRoute<RouteHandleIf>::BigValueRoute(std::shared_ptr<RouteHandleIf> ch,
-                                            BigValueRouteOptions options)
-    : ch_(std::move(ch)), options_(options) {
-
-  assert(ch_ != nullptr);
-}
-
-template <class RouteHandleIf>
 template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-BigValueRoute<RouteHandleIf>::route(
+typename ReplyType<Operation, Request>::type BigValueRoute::route(
     const Request& req, Operation, const ContextPtr& ctx,
     typename GetLike<Operation>::Type) const {
   auto initialReply = ch_->route(req, Operation(), ctx);
@@ -94,7 +37,7 @@ BigValueRoute<RouteHandleIf>::route(
   auto buf = initialReply.value().clone();
   ChunksInfo chunks_info(coalesceAndGetRange(buf));
   if (!chunks_info.valid()) {
-    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+    return Reply(DefaultReply, Operation());
   }
 
   auto reqs = chunkGetRequests(req, chunks_info, Operation());
@@ -115,10 +58,8 @@ BigValueRoute<RouteHandleIf>::route(
     replies.begin(), replies.end(), std::move(initialReply));
 }
 
-template <class RouteHandleIf>
 template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-BigValueRoute<RouteHandleIf>::route(
+typename ReplyType<Operation, Request>::type BigValueRoute::route(
   const Request& req, Operation, const ContextPtr& ctx,
   typename UpdateLike<Operation>::Type) const {
 
@@ -155,28 +96,24 @@ BigValueRoute<RouteHandleIf>::route(
   }
 }
 
-template <class RouteHandleIf>
 template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-BigValueRoute<RouteHandleIf>::route(
+typename ReplyType<Operation, Request>::type BigValueRoute::route(
   const Request& req, Operation, const ContextPtr& ctx,
   OtherThanT(Operation, GetLike<>, UpdateLike<>)) const {
 
   return ch_->route(req, Operation(), ctx);
 }
 
-template <class RouteHandleIf>
 template <class Operation, class Request>
-std::pair<std::vector<typename ChunkUpdateRequest<Request>::type>,
-  typename BigValueRoute<RouteHandleIf>::ChunksInfo>
-BigValueRoute<RouteHandleIf>::chunkUpdateRequests(const Request& req,
-                                                  Operation) const {
+std::pair<std::vector<Request>,
+  typename BigValueRoute::ChunksInfo>
+BigValueRoute::chunkUpdateRequests(const Request& req, Operation) const {
   int num_chunks =
     (req.value().length() + options_.threshold_ - 1) / options_.threshold_;
   ChunksInfo info(num_chunks);
 
   // Type for Request and ChunkUpdateRequest is same for now.
-  std::vector<typename ChunkUpdateRequest<Request>::type> big_set_reqs;
+  std::vector<Request> big_set_reqs;
   big_set_reqs.reserve(num_chunks);
 
   auto base_key = req.fullKey();
@@ -197,29 +134,26 @@ BigValueRoute<RouteHandleIf>::chunkUpdateRequests(const Request& req,
   return std::make_pair(std::move(big_set_reqs), info);
 }
 
-template <class RouteHandleIf>
 template<class Operation, class Request>
-std::vector<typename ChunkGetRequest<Request>::type>
-BigValueRoute<RouteHandleIf>::chunkGetRequests(const Request& req,
-                                               const ChunksInfo& info,
-                                               Operation) const {
+std::vector<Request>
+BigValueRoute::chunkGetRequests(const Request& req,
+                                const ChunksInfo& info,
+                                Operation) const {
   // Type for Request and ChunkGetRequest is same for now.
-  std::vector<typename ChunkGetRequest<Request>::type> big_get_reqs;
+  std::vector<Request> big_get_reqs;
   big_get_reqs.reserve(info.numChunks());
 
   auto base_key = req.fullKey();
   for (int i = 0; i < info.numChunks(); i++) {
     // override key with chunk keys
-    Request req_big(createChunkKey(base_key, i, info.randSuffix()));
-    big_get_reqs.push_back(std::move(req_big));
+    big_get_reqs.emplace_back(createChunkKey(base_key, i, info.randSuffix()));
   }
 
   return big_get_reqs;
 }
 
-template <class RouteHandleIf>
 template<typename InputIterator, class Reply>
-Reply BigValueRoute<RouteHandleIf>::mergeChunkGetReplies(
+Reply BigValueRoute::mergeChunkGetReplies(
   InputIterator begin,
   InputIterator end,
   Reply&& initial_reply) const {
@@ -240,16 +174,4 @@ Reply BigValueRoute<RouteHandleIf>::mergeChunkGetReplies(
   return std::move(initial_reply);
 }
 
-template <class RouteHandleIf>
-folly::IOBuf BigValueRoute<RouteHandleIf>::createChunkKey(
-    folly::StringPiece base_key,
-    uint32_t chunk_index,
-    uint64_t rand_suffix) const {
-
-  return folly::IOBuf(
-    folly::IOBuf::COPY_BUFFER,
-    folly::format("{}|#|{}:{}", base_key, chunk_index, rand_suffix).str()
-  );
-}
-
-}}  // facebook::memcache
+}}}  // facebook::memcache::mcrouter

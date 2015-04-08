@@ -18,12 +18,15 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/routes/MigrateRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/lib/test/TestRouteHandle.h"
 
 using namespace facebook::memcache;
 
 using std::make_shared;
 using std::string;
 using std::vector;
+
+using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(migrateRouteTest, migrate) {
   auto curr_time = time(nullptr);

@@ -16,6 +16,7 @@
 #include <folly/json.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RateLimitRoute.h"
 
 using namespace facebook::memcache;
@@ -24,6 +25,8 @@ using namespace facebook::memcache::mcrouter;
 using std::make_shared;
 using std::string;
 using std::vector;
+
+using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 
 /* These tests simply ensure that the various settings are read correctly.
    TokenBucket has its own tests */
@@ -44,26 +47,27 @@ void test(Data data, Operation,
      string("{\"") + type + "_rate\": 4.0, \"" + type + "_burst\": 3.0}" :
      string("{\"") + type + "_rate\": 2.0}"));
 
-  TestRouteHandle<RateLimitRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<RateLimitRoute> rh(
     normalRh,
     RateLimiter(json));
+  std::shared_ptr<ProxyRequestContext> ctx;
 
   if (burst) {
     usleep(1001000);
     /* Rate is 4/sec, but we can only have 3 at a time */
-    auto reply = rh.routeSimple(McRequest("key"), Operation());
+    auto reply = rh.route(ProxyMcRequest("key"), Operation(), ctx);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.routeSimple(McRequest("key"), Operation());
+    reply = rh.route(ProxyMcRequest("key"), Operation(), ctx);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.routeSimple(McRequest("key"), Operation());
+    reply = rh.route(ProxyMcRequest("key"), Operation(), ctx);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.routeSimple(McRequest("key"), Operation());
+    reply = rh.route(ProxyMcRequest("key"), Operation(), ctx);
     EXPECT_EQ(reply.result(), reject);
   } else {
     usleep(501000);
-    auto reply = rh.routeSimple(McRequest("key"), Operation());
+    auto reply = rh.route(ProxyMcRequest("key"), Operation(), ctx);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.routeSimple(McRequest("key"), Operation());
+    reply = rh.route(ProxyMcRequest("key"), Operation(), ctx);
     EXPECT_EQ(reply.result(), reject);
   }
 }

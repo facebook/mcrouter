@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RateLimiter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -23,22 +24,20 @@ namespace facebook { namespace memcache { namespace mcrouter {
  *
  * See comments in TokenBucket.h for algorithm details.
  */
-template <class RouteHandleIf>
 class RateLimitRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   static std::string routeName() { return "rate-limit"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {target_};
   }
 
-  RateLimitRoute(std::shared_ptr<RouteHandleIf> target,
-                 RateLimiter rl)
+  RateLimitRoute(McrouterRouteHandlePtr target, RateLimiter rl)
       : target_(std::move(target)),
         rl_(std::move(rl)) {
   }
@@ -55,7 +54,7 @@ class RateLimitRoute {
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> target_;
+  McrouterRouteHandlePtr target_;
   RateLimiter rl_;
 };
 

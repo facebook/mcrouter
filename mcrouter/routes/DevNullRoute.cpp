@@ -9,13 +9,10 @@
  */
 #include "DevNullRoute.h"
 
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeDevNullRoute(const char* name) {
-  return makeMcrouterRouteHandle<DevNullRoute>(name);
+  return std::make_shared<McrouterRouteHandle<DevNullRoute>>(name);
 }
 
 }}}

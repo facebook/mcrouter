@@ -12,10 +12,12 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/routes/FailoverWithExptimeRoute.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -23,24 +25,38 @@ using namespace facebook::memcache::mcrouter;
 using std::make_shared;
 using std::vector;
 
+using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
+
+namespace {
+
+std::shared_ptr<ProxyRequestContext> getContext() {
+  McrouterOptions opts = defaultTestOptions();
+  opts.config_str = "{ \"route\": \"NullRoute\" }";
+  auto router = McrouterInstance::init("test_failover_with_exptime", opts);
+  return ProxyRequestContext::createRecording(*router->getProxy(0), nullptr);
+}
+
+}  // anonymous namespace
+
 TEST(failoverWithExptimeRouteTest, success) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rh(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
   EXPECT_TRUE(toString(reply.value()) == "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
 }
@@ -50,19 +66,20 @@ TEST(failoverWithExptimeRouteTest, once) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rh(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
   EXPECT_TRUE(toString(reply.value()) == "b");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -74,19 +91,20 @@ TEST(failoverWithExptimeRouteTest, twice) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rh(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
   EXPECT_TRUE(toString(reply.value()) == "c");
 
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -99,19 +117,20 @@ TEST(failoverWithExptimeRouteTest, fail) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
   };
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rh(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
 
   /* Will return the last reply when ran out of targets */
   EXPECT_TRUE(toString(reply.value()) == "c");
@@ -142,6 +161,7 @@ void testFailoverGet(mc_res_t res) {
     make_shared<TestHandle>(GetRouteTestData(res, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
@@ -153,26 +173,26 @@ void testFailoverGet(mc_res_t res) {
 
   opSettings->gets = false;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rhNoFail(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rhNoFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
-  auto reply = rhNoFail.routeSimple(McRequest("0"),
-      McOperation<mc_op_get>());
+  auto reply = rhNoFail.route(ProxyMcRequest("0"),
+                              McOperation<mc_op_get>(), ctx);
   EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
 
   opSettings->gets = true;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rhFail(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rhFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
-  reply = rhFail.routeSimple(McRequest("0"), McOperation<mc_op_get>());
+  reply = rhFail.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
   EXPECT_EQ(toString(reply.value()), "b");
 }
 
@@ -181,6 +201,7 @@ void testFailoverUpdate(mc_res_t res) {
     make_shared<TestHandle>(UpdateRouteTestData(res)),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
@@ -192,15 +213,15 @@ void testFailoverUpdate(mc_res_t res) {
 
   opSettings->updates = false;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rhNoFail(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rhNoFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
   auto msg = createMcMsgRef("0", "a");
-  auto reply = rhNoFail.routeSimple(McRequest(std::move(msg)),
-      McOperation<mc_op_set>());
+  auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
+                              McOperation<mc_op_set>(), ctx);
   EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   // only normal handle sees the key
@@ -210,15 +231,15 @@ void testFailoverUpdate(mc_res_t res) {
 
   opSettings->updates = true;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rhFail(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rhFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
   msg = createMcMsgRef("0", "a");
-  reply = rhFail.routeSimple(McRequest(std::move(msg)),
-      McOperation<mc_op_set>());
+  reply = rhFail.route(ProxyMcRequest(std::move(msg)),
+                       McOperation<mc_op_set>(), ctx);
   EXPECT_EQ(toString(reply.value()), "a");
   EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
   EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
@@ -229,6 +250,7 @@ void testFailoverDelete(mc_res_t res) {
     make_shared<TestHandle>(DeleteRouteTestData(res)),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted)),
@@ -240,15 +262,15 @@ void testFailoverDelete(mc_res_t res) {
 
   opSettings->deletes = false;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rhNoFail(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rhNoFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
   auto msg = createMcMsgRef("0");
-  auto reply = rhNoFail.routeSimple(McRequest(std::move(msg)),
-      McOperation<mc_op_delete>());
+  auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
+                              McOperation<mc_op_delete>(), ctx);
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   // only normal handle sees the key
   EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
@@ -257,15 +279,15 @@ void testFailoverDelete(mc_res_t res) {
 
   opSettings->deletes = true;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rhFail(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rhFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
   msg = createMcMsgRef("0");
-  reply = rhFail.routeSimple(McRequest(std::move(msg)),
-      McOperation<mc_op_delete>());
+  reply = rhFail.route(ProxyMcRequest(std::move(msg)),
+                       McOperation<mc_op_delete>(), ctx);
   EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
   EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
 }
@@ -293,6 +315,7 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_connect_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
+  auto ctx = getContext();
 
   vector<std::shared_ptr<TestHandle>> failoverHandles{
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
@@ -301,15 +324,15 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
 
   FailoverWithExptimeSettings settings;
 
-  TestRouteHandle<FailoverWithExptimeRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<FailoverWithExptimeRoute> rh(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
     settings);
 
   auto msg = createMcMsgRef("0", "1");
-  auto reply = rh.routeSimple(McRequest(std::move(msg)),
-      McOperation<mc_op_incr>());
+  auto reply = rh.route(ProxyMcRequest(std::move(msg)),
+                        McOperation<mc_op_incr>(), ctx);
   EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   // only normal handle sees the key
   EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});

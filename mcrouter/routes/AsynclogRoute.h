@@ -14,14 +14,12 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/route.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -29,29 +27,27 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Async logs a failed request. It assumes the required data is available in
  * the reply.
  */
-template <class RouteHandleIf>
 class AsynclogRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   std::string routeName() const { return "asynclog:" + asynclogName_; }
 
-  AsynclogRoute(std::shared_ptr<RouteHandleIf> rh,
-                std::string asynclogName)
+  AsynclogRoute(McrouterRouteHandlePtr rh, std::string asynclogName)
       : rh_(std::move(rh)),
         asynclogName_(std::move(asynclogName)) {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {rh_};
   }
 
-  template <class Operation>
-  ProxyMcReply route(
-    const ProxyMcRequest& req, Operation, const ContextPtr& ctx,
+  template <class Operation, class Request>
+  typename ReplyType<Operation, Request>::type route(
+    const Request& req, Operation, const ContextPtr& ctx,
     typename DeleteLike<Operation>::Type = 0) const {
 
     auto reply = rh_->route(req, Operation(), ctx);
@@ -84,18 +80,19 @@ class AsynclogRoute {
       b.wait();
       stat_incr(proxy->stats, asynclog_requests_stat, 1);
     }
-    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+    using Reply = typename ReplyType<Operation, Request>::type;
+    return Reply(DefaultReply, Operation());
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation, const ContextPtr& ctx,
+    OtherThanT(Operation, DeleteLike<>) = 0) const {
 
     return rh_->route(req, Operation(), ctx);
   }
-
  private:
-  const std::shared_ptr<RouteHandleIf> rh_;
+  const McrouterRouteHandlePtr rh_;
   const std::string asynclogName_;
 };
 

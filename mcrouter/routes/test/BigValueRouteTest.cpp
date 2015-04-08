@@ -12,20 +12,25 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/ProxyMcReply.h"
+#include "mcrouter/ProxyMcRequest.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/BigValueRoute.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 using std::string;
 using std::vector;
 
+using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
+
 static const int version = 1;
 static const int threshold = 128;
-static const BigValueRouteOptions options(threshold);
+static const BigValueRouteOptions opts(threshold);
 
 TEST(BigValueRouteTest, smallvalue) {
   // for small values, this route handle simply passes it to child route handle
@@ -36,17 +41,17 @@ TEST(BigValueRouteTest, smallvalue) {
   };
   auto route_handles = get_route_handles(test_handles);
   TestFiberManager fm;
+  std::shared_ptr<ProxyRequestContext> ctx;
 
   fm.runAll({
     [&]() {
-      TestRouteHandle<BigValueRoute<TestRouteHandleIf>> rh(
-        route_handles[0], options);
+      McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
       string key = "key_get";
       auto msg = createMcMsgRef(key, "value");
       msg->op = mc_op_get;
-      McRequest req_get(std::move(msg));
-      auto f_get = rh.routeSimple(req_get, McOperation<mc_op_get>());
+      ProxyMcRequest req_get(std::move(msg));
+      auto f_get = rh.route(req_get, McOperation<mc_op_get>(), ctx);
 
       EXPECT_TRUE(toString(f_get.value()) == "a");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
@@ -55,8 +60,8 @@ TEST(BigValueRouteTest, smallvalue) {
       string key_set = "key_set";
       auto msg_set = createMcMsgRef(key_set, "value");
       msg_set->op = mc_op_set;
-      McRequest req_set(std::move(msg_set));
-      auto f_set = rh.routeSimple(req_set, McOperation<mc_op_set>());
+      ProxyMcRequest req_set(std::move(msg_set));
+      auto f_set = rh.route(req_set, McOperation<mc_op_set>(), ctx);
       EXPECT_TRUE(toString(f_set.value()) == "value");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_set"});
     }
@@ -85,18 +90,18 @@ TEST(BigValueRouteTest, bigvalue) {
   auto route_handles = get_route_handles(test_handles);
 
   TestFiberManager fm;
+  std::shared_ptr<ProxyRequestContext> ctx;
 
   fm.runAll({
     [&]() {
       { // Test Get Like path with init_reply in corect format
-        TestRouteHandle<BigValueRoute<TestRouteHandleIf>> rh(
-          route_handles[0], options);
+        McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
         auto msg = createMcMsgRef("key_get");
         msg->op = mc_op_get;
-        McRequest req_get(std::move(msg));
+        ProxyMcRequest req_get(std::move(msg));
 
-        auto f_get = rh.routeSimple(req_get, McOperation<mc_op_get>());
+        auto f_get = rh.route(req_get, McOperation<mc_op_get>(), ctx);
         auto keys_get = test_handles[0]->saw_keys;
         EXPECT_TRUE(keys_get.size() == num_chunks + 1);
         // first get the result for original key
@@ -118,14 +123,13 @@ TEST(BigValueRouteTest, bigvalue) {
       }
 
       { // Test Get Like path with init_reply_error
-        TestRouteHandle<BigValueRoute<TestRouteHandleIf>> rh(
-          route_handles[1], options);
+        McrouterRouteHandle<BigValueRoute> rh(route_handles[1], opts);
 
         auto msg = createMcMsgRef("key_get");
         msg->op = mc_op_get;
-        McRequest req_get(std::move(msg));
+        ProxyMcRequest req_get(std::move(msg));
 
-        auto f_get = rh.routeSimple(req_get, McOperation<mc_op_get>());
+        auto f_get = rh.route(req_get, McOperation<mc_op_get>(), ctx);
         auto keys_get = test_handles[1]->saw_keys;
         EXPECT_TRUE(keys_get.size() == 1);
         // first get the result for original key, then return mc_res_notfound
@@ -135,8 +139,7 @@ TEST(BigValueRouteTest, bigvalue) {
       }
 
       { // Test Update Like path with mc_op_set op
-        TestRouteHandle<BigValueRoute<TestRouteHandleIf>> rh(
-          route_handles[2], options);
+        McrouterRouteHandle<BigValueRoute> rh(route_handles[2], opts);
 
         std::string big_value  = folly::to<std::string>(
           std::string(threshold*(num_chunks/2), 't'),
@@ -145,9 +148,9 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string chunk_type_2 = std::string(threshold, 's');
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_set;
-        McRequest req_set(std::move(msg_set));
+        ProxyMcRequest req_set(std::move(msg_set));
 
-        auto f_set = rh.routeSimple(req_set, McOperation<mc_op_set>());
+        auto f_set = rh.route(req_set, McOperation<mc_op_set>(), ctx);
         auto keys_set = test_handles[2]->saw_keys;
         auto values_set = test_handles[2]->sawValues;
         EXPECT_TRUE(keys_set.size() == num_chunks + 1);
@@ -182,17 +185,16 @@ TEST(BigValueRouteTest, bigvalue) {
       }
 
       { // Test Update Like path with mc_op_lease_set op
-        TestRouteHandle<BigValueRoute<TestRouteHandleIf>> rh(
-          route_handles[3], options);
+        McrouterRouteHandle<BigValueRoute> rh(route_handles[3], opts);
 
         std::string big_value  = folly::to<std::string>(
           std::string(threshold*(num_chunks/2), 't'),
           std::string(threshold*(num_chunks/2), 's'));
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_lease_set;
-        McRequest req_set(std::move(msg_set));
+        ProxyMcRequest req_set(std::move(msg_set));
 
-        auto f_set = rh.routeSimple(req_set, McOperation<mc_op_lease_set>());
+        auto f_set = rh.route(req_set, McOperation<mc_op_lease_set>(), ctx);
         auto keys_set = test_handles[3]->saw_keys;
         auto operations_set = test_handles[3]->sawOperations;
         EXPECT_TRUE(keys_set.size() == num_chunks + 1);

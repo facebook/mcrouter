@@ -52,18 +52,12 @@ static std::shared_ptr<McrouterRouteHandleIf>
 getRoute(const folly::dynamic& d) {
   McrouterOptions opts = defaultTestOptions();
   opts.config_file = kMemcacheConfig;
-  folly::EventBase eventBase;
   auto router = McrouterInstance::init("test_get_route", opts);
-  auto proxy = folly::make_unique<proxy_t>(router, &eventBase, opts);
+  auto proxy = router->getProxy(0);
   PoolFactory pf(folly::dynamic::object(), router->configApi(), opts);
-  McRouteHandleProvider provider(proxy.get(), *proxy->destinationMap, pf);
+  McRouteHandleProvider provider(proxy, *proxy->destinationMap, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
-  auto res = factory.create(d);
-
-  // should be disposed before event_base
-  proxy.reset();
-
-  return res;
+  return factory.create(d);
 }
 
 TEST(McRouteHandleProviderTest, sanity) {

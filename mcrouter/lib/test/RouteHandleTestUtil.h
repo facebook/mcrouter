@@ -18,17 +18,13 @@
 #include <folly/experimental/fibers/SimpleLoopController.h>
 #include <folly/experimental/fibers/WhenN.h>
 
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/OperationTraits.h"
-#include "mcrouter/lib/test/TestRouteHandle.h"
 
 namespace facebook { namespace memcache {
-
-template <class RouteHandleIf>
-struct RecordingRoute;
-
-typedef TestRouteHandle<RecordingRoute<TestRouteHandleIf>> RecordingRouteHandle;
 
 struct GetRouteTestData {
   mc_res_t result_;
@@ -67,8 +63,12 @@ struct DeleteRouteTestData {
   }
 };
 
-struct TestHandle {
-  std::shared_ptr<RecordingRouteHandle> rh;
+template <class RouteHandleIf>
+struct RecordingRoute;
+
+template <class RouteHandleIf>
+struct TestHandleImpl {
+  std::shared_ptr<RouteHandleIf> rh;
 
   std::vector<std::string> saw_keys;
 
@@ -84,34 +84,36 @@ struct TestHandle {
 
   std::vector<folly::fibers::Promise<void>> promises_;
 
-  explicit TestHandle(GetRouteTestData td)
-      : rh(std::make_shared<RecordingRouteHandle>(
+  explicit TestHandleImpl(GetRouteTestData td)
+      : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
             td, UpdateRouteTestData(), DeleteRouteTestData(), this)
         ),
         isTko(false),
         isPaused(false) {
   }
 
-  explicit TestHandle(UpdateRouteTestData td)
-      : rh(std::make_shared<RecordingRouteHandle>(
+  explicit TestHandleImpl(UpdateRouteTestData td)
+      : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
             GetRouteTestData(), td, DeleteRouteTestData(), this)
         ),
         isTko(false),
         isPaused(false) {
   }
 
-  explicit TestHandle(DeleteRouteTestData td)
-      : rh(std::make_shared<RecordingRouteHandle>(
+  explicit TestHandleImpl(DeleteRouteTestData td)
+      : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
             GetRouteTestData(), UpdateRouteTestData(), td, this)
         ),
         isTko(false),
         isPaused(false) {
   }
 
-  TestHandle(GetRouteTestData g_td,
-             UpdateRouteTestData u_td,
-             DeleteRouteTestData d_td)
-      : rh(std::make_shared<RecordingRouteHandle>(g_td, u_td, d_td, this)),
+  TestHandleImpl(GetRouteTestData g_td,
+                 UpdateRouteTestData u_td,
+                 DeleteRouteTestData d_td)
+      : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
+            g_td, u_td, d_td, this)
+        ),
         isTko(false),
         isPaused(false) {
   }
@@ -162,20 +164,22 @@ struct RecordingRoute {
   GetRouteTestData dataGet_;
   UpdateRouteTestData dataUpdate_;
   DeleteRouteTestData dataDelete_;
-  TestHandle* h_;
+  TestHandleImpl<RouteHandleIf>* h_;
 
   RecordingRoute(GetRouteTestData g_td,
                  UpdateRouteTestData u_td,
                  DeleteRouteTestData d_td,
-                 TestHandle* h)
+                 TestHandleImpl<RouteHandleIf>* h)
       : dataGet_(g_td), dataUpdate_(u_td), dataDelete_(d_td), h_(h) {}
 
   template <int M, class Request>
   typename ReplyType<McOperation<M>, Request>::type route(
     const Request& req, McOperation<M>, const ContextPtr& ctx) {
 
+    using Reply = typename ReplyType<McOperation<M>, Request>::type;
+
     if (h_->isTko) {
-      return McReply(TkoReply);
+      return Reply(TkoReply);
     }
 
     if (h_->isPaused) {
@@ -191,7 +195,7 @@ struct RecordingRoute {
     if (GetLike<McOperation<M>>::value) {
       auto msg = createMcMsgRef(req.fullKey(), dataGet_.value_);
       msg->flags = dataGet_.flags_;
-      return McReply(dataGet_.result_, std::move(msg));
+      return Reply(dataGet_.result_, std::move(msg));
     }
     if (UpdateLike<McOperation<M>>::value) {
       auto val = req.value().clone();
@@ -199,20 +203,21 @@ struct RecordingRoute {
       h_->sawValues.push_back(sp_value.str());
       auto msg = createMcMsgRef(req.fullKey(), sp_value);
       msg->flags = dataUpdate_.flags_;
-      return McReply(dataUpdate_.result_, std::move(msg));
+      return Reply(dataUpdate_.result_, std::move(msg));
     }
     if (DeleteLike<McOperation<M>>::value) {
       auto msg = createMcMsgRef(req.fullKey());
-      return McReply(dataDelete_.result_, std::move(msg));
+      return Reply(dataDelete_.result_, std::move(msg));
     }
-    return McReply(DefaultReply, McOperation<M>());
+    return Reply(DefaultReply, McOperation<M>());
   }
 };
 
-inline std::vector<std::shared_ptr<TestRouteHandleIf>> get_route_handles(
-  const std::vector<std::shared_ptr<TestHandle>>& hs) {
+template <class RouteHandleIf>
+inline std::vector<std::shared_ptr<RouteHandleIf>> get_route_handles(
+  const std::vector<std::shared_ptr<TestHandleImpl<RouteHandleIf>>>& hs) {
 
-  std::vector<std::shared_ptr<TestRouteHandleIf>> r;
+  std::vector<std::shared_ptr<RouteHandleIf>> r;
   for (auto& h : hs) {
     r.push_back(h->rh);
   }

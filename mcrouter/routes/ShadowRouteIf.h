@@ -18,11 +18,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class McrouterRouteHandleIf;
 class ShadowSettings;
 
-template <class RouteHandleIf>
-using ShadowData = std::vector<std::pair<
-          std::shared_ptr<RouteHandleIf>,
+using McrouterShadowData = std::vector<std::pair<
+          std::shared_ptr<McrouterRouteHandleIf>,
           std::shared_ptr<ShadowSettings>>>;
-
-using McrouterShadowData = ShadowData<McrouterRouteHandleIf>;
 
 }}}  // facebook::memcache::mcrouter

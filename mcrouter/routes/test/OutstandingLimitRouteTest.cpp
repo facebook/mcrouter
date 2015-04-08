@@ -14,24 +14,42 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
-std::string makeKey(size_t id) {
-  return folly::format("test-key:{}", id).str();
+using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
+
+namespace {
+
+std::string makeKey(uint64_t id) {
+  return folly::sformat("test-key:{}", id);
 }
 
+std::shared_ptr<ProxyRequestContext> getContext(uint64_t senderId) {
+  McrouterOptions opts = defaultTestOptions();
+  opts.config_str = "{ \"route\": \"NullRoute\" }";
+  auto router = McrouterInstance::init("test_oustanding_limit", opts);
+  auto ctx = ProxyRequestContext::createRecording(*router->getProxy(0),
+                                                  nullptr);
+  ctx->setSenderIdForTest(senderId);
+  return ctx;
+}
+
+}  // anonymous namespace
+
 void sendRequest(folly::fibers::FiberManager& fm,
-                 TestRouteHandleIf& rh,
+                 McrouterRouteHandleIf& rh,
                  size_t id,
-                 size_t senderId,
+                 uint64_t senderId,
                  std::vector<std::string>& replyOrder) {
-  fm.addTask([&rh, id, senderId, &replyOrder]() {
-      McRequest request(makeKey(id));
-      auto context = std::make_shared<TestContext>();
-      context->setSenderId(senderId);
+  auto context = getContext(senderId);
+
+  fm.addTask([&rh, id, context, &replyOrder]() {
+      ProxyMcRequest request(makeKey(id));
 
       rh.route(request, McOperation<mc_op_get>(), context);
       replyOrder.push_back(makeKey(id));
@@ -42,7 +60,7 @@ TEST(oustandingLimitRouteTest, basic) {
   auto normalHandle = std::make_shared<TestHandle>(
     GetRouteTestData(mc_res_found, "a"));
 
-  TestRouteHandle<OutstandingLimitRoute<TestRouteHandleIf>> rh(
+  McrouterRouteHandle<OutstandingLimitRoute> rh(
     normalHandle->rh,
     3);
 

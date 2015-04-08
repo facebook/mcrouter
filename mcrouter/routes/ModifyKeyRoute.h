@@ -25,6 +25,7 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/RoutingPrefix.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -43,43 +44,17 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * "foo" => "/a/b/foo"
  * "/b/c/o" => "/a/b/fooo"
  */
-template <class RouteHandleIf>
 class ModifyKeyRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   static std::string routeName() { return "modify-key"; }
 
-  ModifyKeyRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                 const folly::dynamic& json) {
-    auto jtarget = json.get_ptr("target");
-    checkLogic(jtarget, "ModifyKeyRoute: no target");
-    target_ = factory.create(*jtarget);
-
-    if (auto jroutingPrefix = json.get_ptr("set_routing_prefix")) {
-      auto rp = jroutingPrefix->stringPiece();
-      if (rp.empty()) {
-        routingPrefix_ = "";
-      } else {
-        try {
-          routingPrefix_ = RoutingPrefix(rp).str();
-        } catch (const std::exception& e) {
-          throw std::logic_error("ModifyKeyRoute: set_routing_prefix: " +
-                                 std::string(e.what()));
-        }
-      }
-    }
-    if (auto jkeyPrefix = json.get_ptr("ensure_key_prefix")) {
-      keyPrefix_ = jkeyPrefix->stringPiece().str();
-      auto err = mc_client_req_key_check(to<nstring_t>(keyPrefix_));
-      checkLogic(keyPrefix_.empty() || err == mc_req_err_valid,
-                 "ModifyKeyRoute: invalid key prefix '{}', {}", keyPrefix_,
-                 mc_req_err_to_string(err));
-    }
-  }
+  ModifyKeyRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
+                 const folly::dynamic& json);
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>>
+  std::vector<McrouterRouteHandlePtr>
   couldRouteTo(const Request& req, Operation, const ContextPtr& ctx) const {
     return { target_ };
   }
@@ -102,7 +77,7 @@ class ModifyKeyRoute {
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> target_;
+  McrouterRouteHandlePtr target_;
   folly::Optional<std::string> routingPrefix_;
   std::string keyPrefix_;
 

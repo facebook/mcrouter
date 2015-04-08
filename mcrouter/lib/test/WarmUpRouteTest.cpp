@@ -17,12 +17,15 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/routes/WarmUpRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/lib/test/TestRouteHandle.h"
 
 using namespace facebook::memcache;
 
 using std::make_shared;
 using std::string;
 using std::vector;
+
+using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(warmUpRouteTest, warmUp) {
   vector<std::shared_ptr<TestHandle>> test_handles{

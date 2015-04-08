@@ -14,7 +14,9 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 
@@ -24,6 +26,19 @@ using namespace facebook::memcache::mcrouter;
 using std::make_shared;
 using std::string;
 using std::vector;
+
+using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
+
+namespace {
+
+std::shared_ptr<ProxyRequestContext> getContext() {
+  McrouterOptions opts = defaultTestOptions();
+  opts.config_str = "{ \"route\": \"NullRoute\" }";
+  auto router = McrouterInstance::init("test_shadow", opts);
+  return ProxyRequestContext::createRecording(*router->getProxy(0), nullptr);
+}
+
+}  // anonymous namespace
 
 TEST(shadowRouteTest, defaultPolicy) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
@@ -45,22 +60,23 @@ TEST(shadowRouteTest, defaultPolicy) {
   };
 
   auto shadowRhs = get_route_handles(shadowHandles);
-  ShadowData<TestRouteHandleIf> shadowData = {
+  McrouterShadowData shadowData = {
     {std::move(shadowRhs[0]), std::move(settings[0])},
     {std::move(shadowRhs[1]), std::move(settings[1])},
   };
 
-  TestRouteHandle<ShadowRoute<TestRouteHandleIf, DefaultShadowPolicy>> rh(
+  McrouterRouteHandle<ShadowRoute<DefaultShadowPolicy>> rh(
     normalRh,
     std::move(shadowData),
     0,
     DefaultShadowPolicy());
 
+  auto ctx = getContext();
   fm.runAll(
     {
       [&] () {
-        auto reply = rh.routeSimple(McRequest("key"),
-                                    McOperation<mc_op_get>());
+        auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>(),
+                              ctx);
 
         EXPECT_TRUE(reply.result() == mc_res_found);
         EXPECT_TRUE(toString(reply.value()) == "a");
@@ -75,8 +91,8 @@ TEST(shadowRouteTest, defaultPolicy) {
   fm.runAll(
     {
       [&] () {
-        auto reply = rh.routeSimple(McRequest("key"),
-                                    McOperation<mc_op_get>());
+        auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>(),
+                              ctx);
 
         EXPECT_TRUE(reply.result() == mc_res_found);
         EXPECT_TRUE(toString(reply.value()) == "a");

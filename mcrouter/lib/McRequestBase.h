@@ -68,6 +68,13 @@ class McRequestBase {
   }
 
   /**
+   * @return true if "|#|" is present
+   */
+  bool hasHashStop() const {
+    return keys_.routingKey.size() != keys_.keyWithoutRoute.size();
+  }
+
+  /**
    * mutator functions
    */
   void setExptime(uint32_t expt) {

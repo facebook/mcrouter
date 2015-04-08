@@ -13,6 +13,7 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/config/test/TestRouteHandleProvider.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/lib/test/TestRouteHandle.h"
 
 using namespace facebook::memcache;
 

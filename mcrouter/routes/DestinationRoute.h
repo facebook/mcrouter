@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include <folly/Format.h>
 #include <folly/Memory.h>
 #include <folly/ScopeGuard.h>
 #include <folly/experimental/fibers/FiberManager.h>
@@ -24,15 +23,12 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
-#include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/route.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -48,19 +44,11 @@ struct DestinationRequestCtx {
  * Routes a request to a single ProxyClient.
  * This is the lowest level in Mcrouter's RouteHandle tree.
  */
-template <class RouteHandleIf>
 class DestinationRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
-  std::string routeName() const {
-    return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
-      client_->pool.getName(),
-      client_->indexInPool,
-      client_->useSsl,
-      client_->ap.toString(),
-      client_->server_timeout.count());
-  }
+  std::string routeName() const;
 
   /**
    * @param client Client to send request to
@@ -73,27 +61,15 @@ class DestinationRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
     ctx->recordDestination(*client_);
     return {};
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
-
-    return routeImpl(req, Operation(), ctx);
-  }
-
- private:
-  std::shared_ptr<const ProxyClientCommon> client_;
-  std::shared_ptr<ProxyDestination> destination_;
-  size_t pendingShadowReqs_{0};
-
   template <int Op>
-  ProxyMcReply routeImpl(
+  ProxyMcReply route(
     const ProxyMcRequest& req, McOperation<Op>, const ContextPtr& ctx) const {
 
     if (!destination_->may_send()) {
@@ -105,7 +81,7 @@ class DestinationRoute {
 
     if (ctx->recording()) {
       ctx->recordDestination(*client_);
-      return NullRoute<RouteHandleIf>::route(req, McOperation<Op>(), ctx);
+      return ProxyMcReply(DefaultReply, McOperation<Op>());
     }
 
     auto proxy = &ctx->proxy();
@@ -150,6 +126,11 @@ class DestinationRoute {
 
     return reply;
   }
+
+ private:
+  std::shared_ptr<const ProxyClientCommon> client_;
+  std::shared_ptr<ProxyDestination> destination_;
+  size_t pendingShadowReqs_{0};
 };
 
 }}}  // facebook::memcache::mcrouter

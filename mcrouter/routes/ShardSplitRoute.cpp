@@ -9,16 +9,13 @@
  */
 #include "ShardSplitRoute.h"
 
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeShardSplitRoute(
   McrouterRouteHandlePtr rh,
   ShardSplitter shardSplitter) {
 
-  return makeMcrouterRouteHandle<ShardSplitRoute>(
+  return std::make_shared<McrouterRouteHandle<ShardSplitRoute>>(
     std::move(rh), std::move(shardSplitter));
 }
 
@@ -34,4 +31,4 @@ std::string createSplitKey(folly::StringPiece fullKey,
   return newKey;
 }
 
-}}}
+}}}  // facebook::memcache::mcrouter

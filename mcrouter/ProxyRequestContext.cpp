@@ -80,9 +80,15 @@ uint64_t ProxyRequestContext::senderId() const {
   uint64_t id = 0;
   if (requester_) {
     id = requester_->clientId();
+  } else {
+    id = senderIdForTest_;
   }
 
   return id;
+}
+
+void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
+  senderIdForTest_ = id;
 }
 
 void ProxyRequestContext::onRequestRefused(const ProxyMcRequest& request,

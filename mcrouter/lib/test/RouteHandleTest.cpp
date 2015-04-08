@@ -27,6 +27,7 @@
 #include "mcrouter/lib/routes/HashRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/lib/test/TestRouteHandle.h"
 
 using namespace facebook::memcache;
 
@@ -34,6 +35,8 @@ using folly::make_unique;
 using std::make_shared;
 using std::string;
 using std::vector;
+
+using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(routeHandleTest, nullGet) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;

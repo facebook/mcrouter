@@ -9,16 +9,24 @@
  */
 #include "DestinationRoute.h"
 
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include <folly/Format.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+std::string DestinationRoute::routeName() const {
+  return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
+    client_->pool.getName(),
+    client_->indexInPool,
+    client_->useSsl,
+    client_->ap.toString(),
+    client_->server_timeout.count());
+}
 
 McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
   std::shared_ptr<ProxyDestination> destination) {
 
-  return makeMcrouterRouteHandle<DestinationRoute>(
+  return std::make_shared<McrouterRouteHandle<DestinationRoute>>(
     std::move(client),
     std::move(destination));
 }

@@ -23,6 +23,7 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -45,21 +46,19 @@ std::string createSplitKey(folly::StringPiece fullKey,
 /**
  * Splits given request according to shard splits provided by ShardSplitter
  */
-template <class RouteHandleIf>
 class ShardSplitRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   static std::string routeName() { return "shard-split"; }
 
-  ShardSplitRoute(std::shared_ptr<RouteHandleIf> rh,
-                  ShardSplitter shardSplitter)
+  ShardSplitRoute(McrouterRouteHandlePtr rh, ShardSplitter shardSplitter)
     : rh_(std::move(rh)),
       shardSplitter_(std::move(shardSplitter)) {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
     ctx->recordShardSplitter(shardSplitter_);
@@ -137,7 +136,7 @@ class ShardSplitRoute {
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> rh_;
+  McrouterRouteHandlePtr rh_;
   const ShardSplitter shardSplitter_;
 
   // from request with key 'prefix:shard:suffix' creates a copy of

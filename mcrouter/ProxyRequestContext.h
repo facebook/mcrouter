@@ -118,6 +118,8 @@ public:
 
   uint64_t senderId() const;
 
+  void setSenderIdForTest(uint64_t id);
+
   ProxyRoute& proxyRoute() const {
     assert(!recording_);
     return config_->proxyRoute();
@@ -212,6 +214,8 @@ public:
 
   folly::Optional<ProxyRequestLogger> logger_;
   folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;
+
+  uint64_t senderIdForTest_{0};
 
   ProxyRequestContext(
     proxy_t& pr,

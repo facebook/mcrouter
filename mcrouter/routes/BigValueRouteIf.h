@@ -9,7 +9,7 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 struct BigValueRouteOptions {
   explicit BigValueRouteOptions(size_t threshold) :
@@ -18,4 +18,4 @@ struct BigValueRouteOptions {
   const size_t threshold_;
 };
 
-}}
+}}}  // facebook::memcache::mcrouter

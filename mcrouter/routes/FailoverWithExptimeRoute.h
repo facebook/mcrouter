@@ -14,43 +14,42 @@
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/Range.h>
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/ProxyClientCommon.h"
-#include "mcrouter/ProxyMcReply.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-const char kFailoverHostPortSeparator = '@';
-const std::string kFailoverTagStart = ":failover=";
-
-template <class RouteHandleIf>
 class FailoverWithExptimeRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   static std::string routeName() { return "failover-exptime"; }
 
+  static std::string keyWithFailoverTag(
+    const folly::StringPiece fullKey,
+    const AccessPoint& ap);
+
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
-    std::vector<std::shared_ptr<RouteHandleIf>> rh = {normal_};
+    std::vector<McrouterRouteHandlePtr> rh = {normal_};
     auto frh = failover_.couldRouteTo(req, Operation(), ctx);
     rh.insert(rh.end(), frh.begin(), frh.end());
     return rh;
   }
 
   FailoverWithExptimeRoute(
-    std::shared_ptr<RouteHandleIf> normalTarget,
-    std::vector<std::shared_ptr<RouteHandleIf>> failoverTargets,
+    McrouterRouteHandlePtr normalTarget,
+    std::vector<McrouterRouteHandlePtr> failoverTargets,
     uint32_t failoverExptime,
     FailoverWithExptimeSettings settings)
       : normal_(std::move(normalTarget)),
@@ -59,41 +58,16 @@ class FailoverWithExptimeRoute {
         settings_(settings) {
   }
 
-  FailoverWithExptimeRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                           const folly::dynamic& json)
-      : failoverExptime_(60) {
-
-    checkLogic(json.isObject(), "FailoverWithExptimeRoute is not object");
-
-    std::vector<std::shared_ptr<RouteHandleIf>> failoverTargets;
-
-    if (json.count("failover")) {
-      failoverTargets = factory.createList(json["failover"]);
-    }
-
-    failover_ = FailoverRoute<RouteHandleIf>(std::move(failoverTargets));
-
-    if (json.count("normal")) {
-      normal_ = factory.create(json["normal"]);
-    }
-
-    if (json.count("failover_exptime")) {
-      checkLogic(json["failover_exptime"].isInt(),
-                 "failover_exptime is not integer");
-      failoverExptime_ = json["failover_exptime"].asInt();
-    }
-
-    if (json.count("settings")) {
-      settings_ = FailoverWithExptimeSettings(json["settings"]);
-    }
-  }
+  FailoverWithExptimeRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
+                           const folly::dynamic& json);
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
+    using Reply = typename ReplyType<Operation, Request>::type;
     if (!normal_) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return Reply(DefaultReply, Operation());
     }
 
     auto reply = normal_->route(req, Operation(), ctx);
@@ -101,7 +75,7 @@ class FailoverWithExptimeRoute {
     if (!reply.isFailoverError() ||
         !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
           DeleteLike<Operation>::value) ||
-        isFailoverDisabledForRequest(ctx)) {
+        ctx->failoverDisabled()) {
       return reply;
     }
 
@@ -115,8 +89,11 @@ class FailoverWithExptimeRoute {
     }
 
     auto mutReq = req.clone();
-    if (settings_.failoverTagging) {
-      mutReq.setKey(keyWithFailoverTag(mutReq, reply));
+    if (settings_.failoverTagging &&
+        mutReq.hasHashStop() &&
+        reply.getDestination() != nullptr) {
+      mutReq.setKey(keyWithFailoverTag(mutReq.fullKey(),
+                                       reply.getDestination()->ap));
     }
     /* 0 means infinite exptime.
        We want to set the smallest of request exptime, failover exptime. */
@@ -124,80 +101,16 @@ class FailoverWithExptimeRoute {
         (req.exptime() == 0 || req.exptime() > failoverExptime_)) {
       mutReq.setExptime(failoverExptime_);
     }
-    return routeImpl(mutReq, Operation(), ctx);
+
+    mutReq.setRequestClass(RequestClass::FAILOVER);
+    return failover_.route(mutReq, Operation(), ctx);
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> normal_;
-  FailoverRoute<RouteHandleIf> failover_;
+  McrouterRouteHandlePtr normal_;
+  FailoverRoute<McrouterRouteHandleIf> failover_;
   uint32_t failoverExptime_;
   FailoverWithExptimeSettings settings_;
-
-  template <class Operation>
-  ProxyMcReply routeImpl(
-    ProxyMcRequest& req, Operation,
-    const ContextPtr& ctx) const {
-    req.setRequestClass(RequestClass::FAILOVER);
-    return failover_.route(req, Operation(), ctx);
-  }
-
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type routeImpl(
-    const Request& req, Operation, const ContextPtr& ctx) const {
-    return failover_.route(req, Operation(), ctx);
-  }
-
-  bool isFailoverDisabledForRequest(
-      const std::shared_ptr<ProxyRequestContext>& ctx) const {
-    return ctx->failoverDisabled();
-  }
-
-  template <class C>
-  bool isFailoverDisabledForRequest(const C& ctx) const {
-    return false;
-  }
-
-  static std::string keyWithFailoverTag(const ProxyMcRequest& req,
-                                        const ProxyMcReply& reply) {
-    if (req.keyWithoutRoute() == req.routingKey()) {
-      // The key doesn't have a hash stop.
-      return req.fullKey().str();
-    }
-    auto proxyClient = reply.getDestination();
-    if (proxyClient == nullptr) {
-      return req.fullKey().str();
-    }
-    const size_t tagLength =
-      kFailoverTagStart.size() +
-      proxyClient->ap.getHost().size() +
-      6; // 1 for kFailoverHostPortSeparator + 5 for port.
-    std::string failoverTag;
-    failoverTag.reserve(tagLength);
-    failoverTag = kFailoverTagStart;
-    failoverTag += proxyClient->ap.getHost().str();
-    if (proxyClient->ap.getPort() != 0) {
-      failoverTag += kFailoverHostPortSeparator;
-      failoverTag += folly::to<std::string>(proxyClient->ap.getPort());
-    }
-
-    // Safety check: scrub the host and port for ':' to avoid appending
-    // more than one field to the key.
-    // Note: we start after the ':failover=' part of the string,
-    // since we need the initial ':' and we know the remainder is safe.
-    for (size_t i = kFailoverTagStart.size(); i < failoverTag.size(); i++) {
-      if (failoverTag[i] == ':') {
-        failoverTag[i] = '$';
-      }
-    }
-
-    return req.fullKey().str() + failoverTag;
-  }
-
-  template <class Request, class Reply>
-  static std::string keyWithFailoverTag(const Request& req,
-                                        const Reply& reply) {
-    return req.fullKey().str();
-  }
 };
 
 }}}

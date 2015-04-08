@@ -9,16 +9,13 @@
  */
 #include "RateLimitRoute.h"
 
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeRateLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   RateLimiter rateLimiter) {
 
-  return makeMcrouterRouteHandle<RateLimitRoute>(
+  return std::make_shared<McrouterRouteHandle<RateLimitRoute>>(
     std::move(normalRoute),
     std::move(rateLimiter));
 }

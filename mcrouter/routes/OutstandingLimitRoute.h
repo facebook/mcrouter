@@ -18,6 +18,8 @@
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -26,22 +28,20 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * route. All blocked requests will be sent one request per sender id in
  * round-robin fashion to guarantee fairness.
  */
-template <class RouteHandleIf>
 class OutstandingLimitRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   static std::string routeName() { return "outstanding-limit"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {target_};
   }
 
-  OutstandingLimitRoute(std::shared_ptr<RouteHandleIf> target,
-                        size_t maxOutstanding)
+  OutstandingLimitRoute(McrouterRouteHandlePtr target, size_t maxOutstanding)
     : target_(std::move(target)), maxOutstanding_(maxOutstanding) {
   }
 
@@ -94,7 +94,7 @@ class OutstandingLimitRoute {
   }
 
  private:
-  const std::shared_ptr<RouteHandleIf> target_;
+  const McrouterRouteHandlePtr target_;
   const size_t maxOutstanding_;
   size_t outstanding_{0};
 

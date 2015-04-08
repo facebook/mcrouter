@@ -18,8 +18,8 @@
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/route.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -34,15 +34,15 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Both ranges might be updated at runtime.
  * We can shadow to multiple shadow destinations for a given normal route.
  */
-template <class RouteHandleIf, class ShadowPolicy>
+template <class ShadowPolicy>
 class ShadowRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
 
   static std::string routeName() { return "shadow"; }
 
-  ShadowRoute(std::shared_ptr<RouteHandleIf> normalRoute,
-              ShadowData<RouteHandleIf> shadowData,
+  ShadowRoute(McrouterRouteHandlePtr normalRoute,
+              McrouterShadowData shadowData,
               size_t normalIndex,
               ShadowPolicy shadowPolicy)
       : normal_(std::move(normalRoute)),
@@ -52,10 +52,10 @@ class ShadowRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation, const ContextPtr& ctx) const {
 
-    std::vector<std::shared_ptr<RouteHandleIf>> rh = {normal_};
+    std::vector<McrouterRouteHandlePtr> rh = {normal_};
     for (auto& shadowData: shadowData_) {
       rh.push_back(shadowData.first);
     }
@@ -81,7 +81,7 @@ class ShadowRoute {
         folly::fibers::addTask(
           [shadow, adjustedReq, ctx] () {
             Request shadowReq(adjustedReq->clone());
-            attachRequestClass(shadowReq);
+            shadowReq.setRequestClass(RequestClass::SHADOW);
             shadow->route(shadowReq, Operation(), ctx);
           });
       }
@@ -95,18 +95,10 @@ class ShadowRoute {
   }
 
  private:
-  const std::shared_ptr<RouteHandleIf> normal_;
-  ShadowData<RouteHandleIf> shadowData_;
+  const McrouterRouteHandlePtr normal_;
+  McrouterShadowData shadowData_;
   const size_t normalIndex_;
   ShadowPolicy shadowPolicy_;
-
-  static void attachRequestClass(ProxyMcRequest& req) {
-    req.setRequestClass(RequestClass::SHADOW);
-  }
-
-  template <class Request>
-  static void attachRequestClass(Request& req) {
-  }
 
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
@@ -127,7 +119,6 @@ class ShadowRoute {
       data->start_key_fraction,
       data->end_key_fraction);
   }
-
 };
 
 }}}  // facebook::memcache::mcrouter

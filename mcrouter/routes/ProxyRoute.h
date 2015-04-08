@@ -102,12 +102,6 @@ class ProxyRoute {
     const Request& req, McOperation<mc_op_flushall> op,
     const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
-    if (!proxy_->opts.enable_flush_cmd) {
-      using Reply =
-        typename ReplyType<McOperation<mc_op_flushall>, Request>::type;
-      return Reply(ErrorReply, "Command disabled");
-    }
-
     // route to all clients in the config
     std::vector<McrouterRouteHandlePtr> rh;
     auto clients = proxy_->getConfig()->getClients();
