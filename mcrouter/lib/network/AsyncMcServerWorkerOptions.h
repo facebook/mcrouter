@@ -16,6 +16,11 @@ namespace facebook { namespace memcache {
 
 struct AsyncMcServerWorkerOptions {
   /**
+   * When set AsyncMcServer returns the default version string. If not,
+   * the server is responsible handling the version commands.
+   */
+  bool defaultVersionHandler{true};
+  /**
    * String that will be returned for 'VERSION' commands.
    */
   std::string versionString{"AsyncMcServer-1.0"};

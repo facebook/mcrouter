@@ -259,7 +259,10 @@ void McServerSession::requestReady(McRequest&& req,
 
   if (result == mc_res_bad_key) {
     McServerRequestContext::reply(std::move(ctx), McReply(mc_res_bad_key));
-  } else if (ctx.operation_ == mc_op_version) {
+  } else if (ctx.operation_ == mc_op_version &&
+             options_.defaultVersionHandler) {
+    /* Handle version command only if the user doesn't want to handle it
+     * themselves. */
     McServerRequestContext::reply(std::move(ctx),
                                   McReply(mc_res_ok, options_.versionString));
   } else if (ctx.operation_ == mc_op_quit) {
