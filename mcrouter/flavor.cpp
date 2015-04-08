@@ -12,6 +12,7 @@
 #include <string>
 #include <unordered_map>
 
+#include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
 
 #include <folly/FileUtil.h>
@@ -129,6 +130,14 @@ bool readFlavor(
   }
 
   libmcrouter_opts["router_name"] = getRouterNameFromFlavor(flavor);
+  try {
+    libmcrouter_opts["flavor_name"] =
+      boost::filesystem::absolute(flavor).string();
+  } catch (const boost::filesystem::filesystem_error& e) {
+    LOG(ERROR) << "Error getting the absolute path of flavor. Exception: "
+               << e.what();
+    return false;
+  }
 
   return true;
 }
