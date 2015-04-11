@@ -46,6 +46,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class ModifyKeyRoute {
  public:
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
+
   static std::string routeName() { return "modify-key"; }
 
   ModifyKeyRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -53,25 +55,25 @@ class ModifyKeyRoute {
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr>
-  couldRouteTo(const Request& req, Operation) const {
+  couldRouteTo(const Request& req, Operation, const ContextPtr& ctx) const {
     return { target_ };
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) const {
+  route(const Request& req, Operation, const ContextPtr& ctx) const {
     folly::StringPiece rp = routingPrefix_.hasValue()
       ? routingPrefix_.value()
       : req.routingPrefix();
 
     if (!req.keyWithoutRoute().startsWith(keyPrefix_)) {
       auto key = folly::to<std::string>(rp, keyPrefix_, req.keyWithoutRoute());
-      return routeReqWithKey(req, key, Operation());
+      return routeReqWithKey(req, key, Operation(), ctx);
     } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
       auto key = folly::to<std::string>(rp, req.keyWithoutRoute());
-      return routeReqWithKey(req, key, Operation());
+      return routeReqWithKey(req, key, Operation(), ctx);
     }
-    return target_->route(req, Operation());
+    return target_->route(req, Operation(), ctx);
   }
 
  private:
@@ -81,7 +83,8 @@ class ModifyKeyRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  routeReqWithKey(const Request& req, folly::StringPiece key, Operation) const {
+  routeReqWithKey(const Request& req, folly::StringPiece key, Operation,
+                  const ContextPtr& ctx) const {
     typedef typename ReplyType<Operation, Request>::type Reply;
 
     auto err = mc_client_req_key_check(to<nstring_t>(key));
@@ -91,7 +94,7 @@ class ModifyKeyRoute {
     }
     auto cloneReq = req.clone();
     cloneReq.setKey(key);
-    return target_->route(cloneReq, Operation());
+    return target_->route(cloneReq, Operation(), ctx);
   }
 };
 

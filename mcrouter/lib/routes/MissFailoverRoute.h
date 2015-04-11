@@ -31,11 +31,13 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class MissFailoverRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "miss-failover"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return targets_;
   }
@@ -58,46 +60,48 @@ class MissFailoverRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type routeImpl(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     if (targets_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     }
 
     for (size_t i = 0; i < targets_.size() - 1; ++i) {
-      auto reply = targets_[i]->route(req, Operation());
+      auto reply = targets_[i]->route(req, Operation(), ctx);
       if (reply.isHit()) {
         return reply;
       }
     }
 
-    return targets_.back()->route(req, Operation());
+    return targets_.back()->route(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0)
+    const Request& req, Operation, const ContextPtr& ctx,
+    typename GetLike<Operation>::Type = 0)
     const {
-    return routeImpl(req, Operation());
+    return routeImpl(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename DeleteLike<Operation>::Type = 0)
+    const Request& req, Operation, const ContextPtr& ctx,
+    typename DeleteLike<Operation>::Type = 0)
     const {
-    return routeImpl(req, Operation());
+    return routeImpl(req, Operation(), ctx);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
+    const Request& req, Operation, const ContextPtr& ctx,
     OtherThanT(Operation, GetLike<>, DeleteLike<>) = 0)
     const {
 
     if (targets_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     }
-    return targets_[0]->route(req, Operation());
+    return targets_[0]->route(req, Operation(), ctx);
   }
 
  private:

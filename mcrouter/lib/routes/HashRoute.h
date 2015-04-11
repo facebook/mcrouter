@@ -29,6 +29,8 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf, typename HashFunc>
 class HashRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "hash:" + HashFunc::type(); }
 
   HashRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh,
@@ -52,19 +54,19 @@ class HashRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {rh_[pick(req)]};
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     if (rh_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
+      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
     } else {
-      return rh_[pickInMainContext(req)]->route(req, Operation());
+      return rh_[pickInMainContext(req)]->route(req, Operation(), ctx);
     }
   }
 

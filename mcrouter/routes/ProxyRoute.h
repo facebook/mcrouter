@@ -41,6 +41,7 @@ class ProxyRoute {
  private:
   ProxyMcReply dispatchMcMsgHelper(
     McMsgRef&& msg,
+    std::shared_ptr<ProxyRequestContext> ctx,
     McOpList::Item<0>) const {
 
     throw std::runtime_error("dispatch for requested op not implemented");
@@ -49,14 +50,16 @@ class ProxyRoute {
   template <int op_id>
   ProxyMcReply dispatchMcMsgHelper(
     McMsgRef&& msg,
+    const std::shared_ptr<ProxyRequestContext>& ctx,
     McOpList::Item<op_id>) const {
 
     if (msg->op == McOpList::Item<op_id>::op::mc_op) {
       return route(ProxyMcRequest(std::move(msg)),
-                   typename McOpList::Item<op_id>::op());
+                   typename McOpList::Item<op_id>::op(),
+                   ctx);
     }
 
-    return dispatchMcMsgHelper(std::move(msg), McOpList::Item<op_id-1>());
+    return dispatchMcMsgHelper(std::move(msg), ctx, McOpList::Item<op_id-1>());
   }
 
  public:
@@ -72,26 +75,32 @@ class ProxyRoute {
     }
   }
 
-  ProxyMcReply dispatchMcMsg(McMsgRef&& msg) const {
-    return dispatchMcMsgHelper(std::move(msg), McOpList::LastItem());
+  ProxyMcReply dispatchMcMsg(
+    McMsgRef&& msg,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
+
+    return dispatchMcMsgHelper(std::move(msg), ctx, McOpList::LastItem());
   }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
     return { root_ };
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-    return root_->route(req, Operation());
+    const Request& req, Operation,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
+    return root_->route(req, Operation(), ctx);
   }
 
   template <class Request>
   typename ReplyType<McOperation<mc_op_flushall>, Request>::type route(
-    const Request& req, McOperation<mc_op_flushall> op) const {
+    const Request& req, McOperation<mc_op_flushall> op,
+    const std::shared_ptr<ProxyRequestContext>& ctx) const {
 
     // route to all clients in the config
     std::vector<McrouterRouteHandlePtr> rh;
@@ -101,7 +110,7 @@ class ProxyRoute {
       rh.push_back(makeDestinationRoute(std::move(client), std::move(dest)));
     }
     return
-      AllSyncRoute<McrouterRouteHandleIf>(std::move(rh)).route(req, op);
+      AllSyncRoute<McrouterRouteHandleIf>(std::move(rh)).route(req, op, ctx);
   }
 
  private:

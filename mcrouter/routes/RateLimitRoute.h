@@ -26,11 +26,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class RateLimitRoute {
  public:
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
+
   static std::string routeName() { return "rate-limit"; }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return {target_};
   }
@@ -42,9 +44,9 @@ class RateLimitRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) {
+  route(const Request& req, Operation, const ContextPtr& ctx) {
     if (LIKELY(rl_.canPassThrough(Operation()))) {
-      return target_->route(req, Operation());
+      return target_->route(req, Operation(), ctx);
     }
 
     using Reply = typename ReplyType<Operation, Request>::type;

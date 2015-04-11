@@ -27,77 +27,77 @@ TEST(RouteHandleFactoryTest, sanity) {
   auto rh = factory.create("AllAsyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("AllFastestRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("AllInitialRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("AllMajorityRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("AllSyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("FailoverRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("HashRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("HostIdRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("LatestRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("MissFailoverRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("RandomRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->routeSimple(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_TRUE(reply.isError());
   });
 }

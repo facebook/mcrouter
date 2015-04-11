@@ -14,7 +14,6 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
@@ -51,8 +50,8 @@ void sendRequest(folly::fibers::FiberManager& fm,
 
   fm.addTask([&rh, id, context, &replyOrder]() {
       ProxyMcRequest request(makeKey(id));
-      auto guard = fiber_local::setSharedCtx(std::move(context));
-      rh.route(request, McOperation<mc_op_get>());
+
+      rh.route(request, McOperation<mc_op_get>(), context);
       replyOrder.push_back(makeKey(id));
     });
 }
@@ -69,7 +68,7 @@ TEST(oustandingLimitRouteTest, basic) {
 
   std::vector<std::string> replyOrder;
 
-  TestFiberManager testfm{fiber_local::ContextTypeTag()};
+  TestFiberManager testfm;
   auto& fm = testfm.getFiberManager();
 
   sendRequest(fm, rh, 1, 1, replyOrder);

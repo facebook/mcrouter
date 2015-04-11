@@ -54,7 +54,8 @@ TEST(ReliablePoolRouteTest, firstHostSuccess) {
     HashFunc(saltedHandle.size()),
     "", 5);
 
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("key"),
+                              McOperation<mc_op_get>());
 
   EXPECT_EQ(reply.result(), mc_res_found);
   EXPECT_EQ(toString(reply.value()), "a");
@@ -78,7 +79,8 @@ TEST(ReliablePoolRouteTest, failoverOnce) {
     HashFunc(saltedHandle.size()),
     "", 5);
 
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("key"),
+                              McOperation<mc_op_get>());
 
   EXPECT_EQ(reply.result(), mc_res_notfound);
   EXPECT_EQ(toString(reply.value()), "b");
@@ -102,7 +104,8 @@ TEST(ReliablePoolRouteTest, failoverTwice) {
     HashFunc(saltedHandle.size()),
     "", 5);
 
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("key"),
+                              McOperation<mc_op_get>());
 
   EXPECT_EQ(reply.result(), mc_res_found);
   EXPECT_EQ(toString(reply.value()), "c");
@@ -121,17 +124,21 @@ TEST(ReliablePoolRouteTest, deleteOps) {
 
   TestFiberManager fm;
 
-  fm.run([&] () {
-    TestRouteHandle<ReliablePoolRoute<TestRouteHandleIf, HashFunc>> rh(
-      get_route_handles(saltedHandle),
-      HashFunc(saltedHandle.size()),
-      "", 5);
+  fm.runAll(
+    {
+      [&] () {
+        TestRouteHandle<ReliablePoolRoute<TestRouteHandleIf, HashFunc>> rh(
+          get_route_handles(saltedHandle),
+          HashFunc(saltedHandle.size()),
+          "", 5);
 
-    auto reply = rh.route(McRequest("key"), McOperation<mc_op_delete>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_delete>());
 
-    // Get the most awfull reply
-    EXPECT_EQ(reply.result(), mc_res_notfound);
-  });
+        // Get the most awfull reply
+        EXPECT_EQ(reply.result(), mc_res_notfound);
+      }
+    });
   EXPECT_TRUE(saltedHandle[0]->saw_keys == (vector<std::string>{"key", "key"}));
   EXPECT_TRUE(saltedHandle[1]->saw_keys == (vector<std::string>{"key", "key"}));
   EXPECT_TRUE(saltedHandle[2]->saw_keys == (vector<std::string>{"key", "key"}));

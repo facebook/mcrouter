@@ -28,6 +28,8 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class AllAsyncRoute {
  public:
+  using ContextPtr = typename RouteHandleIf::ContextPtr;
+
   static std::string routeName() { return "all-async"; }
 
   explicit AllAsyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
@@ -47,25 +49,25 @@ class AllAsyncRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     return children_;
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     if (!children_.empty()) {
       auto reqCopy = std::make_shared<Request>(req.clone());
       for (auto& rh : children_) {
         folly::fibers::addTask(
-          [rh, reqCopy]() {
-            rh->route(*reqCopy, Operation());
+          [rh, reqCopy, ctx]() {
+            rh->route(*reqCopy, Operation(), ctx);
           });
       }
     }
-    return NullRoute<RouteHandleIf>::route(req, Operation());
+    return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
   }
 
  private:

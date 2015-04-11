@@ -20,7 +20,6 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
-#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
@@ -30,6 +29,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class FailoverWithExptimeRoute {
  public:
+  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
+
   static std::string routeName() { return "failover-exptime"; }
 
   static std::string keyWithFailoverTag(
@@ -38,10 +39,10 @@ class FailoverWithExptimeRoute {
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     std::vector<McrouterRouteHandlePtr> rh = {normal_};
-    auto frh = failover_.couldRouteTo(req, Operation());
+    auto frh = failover_.couldRouteTo(req, Operation(), ctx);
     rh.insert(rh.end(), frh.begin(), frh.end());
     return rh;
   }
@@ -62,15 +63,14 @@ class FailoverWithExptimeRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation, const ContextPtr& ctx) const {
 
     using Reply = typename ReplyType<Operation, Request>::type;
     if (!normal_) {
       return Reply(DefaultReply, Operation());
     }
 
-    auto reply = normal_->route(req, Operation());
-    auto& ctx = fiber_local::getSharedCtx();
+    auto reply = normal_->route(req, Operation(), ctx);
 
     if (!reply.isFailoverError() ||
         !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
@@ -103,7 +103,7 @@ class FailoverWithExptimeRoute {
     }
 
     mutReq.setRequestClass(RequestClass::FAILOVER);
-    return failover_.route(mutReq, Operation());
+    return failover_.route(mutReq, Operation(), ctx);
   }
 
  private:

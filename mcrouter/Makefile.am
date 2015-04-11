@@ -43,12 +43,11 @@ libmcroutercore_a_SOURCES = \
   mcrouter_options_list.h \
   McrouterClient.cpp \
   McrouterClient.h \
-  McrouterFiberContext.h \
-  McrouterInstance.cpp \
-  McrouterInstance.h \
   McrouterLogFailure.h \
   McrouterLogger.cpp \
   McrouterLogger.h \
+  McrouterInstance.cpp \
+  McrouterInstance.h \
   Observable-inl.h \
   Observable.h \
   options-template.h \

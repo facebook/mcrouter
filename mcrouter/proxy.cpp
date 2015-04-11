@@ -37,7 +37,6 @@
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
@@ -93,10 +92,8 @@ proxy_t::proxy_t(McrouterInstance* router_,
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
-      fiberManager(
-        fiber_local::ContextTypeTag(),
-        folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(opts_)) {
+      fiberManager(folly::make_unique<folly::fibers::EventBaseLoopController>(),
+                   getFiberManagerOptions(opts_)) {
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
@@ -207,12 +204,12 @@ void proxy_t::routeHandlesProcessRequest(
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
   fiberManager.addTaskFinally(
-    [ctx = std::move(func_ctx)]() {
+    [ctx = func_ctx]() {
       auto& origReq = ctx->origReq();
       try {
         auto& proute = ctx->proxyRoute();
-        auto guard = fiber_local::setSharedCtx(std::move(ctx));
-        auto reply = proute.dispatchMcMsg(origReq.clone());
+        auto reply = proute.dispatchMcMsg(origReq.clone(),
+                                          std::move(ctx));
         return ProxyMcReply::moveToMcReply(std::move(reply));
       } catch (const std::exception& e) {
         std::string err = "error routing "

@@ -27,6 +27,7 @@ template <typename Route>
 class McrouterRouteHandle :
       public RouteHandle<Route,
                          McrouterRouteHandleIf,
+                         ProxyRequestContext,
                          List<ProxyMcRequest>,
                          McOpList> {
  public:
@@ -34,6 +35,7 @@ class McrouterRouteHandle :
   explicit McrouterRouteHandle(Args&&... args)
     : RouteHandle<Route,
                   McrouterRouteHandleIf,
+                  ProxyRequestContext,
                   List<ProxyMcRequest>,
                   McOpList>(
                     std::forward<Args>(args)...) {
@@ -42,11 +44,17 @@ class McrouterRouteHandle :
 
 class McrouterRouteHandleIf :
       public RouteHandleIf<McrouterRouteHandleIf,
+                           ProxyRequestContext,
                            List<ProxyMcRequest>,
                            McOpList> {
  public:
   template <class Route>
   using Impl = McrouterRouteHandle<Route>;
+
+  using RouteHandleIf<McrouterRouteHandleIf,
+                      ProxyRequestContext,
+                      List<ProxyMcRequest>,
+                      McOpList>::ContextPtr;
 };
 
 typedef std::shared_ptr<McrouterRouteHandleIf> McrouterRouteHandlePtr;

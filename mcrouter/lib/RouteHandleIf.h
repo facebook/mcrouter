@@ -30,6 +30,7 @@ namespace facebook { namespace memcache {
 
 template<typename Route,
          typename RouteHandleIf,
+         typename Context,
          typename RequestList,
          typename OpList,
          int op_id = OpList::kLastItemId>
@@ -37,9 +38,10 @@ class RouteHandle;
 
 template<typename Route,
          typename RouteHandleIf,
+         typename Context,
          typename OpList,
          int op_id>
-class RouteHandle<Route, RouteHandleIf, List<>, OpList, op_id> :
+class RouteHandle<Route, RouteHandleIf, Context, List<>, OpList, op_id> :
       public RouteHandleIf {
  public:
   template<typename... Args>
@@ -73,16 +75,19 @@ class RouteHandle<Route, RouteHandleIf, List<>, OpList, op_id> :
 
 template<typename Route,
          typename RouteHandleIf,
+         typename Context,
          typename Request,
          typename... Requests,
          typename OpList>
 class RouteHandle<Route,
                   RouteHandleIf,
+                  Context,
                   List<Request, Requests...>,
                   OpList,
                   0> :
       public RouteHandle<Route,
                          RouteHandleIf,
+                         Context,
                          List<Requests...>,
                          OpList,
                          OpList::kLastItemId>{
@@ -91,6 +96,7 @@ class RouteHandle<Route,
   explicit RouteHandle(Args&&... args)
     : RouteHandle<Route,
                   RouteHandleIf,
+                  Context,
                   List<Requests...>,
                   OpList,
                   OpList::kLastItemId>(std::forward<Args>(args)...) {
@@ -98,11 +104,13 @@ class RouteHandle<Route,
 
   using RouteHandle<Route,
                     RouteHandleIf,
+                    Context,
                     List<Requests...>,
                     OpList,
                     OpList::kLastItemId>::couldRouteTo;
   using RouteHandle<Route,
                     RouteHandleIf,
+                    Context,
                     List<Requests...>,
                     OpList,
                     OpList::kLastItemId>::route;
@@ -110,17 +118,20 @@ class RouteHandle<Route,
 
 template<typename Route,
          typename RouteHandleIf,
+         typename Context,
          typename Request,
          typename... Requests,
          typename OpList,
          int op_id>
 class RouteHandle<Route,
                   RouteHandleIf,
+                  Context,
                   List<Request, Requests...>,
                   OpList,
                   op_id> :
       public RouteHandle<Route,
                          RouteHandleIf,
+                         Context,
                          List<Request, Requests...>,
                          OpList,
                          op_id-1>{
@@ -129,6 +140,7 @@ class RouteHandle<Route,
   explicit RouteHandle(Args&&... args)
     : RouteHandle<Route,
                   RouteHandleIf,
+                  Context,
                   List<Request, Requests...>,
                   OpList,
                   op_id-1>(std::forward<Args>(args)...) {
@@ -136,42 +148,52 @@ class RouteHandle<Route,
 
   using RouteHandle<Route,
                     RouteHandleIf,
+                    Context,
                     List<Request, Requests...>,
                     OpList,
                     op_id-1>::couldRouteTo;
   using RouteHandle<Route,
                     RouteHandleIf,
+                    Context,
                     List<Request, Requests...>,
                     OpList,
                     op_id-1>::route;
 
   std::vector<std::shared_ptr<RouteHandleIf>>
-  couldRouteTo(const Request& req,
-               typename OpList::template Item<op_id>::op) const {
+  couldRouteTo(const Request& req, typename OpList::template Item<op_id>::op,
+               const std::shared_ptr<Context>& ctx) const {
     return this->route_.couldRouteTo(
-      req, typename OpList::template Item<op_id>::op());
+      req, typename OpList::template Item<op_id>::op(), ctx);
   }
 
   typename ReplyType<typename OpList::template Item<op_id>::op, Request>::type
-  route(const Request& req, typename OpList::template Item<op_id>::op) {
-    return this->route_.route(req, typename OpList::template Item<op_id>::op());
+  route(const Request& req, typename OpList::template Item<op_id>::op,
+        const std::shared_ptr<Context>& ctx) {
+    return this->route_.route(req,
+                              typename OpList::template Item<op_id>::op(),
+                              ctx);
   }
 };
 
 template <typename RouteHandleIf_,
+          typename Context,
           typename RequestList,
           typename OpList,
           int op_id = OpList::kLastItemId>
 class RouteHandleIf;
 
 template <typename RouteHandleIf_,
+          typename Context,
           typename Request,
           typename OpList>
-class RouteHandleIf<RouteHandleIf_, List<Request>, OpList, 1> {
+class RouteHandleIf<RouteHandleIf_, Context, List<Request>, OpList, 1> {
  public:
+  using ContextPtr = std::shared_ptr<Context>;
+
   template <class Route>
   using Impl = RouteHandle<Route,
                            RouteHandleIf_,
+                           Context,
                            List<Request>,
                            OpList, 1>;
 
@@ -185,7 +207,8 @@ class RouteHandleIf<RouteHandleIf_, List<Request>, OpList, 1> {
    * send a request to
    */
   virtual std::vector<std::shared_ptr<RouteHandleIf_>> couldRouteTo(
-    const Request& req, typename OpList::template Item<1>::op) const = 0;
+    const Request& req, typename OpList::template Item<1>::op,
+    const std::shared_ptr<Context>& ctx) const = 0;
 
   /**
    * Routes the request through this route handle
@@ -193,61 +216,77 @@ class RouteHandleIf<RouteHandleIf_, List<Request>, OpList, 1> {
   virtual typename ReplyType<typename OpList::template Item<1>::op,
                              Request>::type
   route(const Request& req,
-        typename OpList::template Item<1>::op) = 0;
+        typename OpList::template Item<1>::op,
+        const std::shared_ptr<Context>& ctx) = 0;
 
   virtual ~RouteHandleIf() {}
 };
 
 template <typename RouteHandleIf_,
+          typename Context,
           typename Request,
           typename... Requests,
           typename OpList>
 class RouteHandleIf<RouteHandleIf_,
+                    Context,
                     List<Request, Requests...>,
                     OpList,
                     0> :
       public RouteHandleIf<RouteHandleIf_,
+                           Context,
                            List<Requests...>,
                            OpList,
                            OpList::kLastItemId> {
 
  public:
+  using ContextPtr = std::shared_ptr<Context>;
+
   using RouteHandleIf<RouteHandleIf_,
+                      Context,
                       List<Requests...>,
                       OpList,
                       OpList::kLastItemId>::couldRouteTo;
   using RouteHandleIf<RouteHandleIf_,
+                      Context,
                       List<Requests...>,
                       OpList,
                       OpList::kLastItemId>::route;
 };
 
 template <typename RouteHandleIf_,
+          typename Context,
           typename Request,
           typename... Requests,
           typename OpList,
           int op_id>
 class RouteHandleIf<RouteHandleIf_,
+                    Context,
                     List<Request, Requests...>,
                     OpList,
                     op_id> :
       public RouteHandleIf<RouteHandleIf_,
+                           Context,
                            List<Request, Requests...>,
                            OpList,
                            op_id-1> {
  public:
+  using ContextPtr = std::shared_ptr<Context>;
+
   template <class Route>
   using Impl = RouteHandle<Route,
                            RouteHandleIf_,
+                           Context,
                            List<Request, Requests...>,
                            OpList,
                            op_id>;
 
   using RouteHandleIf<RouteHandleIf_,
+                      Context,
                       List<Request, Requests...>,
                       OpList,
                       op_id-1>::couldRouteTo;
   using RouteHandleIf<RouteHandleIf_,
+                      Context,
                       List<Request, Requests...>,
                       OpList,
                       op_id-1>::route;
@@ -257,14 +296,17 @@ class RouteHandleIf<RouteHandleIf_,
    * send a request to
    */
   virtual std::vector<std::shared_ptr<RouteHandleIf_>> couldRouteTo(
-    const Request& req, typename OpList::template Item<op_id>::op) const = 0;
+    const Request& req, typename OpList::template Item<op_id>::op,
+    const std::shared_ptr<Context>& ctx) const = 0;
 
   /**
    * Routes the request through this route handle
    */
   virtual typename ReplyType<typename OpList::template Item<op_id>::op,
                              Request>::type
-  route(const Request& req, typename OpList::template Item<op_id>::op) = 0;
+  route(const Request& req,
+        typename OpList::template Item<op_id>::op,
+        const std::shared_ptr<Context>& ctx) = 0;
 };
 
 }}  // facebook::memcache

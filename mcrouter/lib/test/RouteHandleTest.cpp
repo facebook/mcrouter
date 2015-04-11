@@ -40,31 +40,31 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(routeHandleTest, nullGet) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("key"), McOperation<mc_op_get>());
   EXPECT_TRUE(reply.result() == mc_res_notfound);
 }
 
 TEST(routeHandleTest, nullSet) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_set>());
+  auto reply = rh.routeSimple(McRequest("key"), McOperation<mc_op_set>());
   EXPECT_TRUE(reply.result() == mc_res_notstored);
 }
 
 TEST(routeHandleTest, nullDelete) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_delete>());
+  auto reply = rh.routeSimple(McRequest("key"), McOperation<mc_op_delete>());
   EXPECT_TRUE(reply.result() == mc_res_notfound);
 }
 
 TEST(routeHandleTest, nullIncr) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_incr>());
+  auto reply = rh.routeSimple(McRequest("key"), McOperation<mc_op_incr>());
   EXPECT_TRUE(reply.result() == mc_res_notfound);
 }
 
 TEST(routeHandleTest, error) {
   TestRouteHandle<ErrorRoute<TestRouteHandleIf>> rh;
-  auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+  auto reply = rh.routeSimple(McRequest("key"), McOperation<mc_op_get>());
   EXPECT_TRUE(reply.isError());
 }
 
@@ -83,7 +83,8 @@ TEST(routeHandleTest, allSync) {
   fm.runAll(
     {
       [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         /* Check that we got the worst result back */
         EXPECT_TRUE(reply.result() == mc_res_remote_error);
@@ -112,7 +113,7 @@ TEST(routeHandleTest, allAsync) {
     {
       [&]() {
         auto op = McOperation<mc_op_get>();
-        auto reply = rh.route(McRequest("key"), op);
+        auto reply = rh.routeSimple(McRequest("key"), op);
 
         /* Check that we got no result back */
         EXPECT_TRUE(reply.result() == mc_res_notfound);
@@ -140,7 +141,8 @@ TEST(routeHandleTest, allInitial) {
   fm.runAll(
     {
       [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         /* Check that we got the initial result back */
         EXPECT_TRUE(reply.result() == mc_res_found);
@@ -155,7 +157,7 @@ TEST(routeHandleTest, allInitial) {
 
   /* Check that couldRouteTo is correct */
   EXPECT_TRUE(routeHandles ==
-    rh.couldRouteTo(McRequest("key"), McOperation<mc_op_get>()));
+    rh.couldRouteToSimple(McRequest("key"), McOperation<mc_op_get>()));
 }
 
 TEST(routeHandleTest, allMajority) {
@@ -175,7 +177,8 @@ TEST(routeHandleTest, allMajority) {
   fm.runAll(
     {
       [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         /* Check that we got the majority reply
            without waiting for "b", which is paused */
@@ -211,7 +214,8 @@ TEST(routeHandleTest, allMajorityTie) {
   fm.runAll(
     {
       [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         /* Check that we got the _worst_ majority reply */
         EXPECT_TRUE(reply.result() == mc_res_remote_error);
@@ -235,7 +239,8 @@ TEST(routeHandleTest, allMajorityEmpty) {
   fm.runAll(
     {
       [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         // Check that we got no result back
         EXPECT_TRUE(reply.result() == mc_res_notfound);
@@ -260,7 +265,8 @@ TEST(routeHandleTest, allFastest) {
   fm.runAll(
     {
       [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+        auto reply = rh.routeSimple(McRequest("key"),
+                                    McOperation<mc_op_get>());
 
         /* Check that we got the fastest non-error result back
            ('b' is paused) */
@@ -310,17 +316,17 @@ TEST(routeHandleTest, hashNoSalt) {
     HashFunc(test_handles.size()));
 
   fm.run([&]() {
-      auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+      auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply.value()) == "a");
     });
 
   fm.run([&]() {
-      auto reply = rh.route(McRequest("1"), McOperation<mc_op_get>());
+      auto reply = rh.routeSimple(McRequest("1"), McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply.value()) == "b");
     });
 
   fm.run([&]() {
-      auto reply = rh.route(McRequest("2"), McOperation<mc_op_get>());
+      auto reply = rh.routeSimple(McRequest("2"), McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply.value()) == "c");
     });
 }
@@ -340,19 +346,19 @@ TEST(routeHandleTest, hashSalt) {
     HashFunc(test_handles.size()));
 
   fm.run([&]() {
-      auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+      auto reply = rh.routeSimple(McRequest("0"), McOperation<mc_op_get>());
       /* 01 % 3 == 1 */
       EXPECT_TRUE(toString(reply.value()) == "b");
     });
 
   fm.run([&]() {
-      auto reply = rh.route(McRequest("1"), McOperation<mc_op_get>());
+      auto reply = rh.routeSimple(McRequest("1"), McOperation<mc_op_get>());
       /* 11 % 3 == 2 */
       EXPECT_TRUE(toString(reply.value()) == "c");
     });
 
   fm.run([&]() {
-      auto reply = rh.route(McRequest("2"), McOperation<mc_op_get>());
+      auto reply = rh.routeSimple(McRequest("2"), McOperation<mc_op_get>());
       /* 21 % 3 == 0 */
       EXPECT_TRUE(toString(reply.value()) == "a");
     });
