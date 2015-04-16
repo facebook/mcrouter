@@ -54,6 +54,9 @@ template <class RouteHandleIf>
 class LatestRoute;
 
 template <class RouteHandleIf>
+class LoggingRoute;
+
+template <class RouteHandleIf>
 class MissFailoverRoute;
 
 template <class RouteHandleIf>
@@ -112,6 +115,8 @@ RouteHandleProvider<RouteHandleIf>::create(
     return { makeRouteHandle<RouteHandleIf, NullRoute>() };
   } else if (type == "RandomRoute") {
     return { makeRouteHandle<RouteHandleIf, RandomRoute>(factory, json) };
+  } else if (type == "LoggingRoute") {
+    return { makeRouteHandle<RouteHandleIf, LoggingRoute>(factory, json) };
   }
 
   return {};

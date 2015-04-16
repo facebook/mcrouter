@@ -163,6 +163,8 @@ libmcrouter_a_SOURCES = \
   routes/HostIdRoute.h \
   routes/LatestRoute-inl.h \
   routes/LatestRoute.h \
+  routes/LoggingRoute.cpp \
+  routes/LoggingRoute.h \
   routes/MigrateRoute.h \
   routes/MissFailoverRoute.h \
   routes/NullRoute.h \
