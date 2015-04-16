@@ -14,6 +14,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -29,8 +30,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class AsynclogRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   std::string routeName() const { return "asynclog:" + asynclogName_; }
 
   AsynclogRoute(McrouterRouteHandlePtr rh, std::string asynclogName)
@@ -40,17 +39,17 @@ class AsynclogRoute {
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return {rh_};
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename DeleteLike<Operation>::Type = 0) const {
 
-    auto reply = rh_->route(req, Operation(), ctx);
+    auto reply = rh_->route(req, Operation());
     if (!reply.isFailoverError()) {
       return reply;
     }
@@ -63,7 +62,7 @@ class AsynclogRoute {
       req.keyWithoutRoute();
     folly::StringPiece asynclogName = asynclogName_;
 
-    auto proxy = &ctx->proxy();
+    auto proxy = &fiber_local::getSharedCtx()->proxy();
     folly::fibers::Baton b;
     auto res = proxy->router->asyncWriter().run(
       [&b, proxy, &dest, key, asynclogName] () {
@@ -86,10 +85,10 @@ class AsynclogRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     OtherThanT(Operation, DeleteLike<>) = 0) const {
 
-    return rh_->route(req, Operation(), ctx);
+    return rh_->route(req, Operation());
   }
  private:
   const McrouterRouteHandlePtr rh_;

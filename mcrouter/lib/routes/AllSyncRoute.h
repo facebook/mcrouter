@@ -29,8 +29,6 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class AllSyncRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
-
   static std::string routeName() { return "all-sync"; }
 
   explicit AllSyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
@@ -50,24 +48,24 @@ class AllSyncRoute {
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return children_;
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
 
     if (children_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation(), ctx);
+      return NullRoute<RouteHandleIf>::route(req, Operation());
     }
 
     /* Short circuit if one destination */
     if (children_.size() == 1) {
-      return children_.back()->route(req, Operation(), ctx);
+      return children_.back()->route(req, Operation());
     }
 
     std::vector<std::function<Reply()>> fs;
@@ -76,8 +74,8 @@ class AllSyncRoute {
       // no need to copy the child and request, we will not return from method
       // until we get replies
       fs.emplace_back(
-        [&rh, &req, &ctx]() {
-          return rh->route(req, Operation(), ctx);
+        [&rh, &req]() {
+          return rh->route(req, Operation());
         }
       );
     }

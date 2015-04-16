@@ -18,6 +18,7 @@
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -30,13 +31,11 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class OutstandingLimitRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   static std::string routeName() { return "outstanding-limit"; }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return {target_};
   }
@@ -47,8 +46,9 @@ class OutstandingLimitRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation, const ContextPtr& ctx) {
+  route(const Request& req, Operation) {
     if (outstanding_ == maxOutstanding_) {
+      auto& ctx = fiber_local::getSharedCtx();
       auto senderId = ctx->senderId();
       auto& entry = [&]() -> QueueEntry& {
         auto entry_it = senderIdToEntry_.find(senderId);
@@ -90,7 +90,7 @@ class OutstandingLimitRoute {
       }
     };
 
-    return target_->route(req, Operation(), ctx);
+    return target_->route(req, Operation());
   }
 
  private:

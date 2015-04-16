@@ -47,30 +47,28 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class BigValueRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   static std::string routeName() { return "big-value"; }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const;
+    const Request& req, Operation) const;
 
   BigValueRoute(McrouterRouteHandlePtr ch,
                 BigValueRouteOptions options);
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename GetLike<Operation>::Type = 0) const;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename UpdateLike<Operation>::Type = 0) const;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     OtherThanT(Operation, GetLike<>, UpdateLike<>) = 0) const;
 
  private:

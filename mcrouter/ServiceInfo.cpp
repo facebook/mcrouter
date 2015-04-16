@@ -22,6 +22,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
@@ -80,18 +81,19 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
     [keyStr, proxy = proxy_, &proxyRoute = proxyRoute_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
       folly::fibers::Baton baton;
-      {
-        auto rctx = ProxyRequestContext::createRecordingNotify(
-          *proxy,
-          baton,
-          [&destinations](const ProxyClientCommon& client) {
-            destinations->push_back(client.ap.toHostPortString());
-          }
-        );
-        ProxyMcRequest recordingReq(keyStr);
+      auto rctx = ProxyRequestContext::createRecordingNotify(
+        *proxy,
+        baton,
+        [&destinations](const ProxyClientCommon& client) {
+          destinations->push_back(client.ap.toHostPortString());
+        }
+      );
+      ProxyMcRequest recordingReq(keyStr);
 
+      {
+        auto guard = fiber_local::setSharedCtx(std::move(rctx));
         /* ignore the reply */
-        proxyRoute.route(recordingReq, Operation(), rctx);
+        proxyRoute.route(recordingReq, Operation());
       }
       baton.wait();
       return destinations;
@@ -120,12 +122,11 @@ inline void dumpTree(std::string& tree,
                      int level,
                      const RouteHandle& rh,
                      const ProxyMcRequest& req,
-                     const std::shared_ptr<ProxyRequestContext>& ctx,
                      Operation) {
   tree.append(std::string(level, ' ') + rh.routeName() + '\n');
-  auto targets = rh.couldRouteTo(req, Operation(), ctx);
+  auto targets = rh.couldRouteTo(req, Operation());
   for (auto target : targets) {
-    dumpTree(tree, level + 1, *target.get(), req, ctx, Operation());
+    dumpTree(tree, level + 1, *target.get(), req, Operation());
   }
 }
 }
@@ -134,25 +135,22 @@ template <int op_id>
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
   const ProxyMcRequest& req,
-  const std::shared_ptr<ProxyRequestContext>& ctx,
   const ProxyRoute& proxyRoute,
   McOpList::Item<op_id>) {
 
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
      std::string tree;
-     dumpTree(tree, 0, proxyRoute, req, ctx,
-              typename McOpList::Item<op_id>::op());
+     dumpTree(tree, 0, proxyRoute, req, typename McOpList::Item<op_id>::op());
      return tree;
   }
 
   return routeHandlesCommandHelper(
-    op, req, ctx, proxyRoute, McOpList::Item<op_id-1>());
+    op, req, proxyRoute, McOpList::Item<op_id-1>());
 }
 
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
   const ProxyMcRequest& req,
-  const std::shared_ptr<ProxyRequestContext>& ctx,
   const ProxyRoute& proxyRoute,
   McOpList::Item<0>) {
 
@@ -276,12 +274,9 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       }
       auto op = args[0];
       auto key = args[1];
-      auto ctx = ProxyRequestContext::createRecording(
-        *proxy_,
-        nullptr);
       ProxyMcRequest req(key);
 
-      return routeHandlesCommandHelper(op, req, ctx, proxyRoute_,
+      return routeHandlesCommandHelper(op, req, proxyRoute_,
                                        McOpList::LastItem());
     }
   );

@@ -28,13 +28,11 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class HostIdRoute {
  public:
-  using ContextPtr = typename RouteHandleIf::ContextPtr;
-
   static std::string routeName() { return "hostid"; }
 
   template <class Operation, class Request>
   std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
     return { target_ };
   }
@@ -58,9 +56,9 @@ class HostIdRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
-    return target_->route(req, Operation(), ctx);
+    return target_->route(req, Operation());
   }
 
  private:

@@ -14,7 +14,9 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRoute.h"
@@ -72,32 +74,26 @@ TEST(shadowRouteTest, defaultPolicy) {
     DefaultShadowPolicy());
 
   auto ctx = getContext();
-  fm.runAll(
-    {
-      [&] () {
-        auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>(),
-                              ctx);
+  fm.run([&] () {
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>());
 
-        EXPECT_TRUE(reply.result() == mc_res_found);
-        EXPECT_TRUE(toString(reply.value()) == "a");
-      }
-    });
+    EXPECT_TRUE(reply.result() == mc_res_found);
+    EXPECT_TRUE(toString(reply.value()) == "a");
+  });
 
   EXPECT_TRUE(shadowHandles[0]->saw_keys.empty());
   EXPECT_TRUE(shadowHandles[1]->saw_keys.empty());
   data->end_index = 1;
   data->end_key_fraction = 1.0;
 
-  fm.runAll(
-    {
-      [&] () {
-        auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>(),
-                              ctx);
+  fm.run([&] () {
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>());
 
-        EXPECT_TRUE(reply.result() == mc_res_found);
-        EXPECT_TRUE(toString(reply.value()) == "a");
-      }
-    });
+    EXPECT_TRUE(reply.result() == mc_res_found);
+    EXPECT_TRUE(toString(reply.value()) == "a");
+  });
 
   EXPECT_TRUE(shadowHandles[0]->saw_keys == vector<string>{"key"});
   EXPECT_TRUE(shadowHandles[1]->saw_keys == vector<string>{"key"});

@@ -13,6 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
@@ -56,9 +57,13 @@ TEST(failoverWithExptimeRouteTest, success) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
-  EXPECT_TRUE(toString(reply.value()) == "a");
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
+    EXPECT_TRUE(toString(reply.value()) == "a");
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+  });
 }
 
 TEST(failoverWithExptimeRouteTest, once) {
@@ -79,11 +84,15 @@ TEST(failoverWithExptimeRouteTest, once) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
-  EXPECT_TRUE(toString(reply.value()) == "b");
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
+    EXPECT_TRUE(toString(reply.value()) == "b");
 
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-  EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
+  });
 }
 
 TEST(failoverWithExptimeRouteTest, twice) {
@@ -104,12 +113,16 @@ TEST(failoverWithExptimeRouteTest, twice) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
-  EXPECT_TRUE(toString(reply.value()) == "c");
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
+    EXPECT_TRUE(toString(reply.value()) == "c");
 
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-  EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
-  EXPECT_TRUE(failoverHandles[1]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_TRUE(failoverHandles[1]->sawExptimes == vector<uint32_t>{2});
+  });
 }
 
 TEST(failoverWithExptimeRouteTest, fail) {
@@ -130,14 +143,18 @@ TEST(failoverWithExptimeRouteTest, fail) {
     2,
     FailoverWithExptimeSettings());
 
-  auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
 
-  /* Will return the last reply when ran out of targets */
-  EXPECT_TRUE(toString(reply.value()) == "c");
+    /* Will return the last reply when ran out of targets */
+    EXPECT_TRUE(toString(reply.value()) == "c");
 
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-  EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
-  EXPECT_TRUE(failoverHandles[1]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_TRUE(failoverHandles[1]->sawExptimes == vector<uint32_t>{2});
+  });
 }
 
 FailoverWithExptimeSettings::OperationSettings* getOpSettings(
@@ -179,10 +196,14 @@ void testFailoverGet(mc_res_t res) {
     2,
     settings);
 
-  auto reply = rhNoFail.route(ProxyMcRequest("0"),
-                              McOperation<mc_op_get>(), ctx);
-  EXPECT_EQ(toString(reply.value()), "a");
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rhNoFail.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
+    EXPECT_EQ(toString(reply.value()), "a");
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+  });
 
   opSettings->gets = true;
 
@@ -192,8 +213,11 @@ void testFailoverGet(mc_res_t res) {
     2,
     settings);
 
-  reply = rhFail.route(ProxyMcRequest("0"), McOperation<mc_op_get>(), ctx);
-  EXPECT_EQ(toString(reply.value()), "b");
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto reply = rhFail.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
+    EXPECT_EQ(toString(reply.value()), "b");
+  });
 }
 
 void testFailoverUpdate(mc_res_t res) {
@@ -219,15 +243,19 @@ void testFailoverUpdate(mc_res_t res) {
     2,
     settings);
 
-  auto msg = createMcMsgRef("0", "a");
-  auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
-                              McOperation<mc_op_set>(), ctx);
-  EXPECT_EQ(toString(reply.value()), "a");
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-  // only normal handle sees the key
-  EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
-  EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 0);
-  EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto msg = createMcMsgRef("0", "a");
+    auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
+                                McOperation<mc_op_set>());
+    EXPECT_EQ(toString(reply.value()), "a");
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    // only normal handle sees the key
+    EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
+    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 0);
+    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  });
 
   opSettings->updates = true;
 
@@ -237,12 +265,15 @@ void testFailoverUpdate(mc_res_t res) {
     2,
     settings);
 
-  msg = createMcMsgRef("0", "a");
-  reply = rhFail.route(ProxyMcRequest(std::move(msg)),
-                       McOperation<mc_op_set>(), ctx);
-  EXPECT_EQ(toString(reply.value()), "a");
-  EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
-  EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto msg = createMcMsgRef("0", "a");
+    auto reply = rhFail.route(ProxyMcRequest(std::move(msg)),
+                              McOperation<mc_op_set>());
+    EXPECT_EQ(toString(reply.value()), "a");
+    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
+    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  });
 }
 
 void testFailoverDelete(mc_res_t res) {
@@ -268,14 +299,18 @@ void testFailoverDelete(mc_res_t res) {
     2,
     settings);
 
-  auto msg = createMcMsgRef("0");
-  auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
-                              McOperation<mc_op_delete>(), ctx);
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-  // only normal handle sees the key
-  EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
-  EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 0);
-  EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto msg = createMcMsgRef("0");
+    auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
+                                McOperation<mc_op_delete>());
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    // only normal handle sees the key
+    EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
+    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 0);
+    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  });
 
   opSettings->deletes = true;
 
@@ -285,11 +320,14 @@ void testFailoverDelete(mc_res_t res) {
     2,
     settings);
 
-  msg = createMcMsgRef("0");
-  reply = rhFail.route(ProxyMcRequest(std::move(msg)),
-                       McOperation<mc_op_delete>(), ctx);
-  EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
-  EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto msg = createMcMsgRef("0");
+    auto reply = rhFail.route(ProxyMcRequest(std::move(msg)),
+                              McOperation<mc_op_delete>());
+    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
+    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+  });
 }
 
 TEST(failoverWithExptimeRouteTest, noFailoverOnConnectTimeout) {
@@ -330,12 +368,16 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
     2,
     settings);
 
-  auto msg = createMcMsgRef("0", "1");
-  auto reply = rh.route(ProxyMcRequest(std::move(msg)),
-                        McOperation<mc_op_incr>(), ctx);
-  EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-  // only normal handle sees the key
-  EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
-  EXPECT_TRUE(failoverHandles[0]->saw_keys.size() == 0);
-  EXPECT_TRUE(failoverHandles[1]->saw_keys.size() == 0);
+  TestFiberManager fm;
+  fm.run([&]{
+    auto guard = fiber_local::setSharedCtx(ctx);
+    auto msg = createMcMsgRef("0", "1");
+    auto reply = rh.route(ProxyMcRequest(std::move(msg)),
+                          McOperation<mc_op_incr>());
+    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    // only normal handle sees the key
+    EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
+    EXPECT_TRUE(failoverHandles[0]->saw_keys.size() == 0);
+    EXPECT_TRUE(failoverHandles[1]->saw_keys.size() == 0);
+  });
 }

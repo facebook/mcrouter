@@ -22,6 +22,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShardSplitter.h"
@@ -48,8 +49,6 @@ std::string createSplitKey(folly::StringPiece fullKey,
  */
 class ShardSplitRoute {
  public:
-  using ContextPtr = std::shared_ptr<ProxyRequestContext>;
-
   static std::string routeName() { return "shard-split"; }
 
   ShardSplitRoute(McrouterRouteHandlePtr rh, ShardSplitter shardSplitter)
@@ -59,31 +58,34 @@ class ShardSplitRoute {
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation, const ContextPtr& ctx) const {
+    const Request& req, Operation) const {
 
-    ctx->recordShardSplitter(shardSplitter_);
+    auto& ctx = fiber_local::getSharedCtx();
+    if (ctx) {
+      ctx->recordShardSplitter(shardSplitter_);
+    }
 
     if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
-      return rh_->couldRouteTo(req, Operation(), ctx);
+      return rh_->couldRouteTo(req, Operation());
     }
 
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     if (cnt == 1) {
-      return rh_->couldRouteTo(req, Operation(), ctx);
+      return rh_->couldRouteTo(req, Operation());
     }
     if (GetLike<Operation>::value) {
       size_t i = globals::hostid() % cnt;
       if (i == 0) {
-        return rh_->couldRouteTo(req, Operation(), ctx);
+        return rh_->couldRouteTo(req, Operation());
       }
-      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation(), ctx);
+      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation());
     }
 
     assert(DeleteLike<Operation>::value);
-    auto result = rh_->couldRouteTo(req, Operation(), ctx);
+    auto result = rh_->couldRouteTo(req, Operation());
     for (size_t i = 0; i < cnt - 1; ++i) {
-      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation(), ctx);
+      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation());
       result.insert(result.end(), nx.begin(), nx.end());
     }
 
@@ -92,7 +94,7 @@ class ShardSplitRoute {
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     typename GetLike<Operation>::Type = 0) const {
 
     // Gets are routed to one of the splits.
@@ -100,20 +102,20 @@ class ShardSplitRoute {
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     size_t i = globals::hostid() % cnt;
     if (i == 0) {
-      return rh_->route(req, Operation(), ctx);
+      return rh_->route(req, Operation());
     }
-    return rh_->route(splitReq(req, i - 1, shard), Operation(), ctx);
+    return rh_->route(splitReq(req, i - 1, shard), Operation());
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, const ContextPtr& ctx,
+    const Request& req, Operation,
     OtherThanT(Operation, GetLike<>) = 0) const {
 
     // Anything that is not a Get or Delete goes to the primary split.
     static_assert(!GetLike<Operation>::value, "");
     if (!DeleteLike<Operation>::value) {
-      return rh_->route(req, Operation(), ctx);
+      return rh_->route(req, Operation());
     }
 
     // Deletes are broadcast to all splits.
@@ -125,14 +127,14 @@ class ShardSplitRoute {
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
       folly::fibers::addTask(
-        [r = rh_, req_ = splitReq(req, i, shard), ctx]() {
-          r->route(req_, Operation(), ctx);
+        [r = rh_, req_ = splitReq(req, i, shard)]() {
+          r->route(req_, Operation());
         });
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
     }
-    return rh_->route(req, Operation(), ctx);
+    return rh_->route(req, Operation());
   }
 
  private:
