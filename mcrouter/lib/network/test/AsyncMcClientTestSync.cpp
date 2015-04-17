@@ -291,6 +291,15 @@ class TestClient {
   folly::fibers::FiberManager fm_;
 };
 
+std::string genBigValue() {
+  const size_t kBigValueSize = 1024 * 1024 * 4;
+  std::string bigValue(kBigValueSize, '.');
+  for (size_t i = 0; i < kBigValueSize; ++i) {
+    bigValue[i] = 65 + (i % 26);
+  }
+  return bigValue;
+}
+
 }  // namespace
 
 void serverShutdownTest(bool useSsl = false) {
@@ -552,11 +561,7 @@ TEST(AsyncMcClient, qosClass4) {
 }
 
 void reconnectTest(mc_protocol_t protocol) {
-  const size_t kBigValueSize = 1024 * 1024 * 4;
-  std::string bigValue(kBigValueSize, '.');
-  for (size_t i = 0; i < kBigValueSize; ++i) {
-    bigValue[i] = 65 + (i % 26);
-  }
+  auto bigValue = genBigValue();
 
   TestServer server(protocol == mc_umbrella_protocol, false);
   TestClient client("localhost", server.getListenPort(), 100,
@@ -584,6 +589,41 @@ TEST(AsyncMcClient, reconnectAscii) {
 
 TEST(AsyncMcClient, reconnectUmbrella) {
   reconnectTest(mc_umbrella_protocol);
+}
+
+void reconnectImmediatelyTest(mc_protocol_t protocol) {
+  auto bigValue = genBigValue();
+
+  TestServer server(protocol == mc_umbrella_protocol, false);
+  TestClient client("localhost", server.getListenPort(), 100,
+                    protocol);
+  client.sendGet("test1", mc_res_found);
+  client.sendSet("test", "testValue", mc_res_stored);
+  client.waitForReplies();
+  client.sendGet("sleep", mc_res_timeout);
+  // Wait for the reply, we will still have ~900ms for the write to fail.
+  client.waitForReplies();
+  // Prevent get from being sent before we reconnect, this will trigger
+  // a reconnect in error handling path of AsyncMcClient.
+  client.setThrottle(1, 0);
+  client.sendSet("testKey", bigValue.data(), mc_res_remote_error);
+  client.sendGet("test1", mc_res_timeout);
+  client.waitForReplies();
+  // Allow server some time to wake up.
+  /* sleep override */ usleep(1000000);
+  client.sendGet("test2", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server.join();
+  EXPECT_EQ(server.getStats().accepted.load(), 2);
+}
+
+TEST(AsyncMcClient, reconnectImmediatelyAscii) {
+  reconnectImmediatelyTest(mc_ascii_protocol);
+}
+
+TEST(AsyncMcClient, reconnectImmediatelyUmbrella) {
+  reconnectImmediatelyTest(mc_umbrella_protocol);
 }
 
 void bigKeyTest(mc_protocol_t protocol) {
@@ -655,4 +695,73 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
 
   EXPECT_FALSE(wasUp);
   EXPECT_TRUE(wentDown);
+}
+
+TEST(AsyncMcClient, asciiSentTimeouts) {
+  TestServer server(false /* outOfOrder */, false /* useSsl */);
+  TestClient client("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("hold", mc_res_timeout);
+  client.sendGet("test2", mc_res_timeout);
+  // Wait until we timeout everything.
+  client.waitForReplies();
+  client.sendGet("flush", mc_res_found);
+  client.sendGet("test3", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server.join();
+  EXPECT_EQ(server.getStats().accepted.load(), 1);
+}
+
+TEST(AsyncMcClient, asciiPendingTimeouts) {
+  TestServer server(false /* outOfOrder */, false /* useSsl */);
+  TestClient client("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  // Allow only up to two requests in flight.
+  client.setThrottle(2, 0);
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("hold", mc_res_timeout);
+  client.sendGet("test2", mc_res_timeout);
+  client.sendGet("test3", mc_res_timeout);
+  // Wait until we timeout everything.
+  client.waitForReplies();
+  client.sendGet("flush", mc_res_found);
+  client.sendGet("test3", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server.join();
+  EXPECT_EQ(server.getStats().accepted.load(), 1);
+}
+
+TEST(AsyncMcClient, asciiSendingTimeouts) {
+  auto bigValue = genBigValue();
+  TestServer server(false /* outOfOrder */, false /* useSsl */);
+  // Use very large write timeout, so that we never timeout writes.
+  TestClient client("localhost", server.getListenPort(), 10000,
+                    mc_ascii_protocol);
+  // Allow only up to two requests in flight.
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client.sendGet("sleep", mc_res_timeout);
+  // Wait for the request to timeout.
+  client.waitForReplies();
+  // We'll need to hold the reply to the set request.
+  client.sendGet("hold", mc_res_timeout);
+  // Will overfill write queue of the server and timeout before completely
+  // written.
+  client.sendSet("testKey", bigValue.data(), mc_res_timeout);
+  // Wait until we complete send, note this will happen after server wakes up.
+  // This is due to the fact that we cannot timeout until the request wasn't
+  // completely sent.
+  client.waitForReplies();
+  // Flush set reply.
+  client.sendGet("flush", mc_res_found);
+  client.sendGet("test3", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server.join();
+  EXPECT_EQ(server.getStats().accepted.load(), 1);
 }
