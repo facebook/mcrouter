@@ -61,17 +61,12 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-
-}  // anonymous namespace
-
 static asox_queue_callbacks_t const proxy_request_queue_cb =  {
   /* Note that we want to drain the queue on cleanup,
      so we register both regular and sweep callbacks */
   McrouterClient::requestReady,
   McrouterClient::requestReady,
 };
-
-namespace {
 
 folly::fibers::FiberManager::Options getFiberManagerOptions(
     const McrouterOptions& opts) {
@@ -82,7 +77,7 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
   return fmOpts;
 }
 
-}
+}  // anonymous namespace
 
 proxy_t::proxy_t(McrouterInstance* router_,
                  folly::EventBase* eventBase_,
