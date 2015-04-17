@@ -113,6 +113,7 @@ libmcroutercore_a_SOURCES = \
   routes/HostIdRoute.cpp \
   routes/L1L2CacheRoute.cpp \
   routes/LatestRoute.cpp \
+  routes/LoggingRoute.cpp \
   routes/McExtraRouteHandleProvider.cpp \
   routes/McExtraRouteHandleProvider.h \
   routes/McImportResolver.cpp \
