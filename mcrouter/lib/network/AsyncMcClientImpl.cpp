@@ -485,13 +485,20 @@ void AsyncMcClientImpl::readErr(
 }
 
 void AsyncMcClientImpl::writeSuccess() noexcept {
-  assert(connectionState_ == ConnectionState::UP);
+  assert(connectionState_ == ConnectionState::UP ||
+         connectionState_ == ConnectionState::ERROR);
   DestructorGuard dg(this);
   auto& req = queue_.markNextAsSent();
 
   // In case of no-network we need to provide fake reply.
   if (connectionOptions_.noNetwork) {
     sendFakeReply(req);
+  }
+
+  // It is possible that we're already processing error, but still have a
+  // successfull write.
+  if (connectionState_ == ConnectionState::ERROR) {
+    processShutdown();
   }
 }
 
