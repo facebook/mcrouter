@@ -54,7 +54,7 @@ class McClientRequestContextBase {
    *
    * Should be called only when the request is not in a queue.
    */
-  virtual void replyError(mc_res_t result) = 0;
+  void replyError(mc_res_t result);
 
  protected:
   enum class ReqState {
@@ -63,6 +63,7 @@ class McClientRequestContextBase {
     WRITE_QUEUE,
     WRITE_QUEUE_CANCELED,
     PENDING_REPLY_QUEUE,
+    REPLIED_QUEUE,
     COMPLETE,
   };
 
@@ -78,6 +79,8 @@ class McClientRequestContextBase {
 
   virtual void sendTraceOnReply() = 0;
 
+  virtual void replyErrorImpl(mc_res_t result) = 0;
+
   folly::fibers::Baton baton_;
   McClientRequestContextQueue& queue_;
   ReqState state_{ReqState::NONE};
@@ -91,8 +94,6 @@ class McClientRequestContextBase {
   void* replyStorage_;
   InitializerFuncPtr initializer_;
 
-  void cancelAndWait();
-
   /**
    * Notify context that request was canceled in AsyncMcClientImpl
    */
@@ -102,11 +103,11 @@ class McClientRequestContextBase {
    * Entry point for propagating reply to the user.
    *
    * Typechecks the reply and propagates it to the proper subclass.
-   *
-   * @return false iff the reply type didn't match with expected.
+   * If the reply type doesn't match the expected one, replies the request with
+   * an error
    */
   template <class Reply>
-  bool reply(Reply&& r);
+  void reply(Reply&& r);
 
  public:
   using Queue = folly::CountedIntrusiveList<McClientRequestContextBase,
@@ -124,7 +125,6 @@ class McClientRequestContext : public McClientRequestContextBase {
     McClientRequestContextQueue& queue,
     McClientRequestContextBase::InitializerFuncPtr);
 
-  void replyError(mc_res_t result) override;
   const char* fakeReply() const override;
 
   Reply waitForReply(std::chrono::milliseconds timeout);
@@ -135,6 +135,7 @@ class McClientRequestContext : public McClientRequestContextBase {
   const mc_fbtrace_info_s* fbtraceInfo_;
 #endif
   void sendTraceOnReply() override;
+  void replyErrorImpl(mc_res_t result) override;
 };
 
 class McClientRequestContextQueue {
@@ -229,6 +230,9 @@ class McClientRequestContextQueue {
   McClientRequestContextBase::Queue writeQueue_;
   // Queue of requests, that are already sent and are waiting for replies.
   McClientRequestContextBase::Queue pendingReplyQueue_;
+  // A special internal queue for request that were replied before it's been
+  // completely written.
+  McClientRequestContextBase::Queue repliedQueue_;
   // Id to request map. Used only in case of out-of-order protocol for fast
   // request lookup.
   std::unordered_map<uint64_t, McClientRequestContextBase*> idMap_;

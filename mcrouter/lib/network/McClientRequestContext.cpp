@@ -11,6 +11,13 @@
 
 namespace facebook { namespace memcache {
 
+void McClientRequestContextBase::replyError(mc_res_t result) {
+  assert(state_ == ReqState::NONE);
+  replyErrorImpl(result);
+  state_ = ReqState::COMPLETE;
+  baton_.post();
+}
+
 void McClientRequestContextBase::canceled() {
   state_ = ReqState::NONE;
   baton_.post();
@@ -29,7 +36,7 @@ size_t McClientRequestContextQueue::getPendingRequestCount() const noexcept {
 }
 
 size_t McClientRequestContextQueue::getInflightRequestCount() const noexcept {
-  return writeQueue_.size() + pendingReplyQueue_.size();
+  return repliedQueue_.size() + writeQueue_.size() + pendingReplyQueue_.size();
 }
 
 void McClientRequestContextQueue::failAllSent(mc_res_t error) {
@@ -40,6 +47,7 @@ void McClientRequestContextQueue::failAllSent(mc_res_t error) {
 void McClientRequestContextQueue::failAllPending(mc_res_t error) {
   assert(pendingReplyQueue_.empty());
   assert(writeQueue_.empty());
+  assert(repliedQueue_.empty());
   failQueue(pendingQueue_, error);
 }
 
@@ -75,6 +83,14 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSending() {
 }
 
 McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
+  if (!repliedQueue_.empty()) {
+    auto& req = repliedQueue_.front();
+    repliedQueue_.pop_front();
+    req.state_ = State::COMPLETE;
+    req.baton_.post();
+    return req;
+  }
+
   auto& req = writeQueue_.front();
   writeQueue_.pop_front();
   if (req.state_ == State::WRITE_QUEUE_CANCELED) {
@@ -143,6 +159,8 @@ McClientRequestContextQueue::getParserInitializer(uint64_t reqId) {
       return timedOutInitializers_.front();
     } else if (!pendingReplyQueue_.empty()) {
       return pendingReplyQueue_.front().initializer_;
+    } else if (!writeQueue_.empty()) {
+      return writeQueue_.front().initializer_;
     }
   }
   return nullptr;

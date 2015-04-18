@@ -88,19 +88,32 @@ class CustomErrorServer(MockServer):
     def __init__(self, expected_bytes=0, error_message='SERVER_ERROR'):
         super(CustomErrorServer, self).__init__()
         self.expected_bytes = expected_bytes
+        self.reply_after = expected_bytes
+        self.sleep_after_reply = None
         self.error_message = error_message
 
-    def setExpectedBytes(self, expected_bytes):
+    def setExpectedBytes(self, expected_bytes, reply_after=None):
         self.expected_bytes = expected_bytes
+        if reply_after is None:
+            self.reply_after = expected_bytes
+        else:
+            self.reply_after = reply_after
+
+    def setSleepAfterReply(self, duration):
+        self.sleep_after_reply = duration
 
     def setError(self, error_message):
         self.error_message = error_message
 
     def runServer(self, client_socket, client_address):
         f = client_socket.makefile()
-        f.read(self.expected_bytes)
-        f.close()
+        f.read(self.reply_after)
         client_socket.send(self.error_message + '\r\n')
+        if self.sleep_after_reply is not None:
+            time.sleep(self.sleep_after_reply)
+        if self.reply_after != self.expected_bytes:
+            f.read(self.expected_bytes - self.reply_after)
+        f.close()
 
 class StoreServer(MockServer):
     """A server that responds to requests with 'STORED' after reading expected

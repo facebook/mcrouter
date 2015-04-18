@@ -32,23 +32,23 @@ inline getFbTraceInfo(const Request& request) {
 }
 
 template <class Reply>
-bool McClientRequestContextBase::reply(Reply&& r) {
-  assert(state_ == ReqState::PENDING_REPLY_QUEUE);
+void McClientRequestContextBase::reply(Reply&& r) {
+  assert(state_ == ReqState::PENDING_REPLY_QUEUE ||
+         state_ == ReqState::WRITE_QUEUE ||
+         state_ == ReqState::WRITE_QUEUE_CANCELED);
   if (replyType_ != typeid(Reply)) {
     failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
                  "Attempt to forward a reply of a wrong type. Expected '{}', "
                  "but received '{}'!", replyType_.name(), typeid(Reply).name());
 
-    return false;
+    replyErrorImpl(mc_res_local_error);
+    return;
   }
 
   auto* storage = reinterpret_cast<folly::Optional<Reply>*>(replyStorage_);
   assert(!storage->hasValue());
   storage->emplace(std::move(r));
   sendTraceOnReply();
-  state_ = ReqState::COMPLETE;
-  baton_.post();
-  return true;
 }
 
 template <class Operation, class Request>
@@ -67,13 +67,10 @@ McClientRequestContextBase::McClientRequestContextBase(
 }
 
 template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::replyError(
+void McClientRequestContext<Operation, Request>::replyErrorImpl(
     mc_res_t result) {
-  assert(state_ == ReqState::NONE);
   assert(!replyStorage_.hasValue());
   replyStorage_.emplace(result);
-  state_ = ReqState::COMPLETE;
-  baton_.post();
 }
 
 template <class Operation, class Request>
@@ -94,12 +91,24 @@ McClientRequestContext<Operation, Request>::waitForReply(
   }
 
   switch (state_) {
+    case ReqState::REPLIED_QUEUE:
+      // The request was already replied, but we're still waiting for socket
+      // write to succeed.
+      baton_.reset();
+      baton_.wait();
+      assert(state_ == ReqState::COMPLETE);
+      return std::move(replyStorage_.value());
     case ReqState::WRITE_QUEUE:
       // Request is being written into socket, we need to wait for it to be
       // completely written, then reply with timeout.
       state_ = ReqState::WRITE_QUEUE_CANCELED;
       baton_.reset();
       baton_.wait();
+      assert(state_ == ReqState::COMPLETE || state_ == ReqState::NONE);
+      // It is still possible that we'll receive a reply while waiting.
+      if (state_ == ReqState::COMPLETE) {
+        return std::move(replyStorage_.value());
+      }
       return Reply(mc_res_timeout);
     case ReqState::PENDING_QUEUE:
       // Request wasn't sent to the network yet, reply with timeout.
@@ -162,15 +171,26 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
     } else if (!pendingReplyQueue_.empty()) {
       ctx = &pendingReplyQueue_.front();
       pendingReplyQueue_.pop_front();
+    } else if (!writeQueue_.empty()) {
+      ctx = &writeQueue_.front();
+      writeQueue_.pop_front();
+    } else {
+      // With old mc_parser it's possible to receive unexpected replies, we need
+      // to ignore them. But we need to log this.
+      failure::log("AsyncMcClient", failure::Category::kOther,
+                   "Receieved unexpected reply from server!");
     }
-    // With old mc_parser it's possible to receive unexpected replies, we need
-    // to ignore them.
   }
 
   if (ctx) {
-    if (!ctx->reply(std::move(r))) {
-      ctx->state_ = State::NONE;
-      ctx->replyError(mc_res_local_error);
+    ctx->reply(std::move(r));
+    if (ctx->state_ == State::PENDING_REPLY_QUEUE) {
+      ctx->state_ = State::COMPLETE;
+      ctx->baton_.post();
+    } else {
+      // Move the request to the replied queue.
+      ctx->state_ = State::REPLIED_QUEUE;
+      repliedQueue_.push_back(*ctx);
     }
   }
 }

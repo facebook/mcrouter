@@ -142,6 +142,23 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             res = mcrouter.issue_command(cmd)
             self.assertEqual(error + '\r\n', res)
 
+    def test_early_server_reply(self):
+        value_len = 1024 * 1024 * 4
+        value = 'a' * value_len
+        cmd_header = 'set test:key 0 0 {}\r\n'.format(value_len)
+        cmd = cmd_header + value + '\r\n'
+        error = 'SERVER_ERROR out of memory'
+        self.server.setError(error)
+        # reply before reading the value part of request
+        self.server.setExpectedBytes(len(cmd), len(cmd_header))
+        # sleep for one second to ensure that there's a gap between
+        # request write and reply read events in mcrouter
+        self.server.setSleepAfterReply(1)
+        mcrouter = self.add_mcrouter(self.config,
+                                     extra_args=['--server-timeout', '2000'])
+        res = mcrouter.issue_command(cmd)
+        self.assertEqual(error + '\r\n', res)
+
 
 class TestMcrouterGeneratedErrors(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
