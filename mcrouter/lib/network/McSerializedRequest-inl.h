@@ -29,6 +29,10 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
       break;
     case mc_umbrella_protocol:
       new (&umbrellaMessage_) UmbrellaSerializedMessage();
+      if (req.key().length() > MC_KEY_MAX_LEN_UMBRELLA) {
+        result_ = Result::BAD_KEY;
+        return;
+      }
       if (!umbrellaMessage_.prepare(req, McOperation<Op>(), reqId, iovsBegin_,
                                     iovsCount_)) {
         result_ = Result::ERROR;

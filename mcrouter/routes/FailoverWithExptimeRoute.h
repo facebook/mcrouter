@@ -92,8 +92,12 @@ class FailoverWithExptimeRoute {
     if (settings_.failoverTagging &&
         mutReq.hasHashStop() &&
         reply.getDestination() != nullptr) {
-      mutReq.setKey(keyWithFailoverTag(mutReq.fullKey(),
-                                       reply.getDestination()->ap));
+      auto newKey = keyWithFailoverTag(mutReq.fullKey(),
+                                       reply.getDestination()->ap);
+      /* It's always safe to not append a failover tag */
+      if (newKey.size() <= MC_KEY_MAX_LEN) {
+        mutReq.setKey(std::move(newKey));
+      }
     }
     /* 0 means infinite exptime.
        We want to set the smallest of request exptime, failover exptime. */
