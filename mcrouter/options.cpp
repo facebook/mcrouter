@@ -191,13 +191,13 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
     }
   });
 
+  /* Don't throw on invalid options, the most likely cause is old code
+     during new option roll out */
   for (const auto& kv : new_opts) {
     if (seen.find(kv.first) == seen.end()) {
-      McrouterOptionError e;
-      e.requestedName = kv.first;
-      e.requestedValue = kv.second;
-      e.errorMsg = "Unknown option name";
-      errors.push_back(e);
+      mcrouter::logFailure(failure::Category::kInvalidOption,
+                           "Unknown option name: {}={}",
+                           kv.first, kv.second);
     }
   }
 
