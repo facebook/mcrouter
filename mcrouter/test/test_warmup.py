@@ -45,6 +45,6 @@ class TestWarmup(McrouterTestCase):
         time.sleep(1)
         self.assertEqual(self.mc2.get(key), value)
         mc2_foo2_exptime = int(self.mc2.metaget(key)['exptime'])
-        self.assertGreaterEqual(mc2_foo2_exptime, min_expected_exptime)
         # Prevent random failures due to delays when setting the key on mc2
+        self.assertGreaterEqual(mc2_foo2_exptime, min_expected_exptime - 4)
         self.assertLessEqual(mc2_foo2_exptime, min_expected_exptime + 4)
