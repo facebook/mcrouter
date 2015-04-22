@@ -302,7 +302,7 @@ void asynclog_delete(proxy_t* proxy,
 
   if (proxy->opts.use_asynclog_version2) {
     json = dynamic::object;
-    json["f"] = proxy->opts.router_name;
+    json["f"] = proxy->opts.flavor_name;
     json["h"] = folly::sformat("[{}]:{}", host, port);
     json["p"] = poolName.str();
     json["k"] = key.str();
