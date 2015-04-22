@@ -290,7 +290,7 @@ void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
 
   const uint64_t expectedValue = getQoSClass(connectionOptions.qos);
 
-  uint64_t val;
+  uint64_t val = 0;
   socklen_t len = sizeof(expectedValue);
   int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
   if (rv != 0 || val != expectedValue) {
