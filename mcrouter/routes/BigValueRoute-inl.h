@@ -53,7 +53,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     );
   }
 
-  auto replies = folly::fibers::whenAll(fs.begin(), fs.end());
+  auto replies = folly::fibers::collectAll(fs.begin(), fs.end());
   return mergeChunkGetReplies(
     replies.begin(), replies.end(), std::move(initialReply));
 }
@@ -81,7 +81,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     );
   }
 
-  auto replies = folly::fibers::whenAll(fs.begin(), fs.end());
+  auto replies = folly::fibers::collectAll(fs.begin(), fs.end());
 
   // reply for all chunk update requests
   auto reducedReply = Reply::reduce(replies.begin(), replies.end());

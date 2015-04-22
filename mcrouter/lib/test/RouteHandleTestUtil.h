@@ -242,7 +242,7 @@ class TestFiberManager {
       dynamic_cast<folly::fibers::SimpleLoopController&>(fm_.loopController());
     fm.addTask(
       [&fs, &loopController]() {
-        folly::fibers::whenAll(fs.begin(), fs.end());
+        folly::fibers::collectAll(fs.begin(), fs.end());
         loopController.stop();
       });
 
