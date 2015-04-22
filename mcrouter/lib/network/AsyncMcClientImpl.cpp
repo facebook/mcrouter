@@ -259,11 +259,12 @@ const folly::AsyncSocket::OptionKey getQoSOptionKey(
 
 uint64_t getQoSClass(int qosLevel) {
   static const uint64_t kDefaultClass = 0x00;
-  static const uint64_t kLowestClass = 0x04;
+  static const uint64_t kLowestClass = 0x20;
   static const uint64_t kMediumClass = 0x40;
+  static const uint64_t kHighClass = 0x60;
   static const uint64_t kHighestClass = 0x80;
   static const uint64_t kQoSClasses[] = {
-    kDefaultClass, kLowestClass, kMediumClass, kHighestClass, kHighestClass
+    kDefaultClass, kLowestClass, kMediumClass, kHighClass, kHighestClass
   };
 
   if (qosLevel < 0 || qosLevel > 4) {
