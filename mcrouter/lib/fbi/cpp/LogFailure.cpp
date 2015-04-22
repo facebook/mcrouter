@@ -21,7 +21,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include <folly/experimental/Singleton.h>
+#include <folly/Singleton.h>
 #include <folly/Format.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"

@@ -12,7 +12,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/DynamicConverter.h>
-#include <folly/experimental/Singleton.h>
+#include <folly/Singleton.h>
 #include <folly/json.h>
 #include <folly/MapUtil.h>
 

@@ -24,7 +24,7 @@
 #include <gtest/gtest.h>
 
 #include <folly/experimental/TestUtil.h>
-#include <folly/experimental/Singleton.h>
+#include <folly/Singleton.h>
 #include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
 
