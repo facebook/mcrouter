@@ -228,7 +228,6 @@ bool McrouterLogger::running() const {
 
 void McrouterLogger::loggerThreadRun() {
   logStartupOptions();
-  loggerThreadSleep();
 
   while (running_) {
     log();
