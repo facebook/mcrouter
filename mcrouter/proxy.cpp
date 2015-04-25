@@ -79,11 +79,9 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
 
 }  // anonymous namespace
 
-proxy_t::proxy_t(McrouterInstance* router_,
-                 folly::EventBase* eventBase_,
-                 const McrouterOptions& opts_)
-    : router(router_),
-      opts(opts_),
+proxy_t::proxy_t(McrouterInstance& router_, folly::EventBase* eventBase_)
+    : router(&router_),
+      opts(router->opts()),
       eventBase(eventBase_),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
@@ -91,7 +89,7 @@ proxy_t::proxy_t(McrouterInstance* router_,
       fiberManager(
         fiber_local::ContextTypeTag(),
         folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(opts_)) {
+        getFiberManagerOptions(opts)) {
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));

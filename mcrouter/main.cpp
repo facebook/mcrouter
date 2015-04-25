@@ -501,7 +501,7 @@ int main(int argc, char **argv) {
   check_errors(standaloneErrors);
   check_errors(errors);
   standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
-    standaloneOpts);
+    std::move(standaloneOpts));
 
   auto check_deprecated =
     [](const std::vector<McrouterOptionData>& options,

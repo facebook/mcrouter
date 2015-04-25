@@ -104,8 +104,8 @@ struct proxy_t {
   uint64_t magic;
   McrouterInstance* router{nullptr};
 
-  /** Note: will go away once the router pointer above is guaranteed to exist */
-  const McrouterOptions opts;
+  /** TODO: remove and use router->opts() instead */
+  const McrouterOptions& opts;
 
   asox_queue_t request_queue{0};
   folly::EventBase* eventBase{nullptr};
@@ -165,10 +165,6 @@ struct proxy_t {
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
-  proxy_t(McrouterInstance* router,
-          folly::EventBase* eventBase,
-          const McrouterOptions& opts);
-
   ~proxy_t();
 
   /**
@@ -201,6 +197,8 @@ struct proxy_t {
   void attachEventBase(folly::EventBase* eventBase);
 
  private:
+  proxy_t(McrouterInstance& router, folly::EventBase* eventBase);
+
   /** Read/write lock for config pointer */
   SFRLock configLock_;
   std::shared_ptr<ProxyConfigIf> config_;
@@ -253,6 +251,7 @@ struct proxy_t {
   /** Called once after a valid eventBase has been provided */
   void onEventBaseAttached();
 
+  friend class McrouterInstance;
   friend class ProxyRequestContext;
 };
 

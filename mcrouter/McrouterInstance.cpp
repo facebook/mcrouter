@@ -137,7 +137,7 @@ McrouterInstance* McrouterInstance::create(const McrouterOptions& input_options,
     initFailureLogger();
   }
 
-  auto router = new McrouterInstance(input_options);
+  auto router = new McrouterInstance(input_options.clone());
 
   folly::json::serialization_opts jsonOpts;
   jsonOpts.sort_keys = true;
@@ -173,8 +173,7 @@ McrouterClient::Pointer McrouterInstance::createClient(
 bool McrouterInstance::spinUp(bool spawnProxyThreads) {
   for (size_t i = 0; i < opts_.num_proxies; i++) {
     try {
-      auto proxy =
-        folly::make_unique<proxy_t>(this, nullptr, opts_);
+      auto proxy = std::unique_ptr<proxy_t>(new proxy_t(*this, nullptr));
       if (!opts_.standalone && spawnProxyThreads) {
         proxyThreads_.emplace_back(
           folly::make_unique<ProxyThread>(std::move(proxy)));
@@ -318,8 +317,8 @@ void McrouterInstance::tearDown() {
   delete this;
 }
 
-McrouterInstance::McrouterInstance(const McrouterOptions& input_options) :
-    opts_(options::substituteTemplates(input_options)),
+McrouterInstance::McrouterInstance(McrouterOptions input_options) :
+    opts_(options::substituteTemplates(std::move(input_options))),
     pid_(getpid()),
     configApi_(createConfigApi(opts_)),
     startupLock_(opts_.num_proxies + 1),

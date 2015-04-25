@@ -266,7 +266,7 @@ class McrouterInstance {
   static McrouterInstance* create(const McrouterOptions& input_options,
                                   bool spawnProxyThreads = true);
 
-  explicit McrouterInstance(const McrouterOptions& input_options);
+  explicit McrouterInstance(McrouterOptions input_options);
 
   ~McrouterInstance();
 

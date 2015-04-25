@@ -23,6 +23,15 @@ class OPTIONS_NAME : public McrouterOptionsBase {
 
   #include OPTIONS_FILE
 
+  OPTIONS_NAME() = default;
+
+  OPTIONS_NAME(OPTIONS_NAME&&) = default;
+  OPTIONS_NAME& operator=(OPTIONS_NAME&&) = default;
+
+  OPTIONS_NAME clone() const {
+    return *this;
+  }
+
   void forEach(std::function<void(const std::string&,
                                   McrouterOptionData::Type,
                                   const boost::any&)> f) const {
@@ -60,6 +69,9 @@ class OPTIONS_NAME : public McrouterOptionsBase {
 
     return ret;
   }
+ private:
+  OPTIONS_NAME(const OPTIONS_NAME&) = default;
+  OPTIONS_NAME& operator=(const OPTIONS_NAME&) = default;
 };
 
 #undef mcrouter_option_string
