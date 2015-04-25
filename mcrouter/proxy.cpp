@@ -32,6 +32,7 @@
 #include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/queue.h"
@@ -134,6 +135,11 @@ void proxy_t::onEventBaseAttached() {
 
   if (router != nullptr) {
     router->startupLock().notify();
+  }
+
+  if (opts.cpu_cycles) {
+    fiberManager.setObserver(&cyclesObserver);
+    cycles::attachEventBase(*eventBase);
   }
 }
 

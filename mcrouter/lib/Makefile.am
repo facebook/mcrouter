@@ -1,4 +1,4 @@
-SUBDIRS = . config fbi network test
+SUBDIRS = . config cycles fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -36,6 +36,15 @@ libmcrouter_a_SOURCES = \
   config/RouteHandleProvider-inl.h \
   config/RouteHandleProvider.h \
   config/RouteHandleProviderIf.h \
+  cycles/Accumulator.cpp \
+  cycles/Accumulator.h \
+  cycles/Clocks.cpp \
+  cycles/Clocks.h \
+  cycles/Cycles.cpp \
+  cycles/Cycles.h \
+  cycles/ExtractorThread.cpp \
+  cycles/ExtractorThread.h \
+  cycles/Interval.h \
   fbi/asox_queue.c \
   fbi/asox_queue.h \
   fbi/asox_semaphore.c \

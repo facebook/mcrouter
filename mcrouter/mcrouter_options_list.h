@@ -408,6 +408,11 @@ mcrouter_option_toggle(
   "disable-failure-logging", no_short,
   "Disable failure logging.")
 
+mcrouter_option_toggle(
+  cpu_cycles, false,
+  "cpu-cycles", no_short,
+  "Enables CPU cycles counting for performance measurement.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

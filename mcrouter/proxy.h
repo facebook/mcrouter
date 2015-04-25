@@ -24,6 +24,7 @@
 #include <folly/Range.h>
 #include <folly/experimental/fibers/FiberManager.h>
 
+#include "mcrouter/CyclesObserver.h"
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
@@ -162,6 +163,7 @@ struct proxy_t {
   bool being_destroyed{false};
 
   folly::fibers::FiberManager fiberManager;
+  CyclesObserver cyclesObserver;
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 

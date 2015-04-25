@@ -18,6 +18,7 @@
 
 #include "mcrouter/awriter.h"
 #include "mcrouter/FileObserver.h"
+#include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -27,6 +28,7 @@
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
+#include "mcrouter/stats.h"
 #include "mcrouter/ThreadUtil.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -352,6 +354,22 @@ void McrouterInstance::spawnAuxiliaryThreads() {
   startObservingRuntimeVarsFile();
   spawnStatUpdaterThread();
   spawnStatLoggerThread();
+  if (opts_.cpu_cycles) {
+    cycles::startExtracting([this](cycles::CycleStats stats) {
+      auto anyProxy = getProxy(0);
+      if (anyProxy) {
+        stat_set_uint64(anyProxy->stats, cycles_avg_stat, stats.avg);
+        stat_set_uint64(anyProxy->stats, cycles_min_stat, stats.min);
+        stat_set_uint64(anyProxy->stats, cycles_max_stat, stats.max);
+        stat_set_uint64(anyProxy->stats, cycles_p01_stat, stats.p01);
+        stat_set_uint64(anyProxy->stats, cycles_p05_stat, stats.p05);
+        stat_set_uint64(anyProxy->stats, cycles_p50_stat, stats.p50);
+        stat_set_uint64(anyProxy->stats, cycles_p95_stat, stats.p95);
+        stat_set_uint64(anyProxy->stats, cycles_p99_stat, stats.p99);
+        stat_set_uint64(anyProxy->stats, cycles_num_stat, stats.numSamples);
+      }
+    });
+  }
 }
 
 void McrouterInstance::startAwriterThreads() {
@@ -477,6 +495,10 @@ void McrouterInstance::joinAuxiliaryThreads() {
     }
   } else {
     taskScheduler_.forkWorkAround();
+  }
+
+  if (opts_.cpu_cycles) {
+    cycles::stopExtracting();
   }
 
   if (mcrouterLogger_) {

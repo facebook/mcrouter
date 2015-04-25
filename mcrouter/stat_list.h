@@ -52,6 +52,15 @@
   STUI(fibers_stack_high_watermark, 0, 0)
 //  STUI(failed_client_connections, 0)
   STUI(successful_client_connections, 0, 1)
+  STUI(cycles_avg, 0, 1)
+  STUI(cycles_min, 0, 1)
+  STUI(cycles_max, 0, 1)
+  STUI(cycles_p01, 0, 1)
+  STUI(cycles_p05, 0, 1)
+  STUI(cycles_p50, 0, 1)
+  STUI(cycles_p95, 0, 1)
+  STUI(cycles_p99, 0, 1)
+  STUI(cycles_num, 0, 1)
   STAT(duration_us, stat_double, 0, .dbl = 0.0)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | count_stats

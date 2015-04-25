@@ -9,6 +9,7 @@
  */
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 
@@ -42,8 +43,13 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
     });
   sendCommon(ctx);
 
-  // Wait for the reply.
-  return ctx.waitForReply(timeout);
+  // Label before and after wait() because might be 2 different cycles.
+  uint64_t reqId = nextCyclesRequestId();
+  cycles::label(Operation::mc_op, reqId);
+  Reply reply = ctx.waitForReply(timeout); // Wait for the reply.
+  cycles::label(Operation::mc_op, reqId);
+
+  return reply;
 }
 
 template <class Reply>
