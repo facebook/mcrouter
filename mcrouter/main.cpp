@@ -503,20 +503,6 @@ int main(int argc, char **argv) {
   standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
     std::move(standaloneOpts));
 
-  auto check_deprecated =
-    [](const std::vector<McrouterOptionData>& options,
-       const std::unordered_map<string, string>& dict) {
-      for (const auto& opt : options) {
-        if (opt.group == "DEPRECATED" && dict.find(opt.name) != dict.end()) {
-          logFailure(failure::Category::kInvalidOption,
-                     "Deprecated option: {}", opt.name);
-        }
-      }
-    };
-
-  check_deprecated(McrouterOptions::getOptionData(), option_dict);
-  check_deprecated(McrouterStandaloneOptions::getOptionData(), st_option_dict);
-
   for (const auto& option : unrecognized_options) {
     logFailure(failure::Category::kInvalidOption, "Unrecognized option: {}",
                option);
