@@ -21,14 +21,16 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool& pool_,
                                      AccessPoint ap_,
                                      int keep_routing_prefix_,
                                      bool useSsl_,
-                                     uint64_t qos_)
+                                     uint64_t qosClass_,
+                                     uint64_t qosPath_)
     : pool(pool_),
       ap(std::move(ap_)),
       keep_routing_prefix(keep_routing_prefix_),
       server_timeout(std::move(timeout)),
       indexInPool(pool.getClients().size()),
       useSsl(useSsl_),
-      qos(qos_) {
+      qosClass(qosClass_),
+      qosPath(qosPath_) {
 }
 
 std::string ProxyClientCommon::genProxyDestinationKey(

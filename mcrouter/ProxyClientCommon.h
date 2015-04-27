@@ -28,7 +28,8 @@ struct ProxyClientCommon {
   const size_t indexInPool;
   const bool useSsl;
 
-  const uint64_t qos;
+  const uint64_t qosClass;
+  const uint64_t qosPath;
 
   std::string genProxyDestinationKey(bool include_timeout) const;
 
@@ -38,7 +39,8 @@ struct ProxyClientCommon {
                     AccessPoint ap,
                     int keep_routing_prefix,
                     bool useSsl,
-                    uint64_t qos);
+                    uint64_t qosClass,
+                    uint64_t qosPath);
 
   friend class ClientPool;
 };

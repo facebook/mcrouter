@@ -93,7 +93,12 @@ struct ConnectionOptions {
   /*
    * QoS class to use in packages.
    */
-  unsigned int qos{0};
+  unsigned int qosClass{0};
+
+  /*
+   * QoS path to use in packages.
+   */
+  unsigned int qosPath{0};
 
   /**
    * SSLContext provider callback. If null, then unsecured connections will be

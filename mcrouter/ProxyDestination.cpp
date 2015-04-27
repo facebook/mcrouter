@@ -221,7 +221,8 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
     pdstnKey(std::move(pdstnKey_)),
     shortestTimeout_(ro_.server_timeout),
     useSsl_(ro_.useSsl),
-    qos_(ro_.qos),
+    qosClass_(ro_.qosClass),
+    qosPath_(ro_.qosPath),
     stats_(proxy_->opts),
     poolName_(ro_.pool.getName()) {
 
@@ -256,7 +257,8 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.writeTimeout = shortestTimeout_;
   if (proxy->opts.enable_qos) {
     options.enableQoS = true;
-    options.qos = qos_;
+    options.qosClass = qosClass_;
+    options.qosPath = qosPath_;
   }
 
   if (useSsl_) {

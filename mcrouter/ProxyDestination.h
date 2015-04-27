@@ -108,7 +108,8 @@ class ProxyDestination {
   // Shortest timeout among all ProxyClientCommon's using this destination
   std::chrono::milliseconds shortestTimeout_{0};
   const bool useSsl_{false};
-  const uint64_t qos_{0};
+  const uint64_t qosClass_{0};
+  const uint64_t qosPath_{0};
   uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
 
   Stats stats_;

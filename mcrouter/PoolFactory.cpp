@@ -22,8 +22,40 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-bool isQosValid(const folly::dynamic& jQos) {
-  return jQos.isInt() && jQos.getInt() <= 4;
+bool isQosClassValid(uint64_t qos) {
+  return qos <= 4;
+}
+bool isQosPathValid(uint64_t qos) {
+  return qos <= 3;
+}
+void parseQos(std::string parentName, const folly::dynamic& jQos,
+              uint64_t& qosClass, uint64_t& qosPath) {
+  if (!jQos.isObject()) {
+    logFailure(memcache::failure::Category::kInvalidConfig,
+               "{}: qos must be an object.", parentName);
+    return;
+  }
+
+  uint64_t prevClass = qosClass;
+  if (auto jClass = jQos.get_ptr("class")) {
+    if (jClass->isInt() && isQosClassValid(jClass->getInt())) {
+      qosClass = jClass->getInt();
+    } else {
+      logFailure(memcache::failure::Category::kInvalidConfig,
+                 "{}: qos.class must be an integer in the range [0, 4]",
+                 parentName);
+    }
+  }
+  if (auto jPath = jQos.get_ptr("path")) {
+    if (jPath->isInt() && isQosPathValid(jPath->getInt())) {
+      qosPath = jPath->getInt();
+    } else {
+      logFailure(memcache::failure::Category::kInvalidConfig,
+                 "{}: qos.path must be an integer in the range [0, 3]",
+                 parentName);
+      qosClass = prevClass;
+    }
+  }
 }
 
 mc_protocol_t parseProtocol(const folly::dynamic& obj, mc_protocol_t def) {
@@ -187,14 +219,10 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     keep_routing_prefix = jkeep_routing_prefix->getBool();
   }
 
-  uint64_t qos = opts_.default_qos_class;
+  uint64_t qosClass = opts_.default_qos_class;
+  uint64_t qosPath = opts_.default_qos_path;
   if (auto jqos = json.get_ptr("qos")) {
-    if (isQosValid(*jqos)) {
-      qos = jqos->getInt();
-    } else {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool {}: invalid qos", name);
-    }
+    parseQos(folly::sformat("Pool {}", name), *jqos, qosClass, qosPath);
   }
 
   bool useSsl = false;
@@ -212,7 +240,8 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     const auto& server = jservers->at(i);
     AccessPoint ap;
     bool serverUseSsl = useSsl;
-    uint64_t serverQos = qos;
+    uint64_t serverQosClass = qosClass;
+    uint64_t serverQosPath = qosPath;
     checkLogic(server.isString() || server.isObject(),
                "Pool {}: server #{} is not a string/object", name, i);
     if (server.isString()) {
@@ -227,12 +256,8 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
                  "Pool {}: hostname is not a string for server #{}", name, i);
 
       if (auto jqos = server.get_ptr("qos")) {
-        if (isQosValid(*jqos)) {
-          serverQos = jqos->getInt();
-        } else {
-          logFailure(memcache::failure::Category::kInvalidConfig,
-                     "Pool {}: invalid qos for server #{}", name, i);
-        }
+        parseQos(folly::sformat("Pool {}, server #{}", name, i),
+                 *jqos, qosClass, qosPath);
       }
 
       if (auto juseSsl = server.get_ptr("use_ssl")) {
@@ -251,7 +276,8 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       std::move(ap),
       keep_routing_prefix,
       serverUseSsl,
-      serverQos);
+      serverQosClass,
+      serverQosPath);
 
     clients_.push_back(std::move(client));
   } // servers

@@ -185,7 +185,8 @@ class TestClient {
                std::shared_ptr<folly::SSLContext>()
              > contextProvider = nullptr,
              bool enableQoS = false,
-             uint64_t qos = 0) :
+             uint64_t qosClass = 0,
+             uint64_t qosPath = 0) :
       fm_(folly::make_unique<folly::fibers::EventBaseLoopController>()) {
     dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController()).
       attachEventBase(eventBase_);
@@ -201,7 +202,8 @@ class TestClient {
     }
     if (enableQoS) {
       opts.enableQoS = true;
-      opts.qos = qos;
+      opts.qosClass = qosClass;
+      opts.qosPath = qosPath;
     }
     client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
     client_->setStatusCallbacks([] { LOG(INFO) << "Client UP."; },
@@ -509,10 +511,11 @@ TEST(AsyncMcClient, connectionErrorSsl) {
 void basicTest(mc_protocol_e protocol = mc_ascii_protocol,
                bool useSsl = false,
                bool enableQoS = false,
-               uint64_t qos = 0) {
+               uint64_t qosClass = 0,
+               uint64_t qosPath = 0) {
   TestServer server(true, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    protocol, useSsl, nullptr, enableQoS, qos);
+  TestClient client("localhost", server.getListenPort(), 200, protocol,
+                    useSsl, nullptr, enableQoS, qosClass, qosPath);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
   client.sendGet("empty", mc_res_found);
@@ -538,26 +541,25 @@ TEST(AsyncMcClient, umbrellaSsl) {
   umbrellaTest(true);
 }
 
-void qosTest(mc_protocol_e protocol = mc_ascii_protocol,
-             bool useSsl = false,
-             uint64_t qos = 0) {
-  basicTest(protocol, useSsl, true, qos);
+void qosTest(mc_protocol_e protocol = mc_ascii_protocol, bool useSsl = false,
+             uint64_t qosClass = 0, uint64_t qosPath = 0) {
+  basicTest(protocol, useSsl, true, qosClass, qosPath);
 }
 
 TEST(AsyncMcClient, qosClass1) {
-  qosTest(mc_umbrella_protocol, false, 1);
+  qosTest(mc_umbrella_protocol, false, 1, 0);
 }
 
 TEST(AsyncMcClient, qosClass2) {
-  qosTest(mc_ascii_protocol, false, 2);
+  qosTest(mc_ascii_protocol, false, 2, 1);
 }
 
 TEST(AsyncMcClient, qosClass3) {
-  qosTest(mc_umbrella_protocol, true, 3);
+  qosTest(mc_umbrella_protocol, true, 3, 2);
 }
 
 TEST(AsyncMcClient, qosClass4) {
-  qosTest(mc_ascii_protocol, true, 4);
+  qosTest(mc_ascii_protocol, true, 4, 3);
 }
 
 void reconnectTest(mc_protocol_t protocol) {

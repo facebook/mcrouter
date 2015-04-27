@@ -243,12 +243,23 @@ mcrouter_option_toggle(
 mcrouter_option_toggle(
   enable_qos, false,
   "enable-qos", no_short,
-  "If enabled, sets the spacified qos level in the ip packages. ")
+  "If enabled, sets the DSCP field in IP header according "
+  "to the specified qos class.")
 
 mcrouter_option_integer(
   unsigned int, default_qos_class, 0,
   "default-qos-class", no_short,
-  "Default qos class to use if qos is enabled and not specified.")
+  "Default qos class to use if qos is enabled and the class is not specified "
+  "in pool/server config. The classes go from 0 (lowest priority) to "
+  "4 (highest priority) and act on the hightest-order bits of DSCP.")
+
+mcrouter_option_integer(
+  unsigned int, default_qos_path, 0,
+  "default-qos-path", no_short,
+  "Default qos path priority class to use if qos is enabled and it is not "
+  "specified in the pool/server config. The path priority classes go from "
+  "0 (lowest priority) to 3 (highest priority) and act on the lowest-order "
+  "bits of DSCP.")
 
 
 mcrouter_option_group("Routing configuration")

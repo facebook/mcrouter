@@ -257,7 +257,8 @@ const folly::AsyncSocket::OptionKey getQoSOptionKey(
   return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
 }
 
-uint64_t getQoSClass(int qosLevel) {
+uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
+  // class
   static const uint64_t kDefaultClass = 0x00;
   static const uint64_t kLowestClass = 0x20;
   static const uint64_t kMediumClass = 0x40;
@@ -267,20 +268,36 @@ uint64_t getQoSClass(int qosLevel) {
     kDefaultClass, kLowestClass, kMediumClass, kHighClass, kHighestClass
   };
 
-  if (qosLevel < 0 || qosLevel > 4) {
-    qosLevel = 0;
+  // path
+  static const uint64_t kAnyPathNoProtection      = 0x00;
+  static const uint64_t kAnyPathProtection        = 0x04;
+  static const uint64_t kShortestPathNoProtection = 0x08;
+  static const uint64_t kShortestPathProtection   = 0x0c;
+  static const uint64_t kQoSPaths[] = {
+    kAnyPathNoProtection, kAnyPathProtection,
+    kShortestPathNoProtection, kShortestPathProtection
+  };
+
+  if (qosClassLvl > 4) {
+    qosClassLvl = 0;
     failure::log("AsyncMcClient", failure::Category::kSystemError,
-               "Invalid QoS value in AsyncMcClient");
+                 "Invalid QoS class value in AsyncMcClient");
   }
 
-  return kQoSClasses[qosLevel];
+  if (qosPathLvl > 3) {
+    qosPathLvl = 0;
+    failure::log("AsyncMcClient", failure::Category::kSystemError,
+                 "Invalid QoS path value in AsyncMcClient");
+  }
+
+  return kQoSClasses[qosClassLvl] | kQoSPaths[qosPathLvl];
 }
 
 void createQoSClassOption(
     folly::AsyncSocket::OptionMap& options,
-    const sa_family_t addressFamily, uint64_t qos) {
+    const sa_family_t addressFamily, uint64_t qosClass, uint64_t qosPath) {
   const auto& optkey = getQoSOptionKey(addressFamily);
-  options[optkey] = getQoSClass(qos);
+  options[optkey] = getQoS(qosClass, qosPath);
 }
 
 void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
@@ -288,7 +305,8 @@ void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
                               const ConnectionOptions& connectionOptions) {
   const auto& optkey = getQoSOptionKey(address.getFamily());
 
-  const uint64_t expectedValue = getQoSClass(connectionOptions.qos);
+  const uint64_t expectedValue = getQoS(connectionOptions.qosClass,
+                                        connectionOptions.qosPath);
 
   uint64_t val = 0;
   socklen_t len = sizeof(expectedValue);
@@ -311,7 +329,8 @@ folly::AsyncSocket::OptionMap createSocketOptions(
     connectionOptions.tcpKeepAliveCount, connectionOptions.tcpKeepAliveIdle,
     connectionOptions.tcpKeepAliveInterval);
   if (connectionOptions.enableQoS) {
-    createQoSClassOption(options, address.getFamily(), connectionOptions.qos);
+    createQoSClassOption(options, address.getFamily(),
+        connectionOptions.qosClass, connectionOptions.qosPath);
   }
 
   return std::move(options);
