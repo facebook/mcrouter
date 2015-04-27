@@ -11,7 +11,6 @@ mcrouter_lib_test_SOURCES = \
   RandomRouteTest.cpp \
   RequestReplyTest.cpp \
   RouteHandleTest.cpp \
-  WarmUpRouteTest.cpp \
   WeightedCh3HashFuncTest.cpp
 
 mcrouter_lib_test_CPPFLAGS = -I$(top_srcdir)/oss_include

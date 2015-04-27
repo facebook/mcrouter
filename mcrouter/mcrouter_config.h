@@ -113,6 +113,10 @@ void initFailureLogger();
 
 void scheduleSingletonCleanup();
 
+inline bool isMetagetAvailable() {
+  return false;
+}
+
 #ifdef PACKAGE_STRING
   #define MCROUTER_PACKAGE_STRING PACKAGE_STRING
 #else

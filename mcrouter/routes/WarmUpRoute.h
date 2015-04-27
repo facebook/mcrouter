@@ -16,6 +16,7 @@
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/config.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
@@ -24,7 +25,7 @@
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * This route handle allows for substantial changes in the number of boxes in
@@ -50,10 +51,9 @@ namespace facebook { namespace memcache {
  *     Client is responsible for "warm" consistency.
  *
  * Expiration time (TTL) for automatic warm -> cold update requests is
- * configured with "exptime" field. If the field is not present, exptime is
- * fetched from "warm" on every update operation with additional 'metaget'
- * request.
- * NOTE: Make sure memcached supports 'metaget' before omitting "exptime" field.
+ * configured with "exptime" field. If the field is not present and
+ * "enable_metaget" is true, exptime is fetched from "warm" on every update
+ * operation with additional 'metaget' request.
  */
 template <class RouteHandleIf>
 class WarmUpRoute {
@@ -84,10 +84,18 @@ class WarmUpRoute {
     checkLogic(json.isObject(), "WarmUpRoute should be object");
     checkLogic(json.count("cold"), "WarmUpRoute: no cold route");
     checkLogic(json.count("warm"), "WarmUpRoute: no warm route");
+    bool enableMetaget = isMetagetAvailable();
+    if (json.count("enable_metaget")) {
+      checkLogic(json["enable_metaget"].isBool(),
+                 "WarmUpRoute: enable_metaget is not a boolean");
+      enableMetaget = json["enable_metaget"].getBool();
+    }
     if (json.count("exptime")) {
       checkLogic(json["exptime"].isInt(),
                  "WarmUpRoute: exptime is not an integer");
       exptime_ = json["exptime"].getInt();
+    } else if (!enableMetaget) {
+      exptime_ = 0;
     }
 
     cold_ = factory.create(json["cold"]);
@@ -237,4 +245,4 @@ class WarmUpRoute {
   }
 };
 
-}}
+}}}  // facebook::memcache::mcrouter
