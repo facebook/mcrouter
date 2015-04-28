@@ -24,7 +24,6 @@ ProxyThread::ProxyThread(std::unique_ptr<proxy_t> pr)
       thread_handle(0),
       thread_stack(nullptr),
       isSafeToDeleteProxy(false) {
-  proxy_->attachEventBase(&evb_);
 }
 
 bool ProxyThread::spawn() {
@@ -57,6 +56,7 @@ void ProxyThread::stopAndJoin() {
 
 void ProxyThread::proxyThreadRun() {
   CHECK(proxy_->router != nullptr);
+  proxy_->attachEventBase(&evb_);
   mcrouterSetThreadName(pthread_self(), proxy_->router->opts(), "mcrpxy");
 
   while (!proxy_->router->shutdownStarted()) {
