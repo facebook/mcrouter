@@ -327,7 +327,7 @@ void McrouterInstance::tearDown() {
 }
 
 McrouterInstance::McrouterInstance(McrouterOptions input_options) :
-    opts_(options::substituteTemplates(std::move(input_options))),
+    opts_(std::move(input_options)),
     pid_(getpid()),
     configApi_(createConfigApi(opts_)),
     startupLock_(opts_.num_proxies + 1),

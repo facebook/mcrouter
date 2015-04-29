@@ -180,4 +180,14 @@ std::string shorten(folly::StringPiece s, size_t maxLength) {
   return s.subpiece(0, maxLength - 3).str() + "...";
 }
 
+std::string replaceAll(std::string s, const std::string& from,
+                       const std::string& to) {
+  auto pos = s.find(from);
+  while (pos != std::string::npos) {
+    s.replace(pos, from.size(), to);
+    pos = s.find(from);
+  }
+  return s;
+}
+
 }} // facebook::memcache

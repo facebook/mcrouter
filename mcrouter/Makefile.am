@@ -185,7 +185,6 @@ mcrouter_SOURCES = \
   ManagedModeUtil.h \
   server.cpp \
   server.h \
-  standalone_options.cpp \
   standalone_options.h \
   standalone_options_list.h
 

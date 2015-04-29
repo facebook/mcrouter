@@ -92,15 +92,6 @@ class McrouterOptionsBase {
 namespace options {
 
 /**
- * Returns a copy of the options, performing %..% variable substitution
- * in all string options.
- *
- * Example: "/%REGION%/%CLUSTER%/" will be copied as, say, "/oregon/prn1c16/"
- * FbWhoAmI is used for location source.
- */
-McrouterOptions substituteTemplates(McrouterOptions opts);
-
-/**
  * Perform %..% variable substitution on an individual string
  */
 std::string substituteTemplates(std::string str);

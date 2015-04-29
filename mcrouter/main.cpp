@@ -500,8 +500,6 @@ int main(int argc, char **argv) {
 
   check_errors(standaloneErrors);
   check_errors(errors);
-  standaloneOpts = facebook::memcache::mcrouter::options::substituteTemplates(
-    std::move(standaloneOpts));
 
   for (const auto& option : unrecognized_options) {
     logFailure(failure::Category::kInvalidOption, "Unrecognized option: {}",

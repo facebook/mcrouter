@@ -36,10 +36,4 @@ namespace facebook { namespace memcache { namespace mcrouter {
 #undef OPTIONS_FILE
 #undef OPTIONS_NAME
 
-namespace options {
-
-McrouterStandaloneOptions substituteTemplates(McrouterStandaloneOptions opts);
-
-}  // facebook::memcache::mcrouter::options
-
 }}}  // facebook::memcache::mcrouter

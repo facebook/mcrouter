@@ -233,6 +233,12 @@ folly::dynamic parseJsonString(folly::StringPiece s,
  */
 std::string shorten(folly::StringPiece s, size_t maxLength);
 
+/**
+ * @return `s` where all occurences of `from` are replaced with `to`
+ */
+std::string replaceAll(std::string s, const std::string& from,
+                       const std::string& to);
+
 }}  // facebook::memcache
 
 #endif

@@ -17,6 +17,7 @@
 #include <folly/Conv.h>
 #include <folly/String.h>
 
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 
@@ -73,6 +74,8 @@ to(const std::string& value) {
 namespace facebook { namespace memcache {
 
 namespace {
+
+const char* const kTempCpuCores = "%CPU_CORES%";
 
 template <class T>
 bool tryToString(const boost::any& value, std::string& res) {
@@ -171,19 +174,20 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
                                       const boost::any& value) {
     auto it = new_opts.find(name);
     if (it != new_opts.end()) {
+      auto subValue = options::substituteTemplates(it->second);
       try {
-        fromString(it->second, value);
+        fromString(subValue, value);
       } catch (const std::exception& ex) {
         McrouterOptionError e;
         e.requestedName = name;
-        e.requestedValue = it->second;
+        e.requestedValue = subValue;
         e.errorMsg = "couldn't convert value to " + optionTypeToString(type) +
                      ". Exception: " + ex.what();
         errors.push_back(std::move(e));
       } catch (...) {
         McrouterOptionError e;
         e.requestedName = name;
-        e.requestedValue = it->second;
+        e.requestedValue = subValue;
         e.errorMsg = "couldn't convert value to " + optionTypeToString(type);
         errors.push_back(std::move(e));
       }
@@ -207,25 +211,16 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
 namespace options {
 
 std::string substituteTemplates(std::string str) {
+  if (str.find(kTempCpuCores) != std::string::npos) {
+    auto c = std::thread::hardware_concurrency();
+    if (c == 0) {
+      mcrouter::logFailure(failure::Category::kSystemError,
+                           "Can not get number of CPU cores. Using 1 instead.");
+      c = 1;
+    }
+    str = replaceAll(std::move(str), kTempCpuCores, folly::to<std::string>(c));
+  }
   return mcrouter::performOptionSubstitution(std::move(str));
-}
-
-McrouterOptions substituteTemplates(McrouterOptions opts) {
-  opts.forEach([](const std::string& name,
-                  McrouterOptionData::Type type,
-                  const boost::any& value) {
-    auto strPtr = boost::any_cast<std::string*>(&value);
-    if (strPtr != nullptr) {
-      **strPtr = mcrouter::performOptionSubstitution(**strPtr);
-      return;
-    }
-    auto routingPrefix = boost::any_cast<mcrouter::RoutingPrefix*>(&value);
-    if (routingPrefix != nullptr) {
-      **routingPrefix = mcrouter::performOptionSubstitution(**routingPrefix);
-    }
-  });
-
-  return opts;
 }
 
 }  // facebook::memcache::options
