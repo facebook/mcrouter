@@ -138,8 +138,10 @@ void proxy_t::onEventBaseAttached() {
   }
 
   if (opts.cpu_cycles) {
-    fiberManager.setObserver(&cyclesObserver);
-    cycles::attachEventBase(*eventBase);
+    eventBase->runInEventBaseThread([this] {
+      cycles::attachEventBase(*this->eventBase);
+      this->fiberManager.setObserver(&this->cyclesObserver);
+    });
   }
 }
 
