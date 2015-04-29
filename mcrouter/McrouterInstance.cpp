@@ -50,7 +50,7 @@ class McrouterManager {
     auto mcrouter = folly::get_default(mcrouters_, persistence_id.str(),
                                        nullptr);
     if (!mcrouter) {
-      mcrouter = McrouterInstance::create(options);
+      mcrouter = McrouterInstance::create(options.clone());
       if (mcrouter) {
         mcrouters_[persistence_id.str()] = mcrouter;
       }
@@ -120,13 +120,20 @@ McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
   return nullptr;
 }
 
-McrouterInstance* McrouterInstance::create(const McrouterOptions& input_options,
+McrouterInstance* McrouterInstance::create(McrouterOptions input_options,
                                            bool spawnProxyThreads) {
   if (!isValidRouterName(input_options.service_name) ||
       !isValidRouterName(input_options.router_name)) {
     throw std::runtime_error(
       "Invalid service_name or router_name provided; must be"
       " strings matching [a-zA-Z0-9_-]+");
+  }
+
+  if (input_options.test_mode) {
+    // test-mode disables all logging.
+    LOG(WARNING) << "Running mcrouter in test mode. This mode should not be "
+                    "used in production.";
+    applyTestMode(input_options);
   }
 
   if (!input_options.async_spool.empty()) {
@@ -139,7 +146,7 @@ McrouterInstance* McrouterInstance::create(const McrouterOptions& input_options,
     initFailureLogger();
   }
 
-  auto router = new McrouterInstance(input_options.clone());
+  auto router = new McrouterInstance(std::move(input_options));
 
   folly::json::serialization_opts jsonOpts;
   jsonOpts.sort_keys = true;
@@ -232,7 +239,7 @@ bool McrouterInstance::spinUp(bool spawnProxyThreads) {
 McrouterInstance* McrouterInstance::createTransient(
   const McrouterOptions& options) {
 
-  auto router = create(options);
+  auto router = create(options.clone());
   if (router != nullptr) {
     router->isTransient_ = true;
   }

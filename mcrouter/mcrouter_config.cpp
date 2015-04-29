@@ -66,10 +66,14 @@ std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router) {
   return folly::make_unique<McrouterLogger>(router);
 }
 
-McrouterOptions defaultTestOptions() {
-  auto opts = McrouterOptions();
+void applyTestMode(McrouterOptions& opts) {
   opts.enable_failure_logging = false;
   opts.stats_logging_interval = 0;
+}
+
+McrouterOptions defaultTestOptions() {
+  auto opts = McrouterOptions();
+  applyTestMode(opts);
   return opts;
 }
 

@@ -424,6 +424,11 @@ mcrouter_option_toggle(
   "cpu-cycles", no_short,
   "Enables CPU cycles counting for performance measurement.")
 
+mcrouter_option_toggle(
+  test_mode, false,
+  "test-mode", no_short,
+  "Starts mcrouter in test mode - with logging disabled.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

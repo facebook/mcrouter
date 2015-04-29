@@ -103,6 +103,8 @@ inline bool mcrouterLoopOnce(folly::EventBase* eventBase) {
   return eventBase->loopOnce();
 }
 
+void applyTestMode(McrouterOptions& opts);
+
 McrouterOptions defaultTestOptions();
 
 std::vector<std::string> defaultTestCommandLineArgs();

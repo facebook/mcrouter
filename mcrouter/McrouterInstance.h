@@ -263,7 +263,7 @@ class McrouterInstance {
    * @throw runtime_error  If no valid instance can be constructed from
    *   the provided options.
    */
-  static McrouterInstance* create(const McrouterOptions& input_options,
+  static McrouterInstance* create(McrouterOptions input_options,
                                   bool spawnProxyThreads = true);
 
   explicit McrouterInstance(McrouterOptions input_options);
@@ -304,7 +304,7 @@ class McrouterInstance {
    public:
     static McrouterInstance* create(const McrouterOptions& opts,
                                     bool spawnProxyThreads) {
-      return McrouterInstance::create(opts, spawnProxyThreads);
+      return McrouterInstance::create(opts.clone(), spawnProxyThreads);
     }
 
     static void tearDown(McrouterInstance& mcrouter) {
