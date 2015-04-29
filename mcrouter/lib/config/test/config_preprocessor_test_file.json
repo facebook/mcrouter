@@ -266,6 +266,38 @@
       },
     }
   },
+  "set": {
+    "macros": {},
+    "cases": {
+      "map_replace": {
+        "orig": {
+          "type": "set",
+          "dictionary": { "a": 1, "b": 2 },
+          "key": "b",
+          "value": 5
+        },
+        "expand": { "a": 1, "b": 5 }
+      },
+      "map_add": {
+        "orig": {
+          "type": "set",
+          "dictionary": { "a": 1 },
+          "key": "c",
+          "value": 10
+        },
+        "expand": { "a": 1, "c": 10 }
+      },
+      "array": {
+        "orig": {
+          "type": "set",
+          "dictionary": [ "a", 1, "b" ],
+          "key": 1,
+          "value": "c"
+        },
+        "expand": [ "a", "c", "b" ]
+      }
+    }
+  },
   "transform": {
     "macros": {
       "concat": {

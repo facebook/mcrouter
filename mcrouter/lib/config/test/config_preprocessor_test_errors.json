@@ -130,5 +130,13 @@
   },
   "fail": {
     "ret": "@fail(Custom failure here)"
+  },
+  "set_out_of_range": {
+    "ret": {
+      "type": "set",
+      "dictionary": [ 1, 2 ],
+      "key": 2,
+      "value": 3
+    }
   }
 }

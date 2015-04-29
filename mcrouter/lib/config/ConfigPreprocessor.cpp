@@ -569,6 +569,40 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Returns `dictionary` with `key` set to `value` i.e.
+   *   dictionary[key] = value;
+   *   return dictionary;
+   *
+   * Usage:
+   * "type": "set",
+   * "dictionary": array or object,
+   * "key": string or int,
+   * "value": jsonm
+   */
+  static dynamic setMacro(Context ctx) {
+    const auto& key = ctx.at("key");
+    auto& value = ctx.at("value");
+    auto& dict = ctx.at("dictionary");
+
+    checkLogic(dict.isObject() || dict.isArray(),
+               "Set: dictionary is not array/object");
+
+    if (dict.isObject()) {
+      checkLogic(key.isString(), "Set: key is not a string");
+      dict[key.getString()] = std::move(value);
+      return dict;
+    } else { // array
+      checkLogic(key.isInt(), "Set: key is not an int");
+      auto id = key.getInt();
+      checkLogic(0 <= id && id < dict.size(),
+                 "Set: key '{}' is out of range 0..{}",
+                 id, dict.size() - 1);
+      dict[id] = std::move(value);
+      return dict;
+    }
+  }
+
+  /**
    * Returns list of integers [from, from+1, ... to]
    */
   static dynamic rangeMacro(Context ctx) {
@@ -1280,6 +1314,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
 
   addBuiltInMacro("sort", { "dictionary" }, &BuiltIns::sortMacro);
 
+  addBuiltInMacro("set", { "dictionary", "key", "value" }, &BuiltIns::setMacro);
+
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
@@ -1315,7 +1351,7 @@ dynamic ConfigPreprocessor::replaceParams(StringPiece str,
     string paramName;
     auto nextPos = unescapeUntil(str, paramName, '%');
     checkLogic(nextPos != string::npos,
-               "Odd number of percent signs in string");
+               "Odd number of percent signs in string around '{}'", str);
 
     // first check current context, then global context
     auto paramIt = context.find(paramName);
