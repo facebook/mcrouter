@@ -158,8 +158,7 @@ public:
   /**
    * Called once a request is refused due to rate limiting/TKO logic
    */
-  void onRequestRefused(const ProxyMcRequest& request,
-                        const ProxyMcReply& reply);
+  void onRequestRefused(const ProxyMcReply& reply);
 
   const McMsgRef& origReq() const {
     return origReq_;

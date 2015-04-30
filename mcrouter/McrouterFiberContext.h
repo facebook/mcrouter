@@ -13,39 +13,32 @@
 #include <utility>
 
 #include <folly/experimental/fibers/FiberManager.h>
+#include <folly/Range.h>
+#include <folly/ScopeGuard.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+class ProxyClientCommon;
 class ProxyRequestContext;
+
+enum class RequestClass {
+  NORMAL,
+  FAILOVER,
+  SHADOW,
+};
+
+folly::StringPiece getRequestClassString(RequestClass reqClass);
 
 namespace fiber_local { namespace detail {
 
 struct McrouterFiberContext {
   std::shared_ptr<ProxyRequestContext> sharedCtx;
-};
 
-struct SharedCtxGuard {
-  SharedCtxGuard(const SharedCtxGuard&) = delete;
-  SharedCtxGuard& operator=(const SharedCtxGuard&) = delete;
+  folly::StringPiece asynclogName;
 
-  explicit SharedCtxGuard(std::shared_ptr<ProxyRequestContext> ctx) {
-    auto& sctx = folly::fibers::local<McrouterFiberContext>().sharedCtx;
-    assert(!sctx);
-    sctx = std::move(ctx);
-  }
+  RequestClass requestClass{RequestClass::NORMAL};
 
-  SharedCtxGuard(SharedCtxGuard&& other) noexcept
-  : responsible_(other.responsible_) {
-    other.responsible_ = false;
-  }
-
-  ~SharedCtxGuard() {
-    if (responsible_) {
-      folly::fibers::local<McrouterFiberContext>().sharedCtx.reset();
-    }
-  }
- private:
-  bool responsible_{true};
+  bool failoverTag{false};
 };
 
 }  // detail
@@ -53,13 +46,39 @@ struct SharedCtxGuard {
 using ContextTypeTag = folly::fibers::LocalType<detail::McrouterFiberContext>;
 
 /**
- * Update ProxyRequestContext for current fiber (thread, if we're not on fiber)
- *
- * @return guard that will clear the context on destruction
+ * Clear all locals, run `f`, restore locals
  */
-inline detail::SharedCtxGuard
-setSharedCtx(std::shared_ptr<ProxyRequestContext> ctx) {
-  return detail::SharedCtxGuard(std::move(ctx));
+template <typename F>
+inline typename std::result_of<F()>::type runWithoutLocals(F&& f) {
+  auto tmp = std::move(folly::fibers::local<detail::McrouterFiberContext>());
+  folly::fibers::local<detail::McrouterFiberContext>() =
+    detail::McrouterFiberContext();
+  auto guard = folly::makeGuard([&tmp]() mutable {
+    folly::fibers::local<detail::McrouterFiberContext>() = std::move(tmp);
+  });
+
+  return f();
+}
+
+/**
+ * Copy all locals, run `f`, restore locals
+ */
+template <typename F>
+inline typename std::result_of<F()>::type runWithLocals(F&& f) {
+  auto tmp = folly::fibers::local<detail::McrouterFiberContext>();
+  auto guard = folly::makeGuard([&tmp]() mutable {
+    folly::fibers::local<detail::McrouterFiberContext>() = std::move(tmp);
+  });
+
+  return f();
+}
+
+/**
+ * Update ProxyRequestContext for current fiber (thread, if we're not on fiber)
+ */
+inline void setSharedCtx(std::shared_ptr<ProxyRequestContext> ctx) {
+  folly::fibers::local<detail::McrouterFiberContext>().sharedCtx =
+    std::move(ctx);
 }
 
 /**
@@ -67,6 +86,55 @@ setSharedCtx(std::shared_ptr<ProxyRequestContext> ctx) {
  */
 inline const std::shared_ptr<ProxyRequestContext>& getSharedCtx() {
   return folly::fibers::local<detail::McrouterFiberContext>().sharedCtx;
+}
+
+/**
+ * Update RequestClass for current fiber (thread, if we're not on fiber)
+ */
+inline void setRequestClass(RequestClass value) {
+  folly::fibers::local<detail::McrouterFiberContext>().requestClass = value;
+}
+
+/**
+ * Get RequestClass of current fiber (thread, if we're not on fiber)
+ */
+inline RequestClass getRequestClass() {
+  return folly::fibers::local<detail::McrouterFiberContext>().requestClass;
+}
+
+/**
+ * Update AsynclogName for current fiber (thread, if we're not on fiber)
+ */
+inline void setAsynclogName(folly::StringPiece value) {
+  folly::fibers::local<detail::McrouterFiberContext>().asynclogName = value;
+}
+
+/**
+ * Clear AsynclogName for current fiber (thread, if we're not on fiber)
+ */
+inline void clearAsynclogName() {
+  setAsynclogName("");
+}
+
+/**
+ * Get asynclog name of current fiber (thread, if we're not on fiber)
+ */
+inline folly::StringPiece getAsynclogName() {
+  return folly::fibers::local<detail::McrouterFiberContext>().asynclogName;
+}
+
+/**
+ * Update failover tag for current fiber (thread, if we're not on fiber)
+ */
+inline void setFailoverTag(bool value) {
+  folly::fibers::local<detail::McrouterFiberContext>().failoverTag = value;
+}
+
+/**
+ * Get failover tag of current fiber (thread, if we're not on fiber)
+ */
+inline bool getFailoverTag() {
+  return folly::fibers::local<detail::McrouterFiberContext>().failoverTag;
 }
 
 }}}}  // facebook::memcache::mcrouter::fiber_local

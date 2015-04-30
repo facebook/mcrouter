@@ -57,9 +57,9 @@ TEST(failoverWithExptimeRouteTest, success) {
     2,
     FailoverWithExptimeSettings());
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
     EXPECT_TRUE(toString(reply.value()) == "a");
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -84,9 +84,9 @@ TEST(failoverWithExptimeRouteTest, once) {
     2,
     FailoverWithExptimeSettings());
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
     EXPECT_TRUE(toString(reply.value()) == "b");
 
@@ -113,9 +113,9 @@ TEST(failoverWithExptimeRouteTest, twice) {
     2,
     FailoverWithExptimeSettings());
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
     EXPECT_TRUE(toString(reply.value()) == "c");
 
@@ -143,9 +143,9 @@ TEST(failoverWithExptimeRouteTest, fail) {
     2,
     FailoverWithExptimeSettings());
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rh.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
 
     /* Will return the last reply when ran out of targets */
@@ -197,9 +197,9 @@ void testFailoverGet(mc_res_t res) {
     settings);
 
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rhNoFail.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
     EXPECT_EQ(toString(reply.value()), "a");
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -214,7 +214,7 @@ void testFailoverGet(mc_res_t res) {
     settings);
 
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rhFail.route(ProxyMcRequest("0"), McOperation<mc_op_get>());
     EXPECT_EQ(toString(reply.value()), "b");
   });
@@ -243,9 +243,9 @@ void testFailoverUpdate(mc_res_t res) {
     2,
     settings);
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto msg = createMcMsgRef("0", "a");
     auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
                                 McOperation<mc_op_set>());
@@ -266,7 +266,7 @@ void testFailoverUpdate(mc_res_t res) {
     settings);
 
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto msg = createMcMsgRef("0", "a");
     auto reply = rhFail.route(ProxyMcRequest(std::move(msg)),
                               McOperation<mc_op_set>());
@@ -299,9 +299,9 @@ void testFailoverDelete(mc_res_t res) {
     2,
     settings);
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto msg = createMcMsgRef("0");
     auto reply = rhNoFail.route(ProxyMcRequest(std::move(msg)),
                                 McOperation<mc_op_delete>());
@@ -321,7 +321,7 @@ void testFailoverDelete(mc_res_t res) {
     settings);
 
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto msg = createMcMsgRef("0");
     auto reply = rhFail.route(ProxyMcRequest(std::move(msg)),
                               McOperation<mc_op_delete>());
@@ -368,9 +368,9 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
     2,
     settings);
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto msg = createMcMsgRef("0", "1");
     auto reply = rh.route(ProxyMcRequest(std::move(msg)),
                           McOperation<mc_op_incr>());

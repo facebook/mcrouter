@@ -293,12 +293,12 @@ epilogue:
 
 /** Adds an asynchronous request to the event log. */
 void asynclog_delete(proxy_t* proxy,
-                     std::shared_ptr<const ProxyClientCommon> pclient,
+                     const ProxyClientCommon& pclient,
                      folly::StringPiece key,
                      folly::StringPiece poolName) {
   dynamic json = {};
-  const auto& host = pclient->ap.getHost();
-  const auto& port = pclient->ap.getPort();
+  const auto& host = pclient.ap.getHost();
+  const auto& port = pclient.ap.getPort();
 
   if (proxy->opts.use_asynclog_version2) {
     json = dynamic::object;

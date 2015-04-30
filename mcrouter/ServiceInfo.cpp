@@ -78,7 +78,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
   proxy_->fiberManager.addTaskFinally(
-    [keyStr, proxy = proxy_, &proxyRoute = proxyRoute_]() {
+    [this, keyStr, proxy = proxy_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
       folly::fibers::Baton baton;
       auto rctx = ProxyRequestContext::createRecordingNotify(
@@ -90,11 +90,13 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
       );
       ProxyMcRequest recordingReq(keyStr);
 
-      {
-        auto guard = fiber_local::setSharedCtx(std::move(rctx));
+      fiber_local::runWithLocals([ctx = std::move(rctx),
+                                  &recordingReq,
+                                  &proxyRoute = proxyRoute_]() mutable {
+        fiber_local::setSharedCtx(std::move(ctx));
         /* ignore the reply */
         proxyRoute.route(recordingReq, Operation());
-      }
+      });
       baton.wait();
       return destinations;
     },

@@ -32,10 +32,6 @@ class FailoverWithExptimeRoute {
  public:
   static std::string routeName() { return "failover-exptime"; }
 
-  static std::string keyWithFailoverTag(
-    const folly::StringPiece fullKey,
-    const AccessPoint& ap);
-
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation) const {
@@ -69,8 +65,8 @@ class FailoverWithExptimeRoute {
       return Reply(DefaultReply, Operation());
     }
 
-    auto reply = normal_->route(req, Operation());
     auto& ctx = fiber_local::getSharedCtx();
+    auto reply = normal_->route(req, Operation());
 
     if (!reply.isFailoverError() ||
         !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
@@ -89,16 +85,6 @@ class FailoverWithExptimeRoute {
     }
 
     auto mutReq = req.clone();
-    if (settings_.failoverTagging &&
-        mutReq.hasHashStop() &&
-        reply.getDestination() != nullptr) {
-      auto newKey = keyWithFailoverTag(mutReq.fullKey(),
-                                       reply.getDestination()->ap);
-      /* It's always safe to not append a failover tag */
-      if (newKey.size() <= MC_KEY_MAX_LEN) {
-        mutReq.setKey(std::move(newKey));
-      }
-    }
     /* 0 means infinite exptime.
        We want to set the smallest of request exptime, failover exptime. */
     if (failoverExptime_ != 0 &&
@@ -106,8 +92,12 @@ class FailoverWithExptimeRoute {
       mutReq.setExptime(failoverExptime_);
     }
 
-    mutReq.setRequestClass(RequestClass::FAILOVER);
-    return failover_.route(mutReq, Operation());
+    bool needFailoverTag = settings_.failoverTagging && mutReq.hasHashStop();
+    return fiber_local::runWithLocals([this, &needFailoverTag, &mutReq]() {
+      fiber_local::setFailoverTag(needFailoverTag);
+      fiber_local::setRequestClass(RequestClass::FAILOVER);
+      return failover_.route(mutReq, Operation());
+    });
   }
 
  private:

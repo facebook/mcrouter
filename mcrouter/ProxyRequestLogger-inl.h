@@ -8,6 +8,7 @@
  *
  */
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
@@ -42,8 +43,8 @@ namespace {
     } while(0)
 
 template <int operation>
-inline void logOutlier(proxy_t& proxy, McOperation<operation>,
-                       RequestClass reqClass) {
+inline void logOutlier(proxy_t& proxy, McOperation<operation>) {
+  auto reqClass = fiber_local::getRequestClass();
   switch (operation) {
     case mc_op_get:
       REQUEST_CLASS_STATS(proxy, get, outlier, reqClass);
@@ -61,8 +62,8 @@ inline void logOutlier(proxy_t& proxy, McOperation<operation>,
 }
 
 template <int operation>
-inline void logRequestClass(proxy_t& proxy, McOperation<operation>,
-                            RequestClass reqClass) {
+inline void logRequestClass(proxy_t& proxy, McOperation<operation>) {
+  auto reqClass = fiber_local::getRequestClass();
   switch (operation) {
     case mc_op_get:
       REQUEST_CLASS_STATS(proxy, get, out, reqClass);
@@ -128,28 +129,28 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>,
 
 }
 
-void ProxyRequestLogger::logError(const ProxyMcRequest& req,
-                                  const McReplyBase& reply) {
+void ProxyRequestLogger::logError(const McReplyBase& reply) {
+  auto reqClass = fiber_local::getRequestClass();
   if (reply.isError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, error, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);
   }
   if (reply.isConnectError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, connect_error, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, connect_error, reqClass);
   }
   if (reply.isConnectTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, connect_timeout, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, connect_timeout, reqClass);
   }
   if (reply.isDataTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, data_timeout, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, data_timeout, reqClass);
   }
   if (reply.isRedirect()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, busy, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, busy, reqClass);
   }
   if (reply.isTko()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, tko, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, tko, reqClass);
   }
   if (reply.isLocalError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, local_error, req.getRequestClass());
+    REQUEST_CLASS_ERROR_STATS(proxy_, local_error, reqClass);
   }
 }
 
@@ -164,12 +165,12 @@ void ProxyRequestLogger::log(const ProxyMcRequest& request,
   bool isOutlier = proxy_->opts.logging_rtt_outlier_threshold_us > 0 &&
     durationUs >= proxy_->opts.logging_rtt_outlier_threshold_us;
 
-  logError(request, reply);
-  logRequestClass(*proxy_, Operation(), request.getRequestClass());
+  logError(reply);
+  logRequestClass(*proxy_, Operation());
   proxy_->durationUs.insertSample(durationUs);
 
   if (isOutlier) {
-    logOutlier(*proxy_, Operation(), request.getRequestClass());
+    logOutlier(*proxy_, Operation());
   }
 }
 

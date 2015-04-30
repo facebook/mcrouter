@@ -275,7 +275,7 @@ class TestGetFailoverWithFailoverTag(TestGetFailover):
         self.failover_common(key)
 
         # Verify the failover tag was appended
-        fail_key = key + ":failover=localhost@" + str(self.wildcard.getport())
+        fail_key = key + ":failover=localhost@" + str(self.gut.getport())
         self.assertEqual(self.mcr.get(key), 'bizbang-fail')
         self.assertEqual(self.gut.get(fail_key), 'bizbang-fail')
 

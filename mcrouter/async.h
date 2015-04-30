@@ -24,7 +24,7 @@ class ProxyClientCommon;
  * or an error occurs.
  */
 void asynclog_delete(proxy_t* proxy,
-                     std::shared_ptr<const ProxyClientCommon> pclient,
+                     const ProxyClientCommon& pclient,
                      folly::StringPiece key,
                      folly::StringPiece poolName);
 

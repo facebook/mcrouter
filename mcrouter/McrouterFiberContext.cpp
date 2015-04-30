@@ -7,12 +7,20 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "ProxyMcRequest.h"
+#include "McrouterFiberContext.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyMcRequest ProxyMcRequest::clone() const {
-  return *this;
+folly::StringPiece getRequestClassString(RequestClass reqClass) {
+  switch (reqClass) {
+    case RequestClass::NORMAL:
+      return "normal";
+    case RequestClass::FAILOVER:
+      return "failover";
+    case RequestClass::SHADOW:
+      return "shadow";
+  }
+  CHECK(false) << "Unknown request class";
 }
 
 }}}  // facebook::memcache::mcrouter

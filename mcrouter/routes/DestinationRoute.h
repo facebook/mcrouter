@@ -50,6 +50,15 @@ class DestinationRoute {
   std::string routeName() const;
 
   /**
+   * Spool failed delete request to disk.
+   *
+   * @return  true on sucess, false otherwise
+   */
+  bool spool(const ProxyMcRequest& req) const;
+
+  std::string keyWithFailoverTag(const folly::StringPiece fullKey) const;
+
+  /**
    * @param client Client to send request to
    * @param destination The destination where the request is to be sent
    */
@@ -69,13 +78,29 @@ class DestinationRoute {
     return {};
   }
 
+  template <class Operation>
+  ProxyMcReply route(const ProxyMcRequest& req, Operation,
+                     typename DeleteLike<Operation>::Type = 0) const {
+    auto reply = routeImpl(req, Operation());
+    if (reply.isFailoverError() && spool(req)) {
+      return ProxyMcReply(DefaultReply, Operation());
+    }
+    return reply;
+  }
+
+  template <class Operation>
+  ProxyMcReply route(const ProxyMcRequest& req, Operation,
+                     OtherThanT(Operation, DeleteLike<>) = 0) const {
+    return routeImpl(req, Operation());
+  }
+
   template <int Op>
-  ProxyMcReply route(const ProxyMcRequest& req, McOperation<Op>) const {
+  ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
     auto& ctx = fiber_local::getSharedCtx();
+
     if (!destination_->may_send()) {
       ProxyMcReply reply(TkoReply);
-      reply.setDestination(client_);
-      ctx->onRequestRefused(req, reply);
+      ctx->onRequestRefused(reply);
       return reply;
     }
 
@@ -85,20 +110,20 @@ class DestinationRoute {
     }
 
     auto proxy = &ctx->proxy();
-    if (req.getRequestClass() == RequestClass::SHADOW) {
+    auto requestClass = fiber_local::getRequestClass();
+    if (requestClass == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
         ProxyMcReply reply(ErrorReply);
-        reply.setDestination(client_);
-        ctx->onRequestRefused(req, reply);
+        ctx->onRequestRefused(reply);
         return reply;
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
       ++mutableCounter;
     }
 
-    auto shadowReqsCountGuard = folly::makeGuard([this, &req]() {
-      if (req.getRequestClass() == RequestClass::SHADOW) {
+    auto shadowReqsCountGuard = folly::makeGuard([this, &req, requestClass]() {
+      if (requestClass == RequestClass::SHADOW) {
         auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
         --mutableCounter;
       }
@@ -109,6 +134,14 @@ class DestinationRoute {
     DestinationRequestCtx dctx;
     auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
 
+    if (fiber_local::getFailoverTag()) {
+      auto newKey = keyWithFailoverTag(newReq.fullKey());
+      /* It's always safe to not append a failover tag */
+      if (newKey.size() <= MC_KEY_MAX_LEN) {
+        newReq.setKey(std::move(newKey));
+      }
+    }
+
     auto reply = ProxyMcReply(
       destination->send(newReq, McOperation<Op>(), dctx,
                         client_->server_timeout));
@@ -118,12 +151,6 @@ class DestinationRoute {
                          dctx.startTime,
                          dctx.endTime,
                          McOperation<Op>());
-
-    // For AsynclogRoute
-    if (reply.isFailoverError()) {
-      reply.setDestination(client_);
-    }
-
     return reply;
   }
 

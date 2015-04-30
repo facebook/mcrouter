@@ -11,43 +11,6 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-namespace {
-
-const char kFailoverHostPortSeparator = '@';
-const std::string kFailoverTagStart = ":failover=";
-
-}  // anonymous namespace
-
-std::string FailoverWithExptimeRoute::keyWithFailoverTag(
-    folly::StringPiece fullKey,
-    const AccessPoint& ap) {
-  const size_t tagLength =
-    kFailoverTagStart.size() +
-    ap.getHost().size() +
-    6; // 1 for kFailoverHostPortSeparator + 5 for port.
-  std::string failoverTag;
-  failoverTag.reserve(tagLength);
-  failoverTag = kFailoverTagStart;
-  failoverTag += ap.getHost().str();
-  if (ap.getPort() != 0) {
-    failoverTag += kFailoverHostPortSeparator;
-    failoverTag += folly::to<std::string>(ap.getPort());
-  }
-
-  // Safety check: scrub the host and port for ':' to avoid appending
-  // more than one field to the key.
-  // Note: we start after the ':failover=' part of the string,
-  // since we need the initial ':' and we know the remainder is safe.
-  for (size_t i = kFailoverTagStart.size(); i < failoverTag.size(); i++) {
-    if (failoverTag[i] == ':') {
-      failoverTag[i] = '$';
-    }
-  }
-
-  return fullKey.str() + failoverTag;
-}
-
-
 FailoverWithExptimeRoute::FailoverWithExptimeRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
   const folly::dynamic& json)

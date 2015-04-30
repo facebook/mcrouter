@@ -28,7 +28,7 @@ class ProxyRequestLogger {
            const int64_t endTimeUs,
            Operation);
 
-  inline void logError(const ProxyMcRequest& request, const McReplyBase& reply);
+  inline void logError(const McReplyBase& reply);
 
  protected:
   proxy_t* proxy_;

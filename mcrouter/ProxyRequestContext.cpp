@@ -57,7 +57,9 @@ ProxyRequestContext::~ProxyRequestContext() {
 
   assert(replied_);
   if (reqComplete_) {
-    reqComplete_(*this);
+    fiber_local::runWithoutLocals([this]() {
+      reqComplete_(*this);
+    });
   }
 
   if (processing_) {
@@ -91,13 +93,12 @@ void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
   senderIdForTest_ = id;
 }
 
-void ProxyRequestContext::onRequestRefused(const ProxyMcRequest& request,
-                                           const ProxyMcReply& reply) {
+void ProxyRequestContext::onRequestRefused(const ProxyMcReply& reply) {
   if (recording_) {
     return;
   }
   assert(logger_.hasValue());
-  logger_->logError(request, reply);
+  logger_->logError(reply);
 }
 
 void ProxyRequestContext::sendReply(McReply newReply) {
@@ -112,7 +113,9 @@ void ProxyRequestContext::sendReply(McReply newReply) {
   replied_ = true;
 
   if (LIKELY(enqueueReply_ != nullptr)) {
-    enqueueReply_(*this);
+    fiber_local::runWithoutLocals([this]() {
+      enqueueReply_(*this);
+    });
   }
 
   stat_incr(proxy_.stats, request_replied_stat, 1);

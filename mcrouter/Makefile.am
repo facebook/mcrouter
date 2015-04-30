@@ -44,6 +44,7 @@ libmcroutercore_a_SOURCES = \
   mcrouter_options_list.h \
   McrouterClient.cpp \
   McrouterClient.h \
+  McrouterFiberContext.cpp \
   McrouterFiberContext.h \
   McrouterInstance.cpp \
   McrouterInstance.h \

@@ -53,7 +53,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
   };
 
-  TestFiberManager fm;
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
 
   auto data = make_shared<ShadowSettings::Data>();
   vector<std::shared_ptr<ShadowSettings>> settings {
@@ -75,7 +75,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   auto ctx = getContext();
   fm.run([&] () {
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>());
 
     EXPECT_TRUE(reply.result() == mc_res_found);
@@ -88,7 +88,7 @@ TEST(shadowRouteTest, defaultPolicy) {
   data->end_key_fraction = 1.0;
 
   fm.run([&] () {
-    auto guard = fiber_local::setSharedCtx(ctx);
+    fiber_local::setSharedCtx(ctx);
     auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>());
 
     EXPECT_TRUE(reply.result() == mc_res_found);

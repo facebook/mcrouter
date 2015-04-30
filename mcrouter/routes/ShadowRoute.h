@@ -80,8 +80,12 @@ class ShadowRoute {
         folly::fibers::addTask(
           [shadow, adjustedReq] () {
             Request shadowReq(adjustedReq->clone());
-            shadowReq.setRequestClass(RequestClass::SHADOW);
-            shadow->route(shadowReq, Operation());
+            fiber_local::runWithLocals([&shadow, &shadowReq]() {
+              // we don't want to spool shadow requests
+              fiber_local::clearAsynclogName();
+              fiber_local::setRequestClass(RequestClass::SHADOW);
+              shadow->route(shadowReq, Operation());
+            });
           });
       }
     }

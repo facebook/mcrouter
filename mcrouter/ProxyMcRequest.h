@@ -17,12 +17,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyMcReply;
 
-enum class RequestClass {
-  NORMAL,
-  FAILOVER,
-  SHADOW,
-};
-
 class ProxyMcRequest : public McRequestBase {
  public:
   template<typename... Args>
@@ -32,16 +26,6 @@ class ProxyMcRequest : public McRequestBase {
     : McRequestBase(std::move(req)) {}
 
   ProxyMcRequest clone() const;
-  void setRequestClass(RequestClass type) {
-    reqClass_ = type;
-  }
-  RequestClass getRequestClass() const {
-    return reqClass_;
-  }
-  folly::StringPiece getRequestClassString() const;
-
- private:
-  RequestClass reqClass_{RequestClass::NORMAL};
 };
 
 } // mcrouter
