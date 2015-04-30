@@ -19,11 +19,11 @@
 namespace facebook { namespace memcache {
 
 class McReply;
+class McRequest;
 
 namespace mcrouter {
 
 class ProxyClientCommon;
-class ProxyMcRequest;
 class ProxyRoute;
 
 /**
@@ -142,7 +142,7 @@ public:
    */
   template <typename Operation>
   void onReplyReceived(const ProxyClientCommon& pclient,
-                       const ProxyMcRequest& request,
+                       const McRequest& request,
                        const McReply& reply,
                        const int64_t startTimeUs,
                        const int64_t endTimeUs,

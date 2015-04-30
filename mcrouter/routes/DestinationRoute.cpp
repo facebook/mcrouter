@@ -29,7 +29,7 @@ std::string DestinationRoute::routeName() const {
     client_->server_timeout.count());
 }
 
-bool DestinationRoute::spool(const ProxyMcRequest& req) const {
+bool DestinationRoute::spool(const McRequest& req) const {
   auto asynclogName = fiber_local::getAsynclogName();
   if (asynclogName.empty()) {
     return false;

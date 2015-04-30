@@ -76,7 +76,7 @@ TEST(shadowRouteTest, defaultPolicy) {
   auto ctx = getContext();
   fm.run([&] () {
     fiber_local::setSharedCtx(ctx);
-    auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>());
+    auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
 
     EXPECT_TRUE(reply.result() == mc_res_found);
     EXPECT_TRUE(toString(reply.value()) == "a");
@@ -89,7 +89,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   fm.run([&] () {
     fiber_local::setSharedCtx(ctx);
-    auto reply = rh.route(ProxyMcRequest("key"), McOperation<mc_op_get>());
+    auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
 
     EXPECT_TRUE(reply.result() == mc_res_found);
     EXPECT_TRUE(toString(reply.value()) == "a");

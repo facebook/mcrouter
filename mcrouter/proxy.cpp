@@ -47,7 +47,6 @@
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/route.h"
@@ -194,7 +193,7 @@ void proxy_t::routeHandlesProcessRequest(
   if (preq->origReq()->op == mc_op_get_service_info) {
     auto orig = preq->origReq().clone();
     const auto& config = preq->proxyConfig();
-    ProxyMcRequest req(std::move(orig));
+    McRequest req(std::move(orig));
 
     /* Will answer request for us */
     config.serviceInfo()->handleRequest(req, preq);

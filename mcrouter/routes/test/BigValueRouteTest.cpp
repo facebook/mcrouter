@@ -13,8 +13,8 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/BigValueRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -49,7 +49,7 @@ TEST(BigValueRouteTest, smallvalue) {
       string key = "key_get";
       auto msg = createMcMsgRef(key, "value");
       msg->op = mc_op_get;
-      ProxyMcRequest req_get(std::move(msg));
+      McRequest req_get(std::move(msg));
       auto f_get = rh.route(req_get, McOperation<mc_op_get>());
 
       EXPECT_TRUE(toString(f_get.value()) == "a");
@@ -59,7 +59,7 @@ TEST(BigValueRouteTest, smallvalue) {
       string key_set = "key_set";
       auto msg_set = createMcMsgRef(key_set, "value");
       msg_set->op = mc_op_set;
-      ProxyMcRequest req_set(std::move(msg_set));
+      McRequest req_set(std::move(msg_set));
       auto f_set = rh.route(req_set, McOperation<mc_op_set>());
       EXPECT_TRUE(toString(f_set.value()) == "value");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_set"});
@@ -98,7 +98,7 @@ TEST(BigValueRouteTest, bigvalue) {
 
         auto msg = createMcMsgRef("key_get");
         msg->op = mc_op_get;
-        ProxyMcRequest req_get(std::move(msg));
+        McRequest req_get(std::move(msg));
 
         auto f_get = rh.route(req_get, McOperation<mc_op_get>());
         auto keys_get = test_handles[0]->saw_keys;
@@ -126,7 +126,7 @@ TEST(BigValueRouteTest, bigvalue) {
 
         auto msg = createMcMsgRef("key_get");
         msg->op = mc_op_get;
-        ProxyMcRequest req_get(std::move(msg));
+        McRequest req_get(std::move(msg));
 
         auto f_get = rh.route(req_get, McOperation<mc_op_get>());
         auto keys_get = test_handles[1]->saw_keys;
@@ -147,7 +147,7 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string chunk_type_2 = std::string(threshold, 's');
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_set;
-        ProxyMcRequest req_set(std::move(msg_set));
+        McRequest req_set(std::move(msg_set));
 
         auto f_set = rh.route(req_set, McOperation<mc_op_set>());
         auto keys_set = test_handles[2]->saw_keys;
@@ -191,7 +191,7 @@ TEST(BigValueRouteTest, bigvalue) {
           std::string(threshold*(num_chunks/2), 's'));
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_lease_set;
-        ProxyMcRequest req_set(std::move(msg_set));
+        McRequest req_set(std::move(msg_set));
 
         auto f_set = rh.route(req_set, McOperation<mc_op_lease_set>());
         auto keys_set = test_handles[3]->saw_keys;

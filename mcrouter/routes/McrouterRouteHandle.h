@@ -13,9 +13,8 @@
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleIf.h"
-#include "mcrouter/ProxyMcRequest.h"
-#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -26,14 +25,14 @@ template <typename Route>
 class McrouterRouteHandle :
       public RouteHandle<Route,
                          McrouterRouteHandleIf,
-                         List<ProxyMcRequest>,
+                         List<McRequest>,
                          McOpList> {
  public:
   template<typename... Args>
   explicit McrouterRouteHandle(Args&&... args)
     : RouteHandle<Route,
                   McrouterRouteHandleIf,
-                  List<ProxyMcRequest>,
+                  List<McRequest>,
                   McOpList>(
                     std::forward<Args>(args)...) {
   }
@@ -41,7 +40,7 @@ class McrouterRouteHandle :
 
 class McrouterRouteHandleIf :
       public RouteHandleIf<McrouterRouteHandleIf,
-                           List<ProxyMcRequest>,
+                           List<McRequest>,
                            McOpList> {
  public:
   template <class Route>

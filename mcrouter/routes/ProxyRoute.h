@@ -52,7 +52,7 @@ class ProxyRoute {
     McOpList::Item<op_id>) const {
 
     if (msg->op == McOpList::Item<op_id>::op::mc_op) {
-      return route(ProxyMcRequest(std::move(msg)),
+      return route(McRequest(std::move(msg)),
                    typename McOpList::Item<op_id>::op());
     }
 

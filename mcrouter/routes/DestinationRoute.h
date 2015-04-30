@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <folly/Memory.h>
+#include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
 #include <folly/experimental/fibers/FiberManager.h>
 
@@ -24,6 +25,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -55,7 +57,7 @@ class DestinationRoute {
    *
    * @return  true on sucess, false otherwise
    */
-  bool spool(const ProxyMcRequest& req) const;
+  bool spool(const McRequest& req) const;
 
   std::string keyWithFailoverTag(const folly::StringPiece fullKey) const;
 
@@ -80,7 +82,7 @@ class DestinationRoute {
   }
 
   template <class Operation>
-  McReply route(const ProxyMcRequest& req, Operation,
+  McReply route(const McRequest& req, Operation,
                 typename DeleteLike<Operation>::Type = 0) const {
     auto reply = routeImpl(req, Operation());
     if (reply.isFailoverError() && spool(req)) {
@@ -90,13 +92,13 @@ class DestinationRoute {
   }
 
   template <class Operation>
-  McReply route(const ProxyMcRequest& req, Operation,
+  McReply route(const McRequest& req, Operation,
                 OtherThanT(Operation, DeleteLike<>) = 0) const {
     return routeImpl(req, Operation());
   }
 
   template <int Op>
-  McReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
+  McReply routeImpl(const McRequest& req, McOperation<Op>) const {
     auto& ctx = fiber_local::getSharedCtx();
 
     if (!destination_->may_send()) {
@@ -133,17 +135,25 @@ class DestinationRoute {
     auto& destination = destination_;
 
     DestinationRequestCtx dctx;
-    auto newReq = McRequest::cloneFrom(req, !client_->keep_routing_prefix);
+    folly::Optional<McRequest> newReq;
+    if (!client_->keep_routing_prefix && !req.routingPrefix().empty()) {
+      newReq.emplace(req.clone());
+      newReq->stripRoutingPrefix();
+    }
 
     if (fiber_local::getFailoverTag()) {
-      auto newKey = keyWithFailoverTag(newReq.fullKey());
+      if (!newReq) {
+        newReq.emplace(req.clone());
+      }
+      auto newKey = keyWithFailoverTag(newReq->fullKey());
       /* It's always safe to not append a failover tag */
       if (newKey.size() <= MC_KEY_MAX_LEN) {
-        newReq.setKey(std::move(newKey));
+        newReq->setKey(std::move(newKey));
       }
     }
 
-    auto reply = destination->send(newReq, McOperation<Op>(), dctx,
+    const McRequest& reqToSend = newReq ? *newReq : req;
+    auto reply = destination->send(reqToSend, McOperation<Op>(), dctx,
                                    client_->server_timeout);
     ctx->onReplyReceived(*client_,
                          req,

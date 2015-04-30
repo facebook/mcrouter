@@ -9,9 +9,9 @@
  */
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -155,7 +155,7 @@ void ProxyRequestLogger::logError(const McReply& reply) {
 }
 
 template <class Operation>
-void ProxyRequestLogger::log(const ProxyMcRequest& request,
+void ProxyRequestLogger::log(const McRequest& request,
                              const McReply& reply,
                              const int64_t startTimeUs,
                              const int64_t endTimeUs,

@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "McRequestBase.h"
+#include "McRequest.h"
 
 #include <folly/io/IOBuf.h>
 #include <folly/Memory.h>
@@ -17,7 +17,7 @@
 
 namespace facebook { namespace memcache {
 
-McRequestBase::McRequestBase(McMsgRef&& msg)
+McRequest::McRequest(McMsgRef&& msg)
     : msg_(std::move(msg)),
       keyData_(makeMsgKeyIOBufStack(msg_)),
       valueData_(makeMsgValueIOBufStack(msg_)),
@@ -34,7 +34,7 @@ McRequestBase::McRequestBase(McMsgRef&& msg)
 {
 }
 
-McRequestBase::McRequestBase(folly::StringPiece key)
+McRequest::McRequest(folly::StringPiece key)
     : keyData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, key)) {
   keyData_.coalesce();
   keys_.update(getRange(keyData_));
@@ -43,7 +43,7 @@ McRequestBase::McRequestBase(folly::StringPiece key)
   msg_ = std::move(msg);
 }
 
-McRequestBase::McRequestBase(folly::IOBuf keyData)
+McRequest::McRequest(folly::IOBuf keyData)
     : keyData_(std::move(keyData)) {
   keyData_.coalesce();
   keys_.update(getRange(keyData_));
@@ -52,7 +52,7 @@ McRequestBase::McRequestBase(folly::IOBuf keyData)
   msg_ = std::move(msg);
 }
 
-bool McRequestBase::setKeyFrom(const folly::IOBuf& source,
+bool McRequest::setKeyFrom(const folly::IOBuf& source,
                                const uint8_t* keyBegin, size_t keySize) {
   if (keySize && cloneInto(keyData_, source, keyBegin, keySize)) {
     keys_ = Keys(getRange(keyData_));
@@ -61,14 +61,14 @@ bool McRequestBase::setKeyFrom(const folly::IOBuf& source,
   return false;
 }
 
-bool McRequestBase::setValueFrom(const folly::IOBuf& source,
-                                 const uint8_t* valueBegin, size_t valueSize) {
+bool McRequest::setValueFrom(const folly::IOBuf& source,
+                             const uint8_t* valueBegin, size_t valueSize) {
   return valueSize && cloneInto(valueData_, source, valueBegin, valueSize);
 }
 
-void McRequestBase::dependentHelper(mc_op_t op, folly::StringPiece key,
-                                    folly::StringPiece value,
-                                    MutableMcMsgRef& into) const {
+void McRequest::dependentHelper(mc_op_t op, folly::StringPiece key,
+                                folly::StringPiece value,
+                                MutableMcMsgRef& into) const {
   if (msg_.get()) {
     mc_msg_shallow_copy(into.get(), msg_.get());
   }
@@ -85,7 +85,7 @@ void McRequestBase::dependentHelper(mc_op_t op, folly::StringPiece key,
   into->value = to<nstring_t>(value);
 }
 
-void McRequestBase::ensureMsgExists(mc_op_t op) const {
+void McRequest::ensureMsgExists(mc_op_t op) const {
   /* dependentMsg* functions assume msg_ exists,
      so create one if necessary. */
   if (!msg_.get()) {
@@ -97,7 +97,7 @@ void McRequestBase::ensureMsgExists(mc_op_t op) const {
   }
 }
 
-McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
+McMsgRef McRequest::dependentMsg(mc_op_t op) const {
   ensureMsgExists(op);
 
   auto is_key_set =
@@ -131,7 +131,7 @@ McMsgRef McRequestBase::dependentMsg(mc_op_t op) const {
   }
 }
 
-McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
+McMsgRef McRequest::dependentMsgStripRoutingPrefix(mc_op_t op) const {
   ensureMsgExists(op);
 
   auto is_key_set =
@@ -166,23 +166,23 @@ McMsgRef McRequestBase::dependentMsgStripRoutingPrefix(mc_op_t op) const {
   }
 }
 
-folly::StringPiece McRequestBase::keyWithoutRoute() const {
+folly::StringPiece McRequest::keyWithoutRoute() const {
   return keys_.keyWithoutRoute;
 }
 
-uint32_t McRequestBase::exptime() const {
+uint32_t McRequest::exptime() const {
   return exptime_;
 }
 
-uint64_t McRequestBase::flags() const {
+uint64_t McRequest::flags() const {
   return flags_;
 }
 
-McRequestBase::Keys::Keys(folly::StringPiece key) noexcept {
+McRequest::Keys::Keys(folly::StringPiece key) noexcept {
   update(key);
 }
 
-void McRequestBase::Keys::update(folly::StringPiece key) {
+void McRequest::Keys::update(folly::StringPiece key) {
   keyWithoutRoute = key;
   if (!key.empty()) {
     if (*key.begin() == '/') {
@@ -209,7 +209,7 @@ void McRequestBase::Keys::update(folly::StringPiece key) {
   routingKeyHash = getMemcacheKeyHashValue(routingKey);
 }
 
-McRequestBase::McRequestBase(const McRequestBase& other)
+McRequest::McRequest(const McRequest& other)
     : exptime_(other.exptime_),
       flags_(other.flags_),
       delta_(other.delta_),
@@ -238,7 +238,7 @@ McRequestBase::McRequestBase(const McRequestBase& other)
 #endif
 }
 
-McRequestBase::~McRequestBase() {
+McRequest::~McRequest() {
 }
 
 }}

@@ -50,7 +50,7 @@ void sendRequest(folly::fibers::FiberManager& fm,
   auto context = getContext(senderId);
 
   fm.addTask([&rh, id, context, &replyOrder]() {
-      ProxyMcRequest request(makeKey(id));
+      McRequest request(makeKey(id));
       fiber_local::setSharedCtx(std::move(context));
       rh.route(request, McOperation<mc_op_get>());
       replyOrder.push_back(makeKey(id));

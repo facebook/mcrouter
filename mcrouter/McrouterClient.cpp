@@ -87,8 +87,8 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
       requests[i].context);
     preq->requester_ = incref();
     if (requests[i].saved_request.hasValue()) {
-      preq->savedRequest_.emplace(
-        std::move(*requests[i].saved_request));
+      // TODO: remove copy
+      preq->savedRequest_.emplace(requests[i].saved_request->clone());
     }
 
     __sync_fetch_and_add(&stats_.op_count[requests[i].req->op], 1);

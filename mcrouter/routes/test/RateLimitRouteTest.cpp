@@ -54,19 +54,19 @@ void test(Data data, Operation,
   if (burst) {
     usleep(1001000);
     /* Rate is 4/sec, but we can only have 3 at a time */
-    auto reply = rh.route(ProxyMcRequest("key"), Operation());
+    auto reply = rh.route(McRequest("key"), Operation());
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(ProxyMcRequest("key"), Operation());
+    reply = rh.route(McRequest("key"), Operation());
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(ProxyMcRequest("key"), Operation());
+    reply = rh.route(McRequest("key"), Operation());
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(ProxyMcRequest("key"), Operation());
+    reply = rh.route(McRequest("key"), Operation());
     EXPECT_EQ(reply.result(), reject);
   } else {
     usleep(501000);
-    auto reply = rh.route(ProxyMcRequest("key"), Operation());
+    auto reply = rh.route(McRequest("key"), Operation());
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(ProxyMcRequest("key"), Operation());
+    reply = rh.route(McRequest("key"), Operation());
     EXPECT_EQ(reply.result(), reject);
   }
 }
