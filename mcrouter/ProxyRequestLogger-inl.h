@@ -8,9 +8,9 @@
  *
  */
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/stats.h"
 
@@ -129,7 +129,7 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>) {
 
 }
 
-void ProxyRequestLogger::logError(const McReplyBase& reply) {
+void ProxyRequestLogger::logError(const McReply& reply) {
   auto reqClass = fiber_local::getRequestClass();
   if (reply.isError()) {
     REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);
@@ -156,7 +156,7 @@ void ProxyRequestLogger::logError(const McReplyBase& reply) {
 
 template <class Operation>
 void ProxyRequestLogger::log(const ProxyMcRequest& request,
-                             const ProxyMcReply& reply,
+                             const McReply& reply,
                              const int64_t startTimeUs,
                              const int64_t endTimeUs,
                              Operation) {

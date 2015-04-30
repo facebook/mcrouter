@@ -14,7 +14,6 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/RouteHandleIf.h"
-#include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"

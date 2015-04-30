@@ -23,6 +23,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -79,34 +80,34 @@ class DestinationRoute {
   }
 
   template <class Operation>
-  ProxyMcReply route(const ProxyMcRequest& req, Operation,
-                     typename DeleteLike<Operation>::Type = 0) const {
+  McReply route(const ProxyMcRequest& req, Operation,
+                typename DeleteLike<Operation>::Type = 0) const {
     auto reply = routeImpl(req, Operation());
     if (reply.isFailoverError() && spool(req)) {
-      return ProxyMcReply(DefaultReply, Operation());
+      return McReply(DefaultReply, Operation());
     }
     return reply;
   }
 
   template <class Operation>
-  ProxyMcReply route(const ProxyMcRequest& req, Operation,
-                     OtherThanT(Operation, DeleteLike<>) = 0) const {
+  McReply route(const ProxyMcRequest& req, Operation,
+                OtherThanT(Operation, DeleteLike<>) = 0) const {
     return routeImpl(req, Operation());
   }
 
   template <int Op>
-  ProxyMcReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
+  McReply routeImpl(const ProxyMcRequest& req, McOperation<Op>) const {
     auto& ctx = fiber_local::getSharedCtx();
 
     if (!destination_->may_send()) {
-      ProxyMcReply reply(TkoReply);
+      McReply reply(TkoReply);
       ctx->onRequestRefused(reply);
       return reply;
     }
 
     if (ctx->recording()) {
       ctx->recordDestination(*client_);
-      return ProxyMcReply(DefaultReply, McOperation<Op>());
+      return McReply(DefaultReply, McOperation<Op>());
     }
 
     auto proxy = &ctx->proxy();
@@ -114,7 +115,7 @@ class DestinationRoute {
     if (requestClass == RequestClass::SHADOW) {
       if (proxy->opts.target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
-        ProxyMcReply reply(ErrorReply);
+        McReply reply(ErrorReply);
         ctx->onRequestRefused(reply);
         return reply;
       }
@@ -142,9 +143,8 @@ class DestinationRoute {
       }
     }
 
-    auto reply = ProxyMcReply(
-      destination->send(newReq, McOperation<Op>(), dctx,
-                        client_->server_timeout));
+    auto reply = destination->send(newReq, McOperation<Op>(), dctx,
+                                   client_->server_timeout);
     ctx->onReplyReceived(*client_,
                          req,
                          reply,

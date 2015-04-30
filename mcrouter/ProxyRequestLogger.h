@@ -9,10 +9,13 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
+
+class McReply;
+
+namespace mcrouter {
 
 class proxy_t;
-class ProxyMcReply;
 class ProxyMcRequest;
 
 class ProxyRequestLogger {
@@ -23,12 +26,12 @@ class ProxyRequestLogger {
 
   template <class Operation>
   void log(const ProxyMcRequest& request,
-           const ProxyMcReply& reply,
+           const McReply& reply,
            const int64_t startTimeUs,
            const int64_t endTimeUs,
            Operation);
 
-  inline void logError(const McReplyBase& reply);
+  inline void logError(const McReply& reply);
 
  protected:
   proxy_t* proxy_;

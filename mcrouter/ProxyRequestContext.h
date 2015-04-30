@@ -16,10 +16,13 @@
 #include "mcrouter/ProxyConfigIf.h"
 #include "mcrouter/ProxyRequestLogger.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
+
+class McReply;
+
+namespace mcrouter {
 
 class ProxyClientCommon;
-class ProxyMcReply;
 class ProxyMcRequest;
 class ProxyRoute;
 
@@ -140,7 +143,7 @@ public:
   template <typename Operation>
   void onReplyReceived(const ProxyClientCommon& pclient,
                        const ProxyMcRequest& request,
-                       const ProxyMcReply& reply,
+                       const McReply& reply,
                        const int64_t startTimeUs,
                        const int64_t endTimeUs,
                        Operation) {
@@ -158,7 +161,7 @@ public:
   /**
    * Called once a request is refused due to rate limiting/TKO logic
    */
-  void onRequestRefused(const ProxyMcReply& reply);
+  void onRequestRefused(const McReply& reply);
 
   const McMsgRef& origReq() const {
     return origReq_;

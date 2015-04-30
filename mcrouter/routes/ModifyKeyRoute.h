@@ -23,7 +23,6 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/Reply.h"
 #include "mcrouter/RoutingPrefix.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 

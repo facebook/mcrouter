@@ -213,8 +213,7 @@ void proxy_t::routeHandlesProcessRequest(
       try {
         auto& proute = ctx->proxyRoute();
         fiber_local::setSharedCtx(std::move(ctx));
-        auto reply = proute.dispatchMcMsg(origReq.clone());
-        return ProxyMcReply::moveToMcReply(std::move(reply));
+        return proute.dispatchMcMsg(origReq.clone());
       } catch (const std::exception& e) {
         std::string err = "error routing "
           + to<std::string>(origReq->key) + ": " +

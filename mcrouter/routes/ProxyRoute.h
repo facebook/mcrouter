@@ -39,7 +39,7 @@ makeDestinationRoute(std::shared_ptr<const ProxyClientCommon> client,
  */
 class ProxyRoute {
  private:
-  ProxyMcReply dispatchMcMsgHelper(
+  McReply dispatchMcMsgHelper(
     McMsgRef&& msg,
     McOpList::Item<0>) const {
 
@@ -47,7 +47,7 @@ class ProxyRoute {
   }
 
   template <int op_id>
-  ProxyMcReply dispatchMcMsgHelper(
+  McReply dispatchMcMsgHelper(
     McMsgRef&& msg,
     McOpList::Item<op_id>) const {
 
@@ -72,7 +72,7 @@ class ProxyRoute {
     }
   }
 
-  ProxyMcReply dispatchMcMsg(McMsgRef&& msg) const {
+  McReply dispatchMcMsg(McMsgRef&& msg) const {
     return dispatchMcMsgHelper(std::move(msg), McOpList::LastItem());
   }
 

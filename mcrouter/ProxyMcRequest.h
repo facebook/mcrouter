@@ -13,9 +13,11 @@
 #include "mcrouter/lib/McRequestBase.h"
 #include "mcrouter/lib/Operation.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
 
-class ProxyMcReply;
+class McReply;
+
+namespace mcrouter {
 
 class ProxyMcRequest : public McRequestBase {
  public:
@@ -32,7 +34,7 @@ class ProxyMcRequest : public McRequestBase {
 
 template <typename Operation>
 struct ReplyType<Operation, mcrouter::ProxyMcRequest> {
-  typedef mcrouter::ProxyMcReply type;
+  typedef McReply type;
 };
 
 }}  // facebook::memcache

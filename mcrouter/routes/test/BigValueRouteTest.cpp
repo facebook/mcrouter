@@ -12,8 +12,8 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/BigValueRoute.h"

@@ -12,10 +12,10 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
-#include "mcrouter/ProxyMcReply.h"
 #include "mcrouter/ProxyMcRequest.h"
 #include "mcrouter/routes/FailoverWithExptimeRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"

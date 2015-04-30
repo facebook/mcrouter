@@ -93,7 +93,7 @@ void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
   senderIdForTest_ = id;
 }
 
-void ProxyRequestContext::onRequestRefused(const ProxyMcReply& reply) {
+void ProxyRequestContext::onRequestRefused(const McReply& reply) {
   if (recording_) {
     return;
   }
