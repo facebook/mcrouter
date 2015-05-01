@@ -12,9 +12,10 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/DynamicConverter.h>
-#include <folly/Singleton.h>
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/json.h>
 #include <folly/MapUtil.h>
+#include <folly/Singleton.h>
 
 #include "mcrouter/awriter.h"
 #include "mcrouter/FileObserver.h"
@@ -122,43 +123,45 @@ McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
 
 McrouterInstance* McrouterInstance::create(McrouterOptions input_options,
                                            bool spawnProxyThreads) {
-  if (!isValidRouterName(input_options.service_name) ||
-      !isValidRouterName(input_options.router_name)) {
-    throw std::runtime_error(
-      "Invalid service_name or router_name provided; must be"
-      " strings matching [a-zA-Z0-9_-]+");
-  }
+  return folly::fibers::runInMainContext([&]() -> McrouterInstance* {
+    if (!isValidRouterName(input_options.service_name) ||
+        !isValidRouterName(input_options.router_name)) {
+      throw std::runtime_error(
+        "Invalid service_name or router_name provided; must be"
+        " strings matching [a-zA-Z0-9_-]+");
+    }
 
-  if (input_options.test_mode) {
-    // test-mode disables all logging.
-    LOG(WARNING) << "Running mcrouter in test mode. This mode should not be "
-                    "used in production.";
-    applyTestMode(input_options);
-  }
+    if (input_options.test_mode) {
+      // test-mode disables all logging.
+      LOG(WARNING) << "Running mcrouter in test mode. This mode should not be "
+                      "used in production.";
+      applyTestMode(input_options);
+    }
 
-  if (!input_options.async_spool.empty()) {
-    auto rc = ::access(input_options.async_spool.c_str(), W_OK);
-    PLOG_IF(WARNING, rc) << "Error while checking spooldir (" <<
-                            input_options.async_spool << ")";
-  }
+    if (!input_options.async_spool.empty()) {
+      auto rc = ::access(input_options.async_spool.c_str(), W_OK);
+      PLOG_IF(WARNING, rc) << "Error while checking spooldir (" <<
+                              input_options.async_spool << ")";
+    }
 
-  if (input_options.enable_failure_logging) {
-    initFailureLogger();
-  }
+    if (input_options.enable_failure_logging) {
+      initFailureLogger();
+    }
 
-  auto router = new McrouterInstance(std::move(input_options));
+    auto router = new McrouterInstance(std::move(input_options));
 
-  folly::json::serialization_opts jsonOpts;
-  jsonOpts.sort_keys = true;
-  auto dict = folly::toDynamic(router->getStartupOpts());
-  auto jsonStr = folly::json::serialize(dict, jsonOpts);
-  failure::setServiceContext(router->routerName(), jsonStr.toStdString());
+    folly::json::serialization_opts jsonOpts;
+    jsonOpts.sort_keys = true;
+    auto dict = folly::toDynamic(router->getStartupOpts());
+    auto jsonStr = folly::json::serialize(dict, jsonOpts);
+    failure::setServiceContext(router->routerName(), jsonStr.toStdString());
 
-  if (!router->spinUp(spawnProxyThreads)) {
-    router->tearDown();
-    return nullptr;
-  }
-  return router;
+    if (!router->spinUp(spawnProxyThreads)) {
+      router->tearDown();
+      return nullptr;
+    }
+    return router;
+  });
 }
 
 McrouterClient::Pointer McrouterInstance::createClient(
