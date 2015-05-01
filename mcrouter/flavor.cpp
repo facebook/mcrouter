@@ -66,7 +66,7 @@ bool readLibmcrouterFlavor(
     const std::string& flavor_json,
     std::unordered_map<std::string, std::string>& opts) {
   try {
-    auto json = parseJsonString(flavor_json);
+    auto json = parseJsonString(folly::json::stripComments(flavor_json));
     return parse_json_options(json, "options", opts);
   } catch (...) {
     return false;
@@ -88,7 +88,8 @@ bool readStandaloneFlavor(
     std::unordered_map<std::string, std::string>& standalone_opts,
     std::unordered_map<std::string, std::string>& libmcrouter_opts) {
   try {
-    auto json = parseJsonString(standalone_flavor_json);
+    auto json = parseJsonString(
+      folly::json::stripComments(standalone_flavor_json));
 
     if (!parse_json_options(json, "standalone_options", standalone_opts)) {
       return false;

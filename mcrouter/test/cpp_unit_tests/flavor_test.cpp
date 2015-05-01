@@ -32,7 +32,7 @@ TEST(Flavor, readStandaloneFlavor) {
   std::string flavorContents =
     "{"
       "\"libmcrouter_options\": {"
-        "\"default_route\": \"abc\""
+        "\"default_route\": \"abc\" /* comment */"
       "},"
       "\"standalone_options\": {"
         "\"port\": \"11001\", "
@@ -99,7 +99,7 @@ TEST(Flavor, readFlavorFromTwoFiles) {
   std::string flavorStandaloneContents =
     "{"
       "\"standalone_options\": {"
-        "\"port\": \"11001\", "
+        "\"port\": \"11001\", /* comment */"
         "\"log_file\": \"mcrouter.log\""
       "}"
     "}";
@@ -164,6 +164,7 @@ TEST(Flavor, readFlavorFromTwoFilesShouldOverrideLibmcrouterOptions) {
   std::string flavorContents =
     "{"
       "\"options\": {"
+        "// comment\n"
         "\"default_route\": \"abc\""
       "}"
     "}";
