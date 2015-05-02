@@ -13,6 +13,7 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdio>
 #include <mutex>
 #include <thread>
 
@@ -226,6 +227,15 @@ class McServerThread {
           socket_.reset(new folly::AsyncServerSocket());
           socket_->useExistingSocket(opts.existingSocketFd);
         }
+      } else if (!opts.unixDomainSockPath.empty()) {
+        checkLogic(opts.ports.empty() && opts.sslPorts.empty() &&
+          (opts.existingSocketFd == -1),
+          "Can't listen on port and unix domain socket at the same time");
+        std::remove(opts.unixDomainSockPath.c_str());
+        socket_.reset(new folly::AsyncServerSocket());
+        folly::SocketAddress serverAddress;
+        serverAddress.setFromPath(opts.unixDomainSockPath);
+        socket_->bind(serverAddress);
       } else {
         checkLogic(!server_.opts_.ports.empty() ||
                    !server_.opts_.sslPorts.empty(),

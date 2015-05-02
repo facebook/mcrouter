@@ -48,6 +48,11 @@ mcrouter_option_integer(
   "listen-sock-fd", no_short,
   "Listen socket to take over")
 
+mcrouter_option_string(
+  unix_domain_sock, "",
+  "unix-domain-sock", no_short,
+  "Unix domain socket path")
+
 mcrouter_option_toggle(
   background, false,
   "background", 'b',
