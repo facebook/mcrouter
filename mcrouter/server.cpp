@@ -11,6 +11,8 @@
 
 #include <signal.h>
 
+#include <cstdio>
+
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -136,6 +138,8 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
 
   if (standaloneOpts.listen_sock_fd >= 0) {
     opts.existingSocketFd = standaloneOpts.listen_sock_fd;
+  } else if (!standaloneOpts.unix_domain_sock.empty()) {
+    opts.unixDomainSockPath = standaloneOpts.unix_domain_sock;
   } else {
     opts.ports = standaloneOpts.ports;
     opts.sslPorts = standaloneOpts.ssl_ports;
@@ -192,6 +196,10 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
     LOG(INFO) << "Shutting down";
 
     McrouterInstance::freeAllMcrouters();
+
+    if (!opts.unixDomainSockPath.empty()) {
+      std::remove(opts.unixDomainSockPath.c_str());
+    }
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
     return false;

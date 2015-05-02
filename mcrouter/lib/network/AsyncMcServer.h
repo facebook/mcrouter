@@ -46,6 +46,13 @@ class AsyncMcServer {
     int existingSocketFd{-1};
 
     /**
+     * Create Unix Domain Socket to listen on.
+     * If this is used (not empty), port must be empty,
+     * existingSocketFd must be unset (-1).
+     */
+    std::string unixDomainSockPath;
+
+    /**
      * The list of ports to listen on.
      * If this is used, existingSocketFd must be unset (-1).
      */
