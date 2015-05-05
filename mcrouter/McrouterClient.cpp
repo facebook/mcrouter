@@ -118,7 +118,7 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
 
       while (i < nreqs) {
         while (counting_sem_value(&outstandingReqsSem_) == 0) {
-          mcrouterLoopOnce(proxy_->eventBase);
+          proxy_->eventBase->loopOnce();
         }
         n += counting_sem_lazy_wait(&outstandingReqsSem_, nreqs - n);
 

@@ -99,10 +99,6 @@ std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router);
 
-inline bool mcrouterLoopOnce(folly::EventBase* eventBase) {
-  return eventBase->loopOnce();
-}
-
 void applyTestMode(McrouterOptions& opts);
 
 McrouterOptions defaultTestOptions();

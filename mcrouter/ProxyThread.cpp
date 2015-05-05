@@ -60,11 +60,11 @@ void ProxyThread::proxyThreadRun() {
   mcrouterSetThreadName(pthread_self(), proxy_->router->opts(), "mcrpxy");
 
   while (!proxy_->router->shutdownStarted()) {
-    mcrouterLoopOnce(proxy_->eventBase);
+    proxy_->eventBase->loopOnce();
   }
 
   while (proxy_->fiberManager.hasTasks()) {
-    mcrouterLoopOnce(proxy_->eventBase);
+    proxy_->eventBase->loopOnce();
   }
 
   // Delete the proxy from the proxy thread so that the clients get

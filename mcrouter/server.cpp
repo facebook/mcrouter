@@ -114,7 +114,7 @@ void serverLoop(
   while (worker.isAlive() ||
          worker.writesPending() ||
          proxy->fiberManager.hasTasks()) {
-    mcrouterLoopOnce(&evb);
+    evb.loopOnce();
   }
 }
 
