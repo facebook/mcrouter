@@ -1245,7 +1245,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   : nestedLimit_(nestedLimit) {
 
   for (auto& it : globals) {
-    auto constObj = make_unique<Const>(*this, it.first, std::move(it.second));
+    auto constObj =
+        folly::make_unique<Const>(*this, it.first, std::move(it.second));
     consts_.emplace(std::move(it.first), std::move(constObj));
   }
 
@@ -1334,8 +1335,9 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
 
 void ConfigPreprocessor::addBuiltInMacro(string name, vector<dynamic> params,
                                          Macro::Func func) {
-  macros_.emplace(name,
-    make_unique<Macro>(name, std::move(params), std::move(func)));
+  macros_.emplace(
+      name,
+      folly::make_unique<Macro>(name, std::move(params), std::move(func)));
 }
 
 dynamic ConfigPreprocessor::replaceParams(StringPiece str,
@@ -1553,7 +1555,7 @@ void ConfigPreprocessor::parseConstDefs(dynamic jconsts) {
     auto name = asString(tryGet(it, "name", "constDef"), "constDef name");
     const auto& result = tryGet(it, "result", "constDef");
     try {
-      consts_.emplace(name, make_unique<Const>(*this, name, result));
+      consts_.emplace(name, folly::make_unique<Const>(*this, name, result));
     } catch (const std::logic_error& e) {
       throw std::logic_error("'" + name + "' const:\n" + e.what());
     }
@@ -1581,11 +1583,11 @@ void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
     auto f = [res, this](const Context& ctx) {
       return expandMacros(res, ctx);
     };
-    macros_.emplace(key, make_unique<Macro>(key, params, std::move(f)));
+    macros_.emplace(key, folly::make_unique<Macro>(key, params, std::move(f)));
   } else if (objType == "constDef") {
     checkLogic(obj.isObject(), "constDef is not an object");
     const auto& result = tryGet(obj, "result", "constDef");
-    consts_.emplace(key, make_unique<Const>(*this, key, result));
+    consts_.emplace(key, folly::make_unique<Const>(*this, key, result));
   } else {
     throw std::logic_error("Unknown macro definition type: " + objType);
   }
