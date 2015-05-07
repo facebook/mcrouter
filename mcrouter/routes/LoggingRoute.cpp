@@ -18,4 +18,13 @@ makeRouteHandle<mcrouter::McrouterRouteHandleIf, LoggingRoute>(
   RouteHandleFactory<mcrouter::McrouterRouteHandleIf>&,
   const folly::dynamic&);
 
-}}
+namespace mcrouter {
+
+McrouterRouteHandlePtr makeLoggingRoute(
+  McrouterRouteHandlePtr rh) {
+
+  return makeMcrouterRouteHandle<LoggingRoute>(
+    std::move(rh));
+}
+
+}}}

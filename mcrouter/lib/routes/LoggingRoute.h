@@ -12,8 +12,10 @@
 #include <memory>
 #include <string>
 
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
 
@@ -26,6 +28,9 @@ class LoggingRoute {
   static std::string routeName() {
     return "logging";
   }
+
+  explicit LoggingRoute(std::shared_ptr<RouteHandleIf> rh)
+    : child_(std::move(rh)) {}
 
   LoggingRoute(RouteHandleFactory<RouteHandleIf>& factory,
                const folly::dynamic& json) {
@@ -49,7 +54,13 @@ class LoggingRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) {
 
-    auto reply = child_->route(req, Operation());
+    typename ReplyType<Operation,Request>::type reply;
+    if (child_ == nullptr) {
+      reply = NullRoute<RouteHandleIf>::route(req, Operation());
+    } else {
+      reply = child_->route(req, Operation());
+    }
+
     LOG(INFO) << "request key: " << req.fullKey()
               << " response: " << mc_res_to_string(reply.result())
               << " responseLength: " << reply.value().length();
