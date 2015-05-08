@@ -109,23 +109,11 @@ mcrouter_option_integer(
   "fibers-max-pool-size", no_short,
   "Maximum number of preallocated free fibers to keep around")
 
-#ifdef FOLLY_SANITIZE_ADDRESS
-/* ASAN needs a lot of extra stack space.
-   16x is a conservative estimate, 8x also worked with tests
-   where it mattered.  Note that overallocating here does not necessarily
-   increase RSS, since unused memory is pretty much free. */
-#define DEFAULT_STACK_SIZE (16 * 16 * 1024)
-#else
-#define DEFAULT_STACK_SIZE (24 * 1024)
-#endif
-
 mcrouter_option_integer(
-  size_t, fibers_stack_size, DEFAULT_STACK_SIZE,
+  size_t, fibers_stack_size, 24 * 1024,
   "fibers-stack-size", no_short,
   "Size of stack in bytes to allocate per fiber."
   " 0 means use fibers library default.")
-
-#undef DEFAULT_STACK_SIZE
 
 mcrouter_option_integer(
   size_t, fibers_record_stack_size_every, 100000,
