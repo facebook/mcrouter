@@ -33,7 +33,7 @@ template<typename... Args>
 void checkLogic(bool condition, folly::StringPiece format, Args&&... args) {
   if (UNLIKELY(!condition)) {
     throw std::logic_error(
-      folly::format(format, std::forward<Args>(args)...).str());
+      folly::sformatChecked(format, std::forward<Args>(args)...));
   }
 }
 

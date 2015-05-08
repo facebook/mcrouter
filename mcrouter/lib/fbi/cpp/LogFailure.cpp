@@ -34,16 +34,16 @@ std::string createMessage(folly::StringPiece service,
                           folly::StringPiece category,
                           folly::StringPiece msg,
                           const std::map<std::string, std::string>& contexts) {
-  auto result = folly::format("{} {} [{}] [{}] [{}] {}\n",
-    time(nullptr), getpid(), service, category, getThreadName(), msg).str();
+  auto result = folly::sformatChecked("{} {} [{}] [{}] [{}] {}\n",
+    time(nullptr), getpid(), service, category, getThreadName(), msg);
 
   auto contextIt = contexts.find(service.str());
   if (contextIt != contexts.end()) {
-    result += folly::format("\"{}\": {}", contextIt->first,
-                            contextIt->second).str();
+    result += folly::sformatChecked("\"{}\": {}", contextIt->first,
+                                    contextIt->second);
   } else {
     for (const auto& it : contexts) {
-      result += folly::format("\"{}\": {}\n", it.first, it.second).str();
+      result += folly::sformatChecked("\"{}\": {}\n", it.first, it.second);
     }
   }
   return result;
