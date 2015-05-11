@@ -76,7 +76,6 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
     }
   }
 
-  __sync_fetch_and_add(&stats_.nreq, nreqs);
   for (size_t i = 0; i < nreqs; i++) {
     auto preq = ProxyRequestContext::create(
       *proxy_,
@@ -90,12 +89,6 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
       // TODO: remove copy
       preq->savedRequest_.emplace(requests[i].saved_request->clone());
     }
-
-    __sync_fetch_and_add(&stats_.op_count[requests[i].req->op], 1);
-    __sync_fetch_and_add(&stats_.op_value_bytes[requests[i].req->op],
-                         requests[i].req->value.len);
-    __sync_fetch_and_add(&stats_.op_key_bytes[requests[i].req->op],
-                         requests[i].req->key.len);
 
     entries[i].data = preq.release();
     entries[i].nbytes = sizeof(ProxyRequestContext*);
@@ -175,7 +168,6 @@ McrouterClient::McrouterClient(
     counting_sem_init(&outstandingReqsSem_, maxOutstanding_);
   }
 
-  memset(&stats_, 0, sizeof(stats_));
   {
     std::lock_guard<std::mutex> guard(router_->clientListLock_);
     router_->clientList_.push_front(*this);
@@ -200,16 +192,56 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
   router_reply.reply = std::move(preq.reply_.value());
   router_reply.context = preq.context_;
 
-  if (router_reply.reply.result() == mc_res_timeout ||
-      router_reply.reply.result() == mc_res_connect_timeout) {
-    __sync_fetch_and_add(&stats_.ntmo, 1);
+  auto replyBytes = router_reply.reply.value().computeChainDataLength();
+
+  switch (preq.origReq()->op) {
+    case mc_op_get:
+    case mc_op_gets:
+    case mc_op_lease_get:
+    case mc_op_get_count:
+    case mc_op_get_unique_count:
+      stats_.recordFetchRequest(preq.origReq()->key.len, replyBytes);
+      break;
+
+    case mc_op_add:
+    case mc_op_set:
+    case mc_op_replace:
+    case mc_op_lease_set:
+    case mc_op_cas:
+    case mc_op_append:
+    case mc_op_prepend:
+    case mc_op_incr:
+    case mc_op_decr:
+    case mc_op_bump_count:
+    case mc_op_bump_unique_count:
+      stats_.recordUpdateRequest(preq.origReq()->key.len,
+                                 preq.origReq()->value.len);
+      break;
+
+    case mc_op_delete:
+      stats_.recordInvalidateRequest(preq.origReq()->key.len);
+      break;
+
+    case mc_op_unknown:
+    case mc_op_echo:
+    case mc_op_quit:
+    case mc_op_version:
+    case mc_op_servererr:
+    case mc_op_flushall:
+    case mc_op_flushre:
+    case mc_op_stats:
+    case mc_op_verbosity:
+    case mc_op_shutdown:
+    case mc_op_end:
+    case mc_op_metaget:
+    case mc_op_exec:
+    case mc_op_get_service_info:
+    case mc_nops:
+      break;
   }
 
-  __sync_fetch_and_add(&stats_.op_value_bytes[preq.origReq()->op],
-                       router_reply.reply.value().length());
-
   if (LIKELY(callbacks_.on_reply && !disconnected_)) {
-      callbacks_.on_reply(&router_reply, arg_);
+    callbacks_.on_reply(&router_reply, arg_);
   } else if (callbacks_.on_cancel && disconnected_) {
     // This should be called for all canceled requests, when cancellation is
     // implemented properly.
@@ -260,35 +292,6 @@ void McrouterClient::decref() {
     router_->onClientDestroyed();
     delete this;
   }
-}
-
-std::unordered_map<std::string, int64_t>
-McrouterClient::getStatsHelper(bool clear) {
-
-  std::function<uint32_t(uint32_t*)> fetch_func;
-
-  if (clear) {
-    fetch_func = [](uint32_t* ptr) {
-      return xchg32_barrier(ptr, 0);
-    };
-  } else {
-    fetch_func = [](uint32_t* ptr) {
-      return *ptr;
-    };
-  }
-
-  std::unordered_map<std::string, int64_t> ret;
-  ret["nreq"] = fetch_func(&stats_.nreq);
-  for (int op = 0; op < mc_nops; op++) {
-    std::string op_name = mc_op_to_string((mc_op_t)op);
-    ret[op_name + "_count"] = fetch_func(&stats_.op_count[op]);
-    ret[op_name + "_key_bytes"] = fetch_func(&stats_.op_key_bytes[op]);
-    ret[op_name + "_value_bytes"] = fetch_func(
-      &stats_.op_value_bytes[op]);
-  }
-  ret["ntmo"] = fetch_func(&stats_.ntmo);
-
-  return ret;
 }
 
 void McrouterClient::requestReady(asox_queue_t q,

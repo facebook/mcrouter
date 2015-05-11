@@ -3,6 +3,7 @@ SUBDIRS = . config cycles fbi network test
 noinst_LIBRARIES = libmcrouter.a
 
 libmcrouter_a_SOURCES = \
+  CacheClientStats.h \
   Ch3HashFunc.h \
   Crc32HashFunc.h \
   IOBufUtil.cpp \

@@ -13,6 +13,7 @@
 #include <folly/IntrusiveList.h>
 #include <folly/Optional.h>
 
+#include "mcrouter/lib/CacheClientStats.h"
 #include "mcrouter/lib/fbi/counting_sem.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McReply.h"
@@ -28,16 +29,6 @@ class EventBase;
 }
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-struct mcrouter_client_stats_t {
-  uint32_t nreq;              // number of requests
-  uint32_t op_count[mc_nops]; // number of requests for certain op
-  uint32_t op_key_bytes[mc_nops]; // request key bytes
-  uint32_t op_value_bytes[mc_nops]; // request + reply value bytes
-  uint32_t ntmo;              // number of timeouts
-  uint32_t nlocal_errors;     // number of local errors
-  uint32_t nremote_errors;    // number of remote errors
-};
 
 class McrouterClient;
 class McrouterInstance;
@@ -107,18 +98,8 @@ class McrouterClient {
     arg_ = client_context;
   }
 
-  /**
-   * Returns current stats, does not reset the stats.
-   */
-  std::unordered_map<std::string, int64_t> peekStats() {
-    return getStatsHelper(/* clear= */ false);
-  }
-
-  /**
-   * Returns current stats, resets the stats to 0.
-   */
-  std::unordered_map<std::string, int64_t> flushStats() {
-    return getStatsHelper(/* clear= */ true);
+  CacheClientCounters getStatCounters() noexcept {
+    return stats_.getCounters();
   }
 
   /**
@@ -143,6 +124,11 @@ class McrouterClient {
     proxy_ = proxy;
   }
 
+  McrouterClient(const McrouterClient&) = delete;
+  McrouterClient(McrouterClient&&) noexcept = delete;
+  McrouterClient& operator=(const McrouterClient&) = delete;
+  McrouterClient& operator=(McrouterClient&&) = delete;
+
  private:
   McrouterInstance* router_;
 
@@ -151,7 +137,7 @@ class McrouterClient {
 
   proxy_t* proxy_{nullptr};
 
-  mcrouter_client_stats_t stats_;
+  CacheClientStats stats_;
 
   /// Maximum allowed requests in flight (unlimited if 0)
   const unsigned int maxOutstanding_;
@@ -186,7 +172,6 @@ class McrouterClient {
   void cleanup();
   McrouterClient* incref();
   void decref();
-  std::unordered_map<std::string, int64_t> getStatsHelper(bool clear);
 
  public:
   /* Note: this is only public due to legacy code in proxy.cpp.
@@ -196,11 +181,6 @@ class McrouterClient {
                            void *arg);
 
  private:
-  McrouterClient(const McrouterClient&) = delete;
-  McrouterClient(McrouterClient&&) noexcept = delete;
-  McrouterClient& operator=(const McrouterClient&) = delete;
-  McrouterClient& operator=(McrouterClient&&) = delete;
-
   friend class McrouterInstance;
   friend class ProxyRequestContext;
 };
