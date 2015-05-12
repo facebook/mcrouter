@@ -368,10 +368,19 @@ void AsyncMcClientImpl::attemptConnection() {
 
   auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
 
-  auto address = folly::SocketAddress(
-    connectionOptions_.accessPoint.getHost().str(),
-    connectionOptions_.accessPoint.getPort(),
-    /* allowNameLookup */ true);
+  folly::SocketAddress address;
+  try {
+    address = folly::SocketAddress(
+      connectionOptions_.accessPoint.getHost().str(),
+      connectionOptions_.accessPoint.getPort(),
+      /* allowNameLookup */ true);
+  } catch (const std::system_error& e) {
+    failure::log("AsyncMcClient", failure::Category::kBadEnvironment,
+                 "{}", e.what());
+    connectErr(folly::AsyncSocketException(
+                   folly::AsyncSocketException::NOT_OPEN, ""));
+    return;
+  }
 
   auto socketOptions = createSocketOptions(address, connectionOptions_);
 
