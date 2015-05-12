@@ -73,7 +73,8 @@ class AllSyncRoute {
 #pragma clang diagnostic push // ignore generalized lambda capture warning
 #pragma clang diagnostic ignored "-Wc++1y-extensions"
 #endif
-    auto fs = makeFuncGenerator([&req, &children = children_](size_t id) {
+    const auto& children = children_;
+    auto fs = makeFuncGenerator([&req, &children](size_t id) {
       return children[id]->route(req, Operation());
     }, children_.size());
 #ifdef __clang__
