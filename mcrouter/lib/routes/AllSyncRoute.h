@@ -15,9 +15,10 @@
 
 #include <folly/Optional.h>
 #include <folly/dynamic.h>
-#include <folly/experimental/fibers/WhenN.h>
+#include <folly/experimental/fibers/ForEach.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -68,17 +69,16 @@ class AllSyncRoute {
       return children_.back()->route(req, Operation());
     }
 
-    std::vector<std::function<Reply()>> fs;
-    fs.reserve(children_.size());
-    for (auto& rh : children_) {
-      // no need to copy the child and request, we will not return from method
-      // until we get replies
-      fs.emplace_back(
-        [&rh, &req]() {
-          return rh->route(req, Operation());
-        }
-      );
-    }
+#ifdef __clang__
+#pragma clang diagnostic push // ignore generalized lambda capture warning
+#pragma clang diagnostic ignored "-Wc++1y-extensions"
+#endif
+    auto fs = makeFuncGenerator([&req, &children = children_](size_t id) {
+      return children[id]->route(req, Operation());
+    }, children_.size());
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
     folly::Optional<Reply> reply;
     folly::fibers::forEach(fs.begin(), fs.end(),
