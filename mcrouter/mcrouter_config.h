@@ -31,6 +31,10 @@ static_assert(false, "mcrouter: invalid build");
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
 #define MCROUTER_INSTALL_PATH ""
 
+namespace folly {
+class dynamic;
+}
+
 namespace facebook { namespace memcache {
 
 class McReplyBase;
@@ -110,6 +114,8 @@ void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog);
 void initFailureLogger();
 
 void scheduleSingletonCleanup();
+
+std::unordered_map<std::string, folly::dynamic> additionalConfigParams();
 
 inline bool isMetagetAvailable() {
   return false;

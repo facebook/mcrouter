@@ -11,6 +11,7 @@
 
 #include <folly/json.h>
 
+#include "mcrouter/config.h"
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/lib/config/ConfigPreprocessor.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
@@ -29,15 +30,21 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
     : json_(nullptr) {
 
   McImportResolver importResolver(configApi);
+  std::unordered_map<std::string, folly::dynamic> globalParams{
+    { "default-route", opts.default_route.str() },
+    { "default-region", opts.default_route.getRegion().str() },
+    { "default-cluster", opts.default_route.getCluster().str() },
+    { "hostid", globals::hostid() },
+    { "router-name", opts.router_name },
+    { "service-name", opts.service_name }
+  };
+  auto additionalParams = additionalConfigParams();
+  globalParams.insert(additionalParams.begin(), additionalParams.end());
+
   json_ = ConfigPreprocessor::getConfigWithoutMacros(
     jsonC,
     importResolver,
-    {
-      { "default-route", opts.default_route.str() },
-      { "default-region", opts.default_route.getRegion().str() },
-      { "default-cluster", opts.default_route.getCluster().str() },
-      { "hostid", globals::hostid() },
-    });
+    std::move(globalParams));
 
   poolFactory_ = std::make_shared<PoolFactory>(json_, *configApi, opts);
 
