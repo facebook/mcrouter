@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
 
@@ -49,7 +50,7 @@ class ProxyDestination {
   struct Stats {
     State state{State::kNew};
     ExponentialSmoothData avgLatency;
-    uint64_t results[mc_nres] = {0};
+    std::unique_ptr<std::array<uint64_t, mc_nres>> results;
     size_t probesSent{0};
 
     explicit Stats(const McrouterOptions& opts);

@@ -521,8 +521,10 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
           auto& stat = serverStats[pdstn.pdstnKey];
           stat.isHardTko = pdstn.tracker->isHardTko();
           stat.isSoftTko = pdstn.tracker->isSoftTko();
-          for (size_t j = 0; j < mc_nres; ++j) {
-            stat.results[j] += pdstn.stats().results[j];
+          if (pdstn.stats().results) {
+            for (size_t j = 0; j < mc_nres; ++j) {
+              stat.results[j] += (*pdstn.stats().results)[j];
+            }
           }
           ++stat.states[(size_t)pdstn.stats().state];
 

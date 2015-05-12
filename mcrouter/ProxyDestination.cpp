@@ -164,7 +164,10 @@ void ProxyDestination::onReply(const McReply& reply,
                                DestinationRequestCtx& destreqCtx) {
   handle_tko(reply, false);
 
-  stats_.results[reply.result()]++;
+  if (!stats_.results) {
+    stats_.results = folly::make_unique<std::array<uint64_t, mc_nres>>();
+  }
+  ++(*stats_.results)[reply.result()];
   destreqCtx.endTime = nowUs();
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
