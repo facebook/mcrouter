@@ -348,13 +348,13 @@ machine mc_ascii_metaget_reply;
 include mc_ascii_common;
 
 age = uint %{
-  mcMsgT->number = static_cast<uint32_t>(currentUInt_);
+  reply.setNumber(static_cast<uint32_t>(currentUInt_));
 };
 age_unknown = 'unknown' %{
-  mcMsgT->number = -1;
+  reply.setNumber(static_cast<uint32_t>(-1));
 };
 exptime = uint %{
-  mcMsgT->exptime = static_cast<uint32_t>(currentUInt_);
+  reply.setExptime(static_cast<uint32_t>(currentUInt_));
 };
 ip_addr = (xdigit | '.' | ':')+ $ip_addr_value %{
   // Max ip address is 45 chars.

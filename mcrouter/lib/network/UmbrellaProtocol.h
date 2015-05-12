@@ -45,6 +45,28 @@ enum class UmbrellaParseStatus {
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
                                         UmbrellaMessageInfo& infoOut);
 
+uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
+
+/**
+ * Parse an on-the-wire Umbrella reply.
+ *
+ * @param source           Unchained IOBuf; [body, body + nbody) must point
+ *                         inside it.
+ * @param header, nheader  [header, header + nheader) must point to a valid
+ *                         Umbrella header.
+ * @param body, nbody      [body, body + nbody) must point to a valid
+ *                         Umbrella body stored in the `source` IOBuf
+ * @paramOut opOut         Parsed operation.
+ * @paramOut reqidOut      Parsed request ID
+ * @return                 Parsed request.
+ * @throws                 std::runtime_error on any parse error.
+ */
+template <class Operation, class Request>
+typename ReplyType<Operation, Request>::type
+umbrellaParseReply(const folly::IOBuf& source,
+                   const uint8_t* header, size_t nheader,
+                   const uint8_t* body, size_t nbody);
+
 /**
  * Parse an on-the-wire Umbrella request.
  *

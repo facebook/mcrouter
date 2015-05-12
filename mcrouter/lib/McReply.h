@@ -22,6 +22,12 @@
 
 namespace facebook { namespace memcache {
 
+class McReply;
+
+namespace detail {
+inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);
+}  // detail
+
 /**
  * mc_msg_t-based Reply implementation.
  */
@@ -215,11 +221,19 @@ class McReply {
   }
 
   uint32_t exptime() const {
-    return msg_.get() ? msg_->exptime : 0;
+    return exptime_;
+  }
+
+  void setExptime(uint32_t et) {
+    exptime_ = et;
   }
 
   uint32_t number() const {
-    return msg_.get() ? msg_->number : 0;
+    return number_;
+  }
+
+  void setNumber(uint32_t num) {
+    number_ = num;
   }
 
   uint64_t leaseToken() const {
@@ -247,11 +261,19 @@ class McReply {
   }
 
   double lowValue() const {
-    return msg_.get() ? msg_->lowval : 0;
+    return lowValue_;
+  }
+
+  void setLowValue(double val) {
+    lowValue_ = val;
   }
 
   double highValue() const {
-    return msg_.get() ? msg_->highval : 0;
+    return highValue_;
+  }
+
+  void setHighValue(double val) {
+    highValue_ = val;
   }
 
   uint8_t ipv() const {
@@ -312,6 +334,10 @@ class McReply {
   uint64_t delta_{0};
   uint64_t cas_{0};
   uint32_t errCode_{0};
+  uint32_t number_{0};
+  uint32_t exptime_{0};
+  double lowValue_{0};
+  double highValue_{0};
 
   /**
    * Container for a C-style destructor
@@ -320,6 +346,7 @@ class McReply {
   folly::Optional<CUniquePtr> destructor_;
 
   friend class McAsciiParser;
+  inline friend void detail::mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);
 };
 
 }}  // facebook::memcache

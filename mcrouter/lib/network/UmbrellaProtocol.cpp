@@ -66,6 +66,27 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
   return UmbrellaParseStatus::OK;
 }
 
+uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader) {
+  auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
+  size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
+  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
+      != header + nheader) {
+    throw std::runtime_error("Invalid number of entries");
+  }
+  for (size_t i = 0; i < nentries; ++i) {
+    auto& entry = msg->entries[i];
+    size_t tag = folly::Endian::big((uint16_t)entry.tag);
+    if (tag == msg_reqid) {
+      uint64_t val = folly::Endian::big((uint64_t)entry.data.val);
+      if (val == 0) {
+        throw std::runtime_error("invalid reqid");
+      }
+      return val;
+    }
+  }
+  throw std::runtime_error("missing reqid");
+}
+
 McRequest umbrellaParseRequest(const folly::IOBuf& source,
                                const uint8_t* header, size_t nheader,
                                const uint8_t* body, size_t nbody,

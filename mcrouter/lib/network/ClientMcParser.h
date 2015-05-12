@@ -56,6 +56,9 @@ class ClientMcParser : private McParser::ParserCallback {
   McAsciiParser asciiParser_;
   mc_parser_t mcParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
+  void (ClientMcParser<Callback>::*umbrellaForwarder_)(
+    const UmbrellaMessageInfo&, const uint8_t*, const uint8_t*,
+    const folly::IOBuf&, uint64_t){nullptr};
   bool useNewParser_{false};
 
   Callback& callback_;
@@ -64,6 +67,13 @@ class ClientMcParser : private McParser::ParserCallback {
 
   template <class Operation, class Request>
   void forwardAsciiReply();
+
+  template <class Operation, class Request>
+  void forwardUmbrellaReply(const UmbrellaMessageInfo& info,
+                            const uint8_t* header,
+                            const uint8_t* body,
+                            const folly::IOBuf& bodyBuffer,
+                            uint64_t reqId);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,

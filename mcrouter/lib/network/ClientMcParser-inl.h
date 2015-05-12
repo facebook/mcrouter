@@ -64,6 +64,9 @@ void ClientMcParser<Callback>::expectNext() {
     asciiParser_.initializeReplyParser<Operation, Request>();
     replyForwarder_ =
       &ClientMcParser<Callback>::forwardAsciiReply<Operation, Request>;
+  } else if (parser_.protocol() == mc_umbrella_protocol) {
+    umbrellaForwarder_ =
+      &ClientMcParser<Callback>::forwardUmbrellaReply<Operation, Request>;
   }
 }
 
@@ -85,38 +88,38 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
 }
 
 template <class Callback>
+template <class Operation, class Request>
+void ClientMcParser<Callback>::forwardUmbrellaReply(
+  const UmbrellaMessageInfo& info,
+  const uint8_t* header,
+  const uint8_t* body,
+  const folly::IOBuf& bodyBuffer,
+  uint64_t reqId) {
+
+  auto reply = umbrellaParseReply<Operation, Request>(
+    bodyBuffer, header, info.headerSize, body, info.bodySize);
+  callback_.replyReady(std::move(reply), reqId);
+}
+
+template <class Callback>
 bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const uint8_t* header,
                                               const uint8_t* body,
                                               const folly::IOBuf& bodyBuffer) {
-  auto mutMsg = createMcMsgRef();
-  uint64_t reqid;
-  auto st = um_consume_no_copy(header, info.headerSize, body, info.bodySize,
-                               &reqid, mutMsg.get());
-  if (st != um_ok) {
-    callback_.parseError(mc_res_remote_error, "Error parsing Umbrella message");
+  try {
+    uint64_t reqId = umbrellaDetermineReqId(header, info.headerSize);
+    if (callback_.nextReplyAvailable(reqId)) {
+      (this->*umbrellaForwarder_)(info, header, body, bodyBuffer, reqId);
+    }
+    // Consume the message, but don't fail.
+    return true;
+  } catch (const std::runtime_error& e) {
+    std::string reason(
+      std::string("Error parsing Umbrella message: ") + e.what());
+    LOG(ERROR) << reason;
+    callback_.parseError(mc_res_local_error, reason);
     return false;
   }
-
-  folly::IOBuf value;
-  if (mutMsg->value.len != 0) {
-    if (!cloneInto(value, bodyBuffer,
-                   reinterpret_cast<uint8_t*>(mutMsg->value.str),
-                   mutMsg->value.len)) {
-      callback_.parseError(mc_res_remote_error, "Error parsing Umbrella value");
-      return false;
-    }
-    // Reset msg->value, or it will confuse McReply::releasedMsg
-    mutMsg->value.str = nullptr;
-    mutMsg->value.len = 0;
-  }
-  McMsgRef msg(std::move(mutMsg));
-  auto reply = McReply(msg->result, msg.clone());
-  if (value.length() != 0) {
-    reply.setValue(std::move(value));
-  }
-  replyReadyHelper(std::move(reply), reqid);
-  return true;
 }
 
 template <class Callback>
