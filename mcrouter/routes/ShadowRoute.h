@@ -41,7 +41,7 @@ class ShadowRoute {
   static std::string routeName() { return "shadow"; }
 
   ShadowRoute(McrouterRouteHandlePtr normalRoute,
-              McrouterShadowData shadowData,
+              std::shared_ptr<McrouterShadowData> shadowData,
               size_t normalIndex,
               ShadowPolicy shadowPolicy)
       : normal_(std::move(normalRoute)),
@@ -55,7 +55,7 @@ class ShadowRoute {
     const Request& req, Operation) const {
 
     std::vector<McrouterRouteHandlePtr> rh = {normal_};
-    for (auto& shadowData: shadowData_) {
+    for (auto& shadowData : *shadowData_) {
       rh.push_back(shadowData.first);
     }
     return rh;
@@ -67,7 +67,7 @@ class ShadowRoute {
 
     std::shared_ptr<Request> adjustedReq;
     folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
-    for (auto iter: shadowData_) {
+    for (const auto& iter : *shadowData_) {
       if (shouldShadow(req, iter.second.get())) {
         if (!adjustedReq) {
           adjustedReq = std::make_shared<Request>(
@@ -99,7 +99,7 @@ class ShadowRoute {
 
  private:
   const McrouterRouteHandlePtr normal_;
-  McrouterShadowData shadowData_;
+  const std::shared_ptr<McrouterShadowData> shadowData_;
   const size_t normalIndex_;
   ShadowPolicy shadowPolicy_;
 

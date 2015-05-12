@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <memory>
+
 #include <folly/Range.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -27,7 +29,7 @@ class ExtraRouteHandleProviderIf {
   virtual McrouterRouteHandlePtr
   makeShadow(proxy_t* proxy,
              McrouterRouteHandlePtr destination,
-             const McrouterShadowData& data,
+             std::shared_ptr<McrouterShadowData> data,
              size_t indexInPool,
              folly::StringPiece shadowPolicy) = 0;
 

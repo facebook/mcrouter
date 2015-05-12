@@ -154,12 +154,12 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       shadowPolicy = jshadow_policy->stringPiece();
     }
 
-    McrouterShadowData data;
+    auto data = std::make_shared<McrouterShadowData>();
     for (auto& shadow : json["shadows"]) {
       checkLogic(shadow.count("target"),
                  "PoolRoute {} shadows: no target for shadow", pool->getName());
       auto policy = std::make_shared<ShadowSettings>(shadow, proxy_->router);
-      data.emplace_back(factory.create(shadow["target"]), std::move(policy));
+      data->emplace_back(factory.create(shadow["target"]), std::move(policy));
     }
 
     for (size_t i = 0; i < destinations.size(); ++i) {

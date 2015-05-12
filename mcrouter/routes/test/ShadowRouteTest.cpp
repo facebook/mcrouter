@@ -69,7 +69,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   McrouterRouteHandle<ShadowRoute<DefaultShadowPolicy>> rh(
     normalRh,
-    std::move(shadowData),
+    std::make_shared<McrouterShadowData>(shadowData),
     0,
     DefaultShadowPolicy());
 
