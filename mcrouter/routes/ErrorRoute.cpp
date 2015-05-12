@@ -19,13 +19,12 @@ makeRouteHandle<mcrouter::McrouterRouteHandleIf, ErrorRoute>(
 
 namespace mcrouter {
 
-McrouterRouteHandlePtr makeErrorRoute(const char* name) {
-  return makeMcrouterRouteHandle<ErrorRoute>(name);
+McrouterRouteHandlePtr makeErrorRoute() {
+  return makeMcrouterRouteHandle<ErrorRoute>();
 }
 
-McrouterRouteHandlePtr makeErrorRoute(const char* name,
-                                      const std::string& valueToSet) {
-  return makeMcrouterRouteHandle<ErrorRoute>(name, valueToSet);
+McrouterRouteHandlePtr makeErrorRoute(const std::string& valueToSet) {
+  return makeMcrouterRouteHandle<ErrorRoute>(valueToSet);
 }
 
 }}}

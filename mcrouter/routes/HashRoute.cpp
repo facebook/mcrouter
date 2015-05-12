@@ -42,52 +42,44 @@ makeRouteHandle<mcrouter::McrouterRouteHandleIf, HashRoute,
 namespace mcrouter {
 
 McrouterRouteHandlePtr makeHashRouteCrc32(
-  std::string name,
   std::vector<McrouterRouteHandlePtr> rh,
   const std::string& salt) {
 
   auto n = rh.size();
   return makeMcrouterRouteHandle<HashRoute, Crc32HashFunc>(
-    std::move(name),
     std::move(rh),
     salt,
     Crc32HashFunc(n));
 }
 
 McrouterRouteHandlePtr makeHashRouteCh3(
-  std::string name,
   std::vector<McrouterRouteHandlePtr> rh,
   const std::string& salt) {
 
   auto n = rh.size();
   return makeMcrouterRouteHandle<HashRoute, Ch3HashFunc>(
-    std::move(name),
     std::move(rh),
     salt,
     Ch3HashFunc(n));
 }
 
 McrouterRouteHandlePtr makeHashRouteConstShard(
-  std::string name,
   std::vector<McrouterRouteHandlePtr> rh,
   const std::string& salt) {
 
   auto n = rh.size();
   return makeMcrouterRouteHandle<HashRoute, ConstShardHashFunc>(
-    std::move(name),
     std::move(rh),
     salt,
     ConstShardHashFunc(n));
 }
 
 McrouterRouteHandlePtr makeHashRouteWeightedCh3(
-  std::string name,
   std::vector<McrouterRouteHandlePtr> rh,
   const std::string& salt,
   WeightedCh3HashFunc& func) {
 
   return makeMcrouterRouteHandle<HashRoute, WeightedCh3HashFunc>(
-    std::move(name),
     std::move(rh),
     salt,
     func);

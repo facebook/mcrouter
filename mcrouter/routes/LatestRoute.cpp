@@ -22,12 +22,10 @@ makeRouteHandle<mcrouter::McrouterRouteHandleIf, LatestRoute>(
 namespace mcrouter {
 
 McrouterRouteHandlePtr makeLatestRoute(
-  std::string name,
   std::vector<McrouterRouteHandlePtr> targets,
   size_t failoverCount) {
 
   return makeMcrouterRouteHandle<LatestRoute>(
-    std::move(name),
     std::move(targets),
     failoverCount);
 }

@@ -51,12 +51,10 @@ OperationSelectorRoute::OperationSelectorRoute(
 }
 
 McrouterRouteHandlePtr makeOperationSelectorRoute(
-  std::string name,
   std::vector<McrouterRouteHandlePtr> operationPolicies,
   McrouterRouteHandlePtr defaultPolicy) {
 
   return std::make_shared<McrouterRouteHandle<OperationSelectorRoute>>(
-    std::move(name),
     std::move(operationPolicies),
     std::move(defaultPolicy));
 }

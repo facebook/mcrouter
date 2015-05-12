@@ -18,8 +18,8 @@ makeRouteHandle<mcrouter::McrouterRouteHandleIf, NullRoute>();
 
 namespace mcrouter {
 
-McrouterRouteHandlePtr makeNullRoute(const char* name) {
-  return makeMcrouterRouteHandle<NullRoute>(name);
+McrouterRouteHandlePtr makeNullRoute() {
+  return makeMcrouterRouteHandle<NullRoute>();
 }
 
 }}}

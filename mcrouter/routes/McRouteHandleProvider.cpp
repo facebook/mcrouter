@@ -33,7 +33,7 @@ McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
   std::shared_ptr<ProxyDestination> destination);
 
-McrouterRouteHandlePtr makeDevNullRoute(const char* name);
+McrouterRouteHandlePtr makeDevNullRoute();
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -252,7 +252,7 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     // compatibility.
     return { makeOperationSelectorRoute(factory, json) };
   } else if (type == "DevNullRoute") {
-    return { makeDevNullRoute("devnull") };
+    return { makeDevNullRoute() };
   } else if (type == "FailoverWithExptimeRoute") {
     return { makeFailoverWithExptimeRoute(factory, json) };
   } else if (type == "L1L2CacheRoute") {

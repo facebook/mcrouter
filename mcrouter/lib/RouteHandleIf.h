@@ -21,11 +21,6 @@ namespace facebook { namespace memcache {
  *
  * To create a route handle for some route R, use
  *   auto rh = RouteHandle<R>(args);
- * or
- *   std::unique_ptr<RouteHandleIf> rh(RouteHandle<R>::makeNamed(name, args));
- *
- * A named instance will have a name "route_name:name" instead of "route_name"
- * where "route_name" is the result of R::routeName().
  */
 
 template<typename Route,
@@ -47,27 +42,11 @@ class RouteHandle<Route, RouteHandleIf, List<>, OpList, op_id> :
     : route_(std::forward<Args>(args)...) {
   }
 
-  template<typename... Args>
-  explicit RouteHandle(std::string n, Args&&... args)
-    : name_(std::move(n)), route_(std::forward<Args>(args)...) {
-  }
-
-  template<typename... Args>
-  explicit RouteHandle(const char* n, Args&&... args)
-    : name_(n), route_(std::forward<Args>(args)...) {
-  }
-
   std::string routeName() const {
-    auto name = route_.routeName();
-    if (name.empty()) {
-      name = "unknown";
-    }
-
-    return name + (name_.empty() ? "" : ":" + name_);
+    return route_.routeName();
   }
 
  protected:
-  std::string name_;
   Route route_;
 };
 

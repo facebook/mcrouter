@@ -27,13 +27,4 @@ McrouterRouteHandlePtr makeAllSyncRoute(
     std::move(rh));
 }
 
-McrouterRouteHandlePtr makeAllSyncRoute(
-  std::string name,
-  std::vector<McrouterRouteHandlePtr> rh) {
-
-  return makeMcrouterRouteHandle<AllSyncRoute>(
-    std::move(name),
-    std::move(rh));
-}
-
 }}}

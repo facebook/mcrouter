@@ -11,8 +11,8 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeDevNullRoute(const char* name) {
-  return std::make_shared<McrouterRouteHandle<DevNullRoute>>(name);
+McrouterRouteHandlePtr makeDevNullRoute() {
+  return std::make_shared<McrouterRouteHandle<DevNullRoute>>();
 }
 
 }}}
