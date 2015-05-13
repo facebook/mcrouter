@@ -15,6 +15,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <folly/experimental/StringKeyedUnorderedMap.h>
+
 using asox_timer_t = void*;
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -71,7 +73,7 @@ class ProxyDestinationMap {
   void setResetTimer(std::chrono::milliseconds interval);
 
   /**
-   * Calls f(const ProxyDestination&) for each destination stored
+   * Calls f(Key, const ProxyDestination&) for each destination stored
    * in ProxyDestinationMap. The whole map is locked during the call.
    *
    * TODO: replace with getStats()
@@ -81,7 +83,7 @@ class ProxyDestinationMap {
     std::lock_guard<std::mutex> lock(destinationsLock_);
     for (auto& it : destinations_) {
       if (std::shared_ptr<const ProxyDestination> d = it.second.lock()) {
-        f(*d);
+        f(it.first, *d);
       }
     }
   }
@@ -92,8 +94,7 @@ class ProxyDestinationMap {
   struct StateList;
 
   proxy_t* proxy_;
-  std::unordered_map<std::string, std::weak_ptr<ProxyDestination>>
-    destinations_;
+  folly::StringKeyedUnorderedMap<std::weak_ptr<ProxyDestination>> destinations_;
   std::mutex destinationsLock_;
 
   std::unique_ptr<StateList> active_;

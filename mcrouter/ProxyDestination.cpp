@@ -188,11 +188,9 @@ std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
     proxy_t* proxy,
-    const ProxyClientCommon& ro,
-    std::string pdstnKey) {
+    const ProxyClientCommon& ro) {
 
-  auto ptr = std::shared_ptr<ProxyDestination>(
-    new ProxyDestination(proxy, ro, std::move(pdstnKey)));
+  auto ptr = std::shared_ptr<ProxyDestination>(new ProxyDestination(proxy, ro));
   ptr->selfPtr_ = ptr;
   return ptr;
 }
@@ -217,11 +215,9 @@ ProxyDestination::~ProxyDestination() {
 }
 
 ProxyDestination::ProxyDestination(proxy_t* proxy_,
-                                   const ProxyClientCommon& ro_,
-                                   std::string pdstnKey_)
+                                   const ProxyClientCommon& ro_)
   : proxy(proxy_),
     accessPoint(ro_.ap),
-    pdstnKey(std::move(pdstnKey_)),
     shortestTimeout_(ro_.server_timeout),
     useSsl_(ro_.useSsl),
     qosClass_(ro_.qosClass),
@@ -346,7 +342,7 @@ void ProxyDestination::setState(State new_st) {
   }
 
   auto logUtil = [this](const char* s) {
-    VLOG(1) << "server " << pdstnKey << " " << s << " (" <<
+    VLOG(1) << "server " << pdstnKey_ << " " << s << " (" <<
         stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
         stat_get_uint64(proxy->stats, num_servers_stat) << ")";
   };

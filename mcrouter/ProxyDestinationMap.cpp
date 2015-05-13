@@ -57,8 +57,12 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
       destination = it->second.lock();
     }
     if (!destination) {
-      destination = ProxyDestination::create(proxy_, client, key);
-      destinations_[std::move(key)] = destination;
+      destination = ProxyDestination::create(proxy_, client);
+      auto destIt = destinations_.emplace(key, destination);
+      if (!destIt.second) {
+        destIt.first->second = destination;
+      }
+      destination->pdstnKey_ = destIt.first->first;
     } else {
       destination->updatePoolName(client.pool.getName());
       destination->updateShortestTimeout(client.server_timeout);
@@ -85,7 +89,7 @@ void ProxyDestinationMap::removeDestination(ProxyDestination& destination) {
   }
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
-    destinations_.erase(destination.pdstnKey);
+    destinations_.erase(destination.pdstnKey_);
   }
 }
 

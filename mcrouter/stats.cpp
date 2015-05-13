@@ -324,7 +324,7 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
     proxy->destinationMap->foreachDestinationSynced(
-      [&destStats](const ProxyDestination& destination) {
+      [&destStats](folly::StringPiece, const ProxyDestination& destination) {
         destStats.pendingRequests += destination.getPendingRequestCount();
         destStats.inflightRequests += destination.getInflightRequestCount();
         auto batch = destination.getBatchingStat();
@@ -513,12 +513,12 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   }
 
   if (groups & server_stats) {
-    std::unordered_map<std::string, ServerStat> serverStats;
+    folly::StringKeyedUnorderedMap<ServerStat> serverStats;
     auto router = proxy->router;
     for (size_t i = 0; i < router->opts().num_proxies; ++i) {
       router->getProxy(i)->destinationMap->foreachDestinationSynced(
-        [&serverStats](const ProxyDestination& pdstn) {
-          auto& stat = serverStats[pdstn.pdstnKey];
+        [&serverStats](folly::StringPiece key, const ProxyDestination& pdstn) {
+          auto& stat = serverStats[key];
           stat.isHardTko = pdstn.tracker->isHardTko();
           stat.isSoftTko = pdstn.tracker->isSoftTko();
           if (pdstn.stats().results) {

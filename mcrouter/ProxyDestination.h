@@ -58,13 +58,8 @@ class ProxyDestination {
 
   proxy_t* proxy{nullptr}; ///< for convenience
   const AccessPoint accessPoint;
-  const std::string pdstnKey;///< consists of ap, server_timeout
 
   std::shared_ptr<TkoTracker> tracker;
-
-  static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
-                                                  const ProxyClientCommon& ro,
-                                                  std::string pdstnKey);
 
   ~ProxyDestination();
 
@@ -119,6 +114,11 @@ class ProxyDestination {
   std::unique_ptr<McRequest> probe_req;
   asox_timer_t probe_timer{nullptr};
   std::string poolName_;
+  // The string is stored in ProxyDestinationMap::destinations_
+  folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
+
+  static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
+                                                  const ProxyClientCommon& ro);
 
   void setState(State st);
 
@@ -138,9 +138,7 @@ class ProxyDestination {
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
 
-  ProxyDestination(proxy_t* proxy,
-                   const ProxyClientCommon& ro,
-                   std::string pdstnKey);
+  ProxyDestination(proxy_t* proxy, const ProxyClientCommon& ro);
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
