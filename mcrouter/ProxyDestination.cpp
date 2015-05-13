@@ -217,7 +217,7 @@ ProxyDestination::~ProxyDestination() {
 ProxyDestination::ProxyDestination(proxy_t* proxy_,
                                    const ProxyClientCommon& ro_)
   : proxy(proxy_),
-    accessPoint(ro_.ap),
+    accessPoint_(ro_.ap),
     shortestTimeout_(ro_.server_timeout),
     useSsl_(ro_.useSsl),
     qosClass_(ro_.qosClass),
@@ -246,7 +246,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   CHECK(proxy->eventBase);
   assert(!client_);
 
-  ConnectionOptions options(accessPoint);
+  ConnectionOptions options(accessPoint());
   auto& opts = proxy->opts;
   options.noNetwork = opts.no_network;
   options.useNewAsciiParser = opts.new_ascii_parser;
@@ -302,7 +302,7 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(1) << accessPoint.toHostPortString() << " (" << poolName_ << ") "
+    VLOG(1) << accessPoint().toHostPortString() << " (" << poolName_ << ") "
             << eventStr << ". Total hard TKOs: "
             << tracker->globalTkos().hardTkos << "; soft TKOs: "
             << tracker->globalTkos().softTkos << ". Reply: "
@@ -324,7 +324,7 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
       break;
   }
 
-  TkoLog tkoLog(accessPoint, tracker->globalTkos());
+  TkoLog tkoLog(accessPoint(), tracker->globalTkos());
   tkoLog.event = event;
   tkoLog.isHardTko = tracker->isHardTko();
   tkoLog.isSoftTko = tracker->isSoftTko();

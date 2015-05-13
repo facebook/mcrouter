@@ -238,7 +238,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
   auto clientPool = std::make_shared<ClientPool>(name);
   for (size_t i = 0; i < jservers->size(); ++i) {
     const auto& server = jservers->at(i);
-    AccessPoint ap;
+    auto ap = std::make_shared<AccessPoint>();
     bool serverUseSsl = useSsl;
     uint64_t serverQosClass = qosClass;
     uint64_t serverQosPath = qosPath;
@@ -246,7 +246,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
                "Pool {}: server #{} is not a string/object", name, i);
     if (server.isString()) {
       // we support both host:port and host:port:protocol
-      checkLogic(AccessPoint::create(server.stringPiece(), protocol, ap),
+      checkLogic(AccessPoint::create(server.stringPiece(), protocol, *ap),
                  "Pool {}: invalid server {}", name, server.stringPiece());
     } else { // object
       auto jhostname = server.get_ptr("hostname");
@@ -267,7 +267,7 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       }
 
       checkLogic(AccessPoint::create(jhostname->stringPiece(),
-                                     parseProtocol(server, protocol), ap),
+                                     parseProtocol(server, protocol), *ap),
                  "Pool {}: invalid server #{}", name, i);
     }
 

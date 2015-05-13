@@ -57,7 +57,6 @@ class ProxyDestination {
   };
 
   proxy_t* proxy{nullptr}; ///< for convenience
-  const AccessPoint accessPoint;
 
   std::shared_ptr<TkoTracker> tracker;
 
@@ -76,6 +75,10 @@ class ProxyDestination {
    */
   const Stats& stats() const {
     return stats_;
+  }
+
+  const AccessPoint& accessPoint() const {
+    return *accessPoint_;
   }
 
   void resetInactive();
@@ -100,6 +103,7 @@ class ProxyDestination {
   static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
 
   std::unique_ptr<AsyncMcClient> client_;
+  std::shared_ptr<const AccessPoint> accessPoint_;
 
   // Shortest timeout among all ProxyClientCommon's using this destination
   std::chrono::milliseconds shortestTimeout_{0};

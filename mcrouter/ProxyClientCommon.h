@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include <string>
 
 #include "mcrouter/lib/network/AccessPoint.h"
@@ -20,7 +21,7 @@ class ClientPool;
 
 struct ProxyClientCommon {
   const ClientPool& pool;
-  const AccessPoint ap;
+  std::shared_ptr<const AccessPoint> ap;
 
   const int keep_routing_prefix;
   const std::chrono::milliseconds server_timeout;
@@ -36,7 +37,7 @@ struct ProxyClientCommon {
  private:
   ProxyClientCommon(const ClientPool& pool,
                     std::chrono::milliseconds timeout,
-                    AccessPoint ap,
+                    std::shared_ptr<const AccessPoint> ap,
                     int keep_routing_prefix,
                     bool useSsl,
                     uint64_t qosClass,

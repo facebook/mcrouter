@@ -25,7 +25,7 @@ std::string DestinationRoute::routeName() const {
     client_->pool.getName(),
     client_->indexInPool,
     client_->useSsl,
-    client_->ap.toString(),
+    client_->ap->toString(),
     client_->server_timeout.count());
 }
 
@@ -64,15 +64,15 @@ std::string DestinationRoute::keyWithFailoverTag(
     const folly::StringPiece fullKey) const {
   const size_t tagLength =
     strlen(kFailoverTagStart) +
-    client_->ap.getHost().size() +
+    client_->ap->getHost().size() +
     6; // 1 for kFailoverHostPortSeparator + 5 for port.
   std::string failoverTag;
   failoverTag.reserve(tagLength);
   failoverTag = kFailoverTagStart;
-  failoverTag += client_->ap.getHost().str();
-  if (client_->ap.getPort() != 0) {
+  failoverTag += client_->ap->getHost().str();
+  if (client_->ap->getPort() != 0) {
     failoverTag += kFailoverHostPortSeparator;
-    failoverTag += folly::to<std::string>(client_->ap.getPort());
+    failoverTag += folly::to<std::string>(client_->ap->getPort());
   }
 
   // Safety check: scrub the host and port for ':' to avoid appending

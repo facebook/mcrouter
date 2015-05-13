@@ -85,7 +85,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         *proxy,
         baton,
         [&destinations](const ProxyClientCommon& client) {
-          destinations->push_back(client.ap.toHostPortString());
+          destinations->push_back(client.ap->toHostPortString());
         }
       );
       McRequest recordingReq(keyStr);
