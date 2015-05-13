@@ -7,24 +7,30 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/routes/LoggingRoute.h"
+#include "mcrouter/routes/LoggingRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache {
-
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, LoggingRoute>(
-  RouteHandleFactory<mcrouter::McrouterRouteHandleIf>&,
-  const folly::dynamic&);
 
 namespace mcrouter {
 
 McrouterRouteHandlePtr makeLoggingRoute(
   McrouterRouteHandlePtr rh) {
 
-  return makeMcrouterRouteHandle<LoggingRoute>(
+  return std::make_shared<McrouterRouteHandle<LoggingRoute>>(
     std::move(rh));
 }
+
+
+McrouterRouteHandlePtr makeLoggingRoute(
+  RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  const folly::dynamic& json) {
+
+ return std::make_shared<McrouterRouteHandle<LoggingRoute>>(
+    factory,
+    json);
+}
+
 
 }}}

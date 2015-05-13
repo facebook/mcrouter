@@ -16,23 +16,23 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Forwards requests to the child route, then logs the request and response.
  */
-template <class RouteHandleIf>
 class LoggingRoute {
  public:
   static std::string routeName() {
     return "logging";
   }
 
-  explicit LoggingRoute(std::shared_ptr<RouteHandleIf> rh)
+  explicit LoggingRoute(McrouterRouteHandlePtr rh)
     : child_(std::move(rh)) {}
 
-  LoggingRoute(RouteHandleFactory<RouteHandleIf>& factory,
+  LoggingRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
                const folly::dynamic& json) {
     if (json.isObject()) {
       if (json.count("target")) {
@@ -44,7 +44,7 @@ class LoggingRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
+  std::vector<McrouterRouteHandlePtr> couldRouteTo(
     const Request& req, Operation) const {
 
     return {child_};
@@ -56,7 +56,7 @@ class LoggingRoute {
 
     typename ReplyType<Operation,Request>::type reply;
     if (child_ == nullptr) {
-      reply = NullRoute<RouteHandleIf>::route(req, Operation());
+      reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
     } else {
       reply = child_->route(req, Operation());
     }
@@ -68,7 +68,7 @@ class LoggingRoute {
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> child_;
+  McrouterRouteHandlePtr child_;
 };
 
-}}
+}}}

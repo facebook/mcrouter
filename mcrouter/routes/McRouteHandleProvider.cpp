@@ -63,6 +63,10 @@ McrouterRouteHandlePtr makeOutstandingLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   size_t maxOutstanding);
 
+McrouterRouteHandlePtr makeLoggingRoute(
+  RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  const folly::dynamic& json);
+
 McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
                                            ShardSplitter);
 
@@ -267,6 +271,8 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     return makePool(json).second;
   } else if (type == "PoolRoute") {
     return { makePoolRoute(factory, json) };
+  } else if (type == "LoggingRoute") {
+    return { makeLoggingRoute(factory, json) };
   } else {
     /* returns empty vector if type unknown */
     auto ret = extraProvider_->tryCreate(factory, type, json);

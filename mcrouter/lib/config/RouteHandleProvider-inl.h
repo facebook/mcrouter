@@ -115,8 +115,6 @@ RouteHandleProvider<RouteHandleIf>::create(
     return { makeRouteHandle<RouteHandleIf, NullRoute>() };
   } else if (type == "RandomRoute") {
     return { makeRouteHandle<RouteHandleIf, RandomRoute>(factory, json) };
-  } else if (type == "LoggingRoute") {
-    return { makeRouteHandle<RouteHandleIf, LoggingRoute>(factory, json) };
   }
 
   return {};

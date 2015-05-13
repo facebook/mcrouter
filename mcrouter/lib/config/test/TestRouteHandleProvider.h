@@ -21,7 +21,6 @@
 #include "mcrouter/lib/routes/HashRoute.h"
 #include "mcrouter/lib/routes/HostIdRoute.h"
 #include "mcrouter/lib/routes/LatestRoute.h"
-#include "mcrouter/lib/routes/LoggingRoute.h"
 #include "mcrouter/lib/routes/MissFailoverRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/routes/RandomRoute.h"
