@@ -199,7 +199,12 @@ class TkoTrackerMap {
                      const size_t maxSoftTkos);
 
   /**
-   * @return  servers that recently received error replies.
+   * @return  number of servers that recently returned error replies.
+   */
+  size_t getSuspectServersCount();
+
+  /**
+   * @return  servers that recently returned error replies.
    *   Format: {
    *     server ip => ( is server marked as TKO?, number of failures )
    *   }

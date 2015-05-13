@@ -334,6 +334,9 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
     );
   }
 
+  stat_set_uint64(stats, num_suspect_servers_stat,
+                  router->tkoTrackerMap().getSuspectServersCount());
+
   stat_set_uint64(stats, mcc_txbuf_reqs_stat, destStats.pendingRequests);
   stat_set_uint64(stats, mcc_waiting_replies_stat, destStats.inflightRequests);
 

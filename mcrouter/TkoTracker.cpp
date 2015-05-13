@@ -217,6 +217,19 @@ TkoTrackerMap::getSuspectServers() {
   return result;
 }
 
+size_t TkoTrackerMap::getSuspectServersCount() {
+  size_t result = 0;
+  std::lock_guard<std::mutex> lock(mx_);
+  for (const auto& it : trackers_) {
+    if (auto tracker = it.second.lock()) {
+      if (tracker->consecutiveFailureCount() > 0) {
+        ++result;
+      }
+    }
+  }
+  return result;
+}
+
 std::weak_ptr<TkoTracker> TkoTrackerMap::getTracker(folly::StringPiece key) {
   std::lock_guard<std::mutex> lock(mx_);
   return folly::get_default(trackers_, key);
