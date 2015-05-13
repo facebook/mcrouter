@@ -7,38 +7,33 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_CPP_TRIE_H
-#define FBI_CPP_TRIE_H
+#pragma once
 
 #include <array>
 #include <memory>
-#include <stack>
+#include <string>
 #include <utility>
 
-#include <folly/Optional.h>
 #include <folly/Range.h>
 
 namespace facebook { namespace memcache {
 
 /**
- * Simple Trie implementation that assumes there are lots of gets and
- * small amount of sets. Example: Trie<int, 'a', 'z'> t;
+ * Simple Trie implementation.
  *
- * @param Value type of stored value. It should be possible to wrap this type
- *              with folly::Optional
- * @param MinChar minimum character that could be in key (inclusive)
- * @param MaxChar maximum characted that could be in key (inclusive)
+ * @param Value type of stored value.
  */
-template<class Value, char MinChar = '!', char MaxChar = '~'>
+template <class Value>
 class Trie {
-  static_assert(MinChar <= MaxChar,
-                "MinChar should be less or equal than MaxChar");
+  static_assert(sizeof(folly::StringPiece::value_type) == 1,
+                "Trie works only with 8 bit character types");
+
   /**
    * iterator implementation
    * @param T underlying container type
    * @param V value type
    */
-  template<class T, class V>
+  template <class T, class V>
   class iterator_base;
  public:
   typedef std::pair<const std::string, Value> value_type;
@@ -55,11 +50,11 @@ class Trie {
    */
   typedef iterator_base<Trie, value_type> iterator;
 
-  Trie();
+  Trie() = default;
 
   Trie(const Trie& other);
 
-  Trie(Trie&& other);
+  Trie(Trie&& other) noexcept;
 
   Trie& operator=(const Trie& other);
 
@@ -77,8 +72,8 @@ class Trie {
   /**
    * Set value for key
    *
-   * @param key string with each character from [MinChar, MaxChar]
-   * @param value value to store
+   * @param key
+   * @param value
    */
   void emplace(folly::StringPiece key, Value value);
 
@@ -108,31 +103,31 @@ class Trie {
   void clear();
 
  private:
-  // total number of characters in one node
-  static size_t const kNumChars = (size_t)(MaxChar - MinChar) + 1;
-
-  // value stored in node
-  folly::Optional<value_type> value_;
+  // total number of children in one node
+  static const size_t kNumChars = 16;
 
   // edges of this node (points to nodes with keys longer by one character)
   std::array<std::unique_ptr<Trie>, kNumChars> next_;
 
-  Trie* parent_;
-  char c_;
+  // value stored in the node
+  std::unique_ptr<value_type> value_;
 
-  // returns edge from next_ if c is in [MinChar, MaxChar], nullptr otherwise
-  inline Trie* getEdge(char c) const;
-
-  // converts character to index in 'next' array
-  static inline int toEdge(char c);
+  Trie* parent_{nullptr};
+  char c_{0};
 
   const Trie* findImpl(folly::StringPiece key) const;
 
   const Trie* findPrefixImpl(folly::StringPiece key) const;
+
+  static constexpr size_t getTopHalf(folly::StringPiece::value_type c) {
+    return c >> 4;
+  }
+
+  static constexpr size_t getBottomHalf(folly::StringPiece::value_type c) {
+    return c & 15;
+  }
 };
 
 }} // facebook::memcache
 
 #include "Trie-inl.h"
-
-#endif

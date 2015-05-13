@@ -19,14 +19,15 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 using facebook::memcache::Trie;
-using facebook::memcache::to;
 
-static int const kNumRandKeys = 1<<15;
+namespace {
 
-static std::string keys[kNumRandKeys];
-static Trie<int> randTrie;
+const int kNumRandKeys = 1 << 15;
 
-static void prepareRand() {
+std::string keys[kNumRandKeys];
+Trie<int> randTrie;
+
+void prepareRand() {
   srand(1234);
   for (long i = 0; i < kNumRandKeys; ++i) {
     keys[i] = facebook::memcache::randomString(10, 20);
@@ -34,6 +35,8 @@ static void prepareRand() {
     randTrie.emplace(keys[i], i);
   }
 }
+
+}  // anonymous namespace
 
 TEST(Trie, SanityTest) {
   Trie<void*> trie;
@@ -120,7 +123,7 @@ TEST(Trie, PrefixTest2) {
 }
 
 TEST(Trie, IteratorTest) {
-  Trie<int, 'a', 'z'> trie;
+  Trie<int> trie;
 
   std::string k[] = {
     "a",
@@ -163,14 +166,14 @@ TEST(Trie, ConstructorTest) {
   Trie<int> trie;
 
   std::string k[] = {
+    "",
     "a",
     "ab",
     "abc",
     "abd",
     "baa",
-    "bab",
     "baac",
-    ""
+    "bab"
   };
   int nk = sizeof(k) / sizeof(k[0]);
 
@@ -181,7 +184,7 @@ TEST(Trie, ConstructorTest) {
 
   // copy constructor
   {
-    auto trie2(trie);
+    Trie<int> trie2{trie};
 
     for (auto i = 0; i < nk; ++i) {
       EXPECT_TRUE(trie.find(k[i])->second == i);
@@ -192,11 +195,15 @@ TEST(Trie, ConstructorTest) {
 
   // move constructor
   {
-    auto trie2(trie);
-    auto trie3(std::move(trie2));
+    Trie<int> trie2{trie};
+    Trie<int> trie3{std::move(trie2)};
+    auto it = trie3.begin();
     for (auto i = 0; i < nk; ++i) {
-      EXPECT_TRUE(trie3.find(k[i])->second == i);
+      EXPECT_EQ(trie3.find(k[i])->second, i);
+      EXPECT_EQ(it->second, i);
+      ++it;
     }
+    EXPECT_EQ(it, trie3.end());
   }
 
   // copy assignment

@@ -231,17 +231,17 @@ int main(int argc, char **argv){
  * ============================================================================
  * mcrouter/lib/fbi/cpp/test/TrieBenchmarks.cpp    relative  time/iter  iters/s
  * ============================================================================
- * Trie_get0                                                  123.68ns    8.09M
- * Map_get0                                          41.39%   298.80ns    3.35M
- * Trie_get1                                                  340.15ns    2.94M
- * Map_get1                                          28.16%     1.21us  827.88K
- * Trie_get2                                                  274.89ns    3.64M
- * Map_get2                                          46.64%   589.39ns    1.70M
- * Trie_get_prefix0                                           145.53ns    6.87M
- * Map_get_prefix0                                   48.55%   299.78ns    3.34M
- * Trie_get_prefix1                                           405.26ns    2.47M
- * Map_get_prefix1                                   33.60%     1.21us  829.21K
- * Trie_get_prefix2                                           342.24ns    2.92M
- * Map_get_prefix2                                   58.28%   587.22ns    1.70M
+ * Trie_get0                                                  184.44ns    5.42M
+ * Map_get0                                          62.97%   292.89ns    3.41M
+ * Trie_get1                                                  354.96ns    2.82M
+ * Map_get1                                          29.92%     1.19us  842.95K
+ * Trie_get2                                                  403.62ns    2.48M
+ * Map_get2                                          69.33%   582.21ns    1.72M
+ * Trie_get_prefix0                                           212.50ns    4.71M
+ * Map_get_prefix0                                   72.62%   292.61ns    3.42M
+ * Trie_get_prefix1                                           453.76ns    2.20M
+ * Map_get_prefix1                                   38.27%     1.19us  843.42K
+ * Trie_get_prefix2                                           482.68ns    2.07M
+ * Map_get_prefix2                                   82.98%   581.71ns    1.72M
  * ============================================================================
  */

@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_CPP_TRIE_INL_H
-#define FBI_CPP_TRIE_INL_H
+#pragma once
 
 #include <boost/iterator/iterator_facade.hpp>
 
@@ -18,17 +17,13 @@
 
 namespace facebook { namespace memcache {
 
-template<class Value, char MinChar, char MaxChar>
-Trie<Value, MinChar, MaxChar>::Trie()
-  : parent_(nullptr),
-    c_(0) {
-}
-
-template<class Value, char MinChar, char MaxChar>
-Trie<Value, MinChar, MaxChar>::Trie(const Trie& other)
-  : value_(other.value_),
-    parent_(other.parent_),
+template <class Value>
+Trie<Value>::Trie(const Trie& other)
+  : parent_(other.parent_),
     c_(other.c_) {
+  if (other.value_) {
+    value_ = folly::make_unique<value_type>(*other.value_);
+  }
 
   for (auto edge = 0; edge < kNumChars; ++edge) {
     if (other.next_[edge]) {
@@ -38,56 +33,61 @@ Trie<Value, MinChar, MaxChar>::Trie(const Trie& other)
   }
 }
 
-template<class Value, char MinChar, char MaxChar>
-Trie<Value, MinChar, MaxChar>::Trie(Trie&& other)
-    : value_(std::move(other.value_)),
-      next_(std::move(other.next_)),
+template <class Value>
+Trie<Value>::Trie(Trie&& other) noexcept
+    : next_(std::move(other.next_)),
+      value_(std::move(other.value_)),
       parent_(other.parent_),
       c_(other.c_) {
+  for (auto edge = 0; edge < kNumChars; ++edge) {
+    if (next_[edge]) {
+      next_[edge]->parent_ = this;
+    }
+  }
 }
 
-template<class Value, char MinChar, char MaxChar>
-Trie<Value, MinChar, MaxChar>&
-Trie<Value, MinChar, MaxChar>::operator=(const Trie& other) {
+template <class Value>
+Trie<Value>& Trie<Value>::operator=(const Trie& other) {
   return *this = Trie(other);
 }
 
-template<class Value, char MinChar, char MaxChar>
-Trie<Value, MinChar, MaxChar>&
-Trie<Value, MinChar, MaxChar>::operator=(Trie&& other) {
+template <class Value>
+Trie<Value>& Trie<Value>::operator=(Trie&& other) {
   assert(this != &other);
-  // can not use operator=, because pair.first is const
-  if (other.value_) {
-    value_.emplace(std::move(other.value_->first),
-                   std::move(other.value_->second));
-  } else {
-    value_.clear();
-  }
   next_ = std::move(other.next_);
+  value_ = std::move(other.value_);
   parent_ = other.parent_;
   c_ = other.c_;
+
+  for (auto edge = 0; edge < kNumChars; ++edge) {
+    if (next_[edge]) {
+      next_[edge]->parent_ = this;
+    }
+  }
 
   return *this;
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::const_iterator
-Trie<Value, MinChar, MaxChar>::find(folly::StringPiece key) const {
+template <class Value>
+typename Trie<Value>::const_iterator
+Trie<Value>::find(folly::StringPiece key) const {
   return const_iterator(findImpl(key));
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::iterator
-Trie<Value, MinChar, MaxChar>::find(folly::StringPiece key) {
+template <class Value>
+typename Trie<Value>::iterator Trie<Value>::find(folly::StringPiece key) {
   return iterator(const_cast<Trie*>(findImpl(key)));
 }
 
-template<class Value, char MinChar, char MaxChar>
-const Trie<Value, MinChar, MaxChar>*
-Trie<Value, MinChar, MaxChar>::findImpl(folly::StringPiece key) const {
+template <class Value>
+const Trie<Value>* Trie<Value>::findImpl(folly::StringPiece key) const {
   auto node = this;
   for (const auto c : key) {
-    node = node->getEdge(c);
+    node = node->next_[getTopHalf(c)].get();
+    if (node == nullptr) {
+      return nullptr;
+    }
+    node = node->next_[getBottomHalf(c)].get();
     if (node == nullptr) {
       return nullptr;
     }
@@ -95,44 +95,49 @@ Trie<Value, MinChar, MaxChar>::findImpl(folly::StringPiece key) const {
   return node->value_ ? node : nullptr;
 }
 
-template<class Value, char MinChar, char MaxChar>
-void Trie<Value, MinChar, MaxChar>::emplace(folly::StringPiece key, Value val) {
+template <class Value>
+void Trie<Value>::emplace(folly::StringPiece key, Value val) {
   auto node = this;
-  for (auto c : key) {
-    auto& nx = node->next_[toEdge(c)];
-    if (!nx) {
-      nx = folly::make_unique<Trie>();
-      nx->parent_ = node;
-      nx->c_ = c;
+  for (const auto c : key) {
+    size_t steps[] = { getTopHalf(c), getBottomHalf(c) };
+    for (auto ci : steps) {
+      auto& nx = node->next_[ci];
+      if (!nx) {
+        nx = folly::make_unique<Trie>();
+        nx->parent_ = node;
+        nx->c_ = ci;
+      }
+      node = nx.get();
     }
-    node = nx.get();
   }
 
-  node->value_.emplace(key.str(), std::move(val));
+  node->value_ = folly::make_unique<value_type>(key.str(), std::move(val));
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::const_iterator
-Trie<Value, MinChar, MaxChar>::findPrefix(folly::StringPiece key) const {
+template <class Value>
+typename Trie<Value>::const_iterator
+Trie<Value>::findPrefix(folly::StringPiece key) const {
   return const_iterator(findPrefixImpl(key));
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::iterator
-Trie<Value, MinChar, MaxChar>::findPrefix(folly::StringPiece key) {
+template <class Value>
+typename Trie<Value>::iterator Trie<Value>::findPrefix(folly::StringPiece key) {
   return iterator(const_cast<Trie*>(findPrefixImpl(key)));
 }
 
-template<class Value, char MinChar, char MaxChar>
-const Trie<Value, MinChar, MaxChar>*
-Trie<Value, MinChar, MaxChar>::findPrefixImpl(folly::StringPiece key) const {
+template <class Value>
+const Trie<Value>* Trie<Value>::findPrefixImpl(folly::StringPiece key) const {
   auto node = this;
   const Trie* result = nullptr;
   for (const auto c : key) {
     if (node->value_) {
       result = node;
     }
-    node = node->getEdge(c);
+    node = node->next_[getTopHalf(c)].get();
+    if (node == nullptr) {
+      return result;
+    }
+    node = node->next_[getBottomHalf(c)].get();
     if (node == nullptr) {
       return result;
     }
@@ -140,89 +145,72 @@ Trie<Value, MinChar, MaxChar>::findPrefixImpl(folly::StringPiece key) const {
   return node->value_ ? node : result;
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::const_iterator
-Trie<Value, MinChar, MaxChar>::begin() const {
+template <class Value>
+typename Trie<Value>::const_iterator Trie<Value>::begin() const {
   return cbegin();
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::iterator
-Trie<Value, MinChar, MaxChar>::begin() {
-  return iterator(this);
+template <class Value>
+typename Trie<Value>::iterator Trie<Value>::begin() {
+  iterator result{this};
+  if (!value_) {
+    ++result;
+  }
+  return result;
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::const_iterator
-Trie<Value, MinChar, MaxChar>::end() const {
+template <class Value>
+typename Trie<Value>::const_iterator Trie<Value>::end() const {
   return cend();
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::iterator
-Trie<Value, MinChar, MaxChar>::end() {
+template <class Value>
+typename Trie<Value>::iterator Trie<Value>::end() {
   return iterator();
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::const_iterator
-Trie<Value, MinChar, MaxChar>::cbegin() const {
-  return const_iterator(this);
+template <class Value>
+typename Trie<Value>::const_iterator Trie<Value>::cbegin() const {
+  const_iterator result{this};
+  if (!value_) {
+    ++result;
+  }
+  return result;
 }
 
-template<class Value, char MinChar, char MaxChar>
-typename Trie<Value, MinChar, MaxChar>::const_iterator
-Trie<Value, MinChar, MaxChar>::cend() const {
+template <class Value>
+typename Trie<Value>::const_iterator Trie<Value>::cend() const {
   return const_iterator();
 }
 
-template<class Value, char MinChar, char MaxChar>
-Trie<Value, MinChar, MaxChar>*
-Trie<Value, MinChar, MaxChar>::getEdge(char c) const {
-  if (LIKELY(MinChar <= c && c <= MaxChar)) {
-    return next_[c - MinChar].get();
-  }
-  return nullptr;
-}
-
-template<class Value, char MinChar, char MaxChar>
-int Trie<Value, MinChar, MaxChar>::toEdge(char c) {
-  CHECK(MinChar <= c && c <= MaxChar) << "Out of bounds character";
-  return c - MinChar;
-}
-
-template<class Value, char MinChar, char MaxChar>
-void Trie<Value, MinChar, MaxChar>::clear() {
-  value_.clear();
+template <class Value>
+void Trie<Value>::clear() {
+  value_.reset();
   for (auto& edge : next_) {
     edge.reset();
   }
+  parent_ = nullptr;
+  c_ = 0;
 }
 
 /* iterator_base */
 
-template <class Value, char MinChar, char MaxChar>
+template <class Value>
 template <class T, class V>
-class Trie<Value, MinChar, MaxChar>::iterator_base
+class Trie<Value>::iterator_base
   : public boost::iterator_facade<
       /* Derived */ iterator_base<T, V>,
       /* Value */ V,
       /* CategoryOrTraversal */ boost::forward_traversal_tag>
 {
  public:
-  iterator_base()
-    : t_(nullptr) {
-  }
-
-  explicit iterator_base(T* trie)
-    : t_(trie) {
-    if (t_ != nullptr && !t_->value_) {
-      increment();
-    }
-  }
+  iterator_base() = default;
  private:
+  friend class Trie<Value>;
   friend class boost::iterator_core_access;
-  T* t_;
+  T* t_{nullptr};
+
+  explicit iterator_base(T* trie) : t_(trie) { }
 
   void increment() {
     // nonrecursive DFS over Trie.
@@ -230,10 +218,10 @@ class Trie<Value, MinChar, MaxChar>::iterator_base
     while (t_ != nullptr) {
       // try to go "deeper"
       while (edge < kNumChars) {
-        // found child, so make key longer
+        // found a child, so make key longer
         if (t_->next_[edge]) {
           t_ = t_->next_[edge].get();
-          // found child with value
+          // found a child with value
           if (t_->value_) {
             return;
           }
@@ -244,7 +232,7 @@ class Trie<Value, MinChar, MaxChar>::iterator_base
       }
       // nothing in this subtree, go back
       do {
-        edge = (t_->c_ - MinChar) + 1;
+        edge = t_->c_ + 1;
         t_ = t_->parent_;
       } while (t_ != nullptr && edge == kNumChars);
     }
@@ -261,5 +249,3 @@ class Trie<Value, MinChar, MaxChar>::iterator_base
 };
 
 }} // facebook::memcache
-
-#endif
