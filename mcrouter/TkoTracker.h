@@ -16,6 +16,9 @@
 #include <unordered_map>
 #include <utility>
 
+#include <folly/experimental/StringKeyedUnorderedMap.h>
+#include <folly/Range.h>
+
 #include "mcrouter/TkoCounters.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -131,7 +134,8 @@ class TkoTracker {
 
   ~TkoTracker();
  private:
-  std::string key_;
+  // The string is stored in TkoTrackerMap::trackers_
+  folly::StringPiece key_;
   const size_t tkoThreshold_;
   const size_t maxSoftTkos_;
   TkoTrackerMap& trackerMap_;
@@ -171,8 +175,7 @@ class TkoTracker {
    *        the router
    * @param globalTkoStats number of TKO destination for current router
    */
-  TkoTracker(std::string key,
-             size_t tkoThreshold,
+  TkoTracker(size_t tkoThreshold,
              size_t maxSoftTkos,
              TkoTrackerMap& trackerMap);
 
@@ -208,15 +211,15 @@ class TkoTrackerMap {
     return globalTkos_;
   }
 
-  std::weak_ptr<TkoTracker> getTracker(const std::string& key);
+  std::weak_ptr<TkoTracker> getTracker(folly::StringPiece key);
  private:
   std::mutex mx_;
-  std::unordered_map<std::string, std::weak_ptr<TkoTracker>> trackers_;
+  folly::StringKeyedUnorderedMap<std::weak_ptr<TkoTracker>> trackers_;
 
   // Total number of boxes marked as TKO.
   TkoCounters globalTkos_;
 
-  void removeTracker(const std::string& key) noexcept;
+  void removeTracker(folly::StringPiece key) noexcept;
 
   friend class TkoTracker;
 };

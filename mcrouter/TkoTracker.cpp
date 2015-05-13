@@ -20,12 +20,10 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-TkoTracker::TkoTracker(std::string key,
-                       size_t tkoThreshold,
+TkoTracker::TkoTracker(size_t tkoThreshold,
                        size_t maxSoftTkos,
                        TkoTrackerMap& trackerMap)
-  : key_(std::move(key)),
-    tkoThreshold_(tkoThreshold),
+  : tkoThreshold_(tkoThreshold),
     maxSoftTkos_(maxSoftTkos),
     trackerMap_(trackerMap) {
 }
@@ -192,8 +190,12 @@ void TkoTrackerMap::updateTracker(
     auto it = trackers_.find(key);
     std::shared_ptr<TkoTracker> tracker;
     if (it == trackers_.end() || (tracker = it->second.lock()) == nullptr) {
-      tracker.reset(new TkoTracker(key, tkoThreshold, maxSoftTkos, *this));
-      trackers_.emplace(std::move(key), tracker);
+      tracker.reset(new TkoTracker(tkoThreshold, maxSoftTkos, *this));
+      auto trackerIt = trackers_.emplace(key, tracker);
+      if (!trackerIt.second) {
+        trackerIt.first->second = tracker;
+      }
+      tracker->key_ = trackerIt.first->first;
     }
     pdstn.tracker = std::move(tracker);
   }
@@ -207,19 +209,20 @@ TkoTrackerMap::getSuspectServers() {
     if (auto tracker = it.second.lock()) {
       auto failures = tracker->consecutiveFailureCount();
       if (failures > 0) {
-        result.emplace(it.first, std::make_pair(tracker->isTko(), failures));
+        result.emplace(it.first.str(),
+                       std::make_pair(tracker->isTko(), failures));
       }
     }
   }
   return result;
 }
 
-std::weak_ptr<TkoTracker> TkoTrackerMap::getTracker(const std::string& key) {
+std::weak_ptr<TkoTracker> TkoTrackerMap::getTracker(folly::StringPiece key) {
   std::lock_guard<std::mutex> lock(mx_);
   return folly::get_default(trackers_, key);
 }
 
-void TkoTrackerMap::removeTracker(const std::string& key) noexcept {
+void TkoTrackerMap::removeTracker(folly::StringPiece key) noexcept {
   std::lock_guard<std::mutex> lock(mx_);
   auto it = trackers_.find(key);
   if (it != trackers_.end()) {
