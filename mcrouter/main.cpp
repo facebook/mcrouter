@@ -125,46 +125,13 @@ static void print_usage_and_die(char* progname, int errorCode) {
   exit(errorCode);
 }
 
-// output the unimplemented option
-void unimplemented(char ch, struct option long_options[], int long_index) {
-  // long_index stores whether a long option was used
-  if (long_index == -1) {
-    fprintf(stderr, "Option %c is unimplemented\n", ch);
+std::string constructArgString(int argc, char **argv) {
+  std::string res;
+  for (int i = 1; i < argc; ++i) {
+    res += argv[i];
+    res += (i == argc - 1) ? "" : " ";
   }
-  else {
-    fprintf(stderr, "Option %s is unimplemented\n", long_options[long_index].name);
-  }
-}
-
-char* construct_arg_string(int argc, char **argv) {
-  char* buf = nullptr;
-  char* c = nullptr;
-  int i = 0;
-  int len = 0;
-
-  for (i = 1; i < argc; i++) {
-    // Adding +1 after each arg leaves room for spaces and a \0 at the end
-    len += strlen(argv[i]) + 1;
-  }
-
-  buf = (char*)malloc(sizeof(char) * len);
-  if (buf == nullptr) {
-    return nullptr;
-  }
-
-  c = buf;
-  for (i = 1; i < argc; i++) {
-    strcpy(c, argv[i]);
-    c += strlen(argv[i]);
-
-    if (i < argc - 1) {
-      *(c++) = ' ';
-    } else {
-      *(c++) = '\0';
-    }
-  }
-
-  return buf;
+  return res;
 }
 
 static void parse_options(int argc,
@@ -475,7 +442,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  auto commandArgs = construct_arg_string(argc, argv);
+  auto commandArgs = constructArgString(argc, argv);
   failure::setServiceContext("mcrouter",
                              std::string(argv[0]) + " " + commandArgs);
   failure::setHandler(failure::handlers::logToStdError());
