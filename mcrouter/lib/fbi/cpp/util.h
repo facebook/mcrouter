@@ -125,7 +125,8 @@ inline typename Map::mapped_type tryGet(
  * from range.
  */
 std::string randomString(size_t minLen = 1, size_t maxLen = 20,
-    folly::StringPiece range = "abcdefghijklmnopqrstuvwxyz");
+    folly::StringPiece range = "abcdefghijklmnopqrstuvwxyz"
+                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
 /**
  * Returns hash value for a given key.

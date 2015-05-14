@@ -13,6 +13,7 @@
 #include <utime.h>
 #include <pthread.h>
 
+#include <chrono>
 #include <random>
 
 #include <boost/filesystem/operations.hpp>
@@ -22,7 +23,6 @@
 
 #include <folly/FileUtil.h>
 #include <folly/json.h>
-#include <folly/Random.h>
 #include <folly/ScopeGuard.h>
 #include <folly/SpookyHashV2.h>
 
@@ -34,9 +34,11 @@ std::string randomString(size_t minLen, size_t maxLen,
   assert(minLen <= maxLen);
   assert(!range.empty());
 
-  static const int seed = folly::randomNumberSeed();
-  typedef std::mt19937 RandomT;
-  static RandomT rng(seed);
+  thread_local std::ranlux24_base rng{
+    static_cast<size_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count())
+  };
   std::uniform_int_distribution<size_t> lenRange(minLen, maxLen);
   std::uniform_int_distribution<size_t> charRange(0, range.size() - 1);
 
@@ -121,8 +123,9 @@ bool atomicallyWriteFileToDisk(folly::StringPiece contents,
     if (fileDir.empty()) {
       return false;
     }
-    auto tempFileTempl = filePath.filename().string() + ".temp-%%%%%%%%%%";
-    tempFilePath = fileDir / boost::filesystem::unique_path(tempFileTempl);
+    auto tempFileName = filePath.filename().string() + ".temp-" +
+      randomString(/* minLen */ 10, /* maxLen */ 10);
+    tempFilePath = fileDir / tempFileName;
 
     boost::filesystem::create_directories(fileDir);
 
