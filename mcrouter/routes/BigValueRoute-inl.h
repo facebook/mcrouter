@@ -124,7 +124,7 @@ BigValueRoute::chunkUpdateRequests(const Request& req, Operation) const {
     req.value().cloneInto(chunk_value);
     chunk_value.trimStart(i_pos);
     chunk_value.trimEnd(chunk_value.length() -
-                        std::min(options_.threshold_, chunk_value.length()));
+                        std::min((size_t) options_.threshold_, (size_t) chunk_value.length()));
     Request req_big(createChunkKey(base_key, i, info.randSuffix()));
     req_big.setValue(std::move(chunk_value));
     req_big.setExptime(req.exptime());

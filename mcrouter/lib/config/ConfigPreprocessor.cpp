@@ -549,7 +549,7 @@ class ConfigPreprocessor::BuiltIns {
     } else if (dict.isArray()) {
       dynamic res = {};
       checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not an int");
-      auto fromId = std::max(0L, from.asInt());
+      auto fromId = std::max(0LL, from.asInt());
       auto toId = std::min(to.asInt() + 1, (int64_t)dict.size());
       for (auto i = fromId; i < toId; ++i) {
         res.push_back(std::move(dict[i]));
@@ -559,7 +559,7 @@ class ConfigPreprocessor::BuiltIns {
       string res;
       auto dictStr = dict.stringPiece();
       checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not an int");
-      auto fromId = std::max(0L, from.asInt());
+      auto fromId = std::max(0LL, from.asInt());
       auto toId = std::min(to.asInt() + 1, (int64_t)dict.size());
       for (auto i = fromId; i < toId; ++i) {
         res += dictStr[i];
