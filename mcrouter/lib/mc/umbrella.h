@@ -25,7 +25,11 @@ __BEGIN_DECLS
 
 #define UMBRELLA_VERSION_BASIC 0
 
+#ifdef __APPLE__
+#define flip64(f, x) ((int64_t)f(((int64_t)x) >> 32) | ((int64_t)f((int32_t)(x)) << 32))
+#else
 #define flip64(f, x) ((int64_t)(f)(((int64_t)x) >> 32) | ((int64_t)(f)((int32_t)(x)) << 32))
+#endif
 
 #define ntoh64(x) (flip64(ntohl, ((int64_t)x)))
 #define ntoh32(x) ntohl(x)

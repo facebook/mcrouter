@@ -19,6 +19,10 @@
 
 __BEGIN_DECLS
 
+#ifndef __ASSERT_VOID_CAST
+#define __ASSERT_VOID_CAST (void)
+#endif
+
 #define NSTRING_LIT(lit) {(char*)lit, sizeof(lit)-1}
 #define NSTRING_INIT(cs) {cs, strlen(cs)}
 
