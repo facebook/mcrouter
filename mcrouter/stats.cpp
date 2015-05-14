@@ -388,7 +388,7 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
       pr->fiberManager.fibersPoolSize();
     stats[fibers_stack_high_watermark_stat].data.uint64 =
       std::max(stats[fibers_stack_high_watermark_stat].data.uint64,
-               pr->fiberManager.stackHighWatermark());
+               (uint64_t) pr->fiberManager.stackHighWatermark());
     stats[duration_us_stat].data.dbl += pr->durationUs.value();
   }
   if (router->opts().num_proxies > 0) {

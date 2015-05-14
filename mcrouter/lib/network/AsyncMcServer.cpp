@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
 #include "AsyncMcServer.h"
 
 #include <signal.h>
@@ -380,3 +381,4 @@ void AsyncMcServer::join() {
 }
 
 }}  // facebook::memcache
+#endif

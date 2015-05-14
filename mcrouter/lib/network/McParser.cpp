@@ -64,7 +64,7 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
       readBuffer_.reserve(0, bufferSize_);
     }
     return std::make_pair(readBuffer_.writableTail(),
-                          std::min(readBuffer_.tailroom(), bufferSize_));
+                          std::min((size_t) readBuffer_.tailroom(), bufferSize_));
   }
 }
 

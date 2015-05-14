@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
+
 #include "counting_sem.h"
 
 #include <limits.h>
@@ -138,3 +140,5 @@ void counting_sem_post(counting_sem_t* sem, int32_t n) {
     fbi_futex_wake(&sem->cnt, 1);
   }
 }
+
+#endif

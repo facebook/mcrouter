@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <functional>
 
 #include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/cycles/Interval.h"

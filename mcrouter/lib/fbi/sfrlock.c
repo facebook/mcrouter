@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
+
 #include "sfrlock.h"
 
 #include <limits.h>
@@ -92,3 +94,5 @@ void sfrlock_wrlock_contended(sfrlock_t *l) {
 
   __sync_fetch_and_sub(&l->waiters, 1);
 }
+
+#endif

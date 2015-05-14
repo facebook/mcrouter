@@ -47,7 +47,7 @@ action value_data {
   if (remainingIOBufLength_) {
     // Copy IOBuf for part of (or whole) value.
     size_t offset = p_ - reinterpret_cast<const char*>(buffer.data()) + 1;
-    size_t toUse = std::min(buffer.length() - offset, remainingIOBufLength_);
+    size_t toUse = std::min((size_t) buffer.length() - offset, (size_t) remainingIOBufLength_);
     buffer.cloneOneInto(reply.valueData_.value());
     // Adjust buffer pointers.
     reply.valueData_->trimStart(offset);

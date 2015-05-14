@@ -619,7 +619,7 @@ void AsyncMcClientImpl::sendFakeReply(McClientRequestContextBase& request) {
   transport.fakeDataRead(msg, msgLen);
 }
 
-void AsyncMcClientImpl::incMsgId(size_t& msgId) {
+void AsyncMcClientImpl::incMsgId(uint64_t& msgId) {
   ++msgId;
   if (UNLIKELY(msgId == 0)) {
     msgId = 1;

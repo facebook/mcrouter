@@ -9,6 +9,8 @@
  */
 #include "asox_semaphore.h"
 
+#ifdef __linux__
+
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -263,3 +265,5 @@ void asox_sem_del(asox_sem_t sem_in) {
   free(sem);
   return;
 }
+
+#endif

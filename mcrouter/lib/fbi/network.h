@@ -13,6 +13,10 @@
 #include <netinet/in.h>
 #include <stdbool.h>
 
+#ifdef __APPLE__
+#include <cups/http.h>
+#endif
+
 __BEGIN_DECLS
 
 typedef struct {

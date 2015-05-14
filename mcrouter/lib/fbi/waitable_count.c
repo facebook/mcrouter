@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
 #include "waitable_count.h"
 
 #include <errno.h>
@@ -131,3 +132,4 @@ void waitable_counter_dec(waitable_counter_t *wc, unsigned v) {
             NULL, NULL, 0);
   }
 }
+#endif

@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
 #include "ManagedModeUtil.h"
 
 #include <signal.h>
@@ -142,3 +143,4 @@ bool shutdownFromChild() {
 }
 
 }}} // namespace facebook::memcache::mcrouter
+#endif

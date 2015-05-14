@@ -79,8 +79,8 @@ void McAsciiParser::handleError(folly::IOBuf& buffer) {
   state_ = State::ERROR;
   // We've encoutered error we need to do proper logging.
   auto start = reinterpret_cast<const char*>(buffer.data());
-  auto length = std::min(p_ - start + kProtocolTailContextLength,
-                         buffer.length());
+  auto length = std::min((size_t) (p_ - start + kProtocolTailContextLength),
+                         (size_t) buffer.length());
   failure::log("AsyncMcClient", failure::Category::kOther,
                "Error parsing message '{}' at character {}!",
                folly::cEscape<std::string>(folly::StringPiece(start,

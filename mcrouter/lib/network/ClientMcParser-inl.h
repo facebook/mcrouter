@@ -130,7 +130,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
           failure::log("AsyncMcClient", failure::Category::kOther,
                        "Received unexpected data from remote endpoint: '{}'!",
                        folly::cEscape<std::string>(folly::StringPiece(
-                         data, data + std::min(readBuffer.length(),
+                         data, data + std::min((size_t) readBuffer.length(),
                                                static_cast<size_t>(128)))));
           callback_.parseError(mc_res_local_error,
                                "Received unexpected ASCII data");

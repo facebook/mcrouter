@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
+
 #include "cwlock.h"
 
 #include <limits.h>
@@ -84,3 +86,5 @@ void cwlock_unlock(cwlock_t *l) {
             NULL, NULL, 0);
   }
 }
+
+#endif
