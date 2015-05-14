@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
 #include "ThreadUtil.h"
 
 #include <sys/capability.h>
@@ -71,3 +72,4 @@ bool spawnThread(pthread_t* thread_handle, void** stack,
 }
 
 }}} // facebook::memcache::mcrouter
+#endif

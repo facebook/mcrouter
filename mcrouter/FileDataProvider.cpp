@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#ifdef __linux__
 #include "FileDataProvider.h"
 
 #include <poll.h>
@@ -122,3 +123,5 @@ bool FileDataProvider::hasUpdate() {
 }
 
 }}} // facebook::memcache::mcrouter
+
+#endif
