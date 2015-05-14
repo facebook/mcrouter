@@ -180,7 +180,7 @@ size_t ProxyDestination::getInflightRequestCount() const {
 }
 
 std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
-  return client_ ? client_->getBatchingStat() : std::make_pair(0UL, 0UL);
+  return client_ ? client_->getBatchingStat() : std::make_pair(0ULL, 0ULL);
 }
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
