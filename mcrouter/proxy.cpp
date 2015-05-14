@@ -374,21 +374,21 @@ ShadowSettings::Data::Data(const folly::dynamic& json) {
   if (json.count("index_range")) {
     checkLogic(json["index_range"].isArray(),
                "shadowing_policy: index_range is not array");
-    auto ar = folly::convertTo<std::vector<size_t>>(json["index_range"]);
+	auto const &ar = json["index_range"];
     checkLogic(ar.size() == 2, "shadowing_policy: index_range size is not 2");
-    start_index = ar[0];
-    end_index = ar[1];
+    start_index = ar[0].asInt();
+    end_index = ar[1].asInt();
     checkLogic(start_index <= end_index,
                "shadowing_policy: index_range start > end");
   }
   if (json.count("key_fraction_range")) {
     checkLogic(json["key_fraction_range"].isArray(),
                "shadowing_policy: key_fraction_range is not array");
-    auto ar = folly::convertTo<std::vector<double>>(json["key_fraction_range"]);
+    auto const &ar = json["key_fraction_range"];
     checkLogic(ar.size() == 2,
                "shadowing_policy: key_fraction_range size is not 2");
-    start_key_fraction = ar[0];
-    end_key_fraction = ar[1];
+    start_key_fraction = ar[0].asDouble();
+    end_key_fraction = ar[1].asDouble();
     checkLogic(0 <= start_key_fraction &&
                start_key_fraction <= end_key_fraction &&
                end_key_fraction <= 1,
