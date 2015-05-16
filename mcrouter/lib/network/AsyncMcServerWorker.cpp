@@ -107,9 +107,10 @@ void AsyncMcServerWorker::addClientSocket(
       std::move(socket),
       onRequest_,
       onWriteQuiescence_,
+      onCloseStart_,
       [this] (McServerSession& session) {
-        if (onClosed_) {
-          onClosed_(session);
+        if (onCloseFinish_) {
+          onCloseFinish_(session);
         }
         sessions_.erase(sessions_.iterator_to(session));
       },

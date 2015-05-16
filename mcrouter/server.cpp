@@ -96,9 +96,10 @@ void serverLoop(
       stat_incr(proxy->stats, successful_client_connections_stat, 1);
       stat_incr(proxy->stats, num_clients_stat, 1);
     });
-  worker.setOnConnectionClosed([proxy] (facebook::memcache::McServerSession&) {
-      stat_decr(proxy->stats, num_clients_stat, 1);
-    });
+  worker.setOnConnectionCloseFinish(
+      [proxy](facebook::memcache::McServerSession&) {
+        stat_decr(proxy->stats, num_clients_stat, 1);
+      });
   if (managedMode) {
     worker.setOnShutdownOperation([&router] () {
         if (!shutdownFromChild()) {

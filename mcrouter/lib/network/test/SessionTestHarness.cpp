@@ -116,14 +116,15 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
 SessionTestHarness::SessionTestHarness(
     AsyncMcServerWorkerOptions opts,
     std::function<void(McServerSession&)> onWriteQuiescence,
-    std::function<void(McServerSession&)> onTerminate)
+    std::function<void(McServerSession&)> onCloseFinish)
     : session_(McServerSession::create(
           folly::AsyncTransportWrapper::UniquePtr(
               new MockAsyncSocket(*this)),
           std::make_shared<McServerOnRequestWrapper<OnRequest>>(
               OnRequest(*this)),
           std::move(onWriteQuiescence),
-          std::move(onTerminate),
+          nullptr /* onCloseStart */,
+          std::move(onCloseFinish),
           nullptr,
           std::move(opts),
           nullptr)) {}

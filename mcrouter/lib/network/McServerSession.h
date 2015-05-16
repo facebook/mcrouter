@@ -39,17 +39,24 @@ class McServerSession :
 
   /**
    * Creates a new session.  Sessions manage their own lifetime.
-   * A session will self-destruct right after an onTerminated() callback
+   * A session will self-destruct right after an onCloseFinish() callback
    * call, by which point all of the following must have occured:
    *   1) All outstanding requests have been replied and pending
    *      writes have been completed/errored out.
    *   2) The outgoing connection is closed, either via an explicit close()
    *      call or due to some error.
    *
-   * The application may use onTerminated() callback as the point in
+   * onCloseStart() callback marks the beggining of session
+   * teardown. The application can inititate any cleanup process. After
+   * onCloseStart() the socket is no longer readable, and the application
+   * should try to flush out all outstanding requests so that session
+   * can be closed.
+   *
+   * The application may use onCloseFinish() callback as the point in
    * time after which the session is considered done, and no event loop
    * iteration is necessary.
-   * The session will be alive for the duration of onTerminated callback,
+   *
+   * The session will be alive for the duration of onCloseFinish callback,
    * but this is the last time the application can safely assume that
    * the session is alive.
    *
@@ -63,14 +70,15 @@ class McServerSession :
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     std::function<void(McServerSession&)> onWriteQuiescence,
-    std::function<void(McServerSession&)> onTerminated,
+    std::function<void(McServerSession&)> onCloseStart,
+    std::function<void(McServerSession&)> onCloseFinish,
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
     void* userCtxt);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
-   * onTerminated() callback will only be called after the last write completes.
+   * Please refer create() for info about the callbacks invoked.
    */
   void close();
 
@@ -103,7 +111,8 @@ class McServerSession :
   folly::AsyncTransportWrapper::UniquePtr transport_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
-  std::function<void(McServerSession&)> onTerminated_;
+  std::function<void(McServerSession&)> onCloseStart_;
+  std::function<void(McServerSession&)> onCloseFinish_;
   std::function<void()> onShutdown_;
   AsyncMcServerWorkerOptions options_;
   void* userCtxt_{nullptr};
@@ -207,7 +216,7 @@ class McServerSession :
 
   /**
    * Check if no outstanding transactions, and close socket and
-   * call onTerminated() if so.
+   * call onCloseFinish_() if so.
    */
   void checkClosed();
 
@@ -262,7 +271,8 @@ class McServerSession :
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     std::function<void(McServerSession&)> onWriteSuccess,
-    std::function<void(McServerSession&)> onTerminated,
+    std::function<void(McServerSession&)> onCloseStart,
+    std::function<void(McServerSession&)> onCloseFinish,
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
     void* userCtxt);

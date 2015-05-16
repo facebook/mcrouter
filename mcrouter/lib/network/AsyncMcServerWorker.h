@@ -101,14 +101,31 @@ class AsyncMcServerWorker {
   }
 
   /**
-   * Will be called once on closing every connection. The McServerSession
-   * that was closed is passed in as a parameter.
+   * Will be called once on every connection on which close was inititated.
+   * This callback allows applications to initiate any cleanup process, before
+   * the connection is actually closed (see onCloseFinish).
+   *
+   * The associated McServerSession is passed as the argument to the
+   * callback.
    *
    * Note: this callback will be applied even to already open connections.
    * Can be nullptr for no action.
    */
-  void setOnConnectionClosed(std::function<void(McServerSession&)> cb) {
-    onClosed_ = std::move(cb);
+  void setOnConnectionCloseStart(std::function<void(McServerSession&)> cb) {
+    onCloseStart_ = std::move(cb);
+  }
+
+  /**
+   * Will be called once on closing every connection. The McServerSession
+   * that was closed is passed in as a parameter. This callback marks the
+   * end of the session lifetime and the session is no longer valid after
+   * the callback.
+   *
+   * Note: this callback will be applied even to already open connections.
+   * Can be nullptr for no action.
+   */
+  void setOnConnectionCloseFinish(std::function<void(McServerSession&)> cb) {
+    onCloseFinish_ = std::move(cb);
   }
 
   /**
@@ -147,7 +164,8 @@ class AsyncMcServerWorker {
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
-  std::function<void(McServerSession&)> onClosed_;
+  std::function<void(McServerSession&)> onCloseStart_;
+  std::function<void(McServerSession&)> onCloseFinish_;
   std::function<void()> onShutdown_;
 
   bool isAlive_{true};

@@ -43,7 +43,8 @@ McServerSession& McServerSession::create(
   folly::AsyncTransportWrapper::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
   std::function<void(McServerSession&)> onWriteQuiescence,
-  std::function<void(McServerSession&)> onTerminated,
+  std::function<void(McServerSession&)> onCloseStart,
+  std::function<void(McServerSession&)> onCloseFinish,
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
   void* userCtxt) {
@@ -52,7 +53,8 @@ McServerSession& McServerSession::create(
     std::move(transport),
     std::move(cb),
     std::move(onWriteQuiescence),
-    std::move(onTerminated),
+    std::move(onCloseStart),
+    std::move(onCloseFinish),
     std::move(onShutdown),
     std::move(options),
     userCtxt
@@ -65,14 +67,16 @@ McServerSession::McServerSession(
   folly::AsyncTransportWrapper::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
   std::function<void(McServerSession&)> onWriteQuiescence,
-  std::function<void(McServerSession&)> onTerminated,
+  std::function<void(McServerSession&)> onCloseStart,
+  std::function<void(McServerSession&)> onCloseFinish,
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
   void* userCtxt)
     : transport_(std::move(transport)),
       onRequest_(std::move(cb)),
       onWriteQuiescence_(std::move(onWriteQuiescence)),
-      onTerminated_(std::move(onTerminated)),
+      onCloseStart_(std::move(onCloseStart)),
+      onCloseFinish_(std::move(onCloseFinish)),
       onShutdown_(std::move(onShutdown)),
       options_(std::move(options)),
       userCtxt_(userCtxt),
@@ -130,8 +134,8 @@ void McServerSession::checkClosed() {
         transport_->setReadCB(nullptr);
         transport_.reset();
       }
-      if (onTerminated_) {
-        onTerminated_(*this);
+      if (onCloseFinish_) {
+        onCloseFinish_(*this);
       }
       destroy();
     }
@@ -187,6 +191,8 @@ void McServerSession::processMultiOpEnd() {
 }
 
 void McServerSession::close() {
+  DestructorGuard dg(this);
+
   if (currentMultiop_) {
     /* If we got closed in the middle of a multiop request,
        process it as if we saw mc_op_end */
@@ -195,7 +201,11 @@ void McServerSession::close() {
 
   if (state_ == STREAMING) {
     state_ = CLOSING;
+    if (onCloseStart_) {
+      onCloseStart_(*this);
+    }
   }
+
   checkClosed();
 }
 
