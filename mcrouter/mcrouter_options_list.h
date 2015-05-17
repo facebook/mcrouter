@@ -298,6 +298,11 @@ mcrouter_option_toggle(
   "enable-flush-cmd", no_short,
   "Enable flush_all command")
 
+mcrouter_option_integer(
+  int, reconfiguration_delay_ms, 1000,
+  "reconfiguration-delay-ms", no_short,
+  "Delay between config files change and mcrouter reconfiguration.")
+
 mcrouter_option_group("TKO probes")
 
 mcrouter_option_toggle(

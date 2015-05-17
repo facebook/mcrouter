@@ -132,8 +132,9 @@ void ConfigApi::configThreadRun() {
 
     {
       std::unique_lock<std::mutex> lk(finishMutex_);
-      finishCV_.wait_for(lk, std::chrono::seconds(1),
-                         [this] { return finish_.load(); });
+      finishCV_.wait_for(
+        lk, std::chrono::milliseconds(opts_.reconfiguration_delay_ms),
+        [this] { return finish_.load(); });
 
     }
 
