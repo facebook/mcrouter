@@ -83,12 +83,12 @@ class McReply {
   /**
    * Is this reply an error?
    */
-  bool isError() const;
+  inline bool isError() const;
 
   /**
    * Is this reply an error as far as failover logic is concerned?
    */
-  bool isFailoverError() const;
+  inline bool isFailoverError() const;
 
   /**
    * Is this reply a soft TKO error?

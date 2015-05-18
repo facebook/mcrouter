@@ -69,7 +69,7 @@ std::string DestinationRoute::keyWithFailoverTag(
   std::string failoverTag;
   failoverTag.reserve(tagLength);
   failoverTag = kFailoverTagStart;
-  failoverTag += client_->ap->getHost().str();
+  failoverTag += client_->ap->getHost();
   if (client_->ap->getPort() != 0) {
     failoverTag += kFailoverHostPortSeparator;
     failoverTag += folly::to<std::string>(client_->ap->getPort());

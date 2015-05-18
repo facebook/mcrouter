@@ -20,27 +20,6 @@ bool McReply::worseThan(const McReply& other) const {
   return awfulness(result_) > awfulness(other.result_);
 }
 
-bool McReply::isError() const {
-  return mc_res_is_err(result_);
-}
-
-bool McReply::isFailoverError() const {
-  switch (result_) {
-    case mc_res_busy:
-    case mc_res_shutdown:
-    case mc_res_tko:
-    case mc_res_try_again:
-    case mc_res_local_error:
-    case mc_res_connect_error:
-    case mc_res_connect_timeout:
-    case mc_res_timeout:
-    case mc_res_remote_error:
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool McReply::isSoftTkoError() const {
   switch (result_) {
     case mc_res_timeout:

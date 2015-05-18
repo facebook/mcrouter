@@ -371,7 +371,7 @@ void AsyncMcClientImpl::attemptConnection() {
   folly::SocketAddress address;
   try {
     address = folly::SocketAddress(
-      connectionOptions_.accessPoint.getHost().str(),
+      connectionOptions_.accessPoint.getHost(),
       connectionOptions_.accessPoint.getPort(),
       /* allowNameLookup */ true);
   } catch (const std::system_error& e) {

@@ -26,7 +26,7 @@ struct AccessPoint {
                      mc_protocol_t default_protocol,
                      AccessPoint& ap);
 
-  const folly::StringPiece getHost() const {
+  const std::string& getHost() const {
     return host_;
   }
 
