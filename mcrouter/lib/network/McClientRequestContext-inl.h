@@ -157,12 +157,12 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
   // Get the context and erase it from the queue and map.
   McClientRequestContextBase* ctx{nullptr};
   if (outOfOrder_) {
-    auto iter = idMap_.find(id);
-    if (iter != idMap_.end()) {
-      ctx = iter->second;
-      assert(ctx->state_ == State::PENDING_REPLY_QUEUE);
-      pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(*iter->second));
-      idMap_.erase(iter);
+    auto iter = getContextById(id);
+    if (iter != set_.end()) {
+      ctx = &(*iter);
+      assert(iter->state_ == State::PENDING_REPLY_QUEUE);
+      pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(*iter));
+      set_.erase(iter);
     }
   } else {
     // First we're going to receive replies for timed out requests.

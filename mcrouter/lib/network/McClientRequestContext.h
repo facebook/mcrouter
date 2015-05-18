@@ -11,6 +11,8 @@
 
 #include <typeindex>
 
+#include <boost/intrusive/unordered_set.hpp>
+
 #include <folly/IntrusiveList.h>
 #include <folly/experimental/fibers/Baton.h>
 
@@ -28,7 +30,8 @@ class McClientRequestContextQueue;
  * Class for storing per request data that is required for proper requests
  * processing inside of AsyncMcClient.
  */
-class McClientRequestContextBase {
+class McClientRequestContextBase
+  : public boost::intrusive::unordered_set_base_hook<> {
  public:
   using InitializerFuncPtr =
     void (*)(ClientMcParser<AsyncMcClientImpl>&);
@@ -110,8 +113,25 @@ class McClientRequestContextBase {
   void reply(Reply&& r);
 
  public:
+  struct Equal {
+    bool operator()(const McClientRequestContextBase& a,
+                    const McClientRequestContextBase& b) const {
+      return a.id == b.id;
+    }
+  };
+
+  struct Hash {
+    size_t operator()(const McClientRequestContextBase& ctx) const {
+      return std::hash<uint64_t>()(ctx.id);
+    }
+  };
+
   using Queue = folly::CountedIntrusiveList<McClientRequestContextBase,
                                             &McClientRequestContextBase::hook_>;
+  using UnorderedSet =
+    boost::intrusive::unordered_set<McClientRequestContextBase,
+                                    boost::intrusive::equal<Equal>,
+                                    boost::intrusive::hash<Hash>>;
 };
 
 template <class Operation, class Request>
@@ -217,6 +237,8 @@ class McClientRequestContextQueue {
   getParserInitializer(uint64_t reqId = 0);
 
  private:
+  static constexpr size_t kDefaultNumBuckets = 128;
+
   // Friend to allow access to remove* mothods.
   template<class Operation, class Request>
   friend class McClientRequestContext;
@@ -233,9 +255,10 @@ class McClientRequestContextQueue {
   // A special internal queue for request that were replied before it's been
   // completely written.
   McClientRequestContextBase::Queue repliedQueue_;
-  // Id to request map. Used only in case of out-of-order protocol for fast
-  // request lookup.
-  std::unordered_map<uint64_t, McClientRequestContextBase*> idMap_;
+  // Unordered set of requests. Used only in case of out-of-order protocol
+  // for fast request lookup.
+  std::vector<McClientRequestContextBase::UnorderedSet::bucket_type> buckets_;
+  McClientRequestContextBase::UnorderedSet set_;
 
   // Storage for parser initializers for timed out requests.
   std::queue<McClientRequestContextBase::InitializerFuncPtr>
@@ -243,7 +266,9 @@ class McClientRequestContextQueue {
 
   void failQueue(McClientRequestContextBase::Queue& queue, mc_res_t error);
 
-  void removeFromMap(uint64_t id);
+  McClientRequestContextBase::UnorderedSet::iterator
+  getContextById(uint64_t id);
+  void removeFromSet(McClientRequestContextBase& req);
 
   /**
    * Removes given request from pending queue and id map.
@@ -262,6 +287,8 @@ class McClientRequestContextQueue {
    * Should be called whenever the network communication channel gets closed.
    */
   void clearStoredInitializers();
+
+  void growBucketsArray();
 };
 
 }}  // facebook::memcache

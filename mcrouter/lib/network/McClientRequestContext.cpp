@@ -28,7 +28,21 @@ McClientRequestContextBase::~McClientRequestContextBase() {
 }
 
 McClientRequestContextQueue::McClientRequestContextQueue(
-  bool outOfOrder) noexcept : outOfOrder_(outOfOrder) {
+  bool outOfOrder) noexcept
+  : outOfOrder_(outOfOrder),
+    buckets_(kDefaultNumBuckets),
+    set_(McClientRequestContextBase::UnorderedSet::bucket_traits(
+      buckets_.data(), buckets_.size())) {
+}
+
+void McClientRequestContextQueue::growBucketsArray() {
+  // Allocate buckets array that is twice bigger than the current one.
+  std::vector<McClientRequestContextBase::UnorderedSet::bucket_type>
+  tmp(buckets_.size() * 2);
+  set_.rehash(McClientRequestContextBase::UnorderedSet::bucket_traits(
+    tmp.data(), tmp.size()));
+  // Use swap here, since it has better defined behaviour regarding iterators.
+  buckets_.swap(tmp);
 }
 
 size_t McClientRequestContextQueue::getPendingRequestCount() const noexcept {
@@ -69,7 +83,11 @@ void McClientRequestContextQueue::markAsPending(
   pendingQueue_.push_back(req);
 
   if (outOfOrder_) {
-    idMap_[req.id] = &req;
+    // We hit the number of allocated buckets, grow the array.
+    if (set_.size() >= buckets_.size()) {
+      growBucketsArray();
+    }
+    set_.insert(req);
   }
 }
 
@@ -94,7 +112,7 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
   auto& req = writeQueue_.front();
   writeQueue_.pop_front();
   if (req.state_ == State::WRITE_QUEUE_CANCELED) {
-    removeFromMap(req.id);
+    removeFromSet(req);
     // We already sent this request, so we're going to get a reply in future.
     if (!outOfOrder_) {
       timedOutInitializers_.push(req.initializer_);
@@ -113,22 +131,34 @@ void McClientRequestContextQueue::failQueue(
   while (!queue.empty()) {
     auto& req = queue.front();
     queue.pop_front();
-    removeFromMap(req.id);
+    removeFromSet(req);
     req.state_ = State::NONE;
     req.replyError(error);
   }
 }
 
-void McClientRequestContextQueue::removeFromMap(uint64_t id) {
+McClientRequestContextBase::UnorderedSet::iterator
+McClientRequestContextQueue::getContextById(uint64_t id) {
+  return
+    set_.find(
+      id,
+      std::hash<uint64_t>(),
+      [] (uint64_t id, const McClientRequestContextBase& ctx) {
+        return id == ctx.id;
+      });
+}
+
+void McClientRequestContextQueue::removeFromSet(
+    McClientRequestContextBase& req) {
   if (outOfOrder_) {
-    idMap_.erase(id);
+    set_.erase(req);
   }
 }
 
 void McClientRequestContextQueue::removePending(
     McClientRequestContextBase& req) {
   assert(req.state_ == State::PENDING_QUEUE);
-  removeFromMap(req.id);
+  removeFromSet(req);
   pendingQueue_.erase(pendingQueue_.iterator_to(req));
   req.state_ = State::NONE;
 }
@@ -137,7 +167,7 @@ void McClientRequestContextQueue::removePendingReply(
     McClientRequestContextBase& req) {
   assert(req.state_ == State::PENDING_REPLY_QUEUE);
   assert(&req == &pendingReplyQueue_.front());
-  removeFromMap(req.id);
+  removeFromSet(req);
   pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(req));
   req.state_ = State::NONE;
   // We need timedOutInitializers_ only for in order protocol.
@@ -149,9 +179,9 @@ void McClientRequestContextQueue::removePendingReply(
 McClientRequestContextBase::InitializerFuncPtr
 McClientRequestContextQueue::getParserInitializer(uint64_t reqId) {
   if (outOfOrder_) {
-    auto it = idMap_.find(reqId);
-    if (it != idMap_.end()) {
-      return it->second->initializer_;
+    auto it = getContextById(reqId);
+    if (it != set_.end()) {
+      return it->initializer_;
     }
   } else {
     // In inorder protocol we expect to receive timedout requests first.
