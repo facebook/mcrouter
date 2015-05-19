@@ -17,14 +17,15 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class CyclesObserver : public folly::fibers::ExecutionObserver {
  public:
-  void starting() noexcept override {
+  void starting(uintptr_t id) noexcept override {
     if (!cycles::start()) {
       // Should never happen
       DCHECK(false) << "There is already one cycles interval "
                        "active in this thread";
     }
   }
-  void stopped() noexcept override {
+  void runnable(uintptr_t id) noexcept override {}
+  void stopped(uintptr_t id) noexcept override {
     cycles::finish();
   }
 };
