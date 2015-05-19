@@ -63,7 +63,7 @@ folly::IOBuf BigValueRoute::createChunkKey(
 
   return folly::IOBuf(
     folly::IOBuf::COPY_BUFFER,
-    folly::format("{}|#|{}:{}", base_key, chunk_index, rand_suffix).str()
+    folly::sformat("{}:{}:{}", base_key, chunk_index, rand_suffix)
   );
 }
 

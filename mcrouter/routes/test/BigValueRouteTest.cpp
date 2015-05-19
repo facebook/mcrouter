@@ -111,7 +111,7 @@ TEST(BigValueRouteTest, bigvalue) {
         // perform get request on chunk keys
         for (int i = 1; i < num_chunks + 1; i++) {
           auto chunk_key = folly::format(
-            "key_get|#|{}:{}", i-1, rand_suffix_get).str();
+            "key_get:{}:{}", i-1, rand_suffix_get).str();
           EXPECT_EQ(chunk_key, keys_get[i]);
           merged_str.append(init_reply);
         }
@@ -156,7 +156,7 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string rand_suffix_set;
         // first set chunk values corresponding to chunk keys
         for(int i = 0; i < num_chunks; i++) {
-          auto chunk_key_prefix = folly::format("key_set|#|{}:", i).str();
+          auto chunk_key_prefix = folly::format("key_set:{}:", i).str();
           auto length = chunk_key_prefix.length();
           auto saw_prefix = keys_set[i].substr(0, length);
           EXPECT_TRUE(saw_prefix == chunk_key_prefix);
@@ -200,7 +200,7 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string rand_suffix_set;
         // first set chunk values corresponding to chunk keys
         for(int i = 0; i < num_chunks; i++) {
-          auto chunk_key_prefix = folly::format("key_set|#|{}:", i).str();
+          auto chunk_key_prefix = folly::format("key_set:{}:", i).str();
           auto length = chunk_key_prefix.length();
           auto saw_prefix = keys_set[i].substr(0, length);
           EXPECT_TRUE(saw_prefix == chunk_key_prefix);
