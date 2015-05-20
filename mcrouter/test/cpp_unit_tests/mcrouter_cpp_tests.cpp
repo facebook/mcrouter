@@ -119,21 +119,15 @@ TEST(mcrouter, start_and_stop) {
   }
 }
 
-void on_disconnect(void* context) {
-  sem_post((sem_t*)context);
-}
-
 TEST(mcrouter, test_zeroreqs_mcroutersend) {
-  sem_t sem_disconnect;
-  sem_init(&sem_disconnect, 0, 0);
   auto opts = defaultTestOptions();
   opts.config_file = kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
   auto router = McrouterInstance::init("test_zeroreqs_mcroutersend", opts);
   {
     auto client = router->createClient(
-      (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
-      &sem_disconnect,
+      (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
+      nullptr,
       0);
 
     vector<mcrouter_msg_t> reqs(0);
@@ -141,6 +135,10 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
     client->send(reqs.data(), reqs.size());
     client->send(nullptr, 0);
   }
+}
+
+void on_disconnect(void* context) {
+  sem_post((sem_t*)context);
 }
 
 TEST(mcrouter, disconnect_callback) {
@@ -170,6 +168,7 @@ TEST(mcrouter, disconnect_callback) {
     EXPECT_NE(0, sem_trywait(&sem_disconnect));
   }
   EXPECT_EQ(0, sem_wait(&sem_disconnect));
+  sem_destroy(&sem_disconnect);
 }
 
 TEST(mcrouter, fork) {
