@@ -162,7 +162,14 @@ bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
     consecutiveFailureCount_ = 0;
     return true;
   }
-  if (setSumFailures(0)) {
+  /* Skip resetting failures if the counter is at zero.
+     If an error races here and increments the counter,
+     we can pretend this success happened before the error,
+     and the state is consistent.
+
+     If we don't skip here we end up doing CAS on a shared state
+     every single request. */
+  if (sumFailures_ != 0 && setSumFailures(0)) {
     consecutiveFailureCount_ = 0;
   }
   return false;
