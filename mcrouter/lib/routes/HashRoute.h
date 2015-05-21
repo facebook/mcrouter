@@ -15,7 +15,6 @@
 
 #include <folly/Range.h>
 #include <folly/dynamic.h>
-#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
@@ -64,7 +63,7 @@ class HashRoute {
     if (rh_.empty()) {
       return NullRoute<RouteHandleIf>::route(req, Operation());
     } else {
-      return rh_[pickInMainContext(req)]->route(req, Operation());
+      return rh_[pick(req)]->route(req, Operation());
     }
   }
 
@@ -97,18 +96,6 @@ class HashRoute {
     }
     return n;
   }
-
-  template <class Request>
-  size_t pickInMainContext(const Request& req) const {
-    /* Hash functions can be stack-intensive,
-       so jump back to the main context */
-    return folly::fibers::runInMainContext([this, &req] () {
-        /* this-> here is necessary for gcc-4.7 - it can't find pick()
-           without it */
-        return this->pick(req);
-      }
-    );
-  }
 };
 
-}}
+}}  // facebook::memcache

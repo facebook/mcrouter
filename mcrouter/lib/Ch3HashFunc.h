@@ -34,7 +34,7 @@ class Ch3HashFunc {
   }
 
   size_t operator() (folly::StringPiece hashable) const {
-    return furc_hash(hashable.data(), hashable.size(), n_);
+    return furc_hash_array(hashable.data(), hashable.size(), n_, hash);
   }
 
   static std::string type() {
@@ -42,6 +42,7 @@ class Ch3HashFunc {
   }
 
  private:
+  mutable uint64_t hash[FURC_CACHE_SIZE];
   size_t n_;
 };
 
