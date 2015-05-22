@@ -113,10 +113,6 @@ class WarmUpRoute {
 
     /* else */
     auto warmReply = warm_->route(req, op);
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
     uint32_t exptime;
     if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
       folly::fibers::addTask([
@@ -125,9 +121,6 @@ class WarmUpRoute {
         cold->route(addReq, McOperation<mc_op_add>());
       });
     }
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
     return warmReply;
   }
 
@@ -154,10 +147,6 @@ class WarmUpRoute {
 
     // miss with lease token from cold route: send simple get to warm route
     auto warmReply = warm_->route(req, McOperation<mc_op_get>());
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
     uint32_t exptime;
     if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
       // update cold route with lease set
@@ -169,9 +158,6 @@ class WarmUpRoute {
       });
       return warmReply;
     }
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
     return coldReply;
   }
 

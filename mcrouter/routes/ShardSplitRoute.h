@@ -122,17 +122,10 @@ class ShardSplitRoute {
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     for (size_t i = 0; i < cnt - 1; ++i) {
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
       folly::fibers::addTask(
         [r = rh_, req_ = splitReq(req, i, shard)]() {
           r->route(req_, Operation());
         });
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
     }
     return rh_->route(req, Operation());
   }

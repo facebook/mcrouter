@@ -69,17 +69,10 @@ class AllSyncRoute {
       return children_.back()->route(req, Operation());
     }
 
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
     const auto& children = children_;
     auto fs = makeFuncGenerator([&req, &children](size_t id) {
       return children[id]->route(req, Operation());
     }, children_.size());
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
     folly::Optional<Reply> reply;
     folly::fibers::forEach(fs.begin(), fs.end(),

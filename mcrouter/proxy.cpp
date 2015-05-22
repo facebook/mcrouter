@@ -202,10 +202,6 @@ void proxy_t::routeHandlesProcessRequest(
 
   auto func_ctx = preq;
 
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
   fiberManager.addTaskFinally(
     [ctx = std::move(func_ctx)]() mutable {
       auto& origReq = ctx->origReq();
@@ -224,9 +220,6 @@ void proxy_t::routeHandlesProcessRequest(
       ctx->sendReply(std::move(*reply));
     }
   );
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 }
 
 void proxy_t::processRequest(std::unique_ptr<ProxyRequestContext> preq) {

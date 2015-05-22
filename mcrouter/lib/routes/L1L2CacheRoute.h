@@ -125,10 +125,6 @@ class L1L2CacheRoute {
 
     /* else */
     auto l2Reply = l2_->route(req, Operation());
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
     if (l2Reply.isHit()) {
       folly::fibers::addTask(
         [l1 = l1_,
@@ -141,9 +137,6 @@ class L1L2CacheRoute {
         l1->route(addReq, McOperation<mc_op_add>());
       });
     }
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
     return l2Reply;
   }
 
@@ -186,10 +179,6 @@ class L1L2CacheRoute {
 
   template <class Request, class Operation>
   void updateL1Ncache(const Request& req, Operation) {
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
     folly::fibers::addTask(
       [l1 = l1_, l2 = l2_, creq = Request(req.clone()),
        upgradingL1Exptime = upgradingL1Exptime_,
@@ -204,9 +193,6 @@ class L1L2CacheRoute {
         }
       }
     );
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
   }
 };
 

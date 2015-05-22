@@ -7,10 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
 
 #include "ExtractorThread.h"
 

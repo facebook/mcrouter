@@ -73,10 +73,6 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
   const std::shared_ptr<ProxyRequestContext>& ctx,
   std::string keyStr,
   Operation) const {
-#ifdef __clang__
-#pragma clang diagnostic push // ignore generalized lambda capture warning
-#pragma clang diagnostic ignored "-Wc++1y-extensions"
-#endif
   proxy_->fiberManager.addTaskFinally(
     [this, keyStr, proxy = proxy_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
@@ -113,9 +109,6 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
       ctx->sendReply(McReply(mc_res_found, str));
     }
   );
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 }
 
 namespace {
