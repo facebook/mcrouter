@@ -16,6 +16,8 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -61,9 +63,20 @@ class LoggingRoute {
       reply = child_->route(req, Operation());
     }
 
+    // Pull the IP (if available) out of the saved request
+    auto& ctx = mcrouter::fiber_local::getSharedCtx();
+    auto& ip = ctx->userIpAddress();
+    folly::StringPiece displayIp;
+    if (!ip.empty()) {
+      displayIp = folly::StringPiece(ip);
+    } else {
+      displayIp = folly::StringPiece("N/A");
+    }
+
     LOG(INFO) << "request key: " << req.fullKey()
               << " response: " << mc_res_to_string(reply.result())
-              << " responseLength: " << reply.value().length();
+              << " responseLength: " << reply.value().length()
+              << " ip: " << displayIp;
     return std::move(reply);
   }
 

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "mcrouter/config.h"
 #include "mcrouter/config-impl.h"
@@ -174,6 +175,14 @@ public:
    */
   void sendReply(McReply newReply);
 
+  const std::string& userIpAddress() const noexcept {
+    return userIpAddr_;
+  }
+
+  void setUserIpAddress(folly::StringPiece newAddr) noexcept {
+    userIpAddr_ = newAddr.str();
+  }
+
  private:
   proxy_t& proxy_;
   McMsgRef origReq_;
@@ -218,6 +227,8 @@ public:
   folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;
 
   uint64_t senderIdForTest_{0};
+
+  std::string userIpAddr_;
 
   ProxyRequestContext(
     proxy_t& pr,

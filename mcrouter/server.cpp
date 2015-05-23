@@ -30,8 +30,11 @@ namespace {
  */
 class ServerOnRequest {
  public:
-  explicit ServerOnRequest(McrouterClient* client)
-      : client_(client) {
+  explicit ServerOnRequest(
+    McrouterClient* client,
+    bool retainSourceIp = false)
+      : client_(client),
+        retainSourceIp_(retainSourceIp) {
   }
 
   template <int M>
@@ -39,7 +42,7 @@ class ServerOnRequest {
                  McRequest&& req,
                  McOperation<M>) {
     mcrouter_msg_t router_msg;
-
+    auto& peerIp = ctx.session().peerIpAddress();
     auto op = mc_op_t(M);
     /* TODO: nasty C/C++ interface stuff.  We should hand off the McRequest
        directly here.  For now, hand off the dependentMsg() since we can assume
@@ -50,12 +53,17 @@ class ServerOnRequest {
     auto msg = router_msg.saved_request->dependentMsg(op);
     router_msg.req = const_cast<mc_msg_t*>(msg.get());
     /* mcrouter_send will incref req, it's ok to destroy msg after this call */
-    client_->send(&router_msg, 1);
+    if (retainSourceIp_) {
+      client_->send(&router_msg, 1, peerIp);
+    } else {
+      client_->send(&router_msg, 1);
+    }
     p.release();
   }
 
  private:
   McrouterClient* client_;
+  bool retainSourceIp_{false};
 };
 
 void router_on_reply(mcrouter_msg_t* msg,
@@ -80,7 +88,8 @@ void serverLoop(
   size_t threadId,
   folly::EventBase& evb,
   AsyncMcServerWorker& worker,
-  bool managedMode) {
+  bool managedMode,
+  bool retainSourceIp) {
 
   auto routerClient = router.createClient(
     server_callbacks,
@@ -91,7 +100,7 @@ void serverLoop(
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
-  worker.setOnRequest(ServerOnRequest(routerClient.get()));
+  worker.setOnRequest(ServerOnRequest(routerClient.get(), retainSourceIp));
   worker.setOnConnectionAccepted([proxy] () {
       stat_incr(proxy->stats, successful_client_connections_stat, 1);
       stat_incr(proxy->stats, num_clients_stat, 1);
@@ -155,7 +164,8 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
       [&router, &standaloneOpts] (size_t threadId,
                                   folly::EventBase& evb,
                                   AsyncMcServerWorker& worker) {
-        serverLoop(router, threadId, evb, worker, standaloneOpts.managed);
+        serverLoop(router, threadId, evb, worker, standaloneOpts.managed,
+                   standaloneOpts.retain_source_ip);
       }
     );
 

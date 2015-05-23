@@ -12,6 +12,7 @@
 #include <folly/detail/CacheLocality.h>
 #include <folly/IntrusiveList.h>
 #include <folly/Optional.h>
+#include <folly/Range.h>
 
 #include "mcrouter/lib/CacheClientStats.h"
 #include "mcrouter/lib/fbi/counting_sem.h"
@@ -79,10 +80,16 @@ class McrouterClient {
 
   /**
    * Asynchronously send `nreqs' requests from the array started at `requests'.
+   * Optionally, `ipAddr` is a StringPiece that contains the IP address of the
+   * external client we got the requests from.
    *
    * @returns number of requests successfully sent
    */
-  size_t send(const mcrouter_msg_t* requests, size_t nreqs);
+  size_t send(
+    const mcrouter_msg_t* requests,
+    size_t nreqs,
+    folly::StringPiece ipAddr = folly::StringPiece()
+  );
 
   /**
    * Returns the mcrouter managed event base that runs the callbacks.

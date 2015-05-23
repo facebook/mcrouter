@@ -107,8 +107,13 @@ class McServerSession :
     return userCtxt_;
   }
 
+  const std::string& peerIpAddress() noexcept {
+    return peerIpAddress_;
+  }
+
  private:
   folly::AsyncTransportWrapper::UniquePtr transport_;
+  std::string peerIpAddress_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
   std::function<void(McServerSession&)> onCloseStart_;

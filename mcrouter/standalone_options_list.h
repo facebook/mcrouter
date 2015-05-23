@@ -79,6 +79,12 @@ mcrouter_option_integer(
   "Adjusts server buffer size to process this many requests per read."
   " Smaller values may improve latency.")
 
+mcrouter_option_toggle(
+  retain_source_ip, false,
+  "retain-source-ip", no_short,
+  "Look up the source IP address for inbound requests and expose it to"
+  " routing logic.")
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif

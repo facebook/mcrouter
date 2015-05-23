@@ -57,7 +57,10 @@ bool precheckRequest(ProxyRequestContext& preq) {
 
 }
 
-size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
+size_t McrouterClient::send(
+  const mcrouter_msg_t* requests,
+  size_t nreqs,
+  folly::StringPiece ipAddr /* = folly::StringPiece() */ ) {
   if (nreqs == 0) {
     return 0;
   }
@@ -85,6 +88,9 @@ size_t McrouterClient::send(const mcrouter_msg_t* requests, size_t nreqs) {
       },
       requests[i].context);
     preq->requester_ = incref();
+    if (!ipAddr.empty()) {
+      preq->setUserIpAddress(ipAddr);
+    }
     if (requests[i].saved_request.hasValue()) {
       // TODO: remove copy
       preq->savedRequest_.emplace(requests[i].saved_request->clone());
