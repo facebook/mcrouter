@@ -295,12 +295,14 @@ void proxy_t::processRequest(std::unique_ptr<ProxyRequestContext> preq) {
 void proxy_t::dispatchRequest(std::unique_ptr<ProxyRequestContext> preq) {
   if (rateLimited(*preq)) {
     if (opts.proxy_max_throttled_requests > 0 &&
-        waitingRequests_.size() >= opts.proxy_max_throttled_requests) {
+        numRequestsWaiting_ >= opts.proxy_max_throttled_requests) {
       preq->sendReply(McReply(mc_res_local_error, "Max throttled exceeded"));
       return;
     }
+    auto& queue = waitingRequests_[static_cast<int>(preq->priority())];
     auto w = folly::make_unique<WaitingRequest>(std::move(preq));
-    waitingRequests_.pushBack(std::move(w));
+    queue.pushBack(std::move(w));
+    ++numRequestsWaiting_;
     stat_incr(stats, proxy_reqs_waiting_stat, 1);
   } else {
     processRequest(std::move(preq));
@@ -319,7 +321,7 @@ bool proxy_t::rateLimited(const ProxyRequestContext& preq) const {
     return false;
   }
 
-  if (waitingRequests_.empty() &&
+  if (waitingRequests_[static_cast<int>(preq.priority())].empty() &&
       numRequestsProcessing_ < opts.proxy_max_inflight_requests) {
     return false;
   }
@@ -331,12 +333,17 @@ proxy_t::WaitingRequest::WaitingRequest(std::unique_ptr<ProxyRequestContext> r)
     : request(std::move(r)) {}
 
 void proxy_t::pump() {
-  while (numRequestsProcessing_ < opts.proxy_max_inflight_requests &&
-         !waitingRequests_.empty()) {
-    auto w = waitingRequests_.popFront();
-    stat_decr(stats, proxy_reqs_waiting_stat, 1);
+  auto numPriorities = static_cast<int>(ProxyRequestPriority::kNumPriorities);
+  for (int i = 0; i < numPriorities; ++i) {
+    auto& queue = waitingRequests_[i];
+    while (numRequestsProcessing_ < opts.proxy_max_inflight_requests &&
+           !queue.empty()) {
+      --numRequestsWaiting_;
+      auto w = queue.popFront();
+      stat_decr(stats, proxy_reqs_waiting_stat, 1);
 
-    processRequest(std::move(w->request));
+      processRequest(std::move(w->request));
+    }
   }
 }
 

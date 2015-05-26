@@ -22,11 +22,13 @@ ProxyRequestContext::ProxyRequestContext(
   McMsgRef req,
   void (*enqReply)(ProxyRequestContext& preq),
   void* context,
+  ProxyRequestPriority priority__,
   void (*reqComplete)(ProxyRequestContext& preq))
     : proxy_(pr),
       context_(context),
       enqueueReply_(enqReply),
-      reqComplete_(reqComplete) {
+      reqComplete_(reqComplete),
+      priority_(priority__) {
 
   logger_.emplace(&proxy_);
   additionalLogger_.emplace(&proxy_);

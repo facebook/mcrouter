@@ -15,6 +15,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/ProxyConfigIf.h"
+#include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/ProxyRequestLogger.h"
 
 namespace facebook { namespace memcache {
@@ -138,6 +139,10 @@ public:
     return failoverDisabled_;
   }
 
+  ProxyRequestPriority priority() const {
+    return priority_;
+  }
+
   /**
    * Called once a reply is received to record a stats sample if required.
    */
@@ -228,6 +233,8 @@ public:
 
   uint64_t senderIdForTest_{0};
 
+  ProxyRequestPriority priority_{ProxyRequestPriority::kCritical};
+
   std::string userIpAddr_;
 
   ProxyRequestContext(
@@ -235,6 +242,7 @@ public:
     McMsgRef req,
     void (*enqReply)(ProxyRequestContext& preq),
     void* context,
+    ProxyRequestPriority priority = ProxyRequestPriority::kCritical,
     void (*reqComplete)(ProxyRequestContext& preq) = nullptr);
 
   enum RecordingT { Recording };

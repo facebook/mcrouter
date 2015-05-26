@@ -25,8 +25,8 @@
 #include <folly/Range.h>
 #include <folly/experimental/fibers/FiberManager.h>
 
-#include "mcrouter/CyclesObserver.h"
 #include "mcrouter/config.h"
+#include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/mc/msg.h"
@@ -37,6 +37,7 @@
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
+#include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/stats.h"
 
 // make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
@@ -245,6 +246,8 @@ struct proxy_t {
 
   /** Number of requests processing */
   size_t numRequestsProcessing_{0};
+  /** Number of waiting requests */
+  size_t numRequestsWaiting_{0};
 
   /**
    * We use this wrapper instead of putting 'hook' inside ProxyRequestContext
@@ -261,7 +264,8 @@ struct proxy_t {
   };
 
   /** Queue of requests we didn't start processing yet */
-  WaitingRequest::Queue waitingRequests_;
+  WaitingRequest::Queue
+    waitingRequests_[static_cast<int>(ProxyRequestPriority::kNumPriorities)];
 
   /** If true, we can't start processing this request right now */
   bool rateLimited(const ProxyRequestContext& preq) const;
