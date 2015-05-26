@@ -82,3 +82,103 @@ TEST(failoverRouteTest, fail) {
   /* Will return the last reply when ran out of targets */
   EXPECT_EQ(toString(reply.value()), "c");
 }
+
+TEST(failoverRouteTest, customErrorOnce) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+  };
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(std::vector<std::string>{"remote_error"}));
+
+  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_TRUE(toString(reply.value()) == "b");
+}
+
+TEST(failoverRouteTest, customErrorTwice) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+  };
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(std::vector<std::string>{
+      "remote_error", "local_error"}));
+
+  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_TRUE(toString(reply.value()) == "c");
+}
+
+TEST(failoverRouteTest, customErrorUpdate) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_local_error)),
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_found))
+  };
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(std::vector<std::string>{"remote_error"}));
+
+  auto reply = rh.route(McRequest("0"), McOperation<mc_op_set>());
+  EXPECT_TRUE(reply.result() == mc_res_local_error);
+}
+
+TEST(failoverRouteTest, separateErrorsGet) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+  };
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(
+      /* gets */    std::vector<std::string>{"remote_error"},
+      /* updates */ std::vector<std::string>{"remote_error", "local_error"},
+      /* deletes */ std::vector<std::string>{"local_error"}));
+
+  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_TRUE(toString(reply.value()) == "b");
+}
+
+TEST(failoverRouteTest, separateErrorsUpdate) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_local_error)),
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
+  };
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(
+      /* gets */    std::vector<std::string>{"remote_error"},
+      /* updates */ std::vector<std::string>{"remote_error", "local_error"},
+      /* deletes */ std::vector<std::string>{"local_error"}));
+
+  auto reply = rh.route(McRequest("0"), McOperation<mc_op_set>());
+  EXPECT_TRUE(reply.result() == mc_res_stored);
+}
+
+TEST(failoverRouteTest, separateErrorsDelete) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(DeleteRouteTestData(mc_res_local_error)),
+    make_shared<TestHandle>(DeleteRouteTestData(mc_res_remote_error)),
+    make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))
+  };
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(
+      /* gets */    std::vector<std::string>{"remote_error"},
+      /* updates */ std::vector<std::string>{"remote_error", "local_error"},
+      /* deletes */ std::vector<std::string>{"local_error"}));
+
+  auto reply = rh.route(McRequest("0"), McOperation<mc_op_delete>());
+  EXPECT_TRUE(reply.result() == mc_res_remote_error);
+}

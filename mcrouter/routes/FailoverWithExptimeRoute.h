@@ -46,11 +46,12 @@ class FailoverWithExptimeRoute {
     McrouterRouteHandlePtr normalTarget,
     std::vector<McrouterRouteHandlePtr> failoverTargets,
     uint32_t failoverExptime,
-    FailoverWithExptimeSettings settings)
+    FailoverWithExptimeSettings oldSettings)
       : normal_(std::move(normalTarget)),
         failover_(std::move(failoverTargets)),
+        failoverErrors_(oldSettings.getFailoverErrors()),
         failoverExptime_(failoverExptime),
-        settings_(settings) {
+        failoverTagging_(oldSettings.failoverTagging) {
   }
 
   FailoverWithExptimeRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -68,19 +69,8 @@ class FailoverWithExptimeRoute {
     auto& ctx = fiber_local::getSharedCtx();
     auto reply = normal_->route(req, Operation());
 
-    if (!reply.isFailoverError() ||
-        !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
-          DeleteLike<Operation>::value) ||
-        ctx->failoverDisabled()) {
-      return reply;
-    }
-
-    if (((reply.isTko() || reply.isConnectError() || reply.isRedirect()) &&
-         !settings_.tko.shouldFailover(Operation())) ||
-        (reply.isConnectTimeout() &&
-         !settings_.connectTimeout.shouldFailover(Operation())) ||
-        (reply.isDataTimeout() &&
-         !settings_.dataTimeout.shouldFailover(Operation()))) {
+    if (ctx->failoverDisabled() ||
+        !failoverErrors_.shouldFailover(reply, Operation())) {
       return reply;
     }
 
@@ -92,7 +82,7 @@ class FailoverWithExptimeRoute {
       mutReq.setExptime(failoverExptime_);
     }
 
-    bool needFailoverTag = settings_.failoverTagging && mutReq.hasHashStop();
+    bool needFailoverTag = failoverTagging_ && mutReq.hasHashStop();
     return fiber_local::runWithLocals([this, &needFailoverTag, &mutReq]() {
       fiber_local::setFailoverTag(needFailoverTag);
       fiber_local::setRequestClass(RequestClass::FAILOVER);
@@ -103,8 +93,9 @@ class FailoverWithExptimeRoute {
  private:
   McrouterRouteHandlePtr normal_;
   FailoverRoute<McrouterRouteHandleIf> failover_;
+  FailoverErrorsSettings failoverErrors_;
   uint32_t failoverExptime_;
-  FailoverWithExptimeSettings settings_;
+  bool failoverTagging_{false};
 };
 
 }}}

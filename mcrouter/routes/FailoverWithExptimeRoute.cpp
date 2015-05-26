@@ -20,24 +20,45 @@ FailoverWithExptimeRoute::FailoverWithExptimeRoute(
 
   std::vector<McrouterRouteHandlePtr> failoverTargets;
 
-  if (json.count("failover")) {
-    failoverTargets = factory.createList(json["failover"]);
+  if (auto failover = json.get_ptr("failover")) {
+    failoverTargets = factory.createList(*failover);
   }
 
   failover_ = FailoverRoute<McrouterRouteHandleIf>(std::move(failoverTargets));
 
-  if (json.count("normal")) {
-    normal_ = factory.create(json["normal"]);
+  if (auto normal = json.get_ptr("normal")) {
+    normal_ = factory.create(*normal);
   }
 
-  if (json.count("failover_exptime")) {
-    checkLogic(json["failover_exptime"].isInt(),
+  if (auto failoverExptime = json.get_ptr("failover_exptime")) {
+    checkLogic(failoverExptime->isInt(),
                "failover_exptime is not integer");
-    failoverExptime_ = json["failover_exptime"].asInt();
+    failoverExptime_ = failoverExptime->getInt();
   }
 
-  if (json.count("settings")) {
-    settings_ = FailoverWithExptimeSettings(json["settings"]);
+  // Check if only one format is being used
+  checkLogic(!(json.count("settings") && // old
+        (json.count("failover_errors") || json.count("failover_tag"))), // new
+      "Use either 'settings' (old format) or 'failover_errors' / 'failover_tag'"
+    );
+
+  // new format
+  if (auto failoverTag = json.get_ptr("failover_tag")) {
+    checkLogic(failoverTag->isBool(),
+               "FailoverWithExptime: failover_tag is not bool");
+    failoverTagging_ = failoverTag->getBool();
+  }
+  if (auto failoverErrors = json.get_ptr("failover_errors")) {
+    failoverErrors_ = FailoverErrorsSettings(*failoverErrors);
+  }
+
+  // old format
+  if (auto settings = json.get_ptr("settings")) {
+    LOG(WARNING) << "FailoverWithExptime: This config format is deprecated. "
+                    "Use 'failover_errors' instead of 'settings'.";
+    auto oldSettings = FailoverWithExptimeSettings(*settings);
+    failoverTagging_ = oldSettings.failoverTagging;
+    failoverErrors_ = oldSettings.getFailoverErrors();
   }
 }
 

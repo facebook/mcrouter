@@ -6,6 +6,8 @@ libmcrouter_a_SOURCES = \
   CacheClientStats.h \
   Ch3HashFunc.h \
   Crc32HashFunc.h \
+  FailoverErrorsSettings.cpp \
+  FailoverErrorsSettings.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
   MessageStorage.h \

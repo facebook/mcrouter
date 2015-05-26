@@ -10,8 +10,38 @@
 #include "FailoverWithExptimeRouteIf.h"
 
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/mc/msg.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+namespace {
+
+void appendErrors(const std::vector<mc_res_t>& errors,
+                  std::vector<std::string>& vec) {
+  for (const auto error : errors) {
+    folly::StringPiece name(mc_res_to_string(error));
+    name.removePrefix("mc_res_");
+    vec.push_back(name.str());
+  }
+}
+
+void appendErrors(const FailoverWithExptimeSettings::OperationSettings& config,
+                  std::vector<mc_res_t> errors,
+                  std::vector<std::string>& gets,
+                  std::vector<std::string>& updates,
+                  std::vector<std::string>& deletes) {
+  if (config.gets) {
+    appendErrors(errors, gets);
+  }
+  if (config.updates) {
+    appendErrors(errors, updates);
+  }
+  if (config.deletes) {
+    appendErrors(errors, deletes);
+  }
+}
+
+} // anonymous namespace
 
 void FailoverWithExptimeSettings::OperationSettings::override(
       const folly::dynamic& json) {
@@ -75,6 +105,24 @@ FailoverWithExptimeSettings::FailoverWithExptimeSettings(
                "FailoverWithExptime: failover_tag is not bool");
     failoverTagging = json["failover_tag"].asBool();
   }
+}
+
+FailoverErrorsSettings FailoverWithExptimeSettings::getFailoverErrors() const {
+  std::vector<std::string> gets, updates, deletes;
+
+  appendErrors(tko,
+      { mc_res_tko, mc_res_connect_error, mc_res_busy, mc_res_try_again },
+      gets, updates, deletes);
+
+  appendErrors(connectTimeout, { mc_res_connect_timeout },
+      gets, updates, deletes);
+
+  appendErrors(dataTimeout, { mc_res_timeout, mc_res_remote_error },
+      gets, updates, deletes);
+
+  return FailoverErrorsSettings(std::move(gets),
+                                std::move(updates),
+                                std::move(deletes));
 }
 
 }}}  // facebook::memcache::mcrouter

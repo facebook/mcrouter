@@ -16,6 +16,7 @@
 #include <folly/dynamic.h>
 #include <folly/Hash.h>
 
+#include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
@@ -42,23 +43,29 @@ class LatestRoute {
   }
 
   LatestRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
-              size_t failoverCount) {
-    commonInit(std::move(targets), failoverCount);
+              size_t failoverCount,
+              FailoverErrorsSettings failoverErrors) {
+    commonInit(std::move(targets), failoverCount, std::move(failoverErrors));
   }
 
   LatestRoute(const folly::dynamic& json,
               std::vector<std::shared_ptr<RouteHandleIf>> targets) {
 
     size_t failoverCount = 5;
+    FailoverErrorsSettings failoverErrors;
     if (json.isObject()) {
       if (json.count("failover_count")) {
         checkLogic(json["failover_count"].isInt(),
                    "LatestRoute: failover_count is not an integer");
         failoverCount = json["failover_count"].asInt();
       }
+
+      if (auto jsonFailoverErrors = json.get_ptr("failover_errors")) {
+        failoverErrors = FailoverErrorsSettings(*jsonFailoverErrors);
+      }
     }
 
-    commonInit(std::move(targets), failoverCount);
+    commonInit(std::move(targets), failoverCount, std::move(failoverErrors));
   }
 
   template <class Operation, class Request>
@@ -71,7 +78,7 @@ class LatestRoute {
   FailoverRoute<RouteHandleIf> route_;
 
   void commonInit(std::vector<std::shared_ptr<RouteHandleIf>> targets,
-                  size_t failoverCount) {
+                  size_t failoverCount, FailoverErrorsSettings failoverErrors) {
     checkLogic(!targets.empty(), "LatestRoute children is empty");
 
     std::vector<std::shared_ptr<RouteHandleIf>> failovers;
@@ -85,7 +92,8 @@ class LatestRoute {
       curHash = folly::hash::hash_combine(curHash, i);
     }
 
-    route_ = FailoverRoute<RouteHandleIf>(std::move(failovers));
+    route_ = FailoverRoute<RouteHandleIf>(std::move(failovers),
+                                          std::move(failoverErrors));
   }
 };
 

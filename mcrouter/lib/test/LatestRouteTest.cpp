@@ -14,6 +14,7 @@
 
 #include <folly/Hash.h>
 
+#include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
@@ -38,7 +39,8 @@ TEST(latestRouteTest, one) {
 
   TestRouteHandle<LatestRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles),
-    /* failoverCount= */ 3);
+    /* failoverCount= */ 3,
+    FailoverErrorsSettings());
 
   char first =
     folly::hash::hash_combine(0, globals::hostid()) % test_handles.size();

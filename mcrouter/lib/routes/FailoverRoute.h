@@ -16,6 +16,7 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -40,8 +41,10 @@ class FailoverRoute {
 
   FailoverRoute() = default;
 
-  explicit FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets)
-      : targets_(std::move(targets)) {
+  explicit FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
+              FailoverErrorsSettings failoverErrors = FailoverErrorsSettings())
+      : targets_(std::move(targets)),
+        failoverErrors_(std::move(failoverErrors)) {
   }
 
   FailoverRoute(RouteHandleFactory<RouteHandleIf>& factory,
@@ -49,6 +52,9 @@ class FailoverRoute {
     if (json.isObject()) {
       if (json.count("children")) {
         targets_ = factory.createList(json["children"]);
+      }
+      if (auto jsonFailoverErrors = json.get_ptr("failover_errors")) {
+        failoverErrors_ = FailoverErrorsSettings(*jsonFailoverErrors);
       }
     } else {
       targets_ = factory.createList(json);
@@ -65,7 +71,7 @@ class FailoverRoute {
 
     for (size_t i = 0; i + 1 < targets_.size(); ++i) {
       auto reply = targets_[i]->route(req, Operation());
-      if (!reply.isFailoverError()) {
+      if (!failoverErrors_.shouldFailover(reply, Operation())) {
         return reply;
       }
     }
@@ -75,6 +81,7 @@ class FailoverRoute {
 
  private:
   std::vector<std::shared_ptr<RouteHandleIf>> targets_;
+  FailoverErrorsSettings failoverErrors_;
 };
 
 }}

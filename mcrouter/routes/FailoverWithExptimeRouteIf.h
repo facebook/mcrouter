@@ -13,6 +13,7 @@
 
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/OperationTraits.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -56,6 +57,8 @@ struct FailoverWithExptimeSettings {
       return false;
     }
   };
+
+  FailoverErrorsSettings getFailoverErrors() const;
 
   OperationSettings tko;
   OperationSettings connectTimeout;

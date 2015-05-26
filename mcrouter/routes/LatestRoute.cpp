@@ -23,11 +23,13 @@ namespace mcrouter {
 
 McrouterRouteHandlePtr makeLatestRoute(
   std::vector<McrouterRouteHandlePtr> targets,
-  size_t failoverCount) {
+  size_t failoverCount,
+  FailoverErrorsSettings failoverErrors) {
 
   return makeMcrouterRouteHandle<LatestRoute>(
     std::move(targets),
-    failoverCount);
+    failoverCount,
+    std::move(failoverErrors));
 }
 
 }}}
