@@ -60,22 +60,17 @@ void parseQos(std::string parentName, const folly::dynamic& jQos,
 
 mc_protocol_t parseProtocol(const folly::dynamic& obj, mc_protocol_t def) {
   if (auto jprotocol = obj.get_ptr("protocol")) {
-    if (!jprotocol->isString()) {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool protocol: expected string, {} found",
-                 jprotocol->typeName());
-      return def;
-    }
+    checkLogic(jprotocol->isString(),
+               "Protocol: expected string, {} found",
+               jprotocol->typeName());
 
     auto str = jprotocol->stringPiece();
     if (equalStr("ascii", str, folly::asciiCaseInsensitive)) {
       return mc_ascii_protocol;
     } else if (equalStr("umbrella", str, folly::asciiCaseInsensitive)) {
       return mc_umbrella_protocol;
-    } else {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Unknown protocol '{}'", str);
     }
+    checkLogic(false, "Unknown protocol '{}'", str);
   }
   return def;
 }
