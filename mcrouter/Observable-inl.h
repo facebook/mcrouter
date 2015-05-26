@@ -9,6 +9,8 @@
  */
 #include <mutex>
 
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 template<class Data>
@@ -29,9 +31,11 @@ Observable<Data>::subscribeAndCall(OnUpdateOldNew callback) {
   try {
     callback(Data(), data_);
   } catch (const std::exception& e) {
-    LOG(ERROR) << "Error occured in callback: " << e.what();
+    failure::log("mcrouter", failure::Category::kOther,
+                 "Error occured in observable callback: {}", e.what());
   } catch (...) {
-    LOG(ERROR) << "Unknown error occured in callback";
+    failure::log("mcrouter", failure::Category::kOther,
+                 "Unknown error occured in observable callback");
   }
   return subscribe(std::move(callback));
 }

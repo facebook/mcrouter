@@ -55,22 +55,19 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
 
-  auto data = make_shared<ShadowSettings::Data>();
-  vector<std::shared_ptr<ShadowSettings>> settings {
-    make_shared<ShadowSettings>(data, nullptr),
-    make_shared<ShadowSettings>(data, nullptr),
-  };
+  auto settings = ShadowSettings::create(
+      folly::dynamic::object("index_range", folly::dynamic{ 0, 1 }),
+      nullptr);
 
   auto shadowRhs = get_route_handles(shadowHandles);
-  McrouterShadowData shadowData = {
-    {std::move(shadowRhs[0]), std::move(settings[0])},
-    {std::move(shadowRhs[1]), std::move(settings[1])},
+  McrouterShadowData shadowData{
+    {std::move(shadowRhs[0]), settings},
+    {std::move(shadowRhs[1]), settings},
   };
 
   McrouterRouteHandle<ShadowRoute<DefaultShadowPolicy>> rh(
     normalRh,
-    std::make_shared<McrouterShadowData>(shadowData),
-    0,
+    std::move(shadowData),
     DefaultShadowPolicy());
 
   auto ctx = getContext();
@@ -84,8 +81,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   EXPECT_TRUE(shadowHandles[0]->saw_keys.empty());
   EXPECT_TRUE(shadowHandles[1]->saw_keys.empty());
-  data->end_index = 1;
-  data->end_key_fraction = 1.0;
+  settings->setKeyRange(0, 1);
 
   fm.run([&] () {
     fiber_local::setSharedCtx(ctx);

@@ -68,22 +68,4 @@ bool match_pattern_route(folly::StringPiece pattern,
                               route.begin(), route.end());
 }
 
-bool match_routing_key_hash(uint32_t routingKeyHash,
-    double start_key_fraction,
-    double end_key_fraction) {
-  const uint32_t m = std::numeric_limits<uint32_t>::max();
-
-  start_key_fraction = std::max(0.0, start_key_fraction);
-  end_key_fraction = std::min(1.0, end_key_fraction);
-
-  uint32_t keyStart = start_key_fraction * m;
-  uint32_t keyEnd = end_key_fraction * m;
-
-  /* Make sure that hash is always < max(), so [0.0, 1.0) really includes
-     everything */
-  auto keyHash = routingKeyHash % (m - 1);
-
-  return keyHash >= keyStart && keyHash < keyEnd;
-}
-
 }}} // facebook::memcache::mcrouter

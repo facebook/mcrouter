@@ -15,15 +15,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeShadowRouteDefault(
   McrouterRouteHandlePtr normalRoute,
-  std::shared_ptr<McrouterShadowData> shadowData,
-  size_t normalIndex,
+  McrouterShadowData shadowData,
   DefaultShadowPolicy shadowPolicy) {
 
   return
     std::make_shared<McrouterRouteHandle<ShadowRoute<DefaultShadowPolicy>>>(
       std::move(normalRoute),
       std::move(shadowData),
-      normalIndex,
       std::move(shadowPolicy));
 }
 

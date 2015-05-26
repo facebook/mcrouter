@@ -19,12 +19,4 @@ namespace facebook { namespace memcache { namespace mcrouter {
 bool match_pattern_route(folly::StringPiece pattern,
                          folly::StringPiece route);
 
-/**
- * Checks if the hash of routing part of the key is within a range
- * Used for probabilistic decisions, like stats sampling or shadowing.
- */
-bool match_routing_key_hash(uint32_t routingKeyHash,
-    double start_key_fraction,
-    double end_key_fraction);
-
 }}} // facebook::memcache::mcrouter

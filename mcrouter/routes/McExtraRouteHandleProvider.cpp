@@ -18,20 +18,18 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeShadowRouteDefault(
   McrouterRouteHandlePtr normalRoute,
-  std::shared_ptr<McrouterShadowData> shadowData,
-  size_t normalIndex,
+  McrouterShadowData shadowData,
   DefaultShadowPolicy shadowPolicy);
 
 McrouterRouteHandlePtr McExtraRouteHandleProvider::makeShadow(
   proxy_t* proxy,
   McrouterRouteHandlePtr destination,
-  std::shared_ptr<McrouterShadowData> data,
-  size_t indexInPool,
+  McrouterShadowData data,
   folly::StringPiece shadowPolicy) {
 
   if (shadowPolicy == "default") {
     return makeShadowRouteDefault(std::move(destination), std::move(data),
-                                  indexInPool, DefaultShadowPolicy());
+                                  DefaultShadowPolicy());
   } else {
     throw std::logic_error("Invalid shadow policy: " + shadowPolicy.str());
   }

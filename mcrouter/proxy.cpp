@@ -362,60 +362,50 @@ MutableMcMsgRef new_reply(const char* str) {
   return reply;
 }
 
-ShadowSettings::Data::Data(const folly::dynamic& json) {
-  checkLogic(json.isObject(), "shadowing_policy is not object");
-  if (json.count("index_range")) {
-    checkLogic(json["index_range"].isArray(),
-               "shadowing_policy: index_range is not array");
-    auto ar = folly::convertTo<std::vector<size_t>>(json["index_range"]);
-    checkLogic(ar.size() == 2, "shadowing_policy: index_range size is not 2");
-    start_index = ar[0];
-    end_index = ar[1];
-    checkLogic(start_index <= end_index,
-               "shadowing_policy: index_range start > end");
+std::shared_ptr<ShadowSettings>
+ShadowSettings::create(const folly::dynamic& json, McrouterInstance* router) {
+  auto result = std::shared_ptr<ShadowSettings>(new ShadowSettings());
+  try {
+    checkLogic(json.isObject(), "json is not an object");
+    if (auto jKeyFractionRange = json.get_ptr("key_fraction_range")) {
+      checkLogic(jKeyFractionRange->isArray(),
+                 "key_fraction_range is not an array");
+      auto ar = folly::convertTo<std::vector<double>>(*jKeyFractionRange);
+      checkLogic(ar.size() == 2, "key_fraction_range size is not 2");
+      result->setKeyRange(ar[0], ar[1]);
+    }
+    if (auto jIndexRange = json.get_ptr("index_range")) {
+      checkLogic(jIndexRange->isArray(), "index_range is not an array");
+      auto ar = folly::convertTo<std::vector<size_t>>(*jIndexRange);
+      checkLogic(ar.size() == 2, "index_range size is not 2");
+      checkLogic(ar[0] <= ar[1], "index_range start > end");
+      result->startIndex_ = ar[0];
+      result->endIndex_ = ar[1];
+    }
+    if (auto jKeyFractionRangeRv = json.get_ptr("key_fraction_range_rv")) {
+      checkLogic(jKeyFractionRangeRv->isString(),
+                 "key_fraction_range_rv is not a string");
+      result->keyFractionRangeRv_ = jKeyFractionRangeRv->stringPiece().str();
+    }
+  } catch (const std::logic_error& e) {
+    logFailure(router, failure::Category::kInvalidConfig,
+               "ShadowSettings: {}", e.what());
+    return nullptr;
   }
-  if (json.count("key_fraction_range")) {
-    checkLogic(json["key_fraction_range"].isArray(),
-               "shadowing_policy: key_fraction_range is not array");
-    auto ar = folly::convertTo<std::vector<double>>(json["key_fraction_range"]);
-    checkLogic(ar.size() == 2,
-               "shadowing_policy: key_fraction_range size is not 2");
-    start_key_fraction = ar[0];
-    end_key_fraction = ar[1];
-    checkLogic(0 <= start_key_fraction &&
-               start_key_fraction <= end_key_fraction &&
-               end_key_fraction <= 1,
-               "shadowing_policy: invalid key_fraction_range");
-  }
-  if (json.count("index_range_rv")) {
-    checkLogic(json["index_range_rv"].isString(),
-               "shadowing_policy: index_range_rv is not string");
-    index_range_rv = json["index_range_rv"].asString().toStdString();
-  }
-  if (json.count("key_fraction_range_rv")) {
-    checkLogic(json["key_fraction_range_rv"].isString(),
-               "shadowing_policy: key_fraction_range_rv is not string");
-    key_fraction_range_rv =
-      json["key_fraction_range_rv"].asString().toStdString();
-  }
-}
-
-ShadowSettings::ShadowSettings(const folly::dynamic& json,
-                               McrouterInstance* router)
-    : data_(std::make_shared<Data>(json)) {
 
   if (router) {
-    registerOnUpdateCallback(router);
+    result->registerOnUpdateCallback(router);
   }
+
+  return result;
 }
 
-ShadowSettings::ShadowSettings(std::shared_ptr<Data> data,
-                               McrouterInstance* router)
-    : data_(std::move(data)) {
-
-  if (router) {
-    registerOnUpdateCallback(router);
-  }
+void ShadowSettings::setKeyRange(double start, double end) {
+  checkLogic(0 <= start && start <= end && end <= 1,
+             "invalid key_fraction_range [{}, {}]", start, end);
+  uint64_t keyStart = start * std::numeric_limits<uint32_t>::max();
+  uint64_t keyEnd = end * std::numeric_limits<uint32_t>::max();
+  keyRange_ = (keyStart << 32UL) | keyEnd;
 }
 
 ShadowSettings::~ShadowSettings() {
@@ -424,75 +414,25 @@ ShadowSettings::~ShadowSettings() {
   handle_.reset();
 }
 
-std::shared_ptr<const ShadowSettings::Data> ShadowSettings::getData() {
-  return data_.get();
-}
-
 void ShadowSettings::registerOnUpdateCallback(McrouterInstance* router) {
   handle_ = router->rtVarsData().subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {
-      if (!newVars) {
+      if (!newVars || keyFractionRangeRv_.empty()) {
         return;
       }
-      auto dataCopy = std::make_shared<Data>(*this->getData());
-      size_t start_index_temp = 0, end_index_temp = 0;
-      double start_key_fraction_temp = 0, end_key_fraction_temp = 0;
-      bool updateRange = false, updateKeyFraction = false;
-      if (!dataCopy->index_range_rv.empty()) {
-        auto valIndex =
-            newVars->getVariableByName(dataCopy->index_range_rv);
-        if (valIndex != nullptr) {
-          checkLogic(valIndex.isArray(), "index_range_rv is not an array");
-
-          checkLogic(valIndex.size() == 2, "Size of index_range_rv is not 2");
-
-          checkLogic(valIndex[0].isInt(), "start_index is not an int");
-          checkLogic(valIndex[1].isInt(), "end_index is not an int");
-          start_index_temp = valIndex[0].asInt();
-          end_index_temp = valIndex[1].asInt();
-          checkLogic(start_index_temp <= end_index_temp,
-                     "start_index > end_index");
-          updateRange = true;
-        }
+      auto val = newVars->getVariableByName(keyFractionRangeRv_);
+      if (val != nullptr) {
+        checkLogic(val.isArray(),
+                   "runtime vars: {} is not an array", keyFractionRangeRv_);
+        checkLogic(val.size() == 2,
+                   "runtime vars: size of {} is not 2", keyFractionRangeRv_);
+        checkLogic(val[0].isNumber(),
+                   "runtime vars: {}#0 is not a number", keyFractionRangeRv_);
+        checkLogic(val[1].isNumber(),
+                   "runtime vars: {}#1 is not a number", keyFractionRangeRv_);
+        setKeyRange(val[0].asDouble(), val[1].asDouble());
       }
-      if (!dataCopy->key_fraction_range_rv.empty()) {
-        auto valFraction =
-            newVars->getVariableByName(dataCopy->key_fraction_range_rv);
-        if (valFraction != nullptr) {
-          checkLogic(valFraction.isArray(),
-                     "key_fraction_range_rv is not an array");
-          checkLogic(valFraction.size() == 2,
-                     "Size of key_fraction_range_rv is not 2");
-          checkLogic(valFraction[0].isNumber(),
-                     "start_key_fraction is not a number");
-          checkLogic(valFraction[1].isNumber(),
-                     "end_key_fraction is not a number");
-          start_key_fraction_temp = valFraction[0].asDouble();
-          end_key_fraction_temp = valFraction[1].asDouble();
-
-          checkLogic(start_key_fraction_temp >= 0.0 &&
-                     start_key_fraction_temp <= 1.0 &&
-                     end_key_fraction_temp >= 0.0 &&
-                     end_key_fraction_temp <= 1.0 &&
-                     start_key_fraction_temp <= end_key_fraction_temp,
-                     "Invalid values for start_key_fraction and/or "
-                     "end_key_fraction");
-
-          updateKeyFraction = true;
-        }
-      }
-
-      if (updateRange) {
-        dataCopy->start_index = start_index_temp;
-        dataCopy->end_index = end_index_temp;
-      }
-      if (updateKeyFraction) {
-        dataCopy->start_key_fraction = start_key_fraction_temp;
-        dataCopy->end_key_fraction = end_key_fraction_temp;
-      }
-
-      this->data_.set(std::move(dataCopy));
     });
 }
 

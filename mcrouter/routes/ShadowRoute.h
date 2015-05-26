@@ -29,10 +29,9 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Shadowing using dynamic settings.
  *
  * Always sends the request to normalRoute.
- * In addition, asynchronously sends the same request to shadowRoutes if:
- *   1) normalIndex is within settings range
- *   2) key hash is within settings range
- * Both ranges might be updated at runtime.
+ * In addition, asynchronously sends the same request to shadowRoutes if key
+ * hash is within settings range
+ * Key range might be updated at runtime.
  * We can shadow to multiple shadow destinations for a given normal route.
  */
 template <class ShadowPolicy>
@@ -41,12 +40,10 @@ class ShadowRoute {
   static std::string routeName() { return "shadow"; }
 
   ShadowRoute(McrouterRouteHandlePtr normalRoute,
-              std::shared_ptr<McrouterShadowData> shadowData,
-              size_t normalIndex,
+              McrouterShadowData shadowData,
               ShadowPolicy shadowPolicy)
       : normal_(std::move(normalRoute)),
         shadowData_(std::move(shadowData)),
-        normalIndex_(normalIndex),
         shadowPolicy_(std::move(shadowPolicy)) {
   }
 
@@ -55,7 +52,7 @@ class ShadowRoute {
     const Request& req, Operation) const {
 
     std::vector<McrouterRouteHandlePtr> rh = {normal_};
-    for (auto& shadowData : *shadowData_) {
+    for (auto& shadowData : shadowData_) {
       rh.push_back(shadowData.first);
     }
     return rh;
@@ -67,7 +64,7 @@ class ShadowRoute {
 
     std::shared_ptr<Request> adjustedReq;
     folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
-    for (const auto& iter : *shadowData_) {
+    for (const auto& iter : shadowData_) {
       if (shouldShadow(req, iter.second.get())) {
         if (!adjustedReq) {
           adjustedReq = std::make_shared<Request>(
@@ -99,28 +96,14 @@ class ShadowRoute {
 
  private:
   const McrouterRouteHandlePtr normal_;
-  const std::shared_ptr<McrouterShadowData> shadowData_;
-  const size_t normalIndex_;
+  const McrouterShadowData shadowData_;
   ShadowPolicy shadowPolicy_;
 
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
-    auto data = settings->getData();
-
-    if (normalIndex_ < data->start_index ||
-        normalIndex_ >= data->end_index) {
-      return false;
-    }
-
-    assert(data->start_key_fraction >= 0.0 &&
-           data->start_key_fraction <= 1.0 &&
-           data->end_key_fraction >= 0.0 &&
-           data->end_key_fraction <= 1.0 &&
-           data->start_key_fraction <= data->end_key_fraction);
-
-    return match_routing_key_hash(req.routingKeyHash(),
-      data->start_key_fraction,
-      data->end_key_fraction);
+    auto range = settings->keyRange();
+    return range.first <= req.routingKeyHash() &&
+                          req.routingKeyHash() <= range.second;
   }
 };
 

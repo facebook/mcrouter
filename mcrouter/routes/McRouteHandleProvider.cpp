@@ -158,17 +158,30 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       shadowPolicy = jshadow_policy->stringPiece();
     }
 
-    auto data = std::make_shared<McrouterShadowData>();
+    McrouterShadowData data;
     for (auto& shadow : json["shadows"]) {
       checkLogic(shadow.count("target"),
                  "PoolRoute {} shadows: no target for shadow", pool->getName());
-      auto policy = std::make_shared<ShadowSettings>(shadow, proxy_->router);
-      data->emplace_back(factory.create(shadow["target"]), std::move(policy));
+      auto s = ShadowSettings::create(shadow, proxy_->router);
+      if (s) {
+        data.emplace_back(factory.create(shadow["target"]), std::move(s));
+      }
     }
 
     for (size_t i = 0; i < destinations.size(); ++i) {
-      destinations[i] = extraProvider_->makeShadow(
-        proxy_, std::move(destinations[i]), data, i, shadowPolicy);
+      McrouterShadowData destinationShadows;
+      for (const auto& shadowData : data) {
+        if (shadowData.second->startIndex() <= i &&
+            i < shadowData.second->endIndex()) {
+          destinationShadows.push_back(shadowData);
+        }
+      }
+      if (!destinationShadows.empty()) {
+        destinationShadows.shrink_to_fit();
+        destinations[i] = extraProvider_->makeShadow(
+          proxy_, std::move(destinations[i]),
+          std::move(destinationShadows), shadowPolicy);
+      }
     }
   }
 

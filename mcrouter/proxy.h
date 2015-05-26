@@ -17,6 +17,7 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 
+#include <atomic>
 #include <memory>
 #include <random>
 #include <string>
@@ -28,7 +29,6 @@
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/fbi/asox_queue.h"
-#include "mcrouter/lib/fbi/cpp/AtomicSharedPtr.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
@@ -76,29 +76,48 @@ typedef Observable<std::shared_ptr<const RuntimeVarsData>>
   ObservableRuntimeVars;
 
 struct ShadowSettings {
-  struct Data {
-    size_t start_index{0};
-    size_t end_index{0};
-    double start_key_fraction{0};
-    double end_key_fraction{0};
-    std::string index_range_rv;
-    std::string key_fraction_range_rv;
+  /**
+   * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
+   */
+  static std::shared_ptr<ShadowSettings>
+  create(const folly::dynamic& json, McrouterInstance* router);
 
-    Data() = default;
-
-    explicit Data(const folly::dynamic& json);
-  };
-
-  ShadowSettings(const folly::dynamic& json, McrouterInstance* router);
-  ShadowSettings(std::shared_ptr<Data> data, McrouterInstance* router);
   ~ShadowSettings();
 
-  std::shared_ptr<const Data> getData();
+  const std::string& keyFractionRangeRv() const {
+    return keyFractionRangeRv_;
+  }
+
+  size_t startIndex() const {
+    return startIndex_;
+  }
+
+  size_t endIndex() const {
+    return endIndex_;
+  }
+
+  // [start, end] where 0 <= start <= end <= numeric_limits<uint32_t>::max()
+  std::pair<uint32_t, uint32_t> keyRange() const {
+    auto fraction = keyRange_.load();
+    return { fraction >> 32, fraction & ((1UL << 32) - 1) };
+  }
+
+  /**
+   * @throws std::logic_error if !(0 <= start <= end <= 1)
+   */
+  void setKeyRange(double start, double end);
 
  private:
-  AtomicSharedPtr<Data> data_;
   ObservableRuntimeVars::CallbackHandle handle_;
   void registerOnUpdateCallback(McrouterInstance* router);
+
+  std::string keyFractionRangeRv_;
+  size_t startIndex_{0};
+  size_t endIndex_{0};
+
+  std::atomic<uint64_t> keyRange_{0};
+
+  ShadowSettings() = default;
 };
 
 struct proxy_t {

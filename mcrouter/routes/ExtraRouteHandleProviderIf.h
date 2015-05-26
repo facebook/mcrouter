@@ -29,8 +29,7 @@ class ExtraRouteHandleProviderIf {
   virtual McrouterRouteHandlePtr
   makeShadow(proxy_t* proxy,
              McrouterRouteHandlePtr destination,
-             std::shared_ptr<McrouterShadowData> data,
-             size_t indexInPool,
+             McrouterShadowData data,
              folly::StringPiece shadowPolicy) = 0;
 
   virtual std::vector<McrouterRouteHandlePtr>
