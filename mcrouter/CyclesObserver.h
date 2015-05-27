@@ -9,13 +9,13 @@
  */
 #pragma once
 
-#include <folly/experimental/fibers/ExecutionObserver.h>
+#include <folly/experimental/ExecutionObserver.h>
 
 #include "mcrouter/lib/cycles/Cycles.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class CyclesObserver : public folly::fibers::ExecutionObserver {
+class CyclesObserver : public folly::ExecutionObserver {
  public:
   void starting(uintptr_t id) noexcept override {
     if (!cycles::start()) {
