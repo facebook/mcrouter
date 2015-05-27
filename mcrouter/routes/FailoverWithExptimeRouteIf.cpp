@@ -120,6 +120,11 @@ FailoverErrorsSettings FailoverWithExptimeSettings::getFailoverErrors() const {
   appendErrors(dataTimeout, { mc_res_timeout, mc_res_remote_error },
       gets, updates, deletes);
 
+  // Append all other failover errors.
+  appendErrors(FailoverWithExptimeSettings::OperationSettings(),
+      { mc_res_shutdown, mc_res_local_error },
+      gets, updates, deletes);
+
   return FailoverErrorsSettings(std::move(gets),
                                 std::move(updates),
                                 std::move(deletes));

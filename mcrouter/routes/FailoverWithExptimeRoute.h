@@ -70,6 +70,9 @@ class FailoverWithExptimeRoute {
     auto reply = normal_->route(req, Operation());
 
     if (ctx->failoverDisabled() ||
+        !reply.isFailoverError() ||
+        !(GetLike<Operation>::value || UpdateLike<Operation>::value ||
+          DeleteLike<Operation>::value) ||
         !failoverErrors_.shouldFailover(reply, Operation())) {
       return reply;
     }

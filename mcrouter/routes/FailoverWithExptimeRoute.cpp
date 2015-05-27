@@ -54,8 +54,8 @@ FailoverWithExptimeRoute::FailoverWithExptimeRoute(
 
   // old format
   if (auto settings = json.get_ptr("settings")) {
-    LOG(WARNING) << "FailoverWithExptime: This config format is deprecated. "
-                    "Use 'failover_errors' instead of 'settings'.";
+    VLOG(1) << "FailoverWithExptime: This config format is deprecated. "
+               "Use 'failover_errors' instead of 'settings'.";
     auto oldSettings = FailoverWithExptimeSettings(*settings);
     failoverTagging_ = oldSettings.failoverTagging;
     failoverErrors_ = oldSettings.getFailoverErrors();
