@@ -97,7 +97,7 @@ class FailoverWithExptimeRoute {
   McrouterRouteHandlePtr normal_;
   FailoverRoute<McrouterRouteHandleIf> failover_;
   FailoverErrorsSettings failoverErrors_;
-  uint32_t failoverExptime_;
+  int32_t failoverExptime_;
   bool failoverTagging_{false};
 };
 

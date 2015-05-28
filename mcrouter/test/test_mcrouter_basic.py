@@ -102,6 +102,25 @@ class TestMcrouterBasic(McrouterTestCase):
         time.sleep(2)
         self.assertFalse(mcr.is_alive())
 
+    def test_set_exptime(self):
+        mcr = self.get_mcrouter()
+
+        # positive
+        self.assertTrue(mcr.set('key', 'value', exptime=10))
+        self.assertEqual(mcr.get('key'), 'value')
+
+        # negative
+        self.assertTrue(mcr.set('key', 'value', exptime=-10))
+        self.assertIsNone(mcr.get('key'))
+
+        # future: year 2033
+        self.assertTrue(mcr.set('key', 'value', exptime=2000000000))
+        self.assertEqual(mcr.get('key'), 'value')
+
+        # past
+        self.assertTrue(mcr.set('key', 'value', exptime=1432250000))
+        self.assertIsNone(mcr.get('key'))
+
 class TestMcrouterInvalidRoute(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--send-invalid-route-to-default']
@@ -379,6 +398,32 @@ class TestBasicFailover(McrouterTestCase):
         self.assertTrue(self.mc2.set("key", "value"))
         self.assertEqual(mcr.get("key"), "value")
         self.assertEqual(mcr.get("key"), "value")
+
+    def test_failover_negative_exptime(self):
+        mcr = self.get_mcrouter()
+
+        # Go through the default route and verify a get.
+        self.assertTrue(mcr.set("key", "value", exptime=0))
+        self.assertEqual(mcr.get("key"), "value")
+
+        # Exptime using negative value: past
+        self.assertTrue(mcr.set("key", "value", exptime=-10))
+        self.assertIsNone(mcr.get("key"))
+
+        self.mc1.terminate()
+
+        # Go through the failover now.
+        # We assert twice since in the first call mcrouter will discover
+        # a tko host and it short circuits the second time.
+        self.assertEqual(mcr.get("key"), None)
+        self.assertEqual(mcr.get("key"), None)
+
+        # Check get failover still works
+        self.assertTrue(self.mc2.set("key", "value"))
+        self.assertEqual(mcr.get("key"), "value")
+        # Exptime using negative value: past
+        self.assertTrue(mcr.set("key", "value", exptime=-10))
+        self.assertIsNone(mcr.get("key"))
 
 class TestBasicFailoverOverride(McrouterTestCase):
     config = './mcrouter/test/test_basic_failover_override.json'

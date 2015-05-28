@@ -244,7 +244,7 @@ typedef struct mc_msg_s {
   uint32_t err_code; ///< application specific error code
 
   uint64_t flags; // is_transient for metaget
-  uint32_t exptime;
+  int32_t exptime;
   uint32_t number; ///< flushall delay, verbosity, age in metaget
 
   uint64_t delta; ///< arithmetic

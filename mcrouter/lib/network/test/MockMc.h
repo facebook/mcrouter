@@ -31,13 +31,13 @@ class MockMc {
  public:
   struct Item {
     std::unique_ptr<folly::IOBuf> value;
-    uint32_t exptime{0};
+    int32_t exptime{0};
     uint64_t flags{0};
 
     explicit Item(std::unique_ptr<folly::IOBuf> v);
     explicit Item(const McRequest& req);
 
-    Item(const folly::IOBuf& v, uint32_t t, uint64_t f);
+    Item(const folly::IOBuf& v, int32_t t, uint64_t f);
   };
 
   /**

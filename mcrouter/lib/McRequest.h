@@ -87,7 +87,7 @@ class McRequest {
   /**
    * mutator functions
    */
-  void setExptime(uint32_t expt) {
+  void setExptime(int32_t expt) {
     exptime_ = expt;
   }
   void setKey(folly::StringPiece k) {
@@ -161,7 +161,7 @@ class McRequest {
   /**
    * Access exptime
    */
-  uint32_t exptime() const;
+  int32_t exptime() const;
 
   /**
    * Access flush_all delay interval.
@@ -265,7 +265,7 @@ class McRequest {
     void update(folly::StringPiece key);
   } keys_;
 
-  uint32_t exptime_{0};
+  int32_t exptime_{0};
   uint64_t flags_{0};
   uint64_t delta_{0};
   uint64_t leaseToken_{0};

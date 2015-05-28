@@ -31,13 +31,15 @@ MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v)
 
 MockMc::Item::Item(const McRequest& req)
     : value(req.value().clone()),
-      exptime(req.exptime() > 0 ? req.exptime() + time(nullptr) : 0),
+      exptime(req.exptime() != 0 && req.exptime() <= 60*60*24*30
+          ? req.exptime() + time(nullptr)
+          : req.exptime()),
       flags(req.flags()) {
 }
 
-MockMc::Item::Item(const folly::IOBuf& v, uint32_t t, uint64_t f)
+MockMc::Item::Item(const folly::IOBuf& v, int32_t t, uint64_t f)
     : value(v.clone()),
-      exptime(t > 0 ? t + time(nullptr) : 0),
+      exptime(t != 0 && t <= 60*60*24*30 ? t + time(nullptr) : t),
       flags(f) {
 }
 

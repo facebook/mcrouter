@@ -170,7 +170,7 @@ folly::StringPiece McRequest::keyWithoutRoute() const {
   return keys_.keyWithoutRoute;
 }
 
-uint32_t McRequest::exptime() const {
+int32_t McRequest::exptime() const {
   return exptime_;
 }
 

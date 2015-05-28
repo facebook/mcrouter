@@ -29,7 +29,7 @@ template <class Request>
 void AsciiSerializedRequest::keyValueRequestCommon(folly::StringPiece prefix,
                                                    const Request& request) {
   auto value = request.valueRangeSlow();
-  auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %u %zd\r\n",
+  auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %d %zd\r\n",
                       request.flags(), request.exptime(), value.size());
   assert(len > 0 && len < kMaxBufferLength);
   addStrings(prefix, request.fullKey(),

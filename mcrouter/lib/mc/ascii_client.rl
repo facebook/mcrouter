@@ -263,7 +263,7 @@ casid = digit+ >start_token %finish_token %{
 flags = digit+ >start_token %finish_token %{
   parser->msg->flags = strtoll(ts, NULL, 10);
 };
-exptime = digit+ >start_token %finish_token %{
+exptime = ('-'? digit+) >start_token %finish_token %{
   parser->msg->exptime = strtol(ts, NULL, 10);
 };
 delta = digit+ >start_token %finish_token %{
