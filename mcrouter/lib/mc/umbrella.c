@@ -641,7 +641,6 @@ void print_entry_list(entry_list_t *elist) {
   uint32_t i;
   for (i = 0; i < elist->nentries; i++) {
     um_elist_entry_t *entry = &elist->entries[i];
-    int j;
 
     printf("[%d] => ", entry->tag);
     switch (entry->type) {

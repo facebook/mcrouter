@@ -187,7 +187,6 @@ void McAsciiParserHarness::runTest(int maxPieceSize) {
   if (maxPieceSize >= 0) {
     auto storedData = std::move(data_);
     storedData.coalesce();
-    auto c = clock();
     auto splits = genAllSplits(storedData.length(),
                                static_cast<size_t>(maxPieceSize));
     LOG(INFO) << "Number of tests generated: " << splits.size();

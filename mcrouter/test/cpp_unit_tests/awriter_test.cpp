@@ -240,7 +240,6 @@ TEST(awriter, max_queue_length) {
 // Test that passes invalid fd and expect errors when writing.
 TEST(awriter, invalid_fd) {
   counts testCounter;
-  pthread_t thread;
   const int num_entries = 3;
   testing_context_t e[num_entries];
   auto fd = std::make_shared<folly::File>(-1);

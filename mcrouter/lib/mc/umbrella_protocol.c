@@ -522,7 +522,6 @@ static void _msg_to_elist(entry_list_t* elist,
                           const mc_msg_t* msg,
                           struct iovec* value_iovs,
                           size_t n_value_iovs) {
-  char* ip_addr_buf;
   entry_list_append_I32(elist, msg_op, umbrella_op_from_mc[msg->op]);
 
 #define append_non_zero(type, field) {                                  \
