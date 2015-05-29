@@ -381,3 +381,35 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
     EXPECT_TRUE(failoverHandles[1]->saw_keys.size() == 0);
   });
 }
+
+TEST(failoverWithExptimeRouteTest, shouldFailoverShutdownAndLocalError) {
+  vector<std::shared_ptr<TestHandle>> normalHandle{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_shutdown, "a")),
+  };
+  vector<std::shared_ptr<TestHandle>> failoverHandles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+  };
+
+  FailoverWithExptimeSettings settings;
+  settings.tko.disable();
+  settings.connectTimeout.disable();
+  settings.dataTimeout.disable();
+
+  McrouterRouteHandle<FailoverWithExptimeRoute> rh(
+    get_route_handles(normalHandle)[0],
+    get_route_handles(failoverHandles),
+    2,
+    settings);
+
+  auto ctx = getContext();
+  TestFiberManager fm{fiber_local::ContextTypeTag()};
+  fm.run([&]{
+    fiber_local::setSharedCtx(ctx);
+    auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+    EXPECT_EQ("c", toString(reply.value()));
+    EXPECT_EQ(normalHandle[0]->sawExptimes, vector<uint32_t>{0});
+    EXPECT_EQ(failoverHandles[0]->sawExptimes, vector<uint32_t>{2});
+    EXPECT_EQ(failoverHandles[1]->sawExptimes, vector<uint32_t>{2});
+  });
+}
