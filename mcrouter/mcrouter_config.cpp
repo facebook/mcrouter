@@ -88,7 +88,7 @@ void initFailureLogger() { }
 void scheduleSingletonCleanup() { }
 
 std::unordered_map<std::string, folly::dynamic> additionalConfigParams() {
-  return {};
+  return std::unordered_map<std::string, folly::dynamic>();
 }
 
 }}}  // facebook::memcache::mcrouter
