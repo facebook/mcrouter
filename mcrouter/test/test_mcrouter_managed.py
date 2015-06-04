@@ -30,19 +30,19 @@ class TestMcrouterManagedMode(McrouterTestCase):
         proc.send_signal(sig)
         proc.wait()
 
-    def get_child_pid(self):
+    def get_pid(self):
         detailedStats = {}
         try:
             detailedStats = self.mcrouter.stats('detailed')
         except socket.error:
             return -1
 
-        if 'child_pid' in detailedStats:
-            return int(detailedStats['child_pid'])
+        if 'pid' in detailedStats:
+            return int(detailedStats['pid'])
         return -1
 
     def killChildProcess(self, sig=signal.SIGTERM):
-        pid = self.get_child_pid()
+        pid = self.get_pid()
         if pid > 0:
             try:
                 os.kill(pid, sig)

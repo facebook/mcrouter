@@ -555,7 +555,7 @@ class Mcrouter(MCProcess):
             def get_pid():
                 stats = self.stats()
                 if stats:
-                    return int(stats['child_pid'])
+                    return int(stats['pid'])
                 return None
 
             def terminate():
