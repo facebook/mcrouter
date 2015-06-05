@@ -231,6 +231,9 @@ struct proxy_t {
   pthread_t statsLogWriterThreadHandle_{0};
   void* statsLogWriterThreadStack_{nullptr};
 
+  // Stores the id of the next request.
+  uint64_t nextReqId_ = 0;
+
   void routeHandlesProcessRequest(std::unique_ptr<ProxyRequestContext> preq);
   void processRequest(std::unique_ptr<ProxyRequestContext> preq);
 
@@ -275,6 +278,12 @@ struct proxy_t {
 
   /** Called once after a valid eventBase has been provided */
   void onEventBaseAttached();
+
+  /**
+   * Returns the next request id.
+   * Request ids are unique per proxy_t.
+   */
+  uint64_t nextRequestId();
 
   friend class McrouterInstance;
   friend class ProxyRequestContext;

@@ -11,23 +11,12 @@
 
 #include <folly/experimental/ExecutionObserver.h>
 
-#include "mcrouter/lib/cycles/Cycles.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class CyclesObserver : public folly::ExecutionObserver {
- public:
-  void starting(uintptr_t id) noexcept override {
-    if (!cycles::start()) {
-      // Should never happen
-      DCHECK(false) << "There is already one cycles interval "
-                       "active in this thread";
-    }
-  }
-  void runnable(uintptr_t id) noexcept override {}
-  void stopped(uintptr_t id) noexcept override {
-    cycles::finish();
-  }
+  void starting(uintptr_t id) noexcept override;
+  void runnable(uintptr_t id) noexcept override;
+  void stopped(uintptr_t id) noexcept override;
 };
 
 }}} // facebook::memcache::mcrouter

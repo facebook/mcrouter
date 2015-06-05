@@ -188,7 +188,13 @@ public:
     userIpAddr_ = newAddr.str();
   }
 
+  /**
+   * Returns the id of this requests.
+   */
+  uint64_t requestId() const;
+
  private:
+  const uint64_t requestId_;
   proxy_t& proxy_;
   McMsgRef origReq_;
   folly::Optional<McReply> reply_;

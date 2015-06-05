@@ -167,9 +167,6 @@ class AsyncMcClientImpl :
   void sendFakeReply(McClientRequestContextBase& request);
 
   static void incMsgId(size_t& msgId);
-
-  // Returns the next request id to be used for cycles measurement.
-  static uint64_t nextCyclesRequestId();
 };
 
 }} // facebook::memcache

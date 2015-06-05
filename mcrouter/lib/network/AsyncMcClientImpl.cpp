@@ -626,11 +626,6 @@ void AsyncMcClientImpl::incMsgId(size_t& msgId) {
   }
 }
 
-uint64_t AsyncMcClientImpl::nextCyclesRequestId() {
-  static thread_local uint64_t reqId = 0;
-  return ++reqId;
-}
-
 void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
   if (!timeout.count()) {
     return;

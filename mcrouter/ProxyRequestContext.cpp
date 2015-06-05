@@ -24,7 +24,8 @@ ProxyRequestContext::ProxyRequestContext(
   void* context,
   ProxyRequestPriority priority__,
   void (*reqComplete)(ProxyRequestContext& preq))
-    : proxy_(pr),
+    : requestId_(pr.nextRequestId()),
+      proxy_(pr),
       context_(context),
       enqueueReply_(enqReply),
       reqComplete_(reqComplete),
@@ -89,6 +90,10 @@ uint64_t ProxyRequestContext::senderId() const {
   }
 
   return id;
+}
+
+uint64_t ProxyRequestContext::requestId() const {
+  return requestId_;
 }
 
 void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
@@ -166,7 +171,8 @@ ProxyRequestContext::ProxyRequestContext(
   proxy_t& pr,
   ClientCallback clientCallback,
   ShardSplitCallback shardSplitCallback)
-    : proxy_(pr),
+    : requestId_(pr.nextRequestId()),
+      proxy_(pr),
       recording_(true) {
   new (&recordingState_) std::unique_ptr<RecordingState>(
     folly::make_unique<RecordingState>());

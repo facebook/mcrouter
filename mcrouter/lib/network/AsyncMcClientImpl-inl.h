@@ -43,13 +43,8 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
     });
   sendCommon(ctx);
 
-  // Label before and after wait() because might be 2 different cycles.
-  uint64_t reqId = nextCyclesRequestId();
-  cycles::label(Operation::mc_op, reqId);
-  Reply reply = ctx.waitForReply(timeout); // Wait for the reply.
-  cycles::label(Operation::mc_op, reqId);
-
-  return reply;
+  // Wait for the reply.
+  return ctx.waitForReply(timeout);
 }
 
 template <class Reply>

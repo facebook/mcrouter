@@ -347,6 +347,10 @@ void proxy_t::pump() {
   }
 }
 
+uint64_t proxy_t::nextRequestId() {
+  return ++nextReqId_;
+}
+
 /** allocate a new reply with piggybacking copy of str and the appropriate
     fields of the value nstring pointing to it.
     str may be nullptr for no piggybacking string.
