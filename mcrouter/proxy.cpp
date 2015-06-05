@@ -37,6 +37,7 @@
 #include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/fbi/timer.h"
+#include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
@@ -61,13 +62,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-static asox_queue_callbacks_t const proxy_request_queue_cb =  {
-  /* Note that we want to drain the queue on cleanup,
-     so we register both regular and sweep callbacks */
-  McrouterClient::requestReady,
-  McrouterClient::requestReady,
-};
-
 folly::fibers::FiberManager::Options getFiberManagerOptions(
     const McrouterOptions& opts) {
   folly::fibers::FiberManager::Options fmOpts;
@@ -75,6 +69,43 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
   fmOpts.recordStackEvery = opts.fibers_record_stack_size_every;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
   return fmOpts;
+}
+
+/**
+ * @return true  If precheck finds an interesting request and has the reply
+ *   set up otherwise this request needs to go through normal flow.
+ */
+bool precheckRequest(ProxyRequestContext& preq) {
+  switch (preq.origReq()->op) {
+    // Return error (pretend to not even understand the protocol)
+    case mc_op_shutdown:
+      preq.sendReply(McReply(mc_res_bad_command));
+      break;
+
+    // Return 'Not supported' message
+    case mc_op_append:
+    case mc_op_prepend:
+    case mc_op_flushre:
+      preq.sendReply(McReply(mc_res_local_error, "Command not supported"));
+      break;
+
+    case mc_op_flushall:
+      if (!preq.proxy().opts.enable_flush_cmd) {
+        preq.sendReply(McReply(mc_res_local_error, "Command disabled"));
+        break;
+      }
+      /* fallthrough */
+
+    // Everything else is supported
+    default:
+      auto err = mc_client_req_check(preq.origReq().get());
+      if (err != mc_req_err_valid) {
+        preq.sendReply(McReply(mc_res_local_error, mc_req_err_to_string(err)));
+        break;
+      }
+      return false;
+  }
+  return true;
 }
 
 }  // anonymous namespace
@@ -125,10 +156,19 @@ void proxy_t::onEventBaseAttached() {
     destinationMap->setResetTimer(connectionResetInterval);
   }
 
-  int priority = get_event_priority(opts, SERVER_REQUEST);
-  request_queue = asox_queue_init(eventBase->getLibeventBase(), priority,
-                                  1, 0, 0, &proxy_request_queue_cb,
-                                  ASOX_QUEUE_INTRA_PROCESS, this);
+  messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
+    opts.client_queue_size,
+    [this] (ProxyMessage&& message) {
+      this->messageReady(message.type, message.data);
+    },
+    *eventBase,
+    opts.client_queue_no_notify_rate,
+    opts.client_queue_wait_threshold_us,
+    &nowUs,
+    [this] () {
+      stat_incr_safe(stats, client_queue_notifications_stat);
+    }
+  );
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
 
@@ -173,11 +213,79 @@ proxy_t::~proxy_t() {
   destinationMap.reset();
 
   being_destroyed = true;
-  if (request_queue) {
-    asox_queue_del(request_queue);
+
+  if (messageQueue_) {
+    messageQueue_->drain();
   }
 
   magic = 0xdeadbeefdeadbeefLL;
+}
+
+void proxy_t::sendMessage(ProxyMessage::Type t, void* data) {
+  CHECK(messageQueue_.get());
+  messageQueue_->blockingWrite(t, data);
+}
+
+void proxy_t::drainMessageQueue() {
+  CHECK(messageQueue_.get());
+  messageQueue_->drain();
+}
+
+size_t proxy_t::queueNotifyPeriod() const {
+  if (messageQueue_) {
+    return messageQueue_->currentNotifyPeriod();
+  }
+  return 0;
+}
+
+void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
+  switch (t) {
+    case ProxyMessage::Type::REQUEST:
+    {
+      auto preq =
+        std::unique_ptr<ProxyRequestContext>(
+          reinterpret_cast<ProxyRequestContext*>(data));
+      auto client = preq->requester_;
+
+      client->numPending_++;
+
+      if (precheckRequest(*preq)) {
+        return;
+      }
+
+      if (being_destroyed) {
+        /* We can't process this, since 1) we destroyed the config already,
+           and 2) the clients are winding down, so we wouldn't get any
+           meaningful response back anyway. */
+        LOG(ERROR) << "Outstanding request on a proxy that's being destroyed";
+        preq->sendReply(McReply(mc_res_unknown));
+        return;
+      }
+      dispatchRequest(std::move(preq));
+    }
+    break;
+
+    case ProxyMessage::Type::OLD_CONFIG:
+    {
+      auto oldConfig = reinterpret_cast<old_config_req_t*>(data);
+      delete oldConfig;
+    }
+    break;
+
+    case ProxyMessage::Type::DISCONNECT:
+    {
+      auto client = reinterpret_cast<McrouterClient*>(data);
+      client->performDisconnect();
+    }
+    break;
+
+    case ProxyMessage::Type::SHUTDOWN:
+      /*
+       * No-op. We just wanted to wake this event base up so that
+       * it can exit event loop and check router->shutdown
+       */
+      break;
+  }
 }
 
 void proxy_t::routeHandlesProcessRequest(
@@ -457,13 +565,7 @@ void proxy_config_swap(proxy_t* proxy,
 
   if (oldConfig) {
     auto configReq = new old_config_req_t(std::move(oldConfig));
-    asox_queue_entry_t oldConfigEntry;
-    oldConfigEntry.data = configReq;
-    oldConfigEntry.nbytes = sizeof(*configReq);
-    oldConfigEntry.priority = 0;
-    oldConfigEntry.type = request_type_old_config;
-    oldConfigEntry.time_enqueued = time(nullptr);
-    asox_queue_enqueue(proxy->request_queue, &oldConfigEntry);
+    proxy->sendMessage(ProxyMessage::Type::OLD_CONFIG, configReq);
   }
 }
 

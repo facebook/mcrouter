@@ -12,6 +12,7 @@
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/config.h"
+#include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ThreadUtil.h"
@@ -36,13 +37,7 @@ bool ProxyThread::spawn() {
 
 void ProxyThread::stopAndJoin() {
   if (thread_handle && proxy_->router->pid() == getpid()) {
-    CHECK(proxy_->request_queue != nullptr);
-    asox_queue_entry_t entry;
-    entry.type = request_type_router_shutdown;
-    entry.priority = 0;
-    entry.data = nullptr;
-    entry.nbytes = 0;
-    asox_queue_enqueue(proxy_->request_queue, &entry);
+    proxy_->sendMessage(ProxyMessage::Type::SHUTDOWN, nullptr);
     {
       std::unique_lock<std::mutex> lk(mux);
       isSafeToDeleteProxy = true;
@@ -59,12 +54,10 @@ void ProxyThread::proxyThreadRun() {
   CHECK(proxy_->router != nullptr);
   mcrouterSetThreadName(pthread_self(), proxy_->router->opts(), "mcrpxy");
 
-  while (!proxy_->router->shutdownStarted()) {
+  while (!proxy_->router->shutdownStarted() ||
+         proxy_->fiberManager.hasTasks()) {
     proxy_->eventBase->loopOnce();
-  }
-
-  while (proxy_->fiberManager.hasTasks()) {
-    proxy_->eventBase->loopOnce();
+    proxy_->drainMessageQueue();
   }
 
   // Delete the proxy from the proxy thread so that the clients get

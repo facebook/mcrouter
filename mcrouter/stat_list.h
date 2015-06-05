@@ -36,6 +36,7 @@
   STUI(proxy_reqs_processing, 0, 1)
   /* Proxy requests queued up and not routed yet */
   STUI(proxy_reqs_waiting, 0, 1)
+  STAT(client_queue_notify_period, stat_double, 0, .dbl = 0.0)
 //  STUI(bytes_read, 0)
 //  STUI(bytes_written, 0)
 //  STUI(get_hits, 0)
@@ -288,6 +289,7 @@
   STUIR(request_error, 0, 1)
   STUIR(request_success, 0, 1)
   STUIR(request_replied, 0, 1)
+  STUIR(client_queue_notifications, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
   STUI(result_error_count, 0, 1)

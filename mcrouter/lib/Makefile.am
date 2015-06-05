@@ -11,6 +11,8 @@ libmcrouter_a_SOURCES = \
   IOBufUtil.cpp \
   IOBufUtil.h \
   MessageStorage.h \
+  MessageQueue.cpp \
+  MessageQueue.h \
   McMsgRef.h \
   McOpList.h \
   McOperation.h \

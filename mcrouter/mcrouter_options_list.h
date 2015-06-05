@@ -91,6 +91,25 @@ mcrouter_option_toggle(
   "disable-priorities", no_short,
   "don't use event base priorities")
 
+mcrouter_option_integer(
+  size_t, client_queue_size, 1024,
+  no_long, no_short,
+  "McrouterClient -> ProxyThread queue size.")
+
+mcrouter_option_integer(
+  size_t, client_queue_no_notify_rate, 0,
+  no_long, no_short,
+  "Each client will only notify on every Nth request."
+  "  If 0, normal notification logic is used - i.e. notify on every request,"
+  " best effort avoid notifying twice.  Higher values decrease CPU utilization,"
+  " but increase average latency.")
+
+mcrouter_option_integer(
+  size_t, client_queue_wait_threshold_us, 0,
+  no_long, no_short,
+  "Force client queue notification if last drain was at least this long ago."
+  "  If 0, this logic is disabled.")
+
 mcrouter_option_toggle(
   realtime_disabled, false,
   "no-realtime", no_short,

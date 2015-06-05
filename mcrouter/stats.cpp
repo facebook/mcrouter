@@ -393,9 +393,12 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
       std::max(stats[fibers_stack_high_watermark_stat].data.uint64,
                pr->fiberManager.stackHighWatermark());
     stats[duration_us_stat].data.dbl += pr->durationUs.value();
+    stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
   }
   if (router->opts().num_proxies > 0) {
     stats[duration_us_stat].data.dbl /= router->opts().num_proxies;
+    stats[client_queue_notify_period_stat].data.dbl /=
+      router->opts().num_proxies;
   }
 #ifndef FBCODE_OPT_BUILD
   stats[mc_msg_num_outstanding_stat].data.uint64 =

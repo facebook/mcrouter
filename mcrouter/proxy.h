@@ -23,6 +23,7 @@
 #include <string>
 
 #include <folly/Range.h>
+#include <folly/detail/CacheLocality.h>
 #include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/config.h"
@@ -59,6 +60,9 @@ typedef class fb_timer_s fb_timer_t;
 namespace facebook { namespace memcache {
 
 class McReply;
+
+template <class T>
+class MessageQueue;
 
 namespace mcrouter {
 // forward declaration
@@ -121,14 +125,32 @@ struct ShadowSettings {
   ShadowSettings() = default;
 };
 
+struct ProxyMessage {
+  enum class Type {
+    REQUEST,
+    DISCONNECT,
+    OLD_CONFIG,
+    SHUTDOWN
+  };
+
+  Type type{Type::REQUEST};
+  void* data{nullptr};
+
+  constexpr ProxyMessage() = default;
+
+  ProxyMessage(Type t, void* d) noexcept
+      : type(t), data(d) {}
+};
+
 struct proxy_t {
   uint64_t magic;
   McrouterInstance* router{nullptr};
 
+  std::atomic<int64_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING loopStart_{0};
+
   /** TODO: remove and use router->opts() instead */
   const McrouterOptions& opts;
 
-  asox_queue_t request_queue{0};
   folly::EventBase* eventBase{nullptr};
 
   std::unique_ptr<ProxyDestinationMap> destinationMap;
@@ -218,6 +240,22 @@ struct proxy_t {
    */
   void attachEventBase(folly::EventBase* eventBase);
 
+  /**
+   * Put a new proxy message into the queue.
+   */
+  void sendMessage(ProxyMessage::Type t, void* data);
+
+  /**
+   * Must be called from the EventBase thread;
+   * drains message queue.
+   */
+  void drainMessageQueue();
+
+  /**
+   * @return Current value of the relaxed notification period if set.
+   */
+  size_t queueNotifyPeriod() const;
+
  private:
   proxy_t(McrouterInstance& router, folly::EventBase* eventBase);
 
@@ -234,6 +272,9 @@ struct proxy_t {
   // Stores the id of the next request.
   uint64_t nextReqId_ = 0;
 
+  std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
+
+  void messageReady(ProxyMessage::Type t, void* data);
   void routeHandlesProcessRequest(std::unique_ptr<ProxyRequestContext> preq);
   void processRequest(std::unique_ptr<ProxyRequestContext> preq);
 
@@ -285,6 +326,7 @@ struct proxy_t {
    */
   uint64_t nextRequestId();
 
+  friend class McrouterClient;
   friend class McrouterInstance;
   friend class ProxyRequestContext;
 };
@@ -295,13 +337,6 @@ struct old_config_req_t {
   }
  private:
   std::shared_ptr<ProxyConfigIf> config_;
-};
-
-enum request_entry_type_t {
-  request_type_request,
-  request_type_disconnect,
-  request_type_old_config,
-  request_type_router_shutdown,
 };
 
 void proxy_config_swap(proxy_t* proxy,

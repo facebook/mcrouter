@@ -34,6 +34,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class McrouterClient;
 class McrouterInstance;
 class proxy_t;
+class ProxyMessage;
 class ProxyRequestContext;
 
 struct mcrouter_msg_t {
@@ -176,19 +177,14 @@ class McrouterClient {
 
   void onReply(ProxyRequestContext& preq);
   void disconnect();
+  void performDisconnect();
   void cleanup();
   McrouterClient* incref();
   void decref();
 
- public:
-  /* Note: this is only public due to legacy code in proxy.cpp.
-     Will fix. */
-  static void requestReady(asox_queue_t q,
-                           asox_queue_entry_t *entry,
-                           void *arg);
-
  private:
   friend class McrouterInstance;
+  friend class proxy_t;
   friend class ProxyRequestContext;
 };
 
