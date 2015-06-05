@@ -17,6 +17,29 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class Reply>
+std::vector<Reply> BigValueRoute::collectAllByBatches(
+  std::vector<std::function<Reply()>>& fs) const {
+
+  auto batchSize = options_.batchSize_;
+  if (batchSize == 0) {
+    batchSize = fs.size();
+  }
+
+  std::vector<Reply> allReplies;
+  size_t b = 0;
+  size_t e = std::min(fs.size(), batchSize);
+  while (b < fs.size()) {
+    auto replies = folly::fibers::collectAll(fs.begin() + b, fs.begin() + e);
+    for (auto& r : replies) {
+      allReplies.emplace_back(std::move(r));
+    }
+    b = e;
+    e = std::min(fs.size(), e + batchSize);
+  }
+  return allReplies;
+}
+
 template <class Operation, class Request>
 std::vector<McrouterRouteHandlePtr> BigValueRoute::couldRouteTo(
   const Request& req, Operation) const {
@@ -53,7 +76,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     );
   }
 
-  auto replies = folly::fibers::collectAll(fs.begin(), fs.end());
+  auto replies = collectAllByBatches(fs);
   return mergeChunkGetReplies(
     replies.begin(), replies.end(), std::move(initialReply));
 }
@@ -81,7 +104,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     );
   }
 
-  auto replies = folly::fibers::collectAll(fs.begin(), fs.end());
+  auto replies = collectAllByBatches(fs);
 
   // reply for all chunk update requests
   auto reducedReply = Reply::reduce(replies.begin(), replies.end());

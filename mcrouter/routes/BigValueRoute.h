@@ -95,6 +95,10 @@ class BigValueRoute {
   typedef McOperation<mc_op_get> ChunkGetOP;
   typedef McOperation<mc_op_set> ChunkUpdateOP;
 
+  template <class Reply>
+  std::vector<Reply> collectAllByBatches(
+    std::vector<std::function<Reply()>>& fs) const;
+
   template <class Operation, class Request>
   std::pair<std::vector<Request>, ChunksInfo>
   chunkUpdateRequests(const Request& req, Operation) const;

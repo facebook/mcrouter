@@ -30,7 +30,7 @@ using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 
 static const int version = 1;
 static const int threshold = 128;
-static const BigValueRouteOptions opts(threshold);
+static const BigValueRouteOptions opts(threshold, /* batchSize= */ 0);
 
 TEST(BigValueRouteTest, smallvalue) {
   // for small values, this route handle simply passes it to child route handle

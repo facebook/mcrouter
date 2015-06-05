@@ -67,7 +67,8 @@ class ProxyRoute {
     root_ = std::make_shared<McrouterRouteHandle<RootRoute>>(
       proxy_, routeSelectors);
     if (proxy_->opts.big_value_split_threshold != 0) {
-      BigValueRouteOptions options(proxy_->opts.big_value_split_threshold);
+      BigValueRouteOptions options(proxy_->opts.big_value_split_threshold,
+                                   proxy_->opts.big_value_batch_size);
       root_ = makeBigValueRoute(std::move(root_), std::move(options));
     }
   }

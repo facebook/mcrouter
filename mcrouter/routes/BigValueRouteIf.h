@@ -12,10 +12,13 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 struct BigValueRouteOptions {
-  explicit BigValueRouteOptions(size_t threshold) :
-    threshold_(threshold) {
+  explicit BigValueRouteOptions(size_t threshold,
+                                size_t batchSize) :
+      threshold_(threshold),
+      batchSize_(batchSize) {
   }
   const size_t threshold_;
+  const size_t batchSize_;
 };
 
 }}}  // facebook::memcache::mcrouter

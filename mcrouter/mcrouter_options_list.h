@@ -105,6 +105,12 @@ mcrouter_option_integer(
   "else used as threshold for splitting big values internally")
 
 mcrouter_option_integer(
+  size_t, big_value_batch_size, 10,
+  "big-value-batch-size", no_short,
+  "If nonzero, big value chunks are written/read in batches of at most"
+  " this size.  Used to prevent queue build up with really large values")
+
+mcrouter_option_integer(
   size_t, fibers_max_pool_size, 1000,
   "fibers-max-pool-size", no_short,
   "Maximum number of preallocated free fibers to keep around")
