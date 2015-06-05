@@ -137,8 +137,6 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
     case mc_op_get:
     case mc_op_gets:
     case mc_op_lease_get:
-    case mc_op_get_count:
-    case mc_op_get_unique_count:
       stats_.recordFetchRequest(preq.origReq()->key.len, replyBytes);
       break;
 
@@ -151,8 +149,6 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
     case mc_op_prepend:
     case mc_op_incr:
     case mc_op_decr:
-    case mc_op_bump_count:
-    case mc_op_bump_unique_count:
       stats_.recordUpdateRequest(preq.origReq()->key.len,
                                  preq.origReq()->value.len);
       break;

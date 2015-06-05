@@ -89,9 +89,7 @@ McReply::McReply(mc_res_t res, McMsgRef&& msg)
       cas_(msg_.get() ? msg_->cas : 0),
       errCode_(msg_.get() ? msg_->err_code : 0),
       number_(msg_.get() ? msg_->number : 0),
-      exptime_(msg_.get() ? msg_->exptime : 0),
-      lowValue_(msg_.get() ? msg_->lowval : .0),
-      highValue_(msg_.get() ? msg_->highval : .0) {
+      exptime_(msg_.get() ? msg_->exptime : 0) {
   if (msg_.get() && msg_->value.str != nullptr) {
     valueData_.emplace(makeMsgValueIOBufStack(msg_));
   }
@@ -117,8 +115,6 @@ void McReply::dependentMsg(mc_op_t op, mc_msg_t* out) const {
   out->err_code = errCode_;
   out->number = number_;
   out->exptime = exptime_;
-  out->lowval = lowValue_;
-  out->highval = highValue_;
 }
 
 McMsgRef McReply::releasedMsg(mc_op_t op) const {
@@ -131,8 +127,6 @@ McMsgRef McReply::releasedMsg(mc_op_t op) const {
       msg_->err_code == errCode_ &&
       msg_->number == number_ &&
       msg_->exptime == exptime_ &&
-      msg_->lowval == lowValue_ &&
-      msg_->highval == highValue_ &&
       hasSameMemoryRegion(value(), to<folly::StringPiece>(msg_->value))) {
     return msg_.clone();
   } else {
@@ -157,8 +151,6 @@ McMsgRef McReply::releasedMsg(mc_op_t op) const {
     toRelease->err_code = errCode_;
     toRelease->number = number_;
     toRelease->exptime = exptime_;
-    toRelease->lowval = lowValue_;
-    toRelease->highval = highValue_;
 
     return std::move(toRelease);
   }

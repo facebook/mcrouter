@@ -39,18 +39,6 @@ struct GetLike<McOperation<mc_op_lease_get>> {
 };
 
 template <>
-struct GetLike<McOperation<mc_op_get_count>> {
-  static const bool value = true;
-  typedef void* Type;
-};
-
-template <>
-struct GetLike<McOperation<mc_op_get_unique_count>> {
-  static const bool value = true;
-  typedef void* Type;
-};
-
-template <>
 struct UpdateLike<McOperation<mc_op_set>> {
   static const bool value = true;
   typedef void* Type;
@@ -88,18 +76,6 @@ struct UpdateLike<McOperation<mc_op_prepend>> {
 
 template <>
 struct UpdateLike<McOperation<mc_op_cas>> {
-  static const bool value = true;
-  typedef void* Type;
-};
-
-template <>
-struct UpdateLike<McOperation<mc_op_bump_count>> {
-  static const bool value = true;
-  typedef void* Type;
-};
-
-template <>
-struct UpdateLike<McOperation<mc_op_bump_unique_count>> {
   static const bool value = true;
   typedef void* Type;
 };

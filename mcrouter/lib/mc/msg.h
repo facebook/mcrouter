@@ -57,10 +57,6 @@ typedef enum mc_op_e {
   mc_op_exec,
   mc_op_gets,
   mc_op_get_service_info, ///< Queries various service state
-  mc_op_get_count,
-  mc_op_bump_count,
-  mc_op_get_unique_count,
-  mc_op_bump_unique_count,
   mc_nops // placeholder
 } mc_op_t;
 
@@ -94,10 +90,6 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
     case mc_op_exec: return "exec";
     case mc_op_gets: return "gets";
     case mc_op_get_service_info: return "get-service-info";
-    case mc_op_get_count: return "get-count";
-    case mc_op_bump_count: return "bump-count";
-    case mc_op_get_unique_count: return "get-unique-count";
-    case mc_op_bump_unique_count: return "bump-unique-count";
     case mc_nops: return "unknown";
   };
   return "unknown";
@@ -257,9 +249,6 @@ typedef struct mc_msg_s {
   nstring_t key; ///< get/set key, stats arg, flushre regexp
   nstring_t value; ///< storage value
 
-  double lowval; ///< being used in counter ops
-  double highval; ///< being used in counter ops
-
   struct in6_addr ip_addr; ///< metaget
   uint8_t ipv; ///< metaget
 
@@ -294,10 +283,6 @@ static inline int mc_op_has_key(mc_op_t op) {
     case mc_op_decr:
     case mc_op_metaget:
     case mc_op_gets:
-    case mc_op_get_count:
-    case mc_op_bump_count:
-    case mc_op_get_unique_count:
-    case mc_op_bump_unique_count:
       return 1;
 
     default:
@@ -318,7 +303,6 @@ static inline int mc_op_has_value(mc_op_t op) {
     case mc_op_append:
     case mc_op_lease_set:
     case mc_op_cas:
-    case mc_op_bump_unique_count:
       return 1;
 
     default:

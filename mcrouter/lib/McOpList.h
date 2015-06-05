@@ -37,9 +37,5 @@ MC_OP(McOperation<mc_op_metaget>)
 MC_OP(McOperation<mc_op_exec>)
 MC_OP(McOperation<mc_op_gets>)
 MC_OP(McOperation<mc_op_get_service_info>)
-MC_OP(McOperation<mc_op_get_count>)
-MC_OP(McOperation<mc_op_bump_count>)
-MC_OP(McOperation<mc_op_get_unique_count>)
-MC_OP(McOperation<mc_op_bump_unique_count>)
 
 #undef MC_OP

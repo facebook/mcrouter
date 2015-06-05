@@ -115,7 +115,6 @@ class UmbrellaSerializedMessage {
   bool error_{false};
 
   void appendInt(entry_type_t type, int32_t tag, uint64_t val);
-  void appendDouble(double val);
   void appendString(int32_t tag, const uint8_t* data, size_t len,
                     entry_type_t type = BSTRING);
 

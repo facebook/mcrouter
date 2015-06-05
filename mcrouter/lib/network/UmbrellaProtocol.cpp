@@ -237,12 +237,6 @@ bool UmbrellaSerializedMessage::prepare(const McReply& reply, mc_op_t op,
   if (reply.cas()) {
     appendInt(U64, msg_cas, reply.cas());
   }
-  if (reply.lowValue() || reply.highValue()) {
-    appendDouble(reply.lowValue());
-  }
-  if (reply.highValue()) {
-    appendDouble(reply.highValue());
-  }
 
   /* TODO: if we intend to pass chained IOBufs as values,
      we can optimize this to write multiple iovs directly */
@@ -275,21 +269,6 @@ void UmbrellaSerializedMessage::appendInt(
   entry.type = folly::Endian::big((uint16_t)type);
   entry.tag = folly::Endian::big((uint16_t)tag);
   entry.data.val = folly::Endian::big((uint64_t)val);
-}
-
-void UmbrellaSerializedMessage::appendDouble(double val) {
-  if (nEntries_ >= kInlineEntries) {
-    error_ = true;
-    return;
-  }
-
-  um_elist_entry_t& entry = entries_[nEntries_++];
-  entry.type = folly::Endian::big((uint16_t)DOUBLE);
-  entry.tag = folly::Endian::big((uint16_t)msg_double);
-  uint64_t doubleBits;
-  static_assert(sizeof(double) == sizeof(uint64_t), "double is not 8 bytes!");
-  memcpy(&doubleBits, &val, sizeof(double));
-  entry.data.val = folly::Endian::big(doubleBits);
 }
 
 void UmbrellaSerializedMessage::appendString(

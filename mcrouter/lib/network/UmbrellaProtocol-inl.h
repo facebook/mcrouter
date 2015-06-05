@@ -29,7 +29,6 @@ uint32_t const kUmbrellaResToMc[mc_nres] = {
 template <msg_field_t TagId> class Tag{};
 using CasTag = Tag<msg_cas>;
 using DeltaTag = Tag<msg_delta>;
-using DoubleTag = Tag<msg_double>;
 using ErrCodeTag = Tag<msg_err_code>;
 using ExptimeTag = Tag<msg_exptime>;
 using FlagsTag = Tag<msg_flags>;
@@ -68,17 +67,6 @@ template <class Op, class Message>
 void parseFieldImpl(Op, DeltaTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
   message.setDelta(folly::Endian::big((uint64_t)entry.data.val));
-}
-
-template <class Op, class Message>
-void parseFieldImpl(Op, DoubleTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
-  // Move low to high.
-  message.setHighValue(message.lowValue());
-  uint64_t value = folly::Endian::big((uint64_t)entry.data.val);
-  double doubleValue;
-  memcpy(&doubleValue, &value, sizeof(double));
-  message.setLowValue(doubleValue);
 }
 
 template <class Op, class Message>
@@ -174,9 +162,6 @@ void umbrellaParseMessage(Message& message, Op,
       case msg_delta:
         Handler::parseField(Op(), DeltaTag(), message, source, body, entry);
         break;
-      case msg_double:
-        Handler::parseField(Op(), DoubleTag(), message, source, body, entry);
-        break;
       case msg_err_code:
         Handler::parseField(Op(), ErrCodeTag(), message, source, body, entry);
         break;
@@ -221,7 +206,7 @@ void umbrellaParseMessage(Message& message, Op,
 template <class Operation>
 struct TagSet {
   using Tags =
-    List<CasTag, DeltaTag, DoubleTag, ErrCodeTag, ExptimeTag, FlagsTag,
+    List<CasTag, DeltaTag, ErrCodeTag, ExptimeTag, FlagsTag,
          LeaseTokenTag, NumberTag, ResultTag, ValueTag>;
 };
 

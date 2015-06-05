@@ -260,22 +260,6 @@ class McReply {
     delta_ = d;
   }
 
-  double lowValue() const {
-    return lowValue_;
-  }
-
-  void setLowValue(double val) {
-    lowValue_ = val;
-  }
-
-  double highValue() const {
-    return highValue_;
-  }
-
-  void setHighValue(double val) {
-    highValue_ = val;
-  }
-
   uint8_t ipv() const {
     return msg_.get() ? msg_->ipv : 0;
   }
@@ -336,8 +320,6 @@ class McReply {
   uint32_t errCode_{0};
   uint32_t number_{0};
   uint32_t exptime_{0};
-  double lowValue_{0};
-  double highValue_{0};
 
   /**
    * Container for a C-style destructor

@@ -150,24 +150,6 @@ static inline int entry_list_append_int_like(entry_list_t *elist, entry_type_t t
   return 0;
 }
 
-int entry_list_append_DOUBLE(entry_list_t *elist,
-                             int32_t tag, double val) {
-  int entry_idx = entry_list_new_entry(elist);
-  if (entry_idx < 0) {
-    return -1;
-  }
-  um_elist_entry_t *entry = &elist->entries[entry_idx];
-
-  entry->type = hton16(DOUBLE);
-  entry->tag = hton16(tag);
-
-  uint64_t doubleBits;
-  memcpy(&doubleBits, &val, sizeof(double));
-  entry->data.val = hton64(doubleBits);
-
-  return 0;
-}
-
 int entry_list_init(entry_list_t *elist) {
   FBI_ASSERT(elist != NULL);
   memset(elist, 0, sizeof(*elist));
@@ -447,7 +429,6 @@ ssize_t entry_list_read_from_buf(entry_list_t *elist, char *buf, size_t len,
       case U32:
       case I64:
       case U64:
-      case DOUBLE:
         break;
       default:
         goto error;
@@ -654,7 +635,6 @@ void print_entry_list(entry_list_t *elist) {
         printf("%ld\n", (int64_t)entry->data.val);
         break;
       case U64:
-      case DOUBLE:
         printf("%lu\n", (uint64_t)entry->data.val);
         break;
       case CSTRING:

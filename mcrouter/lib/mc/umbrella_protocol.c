@@ -52,9 +52,9 @@ typedef struct _parse_info_s {
 // Which fields are required for each message?
 #define always_required msg_op
 #ifndef LIBMC_FBTRACE_DISABLE
-#define always_optional msg_flags | msg_fbtrace | msg_double
+#define always_optional msg_flags | msg_fbtrace
 #else
-#define always_optional msg_flags | msg_double
+#define always_optional msg_flags
 #endif
 #define store_req (msg_key | msg_flags | msg_exptime | msg_value)
 #define arith_req (msg_key | msg_delta)
@@ -297,7 +297,6 @@ static int _fill_base_msg(entry_list_t *elist,
                           _parse_info_t* parse_info) {
   FBI_ASSERT(elist && base && parse_info);
   uint64_t i;
-  int numDoubles = 0;
   parse_info->reqid = 0;
   parse_info->key_idx = -1;
   parse_info->value_idx = -1;
@@ -315,8 +314,8 @@ static int _fill_base_msg(entry_list_t *elist,
     uint16_t tag = ntoh16(elist->entries[i].tag);
     uint64_t val = ntoh64(elist->entries[i].data.val);
 
-    // No dup fields (except for stats and double)
-    if ((tag & field_mask) && (tag != msg_stats && tag != msg_double)) {
+    // No dup fields (except for stats)
+    if ((tag & field_mask) && (tag != msg_stats)) {
       dbg_error("Duplicate field: field_mask = 0x%lX, field = 0x%X\n",
                 field_mask, tag);
       return -1;
@@ -364,16 +363,6 @@ static int _fill_base_msg(entry_list_t *elist,
         break;
       case msg_cas:
         base->cas = val;
-        break;
-      case msg_double:
-        if (numDoubles == 0 ) {
-          memcpy(&base->lowval, &val, sizeof(double));
-        } else if (numDoubles == 1) {
-          memcpy(&base->highval, &val, sizeof(double));
-        } else {
-          return -1;
-        }
-        numDoubles++;
         break;
       case msg_key:
         if (parse_info->key_idx == -1) {
@@ -584,13 +573,6 @@ static void _msg_to_elist(entry_list_t* elist,
   }
 
 #endif
-
-  if (msg->lowval || msg->highval) {
-    entry_list_append_DOUBLE(elist, msg_double, msg->lowval);
-  }
-  if (msg->highval) {
-    entry_list_append_DOUBLE(elist, msg_double, msg->highval);
-  }
 }
 
 static void _backing_msg_fill(um_backing_msg_t* bmsg,

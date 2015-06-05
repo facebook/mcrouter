@@ -48,7 +48,6 @@ typedef enum entry_type_e {
   U64,                      // uint64_t
   CSTRING,                  // char * (null terminated c string
   BSTRING,                  // char * (binary blob)
-  DOUBLE,                   // double
 } entry_type_t;
 
 // To avoid an allocation and data copy, we allow entries to point to strings
@@ -168,9 +167,6 @@ APPEND_INT_FUNC(U64, uint64_t)
 
 #undef APPEND_INT_FUNC
 
-int entry_list_append_DOUBLE(entry_list_t *elist,
-                             int32_t tag,
-                             double val);
 int entry_list_append_BSTRING(entry_list_t *elist,
                               int32_t tag,
                               const char *str,
@@ -235,8 +231,6 @@ typedef enum msg_field_e {
 #ifndef LIBMC_FBTRACE_DISABLE
   msg_fbtrace = 0x800,
 #endif
-
-  msg_double = 0x80,
 
   msg_stats = 0x1000,
   msg_key = 0x2000,
