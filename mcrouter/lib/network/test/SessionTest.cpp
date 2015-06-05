@@ -32,6 +32,8 @@ TEST(Session, basic) {
     vector<string>({"VALUE key 0 9\r\nkey_value\r\nEND\r\n"
                     "VERSION Test-1.0\r\n"}),
     t.flushWrites());
+
+  t.closeSession();
 }
 
 TEST(Session, throttle) {
@@ -74,6 +76,8 @@ TEST(Session, throttle) {
         "VALUE key5 0 10\r\nkey5_value\r\nEND\r\n"}),
     t.flushWrites());
   EXPECT_TRUE(t.pausedKeys().empty());
+
+  t.closeSession();
 }
 
 TEST(Session, throttleBigPacket) {
@@ -120,6 +124,8 @@ TEST(Session, throttleBigPacket) {
         "VALUE key5 0 10\r\nkey5_value\r\nEND\r\n"}),
     t.flushWrites());
   EXPECT_TRUE(t.pausedKeys().empty());
+
+  t.closeSession();
 }
 
 TEST(Session, quit) {

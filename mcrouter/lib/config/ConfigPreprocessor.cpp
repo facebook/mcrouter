@@ -1130,7 +1130,10 @@ class ConfigPreprocessor::BuiltIns {
 
         if (useIt == json.items().end()) {
           if (result.isNull()) {
-            result = dynamic{ std::move(itemIt->second) };
+            // array of one element
+            result = std::initializer_list<dynamic>{
+              std::move(itemIt->second)
+            };
           } else {
             result.push_back(std::move(itemIt->second));
           }
@@ -1172,7 +1175,9 @@ class ConfigPreprocessor::BuiltIns {
       if (auto jnoMatchResult = json.get_ptr("noMatchResult")) {
         return p->expandMacros(std::move(*jnoMatchResult), ctx);
       }
-      return from.isObject() ? dynamic::object() : dynamic{};
+      return from.isObject()
+        ? dynamic::object()
+        : dynamic(std::initializer_list<dynamic>{});
     }
     return result;
   }

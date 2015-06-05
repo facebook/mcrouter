@@ -52,8 +52,6 @@ libmcrouter_a_SOURCES = \
   fbi/asox_semaphore.h \
   fbi/asox_timer.c \
   fbi/asox_timer.h \
-  fbi/counter.c \
-  fbi/counter.h \
   fbi/counting_sem.c \
   fbi/counting_sem.h \
   fbi/cpp/FuncGenerator.h \

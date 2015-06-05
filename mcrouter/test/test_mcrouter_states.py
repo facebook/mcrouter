@@ -68,13 +68,6 @@ class TestMcrouterStates(McrouterTestCase):
         self.assertEqual(stat['num_servers_down'], '2')
         check_invariant()
 
-        # up again
-        self.mc = Memcached(self.mc.port)
-        # wait for unmarking tko
-        time.sleep(1)
-        check_invariant()
-        check_all_up()
-
         # change config
         mcr.change_config(self.config2)
         # wait for mcrouter to reconfigure
