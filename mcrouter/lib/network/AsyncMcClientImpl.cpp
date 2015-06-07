@@ -388,7 +388,8 @@ void AsyncMcClientImpl::attemptConnection() {
   socket.connect(this, address, connectionOptions_.writeTimeout.count(),
                  socketOptions);
 
-  if (connectionOptions_.enableQoS) {
+  // If AsyncSocket::connect() fails, socket_ may have been reset
+  if (socket_ && connectionOptions_.enableQoS) {
     checkWhetherQoSIsApplied(address, socket.getFd(), connectionOptions_);
   }
 }
