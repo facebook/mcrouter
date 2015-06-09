@@ -322,7 +322,8 @@ static int validate_options() {
     return 0;
   }
   if (standaloneOpts.ports.empty() &&
-      standaloneOpts.listen_sock_fd < 0) {
+      standaloneOpts.listen_sock_fd < 0 &&
+      standaloneOpts.unix_domain_sock.empty()) {
     LOG(ERROR) << "invalid ports";
     return 0;
   }
