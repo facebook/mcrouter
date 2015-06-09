@@ -8,7 +8,6 @@ Makefile.in
 /mcrouter
 /doc/
 /git-describe.h
-/VERSION
 /.mm*
 .deps/
 /aclocal.m4
