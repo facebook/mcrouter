@@ -46,6 +46,7 @@ class ConfigApi;
 class ExtraRouteHandleProviderIf;
 class McrouterInstance;
 class McrouterLogger;
+class McrouterStandaloneOptions;
 class proxy_t;
 class TkoLog;
 
@@ -97,7 +98,8 @@ std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts);
 
 std::string performOptionSubstitution(std::string str);
 
-bool standaloneInit(const McrouterOptions& opts);
+bool standaloneInit(const McrouterOptions& opts,
+                    const McrouterStandaloneOptions& standaloneOpts);
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 

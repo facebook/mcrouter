@@ -16,6 +16,7 @@
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
+#include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -45,7 +46,8 @@ std::string performOptionSubstitution(std::string str) {
   return str;
 }
 
-bool standaloneInit(const McrouterOptions& opts) {
+bool standaloneInit(const McrouterOptions& opts,
+                    const McrouterStandaloneOptions& standaloneOpts) {
   int numSources = (opts.config_file.empty() ? 0 : 1) +
     (opts.config_str.empty() ? 0 : 1);
   if (numSources == 0) {

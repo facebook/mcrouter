@@ -491,7 +491,7 @@ int main(int argc, char **argv) {
   // do this immediately after setting up log file
   notify_command_line(argc, argv);
 
-  if (!standaloneInit(opts) || !validate_options()) {
+  if (!standaloneInit(opts, standaloneOpts) || !validate_options()) {
     print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
   }
 
