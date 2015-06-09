@@ -193,7 +193,11 @@ void McrouterClient::disconnect() {
   if (isZombie_) {
     return;
   }
-  proxy_->messageQueue_->blockingWrite(ProxyMessage::Type::DISCONNECT, this);
+  if (proxy_->eventBase->isInEventBaseThread()) {
+    performDisconnect();
+  } else {
+    proxy_->messageQueue_->blockingWrite(ProxyMessage::Type::DISCONNECT, this);
+  }
 }
 
 void McrouterClient::performDisconnect() {
