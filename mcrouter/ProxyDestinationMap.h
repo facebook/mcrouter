@@ -14,6 +14,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
@@ -80,10 +81,17 @@ class ProxyDestinationMap {
    */
   template <typename Func>
   void foreachDestinationSynced(Func&& f) {
-    std::lock_guard<std::mutex> lock(destinationsLock_);
-    for (auto& it : destinations_) {
-      if (std::shared_ptr<const ProxyDestination> d = it.second.lock()) {
-        f(it.first, *d);
+    // The toFree vector is used to delay destruction as we have the following
+    // race condition: ProxyDestination destructor will try to grab a lock
+    // on destionationsLock_, which is already locked here.
+    std::vector<std::shared_ptr<const ProxyDestination>> toFree;
+    {
+      std::lock_guard<std::mutex> lock(destinationsLock_);
+      for (auto& it : destinations_) {
+        if (std::shared_ptr<const ProxyDestination> d = it.second.lock()) {
+          f(it.first, *d);
+          toFree.push_back(std::move(d));
+        }
       }
     }
   }
