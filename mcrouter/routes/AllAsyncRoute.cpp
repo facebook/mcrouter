@@ -7,24 +7,39 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/AllAsyncRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, AllAsyncRoute>(
-  RouteHandleFactory<mcrouter::McrouterRouteHandleIf>&,
-  const folly::dynamic&);
-
-namespace mcrouter {
+McrouterRouteHandlePtr makeNullRoute();
 
 McrouterRouteHandlePtr makeAllAsyncRoute(
   std::vector<McrouterRouteHandlePtr> rh) {
 
-  return makeMcrouterRouteHandle<AllAsyncRoute>(
-    std::move(rh));
+  if (rh.empty()) {
+    return makeNullRoute();
+  }
+
+  return makeMcrouterRouteHandle<AllAsyncRoute>(std::move(rh));
 }
 
-}}}
+McrouterRouteHandlePtr makeAllAsyncRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  std::vector<McrouterRouteHandlePtr> children;
+  if (json.isObject()) {
+    if (auto jchildren = json.get_ptr("children")) {
+      children = factory.createList(*jchildren);
+    }
+  } else {
+    children = factory.createList(json);
+  }
+  return makeAllAsyncRoute(std::move(children));
+}
+
+}}}  // facebook::memcache::mcrouter

@@ -13,8 +13,9 @@
 #include <memory>
 #include <vector>
 
-#include <folly/ScopeGuard.h>
+#include <folly/Conv.h>
 #include <folly/experimental/fibers/Baton.h>
+#include <folly/ScopeGuard.h>
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
@@ -31,7 +32,9 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class OutstandingLimitRoute {
  public:
-  static std::string routeName() { return "outstanding-limit"; }
+  std::string routeName() const {
+    return folly::to<std::string>("outstanding-limit|limit=", maxOutstanding_);
+  }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(

@@ -13,10 +13,8 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/experimental/fibers/AddTasks.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -40,17 +38,6 @@ class AllFastestRoute {
 
   explicit AllFastestRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
-  }
-
-  AllFastestRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                  const folly::dynamic& json) {
-    if (json.isObject()) {
-      if (json.count("children")) {
-        children_ = factory.createList(json["children"]);
-      }
-    } else {
-      children_ = factory.createList(json);
-    }
   }
 
   template <class Operation, class Request>
@@ -88,7 +75,7 @@ class AllFastestRoute {
   }
 
  private:
-  std::vector<std::shared_ptr<RouteHandleIf>> children_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
 
 }}

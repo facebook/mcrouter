@@ -13,9 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
-
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Reply.h"
 
@@ -26,8 +23,8 @@ namespace facebook { namespace memcache {
  */
 template <class RouteHandleIf>
 struct ErrorRoute {
-  static std::string routeName() {
-    return "error";
+  std::string routeName() const {
+    return "error" + (valueToSet_.empty() ? "" : "|" + valueToSet_);
   }
 
   template <class Operation, class Request>
@@ -37,18 +34,7 @@ struct ErrorRoute {
     return {};
   }
 
-  ErrorRoute() {}
-
-  explicit ErrorRoute(const folly::dynamic& json) {
-    checkLogic(json.isString() || json.isNull(),
-               "ErrorRoute: response should be string or empty");
-
-    if (json.isString()) {
-      valueToSet_ = json.asString().toStdString();
-    }
-  }
-
-  explicit ErrorRoute(std::string valueToSet)
+  explicit ErrorRoute(std::string valueToSet = "")
     : valueToSet_(std::move(valueToSet)) {}
 
   template <class Operation, class Request>
@@ -61,7 +47,7 @@ struct ErrorRoute {
   }
 
  private:
-  std::string valueToSet_;
+  const std::string valueToSet_;
 };
 
 }}

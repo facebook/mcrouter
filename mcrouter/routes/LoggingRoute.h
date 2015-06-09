@@ -12,8 +12,6 @@
 #include <memory>
 #include <string>
 
-#include "mcrouter/lib/config/RouteHandleBuilder.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
@@ -33,17 +31,6 @@ class LoggingRoute {
 
   explicit LoggingRoute(McrouterRouteHandlePtr rh)
     : child_(std::move(rh)) {}
-
-  LoggingRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-               const folly::dynamic& json) {
-    if (json.isObject()) {
-      if (json.count("target")) {
-        child_ = factory.create(json["target"]);
-      }
-    } else if (json.isString()) {
-      child_ = factory.create(json);
-    }
-  }
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
@@ -81,7 +68,7 @@ class LoggingRoute {
   }
 
  private:
-  McrouterRouteHandlePtr child_;
+  const McrouterRouteHandlePtr child_;
 };
 
 }}}

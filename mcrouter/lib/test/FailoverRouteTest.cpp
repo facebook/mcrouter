@@ -33,7 +33,7 @@ TEST(failoverRouteTest, success) {
   };
 
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+    get_route_handles(test_handles), FailoverErrorsSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "a");
@@ -47,7 +47,7 @@ TEST(failoverRouteTest, once) {
   };
 
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+    get_route_handles(test_handles), FailoverErrorsSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "b");
@@ -61,7 +61,7 @@ TEST(failoverRouteTest, twice) {
   };
 
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+    get_route_handles(test_handles), FailoverErrorsSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
   EXPECT_TRUE(toString(reply.value()) == "c");
@@ -75,7 +75,7 @@ TEST(failoverRouteTest, fail) {
   };
 
   TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+    get_route_handles(test_handles), FailoverErrorsSettings());
 
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
 

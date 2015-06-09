@@ -13,9 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
-
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/routes/NullRoute.h"
@@ -43,17 +40,6 @@ class MissFailoverRoute {
   explicit MissFailoverRoute(
     std::vector<std::shared_ptr<RouteHandleIf>> targets)
       : targets_(std::move(targets)) {
-  }
-
-  MissFailoverRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                    const folly::dynamic& json) {
-    if (json.isObject()) {
-      if (json.count("children")) {
-        targets_ = factory.createList(json["children"]);
-      }
-    } else {
-      targets_ = factory.createList(json);
-    }
   }
 
   template <class Operation, class Request>
@@ -101,7 +87,7 @@ class MissFailoverRoute {
   }
 
  private:
-  std::vector<std::shared_ptr<RouteHandleIf>> targets_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
 };
 
 }}

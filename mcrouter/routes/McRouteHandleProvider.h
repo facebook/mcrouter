@@ -9,12 +9,15 @@
  */
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "mcrouter/lib/config/RouteHandleProvider.h"
+#include <folly/Range.h>
+
+#include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
@@ -26,7 +29,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class ClientPool;
 class ExtraRouteHandleProviderIf;
 class PoolFactory;
-class ProxyClientCommon;
 class ProxyDestinationMap;
 class proxy_t;
 
@@ -35,7 +37,7 @@ class proxy_t;
  * routes.
  */
 class McRouteHandleProvider :
-  public RouteHandleProvider<McrouterRouteHandleIf> {
+  public RouteHandleProviderIf<McrouterRouteHandleIf> {
  public:
   McRouteHandleProvider(proxy_t* proxy,
                         ProxyDestinationMap& destinationMap,
@@ -45,11 +47,6 @@ class McRouteHandleProvider :
   create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
          folly::StringPiece type, const folly::dynamic& json) override;
 
-  McrouterRouteHandlePtr
-  createHash(folly::StringPiece funcType,
-             const folly::dynamic& json,
-             std::vector<McrouterRouteHandlePtr> children) override;
-
   std::unordered_map<std::string, McrouterRouteHandlePtr>
   releaseAsyncLogRoutes() {
     return std::move(asyncLogRoutes_);
@@ -58,17 +55,19 @@ class McRouteHandleProvider :
   ~McRouteHandleProvider();
 
  private:
+  using RouteFunc = std::function<
+      McrouterRouteHandlePtr(RouteHandleFactory<McrouterRouteHandleIf>&,
+                            const folly::dynamic&)>;
   proxy_t* proxy_;
   ProxyDestinationMap& destinationMap_;
   PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
-  // pool name => { ClientPool, destinations }
-  std::unordered_map<std::string,
-    std::pair<std::shared_ptr<ClientPool>,
-              std::vector<McrouterRouteHandlePtr>>> pools_;
 
   // poolName -> AsynclogRoute
   std::unordered_map<std::string, McrouterRouteHandlePtr> asyncLogRoutes_;
+
+  const std::unordered_map<folly::StringPiece, RouteFunc,
+                           folly::StringPieceHash> routeMap_;
 
   std::pair<std::shared_ptr<ClientPool>, std::vector<McrouterRouteHandlePtr>>
   makePool(const folly::dynamic& json);

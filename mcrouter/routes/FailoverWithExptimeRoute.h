@@ -13,17 +13,11 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Range.h>
 
-#include "mcrouter/config-impl.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -45,17 +39,15 @@ class FailoverWithExptimeRoute {
   FailoverWithExptimeRoute(
     McrouterRouteHandlePtr normalTarget,
     std::vector<McrouterRouteHandlePtr> failoverTargets,
-    uint32_t failoverExptime,
-    FailoverWithExptimeSettings oldSettings)
+    int32_t failoverExptime,
+    FailoverErrorsSettings failoverErrors,
+    bool failoverTagging)
       : normal_(std::move(normalTarget)),
-        failover_(std::move(failoverTargets)),
-        failoverErrors_(oldSettings.getFailoverErrors()),
+        failover_(std::move(failoverTargets), FailoverErrorsSettings()),
+        failoverErrors_(std::move(failoverErrors)),
         failoverExptime_(failoverExptime),
-        failoverTagging_(oldSettings.failoverTagging) {
+        failoverTagging_(failoverTagging) {
   }
-
-  FailoverWithExptimeRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-                           const folly::dynamic& json);
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
@@ -94,11 +86,11 @@ class FailoverWithExptimeRoute {
   }
 
  private:
-  McrouterRouteHandlePtr normal_;
-  FailoverRoute<McrouterRouteHandleIf> failover_;
-  FailoverErrorsSettings failoverErrors_;
-  int32_t failoverExptime_;
-  bool failoverTagging_{false};
+  const McrouterRouteHandlePtr normal_;
+  const FailoverRoute<McrouterRouteHandleIf> failover_;
+  const FailoverErrorsSettings failoverErrors_;
+  const int32_t failoverExptime_;
+  const bool failoverTagging_{false};
 };
 
 }}}

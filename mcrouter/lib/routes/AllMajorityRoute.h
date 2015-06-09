@@ -13,10 +13,8 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/experimental/fibers/AddTasks.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/routes/NullRoute.h"
@@ -44,17 +42,6 @@ class AllMajorityRoute {
 
   explicit AllMajorityRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
-  }
-
-  AllMajorityRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                   const folly::dynamic& json) {
-    if (json.isObject()) {
-      if (json.count("children")) {
-        children_ = factory.createList(json["children"]);
-      }
-    } else {
-      children_ = factory.createList(json);
-    }
   }
 
   template <class Operation, class Request>
@@ -107,7 +94,7 @@ class AllMajorityRoute {
   }
 
  private:
-  std::vector<std::shared_ptr<RouteHandleIf>> children_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
 
 }}

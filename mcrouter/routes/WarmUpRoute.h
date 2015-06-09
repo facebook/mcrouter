@@ -12,12 +12,9 @@
 #include <memory>
 #include <string>
 
-#include <folly/dynamic.h>
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/config.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
@@ -69,37 +66,13 @@ class WarmUpRoute {
 
   WarmUpRoute(std::shared_ptr<RouteHandleIf> warm,
               std::shared_ptr<RouteHandleIf> cold,
-              uint32_t exptime)
+              folly::Optional<uint32_t> exptime)
   : warm_(std::move(warm)),
     cold_(std::move(cold)),
-    exptime_(exptime) {
+    exptime_(std::move(exptime)) {
 
     assert(warm_ != nullptr);
     assert(cold_ != nullptr);
-  }
-
-  WarmUpRoute(RouteHandleFactory<RouteHandleIf>& factory,
-              const folly::dynamic& json) {
-
-    checkLogic(json.isObject(), "WarmUpRoute should be object");
-    checkLogic(json.count("cold"), "WarmUpRoute: no cold route");
-    checkLogic(json.count("warm"), "WarmUpRoute: no warm route");
-    bool enableMetaget = isMetagetAvailable();
-    if (json.count("enable_metaget")) {
-      checkLogic(json["enable_metaget"].isBool(),
-                 "WarmUpRoute: enable_metaget is not a boolean");
-      enableMetaget = json["enable_metaget"].getBool();
-    }
-    if (json.count("exptime")) {
-      checkLogic(json["exptime"].isInt(),
-                 "WarmUpRoute: exptime is not an integer");
-      exptime_ = json["exptime"].getInt();
-    } else if (!enableMetaget) {
-      exptime_ = 0;
-    }
-
-    cold_ = factory.create(json["cold"]);
-    warm_ = factory.create(json["warm"]);
   }
 
   ////////////////////////////////mc_op_get/////////////////////////////////////
@@ -192,9 +165,9 @@ class WarmUpRoute {
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> warm_;
-  std::shared_ptr<RouteHandleIf> cold_;
-  folly::Optional<uint32_t> exptime_;
+  const std::shared_ptr<RouteHandleIf> warm_;
+  const std::shared_ptr<RouteHandleIf> cold_;
+  const folly::Optional<uint32_t> exptime_;
 
   template <class Request, class Reply>
   static Request coldUpdateFromWarm(const Request& origReq,

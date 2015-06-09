@@ -18,6 +18,7 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/routes/FailoverWithExptimeRoute.h"
+#include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 using namespace facebook::memcache;
@@ -55,7 +56,8 @@ TEST(failoverWithExptimeRouteTest, success) {
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    FailoverWithExptimeSettings());
+    FailoverErrorsSettings(),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -82,7 +84,8 @@ TEST(failoverWithExptimeRouteTest, once) {
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    FailoverWithExptimeSettings());
+    FailoverErrorsSettings(),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -111,7 +114,8 @@ TEST(failoverWithExptimeRouteTest, twice) {
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    FailoverWithExptimeSettings());
+    FailoverErrorsSettings(),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -141,7 +145,8 @@ TEST(failoverWithExptimeRouteTest, fail) {
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    FailoverWithExptimeSettings());
+    FailoverErrorsSettings(),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -157,22 +162,6 @@ TEST(failoverWithExptimeRouteTest, fail) {
   });
 }
 
-FailoverWithExptimeSettings::OperationSettings* getOpSettings(
-    FailoverWithExptimeSettings& settings,
-    mc_res_t res) {
-  switch (res) {
-    case mc_res_timeout:
-      return &settings.dataTimeout;
-    case mc_res_connect_timeout:
-      return &settings.connectTimeout;
-    case mc_res_tko:
-      return &settings.tko;
-    default:
-      ADD_FAILURE() << "Unknown result: " << res;
-      return nullptr;
-  }
-}
-
 void testFailoverGet(mc_res_t res) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
     make_shared<TestHandle>(GetRouteTestData(res, "a")),
@@ -185,16 +174,12 @@ void testFailoverGet(mc_res_t res) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  FailoverWithExptimeSettings settings;
-  auto opSettings = getOpSettings(settings, res);
-
-  opSettings->gets = false;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rhNoFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(std::vector<std::string>{}),
+    false);
 
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
@@ -205,13 +190,12 @@ void testFailoverGet(mc_res_t res) {
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   });
 
-  opSettings->gets = true;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rhFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(),
+    false);
 
   fm.run([&]{
     fiber_local::setSharedCtx(ctx);
@@ -232,16 +216,12 @@ void testFailoverUpdate(mc_res_t res) {
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
   };
 
-  FailoverWithExptimeSettings settings;
-  auto opSettings = getOpSettings(settings, res);
-
-  opSettings->updates = false;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rhNoFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(std::vector<std::string>{}),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -257,13 +237,12 @@ void testFailoverUpdate(mc_res_t res) {
     EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
   });
 
-  opSettings->updates = true;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rhFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(),
+    false);
 
   fm.run([&]{
     fiber_local::setSharedCtx(ctx);
@@ -288,16 +267,12 @@ void testFailoverDelete(mc_res_t res) {
     make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))
   };
 
-  FailoverWithExptimeSettings settings;
-  auto opSettings = getOpSettings(settings, res);
-
-  opSettings->deletes = false;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rhNoFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(std::vector<std::string>{}),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -312,13 +287,12 @@ void testFailoverDelete(mc_res_t res) {
     EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
   });
 
-  opSettings->deletes = true;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rhFail(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(),
+    false);
 
   fm.run([&]{
     fiber_local::setSharedCtx(ctx);
@@ -360,13 +334,12 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
   };
 
-  FailoverWithExptimeSettings settings;
-
   McrouterRouteHandle<FailoverWithExptimeRoute> rh(
     normalRh[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    FailoverErrorsSettings(),
+    false);
 
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
@@ -400,7 +373,8 @@ TEST(failoverWithExptimeRouteTest, shouldFailoverShutdownAndLocalError) {
     get_route_handles(normalHandle)[0],
     get_route_handles(failoverHandles),
     2,
-    settings);
+    settings.getFailoverErrors(),
+    false);
 
   auto ctx = getContext();
   TestFiberManager fm{fiber_local::ContextTypeTag()};

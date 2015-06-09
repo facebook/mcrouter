@@ -35,11 +35,6 @@ ConstShardHashFunc::ConstShardHashFunc(size_t n)
       ch3_(n) {
 }
 
-ConstShardHashFunc::ConstShardHashFunc(const folly::dynamic& json, size_t n)
-    : n_(n),
-      ch3_(n) {
-}
-
 size_t ConstShardHashFunc::operator()(folly::StringPiece key) const {
   size_t index;
   if (shardLookup(key, &index)) {

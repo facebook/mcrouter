@@ -15,15 +15,11 @@
 #include <vector>
 
 #include <folly/Conv.h>
-#include <folly/dynamic.h>
 #include <folly/Optional.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/RoutingPrefix.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -47,8 +43,9 @@ class ModifyKeyRoute {
  public:
   static std::string routeName() { return "modify-key"; }
 
-  ModifyKeyRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-                 const folly::dynamic& json);
+  ModifyKeyRoute(McrouterRouteHandlePtr target,
+                 folly::Optional<std::string> routingPrefix,
+                 std::string keyPrefix);
 
   template <class Operation, class Request>
   std::vector<McrouterRouteHandlePtr>
@@ -74,9 +71,9 @@ class ModifyKeyRoute {
   }
 
  private:
-  McrouterRouteHandlePtr target_;
-  folly::Optional<std::string> routingPrefix_;
-  std::string keyPrefix_;
+  const McrouterRouteHandlePtr target_;
+  const folly::Optional<std::string> routingPrefix_;
+  const std::string keyPrefix_;
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type

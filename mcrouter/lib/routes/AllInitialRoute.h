@@ -14,10 +14,8 @@
 #include <vector>
 
 #include <folly/Memory.h>
-#include <folly/dynamic.h>
 #include <folly/experimental/fibers/FiberManager.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/routes/AllAsyncRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
@@ -59,28 +57,6 @@ class AllInitialRoute {
     }
 
     firstChild_ = *rh.begin();
-
-    if (rh.size() > 1) {
-      asyncRoute_ = folly::make_unique<AllAsyncRoute<RouteHandleIf>>(
-        std::vector<std::shared_ptr<RouteHandleIf>>(rh.begin() + 1,
-                                                    rh.end()));
-    }
-  }
-
-  AllInitialRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                  const folly::dynamic& json) {
-    std::vector<std::shared_ptr<RouteHandleIf>> rh;
-    if (json.isObject()) {
-      if (json.count("children")) {
-        rh = factory.createList(json["children"]);
-      }
-    } else {
-      rh = factory.createList(json);
-    }
-
-    if (!rh.empty()) {
-      firstChild_ = rh[0];
-    }
 
     if (rh.size() > 1) {
       asyncRoute_ = folly::make_unique<AllAsyncRoute<RouteHandleIf>>(

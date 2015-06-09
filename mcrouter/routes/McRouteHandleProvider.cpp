@@ -14,6 +14,7 @@
 #include "mcrouter/ClientPool.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -26,63 +27,144 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
+
+McrouterRouteHandlePtr makeAllAsyncRoute(McRouteHandleFactory& factory,
+                                         const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeAllFastestRoute(McRouteHandleFactory& factory,
+                                           const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeAllInitialRoute(McRouteHandleFactory& factory,
+                                           const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeAllMajorityRoute(McRouteHandleFactory& factory,
+                                            const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeAllSyncRoute(McRouteHandleFactory& factory,
+                                        const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeAsynclogRoute(McRouteHandleFactory& factory,
+                                         const folly::dynamic& json);
+
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
                                          std::string asynclogName);
+
+McrouterRouteHandlePtr makeDevNullRoute(McRouteHandleFactory& factory,
+                                        const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeHostIdRoute(McRouteHandleFactory& factory,
+                                       const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeModifyKeyRoute(McRouteHandleFactory& factory,
+                                          const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
   std::shared_ptr<ProxyDestination> destination);
 
-McrouterRouteHandlePtr makeDevNullRoute();
+McrouterRouteHandlePtr makeErrorRoute(McRouteHandleFactory& factory,
+                                      const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeFailoverRoute(McRouteHandleFactory& factory,
+                                         const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  McRouteHandleFactory& factory,
   const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeL1L2CacheRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json);
+McrouterRouteHandlePtr makeHashRoute(const folly::dynamic& json,
+                                     std::vector<McrouterRouteHandlePtr> rh);
 
-McrouterRouteHandlePtr makeMigrateRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json);
+McrouterRouteHandlePtr makeHashRoute(McRouteHandleFactory& factory,
+                                     const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeModifyKeyRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json);
+McrouterRouteHandlePtr makeL1L2CacheRoute(McRouteHandleFactory& factory,
+                                          const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeOperationSelectorRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json);
+McrouterRouteHandlePtr makeLatestRoute(McRouteHandleFactory& factory,
+                                       const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeRateLimitRoute(
-  McrouterRouteHandlePtr normalRoute,
-  RateLimiter rateLimiter);
+McrouterRouteHandlePtr makeLoggingRoute(McRouteHandleFactory& factory,
+                                        const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeMigrateRoute(McRouteHandleFactory& factory,
+                                        const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeMissFailoverRoute(McRouteHandleFactory& factory,
+                                             const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeNullRoute(McRouteHandleFactory& factory,
+                                     const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeOperationSelectorRoute(McRouteHandleFactory& factory,
+                                                  const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeOutstandingLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   size_t maxOutstanding);
 
-McrouterRouteHandlePtr makeLoggingRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json);
+McrouterRouteHandlePtr makeRateLimitRoute(McrouterRouteHandlePtr normalRoute,
+                                          RateLimiter rateLimiter);
+
+McrouterRouteHandlePtr makeRandomRoute(McRouteHandleFactory& factory,
+                                       const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
                                            ShardSplitter);
 
-McrouterRouteHandlePtr makeWarmUpRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json);
+McrouterRouteHandlePtr makeWarmUpRoute(McRouteHandleFactory& factory,
+                                       const folly::dynamic& json);
 
 McRouteHandleProvider::McRouteHandleProvider(
   proxy_t* proxy,
   ProxyDestinationMap& destinationMap,
   PoolFactory& poolFactory)
-    : RouteHandleProvider<McrouterRouteHandleIf>(),
-      proxy_(proxy),
+    : proxy_(proxy),
       destinationMap_(destinationMap),
       poolFactory_(poolFactory),
-      extraProvider_(createExtraRouteHandleProvider()) {
+      extraProvider_(createExtraRouteHandleProvider()),
+      routeMap_{
+        { "AllAsyncRoute", &makeAllAsyncRoute },
+        { "AllFastestRoute", &makeAllFastestRoute },
+        { "AllInitialRoute", &makeAllInitialRoute },
+        { "AllMajorityRoute", &makeAllMajorityRoute },
+        { "AllSyncRoute", &makeAllSyncRoute },
+        {
+          "AsynclogRoute",
+          [](McRouteHandleFactory& factory, const folly::dynamic& json) {
+            return makeAsynclogRoute(factory, json);
+          }
+        },
+        { "DevNullRoute", &makeDevNullRoute },
+        { "ErrorRoute", &makeErrorRoute },
+        { "FailoverRoute", &makeFailoverRoute },
+        { "FailoverWithExptimeRoute", &makeFailoverWithExptimeRoute },
+        {
+          "HashRoute",
+          [](McRouteHandleFactory& factory, const folly::dynamic& json) {
+            return makeHashRoute(factory, json);
+          }
+        },
+        { "HostIdRoute", &makeHostIdRoute },
+        { "L1L2CacheRoute", &makeL1L2CacheRoute },
+        { "LatestRoute", &makeLatestRoute },
+        { "LoggingRoute", &makeLoggingRoute },
+        { "MigrateRoute", &makeMigrateRoute },
+        { "MissFailoverRoute", &makeMissFailoverRoute },
+        { "ModifyKeyRoute", &makeModifyKeyRoute },
+        { "NullRoute", &makeNullRoute },
+        { "OperationSelectorRoute", &makeOperationSelectorRoute },
+        {
+          "PoolRoute",
+          [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
+            return makePoolRoute(factory, json);
+          }
+        },
+        { "PrefixPolicyRoute", &makeOperationSelectorRoute },
+        { "RandomRoute", &makeRandomRoute },
+        { "WarmUpRoute", &makeWarmUpRoute },
+      } {
 }
 
 McRouteHandleProvider::~McRouteHandleProvider() {
@@ -94,11 +176,6 @@ McRouteHandleProvider::makePool(const folly::dynamic& json) {
   checkLogic(json.isString() || json.isObject(),
              "Pool should be a string (name of pool) or an object");
   auto pool = poolFactory_.parsePool(json);
-  auto seenIt = pools_.find(pool->getName());
-  if (seenIt != pools_.end()) {
-    return seenIt->second;
-  }
-
   std::vector<McrouterRouteHandlePtr> destinations;
   for (const auto& client : pool->getClients()) {
     auto pdstn = destinationMap_.fetch(*client);
@@ -120,8 +197,7 @@ McRouteHandleProvider::createAsynclogRoute(McrouterRouteHandlePtr target,
 }
 
 McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json) {
+  McRouteHandleFactory& factory, const folly::dynamic& json) {
 
   checkLogic(json.isObject() || json.isString(),
              "PoolRoute should be object or string");
@@ -206,7 +282,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       }
     }
   }
-  auto route = makeHash(jhashWithWeights, std::move(destinations));
+  auto route = makeHashRoute(jhashWithWeights, std::move(destinations));
 
   if (json.isObject()) {
     if (proxy_->opts.destination_rate_limiting) {
@@ -242,79 +318,27 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
 }
 
 std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    McRouteHandleFactory& factory,
     folly::StringPiece type,
     const folly::dynamic& json) {
 
-  if (type == "AsynclogRoute") {
-    std::string asynclogName;
-    McrouterRouteHandlePtr target;
-    checkLogic(json.isObject() || json.isString(),
-               "AsynclogRoute should be object or string");
-    if (json.isString()) {
-      asynclogName = json.stringPiece().str();
-      target = factory.create(json);
-    } else { // object
-      auto jname = json.get_ptr("name");
-      checkLogic(jname && jname->isString(),
-                 "AsynclogRoute: required string name");
-      auto jtarget = json.get_ptr("target");
-      checkLogic(jtarget, "AsynclogRoute: target not found");
-      asynclogName = jname->stringPiece().str();
-      target = factory.create(*jtarget);
-    }
-    return { createAsynclogRoute(std::move(target), std::move(asynclogName)) };
-  } else if (type == "OperationSelectorRoute" || type == "PrefixPolicyRoute") {
-    // PrefixPolicyRoute is deprecated, but must be preserved for backwards
-    // compatibility.
-    return { makeOperationSelectorRoute(factory, json) };
-  } else if (type == "DevNullRoute") {
-    return { makeDevNullRoute() };
-  } else if (type == "FailoverWithExptimeRoute") {
-    return { makeFailoverWithExptimeRoute(factory, json) };
-  } else if (type == "L1L2CacheRoute") {
-    return { makeL1L2CacheRoute(factory, json) };
-  } else if (type == "WarmUpRoute") {
-    return { makeWarmUpRoute(factory, json) };
-  } else if (type == "MigrateRoute") {
-    return { makeMigrateRoute(factory, json) };
-  } else if (type == "ModifyKeyRoute") {
-    return { makeModifyKeyRoute(factory, json) };
-  } else if (type == "Pool") {
+  if (type == "Pool") {
     return makePool(json).second;
-  } else if (type == "PoolRoute") {
-    return { makePoolRoute(factory, json) };
-  } else if (type == "LoggingRoute") {
-    return { makeLoggingRoute(factory, json) };
-  } else {
-    /* returns empty vector if type unknown */
-    auto ret = extraProvider_->tryCreate(factory, type, json);
-    if (!ret.empty()) {
-      return ret;
-    }
   }
 
-  auto ret = RouteHandleProvider<McrouterRouteHandleIf>::create(factory, type,
-                                                                json);
-  checkLogic(!ret.empty(), "Unknown RouteHandle: {}", type);
-  return ret;
-}
-
-McrouterRouteHandlePtr McRouteHandleProvider::createHash(
-    folly::StringPiece funcType,
-    const folly::dynamic& json,
-    std::vector<McrouterRouteHandlePtr> children) {
-
-  if (funcType == ConstShardHashFunc::type()) {
-    return makeRouteHandle<McrouterRouteHandleIf, HashRoute,
-                           ConstShardHashFunc>(
-      json, std::move(children));
+  auto it = routeMap_.find(type);
+  if (it != routeMap_.end()) {
+    return { it->second(factory, json) };
   }
 
-  auto ret = RouteHandleProvider<McrouterRouteHandleIf>::createHash(
-    funcType, json, std::move(children));
-  checkLogic(ret != nullptr, "Unknown hash function: {}", funcType);
-  return ret;
+  /* returns empty vector if type is unknown */
+  auto ret = extraProvider_->tryCreate(factory, type, json);
+  if (!ret.empty()) {
+    return ret;
+  }
+
+  checkLogic(false, "Unknown RouteHandle: {}", type);
+  return {};
 }
 
 }}} // facebook::memcache::mcrouter

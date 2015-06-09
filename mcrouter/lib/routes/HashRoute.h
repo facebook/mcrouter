@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
+#include <folly/Conv.h>
 #include <folly/Range.h>
-#include <folly/dynamic.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
@@ -28,7 +28,10 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf, typename HashFunc>
 class HashRoute {
  public:
-  static std::string routeName() { return "hash:" + HashFunc::type(); }
+  std::string routeName() const {
+    return folly::to<std::string>("hash|", HashFunc::type(),
+                                  (salt_.empty() ? "" : "|salt=" + salt_));
+  }
 
   HashRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh,
             std::string salt,
@@ -36,17 +39,6 @@ class HashRoute {
     : rh_(std::move(rh)),
       salt_(std::move(salt)),
       hashFunc_(std::move(hashFunc)) {
-  }
-
-  HashRoute(const folly::dynamic& json,
-            std::vector<std::shared_ptr<RouteHandleIf>> children)
-    : rh_(std::move(children)),
-      hashFunc_(json, rh_.size()) {
-
-    if (json.isObject() && json.count("salt")) {
-      checkLogic(json["salt"].isString(), "HashRoute salt is not a string");
-      salt_ = json["salt"].getString().toStdString();
-    }
   }
 
   template <class Operation, class Request>
@@ -70,8 +62,8 @@ class HashRoute {
  private:
   static const size_t kMaxKeySaltSize = 512;
   const std::vector<std::shared_ptr<RouteHandleIf>> rh_;
-  std::string salt_;
-  HashFunc hashFunc_;
+  const std::string salt_;
+  const HashFunc hashFunc_;
 
   template <class Request>
   size_t pick(const Request& req) const {

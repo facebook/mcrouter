@@ -11,18 +11,27 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/config/test/TestRouteHandleProvider.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/lib/test/TestRouteHandle.h"
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/options.h"
+#include "mcrouter/PoolFactory.h"
+#include "mcrouter/proxy.h"
+#include "mcrouter/routes/McRouteHandleProvider.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 TEST(RouteHandleFactoryTest, sanity) {
   TestFiberManager fm;
 
-  RouteHandleProvider<TestRouteHandleIf> provider;
-
-  RouteHandleFactory<TestRouteHandleIf> factory(provider);
+  McrouterOptions opts = defaultTestOptions();
+  opts.config_str = "{ \"route\": \"NullRoute\" }";
+  auto router = McrouterInstance::init("test_rh_factory", opts);
+  auto proxy = router->getProxy(0);
+  PoolFactory pf(folly::dynamic::object(), router->configApi(), opts);
+  McRouteHandleProvider provider(proxy, *proxy->destinationMap, pf);
+  RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 
   auto rh = factory.create("AllAsyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);

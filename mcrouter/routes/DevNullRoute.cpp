@@ -9,10 +9,22 @@
  */
 #include "DevNullRoute.h"
 
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeDevNullRoute() {
-  return std::make_shared<McrouterRouteHandle<DevNullRoute>>();
+  static auto devnull = std::make_shared<McrouterRouteHandle<DevNullRoute>>();
+  return devnull;
 }
 
-}}}
+McrouterRouteHandlePtr makeDevNullRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  return makeDevNullRoute();
+}
+
+}}}  // facebook::memcache::mcrouter

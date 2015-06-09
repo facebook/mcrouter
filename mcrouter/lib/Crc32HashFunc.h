@@ -25,15 +25,12 @@ class Crc32HashFunc {
   explicit Crc32HashFunc(size_t n)
       : n_(n) {}
 
-  Crc32HashFunc(const folly::dynamic& json, size_t n)
-      : n_(n) {}
-
   size_t operator() (folly::StringPiece hashable) const {
     auto res = crc32_hash(hashable.data(), hashable.size());
     return (res & 0x7fffffff) % n_;
   }
 
-  static std::string type() {
+  static const char* const type() {
     return "Crc32";
   }
 

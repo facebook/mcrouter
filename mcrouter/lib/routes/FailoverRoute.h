@@ -41,24 +41,10 @@ class FailoverRoute {
 
   FailoverRoute() = default;
 
-  explicit FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
-              FailoverErrorsSettings failoverErrors = FailoverErrorsSettings())
+  FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
+                FailoverErrorsSettings failoverErrors)
       : targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)) {
-  }
-
-  FailoverRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                const folly::dynamic& json) {
-    if (json.isObject()) {
-      if (json.count("children")) {
-        targets_ = factory.createList(json["children"]);
-      }
-      if (auto jsonFailoverErrors = json.get_ptr("failover_errors")) {
-        failoverErrors_ = FailoverErrorsSettings(*jsonFailoverErrors);
-      }
-    } else {
-      targets_ = factory.createList(json);
-    }
   }
 
   template <class Operation, class Request>
@@ -80,8 +66,8 @@ class FailoverRoute {
   }
 
  private:
-  std::vector<std::shared_ptr<RouteHandleIf>> targets_;
-  FailoverErrorsSettings failoverErrors_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
+  const FailoverErrorsSettings failoverErrors_;
 };
 
 }}

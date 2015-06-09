@@ -45,11 +45,9 @@ class ConstShardHashFunc {
  public:
   explicit ConstShardHashFunc(size_t n);
 
-  ConstShardHashFunc(const folly::dynamic& json, size_t n);
-
   size_t operator()(folly::StringPiece key) const;
 
-  static std::string type() { return "ConstShard"; }
+  static const char* const type() { return "ConstShard"; }
 
  private:
   size_t n_;
