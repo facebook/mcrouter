@@ -16,7 +16,8 @@ from mcrouter.test.McrouterTestCase import McrouterTestCase
 class TestBigvalue(McrouterTestCase):
     config = './mcrouter/test/test_bigvalue.json'
     extra_args = ['--big-value-split-threshold', '5000',
-                  '-t', '20']
+                  '--big-value-batch-size', '2',
+                  '-t', '30']
 
     def setUp(self):
         self.add_server(Memcached())
