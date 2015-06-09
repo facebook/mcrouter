@@ -12,11 +12,9 @@
 #include <memory>
 #include <string>
 
-#include <folly/dynamic.h>
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
@@ -70,35 +68,6 @@ class L1L2CacheRoute {
     assert(l2_ != nullptr);
   }
 
-  L1L2CacheRoute(RouteHandleFactory<RouteHandleIf>& factory,
-                 const folly::dynamic& json) {
-
-    checkLogic(json.isObject(), "L1L2CacheRoute should be an object");
-    checkLogic(json.count("l1"), "L1L2CacheRoute: no l1 route");
-    checkLogic(json.count("l2"), "L1L2CacheRoute: no l2 route");
-    checkLogic(json.count("upgradingL1Exptime"),
-               "L1L2CacheRoute: no upgradingL1Exptime");
-    checkLogic(json["upgradingL1Exptime"].isInt(),
-               "L1L2CacheRoute: upgradingL1Exptime is not an integer");
-    upgradingL1Exptime_ = json["upgradingL1Exptime"].getInt();
-
-    if (json.count("ncacheExptime")) {
-      checkLogic(json["ncacheExptime"].isInt(),
-                 "L1L2CacheRoute: ncacheExptime is not an integer");
-      ncacheExptime_ = json["ncacheExptime"].getInt();
-    }
-
-    if (json.count("ncacheUpdatePeriod")) {
-      checkLogic(json["ncacheUpdatePeriod"].isInt(),
-                 "L1L2CacheRoute: ncacheUpdatePeriod is not an integer");
-      ncacheUpdatePeriod_ = json["ncacheUpdatePeriod"].getInt();
-      ncacheUpdateCounter_ = ncacheUpdatePeriod_;
-    }
-
-    l1_ = factory.create(json["l1"]);
-    l2_ = factory.create(json["l2"]);
-  }
-
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation, typename GetLike<Operation>::Type = 0) {
@@ -148,9 +117,9 @@ class L1L2CacheRoute {
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> l1_;
-  std::shared_ptr<RouteHandleIf> l2_;
-  uint32_t upgradingL1Exptime_{0};
+  const std::shared_ptr<RouteHandleIf> l1_;
+  const std::shared_ptr<RouteHandleIf> l2_;
+  const uint32_t upgradingL1Exptime_{0};
   size_t ncacheExptime_{0};
   size_t ncacheUpdatePeriod_{0};
   size_t ncacheUpdateCounter_{0};

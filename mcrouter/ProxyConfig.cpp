@@ -13,6 +13,7 @@
 #include <folly/dynamic.h>
 #include <folly/json.h>
 
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"

@@ -44,7 +44,7 @@ class ReliablePoolRoute {
       : destinations_(std::move(destinations)),
         failoverCount_(failoverCount),
         rhs_(makeFailoverTargets(std::move(init_salt))),
-        failoverRoute_(rhs_),
+        failoverRoute_(rhs_, FailoverErrorsSettings()),
         allSyncRoute_(rhs_) {
   }
 

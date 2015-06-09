@@ -74,32 +74,6 @@ class MigrateRoute {
     assert(to_ != nullptr);
   }
 
-  MigrateRoute(RouteHandleFactory<RouteHandleIf>& factory,
-               const folly::dynamic& json,
-               TimeProvider tp)
-      : intervalSec_(3600),
-        tp_(tp) {
-
-    checkLogic(json.isObject(), "MigrateRoute should be object");
-    checkLogic(json.count("start_time") && json["start_time"].isInt(),
-               "MigrateRoute has no/invalid start_time");
-    checkLogic(json.count("from"), "MigrateRoute has no 'from' route");
-    checkLogic(json.count("to"), "MigrateRoute has no 'to' route");
-
-    startTimeSec_ = json["start_time"].asInt();
-    if (json.count("interval")) {
-      checkLogic(json["interval"].isInt(),
-                 "MigrateRoute interval is not integer");
-      intervalSec_ = json["interval"].asInt();
-    }
-
-    from_ = factory.create(json["from"]);
-    to_ = factory.create(json["to"]);
-
-    assert(from_ != nullptr);
-    assert(to_ != nullptr);
-  }
-
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
@@ -138,8 +112,8 @@ class MigrateRoute {
   static constexpr int kFromMask = 1;
   static constexpr int kToMask = 2;
 
-  std::shared_ptr<RouteHandleIf> from_;
-  std::shared_ptr<RouteHandleIf> to_;
+  const std::shared_ptr<RouteHandleIf> from_;
+  const std::shared_ptr<RouteHandleIf> to_;
   time_t startTimeSec_;
   time_t intervalSec_;
   const TimeProvider tp_;

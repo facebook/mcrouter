@@ -14,10 +14,8 @@
 #include <vector>
 
 #include <folly/Optional.h>
-#include <folly/dynamic.h>
 #include <folly/experimental/fibers/ForEach.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -34,17 +32,6 @@ class AllSyncRoute {
 
   explicit AllSyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
-  }
-
-  AllSyncRoute(RouteHandleFactory<RouteHandleIf>& factory,
-               const folly::dynamic& json) {
-    if (json.isObject()) {
-      if (json.count("children")) {
-        children_ = factory.createList(json["children"]);
-      }
-    } else {
-      children_ = factory.createList(json);
-    }
   }
 
   template <class Operation, class Request>
@@ -85,7 +72,7 @@ class AllSyncRoute {
   }
 
  private:
-  std::vector<std::shared_ptr<RouteHandleIf>> children_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
 
 }}

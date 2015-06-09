@@ -9,46 +9,15 @@
  */
 #include "OperationSelectorRoute.h"
 
+#include <map>
+
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-OperationSelectorRoute::OperationSelectorRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
-    const folly::dynamic& json) {
-  if (!json.isObject()) {
-    defaultPolicy_ = factory.create(json);
-    return;
-  }
-
-  if (json.count("default_policy")) {
-    defaultPolicy_ = factory.create(json["default_policy"]);
-  }
-
-  operationPolicies_.resize(mc_nops);
-  if (json.count("operation_policies")) {
-    const auto& policies = json["operation_policies"];
-    checkLogic(policies.isObject(),
-               "OperationSelectorRoute: operation_policies is not object");
-
-    std::map<std::string, folly::dynamic> orderedPolicies;
-    for (const auto& it : policies.items()) {
-      checkLogic(it.first.isString(),
-                 "OperationSelectorRoute: operation_policies "
-                 "key is not a string");
-      auto key = it.first.asString().toStdString();
-      orderedPolicies.insert({ key, it.second });
-    }
-
-    // order is important here: named handles may not be resolved if we parse
-    // policies in random order
-    for (const auto& it : orderedPolicies) {
-      auto opId = mc_op_from_string(it.first.data());
-      checkLogic(opId != mc_op_unknown, "Unknown mc operation: {}", it.first);
-      operationPolicies_[opId] = factory.create(it.second);
-    }
-  }
-}
 
 McrouterRouteHandlePtr makeOperationSelectorRoute(
   std::vector<McrouterRouteHandlePtr> operationPolicies,
@@ -60,11 +29,44 @@ McrouterRouteHandlePtr makeOperationSelectorRoute(
 }
 
 McrouterRouteHandlePtr makeOperationSelectorRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json) {
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  if (!json.isObject()) {
+    return factory.create(json);
+  }
 
-  return std::make_shared<McrouterRouteHandle<OperationSelectorRoute>>(
-    factory, json);
+  McrouterRouteHandlePtr defaultPolicy;
+  if (json.count("default_policy")) {
+    defaultPolicy = factory.create(json["default_policy"]);
+  }
+
+  std::vector<McrouterRouteHandlePtr> operationPolicies{mc_nops};
+  if (auto jOpPolicies = json.get_ptr("operation_policies")) {
+    checkLogic(jOpPolicies->isObject(),
+               "OperationSelectorRoute: operation_policies is not an object");
+
+    std::map<std::string, const folly::dynamic*> orderedPolicies;
+    for (auto& it : jOpPolicies->items()) {
+      checkLogic(it.first.isString(),
+                 "OperationSelectorRoute: operation_policies' "
+                 "key is not a string");
+      auto key = it.first.stringPiece().str();
+      orderedPolicies.emplace(std::move(key), &it.second);
+    }
+
+    // order is important here: named handles may not be resolved if we parse
+    // policies in random order
+    for (const auto& it : orderedPolicies) {
+      auto opId = mc_op_from_string(it.first.data());
+      checkLogic(opId != mc_op_unknown, "Unknown mc operation: {}", it.first);
+      operationPolicies[opId] = factory.create(*it.second);
+    }
+
+    return makeOperationSelectorRoute(std::move(operationPolicies),
+                                      std::move(defaultPolicy));
+  }
+
+  return defaultPolicy;
 }
 
 }}}  // facebook::memcache::mcrouter

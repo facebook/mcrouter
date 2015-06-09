@@ -29,15 +29,11 @@ class Ch3HashFunc {
     }
   }
 
-  Ch3HashFunc(const folly::dynamic& json, size_t n)
-      : Ch3HashFunc(n) {
-  }
-
   size_t operator() (folly::StringPiece hashable) const {
     return furc_hash_array(hashable.data(), hashable.size(), n_, hash);
   }
 
-  static std::string type() {
+  static const char* const type() {
     return "Ch3";
   }
 

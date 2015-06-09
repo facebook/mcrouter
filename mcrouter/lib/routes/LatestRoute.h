@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Hash.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
@@ -44,28 +43,9 @@ class LatestRoute {
 
   LatestRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
               size_t failoverCount,
-              FailoverErrorsSettings failoverErrors) {
-    commonInit(std::move(targets), failoverCount, std::move(failoverErrors));
-  }
-
-  LatestRoute(const folly::dynamic& json,
-              std::vector<std::shared_ptr<RouteHandleIf>> targets) {
-
-    size_t failoverCount = 5;
-    FailoverErrorsSettings failoverErrors;
-    if (json.isObject()) {
-      if (json.count("failover_count")) {
-        checkLogic(json["failover_count"].isInt(),
-                   "LatestRoute: failover_count is not an integer");
-        failoverCount = json["failover_count"].asInt();
-      }
-
-      if (auto jsonFailoverErrors = json.get_ptr("failover_errors")) {
-        failoverErrors = FailoverErrorsSettings(*jsonFailoverErrors);
-      }
-    }
-
-    commonInit(std::move(targets), failoverCount, std::move(failoverErrors));
+              FailoverErrorsSettings failoverErrors)
+    : route_(getFailoverTargets(std::move(targets), failoverCount),
+             std::move(failoverErrors)) {
   }
 
   template <class Operation, class Request>
@@ -75,12 +55,11 @@ class LatestRoute {
   }
 
  private:
-  FailoverRoute<RouteHandleIf> route_;
+  const FailoverRoute<RouteHandleIf> route_;
 
-  void commonInit(std::vector<std::shared_ptr<RouteHandleIf>> targets,
-                  size_t failoverCount, FailoverErrorsSettings failoverErrors) {
-    checkLogic(!targets.empty(), "LatestRoute children is empty");
-
+  static std::vector<std::shared_ptr<RouteHandleIf>> getFailoverTargets(
+      std::vector<std::shared_ptr<RouteHandleIf>> targets,
+      size_t failoverCount) {
     std::vector<std::shared_ptr<RouteHandleIf>> failovers;
     failoverCount = std::min(failoverCount, targets.size());
     size_t curHash = folly::hash::hash_combine(0, globals::hostid());
@@ -91,9 +70,7 @@ class LatestRoute {
       targets.pop_back();
       curHash = folly::hash::hash_combine(curHash, i);
     }
-
-    route_ = FailoverRoute<RouteHandleIf>(std::move(failovers),
-                                          std::move(failoverErrors));
+    return failovers;
   }
 };
 

@@ -9,7 +9,9 @@
  */
 #include "AsynclogRoute.h"
 
-#include "mcrouter/async.h"
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -21,4 +23,26 @@ McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
     std::move(asynclogName));
 }
 
-}}}
+McrouterRouteHandlePtr makeAsynclogRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  std::string asynclogName;
+  McrouterRouteHandlePtr target;
+  checkLogic(json.isObject() || json.isString(),
+             "AsynclogRoute should be object or string");
+  if (json.isString()) {
+    asynclogName = json.stringPiece().str();
+    target = factory.create(json);
+  } else { // object
+    auto jname = json.get_ptr("name");
+    checkLogic(jname && jname->isString(),
+               "AsynclogRoute: required string name");
+    auto jtarget = json.get_ptr("target");
+    checkLogic(jtarget, "AsynclogRoute: target not found");
+    asynclogName = jname->stringPiece().str();
+    target = factory.create(*jtarget);
+  }
+  return makeAsynclogRoute(std::move(target), std::move(asynclogName));
+}
+
+}}}  // facebook::memcache::mcrouter

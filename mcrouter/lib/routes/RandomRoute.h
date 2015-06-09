@@ -15,10 +15,6 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
-
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 
 namespace facebook { namespace memcache {
@@ -44,22 +40,6 @@ class RandomRoute {
               std::chrono::system_clock::now().time_since_epoch().count())) {
   }
 
-  RandomRoute(RouteHandleFactory<RouteHandleIf>& factory,
-              const folly::dynamic& json)
-      : gen_(std::ranlux24_base(
-              std::chrono::system_clock::now().time_since_epoch().count())) {
-
-    if (json.isObject()) {
-      if (json.count("children")) {
-        children_ = factory.createList(json["children"]);
-      }
-    } else {
-      children_ = factory.createList(json);
-    }
-
-    checkLogic(!children_.empty(), "RandomRoute children is empty");
-  }
-
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) {
@@ -67,7 +47,7 @@ class RandomRoute {
   }
 
  private:
-  std::vector<std::shared_ptr<RouteHandleIf>> children_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> children_;
   std::ranlux24_base gen_;
 };
 

@@ -10,7 +10,6 @@
 #pragma once
 
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
-#include "mcrouter/lib/config/RouteHandleProvider.h"
 #include "mcrouter/lib/routes/AllAsyncRoute.h"
 #include "mcrouter/lib/routes/AllFastestRoute.h"
 #include "mcrouter/lib/routes/AllInitialRoute.h"
@@ -19,7 +18,6 @@
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/lib/routes/HashRoute.h"
-#include "mcrouter/lib/routes/HostIdRoute.h"
 #include "mcrouter/lib/routes/LatestRoute.h"
 #include "mcrouter/lib/routes/MissFailoverRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"

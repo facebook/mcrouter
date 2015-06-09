@@ -7,24 +7,43 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/AllInitialRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, AllInitialRoute>(
-  RouteHandleFactory<mcrouter::McrouterRouteHandleIf>&,
-  const folly::dynamic&);
-
-namespace mcrouter {
+McrouterRouteHandlePtr makeNullRoute();
 
 McrouterRouteHandlePtr makeAllInitialRoute(
   std::vector<McrouterRouteHandlePtr> rh) {
 
-  return makeMcrouterRouteHandle<AllInitialRoute>(
-    std::move(rh));
+  if (rh.empty()) {
+    return makeNullRoute();
+  }
+
+  if (rh.size() == 1) {
+    return std::move(rh[0]);
+  }
+
+  return makeMcrouterRouteHandle<AllInitialRoute>(std::move(rh));
 }
 
-}}}
+McrouterRouteHandlePtr makeAllInitialRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  std::vector<McrouterRouteHandlePtr> children;
+  if (json.isObject()) {
+    if (auto jchildren = json.get_ptr("children")) {
+      children = factory.createList(*jchildren);
+    }
+  } else {
+    children = factory.createList(json);
+  }
+  return makeAllInitialRoute(std::move(children));
+}
+
+}}}  // facebook::memcache::mcrouter

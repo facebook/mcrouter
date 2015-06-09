@@ -9,15 +9,11 @@
  */
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/route.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
-#include "mcrouter/routes/RouteHandleMap.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -32,9 +28,6 @@ class OperationSelectorRoute {
       : operationPolicies_(std::move(operationPolicies)),
         defaultPolicy_(std::move(defaultPolicy)) {
   }
-
-  OperationSelectorRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-                         const folly::dynamic& json);
 
   template <int M, class Request>
   std::vector<McrouterRouteHandlePtr> couldRouteTo(
@@ -64,8 +57,8 @@ class OperationSelectorRoute {
   }
 
 private:
-  std::vector<McrouterRouteHandlePtr> operationPolicies_;
-  McrouterRouteHandlePtr defaultPolicy_;
+  const std::vector<McrouterRouteHandlePtr> operationPolicies_;
+  const McrouterRouteHandlePtr defaultPolicy_;
 };
 
 }}}  // facebook::memcache::mcrouter

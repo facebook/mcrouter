@@ -7,15 +7,35 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/config/RouteHandleBuilder.h"
-#include "mcrouter/lib/routes/HostIdRoute.h"
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, HostIdRoute>(
-  RouteHandleFactory<mcrouter::McrouterRouteHandleIf>&,
-  const folly::dynamic&);
+McrouterRouteHandlePtr makeNullRoute();
 
-}}
+McrouterRouteHandlePtr makeHostIdRoute(std::vector<McrouterRouteHandlePtr> rh) {
+  if (rh.empty()) {
+    return makeNullRoute();
+  }
+  return std::move(rh[globals::hostid() % rh.size()]);
+}
+
+McrouterRouteHandlePtr makeHostIdRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  std::vector<McrouterRouteHandlePtr> children;
+  if (json.isObject()) {
+    if (auto jchildren = json.get_ptr("children")) {
+      children = factory.createList(*jchildren);
+    }
+  } else {
+    children = factory.createList(json);
+  }
+  return makeHostIdRoute(std::move(children));
+}
+
+}}}  // facebook::memcache::mcrouter

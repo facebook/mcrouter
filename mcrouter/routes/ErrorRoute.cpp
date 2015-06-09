@@ -7,24 +7,29 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, ErrorRoute>(
-  const folly::dynamic&);
-
-namespace mcrouter {
-
-McrouterRouteHandlePtr makeErrorRoute() {
-  return makeMcrouterRouteHandle<ErrorRoute>();
+McrouterRouteHandlePtr makeErrorRoute(std::string valueToSet = "") {
+  return makeMcrouterRouteHandle<ErrorRoute>(std::move(valueToSet));
 }
 
-McrouterRouteHandlePtr makeErrorRoute(const std::string& valueToSet) {
-  return makeMcrouterRouteHandle<ErrorRoute>(valueToSet);
+McrouterRouteHandlePtr makeErrorRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  checkLogic(json.isString() || json.isNull(),
+             "ErrorRoute: response should be string or empty");
+  std::string response;
+  if (json.isString()) {
+    response = json.stringPiece().str();
+  }
+  return makeErrorRoute(std::move(response));
 }
 
-}}}
+}}}  // facebook::memcache::mcrouter

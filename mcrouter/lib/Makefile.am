@@ -36,8 +36,6 @@ libmcrouter_a_SOURCES = \
   config/RouteHandleBuilder.h \
   config/RouteHandleFactory-inl.h \
   config/RouteHandleFactory.h \
-  config/RouteHandleProvider-inl.h \
-  config/RouteHandleProvider.h \
   config/RouteHandleProviderIf.h \
   cycles/Accumulator.cpp \
   cycles/Accumulator.h \
@@ -170,7 +168,6 @@ libmcrouter_a_SOURCES = \
   routes/ErrorRoute.h \
   routes/FailoverRoute.h \
   routes/HashRoute.h \
-  routes/HostIdRoute.h \
   routes/LatestRoute-inl.h \
   routes/LatestRoute.h \
   routes/LoggingRoute.h \

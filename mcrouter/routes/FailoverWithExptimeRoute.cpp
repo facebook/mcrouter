@@ -9,31 +9,57 @@
  */
 #include "FailoverWithExptimeRoute.h"
 
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
-FailoverWithExptimeRoute::FailoverWithExptimeRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json)
-    : failoverExptime_(60) {
+McrouterRouteHandlePtr makeNullRoute();
 
-  checkLogic(json.isObject(), "FailoverWithExptimeRoute is not object");
+McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
+  McrouterRouteHandlePtr normalTarget,
+  std::vector<McrouterRouteHandlePtr> failoverTargets,
+  int32_t failoverExptime,
+  FailoverErrorsSettings failoverErrors,
+  bool failoverTagging) {
+
+  if (!normalTarget) {
+    return makeNullRoute();
+  }
+
+  if (failoverTargets.empty()) {
+    return std::move(normalTarget);
+  }
+
+  return std::make_shared<McrouterRouteHandle<FailoverWithExptimeRoute>>(
+    std::move(normalTarget),
+    std::move(failoverTargets),
+    failoverExptime,
+    std::move(failoverErrors),
+    failoverTagging);
+}
+
+McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  checkLogic(json.isObject(), "FailoverWithExptimeRoute is not an object");
+
+  McrouterRouteHandlePtr normal;
+  if (auto jnormal = json.get_ptr("normal")) {
+    normal = factory.create(*jnormal);
+  }
 
   std::vector<McrouterRouteHandlePtr> failoverTargets;
-
-  if (auto failover = json.get_ptr("failover")) {
-    failoverTargets = factory.createList(*failover);
+  if (auto jfailover = json.get_ptr("failover")) {
+    failoverTargets = factory.createList(*jfailover);
   }
 
-  failover_ = FailoverRoute<McrouterRouteHandleIf>(std::move(failoverTargets));
-
-  if (auto normal = json.get_ptr("normal")) {
-    normal_ = factory.create(*normal);
-  }
-
-  if (auto failoverExptime = json.get_ptr("failover_exptime")) {
-    checkLogic(failoverExptime->isInt(),
-               "failover_exptime is not integer");
-    failoverExptime_ = failoverExptime->getInt();
+  int32_t failoverExptime = 60;
+  if (auto jexptime = json.get_ptr("failover_exptime")) {
+    checkLogic(jexptime->isInt(), "FailoverWithExptimeRoute: "
+                                  "failover_exptime is not an integer");
+    failoverExptime = jexptime->getInt();
   }
 
   // Check if only one format is being used
@@ -43,44 +69,32 @@ FailoverWithExptimeRoute::FailoverWithExptimeRoute(
     );
 
   // new format
-  if (auto failoverTag = json.get_ptr("failover_tag")) {
-    checkLogic(failoverTag->isBool(),
+  FailoverErrorsSettings failoverErrors;
+  bool failoverTagging = false;
+  if (auto jfailoverTag = json.get_ptr("failover_tag")) {
+    checkLogic(jfailoverTag->isBool(),
                "FailoverWithExptime: failover_tag is not bool");
-    failoverTagging_ = failoverTag->getBool();
+    failoverTagging = jfailoverTag->getBool();
   }
-  if (auto failoverErrors = json.get_ptr("failover_errors")) {
-    failoverErrors_ = FailoverErrorsSettings(*failoverErrors);
+  if (auto jfailoverErrors = json.get_ptr("failover_errors")) {
+    failoverErrors = FailoverErrorsSettings(*jfailoverErrors);
   }
 
   // old format
-  if (auto settings = json.get_ptr("settings")) {
+  if (auto jsettings = json.get_ptr("settings")) {
     VLOG(1) << "FailoverWithExptime: This config format is deprecated. "
                "Use 'failover_errors' instead of 'settings'.";
-    auto oldSettings = FailoverWithExptimeSettings(*settings);
-    failoverTagging_ = oldSettings.failoverTagging;
-    failoverErrors_ = oldSettings.getFailoverErrors();
+    auto oldSettings = FailoverWithExptimeSettings(*jsettings);
+    failoverTagging = oldSettings.failoverTagging;
+    failoverErrors = oldSettings.getFailoverErrors();
   }
-}
 
-McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-  McrouterRouteHandlePtr normalTarget,
-  std::vector<McrouterRouteHandlePtr> failoverTargets,
-  uint32_t failoverExptime,
-  FailoverWithExptimeSettings settings) {
-
-  return std::make_shared<McrouterRouteHandle<FailoverWithExptimeRoute>>(
-    std::move(normalTarget),
+  return makeFailoverWithExptimeRoute(
+    std::move(normal),
     std::move(failoverTargets),
     failoverExptime,
-    std::move(settings));
-}
-
-McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-  RouteHandleFactory<McrouterRouteHandleIf>& factory,
-  const folly::dynamic& json) {
-
-  return std::make_shared<McrouterRouteHandle<FailoverWithExptimeRoute>>(
-    factory, json);
+    std::move(failoverErrors),
+    failoverTagging);
 }
 
 }}}  // facebook::memcache::mcrouter

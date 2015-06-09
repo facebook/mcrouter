@@ -7,19 +7,24 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <folly/dynamic.h>
+
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
-
-template std::shared_ptr<mcrouter::McrouterRouteHandleIf>
-makeRouteHandle<mcrouter::McrouterRouteHandleIf, NullRoute>();
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute() {
-  return makeMcrouterRouteHandle<NullRoute>();
+  static auto nullRoute = makeMcrouterRouteHandle<NullRoute>();
+  return nullRoute;
 }
 
-}}}
+McrouterRouteHandlePtr makeNullRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  return makeNullRoute();
+}
+
+}}}  // facebook::memcache::mcrouter

@@ -63,7 +63,7 @@ class WeightedCh3HashFunc {
     return weights_;
   }
 
-  static std::string type() {
+  static const char* const type() {
     return "WeightedCh3";
   }
 
