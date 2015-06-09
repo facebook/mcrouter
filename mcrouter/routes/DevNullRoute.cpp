@@ -17,8 +17,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeDevNullRoute() {
-  static auto devnull = std::make_shared<McrouterRouteHandle<DevNullRoute>>();
-  return devnull;
+  return std::make_shared<McrouterRouteHandle<DevNullRoute>>();
 }
 
 McrouterRouteHandlePtr makeDevNullRoute(
