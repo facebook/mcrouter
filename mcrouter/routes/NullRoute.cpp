@@ -17,8 +17,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute() {
-  static auto nullRoute = makeMcrouterRouteHandle<NullRoute>();
-  return nullRoute;
+  return makeMcrouterRouteHandle<NullRoute>();
 }
 
 McrouterRouteHandlePtr makeNullRoute(
