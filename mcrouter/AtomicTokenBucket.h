@@ -41,7 +41,7 @@ class DynamicAtomicTokenBucket {
    *
    * @param toConsume The number of tokens to consume.
    * @param rate Number of tokens to generate per second.
-   * @param burstSize Maximum burst size. Must be at least 1.
+   * @param burstSize Maximum burst size. Must be greater than 0.
    * @param nowInSeconds Current time in seconds. Should be monotonically
    *                     increasing from the nowInSeconds specified in
    *                     this token bucket's constructor.
@@ -52,7 +52,7 @@ class DynamicAtomicTokenBucket {
                double burstSize,
                double nowInSeconds = defaultClockNow()) {
     assert(rate > 0);
-    assert(burstSize >= 1);
+    assert(burstSize > 0);
 
     return consumeImpl(
       rate,
@@ -74,7 +74,7 @@ class DynamicAtomicTokenBucket {
    *
    * @param toConsume The number of tokens to consume.
    * @param rate Number of tokens to generate per second.
-   * @param burstSize Maximum burst size. Must be at least 1.
+   * @param burstSize Maximum burst size. Must be greater than 0.
    * @param nowInSeconds Current time in seconds. Should be monotonically
    *                     increasing from the nowInSeconds specified in
    *                     this token bucket's constructor.
@@ -85,7 +85,7 @@ class DynamicAtomicTokenBucket {
                         double burstSize,
                         double nowInSeconds = defaultClockNow()) {
     assert(rate > 0);
-    assert(burstSize >= 1);
+    assert(burstSize > 0);
 
     double consumed;
     consumeImpl(
@@ -112,7 +112,7 @@ class DynamicAtomicTokenBucket {
                    double burstSize,
                    double nowInSeconds = defaultClockNow()) const {
     assert(rate > 0);
-    assert(burstSize >= 1);
+    assert(burstSize > 0);
 
     return std::min((nowInSeconds - zeroTime_) * rate, burstSize);
   }
@@ -152,7 +152,7 @@ class AtomicTokenBucket {
    * Construct a token bucket with a specific maximum rate and burst size.
    *
    * @param rate Number of tokens to generate per second.
-   * @param burstSize Maximum burst size. Must be at least 1.
+   * @param burstSize Maximum burst size. Must be greater than 0.
    * @param nowInSeconds Current time in seconds according to some
    *                     monotonically increasing clock.
    *
@@ -162,7 +162,7 @@ class AtomicTokenBucket {
       : rate_(rate),
         burstSize_(burstSize) {
     assert(rate_ > 0);
-    assert(burstSize_ >= 1);
+    assert(burstSize_ > 0);
   }
 
   /**
