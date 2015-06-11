@@ -291,7 +291,9 @@ void asynclog_delete(proxy_t* proxy,
                      folly::StringPiece poolName) {
   dynamic json = {};
   const auto& host = pclient.ap->getHost();
-  const auto& port = pclient.ap->getPort();
+  const auto& port = proxy->opts.asynclog_port_override == 0
+                         ? pclient.ap->getPort()
+                         : proxy->opts.asynclog_port_override;
 
   if (proxy->opts.use_asynclog_version2) {
     json = dynamic::object;
