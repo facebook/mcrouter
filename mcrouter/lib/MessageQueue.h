@@ -134,7 +134,9 @@ class MessageQueue {
     handler_.initHandler(&evb_, efd_);
     handler_.registerHandler(
       folly::EventHandler::READ | folly::EventHandler::PERSIST);
-    timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
+    if (noNotifyRate > 0) {
+      timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
+    }
   }
 
   size_t currentNotifyPeriod() const noexcept {
