@@ -52,6 +52,12 @@ class McrouterInstance {
    */
   static McrouterInstance* init(folly::StringPiece persistence_id,
                                 const McrouterOptions& options);
+  /**
+   * Same as init(), but mcrouter will not spin up proxyThreads
+   */
+  static McrouterInstance* initNonManagedThreads(
+    folly::StringPiece persistence_id,
+    const McrouterOptions& options);
 
   /**
    * If an instance with the given persistence_id already exists,
@@ -85,6 +91,16 @@ class McrouterInstance {
                                        void* client_context,
                                        size_t maximum_outstanding_requests);
 
+  /**
+   * Same as createClient(), but you must use it from the same thread that's
+   * running the assigned proxy's event base.  The sends call into proxy
+   * callbacks directly, bypassing the queue.
+   */
+  McrouterClient::Pointer createSameThreadClient(
+    mcrouter_client_callbacks_t callbacks,
+    void* client_context,
+    size_t maximum_outstanding_requests);
+
   const McrouterOptions& opts() const {
     return opts_;
   }
@@ -107,14 +123,6 @@ class McrouterInstance {
 
   ShutdownLock& shutdownLock() {
     return shutdownLock_;
-  }
-
-  /**
-   * @return  True if we want to run with realtime threads, that is if we're
-   *   running as both standalone and with realtime requested.
-   */
-  bool wantRealtimeThreads() const {
-    return opts_.standalone && !opts_.realtime_disabled;
   }
 
   /**
@@ -264,7 +272,7 @@ class McrouterInstance {
    *   the provided options.
    */
   static McrouterInstance* create(McrouterOptions input_options,
-                                  bool spawnProxyThreads = true);
+                                  bool spawnProxyThreads);
 
   explicit McrouterInstance(McrouterOptions input_options);
 

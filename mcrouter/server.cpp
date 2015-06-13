@@ -91,7 +91,7 @@ void serverLoop(
   bool managedMode,
   bool retainSourceIp) {
 
-  auto routerClient = router.createClient(
+  auto routerClient = router.createSameThreadClient(
     server_callbacks,
     &worker,
     0);

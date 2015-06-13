@@ -101,13 +101,6 @@ class McrouterClient {
   );
 
   /**
-   * Returns the mcrouter managed event base that runs the callbacks.
-   * Returns nullptr in sync or standalone mode, as mcrouter doesn't create
-   * its own event bases.
-   */
-  folly::EventBase* getBase() const;
-
-  /**
    * Change the context passed back to the callbacks.
    */
   void setClientContext(void* client_context) {
@@ -149,6 +142,7 @@ class McrouterClient {
 
  private:
   McrouterInstance* router_;
+  bool sameThread_{false};
 
   mcrouter_client_callbacks_t callbacks_;
   void* arg_;
@@ -189,13 +183,15 @@ class McrouterClient {
     McrouterInstance* router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
-    size_t maximum_outstanding);
+    size_t maximum_outstanding,
+    bool sameThread);
 
   static Pointer create(
     McrouterInstance* router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
-    size_t maximum_outstanding);
+    size_t maximum_outstanding,
+    bool sameThread);
 
   void onReply(ProxyRequestContext& preq);
 

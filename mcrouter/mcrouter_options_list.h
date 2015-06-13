@@ -56,11 +56,6 @@ mcrouter_option_string(
   no_long, no_short,
   "Name of the flavor used to configure this router instance.")
 
-mcrouter_option_integer(
-  int, standalone, 0,
-  no_long, no_short,
-  "")
-
 mcrouter_option_toggle(
   asynclog_disable, false,
   "asynclog-disable", no_short,
@@ -109,13 +104,6 @@ mcrouter_option_integer(
   no_long, no_short,
   "Force client queue notification if last drain was at least this long ago."
   "  If 0, this logic is disabled.")
-
-mcrouter_option_toggle(
-  realtime_disabled, false,
-  "no-realtime", no_short,
-  "when run as root, mcrouter is run with realtime priority to "
-  "improve latency. Use this option to disable realtime-priority "
-  "when run as root")
 
 mcrouter_option_integer(
   size_t, big_value_split_threshold, 0,

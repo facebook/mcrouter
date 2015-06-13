@@ -512,7 +512,6 @@ int main(int argc, char **argv) {
   }
 
   raise_fdlimit();
-  opts.standalone = 1;
 
   // Set the router port as part of the router id.
   std::string port_str = "0";
@@ -532,7 +531,7 @@ int main(int argc, char **argv) {
    */
   mc_msg_use_atomic_refcounts(0);
 
-  auto router = McrouterInstance::init("standalone", opts);
+  auto router = McrouterInstance::initNonManagedThreads("standalone", opts);
   if (router == nullptr) {
     LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
     exit(EXIT_STATUS_TRANSIENT_ERROR);
