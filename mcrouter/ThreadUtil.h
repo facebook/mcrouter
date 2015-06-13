@@ -23,7 +23,7 @@ namespace mcrouter {
  * Utility functions for launching threads and setting thread names.
  */
 bool spawnThread(pthread_t* thread_handle, void** stack,
-                 void* (thread_run)(void*), void* arg, int realtime);
+                 void* (thread_run)(void*), void* arg);
 
 void mcrouterSetThreadName(pthread_t tid,
                            const McrouterOptions& opts,

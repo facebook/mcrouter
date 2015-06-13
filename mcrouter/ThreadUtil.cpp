@@ -30,7 +30,7 @@ void mcrouterSetThreadName(pthread_t tid,
 }
 
 bool spawnThread(pthread_t* thread_handle, void** stack,
-                 void* (thread_run)(void*), void* arg, int realtime) {
+                 void* (thread_run)(void*), void* arg) {
   /* Default thread stack size if RLIMIT_STACK is unlimited */
   static constexpr size_t DEFAULT_STACK_SIZE = 8192 * 1024;
 
@@ -43,20 +43,6 @@ bool spawnThread(pthread_t* thread_handle, void** stack,
     rlim.rlim_cur == RLIM_INFINITY ? DEFAULT_STACK_SIZE : rlim.rlim_cur;
   PCHECK(posix_memalign(stack, 8, stack_sz) == 0);
   PCHECK(pthread_attr_setstack(&attr, *stack, stack_sz) == 0);
-
-  if (realtime) {
-    struct sched_param sched_param;
-    cap_t cap_p = cap_get_proc();
-    cap_flag_value_t cap_val;
-    cap_get_flag(cap_p, CAP_SYS_NICE, CAP_EFFECTIVE, &cap_val);
-    if (cap_val == CAP_SET) {
-      sched_param.sched_priority = DEFAULT_REALTIME_PRIORITY_LEVEL;
-      pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
-      pthread_attr_setschedparam(&attr, &sched_param);
-      pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-    }
-    cap_free(cap_p);
-  }
 
   int rc = pthread_create(thread_handle, &attr, thread_run, arg);
   pthread_attr_destroy(&attr);

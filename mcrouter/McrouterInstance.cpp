@@ -45,13 +45,14 @@ class McrouterManager {
   }
 
   McrouterInstance* mcrouterGetCreate(folly::StringPiece persistence_id,
-                                      const McrouterOptions& options) {
+                                      const McrouterOptions& options,
+                                      bool spawnProxyThreads) {
     std::lock_guard<std::mutex> lg(mutex_);
 
     auto mcrouter = folly::get_default(mcrouters_, persistence_id.str(),
                                        nullptr);
     if (!mcrouter) {
-      mcrouter = McrouterInstance::create(options.clone());
+      mcrouter = McrouterInstance::create(options.clone(), spawnProxyThreads);
       if (mcrouter) {
         mcrouters_[persistence_id.str()] = mcrouter;
       }
@@ -107,7 +108,20 @@ bool isValidRouterName(folly::StringPiece name) {
 McrouterInstance* McrouterInstance::init(folly::StringPiece persistence_id,
                                          const McrouterOptions& options) {
   if (auto manager = gMcrouterManager.get_weak().lock()) {
-    return manager->mcrouterGetCreate(persistence_id, options);
+    return manager->mcrouterGetCreate(persistence_id, options,
+                                      /* spawnProxyThreads= */ true);
+  }
+
+  return nullptr;
+}
+
+McrouterInstance* McrouterInstance::initNonManagedThreads(
+  folly::StringPiece persistence_id,
+  const McrouterOptions& options) {
+
+  if (auto manager = gMcrouterManager.get_weak().lock()) {
+    return manager->mcrouterGetCreate(persistence_id, options,
+                                      /* spawnProxyThreads= */ false);
   }
 
   return nullptr;
@@ -178,14 +192,28 @@ McrouterClient::Pointer McrouterInstance::createClient(
   return McrouterClient::create(this,
                                 callbacks,
                                 arg,
-                                max_outstanding);
+                                max_outstanding,
+                                /* sameThread= */ false);
+}
+
+McrouterClient::Pointer McrouterInstance::createSameThreadClient(
+  mcrouter_client_callbacks_t callbacks,
+  void* arg,
+  size_t max_outstanding) {
+
+  assert(!isTransient_);
+  return McrouterClient::create(this,
+                                callbacks,
+                                arg,
+                                max_outstanding,
+                                /* sameThread= */ true);
 }
 
 bool McrouterInstance::spinUp(bool spawnProxyThreads) {
   for (size_t i = 0; i < opts_.num_proxies; i++) {
     try {
       auto proxy = std::unique_ptr<proxy_t>(new proxy_t(*this, nullptr));
-      if (!opts_.standalone && spawnProxyThreads) {
+      if (spawnProxyThreads) {
         proxyThreads_.emplace_back(
           folly::make_unique<ProxyThread>(std::move(proxy)));
       } else {
@@ -204,11 +232,7 @@ bool McrouterInstance::spinUp(bool spawnProxyThreads) {
 
   startTime_ = time(nullptr);
 
-  /*
-   * If we're standalone, someone else will decide how to run the proxy
-   * Specifically, we'll run them under proxy servers in main()
-   */
-  if (!opts_.standalone && spawnProxyThreads) {
+  if (spawnProxyThreads) {
     for (auto& pt : proxyThreads_) {
       auto rc = pt->spawn();
       if (!rc) {
@@ -241,7 +265,7 @@ bool McrouterInstance::spinUp(bool spawnProxyThreads) {
 McrouterInstance* McrouterInstance::createTransient(
   const McrouterOptions& options) {
 
-  auto router = create(options.clone());
+  auto router = create(options.clone(), /* spawnProxyThreads= */ true);
   if (router != nullptr) {
     router->isTransient_ = true;
   }
@@ -472,7 +496,7 @@ void McrouterInstance::spawnStatUpdaterThread() {
   auto rc = spawnThread(&statUpdaterThreadHandle_,
                         &statUpdaterThreadStack_,
                         &McrouterInstance::statUpdaterThreadRun,
-                        this, wantRealtimeThreads());
+                        this);
   if (!rc) {
     throw std::runtime_error("failed to spawn mcrouter stat updater thread");
   }

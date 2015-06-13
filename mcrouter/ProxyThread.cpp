@@ -31,8 +31,7 @@ ProxyThread::ProxyThread(std::unique_ptr<proxy_t> pr)
 bool ProxyThread::spawn() {
   return spawnThread(&thread_handle,
                      &thread_stack,
-                     proxyThreadRunHandler, this,
-                     proxy_->router->wantRealtimeThreads());
+                     proxyThreadRunHandler, this);
 }
 
 void ProxyThread::stopAndJoin() {

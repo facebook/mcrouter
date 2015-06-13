@@ -46,10 +46,10 @@ size_t McrouterClient::send(
     return preq;
   };
 
-  if (router_->opts().standalone) {
+  if (sameThread_) {
     /*
      * Skip the extra queue hop and directly call the queue callback,
-     * since we're standalone and thus staying in the same thread.
+     * since we're staying in the same thread.
      *
      * Note: maxOutstanding_ is ignored in this case.
      */
@@ -82,20 +82,14 @@ size_t McrouterClient::send(
   return nreqs;
 }
 
-folly::EventBase* McrouterClient::getBase() const {
-  if (router_->opts().standalone) {
-    return proxy_->eventBase;
-  } else {
-    return nullptr;
-  }
-}
-
 McrouterClient::McrouterClient(
   McrouterInstance* router,
   mcrouter_client_callbacks_t callbacks,
   void* arg,
-  size_t maxOutstanding) :
+  size_t maxOutstanding,
+  bool sameThread) :
     router_(router),
+    sameThread_(sameThread),
     callbacks_(callbacks),
     arg_(arg),
     maxOutstanding_(maxOutstanding) {
@@ -125,12 +119,14 @@ McrouterClient::Pointer McrouterClient::create(
   McrouterInstance* router,
   mcrouter_client_callbacks_t callbacks,
   void* arg,
-  size_t maxOutstanding) {
+  size_t maxOutstanding,
+  bool sameThread) {
 
   auto client = new McrouterClient(router,
                                    callbacks,
                                    arg,
-                                   maxOutstanding);
+                                   maxOutstanding,
+                                   sameThread);
   client->self_ = std::shared_ptr<McrouterClient>(client);
   return Pointer(client);
 }
