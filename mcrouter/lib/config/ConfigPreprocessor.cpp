@@ -161,7 +161,7 @@ size_t unescapeUntil(StringPiece from, string& to, char c) {
 
 } // namespace
 
-const ConfigPreprocessor::Context ConfigPreprocessor::emptyContext_;
+const ConfigPreprocessor::Context ConfigPreprocessor::emptyContext_ = {};
 
 ///////////////////////////////Macro////////////////////////////////////////////
 
