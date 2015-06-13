@@ -128,7 +128,6 @@ struct ShadowSettings {
 struct ProxyMessage {
   enum class Type {
     REQUEST,
-    DISCONNECT,
     OLD_CONFIG,
     SHUTDOWN
   };

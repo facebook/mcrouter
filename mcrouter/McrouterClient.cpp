@@ -22,10 +22,10 @@ size_t McrouterClient::send(
   size_t nreqs,
   folly::StringPiece ipAddr /* = folly::StringPiece() */ ) {
 
-  if (nreqs == 0) {
+  assert(!disconnected_);
+  if (nreqs == 0 || isZombie_) {
     return 0;
   }
-  assert(!isZombie_);
 
   auto makePreq = [this, &requests, ipAddr] (size_t i) {
     auto preq = ProxyRequestContext::create(
@@ -35,7 +35,7 @@ size_t McrouterClient::send(
         prq.requester_->onReply(prq);
       },
       requests[i].context);
-    preq->requester_ = incref();
+    preq->requester_ = self_;
     if (!ipAddr.empty()) {
       preq->setUserIpAddress(ipAddr);
     }
@@ -121,6 +121,20 @@ McrouterClient::McrouterClient(
   }
 }
 
+McrouterClient::Pointer McrouterClient::create(
+  McrouterInstance* router,
+  mcrouter_client_callbacks_t callbacks,
+  void* arg,
+  size_t maxOutstanding) {
+
+  auto client = new McrouterClient(router,
+                                   callbacks,
+                                   arg,
+                                   maxOutstanding);
+  client->self_ = std::shared_ptr<McrouterClient>(client);
+  return Pointer(client);
+}
+
 void McrouterClient::onReply(ProxyRequestContext& preq) {
   mcrouter_msg_t router_reply;
 
@@ -182,32 +196,10 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
     // implemented properly.
     callbacks_.on_cancel(preq.context_, arg_);
   }
-
-  numPending_--;
-  if (numPending_ == 0 && disconnected_) {
-    cleanup();
-  }
 }
 
-void McrouterClient::disconnect() {
-  if (isZombie_) {
-    return;
-  }
-  if (proxy_->eventBase->isInEventBaseThread()) {
-    performDisconnect();
-  } else {
-    proxy_->messageQueue_->blockingWrite(ProxyMessage::Type::DISCONNECT, this);
-  }
-}
-
-void McrouterClient::performDisconnect() {
-  disconnected_ = true;
-  if (numPending_ == 0) {
-    cleanup();
-  }
-}
-
-void McrouterClient::cleanup() {
+McrouterClient::~McrouterClient() {
+  assert(disconnected_);
   {
     std::lock_guard<std::mutex> guard(router_->clientListLock_);
     router_->clientList_.erase(router_->clientList_.iterator_to(*this));
@@ -215,21 +207,8 @@ void McrouterClient::cleanup() {
   if (callbacks_.on_disconnect) {
     callbacks_.on_disconnect(arg_);
   }
-  decref();
-}
 
-McrouterClient* McrouterClient::incref() {
-  refcount_++;
-  return this;
-}
-
-void McrouterClient::decref() {
-  assert(refcount_ > 0);
-  refcount_--;
-  if (refcount_ == 0) {
-    router_->onClientDestroyed();
-    delete this;
-  }
+  router_->onClientDestroyed();
 }
 
 }}}  // facebook::memcache::mcrouter

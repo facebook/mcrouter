@@ -175,11 +175,10 @@ McrouterClient::Pointer McrouterInstance::createClient(
       "Can't create multiple clients with a transient mcrouter");
   }
 
-  return McrouterClient::Pointer(
-    new McrouterClient(this,
-                       callbacks,
-                       arg,
-                       max_outstanding));
+  return McrouterClient::create(this,
+                                callbacks,
+                                arg,
+                                max_outstanding);
 }
 
 bool McrouterInstance::spinUp(bool spawnProxyThreads) {

@@ -208,7 +208,7 @@ public:
 
   bool recording_{false};
 
-  McrouterClient* requester_{nullptr};
+  std::shared_ptr<McrouterClient> requester_;
 
   struct RecordingState {
     ClientCallback clientCallback;

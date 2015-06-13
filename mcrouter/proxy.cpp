@@ -247,8 +247,6 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
           reinterpret_cast<ProxyRequestContext*>(data));
       auto client = preq->requester_;
 
-      client->numPending_++;
-
       if (precheckRequest(*preq)) {
         return;
       }
@@ -269,13 +267,6 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
     {
       auto oldConfig = reinterpret_cast<old_config_req_t*>(data);
       delete oldConfig;
-    }
-    break;
-
-    case ProxyMessage::Type::DISCONNECT:
-    {
-      auto client = reinterpret_cast<McrouterClient*>(data);
-      client->performDisconnect();
     }
     break;
 
