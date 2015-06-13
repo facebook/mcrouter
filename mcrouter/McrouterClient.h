@@ -69,7 +69,15 @@ class McrouterClient {
  private:
   struct Disconnecter {
     void operator() (McrouterClient* client) {
-      client->disconnect();
+      client->disconnected_ = true;
+      /* We only access self_ when we need to send a request, which only
+         the user can do. Since the user is destroying the pointer,
+         there could be no concurrent send and this write is safe.
+
+         Note: not client->self_.reset(), since this could destroy client
+         from inside the call to reset(), destroying self_ while the method
+         is still running. */
+      auto stolenPtr = std::move(client->self_);
     }
   };
   folly::IntrusiveListHook hook_;
@@ -137,6 +145,8 @@ class McrouterClient {
   McrouterClient& operator=(const McrouterClient&) = delete;
   McrouterClient& operator=(McrouterClient&&) = delete;
 
+  ~McrouterClient();
+
  private:
   McrouterInstance* router_;
 
@@ -151,14 +161,10 @@ class McrouterClient {
   const unsigned int maxOutstanding_;
   counting_sem_t outstandingReqsSem_;
 
-  // whether the routing thread has received disconnect notification.
-  bool disconnected_{false};
-
-  // only updated by mcrouter thread, so we don't need any fancy atomic refcount
-  int numPending_{0};
-
-  // If true implies that the underlying mcrouter has already been
-  // freed. A zombie client can not serve any more requests.
+  /**
+   * If true then the underlying mcrouter has already been freed.
+   * A zombie client can not serve any more requests.
+   */
   std::atomic<bool> isZombie_{false};
 
   /**
@@ -167,7 +173,17 @@ class McrouterClient {
    */
   uint64_t clientId_;
 
-  std::atomic<size_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING refcount_{1};
+  /**
+   * The user let go of the McrouterClient::Pointer, and the object
+   * is pending destruction when all requests complete.
+   * Outstanding requests result in on_cancel() callback.
+   */
+  std::atomic<bool> disconnected_{false};
+
+  /**
+   * The ownership is shared between the user and the outstanding requests.
+   */
+  std::shared_ptr<McrouterClient> self_;
 
   McrouterClient(
     McrouterInstance* router,
@@ -175,16 +191,16 @@ class McrouterClient {
     void *arg,
     size_t maximum_outstanding);
 
+  static Pointer create(
+    McrouterInstance* router,
+    mcrouter_client_callbacks_t callbacks,
+    void *arg,
+    size_t maximum_outstanding);
+
   void onReply(ProxyRequestContext& preq);
-  void disconnect();
-  void performDisconnect();
-  void cleanup();
-  McrouterClient* incref();
-  void decref();
 
  private:
   friend class McrouterInstance;
-  friend class proxy_t;
   friend class ProxyRequestContext;
 };
 
