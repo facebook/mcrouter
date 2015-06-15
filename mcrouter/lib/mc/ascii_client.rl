@@ -467,7 +467,7 @@ quit = quit_op ' '* fin;
 
 version = version_op ' '* fin;
 
-stats = stats_op (' '+ multi_token)? fin;
+stats = stats_op (' '+ multi_token)? ' '* fin;
 
 exec = exec_op ' '+ multi_token fin;
 
