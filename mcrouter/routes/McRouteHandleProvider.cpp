@@ -107,6 +107,9 @@ McrouterRouteHandlePtr makeOutstandingLimitRoute(
 McrouterRouteHandlePtr makeRateLimitRoute(McrouterRouteHandlePtr normalRoute,
                                           RateLimiter rateLimiter);
 
+McrouterRouteHandlePtr makeRateLimitRoute(McRouteHandleFactory& factory,
+                                          const folly::dynamic& json);
+
 McrouterRouteHandlePtr makeRandomRoute(McRouteHandleFactory& factory,
                                        const folly::dynamic& json);
 
@@ -163,6 +166,12 @@ McRouteHandleProvider::McRouteHandleProvider(
         },
         { "PrefixPolicyRoute", &makeOperationSelectorRoute },
         { "RandomRoute", &makeRandomRoute },
+        {
+          "RateLimitRoute",
+          [](McRouteHandleFactory& factory, const folly::dynamic& json) {
+            return makeRateLimitRoute(factory, json);
+          }
+        },
         { "WarmUpRoute", &makeWarmUpRoute },
       } {
 }
