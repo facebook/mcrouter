@@ -360,7 +360,7 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
   stats[config_last_attempt_stat].data.uint64 = router->lastConfigAttempt();
   stats[config_failures_stat].data.uint64 = router->configFailures();
 
-  stats[child_pid_stat].data.int64 = getpid();
+  stats[pid_stat].data.int64 = getpid();
   stats[parent_pid_stat].data.int64 = getppid();
 
   struct rusage ru;
