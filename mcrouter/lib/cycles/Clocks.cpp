@@ -20,6 +20,11 @@ inline uint64_t rdtsc() {
   uint64_t hi, lo;
   __asm__ volatile("rdtsc" : "=a" (lo), "=d" (hi));
   return (hi << 32) | lo;
+#elif defined(__powerpc__) && \
+    ( __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+  uint64_t val;
+  val = __builtin_ppc_get_timebase();
+  return val;
 #else
 #error Unsupported CPU. Consider implementing your own Clock.
 #endif
