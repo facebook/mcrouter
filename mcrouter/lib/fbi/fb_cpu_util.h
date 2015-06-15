@@ -27,12 +27,14 @@ static inline double timer_frequency(void)
 #endif
 
 static inline uint64_t cycle_timer(void) {
-#ifdef __aarch64__
   uint64_t val;
+#ifdef __aarch64__
   asm volatile ("mrs %[rt],cntvct_el0" : [rt] "=r" (val));
+#elif defined(__powerpc__) && \
+    ( __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+  val = __builtin_ppc_get_timebase();
 #else
   uint32_t __a,__d;
-  uint64_t val;
 
   //cpuid();
   asm volatile("rdtsc" : "=a" (__a), "=d" (__d));
