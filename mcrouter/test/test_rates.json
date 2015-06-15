@@ -21,6 +21,14 @@
           "sets_rate": 50.0,
           "sets_burst": 10.0
         }
+      },
+      "explicit": {
+        "type": "RateLimitRoute",
+        "target": "PoolRoute|A",
+        "rates": {
+          "sets_rate": 50.0,
+          "sets_burst": 10.0
+        }
       }
     }
   }

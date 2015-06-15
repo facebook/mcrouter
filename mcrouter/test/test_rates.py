@@ -27,11 +27,9 @@ class TestRates(McrouterTestCase):
             self.config,
             extra_args=self.extra_args)
 
-    def test_basic(self):
+    def basic_impl(self, key):
         mcrouter = self.get_mcrouter()
         time.sleep(2)
-
-        key = "basic"
 
         # 10 pass for sure
         for i in range(10):
@@ -47,6 +45,12 @@ class TestRates(McrouterTestCase):
             if self.mc.get(key) != value:
                 failed = failed + 1
         self.assertGreater(failed, 10)
+
+    def test_basic(self):
+        self.basic_impl("basic")
+
+    def test_basic_explicit(self):
+        self.basic_impl("explicit")
 
     def test_burst(self):
         mcrouter = self.get_mcrouter()
