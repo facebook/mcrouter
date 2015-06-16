@@ -109,17 +109,17 @@ bool precheckRequest(ProxyRequestContext& preq) {
 
 }  // anonymous namespace
 
-proxy_t::proxy_t(McrouterInstance& router_, folly::EventBase* eventBase_)
+proxy_t::proxy_t(McrouterInstance& router_, folly::EventBase& evb)
     : router(&router_),
       opts(router->opts()),
-      eventBase(eventBase_),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
       fiberManager(
         fiber_local::ContextTypeTag(),
         folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(opts)) {
+        getFiberManagerOptions(opts)),
+      eventBase_(evb) {
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
@@ -130,21 +130,8 @@ proxy_t::proxy_t(McrouterInstance& router_, folly::EventBase* eventBase_)
 
   init_stats(stats);
 
-  if (eventBase != nullptr) {
-    onEventBaseAttached();
-  }
-}
-
-void proxy_t::attachEventBase(folly::EventBase* eventBase_) {
-  assert(eventBase == nullptr);
-  assert(eventBase_ != nullptr);
-  eventBase = eventBase_;
-  onEventBaseAttached();
-}
-
-void proxy_t::onEventBaseAttached() {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(
-    fiberManager.loopController()).attachEventBase(*eventBase);
+    fiberManager.loopController()).attachEventBase(eventBase_);
 
   std::chrono::milliseconds connectionResetInterval{
     opts.reset_inactive_connection_interval
@@ -158,7 +145,7 @@ void proxy_t::onEventBaseAttached() {
     [this] (ProxyMessage&& message) {
       this->messageReady(message.type, message.data);
     },
-    *eventBase,
+    eventBase_,
     opts.client_queue_no_notify_rate,
     opts.client_queue_wait_threshold_us,
     &nowUs,
@@ -169,13 +156,9 @@ void proxy_t::onEventBaseAttached() {
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
 
-  if (router != nullptr) {
-    router->startupLock().notify();
-  }
-
   if (opts.cpu_cycles) {
-    eventBase->runInEventBaseThread([this] {
-      cycles::attachEventBase(*this->eventBase);
+    eventBase_.runInEventBaseThread([this] {
+      cycles::attachEventBase(this->eventBase_);
       this->fiberManager.setObserver(&this->cyclesObserver);
     });
   }

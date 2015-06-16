@@ -89,6 +89,11 @@ class AsyncMcServer {
   ~AsyncMcServer();
 
   /**
+   * @return Event bases from all worker threads ordered by threadId.
+   */
+  std::vector<folly::EventBase*> eventBases() const;
+
+  /**
    * Spawn the required number of threads, and run the loop function in each
    * of them.
    *

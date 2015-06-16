@@ -252,7 +252,6 @@ void McrouterLogger::logStartupOptions() {
 void McrouterLogger::log() {
   std::vector<stat_t> stats(num_stats);
   try {
-    router_->startupLock().wait();
     std::lock_guard<ShutdownLock> lg(router_->shutdownLock());
 
     prepare_stats(router_, stats.data());

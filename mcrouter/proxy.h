@@ -150,8 +150,6 @@ struct proxy_t {
   /** TODO: remove and use router->opts() instead */
   const McrouterOptions& opts;
 
-  folly::EventBase* eventBase{nullptr};
-
   std::unique_ptr<ProxyDestinationMap> destinationMap;
 
   // async spool related
@@ -208,6 +206,10 @@ struct proxy_t {
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
+  folly::EventBase& eventBase() const {
+    return eventBase_;
+  }
+
   ~proxy_t();
 
   /**
@@ -234,12 +236,6 @@ struct proxy_t {
   void dispatchRequest(std::unique_ptr<ProxyRequestContext> preq);
 
   /**
-   * If no event base was provided on construction, this must be called
-   * before spawning the proxy.
-   */
-  void attachEventBase(folly::EventBase* eventBase);
-
-  /**
    * Put a new proxy message into the queue.
    */
   void sendMessage(ProxyMessage::Type t, void* data);
@@ -256,7 +252,7 @@ struct proxy_t {
   size_t queueNotifyPeriod() const;
 
  private:
-  proxy_t(McrouterInstance& router, folly::EventBase* eventBase);
+  folly::EventBase& eventBase_;
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;
@@ -272,6 +268,8 @@ struct proxy_t {
   uint64_t nextReqId_ = 0;
 
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
+
+  proxy_t(McrouterInstance& router, folly::EventBase& eventBase);
 
   void messageReady(ProxyMessage::Type t, void* data);
   void routeHandlesProcessRequest(std::unique_ptr<ProxyRequestContext> preq);
@@ -316,9 +314,6 @@ struct proxy_t {
   /** Will let through requests from the above queue if we have capacity */
   void pump();
 
-  /** Called once after a valid eventBase has been provided */
-  void onEventBaseAttached();
-
   /**
    * Returns the next request id.
    * Request ids are unique per proxy_t.
@@ -328,6 +323,7 @@ struct proxy_t {
   friend class McrouterClient;
   friend class McrouterInstance;
   friend class ProxyRequestContext;
+  friend class ProxyThread;
 };
 
 struct old_config_req_t {

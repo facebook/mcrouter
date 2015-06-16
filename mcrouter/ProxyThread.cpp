@@ -19,13 +19,9 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyThread::ProxyThread(std::unique_ptr<proxy_t> pr)
-    : proxy_(std::move(pr)),
-      evb_(/* enableTimeMeasurement */ false),
-      thread_handle(0),
-      thread_stack(nullptr),
-      isSafeToDeleteProxy(false) {
-  proxy_->attachEventBase(&evb_);
+ProxyThread::ProxyThread(McrouterInstance& router)
+    : evb_(/* enableTimeMeasurement */ false),
+      proxy_(new proxy_t(router, evb_)) {
 }
 
 bool ProxyThread::spawn() {
@@ -55,7 +51,7 @@ void ProxyThread::proxyThreadRun() {
 
   while (!proxy_->router->shutdownStarted() ||
          proxy_->fiberManager.hasTasks()) {
-    proxy_->eventBase->loopOnce();
+    proxy_->eventBase().loopOnce();
     proxy_->drainMessageQueue();
   }
 

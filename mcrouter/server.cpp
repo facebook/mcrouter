@@ -96,7 +96,6 @@ void serverLoop(
     &worker,
     0);
   auto proxy = router.getProxy(threadId);
-  proxy->attachEventBase(&evb);
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
@@ -130,8 +129,8 @@ void serverLoop(
 
 }  // namespace
 
-void runServer(const McrouterStandaloneOptions& standaloneOpts,
-               McrouterInstance& router) {
+bool runServer(const McrouterStandaloneOptions& standaloneOpts,
+               const McrouterOptions& mcrouterOpts) {
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {
@@ -139,17 +138,17 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
   } else {
     opts.ports = standaloneOpts.ports;
     opts.sslPorts = standaloneOpts.ssl_ports;
-    opts.pemCertPath = router.opts().pem_cert_path;
-    opts.pemKeyPath = router.opts().pem_key_path;
-    opts.pemCaPath = router.opts().pem_ca_path;
+    opts.pemCertPath = mcrouterOpts.pem_cert_path;
+    opts.pemKeyPath = mcrouterOpts.pem_key_path;
+    opts.pemCaPath = mcrouterOpts.pem_ca_path;
   }
 
-  opts.numThreads = router.opts().num_proxies;
+  opts.numThreads = mcrouterOpts.num_proxies;
 
   opts.worker.versionString = MCROUTER_PACKAGE_STRING;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;
   opts.worker.sendTimeout = std::chrono::milliseconds{
-    router.opts().server_timeout_ms};
+    mcrouterOpts.server_timeout_ms};
 
   /* Default to one read per event to help latency-sensitive workloads.
      We can make this an option if this needs to be adjusted. */
@@ -160,25 +159,39 @@ void runServer(const McrouterStandaloneOptions& standaloneOpts,
     LOG(INFO) << "Spawning AsyncMcServer";
 
     AsyncMcServer server(opts);
+    server.installShutdownHandler({SIGINT, SIGTERM});
+
+    auto router = McrouterInstance::init(
+      "standalone",
+      mcrouterOpts,
+      server.eventBases());
+
+    if (router == nullptr) {
+      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
+      return false;
+    }
+
+    router->addStartupOpts(standaloneOpts.toDict());
+
     server.spawn(
-      [&router, &standaloneOpts] (size_t threadId,
-                                  folly::EventBase& evb,
-                                  AsyncMcServerWorker& worker) {
-        serverLoop(router, threadId, evb, worker, standaloneOpts.managed,
+      [router, &standaloneOpts] (size_t threadId,
+                                 folly::EventBase& evb,
+                                 AsyncMcServerWorker& worker) {
+        serverLoop(*router, threadId, evb, worker, standaloneOpts.managed,
                    standaloneOpts.retain_source_ip);
       }
     );
 
-    server.installShutdownHandler({SIGINT, SIGTERM});
     server.join();
 
     LOG(INFO) << "Shutting down";
 
     McrouterInstance::freeAllMcrouters();
-
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
+    return false;
   }
+  return true;
 }
 
 }}}  // facebook::memcache::mcrouter

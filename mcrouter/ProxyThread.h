@@ -17,11 +17,12 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+class McrouterInstance;
 class proxy_t;
 
 class ProxyThread {
  public:
-  explicit ProxyThread(std::unique_ptr<proxy_t> pr);
+  explicit ProxyThread(McrouterInstance& router);
 
   /**
    * Stops the underlyting proxy thread and joins it.
@@ -37,13 +38,13 @@ class ProxyThread {
   folly::EventBase& eventBase() { return evb_; }
 
  private:
-  std::unique_ptr<proxy_t> proxy_;
   folly::EventBase evb_;
-  pthread_t thread_handle;
-  void *thread_stack;
+  std::unique_ptr<proxy_t> proxy_;
+  pthread_t thread_handle{0};
+  void *thread_stack{nullptr};
   std::mutex mux;
   std::condition_variable cv;
-  bool isSafeToDeleteProxy;
+  bool isSafeToDeleteProxy{false};
 
   void stopAwriterThreads();
   void proxyThreadRun();
