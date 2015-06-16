@@ -17,7 +17,6 @@
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/PoolFactory.h"
-#include "mcrouter/priorities.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/routes/McImportResolver.h"
