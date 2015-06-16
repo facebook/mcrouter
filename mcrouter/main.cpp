@@ -531,17 +531,19 @@ int main(int argc, char **argv) {
    */
   mc_msg_use_atomic_refcounts(0);
 
-  auto router = McrouterInstance::initNonManagedThreads("standalone", opts);
-  if (router == nullptr) {
-    LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
-    exit(EXIT_STATUS_TRANSIENT_ERROR);
-  } else if (validate_configs) {
+  if (validate_configs) {
+    auto router = McrouterInstance::init("standalone-validate", opts);
+    if (router == nullptr) {
+      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
+      exit(EXIT_STATUS_TRANSIENT_ERROR);
+    }
+
     /* Only validating config, exit with good status immediately */
     _exit(0);
   }
 
   set_standalone_args(commandArgs);
-  router->addStartupOpts(standaloneOpts.toDict());
-
-  runServer(standaloneOpts, *router);
+  if (!runServer(standaloneOpts, opts)) {
+    exit(EXIT_STATUS_TRANSIENT_ERROR);
+  }
 }

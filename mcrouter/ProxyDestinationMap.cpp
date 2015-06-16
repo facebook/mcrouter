@@ -116,7 +116,7 @@ void ProxyDestinationMap::resetAllInactive() {
 void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
   assert(interval.count() > 0);
   auto delay = to<timeval_t>((unsigned int)interval.count());
-  resetTimer_ = asox_add_timer(proxy_->eventBase->getLibeventBase(), delay,
+  resetTimer_ = asox_add_timer(proxy_->eventBase().getLibeventBase(), delay,
                                onResetTimer, this);
 }
 

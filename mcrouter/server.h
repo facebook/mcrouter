@@ -9,13 +9,21 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
 
-class McrouterInstance;
+class McrouterOptions;
+
+namespace mcrouter {
+
 class McrouterStandaloneOptions;
 
-void runServer(const McrouterStandaloneOptions& standaloneOpts,
-               McrouterInstance& router);
+/**
+ * Spawns the standalone server and blocks until it's shutdown.
+ *
+ * @return True if server shut down cleanly, false if any errors occurred.
+ */
+bool runServer(const McrouterStandaloneOptions& standaloneOpts,
+               const McrouterOptions& mcrouterOpts);
 
 }  // facebook::memcache::mcrouter
 

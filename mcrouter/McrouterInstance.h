@@ -18,7 +18,6 @@
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
-#include "mcrouter/lib/fbi/cpp/StartupLock.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
@@ -47,17 +46,17 @@ class McrouterInstance {
    * @return  If an instance with the given persistence_id already exists,
    *   returns a pointer to it. Options are ignored in this case.
    *   Otherwise spins up a new instance and returns the pointer to it.
+   * @param evbs  Must be either empty or contain options.num_proxies
+   *   event bases.  If empty, mcrouter will spawn its own proxy threads.
+   *   Otherwise, proxies will run on the provided event bases
+   *   (auxiliary threads will still be spawned).
    * @throw runtime_error  If no valid instance can be constructed from
    *   the provided options.
    */
-  static McrouterInstance* init(folly::StringPiece persistence_id,
-                                const McrouterOptions& options);
-  /**
-   * Same as init(), but mcrouter will not spin up proxyThreads
-   */
-  static McrouterInstance* initNonManagedThreads(
+  static McrouterInstance* init(
     folly::StringPiece persistence_id,
-    const McrouterOptions& options);
+    const McrouterOptions& options,
+    const std::vector<folly::EventBase*>& evbs = {});
 
   /**
    * If an instance with the given persistence_id already exists,
@@ -162,10 +161,6 @@ class McrouterInstance {
     return rtVarsData_;
   }
 
-  StartupLock& startupLock() {
-    return startupLock_;
-  }
-
   AsyncWriter& asyncWriter() {
     assert(asyncWriter_.get() != nullptr);
     return *asyncWriter_;
@@ -225,8 +220,6 @@ class McrouterInstance {
   // Stores data for runtime variables.
   ObservableRuntimeVars rtVarsData_;
 
-  StartupLock startupLock_;
-
   /**
    * Logs mcrouter stats to disk every opts->stats_logging_interval
    * milliseconds
@@ -272,13 +265,13 @@ class McrouterInstance {
    *   the provided options.
    */
   static McrouterInstance* create(McrouterOptions input_options,
-                                  bool spawnProxyThreads);
+                                  const std::vector<folly::EventBase*>& evbs);
 
   explicit McrouterInstance(McrouterOptions input_options);
 
   ~McrouterInstance();
 
-  bool spinUp(bool spawnProxyThreads);
+  bool spinUp(const std::vector<folly::EventBase*>& evbs);
   void tearDown();
 
   void startAwriterThreads();
@@ -310,9 +303,11 @@ class McrouterInstance {
   /* Do not use for new code */
   class LegacyPrivateAccessor {
    public:
-    static McrouterInstance* create(const McrouterOptions& opts,
-                                    bool spawnProxyThreads) {
-      return McrouterInstance::create(opts.clone(), spawnProxyThreads);
+    static McrouterInstance* create(
+      const McrouterOptions& opts,
+      const std::vector<folly::EventBase*>& evbs) {
+
+      return McrouterInstance::create(opts.clone(), evbs);
     }
 
     static void tearDown(McrouterInstance& mcrouter) {

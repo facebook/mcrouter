@@ -63,6 +63,7 @@ class McServerThread {
  public:
   explicit McServerThread(AsyncMcServer& server)
       : server_(server),
+        evb_(/* enableTimeMeasurement */ false),
         worker_(server.opts_.worker, evb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true) {
@@ -282,6 +283,21 @@ class McServerThread {
 
 AsyncMcServer::AsyncMcServer(Options opts)
     : opts_(std::move(opts)) {
+
+  CHECK(opts_.numThreads > 0);
+  threads_.emplace_back(folly::make_unique<McServerThread>(
+                          McServerThread::Acceptor, *this));
+  for (size_t i = 1; i < opts_.numThreads; ++i) {
+    threads_.emplace_back(folly::make_unique<McServerThread>(*this));
+  }
+}
+
+std::vector<folly::EventBase*> AsyncMcServer::eventBases() const {
+  std::vector<folly::EventBase*> out;
+  for (auto& t : threads_) {
+    out.push_back(&t->eventBase());
+  }
+  return out;
 }
 
 AsyncMcServer::~AsyncMcServer() {
@@ -293,13 +309,7 @@ AsyncMcServer::~AsyncMcServer() {
 }
 
 void AsyncMcServer::spawn(LoopFn fn) {
-  CHECK(opts_.numThreads > 0);
-
-  threads_.emplace_back(folly::make_unique<McServerThread>(
-                          McServerThread::Acceptor, *this));
-  for (size_t i = 1; i < opts_.numThreads; ++i) {
-    threads_.emplace_back(folly::make_unique<McServerThread>(*this));
-  }
+  CHECK(threads_.size() == opts_.numThreads);
 
   /* We need to make sure we register all acceptor callbacks before
      running spawn() on other threads. This is so that eventBase.loop()

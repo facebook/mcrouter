@@ -79,7 +79,7 @@ void ProxyDestination::schedule_next_probe() {
 
   assert(probe_timer == nullptr);
   probe_timer = asox_add_timer(
-    proxy->eventBase->getLibeventBase(),
+    proxy->eventBase().getLibeventBase(),
     delay,
     [](const asox_timer_t timer, void* arg) {
       reinterpret_cast<ProxyDestination*>(arg)->on_timer(timer);
@@ -243,7 +243,6 @@ void ProxyDestination::resetInactive() {
 }
 
 void ProxyDestination::initializeAsyncMcClient() {
-  CHECK(proxy->eventBase);
   assert(!client_);
 
   ConnectionOptions options(accessPoint());
@@ -271,7 +270,7 @@ void ProxyDestination::initializeAsyncMcClient() {
     };
   }
 
-  client_ = folly::make_unique<AsyncMcClient>(*proxy->eventBase,
+  client_ = folly::make_unique<AsyncMcClient>(proxy->eventBase(),
                                               std::move(options));
 
   client_->setStatusCallbacks(
