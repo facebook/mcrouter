@@ -13,6 +13,7 @@
 #include <string>
 
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
@@ -33,10 +34,9 @@ class LoggingRoute {
     : child_(std::move(rh)) {}
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {child_};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*child_, req, Operation());
   }
 
   template <class Operation, class Request>

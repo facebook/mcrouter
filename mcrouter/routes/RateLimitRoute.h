@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RateLimiter.h"
 
@@ -29,10 +30,9 @@ class RateLimitRoute {
   static std::string routeName() { return "rate-limit"; }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {target_};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*target_, req, Operation());
   }
 
   RateLimitRoute(McrouterRouteHandlePtr target, RateLimiter rl)

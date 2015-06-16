@@ -16,6 +16,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -78,10 +79,9 @@ class ProxyRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return { root_ };
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*root_, req, Operation());
   }
 
   template <class Operation, class Request>

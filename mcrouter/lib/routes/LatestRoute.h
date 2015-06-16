@@ -19,6 +19,7 @@
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
 
 namespace facebook { namespace memcache {
@@ -36,9 +37,9 @@ class LatestRoute {
   static std::string routeName() { return "latest"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-    return route_.couldRouteTo(req, Operation());
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    route_.traverse(req, Operation(), t);
   }
 
   LatestRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,

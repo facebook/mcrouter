@@ -23,6 +23,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
@@ -111,21 +112,6 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
   );
 }
 
-namespace {
-template <class RouteHandle, class Operation>
-inline void dumpTree(std::string& tree,
-                     int level,
-                     const RouteHandle& rh,
-                     const McRequest& req,
-                     Operation) {
-  tree.append(std::string(level, ' ') + rh.routeName() + '\n');
-  auto targets = rh.couldRouteTo(req, Operation());
-  for (auto target : targets) {
-    dumpTree(tree, level + 1, *target.get(), req, Operation());
-  }
-}
-}
-
 template <int op_id>
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
@@ -135,7 +121,17 @@ inline std::string routeHandlesCommandHelper(
 
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
      std::string tree;
-     dumpTree(tree, 0, proxyRoute, req, typename McOpList::Item<op_id>::op());
+     int level = 0;
+     RouteHandleTraverser<McrouterRouteHandleIf> t(
+      [&tree, &level](const McrouterRouteHandleIf& rh) {
+        tree.append(std::string(level, ' ') + rh.routeName() + '\n');
+        ++level;
+      },
+      [&level]() {
+        --level;
+      }
+     );
+     proxyRoute.traverse(req, typename McOpList::Item<op_id>::op(), t);
      return tree;
   }
 

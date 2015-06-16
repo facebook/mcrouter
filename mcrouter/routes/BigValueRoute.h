@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -50,8 +51,8 @@ class BigValueRoute {
   static std::string routeName() { return "big-value"; }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const;
 
   BigValueRoute(McrouterRouteHandlePtr ch,
                 BigValueRouteOptions options);

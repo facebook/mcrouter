@@ -20,6 +20,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -48,9 +49,19 @@ class ModifyKeyRoute {
                  std::string keyPrefix);
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr>
-  couldRouteTo(const Request& req, Operation) const {
-    return { target_ };
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    folly::StringPiece rp = routingPrefix_.hasValue()
+      ? routingPrefix_.value()
+      : req.routingPrefix();
+    auto cloneReq = req.clone();
+    if (!req.keyWithoutRoute().startsWith(keyPrefix_)) {
+      auto key = folly::to<std::string>(rp, keyPrefix_, req.keyWithoutRoute());
+      cloneReq.setKey(key);
+    } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
+      cloneReq.setKey(folly::to<std::string>(rp, req.keyWithoutRoute()));
+    }
+    t(*target_, cloneReq, Operation());
   }
 
   template <class Operation, class Request>

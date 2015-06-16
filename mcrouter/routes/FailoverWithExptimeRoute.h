@@ -15,6 +15,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
@@ -27,13 +28,10 @@ class FailoverWithExptimeRoute {
   static std::string routeName() { return "failover-exptime"; }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    std::vector<McrouterRouteHandlePtr> rh = {normal_};
-    auto frh = failover_.couldRouteTo(req, Operation());
-    rh.insert(rh.end(), frh.begin(), frh.end());
-    return rh;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*normal_, req, Operation());
+    failover_.traverse(req, Operation(), t);
   }
 
   FailoverWithExptimeRoute(

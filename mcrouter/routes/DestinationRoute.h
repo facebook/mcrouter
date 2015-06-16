@@ -26,6 +26,7 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -72,13 +73,12 @@ class DestinationRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
       ctx->recordDestination(*client_);
     }
-    return {};
   }
 
   template <class Operation>

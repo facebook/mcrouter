@@ -17,6 +17,7 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -34,10 +35,9 @@ class AllMajorityRoute {
   static std::string routeName() { return "all-majority"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return children_;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(children_, req, Operation());
   }
 
   explicit AllMajorityRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)

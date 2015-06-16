@@ -11,6 +11,7 @@
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/FailoverRoute.h"
@@ -49,10 +50,9 @@ class ReliablePoolRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return destinations_;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(destinations_, req, Operation());
   }
 
   template <class Operation, class Request>

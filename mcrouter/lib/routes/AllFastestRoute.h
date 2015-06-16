@@ -15,6 +15,7 @@
 
 #include <folly/experimental/fibers/AddTasks.h>
 
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -30,10 +31,9 @@ class AllFastestRoute {
   static std::string routeName() { return "all-fastest"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return children_;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(children_, req, Operation());
   }
 
   explicit AllFastestRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)

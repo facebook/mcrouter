@@ -41,9 +41,10 @@ std::vector<Reply> BigValueRoute::collectAllByBatches(
 }
 
 template <class Operation, class Request>
-std::vector<McrouterRouteHandlePtr> BigValueRoute::couldRouteTo(
-  const Request& req, Operation) const {
-  return {ch_};
+void BigValueRoute::traverse(
+    const Request& req, Operation,
+    const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+  t(*ch_, req, Operation());
 }
 
 template <class Operation, class Request>

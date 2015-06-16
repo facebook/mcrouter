@@ -17,6 +17,7 @@
 #include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/config.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/proxy.h"
@@ -36,15 +37,20 @@ class RootRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     const auto* rhPtr =
       rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
-    if (UNLIKELY(rhPtr == nullptr)) {
-      return rhMap_.getTargetsForKeySlow(req.routingPrefix(), req.routingKey());
+    if (LIKELY(rhPtr != nullptr)) {
+      for (const auto& rh : *rhPtr) {
+        t(*rh, req, Operation());
+      }
+      return;
     }
-    return *rhPtr;
+    auto v = rhMap_.getTargetsForKeySlow(req.routingPrefix(), req.routingKey());
+    for (const auto& rh : v) {
+      t(*rh, req, Operation());
+    }
   }
 
   template <class Operation, class Request>

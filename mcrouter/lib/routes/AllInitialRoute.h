@@ -17,6 +17,7 @@
 #include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllAsyncRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
@@ -33,22 +34,15 @@ class AllInitialRoute {
   static std::string routeName() { return "all-initial"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    std::vector<std::shared_ptr<RouteHandleIf>> children;
-
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (firstChild_) {
-      children.push_back(firstChild_);
+      t(*firstChild_, req, Operation());
     }
 
     if (asyncRoute_) {
-      auto asyncChildren = asyncRoute_->couldRouteTo(req, Operation());
-      children.insert(children.end(),
-          asyncChildren.begin(), asyncChildren.end());
+      asyncRoute_->traverse(req, Operation(), t);
     }
-
-    return children;
   }
 
   explicit AllInitialRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh) {

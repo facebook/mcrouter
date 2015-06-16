@@ -19,6 +19,7 @@
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -37,10 +38,9 @@ class OutstandingLimitRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {target_};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*target_, req, Operation());
   }
 
   OutstandingLimitRoute(McrouterRouteHandlePtr target, size_t maxOutstanding)

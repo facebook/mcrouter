@@ -16,6 +16,7 @@
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/MigrateRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
@@ -56,9 +57,12 @@ TEST(migrateRouteTest, migrate) {
         route_handles[0], route_handles[1], curr_time + 25, interval, tp_func);
 
       McRequest req_get("key_get");
-      auto possibleGet = rh.couldRouteTo(req_get, McOperation<mc_op_get>());
-      EXPECT_EQ(possibleGet.size(), 1);
-      EXPECT_EQ(possibleGet[0], route_handles[0]);
+      int cnt = 0;
+      RouteHandleTraverser<TestRouteHandleIf> t{
+        [&cnt](const TestRouteHandleIf&) { ++cnt; }
+      };
+      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      EXPECT_EQ(cnt, 1);
 
       auto reply_get = rh.route(req_get, McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply_get.value()) == "a");
@@ -68,9 +72,9 @@ TEST(migrateRouteTest, migrate) {
       (test_handles[1]->saw_keys).clear();
 
       McRequest req_del("key_del");
-      auto possibleDel = rh.couldRouteTo(req_del, McOperation<mc_op_delete>());
-      EXPECT_EQ(possibleDel.size(), 1);
-      EXPECT_EQ(possibleDel[0], route_handles[0]);
+      cnt = 0;
+      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      EXPECT_EQ(cnt, 1);
 
       auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
       EXPECT_TRUE(reply_del.result() == mc_res_deleted);
@@ -93,9 +97,12 @@ TEST(migrateRouteTest, migrate) {
         curr_time -  25, interval, tp_func);
 
       McRequest req_get("key_get");
-      auto possibleGet = rh.couldRouteTo(req_get, McOperation<mc_op_get>());
-      EXPECT_EQ(possibleGet.size(), 1);
-      EXPECT_EQ(possibleGet[0], route_handles_c2[0]);
+      int cnt = 0;
+      RouteHandleTraverser<TestRouteHandleIf> t{
+        [&cnt](const TestRouteHandleIf&) { ++cnt; }
+      };
+      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      EXPECT_EQ(cnt, 1);
 
       auto reply_get = rh.route(req_get, McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply_get.value()) == "a");
@@ -105,10 +112,9 @@ TEST(migrateRouteTest, migrate) {
       (test_handles[1]->saw_keys).clear();
 
       McRequest req_del("key_del");
-      auto possibleDel = rh.couldRouteTo(req_del, McOperation<mc_op_delete>());
-      EXPECT_EQ(possibleDel.size(), 2);
-      EXPECT_EQ(possibleDel[0], route_handles_c2[0]);
-      EXPECT_EQ(possibleDel[1], route_handles_c2[1]);
+      cnt = 0;
+      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      EXPECT_EQ(cnt, 2);
 
       auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
       EXPECT_TRUE(reply_del.result() == mc_res_notfound);
@@ -131,9 +137,12 @@ TEST(migrateRouteTest, migrate) {
         curr_time - 75, interval, tp_func);
 
       McRequest req_get("key_get");
-      auto possibleGet = rh.couldRouteTo(req_get, McOperation<mc_op_get>());
-      EXPECT_EQ(possibleGet.size(), 1);
-      EXPECT_EQ(possibleGet[0], route_handles_c3[1]);
+      int cnt = 0;
+      RouteHandleTraverser<TestRouteHandleIf> t{
+        [&cnt](const TestRouteHandleIf&) { ++cnt; }
+      };
+      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      EXPECT_EQ(cnt, 1);
 
       auto reply_get = rh.route(McRequest("key_get"), McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply_get.value()) == "b");
@@ -143,10 +152,9 @@ TEST(migrateRouteTest, migrate) {
       (test_handles[1]->saw_keys).clear();
 
       McRequest req_del("key_del");
-      auto possibleDel = rh.couldRouteTo(req_del, McOperation<mc_op_delete>());
-      EXPECT_EQ(possibleDel.size(), 2);
-      EXPECT_EQ(possibleDel[0], route_handles_c3[0]);
-      EXPECT_EQ(possibleDel[1], route_handles_c3[1]);
+      cnt = 0;
+      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      EXPECT_EQ(cnt, 2);
 
       auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
       EXPECT_TRUE(reply_del.result() == mc_res_notfound);
@@ -159,9 +167,12 @@ TEST(migrateRouteTest, migrate) {
         route_handles[0], route_handles[1], curr_time - 125, interval, tp_func);
 
       McRequest req_get("key_get");
-      auto possibleGet = rh.couldRouteTo(req_get, McOperation<mc_op_get>());
-      EXPECT_EQ(possibleGet.size(), 1);
-      EXPECT_EQ(possibleGet[0], route_handles[1]);
+      int cnt = 0;
+      RouteHandleTraverser<TestRouteHandleIf> t{
+        [&cnt](const TestRouteHandleIf&) { ++cnt; }
+      };
+      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      EXPECT_EQ(cnt, 1);
 
       auto reply_get = rh.route(req_get, McOperation<mc_op_get>());
       EXPECT_TRUE(toString(reply_get.value()) == "b");
@@ -171,9 +182,9 @@ TEST(migrateRouteTest, migrate) {
       (test_handles[1]->saw_keys).clear();
 
       McRequest req_del("key_del");
-      auto possibleDel = rh.couldRouteTo(req_del, McOperation<mc_op_delete>());
-      EXPECT_EQ(possibleDel.size(), 1);
-      EXPECT_EQ(possibleDel[0], route_handles[1]);
+      cnt = 0;
+      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      EXPECT_EQ(cnt, 1);
 
       auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
       EXPECT_TRUE(reply_del.result() == mc_res_notfound);

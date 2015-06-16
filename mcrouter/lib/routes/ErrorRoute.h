@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
 
@@ -28,11 +29,8 @@ struct ErrorRoute {
   }
 
   template <class Operation, class Request>
-  static std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) {
-
-    return {};
-  }
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const { }
 
   explicit ErrorRoute(std::string valueToSet = "")
     : valueToSet_(std::move(valueToSet)) {}

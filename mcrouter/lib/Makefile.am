@@ -26,6 +26,7 @@ libmcrouter_a_SOURCES = \
   OperationTraits.h \
   Reply.h \
   RouteHandleIf.h \
+  RouteHandleTraverser.h \
   StatsReply.cpp \
   StatsReply.h \
   WeightedCh3HashFunc.cpp \
