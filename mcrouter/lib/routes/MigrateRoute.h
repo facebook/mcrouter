@@ -22,6 +22,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
 
@@ -45,18 +46,15 @@ class MigrateRoute {
   static std::string routeName() { return "migrate"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto mask = routeMask(req, Operation());
-    std::vector<std::shared_ptr<RouteHandleIf>> ret;
     if (mask & kFromMask) {
-      ret.push_back(from_);
+      t(*from_, req, Operation());
     }
     if (mask & kToMask) {
-      ret.push_back(to_);
+      t(*to_, req, Operation());
     }
-    return ret;
   }
 
   MigrateRoute(std::shared_ptr<RouteHandleIf> fh,

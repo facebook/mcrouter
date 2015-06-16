@@ -79,9 +79,9 @@ public:
    *
    * @param clientCallback  If non-nullptr, called by DestinationRoute when
    *   the request would normally be sent to destination;
-   *   also in couldRouteTo() of DestinationRoute.
+   *   also in traverse() of DestinationRoute.
    * @param shardSplitCallback  If non-nullptr, called by ShardSplitRoute
-   *   in couldRouteTo() with itself as the argument.
+   *   in traverse() with itself as the argument.
    */
   static std::shared_ptr<ProxyRequestContext> createRecording(
     proxy_t& proxy,

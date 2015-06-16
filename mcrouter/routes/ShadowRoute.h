@@ -17,6 +17,7 @@
 #include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
@@ -48,14 +49,12 @@ class ShadowRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    std::vector<McrouterRouteHandlePtr> rh = {normal_};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*normal_, req, Operation());
     for (auto& shadowData : shadowData_) {
-      rh.push_back(shadowData.first);
+      t(*shadowData.first, req, Operation());
     }
-    return rh;
   }
 
   template <class Operation, class Request>

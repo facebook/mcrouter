@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -30,16 +31,13 @@ class OperationSelectorRoute {
   }
 
   template <int M, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, McOperation<M>) const {
-
+  void traverse(const Request& req, McOperation<M>,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     if (operationPolicies_[M]) {
-      return {operationPolicies_[M]};
+      t(*operationPolicies_[M], req, McOperation<M>());
     } else if (defaultPolicy_) {
-      return {defaultPolicy_};
+      t(*defaultPolicy_, req, McOperation<M>());
     }
-
-    return {};
   }
 
   template<int M, class Request>

@@ -21,6 +21,7 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -58,10 +59,10 @@ class WarmUpRoute {
   static std::string routeName() { return "warm-up"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {cold_, warm_};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(*cold_, req, Operation());
+    t(*warm_, req, Operation());
   }
 
   WarmUpRoute(std::shared_ptr<RouteHandleIf> warm,

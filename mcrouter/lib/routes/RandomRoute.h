@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
 
@@ -28,10 +29,9 @@ class RandomRoute {
   static std::string routeName() { return "random"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return children_;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(children_, req, Operation());
   }
 
   explicit RandomRoute(std::vector<std::shared_ptr<RouteHandleIf>> children)

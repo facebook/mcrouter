@@ -17,6 +17,7 @@
 #include <folly/experimental/fibers/ForEach.h>
 
 #include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -35,10 +36,9 @@ class AllSyncRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return children_;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(children_, req, Operation());
   }
 
   template <class Operation, class Request>

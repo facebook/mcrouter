@@ -22,6 +22,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -57,39 +58,39 @@ class ShardSplitRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
       ctx->recordShardSplitter(shardSplitter_);
     }
 
     if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
-      return rh_->couldRouteTo(req, Operation());
+      t(*rh_, req, Operation());
+      return;
     }
 
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     if (cnt == 1) {
-      return rh_->couldRouteTo(req, Operation());
+      t(*rh_, req, Operation());
+      return;
     }
     if (GetLike<Operation>::value) {
       size_t i = globals::hostid() % cnt;
       if (i == 0) {
-        return rh_->couldRouteTo(req, Operation());
+        t(*rh_, req, Operation());
+        return;
       }
-      return rh_->couldRouteTo(splitReq(req, i - 1, shard), Operation());
+      t(*rh_, splitReq(req, i - 1, shard), Operation());
+      return;
     }
 
     assert(DeleteLike<Operation>::value);
-    auto result = rh_->couldRouteTo(req, Operation());
+    t(*rh_, req, Operation());
     for (size_t i = 0; i < cnt - 1; ++i) {
-      auto nx = rh_->couldRouteTo(splitReq(req, i, shard), Operation());
-      result.insert(result.end(), nx.begin(), nx.end());
+      t(*rh_, splitReq(req, i, shard), Operation());
     }
-
-    return result;
   }
 
   template <class Operation, class Request>

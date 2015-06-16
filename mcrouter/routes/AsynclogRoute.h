@@ -11,6 +11,7 @@
 
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -30,10 +31,9 @@ class AsynclogRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {rh_};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    t(*rh_, req, Operation());
   }
 
   template <class Operation, class Request>

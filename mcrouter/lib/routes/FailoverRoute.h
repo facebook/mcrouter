@@ -18,6 +18,7 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -33,10 +34,9 @@ class FailoverRoute {
   static std::string routeName() { return "failover"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return targets_;
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(targets_, req, Operation());
   }
 
   FailoverRoute() = default;

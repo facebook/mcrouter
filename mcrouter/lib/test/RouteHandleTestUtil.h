@@ -23,6 +23,7 @@
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
 
@@ -154,10 +155,8 @@ struct RecordingRoute {
   static std::string routeName() { return "test"; }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-    return {};
-  }
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const { }
 
   GetRouteTestData dataGet_;
   UpdateRouteTestData dataUpdate_;

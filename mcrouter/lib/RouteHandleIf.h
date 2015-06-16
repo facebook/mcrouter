@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
 
@@ -79,7 +80,7 @@ class RouteHandle<Route,
                     RouteHandleIf,
                     List<Requests...>,
                     OpList,
-                    OpList::kLastItemId>::couldRouteTo;
+                    OpList::kLastItemId>::traverse;
   using RouteHandle<Route,
                     RouteHandleIf,
                     List<Requests...>,
@@ -117,18 +118,17 @@ class RouteHandle<Route,
                     RouteHandleIf,
                     List<Request, Requests...>,
                     OpList,
-                    op_id-1>::couldRouteTo;
+                    op_id-1>::traverse;
   using RouteHandle<Route,
                     RouteHandleIf,
                     List<Request, Requests...>,
                     OpList,
                     op_id-1>::route;
 
-  std::vector<std::shared_ptr<RouteHandleIf>>
-  couldRouteTo(const Request& req,
-               typename OpList::template Item<op_id>::op) const {
-    return this->route_.couldRouteTo(
-      req, typename OpList::template Item<op_id>::op());
+  void traverse(const Request& req,
+                typename OpList::template Item<op_id>::op,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    this->route_.traverse(req, typename OpList::template Item<op_id>::op(), t);
   }
 
   typename ReplyType<typename OpList::template Item<op_id>::op, Request>::type
@@ -160,11 +160,12 @@ class RouteHandleIf<RouteHandleIf_, List<Request>, OpList, 1> {
   virtual std::string routeName() const = 0;
 
   /**
-   * Returns a list of all possible route handles this route handle could
+   * Traverses over route handles this route handle could
    * send a request to
    */
-  virtual std::vector<std::shared_ptr<RouteHandleIf_>> couldRouteTo(
-    const Request& req, typename OpList::template Item<1>::op) const = 0;
+  virtual void
+  traverse(const Request& req, typename OpList::template Item<1>::op,
+           const RouteHandleTraverser<RouteHandleIf_>& t) const = 0;
 
   /**
    * Routes the request through this route handle
@@ -194,7 +195,7 @@ class RouteHandleIf<RouteHandleIf_,
   using RouteHandleIf<RouteHandleIf_,
                       List<Requests...>,
                       OpList,
-                      OpList::kLastItemId>::couldRouteTo;
+                      OpList::kLastItemId>::traverse;
   using RouteHandleIf<RouteHandleIf_,
                       List<Requests...>,
                       OpList,
@@ -225,18 +226,19 @@ class RouteHandleIf<RouteHandleIf_,
   using RouteHandleIf<RouteHandleIf_,
                       List<Request, Requests...>,
                       OpList,
-                      op_id-1>::couldRouteTo;
+                      op_id-1>::traverse;
   using RouteHandleIf<RouteHandleIf_,
                       List<Request, Requests...>,
                       OpList,
                       op_id-1>::route;
 
   /**
-   * Returns a list of all possible route handles this route handle could
+   * Traverses over all possible route handles this route handle could
    * send a request to
    */
-  virtual std::vector<std::shared_ptr<RouteHandleIf_>> couldRouteTo(
-    const Request& req, typename OpList::template Item<op_id>::op) const = 0;
+  virtual void
+  traverse(const Request& req, typename OpList::template Item<op_id>::op,
+           const RouteHandleTraverser<RouteHandleIf_>& t) const = 0;
 
   /**
    * Routes the request through this route handle

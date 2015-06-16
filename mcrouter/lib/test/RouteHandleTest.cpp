@@ -134,8 +134,7 @@ TEST(routeHandleTest, allInitial) {
 
   TestFiberManager fm;
   auto routeHandles = get_route_handles(test_handles);
-  TestRouteHandle<AllInitialRoute<TestRouteHandleIf>> rh(
-    routeHandles);
+  TestRouteHandle<AllInitialRoute<TestRouteHandleIf>> rh(routeHandles);
 
   fm.runAll(
     {
@@ -153,9 +152,13 @@ TEST(routeHandleTest, allInitial) {
     EXPECT_TRUE(h->saw_keys == vector<string>{"key"});
   }
 
-  /* Check that couldRouteTo is correct */
-  EXPECT_TRUE(routeHandles ==
-    rh.couldRouteTo(McRequest("key"), McOperation<mc_op_get>()));
+  /* Check that traverse is correct */
+  int cnt = 0;
+  RouteHandleTraverser<TestRouteHandleIf> t{
+    [&cnt](const TestRouteHandleIf&){ ++cnt; }
+  };
+  rh.traverse(McRequest("key"), McOperation<mc_op_get>(), t);
+  EXPECT_EQ(cnt, routeHandles.size());
 }
 
 TEST(routeHandleTest, allMajority) {

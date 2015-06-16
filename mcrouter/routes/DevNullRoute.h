@@ -10,6 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyRequestContext.h"
@@ -25,11 +26,8 @@ class DevNullRoute {
   static std::string routeName() { return "devnull"; }
 
   template <class Operation, class Request>
-  std::vector<McrouterRouteHandlePtr> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {};
-  }
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const { }
 
   template <class Operation, class Request>
   static typename ReplyType<Operation, Request>::type

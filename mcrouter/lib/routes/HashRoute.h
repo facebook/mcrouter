@@ -18,6 +18,7 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
@@ -42,10 +43,9 @@ class HashRoute {
   }
 
   template <class Operation, class Request>
-  std::vector<std::shared_ptr<RouteHandleIf>> couldRouteTo(
-    const Request& req, Operation) const {
-
-    return {rh_[pick(req)]};
+  void traverse(const Request& req, Operation,
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
+    t(*rh_[pick(req)], req, Operation());
   }
 
   template <class Operation, class Request>
