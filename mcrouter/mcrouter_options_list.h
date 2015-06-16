@@ -81,11 +81,6 @@ mcrouter_option_integer(
   "num-proxies", no_short,
   "adjust how many proxy threads to run")
 
-mcrouter_option_toggle(
-  use_priorities, true,
-  "disable-priorities", no_short,
-  "don't use event base priorities")
-
 mcrouter_option_integer(
   size_t, client_queue_size, 1024,
   no_long, no_short,

@@ -61,8 +61,6 @@ libmcroutercore_a_SOURCES = \
   PeriodicTaskScheduler.h \
   PoolFactory.cpp \
   PoolFactory.h \
-  priorities.cpp \
-  priorities.h \
   proxy.cpp \
   proxy.h \
   ProxyClientCommon.cpp \

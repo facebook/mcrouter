@@ -43,7 +43,6 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
-#include "mcrouter/priorities.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
@@ -146,8 +145,6 @@ void proxy_t::attachEventBase(folly::EventBase* eventBase_) {
 void proxy_t::onEventBaseAttached() {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(
     fiberManager.loopController()).attachEventBase(*eventBase);
-
-  init_proxy_event_priorities(this);
 
   std::chrono::milliseconds connectionResetInterval{
     opts.reset_inactive_connection_interval
