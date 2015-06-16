@@ -493,7 +493,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   StatsReply reply;
 
   if (group_str == "version") {
-    reply.addStat("mcrouter-version", MCROUTER_PACKAGE_STRING);
+    reply.addStat("mcrouter-version", MCROUTER_VERSION_STRING);
     return reply.getMcReply();
   }
 

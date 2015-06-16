@@ -150,7 +150,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
 
   opts.numThreads = mcrouterOpts.num_proxies;
 
-  opts.worker.versionString = MCROUTER_PACKAGE_STRING;
+  opts.worker.versionString = MCROUTER_VERSION_STRING;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;
   opts.worker.sendTimeout = std::chrono::milliseconds{
     mcrouterOpts.server_timeout_ms};
