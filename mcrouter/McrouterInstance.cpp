@@ -162,7 +162,8 @@ McrouterInstance* McrouterInstance::create(
     jsonOpts.sort_keys = true;
     auto dict = folly::toDynamic(router->getStartupOpts());
     auto jsonStr = folly::json::serialize(dict, jsonOpts);
-    failure::setServiceContext(router->routerName(), jsonStr.toStdString());
+    failure::setServiceContext(routerName(router->opts()),
+                               jsonStr.toStdString());
 
     if (!router->spinUp(evbs)) {
       router->tearDown();
@@ -297,10 +298,6 @@ proxy_t* McrouterInstance::getProxy(size_t index) const {
     return index < proxyThreads_.size() ?
                    &proxyThreads_[index]->proxy() : nullptr;
   }
-}
-
-std::string McrouterInstance::routerName() const {
-  return "libmcrouter." + opts_.service_name + "." + opts_.router_name;
 }
 
 void McrouterInstance::onClientDestroyed() {
@@ -554,8 +551,8 @@ bool McrouterInstance::reconfigure() {
     if (success) {
       success = router_configure_from_string(*this, config);
     } else {
-      logFailure(*this, failure::Category::kBadEnvironment,
-                 "Can not read config file");
+      MC_LOG_FAILURE(opts(), failure::Category::kBadEnvironment,
+                     "Can not read config file");
     }
 
     if (!success) {
@@ -583,8 +580,8 @@ bool McrouterInstance::configure(folly::StringPiece input) {
       newConfigs.push_back(builder.buildConfig(getProxy(i)));
     }
   } catch (const std::exception& e) {
-    logFailure(*this, failure::Category::kInvalidConfig,
-               "Failed to reconfigure: {}", e.what());
+    MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,
+                   "Failed to reconfigure: {}", e.what());
     return false;
   }
 

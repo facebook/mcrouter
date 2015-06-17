@@ -114,8 +114,6 @@ class McrouterInstance {
   void addStartupOpts(
     std::unordered_map<std::string, std::string> additionalOpts);
 
-  std::string routerName() const;
-
   bool shutdownStarted() {
     return shutdownLock_.shutdownStarted();
   }

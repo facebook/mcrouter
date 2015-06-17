@@ -50,6 +50,7 @@ libmcroutercore_a_SOURCES = \
   McrouterInstance.cpp \
   McrouterInstance.h \
   McrouterLogFailure.h \
+  McrouterLogFailure.cpp \
   McrouterLogger.cpp \
   McrouterLogger.h \
   Observable-inl.h \

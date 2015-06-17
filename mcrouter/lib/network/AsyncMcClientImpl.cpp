@@ -280,14 +280,14 @@ uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
 
   if (qosClassLvl > 4) {
     qosClassLvl = 0;
-    failure::log("AsyncMcClient", failure::Category::kSystemError,
-                 "Invalid QoS class value in AsyncMcClient");
+    LOG_FAILURE("AsyncMcClient", failure::Category::kSystemError,
+                "Invalid QoS class value in AsyncMcClient");
   }
 
   if (qosPathLvl > 3) {
     qosPathLvl = 0;
-    failure::log("AsyncMcClient", failure::Category::kSystemError,
-                 "Invalid QoS path value in AsyncMcClient");
+    LOG_FAILURE("AsyncMcClient", failure::Category::kSystemError,
+                "Invalid QoS path value in AsyncMcClient");
   }
 
   return kQoSClasses[qosClassLvl] | kQoSPaths[qosPathLvl];
@@ -312,11 +312,11 @@ void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
   socklen_t len = sizeof(expectedValue);
   int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
   if (rv != 0 || val != expectedValue) {
-    failure::log("AsyncMcClient", failure::Category::kSystemError,
-                 "Failed to apply QoS! "
-                 "Return Value: {} (expected: {}). "
-                 "QoS Value: {} (expected: {}).",
-                 rv, 0, val, expectedValue);
+    LOG_FAILURE("AsyncMcClient", failure::Category::kSystemError,
+                "Failed to apply QoS! "
+                "Return Value: {} (expected: {}). "
+                "QoS Value: {} (expected: {}).",
+                rv, 0, val, expectedValue);
   }
 }
 
@@ -352,7 +352,7 @@ void AsyncMcClientImpl::attemptConnection() {
   if (connectionOptions_.sslContextProvider) {
     auto sslContext = connectionOptions_.sslContextProvider();
     if (!sslContext) {
-      failure::log("AsyncMcClient", failure::Category::kBadEnvironment,
+      LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
         "SSLContext provider returned nullptr, check SSL certificates. Any "
         "further request to {} will fail.",
         connectionOptions_.accessPoint.toHostPortString());
@@ -375,8 +375,8 @@ void AsyncMcClientImpl::attemptConnection() {
       connectionOptions_.accessPoint.getPort(),
       /* allowNameLookup */ true);
   } catch (const std::system_error& e) {
-    failure::log("AsyncMcClient", failure::Category::kBadEnvironment,
-                 "{}", e.what());
+    LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
+                "{}", e.what());
     connectErr(folly::AsyncSocketException(
                    folly::AsyncSocketException::NOT_OPEN, ""));
     return;

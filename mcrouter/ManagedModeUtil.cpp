@@ -13,9 +13,11 @@
 #include <sys/eventfd.h>
 #include <sys/wait.h>
 
+#include <thread>
+
 #include <glog/logging.h>
 
-#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -92,8 +94,8 @@ void spawnManagedChild() {
     switch (childPid = fork()) {
     case -1:
       // error
-      logFailure(failure::Category::kSystemError,
-          "Can't spawn child process, sleeping");
+      LOG_FAILURE("mcrouter", failure::Category::kSystemError,
+                  "Can't spawn child process, sleeping");
       std::this_thread::sleep_for(std::chrono::seconds(SpawnWait));
       break;
 
@@ -118,7 +120,7 @@ void spawnManagedChild() {
       } else {
         // Child was killed. Shutdown parent.
         if (!waitpidTimeout(childPid, TermSignalTimeout)) {
-          logFailure(failure::Category::kSystemError,
+          LOG_FAILURE("mcrouter", failure::Category::kSystemError,
               "Child process did not exit in {} microseconds. Sending SIGKILL.",
               TermSignalTimeout);
           kill(childPid, SIGKILL);

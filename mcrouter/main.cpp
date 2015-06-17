@@ -399,7 +399,7 @@ void notify_command_line(int argc, char ** argv) {
 }
 
 void on_assert_fail(const char *msg) {
-  logFailure(failure::Category::kBrokenLogic, msg);
+  LOG_FAILURE("mcrouter", failure::Category::kBrokenLogic, msg);
 }
 
 int main(int argc, char **argv) {
@@ -451,9 +451,9 @@ int main(int argc, char **argv) {
   [&] (const vector<McrouterOptionError>& errors) {
     if (!errors.empty()) {
       for (auto& e : errors) {
-        logFailure(failure::Category::kInvalidOption,
-                   "Option parse error: {}={}, {}",
-                   e.requestedName, e.requestedValue, e.errorMsg);
+        MC_LOG_FAILURE(opts, failure::Category::kInvalidOption,
+                       "Option parse error: {}={}, {}",
+                       e.requestedName, e.requestedValue, e.errorMsg);
       }
     }
   };
@@ -469,8 +469,8 @@ int main(int argc, char **argv) {
   check_errors(errors);
 
   for (const auto& option : unrecognized_options) {
-    logFailure(failure::Category::kInvalidOption, "Unrecognized option: {}",
-               option);
+    MC_LOG_FAILURE(opts, failure::Category::kInvalidOption,
+                   "Unrecognized option: {}", option);
   }
 
   srand(time(nullptr) + getpid());

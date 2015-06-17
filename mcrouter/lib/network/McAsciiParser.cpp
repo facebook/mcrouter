@@ -81,11 +81,11 @@ void McAsciiParser::handleError(folly::IOBuf& buffer) {
   auto start = reinterpret_cast<const char*>(buffer.data());
   auto length = std::min(p_ - start + kProtocolTailContextLength,
                          buffer.length());
-  failure::log("AsyncMcClient", failure::Category::kOther,
-               "Error parsing message '{}' at character {}!",
-               folly::cEscape<std::string>(folly::StringPiece(start,
-                                                              start + length)),
-               p_ - start);
+  LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
+              "Error parsing message '{}' at character {}!",
+              folly::cEscape<std::string>(folly::StringPiece(start,
+                                                             start + length)),
+              p_ - start);
 }
 
 }}  // facebook::memcache

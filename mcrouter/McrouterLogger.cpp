@@ -198,9 +198,9 @@ bool McrouterLogger::start() {
     folly::setThreadName(loggerThread_.native_handle(), threadName);
   } catch (const std::system_error& e) {
     running_ = false;
-    logFailure(router_, memcache::failure::Category::kSystemError,
-               "Can not start McrouterLogger thread {}: {}",
-               threadName, e.what());
+    MC_LOG_FAILURE(router_.opts(), memcache::failure::Category::kSystemError,
+                   "Can not start McrouterLogger thread {}: {}",
+                   threadName, e.what());
   }
 
   return running_;

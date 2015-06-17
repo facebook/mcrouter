@@ -11,7 +11,7 @@
 
 #include <unistd.h>
 
-#include <ctime>
+#include <chrono>
 #include <map>
 #include <mutex>
 #include <string>
@@ -30,45 +30,62 @@ namespace facebook { namespace memcache { namespace failure {
 
 namespace {
 
-std::string createMessage(folly::StringPiece service,
+std::string createMessage(folly::StringPiece file,
+                          int line,
+                          folly::StringPiece service,
                           folly::StringPiece category,
                           folly::StringPiece msg,
                           const std::map<std::string, std::string>& contexts) {
-  auto result = folly::sformatChecked("{} {} [{}] [{}] [{}] {}\n",
-    time(nullptr), getpid(), service, category, getThreadName(), msg);
+  auto nowUs = std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::system_clock::now().time_since_epoch()).count();
+  auto result = folly::sformat("FAILURE {}.{} {} [{}] [{}] [{}] {}:{}] {}\n",
+    nowUs / 1000000, nowUs % 1000000, getpid(), service, category,
+    getThreadName(), file, line, msg);
 
   auto contextIt = contexts.find(service.str());
   if (contextIt != contexts.end()) {
-    result += folly::sformatChecked("\"{}\": {}", contextIt->first,
+    result += folly::sformat("\"{}\": {}", contextIt->first,
                                     contextIt->second);
   } else {
     for (const auto& it : contexts) {
-      result += folly::sformatChecked("\"{}\": {}\n", it.first, it.second);
+      result += folly::sformat("\"{}\": {}\n", it.first, it.second);
     }
   }
   return result;
 }
 
-void vlogErrorImpl(folly::StringPiece service,
+void vlogErrorImpl(folly::StringPiece file,
+                   int line,
+                   folly::StringPiece service,
                    folly::StringPiece category,
                    folly::StringPiece msg,
                    const std::map<std::string, std::string>& contexts) {
-  VLOG(1) << createMessage(service, category, msg, contexts);
+  bool logPrefixSaved = FLAGS_log_prefix;
+  FLAGS_log_prefix = false;
+  VLOG(1) << createMessage(file, line, service, category, msg, contexts);
+  FLAGS_log_prefix = logPrefixSaved;
 }
 
-void logToStdErrorImpl(folly::StringPiece service,
+void logToStdErrorImpl(folly::StringPiece file,
+                       int line,
+                       folly::StringPiece service,
                        folly::StringPiece category,
                        folly::StringPiece msg,
                        const std::map<std::string, std::string>& contexts) {
-  LOG(ERROR) << createMessage(service, category, msg, contexts);
+  bool logPrefixSaved = FLAGS_log_prefix;
+  FLAGS_log_prefix = false;
+  LOG(ERROR) << createMessage(file, line, service, category, msg, contexts);
+  FLAGS_log_prefix = logPrefixSaved;
 }
 
 template <class Error>
-void throwErrorImpl(folly::StringPiece service,
+void throwErrorImpl(folly::StringPiece file,
+                    int line,
+                    folly::StringPiece service,
                     folly::StringPiece category,
                     folly::StringPiece msg,
                     const std::map<std::string, std::string>& contexts) {
-  throw Error(createMessage(service, category, msg, contexts));
+  throw Error(createMessage(file, line, service, category, msg, contexts));
 }
 
 struct StaticContainer {
@@ -150,7 +167,11 @@ void setServiceContext(folly::StringPiece service, std::string context) {
   }
 }
 
-void log(folly::StringPiece service,
+namespace detail {
+
+void log(folly::StringPiece file,
+         int line,
+         folly::StringPiece service,
          folly::StringPiece category,
          folly::StringPiece msg) {
   std::map<std::string, std::string> contexts;
@@ -161,8 +182,10 @@ void log(folly::StringPiece service,
     handlers = container->handlers;
   }
   for (auto& handler : handlers) {
-    handler.second(service, category, msg, contexts);
+    handler.second(file, line, service, category, msg, contexts);
   }
 }
+
+}  // detail
 
 }}}  // facebook::memcache

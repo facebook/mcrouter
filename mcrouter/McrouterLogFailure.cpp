@@ -7,21 +7,14 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#pragma once
+#include "McrouterLogFailure.h"
 
-#include <string>
+#include "mcrouter/options.h"
 
-#include "mcrouter/lib/fbi/cpp/LogFailure.h"
+namespace facebook { namespace memcache { namespace mcrouter {
 
-namespace facebook { namespace memcache {
-
-class McrouterOptions;
-
-namespace mcrouter {
-
-std::string routerName(const McrouterOptions& opts);
-
-#define MC_LOG_FAILURE(opts, ...) \
-  LOG_FAILURE(routerName(opts), __VA_ARGS__)
+std::string routerName(const McrouterOptions& opts) {
+  return "libmcrouter." + opts.service_name + "." + opts.router_name;
+}
 
 }}}  // facebook::memcache::mcrouter
