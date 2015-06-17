@@ -33,11 +33,15 @@ using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 
 namespace {
 
-std::shared_ptr<ProxyRequestContext> getContext() {
+McrouterInstance* getRouter() {
   McrouterOptions opts = defaultTestOptions();
   opts.config_str = "{ \"route\": \"NullRoute\" }";
-  auto router = McrouterInstance::init("test_shadow", opts);
-  return ProxyRequestContext::createRecording(*router->getProxy(0), nullptr);
+  return McrouterInstance::init("test_shadow", opts);
+}
+
+std::shared_ptr<ProxyRequestContext> getContext() {
+  return ProxyRequestContext::createRecording(*getRouter()->getProxy(0),
+                                              nullptr);
 }
 
 }  // anonymous namespace
@@ -57,7 +61,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   auto settings = ShadowSettings::create(
       folly::dynamic::object("index_range", folly::dynamic{ 0, 1 }),
-      nullptr);
+      *getRouter());
 
   auto shadowRhs = get_route_handles(shadowHandles);
   McrouterShadowData shadowData{

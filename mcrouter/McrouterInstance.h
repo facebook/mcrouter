@@ -171,6 +171,11 @@ class McrouterInstance {
     return *statsLogWriter_;
   }
 
+  McrouterInstance(const McrouterInstance&) = delete;
+  McrouterInstance& operator=(const McrouterInstance&) = delete;
+  McrouterInstance(McrouterInstance&&) noexcept = delete;
+  McrouterInstance& operator=(McrouterInstance&&) = delete;
+
  private:
   const McrouterOptions opts_;
 
@@ -293,11 +298,6 @@ class McrouterInstance {
       NB file-based configuration is synchronous
       but server-based configuration is asynchronous */
   bool reconfigure();
-
-  McrouterInstance(const McrouterInstance&) = delete;
-  McrouterInstance& operator=(const McrouterInstance&) = delete;
-  McrouterInstance(McrouterInstance&&) noexcept = delete;
-  McrouterInstance& operator=(McrouterInstance&&) = delete;
 
  public:
   /* Do not use for new code */

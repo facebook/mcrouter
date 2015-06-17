@@ -283,7 +283,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("config_sources_info",
     [this] (const std::vector<folly::StringPiece>& args) {
-      auto configInfo = proxy_->router->configApi().getConfigSourcesInfo();
+      auto configInfo = proxy_->router().configApi().getConfigSourcesInfo();
       return folly::toPrettyJson(configInfo).toStdString();
     }
   );
@@ -291,11 +291,11 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   commands_.emplace("preprocessed_config",
     [this] (const std::vector<folly::StringPiece>& args) {
       std::string confFile;
-      if (!proxy_->router->configApi().getConfigFile(confFile)) {
+      if (!proxy_->router().configApi().getConfigFile(confFile)) {
         throw std::runtime_error("can not load config");
       }
       ProxyConfigBuilder builder(proxy_->opts,
-                                 &proxy_->router->configApi(),
+                                 &proxy_->router().configApi(),
                                  confFile);
       folly::json::serialization_opts jsonOpts;
       jsonOpts.pretty_formatting = true;

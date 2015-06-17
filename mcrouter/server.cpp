@@ -111,7 +111,7 @@ void serverLoop(
   if (managedMode) {
     worker.setOnShutdownOperation([&router] () {
         if (!shutdownFromChild()) {
-          logFailure(&router, failure::Category::kSystemError,
+          logFailure(router, failure::Category::kSystemError,
                      "Could not shutdown mcrouter on user command.");
         }
       });

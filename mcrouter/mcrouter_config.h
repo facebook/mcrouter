@@ -86,7 +86,7 @@ inline time_t nowWallSec() {
   return time(nullptr);
 }
 
-int router_configure_from_string(McrouterInstance* router,
+int router_configure_from_string(McrouterInstance& router,
                                  folly::StringPiece input);
 
 bool read_standalone_flavor(
@@ -103,7 +103,7 @@ bool standaloneInit(const McrouterOptions& opts,
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 
-std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router);
+std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router);
 
 void applyTestMode(McrouterOptions& opts);
 

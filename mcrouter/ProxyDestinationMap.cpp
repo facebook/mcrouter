@@ -47,7 +47,7 @@ ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
 std::shared_ptr<ProxyDestination>
 ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
   auto key = client.genProxyDestinationKey(
-    !proxy_->router->opts().same_connection_any_timeout);
+    !proxy_->router().opts().same_connection_any_timeout);
   std::shared_ptr<ProxyDestination> destination;
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
@@ -71,12 +71,10 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
 
   // Update shared area of ProxyDestinations with same key from different
   // threads. This shared area is represented with ProxyClientShared class.
-  if (proxy_->router != nullptr) {
-    proxy_->router->tkoTrackerMap().updateTracker(
-        *destination,
-        proxy_->router->opts().failures_until_tko,
-        proxy_->router->opts().maximum_soft_tkos);
-  }
+  proxy_->router().tkoTrackerMap().updateTracker(
+    *destination,
+    proxy_->router().opts().failures_until_tko,
+    proxy_->router().opts().maximum_soft_tkos);
 
   return destination;
 }

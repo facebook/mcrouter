@@ -493,7 +493,7 @@ void McrouterInstance::spawnStatUpdaterThread() {
 }
 
 void McrouterInstance::spawnStatLoggerThread() {
-  mcrouterLogger_ = createMcrouterLogger(this);
+  mcrouterLogger_ = createMcrouterLogger(*this);
   mcrouterLogger_->start();
 }
 
@@ -552,9 +552,9 @@ bool McrouterInstance::reconfigure() {
     std::string config;
     success = configApi_->getConfigFile(config);
     if (success) {
-      success = router_configure_from_string(this, config);
+      success = router_configure_from_string(*this, config);
     } else {
-      logFailure(this, failure::Category::kBadEnvironment,
+      logFailure(*this, failure::Category::kBadEnvironment,
                  "Can not read config file");
     }
 
@@ -583,7 +583,7 @@ bool McrouterInstance::configure(folly::StringPiece input) {
       newConfigs.push_back(builder.buildConfig(getProxy(i)));
     }
   } catch (const std::exception& e) {
-    logFailure(this, failure::Category::kInvalidConfig,
+    logFailure(*this, failure::Category::kInvalidConfig,
                "Failed to reconfigure: {}", e.what());
     return false;
   }

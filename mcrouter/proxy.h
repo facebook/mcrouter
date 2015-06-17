@@ -85,7 +85,7 @@ struct ShadowSettings {
    * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
    */
   static std::shared_ptr<ShadowSettings>
-  create(const folly::dynamic& json, McrouterInstance* router);
+  create(const folly::dynamic& json, McrouterInstance& router);
 
   ~ShadowSettings();
 
@@ -114,7 +114,7 @@ struct ShadowSettings {
 
  private:
   ObservableRuntimeVars::CallbackHandle handle_;
-  void registerOnUpdateCallback(McrouterInstance* router);
+  void registerOnUpdateCallback(McrouterInstance& router);
 
   std::string keyFractionRangeRv_;
   size_t startIndex_{0};
@@ -143,7 +143,9 @@ struct ProxyMessage {
 
 struct proxy_t {
   uint64_t magic;
-  McrouterInstance* router{nullptr};
+ private:
+  McrouterInstance& router_;
+ public:
 
   std::atomic<int64_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING loopStart_{0};
 
@@ -250,6 +252,10 @@ struct proxy_t {
    * @return Current value of the relaxed notification period if set.
    */
   size_t queueNotifyPeriod() const;
+
+  McrouterInstance& router() const {
+    return router_;
+  }
 
  private:
   folly::EventBase& eventBase_;

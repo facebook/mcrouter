@@ -31,7 +31,7 @@ bool ProxyThread::spawn() {
 }
 
 void ProxyThread::stopAndJoin() {
-  if (thread_handle && proxy_->router->pid() == getpid()) {
+  if (thread_handle && proxy_->router().pid() == getpid()) {
     proxy_->sendMessage(ProxyMessage::Type::SHUTDOWN, nullptr);
     {
       std::unique_lock<std::mutex> lk(mux);
@@ -46,10 +46,9 @@ void ProxyThread::stopAndJoin() {
 }
 
 void ProxyThread::proxyThreadRun() {
-  CHECK(proxy_->router != nullptr);
-  mcrouterSetThreadName(pthread_self(), proxy_->router->opts(), "mcrpxy");
+  mcrouterSetThreadName(pthread_self(), proxy_->router().opts(), "mcrpxy");
 
-  while (!proxy_->router->shutdownStarted() ||
+  while (!proxy_->router().shutdownStarted() ||
          proxy_->fiberManager.hasTasks()) {
     proxy_->eventBase().loopOnce();
     proxy_->drainMessageQueue();

@@ -217,10 +217,8 @@ static std::shared_ptr<folly::File> asynclog_open(proxy_t *proxy) {
                date.tm_min,
                date.tm_sec,
                (long long) now,
-               (proxy->router ? proxy->router->opts().service_name.c_str() :
-                "unknown"),
-               (proxy->router ? proxy->router->opts().router_name.c_str() :
-                "unknown"),
+               proxy->router().opts().service_name.c_str(),
+               proxy->router().opts().router_name.c_str(),
                tid,
                proxy) > PATH_MAX) {
     path[PATH_MAX] = '\0';
@@ -310,7 +308,7 @@ void asynclog_delete(proxy_t* proxy,
 
   auto fd = asynclog_open(proxy);
   if (!fd) {
-    logFailure(proxy->router, memcache::failure::Category::kSystemError,
+    logFailure(proxy->router(), memcache::failure::Category::kSystemError,
                "asynclog_open() failed (key {}, pool {})",
                key, poolName);
     return;
@@ -341,7 +339,7 @@ void asynclog_delete(proxy_t* proxy,
 
   ssize_t size = folly::writeFull(fd->fd(), jstr.data(), jstr.size());
   if (size == -1 || size_t(size) < jstr.size()) {
-    logFailure(proxy->router, memcache::failure::Category::kSystemError,
+    logFailure(proxy->router(), memcache::failure::Category::kSystemError,
                "Error fully writing asynclog request (key {}, pool {})",
                key, poolName);
   }

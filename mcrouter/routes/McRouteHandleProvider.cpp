@@ -247,7 +247,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     for (auto& shadow : json["shadows"]) {
       checkLogic(shadow.count("target"),
                  "PoolRoute {} shadows: no target for shadow", pool->getName());
-      auto s = ShadowSettings::create(shadow, proxy_->router);
+      auto s = ShadowSettings::create(shadow, proxy_->router());
       if (s) {
         data.emplace_back(factory.create(shadow["target"]), std::move(s));
       }

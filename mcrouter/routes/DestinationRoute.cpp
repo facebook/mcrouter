@@ -42,14 +42,14 @@ bool DestinationRoute::spool(const McRequest& req) const {
   auto proxy = &fiber_local::getSharedCtx()->proxy();
   auto& client = *client_;
   folly::fibers::Baton b;
-  auto res = proxy->router->asyncWriter().run(
+  auto res = proxy->router().asyncWriter().run(
     [&b, &client, proxy, key, asynclogName] () {
       asynclog_delete(proxy, client, key, asynclogName);
       b.post();
     }
   );
   if (!res) {
-    logFailure(proxy->router, memcache::failure::Category::kOutOfResources,
+    logFailure(proxy->router(), memcache::failure::Category::kOutOfResources,
                "Could not enqueue asynclog request (key {}, pool {})",
                key, asynclogName);
   } else {
