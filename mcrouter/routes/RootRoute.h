@@ -20,6 +20,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteHandleMap.h"
@@ -31,9 +32,9 @@ class RootRoute {
   static std::string routeName() { return "root"; }
 
   RootRoute(proxy_t* proxy, const RouteSelectorMap& routeSelectors)
-      : opts_(proxy->opts),
-        rhMap_(routeSelectors, proxy->opts.default_route,
-               proxy->opts.send_invalid_route_to_default) {
+      : opts_(proxy->router().opts()),
+        rhMap_(routeSelectors, opts_.default_route,
+               opts_.send_invalid_route_to_default) {
   }
 
   template <class Operation, class Request>

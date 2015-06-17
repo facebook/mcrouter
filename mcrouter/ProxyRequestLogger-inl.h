@@ -11,6 +11,7 @@
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/stats.h"
 
@@ -162,8 +163,9 @@ void ProxyRequestLogger::log(const McRequest& request,
                              Operation) {
 
   auto durationUs = endTimeUs - startTimeUs;
-  bool isOutlier = proxy_->opts.logging_rtt_outlier_threshold_us > 0 &&
-    durationUs >= proxy_->opts.logging_rtt_outlier_threshold_us;
+  bool isOutlier =
+    proxy_->router().opts().logging_rtt_outlier_threshold_us > 0 &&
+    durationUs >= proxy_->router().opts().logging_rtt_outlier_threshold_us;
 
   logError(reply);
   logRequestClass(*proxy_, Operation());

@@ -149,9 +149,6 @@ struct proxy_t {
 
   std::atomic<int64_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING loopStart_{0};
 
-  /** TODO: remove and use router->opts() instead */
-  const McrouterOptions& opts;
-
   std::unique_ptr<ProxyDestinationMap> destinationMap;
 
   // async spool related

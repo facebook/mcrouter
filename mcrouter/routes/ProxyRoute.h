@@ -18,6 +18,7 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
@@ -67,9 +68,10 @@ class ProxyRoute {
       : proxy_(proxy) {
     root_ = std::make_shared<McrouterRouteHandle<RootRoute>>(
       proxy_, routeSelectors);
-    if (proxy_->opts.big_value_split_threshold != 0) {
-      BigValueRouteOptions options(proxy_->opts.big_value_split_threshold,
-                                   proxy_->opts.big_value_batch_size);
+    if (proxy_->router().opts().big_value_split_threshold != 0) {
+      BigValueRouteOptions options(
+        proxy_->router().opts().big_value_split_threshold,
+        proxy_->router().opts().big_value_batch_size);
       root_ = makeBigValueRoute(std::move(root_), std::move(options));
     }
   }
