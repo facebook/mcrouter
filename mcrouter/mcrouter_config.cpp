@@ -20,9 +20,9 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-int router_configure_from_string(McrouterInstance* router,
+int router_configure_from_string(McrouterInstance& router,
                                  folly::StringPiece input) {
-  return router->configure(input);
+  return router.configure(input);
 }
 
 bool read_standalone_flavor(
@@ -64,7 +64,7 @@ std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
   return folly::make_unique<McExtraRouteHandleProvider>();
 }
 
-std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance* router) {
+std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router) {
   return folly::make_unique<McrouterLogger>(router);
 }
 

@@ -22,16 +22,12 @@ void logFailure(folly::StringPiece category, folly::StringPiece msg,
 }
 
 template <typename... Args>
-void logFailure(McrouterInstance* router,
+void logFailure(McrouterInstance& router,
                 folly::StringPiece category,
                 folly::StringPiece msg,
                 Args&&... args) {
-  if (router) {
-    facebook::memcache::failure::log(
-      router->routerName(), category, msg, std::forward<Args>(args)...);
-  } else {
-    logFailure(category, msg, std::forward<Args>(args)...);
-  }
+  facebook::memcache::failure::log(
+    router.routerName(), category, msg, std::forward<Args>(args)...);
 }
 
 }}}  // facebook::memcache::mcrouter

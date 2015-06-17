@@ -39,7 +39,7 @@ class McrouterLogger {
    *                         is written.
    */
   explicit McrouterLogger(
-    McrouterInstance* router,
+    McrouterInstance& router,
     std::unique_ptr<AdditionalLoggerIf> additionalLogger = nullptr);
 
   ~McrouterLogger();
@@ -65,7 +65,7 @@ class McrouterLogger {
   void stop();
 
  private:
-  McrouterInstance* router_;
+  McrouterInstance& router_;
 
   std::unique_ptr<AdditionalLoggerIf> additionalLogger_;
 

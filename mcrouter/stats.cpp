@@ -118,9 +118,9 @@ struct AggregatedDestinationStats {
   std::pair<uint64_t, uint64_t> batches{0, 0};
 };
 
-int get_num_bins_used(const McrouterInstance* router) {
-  if (router->opts().num_proxies > 0) {
-    const proxy_t* anyProxy = router->getProxy(0);
+int get_num_bins_used(const McrouterInstance& router) {
+  if (router.opts().num_proxies > 0) {
+    const proxy_t* anyProxy = router.getProxy(0);
     if (anyProxy) {
       return anyProxy->num_bins_used;
     }
@@ -134,7 +134,7 @@ double stats_rate_value(proxy_t* proxy, int idx) {
 
   if (proxy->num_bins_used != 0) {
     if (stat->aggregate) {
-      rate = stats_aggregate_rate_value(proxy->router, idx);
+      rate = stats_aggregate_rate_value(proxy->router(), idx);
     } else {
       rate = (double)proxy->stats_num_within_window[idx] /
         (proxy->num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
@@ -156,14 +156,14 @@ struct proc_stat_data_t {
   unsigned long rss;
 };
 
-double stats_aggregate_rate_value(const McrouterInstance* router, int idx) {
+double stats_aggregate_rate_value(const McrouterInstance& router, int idx) {
   double rate = 0;
   int num_bins_used = get_num_bins_used(router);
 
   if (num_bins_used != 0) {
     uint64_t num = 0;
-    for (size_t i = 0; i < router->opts().num_proxies; ++i) {
-      num += router->getProxy(i)->stats_num_within_window[idx];
+    for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+      num += router.getProxy(i)->stats_num_within_window[idx];
     }
     rate = (double)num / (num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
   }
@@ -314,13 +314,13 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
   return 0;
 }
 
-void prepare_stats(McrouterInstance* router, stat_t* stats) {
+void prepare_stats(McrouterInstance& router, stat_t* stats) {
   init_stats(stats);
 
   AggregatedDestinationStats destStats;
   uint64_t config_last_success = 0;
-  for (size_t i = 0; i < router->opts().num_proxies; ++i) {
-    auto proxy = router->getProxy(i);
+  for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+    auto proxy = router.getProxy(i);
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
     proxy->destinationMap->foreachDestinationSynced(
@@ -335,7 +335,7 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
   }
 
   stat_set_uint64(stats, num_suspect_servers_stat,
-                  router->tkoTrackerMap().getSuspectServersCount());
+                  router.tkoTrackerMap().getSuspectServersCount());
 
   stat_set_uint64(stats, mcc_txbuf_reqs_stat, destStats.pendingRequests);
   stat_set_uint64(stats, mcc_waiting_replies_stat, destStats.inflightRequests);
@@ -351,14 +351,14 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
   uint64_t now = time(nullptr);
   stats[time_stat].data.uint64 = now;
 
-  uint64_t start_time = router->startTime();
+  uint64_t start_time = router.startTime();
   stats[start_time_stat].data.uint64 = start_time;
   stats[uptime_stat].data.uint64 = now - start_time;
 
   stats[config_age_stat].data.uint64 = now - config_last_success;
   stats[config_last_success_stat].data.uint64 = config_last_success;
-  stats[config_last_attempt_stat].data.uint64 = router->lastConfigAttempt();
-  stats[config_failures_stat].data.uint64 = router->configFailures();
+  stats[config_last_attempt_stat].data.uint64 = router.lastConfigAttempt();
+  stats[config_failures_stat].data.uint64 = router.configFailures();
 
   stats[pid_stat].data.int64 = getpid();
   stats[parent_pid_stat].data.int64 = getppid();
@@ -383,8 +383,8 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
   stats[fibers_allocated_stat].data.uint64 = 0;
   stats[fibers_pool_size_stat].data.uint64 = 0;
   stats[fibers_stack_high_watermark_stat].data.uint64 = 0;
-  for (size_t i = 0; i < router->opts().num_proxies; ++i) {
-    auto pr = router->getProxy(i);
+  for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+    auto pr = router.getProxy(i);
     stats[fibers_allocated_stat].data.uint64 +=
       pr->fiberManager.fibersAllocated();
     stats[fibers_pool_size_stat].data.uint64 +=
@@ -395,10 +395,10 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
     stats[duration_us_stat].data.dbl += pr->durationUs.value();
     stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
   }
-  if (router->opts().num_proxies > 0) {
-    stats[duration_us_stat].data.dbl /= router->opts().num_proxies;
+  if (router.opts().num_proxies > 0) {
+    stats[duration_us_stat].data.dbl /= router.opts().num_proxies;
     stats[client_queue_notify_period_stat].data.dbl /=
-      router->opts().num_proxies;
+      router.opts().num_proxies;
   }
 #ifndef FBCODE_OPT_BUILD
   stats[mc_msg_num_outstanding_stat].data.uint64 =
@@ -407,8 +407,8 @@ void prepare_stats(McrouterInstance* router, stat_t* stats) {
 
   for (int i = 0; i < num_stats; i++) {
     if (stats[i].aggregate && !(stats[i].group & rate_stats)) {
-      for (size_t j = 0; j < router->opts().num_proxies; ++j) {
-        auto pr = router->getProxy(j);
+      for (size_t j = 0; j < router.opts().num_proxies; ++j) {
+        auto pr = router.getProxy(j);
         if (stats[i].type == stat_uint64) {
           stats[i].data.uint64 += pr->stats[i].data.uint64;
         } else if (stats[i].type == stat_int64) {
@@ -505,7 +505,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
 
   stat_t stats[num_stats];
 
-  prepare_stats(proxy->router, stats);
+  prepare_stats(proxy->router(), stats);
 
   for (unsigned int ii = 0; ii < num_stats; ii++) {
     stat_t* stat = &stats[ii];
@@ -520,9 +520,9 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
 
   if (groups & server_stats) {
     folly::StringKeyedUnorderedMap<ServerStat> serverStats;
-    auto router = proxy->router;
-    for (size_t i = 0; i < router->opts().num_proxies; ++i) {
-      router->getProxy(i)->destinationMap->foreachDestinationSynced(
+    auto& router = proxy->router();
+    for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+      router.getProxy(i)->destinationMap->foreachDestinationSynced(
         [&serverStats](folly::StringPiece key, const ProxyDestination& pdstn) {
           auto& stat = serverStats[key];
           stat.isHardTko = pdstn.tracker->isHardTko();
@@ -549,7 +549,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
   }
 
   if (groups & suspect_server_stats) {
-    auto suspectServers = proxy->router->tkoTrackerMap().getSuspectServers();
+    auto suspectServers = proxy->router().tkoTrackerMap().getSuspectServers();
     for (const auto& it : suspectServers) {
       reply.addStat(it.first, folly::format("status:{} num_failures:{}",
                                             it.second.first ? "tko" : "down",

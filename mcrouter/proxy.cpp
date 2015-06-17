@@ -109,9 +109,9 @@ bool precheckRequest(ProxyRequestContext& preq) {
 
 }  // anonymous namespace
 
-proxy_t::proxy_t(McrouterInstance& router_, folly::EventBase& evb)
-    : router(&router_),
-      opts(router->opts()),
+proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
+    : router_(rtr),
+      opts(router_.opts()),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
@@ -453,7 +453,7 @@ MutableMcMsgRef new_reply(const char* str) {
 }
 
 std::shared_ptr<ShadowSettings>
-ShadowSettings::create(const folly::dynamic& json, McrouterInstance* router) {
+ShadowSettings::create(const folly::dynamic& json, McrouterInstance& router) {
   auto result = std::shared_ptr<ShadowSettings>(new ShadowSettings());
   try {
     checkLogic(json.isObject(), "json is not an object");
@@ -483,9 +483,7 @@ ShadowSettings::create(const folly::dynamic& json, McrouterInstance* router) {
     return nullptr;
   }
 
-  if (router) {
-    result->registerOnUpdateCallback(router);
-  }
+  result->registerOnUpdateCallback(router);
 
   return result;
 }
@@ -504,8 +502,8 @@ ShadowSettings::~ShadowSettings() {
   handle_.reset();
 }
 
-void ShadowSettings::registerOnUpdateCallback(McrouterInstance* router) {
-  handle_ = router->rtVarsData().subscribeAndCall(
+void ShadowSettings::registerOnUpdateCallback(McrouterInstance& router) {
+  handle_ = router.rtVarsData().subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {
       if (!newVars || keyFractionRangeRv_.empty()) {
