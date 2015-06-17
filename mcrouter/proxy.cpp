@@ -89,7 +89,7 @@ bool precheckRequest(ProxyRequestContext& preq) {
       break;
 
     case mc_op_flushall:
-      if (!preq.proxy().opts.enable_flush_cmd) {
+      if (!preq.proxy().router().opts().enable_flush_cmd) {
         preq.sendReply(McReply(mc_res_local_error, "Command disabled"));
         break;
       }
@@ -111,14 +111,13 @@ bool precheckRequest(ProxyRequestContext& preq) {
 
 proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
     : router_(rtr),
-      opts(router_.opts()),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
       fiberManager(
         fiber_local::ContextTypeTag(),
         folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(opts)),
+        getFiberManagerOptions(router_.opts())),
       eventBase_(evb) {
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
@@ -134,20 +133,20 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
     fiberManager.loopController()).attachEventBase(eventBase_);
 
   std::chrono::milliseconds connectionResetInterval{
-    opts.reset_inactive_connection_interval
+    router_.opts().reset_inactive_connection_interval
   };
   if (connectionResetInterval.count() > 0) {
     destinationMap->setResetTimer(connectionResetInterval);
   }
 
   messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
-    opts.client_queue_size,
+    router_.opts().client_queue_size,
     [this] (ProxyMessage&& message) {
       this->messageReady(message.type, message.data);
     },
     eventBase_,
-    opts.client_queue_no_notify_rate,
-    opts.client_queue_wait_threshold_us,
+    router_.opts().client_queue_no_notify_rate,
+    router_.opts().client_queue_wait_threshold_us,
     &nowUs,
     [this] () {
       stat_incr_safe(stats, client_queue_notifications_stat);
@@ -156,7 +155,7 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(this);
 
-  if (opts.cpu_cycles) {
+  if (router_.opts().cpu_cycles) {
     eventBase_.runInEventBaseThread([this] {
       cycles::attachEventBase(this->eventBase_);
       this->fiberManager.setObserver(&this->cyclesObserver);
@@ -373,8 +372,8 @@ void proxy_t::processRequest(std::unique_ptr<ProxyRequestContext> preq) {
 
 void proxy_t::dispatchRequest(std::unique_ptr<ProxyRequestContext> preq) {
   if (rateLimited(*preq)) {
-    if (opts.proxy_max_throttled_requests > 0 &&
-        numRequestsWaiting_ >= opts.proxy_max_throttled_requests) {
+    if (router_.opts().proxy_max_throttled_requests > 0 &&
+        numRequestsWaiting_ >= router_.opts().proxy_max_throttled_requests) {
       preq->sendReply(McReply(mc_res_local_error, "Max throttled exceeded"));
       return;
     }
@@ -389,7 +388,7 @@ void proxy_t::dispatchRequest(std::unique_ptr<ProxyRequestContext> preq) {
 }
 
 bool proxy_t::rateLimited(const ProxyRequestContext& preq) const {
-  if (!opts.proxy_max_inflight_requests) {
+  if (!router_.opts().proxy_max_inflight_requests) {
     return false;
   }
 
@@ -401,7 +400,7 @@ bool proxy_t::rateLimited(const ProxyRequestContext& preq) const {
   }
 
   if (waitingRequests_[static_cast<int>(preq.priority())].empty() &&
-      numRequestsProcessing_ < opts.proxy_max_inflight_requests) {
+      numRequestsProcessing_ < router_.opts().proxy_max_inflight_requests) {
     return false;
   }
 
@@ -415,8 +414,8 @@ void proxy_t::pump() {
   auto numPriorities = static_cast<int>(ProxyRequestPriority::kNumPriorities);
   for (int i = 0; i < numPriorities; ++i) {
     auto& queue = waitingRequests_[i];
-    while (numRequestsProcessing_ < opts.proxy_max_inflight_requests &&
-           !queue.empty()) {
+    while (numRequestsProcessing_ < router_.opts().proxy_max_inflight_requests
+           && !queue.empty()) {
       --numRequestsWaiting_;
       auto w = queue.popFront();
       stat_decr(stats, proxy_reqs_waiting_stat, 1);

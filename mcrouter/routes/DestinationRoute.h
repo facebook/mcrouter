@@ -28,6 +28,7 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
@@ -115,8 +116,9 @@ class DestinationRoute {
     auto proxy = &ctx->proxy();
     auto requestClass = fiber_local::getRequestClass();
     if (requestClass == RequestClass::SHADOW) {
-      if (proxy->opts.target_max_shadow_requests > 0 &&
-          pendingShadowReqs_ >= proxy->opts.target_max_shadow_requests) {
+      if (proxy->router().opts().target_max_shadow_requests > 0 &&
+          pendingShadowReqs_ >=
+          proxy->router().opts().target_max_shadow_requests) {
         McReply reply(ErrorReply);
         ctx->onRequestRefused(reply);
         return reply;

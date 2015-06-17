@@ -196,11 +196,11 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("config",
     [this] (const std::vector<folly::StringPiece>& args) {
-      if (proxy_->opts.config_str.empty()) {
+      if (proxy_->router().opts().config_str.empty()) {
         return std::string(
           R"({"error": "config is loaded from file and not available"})");
       }
-      return std::string(proxy_->opts.config_str);
+      return proxy_->router().opts().config_str;
     }
   );
 
@@ -213,11 +213,11 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("config_file",
     [this] (const std::vector<folly::StringPiece>& args) {
-      if (proxy_->opts.config_file.empty()) {
+      if (proxy_->router().opts().config_file.empty()) {
         throw std::runtime_error("no config file found!");
       }
 
-      return proxy_->opts.config_file;
+      return proxy_->router().opts().config_file;
     }
   );
 
@@ -227,7 +227,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
         throw std::runtime_error("options: 0 or 1 args expected");
       }
 
-      auto optDict = proxy_->opts.toDict();
+      auto optDict = proxy_->router().opts().toDict();
 
       if (args.size() == 1) {
         auto it = optDict.find(args[0].str());
@@ -294,7 +294,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       if (!proxy_->router().configApi().getConfigFile(confFile)) {
         throw std::runtime_error("can not load config");
       }
-      ProxyConfigBuilder builder(proxy_->opts,
+      ProxyConfigBuilder builder(proxy_->router().opts(),
                                  &proxy_->router().configApi(),
                                  confFile);
       folly::json::serialization_opts jsonOpts;

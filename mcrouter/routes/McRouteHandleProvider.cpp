@@ -15,6 +15,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -198,7 +199,7 @@ McRouteHandleProvider::makePool(const folly::dynamic& json) {
 McrouterRouteHandlePtr
 McRouteHandleProvider::createAsynclogRoute(McrouterRouteHandlePtr target,
                                            std::string asynclogName) {
-  if (!proxy_->opts.asynclog_disable) {
+  if (!proxy_->router().opts().asynclog_disable) {
     target = makeAsynclogRoute(std::move(target), asynclogName);
   }
   asyncLogRoutes_.emplace(std::move(asynclogName), target);
@@ -294,7 +295,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   auto route = makeHashRoute(jhashWithWeights, std::move(destinations));
 
   if (json.isObject()) {
-    if (proxy_->opts.destination_rate_limiting) {
+    if (proxy_->router().opts().destination_rate_limiting) {
       if (auto jrates = json.get_ptr("rates")) {
         route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
       }
@@ -312,7 +313,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       checkLogic(jasynclog->isBool(), "PoolRoute: asynclog is not bool");
       needAsynclog = jasynclog->getBool();
     }
-    if (proxy_->opts.asynclog_route_name) {
+    if (proxy_->router().opts().asynclog_route_name) {
       if (auto jname = json.get_ptr("name")) {
         checkLogic(jname->isString(), "PoolRoute: name is not a string");
         asynclogName = jname->stringPiece().str();

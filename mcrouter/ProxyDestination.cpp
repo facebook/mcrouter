@@ -54,7 +54,7 @@ stat_name_t getStatName(ProxyDestination::State st) {
 }  // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
-  assert(!proxy->opts.disable_tko_tracking);
+  assert(!proxy->router().opts().disable_tko_tracking);
 
   int delay_ms = probe_delay_next_ms;
   if (probe_delay_next_ms < 2) {
@@ -63,8 +63,8 @@ void ProxyDestination::schedule_next_probe() {
   } else {
     probe_delay_next_ms *= kProbeExponentialFactor;
   }
-  if (probe_delay_next_ms > proxy->opts.probe_delay_max_ms) {
-    probe_delay_next_ms = proxy->opts.probe_delay_max_ms;
+  if (probe_delay_next_ms > proxy->router().opts().probe_delay_max_ms) {
+    probe_delay_next_ms = proxy->router().opts().probe_delay_max_ms;
   }
 
   // Calculate random jitter
@@ -117,7 +117,7 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
 }
 
 void ProxyDestination::start_sending_probes() {
-  probe_delay_next_ms = proxy->opts.probe_delay_initial_ms;
+  probe_delay_next_ms = proxy->router().opts().probe_delay_initial_ms;
   schedule_next_probe();
 }
 
@@ -130,7 +130,7 @@ void ProxyDestination::stop_sending_probes() {
 }
 
 void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
-  if (proxy->opts.disable_tko_tracking) {
+  if (proxy->router().opts().disable_tko_tracking) {
     return;
   }
 
@@ -222,7 +222,7 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
     useSsl_(ro_.useSsl),
     qosClass_(ro_.qosClass),
     qosPath_(ro_.qosPath),
-    stats_(proxy_->opts),
+    stats_(proxy_->router().opts()),
     poolName_(ro_.pool.getName()) {
 
   static uint64_t next_magic = 0x12345678900000LL;
@@ -246,14 +246,14 @@ void ProxyDestination::initializeAsyncMcClient() {
   assert(!client_);
 
   ConnectionOptions options(accessPoint());
-  auto& opts = proxy->opts;
+  auto& opts = proxy->router().opts();
   options.noNetwork = opts.no_network;
   options.useNewAsciiParser = opts.new_ascii_parser;
   options.tcpKeepAliveCount = opts.keepalive_cnt;
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
-  if (proxy->opts.enable_qos) {
+  if (opts.enable_qos) {
     options.enableQoS = true;
     options.qosClass = qosClass_;
     options.qosPath = qosPath_;

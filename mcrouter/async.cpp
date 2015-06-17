@@ -179,7 +179,7 @@ static std::shared_ptr<folly::File> asynclog_open(proxy_t *proxy) {
   char hour_path[PATH_MAX+1];
   time_t hour_time = now - (now % 3600);
   if (snprintf(hour_path, PATH_MAX, "%s/%04d%02d%02dT%02d-%lld",
-               proxy->opts.async_spool.c_str(),
+               proxy->router().opts().async_spool.c_str(),
                date.tm_year + 1900,
                date.tm_mon + 1,
                date.tm_mday,
@@ -289,13 +289,13 @@ void asynclog_delete(proxy_t* proxy,
                      folly::StringPiece poolName) {
   dynamic json = {};
   const auto& host = pclient.ap->getHost();
-  const auto& port = proxy->opts.asynclog_port_override == 0
-                         ? pclient.ap->getPort()
-                         : proxy->opts.asynclog_port_override;
+  const auto& port = proxy->router().opts().asynclog_port_override == 0
+    ? pclient.ap->getPort()
+    : proxy->router().opts().asynclog_port_override;
 
-  if (proxy->opts.use_asynclog_version2) {
+  if (proxy->router().opts().use_asynclog_version2) {
     json = dynamic::object;
-    json["f"] = proxy->opts.flavor_name;
+    json["f"] = proxy->router().opts().flavor_name;
     json["h"] = folly::sformat("[{}]:{}", host, port);
     json["p"] = poolName.str();
     json["k"] = key.str();
@@ -318,7 +318,7 @@ void asynclog_delete(proxy_t* proxy,
   // OR ["AS2.0", 1289416829.836, "C", {"f":"flavor","h":"[10.0.0.1]:11302",
   //                                    "p":"pool_name","k":"foo\r\n"}]
   dynamic jsonOut = {};
-  if (proxy->opts.use_asynclog_version2) {
+  if (proxy->router().opts().use_asynclog_version2) {
     jsonOut.push_back(ASYNCLOG_MAGIC2);
   } else {
     jsonOut.push_back(ASYNCLOG_MAGIC);
