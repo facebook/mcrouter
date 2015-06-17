@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <folly/Conv.h>
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -45,7 +46,7 @@ class HashRoute {
   template <class Operation, class Request>
   void traverse(const Request& req, Operation,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*rh_[pick(req)], req, Operation());
+    t(*rh_[pickInMainContext(req)], req, Operation());
   }
 
   template <class Operation, class Request>
@@ -55,7 +56,7 @@ class HashRoute {
     if (rh_.empty()) {
       return NullRoute<RouteHandleIf>::route(req, Operation());
     } else {
-      return rh_[pick(req)]->route(req, Operation());
+      return rh_[pickInMainContext(req)]->route(req, Operation());
     }
   }
 
@@ -87,6 +88,18 @@ class HashRoute {
       throw std::runtime_error("index out of range");
     }
     return n;
+  }
+
+  template <class Request>
+  size_t pickInMainContext(const Request& req) const {
+    /* Hash functions can be stack-intensive,
+       so jump back to the main context */
+    return folly::fibers::runInMainContext([this, &req] () {
+        /* this-> here is necessary for gcc-4.7 - it can't find pick()
+           without it */
+        return this->pick(req);
+      }
+    );
   }
 };
 

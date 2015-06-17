@@ -47,14 +47,6 @@ __BEGIN_DECLS
 uint32_t furc_hash(const char* const key, const size_t len,
                    const uint32_t m);
 
-/**
- * Same as furc_hash but doesn't allocate 8KB array on stack
- *
- * @param hash  should have at least FURC_CACHE_SIZE elements
- */
-uint32_t furc_hash_array(const char* const key, const size_t len,
-                         const uint32_t m, uint64_t* hash);
-
 uint32_t furc_maximum_pool_size(void);
 
 /**
@@ -72,17 +64,6 @@ uint64_t murmur_hash_64A(const void* const key, const size_t len,
  * Computes a CRC32 hash of the first |len| characters of the |key|.
  */
 uint32_t crc32_hash(const char* const key, const size_t len);
-
-/* Maximum number tries for in-range result before just returning 0. */
-#define FURC_MAX_TRIES 32
-
-/* Gap in bit index per try; limits us to 2^FURC_SHIFT shards.  Making this
- * larger will sacrifice a modest amount of performance.
- */
-#define FURC_SHIFT 23
-
-/* Size of cache for hash values; should be > MAXTRIES * (FURCSHIFT + 1) */
-#define FURC_CACHE_SIZE 1024
 
 __END_DECLS
 

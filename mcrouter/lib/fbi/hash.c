@@ -38,6 +38,17 @@
  */
 #define SEED 4193360111ul
 
+/* Maximum number tries for in-range result before just returning 0. */
+#define MAX_TRIES 32
+
+/* Gap in bit index per try; limits us to 2^FURC_SHIFT shards.  Making this
+ * larger will sacrifice a modest amount of performance.
+ */
+#define FURC_SHIFT 23
+
+/* Size of cache for hash values; should be > MAXTRIES * (FURCSHIFT + 1) */
+#define FURC_CACHE_SIZE 1024
+
 /**
  * MurmurHash2, 64-bit versions, by Austin Appleby
  *
@@ -137,13 +148,13 @@ static uint32_t furc_get_bit(const char* const key, const size_t len,
     return (hash[ord] >> (idx&0x3f)) & 0x1;
 }
 
-uint32_t furc_hash_array(const char* const key, const size_t len,
-                         const uint32_t m, uint64_t* hash) {
-    uint32_t tries;
+uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m) {
+    uint32_t try;
     uint32_t d;
     uint32_t num;
     uint32_t i;
     uint32_t a;
+    uint64_t hash[FURC_CACHE_SIZE];
     int32_t old_ord;
 
     assert(m <= furc_maximum_pool_size());
@@ -157,7 +168,7 @@ uint32_t furc_hash_array(const char* const key, const size_t len,
         ;
 
     a = d;
-    for (tries = 0; tries < FURC_MAX_TRIES; tries++) {
+    for (try = 0; try < MAX_TRIES; try++) {
         while (!furc_get_bit(key, len, a, hash, &old_ord)) {
             if (--d == 0) {
                 return 0;
@@ -177,11 +188,6 @@ uint32_t furc_hash_array(const char* const key, const size_t len,
 
     // Give up; return 0, which is a legal value in all cases.
     return 0;
-}
-
-uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m) {
-    uint64_t hash[FURC_CACHE_SIZE];
-    return furc_hash_array(key, len, m, hash);
 }
 
 inline uint32_t furc_maximum_pool_size(void) {
