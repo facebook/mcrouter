@@ -41,14 +41,14 @@ uint32_t getHash() {
   uint32_t result[2] = {0};
 
   if (!for_each_localaddr(getAddrHash, result)) {
-    failure::log("mcrouter", failure::Category::kSystemError,
-                 "Can not enumerate local addresses: {}", strerror(errno));
+    LOG_FAILURE("mcrouter", failure::Category::kSystemError,
+                "Can not enumerate local addresses: {}", strerror(errno));
     return 0;
   }
 
   if (result[0] == 0) {
-    failure::log("mcrouter", failure::Category::kBadEnvironment,
-                 "Can not find a valid ip addresss");
+    LOG_FAILURE("mcrouter", failure::Category::kBadEnvironment,
+                "Can not find a valid ip addresss");
     return 0;
   }
 

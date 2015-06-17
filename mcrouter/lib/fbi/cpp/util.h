@@ -32,8 +32,7 @@ namespace facebook { namespace memcache {
 template<typename... Args>
 void checkLogic(bool condition, folly::StringPiece format, Args&&... args) {
   if (UNLIKELY(!condition)) {
-    throw std::logic_error(
-      folly::sformatChecked(format, std::forward<Args>(args)...));
+    throw std::logic_error(folly::sformat(format, std::forward<Args>(args)...));
   }
 }
 

@@ -12,8 +12,7 @@
 #include <folly/Memory.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/lib/fbi/debug.h"
-#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -59,12 +58,12 @@ void PeriodicTaskScheduler::schedulerThreadRun(TaskThread& task) {
     try {
       task.func(*this);
     } catch (const std::exception& ex) {
-      logFailure(failure::Category::kOther,
-                 "Error while executing periodic function: {}", ex.what());
+      LOG_FAILURE("mcrouter", failure::Category::kOther,
+                  "Error while executing periodic function: {}", ex.what());
       break;
     } catch (...) {
-      logFailure(failure::Category::kOther,
-                 "Unknown error occured while executing periodic function");
+      LOG_FAILURE("mcrouter", failure::Category::kOther,
+                  "Unknown error occured while executing periodic function");
       break;
     }
   }

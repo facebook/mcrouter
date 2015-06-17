@@ -28,35 +28,6 @@ bool isQosClassValid(uint64_t qos) {
 bool isQosPathValid(uint64_t qos) {
   return qos <= 3;
 }
-void parseQos(std::string parentName, const folly::dynamic& jQos,
-              uint64_t& qosClass, uint64_t& qosPath) {
-  if (!jQos.isObject()) {
-    logFailure(memcache::failure::Category::kInvalidConfig,
-               "{}: qos must be an object.", parentName);
-    return;
-  }
-
-  uint64_t prevClass = qosClass;
-  if (auto jClass = jQos.get_ptr("class")) {
-    if (jClass->isInt() && isQosClassValid(jClass->getInt())) {
-      qosClass = jClass->getInt();
-    } else {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "{}: qos.class must be an integer in the range [0, 4]",
-                 parentName);
-    }
-  }
-  if (auto jPath = jQos.get_ptr("path")) {
-    if (jPath->isInt() && isQosPathValid(jPath->getInt())) {
-      qosPath = jPath->getInt();
-    } else {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "{}: qos.path must be an integer in the range [0, 3]",
-                 parentName);
-      qosClass = prevClass;
-    }
-  }
-}
 
 mc_protocol_t parseProtocol(const folly::dynamic& obj, mc_protocol_t def) {
   if (auto jprotocol = obj.get_ptr("protocol")) {
@@ -89,6 +60,36 @@ PoolFactory::PoolFactory(const folly::dynamic& config,
 
     for (const auto& it : jpools->items()) {
       parsePool(it.first.stringPiece().str(), it.second);
+    }
+  }
+}
+
+void PoolFactory::parseQos(std::string parentName, const folly::dynamic& jQos,
+                           uint64_t& qosClass, uint64_t& qosPath) {
+  if (!jQos.isObject()) {
+    MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                   "{}: qos must be an object.", parentName);
+    return;
+  }
+
+  uint64_t prevClass = qosClass;
+  if (auto jClass = jQos.get_ptr("class")) {
+    if (jClass->isInt() && isQosClassValid(jClass->getInt())) {
+      qosClass = jClass->getInt();
+    } else {
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                     "{}: qos.class must be an integer in the range [0, 4]",
+                     parentName);
+    }
+  }
+  if (auto jPath = jQos.get_ptr("path")) {
+    if (jPath->isInt() && isQosPathValid(jPath->getInt())) {
+      qosPath = jPath->getInt();
+    } else {
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                     "{}: qos.path must be an integer in the range [0, 3]",
+                     parentName);
+      qosClass = prevClass;
     }
   }
 }
@@ -141,8 +142,8 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
   std::chrono::milliseconds timeout{opts_.server_timeout_ms};
   if (auto jlocality = json.get_ptr("pool_locality")) {
     if (!jlocality->isString()) {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool {}: pool_locality is not a string", name);
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                     "Pool {}: pool_locality is not a string", name);
     } else {
       auto str = jlocality->stringPiece();
       if (str == "cluster") {
@@ -154,8 +155,9 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
           timeout = std::chrono::milliseconds(opts_.regional_pools_timeout_ms);
         }
       } else {
-        logFailure(memcache::failure::Category::kInvalidConfig,
-                   "Pool {}: '{}' pool locality is not supported", name, str);
+        MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                       "Pool {}: '{}' pool locality is not supported",
+                       name, str);
       }
     }
   }
@@ -164,16 +166,16 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
   std::string region, cluster;
   if (auto jregion = json.get_ptr("region")) {
     if (!jregion->isString()) {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool {}: pool_region is not a string", name);
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                     "Pool {}: pool_region is not a string", name);
     } else {
       region = jregion->stringPiece().str();
     }
   }
   if (auto jcluster = json.get_ptr("cluster")) {
     if (!jcluster->isString()) {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool {}: pool_cluster is not a string", name);
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                     "Pool {}: pool_cluster is not a string", name);
     } else {
       cluster = jcluster->stringPiece().str();
     }
@@ -181,8 +183,8 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
 
   if (auto jtimeout = json.get_ptr("server_timeout")) {
     if (!jtimeout->isInt()) {
-      logFailure(memcache::failure::Category::kInvalidConfig,
-                 "Pool {}: server_timeout is not an int", name);
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kInvalidConfig,
+                     "Pool {}: server_timeout is not an int", name);
     } else {
       timeout = std::chrono::milliseconds(jtimeout->getInt());
     }

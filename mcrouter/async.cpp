@@ -106,8 +106,9 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
     });
     folly::setThreadName(thread_.native_handle(), threadName);
   } catch (const std::system_error& e) {
-    logFailure(memcache::failure::Category::kSystemError,
-               "Can not start AsyncWriter thread {}: {}", threadName, e.what());
+    LOG_FAILURE("mcrouter", memcache::failure::Category::kSystemError,
+                "Can not start AsyncWriter thread {}: {}", threadName,
+                e.what());
     return false;
   }
 
@@ -308,9 +309,10 @@ void asynclog_delete(proxy_t* proxy,
 
   auto fd = asynclog_open(proxy);
   if (!fd) {
-    logFailure(proxy->router(), memcache::failure::Category::kSystemError,
-               "asynclog_open() failed (key {}, pool {})",
-               key, poolName);
+    MC_LOG_FAILURE(proxy->router().opts(),
+                   memcache::failure::Category::kSystemError,
+                   "asynclog_open() failed (key {}, pool {})",
+                   key, poolName);
     return;
   }
 
@@ -339,9 +341,10 @@ void asynclog_delete(proxy_t* proxy,
 
   ssize_t size = folly::writeFull(fd->fd(), jstr.data(), jstr.size());
   if (size == -1 || size_t(size) < jstr.size()) {
-    logFailure(proxy->router(), memcache::failure::Category::kSystemError,
-               "Error fully writing asynclog request (key {}, pool {})",
-               key, poolName);
+    MC_LOG_FAILURE(proxy->router().opts(),
+                   memcache::failure::Category::kSystemError,
+                   "Error fully writing asynclog request (key {}, pool {})",
+                   key, poolName);
   }
 }
 

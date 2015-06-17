@@ -37,9 +37,9 @@ void McClientRequestContextBase::reply(Reply&& r) {
          state_ == ReqState::WRITE_QUEUE ||
          state_ == ReqState::WRITE_QUEUE_CANCELED);
   if (replyType_ != typeid(Reply)) {
-    failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
-                 "Attempt to forward a reply of a wrong type. Expected '{}', "
-                 "but received '{}'!", replyType_.name(), typeid(Reply).name());
+    LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
+                "Attempt to forward a reply of a wrong type. Expected '{}', "
+                "but received '{}'!", replyType_.name(), typeid(Reply).name());
 
     replyErrorImpl(mc_res_local_error);
     return;
@@ -124,9 +124,9 @@ McClientRequestContext<Operation, Request>::waitForReply(
       return std::move(replyStorage_.value());
     case ReqState::WRITE_QUEUE_CANCELED:
     case ReqState::NONE:
-      failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
-                   "Unexpected state of request: {}!",
-                   static_cast<uint64_t>(state_));
+      LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
+                  "Unexpected state of request: {}!",
+                  static_cast<uint64_t>(state_));
   }
   return Reply(mc_res_local_error);
 }
@@ -177,8 +177,8 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
     } else {
       // With old mc_parser it's possible to receive unexpected replies, we need
       // to ignore them. But we need to log this.
-      failure::log("AsyncMcClient", failure::Category::kOther,
-                   "Receieved unexpected reply from server!");
+      LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
+                  "Receieved unexpected reply from server!");
     }
   }
 

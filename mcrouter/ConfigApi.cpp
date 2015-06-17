@@ -114,11 +114,11 @@ void ConfigApi::configThreadRun() {
     try {
       hasUpdate = checkFileUpdate();
     } catch (const std::exception& e) {
-      logFailure(memcache::failure::Category::kOther,
-                 "Check for config update failed: {}", e.what());
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kOther,
+                     "Check for config update failed: {}", e.what());
     } catch (...) {
-      logFailure(memcache::failure::Category::kOther,
-                 "Check for config update failed with unknown error");
+      MC_LOG_FAILURE(opts_, memcache::failure::Category::kOther,
+                     "Check for config update failed with unknown error");
     }
     // There are a couple of races that can happen here
     // First, the IN_MODIFY event can be fired before the write is complete,

@@ -16,6 +16,7 @@
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/ManagedModeUtil.h"
 #include "mcrouter/McrouterClient.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
@@ -111,8 +112,8 @@ void serverLoop(
   if (managedMode) {
     worker.setOnShutdownOperation([&router] () {
         if (!shutdownFromChild()) {
-          logFailure(router, failure::Category::kSystemError,
-                     "Could not shutdown mcrouter on user command.");
+          MC_LOG_FAILURE(router.opts(), failure::Category::kSystemError,
+                         "Could not shutdown mcrouter on user command.");
         }
       });
   }

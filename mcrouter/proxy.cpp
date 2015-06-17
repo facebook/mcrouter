@@ -477,8 +477,8 @@ ShadowSettings::create(const folly::dynamic& json, McrouterInstance& router) {
       result->keyFractionRangeRv_ = jKeyFractionRangeRv->stringPiece().str();
     }
   } catch (const std::logic_error& e) {
-    logFailure(router, failure::Category::kInvalidConfig,
-               "ShadowSettings: {}", e.what());
+    MC_LOG_FAILURE(router.opts(), failure::Category::kInvalidConfig,
+                   "ShadowSettings: {}", e.what());
     return nullptr;
   }
 

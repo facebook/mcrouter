@@ -64,6 +64,9 @@ class PoolFactory {
 
   std::shared_ptr<ClientPool>
   parsePool(const std::string& name, const folly::dynamic& jpool);
+
+  void parseQos(std::string parentName, const folly::dynamic& jQos,
+                uint64_t& qosClass, uint64_t& qosPath);
 };
 
 }}} // facebook::memcache::mcrouter

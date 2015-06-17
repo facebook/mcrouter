@@ -130,10 +130,10 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
         // Ask the client to initialize parser.
         if (!callback_.nextReplyAvailable(0 /* reqId */)) {
           auto data = reinterpret_cast<const char*>(readBuffer.data());
-          failure::log("AsyncMcClient", failure::Category::kOther,
-                       "Received unexpected data from remote endpoint: '{}'!",
-                       folly::cEscape<std::string>(folly::StringPiece(
-                         data, data + std::min(readBuffer.length(),
+          LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
+                      "Received unexpected data from remote endpoint: '{}'!",
+                      folly::cEscape<std::string>(folly::StringPiece(
+                        data, data + std::min(readBuffer.length(),
                                                static_cast<size_t>(128)))));
           callback_.parseError(mc_res_local_error,
                                "Received unexpected ASCII data");
@@ -154,9 +154,9 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
           break;
         case McAsciiParser::State::UNINIT:
           // We fed parser some data, it shouldn't remain in State::NONE.
-          failure::log("AsyncMcClient", failure::Category::kBrokenLogic,
-                       "Sent data to AsciiParser but it remained in UNINIT "
-                       "state!");
+          LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
+                      "Sent data to AsciiParser but it remained in UNINIT "
+                      "state!");
           callback_.parseError(mc_res_local_error,
                                "Internal AsciiParser error.");
           return;

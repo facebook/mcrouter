@@ -31,11 +31,11 @@ Observable<Data>::subscribeAndCall(OnUpdateOldNew callback) {
   try {
     callback(Data(), data_);
   } catch (const std::exception& e) {
-    failure::log("mcrouter", failure::Category::kOther,
-                 "Error occured in observable callback: {}", e.what());
+    LOG_FAILURE("mcrouter", failure::Category::kOther,
+                "Error occured in observable callback: {}", e.what());
   } catch (...) {
-    failure::log("mcrouter", failure::Category::kOther,
-                 "Unknown error occured in observable callback");
+    LOG_FAILURE("mcrouter", failure::Category::kOther,
+                "Unknown error occured in observable callback");
   }
   return subscribe(std::move(callback));
 }

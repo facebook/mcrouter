@@ -18,7 +18,7 @@
 #include <folly/String.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/proxy.h"
 
 using std::string;
@@ -199,9 +199,9 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
      during new option roll out */
   for (const auto& kv : new_opts) {
     if (seen.find(kv.first) == seen.end()) {
-      mcrouter::logFailure(failure::Category::kInvalidOption,
-                           "Unknown option name: {}={}",
-                           kv.first, kv.second);
+      LOG_FAILURE("mcrouter", failure::Category::kInvalidOption,
+                  "Unknown option name: {}={}",
+                  kv.first, kv.second);
     }
   }
 
@@ -214,8 +214,8 @@ std::string substituteTemplates(std::string str) {
   if (str.find(kTempCpuCores) != std::string::npos) {
     auto c = std::thread::hardware_concurrency();
     if (c == 0) {
-      mcrouter::logFailure(failure::Category::kSystemError,
-                           "Can not get number of CPU cores. Using 1 instead.");
+      LOG_FAILURE("mcrouter", failure::Category::kSystemError,
+                  "Can not get number of CPU cores. Using 1 instead.");
       c = 1;
     }
     str = replaceAll(std::move(str), kTempCpuCores, folly::to<std::string>(c));

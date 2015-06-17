@@ -60,6 +60,8 @@ class Category {
 };
 
 typedef std::function<void(
+  folly::StringPiece file,
+  int line,
   folly::StringPiece service,
   folly::StringPiece category,
   folly::StringPiece msg,
@@ -75,6 +77,34 @@ std::pair<std::string, HandlerFunc> logToStdError();
 std::pair<std::string, HandlerFunc> throwLogicError();
 
 }  // handlers
+
+namespace detail {
+
+/**
+ * Log failure according to action for given category (see @setCategoryAction).
+ * If no special action is provided, default constructed one will be used.
+ */
+void log(folly::StringPiece file,
+         int line,
+         folly::StringPiece service,
+         folly::StringPiece category,
+         folly::StringPiece msg);
+
+/**
+ * log overload to format messages automatically.
+ */
+template <typename... Args>
+void log(folly::StringPiece file,
+         int line,
+         folly::StringPiece service,
+         folly::StringPiece category,
+         folly::StringPiece msgFormat,
+         Args&&... args) {
+  log(file, line, service, category,
+      folly::format(msgFormat, std::forward<Args>(args)...).str());
+}
+
+}  // detail
 
 /**
  * Add new failure handler. Names should be unique.
@@ -106,24 +136,7 @@ bool setHandler(std::pair<std::string, HandlerFunc> handler);
  */
 void setServiceContext(folly::StringPiece service, std::string context);
 
-/**
- * Log failure according to action for given category (see @setCategoryAction).
- * If no special action is provided, default constructed one will be used.
- */
-void log(folly::StringPiece service,
-         folly::StringPiece category,
-         folly::StringPiece msg);
-
-/**
- * log overload to format messages automatically.
- */
-template <typename... Args>
-void log(folly::StringPiece service,
-         folly::StringPiece category,
-         folly::StringPiece msgFormat,
-         Args&&... args) {
-  log(service, category,
-      folly::format(msgFormat, std::forward<Args>(args)...).str());
-}
+#define LOG_FAILURE(...) \
+  facebook::memcache::failure::detail::log(__FILE__, __LINE__, __VA_ARGS__)
 
 }}}  // facebook::memcache::failure

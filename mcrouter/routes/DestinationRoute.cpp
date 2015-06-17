@@ -13,6 +13,7 @@
 
 #include "mcrouter/async.h"
 #include "mcrouter/awriter.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -49,9 +50,10 @@ bool DestinationRoute::spool(const McRequest& req) const {
     }
   );
   if (!res) {
-    logFailure(proxy->router(), memcache::failure::Category::kOutOfResources,
-               "Could not enqueue asynclog request (key {}, pool {})",
-               key, asynclogName);
+    MC_LOG_FAILURE(proxy->router().opts(),
+                   memcache::failure::Category::kOutOfResources,
+                   "Could not enqueue asynclog request (key {}, pool {})",
+                   key, asynclogName);
   } else {
     /* Don't reply to the user until we safely logged the request to disk */
     b.wait();
