@@ -11,7 +11,6 @@
 
 #include <dirent.h>
 #include <event.h>
-#include <pthread.h>
 #include <sys/fcntl.h>
 #include <sys/file.h>
 #include <sys/resource.h>
@@ -260,12 +259,6 @@ struct proxy_t {
   /** Read/write lock for config pointer */
   SFRLock configLock_;
   std::shared_ptr<ProxyConfigIf> config_;
-
-  pthread_t awriterThreadHandle_{0};
-  void* awriterThreadStack_{nullptr};
-
-  pthread_t statsLogWriterThreadHandle_{0};
-  void* statsLogWriterThreadStack_{nullptr};
 
   // Stores the id of the next request.
   uint64_t nextReqId_ = 0;

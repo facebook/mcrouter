@@ -12,6 +12,7 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <thread>
 #include <unordered_map>
 
 #include <folly/Range.h>
@@ -205,8 +206,7 @@ class McrouterInstance {
   LogPostprocessCallbackFunc postprocessCallback_;
 
   // Stat updater thread updates rate stat windows for each proxy
-  pthread_t statUpdaterThreadHandle_{0};
-  void* statUpdaterThreadStack_{nullptr};
+  std::thread statUpdaterThread_;
 
   std::mutex statUpdaterCvMutex_;
   std::condition_variable statUpdaterCv_;
@@ -297,8 +297,7 @@ class McrouterInstance {
 
   void subscribeToConfigUpdate();
 
-  static void* statUpdaterThreadRun(void* arg);
-  void spawnStatUpdaterThread();
+  void statUpdaterThreadRun();
   void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
   void onClientDestroyed();

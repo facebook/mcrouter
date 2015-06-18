@@ -24,29 +24,24 @@ ProxyThread::ProxyThread(McrouterInstance& router)
       proxy_(new proxy_t(router, evb_)) {
 }
 
-bool ProxyThread::spawn() {
-  return spawnThread(&thread_handle,
-                     &thread_stack,
-                     proxyThreadRunHandler, this);
+void ProxyThread::spawn() {
+  thread_ = std::thread([this] () { proxyThreadRun(); });
 }
 
 void ProxyThread::stopAndJoin() {
-  if (thread_handle && proxy_->router().pid() == getpid()) {
+  if (thread_.joinable() && proxy_->router().pid() == getpid()) {
     proxy_->sendMessage(ProxyMessage::Type::SHUTDOWN, nullptr);
     {
       std::unique_lock<std::mutex> lk(mux);
       isSafeToDeleteProxy = true;
     }
     cv.notify_all();
-    pthread_join(thread_handle, nullptr);
-  }
-  if (thread_stack) {
-    free(thread_stack);
+    thread_.join();
   }
 }
 
 void ProxyThread::proxyThreadRun() {
-  mcrouterSetThreadName(pthread_self(), proxy_->router().opts(), "mcrpxy");
+  mcrouterSetThisThreadName(proxy_->router().opts(), "mcrpxy");
 
   while (!proxy_->router().shutdownStarted() ||
          proxy_->fiberManager.hasTasks()) {

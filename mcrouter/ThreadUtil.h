@@ -9,8 +9,6 @@
  */
 #pragma once
 
-#include <pthread.h>
-
 #include <folly/Range.h>
 
 namespace facebook { namespace memcache {
@@ -19,14 +17,7 @@ class McrouterOptions;
 
 namespace mcrouter {
 
-/*
- * Utility functions for launching threads and setting thread names.
- */
-bool spawnThread(pthread_t* thread_handle, void** stack,
-                 void* (thread_run)(void*), void* arg);
-
-void mcrouterSetThreadName(pthread_t tid,
-                           const McrouterOptions& opts,
-                           folly::StringPiece prefix);
+void mcrouterSetThisThreadName(const McrouterOptions& opts,
+                               folly::StringPiece prefix);
 
 }}} // facebook::memcache::mcrouter
