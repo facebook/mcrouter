@@ -239,22 +239,10 @@ typedef enum msg_field_e {
   // with this scheme.
 } msg_field_t;
 
-#define UM_NOPS 32
-
-#ifdef HAVE_STATIC_ASSERT
-_Static_assert(
-  mc_nops == 31,
-  "If you add a new mc_op, make sure to update mc/umbrella_conv.h");
-#endif
+#define UM_NOPS 28
 
 extern uint32_t const umbrella_op_from_mc[UM_NOPS];
 extern uint32_t const umbrella_op_to_mc[UM_NOPS];
-
-#ifdef HAVE_STATIC_ASSERT
-_Static_assert(
-  mc_nres == 30,
-  "If you add a new mc_res, make sure to update mc/umbrella_conv.h");
-#endif
 
 extern uint32_t const umbrella_res_from_mc[mc_nres];
 extern uint32_t const umbrella_res_to_mc[mc_nres];
