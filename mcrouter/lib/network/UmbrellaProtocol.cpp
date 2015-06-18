@@ -19,6 +19,18 @@
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
 #endif
 
+static_assert(
+  mc_nops == 27,
+  "If you add a new mc_op, make sure to update lib/mc/umbrella_conv.h");
+
+static_assert(
+  UM_NOPS == 28,
+  "If you add a new mc_op, make sure to update lib/mc/umbrella_conv.h");
+
+static_assert(
+  mc_nres == 31,
+  "If you add a new mc_res, make sure to update lib/mc/umbrella_conv.h");
+
 namespace facebook { namespace memcache {
 
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
