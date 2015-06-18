@@ -94,7 +94,7 @@ bool ConfigApi::checkFileUpdate() {
 }
 
 void ConfigApi::configThreadRun() {
-  mcrouterSetThreadName(pthread_self(), opts_, "mcrcfg");
+  mcrouterSetThisThreadName(opts_, "mcrcfg");
   if (opts_.constantly_reload_configs) {
     while (!finish_) {
       LOG(INFO) << "Reload config due to constantly_reload_configs";

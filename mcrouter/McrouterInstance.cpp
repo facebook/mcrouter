@@ -230,8 +230,12 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
   startTime_ = time(nullptr);
 
   for (auto& pt : proxyThreads_) {
-    auto rc = pt->spawn();
-    if (!rc) {
+    try {
+      pt->spawn();
+    } catch (const std::system_error& e) {
+      LOG(ERROR) << "Failed to start proxy thread: " << e.what();
+      return false;
+    } catch (...) {
       LOG(ERROR) << "Failed to start proxy thread";
       return false;
     }
@@ -370,7 +374,10 @@ void McrouterInstance::subscribeToConfigUpdate() {
 void McrouterInstance::spawnAuxiliaryThreads() {
   startAwriterThreads();
   startObservingRuntimeVarsFile();
-  spawnStatUpdaterThread();
+  statUpdaterThread_ = std::thread(
+    [this] () {
+      statUpdaterThreadRun();
+    });
   spawnStatLoggerThread();
   if (opts_.cpu_cycles) {
     cycles::startExtracting([this](cycles::CycleStats stats) {
@@ -423,10 +430,11 @@ void McrouterInstance::startObservingRuntimeVarsFile() {
   );
 }
 
-void* McrouterInstance::statUpdaterThreadRun(void* arg) {
-  auto router = reinterpret_cast<McrouterInstance*>(arg);
-  if (router->opts_.num_proxies == 0) {
-    return nullptr;
+void McrouterInstance::statUpdaterThreadRun() {
+  mcrouterSetThisThreadName(opts_, "stats");
+
+  if (opts_.num_proxies == 0) {
+    return;
   }
 
   // the idx of the oldest bin
@@ -437,23 +445,23 @@ void* McrouterInstance::statUpdaterThreadRun(void* arg) {
   while (true) {
     {
       /* Wait for the full timeout unless shutdown is started */
-      std::unique_lock<std::mutex> lock(router->statUpdaterCvMutex_);
-      if (router->statUpdaterCv_.wait_for(
+      std::unique_lock<std::mutex> lock(statUpdaterCvMutex_);
+      if (statUpdaterCv_.wait_for(
             lock,
             std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND),
-            [router]() { return router->shutdownStarted(); })) {
+            [this]() { return shutdownStarted(); })) {
         /* Shutdown was initiated, so we stop this thread */
         break;
       }
     }
 
     // to avoid inconsistence among proxies, we lock all mutexes together
-    for (size_t i = 0; i < router->opts_.num_proxies; ++i) {
-      router->getProxy(i)->stats_lock.lock();
+    for (size_t i = 0; i < opts_.num_proxies; ++i) {
+      getProxy(i)->stats_lock.lock();
     }
 
-    for (size_t i = 0; i < router->opts_.num_proxies; ++i) {
-      auto proxy = router->getProxy(i);
+    for (size_t i = 0; i < opts_.num_proxies; ++i) {
+      auto proxy = getProxy(i);
       if (proxy->num_bins_used < BIN_NUM) {
         ++proxy->num_bins_used;
       }
@@ -468,25 +476,12 @@ void* McrouterInstance::statUpdaterThreadRun(void* arg) {
       }
     }
 
-    for (size_t i = 0; i < router->opts_.num_proxies; ++i) {
-      router->getProxy(i)->stats_lock.unlock();
+    for (size_t i = 0; i < opts_.num_proxies; ++i) {
+      getProxy(i)->stats_lock.unlock();
     }
 
     idx = (idx + 1) % BIN_NUM;
   }
-  return nullptr;
-}
-
-void McrouterInstance::spawnStatUpdaterThread() {
-  auto rc = spawnThread(&statUpdaterThreadHandle_,
-                        &statUpdaterThreadStack_,
-                        &McrouterInstance::statUpdaterThreadRun,
-                        this);
-  if (!rc) {
-    throw std::runtime_error("failed to spawn mcrouter stat updater thread");
-  }
-
-  mcrouterSetThreadName(statUpdaterThreadHandle_, opts_, "stats");
 }
 
 void McrouterInstance::spawnStatLoggerThread() {
@@ -508,8 +503,8 @@ void McrouterInstance::joinAuxiliaryThreads() {
      the full copy of the stack which we must cleanup. */
   if (getpid() == pid_) {
     taskScheduler_.shutdownAllTasks();
-    if (statUpdaterThreadHandle_) {
-      pthread_join(statUpdaterThreadHandle_, nullptr);
+    if (statUpdaterThread_.joinable()) {
+      statUpdaterThread_.join();
     }
   } else {
     taskScheduler_.forkWorkAround();
@@ -521,11 +516,6 @@ void McrouterInstance::joinAuxiliaryThreads() {
 
   if (mcrouterLogger_) {
     mcrouterLogger_->stop();
-  }
-
-  if (statUpdaterThreadStack_) {
-    free(statUpdaterThreadStack_);
-    statUpdaterThreadStack_ = nullptr;
   }
 
   stopAwriterThreads();

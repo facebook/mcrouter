@@ -10,7 +10,6 @@
 #include "stats.h"
 
 #include <dirent.h>
-#include <pthread.h>
 #include <sys/resource.h>
 #include <sys/types.h>
 #include <time.h>

@@ -12,6 +12,7 @@
 #include <condition_variable>
 #include <memory>
 #include <mutex>
+#include <thread>
 
 #include <folly/io/async/EventBase.h>
 
@@ -31,8 +32,10 @@ class ProxyThread {
 
   /**
    * Spawns a new proxy thread for execution.
+   *
+   * @throws std::system_error  If failed to spawn thread
    */
-  bool spawn();
+  void spawn();
 
   proxy_t& proxy() { return *proxy_; }
   folly::EventBase& eventBase() { return evb_; }
@@ -40,8 +43,7 @@ class ProxyThread {
  private:
   folly::EventBase evb_;
   std::unique_ptr<proxy_t> proxy_;
-  pthread_t thread_handle{0};
-  void *thread_stack{nullptr};
+  std::thread thread_;
   std::mutex mux;
   std::condition_variable cv;
   bool isSafeToDeleteProxy{false};

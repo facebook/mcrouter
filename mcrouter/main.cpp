@@ -10,8 +10,6 @@
 #include <event.h>
 #include <getopt.h>
 #include <poll.h>
-#include <pthread.h>
-#include <sched.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
