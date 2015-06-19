@@ -42,7 +42,8 @@ struct DestinationRequestCtx {
   int64_t startTime{0};
   int64_t endTime{0};
 
-  DestinationRequestCtx() : startTime(nowUs()) {
+  explicit DestinationRequestCtx(int64_t now)
+    : startTime(now) {
   }
 };
 
@@ -101,10 +102,16 @@ class DestinationRoute {
   template <int Op>
   McReply routeImpl(const McRequest& req, McOperation<Op>) const {
     auto& ctx = fiber_local::getSharedCtx();
+    auto now = nowUs();
 
     if (!destination_->may_send()) {
       McReply reply(TkoReply);
-      ctx->onRequestRefused(reply);
+      ctx->onReplyReceived(*client_,
+                     req,
+                     reply,
+                     now,
+                     now,
+                     McOperation<Op>());
       return reply;
     }
 
@@ -120,7 +127,12 @@ class DestinationRoute {
           pendingShadowReqs_ >=
           proxy->router().opts().target_max_shadow_requests) {
         McReply reply(ErrorReply);
-        ctx->onRequestRefused(reply);
+        ctx->onReplyReceived(*client_,
+                       req,
+                       reply,
+                       now,
+                       now,
+                       McOperation<Op>());
         return reply;
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
@@ -136,7 +148,7 @@ class DestinationRoute {
 
     auto& destination = destination_;
 
-    DestinationRequestCtx dctx;
+    DestinationRequestCtx dctx(now);
     folly::Optional<McRequest> newReq;
     if (!client_->keep_routing_prefix && !req.routingPrefix().empty()) {
       newReq.emplace(req.clone());

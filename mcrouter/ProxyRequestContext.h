@@ -164,11 +164,6 @@ public:
       pclient, request, reply, startTimeUs, endTimeUs, Operation());
   }
 
-  /**
-   * Called once a request is refused due to rate limiting/TKO logic
-   */
-  void onRequestRefused(const McReply& reply);
-
   const McMsgRef& origReq() const {
     return origReq_;
   }

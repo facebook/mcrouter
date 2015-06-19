@@ -31,10 +31,10 @@ class ProxyRequestLogger {
            const int64_t endTimeUs,
            Operation);
 
-  inline void logError(const McReply& reply);
-
  protected:
   proxy_t* proxy_;
+
+  inline void logError(const McReply& reply);
 };
 
 }}}  // facebook::memcache::mcrouter
