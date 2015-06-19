@@ -85,6 +85,13 @@ mcrouter_option_toggle(
   "Look up the source IP address for inbound requests and expose it to"
   " routing logic.")
 
+mcrouter_option_toggle(
+  postprocess_logging_route, false,
+  "postprocess-logging-route", no_short,
+  "For all hits logged by LoggingRoute, pass the request & reply pair to "
+  "implementation-specific postprocessing logic."
+)
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 
@@ -174,6 +175,14 @@ class McrouterInstance {
   McrouterInstance(McrouterInstance&&) noexcept = delete;
   McrouterInstance& operator=(McrouterInstance&&) = delete;
 
+  const LogPostprocessCallbackFunc& postprocessCallback() const {
+    return postprocessCallback_;
+  }
+
+  void setPostprocessCallback(LogPostprocessCallbackFunc&& newCallback) {
+    postprocessCallback_ = std::move(newCallback);
+  }
+
  private:
   const McrouterOptions opts_;
 
@@ -192,6 +201,8 @@ class McrouterInstance {
 
   // Lock to get before regenerating config structure
   std::mutex configReconfigLock_;
+
+  LogPostprocessCallbackFunc postprocessCallback_;
 
   // Stat updater thread updates rate stat windows for each proxy
   pthread_t statUpdaterThreadHandle_{0};

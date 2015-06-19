@@ -16,6 +16,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -60,10 +61,18 @@ class LoggingRoute {
       displayIp = folly::StringPiece("N/A");
     }
 
-    LOG(INFO) << "request key: " << req.fullKey()
-              << " response: " << mc_res_to_string(reply.result())
-              << " responseLength: " << reply.value().length()
-              << " ip: " << displayIp;
+    auto& callback = ctx->proxy().router().postprocessCallback();
+    if (callback) {
+      if (reply.isHit()) {
+        callback(req.fullKey(), reply.flags(), reply.valueRangeSlow(),
+                 Operation::name, displayIp);
+      }
+    } else {
+      LOG(INFO) << "request key: " << req.fullKey()
+                << " response: " << mc_res_to_string(reply.result())
+                << " responseLength: " << reply.value().length()
+                << " ip: " << displayIp;
+    }
     return std::move(reply);
   }
 

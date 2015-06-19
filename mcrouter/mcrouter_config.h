@@ -40,6 +40,20 @@ namespace facebook { namespace memcache {
 class McReplyBase;
 class McrouterOptions;
 
+using LogPostprocessCallbackFunc =
+  std::function<
+    void(
+      folly::StringPiece, // Key requested
+      uint64_t flags, // Reply flags
+      folly::StringPiece, // The value in the reply
+      const char* const, // Name of operation (e.g. 'get')
+      const folly::StringPiece)>; // User ip
+
+template <class T>
+inline LogPostprocessCallbackFunc getLogPostprocessFunc() {
+    return nullptr;
+}
+
 namespace mcrouter {
 
 class ConfigApi;

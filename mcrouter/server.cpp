@@ -174,6 +174,10 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
 
     router->addStartupOpts(standaloneOpts.toDict());
 
+    if (standaloneOpts.postprocess_logging_route) {
+      router->setPostprocessCallback(getLogPostprocessFunc<void>());
+    }
+
     server.spawn(
       [router, &standaloneOpts] (size_t threadId,
                                  folly::EventBase& evb,
