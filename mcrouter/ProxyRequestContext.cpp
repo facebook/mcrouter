@@ -99,14 +99,6 @@ void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
   senderIdForTest_ = id;
 }
 
-void ProxyRequestContext::onRequestRefused(const McReply& reply) {
-  if (recording_) {
-    return;
-  }
-  assert(logger_.hasValue());
-  logger_->logError(reply);
-}
-
 void ProxyRequestContext::sendReply(McReply newReply) {
   if (recording_) {
     return;
