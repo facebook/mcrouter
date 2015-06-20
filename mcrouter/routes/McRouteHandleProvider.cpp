@@ -313,11 +313,9 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       checkLogic(jasynclog->isBool(), "PoolRoute: asynclog is not bool");
       needAsynclog = jasynclog->getBool();
     }
-    if (proxy_->router().opts().asynclog_route_name) {
-      if (auto jname = json.get_ptr("name")) {
-        checkLogic(jname->isString(), "PoolRoute: name is not a string");
-        asynclogName = jname->stringPiece().str();
-      }
+    if (auto jname = json.get_ptr("name")) {
+      checkLogic(jname->isString(), "PoolRoute: name is not a string");
+      asynclogName = jname->stringPiece().str();
     }
   }
   if (needAsynclog) {
