@@ -195,7 +195,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   );
 
   commands_.emplace("config",
-    [this] (const std::vector<folly::StringPiece>& args) {
+    [this] (const std::vector<folly::StringPiece>& args) -> std::string {
       if (proxy_->router().opts().config_str.empty()) {
         return std::string(
           R"({"error": "config is loaded from file and not available"})");
