@@ -51,12 +51,14 @@ mcrouter_option_integer(
 mcrouter_option_toggle(
   background, false,
   "background", 'b',
-  "Run in background")
+  "Run in background. "
+  "This option is DEPRECATED and will be removed in future versions.")
 
 mcrouter_option_toggle(
   managed, false,
   "managed-mode", 'm',
-  "Managed mode (auto restart on crash)")
+  "Managed mode (auto restart on crash). "
+  "This option is DEPRECATED and will be removed in future versions.")
 
 mcrouter_option_integer(
   rlim_t, fdlimit, DEFAULT_FDLIMIT,
