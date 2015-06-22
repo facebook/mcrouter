@@ -500,11 +500,15 @@ int main(int argc, char **argv) {
   LOG(INFO) << MCROUTER_PACKAGE_STRING << " startup (" << getpid() << ")";
 
   if (standaloneOpts.background && !validate_configs) {
+    LOG(WARNING) << "Background mode is deprecated and will be removed "
+                    "in future releases.";
     daemonize();
   }
 
   // Managed mode
   if (standaloneOpts.managed && !validate_configs) {
+    LOG(WARNING) << "Managed mode is deprecated and will be removed "
+                    "in future releases.";
     spawnManagedChild();
     LOG(INFO) << "forked (" << getpid() << ")";
   }
