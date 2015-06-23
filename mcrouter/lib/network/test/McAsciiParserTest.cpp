@@ -262,7 +262,11 @@ McReply createMetagetHitReply(uint32_t age, uint32_t exptime,
     }
     msg->ip_addr = addr;
   }
-  return McReply(mc_res_found, std::move(msg));
+  auto ret = McReply(mc_res_found, std::move(msg));
+  if (host != "unknown") {
+    ret.setValue(host);
+  }
+  return ret;
 }
 
 }  // anonymous
