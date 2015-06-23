@@ -59,27 +59,22 @@ class McrouterManager {
         mcrouters_[persistence_id.str()] = mcrouter;
       }
     }
-    return mcrouter;
+    return mcrouter.get();
   }
 
   McrouterInstance* mcrouterGet(folly::StringPiece persistence_id) {
     std::lock_guard<std::mutex> lg(mutex_);
 
-    return folly::get_default(mcrouters_, persistence_id.str(), nullptr);
+    return folly::get_default(mcrouters_, persistence_id.str(), nullptr).get();
   }
 
   void freeAllMcrouters() {
     std::lock_guard<std::mutex> lg(mutex_);
-
-    for (auto& mcrouter: mcrouters_) {
-      mcrouter.second->tearDown();
-    }
-
     mcrouters_.clear();
   }
 
  private:
-  std::unordered_map<std::string, McrouterInstance*> mcrouters_;
+  std::unordered_map<std::string, std::shared_ptr<McrouterInstance>> mcrouters_;
   std::mutex mutex_;
 };
 
@@ -127,39 +122,39 @@ McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
   return nullptr;
 }
 
-McrouterInstance* McrouterInstance::create(
+McrouterInstance* McrouterInstance::createRaw(
   McrouterOptions input_options,
   const std::vector<folly::EventBase*>& evbs) {
 
-  return folly::fibers::runInMainContext([&]() -> McrouterInstance* {
-    extraValidateOptions(input_options);
+  extraValidateOptions(input_options);
 
-    if (!isValidRouterName(input_options.service_name) ||
-        !isValidRouterName(input_options.router_name)) {
-      throw std::runtime_error(
-        "Invalid service_name or router_name provided; must be"
-        " strings matching [a-zA-Z0-9_-]+");
-    }
+  if (!isValidRouterName(input_options.service_name) ||
+      !isValidRouterName(input_options.router_name)) {
+    throw std::runtime_error(
+      "Invalid service_name or router_name provided; must be"
+      " strings matching [a-zA-Z0-9_-]+");
+  }
 
-    if (input_options.test_mode) {
-      // test-mode disables all logging.
-      LOG(WARNING) << "Running mcrouter in test mode. This mode should not be "
-                      "used in production.";
-      applyTestMode(input_options);
-    }
+  if (input_options.test_mode) {
+    // test-mode disables all logging.
+    LOG(WARNING) << "Running mcrouter in test mode. This mode should not be "
+      "used in production.";
+    applyTestMode(input_options);
+  }
 
-    if (!input_options.async_spool.empty()) {
-      auto rc = ::access(input_options.async_spool.c_str(), W_OK);
-      PLOG_IF(WARNING, rc) << "Error while checking spooldir (" <<
-                              input_options.async_spool << ")";
-    }
+  if (!input_options.async_spool.empty()) {
+    auto rc = ::access(input_options.async_spool.c_str(), W_OK);
+    PLOG_IF(WARNING, rc) << "Error while checking spooldir (" <<
+      input_options.async_spool << ")";
+  }
 
-    if (input_options.enable_failure_logging) {
-      initFailureLogger();
-    }
+  if (input_options.enable_failure_logging) {
+    initFailureLogger();
+  }
 
-    auto router = new McrouterInstance(std::move(input_options));
+  auto router = new McrouterInstance(std::move(input_options));
 
+  try {
     folly::json::serialization_opts jsonOpts;
     jsonOpts.sort_keys = true;
     auto dict = folly::toDynamic(router->getStartupOpts());
@@ -167,12 +162,30 @@ McrouterInstance* McrouterInstance::create(
     failure::setServiceContext(routerName(router->opts()),
                                jsonStr.toStdString());
 
-    if (!router->spinUp(evbs)) {
-      router->tearDown();
-      return nullptr;
+    if (router->spinUp(evbs)) {
+      return router;
     }
-    return router;
-  });
+  } catch (...) {
+  }
+
+  delete router;
+  return nullptr;
+}
+
+std::shared_ptr<McrouterInstance> McrouterInstance::create(
+  McrouterOptions input_options,
+  const std::vector<folly::EventBase*>& evbs) {
+
+  return folly::fibers::runInMainContext(
+    [&] () mutable {
+      return std::shared_ptr<McrouterInstance>(
+        createRaw(std::move(input_options), evbs),
+        /* Custom deleter since ~McrouterInstance() is private */
+        [] (McrouterInstance* inst) {
+          delete inst;
+        }
+      );
+    });
 }
 
 McrouterClient::Pointer McrouterInstance::createClient(
@@ -180,13 +193,7 @@ McrouterClient::Pointer McrouterInstance::createClient(
   void* arg,
   size_t max_outstanding) {
 
-  if (isTransient_ && liveClients_.fetch_add(1) > 0) {
-    liveClients_--;
-    throw std::runtime_error(
-      "Can't create multiple clients with a transient mcrouter");
-  }
-
-  return McrouterClient::create(this,
+  return McrouterClient::create(shared_from_this(),
                                 callbacks,
                                 arg,
                                 max_outstanding,
@@ -198,8 +205,7 @@ McrouterClient::Pointer McrouterInstance::createSameThreadClient(
   void* arg,
   size_t max_outstanding) {
 
-  assert(!isTransient_);
-  return McrouterClient::create(this,
+  return McrouterClient::create(shared_from_this(),
                                 callbacks,
                                 arg,
                                 max_outstanding,
@@ -261,16 +267,6 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
   return true;
 }
 
-McrouterInstance* McrouterInstance::createTransient(
-  const McrouterOptions& options) {
-
-  auto router = create(options.clone(), {});
-  if (router != nullptr) {
-    router->isTransient_ = true;
-  }
-  return router;
-}
-
 void McrouterInstance::freeAllMcrouters() {
   if (auto manager = gMcrouterManager.get_weak().lock()) {
     manager->freeAllMcrouters();
@@ -306,47 +302,6 @@ proxy_t* McrouterInstance::getProxy(size_t index) const {
   }
 }
 
-void McrouterInstance::onClientDestroyed() {
-  if (isTransient_ && liveClients_ > 0) {
-    std::thread shutdown_thread{
-      [this]() {
-        this->tearDown();
-      }};
-
-    shutdown_thread.detach();
-  }
-}
-
-void McrouterInstance::tearDown() {
-  // Mark all the clients still attached to this router as zombie
-  {
-    std::lock_guard<std::mutex> guard(clientListLock_);
-    for (auto& client : clientList_) {
-      client.isZombie_ = true;
-    }
-  }
-
-  // unsubscribe from config update
-  configUpdateHandle_.reset();
-  configApi_->stopObserving(pid_);
-
-  shutdownAndJoinAuxiliaryThreads();
-
-  for (auto& pt : proxyThreads_) {
-    pt->stopAndJoin();
-  }
-  if (onDestroyProxy_) {
-    for (size_t i = 0; i < proxies_.size(); ++i) {
-      onDestroyProxy_(i, proxies_[i].release());
-    }
-  }
-
-  proxies_.clear();
-  proxyThreads_.clear();
-
-  delete this;
-}
-
 McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     opts_(std::move(input_options)),
     pid_(getpid()),
@@ -359,8 +314,27 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     1.0);
 }
 
-/* Needed here for forward declared unique_ptr destruction */
 McrouterInstance::~McrouterInstance() {
+  // unsubscribe from config update
+  configUpdateHandle_.reset();
+  if (configApi_) {
+    configApi_->stopObserving(pid_);
+  }
+
+  shutdownAndJoinAuxiliaryThreads();
+
+  for (auto& pt : proxyThreads_) {
+    pt->stopAndJoin();
+  }
+
+  if (onDestroyProxy_) {
+    for (size_t i = 0; i < proxies_.size(); ++i) {
+      onDestroyProxy_(i, proxies_[i].release());
+    }
+  }
+
+  proxies_.clear();
+  proxyThreads_.clear();
 }
 
 void McrouterInstance::subscribeToConfigUpdate() {

@@ -11,6 +11,7 @@
 
 #include <condition_variable>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
@@ -39,7 +40,8 @@ using ObservableRuntimeVars =
  * A single mcrouter instance.  A mcrouter instance has a single config,
  * but might run across multiple threads.
  */
-class McrouterInstance {
+class McrouterInstance :
+      public std::enable_shared_from_this<McrouterInstance> {
  public:
   /* Creation methods. All mcrouter instances are managed automatically,
      so the users don't need to worry about destruction. */
@@ -70,12 +72,15 @@ class McrouterInstance {
    * Intended for short-lived instances with unusual configs
    * (i.e. for debugging).
    *
+   * Create a new mcrouter instance.
    * @return  Pointer to the newly brought up instance or nullptr
-   *   if there was a problem starting it up.  Only one client
-   *   is allowed to be created to the instance.  On destruction of that client,
-   *   the instance is destroyed as well.
+   *   if there was a problem starting it up.
+   * @throw runtime_error  If no valid instance can be constructed from
+   *   the provided options.
    */
-  static McrouterInstance* createTransient(const McrouterOptions& options);
+  static std::shared_ptr<McrouterInstance> create(
+    McrouterOptions input_options,
+    const std::vector<folly::EventBase*>& evbs = {});
 
   /**
    * Create a handle to talk to mcrouter.
@@ -211,24 +216,6 @@ class McrouterInstance {
   std::mutex statUpdaterCvMutex_;
   std::condition_variable statUpdaterCv_;
 
-  std::mutex clientListLock_;
-
-  McrouterClient::Queue clientList_;
-
-  // If true, allow only one mcrouter client and shutdown mcrouter
-  // after it disconnects
-  bool isTransient_{false};
-
-  // For a transient mcrouter, number of alive clients
-  // (different from the size of client_list,
-  // as a disconnected client stays alive until all the requests come back).
-  //
-  // Needs to be thread safe, as we create clients on the client thread
-  // and destroy them on a proxy thread.
-  //
-  // Currently limited to one.
-  std::atomic<int> liveClients_{0};
-
   TkoTrackerMap tkoTrackerMap_;
 
   // Stores data for runtime variables.
@@ -272,21 +259,18 @@ class McrouterInstance {
   std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
 
   /**
-   * Create a new mcrouter instance.
-   * @return  Pointer to the newly brought up instance or nullptr
-   *   if there was a problem starting it up.
-   * @throw runtime_error  If no valid instance can be constructed from
-   *   the provided options.
+   * The only reason this is a separate function is due to legacy accessor
+   * needs.
    */
-  static McrouterInstance* create(McrouterOptions input_options,
-                                  const std::vector<folly::EventBase*>& evbs);
+  static McrouterInstance* createRaw(
+    McrouterOptions input_options,
+    const std::vector<folly::EventBase*>& evbs);
 
   explicit McrouterInstance(McrouterOptions input_options);
 
   ~McrouterInstance();
 
   bool spinUp(const std::vector<folly::EventBase*>& evbs);
-  void tearDown();
 
   void startAwriterThreads();
   void stopAwriterThreads();
@@ -300,7 +284,6 @@ class McrouterInstance {
   void statUpdaterThreadRun();
   void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
-  void onClientDestroyed();
 
   /** (re)configure the router. true on success, false on error.
       NB file-based configuration is synchronous
@@ -311,15 +294,15 @@ class McrouterInstance {
   /* Do not use for new code */
   class LegacyPrivateAccessor {
    public:
-    static McrouterInstance* create(
+    static McrouterInstance* createRaw(
       const McrouterOptions& opts,
       const std::vector<folly::EventBase*>& evbs) {
 
-      return McrouterInstance::create(opts.clone(), evbs);
+      return McrouterInstance::createRaw(opts.clone(), evbs);
     }
 
-    static void tearDown(McrouterInstance& mcrouter) {
-      mcrouter.tearDown();
+    static void destroy(McrouterInstance* mcrouter) {
+      delete mcrouter;
     }
 
     static CallbackPool<>&
