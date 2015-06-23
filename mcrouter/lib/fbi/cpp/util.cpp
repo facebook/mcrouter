@@ -193,4 +193,11 @@ std::string replaceAll(std::string s, const std::string& from,
   return s;
 }
 
+std::string toPrettySortedJson(const folly::dynamic& json) {
+  folly::json::serialization_opts opts;
+  opts.pretty_formatting = true;
+  opts.sort_keys = true;
+  return folly::json::serialize(json, opts).toStdString();
+}
+
 }} // facebook::memcache

@@ -102,7 +102,7 @@ void write_file(const McrouterOptions& opts,
 void write_stats_file(const McrouterOptions& opts,
                       const std::string& suffix,
                       const folly::dynamic& stats) {
-  auto statsString = folly::toPrettyJson(stats).toStdString() + "\n";
+  auto statsString = toPrettySortedJson(stats) + "\n";
   write_file(opts, suffix, statsString);
 }
 
@@ -153,7 +153,7 @@ void write_config_sources_info_to_disk(McrouterInstance& router) {
     boost::filesystem::path path(router.opts().stats_root);
     path /= get_stats_key(router.opts()) + "." + kConfigSourcesInfoFileName;
     atomicallyWriteFileToDisk(
-      folly::toPrettyJson(config_info_json).toStdString(),
+      toPrettySortedJson(config_info_json),
       path.string());
   } catch (...) {
     LOG(ERROR) << "Error occured while writing configuration info to disk";
