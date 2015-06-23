@@ -249,6 +249,9 @@ bool UmbrellaSerializedMessage::prepare(const McReply& reply, mc_op_t op,
   if (reply.cas()) {
     appendInt(U64, msg_cas, reply.cas());
   }
+  if (reply.number()) {
+    appendInt(U64, msg_number, reply.number());
+  }
 
   /* TODO: if we intend to pass chained IOBufs as values,
      we can optimize this to write multiple iovs directly */

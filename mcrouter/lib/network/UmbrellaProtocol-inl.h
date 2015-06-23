@@ -110,8 +110,8 @@ void parseFieldImpl(Op, ResultTag, Message& message, const folly::IOBuf& source,
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseValueFieldImpl(Op, Message& message, const folly::IOBuf& source,
+                         const uint8_t* body, const um_elist_entry_t& entry) {
   folly::IOBuf tmp;
   if (!cloneInto(tmp, source,
                  body + folly::Endian::big((uint32_t)entry.data.str.offset),
@@ -121,6 +121,12 @@ void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
   message.setValue(std::move(tmp));
 }
 
+template <class Op, class Message>
+void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
+                    const uint8_t* body, const um_elist_entry_t& entry) {
+  parseValueFieldImpl(Op(), message, source, body, entry);
+}
+
 inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
                            McReply& message, const folly::IOBuf& source,
                            const uint8_t* body, const um_elist_entry_t& entry) {
@@ -128,14 +134,17 @@ inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
   auto* dataStart =
     reinterpret_cast<const char*>(
       body + folly::Endian::big((uint32_t)entry.data.str.offset));
-  int af = AF_INET;
-  if (strchr(dataStart, (int)':') != nullptr) {
-    af = AF_INET6;
+  msg->ipv = 0;
+  if (inet_pton(AF_INET6, dataStart, &msg->ip_addr) > 0) {
+    msg->ipv = 6;
+  } else if (inet_pton(AF_INET, dataStart, &msg->ip_addr) > 0) {
+    msg->ipv = 4;
   }
-  if (inet_pton(af, dataStart, &msg->ip_addr) > 0) {
-    msg->ipv = af == AF_INET ? 4 : 6;
+  if (msg->ipv > 0) {
+    mcReplySetMcMsgRef(message, std::move(msg));
+    parseValueFieldImpl(McOperation<mc_op_metaget>(), message, source, body,
+                        entry);
   }
-  mcReplySetMcMsgRef(message, std::move(msg));
 }
 
 template <class Tags, class Op, class Message>

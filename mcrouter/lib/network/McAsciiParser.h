@@ -108,8 +108,6 @@ class McAsciiParser {
   const char* eof_{nullptr};
   // Used solely for proper error messages parsing.
   bool stripped_{false};
-  // Used in parsing of metaget requests (in particular ip addresses).
-  std::unique_ptr<folly::IOBuf> ipBuffer_;
 
   using ConsumerFunPtr = void (McAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};

@@ -85,20 +85,6 @@ action str_value {
   }
 }
 
-# Action for reading ip address in metaget command.
-action ip_addr_value {
-  if (!ipBuffer_) {
-    // Clone current buffer.
-    ipBuffer_ = buffer.cloneOne();
-    size_t offset = p_ - reinterpret_cast<const char*>(buffer.data());
-    ipBuffer_->trimStart(offset);
-    ipBuffer_->trimEnd(buffer.length() - offset - 1);
-  } else {
-    auto tail = ipBuffer_->prev();
-    appendCurrentCharTo(buffer, *tail);
-  }
-}
-
 # Resets current value, used for errors.
 action reset_value {
   reply.valueData_.clear();
@@ -356,13 +342,12 @@ age_unknown = 'unknown' %{
 exptime = uint %{
   reply.setExptime(static_cast<uint32_t>(currentUInt_));
 };
-ip_addr = (xdigit | '.' | ':')+ $ip_addr_value %{
+ip_addr = (xdigit | '.' | ':')+ $str_value %{
   // Max ip address is 45 chars.
-  if (ipBuffer_->length() < 46) {
+  if (reply.valueData_->length() < 46) {
     char addr[46] = {0};
-    ipBuffer_->coalesce();
-    memcpy(addr, ipBuffer_->data(), ipBuffer_->length());
-    ipBuffer_.reset();
+    reply.valueData_->coalesce();
+    memcpy(addr, reply.valueData_->data(), reply.valueData_->length());
     mcMsgT->ipv = 0;
     if (strchr(addr, ':') == nullptr) {
       if (inet_pton(AF_INET, addr, &mcMsgT->ip_addr) > 0) {
@@ -503,7 +488,6 @@ void McAsciiParser::initializeReplyParser<McOperation<mc_op_metaget>, McRequest>
   // now.
   McReply& reply = currentMessage_.get<McReply>();
   reply.msg_ = createMcMsgRef();
-  ipBuffer_.reset();
   savedCs_ = mc_ascii_metaget_reply_en_metaget_reply;
   errorCs_ = mc_ascii_metaget_reply_error;
   consumer_ = &McAsciiParser::consumeMessage<McReply,
