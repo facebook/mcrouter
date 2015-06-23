@@ -89,7 +89,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_cas>) {
   auto value = request.valueRangeSlow();
-  auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %u %zd %lu\r\n",
+  auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %d %zd %lu\r\n",
                       request.flags(), request.exptime(), value.size(),
                       request.cas());
   assert(len > 0 && len < kMaxBufferLength);
@@ -101,7 +101,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_lease_set>) {
   auto value = request.valueRangeSlow();
-  auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %lu %u %zd\r\n",
+  auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %lu %d %zd\r\n",
                       request.leaseToken(), request.flags(), request.exptime(),
                       value.size());
   assert(len > 0 && len < kMaxBufferLength);
