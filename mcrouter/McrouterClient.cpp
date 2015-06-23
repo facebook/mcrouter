@@ -23,7 +23,9 @@ size_t McrouterClient::send(
   folly::StringPiece ipAddr /* = folly::StringPiece() */ ) {
 
   assert(!disconnected_);
-  if (nreqs == 0 || isZombie_) {
+
+  auto router = router_.lock();
+  if (nreqs == 0 || !router) {
     return 0;
   }
 
@@ -83,12 +85,12 @@ size_t McrouterClient::send(
 }
 
 McrouterClient::McrouterClient(
-  McrouterInstance* router,
+  std::weak_ptr<McrouterInstance> rtr,
   mcrouter_client_callbacks_t callbacks,
   void* arg,
   size_t maxOutstanding,
   bool sameThread) :
-    router_(router),
+    router_(std::move(rtr)),
     sameThread_(sameThread),
     callbacks_(callbacks),
     arg_(arg),
@@ -101,28 +103,23 @@ McrouterClient::McrouterClient(
     counting_sem_init(&outstandingReqsSem_, maxOutstanding_);
   }
 
-  {
-    std::lock_guard<std::mutex> guard(router_->clientListLock_);
-    router_->clientList_.push_front(*this);
-  }
-
-  {
-    std::lock_guard<std::mutex> guard(router_->nextProxyMutex_);
-    assert(router_->nextProxy_ < router_->opts().num_proxies);
-    proxy_ = router_->getProxy(router_->nextProxy_);
-    router_->nextProxy_ =
-      (router_->nextProxy_ + 1) % router_->opts().num_proxies;
+  if (auto router = router_.lock()) {
+    std::lock_guard<std::mutex> guard(router->nextProxyMutex_);
+    assert(router->nextProxy_ < router->opts().num_proxies);
+    proxy_ = router->getProxy(router->nextProxy_);
+    router->nextProxy_ =
+      (router->nextProxy_ + 1) % router->opts().num_proxies;
   }
 }
 
 McrouterClient::Pointer McrouterClient::create(
-  McrouterInstance* router,
+  std::weak_ptr<McrouterInstance> router,
   mcrouter_client_callbacks_t callbacks,
   void* arg,
   size_t maxOutstanding,
   bool sameThread) {
 
-  auto client = new McrouterClient(router,
+  auto client = new McrouterClient(std::move(router),
                                    callbacks,
                                    arg,
                                    maxOutstanding,
@@ -196,15 +193,9 @@ void McrouterClient::onReply(ProxyRequestContext& preq) {
 
 McrouterClient::~McrouterClient() {
   assert(disconnected_);
-  {
-    std::lock_guard<std::mutex> guard(router_->clientListLock_);
-    router_->clientList_.erase(router_->clientList_.iterator_to(*this));
-  }
   if (callbacks_.on_disconnect) {
     callbacks_.on_disconnect(arg_);
   }
-
-  router_->onClientDestroyed();
 }
 
 }}}  // facebook::memcache::mcrouter

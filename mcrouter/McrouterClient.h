@@ -92,7 +92,7 @@ class McrouterClient {
    * Optionally, `ipAddr` is a StringPiece that contains the IP address of the
    * external client we got the requests from.
    *
-   * @returns number of requests successfully sent
+   * @returns 0 if McrouterInstance was destroyed, nreqs otherwise
    */
   size_t send(
     const mcrouter_msg_t* requests,
@@ -109,14 +109,6 @@ class McrouterClient {
 
   CacheClientCounters getStatCounters() noexcept {
     return stats_.getCounters();
-  }
-
-  /**
-   * If true, the underlying mcrouter instance went away, so the client
-   * is a `zombie' and no requests can be sent.
-   */
-  bool isZombie() const {
-    return isZombie_;
   }
 
   /**
@@ -141,7 +133,7 @@ class McrouterClient {
   ~McrouterClient();
 
  private:
-  McrouterInstance* router_;
+  std::weak_ptr<McrouterInstance> router_;
   bool sameThread_{false};
 
   mcrouter_client_callbacks_t callbacks_;
@@ -154,12 +146,6 @@ class McrouterClient {
   /// Maximum allowed requests in flight (unlimited if 0)
   const unsigned int maxOutstanding_;
   counting_sem_t outstandingReqsSem_;
-
-  /**
-   * If true then the underlying mcrouter has already been freed.
-   * A zombie client can not serve any more requests.
-   */
-  std::atomic<bool> isZombie_{false};
 
   /**
    * Automatically-assigned client id, used for QOS for different clients
@@ -180,14 +166,14 @@ class McrouterClient {
   std::shared_ptr<McrouterClient> self_;
 
   McrouterClient(
-    McrouterInstance* router,
+    std::weak_ptr<McrouterInstance> router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding,
     bool sameThread);
 
   static Pointer create(
-    McrouterInstance* router,
+    std::weak_ptr<McrouterInstance> router,
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding,
