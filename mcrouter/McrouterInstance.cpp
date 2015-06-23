@@ -132,6 +132,8 @@ McrouterInstance* McrouterInstance::create(
   const std::vector<folly::EventBase*>& evbs) {
 
   return folly::fibers::runInMainContext([&]() -> McrouterInstance* {
+    extraValidateOptions(input_options);
+
     if (!isValidRouterName(input_options.service_name) ||
         !isValidRouterName(input_options.router_name)) {
       throw std::runtime_error(

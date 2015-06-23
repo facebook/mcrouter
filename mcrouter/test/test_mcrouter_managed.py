@@ -63,10 +63,6 @@ class TestMcrouterManagedMode(McrouterTestCase):
         self.killMainProcess(signal.SIGINT)
         self.assertFalse(self.mcrouter.is_alive())
 
-    def test_sigquit_parent(self):
-        self.killMainProcess(signal.SIGQUIT)
-        self.assertFalse(self.mcrouter.is_alive())
-
     def test_sigkill_child(self):
         self.killChildProcess(signal.SIGKILL)
         self.assertTrue(self.mcrouter.is_alive())
@@ -81,12 +77,6 @@ class TestMcrouterManagedMode(McrouterTestCase):
 
     def test_sigint_child(self):
         self.killChildProcess(signal.SIGINT)
-        self.assertTrue(self.mcrouter.is_alive())
-        time.sleep(1)
-        self.assertTrue(self.mcrouter.is_alive())
-
-    def test_sigquit_child(self):
-        self.killChildProcess(signal.SIGQUIT)
         self.assertTrue(self.mcrouter.is_alive())
         time.sleep(1)
         self.assertTrue(self.mcrouter.is_alive())

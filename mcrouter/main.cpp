@@ -490,31 +490,11 @@ int main(int argc, char **argv) {
   // do this immediately after setting up log file
   notify_command_line(argc, argv);
 
-  if (!standaloneInit(opts, standaloneOpts) || !validate_options()) {
+  if (!validate_options()) {
     print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
   }
 
-  if (validate_configs) {
-    failure::addHandler(failure::handlers::throwLogicError());
-  }
-
   LOG(INFO) << MCROUTER_PACKAGE_STRING << " startup (" << getpid() << ")";
-
-  if (standaloneOpts.background && !validate_configs) {
-    LOG(WARNING) << "Background mode is deprecated and will be removed "
-                    "in future releases.";
-    daemonize();
-  }
-
-  // Managed mode
-  if (standaloneOpts.managed && !validate_configs) {
-    LOG(WARNING) << "Managed mode is deprecated and will be removed "
-                    "in future releases.";
-    spawnManagedChild();
-    LOG(INFO) << "forked (" << getpid() << ")";
-  }
-
-  raise_fdlimit();
 
   // Set the router port as part of the router id.
   std::string port_str = "0";
@@ -535,15 +515,42 @@ int main(int argc, char **argv) {
   mc_msg_use_atomic_refcounts(0);
 
   if (validate_configs) {
-    auto router = McrouterInstance::init("standalone-validate", opts);
-    if (router == nullptr) {
-      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
-      exit(EXIT_STATUS_TRANSIENT_ERROR);
+    failure::addHandler(failure::handlers::throwLogicError());
+
+    try {
+      auto router = McrouterInstance::init("standalone-validate", opts);
+      if (router == nullptr) {
+        throw std::runtime_error("Couldn't create mcrouter");
+      }
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter: " << e.what();
+      exit(EXIT_STATUS_UNRECOVERABLE_ERROR);
+    } catch (...) {
+      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter";
+      exit(EXIT_STATUS_UNRECOVERABLE_ERROR);
     }
 
-    /* Only validating config, exit with good status immediately */
+    /* Exit immediately with good code */
     _exit(0);
   }
+
+  if (standaloneOpts.background) {
+    LOG(WARNING) << "Background mode is deprecated and will be removed "
+                    "in future releases.";
+    daemonize();
+  }
+
+  // Managed mode
+  if (standaloneOpts.managed) {
+    LOG(WARNING) << "Managed mode is deprecated and will be removed "
+                    "in future releases.";
+    spawnManagedChild();
+    LOG(INFO) << "forked (" << getpid() << ")";
+  }
+
+  raise_fdlimit();
+
+  standaloneInit(opts, standaloneOpts);
 
   set_standalone_args(commandArgs);
   if (!runServer(standaloneOpts, opts)) {
