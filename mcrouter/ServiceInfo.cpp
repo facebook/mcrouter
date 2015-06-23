@@ -22,6 +22,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
@@ -284,7 +285,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   commands_.emplace("config_sources_info",
     [this] (const std::vector<folly::StringPiece>& args) {
       auto configInfo = proxy_->router().configApi().getConfigSourcesInfo();
-      return folly::toPrettyJson(configInfo).toStdString();
+      return toPrettySortedJson(configInfo);
     }
   );
 

@@ -239,6 +239,12 @@ std::string shorten(folly::StringPiece s, size_t maxLength);
 std::string replaceAll(std::string s, const std::string& from,
                        const std::string& to);
 
+/**
+ * Same as folly::toPrettyJson but also sorts keys in dictionaries and
+ * converts fbstring to std::string
+ */
+std::string toPrettySortedJson(const folly::dynamic& json);
+
 }}  // facebook::memcache
 
 #endif
