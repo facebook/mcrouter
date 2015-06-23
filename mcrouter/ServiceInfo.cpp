@@ -190,7 +190,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("version",
     [] (const std::vector<folly::StringPiece>& args) {
-      return MCROUTER_PACKAGE_STRING;
+      return MCROUTER_VERSION_STRING;
     }
   );
 

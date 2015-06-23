@@ -137,10 +137,24 @@ inline bool isMetagetAvailable() {
   return false;
 }
 
+#ifdef PACKAGE_NAME
+  #define MCROUTER_PACKAGE_NAME PACKAGE_NAME
+#else
+  #define MCROUTER_PACKAGE_NAME "mcrouter"
+#endif
+
+#ifdef PACKAGE_VERSION
+  #define MCROUTER_PACKAGE_VERSION PACKAGE_VERSION
+#else
+  #define MCROUTER_PACKAGE_VERSION "1.0.0"
+#endif
+
 #ifdef PACKAGE_STRING
   #define MCROUTER_PACKAGE_STRING PACKAGE_STRING
 #else
-  #define MCROUTER_PACKAGE_STRING "mcrouter 1.0"
+  #define MCROUTER_PACKAGE_STRING MCROUTER_PACKAGE_NAME " " MCROUTER_PACKAGE_VERSION
 #endif
+
+#define MCROUTER_VERSION_STRING MCROUTER_PACKAGE_VERSION " " MCROUTER_PACKAGE_NAME
 
 }}} // facebook::memcache::mcrouter

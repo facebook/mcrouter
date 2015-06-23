@@ -9,7 +9,7 @@
  */
 // @nolint
 #define GROUP mcproxy_stats | detailed_stats
-  STSS(version, MCROUTER_PACKAGE_STRING, 0)
+  STSS(version, MCROUTER_VERSION_STRING, 0)
   STSS(commandargs, "", 0)
   STSI(pid, 0, 0)
   STSI(parent_pid, 0, 0)

@@ -199,7 +199,7 @@ static void parse_options(int argc,
       print_usage_and_die(argv[0], /* errorCode */ 0);
       break;
     case 'V':
-      printf("%s\n", MCROUTER_PACKAGE_STRING);
+      printf("%s\n", MCROUTER_VERSION_STRING);
       exit(0);
       break;
 
