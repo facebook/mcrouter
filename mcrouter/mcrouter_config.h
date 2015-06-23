@@ -112,12 +112,18 @@ std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts);
 
 std::string performOptionSubstitution(std::string str);
 
-bool standaloneInit(const McrouterOptions& opts,
-                    const McrouterStandaloneOptions& standaloneOpts);
+inline void standaloneInit(const McrouterOptions& opts,
+                           const McrouterStandaloneOptions& standaloneOpts) {
+}
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router);
+
+/**
+ * @throws logic_error on invalid options
+ */
+void extraValidateOptions(const McrouterOptions& opts);
 
 void applyTestMode(McrouterOptions& opts);
 

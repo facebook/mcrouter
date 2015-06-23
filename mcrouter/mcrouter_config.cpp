@@ -46,26 +46,27 @@ std::string performOptionSubstitution(std::string str) {
   return str;
 }
 
-bool standaloneInit(const McrouterOptions& opts,
-                    const McrouterStandaloneOptions& standaloneOpts) {
-  int numSources = (opts.config_file.empty() ? 0 : 1) +
-    (opts.config_str.empty() ? 0 : 1);
-  if (numSources == 0) {
-    LOG(ERROR) << "no configuration source";
-    return false;
-  } else if (numSources > 1) {
-    LOG(ERROR) << "ambiguous configuration options";
-    return false;
-  }
-  return true;
-}
-
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
   return folly::make_unique<McExtraRouteHandleProvider>();
 }
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router) {
   return folly::make_unique<McrouterLogger>(router);
+}
+
+void extraValidateOptions(const McrouterOptions& opts) {
+  size_t numSources = 0;
+  if (!opts.config_file.empty()) {
+    ++numSources;
+  }
+  if (!opts.config_str.empty()) {
+    ++numSources;
+  }
+  if (numSources == 0) {
+    throw std::logic_error("No configuration source");
+  } else if (numSources > 1) {
+    throw std::logic_error("More than one configuration source");
+  }
 }
 
 void applyTestMode(McrouterOptions& opts) {
