@@ -77,6 +77,8 @@
  * this case, a write is in the process of acquiring the lock, so we must
  * first wait for everyone to release it.
  */
+#include <stdint.h>
+
 #include "mcrouter/lib/fbi/util.h"
 
 typedef struct {
