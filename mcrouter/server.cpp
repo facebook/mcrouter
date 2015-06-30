@@ -16,7 +16,6 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/ManagedModeUtil.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -91,7 +90,6 @@ void serverLoop(
   size_t threadId,
   folly::EventBase& evb,
   AsyncMcServerWorker& worker,
-  bool managedMode,
   bool retainSourceIp) {
 
   auto routerClient = router.createSameThreadClient(
@@ -111,14 +109,6 @@ void serverLoop(
       [proxy](facebook::memcache::McServerSession&) {
         stat_decr(proxy->stats, num_clients_stat, 1);
       });
-  if (managedMode) {
-    worker.setOnShutdownOperation([&router] () {
-        if (!shutdownFromChild()) {
-          MC_LOG_FAILURE(router.opts(), failure::Category::kSystemError,
-                         "Could not shutdown mcrouter on user command.");
-        }
-      });
-  }
 
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
@@ -186,7 +176,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
       [router, &standaloneOpts] (size_t threadId,
                                  folly::EventBase& evb,
                                  AsyncMcServerWorker& worker) {
-        serverLoop(*router, threadId, evb, worker, standaloneOpts.managed,
+        serverLoop(*router, threadId, evb, worker,
                    standaloneOpts.retain_source_ip);
       }
     );

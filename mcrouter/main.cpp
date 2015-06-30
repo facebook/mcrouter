@@ -42,7 +42,6 @@
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/error.h"
 #include "mcrouter/lib/fbi/fb_cpu_util.h"
-#include "mcrouter/ManagedModeUtil.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
@@ -292,27 +291,6 @@ static void parse_options(int argc,
   }
 }
 
-void daemonize() {
-  if (getppid() == 1) {
-    return;
-  }
-  switch (fork()) {
-  case 0:
-    PCHECK(setsid() != -1);
-    /* stdin and stdout redirected to /dev/null; we use stderr for logging */
-    close(0);
-    PCHECK(open("/dev/null", O_RDWR) != -1);
-    PCHECK(dup2(0, 1) != -1);
-    break;
-  case -1:
-    fprintf(stderr, "Can't fork background process\n");
-    exit(EXIT_STATUS_TRANSIENT_ERROR);
-  default: /* Parent process */
-    DLOG(INFO) << "Running in the background";
-    exit(0);
-  }
-}
-
 /** @return 0 on failure */
 static int validate_options() {
   if (opts.num_proxies == 0) {
@@ -532,20 +510,6 @@ int main(int argc, char **argv) {
 
     /* Exit immediately with good code */
     _exit(0);
-  }
-
-  if (standaloneOpts.background) {
-    LOG(WARNING) << "Background mode is deprecated and will be removed "
-                    "in future releases.";
-    daemonize();
-  }
-
-  // Managed mode
-  if (standaloneOpts.managed) {
-    LOG(WARNING) << "Managed mode is deprecated and will be removed "
-                    "in future releases.";
-    spawnManagedChild();
-    LOG(INFO) << "forked (" << getpid() << ")";
   }
 
   raise_fdlimit();
