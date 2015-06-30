@@ -176,8 +176,6 @@ libmcroutercore_a_SOURCES = \
 
 mcrouter_SOURCES = \
   main.cpp \
-  ManagedModeUtil.cpp \
-  ManagedModeUtil.h \
   server.cpp \
   server.h \
   standalone_options.h \
