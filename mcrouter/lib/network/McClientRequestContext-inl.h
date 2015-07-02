@@ -178,7 +178,7 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
       // With old mc_parser it's possible to receive unexpected replies, we need
       // to ignore them. But we need to log this.
       LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
-                  "Receieved unexpected reply from server!");
+                  "Received unexpected reply from server!");
     }
   }
 
