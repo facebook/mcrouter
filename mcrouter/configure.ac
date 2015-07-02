@@ -1,7 +1,15 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(mcrouter, 1.0, mcrouter@fb.com)
+
+m4_define([mcrouter_version_str], m4_esyscmd_s([cat VERSION]))
+m4_define([mcrouter_version], m4_translit(mcrouter_version_str, [:], [.]))
+m4_append([mcrouter_version], [.0])
+AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
+
+LT_VERSION=mcrouter_version_str:0
+AC_SUBST([LT_VERSION])
+
 AC_CONFIG_SRCDIR([McrouterInstance.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])
