@@ -17,6 +17,7 @@
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
+#include "mcrouter/lib/FailoverRecorder.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
@@ -48,6 +49,15 @@ class FailoverRoute {
         failoverErrors_(std::move(failoverErrors)) {
   }
 
+  FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
+                FailoverErrorsSettings failoverErrors,
+                FailoverRecorder failoverRecorder)
+      : targets_(std::move(targets)),
+        failoverErrors_(std::move(failoverErrors)),
+        failoverRecorder_(std::move(failoverRecorder)) {
+  }
+
+
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
@@ -56,18 +66,25 @@ class FailoverRoute {
       return NullRoute<RouteHandleIf>::route(req, Operation());
     }
 
-    auto reply = targets_[0]->route(req, Operation());
-    if (!failoverErrors_.shouldFailover(reply, Operation())) {
-      return reply;
-    }
-
-    // Failover
     return fiber_local::runWithLocals([this, &req]() {
-      for (size_t i = 1; i + 1 < targets_.size(); ++i) {
+      for (size_t i = 0; i + 1 < targets_.size(); ++i) {
+        auto delay = failoverErrors_.failbackDelay(Operation());
+        if (delay) {
+          const time_t lastFailover = failoverRecorder_.getLastFailover(i, Operation());
+          time_t now;
+          time(&now);
+          if (difftime(now, lastFailover) < delay) {
+            continue;
+          }
+        }
         fiber_local::setRequestClass(RequestClass::FAILOVER);
-        auto failoverReply = targets_[i]->route(req, Operation());
-        if (!failoverErrors_.shouldFailover(failoverReply, Operation())) {
-          return failoverReply;
+        auto reply = targets_[i]->route(req, Operation());
+        if (failoverErrors_.shouldFailover(reply, Operation())) {
+          if (delay) {
+            failoverRecorder_.setLastFailover(i, Operation());
+          }
+        } else {
+          return reply;
         }
       }
       fiber_local::setRequestClass(RequestClass::FAILOVER);
@@ -78,6 +95,7 @@ class FailoverRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const FailoverErrorsSettings failoverErrors_;
+  mutable FailoverRecorder failoverRecorder_;
 };
 
 }}} // facebook::memcache::mcrouter

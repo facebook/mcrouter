@@ -183,3 +183,99 @@ TEST(failoverRouteTest, separateErrorsDelete) {
   auto reply = rh.route(McRequest("0"), McOperation<mc_op_delete>());
   EXPECT_TRUE(reply.result() == mc_res_remote_error);
 }
+
+TEST(failoverRouteTest, customErrorGetWithFilbackDelay) {
+  vector<std::shared_ptr<TestHandle>> test_handles {
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+  };
+
+  FailoverErrorsSettings::List lGet = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error"}, 1);
+  FailoverErrorsSettings::List lUpdate = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error"}, 1);
+  FailoverErrorsSettings::List lDelete = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error"}, 1);
+
+  FailoverRecorder recorder = FailoverRecorder(test_handles.size());
+  recorder.setLastFailover(0, McOperation<mc_op_get>());
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(std::move(lGet),
+                           std::move(lUpdate),
+                           std::move(lDelete)),
+    std::move(recorder));
+
+  auto reply1 = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_TRUE(toString(reply1.value()) == "b");
+
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  auto reply2 = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_TRUE(toString(reply2.value()) == "a");
+}
+
+TEST(failoverRouteTest, customErrorUpdateWithFailbackDelay) {
+  vector<std::shared_ptr<TestHandle>> test_handles {
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
+    make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error))
+  };
+
+  FailoverErrorsSettings::List lGet = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error"}, 1);
+  FailoverErrorsSettings::List lUpdate = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error"}, 1);
+  FailoverErrorsSettings::List lDelete = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error", "local_error"}, 1);
+
+  FailoverRecorder recorder = FailoverRecorder(test_handles.size());
+  recorder.setLastFailover(0, McOperation<mc_op_set>());
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(std::move(lGet),
+                           std::move(lUpdate),
+                           std::move(lDelete)),
+    std::move(recorder));
+
+  auto reply1 = rh.route(McRequest("0"), McOperation<mc_op_set>());
+  EXPECT_TRUE(reply1.result() == mc_res_remote_error);
+
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  auto reply2 = rh.route(McRequest("0"), McOperation<mc_op_set>());
+  EXPECT_TRUE(reply2.result() == mc_res_stored);
+}
+
+TEST(failoverRouteTest, customErrorDeleteWithFailbackDelay) {
+  vector<std::shared_ptr<TestHandle>> test_handles {
+    make_shared<TestHandle>(DeleteRouteTestData(mc_res_remote_error)),
+    make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted)),
+    make_shared<TestHandle>(DeleteRouteTestData(mc_res_remote_error))
+  };
+
+  FailoverErrorsSettings::List lGet = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error", "local_error"}, 1);
+  FailoverErrorsSettings::List lUpdate = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error", "local_error"}, 1);
+  FailoverErrorsSettings::List lDelete = FailoverErrorsSettings::List(
+    std::vector<std::string>{"remote_error", "local_error"}, 1);
+
+  FailoverRecorder recorder = FailoverRecorder(test_handles.size());
+  recorder.setLastFailover(1, McOperation<mc_op_delete>());
+
+  TestRouteHandle<FailoverRoute<TestRouteHandleIf>> rh(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(std::move(lGet),
+                           std::move(lUpdate),
+                           std::move(lDelete)),
+    std::move(recorder));
+
+  auto reply1 = rh.route(McRequest("0"), McOperation<mc_op_delete>());
+  EXPECT_TRUE(reply1.result() == mc_res_remote_error);
+
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  auto reply2 = rh.route(McRequest("0"), McOperation<mc_op_delete>());
+  EXPECT_TRUE(reply2.result() == mc_res_deleted);
+}
