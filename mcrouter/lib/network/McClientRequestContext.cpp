@@ -166,7 +166,7 @@ void McClientRequestContextQueue::removePending(
 void McClientRequestContextQueue::removePendingReply(
     McClientRequestContextBase& req) {
   assert(req.state_ == State::PENDING_REPLY_QUEUE);
-  assert(&req == &pendingReplyQueue_.front());
+  assert(&req == &pendingReplyQueue_.front() || outOfOrder_);
   removeFromSet(req);
   pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(req));
   req.state_ = State::NONE;
