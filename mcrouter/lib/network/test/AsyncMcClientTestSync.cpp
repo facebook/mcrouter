@@ -214,16 +214,17 @@ class TestClient {
     client_->setThrottle(maxInflight, maxOutstanding);
   }
 
-  void sendGet(const char* key, mc_res_t expectedResult) {
+  void sendGet(const char* key, mc_res_t expectedResult,
+               uint32_t timeoutMs = 200) {
     inflight_++;
     std::string K(key);
-    fm_.addTask([K, expectedResult, this]() {
+    fm_.addTask([K, expectedResult, this, timeoutMs]() {
         auto msg = createMcMsgRef(K.c_str());
         msg->op = mc_op_get;
         McRequest req{std::move(msg)};
         try {
           auto reply = client_->sendSync(req, McOperation<mc_op_get>(),
-                                         std::chrono::milliseconds(200));
+                                         std::chrono::milliseconds(timeoutMs));
           if (reply.result() == mc_res_found) {
             if (req.fullKey() == "empty") {
               EXPECT_TRUE(reply.hasValue());
@@ -762,6 +763,26 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
   // Flush set reply.
   client.sendGet("flush", mc_res_found);
   client.sendGet("test3", mc_res_found);
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+  server.join();
+  EXPECT_EQ(server.getStats().accepted.load(), 1);
+}
+
+TEST(AsyncMcClient, oooUmbrellaTimeouts) {
+  TestServer server(true /* outOfOrder */, false /* useSsl */);
+  TestClient client("localhost", server.getListenPort(), 200,
+                    mc_umbrella_protocol);
+  // Allow only up to two requests in flight.
+  client.setThrottle(2, 0);
+  client.sendGet("sleep", mc_res_timeout, 500);
+  client.sendGet("sleep", mc_res_timeout, 100);
+  client.waitForReplies();
+
+  // wait for server to wake up
+  /* sleep override */ usleep(3000000);
+
+  client.sendGet("test", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server.join();
