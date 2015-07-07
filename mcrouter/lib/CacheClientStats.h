@@ -15,14 +15,27 @@
 namespace facebook { namespace memcache {
 
 struct CacheClientCounters {
-  size_t fetchCount;
-  size_t fetchKeyBytes;
-  size_t fetchValueBytes;
-  size_t updateCount;
-  size_t updateKeyBytes;
-  size_t updateValueBytes;
-  size_t invalidateCount;
-  size_t invalidateKeyBytes;
+  size_t fetchCount{0};
+  size_t fetchKeyBytes{0};
+  size_t fetchValueBytes{0};
+  size_t updateCount{0};
+  size_t updateKeyBytes{0};
+  size_t updateValueBytes{0};
+  size_t invalidateCount{0};
+  size_t invalidateKeyBytes{0};
+
+  CacheClientCounters& operator+=(const CacheClientCounters& other) {
+    fetchCount += other.fetchCount;
+    fetchKeyBytes += other.fetchKeyBytes;
+    fetchValueBytes += other.fetchValueBytes;
+    updateCount += other.updateCount;
+    updateKeyBytes += other.updateKeyBytes;
+    updateValueBytes += other.updateValueBytes;
+    invalidateCount += other.invalidateCount;
+    invalidateKeyBytes += other.invalidateKeyBytes;
+
+    return *this;
+  }
 };
 
 class CacheClientStats {
@@ -54,7 +67,7 @@ class CacheClientStats {
 
  private:
   mutable folly::SpinLock lock_ FOLLY_ALIGN_TO_AVOID_FALSE_SHARING;
-  CacheClientCounters counters_{0};
+  CacheClientCounters counters_;
 };
 
 }}  // facebook::memcache
