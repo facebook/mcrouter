@@ -44,7 +44,7 @@ class ServerOnRequest {
                  McRequest&& req,
                  McOperation<M>) {
     mcrouter_msg_t router_msg;
-    auto& peerIp = ctx.session().peerIpAddress();
+    auto& session = ctx.session();
     auto op = mc_op_t(M);
     /* TODO: nasty C/C++ interface stuff.  We should hand off the McRequest
        directly here.  For now, hand off the dependentMsg() since we can assume
@@ -56,6 +56,7 @@ class ServerOnRequest {
     router_msg.req = const_cast<mc_msg_t*>(msg.get());
     /* mcrouter_send will incref req, it's ok to destroy msg after this call */
     if (retainSourceIp_) {
+      auto peerIp = session.getSocketAddress().getAddressStr();
       client_->send(&router_msg, 1, peerIp);
     } else {
       client_->send(&router_msg, 1);
