@@ -87,14 +87,10 @@ McServerSession::McServerSession(
       sendWritesCallback_(*this) {
 
   try {
-    folly::SocketAddress sa;
-    transport_->getPeerAddress(&sa);
-    if (sa.getFamily() == AF_INET || sa.getFamily() == AF_INET6) {
-      peerIpAddress_ = sa.getAddressStr();
-    }
+    transport_->getPeerAddress(&socketAddress_);
   } catch (const std::runtime_error& e) {
     // std::system_error or other exception, leave IP address empty
-    LOG(WARNING) << "Failed to look up peer IP address: " << e.what();
+    LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
 
   transport_->setReadCB(this);
