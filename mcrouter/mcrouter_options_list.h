@@ -347,8 +347,8 @@ mcrouter_option_group("Timeouts")
 mcrouter_option_integer(
   unsigned int, server_timeout_ms, 1000,
   "server-timeout", 't',
-  "server timeout in ms (DEPRECATED try to use cluster-server-timeout "
-  "and regional-server-timeout)")
+  "server timeout in ms (DEPRECATED try to use cluster-pools-timeout "
+  "and regional-pools-timeout)")
 
 mcrouter_option_integer(
   unsigned int, cluster_pools_timeout_ms, 0,
