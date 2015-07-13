@@ -14,11 +14,12 @@
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
-#include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
+#include "mcrouter/routes/FailoverRoute.h"
 
 using namespace facebook::memcache;
+using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 using std::vector;

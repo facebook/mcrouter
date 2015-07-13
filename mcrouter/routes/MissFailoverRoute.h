@@ -17,8 +17,9 @@
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterFiberContext.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * For get-like requests, sends the same request sequentially
@@ -50,14 +51,23 @@ class MissFailoverRoute {
       return NullRoute<RouteHandleIf>::route(req, Operation());
     }
 
-    for (size_t i = 0; i < targets_.size() - 1; ++i) {
-      auto reply = targets_[i]->route(req, Operation());
-      if (reply.isHit()) {
-        return reply;
-      }
+    auto reply = targets_[0]->route(req, Operation());
+    if (reply.isHit()) {
+      return reply;
     }
 
-    return targets_.back()->route(req, Operation());
+    // Failover
+    return fiber_local::runWithLocals([this, &req]() {
+      for (size_t i = 1; i < targets_.size() - 1; ++i) {
+        fiber_local::setRequestClass(RequestClass::FAILOVER);
+        auto failoverReply = targets_[i]->route(req, Operation());
+        if (failoverReply.isHit()) {
+          return failoverReply;
+        }
+      }
+      fiber_local::setRequestClass(RequestClass::FAILOVER);
+      return targets_.back()->route(req, Operation());
+    });
   }
 
   template <class Operation, class Request>
@@ -90,4 +100,4 @@ class MissFailoverRoute {
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
 };
 
-}}
+}}} // facebook::memcache::mcrouter

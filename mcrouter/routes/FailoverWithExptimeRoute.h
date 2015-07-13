@@ -16,9 +16,9 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/FailoverRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

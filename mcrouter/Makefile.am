@@ -103,6 +103,7 @@ libmcroutercore_a_SOURCES = \
   routes/ErrorRoute.cpp \
   routes/ExtraRouteHandleProviderIf.h \
   routes/FailoverRoute.cpp \
+  routes/FailoverRoute.h \
   routes/FailoverWithExptimeRoute.cpp \
   routes/FailoverWithExptimeRoute.h \
   routes/FailoverWithExptimeRouteIf.cpp \
@@ -111,6 +112,7 @@ libmcroutercore_a_SOURCES = \
   routes/HostIdRoute.cpp \
   routes/L1L2CacheRoute.cpp \
   routes/LatestRoute.cpp \
+  routes/LatestRoute.h \
   routes/LoggingRoute.cpp \
   routes/McExtraRouteHandleProvider.cpp \
   routes/McExtraRouteHandleProvider.h \
@@ -123,6 +125,7 @@ libmcroutercore_a_SOURCES = \
   routes/McrouterRouteHandle.h \
   routes/MigrateRoute.cpp \
   routes/MissFailoverRoute.cpp \
+  routes/MissFailoverRoute.h \
   routes/ModifyKeyRoute.cpp \
   routes/ModifyKeyRoute.h \
   routes/NullRoute.cpp \

@@ -7,10 +7,11 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "MissFailoverRoute.h"
+
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/routes/MissFailoverRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
