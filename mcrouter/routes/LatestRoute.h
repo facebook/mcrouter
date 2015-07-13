@@ -20,9 +20,9 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/FailoverRoute.h"
+#include "mcrouter/routes/FailoverRoute.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Connection selector route that attempts to "behave well" in how many
@@ -75,4 +75,4 @@ class LatestRoute {
   }
 };
 
-}}  // facebook::memcache
+}}}  // facebook::memcache::mcrouter

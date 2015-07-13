@@ -166,13 +166,9 @@ libmcrouter_a_SOURCES = \
   routes/AllMajorityRoute.h \
   routes/AllSyncRoute.h \
   routes/ErrorRoute.h \
-  routes/FailoverRoute.h \
   routes/HashRoute.h \
-  routes/LatestRoute-inl.h \
-  routes/LatestRoute.h \
   routes/LoggingRoute.h \
   routes/MigrateRoute.h \
-  routes/MissFailoverRoute.h \
   routes/NullRoute.h \
   routes/RandomRoute.h
 

@@ -20,8 +20,9 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterFiberContext.h"
 
-namespace facebook { namespace memcache {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Sends the same request sequentially to each destination in the list in order,
@@ -55,14 +56,23 @@ class FailoverRoute {
       return NullRoute<RouteHandleIf>::route(req, Operation());
     }
 
-    for (size_t i = 0; i + 1 < targets_.size(); ++i) {
-      auto reply = targets_[i]->route(req, Operation());
-      if (!failoverErrors_.shouldFailover(reply, Operation())) {
-        return reply;
-      }
+    auto reply = targets_[0]->route(req, Operation());
+    if (!failoverErrors_.shouldFailover(reply, Operation())) {
+      return reply;
     }
 
-    return targets_.back()->route(req, Operation());
+    // Failover
+    return fiber_local::runWithLocals([this, &req]() {
+      for (size_t i = 1; i + 1 < targets_.size(); ++i) {
+        fiber_local::setRequestClass(RequestClass::FAILOVER);
+        auto failoverReply = targets_[i]->route(req, Operation());
+        if (!failoverErrors_.shouldFailover(failoverReply, Operation())) {
+          return failoverReply;
+        }
+      }
+      fiber_local::setRequestClass(RequestClass::FAILOVER);
+      return targets_.back()->route(req, Operation());
+    });
   }
 
  private:
@@ -70,4 +80,4 @@ class FailoverRoute {
   const FailoverErrorsSettings failoverErrors_;
 };
 
-}}
+}}} // facebook::memcache::mcrouter
