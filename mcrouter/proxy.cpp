@@ -163,23 +163,23 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
   }
 }
 
-std::shared_ptr<ProxyConfigIf> proxy_t::getConfig() const {
+std::shared_ptr<ProxyConfig> proxy_t::getConfig() const {
   std::lock_guard<SFRReadLock> lg(
     const_cast<SFRLock&>(configLock_).readLock());
   return config_;
 }
 
-std::pair<std::unique_lock<SFRReadLock>, ProxyConfigIf&>
+std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&>
 proxy_t::getConfigLocked() const {
   std::unique_lock<SFRReadLock> lock(
     const_cast<SFRLock&>(configLock_).readLock());
   /* make_pair strips the reference, so construct directly */
-  return std::pair<std::unique_lock<SFRReadLock>, ProxyConfigIf&>(
+  return std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&>(
     std::move(lock), *config_);
 }
 
-std::shared_ptr<ProxyConfigIf> proxy_t::swapConfig(
-  std::shared_ptr<ProxyConfigIf> newConfig) {
+std::shared_ptr<ProxyConfig> proxy_t::swapConfig(
+  std::shared_ptr<ProxyConfig> newConfig) {
 
   std::lock_guard<SFRWriteLock> lg(configLock_.writeLock());
   auto old = std::move(config_);

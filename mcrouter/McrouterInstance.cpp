@@ -515,7 +515,7 @@ bool McrouterInstance::reconfigure() {
     std::string config;
     success = configApi_->getConfigFile(config);
     if (success) {
-      success = router_configure_from_string(*this, config);
+      success = configure(config);
     } else {
       MC_LOG_FAILURE(opts(), failure::Category::kBadEnvironment,
                      "Can not read config file");
