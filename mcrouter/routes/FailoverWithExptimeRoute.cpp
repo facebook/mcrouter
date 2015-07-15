@@ -82,7 +82,7 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
 
   // old format
   if (auto jsettings = json.get_ptr("settings")) {
-    VLOG(1) << "FailoverWithExptime: This config format is deprecated. "
+    VLOG(5) << "FailoverWithExptime: This config format is deprecated. "
                "Use 'failover_errors' instead of 'settings'.";
     auto oldSettings = FailoverWithExptimeSettings(*jsettings);
     failoverTagging = oldSettings.failoverTagging;
