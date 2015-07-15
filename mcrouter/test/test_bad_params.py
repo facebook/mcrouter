@@ -10,13 +10,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import re
 import signal
 import socket
 import subprocess
-import sys
-import time
 import unittest
 
 from mcrouter.test.config import McrouterGlobals
@@ -62,7 +59,7 @@ class TestBadParams(OutputCheckerTestCase):
         listen_sock = socket.socket()
         listen_sock.listen(100)
         args = McrouterGlobals.preprocessArgs([
-            McrouterGlobals.InstallDir + '/mcrouter/mcrouter', '-d',
+            McrouterGlobals.InstallDir + '/mcrouter/mcrouter',
             '-f', "/dev/null/doesnotexist",
             '--listen-sock-fd', str(listen_sock.fileno())
         ])
@@ -71,25 +68,6 @@ class TestBadParams(OutputCheckerTestCase):
         self.check_for_message(
                 good='Can not read config file',
                 bad='reconfigured with',
-                timeout=10)
-
-        listen_sock.close()
-
-    def test_bad_tko_param(self):
-        listen_sock = socket.socket()
-        listen_sock.listen(100)
-        args = McrouterGlobals.preprocessArgs([
-            McrouterGlobals.InstallDir + '/mcrouter/mcrouter', '-d',
-            '-f', 'mcrouter/test/test_ascii.json',
-            '--listen-sock-fd', str(listen_sock.fileno()),
-            '--fibers-max-pool-size', 'uu'
-        ])
-
-        self.spawn(args)
-        self.check_for_message(
-                good="Option parse error: fibers_max_pool_size=uu,"
-                " Couldn't convert value to integer",
-                bad='mcrouter .* startup',
                 timeout=10)
 
         listen_sock.close()

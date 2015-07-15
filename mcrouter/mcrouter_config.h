@@ -100,9 +100,6 @@ inline time_t nowWallSec() {
   return time(nullptr);
 }
 
-int router_configure_from_string(McrouterInstance& router,
-                                 folly::StringPiece input);
-
 bool read_standalone_flavor(
     const std::string& flavor,
     std::unordered_map<std::string, std::string>& option_dict,

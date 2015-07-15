@@ -14,7 +14,7 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/config-impl.h"
-#include "mcrouter/ProxyConfigIf.h"
+#include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/ProxyRequestLogger.h"
 
@@ -58,7 +58,7 @@ public:
    */
   static std::shared_ptr<ProxyRequestContext> process(
     std::unique_ptr<ProxyRequestContext> preq,
-    std::shared_ptr<const ProxyConfigIf> config) {
+    std::shared_ptr<const ProxyConfig> config) {
     preq->config_ = std::move(config);
     return std::shared_ptr<ProxyRequestContext>(
       preq.release(),
@@ -130,7 +130,7 @@ public:
     return config_->proxyRoute();
   }
 
-  const ProxyConfigIf& proxyConfig() const {
+  const ProxyConfig& proxyConfig() const {
     assert(!recording_);
     return *config_;
   }
@@ -227,7 +227,7 @@ public:
    */
   void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
 
-  std::shared_ptr<const ProxyConfigIf> config_;
+  std::shared_ptr<const ProxyConfig> config_;
 
   folly::Optional<ProxyRequestLogger> logger_;
   folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;

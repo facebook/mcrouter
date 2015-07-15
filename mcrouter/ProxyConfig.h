@@ -15,7 +15,6 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/ProxyConfigIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
@@ -34,25 +33,25 @@ class proxy_t;
 /**
  * Topmost struct for mcrouter configs.
  */
-class ProxyConfig : public ProxyConfigIf {
+class ProxyConfig {
  public:
-  ProxyRoute& proxyRoute() const override {
+  ProxyRoute& proxyRoute() const {
     return *proxyRoute_;
   }
 
-  std::shared_ptr<ServiceInfo> serviceInfo() const override {
+  std::shared_ptr<ServiceInfo> serviceInfo() const {
     return serviceInfo_;
   }
 
   const std::vector<std::shared_ptr<const ProxyClientCommon>>&
-  getClients() const override;
+  getClients() const;
 
-  std::string getConfigMd5Digest() const override {
+  std::string getConfigMd5Digest() const {
     return configMd5Digest_;
   }
 
   McrouterRouteHandlePtr
-  getRouteHandleForAsyncLog(const std::string& asyncLogName) const override;
+  getRouteHandleForAsyncLog(const std::string& asyncLogName) const;
 
  private:
   std::shared_ptr<ProxyRoute> proxyRoute_;

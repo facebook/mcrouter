@@ -68,7 +68,6 @@ namespace mcrouter {
 class McrouterClient;
 class McrouterInstance;
 class ProxyConfig;
-class ProxyConfigIf;
 class ProxyClientCommon;
 class ProxyDestination;
 class ProxyDestinationMap;
@@ -213,22 +212,22 @@ struct proxy_t {
   /**
    * Thread-safe access to config
    */
-  std::shared_ptr<ProxyConfigIf> getConfig() const;
+  std::shared_ptr<ProxyConfig> getConfig() const;
 
   /**
    * Returns a lock and a reference to the config.
    * The caller may only access the config through the reference
    * while the lock is held.
    */
-  std::pair<std::unique_lock<SFRReadLock>, ProxyConfigIf&>
+  std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&>
   getConfigLocked() const;
 
   /**
    * Thread-safe config swap; returns the previous contents of
    * the config pointer
    */
-  std::shared_ptr<ProxyConfigIf> swapConfig(
-    std::shared_ptr<ProxyConfigIf> newConfig);
+  std::shared_ptr<ProxyConfig> swapConfig(
+    std::shared_ptr<ProxyConfig> newConfig);
 
   /** Queue up and route the new incoming request */
   void dispatchRequest(std::unique_ptr<ProxyRequestContext> preq);
@@ -258,7 +257,7 @@ struct proxy_t {
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;
-  std::shared_ptr<ProxyConfigIf> config_;
+  std::shared_ptr<ProxyConfig> config_;
 
   // Stores the id of the next request.
   uint64_t nextReqId_ = 0;
@@ -323,11 +322,11 @@ struct proxy_t {
 };
 
 struct old_config_req_t {
-  explicit old_config_req_t(std::shared_ptr<ProxyConfigIf> config)
+  explicit old_config_req_t(std::shared_ptr<ProxyConfig> config)
     : config_(std::move(config)) {
   }
  private:
-  std::shared_ptr<ProxyConfigIf> config_;
+  std::shared_ptr<ProxyConfig> config_;
 };
 
 void proxy_config_swap(proxy_t* proxy,

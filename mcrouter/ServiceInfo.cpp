@@ -31,7 +31,6 @@
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfigBuilder.h"
-#include "mcrouter/ProxyConfigIf.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
 #include "mcrouter/routes/ProxyRoute.h"
@@ -46,7 +45,7 @@ struct ServiceInfo::ServiceInfoImpl {
     std::function<std::string(const std::vector<folly::StringPiece>& args)>>
   commands_;
 
-  ServiceInfoImpl(proxy_t* proxy, const ProxyConfigIf& config);
+  ServiceInfoImpl(proxy_t* proxy, const ProxyConfig& config);
 
   void handleRouteCommand(const std::shared_ptr<ProxyRequestContext>& ctx,
                           const std::vector<folly::StringPiece>& args) const;
@@ -180,12 +179,12 @@ void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
 ServiceInfo::~ServiceInfo() {
 }
 
-ServiceInfo::ServiceInfo(proxy_t* proxy, const ProxyConfigIf& config)
+ServiceInfo::ServiceInfo(proxy_t* proxy, const ProxyConfig& config)
     : impl_(folly::make_unique<ServiceInfoImpl>(proxy, config)) {
 }
 
 ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
-                                              const ProxyConfigIf& config)
+                                              const ProxyConfig& config)
     : proxy_(proxy),
       proxyRoute_(config.proxyRoute()) {
 

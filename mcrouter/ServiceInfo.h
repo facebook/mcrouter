@@ -17,7 +17,7 @@ class McRequest;
 
 namespace mcrouter {
 
-class ProxyConfigIf;
+class ProxyConfig;
 class ProxyRequestContext;
 class proxy_t;
 
@@ -27,7 +27,7 @@ class proxy_t;
  */
 class ServiceInfo {
  public:
-  ServiceInfo(proxy_t* proxy, const ProxyConfigIf& config);
+  ServiceInfo(proxy_t* proxy, const ProxyConfig& config);
 
   void handleRequest(const McRequest& req,
                      const std::shared_ptr<ProxyRequestContext>& ctx) const;
