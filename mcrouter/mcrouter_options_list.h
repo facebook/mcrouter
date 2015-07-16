@@ -124,6 +124,11 @@ mcrouter_option_integer(
   "Record exact amount of fibers stacks used for every N fiber. "
   "0 disables stack recording.")
 
+mcrouter_option_toggle(
+  fibers_use_guard_pages, true,
+  "disable-fibers-use-guard-pages", no_short,
+  "If enabled, protect limited amount of fiber stacks with guard pages")
+
 mcrouter_option_string(
   runtime_vars_file,
   MCROUTER_RUNTIME_VARS_DEFAULT,
