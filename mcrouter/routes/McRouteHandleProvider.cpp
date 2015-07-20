@@ -57,9 +57,6 @@ McrouterRouteHandlePtr makeDevNullRoute(McRouteHandleFactory& factory,
 McrouterRouteHandlePtr makeHostIdRoute(McRouteHandleFactory& factory,
                                        const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeModifyKeyRoute(McRouteHandleFactory& factory,
-                                          const folly::dynamic& json);
-
 McrouterRouteHandlePtr makeDestinationRoute(
   std::shared_ptr<const ProxyClientCommon> client,
   std::shared_ptr<ProxyDestination> destination);
@@ -94,6 +91,12 @@ McrouterRouteHandlePtr makeMigrateRoute(McRouteHandleFactory& factory,
 
 McrouterRouteHandlePtr makeMissFailoverRoute(McRouteHandleFactory& factory,
                                              const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeModifyExptimeRoute(McRouteHandleFactory& factory,
+                                              const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeModifyKeyRoute(McRouteHandleFactory& factory,
+                                          const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeNullRoute(McRouteHandleFactory& factory,
                                      const folly::dynamic& json);
@@ -156,6 +159,7 @@ McRouteHandleProvider::McRouteHandleProvider(
         { "LoggingRoute", &makeLoggingRoute },
         { "MigrateRoute", &makeMigrateRoute },
         { "MissFailoverRoute", &makeMissFailoverRoute },
+        { "ModifyExptimeRoute", &makeModifyExptimeRoute },
         { "ModifyKeyRoute", &makeModifyKeyRoute },
         { "NullRoute", &makeNullRoute },
         { "OperationSelectorRoute", &makeOperationSelectorRoute },
