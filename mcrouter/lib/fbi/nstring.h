@@ -138,6 +138,9 @@ static inline void _nstring_map_init(nstring_map_t* map,
                                      const uint32_t mask,
                                      void* (*allocator)(const size_t),
                                      void (*deallocator)(void*)) {
+
+  (void)mask; // unused parameter
+
   memset(map, '\0', nstring_map_sizeof(buckets));
   map->heads = (nstring_map_entry_t**)&map[1];
   map->buckets = buckets;

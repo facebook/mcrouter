@@ -158,7 +158,7 @@ class AtomicTokenBucket {
    *
    */
   AtomicTokenBucket(double rate, double burstSize,
-                    double nowInSeconds = defaultClockNow())
+                    double /*nowInSeconds*/ = defaultClockNow())
       : rate_(rate),
         burstSize_(burstSize) {
     assert(rate_ > 0);
