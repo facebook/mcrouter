@@ -31,8 +31,11 @@ McrouterRouteHandlePtr makeFailoverRoute(
     return std::move(rh[0]);
   }
 
+  FailoverRecorder failoverRecorder(rh.size());;
+
   return makeMcrouterRouteHandle<FailoverRoute>(std::move(rh),
-                                                std::move(failoverErrors));
+                                                std::move(failoverErrors),
+                                                std::move(failoverRecorder));
 }
 
 McrouterRouteHandlePtr makeFailoverRoute(

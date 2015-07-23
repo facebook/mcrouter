@@ -20,14 +20,35 @@ FailoverErrorsSettings::List::List(std::vector<std::string> errors) {
   init(std::move(errors));
 }
 
+FailoverErrorsSettings::List::List(std::vector<std::string> errors,
+                                   uint32_t failback_delay) {
+  failback_delay_ = failback_delay;
+  init(std::move(errors));
+}
+
 FailoverErrorsSettings::List::List(const folly::dynamic& json) {
-  checkLogic(json.isArray(), "List of failover errors is not an array.");
+  checkLogic(json.isArray() || json.isObject(), "List of failover errors is neither an array nor an object.");
 
   std::vector<std::string> errors;
   errors.reserve(json.size());
-  for (const auto& elem : json) {
-    checkLogic(elem.isString(), "Failover error {} is not a string", elem);
-    errors.push_back(elem.getString().toStdString());
+
+  if (json.isArray()) {
+    for (const auto& elem : json) {
+      checkLogic(elem.isString(), "Failover error {} is not a string", elem);
+      errors.push_back(elem.getString().toStdString());
+    }
+  } else if (json.isObject()) {
+    checkLogic(json.count("when") == 1, "List of failover operations is not specified");
+    checkLogic(json["when"].isArray(), "List of failover operations is not an array");
+    for (const auto& elem : json["when"]) {
+      checkLogic(elem.isString(), "Failover error {} is not a string", elem);
+      errors.push_back(elem.getString().toStdString());
+    }
+    if (auto delay = json.get_ptr("failback_delay")) {
+      checkLogic(delay->isInt(),
+          "Failback delay {} is not an int", (*delay));
+      failback_delay_ = delay->getInt();
+    }
   }
 
   init(std::move(errors));
@@ -38,6 +59,10 @@ bool FailoverErrorsSettings::List::shouldFailover(const McReply& reply) const {
     return (*failover_)[reply.result()];
   }
   return reply.isFailoverError();
+}
+
+uint32_t FailoverErrorsSettings::List::failbackDelay() const {
+  return failback_delay_;
 }
 
 void FailoverErrorsSettings::List::init(std::vector<std::string> errors) {
@@ -75,6 +100,15 @@ FailoverErrorsSettings::FailoverErrorsSettings(
     : gets_(std::move(errorsGet)),
       updates_(std::move(errorsUpdate)),
       deletes_(std::move(errorsDelete)) {
+}
+
+FailoverErrorsSettings::FailoverErrorsSettings(
+    List&& listGet,
+    List&& listUpdate,
+    List&& listDelete)
+    : gets_(std::move(listGet)),
+      updates_(std::move(listUpdate)),
+      deletes_(std::move(listDelete)) {
 }
 
 FailoverErrorsSettings::FailoverErrorsSettings(const folly::dynamic& json) {
