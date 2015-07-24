@@ -443,6 +443,7 @@ void McServerSession::writeErr(
 
   DestructorGuard dg(this);
   completeWrite();
+  close();
 }
 
 }}  // facebook::memcache
