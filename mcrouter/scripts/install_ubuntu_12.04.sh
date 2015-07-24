@@ -11,7 +11,8 @@ sudo add-apt-repository -y ppa:dominik-stadler/subversion-1.8 # scons
 sudo apt-get update
 
 sudo apt-get install -y gcc-4.8 g++-4.8 libboost1.54-dev libboost-thread1.54-dev \
-    libboost-filesystem1.54-dev libboost-system1.54-dev libboost-regex1.54-dev \
+    libboost-program-options1.54-dev libboost-filesystem1.54-dev \
+    libboost-system1.54-dev libboost-regex1.54-dev \
     libboost-python1.54-dev libboost-context1.54-dev ragel autoconf unzip \
     libsasl2-dev git libtool python-dev cmake libssl-dev libcap-dev libevent-dev \
     libgtest-dev libsnappy-dev scons flex bison libkrb5-dev binutils-dev make \
