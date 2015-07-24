@@ -11,8 +11,8 @@
     "type": "FailoverWithExptimeRoute",
     "failover": "PoolRoute|B.wildcard",
     "normal": "PoolRoute|A.wildcard",
-    "settings": {
-      "updates": false
+    "failover_errors": {
+      "updates": []
     }
   }
 }

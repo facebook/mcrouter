@@ -10,7 +10,6 @@
 #include "FailoverWithExptimeRoute.h"
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/routes/FailoverWithExptimeRouteIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -62,13 +61,6 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     failoverExptime = jexptime->getInt();
   }
 
-  // Check if only one format is being used
-  checkLogic(!(json.count("settings") && // old
-        (json.count("failover_errors") || json.count("failover_tag"))), // new
-      "Use either 'settings' (old format) or 'failover_errors' / 'failover_tag'"
-    );
-
-  // new format
   FailoverErrorsSettings failoverErrors;
   bool failoverTagging = false;
   if (auto jfailoverTag = json.get_ptr("failover_tag")) {
@@ -78,15 +70,6 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   }
   if (auto jfailoverErrors = json.get_ptr("failover_errors")) {
     failoverErrors = FailoverErrorsSettings(*jfailoverErrors);
-  }
-
-  // old format
-  if (auto jsettings = json.get_ptr("settings")) {
-    VLOG(5) << "FailoverWithExptime: This config format is deprecated. "
-               "Use 'failover_errors' instead of 'settings'.";
-    auto oldSettings = FailoverWithExptimeSettings(*jsettings);
-    failoverTagging = oldSettings.failoverTagging;
-    failoverErrors = oldSettings.getFailoverErrors();
   }
 
   return makeFailoverWithExptimeRoute(

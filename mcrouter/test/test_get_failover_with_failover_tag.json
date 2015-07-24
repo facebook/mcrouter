@@ -12,8 +12,6 @@
     "failover": "PoolRoute|A.gut",
     "normal": "PoolRoute|A.wildcard",
     "failover_exptime": 3,
-    "settings": {
-      "failover_tag": true
-    }
+    "failover_tag": true
   }
 }
