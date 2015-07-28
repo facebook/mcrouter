@@ -11,7 +11,7 @@ sudo apt-get install -y gcc-4.8 g++-4.8 libboost1.54-dev libboost-thread1.54-dev
     libboost-system1.54-dev libboost-regex1.54-dev \
     libboost-python1.54-dev libboost-context1.54-dev ragel autoconf unzip \
     git libtool python-dev cmake libssl-dev libcap-dev libevent-dev \
-    libgtest-dev libsnappy-dev scons binutils-dev make \
+    libgtest-dev libsnappy-dev scons binutils-dev libboost-program-options1.54-dev make \
     wget libdouble-conversion-dev libgflags-dev libgoogle-glog-dev
 
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50
