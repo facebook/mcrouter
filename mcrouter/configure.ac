@@ -16,7 +16,7 @@ AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])
 AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])
 AC_CONFIG_AUX_DIR([build-aux])
 
-AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc subdir-objects])
 
 AC_CONFIG_MACRO_DIR([m4])
 
