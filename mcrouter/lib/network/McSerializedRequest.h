@@ -47,8 +47,8 @@ class McSerializedRequest {
   McSerializedRequest& operator=(const McSerializedRequest&) = delete;
 
   Result serializationResult() const;
-  size_t getIovsCount() { return iovsCount_; }
-  struct iovec* getIovs() { return iovsBegin_; }
+  size_t getIovsCount() const { return iovsCount_; }
+  struct iovec* getIovs() const { return iovsBegin_; }
 
  private:
   static const size_t kMaxIovs = 20;

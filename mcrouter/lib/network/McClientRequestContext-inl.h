@@ -80,6 +80,13 @@ McClientRequestContext<Operation, Request>::fakeReply() const {
 }
 
 template <class Operation, class Request>
+std::string
+McClientRequestContext<Operation, Request>::getContextTypeStr() const {
+  return folly::sformat("OperationT is {}, RequestT is {}",
+                        typeid(Operation).name(), typeid(Request).name());
+}
+
+template <class Operation, class Request>
 typename McClientRequestContext<Operation, Request>::Reply
 McClientRequestContext<Operation, Request>::waitForReply(
     std::chrono::milliseconds timeout) {

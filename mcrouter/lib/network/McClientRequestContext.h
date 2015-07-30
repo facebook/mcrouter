@@ -53,6 +53,12 @@ class McClientRequestContextBase
   virtual const char* fakeReply() const = 0;
 
   /**
+   * Get string representation of a type of the context.
+   * (E.g. operation + request type).
+   */
+  virtual std::string getContextTypeStr() const = 0;
+
+  /**
    * Propagate an error to the user.
    *
    * Should be called only when the request is not in a queue.
@@ -147,6 +153,8 @@ class McClientRequestContext : public McClientRequestContextBase {
 
   const char* fakeReply() const override;
 
+  virtual std::string getContextTypeStr() const override;
+
   Reply waitForReply(std::chrono::milliseconds timeout);
  private:
   folly::Optional<Reply> replyStorage_;
@@ -236,6 +244,11 @@ class McClientRequestContextQueue {
   McClientRequestContextBase::InitializerFuncPtr
   getParserInitializer(uint64_t reqId = 0);
 
+  /**
+   * Get a debug info about current queue state.
+   */
+  std::string debugInfo() const;
+
  private:
   static constexpr size_t kDefaultNumBuckets = 128;
 
@@ -289,6 +302,8 @@ class McClientRequestContextQueue {
   void clearStoredInitializers();
 
   void growBucketsArray();
+
+  std::string getFirstAliveRequestInfo() const;
 };
 
 }}  // facebook::memcache

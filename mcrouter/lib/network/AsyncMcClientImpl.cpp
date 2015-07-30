@@ -407,9 +407,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   assert(queue_.getParserInitializer() == nullptr);
 
   scheduleNextWriterLoop();
-  parser_ = folly::make_unique<ParserT>(*this, 0, kReadBufferSizeMin,
-                                        kReadBufferSizeMax,
-                                        connectionOptions_.useNewAsciiParser);
+  parser_ = folly::make_unique<ParserT>(
+      *this, 0, kReadBufferSizeMin, kReadBufferSizeMax,
+      connectionOptions_.useNewAsciiParser,
+      connectionOptions_.accessPoint.getProtocol());
   socket_->setReadCB(this);
 }
 
@@ -549,7 +550,28 @@ void AsyncMcClientImpl::writeErr(
   processShutdown();
 }
 
+folly::StringPiece AsyncMcClientImpl::clientStateToStr() const {
+  switch (connectionState_) {
+    case ConnectionState::UP: return "UP";
+    case ConnectionState::DOWN: return "DOWN";
+    case ConnectionState::CONNECTING: return "CONNECTING";
+    case ConnectionState::ERROR: return "ERROR";
+  }
+  return "state is incorrect";
+}
+
+void AsyncMcClientImpl::logErrorWithContext(folly::StringPiece reason) {
+  LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
+              "Error: \"{}\", client state: {}, remote endpoint: {}, "
+              "number of requests sent through this client: {}, "
+              "McClientRequestContextQueue info: {}",
+              reason, clientStateToStr(),
+              connectionOptions_.accessPoint.toString(), nextMsgId_,
+              queue_.debugInfo());
+}
+
 void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {
+  logErrorWithContext(reason);
   // mc_parser can call the parseError multiple times, process only first.
   if (connectionState_ != ConnectionState::UP) {
     return;

@@ -11,6 +11,8 @@
 
 namespace facebook { namespace memcache {
 
+constexpr size_t kSerializedRequestContextLength = 1024;
+
 void McClientRequestContextBase::replyError(mc_res_t result) {
   assert(state_ == ReqState::NONE);
   replyErrorImpl(result);
@@ -194,6 +196,51 @@ McClientRequestContextQueue::getParserInitializer(uint64_t reqId) {
     }
   }
   return nullptr;
+}
+
+std::string McClientRequestContextQueue::debugInfo() const {
+  return folly::sformat(
+    "Currently have {} timedout initializers, {} requests in "
+    "replied queue, {} requests in pending reply queue, "
+    "{} requests in write queue and {} requests in pending queue, "
+    "the first alive request is: {}", timedOutInitializers_.size(),
+    repliedQueue_.size(), pendingReplyQueue_.size(), writeQueue_.size(),
+    pendingQueue_.size(), getFirstAliveRequestInfo());
+}
+
+std::string McClientRequestContextQueue::getFirstAliveRequestInfo() const {
+  const McClientRequestContextBase* ctx{nullptr};
+
+  if (!pendingReplyQueue_.empty()) {
+    ctx = &pendingReplyQueue_.front();
+  } else if (!writeQueue_.empty()) {
+    ctx = &writeQueue_.front();
+  } else {
+    return "no alive requests that were sent or are being sent";
+  }
+
+  size_t dataLen = 0;
+  for (size_t i = 0;
+       i < ctx->reqContext.getIovsCount(); ++i) {
+    dataLen += ctx->reqContext.getIovs()[i].iov_len;
+  }
+  dataLen = std::min(dataLen, kSerializedRequestContextLength);
+  std::vector<char> data(dataLen);
+
+  for (size_t i = 0, dataOffset = 0;
+       i < ctx->reqContext.getIovsCount() &&
+       dataOffset < dataLen; ++i) {
+    auto toCopy =
+        std::min(dataLen - dataOffset, ctx->reqContext.getIovs()[i].iov_len);
+    memcpy(data.data() + dataOffset, ctx->reqContext.getIovs()[i].iov_base,
+           toCopy);
+    dataOffset += toCopy;
+  }
+
+  return folly::sformat("{}, serialized data was: \"{}\"",
+                        ctx->getContextTypeStr(),
+                        folly::cEscape<std::string>(
+                            folly::StringPiece(data.data(), data.size())));
 }
 
 }}  // facebook::memcache
