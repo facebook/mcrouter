@@ -16,9 +16,11 @@ ClientMcParser<Callback>::ClientMcParser(Callback& cb,
                                          size_t requestsPerRead,
                                          size_t minBufferSize,
                                          size_t maxBufferSize,
-                                         bool useNewAsciiParser)
+                                         bool useNewAsciiParser,
+                                         mc_protocol_t protocol)
   : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
     useNewParser_(useNewAsciiParser),
+    protocol_(protocol),
     callback_(cb) {
   if (!useNewParser_) {
     mc_parser_init(&mcParser_,
@@ -106,6 +108,14 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const uint8_t* header,
                                               const uint8_t* body,
                                               const folly::IOBuf& bodyBuffer) {
+  if (UNLIKELY(protocol_ != mc_umbrella_protocol)) {
+    std::string reason =
+        folly::sformat("Expected {} protocol, but received umbrella!",
+                       mc_protocol_to_string(protocol_));
+    callback_.parseError(mc_res_local_error, reason);
+    return false;
+  }
+
   try {
     uint64_t reqId = umbrellaDetermineReqId(header, info.headerSize);
     if (callback_.nextReplyAvailable(reqId)) {
@@ -124,19 +134,27 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
 
 template <class Callback>
 void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
+  if (UNLIKELY(protocol_ != mc_ascii_protocol)) {
+    std::string reason(
+      folly::sformat("Expected {} protocol, but received ASCII!",
+                     mc_protocol_to_string(protocol_)));
+    callback_.parseError(mc_res_local_error, reason);
+    return;
+  }
+
   if (useNewParser_) {
     while (readBuffer.length()) {
       if (asciiParser_.getCurrentState() == McAsciiParser::State::UNINIT) {
         // Ask the client to initialize parser.
         if (!callback_.nextReplyAvailable(0 /* reqId */)) {
           auto data = reinterpret_cast<const char*>(readBuffer.data());
-          LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
-                      "Received unexpected data from remote endpoint: '{}'!",
-                      folly::cEscape<std::string>(folly::StringPiece(
-                        data, data + std::min(readBuffer.length(),
-                                               static_cast<size_t>(128)))));
-          callback_.parseError(mc_res_local_error,
-                               "Received unexpected ASCII data");
+          std::string reason(
+            folly::sformat(
+              "Received unexpected data from remote endpoint: '{}'!",
+              folly::cEscape<std::string>(folly::StringPiece(
+                data, data + std::min(readBuffer.length(),
+                static_cast<size_t>(128))))));
+          callback_.parseError(mc_res_local_error, reason);
           return;
         }
       }
@@ -146,7 +164,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
           break;
         case McAsciiParser::State::ERROR:
           callback_.parseError(mc_res_local_error,
-                               "Error parsing ASCII protocol");
+                               asciiParser_.getErrorDescription());
           return;
           break;
         case McAsciiParser::State::PARTIAL:
@@ -154,11 +172,9 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
           break;
         case McAsciiParser::State::UNINIT:
           // We fed parser some data, it shouldn't remain in State::NONE.
-          LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
-                      "Sent data to AsciiParser but it remained in UNINIT "
-                      "state!");
           callback_.parseError(mc_res_local_error,
-                               "Internal AsciiParser error.");
+                               "Sent data to AsciiParser but it remained in "
+                               "UNINIT state!");
           return;
           break;
       }

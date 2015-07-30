@@ -139,6 +139,10 @@ class AsyncMcClientImpl :
 
   void attemptConnection();
 
+  // Log error with additional diagnostic information.
+  void logErrorWithContext(folly::StringPiece reason);
+  folly::StringPiece clientStateToStr() const;
+
   // TAsyncSocket::ConnectCallback overrides
   void connectSuccess() noexcept override;
   void connectErr(const folly::AsyncSocketException& ex) noexcept override;

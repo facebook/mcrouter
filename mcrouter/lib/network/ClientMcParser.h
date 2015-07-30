@@ -21,7 +21,8 @@ class ClientMcParser : private McParser::ParserCallback {
                  size_t requestsPerRead,
                  size_t minBufferSize,
                  size_t maxBufferSize,
-                 bool useNewAsciiParser);
+                 bool useNewAsciiParser,
+                 mc_protocol_t protocol);
 
   ~ClientMcParser() override;
 
@@ -60,6 +61,7 @@ class ClientMcParser : private McParser::ParserCallback {
     const UmbrellaMessageInfo&, const uint8_t*, const uint8_t*,
     const folly::IOBuf&, uint64_t){nullptr};
   bool useNewParser_{false};
+  mc_protocol_t protocol_;
 
   Callback& callback_;
 

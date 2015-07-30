@@ -148,6 +148,7 @@ gets_hit = VALUE ' '+ skip_key ' '+ flags ' '+ value_bytes ' '+ cas_id
 command_error = 'ERROR' @{
   // This is unexpected error reply, just put ourself into error state.
   state_ = State::ERROR;
+  currentErrorDescription_ = "ERROR reply received from server.";
   fbreak;
 };
 

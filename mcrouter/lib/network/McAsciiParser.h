@@ -79,6 +79,12 @@ class McAsciiParser {
   std::pair<void*, size_t> getReadBuffer();
 
   void readDataAvailable(size_t length);
+
+  /**
+   * Get a human readable description of error cause (e.g. received ERROR
+   * reply, or failed to parse some data.)
+   */
+  folly::StringPiece getErrorDescription() const;
  private:
   void appendCurrentCharTo(folly::IOBuf& from, folly::IOBuf& to);
   void handleError(folly::IOBuf& buffer);
@@ -94,6 +100,7 @@ class McAsciiParser {
   template<class Msg, class Op>
   void consumeMessage(folly::IOBuf& buffer);
 
+  std::string currentErrorDescription_;
   uint64_t currentUInt_{0};
   folly::IOBuf* currentIOBuf_{nullptr};
   size_t remainingIOBufLength_{0};
