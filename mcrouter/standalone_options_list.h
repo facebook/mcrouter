@@ -59,6 +59,11 @@ mcrouter_option_integer(
   "Connection limit")
 
 mcrouter_option_integer(
+  size_t, max_conns, 0,
+  "max-conns", no_short,
+  "Maximum number of connections maintained by server")
+
+mcrouter_option_integer(
   uint32_t, max_global_outstanding_reqs, DEFAULT_MAX_GLOBAL_OUTSTANDING_REQS,
   "max-global-outstanding-reqs", no_short,
   "Maximum requests outstanding globally (0 to disable)")

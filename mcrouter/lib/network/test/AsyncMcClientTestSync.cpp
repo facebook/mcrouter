@@ -108,13 +108,20 @@ class ServerOnRequest {
 class TestServer {
  public:
   TestServer(bool outOfOrder, bool useSsl,
-             int maxInflight = 10, int timeoutMs = 250) :
+             int maxInflight = 10, int timeoutMs = 250, size_t maxConns = 100,
+             size_t unreapableTime = 0, size_t updateThreshold = 0) :
       outOfOrder_(outOfOrder) {
     socketFd_ = createListenSocket();
     opts_.existingSocketFd = socketFd_;
     opts_.numThreads = 1;
     opts_.worker.maxInFlight = maxInflight;
     opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
+    opts_.worker.connLRUopts.maxConns =
+      (maxConns + opts_.numThreads - 1)/opts_.numThreads;
+    opts_.worker.connLRUopts.updateThreshold =
+      std::chrono::milliseconds(updateThreshold);
+    opts_.worker.connLRUopts.unreapableTime =
+      std::chrono::milliseconds(unreapableTime);
     if (useSsl) {
       opts_.pemKeyPath = kPemKeyPath;
       opts_.pemCertPath = kPemCertPath;
@@ -212,6 +219,19 @@ class TestClient {
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
     client_->setThrottle(maxInflight, maxOutstanding);
+  }
+
+  void setStatusCallbacks(std::function<void()> onUp,
+      std::function<void(bool aborting)> onDown) {
+    client_->setStatusCallbacks(
+       [onUp] {
+          LOG(INFO) << "Client UP.";
+          onUp();
+       },
+       [onDown] (bool aborting) {
+          LOG(INFO) << "Client DOWN.";
+          onDown(aborting);
+       });
   }
 
   void sendGet(const char* key, mc_res_t expectedResult,
@@ -787,4 +807,194 @@ TEST(AsyncMcClient, oooUmbrellaTimeouts) {
   client.waitForReplies();
   server.join();
   EXPECT_EQ(server.getStats().accepted.load(), 1);
+}
+
+TEST(AsyncMcClient, tonsOfConnections) {
+  TestServer server(false /* outOfOrder */, false /* useSsl */,
+                    10, 250, 3 /* maxConns */,
+                    0 /* unreapableTime */);
+
+  bool wentDown = false;
+
+  /* Create a client to see if it gets evicted. */
+  TestClient client("localhost", server.getListenPort(), 1,
+                    mc_ascii_protocol);
+  client.setStatusCallbacks([]{}, [&wentDown](bool){wentDown = true;});
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Create 3 more clients to evict the first client. */
+  TestClient client2("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  client2.sendGet("test", mc_res_found);
+  client2.waitForReplies();
+  TestClient client3("localhost", server.getListenPort(), 300,
+                    mc_ascii_protocol);
+  client3.sendGet("test", mc_res_found);
+  client3.waitForReplies();
+  TestClient client4("localhost", server.getListenPort(), 400,
+                    mc_ascii_protocol);
+  client4.sendGet("test", mc_res_found);
+  client4.waitForReplies();
+
+  /* Force the status callback to be invoked to see if it was evicted. */
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Should be evicted. */
+  EXPECT_TRUE(wentDown);
+
+  /* Given there are at max 3 connections,
+   * this should work iff unreapableTime is small (which it is). */
+  client4.sendGet("shutdown", mc_res_notfound);
+  client4.waitForReplies();
+
+  server.join();
+}
+
+TEST(AsyncMcClient, disableConnectionLRU) {
+  TestServer server(false /* outOfOrder */, false /* useSsl */,
+                    10, 250, 0 /* maxConns */, 1000000 /* unreapableTime */);
+
+  bool wentDown = false;
+
+  /* Create a client to see if it gets evicted. */
+  TestClient client("localhost", server.getListenPort(), 1,
+                    mc_ascii_protocol);
+  client.setStatusCallbacks([]{}, [&wentDown](bool){wentDown = true;});
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Create 3 more clients to evict the first client. */
+  TestClient client2("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  client2.sendGet("test", mc_res_found);
+  client2.waitForReplies();
+  TestClient client3("localhost", server.getListenPort(), 300,
+                    mc_ascii_protocol);
+  client3.sendGet("test", mc_res_found);
+  client3.waitForReplies();
+  TestClient client4("localhost", server.getListenPort(), 400,
+                    mc_ascii_protocol);
+  client4.sendGet("test", mc_res_found);
+  client4.waitForReplies();
+
+  /* Force the status callback to be invoked to see if it was evicted. */
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Shouldn't be evicted. */
+  EXPECT_FALSE(wentDown);
+
+  /* Given unreapableTime is large, this should work iff LRU is disabled. */
+  client4.sendGet("shutdown", mc_res_notfound);
+  client4.waitForReplies();
+
+  server.join();
+}
+
+TEST(AsyncMcClient, testUnreapableTime) {
+  TestServer server(false /* outOfOrder */, false /* useSsl */,
+                    10, 250, 3 /* maxConns */, 1000000 /* unreapableTime */);
+
+  bool firstWentDown = false;
+  bool lastWentDown = false;
+
+  /* Create a client to see if it gets evicted. */
+  TestClient client("localhost", server.getListenPort(), 1,
+                    mc_ascii_protocol);
+  client.setStatusCallbacks([]{},
+                            [&firstWentDown](bool){firstWentDown = true;});
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Create 3 more clients to evict the first client. */
+  TestClient client2("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  client2.sendGet("test", mc_res_found);
+  client2.waitForReplies();
+  TestClient client3("localhost", server.getListenPort(), 300,
+                    mc_ascii_protocol);
+  client3.sendGet("test", mc_res_found);
+  client3.waitForReplies();
+  TestClient client4("localhost", server.getListenPort(), 400,
+                    mc_ascii_protocol);
+  client4.setStatusCallbacks([]{},
+                            [&lastWentDown](bool){lastWentDown = true;});
+  /* Should be an error. */
+  client4.sendGet("test", mc_res_remote_error);
+  client4.waitForReplies();
+
+  /* Force the status callback to be invoked to see if it was evicted. */
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* The first connection shouldn't be evicted. */
+  EXPECT_FALSE(firstWentDown);
+
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+
+  /* The last connection should be closed. */
+  EXPECT_TRUE(lastWentDown);
+
+  server.join();
+}
+
+TEST(AsyncMcClient, testUpdateThreshold) {
+  TestServer server(false /* outOfOrder */, false /* useSsl */,
+                    10, 250, 2 /* maxConns */, 0 /* unreapableTime */,
+                    2000 /* updateTime = 2 sec */);
+
+  bool firstWentDown = false;
+  bool secondWentDown = false;
+
+  /* Create a client to see if it gets evicted. */
+  TestClient client("localhost", server.getListenPort(), 1,
+                    mc_ascii_protocol);
+  client.setStatusCallbacks([]{},
+                            [&firstWentDown](bool){firstWentDown = true;});
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Now we can update the position of the first connection in the LRU. */
+  /* sleep override */ usleep(2000);
+
+  /* Create a second client to see if it gets evicted. */
+  TestClient client2("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  client2.setStatusCallbacks([]{},
+                            [&secondWentDown](bool){secondWentDown = true;});
+  client2.sendGet("test", mc_res_found);
+  client2.waitForReplies();
+
+  /* Attempt to update the first connection's position in the LRU */
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+
+  /* Attempt to update the second connection's position in the LRU */
+  client2.sendGet("test", mc_res_found);
+  client2.waitForReplies();
+
+  /* Create a third connection to evict one of the first two. */
+  TestClient client3("localhost", server.getListenPort(), 200,
+                    mc_ascii_protocol);
+  client3.sendGet("test", mc_res_found);
+  client3.waitForReplies();
+
+  /* Check if either of the initial connections were evicted. */
+  client.sendGet("test", mc_res_found);
+  client.waitForReplies();
+  client2.sendGet("test", mc_res_found);
+  client2.waitForReplies();
+
+  /* The first connection shouldn't be evicted. */
+  EXPECT_FALSE(firstWentDown);
+  /* The second connection should be evicted. */
+  EXPECT_TRUE(secondWentDown);
+
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+
+  server.join();
 }

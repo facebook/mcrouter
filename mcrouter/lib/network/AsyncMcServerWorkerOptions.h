@@ -12,6 +12,8 @@
 #include <string>
 #include <chrono>
 
+#include "mcrouter/lib/network/ConnectionLRUOptions.h"
+
 namespace facebook { namespace memcache {
 
 struct AsyncMcServerWorkerOptions {
@@ -60,6 +62,11 @@ struct AsyncMcServerWorkerOptions {
    * If 0, buffer size is always maxBufferSize.
    */
   size_t requestsPerRead{0};
+
+  /**
+   * Options pertaining to the LRU of connections.
+   */
+  ConnectionLRUOptions connLRUopts;
 
   /**
    * Smallest allowed buffer size.
