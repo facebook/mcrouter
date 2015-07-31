@@ -15,6 +15,7 @@
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/SSLContext.h>
 
+#include "mcrouter/lib/network/ConnectionLRU.h"
 #include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook { namespace memcache {
@@ -68,6 +69,9 @@ AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
                                          folly::EventBase& eventBase)
     : opts_(std::move(opts)),
       eventBase_(eventBase) {
+  if (opts_.connLRUopts.maxConns) {
+    connLRU_.emplace(opts.connLRUopts);
+  }
 }
 
 void AsyncMcServerWorker::addSecureClientSocket(
@@ -101,23 +105,42 @@ void AsyncMcServerWorker::addClientSocket(
   socket->setSendTimeout(opts_.sendTimeout.count());
   socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
   socket->setNoDelay(true);
+  int fd = socket->getFd();
 
-  sessions_.push_back(
-    McServerSession::create(
-      std::move(socket),
-      onRequest_,
-      onWriteQuiescence_,
-      onCloseStart_,
-      [this] (McServerSession& session) {
-        if (onCloseFinish_) {
-          onCloseFinish_(session);
-        }
-        sessions_.erase(sessions_.iterator_to(session));
-      },
-      onShutdown_,
-      opts_,
-      userCtxt
-    ));
+  auto &session = McServerSession::create(
+    std::move(socket),
+    onRequest_,
+    [this, fd] (McServerSession& session) {
+      if (connLRU_) {
+        connLRU_->touchConnection(fd);
+      }
+      if (onWriteQuiescence_) {
+        onWriteQuiescence_(session);
+      }
+    },
+    onCloseStart_,
+    [this, fd] (McServerSession& session) {
+      if (onCloseFinish_) {
+        onCloseFinish_(session);
+      }
+      sessions_.erase(sessions_.iterator_to(session));
+      if (connLRU_) {
+        connLRU_->removeConnection(fd);
+      }
+    },
+    onShutdown_,
+    opts_,
+    userCtxt
+  );
+
+  sessions_.push_back(session);
+
+  if (connLRU_ &&
+      !connLRU_->addConnection(
+          fd,
+          std::unique_ptr<McServerSession, McServerSessionDeleter>(&session))) {
+    // TODO: record stats about failure
+  }
 }
 
 void AsyncMcServerWorker::shutdown() {

@@ -14,8 +14,10 @@
 #include <unordered_set>
 
 #include <folly/io/async/AsyncSocket.h>
+#include <folly/Optional.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
+#include "mcrouter/lib/network/ConnectionLRU.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/McServerSession.h"
 
@@ -161,6 +163,15 @@ class AsyncMcServerWorker {
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
+
+  struct McServerSessionDeleter {
+    void operator() (McServerSession* session) const {
+      session->close();
+    }
+  };
+
+  folly::Optional<ConnectionLRU<std::unique_ptr<McServerSession,
+                                McServerSessionDeleter>>> connLRU_{folly::none};
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
