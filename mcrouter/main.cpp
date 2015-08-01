@@ -58,8 +58,14 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-#define EXIT_STATUS_TRANSIENT_ERROR 2
-#define EXIT_STATUS_UNRECOVERABLE_ERROR 3
+constexpr int kExitStatusTransientError = 2;
+constexpr int kExitStatusUnrecoverableError = 3;
+
+enum class ValidateConfigMode {
+  NONE = 0,
+  EXIT = 1,
+  RUN = 2
+};
 
 static McrouterOptions opts;
 static McrouterStandaloneOptions standaloneOpts;
@@ -108,16 +114,18 @@ static void print_usage_and_die(char* progname, int errorCode) {
   print_usage("-h, --help", "help");
   print_usage("-V, --version", "version");
   print_usage("-v, --verbosity", "Set verbosity of VLOG");
-  print_usage("    --validate-config", "Check config and exit immediately"
-              " with good or error status");
+  print_usage("    --validate-config=exit|run",
+              "Enable strict config checking. If 'exit' or no argument "
+              "is provided, exit immediately with good or error status. "
+              "Otherwise keep running if config is valid.");
 
   fprintf(stderr, "\nRETURN VALUE\n");
   print_usage("2", "On a problem that might be resolved by restarting later.");
-  static_assert(2 == EXIT_STATUS_TRANSIENT_ERROR,
+  static_assert(2 == kExitStatusTransientError,
                 "Transient error status must be 2");
   print_usage("3", "On a problem that will definitely not be resolved by "
               "restarting.");
-  static_assert(3 == EXIT_STATUS_UNRECOVERABLE_ERROR,
+  static_assert(3 == kExitStatusUnrecoverableError,
                 "Unrecoverable error status must be 3");
   exit(errorCode);
 }
@@ -136,7 +144,7 @@ static void parse_options(int argc,
                           unordered_map<string, string>& option_dict,
                           unordered_map<string, string>& standalone_option_dict,
                           unordered_set<string>& unrecognized_options,
-                          int* validate_configs,
+                          ValidateConfigMode* validate_configs,
                           string* flavor) {
 
   vector<option> long_options = {
@@ -145,7 +153,7 @@ static void parse_options(int argc,
     { "verbosity",                   1, nullptr, 'v'},
     { "help",                        0, nullptr, 'h'},
     { "version",                     0, nullptr, 'V'},
-    { "validate-config",             0, nullptr,  0 },
+    { "validate-config",             2, nullptr,  0 },
     { "proxy-threads",               1, nullptr,  0 },
 
     // Deprecated or not supported
@@ -265,7 +273,14 @@ static void parse_options(int argc,
         }
       } else if (strcmp("validate-config",
                         long_options[long_index].name) == 0) {
-        *validate_configs = 1;
+        if (!optarg || strcmp(optarg, "exit") == 0) {
+          *validate_configs = ValidateConfigMode::EXIT;
+        } else if (strcmp(optarg, "run") == 0) {
+          *validate_configs = ValidateConfigMode::RUN;
+        } else {
+          LOG(ERROR) << "Invalid argument for --validate-config: '"
+                     << optarg << "'. Ignoring the option.";
+        }
       } else if (strcmp("retry-timeout",
                         long_options[long_index].name) == 0) {
         LOG(WARNING) << "--retry-timeout is deprecated, use"
@@ -322,7 +337,7 @@ static void raise_fdlimit() {
   struct rlimit rlim;
   if (getrlimit(RLIMIT_NOFILE, &rlim) == -1) {
     perror("Failed to getrlimit RLIMIT_NOFILE");
-    exit(EXIT_STATUS_TRANSIENT_ERROR);
+    exit(kExitStatusTransientError);
   }
   if (rlim.rlim_cur < standaloneOpts.fdlimit) {
     rlim.rlim_cur = standaloneOpts.fdlimit;
@@ -341,7 +356,7 @@ static void raise_fdlimit() {
     perror("Warning: failed to setrlimit RLIMIT_NOFILE");
     if (getuid() == 0) {
       // if it fails for root, something is seriously wrong
-      exit(EXIT_STATUS_TRANSIENT_ERROR);
+      exit(kExitStatusTransientError);
     }
   }
 }
@@ -387,7 +402,7 @@ int main(int argc, char **argv) {
   unordered_map<string, string> option_dict, st_option_dict,
     cmdline_option_dict, cmdline_st_option_dict;
   unordered_set<string> unrecognized_options;
-  int validate_configs = 0;
+  ValidateConfigMode validate_configs{ValidateConfigMode::NONE};
   std::string flavor;
 
   parse_options(argc, argv, cmdline_option_dict, cmdline_st_option_dict,
@@ -469,7 +484,7 @@ int main(int argc, char **argv) {
   notify_command_line(argc, argv);
 
   if (!validate_options()) {
-    print_usage_and_die(argv[0], EXIT_STATUS_UNRECOVERABLE_ERROR);
+    print_usage_and_die(argv[0], kExitStatusUnrecoverableError);
   }
 
   LOG(INFO) << MCROUTER_PACKAGE_STRING << " startup (" << getpid() << ")";
@@ -492,24 +507,26 @@ int main(int argc, char **argv) {
    */
   mc_msg_use_atomic_refcounts(0);
 
-  if (validate_configs) {
+  if (validate_configs != ValidateConfigMode::NONE) {
     failure::addHandler(failure::handlers::throwLogicError());
 
-    try {
-      auto router = McrouterInstance::init("standalone-validate", opts);
-      if (router == nullptr) {
-        throw std::runtime_error("Couldn't create mcrouter");
+    if (validate_configs == ValidateConfigMode::EXIT) {
+      try {
+        auto router = McrouterInstance::init("standalone-validate", opts);
+        if (router == nullptr) {
+          throw std::runtime_error("Couldn't create mcrouter");
+        }
+      } catch (const std::exception& e) {
+        LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter: " << e.what();
+        exit(kExitStatusUnrecoverableError);
+      } catch (...) {
+        LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter";
+        exit(kExitStatusUnrecoverableError);
       }
-    } catch (const std::exception& e) {
-      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter: " << e.what();
-      exit(EXIT_STATUS_UNRECOVERABLE_ERROR);
-    } catch (...) {
-      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter";
-      exit(EXIT_STATUS_UNRECOVERABLE_ERROR);
-    }
 
-    /* Exit immediately with good code */
-    _exit(0);
+      /* Exit immediately with good code */
+      _exit(0);
+    }
   }
 
   raise_fdlimit();
@@ -518,6 +535,6 @@ int main(int argc, char **argv) {
 
   set_standalone_args(commandArgs);
   if (!runServer(standaloneOpts, opts)) {
-    exit(EXIT_STATUS_TRANSIENT_ERROR);
+    exit(kExitStatusTransientError);
   }
 }
