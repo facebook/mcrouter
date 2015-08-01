@@ -149,11 +149,7 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
       queue_.markAsPending(req);
       scheduleNextWriterLoop();
       if (connectionState_ == ConnectionState::DOWN) {
-        // attempConnection may use a lot of stack memory, thus we need to run
-        // it on a main context.
-        folly::fibers::runInMainContext([this] {
-          attemptConnection();
-        });
+        attemptConnection();
       }
       return;
     case McSerializedRequest::Result::BAD_KEY:
@@ -339,59 +335,63 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 } // anonymous namespace
 
 void AsyncMcClientImpl::attemptConnection() {
-  assert(connectionState_ == ConnectionState::DOWN);
+  // We may use a lot of stack memory (e.g. hostname resolution) or some
+  // expensive SSL code. This should be always executed on main context.
+  folly::fibers::runInMainContext([this] {
+    assert(connectionState_ == ConnectionState::DOWN);
 
-  connectionState_ = ConnectionState::CONNECTING;
+    connectionState_ = ConnectionState::CONNECTING;
 
-  if (connectionOptions_.noNetwork) {
-    socket_.reset(new MockMcClientTransport(eventBase_));
-    connectSuccess();
-    return;
-  }
-
-  if (connectionOptions_.sslContextProvider) {
-    auto sslContext = connectionOptions_.sslContextProvider();
-    if (!sslContext) {
-      LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
-        "SSLContext provider returned nullptr, check SSL certificates. Any "
-        "further request to {} will fail.",
-        connectionOptions_.accessPoint.toHostPortString());
-      connectErr(folly::AsyncSocketException(
-                   folly::AsyncSocketException::SSL_ERROR, ""));
+    if (connectionOptions_.noNetwork) {
+      socket_.reset(new MockMcClientTransport(eventBase_));
+      connectSuccess();
       return;
     }
-    socket_.reset(new folly::AsyncSSLSocket(
-      sslContext, &eventBase_));
-  } else {
-    socket_.reset(new folly::AsyncSocket(&eventBase_));
-  }
 
-  auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
+    if (connectionOptions_.sslContextProvider) {
+      auto sslContext = connectionOptions_.sslContextProvider();
+      if (!sslContext) {
+        LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
+          "SSLContext provider returned nullptr, check SSL certificates. Any "
+          "further request to {} will fail.",
+          connectionOptions_.accessPoint.toHostPortString());
+        connectErr(folly::AsyncSocketException(
+                     folly::AsyncSocketException::SSL_ERROR, ""));
+        return;
+      }
+      socket_.reset(new folly::AsyncSSLSocket(
+        sslContext, &eventBase_));
+    } else {
+      socket_.reset(new folly::AsyncSocket(&eventBase_));
+    }
 
-  folly::SocketAddress address;
-  try {
-    address = folly::SocketAddress(
-      connectionOptions_.accessPoint.getHost(),
-      connectionOptions_.accessPoint.getPort(),
-      /* allowNameLookup */ true);
-  } catch (const std::system_error& e) {
-    LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
-                "{}", e.what());
-    connectErr(folly::AsyncSocketException(
-                   folly::AsyncSocketException::NOT_OPEN, ""));
-    return;
-  }
+    auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
 
-  auto socketOptions = createSocketOptions(address, connectionOptions_);
+    folly::SocketAddress address;
+    try {
+      address = folly::SocketAddress(
+        connectionOptions_.accessPoint.getHost(),
+        connectionOptions_.accessPoint.getPort(),
+        /* allowNameLookup */ true);
+    } catch (const std::system_error& e) {
+      LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
+                  "{}", e.what());
+      connectErr(folly::AsyncSocketException(
+                     folly::AsyncSocketException::NOT_OPEN, ""));
+      return;
+    }
 
-  socket.setSendTimeout(connectionOptions_.writeTimeout.count());
-  socket.connect(this, address, connectionOptions_.writeTimeout.count(),
-                 socketOptions);
+    auto socketOptions = createSocketOptions(address, connectionOptions_);
 
-  // If AsyncSocket::connect() fails, socket_ may have been reset
-  if (socket_ && connectionOptions_.enableQoS) {
-    checkWhetherQoSIsApplied(address, socket.getFd(), connectionOptions_);
-  }
+    socket.setSendTimeout(connectionOptions_.writeTimeout.count());
+    socket.connect(this, address, connectionOptions_.writeTimeout.count(),
+                   socketOptions);
+
+    // If AsyncSocket::connect() fails, socket_ may have been reset
+    if (socket_ && connectionOptions_.enableQoS) {
+      checkWhetherQoSIsApplied(address, socket.getFd(), connectionOptions_);
+    }
+  });
 }
 
 void AsyncMcClientImpl::connectSuccess() noexcept {
