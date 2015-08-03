@@ -9,6 +9,8 @@
  */
 #include "McRouteHandleProvider.h"
 
+#include <memory>
+
 #include <folly/Range.h>
 
 #include "mcrouter/ClientPool.h"
@@ -25,6 +27,7 @@
 #include "mcrouter/routes/ShadowRouteIf.h"
 #include "mcrouter/routes/ShardHashFunc.h"
 #include "mcrouter/routes/ShardSplitter.h"
+#include "mcrouter/routes/SlowWarmUpRouteSettings.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -122,6 +125,11 @@ McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
 
 McrouterRouteHandlePtr makeWarmUpRoute(McRouteHandleFactory& factory,
                                        const folly::dynamic& json);
+
+McrouterRouteHandlePtr makeSlowWarmUpRoute(
+    McrouterRouteHandlePtr target,
+    McrouterRouteHandlePtr failoverTarget,
+    std::shared_ptr<SlowWarmUpRouteSettings> settings);
 
 McRouteHandleProvider::McRouteHandleProvider(
   proxy_t* proxy,
@@ -237,6 +245,31 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
                                                   maxOutstanding);
         }
       }
+    }
+  }
+
+  if (json.isObject() && json.count("slow_warmup")) {
+    auto& slowWarmUpJson = json["slow_warmup"];
+    checkLogic(slowWarmUpJson.isObject(), "SlowWarmUp: must be a json object");
+
+    auto failoverTargetJson = slowWarmUpJson.get_ptr("failoverTarget");
+    checkLogic(failoverTargetJson,
+        "SlowWarmUp: Couldn't find 'failoverTarget' property.");
+    auto failoverTarget = factory.create(*failoverTargetJson);
+
+    std::shared_ptr<SlowWarmUpRouteSettings> slowWarmUpSettings;
+    if (auto settingsJson = slowWarmUpJson.get_ptr("settings")) {
+      checkLogic(settingsJson->isObject(),
+          "SlowWarmUp: 'settings' must be a json object.");
+      slowWarmUpSettings =
+        std::make_shared<SlowWarmUpRouteSettings>(*settingsJson);
+    } else {
+      slowWarmUpSettings = std::make_shared<SlowWarmUpRouteSettings>();
+    }
+
+    for (size_t i = 0; i < destinations.size(); ++i) {
+      destinations[i] = makeSlowWarmUpRoute(std::move(destinations[i]),
+          failoverTarget, slowWarmUpSettings);
     }
   }
 
