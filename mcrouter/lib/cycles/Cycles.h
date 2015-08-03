@@ -125,4 +125,9 @@ void startExtracting(std::function<void(CycleStats)> func);
  */
 void stopExtracting();
 
+/**
+ * Sets the clock to use for cycles measumenet.
+ */
+void setClock(std::unique_ptr<Clock> clk);
+
 }}} // namespace facebook::memcache::cycles

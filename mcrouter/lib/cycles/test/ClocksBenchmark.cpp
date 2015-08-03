@@ -15,13 +15,15 @@
 #include "mcrouter/lib/cycles/Clocks.h"
 
 using facebook::memcache::cycles::CyclesClock;
+using facebook::memcache::cycles::RUsageClock;
 
 CyclesClock cyclesClock;
+RUsageClock rusageClock;
 std::chrono::steady_clock steadyClock;
 
 BENCHMARK(CyclesClock, n) {
   while (n--) {
-    auto t = cyclesClock.ticks();
+    auto t = cyclesClock.read().ticks;
     folly::doNotOptimizeAway(t);
   }
 }
@@ -33,14 +35,22 @@ BENCHMARK_RELATIVE(steady_clock, n) {
   }
 }
 
+BENCHMARK_RELATIVE(RUsageClock, n) {
+  while (n--) {
+    auto t = rusageClock.read().ticks;
+    folly::doNotOptimizeAway(t);
+  }
+}
+
 /**
  * --bm_min_iters=1000000
  *
  * ============================================================================
  * ClocksBenchmark.cpp                             relative  time/iter  iters/s
  * ============================================================================
- * CyclesClock                                                  9.02ns  110.88M
- * steady_clock                                      37.59%    23.99ns   41.68M
+ * CyclesClock                                                  9.01ns  110.95M
+ * steady_clock                                      37.56%    24.00ns   41.67M
+ * RUsageClock                                        4.88%   184.67ns    5.42M
  * ============================================================================
  */
 

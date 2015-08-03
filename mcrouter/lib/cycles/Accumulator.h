@@ -20,10 +20,14 @@ class EventBase;
 
 namespace facebook { namespace memcache { namespace cycles { namespace detail {
 
-// Represents a sample
+/**
+ * Represents a sample - formed by one or more Intervals related to the
+ * same label/request.
+ */
 struct Sample {
   IntervalLabel label{0, 0};
   uint64_t length{0};
+  uint64_t contextSwitches{0};
   size_t numIntervals{0};
 };
 

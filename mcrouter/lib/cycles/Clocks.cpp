@@ -10,6 +10,8 @@
 #include "Clocks.h"
 
 #include <chrono>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 namespace facebook { namespace memcache { namespace cycles {
 
@@ -32,8 +34,14 @@ inline uint64_t rdtsc() {
 
 } // anonymous namespace
 
-uint64_t CyclesClock::ticks() const {
-  return rdtsc();
+Metering CyclesClock::read() const {
+  return Metering{rdtsc(), 0};
+}
+
+Metering RUsageClock::read() const {
+  rusage res;
+  getrusage(RUSAGE_THREAD, &res);
+  return Metering{rdtsc(), (uint64_t)res.ru_nvcsw + res.ru_nivcsw};
 }
 
 }}} // namespace facebook::memcache::cycles

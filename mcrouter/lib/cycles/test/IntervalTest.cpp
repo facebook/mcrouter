@@ -11,18 +11,23 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/cycles/Interval.h"
 
+using namespace facebook::memcache::cycles;
 using namespace facebook::memcache::cycles::detail;
 
 TEST(Interval, basic) {
   const uint64_t length = 123;
+  const uint64_t contextSwitches = 3;
   const size_t reqType = 1;
   const uint64_t reqId = 2;
 
-  Interval interval(length, IntervalLabel(reqType, reqId));
+  Interval interval(Metering{length, contextSwitches},
+                    IntervalLabel(reqType, reqId));
 
   EXPECT_EQ(length, interval.length());
+  EXPECT_EQ(contextSwitches, interval.contextSwitches());
   EXPECT_EQ(reqType, interval.label().requestType());
   EXPECT_EQ(reqId, interval.label().requestId());
 }
