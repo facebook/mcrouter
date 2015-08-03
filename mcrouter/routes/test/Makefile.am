@@ -7,6 +7,7 @@ mcrouter_routes_test_SOURCES = \
   Main.cpp \
   RateLimitRouteTest.cpp \
   ShadowRouteTest.cpp \
+  SlowWarmUpRouteTest.cpp \
   WarmUpRouteTest.cpp
 
 mcrouter_routes_test_CPPFLAGS = -I$(top_srcdir)/oss_include

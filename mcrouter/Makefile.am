@@ -155,6 +155,10 @@ libmcroutercore_a_SOURCES = \
   routes/ShardSplitRoute.h \
   routes/ShardSplitter.cpp \
   routes/ShardSplitter.h \
+  routes/SlowWarmUpRoute.cpp \
+  routes/SlowWarmupRoute.h \
+  routes/SlowWarmUpRouteSettings.cpp \
+  routes/SlowWarmupRouteSettings.h \
   routes/TimeProviderFunc.h \
   routes/WarmUpRoute.cpp \
   routes/WarmUpRoute.h \
