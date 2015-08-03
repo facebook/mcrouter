@@ -12,6 +12,8 @@
 #include <limits>
 #include <string>
 
+#include "mcrouter/lib/cycles/Clocks.h"
+
 namespace facebook { namespace memcache { namespace cycles {
 
 // Forward declarations
@@ -63,18 +65,26 @@ class Interval {
   /**
    * Constructs a labeled interval.
    *
-   * @param len   Duration of the interval.
-   * @param lbl   Label of this interval.
+   * @param metering      Holds the duration and the number of context switches
+   *                      of the interval.
+   * @param lbl           Label of this interval.
    */
-  Interval(uint64_t len, IntervalLabel lbl)
-    : length_(len)
+  Interval(Metering metering, IntervalLabel lbl)
+    : metering_(metering)
     , label_(std::move(lbl)) {}
 
   /**
    * Returns the duration of this interval
    */
   uint64_t length() const{
-    return length_;
+    return metering_.ticks;
+  }
+
+  /**
+   * Returns the number of context switches that happened during this interval.
+   */
+  uint64_t contextSwitches() const{
+    return metering_.contextSwitches;
   }
 
   /**
@@ -85,8 +95,9 @@ class Interval {
   }
 
  private:
-  // Length (duration) of this interval.
-  uint64_t length_{0};
+  // Holds the length (duration) and the number of context swtiches
+  // of this interval.
+  Metering metering_{0, 0};
 
   // Label (key) of this interval.
   IntervalLabel label_;

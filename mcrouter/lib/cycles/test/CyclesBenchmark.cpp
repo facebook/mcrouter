@@ -25,8 +25,8 @@ cycles::CyclesClock cyclesClock;
 BENCHMARK(CyclesClock, n) {
   cycles::startExtracting([](cycles::CycleStats){});
   while (n--) {
-    uint64_t startedAt = cyclesClock.ticks();
-    uint64_t length = cyclesClock.ticks() - startedAt;
+    uint64_t startedAt = cyclesClock.read().ticks;
+    uint64_t length = cyclesClock.read().ticks - startedAt;
 
     folly::doNotOptimizeAway(&length);
   }

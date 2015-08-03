@@ -40,7 +40,8 @@ void Accumulator::add(const Interval& interval) {
     inflightSamples_[idx].length += interval.length();
     inflightSamples_[idx].numIntervals++;
   } else {
-    if (inflightSamples_[idx].numIntervals != 0) {
+    if (inflightSamples_[idx].numIntervals != 0 &&
+        inflightSamples_[idx].contextSwitches == 0) {
       // Save previous sample
       if (numSamples_ < kMaxSamples) {
         samples_[numSamples_] = std::move(inflightSamples_[idx]);
