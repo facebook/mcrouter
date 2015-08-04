@@ -10,6 +10,7 @@
 #include "Clocks.h"
 
 #include <chrono>
+#include <stdexcept>
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -40,8 +41,12 @@ Metering CyclesClock::read() const {
 
 Metering RUsageClock::read() const {
   rusage res;
+#ifdef RUSAGE_THREAD
   getrusage(RUSAGE_THREAD, &res);
   return Metering{rdtsc(), (uint64_t)res.ru_nvcsw + res.ru_nivcsw};
+#else
+  throw std::runtime_error("RUSAGE_THREAD is not defined on this system.");
+#endif
 }
 
 }}} // namespace facebook::memcache::cycles
