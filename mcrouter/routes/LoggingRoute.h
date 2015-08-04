@@ -37,7 +37,9 @@ class LoggingRoute {
   template <class Operation, class Request>
   void traverse(const Request& req, Operation,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*child_, req, Operation());
+    if (child_) {
+      t(*child_, req, Operation());
+    }
   }
 
   template <class Operation, class Request>
@@ -54,26 +56,26 @@ class LoggingRoute {
     // Pull the IP (if available) out of the saved request
     auto& ctx = mcrouter::fiber_local::getSharedCtx();
     auto& ip = ctx->userIpAddress();
-    folly::StringPiece displayIp;
+    folly::StringPiece userIp;
     if (!ip.empty()) {
-      displayIp = folly::StringPiece(ip);
+      userIp = ip;
     } else {
-      displayIp = folly::StringPiece("N/A");
+      userIp = "N/A";
     }
 
     auto& callback = ctx->proxy().router().postprocessCallback();
     if (callback) {
       if (reply.isHit()) {
         callback(req.fullKey(), reply.flags(), reply.valueRangeSlow(),
-                 Operation::name, displayIp);
+                 Operation::name, userIp);
       }
     } else {
       LOG(INFO) << "request key: " << req.fullKey()
                 << " response: " << mc_res_to_string(reply.result())
-                << " responseLength: " << reply.value().length()
-                << " ip: " << displayIp;
+                << " responseLength: " << reply.value().computeChainDataLength()
+                << " user ip: " << userIp;
     }
-    return std::move(reply);
+    return reply;
   }
 
  private:

@@ -227,25 +227,6 @@ TEST(routeHandleTest, allMajorityTie) {
   }
 }
 
-TEST(routeHandleTest, allMajorityEmpty) {
-  TestFiberManager fm;
-
-  vector<std::shared_ptr<TestHandle>> test_handles;
-
-  TestRouteHandle<AllMajorityRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
-
-  fm.runAll(
-    {
-      [&]() {
-        auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
-
-        // Check that we got no result back
-        EXPECT_TRUE(reply.result() == mc_res_notfound);
-      }
-    });
-}
-
 TEST(routeHandleTest, allFastest) {
   TestFiberManager fm;
 

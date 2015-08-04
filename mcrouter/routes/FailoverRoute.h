@@ -16,7 +16,6 @@
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 
@@ -44,15 +43,12 @@ class FailoverRoute {
       : targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)),
         failoverTagging_(failoverTagging) {
+    assert(targets_.size() > 1);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
-
-    if (targets_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
-    }
 
     auto reply = targets_[0]->route(req, Operation());
     if (fiber_local::getSharedCtx()->failoverDisabled() ||

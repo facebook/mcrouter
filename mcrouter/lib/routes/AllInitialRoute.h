@@ -13,13 +13,11 @@
 #include <string>
 #include <vector>
 
-#include <folly/Memory.h>
 #include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllAsyncRoute.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
 
@@ -36,49 +34,33 @@ class AllInitialRoute {
   template <class Operation, class Request>
   void traverse(const Request& req, Operation,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    if (firstChild_) {
-      t(*firstChild_, req, Operation());
-    }
-
-    if (asyncRoute_) {
-      asyncRoute_->traverse(req, Operation(), t);
-    }
+    t(*firstChild_, req, Operation());
+    asyncRoute_.traverse(req, Operation(), t);
   }
 
-  explicit AllInitialRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh) {
-    if (rh.empty()) {
-      return;
-    }
-
-    firstChild_ = *rh.begin();
-
-    if (rh.size() > 1) {
-      asyncRoute_ = folly::make_unique<AllAsyncRoute<RouteHandleIf>>(
-        std::vector<std::shared_ptr<RouteHandleIf>>(rh.begin() + 1,
-                                                    rh.end()));
-    }
+  explicit AllInitialRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
+      : firstChild_(getFirstAndCheck(rh)),
+        asyncRoute_(std::vector<std::shared_ptr<RouteHandleIf>>(
+          rh.begin() + 1, rh.end())) {
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    // no children at all
-    if (!firstChild_) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
-    }
-
-    /* Process all children except first asynchronously */
-    if (asyncRoute_) {
-      asyncRoute_->route(req, Operation());
-    }
-
+    asyncRoute_.route(req, Operation());
     return firstChild_->route(req, Operation());
   }
 
  private:
-  std::shared_ptr<RouteHandleIf> firstChild_;
-  std::unique_ptr<AllAsyncRoute<RouteHandleIf>> asyncRoute_;
+  const std::shared_ptr<RouteHandleIf> firstChild_;
+  const AllAsyncRoute<RouteHandleIf> asyncRoute_;
+
+  static std::shared_ptr<RouteHandleIf>
+  getFirstAndCheck(std::vector<std::shared_ptr<RouteHandleIf>>& rh) {
+    assert(rh.size() > 1);
+    return std::move(rh[0]);
+  }
 };
 
 }}
