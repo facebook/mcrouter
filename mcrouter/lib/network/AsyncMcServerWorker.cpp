@@ -107,7 +107,7 @@ void AsyncMcServerWorker::addClientSocket(
   socket->setNoDelay(true);
   int fd = socket->getFd();
 
-  auto &session = McServerSession::create(
+  auto& session = McServerSession::create(
     std::move(socket),
     onRequest_,
     [this, fd] (McServerSession& session) {

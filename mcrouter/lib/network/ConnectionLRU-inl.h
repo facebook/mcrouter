@@ -13,7 +13,7 @@ namespace facebook { namespace memcache {
 
 template <typename T>
 ConnectionLRU<T>::ConnectionLRU(ConnectionLRUOptions opts)
-  : opts_{opts},
+  : opts_{std::move(opts)},
   map_(opts.maxConns + 1) {
 }
 
