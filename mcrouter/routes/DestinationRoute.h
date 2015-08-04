@@ -14,10 +14,10 @@
 #include <string>
 #include <vector>
 
+#include <folly/experimental/fibers/FiberManager.h>
 #include <folly/Memory.h>
 #include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
-#include <folly/experimental/fibers/FiberManager.h>
 
 #include "mcrouter/ClientPool.h"
 #include "mcrouter/config-impl.h"
@@ -88,7 +88,8 @@ class DestinationRoute {
                 typename DeleteLike<Operation>::Type = 0) const {
     auto reply = routeImpl(req, Operation());
     if (reply.isFailoverError() && spool(req)) {
-      return McReply(DefaultReply, Operation());
+      reply = McReply(DefaultReply, Operation());
+      reply.setDestination(client_->ap);
     }
     return reply;
   }
@@ -103,21 +104,26 @@ class DestinationRoute {
   McReply routeImpl(const McRequest& req, McOperation<Op>) const {
     auto& ctx = fiber_local::getSharedCtx();
     auto now = nowUs();
+    McReply reply(ErrorReply);
+    SCOPE_EXIT {
+      reply.setDestination(client_->ap);
+    };
 
     if (!destination_->may_send()) {
-      McReply reply(TkoReply);
+      reply = McReply(TkoReply);
       ctx->onReplyReceived(*client_,
-                     req,
-                     reply,
-                     now,
-                     now,
-                     McOperation<Op>());
+                           req,
+                           reply,
+                           now,
+                           now,
+                           McOperation<Op>());
       return reply;
     }
 
     if (ctx->recording()) {
       ctx->recordDestination(*client_);
-      return McReply(DefaultReply, McOperation<Op>());
+      reply = McReply(DefaultReply, McOperation<Op>());
+      return reply;
     }
 
     auto proxy = &ctx->proxy();
@@ -126,27 +132,25 @@ class DestinationRoute {
       if (proxy->router().opts().target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >=
           proxy->router().opts().target_max_shadow_requests) {
-        McReply reply(ErrorReply);
+        reply = McReply(ErrorReply);
         ctx->onReplyReceived(*client_,
-                       req,
-                       reply,
-                       now,
-                       now,
-                       McOperation<Op>());
+                             req,
+                             reply,
+                             now,
+                             now,
+                             McOperation<Op>());
         return reply;
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
       ++mutableCounter;
     }
 
-    auto shadowReqsCountGuard = folly::makeGuard([this, &req, requestClass]() {
+    SCOPE_EXIT {
       if (requestClass == RequestClass::SHADOW) {
         auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
         --mutableCounter;
       }
-    });
-
-    auto& destination = destination_;
+    };
 
     DestinationRequestCtx dctx(now);
     folly::Optional<McRequest> newReq;
@@ -167,8 +171,8 @@ class DestinationRoute {
     }
 
     const McRequest& reqToSend = newReq ? *newReq : req;
-    auto reply = destination->send(reqToSend, McOperation<Op>(), dctx,
-                                   client_->server_timeout);
+    reply = destination_->send(reqToSend, McOperation<Op>(), dctx,
+                               client_->server_timeout);
     ctx->onReplyReceived(*client_,
                          req,
                          reply,

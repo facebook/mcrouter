@@ -22,6 +22,7 @@
 
 namespace facebook { namespace memcache {
 
+class AccessPoint;
 class McReply;
 
 namespace detail {
@@ -204,6 +205,14 @@ class McReply {
                                  : folly::StringPiece();
   }
 
+  const std::shared_ptr<const AccessPoint>& destination() const {
+    return destination_;
+  }
+
+  void setDestination(std::shared_ptr<const AccessPoint> ap) {
+    destination_ = std::move(ap);
+  }
+
   uint32_t appSpecificErrorCode() const {
     return errCode_;
   }
@@ -313,6 +322,7 @@ class McReply {
   McMsgRef msg_;
   mc_res_t result_{mc_res_unknown};
   mutable folly::Optional<folly::IOBuf> valueData_;
+  std::shared_ptr<const AccessPoint> destination_;
   uint64_t flags_{0};
   uint64_t leaseToken_{0};
   uint64_t delta_{0};
