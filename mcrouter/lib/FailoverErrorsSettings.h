@@ -34,14 +34,29 @@ class FailoverErrorsSettings {
   explicit FailoverErrorsSettings(const folly::dynamic& json);
 
   template <class Operation>
-  bool shouldFailover(const McReply& reply, Operation) const {
-    if (GetLike<Operation>::value) {
-      return gets_.shouldFailover(reply);
-    } else if (UpdateLike<Operation>::value) {
-      return updates_.shouldFailover(reply);
-    } else if (DeleteLike<Operation>::value) {
-      return deletes_.shouldFailover(reply);
-    }
+  bool shouldFailover(const McReply& reply, Operation,
+                      typename DeleteLike<Operation>::Type = 0) const {
+    return deletes_.shouldFailover(reply);
+  }
+
+  template <class Operation>
+  bool shouldFailover(const McReply& reply, Operation,
+                      typename GetLike<Operation>::Type = 0) const {
+    return gets_.shouldFailover(reply);
+  }
+
+  template <class Operation>
+  bool shouldFailover(const McReply& reply, Operation,
+                      typename UpdateLike<Operation>::Type = 0) const {
+    return updates_.shouldFailover(reply);
+  }
+
+  template <class Operation>
+  bool shouldFailover(const McReply& reply, Operation,
+                      OtherThanT(Operation,
+                                 DeleteLike<>,
+                                 GetLike<>,
+                                 UpdateLike<>) = 0) const {
     return reply.isFailoverError();
   }
 

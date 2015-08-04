@@ -7,52 +7,61 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "FailoverWithExptimeRoute.h"
-
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/ModifyExptimeRoute.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeNullRoute();
+namespace {
+
+std::vector<McrouterRouteHandlePtr> getFailoverChildren(
+    McrouterRouteHandlePtr normal,
+    std::vector<McrouterRouteHandlePtr> failover,
+    int32_t failoverExptime) {
+
+  std::vector<McrouterRouteHandlePtr> children;
+  children.push_back(std::move(normal));
+  for (auto& frh : failover) {
+    auto rh = std::make_shared<McrouterRouteHandle<ModifyExptimeRoute>>(
+        std::move(frh), failoverExptime, ModifyExptimeRoute::Action::Min);
+    children.push_back(std::move(rh));
+  }
+  return children;
+}
+
+}  // anonymous
+
+McrouterRouteHandlePtr makeFailoverRoute(
+    const folly::dynamic& json,
+    std::vector<McrouterRouteHandlePtr> children);
+
+McrouterRouteHandlePtr makeFailoverRoute(
+    std::vector<McrouterRouteHandlePtr> rh,
+    FailoverErrorsSettings failoverErrors,
+    bool failoverTagging);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-  McrouterRouteHandlePtr normalTarget,
-  std::vector<McrouterRouteHandlePtr> failoverTargets,
-  int32_t failoverExptime,
-  FailoverErrorsSettings failoverErrors,
-  bool failoverTagging) {
-
-  if (!normalTarget) {
-    return makeNullRoute();
-  }
-
-  if (failoverTargets.empty()) {
-    return std::move(normalTarget);
-  }
-
-  return std::make_shared<McrouterRouteHandle<FailoverWithExptimeRoute>>(
-    std::move(normalTarget),
-    std::move(failoverTargets),
-    failoverExptime,
-    std::move(failoverErrors),
-    failoverTagging);
+    McrouterRouteHandlePtr normal,
+    std::vector<McrouterRouteHandlePtr> failover,
+    int32_t failoverExptime,
+    FailoverErrorsSettings failoverErrors) {
+  auto children = getFailoverChildren(std::move(normal),
+                                      std::move(failover),
+                                      failoverExptime);
+  return makeFailoverRoute(std::move(children),
+                           std::move(failoverErrors),
+                           /* failoverTagging */ false);
 }
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "FailoverWithExptimeRoute is not an object");
-
-  McrouterRouteHandlePtr normal;
-  if (auto jnormal = json.get_ptr("normal")) {
-    normal = factory.create(*jnormal);
-  }
-
-  std::vector<McrouterRouteHandlePtr> failoverTargets;
-  if (auto jfailover = json.get_ptr("failover")) {
-    failoverTargets = factory.createList(*jfailover);
-  }
+  auto jnormal = json.get_ptr("normal");
+  checkLogic(jnormal, "FailoverWithExptimeRoute: normal not found");
+  auto normal = factory.create(*jnormal);
 
   int32_t failoverExptime = 60;
   if (auto jexptime = json.get_ptr("failover_exptime")) {
@@ -61,23 +70,15 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     failoverExptime = jexptime->getInt();
   }
 
-  FailoverErrorsSettings failoverErrors;
-  bool failoverTagging = false;
-  if (auto jfailoverTag = json.get_ptr("failover_tag")) {
-    checkLogic(jfailoverTag->isBool(),
-               "FailoverWithExptime: failover_tag is not bool");
-    failoverTagging = jfailoverTag->getBool();
-  }
-  if (auto jfailoverErrors = json.get_ptr("failover_errors")) {
-    failoverErrors = FailoverErrorsSettings(*jfailoverErrors);
+  std::vector<McrouterRouteHandlePtr> failover;
+  if (auto jfailover = json.get_ptr("failover")) {
+    failover = factory.createList(*jfailover);
   }
 
-  return makeFailoverWithExptimeRoute(
-    std::move(normal),
-    std::move(failoverTargets),
-    failoverExptime,
-    std::move(failoverErrors),
-    failoverTagging);
+  auto children = getFailoverChildren(std::move(normal),
+                                      std::move(failover),
+                                      failoverExptime);
+  return makeFailoverRoute(json, std::move(children));
 }
 
 }}}  // facebook::memcache::mcrouter

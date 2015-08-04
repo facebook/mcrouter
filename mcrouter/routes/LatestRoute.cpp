@@ -7,35 +7,37 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "LatestRoute.h"
-
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/FailoverErrorsSettings.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeNullRoute();
+McrouterRouteHandlePtr makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
+                                         FailoverErrorsSettings failoverErrors,
+                                         bool failoverTagging);
 
 McrouterRouteHandlePtr makeLatestRoute(
   std::vector<McrouterRouteHandlePtr> targets,
   size_t failoverCount,
   FailoverErrorsSettings failoverErrors) {
 
-  if (targets.empty() || failoverCount == 0) {
-    return makeNullRoute();
+  std::vector<McrouterRouteHandlePtr> failovers;
+  failoverCount = std::min(failoverCount, targets.size());
+  size_t curHash = folly::hash::hash_combine(0, globals::hostid());
+  for (size_t i = 0; i < failoverCount; ++i) {
+    auto id = curHash % targets.size();
+    failovers.push_back(std::move(targets[id]));
+    std::swap(targets[id], targets[targets.size() - 1]);
+    targets.pop_back();
+    curHash = folly::hash::hash_combine(curHash, i);
   }
-
-  if (targets.size() == 1) {
-    return std::move(targets[0]);
-  }
-
-  return makeMcrouterRouteHandle<LatestRoute>(
-    std::move(targets),
-    failoverCount,
-    std::move(failoverErrors));
+  return makeFailoverRoute(std::move(failovers), std::move(failoverErrors),
+                           /* failoverTagging */ false);
 }
 
 McrouterRouteHandlePtr makeLatestRoute(

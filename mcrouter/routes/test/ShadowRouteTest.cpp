@@ -13,14 +13,10 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
-#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
+#include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -28,23 +24,6 @@ using namespace facebook::memcache::mcrouter;
 using std::make_shared;
 using std::string;
 using std::vector;
-
-using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
-
-namespace {
-
-McrouterInstance* getRouter() {
-  McrouterOptions opts = defaultTestOptions();
-  opts.config_str = "{ \"route\": \"NullRoute\" }";
-  return McrouterInstance::init("test_shadow", opts);
-}
-
-std::shared_ptr<ProxyRequestContext> getContext() {
-  return ProxyRequestContext::createRecording(*getRouter()->getProxy(0),
-                                              nullptr);
-}
-
-}  // anonymous namespace
 
 TEST(shadowRouteTest, defaultPolicy) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
@@ -61,7 +40,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   auto settings = ShadowSettings::create(
       folly::dynamic::object("index_range", folly::dynamic{ 0, 1 }),
-      *getRouter());
+      *getTestRouter());
 
   auto shadowRhs = get_route_handles(shadowHandles);
   McrouterShadowData shadowData{
@@ -74,9 +53,8 @@ TEST(shadowRouteTest, defaultPolicy) {
     std::move(shadowData),
     DefaultShadowPolicy());
 
-  auto ctx = getContext();
   fm.run([&] () {
-    fiber_local::setSharedCtx(ctx);
+    mockFiberContext();
     auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
 
     EXPECT_TRUE(reply.result() == mc_res_found);
@@ -88,7 +66,7 @@ TEST(shadowRouteTest, defaultPolicy) {
   settings->setKeyRange(0, 1);
 
   fm.run([&] () {
-    fiber_local::setSharedCtx(ctx);
+    mockFiberContext();
     auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
 
     EXPECT_TRUE(reply.result() == mc_res_found);

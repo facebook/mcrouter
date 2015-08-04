@@ -13,31 +13,16 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
+#include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
-
-using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 
 namespace {
 
 std::string makeKey(uint64_t id) {
   return folly::sformat("test-key:{}", id);
-}
-
-std::shared_ptr<ProxyRequestContext> getContext(uint64_t senderId) {
-  McrouterOptions opts = defaultTestOptions();
-  opts.config_str = "{ \"route\": \"NullRoute\" }";
-  auto router = McrouterInstance::init("test_oustanding_limit", opts);
-  auto ctx = ProxyRequestContext::createRecording(*router->getProxy(0),
-                                                  nullptr);
-  ctx->setSenderIdForTest(senderId);
-  return ctx;
 }
 
 }  // anonymous namespace
@@ -47,7 +32,8 @@ void sendRequest(folly::fibers::FiberManager& fm,
                  size_t id,
                  uint64_t senderId,
                  std::vector<std::string>& replyOrder) {
-  auto context = getContext(senderId);
+  auto context = getTestContext();
+  context->setSenderIdForTest(senderId);
 
   fm.addTask([&rh, id, context, &replyOrder]() {
       McRequest request(makeKey(id));

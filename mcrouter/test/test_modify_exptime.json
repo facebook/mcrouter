@@ -20,6 +20,13 @@
       "c": {
         "type": "ModifyExptimeRoute",
         "target": "Pool|A",
+        "action": "set",
+        "exptime": 2
+      },
+      "d": {
+        "type": "ModifyExptimeRoute",
+        "target": "Pool|A",
+        "action": "min",
         "exptime": 2
       }
     }
