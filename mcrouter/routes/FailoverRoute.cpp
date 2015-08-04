@@ -19,10 +19,9 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute();
 
-McrouterRouteHandlePtr makeFailoverRoute(
-  std::vector<McrouterRouteHandlePtr> rh,
-  FailoverErrorsSettings failoverErrors) {
-
+McrouterRouteHandlePtr makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
+                                         FailoverErrorsSettings failoverErrors,
+                                         bool failoverTagging) {
   if (rh.empty()) {
     return makeNullRoute();
   }
@@ -32,25 +31,42 @@ McrouterRouteHandlePtr makeFailoverRoute(
   }
 
   return makeMcrouterRouteHandle<FailoverRoute>(std::move(rh),
-                                                std::move(failoverErrors));
+                                                std::move(failoverErrors),
+                                                failoverTagging);
+}
+
+McrouterRouteHandlePtr makeFailoverRoute(
+    const folly::dynamic& json,
+    std::vector<McrouterRouteHandlePtr> children) {
+
+  FailoverErrorsSettings failoverErrors;
+  bool failoverTagging = false;
+  if (json.isObject()) {
+    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
+      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
+    }
+    if (auto jfailoverTag = json.get_ptr("failover_tag")) {
+      checkLogic(jfailoverTag->isBool(),
+                 "FailoverWithExptime: failover_tag is not bool");
+      failoverTagging = jfailoverTag->getBool();
+    }
+  }
+  return makeFailoverRoute(std::move(children), std::move(failoverErrors),
+                           failoverTagging);
 }
 
 McrouterRouteHandlePtr makeFailoverRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
   std::vector<McrouterRouteHandlePtr> children;
-  FailoverErrorsSettings failoverErrors;
   if (json.isObject()) {
     if (auto jchildren = json.get_ptr("children")) {
       children = factory.createList(*jchildren);
     }
-    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
-      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
-    }
   } else {
     children = factory.createList(json);
   }
-  return makeFailoverRoute(std::move(children), std::move(failoverErrors));
+  return makeFailoverRoute(json, std::move(children));
 }
 
 }}}  // facebook::memcache::mcrouter

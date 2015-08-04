@@ -45,3 +45,14 @@ class TestModifyExptime(McrouterTestCase):
 
         self.assertIsNone(self.mc.get("c"))
         self.assertIsNone(self.mcr.get("c"))
+
+    def test_modify_min_exptime(self):
+        self.assertTrue(self.mcr.set("d", "value"))
+        self.assertEqual(self.mc.get("d"), "value")
+        self.assertEqual(self.mcr.get("d"), "value")
+
+        # wait for the value to expire
+        time.sleep(5)
+
+        self.assertIsNone(self.mc.get("d"))
+        self.assertIsNone(self.mcr.get("d"))

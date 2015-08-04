@@ -6,6 +6,8 @@ mcrouter_routes_test_SOURCES = \
   FailoverWithExptimeRouteTest.cpp \
   Main.cpp \
   RateLimitRouteTest.cpp \
+  RouteHandleTestUtil.cpp \
+  RouteHandleTestUtil.h \
   ShadowRouteTest.cpp \
   SlowWarmUpRouteTest.cpp \
   WarmUpRouteTest.cpp

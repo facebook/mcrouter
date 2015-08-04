@@ -13,14 +13,12 @@
 #include <string>
 #include <vector>
 
-#include <folly/dynamic.h>
-
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyRequestContext.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -40,12 +38,12 @@ class FailoverRoute {
     t(targets_, req, Operation());
   }
 
-  FailoverRoute() = default;
-
   FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
-                FailoverErrorsSettings failoverErrors)
+                FailoverErrorsSettings failoverErrors,
+                bool failoverTagging)
       : targets_(std::move(targets)),
-        failoverErrors_(std::move(failoverErrors)) {
+        failoverErrors_(std::move(failoverErrors)),
+        failoverTagging_(failoverTagging) {
   }
 
   template <class Operation, class Request>
@@ -57,12 +55,15 @@ class FailoverRoute {
     }
 
     auto reply = targets_[0]->route(req, Operation());
-    if (!failoverErrors_.shouldFailover(reply, Operation())) {
+    if (fiber_local::getSharedCtx()->failoverDisabled() ||
+        !failoverErrors_.shouldFailover(reply, Operation())) {
       return reply;
     }
 
     // Failover
-    return fiber_local::runWithLocals([this, &req]() {
+    bool needFailoverTag = failoverTagging_ && req.hasHashStop();
+    return fiber_local::runWithLocals([this, &req, needFailoverTag]() {
+      fiber_local::setFailoverTag(needFailoverTag);
       for (size_t i = 1; i + 1 < targets_.size(); ++i) {
         fiber_local::setRequestClass(RequestClass::FAILOVER);
         auto failoverReply = targets_[i]->route(req, Operation());
@@ -78,6 +79,7 @@ class FailoverRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const FailoverErrorsSettings failoverErrors_;
+  const bool failoverTagging_{false};
 };
 
 }}} // facebook::memcache::mcrouter
