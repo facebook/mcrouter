@@ -11,13 +11,11 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -25,11 +23,9 @@ using namespace facebook::memcache::mcrouter;
 TEST(RouteHandleFactoryTest, sanity) {
   TestFiberManager fm;
 
-  McrouterOptions opts = defaultTestOptions();
-  opts.config_str = "{ \"route\": \"NullRoute\" }";
-  auto router = McrouterInstance::init("test_rh_factory", opts);
+  auto router = getTestRouter();
   auto proxy = router->getProxy(0);
-  PoolFactory pf(folly::dynamic::object(), router->configApi(), opts);
+  PoolFactory pf(folly::dynamic::object(), router->configApi(), router->opts());
   McRouteHandleProvider provider(proxy, *proxy->destinationMap, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 
@@ -92,6 +88,14 @@ TEST(RouteHandleFactoryTest, sanity) {
   rh = factory.create("LatestRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
+    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    EXPECT_EQ(reply.result(), mc_res_notfound);
+  });
+
+  rh = factory.create("LoggingRoute");
+  EXPECT_TRUE(rh != nullptr);
+  fm.run([&rh]() {
+    mockFiberContext();
     auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });

@@ -38,6 +38,7 @@ class RandomRoute {
       : children_(std::move(children)),
         gen_(std::ranlux24_base(
               std::chrono::system_clock::now().time_since_epoch().count())) {
+    assert(!children_.empty());
   }
 
   template <class Operation, class Request>

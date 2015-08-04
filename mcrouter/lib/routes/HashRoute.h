@@ -20,7 +20,6 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
 
@@ -41,6 +40,7 @@ class HashRoute {
     : rh_(std::move(rh)),
       salt_(std::move(salt)),
       hashFunc_(std::move(hashFunc)) {
+    assert(!rh_.empty());
   }
 
   template <class Operation, class Request>
@@ -52,12 +52,7 @@ class HashRoute {
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
-
-    if (rh_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
-    } else {
-      return rh_[pickInMainContext(req)]->route(req, Operation());
-    }
+    return rh_[pickInMainContext(req)]->route(req, Operation());
   }
 
  private:

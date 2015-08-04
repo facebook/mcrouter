@@ -16,7 +16,6 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -41,15 +40,12 @@ class MissFailoverRoute {
   explicit MissFailoverRoute(
     std::vector<std::shared_ptr<RouteHandleIf>> targets)
       : targets_(std::move(targets)) {
+    assert(targets_.size() > 1);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type routeImpl(
     const Request& req, Operation) const {
-
-    if (targets_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
-    }
 
     auto reply = targets_[0]->route(req, Operation());
     if (reply.isHit()) {
@@ -90,9 +86,6 @@ class MissFailoverRoute {
     OtherThanT(Operation, GetLike<>, DeleteLike<>) = 0)
     const {
 
-    if (targets_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
-    }
     return targets_[0]->route(req, Operation());
   }
 

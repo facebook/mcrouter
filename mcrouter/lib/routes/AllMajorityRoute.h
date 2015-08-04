@@ -16,9 +16,9 @@
 #include <folly/experimental/fibers/AddTasks.h>
 
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook { namespace memcache {
 
@@ -42,6 +42,7 @@ class AllMajorityRoute {
 
   explicit AllMajorityRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
+    assert(!children_.empty());
   }
 
   template <class Operation, class Request>
@@ -49,14 +50,6 @@ class AllMajorityRoute {
     const Request& req, Operation) const {
 
     typedef typename ReplyType<Operation, Request>::type Reply;
-    if (children_.empty()) {
-      return NullRoute<RouteHandleIf>::route(req, Operation());
-    }
-
-    /* Short circuit if one destination */
-    if (children_.size() == 1) {
-      return children_.back()->route(req, Operation());
-    }
 
     std::vector<std::function<Reply()>> funcs;
     funcs.reserve(children_.size());
