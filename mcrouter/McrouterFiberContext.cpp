@@ -11,16 +11,18 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-folly::StringPiece getRequestClassString(RequestClass reqClass) {
-  switch (reqClass) {
-    case RequestClass::NORMAL:
-      return "normal";
-    case RequestClass::FAILOVER:
-      return "failover";
-    case RequestClass::SHADOW:
-      return "shadow";
+const RequestClass RequestClass::kFailover{0x1};
+const RequestClass RequestClass::kShadow{0x2};
+
+const char* RequestClass::toString() const {
+  if (is(RequestClass::kFailover) && is(RequestClass::kShadow)) {
+    return "failover|shadow";
+  } else if (is(RequestClass::kFailover)) {
+    return "failover";
+  } else if (is(RequestClass::kShadow)) {
+    return "shadow";
   }
-  CHECK(false) << "Unknown request class";
+  return "normal";
 }
 
 }}}  // facebook::memcache::mcrouter

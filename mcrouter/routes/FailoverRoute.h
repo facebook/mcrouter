@@ -60,14 +60,13 @@ class FailoverRoute {
     bool needFailoverTag = failoverTagging_ && req.hasHashStop();
     return fiber_local::runWithLocals([this, &req, needFailoverTag]() {
       fiber_local::setFailoverTag(needFailoverTag);
+      fiber_local::addRequestClass(RequestClass::kFailover);
       for (size_t i = 1; i + 1 < targets_.size(); ++i) {
-        fiber_local::setRequestClass(RequestClass::FAILOVER);
         auto failoverReply = targets_[i]->route(req, Operation());
         if (!failoverErrors_.shouldFailover(failoverReply, Operation())) {
           return failoverReply;
         }
       }
-      fiber_local::setRequestClass(RequestClass::FAILOVER);
       return targets_.back()->route(req, Operation());
     });
   }

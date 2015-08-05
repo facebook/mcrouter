@@ -88,7 +88,7 @@ class SlowWarmUpRoute {
     auto& proxy = fiber_local::getSharedCtx()->proxy();
     if (warmingUp() && !shouldSendRequest(proxy.randomGenerator)) {
       return fiber_local::runWithLocals([this, &req]() {
-        fiber_local::setRequestClass(RequestClass::FAILOVER);
+        fiber_local::addRequestClass(RequestClass::kFailover);
         return failoverTarget_->route(req, Operation());
       });
     }

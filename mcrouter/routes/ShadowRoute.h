@@ -79,7 +79,7 @@ class ShadowRoute {
             fiber_local::runWithLocals([&shadow, &shadowReq]() {
               // we don't want to spool shadow requests
               fiber_local::clearAsynclogName();
-              fiber_local::setRequestClass(RequestClass::SHADOW);
+              fiber_local::addRequestClass(RequestClass::kShadow);
               shadow->route(shadowReq, Operation());
             });
           });
