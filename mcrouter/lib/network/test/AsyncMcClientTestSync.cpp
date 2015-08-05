@@ -36,8 +36,7 @@ const char* kPemCaPath = "mcrouter/lib/network/test/ca_cert.pem";
 
 class ServerOnRequest {
  public:
-  ServerOnRequest(bool& shutdown,
-                  bool outOfOrder) :
+  ServerOnRequest(bool& shutdown, bool outOfOrder) :
       shutdown_(shutdown),
       outOfOrder_(outOfOrder) {
   }
@@ -117,7 +116,7 @@ class TestServer {
     opts_.worker.maxInFlight = maxInflight;
     opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
     opts_.worker.connLRUopts.maxConns =
-      (maxConns + opts_.numThreads - 1)/opts_.numThreads;
+      (maxConns + opts_.numThreads - 1) / opts_.numThreads;
     opts_.worker.connLRUopts.updateThreshold =
       std::chrono::milliseconds(updateThreshold);
     opts_.worker.connLRUopts.unreapableTime =
@@ -509,9 +508,9 @@ TEST(AsyncMcClient, outstandingThrottleSsl) {
 void connectionErrorTest(bool useSsl = false) {
   TestServer server(false, useSsl);
   TestClient client1("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+                     mc_ascii_protocol, useSsl);
   TestClient client2("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+                     mc_ascii_protocol, useSsl);
   client1.sendGet("shutdown", mc_res_notfound);
   client1.waitForReplies();
   /* sleep override */ usleep(10000);
@@ -819,21 +818,21 @@ TEST(AsyncMcClient, tonsOfConnections) {
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server.getListenPort(), 1,
                     mc_ascii_protocol);
-  client.setStatusCallbacks([]{}, [&wentDown](bool){wentDown = true;});
+  client.setStatusCallbacks([]{}, [&wentDown](bool) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
   TestClient client2("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
   TestClient client3("localhost", server.getListenPort(), 300,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
   TestClient client4("localhost", server.getListenPort(), 400,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client4.sendGet("test", mc_res_found);
   client4.waitForReplies();
 
@@ -861,21 +860,21 @@ TEST(AsyncMcClient, disableConnectionLRU) {
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server.getListenPort(), 1,
                     mc_ascii_protocol);
-  client.setStatusCallbacks([]{}, [&wentDown](bool){wentDown = true;});
+  client.setStatusCallbacks([]{}, [&wentDown](bool) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
   TestClient client2("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
   TestClient client3("localhost", server.getListenPort(), 300,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
   TestClient client4("localhost", server.getListenPort(), 400,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client4.sendGet("test", mc_res_found);
   client4.waitForReplies();
 
@@ -903,24 +902,26 @@ TEST(AsyncMcClient, testUnreapableTime) {
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server.getListenPort(), 1,
                     mc_ascii_protocol);
-  client.setStatusCallbacks([]{},
-                            [&firstWentDown](bool){firstWentDown = true;});
+  client.setStatusCallbacks([]{}, [&firstWentDown](bool) {
+    firstWentDown = true;
+  });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
   TestClient client2("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
   TestClient client3("localhost", server.getListenPort(), 300,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
   TestClient client4("localhost", server.getListenPort(), 400,
-                    mc_ascii_protocol);
-  client4.setStatusCallbacks([]{},
-                            [&lastWentDown](bool){lastWentDown = true;});
+                     mc_ascii_protocol);
+  client4.setStatusCallbacks([]{}, [&lastWentDown](bool) {
+    lastWentDown = true;
+  });
   /* Should be an error. */
   client4.sendGet("test", mc_res_remote_error);
   client4.waitForReplies();
@@ -952,19 +953,21 @@ TEST(AsyncMcClient, testUpdateThreshold) {
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server.getListenPort(), 1,
                     mc_ascii_protocol);
-  client.setStatusCallbacks([]{},
-                            [&firstWentDown](bool){firstWentDown = true;});
+  client.setStatusCallbacks([]{}, [&firstWentDown](bool) {
+    firstWentDown = true;
+  });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Now we can update the position of the first connection in the LRU. */
-  /* sleep override */ usleep(2000);
+  /* sleep override */ usleep(3000);
 
   /* Create a second client to see if it gets evicted. */
   TestClient client2("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol);
-  client2.setStatusCallbacks([]{},
-                            [&secondWentDown](bool){secondWentDown = true;});
+                     mc_ascii_protocol);
+  client2.setStatusCallbacks([]{}, [&secondWentDown](bool) {
+    secondWentDown = true;
+  });
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
 
@@ -978,7 +981,7 @@ TEST(AsyncMcClient, testUpdateThreshold) {
 
   /* Create a third connection to evict one of the first two. */
   TestClient client3("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol);
+                     mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
 
