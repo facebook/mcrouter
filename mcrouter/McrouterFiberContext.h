@@ -21,13 +21,33 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class ProxyClientCommon;
 class ProxyRequestContext;
 
-enum class RequestClass {
-  NORMAL,
-  FAILOVER,
-  SHADOW,
-};
+class RequestClass {
+ public:
+  static const RequestClass kFailover;
+  static const RequestClass kShadow;
 
-folly::StringPiece getRequestClassString(RequestClass reqClass);
+  constexpr RequestClass() {}
+
+  void add(RequestClass rc) {
+    mask_ |= rc.mask_;
+  }
+
+  bool is(RequestClass rc) const {
+    return (mask_ & rc.mask_) == rc.mask_;
+  }
+
+  bool isNormal() const {
+    return mask_ == 0;
+  }
+
+  const char* toString() const;
+ private:
+  explicit constexpr RequestClass(uint32_t value)
+    : mask_(value) {
+  }
+
+  uint32_t mask_{0};
+};
 
 namespace fiber_local { namespace detail {
 
@@ -36,7 +56,7 @@ struct McrouterFiberContext {
 
   folly::StringPiece asynclogName;
 
-  RequestClass requestClass{RequestClass::NORMAL};
+  RequestClass requestClass;
 
   bool failoverTag{false};
 };
@@ -89,10 +109,10 @@ inline const std::shared_ptr<ProxyRequestContext>& getSharedCtx() {
 }
 
 /**
- * Update RequestClass for current fiber (thread, if we're not on fiber)
+ * Add a RequestClass for current fiber (thread, if we're not on fiber)
  */
-inline void setRequestClass(RequestClass value) {
-  folly::fibers::local<detail::McrouterFiberContext>().requestClass = value;
+inline void addRequestClass(RequestClass value) {
+  folly::fibers::local<detail::McrouterFiberContext>().requestClass.add(value);
 }
 
 /**

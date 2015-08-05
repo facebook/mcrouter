@@ -128,7 +128,7 @@ class DestinationRoute {
 
     auto proxy = &ctx->proxy();
     auto requestClass = fiber_local::getRequestClass();
-    if (requestClass == RequestClass::SHADOW) {
+    if (requestClass.is(RequestClass::kShadow)) {
       if (proxy->router().opts().target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >=
           proxy->router().opts().target_max_shadow_requests) {
@@ -146,7 +146,7 @@ class DestinationRoute {
     }
 
     SCOPE_EXIT {
-      if (requestClass == RequestClass::SHADOW) {
+      if (requestClass.is(RequestClass::kShadow)) {
         auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
         --mutableCounter;
       }

@@ -54,14 +54,13 @@ class MissFailoverRoute {
 
     // Failover
     return fiber_local::runWithLocals([this, &req]() {
+      fiber_local::addRequestClass(RequestClass::kFailover);
       for (size_t i = 1; i < targets_.size() - 1; ++i) {
-        fiber_local::setRequestClass(RequestClass::FAILOVER);
         auto failoverReply = targets_[i]->route(req, Operation());
         if (failoverReply.isHit()) {
           return failoverReply;
         }
       }
-      fiber_local::setRequestClass(RequestClass::FAILOVER);
       return targets_.back()->route(req, Operation());
     });
   }
