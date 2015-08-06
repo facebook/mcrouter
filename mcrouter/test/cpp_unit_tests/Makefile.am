@@ -15,7 +15,7 @@ mcrouter_test_SOURCES = \
   runtime_vars_data_test.cpp \
   TokenBucketTest.cpp
 
-mcrouter_test_CPPFLAGS = -I$(top_srcdir)/oss_include
+mcrouter_test_CPPFLAGS = -I$(top_srcdir)/..
 mcrouter_test_LDADD = $(top_builddir)/libmcroutercore.a $(top_builddir)/lib/libmcrouter.a -lgtest -lgtestmain
 
 mcrouter_libmc_test_SOURCES = \
@@ -25,5 +25,5 @@ mcrouter_libmc_test_SOURCES = \
   MemcacheLocal.cpp \
   MemcacheLocal.h
 
-mcrouter_libmc_test_CPPFLAGS = -I$(top_srcdir)/oss_include
+mcrouter_libmc_test_CPPFLAGS = -I$(top_srcdir)/..
 mcrouter_libmc_test_LDADD = $(top_builddir)/libmcroutercore.a $(top_builddir)/lib/libmcrouter.a -lgtest

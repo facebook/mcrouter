@@ -13,5 +13,5 @@ mcrouter_lib_test_SOURCES = \
   RouteHandleTest.cpp \
   WeightedCh3HashFuncTest.cpp
 
-mcrouter_lib_test_CPPFLAGS = -I$(top_srcdir)/oss_include
+mcrouter_lib_test_CPPFLAGS = -I$(top_srcdir)/..
 mcrouter_lib_test_LDADD = $(top_builddir)/lib/libmcrouter.a -lgtest

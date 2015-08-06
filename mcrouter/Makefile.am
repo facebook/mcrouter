@@ -185,7 +185,7 @@ mcrouter_SOURCES = \
   standalone_options.h \
   standalone_options_list.h
 
-libmcroutercore_a_CPPFLAGS = -Ioss_include
+libmcroutercore_a_CPPFLAGS = -I..
 
 mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a
-mcrouter_CPPFLAGS = -Ioss_include
+mcrouter_CPPFLAGS = -I..
