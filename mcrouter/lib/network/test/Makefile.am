@@ -7,5 +7,5 @@ mcrouter_network_test_SOURCES = \
   SessionTestHarness.cpp \
   SessionTestHarness.h
 
-mcrouter_network_test_CPPFLAGS = -I$(top_srcdir)/oss_include
+mcrouter_network_test_CPPFLAGS = -I$(top_srcdir)/..
 mcrouter_network_test_LDADD = $(top_builddir)/lib/libmcrouter.a -lgtest -lgtestmain

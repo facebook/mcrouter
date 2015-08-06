@@ -12,5 +12,5 @@ mcrouter_routes_test_SOURCES = \
   SlowWarmUpRouteTest.cpp \
   WarmUpRouteTest.cpp
 
-mcrouter_routes_test_CPPFLAGS = -I$(top_srcdir)/oss_include
+mcrouter_routes_test_CPPFLAGS = -I$(top_srcdir)/..
 mcrouter_routes_test_LDADD = $(top_builddir)/libmcroutercore.a $(top_builddir)/lib/libmcrouter.a -lgtest -lfollybenchmark

@@ -174,5 +174,5 @@ libmcrouter_a_SOURCES = \
   routes/NullRoute.h \
   routes/RandomRoute.h
 
-libmcrouter_a_CPPFLAGS = -I$(top_srcdir)/oss_include
-libmcrouter_a_CFLAGS = -I$(top_srcdir)/oss_include
+libmcrouter_a_CPPFLAGS = -I$(top_srcdir)/..
+libmcrouter_a_CFLAGS = -I$(top_srcdir)/..
