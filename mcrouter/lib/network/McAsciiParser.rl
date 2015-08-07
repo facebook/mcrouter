@@ -445,6 +445,16 @@ void McAsciiParser::initializeReplyParser<McOperation<mc_op_replace>, McRequest>
 }
 
 template<>
+void McAsciiParser::initializeReplyParser<McOperation<mc_op_append>, McRequest>() {
+  initializeStorageReplyCommon();
+}
+
+template<>
+void McAsciiParser::initializeReplyParser<McOperation<mc_op_prepend>, McRequest>() {
+  initializeStorageReplyCommon();
+}
+
+template<>
 void McAsciiParser::initializeReplyParser<McOperation<mc_op_lease_set>, McRequest>() {
   initializeStorageReplyCommon();
 }
