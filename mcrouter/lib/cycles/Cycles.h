@@ -21,8 +21,41 @@ class EventBase;
 }
 
 /**
- * folly::cycles is a high-performance API for measuring CPU cycles
- * of applications that do asynchronous request processing.
+ * Cycles is a lightweight API for measuring CPU cycles of systems that
+ * do asynchronous request processing.
+ * It works by aggregating together parts of the request processing (e.g.
+ * different EventBase loops related to the same request) to compute the
+ * total number of CPU cycles used by each request.
+ * The API was designed with effiency in mind, so it safe to leave it operating
+ * in an "always-on" mode with minimal performance impact.
+ *
+ * Example usage:
+ *
+ *  1) Start the API on application startup.
+ *    // Attach all EventBases that are used to process requests.
+ *    cycles::attachEventBase();
+ *
+ *    // Start the thread that reports the aggregated results.
+ *    cycles::startExtracting();
+ *
+ *  2) Use the API
+ *    // Delimit an interval and label it:
+ *    cycles::start();
+ *    ...
+ *    cycles::label();
+ *    ...
+ *    cycles::finish();
+ *
+ *    // Notes:
+ *    //  - Each request can be composed of one or more labeled intervals.
+ *    //    The cycles API will take care of aggregating together intervals
+ *    //    processed in the same thread that have the same label.
+ *    //  - Consider using cycles::IntervalGuard class instead of explicitly
+ *    //    calling cycles::start() and cycles::finish().
+ *
+ *  3) Stop extracting on application shutdown.
+ *    // Stop the extractor thread.
+ *    cycles::stopExtracting();
  */
 namespace facebook { namespace memcache { namespace cycles {
 
