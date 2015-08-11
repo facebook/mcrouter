@@ -36,6 +36,15 @@ void checkLogic(bool condition, folly::StringPiece format, Args&&... args) {
   }
 }
 
+/**
+ * throws std::logic_error with formatted string.
+ * `format` and `args` are passed to folly::format().
+ */
+template<typename... Args>
+[[ noreturn ]] void throwLogic(folly::StringPiece format, Args&&... args) {
+  throw std::logic_error(folly::sformat(format, std::forward<Args>(args)...));
+}
+
 /** folly::to style conversion routines */
 
 template <typename T, typename F> T to(const F& x);
