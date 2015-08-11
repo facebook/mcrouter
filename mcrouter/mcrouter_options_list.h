@@ -430,6 +430,11 @@ mcrouter_option_toggle(
   "test-mode", no_short,
   "Starts mcrouter in test mode - with logging disabled.")
 
+mcrouter_option_toggle(
+  enable_logging_route, false,
+  "enable-logging-route", no_short,
+  "Log every request via LoggingRoute.")
+
 mcrouter_option_integer(
   int, asynclog_port_override, 0, no_long, no_short,
   "If non-zero use this port while logging to async log")

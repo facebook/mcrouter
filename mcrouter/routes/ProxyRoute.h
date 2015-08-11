@@ -36,6 +36,8 @@ McrouterRouteHandlePtr
 makeDestinationRoute(std::shared_ptr<const ProxyClientCommon> client,
                      std::shared_ptr<ProxyDestination> destination);
 
+McrouterRouteHandlePtr makeLoggingRoute(McrouterRouteHandlePtr rh);
+
 /**
  * This is the top-most level of Mcrouter's RouteHandle tree.
  */
@@ -73,6 +75,9 @@ class ProxyRoute {
         proxy_->router().opts().big_value_split_threshold,
         proxy_->router().opts().big_value_batch_size);
       root_ = makeBigValueRoute(std::move(root_), std::move(options));
+    }
+    if (proxy_->router().opts().enable_logging_route) {
+      root_ = makeLoggingRoute(std::move(root_));
     }
   }
 
