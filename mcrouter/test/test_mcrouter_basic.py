@@ -220,6 +220,19 @@ class TestMcrouterBasic2(McrouterTestCase):
         reply = mcr.get('__mcrouter__.route_handles(get,test)')
         self.assertNotIn('big-value', reply)
 
+    def test_enable_logging_route(self):
+        mcr = self.get_mcrouter(['--enable-logging-route'])
+
+        reply = mcr.get('__mcrouter__.route_handles(get,test)')
+        self.assertEqual(reply.count('logging'), 1)
+
+    def test_no_logging_route(self):
+        mcr = self.get_mcrouter()
+
+        reply = mcr.get('__mcrouter__.route_handles(get,test)')
+        self.assertNotIn('logging', reply)
+
+
 class TestBasicAllSync(McrouterTestCase):
     config = './mcrouter/test/test_basic_all_sync.json'
     extra_args = []
