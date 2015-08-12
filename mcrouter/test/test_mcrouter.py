@@ -153,13 +153,13 @@ class TestMigratedPoolsFailover(McrouterTestCase):
         self.assertEqual(self.b_old.get("set-key-1"), str(42))
 
         #next phase
-        time.sleep(2)
+        time.sleep(2.5)
         self.assertEqual(mcr.get("get-key-2"), str(200))
         mcr.set("set-key-2", str(42))
         self.assertEqual(self.b_old.get("set-key-2"), str(42))
 
         #next phase
-        time.sleep(2)
+        time.sleep(2.5)
         # gets/sets go to the new place
         self.assertEqual(mcr.get("get-key-3"), str(30))
         mcr.set("set-key-3", str(424242))
