@@ -10,7 +10,6 @@ mcrouter_test_SOURCES = \
   mcrouter_cpp_tests.h \
   observable_test.cpp \
   options_test.cpp \
-  periodic_task_scheduler_test.cpp \
   route_test.cpp \
   runtime_vars_data_test.cpp \
   TokenBucketTest.cpp
