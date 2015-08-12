@@ -385,12 +385,6 @@ mcrouter_option_integer(
   "Timeouts for talking to pools within same cluster. "
   "If specified (non 0) takes precedence over every other timeout.")
 
-mcrouter_option_toggle(
-  same_connection_any_timeout, false,
-  "same-connection-any-timeout", no_short,
-  "If enabled - same connection to a destination may be used for requests "
-  "with different timeouts.")
-
 
 mcrouter_option_group("Logging")
 
