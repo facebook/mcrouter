@@ -308,7 +308,8 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     configApi_(createConfigApi(opts_)),
     asyncWriter_(folly::make_unique<AsyncWriter>()),
     statsLogWriter_(folly::make_unique<AsyncWriter>(
-                      opts_.stats_async_queue_length)) {
+                      opts_.stats_async_queue_length)),
+    evbAuxiliaryThread_(folly::make_unique<folly::ScopedEventBaseThread>()) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);
@@ -397,9 +398,9 @@ void McrouterInstance::startObservingRuntimeVarsFile() {
     rtVarsDataRef.set(std::make_shared<const RuntimeVarsData>(std::move(data)));
   };
 
-  FileObserver::startObserving(
+  startObservingFile(
     opts_.runtime_vars_file,
-    taskScheduler_,
+    *evbAuxiliaryThread_->getEventBase(),
     opts_.file_observer_poll_period_ms,
     opts_.file_observer_sleep_before_update_ms,
     std::move(onUpdate)
@@ -478,12 +479,9 @@ void McrouterInstance::joinAuxiliaryThreads() {
      After fork(), the child doesn't have the thread but does have
      the full copy of the stack which we must cleanup. */
   if (getpid() == pid_) {
-    taskScheduler_.shutdownAllTasks();
     if (statUpdaterThread_.joinable()) {
       statUpdaterThread_.join();
     }
-  } else {
-    taskScheduler_.forkWorkAround();
   }
 
   if (opts_.cpu_cycles) {
@@ -493,6 +491,8 @@ void McrouterInstance::joinAuxiliaryThreads() {
   if (mcrouterLogger_) {
     mcrouterLogger_->stop();
   }
+
+  evbAuxiliaryThread_.reset();
 
   stopAwriterThreads();
 }

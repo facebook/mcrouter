@@ -16,6 +16,7 @@
 #include <thread>
 #include <unordered_map>
 
+#include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/Range.h>
 
 #include "mcrouter/CallbackPool.h"
@@ -24,7 +25,6 @@
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
-#include "mcrouter/PeriodicTaskScheduler.h"
 #include "mcrouter/TkoTracker.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -238,8 +238,8 @@ class McrouterInstance :
 
   ShutdownLock shutdownLock_;
 
-  // Used to shedule periodic tasks for mcrouter.
-  PeriodicTaskScheduler taskScheduler_;
+  // Auxiliary EventBase thread.
+  std::unique_ptr<folly::ScopedEventBaseThread> evbAuxiliaryThread_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
 

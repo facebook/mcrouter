@@ -15,12 +15,11 @@
 
 #include <folly/experimental/TestUtil.h>
 #include <folly/FileUtil.h>
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "mcrouter/FileObserver.h"
-#include "mcrouter/PeriodicTaskScheduler.h"
 
-using facebook::memcache::mcrouter::FileObserver;
-using facebook::memcache::mcrouter::PeriodicTaskScheduler;
+using facebook::memcache::mcrouter::startObservingFile;
 using folly::test::TemporaryFile;
 
 const std::string BOGUS_CONFIG = "this/file/doesnot/exists";
@@ -35,13 +34,13 @@ TEST(FileObserver, sanity) {
   EXPECT_EQ(folly::writeFull(config.fd(), contents.data(), contents.size()),
             contents.size());
 
-  PeriodicTaskScheduler ts;
+  folly::ScopedEventBaseThread evbThread;
   int counter = 0;
-  FileObserver::startObserving(path, ts, 100, 500,
-                               [&counter, &cv] (std::string) {
-                                  counter++;
-                                  cv.notify_all();
-                               });
+  startObservingFile(path, *evbThread.getEventBase(), 100, 500,
+                     [&counter, &cv] (std::string) {
+                        counter++;
+                        cv.notify_all();
+                     });
 
   EXPECT_EQ(counter, 1);
   contents = "b";
@@ -60,21 +59,19 @@ TEST(FileObserver, sanity) {
     cv.wait_for(lock, std::chrono::seconds(5));
   }
   EXPECT_EQ(counter, 3);
-
-  ts.shutdownAllTasks();
 }
 
 TEST(FileObserver, on_error_callback) {
-  PeriodicTaskScheduler ts;
+  folly::ScopedEventBaseThread evbThread;
   int successCounter1 = 0, errorCounter1 = 0;
-  FileObserver::startObserving(
-    BOGUS_CONFIG, ts, 100, 500,
+  startObservingFile(
+    BOGUS_CONFIG, *evbThread.getEventBase(), 100, 500,
     [&successCounter1] (std::string) { successCounter1++; },
     [&errorCounter1] () { errorCounter1++; });
 
   int successCounter2 = 0, errorCounter2 = 0;
-  FileObserver::startObserving(
-    "", ts, 100, 500,
+  startObservingFile(
+    "", *evbThread.getEventBase(), 100, 500,
     [&successCounter2] (std::string) { successCounter2++; },
     [&errorCounter2] () { errorCounter2++; });
 
@@ -83,6 +80,4 @@ TEST(FileObserver, on_error_callback) {
 
   EXPECT_EQ(successCounter2, 0);
   EXPECT_EQ(errorCounter2, 1);
-
-  ts.shutdownAllTasks();
 }

@@ -58,8 +58,6 @@ libmcroutercore_a_SOURCES = \
   options-template.h \
   options.cpp \
   options.h \
-  PeriodicTaskScheduler.cpp \
-  PeriodicTaskScheduler.h \
   PoolFactory.cpp \
   PoolFactory.h \
   proxy.cpp \
