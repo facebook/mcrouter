@@ -252,8 +252,8 @@ class TestClient {
               EXPECT_EQ(toString(reply.value()), req.fullKey());
             }
           }
-          EXPECT_EQ(std::string(mc_res_to_string(expectedResult)),
-                    std::string(mc_res_to_string(reply.result())));
+          EXPECT_STREQ(mc_res_to_string(expectedResult),
+                       mc_res_to_string(reply.result()));
         } catch (const std::exception& e) {
           LOG(ERROR) << e.what();
           CHECK(false);
@@ -274,8 +274,8 @@ class TestClient {
         auto reply = client_->sendSync(req, McOperation<mc_op_set>(),
                                        std::chrono::milliseconds(200));
 
-        EXPECT_EQ(std::string(mc_res_to_string(expectedResult)),
-                  std::string(mc_res_to_string(reply.result())));
+        EXPECT_STREQ(mc_res_to_string(expectedResult),
+                     mc_res_to_string(reply.result()));
 
         inflight_--;
       });
@@ -387,7 +387,7 @@ TEST(AsyncMcClient, simpleUmbrellaTimeoutSsl) {
 }
 
 void noServerTimeoutTest(bool useSsl = false) {
-  TestClient client("10.1.1.1", 11302, 200, mc_ascii_protocol, useSsl);
+  TestClient client("100::", 11302, 200, mc_ascii_protocol, useSsl);
   client.sendGet("hold", mc_res_connect_timeout);
   client.waitForReplies();
 }
@@ -685,7 +685,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   bool replied = false;
   bool wentDown = false;
 
-  ConnectionOptions opts("10.1.1.1", 11302, mc_ascii_protocol);
+  ConnectionOptions opts("100::", 11302, mc_ascii_protocol);
   opts.writeTimeout = std::chrono::milliseconds(1000);
   auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
@@ -700,8 +700,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
     McRequest req("hold");
     auto reply = client->sendSync(req, McOperation<mc_op_get>(),
                                   std::chrono::milliseconds(100));
-    EXPECT_EQ(mc_res_to_string(reply.result()),
-              mc_res_to_string(mc_res_timeout));
+    EXPECT_STREQ(mc_res_to_string(reply.result()),
+                 mc_res_to_string(mc_res_timeout));
     replied = true;
   });
 
