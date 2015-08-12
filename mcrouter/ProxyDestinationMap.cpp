@@ -46,8 +46,7 @@ ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
 
 std::shared_ptr<ProxyDestination>
 ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
-  auto key = client.genProxyDestinationKey(
-    !proxy_->router().opts().same_connection_any_timeout);
+  auto key = client.genProxyDestinationKey();
   std::shared_ptr<ProxyDestination> destination;
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);

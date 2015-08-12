@@ -32,7 +32,7 @@ struct ProxyClientCommon {
   const uint64_t qosClass;
   const uint64_t qosPath;
 
-  std::string genProxyDestinationKey(bool include_timeout) const;
+  std::string genProxyDestinationKey() const;
 
  private:
   ProxyClientCommon(const ClientPool& pool,
