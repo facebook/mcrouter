@@ -51,8 +51,9 @@ struct HasDispatchTypedRequest<
 
 template <class OnRequest>
 void McServerOnRequestWrapper<OnRequest>::typedRequestReady(
-  uint64_t typeId, const folly::IOBuf& reqBody,
-  McServerRequestContext&& ctx) {
+    uint32_t typeId,
+    const folly::IOBuf& reqBody,
+    McServerRequestContext&& ctx) {
 
   dispatchTypedRequestIfDefined(
     typeId, reqBody, std::move(ctx),

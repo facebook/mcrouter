@@ -104,7 +104,7 @@ private:
                             McRequest&& req,
                             mc_op_t operation) = 0;
 
-  virtual void typedRequestReady(uint64_t typeId,
+  virtual void typedRequestReady(uint32_t typeId,
                                  const folly::IOBuf& reqBody,
                                  McServerRequestContext&& ctx) = 0;
 
@@ -130,7 +130,7 @@ class McServerOnRequestWrapper : public McServerOnRequest {
 
   void requestReady(McServerRequestContext&& ctx, McRequest&& req,
                     mc_op_t operation) override;
-  void typedRequestReady(uint64_t typeId,
+  void typedRequestReady(uint32_t typeId,
                          const folly::IOBuf& reqBody,
                          McServerRequestContext&& ctx) override;
 

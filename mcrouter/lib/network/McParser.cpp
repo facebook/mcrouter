@@ -165,7 +165,7 @@ bool McParser::readDataAvailable(size_t len) {
 
     if (UNLIKELY(!seenFirstByte_)) {
       seenFirstByte_ = true;
-      protocol_ = mc_parser_determine_protocol(*readBuffer_.data());
+      protocol_ = determineProtocol(*readBuffer_.data());
       if (protocol_ == mc_umbrella_protocol) {
         outOfOrder_ = true;
       } else if (protocol_ == mc_ascii_protocol) {
