@@ -295,7 +295,7 @@ void McServerSession::requestReady(McRequest&& req,
   }
 }
 
-void McServerSession::typedRequestReady(uint64_t typeId,
+void McServerSession::typedRequestReady(uint32_t typeId,
                                         const folly::IOBuf& reqBody,
                                         uint64_t reqid) {
   DestructorGuard dg(this);

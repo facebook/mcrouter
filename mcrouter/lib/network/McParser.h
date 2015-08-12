@@ -127,6 +127,19 @@ class McParser {
 
   bool readUmbrellaData();
 
+  /*
+   * Determine the protocol by looking at the first byte
+   */
+  mc_protocol_t determineProtocol(uint8_t first_byte) {
+    switch (first_byte) {
+      case ENTRY_LIST_MAGIC_BYTE:
+      case CARET_MAGIC_BYTE:
+        return mc_umbrella_protocol;
+      default:
+        return mc_ascii_protocol;
+    }
+  }
+
   void recalculateBufferSize(size_t read);
 
   /**

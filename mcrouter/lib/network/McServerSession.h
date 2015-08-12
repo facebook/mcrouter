@@ -250,7 +250,7 @@ class McServerSession :
                     mc_res_t result,
                     bool noreply);
   void parseError(mc_res_t result, folly::StringPiece reason);
-  void typedRequestReady(uint64_t typeId,
+  void typedRequestReady(uint32_t typeId,
                          const folly::IOBuf& reqBody,
                          uint64_t reqid);
 

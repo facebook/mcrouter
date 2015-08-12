@@ -24,9 +24,11 @@ namespace facebook { namespace memcache {
 class McReply;
 class McRequest;
 
+constexpr char CARET_MAGIC_BYTE = '^';
+
 enum class UmbrellaVersion : uint8_t {
   BASIC = 0,
-  TYPED_REQUEST = 1,
+  TYPED_MESSAGE = 1,
 };
 
 struct UmbrellaMessageInfo {
@@ -34,6 +36,7 @@ struct UmbrellaMessageInfo {
   size_t bodySize;
   UmbrellaVersion version;
   size_t typeId;
+  uint32_t reqId;
 };
 
 enum class UmbrellaParseStatus {
@@ -44,6 +47,16 @@ enum class UmbrellaParseStatus {
 
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
                                         UmbrellaMessageInfo& infoOut);
+
+/**
+ * Parses caret message header
+ * and fills up the UmbrellaMessageInfo
+ * @param pointer to buffer and length
+ * @return parsed status
+ */
+UmbrellaParseStatus caretParseHeader(const uint8_t* buf,
+                                     size_t nbuf,
+                                     UmbrellaMessageInfo& info);
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 

@@ -59,16 +59,11 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const folly::IOBuf& bodyBuffer) {
 
   try {
-    if (info.version == UmbrellaVersion::TYPED_REQUEST) {
-      uint32_t reqid;
-      ::memcpy(&reqid, header + sizeof(entry_list_msg_t) + sizeof(uint32_t),
-               sizeof(uint32_t));
-      reqid = folly::Endian::little(reqid);
-
+    if (info.version == UmbrellaVersion::TYPED_MESSAGE) {
       folly::IOBuf trim;
       bodyBuffer.cloneOneInto(trim);
       trim.trimStart(body - bodyBuffer.data());
-      callback_.typedRequestReady(info.typeId, trim, reqid);
+      callback_.typedRequestReady(info.typeId, trim, info.reqId);
     } else {
       mc_op_t op;
       uint64_t reqid;
