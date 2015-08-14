@@ -24,7 +24,6 @@ bool ConnectionLRU<T>::addConnection(int fd, T&& conn) {
   }
 
   // Check if we are exceeding the limit by inserting a new connection.
-  size_t size = map_.size();
   if (list_.size() >= opts_.maxConns) {
     auto& oldNode = list_.front();
     removeConnection(oldNode.fd());

@@ -110,7 +110,7 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
   range.advance(encodedLength + 1);
 
   /* Skip additional fields for now */
-  for (int i = 0; i < additionalFields; i++) {
+  for (uint32_t i = 0; i < additionalFields; i++) {
     try {
       folly::decodeVarint(range);
     } catch (const std::invalid_argument& e) {

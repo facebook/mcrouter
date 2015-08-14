@@ -47,7 +47,7 @@ class ConstShardHashFunc {
 
   size_t operator()(folly::StringPiece key) const;
 
-  static const char* const type() { return "ConstShard"; }
+  static const char* type() { return "ConstShard"; }
 
  private:
   size_t n_;
