@@ -99,6 +99,10 @@ struct ShadowSettings {
     return endIndex_;
   }
 
+  bool validateRepliesFlag() const {
+    return validateReplies_;
+  }
+
   // [start, end] where 0 <= start <= end <= numeric_limits<uint32_t>::max()
   std::pair<uint32_t, uint32_t> keyRange() const {
     auto fraction = keyRange_.load();
@@ -110,6 +114,8 @@ struct ShadowSettings {
    */
   void setKeyRange(double start, double end);
 
+  void setValidateReplies(bool validateReplies);
+
  private:
   ObservableRuntimeVars::CallbackHandle handle_;
   void registerOnUpdateCallback(McrouterInstance& router);
@@ -119,6 +125,8 @@ struct ShadowSettings {
   size_t endIndex_{0};
 
   std::atomic<uint64_t> keyRange_{0};
+
+  bool validateReplies_{false};
 
   ShadowSettings() = default;
 };

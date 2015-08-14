@@ -144,6 +144,7 @@ libmcroutercore_a_SOURCES = \
   routes/RouteSelectorMap.h \
   routes/ShadowRoute.cpp \
   routes/ShadowRoute.h \
+  routes/ShadowRoute-inl.h \
   routes/ShadowRouteIf.h \
   routes/ShardHashFunc.cpp \
   routes/ShardHashFunc.h \
@@ -164,6 +165,7 @@ libmcroutercore_a_SOURCES = \
   RuntimeVarsData.h \
   ServiceInfo.cpp \
   ServiceInfo.h \
+  ShadowValidationData.h \
   stat_list.h \
   stats.cpp \
   stats.h \
