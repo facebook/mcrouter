@@ -47,7 +47,7 @@ public:
 
   void shutdownFromSignalHandler() {
     uint64_t val = 1;
-    write(fd_, &val, 8);
+    PCHECK(write(fd_, &val, 8) == 8);
   }
 
  private:

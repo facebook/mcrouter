@@ -31,7 +31,7 @@ void AsciiSerializedRequest::keyValueRequestCommon(folly::StringPiece prefix,
   auto value = request.valueRangeSlow();
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %d %zd\r\n",
                       request.flags(), request.exptime(), value.size());
-  assert(len > 0 && len < kMaxBufferLength);
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings(prefix, request.fullKey(),
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)),
              value, "\r\n");
@@ -92,7 +92,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %d %zd %lu\r\n",
                       request.flags(), request.exptime(), value.size(),
                       request.cas());
-  assert(len > 0 && len < kMaxBufferLength);
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings("cas ", request.fullKey(),
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)), value,
              "\r\n");
@@ -104,7 +104,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %lu %d %zd\r\n",
                       request.leaseToken(), request.flags(), request.exptime(),
                       value.size());
-  assert(len > 0 && len < kMaxBufferLength);
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings("lease-set ", request.fullKey(),
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)), value,
              "\r\n");
@@ -116,7 +116,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_incr>) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu\r\n",
                       request.delta());
-  assert(len > 0 && len < kMaxBufferLength);
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings("incr ", request.fullKey(),
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }
@@ -125,7 +125,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_decr>) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu\r\n",
                       request.delta());
-  assert(len > 0 && len < kMaxBufferLength);
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings("decr ", request.fullKey(),
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }
@@ -136,7 +136,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_delete>) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %u\r\n",
                       request.exptime());
-  assert(len > 0 && len < kMaxBufferLength);
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings("delete ", request.fullKey(),
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }
@@ -154,6 +154,7 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_flushall>) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %u\r\n",
                       request.number());
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
   addStrings("flush_all",
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }

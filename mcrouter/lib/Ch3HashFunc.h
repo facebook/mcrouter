@@ -33,7 +33,7 @@ class Ch3HashFunc {
     return furc_hash(hashable.data(), hashable.size(), n_);
   }
 
-  static const char* const type() {
+  static const char* type() {
     return "Ch3";
   }
 

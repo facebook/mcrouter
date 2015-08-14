@@ -30,7 +30,7 @@ class Crc32HashFunc {
     return (res & 0x7fffffff) % n_;
   }
 
-  static const char* const type() {
+  static const char* type() {
     return "Crc32";
   }
 

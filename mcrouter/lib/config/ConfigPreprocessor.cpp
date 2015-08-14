@@ -594,9 +594,8 @@ class ConfigPreprocessor::BuiltIns {
     } else { // array
       checkLogic(key.isInt(), "Set: key is not an int");
       auto id = key.getInt();
-      checkLogic(0 <= id && id < dict.size(),
-                 "Set: key '{}' is out of range 0..{}",
-                 id, dict.size() - 1);
+      checkLogic(0 <= id && static_cast<size_t>(id) < dict.size(),
+                 "Set: key '{}' is out of range [0..{})", id, dict.size());
       dict[id] = std::move(value);
       return dict;
     }

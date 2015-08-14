@@ -63,7 +63,7 @@ class WeightedCh3HashFunc {
     return weights_;
   }
 
-  static const char* const type() {
+  static const char* type() {
     return "WeightedCh3";
   }
 
