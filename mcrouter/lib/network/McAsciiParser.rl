@@ -344,9 +344,9 @@ exptime = uint %{
   reply.setExptime(static_cast<uint32_t>(currentUInt_));
 };
 ip_addr = (xdigit | '.' | ':')+ $str_value %{
-  // Max ip address is 45 chars.
-  if (reply.valueData_->length() < 46) {
-    char addr[46] = {0};
+  // Max ip address length is INET6_ADDRSTRLEN - 1 chars.
+  if (reply.valueData_->computeChainDataLength() < INET6_ADDRSTRLEN) {
+    char addr[INET6_ADDRSTRLEN] = {0};
     reply.valueData_->coalesce();
     memcpy(addr, reply.valueData_->data(), reply.valueData_->length());
     mcMsgT->ipv = 0;

@@ -105,8 +105,14 @@ void parseFieldImpl(Op, NumberTag, Message& message, const folly::IOBuf& source,
 template <class Op, class Message>
 void parseFieldImpl(Op, ResultTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message.setResult(
-    (mc_res_t)umbrella_res_to_mc[folly::Endian::big((uint64_t)entry.data.val)]);
+  auto umResult = folly::Endian::big((uint64_t)entry.data.val);
+  if (umResult >= mc_nres) {
+    throw std::runtime_error(
+      folly::sformat("Attempt to parse invalid data, received result is {}, "
+                     "which exceeds the number of known results: {}.", umResult,
+                     static_cast<uint64_t>(mc_nres)));
+  }
+  message.setResult((mc_res_t)kUmbrellaResToMc[umResult]);
 }
 
 template <class Op, class Message>
@@ -130,20 +136,31 @@ void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
 inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
                            McReply& message, const folly::IOBuf& source,
                            const uint8_t* body, const um_elist_entry_t& entry) {
+  parseValueFieldImpl(McOperation<mc_op_metaget>(), message, source, body,
+                      entry);
+  // We need to ensure that it's a contiguous piece of memory.
+  auto dataRange = message.valueRangeSlow();
+
+  // Ignore bad addresses.
+  if (dataRange.size() >= INET6_ADDRSTRLEN) {
+    message.setValue(folly::IOBuf());
+    return;
+  }
+
   auto msg = createMcMsgRef();
-  auto* dataStart =
-    reinterpret_cast<const char*>(
-      body + folly::Endian::big((uint32_t)entry.data.str.offset));
+  char buffer[INET6_ADDRSTRLEN] = {0};
+  // Copy the data to ensure it's NULL terminated.
+  memcpy(buffer, dataRange.data(), dataRange.size());
   msg->ipv = 0;
-  if (inet_pton(AF_INET6, dataStart, &msg->ip_addr) > 0) {
+  if (inet_pton(AF_INET6, buffer, &msg->ip_addr) > 0) {
     msg->ipv = 6;
-  } else if (inet_pton(AF_INET, dataStart, &msg->ip_addr) > 0) {
+  } else if (inet_pton(AF_INET, buffer, &msg->ip_addr) > 0) {
     msg->ipv = 4;
   }
   if (msg->ipv > 0) {
     mcReplySetMcMsgRef(message, std::move(msg));
-    parseValueFieldImpl(McOperation<mc_op_metaget>(), message, source, body,
-                        entry);
+  } else {
+    message.setValue(folly::IOBuf());
   }
 }
 

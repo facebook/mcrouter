@@ -699,3 +699,46 @@ TEST(AsyncMcClient, testUpdateThreshold) {
 
   server.join();
 }
+
+void umbrellaBinaryReply(std::string data, mc_res_t expectedResult) {
+  auto serverSockFd = createListenSocket();
+  auto listenPort = getListenPort(serverSockFd);
+
+  std::thread serverThread([serverSockFd, &data] {
+    auto sockFd = ::accept(serverSockFd, nullptr, nullptr);
+    // Don't read anything, just reply with a serialized reply.
+    size_t n = folly::writeFull(sockFd, data.data(), data.size());
+    CHECK(n == data.size());
+  });
+
+  TestClient client("localhost", listenPort, 200, mc_umbrella_protocol);
+  client.sendGet("test", expectedResult);
+  client.waitForReplies();
+  serverThread.join();
+}
+
+TEST(AsyncMcClient, binaryUmbrellaReply) {
+  // This is a serialized umbrella reply for get operation with
+  // mc_res_notfound result and reqid = 1.
+  std::string data
+    {'}', '\000', '\000', '\003', '\000', '\000', '\000', ',', '\000', '\001',
+     '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000', '\000',
+     '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000', '\000',
+     '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002', '\000',
+     '\000', '\000', '\000', '\000', '\000', '\000', '\003'};
+
+  umbrellaBinaryReply(data, mc_res_notfound);
+}
+
+TEST(AsyncMcClient, curruptedUmbrellaReply) {
+  // This is a serialized umbrella reply for get operation with
+  // reqid = 1, it contains invalid result code (771).
+  std::string data
+    {'}', '\000', '\000', '\003', '\000', '\000', '\000', ',', '\000', '\001',
+     '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000', '\000',
+     '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000', '\000',
+     '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002', '\000',
+     '\000', '\000', '\000', '\000', '\000', '\003', '\003'};
+
+  umbrellaBinaryReply(data, mc_res_remote_error);
+}
