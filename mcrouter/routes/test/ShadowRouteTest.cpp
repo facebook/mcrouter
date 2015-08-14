@@ -64,6 +64,7 @@ TEST(shadowRouteTest, defaultPolicy) {
   EXPECT_TRUE(shadowHandles[0]->saw_keys.empty());
   EXPECT_TRUE(shadowHandles[1]->saw_keys.empty());
   settings->setKeyRange(0, 1);
+  settings->setValidateReplies(true);
 
   fm.run([&] () {
     mockFiberContext();

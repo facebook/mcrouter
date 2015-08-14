@@ -16,6 +16,7 @@
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
+#include "mcrouter/ShadowValidationData.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -80,6 +81,17 @@ std::vector<std::string> defaultTestCommandLineArgs() {
 }
 
 void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog) { }
+
+void logShadowValidationError(proxy_t* proxy,
+                              const ShadowValidationData& valData) {
+  VLOG_EVERY_N(1,100)
+      << "Mismatch between shadow and normal reply" << std::endl
+      << "Key:" << valData.fullKey << std::endl
+      << "Expected Result:"
+      << mc_res_to_string(valData.normalResult) << std::endl
+      << "Shadow Result:"
+      << mc_res_to_string(valData.shadowResult) << std::endl;
+}
 
 void initFailureLogger() { }
 

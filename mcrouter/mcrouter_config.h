@@ -62,6 +62,7 @@ class McrouterInstance;
 class McrouterLogger;
 class McrouterStandaloneOptions;
 class proxy_t;
+class ShadowValidationData;
 class TkoLog;
 
 struct ProxyStatsContainer {
@@ -129,6 +130,9 @@ McrouterOptions defaultTestOptions();
 std::vector<std::string> defaultTestCommandLineArgs();
 
 void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog);
+
+void logShadowValidationError(proxy_t* proxy,
+                              const ShadowValidationData& valData);
 
 void initFailureLogger();
 

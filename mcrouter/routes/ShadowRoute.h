@@ -73,16 +73,16 @@ class ShadowRoute {
           normalReply = normal_->route(*adjustedReq, Operation());
         }
         auto shadow = iter.first;
-        folly::fibers::addTask(
-          [shadow, adjustedReq] () {
-            Request shadowReq(adjustedReq->clone());
-            fiber_local::runWithLocals([&shadow, &shadowReq]() {
-              // we don't want to spool shadow requests
-              fiber_local::clearAsynclogName();
-              fiber_local::addRequestClass(RequestClass::kShadow);
-              shadow->route(shadowReq, Operation());
-            });
-          });
+        if (iter.second->validateRepliesFlag()) {
+          normalReply = normal_->route(*adjustedReq, Operation());
+          // this will spawn the fiber after copying required data
+          // to validate from the normal Reply
+          sendAndValidateRequest(
+              *normalReply , std::move(shadow), adjustedReq, Operation());
+
+        } else {
+          dispatchShadowRequest(std::move(shadow), adjustedReq, Operation());
+        }
       }
     }
 
@@ -104,6 +104,25 @@ class ShadowRoute {
     return range.first <= req.routingKeyHash() &&
                           req.routingKeyHash() <= range.second;
   }
+
+  template <class Operation, class Request>
+  void dispatchShadowRequest(std::shared_ptr<McrouterRouteHandleIf> shadow,
+                             std::shared_ptr<Request> adjustedReq,
+                             Operation) const;
+
+  template <class Operation, class Request, class Reply>
+  void sendAndValidateRequest(const Reply& normalReply,
+                              std::shared_ptr<McrouterRouteHandleIf> shadow,
+                              std::shared_ptr<Request> adjustedReq,
+                              Operation) const;
+
+  template <class Request, class Reply>
+  void sendAndValidateRequest(const Reply& normalReply,
+                              std::shared_ptr<McrouterRouteHandleIf> shadow,
+                              std::shared_ptr<Request> adjustedReq,
+                              McOperation<mc_op_get>) const;
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "ShadowRoute-inl.h"
