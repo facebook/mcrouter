@@ -34,10 +34,10 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
 
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
-  fbTraceOnSend(Operation(), request, connectionOptions_.accessPoint);
+  fbTraceOnSend(Operation(), request, *connectionOptions_.accessPoint);
 
   McClientRequestContext<Operation, Request> ctx(
-    request, nextMsgId_, connectionOptions_.accessPoint.getProtocol(),
+    request, nextMsgId_, connectionOptions_.accessPoint->getProtocol(),
     std::move(selfPtr), queue_, [] (ParserT& parser) {
       parser.expectNext<Operation, Request>();
     });

@@ -245,7 +245,7 @@ void ProxyDestination::resetInactive() {
 void ProxyDestination::initializeAsyncMcClient() {
   assert(!client_);
 
-  ConnectionOptions options(accessPoint());
+  ConnectionOptions options(accessPoint_);
   auto& opts = proxy->router().opts();
   options.noNetwork = opts.no_network;
   options.useNewAsciiParser = opts.new_ascii_parser;

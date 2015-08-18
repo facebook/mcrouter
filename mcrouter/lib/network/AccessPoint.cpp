@@ -18,69 +18,76 @@ namespace facebook { namespace memcache {
 
 AccessPoint::AccessPoint(folly::StringPiece host, uint16_t port,
                          mc_protocol_t protocol)
-    : host_(host.str()),
-      port_(port),
+    : port_(port),
       protocol_(protocol) {
-  initialize();
+
+  try {
+    folly::IPAddress ip(host);
+    host_ = ip.toFullyQualified();
+    isV6_ = ip.isV6();
+  } catch (const folly::IPAddressFormatException& e) {
+    // host is not an IP address (e.g. 'localhost')
+    host_ = host.str();
+    isV6_ = false;
+  }
 }
 
-bool AccessPoint::create(folly::StringPiece host_port_protocol,
-                         mc_protocol_t default_protocol,
-                         AccessPoint& ap) {
-  if (host_port_protocol.empty()) {
-    return false;
+std::shared_ptr<AccessPoint>
+AccessPoint::create(folly::StringPiece hostPortProtocol,
+                    mc_protocol_t defaultProtocol) {
+  if (hostPortProtocol.empty()) {
+    return nullptr;
   }
 
-  if (host_port_protocol[0] == '[') {
+  folly::StringPiece host;
+  uint16_t port;
+  if (hostPortProtocol[0] == '[') {
     // IPv6
-    auto closing = host_port_protocol.find(']');
+    auto closing = hostPortProtocol.find(']');
     if (closing == std::string::npos) {
-      return false;
+      return nullptr;
     }
-    ap.host_ = host_port_protocol.subpiece(1, closing - 1).str();
-    host_port_protocol.advance(closing + 1);
+    host = hostPortProtocol.subpiece(1, closing - 1);
+    hostPortProtocol.advance(closing + 1);
   } else {
     // IPv4 or hostname
-    auto colon = host_port_protocol.find(':');
+    auto colon = hostPortProtocol.find(':');
     if (colon == std::string::npos) {
-      return false;
+      return nullptr;
     }
-    ap.host_ = host_port_protocol.subpiece(0, colon).str();
-    host_port_protocol.advance(colon);
+    host = hostPortProtocol.subpiece(0, colon);
+    hostPortProtocol.advance(colon);
   }
 
-  if (host_port_protocol.empty() || host_port_protocol[0] != ':') {
+  if (hostPortProtocol.empty() || hostPortProtocol[0] != ':') {
     // port is required
-    return false;
+    return nullptr;
   }
 
   // skip ':'
-  host_port_protocol.advance(1);
-  auto colon = host_port_protocol.find(':');
+  hostPortProtocol.advance(1);
+  auto colon = hostPortProtocol.find(':');
   if (colon == std::string::npos) {
     // protocol is optional
 
-    if (host_port_protocol.empty()) {
-      return false;
+    if (hostPortProtocol.empty()) {
+      return nullptr;
     }
-    ap.port_ = folly::to<uint16_t>(host_port_protocol);
-    ap.protocol_ = default_protocol;
+    port = folly::to<uint16_t>(hostPortProtocol);
   } else {
     if (colon == 0) {
-      return false;
+      return nullptr;
     }
-    ap.port_ = folly::to<uint16_t>(host_port_protocol.subpiece(0, colon));
-    host_port_protocol.advance(colon + 1);
-    ap.protocol_ = mc_string_to_protocol(host_port_protocol.data());
+    port = folly::to<uint16_t>(hostPortProtocol.subpiece(0, colon));
+    hostPortProtocol.advance(colon + 1);
+    defaultProtocol = mc_string_to_protocol(hostPortProtocol.data());
   }
 
-  if (ap.host_.empty()) {
-    return false;
+  if (host.empty()) {
+    return nullptr;
   }
 
-  ap.initialize();
-
-  return true;
+  return std::make_shared<AccessPoint>(host, port, defaultProtocol);
 }
 
 std::string AccessPoint::toHostPortString() const {
@@ -88,17 +95,6 @@ std::string AccessPoint::toHostPortString() const {
     return folly::to<std::string>("[", host_, "]:", port_);
   }
   return folly::to<std::string>(host_, ":", port_);
-}
-
-void AccessPoint::initialize() {
-  isV6_ = false;
-  try {
-    folly::IPAddress ip(host_);
-    host_ = ip.toFullyQualified();
-    isV6_ = ip.isV6();
-  } catch (const folly::IPAddressFormatException& e) {
-    // host is not an IP address (e.g. 'localhost')
-  }
 }
 
 std::string AccessPoint::toString() const {
