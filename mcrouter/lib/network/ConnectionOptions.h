@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 
 #include <folly/io/async/AsyncSocket.h>
 
@@ -31,10 +32,11 @@ struct ConnectionOptions {
   ConnectionOptions(folly::StringPiece host_,
                     uint16_t port_,
                     mc_protocol_t protocol_)
-    : accessPoint(host_.str(), port_, protocol_) {
+    : accessPoint(std::make_shared<AccessPoint>(host_, port_, protocol_)) {
   }
 
-  explicit ConnectionOptions(AccessPoint ap) : accessPoint(std::move(ap)) {
+  explicit ConnectionOptions(std::shared_ptr<const AccessPoint> ap)
+    : accessPoint(std::move(ap)) {
   }
 
   /**
@@ -55,7 +57,7 @@ struct ConnectionOptions {
   /**
    * Access point of the destination.
    */
-  AccessPoint accessPoint;
+  std::shared_ptr<const AccessPoint> accessPoint;
 
   /**
    * Number of TCP KeepAlive probes to send before considering connection dead.

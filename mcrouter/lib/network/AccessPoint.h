@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <folly/Range.h>
@@ -22,9 +23,8 @@ struct AccessPoint {
                        uint16_t port = 0,
                        mc_protocol_t protocol = mc_unknown_protocol);
 
-  static bool create(folly::StringPiece host_port_protocol,
-                     mc_protocol_t default_protocol,
-                     AccessPoint& ap);
+  static std::shared_ptr<AccessPoint>
+  create(folly::StringPiece hostPortProtocol, mc_protocol_t defaultProtocol);
 
   const std::string& getHost() const {
     return host_;
@@ -52,9 +52,7 @@ struct AccessPoint {
   std::string host_;
   uint16_t port_;
   mc_protocol_t protocol_;
-  bool isV6_;
-
-  void initialize();
+  bool isV6_{false};
 };
 
 }}  // facebook::memcache

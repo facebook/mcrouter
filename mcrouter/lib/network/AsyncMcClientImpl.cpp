@@ -61,7 +61,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     ConnectionOptions options)
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
-      outOfOrder_(connectionOptions_.accessPoint.getProtocol() ==
+      outOfOrder_(connectionOptions_.accessPoint->getProtocol() ==
                   mc_umbrella_protocol),
       queue_(outOfOrder_),
       writer_(folly::make_unique<WriterLoop>(*this)),
@@ -73,7 +73,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
 std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
     folly::EventBase& eventBase,
     ConnectionOptions options) {
-  if (options.accessPoint.getProtocol() == mc_umbrella_protocol &&
+  if (options.accessPoint->getProtocol() == mc_umbrella_protocol &&
       options.noNetwork) {
     throw std::logic_error("No network mode is not supported for umbrella "
                            "protocol yet!");
@@ -354,7 +354,7 @@ void AsyncMcClientImpl::attemptConnection() {
         LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
           "SSLContext provider returned nullptr, check SSL certificates. Any "
           "further request to {} will fail.",
-          connectionOptions_.accessPoint.toHostPortString());
+          connectionOptions_.accessPoint->toHostPortString());
         connectErr(folly::AsyncSocketException(
                      folly::AsyncSocketException::SSL_ERROR, ""));
         return;
@@ -370,8 +370,8 @@ void AsyncMcClientImpl::attemptConnection() {
     folly::SocketAddress address;
     try {
       address = folly::SocketAddress(
-        connectionOptions_.accessPoint.getHost(),
-        connectionOptions_.accessPoint.getPort(),
+        connectionOptions_.accessPoint->getHost(),
+        connectionOptions_.accessPoint->getPort(),
         /* allowNameLookup */ true);
     } catch (const std::system_error& e) {
       LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
@@ -410,7 +410,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   parser_ = folly::make_unique<ParserT>(
       *this, 0, kReadBufferSizeMin, kReadBufferSizeMax,
       connectionOptions_.useNewAsciiParser,
-      connectionOptions_.accessPoint.getProtocol());
+      connectionOptions_.accessPoint->getProtocol());
   socket_->setReadCB(this);
 }
 
@@ -510,7 +510,7 @@ void AsyncMcClientImpl::readErr(
     const folly::AsyncSocketException& ex) noexcept {
   assert(connectionState_ == ConnectionState::UP);
   VLOG(1) << "Failed to read from socket with remote endpoint \""
-          << connectionOptions_.accessPoint.toString()
+          << connectionOptions_.accessPoint->toString()
           << "\". Exception: " << ex.what();
   processShutdown();
 }
@@ -540,7 +540,7 @@ void AsyncMcClientImpl::writeErr(
          connectionState_ == ConnectionState::ERROR);
 
   VLOG(1) << "Failed to write into socket with remote endpoint \""
-          << connectionOptions_.accessPoint.toString()
+          << connectionOptions_.accessPoint->toString()
           << "\", wrote " << bytesWritten
           << " bytes. Exception: " << ex.what();
 
@@ -566,7 +566,7 @@ void AsyncMcClientImpl::logErrorWithContext(folly::StringPiece reason) {
               "number of requests sent through this client: {}, "
               "McClientRequestContextQueue info: {}",
               reason, clientStateToStr(),
-              connectionOptions_.accessPoint.toString(), nextMsgId_,
+              connectionOptions_.accessPoint->toString(), nextMsgId_,
               queue_.debugInfo());
 }
 
