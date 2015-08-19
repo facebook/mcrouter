@@ -13,6 +13,26 @@
 
 namespace facebook { namespace memcache { namespace detail {
 
+/* Concatenate implementation */
+
+template <class... Items1, class... Items2>
+struct ConcatenateListsImpl<List<Items1...>, List<Items2...>> {
+  using type = List<Items1..., Items2...>;
+};
+
+template <class List1, class... Lists>
+struct ConcatenateListsImpl<List1, Lists...> {
+  using type = typename ConcatenateListsImpl<
+      List1, typename ConcatenateListsImpl<Lists...>::type>::type;
+};
+
+/* Concatenate unit tests */
+static_assert(
+    std::is_same<List<int, double, float, long, char>,
+                 ConcatenateListsT<List<int, double>, List<float, long>,
+                                   List<char>>>::value,
+    "concatenate is broken");
+
 /* Sort implementation */
 
 /* Single bubble sort iteration: for each i, order (i, i+1) */
@@ -90,4 +110,15 @@ struct ExpandImpl<Start, List<>> {
   using type = List<>;
 };
 
+/* PairListFirst test */
+static_assert(
+    std::is_same<PairListFirstT<List<Pair<int, double>, Pair<float, char>>>,
+                 List<int, float>>::value,
+    "PairListFirst list is broken");
+
+/* PairListSecond test */
+static_assert(
+    std::is_same<PairListSecondT<List<Pair<int, double>, Pair<float, char>>>,
+                 List<double, char>>::value,
+    "PairListSecond list is broken");
 }}}  // facebook::memcaceh::detail

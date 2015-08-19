@@ -14,6 +14,12 @@
 namespace facebook { namespace memcache {
 
 /**
+ * Pair of arbitrary types.
+ */
+template <class L, class R>
+struct Pair {};
+
+/**
  * Type list and int list manipulation routines
  */
 
@@ -22,6 +28,21 @@ namespace facebook { namespace memcache {
  */
 template <class... Xs>
 struct List {};
+
+/**
+ * Concatenates several lists into one.
+ */
+namespace detail {
+template <class... Lists> struct ConcatenateListsImpl;
+}  // detail
+
+template <class... Lists>
+struct ConcatenateLists {
+  using type = typename detail::ConcatenateListsImpl<Lists...>::type;
+};
+
+template <class... Lists>
+using ConcatenateListsT = typename ConcatenateLists<Lists...>::type;
 
 /**
  * List<KV...> can be used as an {int -> T} map
@@ -141,6 +162,38 @@ struct Distinct<X, Xs...> {
   static constexpr bool value =
     (Has<X, Xs...>::value ? false : Distinct<Xs...>::value);
 };
+
+/**
+ * Utilities for working with lists of pairs.
+ */
+
+/**
+ * List<Pair<X, Y>...> -> List<X...>
+ */
+template <class List>
+struct PairListFirst;
+
+template <class... First, class... Second>
+struct PairListFirst<List<Pair<First, Second>...>> {
+  using type = List<First...>;
+};
+
+template <class List>
+using PairListFirstT = typename PairListFirst<List>::type;
+
+/**
+ * List<Pair<X, Y>...> -> List<Y...>
+ */
+template <class List>
+struct PairListSecond;
+
+template <class... First, class... Second>
+struct PairListSecond<List<Pair<First, Second>...>> {
+  using type = List<Second...>;
+};
+
+template <class List>
+using PairListSecondT = typename PairListSecond<List>::type;
 
 }}
 
