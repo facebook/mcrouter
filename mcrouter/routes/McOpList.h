@@ -19,7 +19,7 @@ struct McOpList {
   template <int i>
   struct Item {};
 
-  static constexpr int kLastItemId = 17;
+  static constexpr int kLastItemId = 19;
 
   typedef Item<kLastItemId> LastItem;
 };
@@ -36,16 +36,18 @@ template <> struct McOpList::Item< 5> { typedef McOperation<mc_op_cas> op; };
 template <> struct McOpList::Item< 6> { typedef McOperation<mc_op_decr> op; };
 template <> struct McOpList::Item< 7> { typedef McOperation<mc_op_stats> op; };
 template <> struct McOpList::Item< 8> { typedef McOperation<mc_op_metaget> op; };
-template <> struct McOpList::Item< 9> { typedef McOperation<mc_op_gets> op; };
-template <> struct McOpList::Item<10> { typedef McOperation<mc_op_get_service_info> op; };
+template <> struct McOpList::Item< 9> { typedef McOperation<mc_op_prepend> op; };
+template <> struct McOpList::Item<10> { typedef McOperation<mc_op_gets> op; };
+template <> struct McOpList::Item<11> { typedef McOperation<mc_op_get_service_info> op; };
+template <> struct McOpList::Item<12> { typedef McOperation<mc_op_append> op; };
 
 /* Common operations, least to most frequently used */
-template <> struct McOpList::Item<11> { typedef McOperation<mc_op_incr> op; };
-template <> struct McOpList::Item<12> { typedef McOperation<mc_op_add> op; };
-template <> struct McOpList::Item<13> { typedef McOperation<mc_op_lease_set> op; };
-template <> struct McOpList::Item<14> { typedef McOperation<mc_op_set> op; };
-template <> struct McOpList::Item<15> { typedef McOperation<mc_op_delete> op; };
-template <> struct McOpList::Item<16> { typedef McOperation<mc_op_lease_get> op; };
-template <> struct McOpList::Item<17> { typedef McOperation<mc_op_get> op; };
+template <> struct McOpList::Item<13> { typedef McOperation<mc_op_incr> op; };
+template <> struct McOpList::Item<14> { typedef McOperation<mc_op_add> op; };
+template <> struct McOpList::Item<15> { typedef McOperation<mc_op_lease_set> op; };
+template <> struct McOpList::Item<16> { typedef McOperation<mc_op_set> op; };
+template <> struct McOpList::Item<17> { typedef McOperation<mc_op_delete> op; };
+template <> struct McOpList::Item<18> { typedef McOperation<mc_op_lease_get> op; };
+template <> struct McOpList::Item<19> { typedef McOperation<mc_op_get> op; };
 
 }}

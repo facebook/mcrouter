@@ -83,8 +83,6 @@ bool precheckRequest(ProxyRequestContext& preq) {
       break;
 
     // Return 'Not supported' message
-    case mc_op_append:
-    case mc_op_prepend:
     case mc_op_flushre:
       preq.sendReply(McReply(mc_res_local_error, "Command not supported"));
       break;
