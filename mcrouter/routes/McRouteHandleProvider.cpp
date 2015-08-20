@@ -18,6 +18,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -283,11 +284,31 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
 
     McrouterShadowData data;
     for (auto& shadow : json["shadows"]) {
-      checkLogic(shadow.count("target"),
-                 "PoolRoute {} shadows: no target for shadow", pool->getName());
-      auto s = ShadowSettings::create(shadow, proxy_->router());
-      if (s) {
-        data.emplace_back(factory.create(shadow["target"]), std::move(s));
+      if (!shadow.isObject()) {
+        MC_LOG_FAILURE(proxy_->router().opts(),
+                       failure::Category::kInvalidConfig,
+                       "PoolRoute {} shadows: shadow is not an object",
+                       pool->getName());
+        continue;
+      }
+      auto jtarget = shadow.get_ptr("target");
+      if (!jtarget) {
+        MC_LOG_FAILURE(proxy_->router().opts(),
+                       failure::Category::kInvalidConfig,
+                       "PoolRoute {} shadows: no target for shadow",
+                       pool->getName());
+        continue;
+      }
+      try {
+        auto s = ShadowSettings::create(shadow, proxy_->router());
+        if (s) {
+          data.emplace_back(factory.create(*jtarget), std::move(s));
+        }
+      } catch (const std::exception& e) {
+        MC_LOG_FAILURE(proxy_->router().opts(),
+                       failure::Category::kInvalidConfig,
+                       "Can not create shadow for PoolRoute {}: {}",
+                       pool->getName(), e.what());
       }
     }
 
