@@ -21,6 +21,7 @@
 
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
+#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
@@ -162,6 +163,10 @@ class McrouterInstance :
     return tkoTrackerMap_;
   }
 
+  LeaseTokenMap& leaseTokenMap() {
+    return leaseTokenMap_;
+  }
+
   ObservableRuntimeVars& rtVarsData() {
     return rtVarsData_;
   }
@@ -239,7 +244,10 @@ class McrouterInstance :
   ShutdownLock shutdownLock_;
 
   // Auxiliary EventBase thread.
-  std::unique_ptr<folly::ScopedEventBaseThread> evbAuxiliaryThread_;
+  folly::ScopedEventBaseThread evbAuxiliaryThread_;
+
+  // Keep track of lease tokens of failed over requests.
+  LeaseTokenMap leaseTokenMap_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
 
