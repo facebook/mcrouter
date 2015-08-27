@@ -39,6 +39,8 @@ libmcroutercore_a_SOURCES = \
   FileObserver.h \
   flavor.cpp \
   flavor.h \
+  LeaseTokenMap.cpp \
+  LeaseTokenMap.h \
   mcrouter_config-impl.h \
   mcrouter_config.cpp \
   mcrouter_config.h \
