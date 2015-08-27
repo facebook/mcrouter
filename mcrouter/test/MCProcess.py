@@ -113,11 +113,13 @@ class MCProcess(object):
 
     def disconnect(self):
         try:
-            self.socket.close()
+            if self.socket:
+                self.socket.close()
         except IOError:
             pass
         try:
-            self.fd.close()
+            if self.fd:
+                self.fd.close()
         except IOError:
             pass
         self.fd = self.socket = None
@@ -330,9 +332,12 @@ class MCProcess(object):
     def replace(self, key, value, replicate=False, noreply=False):
         return self._set("replace", key, value, replicate, noreply)
 
-    def delete(self, key, noreply=False):
-        self.socket.sendall("delete %s%s\r\n" %
-                            (key, (' noreply' if noreply else '')))
+    def delete(self, key, exptime=None, noreply=False):
+        exptime_str = ''
+        if exptime is not None:
+            exptime_str = " {}".format(exptime)
+        self.socket.sendall("delete {}{}{}\r\n".format(
+                            key, exptime_str, (' noreply' if noreply else '')))
         self.deletes += 1
 
         if noreply:
@@ -391,6 +396,25 @@ class MCProcess(object):
             a = l.split(None, 2)
             if len(a) == 3:
                 s[a[1]] = a[2]
+
+        return s
+
+    def raw_stats(self, spec=None):
+        q = 'stats\r\n'
+        if spec:
+            q = 'stats {0}\r\n'.format(spec)
+        self.socket.sendall(q)
+
+        s = []
+        l = None
+        fds = select.select([self.fd], [], [], 2.0)
+        if len(fds[0]) == 0:
+            return None
+        while l != 'END':
+            l = self.fd.readline().strip()
+            a = l.split(None, 1)
+            if len(a) == 2:
+                s.append(a[1])
 
         return s
 
