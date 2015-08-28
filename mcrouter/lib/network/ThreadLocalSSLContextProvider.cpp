@@ -9,13 +9,16 @@
  */
 #include "ThreadLocalSSLContextProvider.h"
 
-#include <folly/io/async/SSLContext.h>
 #include <unordered_map>
+#include <folly/io/async/SSLContext.h>
+
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 using folly::SSLContext;
 
 namespace facebook { namespace memcache {
 
+namespace {
 struct CertPaths {
   folly::StringPiece pemCertPath;
   folly::StringPiece pemKeyPath;
@@ -44,6 +47,67 @@ struct CertPathsHasher {
       paths.pemCaPath.hash());
   }
 };
+
+void logCertFailure(folly::StringPiece name, folly::StringPiece path,
+                    const std::exception& ex) {
+  LOG_FAILURE("SSLCert", failure::Category::kBadEnvironment,
+              "Failed to load {} from \"{}\", ex: {}", name, path, ex.what());
+}
+
+std::shared_ptr<SSLContext> handleSSLCertsUpdate(folly::StringPiece pemCertPath,
+                                                 folly::StringPiece pemKeyPath,
+                                                 folly::StringPiece pemCaPath) {
+  auto sslContext = std::make_shared<SSLContext>();
+
+  // Load certificate.
+  try {
+    sslContext->loadCertificate(pemCertPath.begin());
+  } catch (const std::exception& ex) {
+    logCertFailure("certificate", pemCertPath, ex);
+    return nullptr;
+  }
+
+  // Load private key.
+  try {
+    sslContext->loadPrivateKey(pemKeyPath.begin());
+  } catch (const std::exception& ex) {
+    logCertFailure("private key", pemKeyPath, ex);
+    return nullptr;
+  }
+
+  // Load trusted certificates.
+  try {
+    sslContext->loadTrustedCertificates(pemCaPath.begin());
+  } catch (const std::exception& ex) {
+    logCertFailure("trusted certificates", pemCaPath, ex);
+    return nullptr;
+  }
+
+  // Load client CA list.
+  try {
+    sslContext->loadClientCAList(pemCaPath.begin());
+  } catch (const std::exception& ex) {
+    logCertFailure("client CA list", pemCaPath, ex);
+    return nullptr;
+  }
+
+  // Try to disable compression if possible to reduce CPU and memory usage.
+#ifdef SSL_OP_NO_COMPRESSION
+  try {
+    sslContext->setOptions(SSL_OP_NO_COMPRESSION);
+  } catch (const std::runtime_error& ex) {
+    LOG_FAILURE("SSLCert", failure::Category::kSystemError,
+                "Failed to apply SSL_OP_NO_COMPRESSION flag onto SSLContext "
+                "with files: pemCertPath='{}', pemKeyPath='{}', pemCaPath='{}'",
+                pemCertPath, pemKeyPath, pemCaPath);
+    // We failed to disable compression, but the SSLContext itself is good to
+    // use.
+  }
+#endif
+
+  return sslContext;
+}
+}  // anonymous
 
 std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
                                           folly::StringPiece pemKeyPath,
@@ -76,20 +140,11 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
   auto now = std::chrono::steady_clock::now();
   if (contextInfo.context == nullptr ||
       now - contextInfo.lastLoadTime > kSslReloadInterval) {
-    try {
-      auto sslContext = std::make_shared<SSLContext>();
-      sslContext->loadCertificate(pemCertPath.begin());
-      sslContext->loadPrivateKey(pemKeyPath.begin());
-      sslContext->loadTrustedCertificates(pemCaPath.begin());
-      sslContext->loadClientCAList(pemCaPath.begin());
-      // Disable compression if possible to reduce CPU and memory usage.
-#ifdef SSL_OP_NO_COMPRESSION
-      sslContext->setOptions(SSL_OP_NO_COMPRESSION);
-#endif
+
+    if (auto updated =
+            handleSSLCertsUpdate(pemCertPath, pemKeyPath, pemCaPath)) {
       contextInfo.lastLoadTime = now;
-      contextInfo.context = std::move(sslContext);
-    } catch (const std::exception& ex) {
-      LOG(ERROR) << "Failed to load certificate, ex: " << ex.what();
+      contextInfo.context = std::move(updated);
     }
   }
   return contextInfo.context;
