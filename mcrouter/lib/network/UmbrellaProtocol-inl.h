@@ -26,6 +26,11 @@ uint32_t const kUmbrellaResToMc[mc_nres] = {
 #include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
 };
 
+uint32_t const kUmbrellaOpToMc[UM_NOPS] = {
+#define UM_OP(mc, um) [um] = mc,
+#include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
+};
+
 template <msg_field_t TagId> class Tag{};
 using CasTag = Tag<msg_cas>;
 using DeltaTag = Tag<msg_delta>;

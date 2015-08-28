@@ -35,6 +35,39 @@ static_assert(
 
 namespace facebook { namespace memcache {
 
+namespace {
+
+/**
+ * Gets the value of the tag specified.
+ *
+ * @param header, nheader [header, header + nheader) must point to a valid
+ *                        Umbrella header.
+ * @param tag             Desired tag.
+ * @param val             Output parameter containing the value of the tag.
+ * @return                True if the tag was found. False otherwise.
+ * @throw                 std::runtime_error on any parse error.
+ */
+bool umbrellaGetTagValue(const uint8_t* header, size_t nheader,
+                         size_t tag, uint64_t& val) {
+  auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
+  size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
+  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
+      != header + nheader) {
+    throw std::runtime_error("Invalid number of entries");
+  }
+  for (size_t i = 0; i < nentries; ++i) {
+    auto& entry = msg->entries[i];
+    size_t curTag = folly::Endian::big((uint16_t)entry.tag);
+    if (curTag == tag) {
+      val = folly::Endian::big((uint64_t)entry.data.val);
+      return true;
+    }
+  }
+  return false;
+}
+
+} // anonymous namespace
+
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
                                         UmbrellaMessageInfo& infoOut) {
 
@@ -125,24 +158,30 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
 }
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader) {
-  auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
-  size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
-  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
-      != header + nheader) {
-    throw std::runtime_error("Invalid number of entries");
+  uint64_t id;
+  if (!umbrellaGetTagValue(header, nheader, msg_reqid, id)) {
+    throw std::runtime_error("missing reqid");
   }
-  for (size_t i = 0; i < nentries; ++i) {
-    auto& entry = msg->entries[i];
-    size_t tag = folly::Endian::big((uint16_t)entry.tag);
-    if (tag == msg_reqid) {
-      uint64_t val = folly::Endian::big((uint64_t)entry.data.val);
-      if (val == 0) {
-        throw std::runtime_error("invalid reqid");
-      }
-      return val;
-    }
+  if (id == 0) {
+    throw std::runtime_error("invalid reqid");
   }
-  throw std::runtime_error("missing reqid");
+  return id;
+}
+
+mc_op_t umbrellaDetermineOperation(const uint8_t* header, size_t nheader) {
+  uint64_t op;
+  if (!umbrellaGetTagValue(header, nheader, msg_op, op)) {
+    throw std::runtime_error("missing op");
+  }
+  if (op >= UM_NOPS) {
+    throw std::runtime_error("invalid operation");
+  }
+  return static_cast<mc_op_t>(detail::kUmbrellaOpToMc[op]);
+}
+
+bool umbrellaIsReply(const uint8_t* header, size_t nheader) {
+  uint64_t res;
+  return umbrellaGetTagValue(header, nheader, msg_result, res);
 }
 
 McRequest umbrellaParseRequest(const folly::IOBuf& source,
