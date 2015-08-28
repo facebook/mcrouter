@@ -61,6 +61,22 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buf,
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 
 /**
+ * Determines the operation type of an umbrella message.
+ *
+ * @return  The operation type of the given message.
+ * @throw   std::runtime_error  On any parse error.
+ */
+mc_op_t umbrellaDetermineOperation(const uint8_t* header, size_t nheader);
+
+/**
+ * Tells whether the given umbrella message is a reply.
+ *
+ * @return  True is the message is a reply. False if it is a request.
+ * @throw   std::runtime_error  On any parse error.
+ */
+bool umbrellaIsReply(const uint8_t* header, size_t nheader);
+
+/**
  * Parse an on-the-wire Umbrella reply.
  *
  * @param source           Unchained IOBuf; [body, body + nbody) must point
