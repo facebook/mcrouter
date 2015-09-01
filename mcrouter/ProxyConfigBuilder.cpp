@@ -39,6 +39,9 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
   };
   auto additionalParams = additionalConfigParams();
   globalParams.insert(additionalParams.begin(), additionalParams.end());
+  for (const auto& param : opts.config_params) {
+    globalParams.emplace(param.first, param.second);
+  }
 
   json_ = ConfigPreprocessor::getConfigWithoutMacros(
     jsonC,
