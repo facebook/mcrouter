@@ -56,40 +56,32 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
      result,
      hashVal,
      normalDest = std::move(normalDest)]() mutable {
-      fiber_local::runWithLocals(
-        [shadow = std::move(shadow),
-         adjustedReq = std::move(adjustedReq),
-         flags,
-         result,
-         hashVal,
-         normalDest = std::move(normalDest)]() mutable {
-          // we don't want to spool shadow request
-          fiber_local::clearAsynclogName();
-          fiber_local::addRequestClass(RequestClass::kShadow);
+      // we don't want to spool shadow request
+      fiber_local::clearAsynclogName();
+      fiber_local::addRequestClass(RequestClass::kShadow);
 
-          auto shadowReply = shadow->route(*adjustedReq,
-                                           McOperation<mc_op_get>());
-          uint64_t shadowFlags = shadowReply.flags();
-          mc_res_t shadowResult = shadowReply.result();
-          size_t shadowHash = folly::IOBufHash()(shadowReply.value());
+      auto shadowReply = shadow->route(*adjustedReq,
+                                       McOperation<mc_op_get>());
+      uint64_t shadowFlags = shadowReply.flags();
+      mc_res_t shadowResult = shadowReply.result();
+      size_t shadowHash = folly::IOBufHash()(shadowReply.value());
 
-          if (shadowFlags != flags || shadowResult != result ||
-              hashVal != shadowHash) {
+      if (shadowFlags != flags || shadowResult != result ||
+          hashVal != shadowHash) {
 
-            auto& proxy = fiber_local::getSharedCtx()->proxy();
+        auto& proxy = fiber_local::getSharedCtx()->proxy();
 
-            ShadowValidationData validationData{McOperation<mc_op_get>().name,
-                                                normalDest.get(),
-                                                shadowReply.destination().get(),
-                                                flags,
-                                                shadowFlags,
-                                                result,
-                                                shadowResult,
-                                                adjustedReq->fullKey()};
+        ShadowValidationData validationData{McOperation<mc_op_get>().name,
+                                            normalDest.get(),
+                                            shadowReply.destination().get(),
+                                            flags,
+                                            shadowFlags,
+                                            result,
+                                            shadowResult,
+                                            adjustedReq->fullKey()};
 
-            logShadowValidationError(&proxy, validationData);
-          }
-        });
+        logShadowValidationError(proxy, validationData);
+      }
     });
 };
 
@@ -101,16 +93,12 @@ void ShadowRoute<ShadowPolicy>::dispatchShadowRequest(
     Operation) const {
 
   folly::fibers::addTask(
-      [shadow = std::move(shadow), adjustedReq = std::move(adjustedReq)]() {
-        fiber_local::runWithLocals(
-          [shadow = std::move(shadow),
-           adjustedReq = std::move(adjustedReq)]() mutable {
-            // we don't want to spool shadow requests
-            fiber_local::clearAsynclogName();
-            fiber_local::addRequestClass(RequestClass::kShadow);
-            shadow->route(*adjustedReq, Operation());
-          });
-      });
+    [shadow = std::move(shadow), adjustedReq = std::move(adjustedReq)]() {
+      // we don't want to spool shadow requests
+      fiber_local::clearAsynclogName();
+      fiber_local::addRequestClass(RequestClass::kShadow);
+      shadow->route(*adjustedReq, Operation());
+    });
 };
 
 }}} // facebook::memcache::mcrouter
