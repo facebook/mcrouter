@@ -82,6 +82,10 @@ std::vector<std::string> defaultTestCommandLineArgs() {
 
 void logTkoEvent(proxy_t& proxy, const TkoLog& tkoLog) { }
 
+void logFailover(proxy_t& proxy, const char* opName,
+                 const McRequest& req, const McReply& normal,
+                 const McReply& failover) { }
+
 void logShadowValidationError(proxy_t& proxy,
                               const ShadowValidationData& valData) {
   VLOG_EVERY_N(1,100)

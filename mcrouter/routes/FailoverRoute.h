@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/config.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -50,24 +51,29 @@ class FailoverRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    auto reply = targets_[0]->route(req, Operation());
+    auto normalReply = targets_[0]->route(req, Operation());
     if (fiber_local::getSharedCtx()->failoverDisabled() ||
-        !failoverErrors_.shouldFailover(reply, Operation())) {
-      return reply;
+        !failoverErrors_.shouldFailover(normalReply, Operation())) {
+      return normalReply;
     }
 
     // Failover
-    bool needFailoverTag = failoverTagging_ && req.hasHashStop();
-    return fiber_local::runWithLocals([this, &req, needFailoverTag]() {
-      fiber_local::setFailoverTag(needFailoverTag);
+    return fiber_local::runWithLocals([this, &req, &normalReply]() {
+      fiber_local::setFailoverTag(failoverTagging_ && req.hasHashStop());
       fiber_local::addRequestClass(RequestClass::kFailover);
-      for (size_t i = 1; i + 1 < targets_.size(); ++i) {
+      auto doFailover = [this, &req, &normalReply](size_t i) {
         auto failoverReply = targets_[i]->route(req, Operation());
+        logFailover(fiber_local::getSharedCtx()->proxy(),
+                    Operation::name, req, normalReply, failoverReply);
+        return failoverReply;
+      };
+      for (size_t i = 1; i + 1 < targets_.size(); ++i) {
+        auto failoverReply = doFailover(i);
         if (!failoverErrors_.shouldFailover(failoverReply, Operation())) {
           return failoverReply;
         }
       }
-      return targets_.back()->route(req, Operation());
+      return doFailover(targets_.size() - 1);
     });
   }
 
