@@ -114,7 +114,7 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
     }
   );
 
-  statsContainer = folly::make_unique<ProxyStatsContainer>(this);
+  statsContainer = folly::make_unique<ProxyStatsContainer>(*this);
 
   if (router_.opts().cpu_cycles) {
     eventBase_.runInEventBaseThread([this] {

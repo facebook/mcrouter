@@ -80,9 +80,9 @@ std::vector<std::string> defaultTestCommandLineArgs() {
   return { "--disable-failure-logging", "--stats-logging-interval=0" };
 }
 
-void logTkoEvent(proxy_t* proxy, const TkoLog& tkoLog) { }
+void logTkoEvent(proxy_t& proxy, const TkoLog& tkoLog) { }
 
-void logShadowValidationError(proxy_t* proxy,
+void logShadowValidationError(proxy_t& proxy,
                               const ShadowValidationData& valData) {
   VLOG_EVERY_N(1,100)
       << "Mismatch between shadow and normal reply" << std::endl

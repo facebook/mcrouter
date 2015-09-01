@@ -332,7 +332,7 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   tkoLog.poolName = poolName_;
   tkoLog.result = result;
 
-  logTkoEvent(proxy, tkoLog);
+  logTkoEvent(*proxy, tkoLog);
 }
 
 void ProxyDestination::setState(State new_st) {
