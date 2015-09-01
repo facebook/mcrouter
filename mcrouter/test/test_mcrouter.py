@@ -348,3 +348,30 @@ class TestMetaGetFailover(McrouterTestCase):
         time.sleep(4)
         self.assertEqual(mcr.metaget('testkey'), {})
         self.assertEqual(mcr.get('testkey'), None)
+
+class TestFailoverWithLimit(McrouterTestCase):
+    config = './mcrouter/test/test_failover_limit.json'
+
+    def setUp(self):
+        self.gut = self.add_server(Memcached())
+        self.wildcard = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(self.config)
+
+    def test_failover_limit(self):
+        mcr = self.get_mcrouter()
+
+        self.assertTrue(mcr.set('key', 'value.wildcard'))
+        self.assertEqual(mcr.get('key'), 'value.wildcard')
+        self.wildcard.terminate()
+
+        # first 12 requests should succeed (10 burst + 2 rate)
+        self.assertTrue(mcr.set('key', 'value.gut'))
+        for i in range(11):
+            self.assertEqual(mcr.get('key'), 'value.gut')
+        # now every 5th request should succeed
+        for i in range(10):
+            for j in range(4):
+                self.assertIsNone(mcr.get('key'))
+            self.assertEqual(mcr.get('key'), 'value.gut')

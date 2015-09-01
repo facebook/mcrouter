@@ -1,0 +1,21 @@
+{
+  "pools": {
+    "A.gut": {
+      "servers": [ "localhost:12345" ]
+    },
+    "A.wildcard": {
+      "servers": [ "localhost:12346" ]
+    }
+  },
+  "route": {
+    "type": "FailoverRoute",
+    "children": [
+      "PoolRoute|A.wildcard",
+      "PoolRoute|A.gut"
+    ],
+    "failover_limit": {
+      "rate": 0.2,
+      "burst": 10
+    }
+  }
+}

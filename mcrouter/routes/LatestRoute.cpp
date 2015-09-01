@@ -12,20 +12,17 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
-                                         FailoverErrorsSettings failoverErrors,
-                                         bool failoverTagging);
+namespace {
 
-McrouterRouteHandlePtr makeLatestRoute(
-  std::vector<McrouterRouteHandlePtr> targets,
-  size_t failoverCount,
-  FailoverErrorsSettings failoverErrors) {
-
+std::vector<McrouterRouteHandlePtr>
+getTargets(std::vector<McrouterRouteHandlePtr> targets,
+           size_t failoverCount) {
   std::vector<McrouterRouteHandlePtr> failovers;
   failoverCount = std::min(failoverCount, targets.size());
   size_t curHash = folly::hash::hash_combine(0, globals::hostid());
@@ -36,28 +33,28 @@ McrouterRouteHandlePtr makeLatestRoute(
     targets.pop_back();
     curHash = folly::hash::hash_combine(curHash, i);
   }
-  return makeFailoverRoute(std::move(failovers), std::move(failoverErrors),
-                           /* failoverTagging */ false);
+  return failovers;
 }
+
+}  // anonymous
+
+McrouterRouteHandlePtr makeFailoverRoute(
+    const folly::dynamic& json,
+    std::vector<McrouterRouteHandlePtr> children);
 
 McrouterRouteHandlePtr makeLatestRoute(
   const folly::dynamic& json,
   std::vector<McrouterRouteHandlePtr> targets) {
 
   size_t failoverCount = 5;
-  FailoverErrorsSettings failoverErrors;
   if (json.isObject()) {
     if (auto jfailoverCount = json.get_ptr("failover_count")) {
       checkLogic(jfailoverCount->isInt(),
                  "LatestRoute: failover_count is not an integer");
       failoverCount = jfailoverCount->getInt();
     }
-    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
-      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
-    }
   }
-  return makeLatestRoute(std::move(targets), failoverCount,
-                         std::move(failoverErrors));
+  return makeFailoverRoute(json, getTargets(std::move(targets), failoverCount));
 }
 
 McrouterRouteHandlePtr makeLatestRoute(

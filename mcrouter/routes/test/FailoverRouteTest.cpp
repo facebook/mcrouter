@@ -16,6 +16,7 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
+#include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
@@ -26,9 +27,11 @@ using std::make_shared;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
-                                         FailoverErrorsSettings failoverErrors,
-                                         bool failoverTagging);
+McrouterRouteHandlePtr
+makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
+                  FailoverErrorsSettings failoverErrors,
+                  std::unique_ptr<FailoverRateLimiter> rateLimiter,
+                  bool failoverTagging);
 }}}  // facebook::memcache::mcrouter
 
 TEST(failoverRouteTest, success) {
@@ -41,6 +44,7 @@ TEST(failoverRouteTest, success) {
   mockFiberContext();
   auto rh = makeFailoverRoute(get_route_handles(test_handles),
                               FailoverErrorsSettings(),
+                              nullptr,
                               /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -57,6 +61,7 @@ TEST(failoverRouteTest, once) {
   mockFiberContext();
   auto rh = makeFailoverRoute(get_route_handles(test_handles),
                               FailoverErrorsSettings(),
+                              nullptr,
                               /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -73,6 +78,7 @@ TEST(failoverRouteTest, twice) {
   mockFiberContext();
   auto rh = makeFailoverRoute(get_route_handles(test_handles),
                               FailoverErrorsSettings(),
+                              nullptr,
                               /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -89,6 +95,7 @@ TEST(failoverRouteTest, fail) {
   mockFiberContext();
   auto rh = makeFailoverRoute(get_route_handles(test_handles),
                               FailoverErrorsSettings(),
+                              nullptr,
                               /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -108,6 +115,7 @@ TEST(failoverRouteTest, customErrorOnce) {
   auto rh = makeFailoverRoute(
     get_route_handles(test_handles),
     FailoverErrorsSettings(std::vector<std::string>{"remote_error"}),
+    nullptr,
     /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -126,6 +134,7 @@ TEST(failoverRouteTest, customErrorTwice) {
     get_route_handles(test_handles),
     FailoverErrorsSettings(std::vector<std::string>{
       "remote_error", "local_error"}),
+    nullptr,
     /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -143,6 +152,7 @@ TEST(failoverRouteTest, customErrorUpdate) {
   auto rh = makeFailoverRoute(
     get_route_handles(test_handles),
     FailoverErrorsSettings(std::vector<std::string>{"remote_error"}),
+    nullptr,
     /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_set>());
@@ -163,6 +173,7 @@ TEST(failoverRouteTest, separateErrorsGet) {
       /* gets */    std::vector<std::string>{"remote_error"},
       /* updates */ std::vector<std::string>{"remote_error", "local_error"},
       /* deletes */ std::vector<std::string>{"local_error"}),
+    nullptr,
     /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -183,6 +194,7 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
       /* gets */    std::vector<std::string>{"remote_error"},
       /* updates */ std::vector<std::string>{"remote_error", "local_error"},
       /* deletes */ std::vector<std::string>{"local_error"}),
+    nullptr,
     /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_set>());
@@ -203,8 +215,36 @@ TEST(failoverRouteTest, separateErrorsDelete) {
       /* gets */    std::vector<std::string>{"remote_error"},
       /* updates */ std::vector<std::string>{"remote_error", "local_error"},
       /* deletes */ std::vector<std::string>{"local_error"}),
+    nullptr,
     /* failoverTagging */ false);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_delete>());
   EXPECT_TRUE(reply.result() == mc_res_remote_error);
+}
+
+TEST(failoverRouteTest, rateLimit) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"))
+  };
+
+  mockFiberContext();
+  auto rh = makeFailoverRoute(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    folly::make_unique<FailoverRateLimiter>(0.5, 1),
+    /* failoverTagging */ false);
+
+  // tokens: 1
+  auto reply1 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_EQ(mc_res_found, reply1.result());
+  // tokens: 0
+  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_EQ(mc_res_timeout, reply2.result());
+  // tokens: 0.5
+  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_EQ(mc_res_found, reply3.result());
+  // tokens: 0
+  auto reply4 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  EXPECT_EQ(mc_res_timeout, reply4.result());
 }
