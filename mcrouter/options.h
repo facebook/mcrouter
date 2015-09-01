@@ -43,6 +43,7 @@ struct McrouterOptionData {
     double_precision,
     toggle,
     routing_prefix,
+    string_map,
     other
   };
 

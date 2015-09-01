@@ -9,6 +9,7 @@
  */
 class OPTIONS_NAME : public McrouterOptionsBase {
  public:
+#define MCROUTER_STRING_MAP std::unordered_map<std::string, std::string>
 #define mcrouter_option(_type, _name, _def, _l, _s, _d, _T) _type _name{_def};
 #define mcrouter_option_string(_n, _f, _l, _s, _d) \
   mcrouter_option(std::string, _n, _f, _l, _s, _d, string)
@@ -18,6 +19,8 @@ class OPTIONS_NAME : public McrouterOptionsBase {
   mcrouter_option(_t, _n, _f, _l, _s, _d, double_precision)
 #define mcrouter_option_toggle(_n, _f, _l, _s, _d) \
   mcrouter_option(bool, _n, _f, _l, _s, _d, toggle)
+#define mcrouter_option_string_map(_n, _l, _s, _d) \
+  mcrouter_option(MCROUTER_STRING_MAP, _n, , _l, _s, _d, string_map)
 #define mcrouter_option_other(_t, _n, _f, _l, _s, _d) \
   mcrouter_option(_t, _n, _f, _l, _s, _d, other)
 
@@ -78,5 +81,7 @@ class OPTIONS_NAME : public McrouterOptionsBase {
 #undef mcrouter_option_integer
 #undef mcrouter_option_double
 #undef mcrouter_option_toggle
+#undef mcrouter_option_string_map
 #undef mcrouter_option_other
 #undef mcrouter_option
+#undef MCROUTER_STRING_MAP

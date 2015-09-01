@@ -311,6 +311,11 @@ mcrouter_option_integer(
   "reconfiguration-delay-ms", no_short,
   "Delay between config files change and mcrouter reconfiguration.")
 
+mcrouter_option_string_map(
+  config_params, "config-params", no_short,
+  "Params for config preprocessor in format 'name1:value1,name2:value2'. "
+  "All values will be passed as strings.")
+
 mcrouter_option_group("TKO probes")
 
 mcrouter_option_toggle(
