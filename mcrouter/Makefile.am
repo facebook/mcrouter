@@ -104,6 +104,8 @@ libmcroutercore_a_SOURCES = \
   routes/DevNullRoute.h \
   routes/ErrorRoute.cpp \
   routes/ExtraRouteHandleProviderIf.h \
+  routes/FailoverRateLimiter.cpp \
+  routes/FailoverRateLimiter.h \
   routes/FailoverRoute.cpp \
   routes/FailoverRoute.h \
   routes/FailoverWithExptimeRoute.cpp \

@@ -9,6 +9,7 @@
  */
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
+#include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ModifyExptimeRoute.h"
 
@@ -40,18 +41,21 @@ McrouterRouteHandlePtr makeFailoverRoute(
 McrouterRouteHandlePtr makeFailoverRoute(
     std::vector<McrouterRouteHandlePtr> rh,
     FailoverErrorsSettings failoverErrors,
+    std::unique_ptr<FailoverRateLimiter> rateLimiter,
     bool failoverTagging);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     McrouterRouteHandlePtr normal,
     std::vector<McrouterRouteHandlePtr> failover,
     int32_t failoverExptime,
-    FailoverErrorsSettings failoverErrors) {
+    FailoverErrorsSettings failoverErrors,
+    std::unique_ptr<FailoverRateLimiter> rateLimiter) {
   auto children = getFailoverChildren(std::move(normal),
                                       std::move(failover),
                                       failoverExptime);
   return makeFailoverRoute(std::move(children),
                            std::move(failoverErrors),
+                           std::move(rateLimiter),
                            /* failoverTagging */ false);
 }
 

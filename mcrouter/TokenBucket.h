@@ -36,7 +36,6 @@ class TokenBucket {
    * @param burstSize Maximum burst size. Must be at least 1.
    * @param nowInSeconds Current time in seconds according to some
    *                     monotonically increasing clock.
-   *
    */
   TokenBucket(double rate, double burstSize, double nowInSeconds)
     : lastUpdateTime_(nowInSeconds),

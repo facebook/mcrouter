@@ -19,6 +19,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/FailoverRateLimiter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -40,20 +41,29 @@ class FailoverRoute {
 
   FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
                 FailoverErrorsSettings failoverErrors,
+                std::unique_ptr<FailoverRateLimiter> rateLimiter,
                 bool failoverTagging)
       : targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)),
+        rateLimiter_(std::move(rateLimiter)),
         failoverTagging_(failoverTagging) {
     assert(targets_.size() > 1);
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+    const Request& req, Operation) {
 
     auto normalReply = targets_[0]->route(req, Operation());
+    if (rateLimiter_) {
+      rateLimiter_->bumpTotalReqs();
+    }
     if (fiber_local::getSharedCtx()->failoverDisabled() ||
         !failoverErrors_.shouldFailover(normalReply, Operation())) {
+      return normalReply;
+    }
+
+    if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
       return normalReply;
     }
 
@@ -80,6 +90,7 @@ class FailoverRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const FailoverErrorsSettings failoverErrors_;
+  std::unique_ptr<FailoverRateLimiter> rateLimiter_;
   const bool failoverTagging_{false};
 };
 

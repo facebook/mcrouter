@@ -12,6 +12,7 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/dynamic.h>
 #include <folly/Hash.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
@@ -28,9 +29,8 @@ using std::make_shared;
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeLatestRoute(
-  std::vector<McrouterRouteHandlePtr> targets,
-  size_t failoverCount,
-  FailoverErrorsSettings failoverErrors);
+  const folly::dynamic& json,
+  std::vector<McrouterRouteHandlePtr> targets);
 
 }}}  // facebook::memcache::mcrouter
 
@@ -43,10 +43,8 @@ TEST(latestRouteTest, one) {
   };
 
   mockFiberContext();
-  auto rh = makeLatestRoute(
-    get_route_handles(test_handles),
-    /* failoverCount= */ 3,
-    FailoverErrorsSettings());
+  folly::dynamic settings = folly::dynamic::object("failover_count", 3);
+  auto rh = makeLatestRoute(settings, get_route_handles(test_handles));
 
   char first =
     folly::hash::hash_combine(0, globals::hostid()) % test_handles.size();

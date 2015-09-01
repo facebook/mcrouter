@@ -19,9 +19,11 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute();
 
-McrouterRouteHandlePtr makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
-                                         FailoverErrorsSettings failoverErrors,
-                                         bool failoverTagging) {
+McrouterRouteHandlePtr
+makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
+                  FailoverErrorsSettings failoverErrors,
+                  std::unique_ptr<FailoverRateLimiter> rateLimiter,
+                  bool failoverTagging) {
   if (rh.empty()) {
     return makeNullRoute();
   }
@@ -32,6 +34,7 @@ McrouterRouteHandlePtr makeFailoverRoute(std::vector<McrouterRouteHandlePtr> rh,
 
   return makeMcrouterRouteHandle<FailoverRoute>(std::move(rh),
                                                 std::move(failoverErrors),
+                                                std::move(rateLimiter),
                                                 failoverTagging);
 }
 
@@ -40,19 +43,23 @@ McrouterRouteHandlePtr makeFailoverRoute(
     std::vector<McrouterRouteHandlePtr> children) {
 
   FailoverErrorsSettings failoverErrors;
+  std::unique_ptr<FailoverRateLimiter> rateLimiter;
   bool failoverTagging = false;
   if (json.isObject()) {
     if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
       failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
     }
-    if (auto jfailoverTag = json.get_ptr("failover_tag")) {
-      checkLogic(jfailoverTag->isBool(),
-                 "FailoverWithExptime: failover_tag is not bool");
-      failoverTagging = jfailoverTag->getBool();
+    if (auto jFailoverTag = json.get_ptr("failover_tag")) {
+      checkLogic(jFailoverTag->isBool(),
+                 "Failover: failover_tag is not bool");
+      failoverTagging = jFailoverTag->getBool();
+    }
+    if (auto jFailoverLimit = json.get_ptr("failover_limit")) {
+      rateLimiter = folly::make_unique<FailoverRateLimiter>(*jFailoverLimit);
     }
   }
   return makeFailoverRoute(std::move(children), std::move(failoverErrors),
-                           failoverTagging);
+                           std::move(rateLimiter), failoverTagging);
 }
 
 McrouterRouteHandlePtr makeFailoverRoute(
