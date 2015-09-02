@@ -175,14 +175,17 @@ void ProxyDestination::onReply(const McReply& reply,
 }
 
 size_t ProxyDestination::getPendingRequestCount() const {
+  folly::SpinLockGuard g(clientLock_);
   return client_ ? client_->getPendingRequestCount() : 0;
 }
 
 size_t ProxyDestination::getInflightRequestCount() const {
+  folly::SpinLockGuard g(clientLock_);
   return client_ ? client_->getInflightRequestCount() : 0;
 }
 
 std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
+  folly::SpinLockGuard g(clientLock_);
   return client_ ? client_->getBatchingStat() : std::make_pair(0UL, 0UL);
 }
 
@@ -237,8 +240,12 @@ bool ProxyDestination::may_send() const {
 void ProxyDestination::resetInactive() {
   // No need to reset non-existing client.
   if (client_) {
-    client_->closeNow();
-    client_.reset();
+    std::unique_ptr<AsyncMcClient> client;
+    {
+      folly::SpinLockGuard g(clientLock_);
+      client = std::move(client_);
+    }
+    client->closeNow();
   }
 }
 
@@ -270,8 +277,12 @@ void ProxyDestination::initializeAsyncMcClient() {
     };
   }
 
-  client_ = folly::make_unique<AsyncMcClient>(proxy->eventBase(),
-                                              std::move(options));
+  auto client = folly::make_unique<AsyncMcClient>(proxy->eventBase(),
+                                                  std::move(options));
+  {
+    folly::SpinLockGuard g(clientLock_);
+    client_ = std::move(client);
+  }
 
   client_->setStatusCallbacks(
     [this] () mutable {
