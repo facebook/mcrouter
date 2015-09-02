@@ -22,7 +22,6 @@
 #include "mcrouter/ClientPool.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
@@ -38,6 +37,15 @@
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+struct DestinationRequestCtx {
+  int64_t startTime{0};
+  int64_t endTime{0};
+
+  explicit DestinationRequestCtx(int64_t now)
+    : startTime(now) {
+  }
+};
 
 /**
  * Routes a request to a single ProxyClient.
@@ -73,19 +81,6 @@ class DestinationRoute {
     if (ctx) {
       ctx->recordDestination(*client_);
     }
-  }
-
-  McReply route(const McRequest& req, McOperation<mc_op_lease_get> op) const {
-    auto reply = routeImpl(req, op);
-    if (reply.leaseToken() > 1 &&
-        (fiber_local::getRequestClass().is(RequestClass::kFailover) ||
-         LeaseTokenMap::conflicts(reply.leaseToken()))) {
-      auto& ctx = fiber_local::getSharedCtx();
-      auto specialToken = ctx->proxy().router().leaseTokenMap().insert(
-          reply.leaseToken(), destination_, client_->server_timeout);
-      reply.setLeaseToken(specialToken);
-    }
-    return reply;
   }
 
   template <class Operation>

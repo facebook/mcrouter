@@ -314,6 +314,14 @@ class TestLeaseGetFailover(McrouterTestCase):
         self.assertFalse(get_res['testkey']['token'])
         self.assertEqual(get_res['testkey']['value'], 'bizbang-lease-fail')
 
+        # the failover should have set it with a much shorter TTL
+        # so make sure that we can't get the value after the TTL
+        # has expired
+        time.sleep(4)
+        get_res['testkey'] = mcr.leaseGet('testkey')
+        self.assertGreater(get_res['testkey']['token'], 0)
+        self.assertFalse(get_res['testkey']['value'])
+
 class TestMetaGetFailover(McrouterTestCase):
     config = './mcrouter/test/test_get_failover.json'
     extra_args = []

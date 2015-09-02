@@ -9,7 +9,6 @@
  */
 #include "mcrouter/routes/ProxyRoute.h"
 
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/RootRoute.h"
 
@@ -50,18 +49,6 @@ std::vector<McrouterRouteHandlePtr> ProxyRoute::getAllDestinations() const {
   }
   return rh;
 }
-
-bool ProxyRoute::queryLeaseTokenMap(uint64_t leaseToken,
-    uint64_t& originalLeaseToken,
-    std::shared_ptr<ProxyDestination>& destination,
-    std::chrono::milliseconds& timeout) const {
-
-  return proxy_->router().leaseTokenMap().query(leaseToken,
-                                                originalLeaseToken,
-                                                destination,
-                                                timeout);
-}
-
 }
 }
 } // facebook::memcache::mcrouter
