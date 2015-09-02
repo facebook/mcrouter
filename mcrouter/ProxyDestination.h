@@ -14,6 +14,7 @@
 #include <string>
 
 #include <folly/IntrusiveList.h>
+#include <folly/SpinLock.h>
 
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
@@ -104,6 +105,7 @@ class ProxyDestination {
 
   std::unique_ptr<AsyncMcClient> client_;
   std::shared_ptr<const AccessPoint> accessPoint_;
+  mutable folly::SpinLock clientLock_; // AsyncMcClient lock for stats threads.
 
   // Shortest timeout among all ProxyClientCommon's using this destination
   std::chrono::milliseconds shortestTimeout_{0};
