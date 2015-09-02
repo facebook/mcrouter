@@ -309,7 +309,7 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     asyncWriter_(folly::make_unique<AsyncWriter>()),
     statsLogWriter_(folly::make_unique<AsyncWriter>(
                       opts_.stats_async_queue_length)),
-    leaseTokenMap_(evbAuxiliaryThread_) {
+    evbAuxiliaryThread_(folly::make_unique<folly::ScopedEventBaseThread>()) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);
@@ -400,7 +400,7 @@ void McrouterInstance::startObservingRuntimeVarsFile() {
 
   startObservingFile(
     opts_.runtime_vars_file,
-    *evbAuxiliaryThread_.getEventBase(),
+    *evbAuxiliaryThread_->getEventBase(),
     opts_.file_observer_poll_period_ms,
     opts_.file_observer_sleep_before_update_ms,
     std::move(onUpdate)
@@ -492,9 +492,9 @@ void McrouterInstance::joinAuxiliaryThreads() {
     mcrouterLogger_->stop();
   }
 
-  stopAwriterThreads();
+  evbAuxiliaryThread_.reset();
 
-  evbAuxiliaryThread_.stop();
+  stopAwriterThreads();
 }
 
 void McrouterInstance::stopAwriterThreads() {

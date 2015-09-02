@@ -15,7 +15,6 @@
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
@@ -23,9 +22,6 @@
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
-#include "mcrouter/proxy.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -127,13 +123,9 @@ class WarmUpRoute {
     auto warmReply = warm_->route(req, McOperation<mc_op_get>());
     uint32_t exptime;
     if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
-      // get lease token
-      auto& map = fiber_local::getSharedCtx()->proxy().router().leaseTokenMap();
-      auto leaseToken = map.getOriginalLeaseToken(coldReply.leaseToken());
-
       // update cold route with lease set
       auto setReq = coldUpdateFromWarm(req, warmReply, exptime);
-      setReq.setLeaseToken(leaseToken);
+      setReq.setLeaseToken(coldReply.leaseToken());
 
       folly::fibers::addTask([cold = cold_, req = std::move(setReq)]() {
         cold->route(req, McOperation<mc_op_lease_set>());
