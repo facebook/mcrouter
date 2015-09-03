@@ -62,8 +62,7 @@ void WriteBuffer::clear() {
   }
 }
 
-bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply,
-                          struct iovec*& iovOut, size_t& niovOut) {
+bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply) {
   ctx_.emplace(std::move(ctx));
   reply_.emplace(std::move(reply));
 
@@ -72,14 +71,16 @@ bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply,
       return asciiReply_.prepare(reply_.value(),
                                  ctx_->operation_,
                                  ctx_->asciiKey(),
-                                 iovOut, niovOut);
+                                 iovsBegin_,
+                                 iovsCount_);
       break;
 
     case mc_umbrella_protocol:
       return umbrellaReply_.prepare(reply_.value(),
                                     ctx_->operation_,
                                     ctx_->reqid_,
-                                    iovOut, niovOut);
+                                    iovsBegin_,
+                                    iovsCount_);
       break;
 
     default:

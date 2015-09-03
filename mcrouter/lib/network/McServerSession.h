@@ -144,9 +144,7 @@ class McServerSession :
      Out of order replies are stalled in the blockedReplies_ queue. */
   uint64_t headReqid_{0}; /**< Id of next unblocked reply */
   uint64_t tailReqid_{0}; /**< Id to assign to next request */
-  std::unordered_map<
-    uint64_t,
-    std::pair<McServerRequestContext, McReply>> blockedReplies_;
+  std::unordered_map<uint64_t, std::unique_ptr<WriteBuffer>> blockedReplies_;
 
   /* If non-null, a multi-op operation is being parsed.*/
   std::shared_ptr<MultiOpParent> currentMultiop_;
@@ -157,7 +155,7 @@ class McServerSession :
   /**
    * All writes to be written at the end of the loop in a single batch.
    */
-  std::deque<std::pair<McServerRequestContext, McReply>> pendingWrites_;
+  std::deque<std::unique_ptr<WriteBuffer>> pendingWrites_;
 
   /**
    * Each entry contains the count of requests with replies already written
@@ -228,7 +226,7 @@ class McServerSession :
    */
   void checkClosed();
 
-  void reply(McServerRequestContext&& ctx, McReply&& reply);
+  void reply(std::unique_ptr<WriteBuffer> wb, uint64_t reqid);
 
   /**
    * Called on mc_op_end or connection close to close out an in flight
@@ -262,7 +260,7 @@ class McServerSession :
    */
   bool ensureWriteBufs();
 
-  void queueWrite(McServerRequestContext&& ctx, McReply&& reply);
+  void queueWrite(std::unique_ptr<WriteBuffer> wb);
 
   void completeWrite();
 
