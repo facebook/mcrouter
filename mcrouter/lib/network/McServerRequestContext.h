@@ -64,6 +64,8 @@ class McServerRequestContext {
 
   bool noReply(const McReply& reply) const;
 
+  static void replyImpl(McServerRequestContext&& ctx, McReply&& reply);
+
   folly::Optional<folly::IOBuf>& asciiKey() {
     if (!asciiState_) {
       asciiState_ = folly::make_unique<AsciiState>();

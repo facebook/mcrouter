@@ -23,16 +23,37 @@ void McServerRequestContext::reply(
   McServerRequestContext&& ctx,
   McReply&& reply) {
 
-  auto session = ctx.session_;
-
   ctx.replied_ = true;
 
   if (ctx.hasParent() && ctx.parent().reply(std::move(reply))) {
     /* parent stole the reply */
-    session->reply(std::move(ctx), McReply());
+    replyImpl(std::move(ctx), McReply());
   } else {
-    session->reply(std::move(ctx), std::move(reply));
+    replyImpl(std::move(ctx), std::move(reply));
   }
+}
+
+void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
+                                       McReply&& reply) {
+
+  auto session = ctx.session_;
+
+  if (ctx.noReply(reply)) {
+    session->reply(nullptr, ctx.reqid_);
+    return;
+  }
+
+  if (!session->ensureWriteBufs()) {
+    session->transport_->close();
+    return;
+  }
+
+  auto wb = session->writeBufs_->get();
+  if (!wb->prepare(std::move(ctx), std::move(reply))) {
+    session->transport_->close();
+    return;
+  }
+  session->reply(std::move(wb), ctx.reqid_);
 }
 
 bool McServerRequestContext::noReply(const McReply& reply) const {
