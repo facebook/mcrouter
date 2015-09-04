@@ -22,10 +22,14 @@ namespace {
 
 std::vector<McrouterRouteHandlePtr>
 getTargets(std::vector<McrouterRouteHandlePtr> targets,
-           size_t failoverCount) {
+           size_t failoverCount,
+           folly::StringPiece salt) {
   std::vector<McrouterRouteHandlePtr> failovers;
   failoverCount = std::min(failoverCount, targets.size());
   size_t curHash = folly::hash::hash_combine(0, globals::hostid());
+  if (!salt.empty()) {
+    curHash = folly::Hash()(curHash, salt);
+  }
   for (size_t i = 0; i < failoverCount; ++i) {
     auto id = curHash % targets.size();
     failovers.push_back(std::move(targets[id]));
@@ -47,14 +51,22 @@ McrouterRouteHandlePtr makeLatestRoute(
   std::vector<McrouterRouteHandlePtr> targets) {
 
   size_t failoverCount = 5;
+  folly::StringPiece salt;
+
   if (json.isObject()) {
     if (auto jfailoverCount = json.get_ptr("failover_count")) {
       checkLogic(jfailoverCount->isInt(),
                  "LatestRoute: failover_count is not an integer");
       failoverCount = jfailoverCount->getInt();
     }
+    if (auto jsalt = json.get_ptr("salt")) {
+      checkLogic(jsalt->isString(), "LatestRoute: salt is not a string");
+      salt = jsalt->stringPiece();
+    }
   }
-  return makeFailoverRoute(json, getTargets(std::move(targets), failoverCount));
+
+  return makeFailoverRoute(json, getTargets(std::move(targets), failoverCount,
+      salt));
 }
 
 McrouterRouteHandlePtr makeLatestRoute(
