@@ -351,9 +351,6 @@
   STUIR(result_local_error_shadow, 0, 1)
   STUIR(result_local_error_all, 0, 1)
 #undef GROUP
-#define GROUP detailed_stats
-  STAT(rusage, stat_string_fn, 0, .string_fn = &stat_get_rusage)
-#undef GROUP
 #define GROUP memory_stats | ods_stats | detailed_stats
 #ifndef FBCODE_OPT_BUILD
   STUI(mc_msg_num_outstanding, 0, 0)

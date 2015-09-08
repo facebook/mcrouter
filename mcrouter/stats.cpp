@@ -187,8 +187,6 @@ static std::string rate_stat_to_str(proxy_t * proxy, int idx) {
  */
 static std::string stat_to_str(const stat_t* stat, void *ptr) {
   switch (stat->type) {
-    case stat_string_fn:
-      return stat->data.string_fn(ptr);
     case stat_string:
       return stat->data.string;
     case stat_uint64:
@@ -203,29 +201,6 @@ static std::string stat_to_str(const stat_t* stat, void *ptr) {
       return "";
   }
 }
-
-static std::string stat_get_rusage(void* ptr) {
-  struct rusage ru;
-  getrusage(RUSAGE_SELF, &ru);
-  return folly::stringPrintf(
-      "{ user_time: %ld.%06ld, "
-      "system_time: %ld.%06ld, "
-      "max_rss: %ld, "
-      "minor_page_flt: %ld, "
-      "major_page_flt: %ld, "
-      "in_block: %ld, "
-      "out_block: %ld, "
-      "num_signals: %ld, "
-      "voluntary_ctx_switches: %ld, "
-      "involuntary_ctx_switches: %ld }",
-      ru.ru_utime.tv_sec, (long)ru.ru_utime.tv_usec,
-      ru.ru_stime.tv_sec, (long)ru.ru_stime.tv_usec,
-      ru.ru_maxrss, ru.ru_minflt, ru.ru_majflt,
-      ru.ru_inblock, ru.ru_oublock, ru.ru_nsignals,
-      ru.ru_nvcsw, ru.ru_nivcsw);
-}
-
-// define all data structs for stats here [median, percentile, etc]
 
 void init_stats(stat_t* stats) {
 #define STAT(_name, _type, _aggregate, _data_assignment)                \
