@@ -46,7 +46,6 @@ struct stat_s;
 typedef std::string(*string_fn_t)(void*);
 
 enum stat_type_t {
-  stat_string_fn,
   stat_string,
   stat_uint64,
   stat_int64,
@@ -80,7 +79,6 @@ struct stat_t {
   stat_type_t type;
   int aggregate;
   union {
-    string_fn_t string_fn;
     char* string;
     uint64_t uint64;
     int64_t int64;
