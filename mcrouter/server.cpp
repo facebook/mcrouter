@@ -108,6 +108,9 @@ void serverLoop(
          proxy->fiberManager.hasTasks()) {
     evb.loopOnce();
   }
+
+  // destroy proxy on proxy thread
+  router.releaseProxy(threadId);
 }
 
 }  // namespace
@@ -170,6 +173,9 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
                                  AsyncMcServerWorker& worker) {
         serverLoop(*router, threadId, evb, worker,
                    standaloneOpts.retain_source_ip);
+      },
+      [router]() {
+        router->shutdown();
       }
     );
 

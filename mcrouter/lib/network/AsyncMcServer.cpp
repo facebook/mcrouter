@@ -318,8 +318,9 @@ AsyncMcServer::~AsyncMcServer() {
   gServer = nullptr;
 }
 
-void AsyncMcServer::spawn(LoopFn fn) {
+void AsyncMcServer::spawn(LoopFn fn, std::function<void()> onShutdown) {
   CHECK(threads_.size() == opts_.numThreads);
+  onShutdown_ = std::move(onShutdown);
 
   /* We need to make sure we register all acceptor callbacks before
      running spawn() on other threads. This is so that eventBase.loop()
@@ -346,15 +347,17 @@ void AsyncMcServer::spawn(LoopFn fn) {
 }
 
 void AsyncMcServer::shutdown() {
-  std::lock_guard<std::mutex> lock(shutdownLock_);
-  if (!alive_) {
+  if (!alive_.exchange(false)) {
     return;
+  }
+
+  if (onShutdown_) {
+    onShutdown_();
   }
 
   for (auto& thread : threads_) {
     thread->shutdown();
   }
-  alive_ = false;
 }
 
 void AsyncMcServer::installShutdownHandler(const std::vector<int>& signals) {

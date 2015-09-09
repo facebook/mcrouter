@@ -62,7 +62,7 @@ class AsyncWriter {
   /**
    * Stops the awriter and waits for all the functions to finish.
    */
-  void stop();
+  void stop() noexcept;
 
   /**
    * @return true if writer can process requests, false otherwise.

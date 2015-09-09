@@ -41,7 +41,7 @@ void ExtractorThread::start(std::function<void(CycleStats)> fn) {
   });
 }
 
-void ExtractorThread::stop() {
+void ExtractorThread::stop() noexcept {
   if (running_.exchange(false)) {
     cv_.notify_all();
     if (thread_.joinable()) {

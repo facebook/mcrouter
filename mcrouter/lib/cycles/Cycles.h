@@ -156,7 +156,7 @@ void startExtracting(std::function<void(CycleStats)> func);
 /**
  * Stops extractor thread.
  */
-void stopExtracting();
+void stopExtracting() noexcept;
 
 /**
  * Sets the clock to use for cycles measumenet.

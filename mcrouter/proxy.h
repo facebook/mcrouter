@@ -244,7 +244,7 @@ struct proxy_t {
   /**
    * Put a new proxy message into the queue.
    */
-  void sendMessage(ProxyMessage::Type t, void* data);
+  void sendMessage(ProxyMessage::Type t, void* data) noexcept;
 
   /**
    * Must be called from the EventBase thread;

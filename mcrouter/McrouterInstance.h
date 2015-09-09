@@ -21,7 +21,6 @@
 
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
-#include "mcrouter/lib/fbi/cpp/ShutdownLock.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
@@ -121,19 +120,23 @@ class McrouterInstance :
   void addStartupOpts(
     std::unordered_map<std::string, std::string> additionalOpts);
 
-  bool shutdownStarted() {
-    return shutdownLock_.shutdownStarted();
-  }
-
-  ShutdownLock& shutdownLock() {
-    return shutdownLock_;
-  }
+  /**
+   * Shutdown all threads started by this instance. It's a blocking call and
+   * should be called at most once. If it is not called, destructor will block
+   * until all threads are stopped.
+   */
+  void shutdown() noexcept;
 
   /**
    * @return  nullptr if index is >= opts.num_proxies,
    *   pointer to the proxy otherwise.
    */
   proxy_t* getProxy(size_t index) const;
+
+  /**
+   * Release ownership of a proxy
+   */
+  std::unique_ptr<proxy_t> releaseProxy(size_t index);
 
   pid_t pid() const {
     return pid_;
@@ -234,9 +237,7 @@ class McrouterInstance :
 
   std::unique_ptr<AsyncWriter> statsLogWriter_;
 
-  std::function<void(size_t, proxy_t*)> onDestroyProxy_;
-
-  ShutdownLock shutdownLock_;
+  std::atomic<bool> shutdownStarted_{false};
 
   // Auxiliary EventBase thread.
   std::unique_ptr<folly::ScopedEventBaseThread> evbAuxiliaryThread_;
@@ -273,11 +274,11 @@ class McrouterInstance :
   bool spinUp(const std::vector<folly::EventBase*>& evbs);
 
   void startAwriterThreads();
-  void stopAwriterThreads();
+  void stopAwriterThreads() noexcept;
 
   void spawnAuxiliaryThreads();
-  void shutdownAndJoinAuxiliaryThreads();
-  void joinAuxiliaryThreads();
+  void joinAuxiliaryThreads() noexcept;
+  void shutdownImpl() noexcept;
 
   void subscribeToConfigUpdate();
 
@@ -308,11 +309,6 @@ class McrouterInstance :
     static CallbackPool<>&
     onReconfigureSuccess(McrouterInstance& mcrouter) {
       return mcrouter.onReconfigureSuccess_;
-    }
-
-    static std::function<void(size_t, proxy_t*)>&
-    onDestroyProxy(McrouterInstance& mcrouter) {
-      return mcrouter.onDestroyProxy_;
     }
   };
 

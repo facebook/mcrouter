@@ -12,7 +12,6 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -104,10 +103,15 @@ class AsyncMcServer {
    * Spawn the required number of threads, and run the loop function in each
    * of them.
    *
+   * @param onShutdown  called on shutdown. Worker threads will be stopped only
+   *                    after the callback completes. It may be called from any
+   *                    thread, but it is guaranteed the callback will be
+   *                    executed exactly one time.
+   *
    * @throws folly::AsyncSocketException
    *   If bind or listen fails.
    */
-  void spawn(LoopFn fn);
+  void spawn(LoopFn fn, std::function<void()> onShutdown = nullptr);
 
   /**
    * Start shutting down all processing gracefully.  Will ensure that any
@@ -145,8 +149,8 @@ class AsyncMcServer {
   Options opts_;
   std::vector<std::unique_ptr<McServerThread>> threads_;
 
-  bool alive_{true};
-  std::mutex shutdownLock_;
+  std::atomic<bool> alive_{true};
+  std::function<void()> onShutdown_;
 
   enum class SignalShutdownState : uint64_t {
     STARTUP,

@@ -10,11 +10,6 @@
 #include "async.h"
 
 #include <limits.h>
-
-#ifndef IOV_MAX
-/* POSIX says IOV_MAX is defined in limits.h, but glibc is broken */
-#define __need_IOV_MAX /* must come before including stdio.h */
-#endif
 #include <stdio.h>
 
 #include <fcntl.h>
@@ -65,7 +60,7 @@ AsyncWriter::~AsyncWriter() {
   assert(!fiberManager_.hasTasks());
 }
 
-void AsyncWriter::stop() {
+void AsyncWriter::stop() noexcept {
   {
     std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
     if (stopped_) {
