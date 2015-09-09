@@ -62,7 +62,7 @@ class McrouterLogger {
    * Stops the logger thread and join it.
    * Note: this is a blocking call.
    */
-  void stop();
+  void stop() noexcept;
 
  private:
   McrouterInstance& router_;

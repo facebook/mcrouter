@@ -52,7 +52,7 @@ void ConfigApi::startObserving() {
   }
 }
 
-void ConfigApi::stopObserving(pid_t pid) {
+void ConfigApi::stopObserving(pid_t pid) noexcept {
   {
     std::lock_guard<std::mutex> lk(finishMutex_);
     finish_ = true;

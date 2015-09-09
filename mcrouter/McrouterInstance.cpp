@@ -250,14 +250,6 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
   }
 
   try {
-    configApi_->startObserving();
-    subscribeToConfigUpdate();
-  } catch (...) {
-    LOG(ERROR) << "Failed to start config thread";
-    return false;
-  }
-
-  try {
     spawnAuxiliaryThreads();
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
@@ -302,6 +294,11 @@ proxy_t* McrouterInstance::getProxy(size_t index) const {
   }
 }
 
+std::unique_ptr<proxy_t> McrouterInstance::releaseProxy(size_t index) {
+  assert(index < proxies_.size());
+  return std::move(proxies_[index]);
+}
+
 McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     opts_(std::move(input_options)),
     pid_(getpid()),
@@ -315,27 +312,23 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     1.0);
 }
 
-McrouterInstance::~McrouterInstance() {
-  // unsubscribe from config update
-  configUpdateHandle_.reset();
-  if (configApi_) {
-    configApi_->stopObserving(pid_);
-  }
-
-  shutdownAndJoinAuxiliaryThreads();
+void McrouterInstance::shutdownImpl() noexcept {
+  joinAuxiliaryThreads();
 
   for (auto& pt : proxyThreads_) {
     pt->stopAndJoin();
   }
+}
 
-  if (onDestroyProxy_) {
-    for (size_t i = 0; i < proxies_.size(); ++i) {
-      onDestroyProxy_(i, proxies_[i].release());
-    }
+void McrouterInstance::shutdown() noexcept {
+  CHECK(!shutdownStarted_.exchange(true));
+  shutdownImpl();
+}
+
+McrouterInstance::~McrouterInstance() {
+  if (!shutdownStarted_.exchange(true)) {
+    shutdownImpl();
   }
-
-  proxies_.clear();
-  proxyThreads_.clear();
 }
 
 void McrouterInstance::subscribeToConfigUpdate() {
@@ -349,6 +342,9 @@ void McrouterInstance::subscribeToConfigUpdate() {
 }
 
 void McrouterInstance::spawnAuxiliaryThreads() {
+  configApi_->startObserving();
+  subscribeToConfigUpdate();
+
   startAwriterThreads();
   startObservingRuntimeVarsFile();
   statUpdaterThread_ = std::thread(
@@ -426,7 +422,7 @@ void McrouterInstance::statUpdaterThreadRun() {
       if (statUpdaterCv_.wait_for(
             lock,
             std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND),
-            [this]() { return shutdownStarted(); })) {
+            [this]() { return shutdownStarted_.load(); })) {
         /* Shutdown was initiated, so we stop this thread */
         break;
       }
@@ -466,15 +462,15 @@ void McrouterInstance::spawnStatLoggerThread() {
   mcrouterLogger_->start();
 }
 
-void McrouterInstance::shutdownAndJoinAuxiliaryThreads() {
-  shutdownLock_.shutdownOnce(
-    [this]() {
-      statUpdaterCv_.notify_all();
-      joinAuxiliaryThreads();
-    });
-}
+void McrouterInstance::joinAuxiliaryThreads() noexcept {
+  // unsubscribe from config update
+  configUpdateHandle_.reset();
+  if (configApi_) {
+    configApi_->stopObserving(pid_);
+  }
 
-void McrouterInstance::joinAuxiliaryThreads() {
+  statUpdaterCv_.notify_all();
+
   /* pid check is a huge hack to make PHP fork() kinda sorta work.
      After fork(), the child doesn't have the thread but does have
      the full copy of the stack which we must cleanup. */
@@ -497,7 +493,7 @@ void McrouterInstance::joinAuxiliaryThreads() {
   stopAwriterThreads();
 }
 
-void McrouterInstance::stopAwriterThreads() {
+void McrouterInstance::stopAwriterThreads() noexcept {
   asyncWriter_->stop();
   statsLogWriter_->stop();
 }

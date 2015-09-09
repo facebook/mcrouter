@@ -25,17 +25,16 @@ ProxyThread::ProxyThread(McrouterInstance& router)
 }
 
 void ProxyThread::spawn() {
+  CHECK(state_.exchange(State::RUNNING) == State::STOPPED);
   thread_ = std::thread([this] () { proxyThreadRun(); });
 }
 
-void ProxyThread::stopAndJoin() {
+void ProxyThread::stopAndJoin() noexcept {
   if (thread_.joinable() && proxy_->router().pid() == getpid()) {
+    CHECK(state_.exchange(State::STOPPING) == State::RUNNING);
     proxy_->sendMessage(ProxyMessage::Type::SHUTDOWN, nullptr);
-    {
-      std::unique_lock<std::mutex> lk(mux);
-      isSafeToDeleteProxy = true;
-    }
-    cv.notify_all();
+    CHECK(state_.exchange(State::STOPPED) == State::STOPPING);
+    evb_.terminateLoopSoon();
     thread_.join();
   }
 }
@@ -43,30 +42,17 @@ void ProxyThread::stopAndJoin() {
 void ProxyThread::proxyThreadRun() {
   mcrouterSetThisThreadName(proxy_->router().opts(), "mcrpxy");
 
-  while (!proxy_->router().shutdownStarted() ||
-         proxy_->fiberManager.hasTasks()) {
-    proxy_->eventBase().loopOnce();
+  while (state_ == State::RUNNING || proxy_->fiberManager.hasTasks()) {
+    evb_.loopOnce();
     proxy_->drainMessageQueue();
   }
 
-  // Delete the proxy from the proxy thread so that the clients get
-  // deleted from the same thread where they were created.
-  std::unique_lock<std::mutex> lk(mux);
-  // This is to avoid a race condition where proxy is deleted
-  // before the call to stopAndJoin is made.
-  cv.wait(lk,
-    [this]() {
-      return this->isSafeToDeleteProxy;
-    });
+  while (state_ != State::STOPPED) {
+    evb_.loopOnce();
+  }
 
   /* make sure proxy is deleted on the proxy thread */
   proxy_.reset();
-}
-
-void *ProxyThread::proxyThreadRunHandler(void *arg) {
-  auto proxyThread = reinterpret_cast<ProxyThread*>(arg);
-  proxyThread->proxyThreadRun();
-  return nullptr;
 }
 
 }}}  // facebook::memcache::mcrouter

@@ -45,7 +45,7 @@ class ExtractorThread {
   /**
    * Stop running the extractor thread.
    */
-  void stop();
+  void stop() noexcept;
 
  private:
   // Interval between data extractions in milliseconds.

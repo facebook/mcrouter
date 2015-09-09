@@ -116,7 +116,7 @@ void startExtracting(std::function<void(CycleStats)> func) {
   extractor.start(std::move(func));
 }
 
-void stopExtracting() {
+void stopExtracting() noexcept {
   extractor.stop();
 }
 

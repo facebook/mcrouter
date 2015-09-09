@@ -58,7 +58,6 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/FuncGenerator.h \
   fbi/cpp/LogFailure.cpp \
   fbi/cpp/LogFailure.h \
-  fbi/cpp/ShutdownLock.h \
   fbi/cpp/Trie-inl.h \
   fbi/cpp/Trie.h \
   fbi/cpp/TypeList.h \

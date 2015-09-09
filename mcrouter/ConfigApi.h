@@ -104,7 +104,7 @@ class ConfigApi {
   /**
    * Stops observing for file changes
    */
-  virtual void stopObserving(pid_t pid);
+  virtual void stopObserving(pid_t pid) noexcept;
 
   virtual ~ConfigApi();
 

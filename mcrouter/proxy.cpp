@@ -161,7 +161,7 @@ proxy_t::~proxy_t() {
   magic = 0xdeadbeefdeadbeefLL;
 }
 
-void proxy_t::sendMessage(ProxyMessage::Type t, void* data) {
+void proxy_t::sendMessage(ProxyMessage::Type t, void* data) noexcept {
   CHECK(messageQueue_.get());
   messageQueue_->blockingWrite(t, data);
 }
