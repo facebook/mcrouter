@@ -24,7 +24,10 @@ namespace facebook { namespace memcache {
 class McReply;
 class McRequest;
 
-constexpr char CARET_MAGIC_BYTE = '^';
+constexpr char kCaretMagicByte = '^';
+constexpr size_t kMaxHeaderLength =
+    1 /* magic byte */ + 1 /* GroupVarint header (lengths of 4 ints) */ +
+    4 * sizeof(uint32_t); /* body size, typeId, req id, extra fields count */
 
 enum class UmbrellaVersion : uint8_t {
   BASIC = 0,
@@ -57,6 +60,13 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
 UmbrellaParseStatus caretParseHeader(const uint8_t* buf,
                                      size_t nbuf,
                                      UmbrellaMessageInfo& info);
+
+/**
+ * Prepares the caret message header
+ * @param header info and pointer to buffer
+ * @return size of header
+ */
+size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuf);
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 

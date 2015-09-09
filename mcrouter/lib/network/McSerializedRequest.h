@@ -15,6 +15,7 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
+#include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
@@ -38,9 +39,12 @@ class McSerializedRequest {
    * @param req  request to serialize, caller is responsible to keep it alive
    *             for the whole lifecycle of this serialized request.
    */
-  template<int Op>
-  McSerializedRequest(const McRequest& req, McOperation<Op>, size_t reqId,
-                      mc_protocol_t protocol);
+  template <int Op>
+  McSerializedRequest(const McRequest& req,
+                      McOperation<Op>,
+                      size_t reqId,
+                      mc_protocol_t protocol,
+                      bool useTyped);
   ~McSerializedRequest();
 
   McSerializedRequest(const McSerializedRequest&) = delete;
@@ -56,12 +60,16 @@ class McSerializedRequest {
   union {
     AsciiSerializedRequest asciiRequest_;
     UmbrellaSerializedMessage umbrellaMessage_;
+    CaretSerializedMessage caretRequest_;
   };
 
   struct iovec* iovsBegin_{nullptr};
   size_t iovsCount_{0};
   mc_protocol_t protocol_{mc_unknown_protocol};
+  const bool useTyped_{false};
   Result result_{Result::OK};
+
+  bool checkKeyLength(const folly::IOBuf& key);
 };
 
 }} // facebook::memcache

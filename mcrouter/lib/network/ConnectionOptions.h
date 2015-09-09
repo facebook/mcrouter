@@ -55,6 +55,11 @@ struct ConnectionOptions {
   bool useNewAsciiParser{false};
 
   /**
+   * Flag to enable serialization in the Caret format for the umbrellaProtocol.
+   */
+  bool useTyped{false};
+
+  /**
    * Access point of the destination.
    */
   std::shared_ptr<const AccessPoint> accessPoint;

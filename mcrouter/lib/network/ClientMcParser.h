@@ -9,8 +9,9 @@
  */
 #pragma once
 
-#include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/network/CaretReplyConverter.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
+#include "mcrouter/lib/network/McParser.h"
 
 namespace facebook { namespace memcache {
 
@@ -60,6 +61,8 @@ class ClientMcParser : private McParser::ParserCallback {
   void (ClientMcParser<Callback>::*umbrellaForwarder_)(
     const UmbrellaMessageInfo&, const uint8_t*, const uint8_t*,
     const folly::IOBuf&, uint64_t){nullptr};
+  CaretReplyConverter converter_;
+
   bool useNewParser_{false};
   mc_protocol_t protocol_;
 

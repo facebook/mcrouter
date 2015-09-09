@@ -37,10 +37,13 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
   fbTraceOnSend(Operation(), request, *connectionOptions_.accessPoint);
 
   McClientRequestContext<Operation, Request> ctx(
-    request, nextMsgId_, connectionOptions_.accessPoint->getProtocol(),
-    std::move(selfPtr), queue_, [] (ParserT& parser) {
-      parser.expectNext<Operation, Request>();
-    });
+      request,
+      nextMsgId_,
+      connectionOptions_.accessPoint->getProtocol(),
+      std::move(selfPtr),
+      queue_,
+      [](ParserT& parser) { parser.expectNext<Operation, Request>(); },
+      connectionOptions_.useTyped);
   sendCommon(ctx);
 
   // Wait for the reply.
