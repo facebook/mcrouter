@@ -98,9 +98,20 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
   const folly::IOBuf& bodyBuffer,
   uint64_t reqId) {
 
-  auto reply = umbrellaParseReply<Operation, Request>(
-    bodyBuffer, header, info.headerSize, body, info.bodySize);
-  callback_.replyReady(std::move(reply), reqId);
+  if (info.version == UmbrellaVersion::BASIC) {
+    auto reply = umbrellaParseReply<Operation, Request>(
+        bodyBuffer, header, info.headerSize, body, info.bodySize);
+    callback_.replyReady(std::move(reply), reqId);
+  } else {
+    ReplyT<Operation, Request> reply;
+    folly::IOBuf trim;
+    bodyBuffer.cloneOneInto(trim);
+    trim.trimStart(info.headerSize);
+
+    // Task: 8257655 - Conversion should be moved to ProxyDestination
+    converter_.dispatchTypedRequest(info.typeId, trim, reply);
+    callback_.replyReady(std::move(reply), reqId);
+  }
 }
 
 template <class Callback>
@@ -117,7 +128,12 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
   }
 
   try {
-    uint64_t reqId = umbrellaDetermineReqId(header, info.headerSize);
+    size_t reqId;
+    if (info.version == UmbrellaVersion::BASIC) {
+      reqId = umbrellaDetermineReqId(header, info.headerSize);
+    } else {
+      reqId = info.reqId;
+    }
     if (callback_.nextReplyAvailable(reqId)) {
       (this->*umbrellaForwarder_)(info, header, body, bodyBuffer, reqId);
     }

@@ -53,18 +53,22 @@ void McClientRequestContextBase::reply(Reply&& r) {
 
 template <class Operation, class Request>
 McClientRequestContextBase::McClientRequestContextBase(
-  Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
-  std::shared_ptr<AsyncMcClientImpl> client,
-  folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage,
-  McClientRequestContextQueue& queue, InitializerFuncPtr initializer)
-  : reqContext(request, Operation(), reqid, protocol),
-    id(reqid),
-    queue_(queue),
-    client_(std::move(client)),
-    replyType_(typeid(typename ReplyType<Operation, Request>::type)),
-    replyStorage_(reinterpret_cast<void*>(&replyStorage)),
-    initializer_(std::move(initializer)) {
-}
+    Operation,
+    const Request& request,
+    uint64_t reqid,
+    mc_protocol_t protocol,
+    std::shared_ptr<AsyncMcClientImpl> client,
+    folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage,
+    McClientRequestContextQueue& queue,
+    InitializerFuncPtr initializer,
+    bool useTyped)
+    : reqContext(request, Operation(), reqid, protocol, useTyped),
+      id(reqid),
+      queue_(queue),
+      client_(std::move(client)),
+      replyType_(typeid(typename ReplyType<Operation, Request>::type)),
+      replyStorage_(reinterpret_cast<void*>(&replyStorage)),
+      initializer_(std::move(initializer)) {}
 
 template <class Operation, class Request>
 void McClientRequestContext<Operation, Request>::replyErrorImpl(
@@ -140,14 +144,25 @@ McClientRequestContext<Operation, Request>::waitForReply(
 
 template <class Operation, class Request>
 McClientRequestContext<Operation, Request>::McClientRequestContext(
-  const Request& request, uint64_t reqid, mc_protocol_t protocol,
-  std::shared_ptr<AsyncMcClientImpl> client, McClientRequestContextQueue& queue,
-  McClientRequestContextBase::InitializerFuncPtr func)
-  : McClientRequestContextBase(Operation(), request, reqid, protocol,
-                               std::move(client), replyStorage_, queue,
-                               std::move(func))
+    const Request& request,
+    uint64_t reqid,
+    mc_protocol_t protocol,
+    std::shared_ptr<AsyncMcClientImpl> client,
+    McClientRequestContextQueue& queue,
+    McClientRequestContextBase::InitializerFuncPtr func,
+    bool useTyped)
+    : McClientRequestContextBase(Operation(),
+                                 request,
+                                 reqid,
+                                 protocol,
+                                 std::move(client),
+                                 replyStorage_,
+                                 queue,
+                                 std::move(func),
+                                 useTyped)
 #ifndef LIBMC_FBTRACE_DISABLE
-    , fbtraceInfo_(getFbTraceInfo(request))
+      ,
+      fbtraceInfo_(getFbTraceInfo(request))
 #endif
 {
 }

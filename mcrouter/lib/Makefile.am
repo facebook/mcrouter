@@ -129,6 +129,8 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
+  network/CaretReplyConverterImpl.h \
+  network/CaretSerializedMessageImpl.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
   network/ConnectionLRU-inl.h \

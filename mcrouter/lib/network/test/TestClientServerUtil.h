@@ -19,6 +19,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/test/TestUtil.h"
+#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
 namespace facebook { namespace memcache {
@@ -112,6 +113,7 @@ class TestServerOnRequest {
   std::vector<std::pair<McServerRequestContext, McReply>> waitingReplies_;
 };
 
+template <class OnRequest>
 class TestServer {
  public:
   TestServer(bool outOfOrder, bool useSsl,
@@ -154,7 +156,7 @@ class TestServer {
                 AsyncMcServerWorker& worker) {
 
           bool shutdown = false;
-          worker.setOnRequest(TestServerOnRequest(shutdown, outOfOrder_));
+          worker.setOnRequest(OnRequest(shutdown, outOfOrder_));
           worker.setOnConnectionAccepted([this] () {
             ++stats_.accepted;
           });
@@ -192,19 +194,22 @@ class TestServer {
 
 class TestClient {
  public:
-  TestClient(std::string host, uint16_t port, int timeoutMs,
+  TestClient(std::string host,
+             uint16_t port,
+             int timeoutMs,
              mc_protocol_t protocol = mc_ascii_protocol,
              bool useSsl = false,
-             std::function<
-               std::shared_ptr<folly::SSLContext>()
-             > contextProvider = nullptr,
+             std::function<std::shared_ptr<folly::SSLContext>()>
+                 contextProvider = nullptr,
              bool enableQoS = false,
              uint64_t qosClass = 0,
-             uint64_t qosPath = 0) :
-      fm_(folly::make_unique<folly::fibers::EventBaseLoopController>()) {
+             uint64_t qosPath = 0,
+             bool useTyped = false)
+      : fm_(folly::make_unique<folly::fibers::EventBaseLoopController>()) {
     dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController()).
       attachEventBase(eventBase_);
     ConnectionOptions opts(host, port, protocol);
+    opts.useTyped = useTyped;
     opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
     if (useSsl) {
       auto defaultContextProvider = [] () {

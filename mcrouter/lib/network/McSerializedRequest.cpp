@@ -20,13 +20,25 @@ McSerializedRequest::~McSerializedRequest() {
       asciiRequest_.~AsciiSerializedRequest();
       break;
     case mc_umbrella_protocol:
-      umbrellaMessage_.~UmbrellaSerializedMessage();
+      if (!useTyped_) {
+        umbrellaMessage_.~UmbrellaSerializedMessage();
+      } else {
+        caretRequest_.~CaretSerializedMessage();
+      }
       break;
     case mc_unknown_protocol:
     case mc_binary_protocol:
     case mc_nprotocols:
       break;
   }
+}
+
+bool McSerializedRequest::checkKeyLength(const folly::IOBuf& key) {
+  if (key.computeChainDataLength() > MC_KEY_MAX_LEN_UMBRELLA) {
+    result_ = Result::BAD_KEY;
+    return false;
+  }
+  return true;
 }
 
 McSerializedRequest::Result McSerializedRequest::serializationResult() const {

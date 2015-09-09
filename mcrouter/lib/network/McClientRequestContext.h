@@ -80,11 +80,16 @@ class McClientRequestContextBase
 
   template <class Operation, class Request>
   McClientRequestContextBase(
-    Operation, const Request& request, uint64_t reqid, mc_protocol_t protocol,
-    std::shared_ptr<AsyncMcClientImpl> client,
-    folly::Optional<typename ReplyType<Operation,Request>::type>& replyStorage,
-    McClientRequestContextQueue& queue, InitializerFuncPtr initializer);
-
+      Operation,
+      const Request& request,
+      uint64_t reqid,
+      mc_protocol_t protocol,
+      std::shared_ptr<AsyncMcClientImpl> client,
+      folly::Optional<typename ReplyType<Operation, Request>::type>&
+          replyStorage,
+      McClientRequestContextQueue& queue,
+      InitializerFuncPtr initializer,
+      bool useTyped);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -145,11 +150,13 @@ class McClientRequestContext : public McClientRequestContextBase {
  public:
   using Reply = typename ReplyType<Operation, Request>::type;
 
-  McClientRequestContext(
-    const Request& request, uint64_t reqid, mc_protocol_t protocol,
-    std::shared_ptr<AsyncMcClientImpl> client,
-    McClientRequestContextQueue& queue,
-    McClientRequestContextBase::InitializerFuncPtr);
+  McClientRequestContext(const Request& request,
+                         uint64_t reqid,
+                         mc_protocol_t protocol,
+                         std::shared_ptr<AsyncMcClientImpl> client,
+                         McClientRequestContextQueue& queue,
+                         McClientRequestContextBase::InitializerFuncPtr,
+                         bool useTyped);
 
   const char* fakeReply() const override;
 

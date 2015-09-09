@@ -23,7 +23,7 @@ using namespace facebook::memcache;
 using folly::EventBase;
 
 void serverShutdownTest(bool useSsl = false) {
-  TestServer server(false, useSsl);
+  TestServer<TestServerOnRequest> server(false, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.sendGet("shutdown", mc_res_notfound);
@@ -41,7 +41,7 @@ TEST(AsyncMcClient, serverShutdownSsl) {
 }
 
 void simpleAsciiTimeoutTest(bool useSsl = false) {
-  TestServer server(false, useSsl);
+  TestServer<TestServerOnRequest> server(false, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.sendGet("nohold1", mc_res_found);
@@ -63,7 +63,7 @@ TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
 }
 
 void simpleUmbrellaTimeoutTest(bool useSsl = false) {
-  TestServer server(true, useSsl);
+  TestServer<TestServerOnRequest> server(true, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol, useSsl);
   client.sendGet("nohold1", mc_res_found);
@@ -113,7 +113,7 @@ TEST(AsyncMcClient, immeadiateConnectFailSsl) {
 }
 
 TEST(AsyncMcClient, invalidCerts) {
-  TestServer server(true, true);
+  TestServer<TestServerOnRequest> server(true, true);
   TestClient brokenClient("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol, true, []() {
                       return getSSLContext("/does/not/exist",
@@ -133,7 +133,7 @@ TEST(AsyncMcClient, invalidCerts) {
 }
 
 void inflightThrottleTest(bool useSsl = false) {
-  TestServer server(false, useSsl);
+  TestServer<TestServerOnRequest> server(false, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.setThrottle(5, 6);
@@ -156,7 +156,7 @@ TEST(AsyncMcClient, inflightThrottleSsl) {
 }
 
 void inflightThrottleFlushTest(bool useSsl = false) {
-  TestServer server(false, useSsl);
+  TestServer<TestServerOnRequest> server(false, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.setThrottle(6, 6);
@@ -180,7 +180,7 @@ TEST(AsyncMcClient, inflightThrottleFlushSsl) {
 }
 
 void outstandingThrottleTest(bool useSsl = false) {
-  TestServer server(false, useSsl);
+  TestServer<TestServerOnRequest> server(false, useSsl);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol, useSsl);
   client.setThrottle(5, 5);
@@ -204,7 +204,7 @@ TEST(AsyncMcClient, outstandingThrottleSsl) {
 }
 
 void connectionErrorTest(bool useSsl = false) {
-  TestServer server(false, useSsl);
+  TestServer<TestServerOnRequest> server(false, useSsl);
   TestClient client1("localhost", server.getListenPort(), 200,
                      mc_ascii_protocol, useSsl);
   TestClient client2("localhost", server.getListenPort(), 200,
@@ -231,7 +231,7 @@ void basicTest(mc_protocol_e protocol = mc_ascii_protocol,
                bool enableQoS = false,
                uint64_t qosClass = 0,
                uint64_t qosPath = 0) {
-  TestServer server(true, useSsl);
+  TestServer<TestServerOnRequest> server(true, useSsl);
   TestClient client("localhost", server.getListenPort(), 200, protocol,
                     useSsl, nullptr, enableQoS, qosClass, qosPath);
   client.sendGet("test1", mc_res_found);
@@ -283,7 +283,8 @@ TEST(AsyncMcClient, qosClass4) {
 void reconnectTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
-  TestServer server(protocol == mc_umbrella_protocol, false);
+  TestServer<TestServerOnRequest> server(protocol == mc_umbrella_protocol,
+                                         false);
   TestClient client("localhost", server.getListenPort(), 100,
                     protocol);
   client.sendGet("test1", mc_res_found);
@@ -314,7 +315,8 @@ TEST(AsyncMcClient, reconnectUmbrella) {
 void reconnectImmediatelyTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
-  TestServer server(protocol == mc_umbrella_protocol, false);
+  TestServer<TestServerOnRequest> server(protocol == mc_umbrella_protocol,
+                                         false);
   TestClient client("localhost", server.getListenPort(), 100,
                     protocol);
   client.sendGet("test1", mc_res_found);
@@ -347,7 +349,8 @@ TEST(AsyncMcClient, reconnectImmediatelyUmbrella) {
 }
 
 void bigKeyTest(mc_protocol_t protocol) {
-  TestServer server(protocol == mc_umbrella_protocol, false);
+  TestServer<TestServerOnRequest> server(protocol == mc_umbrella_protocol,
+                                         false);
   TestClient client("localhost", server.getListenPort(), 200,
                     protocol);
   constexpr int len = MC_KEY_MAX_LEN_ASCII + 5;
@@ -418,7 +421,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
 }
 
 TEST(AsyncMcClient, asciiSentTimeouts) {
-  TestServer server(false /* outOfOrder */, false /* useSsl */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol);
   client.sendGet("test", mc_res_found);
@@ -436,7 +440,8 @@ TEST(AsyncMcClient, asciiSentTimeouts) {
 }
 
 TEST(AsyncMcClient, asciiPendingTimeouts) {
-  TestServer server(false /* outOfOrder */, false /* useSsl */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_ascii_protocol);
   // Allow only up to two requests in flight.
@@ -458,7 +463,8 @@ TEST(AsyncMcClient, asciiPendingTimeouts) {
 
 TEST(AsyncMcClient, asciiSendingTimeouts) {
   auto bigValue = genBigValue();
-  TestServer server(false /* outOfOrder */, false /* useSsl */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */);
   // Use very large write timeout, so that we never timeout writes.
   TestClient client("localhost", server.getListenPort(), 10000,
                     mc_ascii_protocol);
@@ -487,7 +493,8 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
 }
 
 TEST(AsyncMcClient, oooUmbrellaTimeouts) {
-  TestServer server(true /* outOfOrder */, false /* useSsl */);
+  TestServer<TestServerOnRequest> server(true /* outOfOrder */,
+                                         false /* useSsl */);
   TestClient client("localhost", server.getListenPort(), 200,
                     mc_umbrella_protocol);
   // Allow only up to two requests in flight.
@@ -507,9 +514,12 @@ TEST(AsyncMcClient, oooUmbrellaTimeouts) {
 }
 
 TEST(AsyncMcClient, tonsOfConnections) {
-  TestServer server(false /* outOfOrder */, false /* useSsl */,
-                    10, 250, 3 /* maxConns */,
-                    0 /* unreapableTime */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */,
+                                         10,
+                                         250,
+                                         3 /* maxConns */,
+                                         0 /* unreapableTime */);
 
   bool wentDown = false;
 
@@ -550,8 +560,12 @@ TEST(AsyncMcClient, tonsOfConnections) {
 }
 
 TEST(AsyncMcClient, disableConnectionLRU) {
-  TestServer server(false /* outOfOrder */, false /* useSsl */,
-                    10, 250, 0 /* maxConns */, 1000000 /* unreapableTime */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */,
+                                         10,
+                                         250,
+                                         0 /* maxConns */,
+                                         1000000 /* unreapableTime */);
 
   bool wentDown = false;
 
@@ -591,8 +605,12 @@ TEST(AsyncMcClient, disableConnectionLRU) {
 }
 
 TEST(AsyncMcClient, testUnreapableTime) {
-  TestServer server(false /* outOfOrder */, false /* useSsl */,
-                    10, 250, 3 /* maxConns */, 1000000 /* unreapableTime */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */,
+                                         10,
+                                         250,
+                                         3 /* maxConns */,
+                                         1000000 /* unreapableTime */);
 
   bool firstWentDown = false;
   bool lastWentDown = false;
@@ -641,9 +659,13 @@ TEST(AsyncMcClient, testUnreapableTime) {
 }
 
 TEST(AsyncMcClient, testUpdateThreshold) {
-  TestServer server(false /* outOfOrder */, false /* useSsl */,
-                    10, 250, 2 /* maxConns */, 0 /* unreapableTime */,
-                    2000 /* updateTime = 2 sec */);
+  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
+                                         false /* useSsl */,
+                                         10,
+                                         250,
+                                         2 /* maxConns */,
+                                         0 /* unreapableTime */,
+                                         2000 /* updateTime = 2 sec */);
 
   bool firstWentDown = false;
   bool secondWentDown = false;

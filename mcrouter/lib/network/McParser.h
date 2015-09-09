@@ -133,7 +133,7 @@ class McParser {
   mc_protocol_t determineProtocol(uint8_t first_byte) {
     switch (first_byte) {
       case ENTRY_LIST_MAGIC_BYTE:
-      case CARET_MAGIC_BYTE:
+      case kCaretMagicByte:
         return mc_umbrella_protocol;
       default:
         return mc_ascii_protocol;

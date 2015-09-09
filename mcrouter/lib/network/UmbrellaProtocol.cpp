@@ -10,6 +10,7 @@
 #include "UmbrellaProtocol.h"
 
 #include <folly/Bits.h>
+#include <folly/io/IOBuf.h>
 #include <folly/GroupVarint.h>
 #include <folly/Varint.h>
 
@@ -77,7 +78,7 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
 
   if (buf[0] == ENTRY_LIST_MAGIC_BYTE) {
     infoOut.version = UmbrellaVersion::BASIC;
-  } else if (buf[0] == CARET_MAGIC_BYTE) {
+  } else if (buf[0] == kCaretMagicByte) {
     infoOut.version = UmbrellaVersion::TYPED_MESSAGE;
   } else {
     return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
@@ -120,7 +121,7 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
     return UmbrellaParseStatus::NOT_ENOUGH_DATA;
   }
 
-  if (buff[0] != CARET_MAGIC_BYTE) {
+  if (buff[0] != kCaretMagicByte) {
     return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
   }
 
@@ -155,6 +156,21 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
   info.headerSize = range.cbegin() - buf;
 
   return UmbrellaParseStatus::OK;
+}
+
+size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuf) {
+
+  // Header is at most kMaxHeaderLength without extra fields.
+
+  uint32_t bodySize = info.bodySize;
+  uint32_t typeId = info.typeId;
+  uint32_t reqId = info.reqId;
+
+  headerBuf[0] = kCaretMagicByte;
+
+  return folly::GroupVarint32::encode(
+             headerBuf + 1, bodySize, typeId, reqId, 0) -
+         headerBuf;
 }
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader) {
