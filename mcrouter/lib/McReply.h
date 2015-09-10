@@ -278,6 +278,14 @@ class McReply {
     return msg_.get() ? msg_->ip_addr : addr;
   }
 
+  void setIpAddress(const struct in6_addr& addr, uint8_t ipVersion) {
+    // TODO(prateekj): Task 8315662 - Store ipAddress in McReply itself
+    auto msg = createMcMsgRef();
+    msg->ip_addr = addr;
+    msg->ipv = ipVersion;
+    msg_ = std::move(msg);
+  }
+
   /**
    * Fills out a provided mc_msg_t so that it represents this McReply
    * for the given op.
