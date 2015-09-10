@@ -227,6 +227,11 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     checkLogic(juseSsl->isBool(), "Pool {}: use_ssl is not a bool", name);
     useSsl = juseSsl->getBool();
   }
+  bool useTyped = false;
+  if (auto juseTyped = json.get_ptr("use_typed")) {
+    checkLogic(juseTyped->isBool(), "Pool {}: use_typed is not a bool", name);
+    useTyped = juseTyped->getBool();
+  }
 
   // servers
   auto jservers = json.get_ptr("servers");
@@ -269,13 +274,17 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       checkLogic(ap != nullptr, "Pool {}: invalid server #{}", name, i);
     }
 
-    auto client = clientPool->emplaceClient(
-      timeout,
-      std::move(ap),
-      keep_routing_prefix,
-      serverUseSsl,
-      serverQosClass,
-      serverQosPath);
+    if (useTyped) {
+      checkLogic(ap->getProtocol() == mc_umbrella_protocol,
+                 "Typed requests only supported with Umbrella");
+    }
+    auto client = clientPool->emplaceClient(timeout,
+                                            std::move(ap),
+                                            keep_routing_prefix,
+                                            serverQosClass,
+                                            serverQosPath,
+                                            serverUseSsl,
+                                            useTyped);
 
     clients_.push_back(std::move(client));
   } // servers

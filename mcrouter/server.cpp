@@ -21,56 +21,12 @@
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
+#include "mcrouter/ServerOnRequest.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
-
-struct ServerRequestContext {
-  McServerRequestContext ctx;
-  McRequest req;
-
-  ServerRequestContext(McServerRequestContext&& ctx_, McRequest&& req_)
-      : ctx(std::move(ctx_)), req(std::move(req_)) {}
-};
-
-/**
- * Server callback for standalone Mcrouter
- */
-class ServerOnRequest {
- public:
-  explicit ServerOnRequest(
-    McrouterClient* client,
-    bool retainSourceIp = false)
-      : client_(client),
-        retainSourceIp_(retainSourceIp) {
-  }
-
-  template <int M>
-  void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<M>) {
-    auto rctx = folly::make_unique<ServerRequestContext>(std::move(ctx),
-                                                         std::move(req));
-    auto& reqRef = rctx->req;
-    auto cb =
-      [sctx = std::move(rctx)](McReply&& reply) {
-        McServerRequestContext::reply(std::move(sctx->ctx), std::move(reply));
-      };
-
-    if (retainSourceIp_) {
-      auto peerIp = rctx->ctx.session().getSocketAddress().getAddressStr();
-      client_->send(reqRef, McOperation<M>(), std::move(cb), peerIp);
-    } else {
-      client_->send(reqRef, McOperation<M>(), std::move(cb));
-    }
-  }
-
- private:
-  McrouterClient* client_;
-  bool retainSourceIp_{false};
-};
 
 mcrouter_client_callbacks_t const server_callbacks = {
     nullptr, nullptr, nullptr};
@@ -90,7 +46,7 @@ void serverLoop(
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
-  worker.setOnRequest(ServerOnRequest(routerClient.get(), retainSourceIp));
+  worker.setOnRequest(ServerOnRequest(*routerClient, retainSourceIp));
   worker.setOnConnectionAccepted([proxy] () {
       stat_incr(proxy->stats, successful_client_connections_stat, 1);
       stat_incr(proxy->stats, num_clients_stat, 1);
