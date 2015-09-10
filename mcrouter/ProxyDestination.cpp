@@ -219,14 +219,15 @@ ProxyDestination::~ProxyDestination() {
 
 ProxyDestination::ProxyDestination(proxy_t* proxy_,
                                    const ProxyClientCommon& ro_)
-  : proxy(proxy_),
-    accessPoint_(ro_.ap),
-    shortestTimeout_(ro_.server_timeout),
-    useSsl_(ro_.useSsl),
-    qosClass_(ro_.qosClass),
-    qosPath_(ro_.qosPath),
-    stats_(proxy_->router().opts()),
-    poolName_(ro_.pool.getName()) {
+    : proxy(proxy_),
+      accessPoint_(ro_.ap),
+      shortestTimeout_(ro_.server_timeout),
+      qosClass_(ro_.qosClass),
+      qosPath_(ro_.qosPath),
+      stats_(proxy_->router().opts()),
+      poolName_(ro_.pool.getName()),
+      useSsl_(ro_.useSsl),
+      useTyped_(ro_.useTyped) {
 
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);
@@ -260,6 +261,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
+  options.useTyped = useTyped_;
   if (opts.enable_qos) {
     options.enableQoS = true;
     options.qosClass = qosClass_;

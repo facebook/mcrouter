@@ -20,18 +20,19 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool& pool_,
                                      std::chrono::milliseconds timeout,
                                      std::shared_ptr<const AccessPoint> ap_,
                                      int keep_routing_prefix_,
-                                     bool useSsl_,
                                      uint64_t qosClass_,
-                                     uint64_t qosPath_)
+                                     uint64_t qosPath_,
+                                     bool useSsl_,
+                                     bool useTyped_)
     : pool(pool_),
       ap(std::move(ap_)),
       keep_routing_prefix(keep_routing_prefix_),
       server_timeout(std::move(timeout)),
       indexInPool(pool.getClients().size()),
-      useSsl(useSsl_),
       qosClass(qosClass_),
-      qosPath(qosPath_) {
-}
+      qosPath(qosPath_),
+      useSsl(useSsl_),
+      useTyped(useTyped_) {}
 
 std::string ProxyClientCommon::genProxyDestinationKey() const {
   if (ap->getProtocol() == mc_ascii_protocol) {
