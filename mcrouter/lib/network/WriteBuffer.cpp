@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "WriteBuffer.h"
+#include "mcrouter/lib/network/McServerRequestContext.h"
 
 #include "mcrouter/lib/mc/protocol.h"
 
@@ -36,12 +36,30 @@ WriteBuffer::~WriteBuffer() {
       break;
 
     case mc_umbrella_protocol:
-      umbrellaReply_.~UmbrellaSerializedMessage();
+      if (version_ == UmbrellaVersion::BASIC) {
+        umbrellaReply_.~UmbrellaSerializedMessage();
+      } else {
+        caretReply_.~CaretSerializedMessage();
+      }
       break;
 
     default:
       CHECK(false);
   }
+}
+
+void WriteBuffer::ensureType(UmbrellaVersion version) {
+  if (version_ == version) {
+    return;
+  }
+  if (version == UmbrellaVersion::TYPED_MESSAGE) {
+    umbrellaReply_.~UmbrellaSerializedMessage();
+    new (&caretReply_) CaretSerializedMessage();
+  } else {
+    caretReply_.~CaretSerializedMessage();
+    new (&umbrellaReply_) UmbrellaSerializedMessage();
+  }
+  version_ = version;
 }
 
 void WriteBuffer::clear() {
@@ -54,7 +72,11 @@ void WriteBuffer::clear() {
       break;
 
     case mc_umbrella_protocol:
-      umbrellaReply_.clear();
+      if (version_ == UmbrellaVersion::BASIC) {
+        umbrellaReply_.clear();
+      } else {
+        caretReply_.clear();
+      }
       break;
 
     default:
@@ -76,6 +98,7 @@ bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply) {
       break;
 
     case mc_umbrella_protocol:
+      ensureType(UmbrellaVersion::BASIC);
       return umbrellaReply_.prepare(reply_.value(),
                                     ctx_->operation_,
                                     ctx_->reqid_,

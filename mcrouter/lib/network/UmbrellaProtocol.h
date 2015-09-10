@@ -127,7 +127,7 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
 
 class UmbrellaSerializedMessage {
  public:
-  UmbrellaSerializedMessage();
+  UmbrellaSerializedMessage() noexcept;
   void clear();
   bool prepare(const McReply& reply, mc_op_t op, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut);
