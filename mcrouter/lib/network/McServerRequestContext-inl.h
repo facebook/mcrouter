@@ -8,8 +8,29 @@
  *
  */
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/network/McServerSession.h"
+#include "mcrouter/lib/network/WriteBuffer.h"
 
 namespace facebook { namespace memcache {
+
+template <class Reply>
+void McServerRequestContext::reply(McServerRequestContext&& ctx,
+                                   Reply&& reply,
+                                   size_t typeId) {
+  auto session = ctx.session_;
+  ctx.replied_ = true;
+
+  if (!session->ensureWriteBufs()) {
+    return;
+  }
+  uint64_t reqid = ctx.reqid_;
+  auto wb = session->writeBufs_->get();
+  if (!wb->prepareTyped(std::move(ctx), std::move(reply), typeId)) {
+    session->transport_->close();
+    return;
+  }
+  session->reply(std::move(wb), reqid);
+}
 
 template <class OnRequest>
 void McServerOnRequestWrapper<OnRequest>::requestReady(

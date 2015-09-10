@@ -307,7 +307,7 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
   return req;
 }
 
-UmbrellaSerializedMessage::UmbrellaSerializedMessage() {
+UmbrellaSerializedMessage::UmbrellaSerializedMessage() noexcept {
   /* These will not change from message to message */
   msg_.msg_header.magic_byte = ENTRY_LIST_MAGIC_BYTE;
   msg_.msg_header.version = UMBRELLA_VERSION_BASIC;

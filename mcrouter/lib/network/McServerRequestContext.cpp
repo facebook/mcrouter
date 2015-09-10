@@ -44,16 +44,16 @@ void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
   }
 
   if (!session->ensureWriteBufs()) {
-    session->transport_->close();
     return;
   }
 
+  uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
   if (!wb->prepare(std::move(ctx), std::move(reply))) {
     session->transport_->close();
     return;
   }
-  session->reply(std::move(wb), ctx.reqid_);
+  session->reply(std::move(wb), reqid);
 }
 
 bool McServerRequestContext::noReply(const McReply& reply) const {
@@ -92,7 +92,7 @@ McServerRequestContext::McServerRequestContext(
 }
 
 McServerRequestContext::McServerRequestContext(
-  McServerRequestContext&& other) noexcept
+    McServerRequestContext&& other) noexcept
     : session_(other.session_),
       operation_(other.operation_),
       noReply_(other.noReply_),

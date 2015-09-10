@@ -13,7 +13,9 @@
 
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
+#include "mcrouter/lib/network/WriteBuffer.h"
 
 namespace facebook { namespace memcache {
 
@@ -321,11 +323,12 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
 }
 
 bool McServerSession::ensureWriteBufs() {
-  if (!writeBufs_.hasValue()) {
+  if (writeBufs_ == nullptr) {
     try {
-      writeBufs_.emplace(parser_.protocol());
+      writeBufs_ = folly::make_unique<WriteBufferQueue>(parser_.protocol());
     } catch (const std::runtime_error& e) {
       LOG(ERROR) << "Invalid protocol detected";
+      transport_->close();
       return false;
     }
   }
@@ -405,7 +408,7 @@ void McServerSession::writeSuccess() noexcept {
   DestructorGuard dg(this);
   completeWrite();
 
-  assert(writeBufs_.hasValue());
+  assert(writeBufs_ != nullptr);
   if (writeBufs_->empty() && state_ == STREAMING) {
     if (onWriteQuiescence_) {
       onWriteQuiescence_(*this);

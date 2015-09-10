@@ -37,6 +37,9 @@ class McServerRequestContext {
    */
   static void reply(McServerRequestContext&& ctx, McReply&& reply);
 
+  template <class Reply>
+  static void reply(McServerRequestContext&& ctx, Reply&& reply, size_t typeId);
+
   ~McServerRequestContext();
 
   McServerRequestContext(McServerRequestContext&& other) noexcept;

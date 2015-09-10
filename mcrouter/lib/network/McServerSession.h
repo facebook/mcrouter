@@ -16,12 +16,13 @@
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
-#include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/WriteBuffer.h"
 
 namespace facebook { namespace memcache {
 
 class McServerOnRequest;
+class MultiOpParent;
+class WriteBuffer;
+class WriteBufferQueue;
 
 /**
  * A session owns a single transport, and processes the request/reply stream.
@@ -167,7 +168,7 @@ class McServerSession :
    * Queue of write buffers.
    * Only initialized after we know the protocol (see ensureWriteBufs())
    */
-  folly::Optional<WriteBufferQueue> writeBufs_;
+  std::unique_ptr<WriteBufferQueue> writeBufs_;
 
   /**
    * True iff SendWritesCallback has been scheduled.
@@ -255,6 +256,7 @@ class McServerSession :
   /**
    * Must be called after parser has detected the protocol (i.e.
    * at least one request was processed).
+   * Closes the session on protocol error
    * @return True if writeBufs_ has value after this call,
    *         False on any protocol error.
    */

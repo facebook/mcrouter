@@ -19,7 +19,7 @@ class McOperation;
  */
 class CaretSerializedMessage {
  public:
-  CaretSerializedMessage() = default;
+  CaretSerializedMessage() noexcept = default;
 
   CaretSerializedMessage(const CaretSerializedMessage&) = delete;
   CaretSerializedMessage& operator=(const CaretSerializedMessage&) = delete;
@@ -34,9 +34,20 @@ class CaretSerializedMessage {
                McOperation<Op>,
                size_t reqId,
                struct iovec*& iovOut,
-               size_t& niovOut) {
+               size_t& niovOut) noexcept {
     return false;
   }
+
+  template <class Reply>
+  bool prepare(Reply&& reply,
+               size_t reqId,
+               size_t typeId,
+               struct iovec*& iovOut,
+               size_t& niovOut) noexcept {
+    return false;
+  }
+
+  void clear() {}
 };
 }
 } // facebook::memcache
