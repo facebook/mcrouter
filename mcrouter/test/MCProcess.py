@@ -53,7 +53,9 @@ class MCProcess(object):
         stdout = open(self.stdout, 'w')
         stderr = open(self.stderr, 'w')
 
+        self.cmd_line = 'no command line'
         if cmd:
+            self.cmd_line = ' '.join(cmd)
             for command in cmd:
                 if command == 'python':
                     continue
@@ -170,11 +172,11 @@ class MCProcess(object):
             log = ""
 
         if log:
-            print("%s stdout:\n%s" % (self, log))
+            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, log))
         if stdout:
-            print("%s stdout:\n%s" % (self, stdout))
+            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stdout))
         if stderr:
-            print("%s stdout:\n%s" % (self, stderr))
+            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stderr))
 
     def __del__(self):
         if self.proc:
