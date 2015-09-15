@@ -36,9 +36,9 @@ mc_protocol_t parseProtocol(const folly::dynamic& obj, mc_protocol_t def) {
                jprotocol->typeName());
 
     auto str = jprotocol->stringPiece();
-    if (equalStr("ascii", str, folly::asciiCaseInsensitive)) {
+    if (equalStr("ascii", str, folly::AsciiCaseInsensitive())) {
       return mc_ascii_protocol;
-    } else if (equalStr("umbrella", str, folly::asciiCaseInsensitive)) {
+    } else if (equalStr("umbrella", str, folly::AsciiCaseInsensitive())) {
       return mc_umbrella_protocol;
     }
     checkLogic(false, "Unknown protocol '{}'", str);
