@@ -153,10 +153,8 @@ inline bool isMetagetAvailable() {
 
 void insertCustomStartupOpts(folly::dynamic& options);
 
-#ifdef PACKAGE_STRING
-  #define MCROUTER_PACKAGE_STRING PACKAGE_STRING
-#else
-  #define MCROUTER_PACKAGE_STRING "mcrouter 1.0"
+#ifndef MCROUTER_PACKAGE_STRING
+  #define MCROUTER_PACKAGE_STRING "1.0.0 mcrouter"
 #endif
 
 }}} // facebook::memcache::mcrouter
