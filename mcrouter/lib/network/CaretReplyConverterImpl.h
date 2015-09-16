@@ -21,7 +21,7 @@ class CaretReplyConverter {
                             const folly::IOBuf& bodyBuffer,
                             McReply& reply) {
     reply.setResult(mc_res_remote_error);
-    reply.setValue(folly::StringPiece("Not supported"));
+    reply.setValue("Not supported");
   }
 };
 }
