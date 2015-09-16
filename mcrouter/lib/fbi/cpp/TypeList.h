@@ -17,7 +17,10 @@ namespace facebook { namespace memcache {
  * Pair of arbitrary types.
  */
 template <class L, class R>
-struct Pair {};
+struct Pair {
+  using First = L;
+  using Second = R;
+};
 
 /**
  * Type list and int list manipulation routines
@@ -48,7 +51,10 @@ using ConcatenateListsT = typename ConcatenateLists<Lists...>::type;
  * List<KV...> can be used as an {int -> T} map
  */
 template <int Id, class T>
-struct KV {};
+struct KV {
+  static constexpr int Key = Id;
+  using Value = T;
+};
 
 /**
  * (T, List<Ts...>) -> List<T, Ts...>

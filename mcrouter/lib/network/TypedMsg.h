@@ -29,6 +29,10 @@ struct CallDispatcherImpl;
 
 template <class T, class TMList>
 struct IdFromTypeImpl;
+
+template <class T, class PairList>
+struct ReplyFromRequestTypeImpl;
+
 }  // detail
 
 template <class TMList>
@@ -49,13 +53,21 @@ struct StaticChecker<List<TypedMsg<Ids, Ms>...>> {
 template <class T, class TMList>
 struct IdFromType;
 
-template <class T, int K1, class V1, int... K, class... V>
-struct IdFromType<T, List<TypedMsg<K1, V1>, TypedMsg<K, V>...>> {
+template <class T, class TM, class... TMs>
+struct IdFromType<T, List<TM, TMs...>> {
   static constexpr int value =
-      detail::IdFromTypeImpl<T,
-                             List<TypedMsg<K1, V1>, TypedMsg<K, V>...>>::value;
+      detail::IdFromTypeImpl<T, List<TM, TMs...>>::value;
   static_assert(value != -1, "Supplied list doesn't contain given type id");
 };
+
+/**
+ * Given a Request Type T and a List of Request Reply Pairs,
+ * Gets the Reply type for the Request Type T.
+ * If the type is not in the list, gives void as the type
+ */
+template <class T, class PairList>
+using ReplyFromRequestType =
+    typename detail::ReplyFromRequestTypeImpl<T, PairList>::type;
 
 /**
  * Traits to enable/disable methods based on,
