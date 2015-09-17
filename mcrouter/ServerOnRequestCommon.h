@@ -35,6 +35,13 @@ class ServerOnRequestCommon {
   ServerOnRequestCommon(McrouterClient& client, bool retainSourceIp)
       : client_(client), retainSourceIp_(retainSourceIp) {}
 
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
+                 McOperation<mc_op_version>) {
+    McServerRequestContext::reply(std::move(ctx),
+                                  McReply(mc_res_ok, MCROUTER_PACKAGE_STRING));
+  }
+
   template <int M>
   void onRequest(McServerRequestContext&& ctx,
                  McRequest&& req,
