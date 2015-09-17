@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include "mcrouter/routes/PrefixRouteSelector.h"
+#include "mcrouter/routes/PrefixSelectorRoute.h"
 
 using std::pair;
 using std::vector;
@@ -44,7 +44,7 @@ overrideItems(vector<McrouterRouteHandlePtr> original,
 }
 
 RoutePolicyMap::RoutePolicyMap(
-  const vector<std::shared_ptr<PrefixRouteSelector>>& clusters) {
+  const vector<std::shared_ptr<PrefixSelectorRoute>>& clusters) {
   // wildcards of all clusters
   vector<McrouterRouteHandlePtr> wildcards;
   // Trie with aggregated policies from all clusters

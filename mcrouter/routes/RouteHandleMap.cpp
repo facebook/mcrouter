@@ -20,7 +20,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
-#include "mcrouter/routes/PrefixRouteSelector.h"
+#include "mcrouter/routes/PrefixSelectorRoute.h"
 #include "mcrouter/routes/RoutePolicyMap.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 #include "mcrouter/RoutingPrefix.h"
@@ -29,7 +29,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-typedef std::vector<std::shared_ptr<PrefixRouteSelector>> RouteSelectorVector;
+using RouteSelectorVector = std::vector<std::shared_ptr<PrefixSelectorRoute>>;
 
 struct VectorHash {
   size_t operator()(const RouteSelectorVector& v) const {
@@ -67,8 +67,8 @@ RouteHandleMap::RouteHandleMap(
              "invalid default route: {}", defaultRoute_.str());
 
   RouteSelectorVector allRoutes;
-  std::unordered_map<std::string, RouteSelectorVector> byRegion;
-  std::unordered_map<std::string, RouteSelectorVector> byRoute;
+  folly::StringKeyedUnorderedMap<RouteSelectorVector> byRegion;
+  folly::StringKeyedUnorderedMap<RouteSelectorVector> byRoute;
   // add defaults first
   for (const auto& it : routeSelectors) {
     RoutingPrefix prefix(it.first);
@@ -77,7 +77,7 @@ RouteHandleMap::RouteHandleMap(
     }
 
     if (prefix.getRegion() == defaultRoute_.getRegion()) {
-      byRegion[prefix.getRegion().str()].push_back(it.second);
+      byRegion[prefix.getRegion()].push_back(it.second);
     }
   }
 
@@ -89,7 +89,7 @@ RouteHandleMap::RouteHandleMap(
     }
 
     if (prefix.getRegion() != defaultRoute_.getRegion()) {
-      byRegion[prefix.getRegion().str()].push_back(it.second);
+      byRegion[prefix.getRegion()].push_back(it.second);
     }
 
     byRoute[it.first].push_back(it.second);

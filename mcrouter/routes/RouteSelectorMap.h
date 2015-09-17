@@ -10,14 +10,14 @@
 #pragma once
 
 #include <memory>
-#include <string>
-#include <unordered_map>
+
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class PrefixRouteSelector;
+class PrefixSelectorRoute;
 
-typedef std::unordered_map<std::string, std::shared_ptr<PrefixRouteSelector>>
-  RouteSelectorMap;
+using RouteSelectorMap =
+  folly::StringKeyedUnorderedMap<std::shared_ptr<PrefixSelectorRoute>>;
 
 }}}  // facebook::memcache::mcrouter

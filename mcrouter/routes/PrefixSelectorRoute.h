@@ -29,16 +29,16 @@ namespace mcrouter {
  * This class contains RouteHandles that should be used depending on key
  * prefix.
  */
-class PrefixRouteSelector {
+class PrefixSelectorRoute {
  public:
   /// Trie that acts like map from key prefix to corresponding RouteHandle.
   Trie<std::shared_ptr<McrouterRouteHandleIf>> policies;
   /// Used when no RouteHandle found in policies
   std::shared_ptr<McrouterRouteHandleIf> wildcard;
 
-  PrefixRouteSelector() = default;
+  PrefixSelectorRoute() = default;
 
-  PrefixRouteSelector(RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  PrefixSelectorRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
                       const folly::dynamic& json);
 };
 

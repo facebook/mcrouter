@@ -19,11 +19,11 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class PrefixRouteSelector;
+class PrefixSelectorRoute;
 
 /**
  * @brief This class precalculates targets (vector of route handles) we should
- *        route to for some set of PrefixRouteSelectors.
+ *        route to for some set of PrefixSelectorRoutes.
  *
  * Sometimes we want to route to multiple clusters in one request.
  * This happens if routing prefix contains some '*'. Most common cases are
@@ -36,7 +36,7 @@ class PrefixRouteSelector;
  * on each request. This class precalculates these sets for some routing prefix.
  *
  * To use this class one should:
- * 1) create RoutePolicyMap with PrefixRouteSelectors for all clusters that
+ * 1) create RoutePolicyMap with PrefixSelectorRoutes for all clusters that
  *    match the routing prefix e.g. for /star/star/ these will be all clusters.
  *    Order is important: targets for corresponding cluster will be in same
  *    order as in clusters vector passed to constructor. So local clusters
@@ -47,7 +47,7 @@ class PrefixRouteSelector;
 class RoutePolicyMap {
  public:
   explicit RoutePolicyMap(
-    const std::vector<std::shared_ptr<PrefixRouteSelector>>& clusters);
+    const std::vector<std::shared_ptr<PrefixSelectorRoute>>& clusters);
 
   /**
    * @return vector of route handles that a request with given key should be

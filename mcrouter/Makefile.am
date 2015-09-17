@@ -133,8 +133,8 @@ libmcroutercore_a_SOURCES = \
   routes/OperationSelectorRoute.h \
   routes/OutstandingLimitRoute.cpp \
   routes/OutstandingLimitRoute.h \
-  routes/PrefixRouteSelector.cpp \
-  routes/PrefixRouteSelector.h \
+  routes/PrefixSelectorRoute.cpp \
+  routes/PrefixSelectorRoute.h \
   routes/ProxyRoute.cpp \
   routes/ProxyRoute.h \
   routes/RandomRoute.cpp \
