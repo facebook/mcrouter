@@ -25,22 +25,6 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-namespace {
-
-void addRouteSelector(const folly::dynamic& aliases,
-                      const folly::dynamic& route,
-                      RouteHandleFactory<McrouterRouteHandleIf>& factory,
-                      RouteSelectorMap& routeSelectors) {
-
-  auto routeSelector = std::make_shared<PrefixSelectorRoute>(factory, route);
-  for (const auto& alias : aliases) {
-    checkLogic(alias.isString(), "Alias is not a string");
-    routeSelectors[alias.stringPiece()] = routeSelector;
-  }
-}
-
-}  // anonymous namespace
-
 ProxyConfig::ProxyConfig(proxy_t* proxy,
                          const folly::dynamic& json,
                          std::string configMd5Digest,
@@ -68,8 +52,8 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
              "Invalid config: both 'route' and 'routes' are specified");
   checkLogic(jRoute || jRoutes, "No route/routes in config");
   if (jRoute) {
-    addRouteSelector({proxy->getRouterOptions().default_route.str()},
-                     *jRoute, factory, routeSelectors);
+    routeSelectors[proxy->getRouterOptions().default_route] =
+        std::make_shared<PrefixSelectorRoute>(factory, *jRoute);
   } else { // jRoutes
     checkLogic(jRoutes->isArray() || jRoutes->isObject(),
                "Config: routes is not array/object");
@@ -81,11 +65,18 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
         checkLogic(jCurRoute, "RoutePolicy: no route");
         checkLogic(jAliases, "RoutePolicy: no aliases");
         checkLogic(jAliases->isArray(), "RoutePolicy: aliases is not an array");
-        addRouteSelector(*jAliases, *jCurRoute, factory, routeSelectors);
+        auto routeSelector =
+            std::make_shared<PrefixSelectorRoute>(factory, *jCurRoute);
+        for (const auto& alias : *jAliases) {
+          checkLogic(alias.isString(), "RoutePolicy: alias is not a string");
+          routeSelectors[alias.stringPiece()] = routeSelector;
+        }
       }
     } else { // object
       for (const auto& it : jRoutes->items()) {
-        addRouteSelector({ it.first }, it.second, factory, routeSelectors);
+        checkLogic(it.first.isString(), "RoutePolicy: alias is not a string");
+        routeSelectors[it.first.stringPiece()] =
+            std::make_shared<PrefixSelectorRoute>(factory, it.second);
       }
     }
   }
