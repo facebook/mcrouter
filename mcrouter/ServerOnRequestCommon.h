@@ -60,13 +60,14 @@ class ServerOnRequestCommon {
     auto rctx = folly::make_unique<ServerRequestContext>(std::move(ctx),
                                                          std::move(req));
     auto& reqRef = rctx->req;
+    auto& sessionRef = rctx->ctx.session();
 
     auto cb = [sctx = std::move(rctx), replyFn](McReply&& reply) {
       replyFn(std::move(sctx->ctx), std::move(reply));
     };
 
     if (retainSourceIp_) {
-      auto peerIp = rctx->ctx.session().getSocketAddress().getAddressStr();
+      auto peerIp = sessionRef.getSocketAddress().getAddressStr();
       client_.send(reqRef, McOperation<M>(), std::move(cb), peerIp);
     } else {
       client_.send(reqRef, McOperation<M>(), std::move(cb));
