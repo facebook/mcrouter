@@ -305,8 +305,7 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     configApi_(createConfigApi(opts_)),
     asyncWriter_(folly::make_unique<AsyncWriter>()),
     statsLogWriter_(folly::make_unique<AsyncWriter>(
-                      opts_.stats_async_queue_length)),
-    evbAuxiliaryThread_(folly::make_unique<folly::ScopedEventBaseThread>()) {
+                      opts_.stats_async_queue_length)) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);
@@ -396,7 +395,7 @@ void McrouterInstance::startObservingRuntimeVarsFile() {
 
   startObservingFile(
     opts_.runtime_vars_file,
-    *evbAuxiliaryThread_->getEventBase(),
+    *evbAuxiliaryThread_.getEventBase(),
     opts_.file_observer_poll_period_ms,
     opts_.file_observer_sleep_before_update_ms,
     std::move(onUpdate)
@@ -488,9 +487,9 @@ void McrouterInstance::joinAuxiliaryThreads() noexcept {
     mcrouterLogger_->stop();
   }
 
-  evbAuxiliaryThread_.reset();
-
   stopAwriterThreads();
+
+  evbAuxiliaryThread_.stop();
 }
 
 void McrouterInstance::stopAwriterThreads() noexcept {

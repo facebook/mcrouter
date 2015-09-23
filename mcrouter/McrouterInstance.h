@@ -240,7 +240,7 @@ class McrouterInstance :
   std::atomic<bool> shutdownStarted_{false};
 
   // Auxiliary EventBase thread.
-  std::unique_ptr<folly::ScopedEventBaseThread> evbAuxiliaryThread_;
+  folly::ScopedEventBaseThread evbAuxiliaryThread_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
 
