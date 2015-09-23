@@ -35,11 +35,6 @@
 
 mcrouter_option_group("Startup")
 
-mcrouter_option_toggle(
-  new_ascii_parser, true,
-  "new-ascii-parser", no_short,
-  "Enables a new parser for ASCII protocol inside of AsyncMcClient")
-
 mcrouter_option_string(
   service_name, "unknown",
   no_long, no_short,

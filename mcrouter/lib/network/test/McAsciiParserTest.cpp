@@ -158,8 +158,8 @@ class McAsciiParserHarness {
   void runTestImpl() {
     currentId_ = 0;
     errorState_ = false;
-    parser_ = folly::make_unique<ParserT>(*this, 0, 1024, 4096, true,
-                                          mc_ascii_protocol);
+    parser_ =
+        folly::make_unique<ParserT>(*this, 0, 1024, 4096, mc_ascii_protocol);
     for (auto range : data_) {
       while (range.size() > 0 && !errorState_) {
         auto buffer = parser_->getReadBuffer();

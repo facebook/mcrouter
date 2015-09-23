@@ -22,10 +22,7 @@ class ClientMcParser : private McParser::ParserCallback {
                  size_t requestsPerRead,
                  size_t minBufferSize,
                  size_t maxBufferSize,
-                 bool useNewAsciiParser,
                  mc_protocol_t protocol);
-
-  ~ClientMcParser() override;
 
   /**
    * TAsyncTransport-style getReadBuffer().
@@ -56,14 +53,12 @@ class ClientMcParser : private McParser::ParserCallback {
  private:
   McParser parser_;
   McAsciiParser asciiParser_;
-  mc_parser_t mcParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
   void (ClientMcParser<Callback>::*umbrellaForwarder_)(
     const UmbrellaMessageInfo&, const uint8_t*, const uint8_t*,
     const folly::IOBuf&, uint64_t){nullptr};
   CaretReplyConverter converter_;
 
-  bool useNewParser_{false};
   mc_protocol_t protocol_;
 
   Callback& callback_;
@@ -88,9 +83,7 @@ class ClientMcParser : private McParser::ParserCallback {
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
 
-  /* mc_parser_t callbacks */
-  static void parserMsgReady(void* context, uint64_t reqid, mc_msg_t* req);
-  static void parserParseError(void* context, parser_error_t error);
+  bool shouldReadToAsciiBuffer() const;
 };
 
 }}  // facebook::memcache

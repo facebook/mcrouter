@@ -409,7 +409,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   scheduleNextWriterLoop();
   parser_ = folly::make_unique<ParserT>(
       *this, 0, kReadBufferSizeMin, kReadBufferSizeMax,
-      connectionOptions_.useNewAsciiParser,
       connectionOptions_.accessPoint->getProtocol());
   socket_->setReadCB(this);
 }

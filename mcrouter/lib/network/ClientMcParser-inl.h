@@ -16,32 +16,15 @@ ClientMcParser<Callback>::ClientMcParser(Callback& cb,
                                          size_t requestsPerRead,
                                          size_t minBufferSize,
                                          size_t maxBufferSize,
-                                         bool useNewAsciiParser,
                                          mc_protocol_t protocol)
   : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
-    useNewParser_(useNewAsciiParser),
     protocol_(protocol),
     callback_(cb) {
-  if (!useNewParser_) {
-    mc_parser_init(&mcParser_,
-                   reply_parser,
-                   &parserMsgReady,
-                   &parserParseError,
-                   this);
-  }
-}
-
-template <class Callback>
-ClientMcParser<Callback>::~ClientMcParser() {
-  if (!useNewParser_) {
-    mc_parser_reset(&mcParser_);
-  }
 }
 
 template <class Callback>
 std::pair<void*, size_t> ClientMcParser<Callback>::getReadBuffer() {
-  if (useNewParser_ && parser_.protocol() == mc_ascii_protocol &&
-      asciiParser_.hasReadBuffer()) {
+  if (shouldReadToAsciiBuffer()) {
     return asciiParser_.getReadBuffer();
   } else {
     return parser_.getReadBuffer();
@@ -50,8 +33,7 @@ std::pair<void*, size_t> ClientMcParser<Callback>::getReadBuffer() {
 
 template <class Callback>
 bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
-  if (useNewParser_ && parser_.protocol() == mc_ascii_protocol &&
-      asciiParser_.hasReadBuffer()) {
+  if (shouldReadToAsciiBuffer()) {
     asciiParser_.readDataAvailable(len);
     return true;
   } else {
@@ -62,7 +44,7 @@ bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
 template <class Callback>
 template <class Operation, class Request>
 void ClientMcParser<Callback>::expectNext() {
-  if (useNewParser_ && parser_.protocol() == mc_ascii_protocol) {
+  if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Operation, Request>();
     replyForwarder_ =
       &ClientMcParser<Callback>::forwardAsciiReply<Operation, Request>;
@@ -158,48 +140,40 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     return;
   }
 
-  if (useNewParser_) {
-    while (readBuffer.length()) {
-      if (asciiParser_.getCurrentState() == McAsciiParser::State::UNINIT) {
-        // Ask the client to initialize parser.
-        if (!callback_.nextReplyAvailable(0 /* reqId */)) {
-          auto data = reinterpret_cast<const char*>(readBuffer.data());
-          std::string reason(
-            folly::sformat(
-              "Received unexpected data from remote endpoint: '{}'!",
-              folly::cEscape<std::string>(folly::StringPiece(
+  while (readBuffer.length()) {
+    if (asciiParser_.getCurrentState() == McAsciiParser::State::UNINIT) {
+      // Ask the client to initialize parser.
+      if (!callback_.nextReplyAvailable(0 /* reqId */)) {
+        auto data = reinterpret_cast<const char *>(readBuffer.data());
+        std::string reason(folly::sformat(
+            "Received unexpected data from remote endpoint: '{}'!",
+            folly::cEscape<std::string>(folly::StringPiece(
                 data, data + std::min(readBuffer.length(),
-                static_cast<size_t>(128))))));
-          callback_.parseError(mc_res_local_error, reason);
-          return;
-        }
-      }
-      switch (asciiParser_.consume(readBuffer)) {
-        case McAsciiParser::State::COMPLETE:
-          (this->*replyForwarder_)();
-          break;
-        case McAsciiParser::State::ERROR:
-          callback_.parseError(mc_res_local_error,
-                               asciiParser_.getErrorDescription());
-          return;
-          break;
-        case McAsciiParser::State::PARTIAL:
-          // Buffer was completely consumed.
-          break;
-        case McAsciiParser::State::UNINIT:
-          // We fed parser some data, it shouldn't remain in State::NONE.
-          callback_.parseError(mc_res_local_error,
-                               "Sent data to AsciiParser but it remained in "
-                               "UNINIT state!");
-          return;
-          break;
+                                      static_cast<size_t>(128))))));
+        callback_.parseError(mc_res_local_error, reason);
+        return;
       }
     }
-  } else {
-    /* mc_parser only works with contiguous blocks */
-    auto bytes = readBuffer.coalesce();
-    mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
-    readBuffer.clear();
+    switch (asciiParser_.consume(readBuffer)) {
+    case McAsciiParser::State::COMPLETE:
+      (this->*replyForwarder_)();
+      break;
+    case McAsciiParser::State::ERROR:
+      callback_.parseError(mc_res_local_error,
+                           asciiParser_.getErrorDescription());
+      return;
+      break;
+    case McAsciiParser::State::PARTIAL:
+      // Buffer was completely consumed.
+      break;
+    case McAsciiParser::State::UNINIT:
+      // We fed parser some data, it shouldn't remain in State::NONE.
+      callback_.parseError(mc_res_local_error,
+                           "Sent data to AsciiParser but it remained in "
+                           "UNINIT state!");
+      return;
+      break;
+    }
   }
 }
 
@@ -210,31 +184,9 @@ void ClientMcParser<Callback>::parseError(mc_res_t result,
 }
 
 template <class Callback>
-void ClientMcParser<Callback>::parserMsgReady(void* context,
-                                              uint64_t reqid,
-                                              mc_msg_t* req) {
-  auto parser = reinterpret_cast<ClientMcParser<Callback>*>(context);
-  auto result = req->result;
-  parser->replyReadyHelper(McReply(result, McMsgRef::moveRef(req)), reqid);
-}
-
-template <class Callback>
-void ClientMcParser<Callback>::parserParseError(void* context,
-                                                parser_error_t error) {
-  std::string err;
-
-  switch (error) {
-    case parser_unspecified_error:
-    case parser_malformed_request:
-      err = "malformed request";
-      break;
-    case parser_out_of_memory:
-      err = "out of memory";
-      break;
-  }
-
-  reinterpret_cast<ClientMcParser<Callback>*>(context)
-    ->callback_.parseError(mc_res_client_error, err);
+bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
+  return parser_.protocol() == mc_ascii_protocol &&
+         asciiParser_.hasReadBuffer();
 }
 
 }}  // facebook::memcache

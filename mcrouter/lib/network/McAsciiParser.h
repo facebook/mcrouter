@@ -74,7 +74,7 @@ class McAsciiParser {
    * Check if McAsciiParser already has its own buffer.
    * @return  true iff we already have our own buffer that we can read into.
    */
-  bool hasReadBuffer();
+  bool hasReadBuffer() const;
 
   std::pair<void*, size_t> getReadBuffer();
 

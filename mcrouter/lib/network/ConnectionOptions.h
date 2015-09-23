@@ -49,12 +49,6 @@ struct ConnectionOptions {
   bool noNetwork{false};
 
   /**
-   * Temporary field for rolling out a new ASCII parser.
-   * If true, the new ASCII protocol parser will be used.
-   */
-  bool useNewAsciiParser{false};
-
-  /**
    * Flag to enable serialization in the Caret format for the umbrellaProtocol.
    */
   bool useTyped{false};

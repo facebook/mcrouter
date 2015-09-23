@@ -39,7 +39,7 @@ McAsciiParser::State McAsciiParser::consume(folly::IOBuf& buffer) {
   return state_;
 }
 
-bool McAsciiParser::hasReadBuffer() {
+bool McAsciiParser::hasReadBuffer() const {
   return state_ == State::PARTIAL && currentIOBuf_ != nullptr;
 }
 
