@@ -147,6 +147,7 @@ void McrouterClient::onReply(McReply&& reply, McMsgRef&& req, void* context) {
     case mc_op_gets:
     case mc_op_lease_get:
       stats_.recordFetchRequest(req->key.len, replyBytes);
+      break;
 
     case mc_op_add:
     case mc_op_set:
