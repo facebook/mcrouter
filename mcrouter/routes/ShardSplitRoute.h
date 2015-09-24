@@ -31,6 +31,15 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
+ * Create a suffix for the shard ID which will make the key route to
+ * the n'th shard split as specified in 'offset'.
+ *
+ * @param offset Which split the new key should route to.
+ * @return A suffix suitable to be appended to a shard ID in a key.
+ */
+std::string shardSplitSuffix(size_t offset);
+
+/**
  * Create a key which matches 'fullKey' except has a suffix on the shard
  * portion which will make the key route to the n'th shard split as specified in
  * 'index'.

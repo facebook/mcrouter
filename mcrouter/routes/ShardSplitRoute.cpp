@@ -19,6 +19,13 @@ McrouterRouteHandlePtr makeShardSplitRoute(
     std::move(rh), std::move(shardSplitter));
 }
 
+std::string shardSplitSuffix(size_t offset) {
+  std::string ret;
+  ret.push_back('a' + (offset % 26));
+  ret.push_back('a' + (offset / 26));
+  return ret;
+}
+
 std::string createSplitKey(folly::StringPiece fullKey,
                            size_t offset,
                            folly::StringPiece shard) {
