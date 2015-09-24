@@ -210,7 +210,8 @@ struct proxy_t {
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
   folly::EventBase& eventBase() const {
-    return eventBase_;
+    assert(eventBase_ != nullptr);
+    return *eventBase_;
   }
 
   ~proxy_t();
@@ -269,7 +270,7 @@ struct proxy_t {
   const McrouterOptions& getRouterOptions() const;
 
  private:
-  folly::EventBase& eventBase_;
+  folly::EventBase* eventBase_{nullptr};
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;
@@ -280,7 +281,24 @@ struct proxy_t {
 
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
 
-  proxy_t(McrouterInstance& router, folly::EventBase& eventBase);
+  struct ProxyDelayedDestructor {
+    void operator() (proxy_t* proxy) {
+      /* We only access self_ during construction, so this code should
+         never run concurrently.
+
+         Note: not proxy->self_.reset(), since this could destroy client
+         from inside the call to reset(), destroying self_ while the method
+         is still running. */
+      auto stolenPtr = std::move(proxy->self_);
+    }
+  };
+
+  std::shared_ptr<proxy_t> self_;
+
+  using Pointer = std::unique_ptr<proxy_t, ProxyDelayedDestructor>;
+  static Pointer createProxy(McrouterInstance& router,
+                             folly::EventBase& eventBase);
+  explicit proxy_t(McrouterInstance& router);
 
   void messageReady(ProxyMessage::Type t, void* data);
 

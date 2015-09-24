@@ -221,8 +221,7 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
         proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this));
       } else {
         CHECK(evbs[i] != nullptr);
-        std::unique_ptr<proxy_t> proxy(new proxy_t(*this, *evbs[i]));
-        proxies_.emplace_back(std::move(proxy));
+        proxies_.emplace_back(proxy_t::createProxy(*this, *evbs[i]));
       }
     } catch (...) {
       LOG(ERROR) << "Failed to create proxy";
@@ -294,7 +293,7 @@ proxy_t* McrouterInstance::getProxy(size_t index) const {
   }
 }
 
-std::unique_ptr<proxy_t> McrouterInstance::releaseProxy(size_t index) {
+proxy_t::Pointer McrouterInstance::releaseProxy(size_t index) {
   assert(index < proxies_.size());
   return std::move(proxies_[index]);
 }

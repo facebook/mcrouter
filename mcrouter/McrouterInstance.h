@@ -136,7 +136,7 @@ class McrouterInstance :
   /**
    * Release ownership of a proxy
    */
-  std::unique_ptr<proxy_t> releaseProxy(size_t index);
+  proxy_t::Pointer releaseProxy(size_t index);
 
   pid_t pid() const {
     return pid_;
@@ -256,7 +256,7 @@ class McrouterInstance :
    * Embedded mode: Mcrouter owns ProxyThreads, which managed the lifetime
    * of proxies on their own threads.
    */
-  std::vector<std::unique_ptr<proxy_t>> proxies_;
+  std::vector<proxy_t::Pointer> proxies_;
   std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
 
   /**

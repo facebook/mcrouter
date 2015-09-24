@@ -15,6 +15,8 @@
 
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/proxy.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterInstance;
@@ -44,7 +46,7 @@ class ProxyThread {
 
  private:
   folly::EventBase evb_;
-  std::unique_ptr<proxy_t> proxy_;
+  proxy_t::Pointer proxy_;
   std::thread thread_;
 
   enum class State {

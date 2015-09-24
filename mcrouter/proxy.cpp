@@ -70,7 +70,8 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
 
 }  // anonymous namespace
 
-proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
+
+proxy_t::proxy_t(McrouterInstance& rtr)
     : router_(rtr),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       durationUs(kExponentialFactor),
@@ -78,8 +79,8 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
       fiberManager(
         fiber_local::ContextTypeTag(),
         folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(router_.opts())),
-      eventBase_(evb) {
+        getFiberManagerOptions(router_.opts())) {
+
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
@@ -90,22 +91,11 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
 
   init_stats(stats);
 
-  dynamic_cast<folly::fibers::EventBaseLoopController&>(
-    fiberManager.loopController()).attachEventBase(eventBase_);
-
-  std::chrono::milliseconds connectionResetInterval{
-    router_.opts().reset_inactive_connection_interval
-  };
-  if (connectionResetInterval.count() > 0) {
-    destinationMap->setResetTimer(connectionResetInterval);
-  }
-
   messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
     router_.opts().client_queue_size,
     [this] (ProxyMessage&& message) {
       this->messageReady(message.type, message.data);
     },
-    eventBase_,
     router_.opts().client_queue_no_notify_rate,
     router_.opts().client_queue_wait_threshold_us,
     &nowUs,
@@ -115,13 +105,38 @@ proxy_t::proxy_t(McrouterInstance& rtr, folly::EventBase& evb)
   );
 
   statsContainer = folly::make_unique<ProxyStatsContainer>(*this);
+}
 
-  if (router_.opts().cpu_cycles) {
-    eventBase_.runInEventBaseThread([this] {
-      cycles::attachEventBase(this->eventBase_);
-      this->fiberManager.setObserver(&this->cyclesObserver);
+proxy_t::Pointer proxy_t::createProxy(McrouterInstance& router,
+                                      folly::EventBase& eventBase) {
+  /* This hack is needed to make sure proxy_t stays alive
+     until at least event base managed to run the callback below */
+  auto proxy = std::shared_ptr<proxy_t>(new proxy_t(router));
+  proxy->self_ = proxy;
+
+  eventBase.runInEventBaseThread(
+    [proxy, &eventBase] () {
+      proxy->eventBase_ = &eventBase;
+      proxy->messageQueue_->attachEventBase(eventBase);
+
+      dynamic_cast<folly::fibers::EventBaseLoopController&>(
+        proxy->fiberManager.loopController()).attachEventBase(eventBase);
+
+      std::chrono::milliseconds connectionResetInterval{
+        proxy->router_.opts().reset_inactive_connection_interval
+      };
+
+      if (connectionResetInterval.count() > 0) {
+        proxy->destinationMap->setResetTimer(connectionResetInterval);
+      }
+
+      if (proxy->router_.opts().cpu_cycles) {
+        cycles::attachEventBase(eventBase);
+        proxy->fiberManager.setObserver(&proxy->cyclesObserver);
+      }
     });
-  }
+
+  return Pointer(proxy.get());
 }
 
 std::shared_ptr<ProxyConfig> proxy_t::getConfig() const {

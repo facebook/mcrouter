@@ -70,6 +70,10 @@ class Notifier {
 
   void maybeUpdatePeriod() noexcept;
 
+  size_t noNotifyRate() const {
+    return noNotifyRate_;
+  }
+
  private:
   const size_t noNotifyRate_;
   const int64_t waitThreshold_;
@@ -115,26 +119,31 @@ class MessageQueue {
    */
   MessageQueue(size_t capacity,
                std::function<void(T&&)> onMessage,
-               folly::EventBase& evb,
                size_t noNotifyRate,
                int64_t waitThreshold,
                Notifier::NowUsecFunc nowFunc,
                std::function<void()> notifyCallback)
       : queue_(capacity),
         onMessage_(std::move(onMessage)),
-        evb_(evb),
         notifier_(noNotifyRate, waitThreshold, nowFunc),
         handler_(*this),
-        timeoutHandler_(*this, evb_),
+        timeoutHandler_(*this),
         notifyCallback_(std::move(notifyCallback)) {
 
     efd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);
     PCHECK(efd_ >= 0);
+  }
 
-    handler_.initHandler(&evb_, efd_);
+  /**
+   * Must be called from the event base thread.
+   */
+  void attachEventBase(folly::EventBase& evb) {
+    handler_.initHandler(&evb, efd_);
     handler_.registerHandler(
       folly::EventHandler::READ | folly::EventHandler::PERSIST);
-    if (noNotifyRate > 0) {
+
+    if (notifier_.noNotifyRate() > 0) {
+      timeoutHandler_.attachEventBase(&evb);
       timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
     }
   }
@@ -189,7 +198,6 @@ class MessageQueue {
   static constexpr int64_t kWakeupEveryMs = 2;
   folly::MPMCQueue<T> queue_;
   std::function<void(T&&)> onMessage_;
-  folly::EventBase& evb_;
   Notifier notifier_;
 
   class EventHandler : public folly::EventHandler {
@@ -205,10 +213,7 @@ class MessageQueue {
 
   class TimeoutHandler : public folly::AsyncTimeout {
    public:
-    explicit TimeoutHandler(MessageQueue& q, folly::EventBase& evb)
-        : folly::AsyncTimeout(&evb),
-          parent_(q) {
-    }
+    explicit TimeoutHandler(MessageQueue& q) : parent_(q) {}
     void timeoutExpired() noexcept override {
       parent_.onTimeout();
     }
