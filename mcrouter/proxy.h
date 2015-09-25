@@ -162,8 +162,7 @@ struct proxy_t {
   std::mutex stats_lock;
   stat_t stats[num_stats];
 
-  static constexpr double kExponentialFactor{1.0 / 64.0};
-  ExponentialSmoothData durationUs{kExponentialFactor};
+  ExponentialSmoothData<64> durationUs;
 
   // we are wasting some memory here to get faster mapping from stat name to
   // stats_bin[] and stats_num_within_window[] entry. i.e., the stats_bin[]

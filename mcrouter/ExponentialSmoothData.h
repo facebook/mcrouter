@@ -9,25 +9,33 @@
  */
 #pragma once
 
+#include <cmath>
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <size_t WindowSize>
 class ExponentialSmoothData {
  public:
-  explicit ExponentialSmoothData(double smootingFactor);
-  void insertSample(double sample);
+  static_assert(WindowSize > 0, "WindowSize should be > 0");
+
+  void insertSample(double sample) {
+    if (hasValue()) {
+      currentValue_ = (sample + (WindowSize - 1) * currentValue_) / WindowSize;
+    } else {
+      currentValue_ = sample;
+    }
+  }
 
   double value() const {
     return currentValue_;
   }
 
   bool hasValue() const {
-    return hasRegisteredFirstSample_;
+    return !std::isnan(currentValue_);
   }
 
  private:
-  double smoothingFactor_{0.0};
-  double currentValue_{0.0};
-  bool hasRegisteredFirstSample_{false};
+  double currentValue_{std::nan("")};
 };
 
 }}}  // facebook::memcache::mcrouter

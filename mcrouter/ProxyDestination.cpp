@@ -224,7 +224,6 @@ ProxyDestination::ProxyDestination(proxy_t* proxy_,
       shortestTimeout_(ro_.server_timeout),
       qosClass_(ro_.qosClass),
       qosPath_(ro_.qosPath),
-      stats_(proxy_->router().opts()),
       poolName_(ro_.pool.getName()),
       useSsl_(ro_.useSsl),
       useTyped_(ro_.useTyped) {
@@ -392,10 +391,6 @@ void ProxyDestination::updateShortestTimeout(
       client_->updateWriteTimeout(shortestTimeout_);
     }
   }
-}
-
-ProxyDestination::Stats::Stats(const McrouterOptions& opts)
-  : avgLatency(1.0 / opts.latency_window_size) {
 }
 
 }}}  // facebook::memcache::mcrouter

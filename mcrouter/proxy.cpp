@@ -74,7 +74,6 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
 proxy_t::proxy_t(McrouterInstance& rtr)
     : router_(rtr),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
-      durationUs(kExponentialFactor),
       randomGenerator(folly::randomNumberSeed()),
       fiberManager(
         fiber_local::ContextTypeTag(),

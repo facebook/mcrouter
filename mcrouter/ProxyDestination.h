@@ -50,11 +50,9 @@ class ProxyDestination {
 
   struct Stats {
     State state{State::kNew};
-    ExponentialSmoothData avgLatency;
+    ExponentialSmoothData<16> avgLatency;
     std::unique_ptr<std::array<uint64_t, mc_nres>> results;
     size_t probesSent{0};
-
-    explicit Stats(const McrouterOptions& opts);
   };
 
   proxy_t* proxy{nullptr}; ///< for convenience

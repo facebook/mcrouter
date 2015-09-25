@@ -341,12 +341,6 @@ mcrouter_option_integer(
   "The maximum number of machines we can mark TKO if they don't have a hard"
   " failure.")
 
-mcrouter_option_integer(
-  size_t, latency_window_size, 16,
-  "latency-window-size", no_short,
-  "The number of samples to track when computing moving average latency for"
-  " a proxy destination.")
-
 mcrouter_option_group("Timeouts")
 
 mcrouter_option_integer(
