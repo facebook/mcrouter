@@ -33,7 +33,7 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
 AC_CXX_COMPILE_STDCXX_0X
-AC_PROG_RANLIB
+LT_INIT
 
 # Be sure to add any -std option to CXXFLAGS before we invoke any
 # AC_COMPILE_IFELSE() or similar macros. Any such macros that are invoked
@@ -49,17 +49,59 @@ fi
 
 CXXFLAGS="$STD $CXXFLAGS"
 CXXFLAGS="-fno-strict-aliasing $CXXFLAGS"
-CXXFLAGS="-O3 -g -W -Wall -Wextra -Wno-unused-parameter $CXXFLAGS"
+CXXFLAGS="-g -W -Wall -Wextra -Wno-unused-parameter $CXXFLAGS"
 CXXFLAGS=" -Wno-missing-field-initializers -Wno-deprecated $CXXFLAGS"
 CXXFLAGS="-DLIBMC_FBTRACE_DISABLE $CXXFLAGS"
 
 CFLAGS="-DLIBMC_FBTRACE_DISABLE $CFLAGS"
 
-# Checks for libraries.
-AC_CHECK_LIB([glog],[openlog],[],[AC_MSG_ERROR(
-             [Please install google-glog library])])
-AC_CHECK_LIB([gflags],[getenv],[],AC_MSG_ERROR(
-             [Please install google-gflags library]))
+# Checks for glog and gflags
+# There are no symbols with C linkage, so we do a try-run
+AC_HAVE_LIBRARY([glog],[],[AC_MSG_ERROR(
+                [Please install google-glog library])])
+AC_CACHE_CHECK(
+  [for glog viability],
+  [mcrouter_cv_prog_cc_glog],
+  [AC_RUN_IFELSE(
+    [AC_LANG_SOURCE[
+      #include <glog/logging.h>
+      int main(int argc, char** argv) {
+        google::InitGoogleLogging(argv[0]);
+        google::ShutdownGoogleLogging();
+        return 0;
+      }
+    ]],
+    [mcrouter_cv_prog_cc_glog=yes],
+    [mcrouter_cv_prog_cc_glog=no]
+  )]
+)
+
+if test "$mcrouter_cv_prog_cc_glog" != "yes"; then
+  AC_MSG_ERROR(["libglog invalid, see config.log for details"])
+fi
+
+AC_HAVE_LIBRARY([gflags],[],[AC_MSG_ERROR(
+                [Please install google-gflags library])])
+AC_CACHE_CHECK(
+  [for gflags viability],
+  [mcrouter_cv_prog_cc_gflags],
+  [AC_RUN_IFELSE(
+    [AC_LANG_SOURCE[
+      #include <gflags/gflags.h>
+      DEFINE_bool(folly_truthy, true, "Sample truthy flag");
+      DEFINE_bool(folly_falsey, false, "Sample falsey flag");
+      int main(int argc, char** argv) {
+        return (FLAGS_folly_truthy && !FLAGS_folly_falsey) ? 0 : 1;
+      }
+    ]],
+    [mcrouter_cv_prog_cc_gflags=yes],
+    [mcrouter_cv_prog_cc_gflags=no]
+  )]
+)
+
+if test "$mcrouter_cv_prog_cc_gflags" != "yes"; then
+  AC_MSG_ERROR(["libgflags invalid, see config.log for details"])
+fi
 
 # check for boost libs
 AX_BOOST_BASE([1.51.0], [], [AC_MSG_ERROR(
@@ -130,14 +172,6 @@ AC_COMPILE_IFELSE(
    AC_DEFINE([OVERRIDE], [],
              [Define to "override" if the compiler supports C++11 "override"])]
 )
-
-AC_MSG_CHECKING([for _Static_assert])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([_Static_assert (1, "");],
-                                   [(void) 0])],
-                  [AC_DEFINE([HAVE_STATIC_ASSERT], [1],
-                             [Whether _Static_assert can be used or not])
-                   AC_MSG_RESULT([yes])],
-                  [AC_MSG_RESULT([no])])
 
 AC_COMPILE_IFELSE(
   [AC_LANG_SOURCE[
@@ -225,6 +259,9 @@ AM_CONDITIONAL([HAVE_LINUX], [test "$build_os" == "linux-gnu"])
 AM_CONDITIONAL([HAVE_WEAK_SYMBOLS], [test "$ac_have_weak_symbols" = "yes"])
 AM_CONDITIONAL([HAVE_BITS_FUNCTEXCEPT], [test "$ac_cv_header_bits_functexcept" = "yes"])
 
+AM_PATH_PYTHON([2.6],, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+
 AH_BOTTOM([#include "mcrouter_config.h"])
 
 # Output
@@ -239,6 +276,8 @@ AC_CONFIG_FILES([Makefile
                  lib/fbi/test/Makefile
                  lib/fbi/cpp/Makefile
                  lib/fbi/cpp/test/Makefile
+                 lib/mc/Makefile
+                 lib/mc/test/Makefile
                  lib/network/Makefile
                  lib/network/test/Makefile
                  routes/Makefile

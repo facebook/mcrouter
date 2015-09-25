@@ -8,7 +8,8 @@ sudo apt-get install -y libdouble-conversion1 libgflags2 \
     libboost-context1.54.0 libgoogle-glog0 libevent-2.0-5 libsnappy1
 
 sudo apt-get purge -y gcc-4.8 g++-4.8 libboost1.54-dev libboost-thread1.54-dev \
-    libboost-filesystem1.54-dev libboost-system1.54-dev libboost-regex1.54-dev \
+    libboost-program-options1.54-dev libboost-filesystem1.54-dev \
+    libboost-system1.54-dev libboost-regex1.54-dev \
     libboost-python1.54-dev libboost-context1.54-dev ragel autoconf unzip \
     git libtool python-dev cmake libssl-dev libcap-dev libevent-dev \
     libgtest-dev libsnappy-dev scons binutils-dev make \

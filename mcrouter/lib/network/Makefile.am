@@ -1,4 +1,4 @@
-SUBDIRS = test
+SUBDIRS = . test
 
 noinst_PROGRAMS = mock_mc_server
 

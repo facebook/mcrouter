@@ -126,7 +126,8 @@ McMsgRef McReply::releasedMsg(mc_op_t op) const {
       msg_->delta == delta_ &&
       msg_->err_code == errCode_ &&
       msg_->number == number_ &&
-      msg_->exptime == exptime_ &&
+      // reply exptime is always non-negative and used only for metaget
+      static_cast<uint32_t>(msg_->exptime) == exptime_ &&
       hasSameMemoryRegion(value(), to<folly::StringPiece>(msg_->value))) {
     return msg_.clone();
   } else {

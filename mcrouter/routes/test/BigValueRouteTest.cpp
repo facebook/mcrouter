@@ -12,10 +12,12 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/Conv.h>
+#include <folly/Format.h>
+
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
-#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/BigValueRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -23,7 +25,6 @@ using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
-using std::string;
 using std::vector;
 
 using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
@@ -46,23 +47,23 @@ TEST(BigValueRouteTest, smallvalue) {
     [&]() {
       McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
-      string key = "key_get";
+      std::string key = "key_get";
       auto msg = createMcMsgRef(key, "value");
       msg->op = mc_op_get;
       McRequest req_get(std::move(msg));
       auto f_get = rh.route(req_get, McOperation<mc_op_get>());
 
-      EXPECT_TRUE(toString(f_get.value()) == "a");
-      EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
-      (test_handles[0]->saw_keys).clear();
+      EXPECT_EQ("a", toString(f_get.value()));
+      EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_get"});
+      test_handles[0]->saw_keys.clear();
 
-      string key_set = "key_set";
+      std::string key_set = "key_set";
       auto msg_set = createMcMsgRef(key_set, "value");
       msg_set->op = mc_op_set;
       McRequest req_set(std::move(msg_set));
       auto f_set = rh.route(req_set, McOperation<mc_op_set>());
-      EXPECT_TRUE(toString(f_set.value()) == "value");
-      EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_set"});
+      EXPECT_EQ("value", toString(f_set.value()));
+      EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_set"});
     }
   });
 }
@@ -71,13 +72,12 @@ TEST(BigValueRouteTest, bigvalue) {
   // for big values, used saw_keys of test route handle to verify that
   // get path and set path saw original key and chunk keys in correct sequesne.
 
-  std::string rand_suffix_get ("123456");
-  int num_chunks = 10;
+  const std::string rand_suffix_get = "123456";
+  const size_t num_chunks = 10;
   // initial reply of the form version-num_chunks-rand_suffix for get path
-  std::string init_reply =
-    folly::format("{}-{}-{}", version, num_chunks, rand_suffix_get).str();
-  std::string init_reply_error =
-    folly::format("{}-{}", version, num_chunks).str();
+  const auto init_reply =
+    folly::sformat("{}-{}-{}", version, num_chunks, rand_suffix_get);
+  const auto init_reply_error = folly::sformat("{}-{}", version, num_chunks);
   vector<std::shared_ptr<TestHandle>> test_handles{
     make_shared<TestHandle>(GetRouteTestData(
           mc_res_found, init_reply, MC_MSG_FLAG_BIG_VALUE)),
@@ -89,8 +89,6 @@ TEST(BigValueRouteTest, bigvalue) {
   auto route_handles = get_route_handles(test_handles);
 
   TestFiberManager fm;
-  std::shared_ptr<ProxyRequestContext> ctx;
-
   fm.runAll({
     [&]() {
       { // Test Get Like path with init_reply in corect format
@@ -102,23 +100,23 @@ TEST(BigValueRouteTest, bigvalue) {
 
         auto f_get = rh.route(req_get, McOperation<mc_op_get>());
         auto keys_get = test_handles[0]->saw_keys;
-        EXPECT_TRUE(keys_get.size() == num_chunks + 1);
+        EXPECT_EQ(num_chunks + 1, keys_get.size());
         // first get the result for original key
-        EXPECT_TRUE(keys_get.front() == "key_get");
+        EXPECT_EQ("key_get", keys_get.front());
 
         std::string merged_str;
         // since reply for first key indicated that it is for a big get request,
         // perform get request on chunk keys
-        for (int i = 1; i < num_chunks + 1; i++) {
-          auto chunk_key = folly::format(
-            "key_get:{}:{}", i-1, rand_suffix_get).str();
-          EXPECT_EQ(chunk_key, keys_get[i]);
+        for (size_t i = 1; i < num_chunks + 1; i++) {
+          auto chunk_key = folly::sformat(
+            "key_get:{}:{}", i - 1, rand_suffix_get);
+          EXPECT_EQ(keys_get[i], chunk_key);
           merged_str.append(init_reply);
         }
 
         // each chunk_key saw value as init_reply.
         // In GetLike path, it gets appended num_chunks time
-        EXPECT_TRUE(toString(f_get.value()) == merged_str);
+        EXPECT_EQ(merged_str, toString(f_get.value()));
       }
 
       { // Test Get Like path with init_reply_error
@@ -130,11 +128,11 @@ TEST(BigValueRouteTest, bigvalue) {
 
         auto f_get = rh.route(req_get, McOperation<mc_op_get>());
         auto keys_get = test_handles[1]->saw_keys;
-        EXPECT_TRUE(keys_get.size() == 1);
+        EXPECT_EQ(1, keys_get.size());
         // first get the result for original key, then return mc_res_notfound
-        EXPECT_TRUE(keys_get.front() == "key_get");
-        EXPECT_TRUE(f_get.result() == mc_res_notfound);
-        EXPECT_TRUE(toString(f_get.value()) == "");
+        EXPECT_EQ("key_get", keys_get.front());
+        EXPECT_EQ(mc_res_notfound, f_get.result());
+        EXPECT_EQ("", toString(f_get.value()));
       }
 
       { // Test Update Like path with mc_op_set op
@@ -143,8 +141,8 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string big_value  = folly::to<std::string>(
           std::string(threshold*(num_chunks/2), 't'),
           std::string(threshold*(num_chunks/2), 's'));
-        std::string chunk_type_1 = std::string(threshold, 't');
-        std::string chunk_type_2 = std::string(threshold, 's');
+        std::string chunk_type_1(threshold, 't');
+        std::string chunk_type_2(threshold, 's');
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_set;
         McRequest req_set(std::move(msg_set));
@@ -152,35 +150,35 @@ TEST(BigValueRouteTest, bigvalue) {
         auto f_set = rh.route(req_set, McOperation<mc_op_set>());
         auto keys_set = test_handles[2]->saw_keys;
         auto values_set = test_handles[2]->sawValues;
-        EXPECT_TRUE(keys_set.size() == num_chunks + 1);
+        EXPECT_EQ(num_chunks + 1, keys_set.size());
         std::string rand_suffix_set;
         // first set chunk values corresponding to chunk keys
-        for(int i = 0; i < num_chunks; i++) {
-          auto chunk_key_prefix = folly::format("key_set:{}:", i).str();
+        for (size_t i = 0; i < num_chunks; i++) {
+          auto chunk_key_prefix = folly::sformat("key_set:{}:", i);
           auto length = chunk_key_prefix.length();
           auto saw_prefix = keys_set[i].substr(0, length);
-          EXPECT_TRUE(saw_prefix == chunk_key_prefix);
+          EXPECT_EQ(chunk_key_prefix, saw_prefix);
 
           if (rand_suffix_set.empty()) { // rand_suffic same for all chunk_keys
             rand_suffix_set = keys_set[i].substr(length);
           } else {
-            EXPECT_TRUE(rand_suffix_set == keys_set[i].substr(length));
+            EXPECT_EQ(rand_suffix_set, keys_set[i].substr(length));
           }
 
           if (i < num_chunks/2) {
-            EXPECT_TRUE(values_set[i] == chunk_type_1);
+            EXPECT_EQ(chunk_type_1, values_set[i]);
           } else {
-            EXPECT_TRUE(values_set[i] == chunk_type_2);
+            EXPECT_EQ(chunk_type_2, values_set[i]);
           }
         }
 
         // if set for chunk keys succeed,
         // set original key with chunks info as modified value
-        EXPECT_TRUE(keys_set[num_chunks] == "key_set");
-        auto chunks_info = folly::format(
-            "{}-{}-{}", version, num_chunks, rand_suffix_set).str();
-        EXPECT_TRUE(values_set[num_chunks] == chunks_info);
-        EXPECT_TRUE(toString(f_set.value()) == values_set[num_chunks]);
+        EXPECT_EQ("key_set", keys_set[num_chunks]);
+        auto chunks_info = folly::sformat(
+            "{}-{}-{}", version, num_chunks, rand_suffix_set);
+        EXPECT_EQ(chunks_info, values_set[num_chunks]);
+        EXPECT_EQ(values_set[num_chunks], toString(f_set.value()));
       }
 
       { // Test Update Like path with mc_op_lease_set op
@@ -196,22 +194,21 @@ TEST(BigValueRouteTest, bigvalue) {
         auto f_set = rh.route(req_set, McOperation<mc_op_lease_set>());
         auto keys_set = test_handles[3]->saw_keys;
         auto operations_set = test_handles[3]->sawOperations;
-        EXPECT_TRUE(keys_set.size() == num_chunks + 1);
-        std::string rand_suffix_set;
+        EXPECT_EQ(num_chunks + 1, keys_set.size());
         // first set chunk values corresponding to chunk keys
-        for(int i = 0; i < num_chunks; i++) {
-          auto chunk_key_prefix = folly::format("key_set:{}:", i).str();
+        for (size_t i = 0; i < num_chunks; i++) {
+          auto chunk_key_prefix = folly::sformat("key_set:{}:", i);
           auto length = chunk_key_prefix.length();
           auto saw_prefix = keys_set[i].substr(0, length);
-          EXPECT_TRUE(saw_prefix == chunk_key_prefix);
+          EXPECT_EQ(chunk_key_prefix, saw_prefix);
 
-          EXPECT_TRUE(operations_set[i] == mc_op_set);
+          EXPECT_EQ(mc_op_set, operations_set[i]);
         }
 
         // if set for chunk keys succeed,
         // set original key with chunks info as modified value
-        EXPECT_TRUE(keys_set[num_chunks] == "key_set");
-        EXPECT_TRUE(operations_set[num_chunks] == mc_op_lease_set);
+        EXPECT_EQ("key_set", keys_set[num_chunks]);
+        EXPECT_EQ(mc_op_lease_set, operations_set[num_chunks]);
       }
     }
   });

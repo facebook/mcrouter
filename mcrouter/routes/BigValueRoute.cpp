@@ -17,10 +17,11 @@ BigValueRoute::ChunksInfo::ChunksInfo(
     valid_(true) {
   // Verify that reply_value is of the form version-numchunks-randSuffix,
   // where version, numchunks and randsuffix should be numeric
-  int version, chars_read;
-  valid_ &= (sscanf(reply_value.data(), "%d-%u-%u%n",
+  uint32_t version;
+  int chars_read;
+  valid_ &= (sscanf(reply_value.data(), "%u-%u-%u%n",
         &version, &numChunks_, &randSuffix_, &chars_read) == 3);
-  valid_ &= (chars_read == reply_value.size());
+  valid_ &= (static_cast<size_t>(chars_read) == reply_value.size());
   valid_ &= (version == infoVersion_);
 }
 
@@ -33,7 +34,7 @@ BigValueRoute::ChunksInfo::ChunksInfo(uint32_t num_chunks)
 folly::IOBuf BigValueRoute::ChunksInfo::toStringType() const {
   return folly::IOBuf(
     folly::IOBuf::COPY_BUFFER,
-    folly::format("{}-{}-{}", infoVersion_, numChunks_, randSuffix_).str()
+    folly::sformat("{}-{}-{}", infoVersion_, numChunks_, randSuffix_)
   );
 }
 

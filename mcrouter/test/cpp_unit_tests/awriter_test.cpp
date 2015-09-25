@@ -108,21 +108,18 @@ void callback_counter(awriter_entry_t *e, int result) {
 }
 
 static int test_entry_writer(awriter_entry_t* e) {
-  int ret;
   writelog_entry_t *entry = &((testing_context_t*)e->context)->log_context;
   ssize_t size =
     folly::writeFull(entry->file->fd(),
                      entry->buf.data(),
                      entry->buf.size());
   if (size == -1) {
-    ret = errno;
-  } else if (size < entry->buf.size()) {
-    ret = EIO;
-  } else {
-    ret = 0;
+    return errno;
   }
-
-  return ret;
+  if (static_cast<size_t>(size) < entry->buf.size()) {
+    return EIO;
+  }
+  return 0;
 }
 
 static const awriter_callbacks_t test_callbacks = {

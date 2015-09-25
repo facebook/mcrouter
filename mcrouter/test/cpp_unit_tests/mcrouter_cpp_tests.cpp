@@ -80,11 +80,11 @@ void mcrouter_send_helper(McrouterClient& client,
                           const vector<McMsgRef>& reqs,
                           vector<McReply> &replies) {
   vector<mc_msg_t*> ret;
-  int n = reqs.size();
+  size_t n = reqs.size();
   replies.clear();
 
   mcrouter_msg_t *r_msgs = new mcrouter_msg_t[n];
-  for (int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     r_msgs[i].req = const_cast<mc_msg_t*>(reqs[i].get());
     r_msgs[i].reply = McReply(mc_res_unknown);
     r_msgs[i].context = &r_msgs[i];
@@ -195,7 +195,7 @@ TEST(mcrouter, fork) {
   }
 
   int fds[2];
-  pipe(fds);
+  PCHECK(pipe(fds) == 0);
   folly::SingletonVault::singleton()->destroyInstances();
   pid_t pid = fork();
   folly::SingletonVault::singleton()->reenableInstances();
@@ -224,11 +224,11 @@ TEST(mcrouter, fork) {
 
   if (pid) { // parent
     char buf[100];
-    read(fds[0], buf, sizeof(buf));
+    PCHECK(read(fds[0], buf, sizeof(buf)) == 4);
     close(fds[0]);
     waitpid(pid, nullptr, 0);
   } else {
-    write(fds[1], "done", 4);
+    PCHECK(write(fds[1], "done", 4) == 4);
     close(fds[1]);
     exit(0);
   }

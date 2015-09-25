@@ -150,7 +150,7 @@ int MCRouterTestClient::get(const dynamic &keys,
   int ret = 0;
   dynamic raw_results = dynamic::object;
 
-  for (int i = 0; i < keys.size(); i ++) {
+  for (size_t i = 0; i < keys.size(); i++) {
     msgs[i] = make_get_request(keys[i].asString().toStdString());
   }
 
@@ -159,7 +159,7 @@ int MCRouterTestClient::get(const dynamic &keys,
   for ( auto & raw_reply : raw_results.items() ) {
     if (raw_reply.second["result"] == (int) mc_res_found) {
       results[raw_reply.first] = raw_reply.second["value"];
-      ret ++;
+      ret++;
     }
   }
   return ret;
@@ -175,7 +175,7 @@ int MCRouterTestClient::set(const dynamic &kv_pairs,
   for (auto &kv_pair : kv_pairs.items()) {
     msgs[i] = make_set_request(kv_pair.first.asString().toStdString(),
                                kv_pair.second.asString().toStdString());
-    i ++;
+    i++;
   }
 
   int ret = 0;
@@ -196,7 +196,7 @@ int MCRouterTestClient::del(const dynamic &keys, bool local,
   std::vector<mcrouter_msg_t> msgs(keys.size());
   dynamic raw_results = dynamic::object;
 
-  for (int i = 0; i < keys.size(); i ++) {
+  for (size_t i = 0; i < keys.size(); i++) {
     auto key = keys[i].asString().toStdString();
     if (!local) {
       key = "/*/*/" + key;

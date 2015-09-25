@@ -169,7 +169,7 @@ TEST(libasox_semtest, compat_overflow) {
                                 ASOX_SEM_COMPATIBILITY_MODE,
                                 &total_signals_received);
   int fd[2];
-  pipe(fd);
+  PCHECK(pipe(fd) == 0);
   fcntl(fd[0], F_SETFL, O_NONBLOCK);
   fcntl(fd[1], F_SETFL, O_NONBLOCK);
 

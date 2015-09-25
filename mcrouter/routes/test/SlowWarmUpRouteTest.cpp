@@ -39,7 +39,7 @@ std::shared_ptr<ProxyRequestContext> getContext() {
 
 void sendWorkload(TestRouteHandle<SlowWarmUpRoute<TestRouteHandleIf>>& rh,
                   size_t numReqs, size_t& numNormal, size_t& numFailover) {
-  for (int i = 0; i < numReqs; ++i) {
+  for (size_t i = 0; i < numReqs; ++i) {
     auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
     auto val = toString(reply.value());
     if (val == "a") { // normal

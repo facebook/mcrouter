@@ -1,8 +1,10 @@
+.dirstamp
 Makefile
 Makefile.in
 *.pyc
 *.pyo
 *.log
+*.trs
 /build-aux/
 /test/config.py
 /mcrouter
@@ -18,6 +20,9 @@ Makefile.in
 /configure
 /depcomp
 /install-sh
+/lib/network/CaretReplyConverter.h
+/lib/network/CaretSerializedMessage.h
+/lib/network/McAsciiParser-gen.cpp
 /libtool
 /m4/libtool.m4
 /m4/ltoptions.m4
@@ -25,6 +30,9 @@ Makefile.in
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
 /missing
+/ServerOnRequest.h
 /stamp-h1
+/lib/gtest*/*
 *.o
 *.a
+*.la

@@ -13,6 +13,8 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/dynamic.h>
+
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
