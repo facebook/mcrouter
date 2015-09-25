@@ -14,7 +14,7 @@ cd "$SCRIPT_DIR/../.." || die "cd fail"
 
 # copy gtest source into lib/gtest folder
 mkdir -p ./lib/gtest
-cp -r -t ./lib/gtest "$PKG_DIR/gtest/googletest-release-1.7.0"/*
+cp -r -f -t ./lib/gtest "$PKG_DIR/gtest/googletest-release-1.7.0"/*
 
 autoreconf --install
 LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH" \
