@@ -62,7 +62,7 @@ class DestinationRoute {
    */
   bool spool(const McRequest& req) const;
 
-  std::string keyWithFailoverTag(const folly::StringPiece fullKey) const;
+  std::string keyWithFailoverTag(folly::StringPiece fullKey) const;
 
   /**
    * @param client Client to send request to

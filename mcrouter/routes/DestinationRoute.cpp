@@ -18,8 +18,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-const char kFailoverHostPortSeparator = '@';
-const char* const kFailoverTagStart = ":failover=";
+const char* const kFailoverTag = ":failover=1";
 
 std::string DestinationRoute::routeName() const {
   return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
@@ -63,31 +62,8 @@ bool DestinationRoute::spool(const McRequest& req) const {
 }
 
 std::string DestinationRoute::keyWithFailoverTag(
-    const folly::StringPiece fullKey) const {
-  const size_t tagLength =
-    strlen(kFailoverTagStart) +
-    client_->ap->getHost().size() +
-    6; // 1 for kFailoverHostPortSeparator + 5 for port.
-  std::string failoverTag;
-  failoverTag.reserve(tagLength);
-  failoverTag = kFailoverTagStart;
-  failoverTag += client_->ap->getHost();
-  if (client_->ap->getPort() != 0) {
-    failoverTag += kFailoverHostPortSeparator;
-    failoverTag += folly::to<std::string>(client_->ap->getPort());
-  }
-
-  // Safety check: scrub the host and port for ':' to avoid appending
-  // more than one field to the key.
-  // Note: we start after the ':failover=' part of the string,
-  // since we need the initial ':' and we know the remainder is safe.
-  for (size_t i = strlen(kFailoverTagStart); i < failoverTag.size(); i++) {
-    if (failoverTag[i] == ':') {
-      failoverTag[i] = '$';
-    }
-  }
-
-  return fullKey.str() + failoverTag;
+    folly::StringPiece fullKey) const {
+  return folly::to<std::string>(fullKey, kFailoverTag);
 }
 
 McrouterRouteHandlePtr makeDestinationRoute(
