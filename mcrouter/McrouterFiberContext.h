@@ -59,6 +59,8 @@ struct McrouterFiberContext {
   RequestClass requestClass;
 
   bool failoverTag{false};
+
+  bool failoverDisabled{false};
 };
 
 }  // detail
@@ -155,6 +157,20 @@ inline void setFailoverTag(bool value) {
  */
 inline bool getFailoverTag() {
   return folly::fibers::local<detail::McrouterFiberContext>().failoverTag;
+}
+
+/**
+ * Set failover disabled flag for current fiber (thread, if we're not on fiber)
+ */
+inline void setFailoverDisabled(bool value) {
+  folly::fibers::local<detail::McrouterFiberContext>().failoverDisabled = value;
+}
+
+/**
+ * Get failover disabled tag of current fiber (thread, if we're not on fiber)
+ */
+inline bool getFailoverDisabled() {
+  return folly::fibers::local<detail::McrouterFiberContext>().failoverDisabled;
 }
 
 }}}}  // facebook::memcache::mcrouter::fiber_local

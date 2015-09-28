@@ -36,7 +36,11 @@ class FailoverRoute {
   template <class Operation, class Request>
   void traverse(const Request& req, Operation,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(targets_, req, Operation());
+    if (fiber_local::getFailoverDisabled()) {
+      t(*targets_[0], req, Operation());
+    } else {
+      t(targets_, req, Operation());
+    }
   }
 
   FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
