@@ -88,7 +88,7 @@ class AsyncMcClientImpl :
   };
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()
-  // doesn't work correctly with TDelayedDestruction.
+  // doesn't work correctly with DelayedDestruction.
   std::weak_ptr<AsyncMcClientImpl> selfPtr_;
 
   // Stats.
