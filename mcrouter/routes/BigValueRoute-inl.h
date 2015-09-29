@@ -168,7 +168,7 @@ BigValueRoute::chunkGetRequests(const Request& req,
   big_get_reqs.reserve(info.numChunks());
 
   auto base_key = req.fullKey();
-  for (int i = 0; i < info.numChunks(); i++) {
+  for (uint32_t i = 0; i < info.numChunks(); i++) {
     // override key with chunk keys
     big_get_reqs.emplace_back(createChunkKey(base_key, i, info.randSuffix()));
   }

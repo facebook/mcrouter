@@ -5,15 +5,11 @@ set -ex
 sudo apt-get install -y libdouble-conversion1 libgflags2 \
     libboost-program-options1.54.0 libboost-filesystem1.54.0 \
     libboost-system1.54.0 libboost-regex1.54.0 libboost-thread1.54.0 \
-    libboost-context1.54.0 libgoogle-glog0 libevent-2.0-5 libsnappy1
+    libboost-context1.54.0 libgoogle-glog0 libevent-2.0-5
 
-sudo apt-get purge -y gcc-4.8 g++-4.8 libboost1.54-dev libboost-thread1.54-dev \
-    libboost-program-options1.54-dev libboost-filesystem1.54-dev \
-    libboost-system1.54-dev libboost-regex1.54-dev \
-    libboost-python1.54-dev libboost-context1.54-dev ragel autoconf unzip \
-    git libtool python-dev cmake libssl-dev libcap-dev libevent-dev \
-    libgtest-dev libsnappy-dev scons binutils-dev make \
-    wget libdouble-conversion-dev libgflags-dev libgoogle-glog-dev
+sudo apt-get purge -y gcc g++ ragel autoconf \
+    git libtool python-dev libssl-dev libevent-dev \
+    binutils-dev make libdouble-conversion-dev libgflags-dev libgoogle-glog-dev
 
 sudo apt-get purge -y 'libboost.*-dev'
 sudo apt-get autoremove --purge -y

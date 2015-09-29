@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.62)
 
 m4_define([mcrouter_version_str], m4_esyscmd_s([cat VERSION]))
 m4_define([mcrouter_version], m4_translit(mcrouter_version_str, [:], [.]))
@@ -19,7 +19,7 @@ AC_CONFIG_LINKS([ServerOnRequest.h:ServerOnRequestImpl.h])
 AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])
 AC_CONFIG_AUX_DIR([build-aux])
 
-AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc subdir-objects])
+AM_INIT_AUTOMAKE([1.11.1 foreign dist-bzip2 nostdinc subdir-objects parallel-tests])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -32,24 +32,11 @@ AC_LANG([C++])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
-AC_CXX_COMPILE_STDCXX_0X
+AX_CXX_COMPILE_STDCXX_11([],[mandatory])
 LT_INIT
 
-# Be sure to add any -std option to CXXFLAGS before we invoke any
-# AC_COMPILE_IFELSE() or similar macros. Any such macros that are invoked
-# before we update CXXFLAGS will not be run with the same options that we use
-# during the real build.
-STD=""
-if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-   STD="-std=c++0x"
-fi
-if test "x$ac_cv_cxx_compile_cxx0x_gxx" = xyes; then
-   STD="-std=gnu++0x"
-fi
-
-CXXFLAGS="$STD $CXXFLAGS"
 CXXFLAGS="-fno-strict-aliasing $CXXFLAGS"
-CXXFLAGS="-g -W -Wall -Wextra -Wno-unused-parameter $CXXFLAGS"
+CXXFLAGS="-W -Wall -Wextra -Wno-unused-parameter $CXXFLAGS"
 CXXFLAGS=" -Wno-missing-field-initializers -Wno-deprecated $CXXFLAGS"
 CXXFLAGS="-DLIBMC_FBTRACE_DISABLE $CXXFLAGS"
 

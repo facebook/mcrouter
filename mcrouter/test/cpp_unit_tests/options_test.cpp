@@ -11,7 +11,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
 #include "mcrouter/options.h"

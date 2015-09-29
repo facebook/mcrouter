@@ -5,21 +5,22 @@ source common.sh
 [ -d folly ] || git clone https://github.com/facebook/folly
 
 if [ ! -d /usr/include/double-conversion ]; then
-    git clone https://github.com/floitsch/double-conversion
-    cd "$PKG_DIR/double-conversion/" || die "cd fail"
-    scons prefix="$INSTALL_DIR" install
+    if [ ! -d "$PKG_DIR/double-conversion" ]; then
+        git clone https://github.com/google/double-conversion.git
+    fi
+    cd "$PKG_DIR/double-conversion" || die "cd fail"
 
-    # Folly looks for double-conversion/double-conversion.h
-    ln -sf src double-conversion
+    cmake . -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
+    make $MAKE_ARGS && make install $MAKE_ARGS
 
-    export LDFLAGS="-L$INSTALL_DIR/lib -L$PKG_DIR/double-conversion -ldl"
-    export CPPFLAGS="-I$INSTALL_DIR/include -I$PKG_DIR/double-conversion"
+    export LDFLAGS="-L$INSTALL_DIR/lib -ldl $LDFLAGS"
+    export CPPFLAGS="-I$INSTALL_DIR/include $CPPFLAGS"
 fi
 
 cd "$PKG_DIR/folly/folly/" || die "cd fail"
 
 autoreconf --install
 LD_LIBRARY_PATH="$INSTALL_DIR/lib:$LD_LIBRARY_PATH" \
-    LD_RUN_PATH="$INSTALL_DIR/lib" \
+    LD_RUN_PATH="$INSTALL_DIR/lib:$LD_RUN_PATH" \
     ./configure --prefix="$INSTALL_DIR" && \
     make $MAKE_ARGS && make install $MAKE_ARGS

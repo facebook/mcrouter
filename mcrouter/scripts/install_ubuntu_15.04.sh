@@ -12,13 +12,13 @@ sudo apt-get install -y \
     g++ \
     gcc \
     git \
-    libboost-context1.54-dev \
-    libboost-filesystem1.54-dev \
-    libboost-program-options1.54-dev \
-    libboost-regex1.54-dev \
-    libboost-system1.54-dev \
-    libboost-thread1.54-dev \
-    libboost1.54-dev \
+    libboost-context1.55-dev \
+    libboost-filesystem1.55-dev \
+    libboost-program-options1.55-dev \
+    libboost-regex1.55-dev \
+    libboost-system1.55-dev \
+    libboost-thread1.55-dev \
+    libboost1.55-dev \
     libdouble-conversion-dev \
     libevent-dev \
     libgflags-dev \
@@ -31,4 +31,4 @@ sudo apt-get install -y \
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
-./get_and_build_everything.sh ubuntu-14.04 "$@"
+./get_and_build_everything.sh ubuntu-15.04 "$@"

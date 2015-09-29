@@ -9,7 +9,6 @@
  */
 #include <string>
 
-#include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/fbi/nstring.h"

@@ -7,10 +7,10 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <iostream>
 #include <thread>
 #include <vector>
 
+#include <glog/logging.h>
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/fbi/counting_sem.h"
@@ -22,9 +22,9 @@ void consume(int id, int X) {
   while (n > 0) {
     unsigned m = counting_sem_lazy_wait(&sem, n);
     n -= m;
-    printf("c %d consumed %d, remaining %d\n", id, m, n);
+    VLOG(1) << "c " << id << " consumed " << m << ", remaining " << n;
   }
-  printf("consumer %d done\n", id);
+  VLOG(1) << "consumer " << id << " done";
 }
 
 void consume_nonblocking(int id, int X) {
@@ -32,16 +32,16 @@ void consume_nonblocking(int id, int X) {
   while (n > 0) {
     unsigned m = counting_sem_lazy_nonblocking(&sem, n);
     n -= m;
-    printf("c %d consumed %d, remaining %d\n", id, m, n);
+    VLOG(1) << "c " << id << " consumed " << m << ", remaining " << n;
   }
-  printf("consumer %d done\n", id);
+  VLOG(1) << "consumer " << id << " done";
 }
 
 void produce(int id, int Y) {
   for (int i = 0; i < Y; ++i) {
     counting_sem_post(&sem, 1);
   }
-  printf("producer %d done\n", id);
+  VLOG(1) << "producer " << id << " done";
 }
 
 

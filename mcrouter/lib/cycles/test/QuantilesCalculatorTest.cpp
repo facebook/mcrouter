@@ -90,12 +90,12 @@ TEST(QuantilesCalculator, normalDistributionPrecision) {
 
 TEST(QuantilesCalculator, size) {
   const double eps = 0.001;
-  const int iters = 100000;
+  const size_t iters = 100000;
   QuantilesCalculator<uint64_t> qc(eps);
-  for (int i = 1; i <= iters; ++i) {
+  for (size_t i = 1; i <= iters; ++i) {
     qc.insert(normalRnd());
     uint64_t maxSize = (1 / eps) * std::log2(iters * eps);
     EXPECT_LE(qc.internalSize(), maxSize);
   }
-  EXPECT_EQ(qc.size(), iters);
+  EXPECT_EQ(iters, qc.size());
 }
