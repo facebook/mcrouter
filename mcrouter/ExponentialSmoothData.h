@@ -27,7 +27,7 @@ class ExponentialSmoothData {
   }
 
   double value() const {
-    return currentValue_;
+    return hasValue() ? currentValue_ : 0.0;
   }
 
   bool hasValue() const {

@@ -89,8 +89,8 @@ void write_file(const McrouterOptions& opts,
 
     std::string path = stats_file_path(opts, suffix);
     atomicallyWriteFileToDisk(str, path);
-  } catch (...) {
-    // Do nothing
+  } catch (const std::exception& e) {
+    VLOG(1) << "Failed to write stats to disk: " << e.what();
   }
 }
 
@@ -141,8 +141,8 @@ void write_stats_to_disk(const McrouterOptions& opts,
     }
 
     write_stats_file(opts, kStatsSfx, jstats);
-  } catch (...) {
-    // Do nothing
+  } catch (const std::exception& e) {
+    VLOG(1) << "Failed to write stats to disk: " << e.what();
   }
 }
 

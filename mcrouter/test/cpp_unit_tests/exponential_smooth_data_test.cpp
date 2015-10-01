@@ -16,6 +16,7 @@ using facebook::memcache::mcrouter::ExponentialSmoothData;
 TEST(ExponentialSmoothData, sanity) {
   ExponentialSmoothData<16> data;
   EXPECT_FALSE(data.hasValue());
+  EXPECT_DOUBLE_EQ(0.0, data.value());
 
   data.insertSample(10);
   EXPECT_TRUE(data.hasValue());
@@ -30,6 +31,7 @@ TEST(ExponentialSmoothData, sanity) {
 TEST(ExponentialSmoothData, one_bucket) {
   ExponentialSmoothData<1> data;
   EXPECT_FALSE(data.hasValue());
+  EXPECT_DOUBLE_EQ(0.0, data.value());
 
   data.insertSample(5);
   EXPECT_TRUE(data.hasValue());
