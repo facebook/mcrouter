@@ -104,9 +104,9 @@ bool McrouterClient::send(const Request& req,
   } else if (maxOutstanding_ == 0) {
     sendRemoteThread(std::move(preq));
   } else {
-    while (counting_sem_lazy_wait(&outstandingReqsSem_, 1) < 1) {
-      sendRemoteThread(std::move(preq));
-    }
+    auto r = counting_sem_lazy_wait(&outstandingReqsSem_, 1);
+    assert(r == 1);
+    sendRemoteThread(std::move(preq));
   }
 
   return true;
