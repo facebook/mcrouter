@@ -105,6 +105,7 @@ bool McrouterClient::send(const Request& req,
     sendRemoteThread(std::move(preq));
   } else {
     auto r = counting_sem_lazy_wait(&outstandingReqsSem_, 1);
+    (void)r; // so that `r` not be unused under `NDEBUG`
     assert(r == 1);
     sendRemoteThread(std::move(preq));
   }
