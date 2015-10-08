@@ -44,6 +44,11 @@ void McParser::shrinkBuffers() {
   }
 }
 
+void McParser::reset() {
+  readBuffer_.clear();
+  umBodyBuffer_.reset();
+}
+
 std::pair<void*, size_t> McParser::getReadBuffer() {
   if (protocol_ == mc_umbrella_protocol
       && umBodyBuffer_) {

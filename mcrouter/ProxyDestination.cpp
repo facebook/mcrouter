@@ -18,6 +18,7 @@
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/OptionsUtil.h"
 #include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
@@ -260,6 +261,9 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
   options.useTyped = useTyped_;
+  if (!opts.debug_fifo_root.empty()) {
+    options.debugFifoPath = getClientDebugFifoFullPath(opts);
+  }
   if (opts.enable_qos) {
     options.enableQoS = true;
     options.qosClass = qosClass_;

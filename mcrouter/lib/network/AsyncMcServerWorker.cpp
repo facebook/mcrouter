@@ -130,7 +130,8 @@ void AsyncMcServerWorker::addClientSocket(
     },
     onShutdown_,
     opts_,
-    userCtxt
+    userCtxt,
+    debugFifo_
   );
 
   sessions_.push_back(session);

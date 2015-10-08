@@ -24,6 +24,7 @@
 
 namespace facebook { namespace memcache {
 
+class Fifo;
 template <int op>
 class McOperation;
 class McReply;
@@ -98,11 +99,17 @@ class AsyncMcClientImpl :
   folly::EventBase& eventBase_;
   std::unique_ptr<ParserT> parser_;
 
+  // Pointer to current buffer. Updated by getReadBuffer()
+  std::pair<void*, size_t> curBuffer_{nullptr, 0};
+
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
   ConnectionOptions connectionOptions_;
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
+
+  // Debug pipe.
+  Fifo* debugFifo_{nullptr};
 
   bool outOfOrder_{false};
   McClientRequestContextQueue queue_;
@@ -123,7 +130,9 @@ class AsyncMcClientImpl :
   std::unique_ptr<detail::OnEventBaseDestructionCallback>
     eventBaseDestructionCallback_;
 
-  AsyncMcClientImpl(folly::EventBase& eventBase, ConnectionOptions options);
+  AsyncMcClientImpl(folly::EventBase& eventBase,
+                    ConnectionOptions options,
+                    Fifo* debugFifo);
 
   ~AsyncMcClientImpl();
 

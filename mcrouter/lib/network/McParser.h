@@ -93,6 +93,8 @@ class McParser {
   void reportMsgRead() {
     ++parsedMessages_;
   }
+
+  void reset();
  private:
   bool seenFirstByte_{false};
   bool outOfOrder_{false};

@@ -47,6 +47,10 @@ libmcrouter_a_SOURCES = \
   cycles/ExtractorThread.cpp \
   cycles/ExtractorThread.h \
   cycles/Interval.h \
+  debug/Fifo.cpp \
+  debug/Fifo.h \
+  debug/FifoManager.cpp \
+  debug/FifoManager.h \
   fbi/asox_queue.c \
   fbi/asox_queue.h \
   fbi/asox_semaphore.c \

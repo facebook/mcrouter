@@ -22,11 +22,13 @@
 #include <folly/json.h>
 #include <folly/ThreadName.h>
 
+#include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/OptionsUtil.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -37,41 +39,10 @@ const char* kStatsSfx = "stats";
 const char* kStatsStartupOptionsSfx = "startup_options";
 const char* kConfigSourcesInfoFileName = "config_sources_info";
 
-bool ensure_dir_exists_and_writeable(const std::string& path) {
-  boost::system::error_code ec;
-  boost::filesystem::create_directories(path, ec);
-  if (ec) {
-    return false;
-  }
-
-  struct stat st;
-  if (::stat(path.c_str(), &st) != 0) {
-    return false;
-  }
-
-  if ((st.st_mode & 0777) == 0777) {
-    return true;
-  }
-
-  if (::chmod(path.c_str(), 0777) != 0) {
-    return false;
-  }
-
-  return true;
-}
-
-/** returns "<source_library>.<source_service>.<source_flavor>" */
-inline std::string get_stats_key(const McrouterOptions& opts) {
-  return folly::format(
-    "libmcrouter.{}.{}",
-    opts.service_name,
-    opts.router_name).str();
-}
-
 std::string stats_file_path(const McrouterOptions& opts,
                             const std::string& suffix) {
   boost::filesystem::path path(opts.stats_root);
-  path /= get_stats_key(opts) + "." + suffix;
+  path /= getStatPrefix(opts) + "." + suffix;
   return path.string();
 }
 
@@ -83,7 +54,7 @@ void write_file(const McrouterOptions& opts,
                 const std::string& str) {
   try {
     // In case the dir was deleted some time after mcrouter started
-    if (!ensure_dir_exists_and_writeable(opts.stats_root)) {
+    if (!ensureDirExistsAndWritable(opts.stats_root)) {
       return;
     }
 
@@ -109,7 +80,7 @@ void write_stats_file(const McrouterOptions& opts,
 void write_stats_to_disk(const McrouterOptions& opts,
                          const std::vector<stat_t>& stats) {
   try {
-    std::string prefix = get_stats_key(opts) + ".";
+    std::string prefix = getStatPrefix(opts) + ".";
     folly::dynamic jstats = folly::dynamic::object;
 
     for (size_t i = 0; i < stats.size(); ++i) {
@@ -151,7 +122,7 @@ void write_config_sources_info_to_disk(McrouterInstance& router) {
 
   try {
     boost::filesystem::path path(router.opts().stats_root);
-    path /= get_stats_key(router.opts()) + "." + kConfigSourcesInfoFileName;
+    path /= getStatPrefix(router.opts()) + "." + kConfigSourcesInfoFileName;
     atomicallyWriteFileToDisk(
       toPrettySortedJson(config_info_json),
       path.string());
@@ -178,7 +149,7 @@ bool McrouterLogger::start() {
     return false;
   }
 
-  if (!ensure_dir_exists_and_writeable(router_.opts().stats_root)) {
+  if (!ensureDirExistsAndWritable(router_.opts().stats_root)) {
     LOG(ERROR) << "Can't create or chmod " << router_.opts().stats_root <<
                   ", disabling stats logging";
     return false;

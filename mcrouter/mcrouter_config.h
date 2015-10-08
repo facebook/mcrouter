@@ -30,6 +30,7 @@ static_assert(false, "mcrouter: invalid build");
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
 #define MCROUTER_INSTALL_PATH ""
+#define DEBUG_FIFO_ROOT_DEFAULT "/var/mcrouter/fifos"
 
 namespace folly {
 class dynamic;

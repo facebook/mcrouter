@@ -9,9 +9,8 @@
  */
 #include "server.h"
 
-#include <signal.h>
-
 #include <cstdio>
+#include <signal.h>
 
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
@@ -19,6 +18,7 @@
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/OptionsUtil.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/ServerOnRequest.h"
@@ -88,6 +88,10 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
   }
 
   opts.numThreads = mcrouterOpts.num_proxies;
+
+  if (!mcrouterOpts.debug_fifo_root.empty()) {
+    opts.debugFifoPath = getServerDebugFifoFullPath(mcrouterOpts);
+  }
 
   opts.worker.connLRUopts.maxConns =
     (standaloneOpts.max_conns + opts.numThreads - 1) / opts.numThreads;

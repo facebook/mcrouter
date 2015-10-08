@@ -13,6 +13,7 @@
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 
+#include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
@@ -58,9 +59,11 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
 
 AsyncMcClientImpl::AsyncMcClientImpl(
     folly::EventBase& eventBase,
-    ConnectionOptions options)
+    ConnectionOptions options,
+    Fifo* debugFifo)
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
+      debugFifo_(debugFifo),
       outOfOrder_(connectionOptions_.accessPoint->getProtocol() ==
                   mc_umbrella_protocol),
       queue_(outOfOrder_),
@@ -79,8 +82,14 @@ std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
                            "protocol yet!");
   }
 
+  Fifo* debugFifo{nullptr};
+  if (!options.debugFifoPath.empty()) {
+    debugFifo =
+      &FifoManager::getInstance()->fetchThreadLocal(options.debugFifoPath);
+  }
   auto client = std::shared_ptr<AsyncMcClientImpl>(
-    new AsyncMcClientImpl(eventBase, std::move(options)), Destructor());
+    new AsyncMcClientImpl(eventBase, std::move(options), debugFifo),
+    Destructor());
   client->selfPtr_ = client;
   return client;
 }
@@ -200,10 +209,15 @@ void AsyncMcClientImpl::pushMessages() {
          connectionState_ == ConnectionState::UP) {
     auto& req = queue_.markNextAsSending();
 
-    socket_->writev(this, req.reqContext.getIovs(),
-                    req.reqContext.getIovsCount(),
+    auto iov = req.reqContext.getIovs();
+    auto iovcnt = req.reqContext.getIovsCount();
+    socket_->writev(this, iov, iovcnt,
                     numToSend == 1 ? folly::WriteFlags::NONE
                     : folly::WriteFlags::CORK);
+    if (debugFifo_) {
+      debugFifo_->writeIfConnected(reinterpret_cast<uintptr_t>(socket_.get()),
+                                    iov, iovcnt);
+    }
     --numToSend;
   }
   writeScheduled_ = false;
@@ -490,13 +504,18 @@ void AsyncMcClientImpl::processShutdown() {
 }
 
 void AsyncMcClientImpl::getReadBuffer(void** bufReturn, size_t* lenReturn) {
-  auto prealloc = parser_->getReadBuffer();
-  *bufReturn = prealloc.first;
-  *lenReturn = prealloc.second;
+  curBuffer_ = parser_->getReadBuffer();
+  *bufReturn = curBuffer_.first;
+  *lenReturn = curBuffer_.second;
 }
 
 void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
+  assert(curBuffer_.first != nullptr && curBuffer_.second >= len);
   DestructorGuard dg(this);
+  if (debugFifo_) {
+    debugFifo_->writeIfConnected(reinterpret_cast<uintptr_t>(socket_.get()),
+                                  curBuffer_.first, len);
+  }
   parser_->readDataAvailable(len);
 }
 

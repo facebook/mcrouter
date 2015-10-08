@@ -28,6 +28,7 @@ class SSLContext;
 
 namespace facebook { namespace memcache {
 
+class Fifo;
 class McServerOnRequest;
 
 /**
@@ -137,6 +138,10 @@ class AsyncMcServerWorker {
     onShutdown_ = std::move(cb);
   }
 
+  void setDebugFifo(Fifo* debugFifo) {
+    debugFifo_ = debugFifo;
+  }
+
   /**
    * Start closing all connections.
    * All incoming requests must still be replied by the application,
@@ -163,6 +168,7 @@ class AsyncMcServerWorker {
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
+  Fifo* debugFifo_{nullptr};
 
   struct McServerSessionDeleter {
     void operator() (McServerSession* session) const {

@@ -536,10 +536,13 @@ class McrouterBase(MCProcess):
         os.mkdir(self.async_spool)
         self.stats_dir = os.path.join(base_dir.path, 'stats')
         os.mkdir(self.stats_dir)
+        self.fifos_dir = os.path.join(base_dir.path, 'fifos')
+        os.mkdir(self.fifos_dir)
 
         args.extend(['-L', self.log,
                      '-a', self.async_spool,
-                     '--stats-root', self.stats_dir])
+                     '--stats-root', self.stats_dir,
+                     '--debug-fifo-root', self.fifos_dir])
 
         listen_sock = None
         if port is None:

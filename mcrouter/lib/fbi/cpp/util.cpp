@@ -16,8 +16,7 @@
 #include <chrono>
 #include <random>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 
 #include <openssl/md5.h>
 
@@ -198,6 +197,29 @@ std::string toPrettySortedJson(const folly::dynamic& json) {
   opts.pretty_formatting = true;
   opts.sort_keys = true;
   return folly::json::serialize(json, opts).toStdString();
+}
+
+bool ensureDirExistsAndWritable(const std::string& path) {
+  boost::system::error_code ec;
+  boost::filesystem::create_directories(path, ec);
+  if (ec) {
+    return false;
+  }
+
+  struct stat st;
+  if (::stat(path.c_str(), &st) != 0) {
+    return false;
+  }
+
+  if ((st.st_mode & 0777) == 0777) {
+    return true;
+  }
+
+  if (::chmod(path.c_str(), 0777) != 0) {
+    return false;
+  }
+
+  return true;
 }
 
 }} // facebook::memcache

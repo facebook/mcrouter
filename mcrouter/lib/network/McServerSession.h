@@ -19,6 +19,7 @@
 
 namespace facebook { namespace memcache {
 
+class Fifo;
 class McServerOnRequest;
 class MultiOpParent;
 class WriteBuffer;
@@ -75,7 +76,8 @@ class McServerSession :
     std::function<void(McServerSession&)> onCloseFinish,
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
-    void* userCtxt);
+    void* userCtxt,
+    Fifo* debugFifo = nullptr);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
@@ -125,6 +127,7 @@ class McServerSession :
   std::function<void()> onShutdown_;
   AsyncMcServerWorkerOptions options_;
   void* userCtxt_{nullptr};
+  Fifo* debugFifo_{nullptr}; // Debug pipe.
 
   enum State {
     STREAMING,  /* close() was not called */
@@ -137,6 +140,9 @@ class McServerSession :
   State state_{STREAMING};
 
   ServerMcParser<McServerSession> parser_;
+
+  // Pointer to current buffer. Updated by getReadBuffer()
+  std::pair<void*, size_t> curBuffer_;
 
   /* In-order protocol state */
 
@@ -283,7 +289,8 @@ class McServerSession :
     std::function<void(McServerSession&)> onCloseFinish,
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
-    void* userCtxt);
+    void* userCtxt,
+    Fifo* debugFifo);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

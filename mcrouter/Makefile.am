@@ -58,6 +58,8 @@ libmcroutercore_a_SOURCES = \
   options-template.h \
   options.cpp \
   options.h \
+  OptionsUtil.cpp \
+  OptionsUtil.h \
   PoolFactory.cpp \
   PoolFactory.h \
   proxy-inl.h \

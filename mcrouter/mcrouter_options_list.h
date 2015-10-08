@@ -394,6 +394,11 @@ mcrouter_option_string(
   "stats-root", no_short,
   "Root directory for stats files")
 
+mcrouter_option_string(
+  debug_fifo_root, "",
+  "debug-fifo-root", no_short,
+  "Root directory for debug fifos. If empty, debug fifos are disabled.")
+
 mcrouter_option_integer(
   unsigned int, stats_logging_interval, 10000,
   "stats-logging-interval", no_short,

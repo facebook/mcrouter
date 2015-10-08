@@ -108,6 +108,12 @@ struct ConnectionOptions {
    */
   std::function<std::shared_ptr<folly::SSLContext>()>
     sslContextProvider;
+
+  /**
+   * Path of the debug fifo.
+     * If empty, debug fifo is disabled.
+   */
+  std::string debugFifoPath;
 };
 
 }} // facebook::memcache

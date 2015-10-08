@@ -13,6 +13,7 @@
 
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/debug/Fifo.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
@@ -49,7 +50,8 @@ McServerSession& McServerSession::create(
   std::function<void(McServerSession&)> onCloseFinish,
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
-  void* userCtxt) {
+  void* userCtxt,
+  Fifo* debugFifo) {
 
   auto ptr = new McServerSession(
     std::move(transport),
@@ -59,7 +61,8 @@ McServerSession& McServerSession::create(
     std::move(onCloseFinish),
     std::move(onShutdown),
     std::move(options),
-    userCtxt
+    userCtxt,
+    debugFifo
   );
 
   return *ptr;
@@ -73,7 +76,8 @@ McServerSession::McServerSession(
   std::function<void(McServerSession&)> onCloseFinish,
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
-  void* userCtxt)
+  void* userCtxt,
+  Fifo* debugFifo)
     : transport_(std::move(transport)),
       onRequest_(std::move(cb)),
       onWriteQuiescence_(std::move(onWriteQuiescence)),
@@ -82,6 +86,7 @@ McServerSession::McServerSession(
       onShutdown_(std::move(onShutdown)),
       options_(std::move(options)),
       userCtxt_(userCtxt),
+      debugFifo_(debugFifo),
       parser_(*this,
               options_.requestsPerRead,
               options_.minBufferSize,
@@ -216,13 +221,18 @@ void McServerSession::close() {
 }
 
 void McServerSession::getReadBuffer(void** bufReturn, size_t* lenReturn) {
-  auto buf = parser_.getReadBuffer();
-  *bufReturn = buf.first;
-  *lenReturn = buf.second;
+  curBuffer_ = parser_.getReadBuffer();
+  *bufReturn = curBuffer_.first;
+  *lenReturn = curBuffer_.second;
 }
 
 void McServerSession::readDataAvailable(size_t len) noexcept {
   DestructorGuard dg(this);
+
+  if (debugFifo_) {
+    debugFifo_->writeIfConnected(reinterpret_cast<uintptr_t>(transport_.get()),
+                                  curBuffer_.first, len);
+  }
 
   if (!parser_.readDataAvailable(len)) {
     close();
@@ -346,6 +356,10 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     size_t iovCount = wb->getIovsCount();
     writeBufs_->push(std::move(wb));
     transport_->writev(this, iovs, iovCount);
+    if (debugFifo_) {
+      debugFifo_->writeIfConnected(
+          reinterpret_cast<uintptr_t>(transport_.get()), iovs, iovCount);
+    }
     if (!writeBufs_->empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
          in one go */
@@ -386,6 +400,10 @@ void McServerSession::sendWrites() {
   writeBatches_.push_back(count);
 
   transport_->writev(this, iovs.data(), iovs.size());
+  if (debugFifo_) {
+    debugFifo_->writeIfConnected(reinterpret_cast<uintptr_t>(transport_.get()),
+                                  iovs.data(), iovs.size());
+  }
 }
 
 void McServerSession::completeWrite() {

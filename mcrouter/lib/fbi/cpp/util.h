@@ -254,6 +254,11 @@ std::string replaceAll(std::string s, const std::string& from,
  */
 std::string toPrettySortedJson(const folly::dynamic& json);
 
+/**
+ * Makes sure a directory exists and is writable (e.g. create if not found, etc)
+ */
+bool ensureDirExistsAndWritable(const std::string& path);
+
 }}  // facebook::memcache
 
 #endif
