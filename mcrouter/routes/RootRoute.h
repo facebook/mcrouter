@@ -18,8 +18,6 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/ErrorRoute.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteHandleMap.h"
@@ -57,9 +55,7 @@ class RootRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    typedef typename ReplyType<Operation, Request>::type Reply;
-
-    Reply reply;
+    ReplyT<Operation, Request> reply;
     /* If we have to send to more than one prefix,
        wait for the first in the list to reply and let others
        run in the background.
@@ -76,7 +72,7 @@ class RootRoute {
     }
 
     if (reply.isError() && opts_.group_remote_errors) {
-      reply = Reply(mc_res_remote_error);
+      reply = ReplyT<Operation, Request>(mc_res_remote_error);
     }
 
     return reply;
@@ -93,14 +89,10 @@ class RootRoute {
     typename GetLike<Operation>::Type = 0) const {
 
     auto reply = doRoute(rh, req, Operation());
-    if (!reply.isError() || rh.empty()) {
+    if (reply.isError() && opts_.miss_on_get_errors && !rh.empty()) {
       /* rh.empty() case: for backwards compatibility,
          always surface invalid routing errors */
-      return reply;
-    }
-
-    if (opts_.miss_on_get_errors) {
-      reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
+      reply = ReplyT<Operation, Request>(DefaultReply, Operation());
     }
     return reply;
   }
@@ -112,9 +104,13 @@ class RootRoute {
     typename ArithmeticLike<Operation>::Type = 0)
     const {
 
-    auto reply = doRoute(rh, req, Operation());
-    if (reply.isError()) {
-      return NullRoute<McrouterRouteHandleIf>::route(req, Operation());
+    ReplyT<Operation, Request> reply(DefaultReply, Operation());
+
+    if (!opts_.allow_only_gets) {
+      reply = doRoute(rh, req, Operation());
+      if (reply.isError()) {
+        reply = ReplyT<Operation, Request>(DefaultReply, Operation());
+      }
     }
     return reply;
   }
@@ -126,7 +122,13 @@ class RootRoute {
     OtherThanT(Operation, GetLike<>, ArithmeticLike<>) = 0)
     const {
 
-    return doRoute(rh, req, Operation());
+    ReplyT<Operation, Request> reply(DefaultReply, Operation());
+
+    if (!opts_.allow_only_gets) {
+      reply = doRoute(rh, req, Operation());
+    }
+
+    return reply;
   }
 
   template <class Operation, class Request>
@@ -134,21 +136,22 @@ class RootRoute {
     const std::vector<McrouterRouteHandlePtr>& rh,
     const Request& req, Operation) const {
 
-    if (rh.empty()) {
-      return ErrorRoute<McrouterRouteHandleIf>().route(req, Operation());
-    }
+    ReplyT<Operation, Request> reply(ErrorReply);
 
-    if (rh.size() > 1) {
-      auto reqCopy = std::make_shared<Request>(req.clone());
-      for (size_t i = 1; i < rh.size(); ++i) {
-        auto r = rh[i];
-        folly::fibers::addTask(
-          [r, reqCopy]() {
-            r->route(*reqCopy, Operation());
-          });
+    if (!rh.empty()) {
+      if (rh.size() > 1) {
+        auto reqCopy = std::make_shared<Request>(req.clone());
+        for (size_t i = 1; i < rh.size(); ++i) {
+          auto r = rh[i];
+          folly::fibers::addTask(
+            [r, reqCopy]() {
+              r->route(*reqCopy, Operation());
+            });
+        }
       }
+      reply = rh[0]->route(req, Operation());
     }
-    return rh[0]->route(req, Operation());
+    return reply;
   }
 };
 

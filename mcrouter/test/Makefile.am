@@ -16,7 +16,9 @@ TESTS = \
 # ../lib/network/test/mcrouter_network_test
 
 if HAVE_PYTHON
-TESTS += test_ascii_error.py \
+TESTS += \
+  test_allow_only_gets.py \
+  test_ascii_error.py \
   test_async_files.py \
   test_bad_params.py \
   test_config_params.py \

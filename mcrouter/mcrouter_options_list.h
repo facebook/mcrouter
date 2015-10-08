@@ -341,6 +341,13 @@ mcrouter_option_integer(
   "The maximum number of machines we can mark TKO if they don't have a hard"
   " failure.")
 
+mcrouter_option_toggle(
+  allow_only_gets, false,
+  "allow-only-gets", no_short,
+  "Testing only. Allow only get-like operations: get, metaget, lease get. "
+  "For any other operation return a default reply (not stored/not found).")
+
+
 mcrouter_option_group("Timeouts")
 
 mcrouter_option_integer(
