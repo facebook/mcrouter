@@ -14,7 +14,7 @@
 
 namespace facebook { namespace memcache {
 
-class AccessPoint;
+struct AccessPoint;
 
 namespace mcrouter {
 

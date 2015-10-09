@@ -64,8 +64,8 @@ class McrouterInstance;
 class McrouterLogger;
 class McrouterStandaloneOptions;
 class proxy_t;
-class ShadowValidationData;
-class TkoLog;
+struct ShadowValidationData;
+struct TkoLog;
 
 struct ProxyStatsContainer {
   explicit ProxyStatsContainer(proxy_t&) {}

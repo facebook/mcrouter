@@ -22,8 +22,8 @@
 
 namespace facebook { namespace memcache {
 
-class AccessPoint;
 class McReply;
+struct AccessPoint;
 
 namespace detail {
 inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);
