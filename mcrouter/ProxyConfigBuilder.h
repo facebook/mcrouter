@@ -29,10 +29,10 @@ class proxy_t;
 class ProxyConfigBuilder {
  public:
   ProxyConfigBuilder(const McrouterOptions& opts,
-                     ConfigApi* configApi,
+                     ConfigApi& configApi,
                      folly::StringPiece jsonC);
 
-  std::shared_ptr<ProxyConfig> buildConfig(proxy_t* proxy) const;
+  std::shared_ptr<ProxyConfig> buildConfig(proxy_t& proxy) const;
 
   folly::dynamic preprocessedConfig() const;
  private:

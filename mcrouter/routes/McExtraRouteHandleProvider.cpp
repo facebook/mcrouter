@@ -22,7 +22,7 @@ McrouterRouteHandlePtr makeShadowRouteDefault(
   DefaultShadowPolicy shadowPolicy);
 
 McrouterRouteHandlePtr McExtraRouteHandleProvider::makeShadow(
-  proxy_t* proxy,
+  proxy_t&,
   McrouterRouteHandlePtr destination,
   McrouterShadowData data,
   folly::StringPiece shadowPolicy) {

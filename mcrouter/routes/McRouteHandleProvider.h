@@ -29,7 +29,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class ClientPool;
 class ExtraRouteHandleProviderIf;
 class PoolFactory;
-class ProxyDestinationMap;
 class proxy_t;
 
 /**
@@ -39,9 +38,7 @@ class proxy_t;
 class McRouteHandleProvider :
   public RouteHandleProviderIf<McrouterRouteHandleIf> {
  public:
-  McRouteHandleProvider(proxy_t* proxy,
-                        ProxyDestinationMap& destinationMap,
-                        PoolFactory& poolFactory);
+  McRouteHandleProvider(proxy_t& proxy, PoolFactory& poolFactory);
 
   std::vector<McrouterRouteHandlePtr>
   create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -58,8 +55,7 @@ class McRouteHandleProvider :
   using RouteFunc = std::function<
       McrouterRouteHandlePtr(RouteHandleFactory<McrouterRouteHandleIf>&,
                             const folly::dynamic&)>;
-  proxy_t* proxy_;
-  ProxyDestinationMap& destinationMap_;
+  proxy_t& proxy_;
   PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
 

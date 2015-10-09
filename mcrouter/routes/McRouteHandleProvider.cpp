@@ -49,9 +49,6 @@ McrouterRouteHandlePtr makeAllMajorityRoute(McRouteHandleFactory& factory,
 McrouterRouteHandlePtr makeAllSyncRoute(McRouteHandleFactory& factory,
                                         const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAsynclogRoute(McRouteHandleFactory& factory,
-                                         const folly::dynamic& json);
-
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
                                          std::string asynclogName);
 
@@ -132,12 +129,14 @@ McrouterRouteHandlePtr makeSlowWarmUpRoute(
     McrouterRouteHandlePtr failoverTarget,
     std::shared_ptr<SlowWarmUpRouteSettings> settings);
 
+std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json);
+
 McRouteHandleProvider::McRouteHandleProvider(
-  proxy_t* proxy,
-  ProxyDestinationMap& destinationMap,
+  proxy_t& proxy,
   PoolFactory& poolFactory)
     : proxy_(proxy),
-      destinationMap_(destinationMap),
       poolFactory_(poolFactory),
       extraProvider_(createExtraRouteHandleProvider()),
       routeMap_{
@@ -148,8 +147,9 @@ McRouteHandleProvider::McRouteHandleProvider(
         { "AllSyncRoute", &makeAllSyncRoute },
         {
           "AsynclogRoute",
-          [](McRouteHandleFactory& factory, const folly::dynamic& json) {
-            return makeAsynclogRoute(factory, json);
+          [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
+            auto p = parseAsynclogRoute(factory, json);
+            return createAsynclogRoute(std::move(p.first), std::move(p.second));
           }
         },
         { "DevNullRoute", &makeDevNullRoute },
@@ -201,7 +201,7 @@ McRouteHandleProvider::makePool(const folly::dynamic& json) {
   auto pool = poolFactory_.parsePool(json);
   std::vector<McrouterRouteHandlePtr> destinations;
   for (const auto& client : pool->getClients()) {
-    auto pdstn = destinationMap_.fetch(*client);
+    auto pdstn = proxy_.destinationMap->fetch(*client);
     auto route = makeDestinationRoute(client, std::move(pdstn));
     destinations.push_back(std::move(route));
   }
@@ -212,7 +212,7 @@ McRouteHandleProvider::makePool(const folly::dynamic& json) {
 McrouterRouteHandlePtr
 McRouteHandleProvider::createAsynclogRoute(McrouterRouteHandlePtr target,
                                            std::string asynclogName) {
-  if (!proxy_->router().opts().asynclog_disable) {
+  if (!proxy_.router().opts().asynclog_disable) {
     target = makeAsynclogRoute(std::move(target), asynclogName);
   }
   asyncLogRoutes_.emplace(std::move(asynclogName), target);
@@ -285,7 +285,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
     McrouterShadowData data;
     for (auto& shadow : json["shadows"]) {
       if (!shadow.isObject()) {
-        MC_LOG_FAILURE(proxy_->router().opts(),
+        MC_LOG_FAILURE(proxy_.router().opts(),
                        failure::Category::kInvalidConfig,
                        "PoolRoute {} shadows: shadow is not an object",
                        pool->getName());
@@ -293,19 +293,19 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
       }
       auto jtarget = shadow.get_ptr("target");
       if (!jtarget) {
-        MC_LOG_FAILURE(proxy_->router().opts(),
+        MC_LOG_FAILURE(proxy_.router().opts(),
                        failure::Category::kInvalidConfig,
                        "PoolRoute {} shadows: no target for shadow",
                        pool->getName());
         continue;
       }
       try {
-        auto s = ShadowSettings::create(shadow, proxy_->router());
+        auto s = ShadowSettings::create(shadow, proxy_.router());
         if (s) {
           data.emplace_back(factory.create(*jtarget), std::move(s));
         }
       } catch (const std::exception& e) {
-        MC_LOG_FAILURE(proxy_->router().opts(),
+        MC_LOG_FAILURE(proxy_.router().opts(),
                        failure::Category::kInvalidConfig,
                        "Can not create shadow for PoolRoute {}: {}",
                        pool->getName(), e.what());
@@ -353,7 +353,7 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   auto route = makeHashRoute(jhashWithWeights, std::move(destinations));
 
   if (json.isObject()) {
-    if (proxy_->router().opts().destination_rate_limiting) {
+    if (proxy_.router().opts().destination_rate_limiting) {
       if (auto jrates = json.get_ptr("rates")) {
         route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
       }

@@ -533,11 +533,11 @@ bool McrouterInstance::configure(folly::StringPiece input) {
     // each proxy
     ProxyConfigBuilder builder(
       opts_,
-      configApi_.get(),
+      configApi(),
       input);
 
     for (size_t i = 0; i < opts_.num_proxies; i++) {
-      newConfigs.push_back(builder.buildConfig(getProxy(i)));
+      newConfigs.push_back(builder.buildConfig(*getProxy(i)));
     }
   } catch (const std::exception& e) {
     MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,

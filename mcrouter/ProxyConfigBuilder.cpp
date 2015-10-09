@@ -24,7 +24,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
-                                       ConfigApi* configApi,
+                                       ConfigApi& configApi,
                                        folly::StringPiece jsonC)
     : json_(nullptr) {
 
@@ -48,7 +48,7 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
     importResolver,
     std::move(globalParams));
 
-  poolFactory_ = std::make_shared<PoolFactory>(json_, *configApi, opts);
+  poolFactory_ = std::make_shared<PoolFactory>(json_, configApi, opts);
 
   configMd5Digest_ = Md5Hash(jsonC);
 }
@@ -58,7 +58,7 @@ folly::dynamic ProxyConfigBuilder::preprocessedConfig() const {
 }
 
 std::shared_ptr<ProxyConfig>
-ProxyConfigBuilder::buildConfig(proxy_t* proxy) const {
+ProxyConfigBuilder::buildConfig(proxy_t& proxy) const {
   return std::shared_ptr<ProxyConfig>(
     new ProxyConfig(proxy, json_, configMd5Digest_, poolFactory_));
 }

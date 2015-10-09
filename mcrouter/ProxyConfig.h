@@ -65,7 +65,7 @@ class ProxyConfig {
    *
    * @param jsonC config in format of JSON with comments and templates
    */
-  ProxyConfig(proxy_t* proxy,
+  ProxyConfig(proxy_t& proxy,
               const folly::dynamic& json,
               std::string configMd5Digest,
               std::shared_ptr<PoolFactory> poolFactory);

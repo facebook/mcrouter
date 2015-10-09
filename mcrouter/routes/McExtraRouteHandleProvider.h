@@ -21,7 +21,7 @@ class proxy_t;
 class McExtraRouteHandleProvider : public ExtraRouteHandleProviderIf {
  public:
   virtual McrouterRouteHandlePtr
-  makeShadow(proxy_t* proxy,
+  makeShadow(proxy_t& proxy,
              McrouterRouteHandlePtr destination,
              McrouterShadowData data,
              folly::StringPiece shadowPolicy) override;

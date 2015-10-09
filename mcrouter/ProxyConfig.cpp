@@ -25,14 +25,14 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyConfig::ProxyConfig(proxy_t* proxy,
+ProxyConfig::ProxyConfig(proxy_t& proxy,
                          const folly::dynamic& json,
                          std::string configMd5Digest,
                          std::shared_ptr<PoolFactory> poolFactory)
   : poolFactory_(std::move(poolFactory)),
     configMd5Digest_(std::move(configMd5Digest)) {
 
-  McRouteHandleProvider provider(proxy, *proxy->destinationMap, *poolFactory_);
+  McRouteHandleProvider provider(proxy, *poolFactory_);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 
   checkLogic(json.isObject(), "Config is not an object");
@@ -52,7 +52,7 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
              "Invalid config: both 'route' and 'routes' are specified");
   checkLogic(jRoute || jRoutes, "No route/routes in config");
   if (jRoute) {
-    routeSelectors[proxy->getRouterOptions().default_route] =
+    routeSelectors[proxy.getRouterOptions().default_route] =
         std::make_shared<PrefixSelectorRoute>(factory, *jRoute);
   } else { // jRoutes
     checkLogic(jRoutes->isArray() || jRoutes->isObject(),
@@ -82,8 +82,8 @@ ProxyConfig::ProxyConfig(proxy_t* proxy,
   }
 
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
-  proxyRoute_ = std::make_shared<ProxyRoute>(proxy, routeSelectors);
-  serviceInfo_ = std::make_shared<ServiceInfo>(proxy, *this);
+  proxyRoute_ = std::make_shared<ProxyRoute>(&proxy, routeSelectors);
+  serviceInfo_ = std::make_shared<ServiceInfo>(&proxy, *this);
 }
 
 McrouterRouteHandlePtr

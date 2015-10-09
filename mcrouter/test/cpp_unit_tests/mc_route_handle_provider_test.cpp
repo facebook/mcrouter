@@ -27,50 +27,95 @@
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
-static const std::string kConstShard =
+namespace {
+
+const char* const kAsynclogRoute =
+ R"({
+  "type": "AsynclogRoute",
+  "name": "test",
+  "target": "NullRoute"
+ })";
+
+const char* const kConstShard =
  R"({
   "type": "HashRoute",
   "children": "ErrorRoute",
   "hash_func": "ConstShard"
  })";
 
-static const std::string kWarmUp =
+const char* const kInvalidHashFunc =
+ R"({
+  "type": "HashRoute",
+  "children": "ErrorRoute",
+  "hash_func": "InvalidHashFunc"
+ })";
+
+const char* const kWarmUp =
  R"({
    "type": "WarmUpRoute",
    "cold": "ErrorRoute",
    "warm": "NullRoute"
  })";
 
-static const std::string kPoolRoute =
+const char* const kPoolRoute =
  R"({
    "type": "PoolRoute",
    "pool": { "name": "mock", "servers": [ ] },
    "hash": { "hash_func": "Crc32" }
  })";
 
-static std::shared_ptr<McrouterRouteHandleIf>
-getRoute(const folly::dynamic& d) {
-  McrouterOptions opts = defaultTestOptions();
-  opts.config_file = kMemcacheConfig;
-  auto router = McrouterInstance::init("test_get_route", opts);
-  auto proxy = router->getProxy(0);
-  PoolFactory pf(folly::dynamic::object(), router->configApi(), opts);
-  McRouteHandleProvider provider(proxy, *proxy->destinationMap, pf);
-  RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
-  return factory.create(d);
+struct TestSetup {
+ public:
+  TestSetup()
+    : router_(McrouterInstance::init("test_get_route", getOpts())),
+      poolFactory_(folly::dynamic::object(),
+                   router_->configApi(),
+                   router_->opts()),
+      rhProvider_(*router_->getProxy(0), poolFactory_),
+      rhFactory_(rhProvider_) {
+  }
+
+  McRouteHandleProvider& provider() {
+    return rhProvider_;
+  }
+
+  McrouterRouteHandlePtr getRoute(const char* jsonStr) {
+    return rhFactory_.create(parseJsonString(jsonStr));
+  }
+ private:
+  McrouterInstance* router_;
+  PoolFactory poolFactory_;
+  McRouteHandleProvider rhProvider_;
+  RouteHandleFactory<McrouterRouteHandleIf> rhFactory_;
+
+  static McrouterOptions getOpts() {
+    auto opts = defaultTestOptions();
+    opts.config_file = kMemcacheConfig;
+    return opts;
+  }
+};
+
+}  // anonymous
+
+TEST(McRouteHandleProviderTest, asynclog_route) {
+  TestSetup setup;
+  auto rh = setup.getRoute(kAsynclogRoute);
+  EXPECT_TRUE(rh != nullptr);
+  EXPECT_EQ("asynclog:test", rh->routeName());
+  auto asynclogRoutes = setup.provider().releaseAsyncLogRoutes();
+  EXPECT_EQ(1, asynclogRoutes.size());
+  EXPECT_EQ("asynclog:test", asynclogRoutes["test"]->routeName());
 }
 
 TEST(McRouteHandleProviderTest, sanity) {
-  auto rh = getRoute(parseJsonString(kConstShard));
+  auto rh = TestSetup().getRoute(kConstShard);
   EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "error");
+  EXPECT_EQ("error", rh->routeName());
 }
 
 TEST(McRouteHandleProviderTest, invalid_func) {
-  auto d = parseJsonString(kConstShard);
-  d["hash_func"] = "SomeNotExistingFunc";
   try {
-    auto rh = getRoute(d);
+    auto rh = TestSetup().getRoute(kInvalidHashFunc);
   } catch (const std::logic_error& e) {
     return;
   }
@@ -78,13 +123,17 @@ TEST(McRouteHandleProviderTest, invalid_func) {
 }
 
 TEST(McRouteHandleProvider, warmup) {
-  auto rh = getRoute(parseJsonString(kWarmUp));
+  auto rh = TestSetup().getRoute(kWarmUp);
   EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "warm-up");
+  EXPECT_EQ("warm-up", rh->routeName());
 }
 
 TEST(McRouteHandleProvider, pool_route) {
-  auto rh = getRoute(parseJsonString(kPoolRoute));
+  TestSetup setup;
+  auto rh = setup.getRoute(kPoolRoute);
   EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ(rh->routeName(), "asynclog:mock");
+  EXPECT_EQ("asynclog:mock", rh->routeName());
+  auto asynclogRoutes = setup.provider().releaseAsyncLogRoutes();
+  EXPECT_EQ(1, asynclogRoutes.size());
+  EXPECT_EQ("asynclog:mock", asynclogRoutes["mock"]->routeName());
 }

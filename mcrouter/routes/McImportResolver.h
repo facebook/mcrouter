@@ -25,14 +25,14 @@ class ConfigApi;
  */
 class McImportResolver : public ImportResolverIf {
  public:
-  explicit McImportResolver(ConfigApi* configApi);
+  explicit McImportResolver(ConfigApi& configApi);
 
   /**
    * @throws std::runtime_error if can not load file
    */
   std::string import(folly::StringPiece path);
  private:
-  ConfigApi* configApi_;
+  ConfigApi& configApi_;
 };
 
 }}} // facebook::memcache::mcrouter

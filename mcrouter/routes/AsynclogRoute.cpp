@@ -9,6 +9,8 @@
  */
 #include "AsynclogRoute.h"
 
+#include <utility>
+
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -23,7 +25,11 @@ McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
     std::move(asynclogName));
 }
 
-McrouterRouteHandlePtr makeAsynclogRoute(
+/**
+ * @return target and asynclogName
+ *         Caller may call makeAsynclogRoute afterwards.
+ */
+std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
   std::string asynclogName;
@@ -42,7 +48,7 @@ McrouterRouteHandlePtr makeAsynclogRoute(
     asynclogName = jname->stringPiece().str();
     target = factory.create(*jtarget);
   }
-  return makeAsynclogRoute(std::move(target), std::move(asynclogName));
+  return { std::move(target), std::move(asynclogName) };
 }
 
 }}}  // facebook::memcache::mcrouter

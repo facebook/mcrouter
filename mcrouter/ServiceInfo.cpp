@@ -293,13 +293,9 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
         throw std::runtime_error("can not load config");
       }
       ProxyConfigBuilder builder(proxy_->router().opts(),
-                                 &proxy_->router().configApi(),
+                                 proxy_->router().configApi(),
                                  confFile);
-      folly::json::serialization_opts jsonOpts;
-      jsonOpts.pretty_formatting = true;
-      jsonOpts.sort_keys = true;
-      return folly::json::serialize(builder.preprocessedConfig(),
-                                    jsonOpts).toStdString();
+      return toPrettySortedJson(builder.preprocessedConfig());
     }
   );
 
