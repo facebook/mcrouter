@@ -2,9 +2,11 @@
 
 AC_PREREQ(2.62)
 
-m4_define([mcrouter_version_str], m4_esyscmd_s([cat VERSION]))
+m4_define([mcrouter_version_str], m4_esyscmd_s([cut -d '-' -f 1 VERSION]))
+m4_define([mcrouter_version_suffix], m4_esyscmd_s([sed 's/^[0-9]*:[0-9]*//' VERSION]))
 m4_define([mcrouter_version], m4_translit(mcrouter_version_str, [:], [.]))
 m4_append([mcrouter_version], [.0])
+m4_append([mcrouter_version], [mcrouter_version_suffix])
 AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
 
 LT_VERSION=mcrouter_version_str:0
