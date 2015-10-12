@@ -21,6 +21,7 @@
 
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
+#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
@@ -165,6 +166,14 @@ class McrouterInstance :
     return tkoTrackerMap_;
   }
 
+  /**
+   * If lease pairing is enabled, return the lease token map.
+   * Otherwise, return nullptr.
+   */
+  LeaseTokenMap* leaseTokenMap() {
+    return leaseTokenMap_.get();
+  }
+
   ObservableRuntimeVars& rtVarsData() {
     return rtVarsData_;
   }
@@ -241,6 +250,9 @@ class McrouterInstance :
 
   // Auxiliary EventBase thread.
   folly::ScopedEventBaseThread evbAuxiliaryThread_;
+
+  // Keep track of lease tokens of failed over requests.
+  std::unique_ptr<LeaseTokenMap> leaseTokenMap_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
 

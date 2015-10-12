@@ -6,6 +6,7 @@ mcrouter_test_SOURCES = \
   exponential_smooth_data_test.cpp \
   file_observer_test.cpp \
   flavor_test.cpp \
+  LeaseTokenMapTest.cpp \
   mc_route_handle_provider_test.cpp \
   mcrouter_cpp_tests.cpp \
   mcrouter_cpp_tests.h \

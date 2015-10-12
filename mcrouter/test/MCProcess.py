@@ -629,6 +629,16 @@ class McrouterClient(MCProcess):
     def __init__(self, port):
         MCProcess.__init__(self, None, str(port))
 
+class McrouterClients:
+    def __init__(self, port, count):
+        self.clients = []
+        for i in range(0, count):
+            self.clients.append(McrouterClient(port))
+            self.clients[i].connect()
+
+    def __getitem__(self, idx):
+        return self.clients[idx]
+
 class Memcached(MCProcess):
     def __init__(self, port=None):
         args = [McrouterGlobals.InstallDir +

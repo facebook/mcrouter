@@ -20,7 +20,11 @@
 
 using asox_timer_t = void*;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
+
+struct AccessPoint;
+
+namespace mcrouter {
 
 class ProxyClientCommon;
 class ProxyDestination;
@@ -96,6 +100,13 @@ class ProxyDestinationMap {
     }
   }
 
+  /**
+   * If ProxyDestination is already stored in this object - returns it;
+   * otherwise, returns nullptr.
+   */
+  std::shared_ptr<ProxyDestination> find(
+      const AccessPoint& ap, std::chrono::milliseconds timeout) const;
+
   ~ProxyDestinationMap();
 
  private:
@@ -103,12 +114,19 @@ class ProxyDestinationMap {
 
   proxy_t* proxy_;
   folly::StringKeyedUnorderedMap<std::weak_ptr<ProxyDestination>> destinations_;
-  std::mutex destinationsLock_;
+  mutable std::mutex destinationsLock_;
 
   std::unique_ptr<StateList> active_;
   std::unique_ptr<StateList> inactive_;
 
   asox_timer_t resetTimer_;
+
+  /**
+   * If ProxyDestination is already stored in this object - returns it;
+   * otherwise, returns nullptr.
+   * Note: caller must be holding destionationsLock_.
+   */
+  std::shared_ptr<ProxyDestination> find(const std::string& key) const;
 };
 
 }}} // facebook::memcache::mcrouter

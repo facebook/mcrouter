@@ -148,6 +148,7 @@
   STUI(cmd_other_count, 0, 1)
   STUI(cmd_replace_count, 0, 1)
   STUI(cmd_stats_count, 0, 1)
+  STUI(redirected_lease_set_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | cmd_all_stats | cmd_in_stats | \
   rate_stats

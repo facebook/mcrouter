@@ -304,7 +304,10 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     configApi_(createConfigApi(opts_)),
     asyncWriter_(folly::make_unique<AsyncWriter>()),
     statsLogWriter_(folly::make_unique<AsyncWriter>(
-                      opts_.stats_async_queue_length)) {
+                      opts_.stats_async_queue_length)),
+    leaseTokenMap_(opts_.enable_lease_pairing
+        ? folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)
+        : nullptr) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);

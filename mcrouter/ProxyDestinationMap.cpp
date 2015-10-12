@@ -10,11 +10,13 @@
 #include "ProxyDestinationMap.h"
 
 #include <folly/io/async/EventBase.h>
+#include <folly/Format.h>
 #include <folly/Memory.h>
 
 #include "mcrouter/ClientPool.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyClientCommon.h"
@@ -27,6 +29,17 @@ namespace {
 void onResetTimer(const asox_timer_t timer, void* arg) {
   auto map = reinterpret_cast<ProxyDestinationMap*>(arg);
   map->resetAllInactive();
+}
+
+std::string genProxyDestinationKey(const AccessPoint& ap,
+                                   std::chrono::milliseconds timeout) {
+  if (ap.getProtocol() == mc_ascii_protocol) {
+    // we cannot send requests with different timeouts for ASCII, since
+    // it will break in-order nature of the protocol
+    return folly::sformat("{}-{}", ap.toString(), timeout.count());
+  } else {
+    return ap.toString();
+  }
 }
 
 } // namespace
@@ -46,15 +59,12 @@ ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
 
 std::shared_ptr<ProxyDestination>
 ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
-  auto key = client.genProxyDestinationKey();
+  auto key = genProxyDestinationKey(*client.ap, client.server_timeout);
   std::shared_ptr<ProxyDestination> destination;
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
 
-    auto it = destinations_.find(key);
-    if (it != destinations_.end()) {
-      destination = it->second.lock();
-    }
+    destination = find(key);
     if (!destination) {
       destination = ProxyDestination::create(proxy_, client);
       auto destIt = destinations_.emplace(key, destination);
@@ -76,6 +86,29 @@ ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
     proxy_->router().opts().maximum_soft_tkos);
 
   return destination;
+}
+
+/**
+ * If ProxyDestination is already stored in this object - returns it;
+ * otherwise, returns nullptr.
+ */
+std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
+    const AccessPoint& ap, std::chrono::milliseconds timeout) const {
+  auto key = genProxyDestinationKey(ap, timeout);
+  {
+    std::lock_guard<std::mutex> lck(destinationsLock_);
+    return find(key);
+  }
+}
+
+// Note: caller must be holding destionationsLock_.
+std::shared_ptr<ProxyDestination>
+ProxyDestinationMap::find(const std::string& key) const {
+  auto it = destinations_.find(key);
+  if (it == destinations_.end()) {
+    return nullptr;
+  }
+  return it->second.lock();
 }
 
 void ProxyDestinationMap::removeDestination(ProxyDestination& destination) {

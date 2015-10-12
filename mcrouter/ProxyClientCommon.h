@@ -34,8 +34,6 @@ struct ProxyClientCommon {
   const bool useSsl;
   const bool useTyped{false};
 
-  std::string genProxyDestinationKey() const;
-
  private:
   ProxyClientCommon(const ClientPool& pool,
                     std::chrono::milliseconds timeout,

@@ -32,11 +32,19 @@ class McRequest;
 
 namespace mcrouter {
 
-class DestinationRequestCtx;
 class ProxyClientCommon;
 class ProxyDestinationMap;
 class TkoTracker;
 class proxy_t;
+
+struct DestinationRequestCtx {
+  int64_t startTime{0};
+  int64_t endTime{0};
+
+  explicit DestinationRequestCtx(int64_t now)
+    : startTime(now) {
+  }
+};
 
 class ProxyDestination {
  public:

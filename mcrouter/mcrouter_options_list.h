@@ -311,6 +311,11 @@ mcrouter_option_string_map(
   "Params for config preprocessor in format 'name1:value1,name2:value2'. "
   "All values will be passed as strings.")
 
+mcrouter_option_toggle(
+  enable_lease_pairing, false,
+  "enable-lease-pairing", no_short,
+  "Send lease set to the same destination as failed-over lease get.")
+
 mcrouter_option_group("TKO probes")
 
 mcrouter_option_toggle(

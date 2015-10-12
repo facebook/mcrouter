@@ -34,14 +34,4 @@ ProxyClientCommon::ProxyClientCommon(const ClientPool& pool_,
       useSsl(useSsl_),
       useTyped(useTyped_) {}
 
-std::string ProxyClientCommon::genProxyDestinationKey() const {
-  if (ap->getProtocol() == mc_ascii_protocol) {
-    // we cannot send requests with different timeouts for ASCII, since
-    // it will break in-order nature of the protocol
-    return folly::sformat("{}-{}", ap->toString(), server_timeout.count());
-  } else {
-    return ap->toString();
-  }
-}
-
 }}}  // facebook::memcache::mcrouter
