@@ -34,6 +34,19 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 
+std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json,
+    std::vector<McrouterRouteHandlePtr> destinations,
+    proxy_t& proxy,
+    ExtraRouteHandleProviderIf& extraProvider);
+
+std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
+    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+    const folly::dynamic& json,
+    proxy_t& proxy,
+    ExtraRouteHandleProviderIf& extraProvider);
+
 McrouterRouteHandlePtr makeAllAsyncRoute(McRouteHandleFactory& factory,
                                          const folly::dynamic& json);
 
@@ -275,58 +288,8 @@ McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
   }
 
   if (json.isObject() && json.count("shadows")) {
-    folly::StringPiece shadowPolicy = "default";
-    if (auto jshadow_policy = json.get_ptr("shadow_policy")) {
-      checkLogic(jshadow_policy->isString(),
-                 "PoolRoute: shadow_policy is not a string");
-      shadowPolicy = jshadow_policy->stringPiece();
-    }
-
-    McrouterShadowData data;
-    for (auto& shadow : json["shadows"]) {
-      if (!shadow.isObject()) {
-        MC_LOG_FAILURE(proxy_.router().opts(),
-                       failure::Category::kInvalidConfig,
-                       "PoolRoute {} shadows: shadow is not an object",
-                       pool->getName());
-        continue;
-      }
-      auto jtarget = shadow.get_ptr("target");
-      if (!jtarget) {
-        MC_LOG_FAILURE(proxy_.router().opts(),
-                       failure::Category::kInvalidConfig,
-                       "PoolRoute {} shadows: no target for shadow",
-                       pool->getName());
-        continue;
-      }
-      try {
-        auto s = ShadowSettings::create(shadow, proxy_.router());
-        if (s) {
-          data.emplace_back(factory.create(*jtarget), std::move(s));
-        }
-      } catch (const std::exception& e) {
-        MC_LOG_FAILURE(proxy_.router().opts(),
-                       failure::Category::kInvalidConfig,
-                       "Can not create shadow for PoolRoute {}: {}",
-                       pool->getName(), e.what());
-      }
-    }
-
-    for (size_t i = 0; i < destinations.size(); ++i) {
-      McrouterShadowData destinationShadows;
-      for (const auto& shadowData : data) {
-        if (shadowData.second->startIndex() <= i &&
-            i < shadowData.second->endIndex()) {
-          destinationShadows.push_back(shadowData);
-        }
-      }
-      if (!destinationShadows.empty()) {
-        destinationShadows.shrink_to_fit();
-        destinations[i] = extraProvider_->makeShadow(
-          proxy_, std::move(destinations[i]),
-          std::move(destinationShadows), shadowPolicy);
-      }
-    }
+    destinations = makeShadowRoutes(
+        factory, json, std::move(destinations), proxy_, *extraProvider_);
   }
 
   // add weights and override whatever we have in PoolRoute::hash
@@ -390,6 +353,8 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
 
   if (type == "Pool") {
     return makePool(json).second;
+  } else if (type == "ShadowRoute") {
+    return makeShadowRoutes(factory, json, proxy_, *extraProvider_);
   }
 
   auto it = routeMap_.find(type);

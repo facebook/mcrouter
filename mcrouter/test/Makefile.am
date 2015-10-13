@@ -46,6 +46,7 @@ TESTS += \
   test_server_stats.py \
   test_service_info.py \
   test_shadow.py \
+  test_shadow_route.py \
   test_shadow_with_file.py \
   test_shard_splits.py \
   test_slow_warmup.py \
