@@ -78,7 +78,12 @@ class FailoverRoute {
       auto doFailover = [this, &req, &normalReply](size_t i) {
         auto failoverReply = targets_[i]->route(req, Operation());
         logFailover(fiber_local::getSharedCtx()->proxy(),
-                    Operation::name, req, normalReply, failoverReply);
+                    Operation::name,
+                    i,
+                    targets_.size() - 1,
+                    req,
+                    normalReply,
+                    failoverReply);
         return failoverReply;
       };
       for (size_t i = 1; i + 1 < targets_.size(); ++i) {
