@@ -181,7 +181,7 @@ class DestinationRoute {
     reply = destination_->send(reqToSend, McOperation<Op>(), dctx,
                                client_->server_timeout);
     ctx->onReplyReceived(*client_,
-                         req,
+                         reqToSend,
                          reply,
                          dctx.startTime,
                          dctx.endTime,
