@@ -65,6 +65,15 @@ McServerSession& McServerSession::create(
     debugFifo
   );
 
+  assert(ptr->state_ == STREAMING);
+
+  DestructorGuard dg(ptr);
+  ptr->transport_->setReadCB(ptr);
+  if (ptr->state_ != STREAMING) {
+    throw std::runtime_error(
+        "Failed to create McServerSession: setReadCB failed");
+  }
+
   return *ptr;
 }
 
@@ -99,8 +108,6 @@ McServerSession::McServerSession(
     // std::system_error or other exception, leave IP address empty
     LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
-
-  transport_->setReadCB(this);
 }
 
 void McServerSession::pause(PauseReason reason) {

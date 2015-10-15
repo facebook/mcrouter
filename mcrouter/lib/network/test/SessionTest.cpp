@@ -172,3 +172,30 @@ TEST(Session, closeBeforeReply) {
   t.closeSession();
   t.resume();
 }
+
+struct NoOpOnRequest {
+ public:
+  NoOpOnRequest() {}
+
+  template <class Operation>
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
+                 Operation) {}
+};
+
+TEST(Session, invalidSocketAdd) {
+  const int invalidFd = socket(AF_INET6, SOCK_STREAM, 0);
+  EXPECT_NE(invalidFd, -1);
+  close(invalidFd);
+
+  AsyncMcServerWorkerOptions opts;
+  folly::EventBase base;
+  AsyncMcServerWorker worker(opts, base);
+
+  worker.setOnRequest(NoOpOnRequest());
+  worker.setOnWriteQuiescence([](McServerSession&){});
+  worker.setOnConnectionCloseStart([](McServerSession&){});
+  worker.setOnConnectionCloseFinish([](McServerSession&){});
+
+  worker.addClientSocket(invalidFd);
+}

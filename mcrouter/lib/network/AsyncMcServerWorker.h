@@ -45,14 +45,16 @@ class AsyncMcServerWorker {
 
   /**
    * Moves in ownership of an externally accepted client socket.
+   * @return    true on success, false on error
    */
-  void addClientSocket(int fd, void* userCtxt = nullptr);
+  bool addClientSocket(int fd, void* userCtxt = nullptr);
 
   /**
    * Moves in ownership of an externally accepted client socket with an ssl
    * context which will be used to manage it.
+   * @return    true on success, false on error
    */
-  void addSecureClientSocket(
+  bool addSecureClientSocket(
       int fd,
       const std::shared_ptr<folly::SSLContext>& context,
       void* userCtxt = nullptr);
@@ -162,7 +164,7 @@ class AsyncMcServerWorker {
   bool writesPending() const;
 
  private:
-  void addClientSocket(
+  bool addClientSocket(
       folly::AsyncSocket::UniquePtr&& socket,
       void* userCtxt);
 

@@ -40,6 +40,13 @@ class McServerSession :
                                             &McServerSession::hook_>;
 
   /**
+   * Returns true if this object is a part of an intrusive list
+   */
+  bool isLinked() {
+    return hook_.is_linked();
+  }
+
+  /**
    * Creates a new session.  Sessions manage their own lifetime.
    * A session will self-destruct right after an onCloseFinish() callback
    * call, by which point all of the following must have occured:
@@ -67,6 +74,9 @@ class McServerSession :
    *
    * @param transport  Connected transport; transfers ownership inside
    *                   this session.
+   *
+   * @throw            std::runtime_error if we fail to create McServerSession
+   *                   object
    */
   static McServerSession& create(
     folly::AsyncTransportWrapper::UniquePtr transport,

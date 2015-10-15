@@ -74,7 +74,7 @@ AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
   }
 }
 
-void AsyncMcServerWorker::addSecureClientSocket(
+bool AsyncMcServerWorker::addSecureClientSocket(
     int fd,
     const std::shared_ptr<folly::SSLContext>& context,
     void* userCtxt) {
@@ -82,16 +82,16 @@ void AsyncMcServerWorker::addSecureClientSocket(
       new folly::AsyncSSLSocket(
           context, &eventBase_, fd, /* server = */ true));
   sslSocket->sslAccept(&simpleHandshakeCallback, /* timeout = */ 0);
-  addClientSocket(std::move(sslSocket), userCtxt);
+  return addClientSocket(std::move(sslSocket), userCtxt);
 }
 
-void AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
+bool AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
   auto socket = folly::AsyncSocket::UniquePtr(
       new folly::AsyncSocket(&eventBase_, fd));
-  addClientSocket(std::move(socket), userCtxt);
+  return addClientSocket(std::move(socket), userCtxt);
 }
 
-void AsyncMcServerWorker::addClientSocket(
+bool AsyncMcServerWorker::addClientSocket(
     folly::AsyncSocket::UniquePtr&& socket,
     void* userCtxt) {
   if (!onRequest_) {
@@ -107,40 +107,47 @@ void AsyncMcServerWorker::addClientSocket(
   socket->setNoDelay(true);
   int fd = socket->getFd();
 
-  auto& session = McServerSession::create(
-    std::move(socket),
-    onRequest_,
-    [this, fd] (McServerSession& session) {
-      if (connLRU_) {
-        connLRU_->touchConnection(fd);
-      }
-      if (onWriteQuiescence_) {
-        onWriteQuiescence_(session);
-      }
-    },
-    onCloseStart_,
-    [this, fd] (McServerSession& session) {
-      if (onCloseFinish_) {
-        onCloseFinish_(session);
-      }
-      sessions_.erase(sessions_.iterator_to(session));
-      if (connLRU_) {
-        connLRU_->removeConnection(fd);
-      }
-    },
-    onShutdown_,
-    opts_,
-    userCtxt,
-    debugFifo_
-  );
+  try {
+    auto& session = McServerSession::create(
+        std::move(socket),
+        onRequest_,
+        [this, fd](McServerSession& session) {
+          if (connLRU_) {
+            connLRU_->touchConnection(fd);
+          }
+          if (onWriteQuiescence_) {
+            onWriteQuiescence_(session);
+          }
+        },
+        onCloseStart_,
+        [this, fd](McServerSession& session) {
+          if (onCloseFinish_) {
+            onCloseFinish_(session);
+          }
+          if (session.isLinked()) {
+            sessions_.erase(sessions_.iterator_to(session));
+          }
+          if (connLRU_) {
+            connLRU_->removeConnection(fd);
+          }
+        },
+        onShutdown_,
+        opts_,
+        userCtxt,
+        debugFifo_);
 
-  sessions_.push_back(session);
+    sessions_.push_back(session);
 
-  if (connLRU_ &&
-      !connLRU_->addConnection(
-          fd,
-          std::unique_ptr<McServerSession, McServerSessionDeleter>(&session))) {
-    // TODO: record stats about failure
+    if (connLRU_ &&
+        !connLRU_->addConnection(
+            fd,
+            std::unique_ptr<McServerSession, McServerSessionDeleter>(
+                &session))) {
+      // TODO: record stats about failure
+    }
+    return true;
+  } catch (std::exception& ex) {
+    return false;
   }
 }
 
