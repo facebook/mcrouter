@@ -70,6 +70,14 @@
           "dictionary": [ "2", "99", 10, 99 ]
         },
         "expand": [ 10, 99, "2", "99" ]
+      },
+      "hashString": {
+        "orig": "@hash(abcd)",
+        "expand": 6660178300034425268
+      },
+      "hashInt": {
+        "orig": "@hash(@int(2313))",
+        "expand": -4996987850411076878
       }
     }
   },

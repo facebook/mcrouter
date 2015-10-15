@@ -16,6 +16,7 @@
 #include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/Random.h>
+#include <folly/Hash.h>
 
 #include "mcrouter/lib/config/ImportResolverIf.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -312,6 +313,23 @@ class ConfigPreprocessor::BuiltIns {
     }
     p->importCache_.emplace(std::move(path), result);
     return result;
+  }
+
+  /**
+   * Computes hash of an int or string
+   * Usage: @hash(prn1c05)
+   * Usage: @hash(@int(52135))
+   */
+  static dynamic hashMacro(Context ctx) {
+    const auto& val = ctx.at("value");
+    if (val.isInt()) {
+      return folly::Hash()(val.getInt());
+    } else if (val.isString()) {
+      return folly::Hash()(val.stringPiece());
+    } else {
+      // invalid
+      throw std::logic_error("Hash: can not cast to int or string");
+    }
   }
 
   /**
@@ -1256,6 +1274,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
 
   addBuiltInMacro("import", { "path" },
     std::bind(&BuiltIns::importMacro, this, std::ref(importResolver), _1));
+
+  addBuiltInMacro("hash", { "value" }, &BuiltIns::hashMacro);
 
   addBuiltInMacro("int", { "value" }, &BuiltIns::intMacro);
 
