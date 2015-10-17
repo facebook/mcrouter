@@ -23,6 +23,7 @@ sudo apt-get install -y \
     libevent-dev \
     libgflags-dev \
     libgoogle-glog-dev \
+    libjemalloc-dev \
     libssl-dev \
     libtool \
     make \

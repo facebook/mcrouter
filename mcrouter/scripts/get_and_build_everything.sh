@@ -11,6 +11,8 @@ mkdir -p "$PKG_DIR" "$INSTALL_DIR"
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
 
+export LDFLAGS="-ljemalloc $LDFLAGS"
+
 for script in $(ls "order_$ORDER/" | egrep '^[0-9]+_.*[^~]$' | sort -n); do
   "./order_$ORDER/$script" "$PKG_DIR" "$INSTALL_DIR" "$@"
 done

@@ -9,7 +9,8 @@ sudo apt-get install -y libdouble-conversion1 libgflags2 \
 
 sudo apt-get purge -y gcc g++ ragel autoconf \
     git libtool python-dev libssl-dev libevent-dev \
-    binutils-dev make libdouble-conversion-dev libgflags-dev libgoogle-glog-dev
+    binutils-dev make libdouble-conversion-dev libgflags-dev \
+    libgoogle-glog-dev libjemalloc-dev
 
 sudo apt-get purge -y 'libboost.*-dev'
 sudo apt-get autoremove --purge -y

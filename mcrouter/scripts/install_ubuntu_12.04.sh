@@ -26,6 +26,7 @@ sudo apt-get install -y \
     libboost1.54-dev \
     libevent-dev \
     libgflags-dev \
+    libjemalloc-dev \
     libssl-dev \
     libtool \
     make \
