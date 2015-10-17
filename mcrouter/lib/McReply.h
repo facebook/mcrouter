@@ -49,7 +49,13 @@ class McReply {
   /**
    * Constructs an "error" reply, meaning that there was a routing error.
    */
-  explicit McReply(ErrorReplyT, folly::StringPiece valueToSet="")
+  explicit McReply(ErrorReplyT) : McReply(mc_res_local_error) {
+  }
+
+  /**
+   * Same as above, but additionally stores error value.
+   */
+  McReply(ErrorReplyT, folly::StringPiece valueToSet)
       : McReply(mc_res_local_error, valueToSet) {
   }
 
