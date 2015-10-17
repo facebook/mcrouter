@@ -12,6 +12,7 @@
 #include <memory>
 
 #include <folly/Memory.h>
+#include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/Fifo.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
@@ -21,6 +22,8 @@
 namespace facebook { namespace memcache {
 
 namespace {
+
+constexpr size_t kIovecVectorSize = 64;
 
 /**
  * @return true  If this incoming request is a part of a multiget request.
@@ -393,7 +396,7 @@ void McServerSession::sendWrites() {
 
   writeScheduled_ = false;
 
-  std::vector<struct iovec> iovs;
+  folly::small_vector<struct iovec, kIovecVectorSize> iovs;
   size_t count = 0;
   while (!pendingWrites_.empty()) {
     auto wb = std::move(pendingWrites_.front());
