@@ -51,9 +51,19 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
       : client_(client) {}
   ~WriterLoop() {}
   virtual void runLoopCallback() noexcept override {
+    // Delay this write until the end of current loop (e.g. after
+    // runActiveFibers() callback). That way we achieve better batching without
+    // affecting latency.
+    if (!rescheduled_) {
+      rescheduled_ = true;
+      client_.eventBase_.runInLoop(this, /* thisIteration */ true);
+      return;
+    }
+    rescheduled_ = false;
     client_.pushMessages();
   }
  private:
+  bool rescheduled_{false};
   AsyncMcClientImpl& client_;
 };
 
