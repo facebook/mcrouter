@@ -23,7 +23,8 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/lib/network/test/TestUtil.h"
+#include "mcrouter/lib/network/test/ClientSocket.h"
+#include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/test/cpp_unit_tests/mcrouter_test_client.h"
 #include "mcrouter/test/cpp_unit_tests/MemcacheLocal.h"
 
@@ -173,33 +174,33 @@ TEST(libmcrouter, invalid_pools) {
 TEST(libmcrouter, listenSock) {
   /* Create a listen socket, pass it to a child mcrouter and
      check that communication through the socket works */
-  auto listen_socket = facebook::memcache::createListenSocket();
-  auto port = facebook::memcache::getListenPort(listen_socket);
+  using namespace facebook::memcache;
+
+  ListenSocket listenSock;
 
   std::vector<std::string> args{MCROUTER_INSTALL_PATH "mcrouter/mcrouter",
-        "--listen-sock-fd", folly::to<std::string>(listen_socket),
+        "--listen-sock-fd", folly::to<std::string>(listenSock.getSocketFd()),
         "--config-str", configString };
   auto testArgs = defaultTestCommandLineArgs();
   args.insert(args.end(), testArgs.begin(), testArgs.end());
   folly::Subprocess mcr(args);
 
+  SCOPE_EXIT {
+    mcr.terminate();
+    mcr.wait();
+  };
+
   const std::string kSetRequest = "set testkey 0 0 1\r\nv\r\n";
   const std::string kStoredReply = "STORED\r\n";
   const std::string kGetRequest = "get testkey\r\n";
-  const std::string kGetReply = "VALUE testkey 0 1\r\nv\r\n";
+  const std::string kGetReply = "VALUE testkey 0 1\r\nv\r\nEND\r\n";
 
-  auto mcr_socket = facebook::memcache::connectToLocalPort(port);
-  facebook::memcache::checkRequestReply(mcr_socket, kSetRequest, kStoredReply);
-  facebook::memcache::checkRequestReply(mcr_socket, kGetRequest, kGetReply);
-  CHECK(!close(mcr_socket));
+  ClientSocket mcrSock(listenSock.getPort());
+  EXPECT_EQ(kStoredReply, mcrSock.sendRequest(kSetRequest));
+  EXPECT_EQ(kGetReply, mcrSock.sendRequest(kGetRequest));
 
-  auto mc_socket = facebook::memcache::connectToLocalPort(
-    memcacheLocal->getPort());
-  facebook::memcache::checkRequestReply(mc_socket, kGetRequest, kGetReply);
-  CHECK(!close(mc_socket));
-
-  mcr.terminate();
-  mcr.wait();
+  ClientSocket mcSock(memcacheLocal->getPort());
+  EXPECT_EQ(kGetReply, mcSock.sendRequest(kGetRequest));
 }
 
 // for backward compatibility with gflags

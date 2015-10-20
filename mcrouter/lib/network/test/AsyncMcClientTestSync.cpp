@@ -11,11 +11,12 @@
 
 #include <folly/experimental/fibers/EventBaseLoopController.h>
 #include <folly/experimental/fibers/FiberManager.h>
+#include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
-#include "mcrouter/lib/network/test/TestUtil.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -723,17 +724,16 @@ TEST(AsyncMcClient, testUpdateThreshold) {
 }
 
 void umbrellaBinaryReply(std::string data, mc_res_t expectedResult) {
-  auto serverSockFd = createListenSocket();
-  auto listenPort = getListenPort(serverSockFd);
+  ListenSocket sock;
 
-  std::thread serverThread([serverSockFd, &data] {
-    auto sockFd = ::accept(serverSockFd, nullptr, nullptr);
+  std::thread serverThread([&sock, &data] {
+    auto sockFd = ::accept(sock.getSocketFd(), nullptr, nullptr);
     // Don't read anything, just reply with a serialized reply.
     size_t n = folly::writeFull(sockFd, data.data(), data.size());
     CHECK(n == data.size());
   });
 
-  TestClient client("localhost", listenPort, 200, mc_umbrella_protocol);
+  TestClient client("localhost", sock.getPort(), 200, mc_umbrella_protocol);
   client.sendGet("test", expectedResult);
   client.waitForReplies();
   serverThread.join();

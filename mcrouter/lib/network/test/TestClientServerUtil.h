@@ -18,7 +18,7 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/test/TestUtil.h"
+#include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
@@ -120,8 +120,7 @@ class TestServer {
              int maxInflight = 10, int timeoutMs = 250, size_t maxConns = 100,
              size_t unreapableTime = 0, size_t updateThreshold = 0) :
       outOfOrder_(outOfOrder) {
-    socketFd_ = createListenSocket();
-    opts_.existingSocketFd = socketFd_;
+    opts_.existingSocketFd = sock_.getSocketFd();
     opts_.numThreads = 1;
     opts_.worker.maxInFlight = maxInflight;
     opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
@@ -142,7 +141,7 @@ class TestServer {
   }
 
   uint16_t getListenPort() const {
-    return facebook::memcache::getListenPort(socketFd_);
+    return sock_.getPort();
   }
 
   bool run() {
@@ -185,7 +184,7 @@ class TestServer {
     return stats_;
   }
  private:
-  int socketFd_;
+  ListenSocket sock_;
   AsyncMcServer::Options opts_;
   std::unique_ptr<AsyncMcServer> server_;
   bool outOfOrder_ = false;

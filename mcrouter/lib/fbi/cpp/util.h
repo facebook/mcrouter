@@ -27,22 +27,42 @@ namespace facebook { namespace memcache {
 
 /**
  * If `condition` is false, throws std::logic_error.
- * `format` and `args` are passed to folly::format().
+ * `fmt` and `args` are passed to folly::format().
  */
-template<typename... Args>
-void checkLogic(bool condition, folly::StringPiece format, Args&&... args) {
+template <typename... Args>
+void checkLogic(bool condition, folly::StringPiece fmt, Args&&... args) {
   if (UNLIKELY(!condition)) {
-    throw std::logic_error(folly::sformat(format, std::forward<Args>(args)...));
+    throw std::logic_error(folly::sformat(fmt, std::forward<Args>(args)...));
   }
 }
 
 /**
- * throws std::logic_error with formatted string.
- * `format` and `args` are passed to folly::format().
+ * Throws std::logic_error with formatted string.
+ * `fmt` and `args` are passed to folly::format().
  */
-template<typename... Args>
-[[ noreturn ]] void throwLogic(folly::StringPiece format, Args&&... args) {
-  throw std::logic_error(folly::sformat(format, std::forward<Args>(args)...));
+template <typename... Args>
+[[ noreturn ]] void throwLogic(folly::StringPiece fmt, Args&&... args) {
+  throw std::logic_error(folly::sformat(fmt, std::forward<Args>(args)...));
+}
+
+/**
+ * If `condition` is false, throws std::runtime_error.
+ * `fmt` and `args` are passed to folly::format().
+ */
+template <typename... Args>
+void checkRuntime(bool condition, folly::StringPiece fmt, Args&&... args) {
+  if (UNLIKELY(!condition)) {
+    throw std::runtime_error(folly::sformat(fmt, std::forward<Args>(args)...));
+  }
+}
+
+/**
+ * Throws std::runtime_error with formatted string.
+ * `fmt` and `args` are passed to folly::format().
+ */
+template <typename... Args>
+[[ noreturn ]] void throwRuntime(folly::StringPiece fmt, Args&&... args) {
+  throw std::runtime_error(folly::sformat(fmt, std::forward<Args>(args)...));
 }
 
 /** folly::to style conversion routines */
