@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/experimental/fibers/WhenN.h>
@@ -88,7 +89,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
   typename UpdateLike<Operation>::Type) const {
 
   typedef typename ReplyType<Operation, Request>::type Reply;
-  if (req.value().length() <= options_.threshold_) {
+  if (req.value().computeChainDataLength() <= options_.threshold_) {
     return ch_->route(req, Operation());
   }
 
@@ -133,7 +134,8 @@ std::pair<std::vector<Request>,
   typename BigValueRoute::ChunksInfo>
 BigValueRoute::chunkUpdateRequests(const Request& req, Operation) const {
   int num_chunks =
-    (req.value().length() + options_.threshold_ - 1) / options_.threshold_;
+      (req.value().computeChainDataLength() + options_.threshold_ - 1) /
+      options_.threshold_;
   ChunksInfo info(num_chunks);
 
   // Type for Request and ChunkUpdateRequest is same for now.
@@ -141,18 +143,13 @@ BigValueRoute::chunkUpdateRequests(const Request& req, Operation) const {
   big_set_reqs.reserve(num_chunks);
 
   auto base_key = req.fullKey();
-  size_t i_pos = 0;
-  for (int i = 0; i < num_chunks;  i++, i_pos += options_.threshold_) {
-    // generate chunk_key and chunk_value
-    folly::IOBuf chunk_value;
-    req.value().cloneInto(chunk_value);
-    chunk_value.trimStart(i_pos);
-    chunk_value.trimEnd(chunk_value.length() -
-                        std::min(options_.threshold_, chunk_value.length()));
-    Request req_big(createChunkKey(base_key, i, info.randSuffix()));
-    req_big.setValue(std::move(chunk_value));
-    req_big.setExptime(req.exptime());
-    big_set_reqs.push_back(std::move(req_big));
+  folly::IOBuf chunkValue;
+  folly::io::Cursor cursor(&req.value());
+  for (int i = 0; i < num_chunks; ++i) {
+    cursor.cloneAtMost(chunkValue, options_.threshold_);
+    big_set_reqs.emplace_back(createChunkKey(base_key, i, info.randSuffix()));
+    big_set_reqs.back().setValue(std::move(chunkValue));
+    big_set_reqs.back().setExptime(req.exptime());
   }
 
   return std::make_pair(std::move(big_set_reqs), info);

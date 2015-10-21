@@ -29,7 +29,10 @@ class TestBigvalue(McrouterTestCase):
 
     def test_bigvalue(self):
         mcrouter = self.get_mcrouter()
-        value = "x" * 20 * 1000 * 1000
+        # Use a series of characters that would at least somehow produce
+        # different pieces. Also test that we can properly handle a case when
+        # the last piece is smaller than threshold.
+        value = "abc" * (7 * 1000 * 1000 + 5)
         self.assertTrue(mcrouter.set('key', value))
         # Not assertEqual, which would output 20Mb of 'x'
         # if the test fails
