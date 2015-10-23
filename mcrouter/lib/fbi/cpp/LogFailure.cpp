@@ -160,6 +160,20 @@ bool setHandler(std::pair<std::string, HandlerFunc> handler) {
   return false;
 }
 
+bool removeHandler(folly::StringPiece handlerName) {
+  if (auto container = containerSingleton.get_weak().lock()) {
+    std::lock_guard<std::mutex> lock(container->lock);
+    auto& handlers = container->handlers;
+    for (auto it = handlers.begin(); it != handlers.end(); ++it) {
+      if (it->first == handlerName) {
+        handlers.erase(it);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void setServiceContext(folly::StringPiece service, std::string context) {
   if (auto container = containerSingleton.get_weak().lock()) {
     std::lock_guard<std::mutex> lock(container->lock);
@@ -188,4 +202,4 @@ void log(folly::StringPiece file,
 
 }  // detail
 
-}}}  // facebook::memcache
+}}}  // facebook::memcache::failure

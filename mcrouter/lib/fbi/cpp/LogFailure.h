@@ -129,6 +129,15 @@ bool addHandler(std::pair<std::string, HandlerFunc> handler);
 bool setHandler(std::pair<std::string, HandlerFunc> handler);
 
 /**
+ * Remove failure handler by name.
+ *
+ * @param handlerName  handler to remove
+ *
+ * @return  true, if handler was removed
+ */
+bool removeHandler(folly::StringPiece handlerName);
+
+/**
  * Set debug information about your service: version, options,
  * command line args, etc.
  * Context will be logged at the end of each failure, so it is

@@ -6,6 +6,7 @@ mcrouter_network_test_SOURCES = \
   SessionTest.cpp \
   SessionTestHarness.cpp \
   SessionTestHarness.h \
+  TestClientServerUtil.cpp \
   TestClientServerUtil.h
 
 mcrouter_network_test_CPPFLAGS = -I$(top_srcdir)/.. -I$(top_srcdir)/lib/gtest/include

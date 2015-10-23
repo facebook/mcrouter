@@ -13,6 +13,7 @@
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/ScopeGuard.h>
 
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
@@ -20,123 +21,141 @@
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
+using namespace facebook::memcache::test;
 
-using folly::EventBase;
-
-void serverShutdownTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(false, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+void serverShutdownTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(false, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_ascii_protocol, ssl);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, serverShutdown) {
-  serverShutdownTest();
+  serverShutdownTest(noSsl());
 }
 
 TEST(AsyncMcClient, serverShutdownSsl) {
-  serverShutdownTest(true);
+  serverShutdownTest(validSsl());
 }
 
-void simpleAsciiTimeoutTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(false, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+void simpleAsciiTimeoutTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(false, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_ascii_protocol, ssl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_timeout);
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, simpleAsciiTimeout) {
-  simpleAsciiTimeoutTest();
+  simpleAsciiTimeoutTest(noSsl());
 }
 
 TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
-  simpleAsciiTimeoutTest(true);
+  simpleAsciiTimeoutTest(validSsl());
 }
 
-void simpleUmbrellaTimeoutTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(true, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_umbrella_protocol, useSsl);
+void simpleUmbrellaTimeoutTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(true, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_umbrella_protocol, ssl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_found);
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, simpleUmbrellaTimeout) {
-  simpleUmbrellaTimeoutTest();
+  simpleUmbrellaTimeoutTest(noSsl());
 }
 
 TEST(AsyncMcClient, simpleUmbrellaTimeoutSsl) {
-  simpleUmbrellaTimeoutTest(true);
+  simpleUmbrellaTimeoutTest(validSsl());
 }
 
-void noServerTimeoutTest(bool useSsl = false) {
-  TestClient client("100::", 11302, 200, mc_ascii_protocol, useSsl);
+void noServerTimeoutTest(SSLContextProvider ssl) {
+  TestClient client("100::", 11302, 200, mc_ascii_protocol, ssl);
   client.sendGet("hold", mc_res_connect_timeout);
   client.waitForReplies();
 }
 
 TEST(AsyncMcClient, noServerTimeout) {
-  noServerTimeoutTest();
+  noServerTimeoutTest(noSsl());
 }
 
 TEST(AsyncMcClient, noServerTimeoutSsl) {
-  noServerTimeoutTest(true);
+  noServerTimeoutTest(validSsl());
 }
 
-void immediateConnectFailTest(bool useSsl = false) {
-  TestClient client("255.255.255.255", 12345, 200, mc_ascii_protocol, useSsl);
+void immediateConnectFailTest(SSLContextProvider ssl) {
+  TestClient client("255.255.255.255", 12345, 200, mc_ascii_protocol, ssl);
   client.sendGet("nohold", mc_res_connect_error);
   client.waitForReplies();
 }
 
 TEST(AsyncMcClient, immeadiateConnectFail) {
-  immediateConnectFailTest();
+  immediateConnectFailTest(noSsl());
 }
 
 TEST(AsyncMcClient, immeadiateConnectFailSsl) {
-  immediateConnectFailTest(true);
+  immediateConnectFailTest(validSsl());
 }
 
-TEST(AsyncMcClient, invalidCerts) {
-  TestServer<TestServerOnRequest> server(true, true);
-  TestClient brokenClient("localhost", server.getListenPort(), 200,
-                    mc_umbrella_protocol, true, []() {
-                      return getSSLContext("/does/not/exist",
-                                           "/does/not/exist",
-                                           "/does/not/exist");
-                    });
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_umbrella_protocol, true);
+void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
+  bool loggedFailure = false;
+  failure::addHandler({
+    name,
+    [&loggedFailure](folly::StringPiece, int, folly::StringPiece,
+                     folly::StringPiece, folly::StringPiece msg,
+                     const std::map<std::string, std::string>&) {
+      if (msg.contains("SSLError")) {
+        loggedFailure = true;
+      }
+    }
+  });
+  SCOPE_EXIT {
+    failure::removeHandler(name);
+  };
+  auto server = TestServer::create(true, true);
+  TestClient brokenClient("localhost", server->getListenPort(), 200,
+                          mc_umbrella_protocol, ssl);
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_umbrella_protocol, validSsl());
   brokenClient.sendGet("test", mc_res_connect_error);
   brokenClient.waitForReplies();
+  EXPECT_TRUE(loggedFailure);
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(numConns, server->getAcceptedConns());
 }
 
-void inflightThrottleTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(false, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+TEST(AsyncMcClient, invalidCerts) {
+  testCerts("test-invalidCerts", invalidSsl(), 1);
+}
+
+TEST(AsyncMcClient, brokenCerts) {
+  testCerts("test-brokenCerts", brokenSsl(), 2);
+}
+
+void inflightThrottleTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(false, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_ascii_protocol, ssl);
   client.setThrottle(5, 6);
   for (size_t i = 0; i < 5; ++i) {
     client.sendGet("hold", mc_res_timeout);
@@ -144,22 +163,22 @@ void inflightThrottleTest(bool useSsl = false) {
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, inflightThrottle) {
-  inflightThrottleTest();
+  inflightThrottleTest(noSsl());
 }
 
 TEST(AsyncMcClient, inflightThrottleSsl) {
-  inflightThrottleTest(true);
+  inflightThrottleTest(validSsl());
 }
 
-void inflightThrottleFlushTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(false, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+void inflightThrottleFlushTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(false, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_ascii_protocol, ssl);
   client.setThrottle(6, 6);
   for (size_t i = 0; i < 5; ++i) {
     client.sendGet("hold", mc_res_found);
@@ -168,22 +187,22 @@ void inflightThrottleFlushTest(bool useSsl = false) {
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, inflightThrottleFlush) {
-  inflightThrottleFlushTest();
+  inflightThrottleFlushTest(noSsl());
 }
 
 TEST(AsyncMcClient, inflightThrottleFlushSsl) {
-  inflightThrottleFlushTest(true);
+  inflightThrottleFlushTest(validSsl());
 }
 
-void outstandingThrottleTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(false, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    mc_ascii_protocol, useSsl);
+void outstandingThrottleTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(false, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_ascii_protocol, ssl);
   client.setThrottle(5, 5);
   for (size_t i = 0; i < 5; ++i) {
     client.sendGet("hold", mc_res_timeout);
@@ -192,49 +211,48 @@ void outstandingThrottleTest(bool useSsl = false) {
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, outstandingThrottle) {
-  outstandingThrottleTest();
+  outstandingThrottleTest(noSsl());
 }
 
 TEST(AsyncMcClient, outstandingThrottleSsl) {
-  outstandingThrottleTest(true);
+  outstandingThrottleTest(validSsl());
 }
 
-void connectionErrorTest(bool useSsl = false) {
-  TestServer<TestServerOnRequest> server(false, useSsl);
-  TestClient client1("localhost", server.getListenPort(), 200,
-                     mc_ascii_protocol, useSsl);
-  TestClient client2("localhost", server.getListenPort(), 200,
-                     mc_ascii_protocol, useSsl);
+void connectionErrorTest(SSLContextProvider ssl) {
+  auto server = TestServer::create(false, ssl != noSsl());
+  TestClient client1("localhost", server->getListenPort(), 200,
+                     mc_ascii_protocol, ssl);
+  TestClient client2("localhost", server->getListenPort(), 200,
+                     mc_ascii_protocol, ssl);
   client1.sendGet("shutdown", mc_res_notfound);
   client1.waitForReplies();
   /* sleep override */ usleep(10000);
   client2.sendGet("test", mc_res_connect_error);
   client2.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, connectionError) {
-  connectionErrorTest();
+  connectionErrorTest(noSsl());
 }
 
 TEST(AsyncMcClient, connectionErrorSsl) {
-  connectionErrorTest(true);
+  connectionErrorTest(validSsl());
 }
 
-void basicTest(mc_protocol_e protocol = mc_ascii_protocol,
-               bool useSsl = false,
-               bool enableQoS = false,
+void basicTest(mc_protocol_t protocol,
+               SSLContextProvider ssl,
                uint64_t qosClass = 0,
                uint64_t qosPath = 0) {
-  TestServer<TestServerOnRequest> server(true, useSsl);
-  TestClient client("localhost", server.getListenPort(), 200, protocol,
-                    useSsl, nullptr, enableQoS, qosClass, qosPath);
+  auto server = TestServer::create(true, ssl != noSsl());
+  TestClient client("localhost", server->getListenPort(), 200, protocol,
+                    ssl, qosClass, qosPath);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
   client.sendGet("empty", mc_res_found);
@@ -244,50 +262,48 @@ void basicTest(mc_protocol_e protocol = mc_ascii_protocol,
   client.waitForReplies(3);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-void umbrellaTest(bool useSsl = false) {
-  basicTest(mc_umbrella_protocol, useSsl);
+void umbrellaTest(SSLContextProvider ssl) {
+  basicTest(mc_umbrella_protocol, ssl);
 }
 
 TEST(AsyncMcClient, umbrella) {
-  umbrellaTest();
+  umbrellaTest(noSsl());
 }
 
 TEST(AsyncMcClient, umbrellaSsl) {
-  umbrellaTest(true);
+  umbrellaTest(validSsl());
 }
 
-void qosTest(mc_protocol_e protocol = mc_ascii_protocol, bool useSsl = false,
-             uint64_t qosClass = 0, uint64_t qosPath = 0) {
-  basicTest(protocol, useSsl, true, qosClass, qosPath);
+void qosTest(mc_protocol_t protocol, SSLContextProvider ssl,
+             uint64_t qosClass, uint64_t qosPath) {
+  basicTest(protocol, ssl, qosClass, qosPath);
 }
 
 TEST(AsyncMcClient, qosClass1) {
-  qosTest(mc_umbrella_protocol, false, 1, 0);
+  qosTest(mc_umbrella_protocol, noSsl(), 1, 0);
 }
 
 TEST(AsyncMcClient, qosClass2) {
-  qosTest(mc_ascii_protocol, false, 2, 1);
+  qosTest(mc_ascii_protocol, noSsl(), 2, 1);
 }
 
 TEST(AsyncMcClient, qosClass3) {
-  qosTest(mc_umbrella_protocol, true, 3, 2);
+  qosTest(mc_umbrella_protocol, validSsl(), 3, 2);
 }
 
 TEST(AsyncMcClient, qosClass4) {
-  qosTest(mc_ascii_protocol, true, 4, 3);
+  qosTest(mc_ascii_protocol, validSsl(), 4, 3);
 }
 
 void reconnectTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
-  TestServer<TestServerOnRequest> server(protocol == mc_umbrella_protocol,
-                                         false);
-  TestClient client("localhost", server.getListenPort(), 100,
-                    protocol);
+  auto server = TestServer::create(protocol == mc_umbrella_protocol, false);
+  TestClient client("localhost", server->getListenPort(), 100, protocol);
   client.sendGet("test1", mc_res_found);
   client.sendSet("test", "testValue", mc_res_stored);
   client.waitForReplies();
@@ -301,8 +317,8 @@ void reconnectTest(mc_protocol_t protocol) {
   client.sendGet("test2", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 2);
+  server->join();
+  EXPECT_EQ(2, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, reconnectAscii) {
@@ -316,10 +332,8 @@ TEST(AsyncMcClient, reconnectUmbrella) {
 void reconnectImmediatelyTest(mc_protocol_t protocol) {
   auto bigValue = genBigValue();
 
-  TestServer<TestServerOnRequest> server(protocol == mc_umbrella_protocol,
-                                         false);
-  TestClient client("localhost", server.getListenPort(), 100,
-                    protocol);
+  auto server = TestServer::create(protocol == mc_umbrella_protocol, false);
+  TestClient client("localhost", server->getListenPort(), 100, protocol);
   client.sendGet("test1", mc_res_found);
   client.sendSet("test", "testValue", mc_res_stored);
   client.waitForReplies();
@@ -337,8 +351,8 @@ void reconnectImmediatelyTest(mc_protocol_t protocol) {
   client.sendGet("test2", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 2);
+  server->join();
+  EXPECT_EQ(2, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, reconnectImmediatelyAscii) {
@@ -350,10 +364,8 @@ TEST(AsyncMcClient, reconnectImmediatelyUmbrella) {
 }
 
 void bigKeyTest(mc_protocol_t protocol) {
-  TestServer<TestServerOnRequest> server(protocol == mc_umbrella_protocol,
-                                         false);
-  TestClient client("localhost", server.getListenPort(), 200,
-                    protocol);
+  auto server = TestServer::create(protocol == mc_umbrella_protocol, false);
+  TestClient client("localhost", server->getListenPort(), 200, protocol);
   constexpr int len = MC_KEY_MAX_LEN_ASCII + 5;
   char key[len] = {0};
   for (int i = 0; i < len - 1; ++i) {
@@ -363,8 +375,8 @@ void bigKeyTest(mc_protocol_t protocol) {
   client.waitForReplies();
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, badKey) {
@@ -377,7 +389,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   //  2. Fail the request because of timeout.
   //  3. Delete EventBase, this in turn should case proper cleanup
   //     in AsyncMcClient.
-  auto eventBase = folly::make_unique<EventBase>();
+  auto eventBase = folly::make_unique<folly::EventBase>();
   auto fiberManager =
     folly::make_unique<folly::fibers::FiberManager>(
       folly::make_unique<folly::fibers::EventBaseLoopController>());
@@ -422,9 +434,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
 }
 
 TEST(AsyncMcClient, asciiSentTimeouts) {
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */);
-  TestClient client("localhost", server.getListenPort(), 200,
+  auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
+  TestClient client("localhost", server->getListenPort(), 200,
                     mc_ascii_protocol);
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
@@ -436,14 +447,13 @@ TEST(AsyncMcClient, asciiSentTimeouts) {
   client.sendGet("test3", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, asciiPendingTimeouts) {
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */);
-  TestClient client("localhost", server.getListenPort(), 200,
+  auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
+  TestClient client("localhost", server->getListenPort(), 200,
                     mc_ascii_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
@@ -458,16 +468,15 @@ TEST(AsyncMcClient, asciiPendingTimeouts) {
   client.sendGet("test3", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, asciiSendingTimeouts) {
   auto bigValue = genBigValue();
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */);
+  auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
   // Use very large write timeout, so that we never timeout writes.
-  TestClient client("localhost", server.getListenPort(), 10000,
+  TestClient client("localhost", server->getListenPort(), 10000,
                     mc_ascii_protocol);
   // Allow only up to two requests in flight.
   client.sendGet("test", mc_res_found);
@@ -489,14 +498,13 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
   client.sendGet("test3", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, oooUmbrellaTimeouts) {
-  TestServer<TestServerOnRequest> server(true /* outOfOrder */,
-                                         false /* useSsl */);
-  TestClient client("localhost", server.getListenPort(), 200,
+  auto server = TestServer::create(true /* outOfOrder */, false /* useSsl */);
+  TestClient client("localhost", server->getListenPort(), 200,
                     mc_umbrella_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
@@ -510,37 +518,37 @@ TEST(AsyncMcClient, oooUmbrellaTimeouts) {
   client.sendGet("test", mc_res_found);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
-  server.join();
-  EXPECT_EQ(server.getStats().accepted.load(), 1);
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }
 
 TEST(AsyncMcClient, tonsOfConnections) {
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */,
-                                         10,
-                                         250,
-                                         3 /* maxConns */,
-                                         0 /* unreapableTime */);
+  auto server = TestServer::create(false /* outOfOrder */,
+                                   false /* useSsl */,
+                                   10,
+                                   250,
+                                   3 /* maxConns */,
+                                   0 /* unreapableTime */);
 
   bool wentDown = false;
 
   /* Create a client to see if it gets evicted. */
-  TestClient client("localhost", server.getListenPort(), 1,
+  TestClient client("localhost", server->getListenPort(), 1,
                     mc_ascii_protocol);
   client.setStatusCallbacks([]{}, [&wentDown](bool) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
-  TestClient client2("localhost", server.getListenPort(), 200,
+  TestClient client2("localhost", server->getListenPort(), 200,
                      mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
-  TestClient client3("localhost", server.getListenPort(), 300,
+  TestClient client3("localhost", server->getListenPort(), 300,
                      mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
-  TestClient client4("localhost", server.getListenPort(), 400,
+  TestClient client4("localhost", server->getListenPort(), 400,
                      mc_ascii_protocol);
   client4.sendGet("test", mc_res_found);
   client4.waitForReplies();
@@ -557,36 +565,36 @@ TEST(AsyncMcClient, tonsOfConnections) {
   client4.sendGet("shutdown", mc_res_notfound);
   client4.waitForReplies();
 
-  server.join();
+  server->join();
 }
 
 TEST(AsyncMcClient, disableConnectionLRU) {
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */,
-                                         10,
-                                         250,
-                                         0 /* maxConns */,
-                                         1000000 /* unreapableTime */);
+  auto server = TestServer::create(false /* outOfOrder */,
+                                   false /* useSsl */,
+                                   10,
+                                   250,
+                                   0 /* maxConns */,
+                                   1000000 /* unreapableTime */);
 
   bool wentDown = false;
 
   /* Create a client to see if it gets evicted. */
-  TestClient client("localhost", server.getListenPort(), 1,
+  TestClient client("localhost", server->getListenPort(), 1,
                     mc_ascii_protocol);
   client.setStatusCallbacks([]{}, [&wentDown](bool) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
-  TestClient client2("localhost", server.getListenPort(), 200,
+  TestClient client2("localhost", server->getListenPort(), 200,
                      mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
-  TestClient client3("localhost", server.getListenPort(), 300,
+  TestClient client3("localhost", server->getListenPort(), 300,
                      mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
-  TestClient client4("localhost", server.getListenPort(), 400,
+  TestClient client4("localhost", server->getListenPort(), 400,
                      mc_ascii_protocol);
   client4.sendGet("test", mc_res_found);
   client4.waitForReplies();
@@ -602,22 +610,22 @@ TEST(AsyncMcClient, disableConnectionLRU) {
   client4.sendGet("shutdown", mc_res_notfound);
   client4.waitForReplies();
 
-  server.join();
+  server->join();
 }
 
 TEST(AsyncMcClient, testUnreapableTime) {
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */,
-                                         10,
-                                         250,
-                                         3 /* maxConns */,
-                                         1000000 /* unreapableTime */);
+  auto server = TestServer::create(false /* outOfOrder */,
+                                   false /* useSsl */,
+                                   10,
+                                   250,
+                                   3 /* maxConns */,
+                                   1000000 /* unreapableTime */);
 
   bool firstWentDown = false;
   bool lastWentDown = false;
 
   /* Create a client to see if it gets evicted. */
-  TestClient client("localhost", server.getListenPort(), 1,
+  TestClient client("localhost", server->getListenPort(), 1,
                     mc_ascii_protocol);
   client.setStatusCallbacks([]{}, [&firstWentDown](bool) {
     firstWentDown = true;
@@ -626,15 +634,15 @@ TEST(AsyncMcClient, testUnreapableTime) {
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
-  TestClient client2("localhost", server.getListenPort(), 200,
+  TestClient client2("localhost", server->getListenPort(), 200,
                      mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
-  TestClient client3("localhost", server.getListenPort(), 300,
+  TestClient client3("localhost", server->getListenPort(), 300,
                      mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
-  TestClient client4("localhost", server.getListenPort(), 400,
+  TestClient client4("localhost", server->getListenPort(), 400,
                      mc_ascii_protocol);
   client4.setStatusCallbacks([]{}, [&lastWentDown](bool) {
     lastWentDown = true;
@@ -656,23 +664,23 @@ TEST(AsyncMcClient, testUnreapableTime) {
   /* The last connection should be closed. */
   EXPECT_TRUE(lastWentDown);
 
-  server.join();
+  server->join();
 }
 
 TEST(AsyncMcClient, testUpdateThreshold) {
-  TestServer<TestServerOnRequest> server(false /* outOfOrder */,
-                                         false /* useSsl */,
-                                         10,
-                                         250,
-                                         2 /* maxConns */,
-                                         0 /* unreapableTime */,
-                                         2000 /* updateTime = 2 sec */);
+  auto server = TestServer::create(false /* outOfOrder */,
+                                   false /* useSsl */,
+                                   10,
+                                   250,
+                                   2 /* maxConns */,
+                                   0 /* unreapableTime */,
+                                   2000 /* updateTime = 2 sec */);
 
   bool firstWentDown = false;
   bool secondWentDown = false;
 
   /* Create a client to see if it gets evicted. */
-  TestClient client("localhost", server.getListenPort(), 1,
+  TestClient client("localhost", server->getListenPort(), 1,
                     mc_ascii_protocol);
   client.setStatusCallbacks([]{}, [&firstWentDown](bool) {
     firstWentDown = true;
@@ -684,7 +692,7 @@ TEST(AsyncMcClient, testUpdateThreshold) {
   /* sleep override */ usleep(3000);
 
   /* Create a second client to see if it gets evicted. */
-  TestClient client2("localhost", server.getListenPort(), 200,
+  TestClient client2("localhost", server->getListenPort(), 200,
                      mc_ascii_protocol);
   client2.setStatusCallbacks([]{}, [&secondWentDown](bool) {
     secondWentDown = true;
@@ -701,7 +709,7 @@ TEST(AsyncMcClient, testUpdateThreshold) {
   client2.waitForReplies();
 
   /* Create a third connection to evict one of the first two. */
-  TestClient client3("localhost", server.getListenPort(), 200,
+  TestClient client3("localhost", server->getListenPort(), 200,
                      mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
@@ -720,7 +728,7 @@ TEST(AsyncMcClient, testUpdateThreshold) {
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
 
-  server.join();
+  server->join();
 }
 
 void umbrellaBinaryReply(std::string data, mc_res_t expectedResult) {

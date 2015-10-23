@@ -375,12 +375,10 @@ void AsyncMcClientImpl::attemptConnection() {
     if (connectionOptions_.sslContextProvider) {
       auto sslContext = connectionOptions_.sslContextProvider();
       if (!sslContext) {
-        LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
-          "SSLContext provider returned nullptr, check SSL certificates. Any "
-          "further request to {} will fail.",
-          connectionOptions_.accessPoint->toHostPortString());
         connectErr(folly::AsyncSocketException(
-                     folly::AsyncSocketException::SSL_ERROR, ""));
+                     folly::AsyncSocketException::SSL_ERROR,
+                     "SSLContext provider returned nullptr, "
+                     "check SSL certificates"));
         return;
       }
       socket_.reset(new folly::AsyncSSLSocket(
@@ -443,6 +441,12 @@ void AsyncMcClientImpl::connectErr(
   DestructorGuard dg(this);
 
   mc_res_t error;
+
+  if (ex.getType() == folly::AsyncSocketException::SSL_ERROR) {
+    LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
+                "SSLError: {}. Connect to {} failed.",
+                ex.what(), connectionOptions_.accessPoint->toHostPortString());
+  }
 
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
     error = mc_res_connect_timeout;

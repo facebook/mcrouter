@@ -1,32 +1,37 @@
 #!/bin/bash
 
-# This script exists to generate the test_key.pem, test_cert.pem,
-# ca_key.pem, and ca_cert.pem files.  It shouldn't really ever be run again
-# until the year 2041 (when these certs expire)., unless you need to change
+# This script exists to generate the SSL certs used in unit tests.
+# It shouldn't really ever be run again until the year 2041
+# (when these certs expire)., unless you need to change
 # or update attributes of the certificate (Common Name, Organization,
 # whatever).
 
 set -e
 
 DAYS=10000
+CA_KEY=ca_key.pem
+CA_CERT=ca_cert.pem
+CA_CERT_SRL=ca_cert.srl
 
 # Generate Certificate Authority Key
-openssl genrsa -out ca_key.pem 2048
+openssl genrsa -out "${CA_KEY}" 2048
 
 # Generate Self-Signed Certificate Authority Cert
 openssl req -x509 -new -nodes \
-    -key ca_key.pem \
-    -days ${DAYS} \
-    -out ca_cert.pem \
+    -key "${CA_KEY}" \
+    -days "${DAYS}" \
+    -out "${CA_CERT}" \
     -subj '/C=US/O=Asox/CN=Asox Certification Authority'
 
 # CA serial number
-echo 00000009 > ca_cert.srl
-
-# Generate the test key
-openssl genrsa -out test_key.pem 2048
+echo 00000009 > ${CA_CERT_SRL}
 
 function generateCert() {
+    local KEYPREFIX="$1"
+    local TEST_KEY="${KEYPREFIX}_key.pem"
+    local TEST_CERT="${KEYPREFIX}_cert.pem"
+    local TEST_CERT_CSR="${KEYPREFIX}_cert.csr"
+
     cat > conf.tmp <<EOF
 prompt = no
 [req]
@@ -43,29 +48,36 @@ commonName = Asox Company
 # Extensions to add to a certificate request
 # basicConstraints = CA:FALSE
 # keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-subjectAltName = IP:$3, IP:$4
+subjectAltName = IP:$2, IP:$3
 EOF
+
+    # Generate the test key
+    openssl genrsa -out "${TEST_KEY}" 2048
 
     # Generate the test key certificate request
     openssl req -new -nodes \
 	-config conf.tmp \
-	-key $1 \
-	-days ${DAYS} \
-	-out test_cert.csr \
+	-key "${TEST_KEY}" \
+	-days "${DAYS}" \
+	-out "${TEST_CERT_CSR}" \
 	-subj '/C=US/O=Asox/CN=Asox Town Limited'
 
     # Sign the test key
     openssl x509 -req \
 	-extensions v3_req \
 	-extfile conf.tmp \
-	-days ${DAYS} \
-	-in test_cert.csr \
-	-CA ca_cert.pem \
-	-CAkey ca_key.pem \
-	-out $2
+	-days "${DAYS}" \
+	-in "${TEST_CERT_CSR}" \
+	-CA "${CA_CERT}" \
+	-CAkey "${CA_KEY}" \
+	-out "${TEST_CERT}"
 
-    # Clean up the signing request as well as the serial number
-    rm ca_cert.srl test_cert.csr conf.tmp
+    # Clean up the signing request
+    rm "${TEST_CERT_CSR}" conf.tmp
 }
 
-generateCert test_key.pem test_cert.pem 127.0.0.1 ::1
+generateCert test 127.0.0.1 ::1
+generateCert broken 0.0.0.0 ::0
+
+# Clean up serial number
+rm "${CA_CERT_SRL}"
