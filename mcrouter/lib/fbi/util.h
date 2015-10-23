@@ -11,7 +11,7 @@
 #define FBI_UTIL_H
 
 #ifndef ACCESS_ONCE
-#define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
+#define ACCESS_ONCE(x) (*((volatile __typeof__(x) *)&(x)))
 #endif
 
 #endif
