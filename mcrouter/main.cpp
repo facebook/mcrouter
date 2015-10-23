@@ -312,7 +312,8 @@ static int validate_options() {
     LOG(ERROR) << "invalid number of proxy threads";
     return 0;
   }
-  if (standaloneOpts.ports.empty() &&
+  if (standaloneOpts.ssl_ports.empty() &&
+      standaloneOpts.ports.empty() &&
       standaloneOpts.listen_sock_fd < 0 &&
       standaloneOpts.unix_domain_sock.empty()) {
     LOG(ERROR) << "invalid ports";
