@@ -57,7 +57,6 @@ McClientRequestContextBase::McClientRequestContextBase(
     const Request& request,
     uint64_t reqid,
     mc_protocol_t protocol,
-    std::shared_ptr<AsyncMcClientImpl> client,
     folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage,
     McClientRequestContextQueue& queue,
     InitializerFuncPtr initializer,
@@ -65,7 +64,6 @@ McClientRequestContextBase::McClientRequestContextBase(
     : reqContext(request, Operation(), reqid, protocol, useTyped),
       id(reqid),
       queue_(queue),
-      client_(std::move(client)),
       replyType_(typeid(typename ReplyType<Operation, Request>::type)),
       replyStorage_(reinterpret_cast<void*>(&replyStorage)),
       initializer_(std::move(initializer)) {}
@@ -147,7 +145,6 @@ McClientRequestContext<Operation, Request>::McClientRequestContext(
     const Request& request,
     uint64_t reqid,
     mc_protocol_t protocol,
-    std::shared_ptr<AsyncMcClientImpl> client,
     McClientRequestContextQueue& queue,
     McClientRequestContextBase::InitializerFuncPtr func,
     bool useTyped)
@@ -155,7 +152,6 @@ McClientRequestContext<Operation, Request>::McClientRequestContext(
                                  request,
                                  reqid,
                                  protocol,
-                                 std::move(client),
                                  replyStorage_,
                                  queue,
                                  std::move(func),

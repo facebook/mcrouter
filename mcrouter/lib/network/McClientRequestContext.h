@@ -84,7 +84,6 @@ class McClientRequestContextBase
       const Request& request,
       uint64_t reqid,
       mc_protocol_t protocol,
-      std::shared_ptr<AsyncMcClientImpl> client,
       folly::Optional<typename ReplyType<Operation, Request>::type>&
           replyStorage,
       McClientRequestContextQueue& queue,
@@ -102,7 +101,6 @@ class McClientRequestContextBase
  private:
   friend class McClientRequestContextQueue;
 
-  std::shared_ptr<AsyncMcClientImpl> client_;
   std::type_index replyType_;
   folly::SafeIntrusiveListHook hook_;
   void* replyStorage_;
@@ -153,7 +151,6 @@ class McClientRequestContext : public McClientRequestContextBase {
   McClientRequestContext(const Request& request,
                          uint64_t reqid,
                          mc_protocol_t protocol,
-                         std::shared_ptr<AsyncMcClientImpl> client,
                          McClientRequestContextQueue& queue,
                          McClientRequestContextBase::InitializerFuncPtr,
                          bool useTyped);

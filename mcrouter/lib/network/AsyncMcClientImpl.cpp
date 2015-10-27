@@ -132,13 +132,13 @@ void AsyncMcClientImpl::setStatusCallbacks(
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
-  assert(getPendingRequestCount() == 0);
-  assert(getInflightRequestCount() == 0);
   if (socket_) {
     // Close the socket immediately. We need to process all callbacks, such as
     // readEOF and connectError, before we exit destructor.
     socket_->closeNow();
   }
+  assert(getPendingRequestCount() == 0);
+  assert(getInflightRequestCount() == 0);
   eventBaseDestructionCallback_.reset();
 }
 
