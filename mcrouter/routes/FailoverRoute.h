@@ -67,17 +67,21 @@ class FailoverRoute {
       return normalReply;
     }
 
+    auto& proxy = fiber_local::getSharedCtx()->proxy();
+    stat_incr(proxy.stats, failover_all_stat, 1);
+
     if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
+      stat_incr(proxy.stats, failover_rate_limited_stat, 1);
       return normalReply;
     }
 
     // Failover
-    return fiber_local::runWithLocals([this, &req, &normalReply]() {
+    return fiber_local::runWithLocals([this, &req, &proxy, &normalReply]() {
       fiber_local::setFailoverTag(failoverTagging_ && req.hasHashStop());
       fiber_local::addRequestClass(RequestClass::kFailover);
-      auto doFailover = [this, &req, &normalReply](size_t i) {
+      auto doFailover = [this, &req, &proxy, &normalReply](size_t i) {
         auto failoverReply = targets_[i]->route(req, Operation());
-        logFailover(fiber_local::getSharedCtx()->proxy(),
+        logFailover(proxy,
                     Operation::name,
                     i,
                     targets_.size() - 1,
@@ -92,7 +96,11 @@ class FailoverRoute {
           return failoverReply;
         }
       }
-      return doFailover(targets_.size() - 1);
+      auto reply = doFailover(targets_.size() - 1);
+      if (reply.isError()) {
+        stat_incr(proxy.stats, failover_all_failed_stat, 1);
+      }
+      return reply;
     });
   }
 
