@@ -67,4 +67,33 @@ TEST(AccessPoint, host_port_proto) {
   EXPECT_TRUE(AccessPoint::create("[::1]", proto) == nullptr);
 }
 
+TEST(AccessPoint, port_override) {
+  auto proto = mc_unknown_protocol;
+  auto ap = AccessPoint::create("127.0.0.1:12345", proto, 44);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ(ap->getHost(), "127.0.0.1");
+  EXPECT_EQ(ap->getPort(), 44);
+  EXPECT_EQ(ap->getProtocol(), proto);
+  ap = AccessPoint::create("127.0.0.1:12345:ascii", proto, 11);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ(ap->getHost(), "127.0.0.1");
+  EXPECT_EQ(ap->getPort(), 11);
+  EXPECT_EQ(ap->getProtocol(), mc_ascii_protocol);
+  ap = AccessPoint::create("127.0.0.1", proto, 22);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ(ap->getHost(), "127.0.0.1");
+  EXPECT_EQ(ap->getPort(), 22);
+  EXPECT_EQ(ap->getProtocol(), proto);
+  ap = AccessPoint::create("[::1]:12345", proto, 33);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ(ap->getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
+  EXPECT_EQ(ap->getPort(), 33);
+  EXPECT_EQ(ap->getProtocol(), proto);
+  ap = AccessPoint::create("[::1]", proto, 55);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ(ap->getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
+  EXPECT_EQ(ap->getPort(), 55);
+  EXPECT_EQ(ap->getProtocol(), proto);
+}
+
 } // namespace

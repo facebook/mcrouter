@@ -34,7 +34,8 @@ AccessPoint::AccessPoint(folly::StringPiece host, uint16_t port,
 
 std::shared_ptr<AccessPoint>
 AccessPoint::create(folly::StringPiece hostPortProtocol,
-                    mc_protocol_t defaultProtocol) {
+                    mc_protocol_t defaultProtocol,
+                    uint16_t portOverride) {
   if (hostPortProtocol.empty()) {
     return nullptr;
   }
@@ -53,15 +54,26 @@ AccessPoint::create(folly::StringPiece hostPortProtocol,
     // IPv4 or hostname
     auto colon = hostPortProtocol.find(':');
     if (colon == std::string::npos) {
-      return nullptr;
+      // if error case, will get caught by port-check below
+      host = hostPortProtocol;
+    } else {
+      host = hostPortProtocol.subpiece(0, colon);
+      hostPortProtocol.advance(colon);
     }
-    host = hostPortProtocol.subpiece(0, colon);
-    hostPortProtocol.advance(colon);
+  }
+
+  if (host.empty()) {
+    return nullptr;
   }
 
   if (hostPortProtocol.empty() || hostPortProtocol[0] != ':') {
-    // port is required
-    return nullptr;
+    if (portOverride == 0) {
+      // port is required
+      return nullptr;
+    } else {
+      return std::make_shared<AccessPoint>(host, portOverride,
+          defaultProtocol);
+    }
   }
 
   // skip ':'
@@ -73,18 +85,18 @@ AccessPoint::create(folly::StringPiece hostPortProtocol,
     if (hostPortProtocol.empty()) {
       return nullptr;
     }
-    port = folly::to<uint16_t>(hostPortProtocol);
+    port = portOverride != 0
+            ? portOverride
+            : folly::to<uint16_t>(hostPortProtocol);
   } else {
     if (colon == 0) {
       return nullptr;
     }
-    port = folly::to<uint16_t>(hostPortProtocol.subpiece(0, colon));
+    port = portOverride != 0
+            ? portOverride
+            : folly::to<uint16_t>(hostPortProtocol.subpiece(0, colon));
     hostPortProtocol.advance(colon + 1);
     defaultProtocol = mc_string_to_protocol(hostPortProtocol.data());
-  }
-
-  if (host.empty()) {
-    return nullptr;
   }
 
   return std::make_shared<AccessPoint>(host, port, defaultProtocol);

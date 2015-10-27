@@ -233,6 +233,18 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     useTyped = juseTyped->getBool();
   }
 
+  // default to 0, which doesn't override
+  uint16_t port = 0;
+  if (auto portPtr = json.get_ptr("port_override")) {
+    checkLogic(portPtr->isInt(), "Pool {}: port is not an int", name);
+
+    // check that it's a valid port number before assigning it to a uint16_t.
+    auto portVal = portPtr->getInt();
+    checkLogic(0 < portVal && portVal <= std::numeric_limits<uint16_t>::max(),
+               "Pool {}: Invalid port {}: Should be between 1 and 65535",
+               name, port);
+    port = portVal;
+  }
   // servers
   auto jservers = json.get_ptr("servers");
   checkLogic(jservers, "Pool {}: servers not found", name);
@@ -247,8 +259,9 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
     checkLogic(server.isString() || server.isObject(),
                "Pool {}: server #{} is not a string/object", name, i);
     if (server.isString()) {
-      // we support both host:port and host:port:protocol
-      ap = AccessPoint::create(server.stringPiece(), protocol);
+      ap = AccessPoint::create(server.stringPiece(),
+                               protocol,
+                               port);
       checkLogic(ap != nullptr,
                  "Pool {}: invalid server {}", name, server.stringPiece());
     } else { // object
@@ -270,7 +283,8 @@ PoolFactory::parsePool(const std::string& name, const folly::dynamic& json) {
       }
 
       ap = AccessPoint::create(jhostname->stringPiece(),
-                               parseProtocol(server, protocol));
+                               parseProtocol(server, protocol),
+                               port);
       checkLogic(ap != nullptr, "Pool {}: invalid server #{}", name, i);
     }
 

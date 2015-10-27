@@ -23,8 +23,18 @@ struct AccessPoint {
                        uint16_t port = 0,
                        mc_protocol_t protocol = mc_unknown_protocol);
 
+  /**
+   * @param hostPortProtocol create accepts host:port and host:port:protocol
+   * @param defaultProtocol this is the protocl used if no protocol specified
+   * @param portOverride This overrides the port. If 0, port from
+   *                     hostPortProtocol used
+   *
+   * @return shared_ptr to an AccessPoint object
+   */
   static std::shared_ptr<AccessPoint>
-  create(folly::StringPiece hostPortProtocol, mc_protocol_t defaultProtocol);
+  create(folly::StringPiece hostPortProtocol,
+         mc_protocol_t defaultProtocol,
+         uint16_t portOverride = 0);
 
   const std::string& getHost() const {
     return host_;

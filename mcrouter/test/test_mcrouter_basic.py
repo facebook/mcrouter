@@ -569,3 +569,14 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
 
         self.assertEqual(mcr.get("key1"), "value1")
         self.assertEqual(self.l1.get("key1"), "value1")
+
+class TestMcrouterPortOverride(McrouterTestCase):
+    config = './mcrouter/test/mcrouter_test_portoverride.json'
+
+    def test_portoverride(self):
+        mc = self.add_server(Memcached())
+        self.port_map = {}
+        extra_args = ['--config-params', 'PORT:{}'.format(mc.getport())]
+        mcr = self.add_mcrouter(self.config, extra_args=extra_args)
+        self.assertTrue(mcr.set('key', 'value'))
+        self.assertEqual(mcr.get('key'), 'value')
