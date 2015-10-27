@@ -17,26 +17,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
 namespace {
 
 #define REQUEST_CLASS_STATS(proxy, OP, SUFFIX, reqClass)                       \
-    do{ if (reqClass.isNormal()) {                                             \
-          stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _stat, 1);       \
-          stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _count_stat, 1); \
-        } else {                                                               \
-          if (reqClass.is(RequestClass::kFailover)) {                          \
-            stat_incr(proxy.stats,                                             \
-                      cmd_ ## OP ## _ ## SUFFIX ## _failover_stat, 1);         \
-            stat_incr(proxy.stats,                                             \
-                      cmd_ ## OP ## _ ## SUFFIX ## _failover_count_stat, 1);   \
-          }                                                                    \
-          if (reqClass.is(RequestClass::kShadow)) {                            \
-            stat_incr(proxy.stats,                                             \
-                      cmd_ ## OP ## _ ## SUFFIX ## _shadow_stat, 1);           \
-            stat_incr(proxy.stats,                                             \
-                      cmd_ ## OP ## _ ## SUFFIX ## _shadow_count_stat, 1);     \
-          }                                                                    \
-        }                                                                      \
-        stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_stat, 1);     \
-        stat_incr(proxy.stats,                                                 \
-                  cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat, 1);            \
+    do {                                                                       \
+      if (reqClass.isNormal()) {                                               \
+        stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _stat, 1);         \
+        stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _count_stat, 1);   \
+      }                                                                        \
+      stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_stat, 1);       \
+      stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat, 1); \
     } while(0)
 
 template <int operation>
@@ -105,23 +92,14 @@ inline void logRequestClass(proxy_t& proxy, McOperation<operation>) {
 }
 
 #define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)                      \
-    do{ if (reqClass.isNormal()) {                                             \
-          stat_incr(proxy->stats, result_ ## ERROR ## _stat, 1);               \
-          stat_incr(proxy->stats, result_ ## ERROR ## _count_stat, 1);         \
-        } else {                                                               \
-          if (reqClass.is(RequestClass::kFailover)) {                          \
-            stat_incr(proxy->stats, result_ ## ERROR ## _failover_stat, 1);    \
-            stat_incr(proxy->stats,                                            \
-                      result_ ## ERROR ## _failover_count_stat, 1);            \
-          }                                                                    \
-          if (reqClass.is(RequestClass::kShadow)) {                            \
-            stat_incr(proxy->stats, result_ ## ERROR ## _shadow_stat, 1);      \
-            stat_incr(proxy->stats, result_ ## ERROR ## _shadow_count_stat, 1);\
-          }                                                                    \
-        }                                                                      \
-        stat_incr(proxy->stats, result_ ## ERROR ## _all_stat, 1);             \
-        stat_incr(proxy->stats, result_ ## ERROR ## _all_count_stat, 1);       \
-      } while(0)
+    do {                                                                       \
+      if (reqClass.isNormal()) {                                               \
+        stat_incr(proxy->stats, result_ ## ERROR ## _stat, 1);                 \
+        stat_incr(proxy->stats, result_ ## ERROR ## _count_stat, 1);           \
+      }                                                                        \
+      stat_incr(proxy->stats, result_ ## ERROR ## _all_stat, 1);               \
+      stat_incr(proxy->stats, result_ ## ERROR ## _all_count_stat, 1);         \
+    } while(0)
 
 }
 
