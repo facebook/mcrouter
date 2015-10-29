@@ -74,7 +74,7 @@ class McRequest {
    * Used for probabilistic decisions, like stats sampling or shadowing.
    */
   uint32_t routingKeyHash() const {
-    return keys_.routingKeyHash;
+    return keys_.routingKeyHash();
   }
 
   /**
@@ -258,11 +258,14 @@ class McRequest {
     folly::StringPiece routingPrefix;
     folly::StringPiece routingKey;
 
-    uint32_t routingKeyHash;
-
-    Keys() {}
+    constexpr Keys() = default;
     explicit Keys(folly::StringPiece key) noexcept;
+    Keys(const Keys& other) = default;
+
     void update(folly::StringPiece key);
+    uint32_t routingKeyHash() const;
+   private:
+    uint32_t routingKeyHash_{0};
   } keys_;
 
   int32_t exptime_{0};

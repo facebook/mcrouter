@@ -205,8 +205,15 @@ void McRequest::Keys::update(folly::StringPiece key) {
   if (pos != std::string::npos) {
     routingKey.reset(keyWithoutRoute.begin(), pos);
   }
+  routingKeyHash_ = 0;
+}
 
-  routingKeyHash = getMemcacheKeyHashValue(routingKey);
+uint32_t McRequest::Keys::routingKeyHash() const {
+  if (routingKeyHash_ == 0) {
+    const_cast<uint32_t&>(routingKeyHash_)
+      = getMemcacheKeyHashValue(routingKey);
+  }
+  return routingKeyHash_;
 }
 
 McRequest::McRequest(const McRequest& other)
@@ -217,12 +224,12 @@ McRequest::McRequest(const McRequest& other)
       cas_(other.cas_) {
   // Key is always a single piece, so it's safe to do cloneOneInto.
   other.keyData_.cloneOneInto(keyData_);
-  keys_ = Keys(getRange(keyData_));
+  assert(hasSameMemoryRegion(keyData_, other.keyData_));
+  // it's safe to copy existing StringPieces since we don't copy the data
+  keys_ = other.keys_;
   other.valueData_.cloneInto(valueData_);
 
-  if (hasSameMemoryRegion(keyData_, other.keyData_) &&
-      hasSameMemoryRegion(valueData_, other.valueData_)) {
-
+  if (hasSameMemoryRegion(valueData_, other.valueData_)) {
     msg_ = other.msg_.clone();
   } else {
     msg_ = createMcMsgRef(
