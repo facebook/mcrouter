@@ -65,6 +65,7 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
   fmOpts.recordStackEvery = opts.fibers_record_stack_size_every;
   fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
   fmOpts.useGuardPages = opts.fibers_use_guard_pages;
+  fmOpts.fibersPoolResizePeriodMs = opts.fibers_pool_resize_period_ms;
   return fmOpts;
 }
 

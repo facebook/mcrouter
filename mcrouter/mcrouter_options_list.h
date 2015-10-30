@@ -141,6 +141,12 @@ mcrouter_option_integer(
   "How long to sleep for after an update occured"
   " (a hack to avoid partial writes).")
 
+mcrouter_option_integer(
+  uint32_t, fibers_pool_resize_period_ms, 60000,
+  "fibers-pool-resize-period-ms", no_short,
+  "Free unnecessary fibers in the fibers pool every"
+  " fibers-pool-resize-period-ms milliseconds.  If value is 0, periodic"
+  " resizing of the free pool is disabled.")
 
 mcrouter_option_group("Network")
 
