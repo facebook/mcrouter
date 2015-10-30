@@ -48,15 +48,24 @@ class McrouterManager {
     folly::StringPiece persistence_id,
     const McrouterOptions& options,
     const std::vector<folly::EventBase*>& evbs) {
+    std::shared_ptr<McrouterInstance> mcrouter;
 
-    std::lock_guard<std::mutex> lg(mutex_);
-
-    auto mcrouter = folly::get_default(mcrouters_, persistence_id.str(),
-                                       nullptr);
+    {
+      std::lock_guard<std::mutex> lg(mutex_);
+      mcrouter = folly::get_default(mcrouters_, persistence_id.str());
+    }
     if (!mcrouter) {
-      mcrouter = McrouterInstance::create(options.clone(), evbs);
-      if (mcrouter) {
-        mcrouters_[persistence_id.str()] = mcrouter;
+      std::lock_guard<std::mutex> ilg(initMutex_);
+      {
+        std::lock_guard<std::mutex> lg(mutex_);
+        mcrouter = folly::get_default(mcrouters_, persistence_id.str());
+      }
+      if (!mcrouter) {
+        mcrouter = McrouterInstance::create(options.clone(), evbs);
+        if (mcrouter) {
+          std::lock_guard<std::mutex> lg(mutex_);
+          mcrouters_[persistence_id.str()] = mcrouter;
+        }
       }
     }
     return mcrouter.get();
@@ -75,7 +84,10 @@ class McrouterManager {
 
  private:
   std::unordered_map<std::string, std::shared_ptr<McrouterInstance>> mcrouters_;
+  // protects mcrouters_
   std::mutex mutex_;
+  // initMutex_ must not be taken under mutex_, otherwise deadlock is possible
+  std::mutex initMutex_;
 };
 
 namespace {
