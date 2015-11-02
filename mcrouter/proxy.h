@@ -380,10 +380,13 @@ struct proxy_t {
         const Request& req,
         std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
     void process(proxy_t* proxy) override;
+    void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:
     const Request& req_;
     std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx_;
+
+    int64_t timePushedOnQueue_{-1};
   };
 
   /** Queue of requests we didn't start processing yet */

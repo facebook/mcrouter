@@ -397,6 +397,13 @@ mcrouter_option_integer(
   "Timeouts for talking to pools within same cluster. "
   "If specified (non 0) takes precedence over every other timeout.")
 
+mcrouter_option_integer(
+  unsigned int, waiting_request_timeout_ms, 0,
+  "waiting-request-timeout-ms", no_short,
+  "Maximum time in ms that a new request can wait in the queue before being"
+  " discarded. Enabled only if value is non-zero and"
+  " if proxy-max-throttled-requests is enabled.")
+
 
 mcrouter_option_group("Logging")
 

@@ -55,6 +55,19 @@ proxy_t::WaitingRequest<Operation, Request>::WaitingRequest(
 
 template <class Operation, class Request>
 void proxy_t::WaitingRequest<Operation, Request>::process(proxy_t* proxy) {
+  // timePushedOnQueue_ is nonnegative only if waiting-requests-timeout is
+  // enabled
+  if (timePushedOnQueue_ >= 0) {
+    const auto durationInQueueUs = nowUs() - timePushedOnQueue_;
+
+    if (durationInQueueUs >
+        1000 * static_cast<int64_t>(
+          proxy->getRouterOptions().waiting_request_timeout_ms)) {
+      ctx_->sendReply(mc_res_timeout, "Waiting request timeout exceeded");
+      return;
+    }
+  }
+
   proxy->processRequest(req_, std::move(ctx_));
 }
 
@@ -148,6 +161,13 @@ void proxy_t::dispatchRequest(
     auto& queue = waitingRequests_[static_cast<int>(ctx->priority())];
     auto w = folly::make_unique<WaitingRequest<Operation, Request>>(
         req, std::move(ctx));
+    // Only enable timeout on waitingRequests_ queue when queue throttling is
+    // enabled
+    if (getRouterOptions().proxy_max_inflight_requests > 0 &&
+        getRouterOptions().proxy_max_throttled_requests > 0 &&
+        getRouterOptions().waiting_request_timeout_ms > 0) {
+      w->setTimePushedOnQueue(nowUs());
+    }
     queue.pushBack(std::move(w));
     ++numRequestsWaiting_;
     stat_incr(stats, proxy_reqs_waiting_stat, 1);
