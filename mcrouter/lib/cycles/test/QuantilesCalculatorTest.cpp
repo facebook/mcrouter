@@ -61,7 +61,7 @@ TEST(QuantilesCalculator, repeatedPrecision) {
 }
 
 TEST(QuantilesCalculator, randomPrecision) {
-  const double eps = 0.001;
+  const double eps = 0.005;
   QuantilesCalculator<uint64_t> qc(eps);
   ExactCalculator e;
   for (int i = 0; i < 1000000; ++i) {

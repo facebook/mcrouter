@@ -93,31 +93,30 @@ TEST(SlowWarmUpRoute, basic) {
       EXPECT_EQ(mc_res_notfound, reply.result());
     }
 
-    // send 100 gets (round 1) -> should have normal and failover results
+    // send 1000 gets (round 1) -> should have normal and failover results
     size_t numNormal1 = 0;
     size_t numFailover1 = 0;
-    sendWorkload(rh, 100, numNormal1, numFailover1);
+    sendWorkload(rh, 1000, numNormal1, numFailover1);
     EXPECT_TRUE(numNormal1 > 0);
     EXPECT_TRUE(numFailover1 > 0);
-    EXPECT_EQ(100, numNormal1 + numFailover1);
+    EXPECT_EQ(1000, numNormal1 + numFailover1);
 
     // send a large amount of gets -> move hit rate up, but not above 0.9
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 1000; ++i) {
       auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
     }
 
-    // send 100 gets (round 2) -> should have more normal results than 1st round
+    // send 1000 gets (round 2) -> must have more normal results than 1st round
     size_t numNormal2 = 0;
     size_t numFailover2 = 0;
-    sendWorkload(rh, 100, numNormal2, numFailover2);
+    sendWorkload(rh, 1000, numNormal2, numFailover2);
     EXPECT_TRUE(numNormal2 > 0);
-    EXPECT_TRUE(numFailover2 > 0);
-    EXPECT_EQ(100, numNormal2 + numFailover2);
+    EXPECT_EQ(1000, numNormal2 + numFailover2);
     EXPECT_TRUE(numNormal2 > numNormal1);
     EXPECT_TRUE(numFailover2 < numFailover1);
 
     // send a large amount of gets -> move hit rate above 0.9
-    for (int i = 0; i < 5000; ++i) {
+    for (int i = 0; i < 50000; ++i) {
       auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
     }
 
