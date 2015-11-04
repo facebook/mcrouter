@@ -19,7 +19,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
 
   switch (protocol_) {
     case mc_ascii_protocol:
-      new (&asciiRequest_) AsciiSerializedRequest();
+      new (&asciiRequest_) AsciiSerializedRequest;
       if (req.key().length() > MC_KEY_MAX_LEN_ASCII) {
         result_ = Result::BAD_KEY;
         return;
@@ -31,7 +31,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
       break;
     case mc_umbrella_protocol:
       if (!useTyped_) {
-        new (&umbrellaMessage_) UmbrellaSerializedMessage();
+        new (&umbrellaMessage_) UmbrellaSerializedMessage;
         if (!checkKeyLength(req.key())) {
           return;
         }
@@ -40,7 +40,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
           result_ = Result::ERROR;
         }
       } else {
-        new (&caretRequest_) CaretSerializedMessage();
+        new (&caretRequest_) CaretSerializedMessage;
         if (!checkKeyLength(req.key())) {
           return;
         }

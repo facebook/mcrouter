@@ -17,11 +17,11 @@ WriteBuffer::WriteBuffer(mc_protocol_t protocol)
     : protocol_(protocol) {
   switch (protocol_) {
     case mc_ascii_protocol:
-      new (&asciiReply_) AsciiSerializedReply();
+      new (&asciiReply_) AsciiSerializedReply;
       break;
 
     case mc_umbrella_protocol:
-      new (&umbrellaReply_) UmbrellaSerializedMessage();
+      new (&umbrellaReply_) UmbrellaSerializedMessage;
       break;
 
     default:
@@ -54,10 +54,10 @@ void WriteBuffer::ensureType(UmbrellaVersion version) {
   }
   if (version == UmbrellaVersion::TYPED_MESSAGE) {
     umbrellaReply_.~UmbrellaSerializedMessage();
-    new (&caretReply_) CaretSerializedMessage();
+    new (&caretReply_) CaretSerializedMessage;
   } else {
     caretReply_.~CaretSerializedMessage();
-    new (&umbrellaReply_) UmbrellaSerializedMessage();
+    new (&umbrellaReply_) UmbrellaSerializedMessage;
   }
   version_ = version;
 }
