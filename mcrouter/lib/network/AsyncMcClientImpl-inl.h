@@ -21,6 +21,9 @@ template <class Operation, class Request>
 typename ReplyType<Operation, Request>::type
 AsyncMcClientImpl::sendSync(const Request& request, Operation,
                             std::chrono::milliseconds timeout) {
+  auto selfPtr = selfPtr_.lock();
+  // shouldn't happen.
+  assert(selfPtr);
   assert(folly::fibers::onFiber());
 
   using Reply = typename ReplyType<Operation, Request>::type;
@@ -37,6 +40,7 @@ AsyncMcClientImpl::sendSync(const Request& request, Operation,
       request,
       nextMsgId_,
       connectionOptions_.accessPoint->getProtocol(),
+      std::move(selfPtr),
       queue_,
       [](ParserT& parser) { parser.expectNext<Operation, Request>(); },
       connectionOptions_.useTyped);
