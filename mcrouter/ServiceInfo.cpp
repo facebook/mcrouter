@@ -34,6 +34,7 @@
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
 #include "mcrouter/routes/ProxyRoute.h"
+#include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -225,7 +226,7 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
         throw std::runtime_error("options: 0 or 1 args expected");
       }
 
-      auto optDict = proxy_->router().opts().toDict();
+      auto optDict = proxy_->router().getStartupOpts();
 
       if (args.size() == 1) {
         auto it = optDict.find(args[0].str());
@@ -238,6 +239,8 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
       // Print all options in order listed in the file
       auto optData = McrouterOptions::getOptionData();
+      auto startupOpts = McrouterStandaloneOptions::getOptionData();
+      optData.insert(optData.end(), startupOpts.begin(), startupOpts.end());
       std::string str;
       for (auto& opt : optData) {
         if (optDict.find(opt.name) != optDict.end()) {
