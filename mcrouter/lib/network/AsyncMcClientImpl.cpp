@@ -552,6 +552,7 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
          connectionState_ == ConnectionState::ERROR);
   DestructorGuard dg(this);
   auto& req = queue_.markNextAsSent();
+  req.scheduleTimeout();
 
   // In case of no-network we need to provide fake reply.
   if (connectionOptions_.noNetwork) {

@@ -95,11 +95,8 @@ typename McClientRequestContext<Operation, Request>::Reply
 McClientRequestContext<Operation, Request>::waitForReply(
     std::chrono::milliseconds timeout) {
 
-  if (timeout.count()) {
-    baton_.timed_wait(timeout);
-  } else {
-    baton_.wait();
-  }
+  batonWaitTimeoutMs_ = timeout.count();
+  baton_.wait(batonTimeoutHandler_);
 
   switch (state_) {
     case ReqState::REPLIED_QUEUE:

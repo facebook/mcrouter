@@ -25,6 +25,10 @@ void McClientRequestContextBase::canceled() {
   baton_.post();
 }
 
+void McClientRequestContextBase::scheduleTimeout() {
+  batonTimeoutHandler_.scheduleTimeout(batonWaitTimeoutMs_);
+}
+
 McClientRequestContextBase::~McClientRequestContextBase() {
   assert(state_ == ReqState::NONE || state_ == ReqState::COMPLETE);
 }

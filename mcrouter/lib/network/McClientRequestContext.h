@@ -65,6 +65,12 @@ class McClientRequestContextBase
    */
   void replyError(mc_res_t result);
 
+  /**
+   * Schedule a timeout so that the request does not wait
+   * indefinitely for a reply.
+   */
+  void scheduleTimeout();
+
  protected:
   enum class ReqState {
     NONE,
@@ -98,6 +104,9 @@ class McClientRequestContextBase
   folly::fibers::Baton baton_;
   McClientRequestContextQueue& queue_;
   ReqState state_{ReqState::NONE};
+
+  folly::fibers::Baton::TimeoutHandler batonTimeoutHandler_;
+  uint32_t batonWaitTimeoutMs_{0};
 
  private:
   friend class McClientRequestContextQueue;
