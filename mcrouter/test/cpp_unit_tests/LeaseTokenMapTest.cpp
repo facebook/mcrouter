@@ -104,31 +104,6 @@ TEST(LeaseTokenMap, shrink) {
   EXPECT_EQ(map.size(), 0);
 }
 
-TEST(LeaseTokenMap, lowTtl) {
-  size_t tokenTtl = 1;
-  folly::ScopedEventBaseThread evbAuxThread;
-  LeaseTokenMap map(evbAuxThread, tokenTtl);
-
-  EXPECT_EQ(map.size(), 0);
-
-  for (int i = 0; i < 10000; ++i) {
-    uint64_t origToken = i * 10;
-    uint64_t specToken = map.insert(origToken, nullptr,
-                                    std::chrono::milliseconds(i));
-
-    // leave some work for the shrink thread.
-    if (i % 10 != 0) {
-      assertQueryTrue(map, specToken, origToken, std::chrono::milliseconds(i));
-    }
-  }
-
-  // Allow time for the map to shrink.
-  /* sleep override */
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-  EXPECT_EQ(map.size(), 0);
-}
-
 TEST(LeaseTokenMap, stress) {
   size_t tokenTtl = 1000;
   folly::ScopedEventBaseThread evbAuxThread;
