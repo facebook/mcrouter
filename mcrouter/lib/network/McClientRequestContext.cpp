@@ -26,7 +26,7 @@ void McClientRequestContextBase::canceled() {
 }
 
 void McClientRequestContextBase::scheduleTimeout() {
-  batonTimeoutHandler_.scheduleTimeout(batonWaitTimeoutMs_);
+  batonTimeoutHandler_.scheduleTimeout(batonWaitTimeout_);
 }
 
 McClientRequestContextBase::~McClientRequestContextBase() {

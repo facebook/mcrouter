@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <chrono>
 #include <typeindex>
 
 #include <boost/intrusive/unordered_set.hpp>
@@ -106,7 +107,7 @@ class McClientRequestContextBase
   ReqState state_{ReqState::NONE};
 
   folly::fibers::Baton::TimeoutHandler batonTimeoutHandler_;
-  uint32_t batonWaitTimeoutMs_{0};
+  std::chrono::milliseconds batonWaitTimeout_{0};
 
  private:
   friend class McClientRequestContextQueue;

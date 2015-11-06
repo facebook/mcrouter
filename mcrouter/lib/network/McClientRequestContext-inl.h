@@ -95,7 +95,7 @@ typename McClientRequestContext<Operation, Request>::Reply
 McClientRequestContext<Operation, Request>::waitForReply(
     std::chrono::milliseconds timeout) {
 
-  batonWaitTimeoutMs_ = timeout.count();
+  batonWaitTimeout_ = timeout;
   baton_.wait(batonTimeoutHandler_);
 
   switch (state_) {
