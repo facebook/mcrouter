@@ -353,7 +353,7 @@ folly::AsyncSocket::OptionMap createSocketOptions(
         connectionOptions.qosClass, connectionOptions.qosPath);
   }
 
-  return std::move(options);
+  return options;
 }
 
 } // anonymous namespace
