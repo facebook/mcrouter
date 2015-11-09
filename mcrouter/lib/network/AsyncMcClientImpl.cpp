@@ -94,8 +94,9 @@ std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
 
   Fifo* debugFifo{nullptr};
   if (!options.debugFifoPath.empty()) {
-    debugFifo =
-      &FifoManager::getInstance()->fetchThreadLocal(options.debugFifoPath);
+    if (auto fifoManager = FifoManager::getInstance()) {
+      debugFifo = &fifoManager->fetchThreadLocal(options.debugFifoPath);
+    }
   }
   auto client = std::shared_ptr<AsyncMcClientImpl>(
     new AsyncMcClientImpl(eventBase, std::move(options), debugFifo),
