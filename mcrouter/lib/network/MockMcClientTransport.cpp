@@ -32,21 +32,31 @@ MockMcClientTransport::getReadCallback() const {
   return dynamic_cast<MockMcClientTransport::ReadCallback*>(readCallback_);
 }
 
-void MockMcClientTransport::write(folly::AsyncTransportWrapper::WriteCallback* callback, const void* buf,
-                                  size_t bytes, WriteFlags flags) {
+void MockMcClientTransport::write(
+    folly::AsyncTransportWrapper::WriteCallback* callback,
+    const void*,
+    size_t,
+    WriteFlags,
+    folly::AsyncTransportWrapper::BufferCallback*) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
 
-void MockMcClientTransport::writev(folly::AsyncTransportWrapper::WriteCallback* callback, const iovec* vec,
-                                   size_t count, WriteFlags flags) {
+void MockMcClientTransport::writev(
+    folly::AsyncTransportWrapper::WriteCallback* callback,
+    const iovec*,
+    size_t,
+    WriteFlags,
+    folly::AsyncTransportWrapper::BufferCallback*) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
 
-void MockMcClientTransport::writeChain(folly::AsyncTransportWrapper::WriteCallback* callback,
-                                       std::unique_ptr<folly::IOBuf>&& buf,
-                                       WriteFlags flags) {
+void MockMcClientTransport::writeChain(
+    folly::AsyncTransportWrapper::WriteCallback* callback,
+    std::unique_ptr<folly::IOBuf>&&,
+    WriteFlags,
+    folly::AsyncTransportWrapper::BufferCallback*) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }

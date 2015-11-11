@@ -39,12 +39,23 @@ class MockMcClientTransport : public folly::AsyncTransportWrapper,
   void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override;
   ReadCallback* getReadCallback() const override;
 
-  void write(folly::AsyncTransportWrapper::WriteCallback* callback, const void* buf, size_t bytes,
-             WriteFlags flags = WriteFlags::NONE) override;
-  void writev(folly::AsyncTransportWrapper::WriteCallback* callback, const iovec* vec, size_t count,
-              WriteFlags flags = WriteFlags::NONE) override;
-  void writeChain(folly::AsyncTransportWrapper::WriteCallback* callback, std::unique_ptr<folly::IOBuf>&& buf,
-                  WriteFlags flags = WriteFlags::NONE) override;
+  void write(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      const void* buf,
+      size_t bytes,
+      WriteFlags flags = WriteFlags::NONE,
+      folly::AsyncTransportWrapper::BufferCallback* bufCB = nullptr) override;
+  void writev(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      const iovec* vec,
+      size_t count,
+      WriteFlags flags = WriteFlags::NONE,
+      folly::AsyncTransportWrapper::BufferCallback* bufCB = nullptr) override;
+  void writeChain(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      std::unique_ptr<folly::IOBuf>&& buf,
+      WriteFlags flags = WriteFlags::NONE,
+      folly::AsyncTransportWrapper::BufferCallback* bufCB = nullptr) override;
 
   // folly::AsyncTransport overrides
 

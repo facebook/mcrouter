@@ -32,16 +32,24 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
     return harness_.getReadCallback();
   }
 
-  void write(folly::AsyncTransportWrapper::WriteCallback* callback, const void* buf, size_t bytes,
-             WriteFlags flags = WriteFlags::NONE) override {
+  void write(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      const void* buf,
+      size_t bytes,
+      WriteFlags flags = WriteFlags::NONE,
+      folly::AsyncTransportWrapper::BufferCallback* bufCB = nullptr) override {
     iovec op;
     op.iov_base = const_cast<void*>(buf);
     op.iov_len = bytes;
-    writev(callback, &op, 1, flags);
+    writev(callback, &op, 1, flags, bufCB);
   }
 
-  void writev(folly::AsyncTransportWrapper::WriteCallback* callback, const iovec* vec, size_t count,
-              WriteFlags flags = WriteFlags::NONE) override {
+  void writev(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      const iovec* vec,
+      size_t count,
+      WriteFlags = WriteFlags::NONE,
+      folly::AsyncTransportWrapper::BufferCallback* = nullptr) override {
     std::string out;
     for (size_t i = 0; i < count; ++i) {
       out += std::string(reinterpret_cast<char*>(vec[i].iov_base),
@@ -55,9 +63,11 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
     }
   }
 
-  void writeChain(folly::AsyncTransportWrapper::WriteCallback* callback,
-                  std::unique_ptr<folly::IOBuf>&& buf,
-                  WriteFlags flags = WriteFlags::NONE) override {
+  void writeChain(
+      folly::AsyncTransportWrapper::WriteCallback*,
+      std::unique_ptr<folly::IOBuf>&&,
+      WriteFlags = WriteFlags::NONE,
+      folly::AsyncTransportWrapper::BufferCallback* = nullptr) override {
     throw std::runtime_error("not implemented");
   }
 
