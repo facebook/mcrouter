@@ -19,27 +19,31 @@ ServerMcParser<Callback>::ServerMcParser(Callback& cb,
                                          size_t minBufferSize,
                                          size_t maxBufferSize)
   : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
+    asciiParser_(*this),
     callback_(cb) {
-  mc_parser_init(&mcParser_,
-                 request_parser,
-                 &parserMsgReady,
-                 &parserParseError,
-                 this);
 }
 
 template <class Callback>
 ServerMcParser<Callback>::~ServerMcParser() {
-  mc_parser_reset(&mcParser_);
 }
 
 template <class Callback>
 std::pair<void*, size_t> ServerMcParser<Callback>::getReadBuffer() {
-  return parser_.getReadBuffer();
+  if (shouldReadToAsciiBuffer()) {
+    return asciiParser_.getReadBuffer();
+  } else {
+    return parser_.getReadBuffer();
+  }
 }
 
 template <class Callback>
 bool ServerMcParser<Callback>::readDataAvailable(size_t len) {
-  return parser_.readDataAvailable(len);
+  if (shouldReadToAsciiBuffer()) {
+    asciiParser_.readDataAvailable(len);
+    return true;
+  } else {
+    return parser_.readDataAvailable(len);
+  }
 }
 
 template <class Callback>
@@ -87,10 +91,23 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
 
 template <class Callback>
 void ServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
-  /* mc_parser only works with contiguous blocks */
-  auto bytes = readBuffer.coalesce();
-  mc_parser_parse(&mcParser_, bytes.begin(), bytes.size());
-  readBuffer.clear();
+  if (UNLIKELY(parser_.protocol() != mc_ascii_protocol)) {
+    std::string reason(
+      folly::sformat("Expected {} protocol, but received ASCII!",
+                     mc_protocol_to_string(parser_.protocol())));
+    callback_.parseError(mc_res_local_error, reason);
+    return;
+  }
+
+  // Note: McParser never chains IOBufs.
+  auto result = asciiParser_.consume(readBuffer);
+
+  if (result == McAsciiParserBase::State::ERROR) {
+    // Note: we could include actual parsing error instead of
+    // "malformed request" (e.g. asciiParser_.getErrorDescription()).
+    callback_.parseError(mc_res_client_error,
+                         "malformed request");
+  }
 }
 
 template <class Callback>
@@ -100,36 +117,23 @@ void ServerMcParser<Callback>::parseError(mc_res_t result,
 }
 
 template <class Callback>
-void ServerMcParser<Callback>::parserMsgReady(void* context,
-                                              uint64_t reqid,
-                                              mc_msg_t* req) {
-  auto parser = reinterpret_cast<ServerMcParser<Callback>*>(context);
-
-  auto operation = req->op;
-  auto result = req->result;
-  auto noreply = req->noreply;
-
-  parser->requestReadyHelper(McRequest(McMsgRef::moveRef(req)), operation,
-                             reqid, result, noreply);
+bool ServerMcParser<Callback>::shouldReadToAsciiBuffer() const {
+  return parser_.protocol() == mc_ascii_protocol &&
+         asciiParser_.hasReadBuffer();
 }
 
 template <class Callback>
-void ServerMcParser<Callback>::parserParseError(void* context,
-                                                parser_error_t error) {
-  std::string err;
+template <class Operation, class Request>
+void ServerMcParser<Callback>::onRequest(Operation,
+                                         Request&& req,
+                                         bool noreply) {
+  parser_.reportMsgRead();
+  callback_.onRequest(Operation(), std::move(req), noreply);
+}
 
-  switch (error) {
-    case parser_unspecified_error:
-    case parser_malformed_request:
-      err = "malformed request";
-      break;
-    case parser_out_of_memory:
-      err = "out of memory";
-      break;
-  }
-
-  reinterpret_cast<ServerMcParser<Callback>*>(context)
-    ->callback_.parseError(mc_res_client_error, err);
+template <class Callback>
+void ServerMcParser<Callback>::multiOpEnd() {
+  callback_.multiOpEnd();
 }
 
 }}  // facebook::memcache

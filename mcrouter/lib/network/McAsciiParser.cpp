@@ -18,15 +18,11 @@ namespace facebook { namespace memcache {
 
 constexpr size_t kProtocolTailContextLength = 128;
 
-McAsciiParser::McAsciiParser() : state_(State::UNINIT) {
-}
-
-McAsciiParser::State McAsciiParser::consume(folly::IOBuf& buffer) {
+McAsciiParserBase::State McClientAsciiParser::consume(folly::IOBuf& buffer) {
   assert(state_ == State::PARTIAL && !hasReadBuffer());
 
   p_ = reinterpret_cast<const char*>(buffer.data());
   pe_ = p_ + buffer.length();
-  eof_ = nullptr;
 
   (this->*consumer_)(buffer);
 
@@ -39,17 +35,17 @@ McAsciiParser::State McAsciiParser::consume(folly::IOBuf& buffer) {
   return state_;
 }
 
-bool McAsciiParser::hasReadBuffer() const {
+bool McAsciiParserBase::hasReadBuffer() const noexcept {
   return state_ == State::PARTIAL && currentIOBuf_ != nullptr;
 }
 
-std::pair<void*, size_t> McAsciiParser::getReadBuffer() {
+std::pair<void*, size_t> McAsciiParserBase::getReadBuffer() noexcept {
   assert(state_ == State::PARTIAL && currentIOBuf_ != nullptr);
 
   return std::make_pair(currentIOBuf_->writableTail(), remainingIOBufLength_);
 }
 
-void McAsciiParser::readDataAvailable(size_t length) {
+void McAsciiParserBase::readDataAvailable(size_t length) {
   assert(state_ == State::PARTIAL && currentIOBuf_ != nullptr);
   assert(length <= remainingIOBufLength_);
   currentIOBuf_->append(length);
@@ -60,22 +56,7 @@ void McAsciiParser::readDataAvailable(size_t length) {
   }
 }
 
-void McAsciiParser::appendCurrentCharTo(folly::IOBuf& from, folly::IOBuf& to) {
-  // If it is just a next char in the same memory chunk, just append it.
-  // Otherwise we need to append new IOBuf.
-  if (to.data() + to.length() ==
-        reinterpret_cast<const void*>(p_) && to.tailroom() > 0) {
-    to.append(1);
-  } else {
-    auto nextPiece = from.cloneOne();
-    size_t offset = p_ - reinterpret_cast<const char*>(from.data());
-    nextPiece->trimStart(offset);
-    nextPiece->trimEnd(from.length() - offset - 1 /* current char */);
-    to.appendChain(std::move(nextPiece));
-  }
-}
-
-void McAsciiParser::handleError(folly::IOBuf& buffer) {
+void McAsciiParserBase::handleError(folly::IOBuf& buffer) {
   state_ = State::ERROR;
   // We've encoutered error we need to do proper logging.
   auto start = reinterpret_cast<const char*>(buffer.data());
@@ -89,8 +70,35 @@ void McAsciiParser::handleError(folly::IOBuf& buffer) {
                    p_ - start);
 }
 
-folly::StringPiece McAsciiParser::getErrorDescription() const {
+folly::StringPiece McAsciiParserBase::getErrorDescription() const {
   return currentErrorDescription_;
+}
+
+bool McAsciiParserBase::readValue(folly::IOBuf& buffer, folly::IOBuf& to) {
+  if (remainingIOBufLength_) {
+    // Copy IOBuf for part of (or whole) value.
+    size_t offset = p_ - reinterpret_cast<const char*>(buffer.data()) + 1;
+    size_t toUse = std::min(buffer.length() - offset, remainingIOBufLength_);
+    buffer.cloneOneInto(to);
+    // Adjust buffer pointers.
+    to.trimStart(offset);
+    to.trimEnd(buffer.length() - offset - toUse);
+
+    remainingIOBufLength_ -= toUse;
+    // Move the state machine to the proper character.
+    p_ += toUse;
+
+    // Now if we don't have enough data, we need to preallocate second piece
+    // for remaining buffer and signal partial read.
+    if (remainingIOBufLength_) {
+      auto secondPiece = folly::IOBuf::createCombined(remainingIOBufLength_);
+      currentIOBuf_ = secondPiece.get();
+      to.appendChain(std::move(secondPiece));
+      return false;
+    }
+  }
+
+  return true;
 }
 
 }}  // facebook::memcache

@@ -18,7 +18,6 @@ ClientMcParser<Callback>::ClientMcParser(Callback& cb,
                                          size_t maxBufferSize,
                                          mc_protocol_t protocol)
   : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
-    protocol_(protocol),
     callback_(cb) {
 }
 
@@ -101,10 +100,10 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const uint8_t* header,
                                               const uint8_t* body,
                                               const folly::IOBuf& bodyBuffer) {
-  if (UNLIKELY(protocol_ != mc_umbrella_protocol)) {
+  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
     std::string reason =
         folly::sformat("Expected {} protocol, but received umbrella!",
-                       mc_protocol_to_string(protocol_));
+                       mc_protocol_to_string(parser_.protocol()));
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }
@@ -132,16 +131,16 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
 
 template <class Callback>
 void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
-  if (UNLIKELY(protocol_ != mc_ascii_protocol)) {
+  if (UNLIKELY(parser_.protocol() != mc_ascii_protocol)) {
     std::string reason(
       folly::sformat("Expected {} protocol, but received ASCII!",
-                     mc_protocol_to_string(protocol_)));
+                     mc_protocol_to_string(parser_.protocol())));
     callback_.parseError(mc_res_local_error, reason);
     return;
   }
 
   while (readBuffer.length()) {
-    if (asciiParser_.getCurrentState() == McAsciiParser::State::UNINIT) {
+    if (asciiParser_.getCurrentState() == McAsciiParserBase::State::UNINIT) {
       // Ask the client to initialize parser.
       if (!callback_.nextReplyAvailable(0 /* reqId */)) {
         auto data = reinterpret_cast<const char *>(readBuffer.data());
@@ -155,24 +154,22 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
       }
     }
     switch (asciiParser_.consume(readBuffer)) {
-    case McAsciiParser::State::COMPLETE:
+    case McAsciiParserBase::State::COMPLETE:
       (this->*replyForwarder_)();
       break;
-    case McAsciiParser::State::ERROR:
+    case McAsciiParserBase::State::ERROR:
       callback_.parseError(mc_res_local_error,
                            asciiParser_.getErrorDescription());
       return;
-      break;
-    case McAsciiParser::State::PARTIAL:
+    case McAsciiParserBase::State::PARTIAL:
       // Buffer was completely consumed.
       break;
-    case McAsciiParser::State::UNINIT:
+    case McAsciiParserBase::State::UNINIT:
       // We fed parser some data, it shouldn't remain in State::NONE.
       callback_.parseError(mc_res_local_error,
                            "Sent data to AsciiParser but it remained in "
                            "UNINIT state!");
       return;
-      break;
     }
   }
 }

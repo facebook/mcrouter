@@ -351,7 +351,7 @@ class McReply {
   using CUniquePtr = std::unique_ptr<void, void(*)(void*)>;
   folly::Optional<CUniquePtr> destructor_;
 
-  friend class McAsciiParser;
+  friend class McClientAsciiParser;
   inline friend void detail::mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);
 };
 

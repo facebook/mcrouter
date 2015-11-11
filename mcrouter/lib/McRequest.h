@@ -136,19 +136,10 @@ class McRequest {
    * Returns a reference to an mc_msg_t representing this request
    * with the correct op set.
    *
-   * Note: McRequest assumes this object will not be modified.
-   *
    * The returned mc_msg_t might reference data owned by this McRequest,
    * so the McRequest must be kept alive (thus "dependent").
    */
   McMsgRef dependentMsg(mc_op_t op) const;
-
-  /**
-   * Same as dependentMsg(), but any routing prefix is stripped.
-   * If the original request didn't have a routing prefix to begin with,
-   * behaves exactly like dependentMsg().
-   */
-  McMsgRef dependentMsgStripRoutingPrefix(mc_op_t op) const;
 
   /**
    * Full key without any routing prefix.
@@ -167,7 +158,11 @@ class McRequest {
    * Access flush_all delay interval.
    */
   uint32_t number() const {
-    return msg_.get() ? msg_->number : 0;
+    return number_;
+  }
+
+  void setNumber(uint32_t num) {
+    number_ = num;
   }
 
   /**
@@ -236,8 +231,6 @@ class McRequest {
 #endif
 
  private:
-  McMsgRef msg_;
-
   /* Always stored unchained */
   folly::IOBuf keyData_;
 
@@ -269,6 +262,7 @@ class McRequest {
   } keys_;
 
   int32_t exptime_{0};
+  uint32_t number_{0};
   uint64_t flags_{0};
   uint64_t delta_{0};
   uint64_t leaseToken_{0};
@@ -318,16 +312,9 @@ class McRequest {
   bool setValueFrom(const folly::IOBuf& source,
                     const uint8_t* valueBegin, size_t valueSize);
 
-  /**
-   * Helper method to set all fields and proper key/value into McMsgRef.
-   */
-  void dependentHelper(mc_op_t op, folly::StringPiece key,
-                       folly::StringPiece value,
-                       MutableMcMsgRef& into) const;
-
-  void ensureMsgExists(mc_op_t op) const;
-
   McRequest(const McRequest& other);
+
+  friend class McServerAsciiParser;
 };
 
 }}  // facebook::memcache

@@ -208,55 +208,6 @@ TEST(requestReply, dependentRef) {
 }
 
 /**
- * Check that mc_msg_t copies are created only when necessary
- */
-void checkCopies(McRequest& req, mc_msg_t* msg) {
-  auto get_route_msg = req.dependentMsg(mc_op_get);
-
-  if (msg == nullptr) {
-    EXPECT_TRUE(get_route_msg.get() != nullptr);
-  } else {
-    EXPECT_TRUE(get_route_msg.get() == msg);
-  }
-
-
-  auto set_route_msg = req.dependentMsg(mc_op_set);
-
-  /* Wrong op, must create a copy */
-  EXPECT_TRUE(set_route_msg.get() != nullptr);
-  EXPECT_TRUE(set_route_msg.get() != get_route_msg.get());
-
-  auto get_noroute_msg = req.dependentMsgStripRoutingPrefix(mc_op_get);
-
-  EXPECT_TRUE(get_noroute_msg.get() != nullptr);
-  if (!req.routingPrefix().empty()) {
-    EXPECT_TRUE(get_noroute_msg.get() != get_route_msg.get());
-  } else if (msg != nullptr) {
-    /* Don't want routing prefix, but there isn't one anyway,
-       so no copy required */
-    EXPECT_TRUE(get_noroute_msg.get() == get_route_msg.get());
-  }
-
-  McRequest req_2 = req.clone();
-
-  auto get_route_msg_2 = req_2.dependentMsg(mc_op_get);
-  auto get_noroute_msg_2 = req_2.dependentMsgStripRoutingPrefix(mc_op_get);
-
-  if (msg != nullptr) {
-    /* Check no copy */
-    EXPECT_TRUE(get_route_msg_2.get() == get_route_msg.get());
-    if (!req.routingPrefix().empty()) {
-      EXPECT_TRUE(get_noroute_msg_2.get() != get_noroute_msg.get());
-    } else {
-      EXPECT_TRUE(get_noroute_msg_2.get() == get_noroute_msg.get());
-    }
-  } else {
-    EXPECT_TRUE(get_route_msg_2.get() != nullptr);
-    EXPECT_TRUE(get_noroute_msg_2.get() != nullptr);
-  }
-}
-
-/**
  * Check various ways to create the request with the key
  * and run the given method on each request
  */
@@ -271,7 +222,6 @@ void checkKey(const std::string& key,
 
     McRequest req(McMsgRef::cloneRef(msg));
     run(req);
-    checkCopies(req, msg);
 
     mc_msg_decref(msg);
   }
@@ -279,7 +229,6 @@ void checkKey(const std::string& key,
   {
     McRequest req(key);
     run(req);
-    checkCopies(req, nullptr);
   }
 }
 

@@ -18,18 +18,18 @@
 namespace facebook { namespace memcache {
 
 McRequest::McRequest(McMsgRef&& msg)
-    : msg_(std::move(msg)),
-      keyData_(makeMsgKeyIOBufStack(msg_)),
-      valueData_(makeMsgValueIOBufStack(msg_)),
+    : keyData_(makeMsgKeyIOBufStack(msg)),
+      valueData_(makeMsgValueIOBufStack(msg)),
       keys_(getRange(keyData_)),
-      exptime_(msg_->exptime),
-      flags_(msg_->flags),
-      delta_(msg_->delta),
-      leaseToken_(msg_->lease_id),
-      cas_(msg_->cas)
+      exptime_(msg->exptime),
+      number_(msg->number),
+      flags_(msg->flags),
+      delta_(msg->delta),
+      leaseToken_(msg->lease_id),
+      cas_(msg->cas)
 #ifndef LIBMC_FBTRACE_DISABLE
     ,
-      fbtraceInfo_(McFbtraceRef::cloneRef(msg_->fbtrace_info))
+      fbtraceInfo_(McFbtraceRef::cloneRef(msg->fbtrace_info))
 #endif
 {
 }
@@ -38,22 +38,16 @@ McRequest::McRequest(folly::StringPiece key)
     : keyData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, key)) {
   keyData_.coalesce();
   keys_.update(getRange(keyData_));
-  auto msg = createMcMsgRef();
-  msg->key = to<nstring_t>(getRange(keyData_));
-  msg_ = std::move(msg);
 }
 
 McRequest::McRequest(folly::IOBuf keyData)
     : keyData_(std::move(keyData)) {
   keyData_.coalesce();
   keys_.update(getRange(keyData_));
-  auto msg = createMcMsgRef();
-  msg->key = to<nstring_t>(getRange(keyData_));
-  msg_ = std::move(msg);
 }
 
 bool McRequest::setKeyFrom(const folly::IOBuf& source,
-                               const uint8_t* keyBegin, size_t keySize) {
+                           const uint8_t* keyBegin, size_t keySize) {
   if (keySize && cloneInto(keyData_, source, keyBegin, keySize)) {
     keys_ = Keys(getRange(keyData_));
     return true;
@@ -66,14 +60,12 @@ bool McRequest::setValueFrom(const folly::IOBuf& source,
   return valueSize && cloneInto(valueData_, source, valueBegin, valueSize);
 }
 
-void McRequest::dependentHelper(mc_op_t op, folly::StringPiece key,
-                                folly::StringPiece value,
-                                MutableMcMsgRef& into) const {
-  if (msg_.get()) {
-    mc_msg_shallow_copy(into.get(), msg_.get());
-  }
+McMsgRef McRequest::dependentMsg(mc_op_t op) const {
+  auto into = createMcMsgRef();
+
   into->op = op;
   into->exptime = exptime_;
+  into->number = number_;
   into->flags = flags_;
   into->delta = delta_;
   into->lease_id = leaseToken_;
@@ -81,89 +73,10 @@ void McRequest::dependentHelper(mc_op_t op, folly::StringPiece key,
 #ifndef LIBMC_FBTRACE_DISABLE
   into->fbtrace_info = fbtraceInfo_.clone().release();
 #endif
-  into->key = to<nstring_t>(key);
-  into->value = to<nstring_t>(value);
-}
+  into->key = to<nstring_t>(getRange(keyData_));
+  into->value = to<nstring_t>(valueRangeSlow());
 
-void McRequest::ensureMsgExists(mc_op_t op) const {
-  /* dependentMsg* functions assume msg_ exists,
-     so create one if necessary. */
-  if (!msg_.get()) {
-    auto msg = createMcMsgRef();
-    dependentHelper(op, getRange(keyData_),
-                    coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)),
-                    msg);
-    const_cast<McMsgRef&>(msg_) = std::move(msg);
-  }
-}
-
-McMsgRef McRequest::dependentMsg(mc_op_t op) const {
-  ensureMsgExists(op);
-
-  auto is_key_set =
-    hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
-  auto is_value_set =
-    hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value));
-
-  if (msg_->op == op &&
-      msg_->exptime == exptime_ &&
-      msg_->flags == flags_ &&
-      msg_->delta == delta_ &&
-      msg_->lease_id == leaseToken_ &&
-      msg_->cas == cas_ &&
-#ifndef LIBMC_FBTRACE_DISABLE
-      msg_->fbtrace_info == fbtraceInfo_.get() &&
-#endif
-      is_key_set &&
-      is_value_set) {
-    /* msg_ is an object with the same fields we expect.
-       In addition, we want to keep routing prefix.
-       We can simply return the reference. */
-    return msg_.clone();
-  } else {
-    /* Out of luck.  The best we can do is make the copy
-       reference key/value fields from the backing store. */
-    auto toRelease = createMcMsgRef();
-    dependentHelper(op, getRange(keyData_),
-                    coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)),
-                    toRelease);
-    return std::move(toRelease);
-  }
-}
-
-McMsgRef McRequest::dependentMsgStripRoutingPrefix(mc_op_t op) const {
-  ensureMsgExists(op);
-
-  auto is_key_set =
-    keys_.routingPrefix.empty() &&
-    hasSameMemoryRegion(keyData_, to<folly::StringPiece>(msg_->key));
-  auto is_value_set =
-    hasSameMemoryRegion(valueData_, to<folly::StringPiece>(msg_->value));
-
-  if (msg_->op == op &&
-      msg_->exptime == exptime_ &&
-      msg_->flags == flags_ &&
-      msg_->delta == delta_ &&
-      msg_->lease_id == leaseToken_ &&
-      msg_->cas == cas_ &&
-#ifndef LIBMC_FBTRACE_DISABLE
-      msg_->fbtrace_info == fbtraceInfo_.get() &&
-#endif
-      is_key_set &&
-      is_value_set) {
-    /* msg_ is an object with the same fields we expect.
-       In addition, routing prefix is empty anyway.
-       We can simply return the reference. */
-    return msg_.clone();
-  } else {
-    /* Out of luck.  The best we can do is make the copy
-       reference key/value fields from the backing store. */
-    auto toRelease = dependentMcMsgRef(msg_);
-    dependentHelper(op, keys_.keyWithoutRoute,
-                    coalesceAndGetRange(const_cast<folly::IOBuf&>(valueData_)),
-                    toRelease);
-    return std::move(toRelease);
-  }
+  return std::move(into);
 }
 
 folly::StringPiece McRequest::keyWithoutRoute() const {
@@ -218,6 +131,7 @@ uint32_t McRequest::Keys::routingKeyHash() const {
 
 McRequest::McRequest(const McRequest& other)
     : exptime_(other.exptime_),
+      number_(other.number_),
       flags_(other.flags_),
       delta_(other.delta_),
       leaseToken_(other.leaseToken_),
@@ -228,14 +142,6 @@ McRequest::McRequest(const McRequest& other)
   // it's safe to copy existing StringPieces since we don't copy the data
   keys_ = other.keys_;
   other.valueData_.cloneInto(valueData_);
-
-  if (hasSameMemoryRegion(valueData_, other.valueData_)) {
-    msg_ = other.msg_.clone();
-  } else {
-    msg_ = createMcMsgRef(
-      other.msg_, getRange(keyData_),
-      coalesceAndGetRange(valueData_));
-  }
 
 #ifndef LIBMC_FBTRACE_DISABLE
   if (other.fbtraceInfo_.get()) {

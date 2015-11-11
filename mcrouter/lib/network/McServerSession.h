@@ -269,6 +269,22 @@ class McServerSession :
                          const folly::IOBuf& reqBody,
                          uint64_t reqid);
 
+  /* Ascii parser callbacks */
+  template <int op, class Request>
+  void onRequest(McOperation<op>, Request&& req, bool noreply) {
+    mc_res_t result = mc_res_unknown;
+    if (req.fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
+      result = mc_res_bad_key;
+    }
+    requestReady(std::move(req), (mc_op_t)op, 0 /* no reqid */, result,
+                 noreply);
+  }
+
+  void multiOpEnd() {
+    requestReady(McRequest(), mc_op_end, 0 /* no reqid */,
+                 mc_res_unknown, false /* never noreply for read ops */);
+  }
+
   /**
    * Must be called after parser has detected the protocol (i.e.
    * at least one request was processed).

@@ -52,14 +52,12 @@ class ClientMcParser : private McParser::ParserCallback {
   void expectNext();
  private:
   McParser parser_;
-  McAsciiParser asciiParser_;
+  McClientAsciiParser asciiParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
   void (ClientMcParser<Callback>::*umbrellaForwarder_)(
     const UmbrellaMessageInfo&, const uint8_t*, const uint8_t*,
     const folly::IOBuf&, uint64_t){nullptr};
   CaretReplyConverter converter_;
-
-  mc_protocol_t protocol_;
 
   Callback& callback_;
 

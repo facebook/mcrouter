@@ -17,6 +17,7 @@
 #include <mcrouter/lib/McReply.h>
 #include <mcrouter/lib/network/McAsciiParser.h>
 #include <mcrouter/lib/network/ClientMcParser.h>
+#include <mcrouter/lib/network/test/TestMcAsciiParserUtil.h>
 
 using namespace facebook::memcache;
 using folly::IOBuf;
@@ -36,38 +37,6 @@ void compare(const McReply& expected, const McReply& actual) {
   EXPECT_EQ(expected.ipv(), actual.ipv());
   EXPECT_EQ(0, memcmp(&expected.ipAddress(), &actual.ipAddress(),
                       sizeof(expected.ipAddress())));
-}
-
-std::vector<std::vector<size_t>> genAllSplits(size_t length,
-                                              size_t maxPieceSize) {
-  if (maxPieceSize == 0) {
-    maxPieceSize = length;
-  }
-  static std::unordered_map<std::pair<size_t, size_t>,
-                            std::vector<std::vector<size_t>>> prec;
-
-  auto it = prec.find(std::make_pair(length, maxPieceSize));
-  if (it != prec.end()) {
-    return it->second;
-  }
-
-  std::vector<std::vector<size_t>> splits;
-  if (length <= maxPieceSize) {
-    splits.push_back({length});
-  }
-
-  for (auto piece = 1; piece < std::min(maxPieceSize + 1, length); ++piece) {
-    auto vecs = genAllSplits(length - piece, maxPieceSize);
-    splits.reserve(splits.size() + vecs.size());
-    for (auto& v : vecs) {
-      v.push_back(piece);
-      splits.push_back(std::move(v));
-    }
-  }
-
-  prec[std::make_pair(length, maxPieceSize)] = splits;
-
-  return splits;
 }
 
 class McAsciiParserHarness {
@@ -188,25 +157,11 @@ void McAsciiParserHarness::runTest(int maxPieceSize) {
   if (maxPieceSize >= 0) {
     auto storedData = std::move(data_);
     storedData.coalesce();
-    auto splits = genAllSplits(storedData.length(),
-                               static_cast<size_t>(maxPieceSize));
+    auto splits = genChunkedDataSets(storedData.length(),
+                                     static_cast<size_t>(maxPieceSize));
     LOG(INFO) << "Number of tests generated: " << splits.size();
     for (const auto& split : splits) {
-      //std::string s = "Running for: "; // for info
-      std::unique_ptr<folly::IOBuf> buffer;
-      size_t start = 0;
-      for (const auto& piece : split) {
-        auto p = folly::IOBuf::copyBuffer(storedData.data() + start, piece);
-        // s += "'" + folly::cEscape<std::string>(
-        //              folly::StringPiece(p->coalesce())) + "', ";
-        if (start == 0) {
-          buffer = std::move(p);
-        } else {
-          buffer->prependChain(std::move(p));
-        }
-        start += piece;
-      }
-      data_ = std::move(*buffer);
+      data_ = std::move(*chunkData(storedData, split));
       runTestImpl();
     }
   }

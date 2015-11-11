@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
 
 namespace facebook { namespace memcache {
@@ -48,9 +49,16 @@ class ServerMcParser : private McParser::ParserCallback {
     return parser_.outOfOrder();
   }
 
+  /**
+   * @return error message from ascii parser about parsing error.
+   */
+  folly::StringPiece getUnderlyingAsciiParserError() const {
+    return asciiParser_.getErrorDescription();
+  }
+
  private:
   McParser parser_;
-  mc_parser_t mcParser_;
+  McServerAsciiParser asciiParser_;
 
   Callback& callback_;
 
@@ -65,10 +73,16 @@ class ServerMcParser : private McParser::ParserCallback {
                       const folly::IOBuf& bodyBuffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
+  bool shouldReadToAsciiBuffer() const;
 
-  /* mc_parser_t callbacks */
-  static void parserMsgReady(void* context, uint64_t reqid, mc_msg_t* req);
-  static void parserParseError(void* context, parser_error_t error);
+  template <class Operation, class Request>
+  void onRequest(Operation, Request&&, bool noreply);
+
+  void multiOpEnd();
+
+  // McServerAsciiParser callback wrapper.
+  template <class C, class OpReqsList>
+  friend class detail::CallbackWrapper;
 };
 
 }}  // facebook::memcache

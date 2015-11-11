@@ -14,14 +14,14 @@
 
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/MessageStorage.h"
 
 namespace facebook { namespace memcache {
 
-class McRequest;
-
-class McAsciiParser {
+class McAsciiParserBase {
  public:
   enum class State {
     // The parser is not initialized to parse any messages.
@@ -34,13 +34,57 @@ class McAsciiParser {
     COMPLETE,
   };
 
-  McAsciiParser();
+  McAsciiParserBase() = default;
 
-  McAsciiParser(const McAsciiParser&) = delete;
-  McAsciiParser(McAsciiParser&&) = delete;
-  McAsciiParser& operator=(const McAsciiParser&) = delete;
-  McAsciiParser& operator=(McAsciiParser&&) = delete;
+  McAsciiParserBase(const McAsciiParserBase&) = delete;
+  McAsciiParserBase& operator=(const McAsciiParserBase&) = delete;
 
+  State getCurrentState() const noexcept { return state_; }
+
+  /**
+   * Check if McAsciiParser already has its own buffer.
+   * @return  true iff we already have our own buffer that we can read into.
+   */
+  bool hasReadBuffer() const noexcept;
+
+  std::pair<void*, size_t> getReadBuffer() noexcept;
+
+  void readDataAvailable(size_t length);
+
+  /**
+   * Get a human readable description of error cause (e.g. received ERROR
+   * reply, or failed to parse some data.)
+   */
+  folly::StringPiece getErrorDescription() const;
+ protected:
+  void handleError(folly::IOBuf& buffer);
+  /**
+   * Read value data.
+   * It uses remainingIOBufLength_ to determine how much we need to read. It
+   * will also update that variable and currentIOBuf_ accordingly.
+   *
+   * @return true iff the value was completely read.
+   */
+  bool readValue(folly::IOBuf& buffer, folly::IOBuf& to);
+
+  std::string currentErrorDescription_;
+
+  uint64_t currentUInt_{0};
+
+  folly::IOBuf* currentIOBuf_{nullptr};
+  size_t remainingIOBufLength_{0};
+  State state_{State::UNINIT};
+  bool negative_{false};
+
+  // Variables used by ragel.
+  int savedCs_;
+  int errorCs_;
+  const char* p_{nullptr};
+  const char* pe_{nullptr};
+};
+
+class McClientAsciiParser : public McAsciiParserBase {
+ public:
   /**
    * Consume given IOBuf.
    *
@@ -67,28 +111,7 @@ class McAsciiParser {
    */
   template<class T>
   T getReply();
-
-  State getCurrentState() { return state_; }
-
-  /**
-   * Check if McAsciiParser already has its own buffer.
-   * @return  true iff we already have our own buffer that we can read into.
-   */
-  bool hasReadBuffer() const;
-
-  std::pair<void*, size_t> getReadBuffer();
-
-  void readDataAvailable(size_t length);
-
-  /**
-   * Get a human readable description of error cause (e.g. received ERROR
-   * reply, or failed to parse some data.)
-   */
-  folly::StringPiece getErrorDescription() const;
  private:
-  void appendCurrentCharTo(folly::IOBuf& from, folly::IOBuf& to);
-  void handleError(folly::IOBuf& buffer);
-
   void initializeCommon();
 
   void initializeArithmReplyCommon();
@@ -100,89 +123,99 @@ class McAsciiParser {
   template<class Msg, class Op>
   void consumeMessage(folly::IOBuf& buffer);
 
-  std::string currentErrorDescription_;
-  uint64_t currentUInt_{0};
-  folly::IOBuf* currentIOBuf_{nullptr};
-  size_t remainingIOBufLength_{0};
   MessageStorage<List<McReply>> currentMessage_;
-  State state_{State::UNINIT};
 
-  // Variables used by ragel.
-  int savedCs_;
-  int errorCs_;
-  const char* p_{nullptr};
-  const char* pe_{nullptr};
-  const char* eof_{nullptr};
-  // Used solely for proper error messages parsing.
-  bool stripped_{false};
-
-  using ConsumerFunPtr = void (McAsciiParser::*)(folly::IOBuf&);
+  using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
 };
 
-template<class T>
-T McAsciiParser::getReply() {
-  assert(state_ == State::COMPLETE);
-  state_ = State::UNINIT;
-  return std::move(currentMessage_.get<T>());
-}
+namespace detail {
+using SupportedReqs = List<Pair<McOperation<mc_op_get>, McRequest>,
+                           Pair<McOperation<mc_op_gets>, McRequest>,
+                           Pair<McOperation<mc_op_lease_get>, McRequest>,
+                           Pair<McOperation<mc_op_metaget>, McRequest>,
+                           Pair<McOperation<mc_op_set>, McRequest>,
+                           Pair<McOperation<mc_op_add>, McRequest>,
+                           Pair<McOperation<mc_op_replace>, McRequest>,
+                           Pair<McOperation<mc_op_append>, McRequest>,
+                           Pair<McOperation<mc_op_prepend>, McRequest>,
+                           Pair<McOperation<mc_op_cas>, McRequest>,
+                           Pair<McOperation<mc_op_lease_set>, McRequest>,
+                           Pair<McOperation<mc_op_delete>, McRequest>,
+                           Pair<McOperation<mc_op_shutdown>, McRequest>,
+                           Pair<McOperation<mc_op_incr>, McRequest>,
+                           Pair<McOperation<mc_op_decr>, McRequest>,
+                           Pair<McOperation<mc_op_version>, McRequest>,
+                           Pair<McOperation<mc_op_quit>, McRequest>,
+                           Pair<McOperation<mc_op_stats>, McRequest>,
+                           Pair<McOperation<mc_op_exec>, McRequest>,
+                           Pair<McOperation<mc_op_flushre>, McRequest>,
+                           Pair<McOperation<mc_op_flushall>, McRequest>>;
 
-// Forward-declare initializers.
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_get>, McRequest>();
+template <class OpReqList> class CallbackBase;
+}  // detail
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_gets>, McRequest>();
+class McServerAsciiParser : public McAsciiParserBase {
+ public:
+  template <class Callback>
+  explicit McServerAsciiParser(Callback& cb);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_lease_get>,
-                                          McRequest>();
+  /**
+   * Consume given IOBuf.
+   *
+   * Should be called only in case hasReadBuffer() returned false.
+   *
+   * @param buffer  data to consume.
+   * @return  new parser state.
+   */
+  State consume(folly::IOBuf& buffer);
+ private:
+  void opTypeConsumer(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_set>, McRequest>();
+  // Get-like.
+  template <class Operation, class Request>
+  void initGetLike();
+  template <class Operation, class Request>
+  void consumeGetLike(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_add>, McRequest>();
+  // Update-like.
+  template <class Operation, class Request>
+  void initSetLike();
+  template <class Operation, class Request>
+  void consumeSetLike(folly::IOBuf& buffer);
+  void consumeCas(folly::IOBuf& buffer);
+  void consumeLeaseSet(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_replace>,
-                                          McRequest>();
+  void consumeDelete(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_lease_set>,
-                                          McRequest>();
+  void consumeShutdown(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_cas>, McRequest>();
+  // Arithmetic.
+  template <class Operation, class Request>
+  void initArithmetic();
+  template <class Operation, class Request>
+  void consumeArithmetic(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_incr>, McRequest>();
+  void consumeStats(folly::IOBuf& buffer);
+  void consumeExec(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_decr>, McRequest>();
+  // Flush.
+  void consumeFlushRe(folly::IOBuf& buffer);
+  void consumeFlushAll(folly::IOBuf& buffer);
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_version>,
-                                          McRequest>();
+  void finishReq();
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_delete>,
-                                          McRequest>();
+  std::unique_ptr<detail::CallbackBase<detail::SupportedReqs>> callback_;
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_metaget>,
-                                          McRequest>();
+  const char* keyPieceStart_{nullptr};
+  folly::IOBuf currentKey_;
+  bool noreply_{false};
+  MessageStorage<List<McRequest>> currentMessage_;
 
-template<>
-void McAsciiParser::initializeReplyParser<McOperation<mc_op_flushall>,
-                                          McRequest>();
-
-template<class Operation, class Request>
-void McAsciiParser::initializeReplyParser() {
-  throw std::logic_error(
-    folly::sformat("Unexpected call to McAsciiParser::initializeReplyParser "
-                   "with template arguments [Operation = {}, Request = {}]",
-                   typeid(Operation).name(), typeid(Request).name()));
-}
+  using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
+  ConsumerFunPtr consumer_{nullptr};
+};
 
 }}  // facebook::memcache
+
+#include "McAsciiParser-inl.h"
