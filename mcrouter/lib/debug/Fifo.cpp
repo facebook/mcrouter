@@ -17,7 +17,6 @@
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
 
-#include <folly/Bits.h>
 #include <folly/FileUtil.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -79,9 +78,7 @@ bool doWrite(int pipeFd, uint64_t msgId,
 
   // Create header
   PacketHeader header;
-  header.msgId = folly::Endian::little(msgId);
-  header.packetSize = 0;
-  header.packetId = 0;
+  header.setMsgId(msgId);
   uint32_t packetId = 0;
   pipeIov[0].iov_base = &header;
   pipeIov[0].iov_len = sizeof(PacketHeader);
@@ -113,9 +110,8 @@ bool doWrite(int pipeFd, uint64_t msgId,
       }
       ++pipeIovIndex;
     }
-    header.packetSize = folly::Endian::little(
-        PIPE_BUF - remSize - sizeof(PacketHeader));
-    header.packetId = folly::Endian::little(packetId);
+    header.setPacketSize(PIPE_BUF - remSize - sizeof(PacketHeader));
+    header.setPacketId(packetId);
 
     // Write to pipe
     auto res = folly::writevNoInt(pipeFd, pipeIov, pipeIovIndex);

@@ -14,6 +14,9 @@
 #include <string>
 #include <sys/uio.h>
 
+#include <folly/Bits.h>
+#include <folly/Portability.h>
+
 namespace facebook { namespace memcache {
 
 /**
@@ -85,11 +88,32 @@ class Fifo {
  * atomically at a time. For that reason, calls to Fifo::writeIfConnected()
  * are broke down into packets.
  */
-struct PacketHeader {
-  uint64_t msgId;
-  uint32_t packetSize;
-  uint32_t packetId;
+struct FOLLY_PACK_ATTR PacketHeader {
+ private:
+  uint64_t msgIdLE_{0};
+  uint32_t packetSizeLE_{0};
+  uint32_t packetIdLE_{0};
+ public:
+  uint64_t msgId() const {
+    return folly::Endian::little(msgIdLE_);
+  }
+  uint32_t packetSize() const {
+    return folly::Endian::little(packetSizeLE_);
+  }
+  uint32_t packetId() const {
+    return folly::Endian::little(packetIdLE_);
+  }
+  void setMsgId(uint64_t msgId) {
+    msgIdLE_ = folly::Endian::little(msgId);
+  }
+  void setPacketSize(uint32_t packetSize) {
+    packetSizeLE_ = folly::Endian::little(packetSize);
+  }
+  void setPacketId(uint32_t packetId) {
+    packetIdLE_ = folly::Endian::little(packetId);
+  }
 };
+constexpr uint32_t kFifoMaxPacketSize = PIPE_BUF - sizeof(PacketHeader);
 static_assert(PIPE_BUF > sizeof(PacketHeader),
               "sizeof(PacketHeader) must be smaller than PIPE_BUF.");
 

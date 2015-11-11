@@ -214,6 +214,39 @@ enum mc_msg_flags_t {
     MC_MSG_FLAG_USER_16 = 0x800000000000LL
 };
 
+static inline const char* mc_flag_to_string(const enum mc_msg_flags_t flag) {
+  switch (flag) {
+    case MC_MSG_FLAG_PHP_SERIALIZED: return "PHP_SERIALIZED";
+    case MC_MSG_FLAG_COMPRESSED: return "COMPRESSED";
+    case MC_MSG_FLAG_FB_SERIALIZED: return "FB_SERIALIZED";
+    case MC_MSG_FLAG_FB_COMPACT_SERIALIZED: return "FB_COMPACT_SERIALIZED";
+    case MC_MSG_FLAG_ASCII_INT_SERIALIZED: return "ASCII_INT_SERIALIZED";
+    case MC_MSG_FLAG_NZLIB_COMPRESSED: return "NZLIB_COMPRESSED";
+    case MC_MSG_FLAG_QUICKLZ_COMPRESSED: return "QUICKLZ_COMPRESSED";
+    case MC_MSG_FLAG_SNAPPY_COMPRESSED: return "SNAPPY_COMPRESSED";
+    case MC_MSG_FLAG_BIG_VALUE: return "BIG_VALUE";
+    case MC_MSG_FLAG_NEGATIVE_CACHE: return "NEGATIVE_CACHE";
+    case MC_MSG_FLAG_HOT_KEY: return "HOT_KEY";
+    case MC_MSG_FLAG_USER_1: return "USER_1";
+    case MC_MSG_FLAG_USER_2: return "USER_2";
+    case MC_MSG_FLAG_USER_3: return "USER_3";
+    case MC_MSG_FLAG_USER_4: return "USER_4";
+    case MC_MSG_FLAG_USER_5: return "USER_5";
+    case MC_MSG_FLAG_USER_6: return "USER_6";
+    case MC_MSG_FLAG_USER_7: return "USER_7";
+    case MC_MSG_FLAG_USER_8: return "USER_8";
+    case MC_MSG_FLAG_USER_9: return "USER_9";
+    case MC_MSG_FLAG_USER_10: return "USER_10";
+    case MC_MSG_FLAG_USER_11: return "USER_11";
+    case MC_MSG_FLAG_USER_12: return "USER_12";
+    case MC_MSG_FLAG_USER_13: return "USER_13";
+    case MC_MSG_FLAG_USER_14: return "USER_14";
+    case MC_MSG_FLAG_USER_15: return "USER_15";
+    case MC_MSG_FLAG_USER_16: return "USER_16";
+  }
+  return "UNKNOWN";
+}
+
 typedef enum mc_req_err_s {
   mc_req_err_valid,
   mc_req_err_no_key,
