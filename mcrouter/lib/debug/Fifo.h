@@ -103,14 +103,14 @@ struct FOLLY_PACK_ATTR PacketHeader {
   uint32_t packetId() const {
     return folly::Endian::little(packetIdLE_);
   }
-  void setMsgId(uint64_t msgId) {
-    msgIdLE_ = folly::Endian::little(msgId);
+  void setMsgId(uint64_t val) {
+    msgIdLE_ = folly::Endian::little(val);
   }
-  void setPacketSize(uint32_t packetSize) {
-    packetSizeLE_ = folly::Endian::little(packetSize);
+  void setPacketSize(uint32_t val) {
+    packetSizeLE_ = folly::Endian::little(val);
   }
-  void setPacketId(uint32_t packetId) {
-    packetIdLE_ = folly::Endian::little(packetId);
+  void setPacketId(uint32_t val) {
+    packetIdLE_ = folly::Endian::little(val);
   }
 };
 constexpr uint32_t kFifoMaxPacketSize = PIPE_BUF - sizeof(PacketHeader);
