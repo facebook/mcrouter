@@ -9,64 +9,48 @@
  */
 #pragma once
 
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <folly/dynamic.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
-namespace folly {
-class dynamic;
-}
+namespace facebook { namespace memcache { namespace mcrouter {
 
-namespace facebook { namespace memcache {
-
-class McrouterOptions;
-
-namespace mcrouter {
-
-class ClientPool;
 class ConfigApi;
-class ProxyClientCommon;
 
 /**
  * Parses mcrouter pools from mcrouter config.
  */
 class PoolFactory {
  public:
+  struct PoolJson {
+    PoolJson(folly::StringPiece name_, const folly::dynamic& json_)
+      : name(name_), json(json_) {}
+
+    const folly::StringPiece name;
+    const folly::dynamic& json;
+  };
+
   /**
    * @param config JSON object with clusters/pools properties (both optional).
    * @param configApi API to fetch pools from files. Should be
    *                  reference once we'll remove 'routerless' mode.
-   * @param mcOpts mcrouter options for parsing.
    */
-  PoolFactory(const folly::dynamic& config, ConfigApi& configApi,
-              const McrouterOptions& opts);
+  PoolFactory(const folly::dynamic& config, ConfigApi& configApi);
 
   /**
-   * Parses a single pool from given json blob.
+   * Load pool from ConfigApi, expand `inherit`, etc.
    *
-   * @param jpool should be the pool object.
+   * @param json pool json
+   *
+   * @return  object with pool name and final json blob.
    */
-  std::shared_ptr<ClientPool> parsePool(const folly::dynamic& jpool);
-
-  /**
-   * @return All clients created.
-   */
-  const std::vector<std::shared_ptr<const ProxyClientCommon>>& clients() const {
-    return clients_;
-  }
+  PoolJson parsePool(const folly::dynamic& json);
 
  private:
-  std::unordered_map<std::string, std::shared_ptr<ClientPool>> pools_;
-  std::vector<std::shared_ptr<const ProxyClientCommon>> clients_;
+  folly::StringKeyedUnorderedMap<folly::dynamic> pools_;
   ConfigApi& configApi_;
-  const McrouterOptions& opts_;
 
-  std::shared_ptr<ClientPool>
-  parsePool(const std::string& name, const folly::dynamic& jpool);
-
-  void parseQos(std::string parentName, const folly::dynamic& jQos,
-                uint64_t& qosClass, uint64_t& qosPath);
+  PoolJson parsePool(folly::StringPiece name, const folly::dynamic& json);
+  PoolJson emplace(folly::StringPiece name, folly::dynamic jpool);
 };
 
 }}} // facebook::memcache::mcrouter

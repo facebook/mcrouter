@@ -13,13 +13,11 @@
 #include <folly/Format.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/ClientPool.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -58,28 +56,23 @@ ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
 }
 
 std::shared_ptr<ProxyDestination>
-ProxyDestinationMap::fetch(const ProxyClientCommon& client) {
-  auto key = genProxyDestinationKey(*client.ap, client.server_timeout);
-  std::shared_ptr<ProxyDestination> destination;
+ProxyDestinationMap::emplace(std::shared_ptr<AccessPoint> ap,
+                             std::chrono::milliseconds timeout,
+                             bool useSsl,
+                             bool useTyped,
+                             uint64_t qosClass,
+                             uint64_t qosPath) {
+  auto key = genProxyDestinationKey(*ap, timeout);
+  auto destination = ProxyDestination::create(*proxy_, std::move(ap),
+      timeout, useSsl, useTyped, qosClass, qosPath);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
-
-    destination = find(key);
-    if (!destination) {
-      destination = ProxyDestination::create(proxy_, client);
-      auto destIt = destinations_.emplace(key, destination);
-      if (!destIt.second) {
-        destIt.first->second = destination;
-      }
-      destination->pdstnKey_ = destIt.first->first;
-    } else {
-      destination->updatePoolName(client.pool.getName());
-      destination->updateShortestTimeout(client.server_timeout);
-    }
+    auto destIt = destinations_.emplace(key, destination);
+    destination->pdstnKey_ = destIt.first->first;
   }
 
   // Update shared area of ProxyDestinations with same key from different
-  // threads. This shared area is represented with ProxyClientShared class.
+  // threads. This shared area is represented with TkoTracker class.
   proxy_->router().tkoTrackerMap().updateTracker(
     *destination,
     proxy_->router().opts().failures_until_tko,
@@ -145,7 +138,7 @@ void ProxyDestinationMap::resetAllInactive() {
 
 void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
   assert(interval.count() > 0);
-  auto delay = to<timeval_t>((unsigned int)interval.count());
+  auto delay = to<timeval_t>(interval);
   resetTimer_ = asox_add_timer(proxy_->eventBase().getLibeventBase(), delay,
                                onResetTimer, this);
 }

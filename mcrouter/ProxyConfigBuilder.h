@@ -11,18 +11,16 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include <folly/dynamic.h>
 #include <folly/Range.h>
 
 #include "mcrouter/options.h"
+#include "mcrouter/PoolFactory.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ConfigApi;
-class McrouterInstance;
-class PoolFactory;
 class ProxyConfig;
 class proxy_t;
 
@@ -34,10 +32,12 @@ class ProxyConfigBuilder {
 
   std::shared_ptr<ProxyConfig> buildConfig(proxy_t& proxy) const;
 
-  folly::dynamic preprocessedConfig() const;
+  const folly::dynamic& preprocessedConfig() const {
+    return json_;
+  }
  private:
   folly::dynamic json_;
-  std::shared_ptr<PoolFactory> poolFactory_;
+  std::unique_ptr<PoolFactory> poolFactory_;
   std::string configMd5Digest_;
 };
 

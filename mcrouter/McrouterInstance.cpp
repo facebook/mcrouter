@@ -566,7 +566,8 @@ bool McrouterInstance::configure(folly::StringPiece input) {
 
   VLOG_IF(0, !opts_.constantly_reload_configs) <<
       "reconfigured " << opts_.num_proxies << " proxies with " <<
-      newConfigs[0]->getClients().size() << " clients (" <<
+      newConfigs[0]->getPools().size() << " pools, " <<
+      newConfigs[0]->calcNumClients() << " clients " <<
       newConfigs[0]->getConfigMd5Digest() << ")";
 
   return true;

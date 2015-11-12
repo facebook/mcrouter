@@ -13,15 +13,14 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/ClientPool.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 #include "mcrouter/routes/RateLimiter.h"
@@ -72,8 +71,11 @@ McrouterRouteHandlePtr makeHostIdRoute(McRouteHandleFactory& factory,
                                        const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeDestinationRoute(
-  std::shared_ptr<const ProxyClientCommon> client,
-  std::shared_ptr<ProxyDestination> destination);
+  std::shared_ptr<ProxyDestination> destination,
+  std::string poolName,
+  size_t indexInPool,
+  std::chrono::milliseconds timeout,
+  bool keepRoutingPrefix);
 
 McrouterRouteHandlePtr makeErrorRoute(McRouteHandleFactory& factory,
                                       const folly::dynamic& json);
@@ -207,21 +209,6 @@ McRouteHandleProvider::~McRouteHandleProvider() {
   /* Needed for forward declaration of ExtraRouteHandleProviderIf in .h */
 }
 
-std::pair<std::shared_ptr<ClientPool>, std::vector<McrouterRouteHandlePtr>>
-McRouteHandleProvider::makePool(const folly::dynamic& json) {
-  checkLogic(json.isString() || json.isObject(),
-             "Pool should be a string (name of pool) or an object");
-  auto pool = poolFactory_.parsePool(json);
-  std::vector<McrouterRouteHandlePtr> destinations;
-  for (const auto& client : pool->getClients()) {
-    auto pdstn = proxy_.destinationMap->fetch(*client);
-    auto route = makeDestinationRoute(client, std::move(pdstn));
-    destinations.push_back(std::move(route));
-  }
-
-  return std::make_pair(std::move(pool), std::move(destinations));
-}
-
 McrouterRouteHandlePtr
 McRouteHandleProvider::createAsynclogRoute(McrouterRouteHandlePtr target,
                                            std::string asynclogName) {
@@ -232,118 +219,248 @@ McRouteHandleProvider::createAsynclogRoute(McrouterRouteHandlePtr target,
   return target;
 }
 
-McrouterRouteHandlePtr McRouteHandleProvider::makePoolRoute(
-  McRouteHandleFactory& factory, const folly::dynamic& json) {
+const std::vector<McrouterRouteHandlePtr>&
+McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
+                                const PoolFactory::PoolJson& jpool) {
+  auto existingIt = pools_.find(jpool.name);
+  if (existingIt != pools_.end()) {
+    return existingIt->second;
+  }
 
+  auto name = jpool.name.str();
+  const auto& json = jpool.json;
+  auto& opts = proxy_.router().opts();
+  // region & cluster
+  folly::StringPiece region, cluster;
+  if (auto jregion = json.get_ptr("region")) {
+    if (!jregion->isString()) {
+      MC_LOG_FAILURE(opts, memcache::failure::Category::kInvalidConfig,
+                     "Pool {}: pool_region is not a string", name);
+    } else {
+      region = jregion->stringPiece();
+    }
+  }
+  if (auto jcluster = json.get_ptr("cluster")) {
+    if (!jcluster->isString()) {
+      MC_LOG_FAILURE(opts, memcache::failure::Category::kInvalidConfig,
+                     "Pool {}: pool_cluster is not a string", name);
+    } else {
+      cluster = jcluster->stringPiece();
+    }
+  }
+
+  try {
+    std::chrono::milliseconds timeout{opts.server_timeout_ms};
+    if (auto jTimeout = json.get_ptr("server_timeout")) {
+      timeout = parseTimeout(*jTimeout, "server_timeout");
+    }
+
+    if (!region.empty() && !cluster.empty()) {
+      auto& route = opts.default_route;
+      if (region == route.getRegion() && cluster == route.getCluster()) {
+        if (opts.within_cluster_timeout_ms != 0) {
+          timeout = std::chrono::milliseconds(opts.within_cluster_timeout_ms);
+        }
+      } else if (region == route.getRegion()) {
+        if (opts.cross_cluster_timeout_ms != 0) {
+          timeout = std::chrono::milliseconds(opts.cross_cluster_timeout_ms);
+        }
+      } else {
+        if (opts.cross_region_timeout_ms != 0) {
+          timeout = std::chrono::milliseconds(opts.cross_region_timeout_ms);
+        }
+      }
+    }
+
+    mc_protocol_t protocol = mc_ascii_protocol;
+    if (auto jProtocol = json.get_ptr("protocol")) {
+      auto str = parseString(*jProtocol, "protocol");
+      if (equalStr("ascii", str, folly::AsciiCaseInsensitive())) {
+        protocol = mc_ascii_protocol;
+      } else if (equalStr("umbrella", str, folly::AsciiCaseInsensitive())) {
+        protocol = mc_umbrella_protocol;
+      } else {
+        throwLogic("Unknown protocol '{}'", str);
+      }
+    }
+
+    bool keepRoutingPrefix = false;
+    if (auto jKeepRoutingPrefix = json.get_ptr("keep_routing_prefix")) {
+      keepRoutingPrefix = parseBool(*jKeepRoutingPrefix, "keep_routing_prefix");
+    }
+
+    uint64_t qosClass = opts.default_qos_class;
+    uint64_t qosPath = opts.default_qos_path;
+    if (auto jQos = json.get_ptr("qos")) {
+      checkLogic(jQos->isObject(), "qos must be an object.");
+      if (auto jClass = jQos->get_ptr("class")) {
+        qosClass = parseInt(*jClass, "qos.class", 0, 4);
+      }
+      if (auto jPath = jQos->get_ptr("path")) {
+        qosPath = parseInt(*jPath, "qos.path", 0, 3);
+      }
+    }
+
+    bool useSsl = false;
+    if (auto jUseSsl = json.get_ptr("use_ssl")) {
+      useSsl = parseBool(*jUseSsl, "use_ssl");
+    }
+    bool useTyped = false;
+    if (auto jUseTyped = json.get_ptr("use_typed")) {
+      useTyped = parseBool(*jUseTyped, "use_typed");
+    }
+
+    // default to 0, which doesn't override
+    uint16_t port = 0;
+    if (auto jPort = json.get_ptr("port_override")) {
+      port = parseInt(*jPort, "port_override", 1, 65535);
+    }
+    // servers
+    auto jservers = json.get_ptr("servers");
+    checkLogic(jservers, "servers not found");
+    checkLogic(jservers->isArray(), "servers is not an array");
+    std::vector<McrouterRouteHandlePtr> destinations;
+    destinations.reserve(jservers->size());
+    for (size_t i = 0; i < jservers->size(); ++i) {
+      const auto& server = jservers->at(i);
+      checkLogic(server.isString() || server.isObject(),
+                 "server #{} is not a string/object", i);
+      if (server.isObject()) {
+        destinations.push_back(factory.create(server));
+        continue;
+      }
+      auto ap = AccessPoint::create(server.stringPiece(), protocol, port);
+      checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
+      checkLogic(!useTyped || ap->getProtocol() == mc_umbrella_protocol,
+                 "Typed requests only supported with Umbrella");
+
+      accessPoints_[name].push_back(ap);
+
+      auto pdstn = proxy_.destinationMap->find(*ap, timeout);
+      if (!pdstn) {
+        pdstn = proxy_.destinationMap->emplace(
+          std::move(ap), timeout, useSsl, useTyped, qosClass, qosPath
+        );
+      }
+      pdstn->updatePoolName(name);
+      pdstn->updateShortestTimeout(timeout);
+
+      destinations.push_back(makeDestinationRoute(
+        std::move(pdstn), name, i, timeout, keepRoutingPrefix));
+    } // servers
+
+    return pools_.emplace(name, std::move(destinations)).first->second;
+  } catch (const std::exception& e) {
+    throwLogic("Pool {}: {}", name, e.what());
+  }
+}
+
+McrouterRouteHandlePtr
+McRouteHandleProvider::makePoolRoute(McRouteHandleFactory& factory,
+                                     const folly::dynamic& json) {
   checkLogic(json.isObject() || json.isString(),
              "PoolRoute should be object or string");
   const folly::dynamic* jpool;
   if (json.isObject()) {
     jpool = json.get_ptr("pool");
     checkLogic(jpool, "PoolRoute: pool not found");
-  } else {
+  } else { // string
     jpool = &json;
   }
-  auto p = makePool(*jpool);
-  auto pool = std::move(p.first);
-  auto destinations = std::move(p.second);
 
-  if (json.isObject()) {
-    if (auto maxOutstandingPtr = json.get_ptr("max_outstanding")) {
-      checkLogic(maxOutstandingPtr->isInt(),
-                 "PoolRoute {}: max_outstanding is not int", pool->getName());
-      auto maxOutstanding = maxOutstandingPtr->asInt();
-      if (maxOutstanding) {
-        for (auto& destination: destinations) {
-          destination = makeOutstandingLimitRoute(std::move(destination),
-                                                  maxOutstanding);
+  auto poolJson = poolFactory_.parsePool(*jpool);
+  auto destinations = makePool(factory, poolJson);
+
+  try {
+    if (json.isObject()) {
+      if (auto maxOutstandingPtr = json.get_ptr("max_outstanding")) {
+        auto v = parseInt(*maxOutstandingPtr, "max_outstanding", 0, 1000000);
+        if (v) {
+          for (auto& destination: destinations) {
+            destination = makeOutstandingLimitRoute(std::move(destination), v);
+          }
+        }
+      }
+      if (auto slowWarmUpJson = json.get_ptr("slow_warmup")) {
+        checkLogic(slowWarmUpJson->isObject(),
+                   "slow_warmup must be a json object");
+
+        auto failoverTargetJson = slowWarmUpJson->get_ptr("failoverTarget");
+        checkLogic(failoverTargetJson,
+                   "couldn't find 'failoverTarget' property in slow_warmup");
+        auto failoverTarget = factory.create(*failoverTargetJson);
+
+        std::shared_ptr<SlowWarmUpRouteSettings> slowWarmUpSettings;
+        if (auto settingsJson = slowWarmUpJson->get_ptr("settings")) {
+          checkLogic(settingsJson->isObject(),
+                     "'settings' in slow_warmup must be a json object.");
+          slowWarmUpSettings =
+            std::make_shared<SlowWarmUpRouteSettings>(*settingsJson);
+        } else {
+          slowWarmUpSettings = std::make_shared<SlowWarmUpRouteSettings>();
+        }
+
+        for (size_t i = 0; i < destinations.size(); ++i) {
+          destinations[i] = makeSlowWarmUpRoute(std::move(destinations[i]),
+              failoverTarget, slowWarmUpSettings);
+        }
+      }
+
+      if (json.count("shadows")) {
+        destinations = makeShadowRoutes(
+            factory, json, std::move(destinations), proxy_, *extraProvider_);
+      }
+    }
+
+    // add weights and override whatever we have in PoolRoute::hash
+    folly::dynamic jhashWithWeights = folly::dynamic::object();
+    if (auto jWeights = poolJson.json.get_ptr("weights")) {
+      jhashWithWeights = folly::dynamic::object
+        ("hash_func", WeightedCh3HashFunc::type())
+        ("weights", *jWeights);
+    }
+
+    if (json.isObject()) {
+      if (auto jhash = json.get_ptr("hash")) {
+        checkLogic(jhash->isObject() || jhash->isString(),
+                   "hash is not object/string");
+        if (jhash->isString()) {
+          jhashWithWeights["hash_func"] = *jhash;
+        } else { // object
+          for (const auto& it : jhash->items()) {
+            jhashWithWeights[it.first] = it.second;
+          }
         }
       }
     }
-  }
+    auto route = makeHashRoute(jhashWithWeights, std::move(destinations));
 
-  if (json.isObject() && json.count("slow_warmup")) {
-    auto& slowWarmUpJson = json["slow_warmup"];
-    checkLogic(slowWarmUpJson.isObject(), "SlowWarmUp: must be a json object");
-
-    auto failoverTargetJson = slowWarmUpJson.get_ptr("failoverTarget");
-    checkLogic(failoverTargetJson,
-        "SlowWarmUp: Couldn't find 'failoverTarget' property.");
-    auto failoverTarget = factory.create(*failoverTargetJson);
-
-    std::shared_ptr<SlowWarmUpRouteSettings> slowWarmUpSettings;
-    if (auto settingsJson = slowWarmUpJson.get_ptr("settings")) {
-      checkLogic(settingsJson->isObject(),
-          "SlowWarmUp: 'settings' must be a json object.");
-      slowWarmUpSettings =
-        std::make_shared<SlowWarmUpRouteSettings>(*settingsJson);
-    } else {
-      slowWarmUpSettings = std::make_shared<SlowWarmUpRouteSettings>();
-    }
-
-    for (size_t i = 0; i < destinations.size(); ++i) {
-      destinations[i] = makeSlowWarmUpRoute(std::move(destinations[i]),
-          failoverTarget, slowWarmUpSettings);
-    }
-  }
-
-  if (json.isObject() && json.count("shadows")) {
-    destinations = makeShadowRoutes(
-        factory, json, std::move(destinations), proxy_, *extraProvider_);
-  }
-
-  // add weights and override whatever we have in PoolRoute::hash
-  folly::dynamic jhashWithWeights = folly::dynamic::object();
-  if (pool->getWeights()) {
-    jhashWithWeights = folly::dynamic::object
-      ("hash_func", WeightedCh3HashFunc::type())
-      ("weights", *pool->getWeights());
-  }
-
-  if (json.isObject()) {
-    if (auto jhash = json.get_ptr("hash")) {
-      checkLogic(jhash->isObject() || jhash->isString(),
-                 "PoolRoute {}: hash is not object/string", pool->getName());
-      if (jhash->isString()) {
-        jhashWithWeights["hash_func"] = *jhash;
-      } else { // object
-        for (const auto& it : jhash->items()) {
-          jhashWithWeights[it.first] = it.second;
+    auto asynclogName = poolJson.name;
+    bool needAsynclog = true;
+    if (json.isObject()) {
+      if (proxy_.router().opts().destination_rate_limiting) {
+        if (auto jrates = json.get_ptr("rates")) {
+          route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
         }
       }
-    }
-  }
-  auto route = makeHashRoute(jhashWithWeights, std::move(destinations));
-
-  if (json.isObject()) {
-    if (proxy_.router().opts().destination_rate_limiting) {
-      if (auto jrates = json.get_ptr("rates")) {
-        route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
+      if (auto jsplits = json.get_ptr("shard_splits")) {
+        route = makeShardSplitRoute(std::move(route), ShardSplitter(*jsplits));
+      }
+      if (auto jasynclog = json.get_ptr("asynclog")) {
+        needAsynclog = parseBool(*jasynclog, "asynclog");
+      }
+      if (auto jname = json.get_ptr("name")) {
+        asynclogName = parseString(*jname, "name");
       }
     }
-
-    if (auto jsplits = json.get_ptr("shard_splits")) {
-      route = makeShardSplitRoute(std::move(route), ShardSplitter(*jsplits));
+    if (needAsynclog) {
+      route = createAsynclogRoute(std::move(route), asynclogName.str());
     }
-  }
 
-  auto asynclogName = pool->getName();
-  bool needAsynclog = true;
-  if (json.isObject()) {
-    if (auto jasynclog = json.get_ptr("asynclog")) {
-      checkLogic(jasynclog->isBool(), "PoolRoute: asynclog is not bool");
-      needAsynclog = jasynclog->getBool();
-    }
-    if (auto jname = json.get_ptr("name")) {
-      checkLogic(jname->isString(), "PoolRoute: name is not a string");
-      asynclogName = jname->stringPiece().str();
-    }
+    return route;
+  } catch (const std::exception& e) {
+    throwLogic("PoolRoute {}: {}", poolJson.name, e.what());
   }
-  if (needAsynclog) {
-    route = createAsynclogRoute(std::move(route), asynclogName);
-  }
-
-  return route;
 }
 
 std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
@@ -352,7 +469,7 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     const folly::dynamic& json) {
 
   if (type == "Pool") {
-    return makePool(json).second;
+    return makePool(factory, poolFactory_.parsePool(json));
   } else if (type == "ShadowRoute") {
     return makeShadowRoutes(factory, json, proxy_, *extraProvider_);
   }
@@ -368,8 +485,7 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     return ret;
   }
 
-  checkLogic(false, "Unknown RouteHandle: {}", type);
-  return {};
+  throwLogic("Unknown RouteHandle: {}", type);
 }
 
 }}} // facebook::memcache::mcrouter

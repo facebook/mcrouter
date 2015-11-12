@@ -76,7 +76,7 @@ class ProxyRoute {
   template <class Request>
   typename ReplyType<McOperation<mc_op_flushall>, Request>::type route(
       const Request& req, McOperation<mc_op_flushall> op) const {
-    // route to all clients in the config.
+    // route to all destinations in the config.
     return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations())
         .route(req, op);
   }

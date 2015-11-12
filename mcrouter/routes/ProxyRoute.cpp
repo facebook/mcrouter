@@ -20,10 +20,6 @@ namespace mcrouter {
 McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr ch,
                                          BigValueRouteOptions options);
 
-McrouterRouteHandlePtr
-makeDestinationRoute(std::shared_ptr<const ProxyClientCommon> client,
-                     std::shared_ptr<ProxyDestination> destination);
-
 McrouterRouteHandlePtr makeLoggingRoute(McrouterRouteHandlePtr rh);
 
 ProxyRoute::ProxyRoute(proxy_t *proxy, const RouteSelectorMap &routeSelectors)
@@ -43,10 +39,8 @@ ProxyRoute::ProxyRoute(proxy_t *proxy, const RouteSelectorMap &routeSelectors)
 
 std::vector<McrouterRouteHandlePtr> ProxyRoute::getAllDestinations() const {
   std::vector<McrouterRouteHandlePtr> rh;
-  auto clients = proxy_->getConfig()->getClients();
-  for (auto &client : clients) {
-    auto dest = proxy_->destinationMap->fetch(*client);
-    rh.push_back(makeDestinationRoute(std::move(client), std::move(dest)));
+  for (auto& it : proxy_->getConfig()->getPools()) {
+    rh.insert(rh.end(), it.second.begin(), it.second.end());
   }
   return rh;
 }

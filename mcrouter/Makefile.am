@@ -25,8 +25,6 @@ libmcroutercore_a_SOURCES = \
   awriter.h \
   CallbackPool-inl.h \
   CallbackPool.h \
-  ClientPool.cpp \
-  ClientPool.h \
   ConfigApi.cpp \
   ConfigApi.h \
   CyclesObserver.cpp \
@@ -67,8 +65,6 @@ libmcroutercore_a_SOURCES = \
   proxy-inl.h \
   proxy.cpp \
   proxy.h \
-  ProxyClientCommon.cpp \
-  ProxyClientCommon.h \
   ProxyConfig.cpp \
   ProxyConfig.h \
   ProxyConfigBuilder.cpp \

@@ -215,6 +215,29 @@ class TestDuplicateServersDiffTimeouts(McrouterTestCase):
         key = 'localhost:' + str(self.port_map[12345]) + ':TCP:ascii-2000'
         self.assertTrue(key in stats)
 
+class TestPoolServerErrors(McrouterTestCase):
+    config = './mcrouter/test/test_pool_server_errors.json'
+
+    def setUp(self):
+        self.mc1 = self.add_server(Memcached())
+        # mc2 is ErrorRoute
+        self.mc3 = self.add_server(Memcached())
+
+    def test_pool_server_errors(self):
+        mcr = self.add_mcrouter(self.config, '/a/a/')
+        self.assertIsNone(mcr.get('test'))
+
+        stats = mcr.stats('servers')
+        self.assertEqual(2, len(stats))
+
+        self.assertTrue(mcr.set('/b/b/abc', 'valueA'))
+        self.assertEqual(self.mc1.get('abc'), 'valueA')
+
+        self.assertFalse(mcr.set('/b/b/a', 'valueB'))
+
+        self.assertTrue(mcr.set('/b/b/ab', 'valueC'))
+        self.assertEqual(self.mc3.get('ab'), 'valueC')
+
 class TestSamePoolFailover(McrouterTestCase):
     config = './mcrouter/test/test_same_pool_failover.json'
     extra_args = []

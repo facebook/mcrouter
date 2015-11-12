@@ -29,7 +29,6 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
@@ -80,8 +79,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
       auto rctx = ProxyRequestContext::createRecordingNotify(
         *proxy,
         baton,
-        [&destinations](const ProxyClientCommon& client) {
-          destinations->push_back(client.ap->toHostPortString());
+        [&destinations](folly::StringPiece, size_t, const AccessPoint& dest) {
+          destinations->push_back(dest.toHostPortString());
         }
       );
       McRequest recordingReq(keyStr);

@@ -191,7 +191,7 @@ void TkoTrackerMap::updateTracker(
   ProxyDestination& pdstn,
   const size_t tkoThreshold,
   const size_t maxSoftTkos) {
-  auto key = pdstn.accessPoint().toHostPortString();
+  auto key = pdstn.accessPoint()->toHostPortString();
   {
     std::lock_guard<std::mutex> lock(mx_);
     auto it = trackers_.find(key);

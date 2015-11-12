@@ -24,10 +24,12 @@
 
 namespace facebook {
 namespace memcache {
+
+struct AccessPoint;
+
 namespace mcrouter {
 
 class McrouterClient;
-class ProxyClientCommon;
 class ProxyRoute;
 class ShardSplitter;
 
@@ -44,7 +46,8 @@ class ShardSplitter;
  */
 class ProxyRequestContext {
 public:
-  using ClientCallback = std::function<void(const ProxyClientCommon&)>;
+  using ClientCallback = std::function<
+    void(folly::StringPiece, size_t, const AccessPoint&)>;
   using ShardSplitCallback = std::function<void(const ShardSplitter&)>;
 
   /**
@@ -82,9 +85,11 @@ public:
     return recording_;
   }
 
-  void recordDestination(const ProxyClientCommon& destination) const {
+  void recordDestination(folly::StringPiece poolName,
+                         size_t index,
+                         const AccessPoint& ap) const {
     if (recording_ && recordingState_->clientCallback) {
-      recordingState_->clientCallback(destination);
+      recordingState_->clientCallback(poolName, index, ap);
     }
   }
 
@@ -120,7 +125,8 @@ public:
    * Called once a reply is received to record a stats sample if required.
    */
   template <class Operation, class Request>
-  void onReplyReceived(const ProxyClientCommon& pclient,
+  void onReplyReceived(const std::string& poolName,
+                       const AccessPoint& ap,
                        const Request& request,
                        const ReplyT<Operation, Request>& reply,
                        const int64_t startTimeUs,
@@ -134,7 +140,7 @@ public:
     logger_->log(request, reply, startTimeUs, endTimeUs, Operation());
     assert(additionalLogger_.hasValue());
     additionalLogger_->log(
-      pclient, request, reply, startTimeUs, endTimeUs, Operation());
+      poolName, ap, request, reply, startTimeUs, endTimeUs, Operation());
   }
 
   /**

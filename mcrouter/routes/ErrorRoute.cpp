@@ -16,18 +16,23 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeErrorRoute(std::string valueToSet = "") {
+McrouterRouteHandlePtr makeErrorRoute(std::string valueToSet) {
   return makeMcrouterRouteHandle<ErrorRoute>(std::move(valueToSet));
 }
 
 McrouterRouteHandlePtr makeErrorRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
-  checkLogic(json.isString() || json.isNull(),
-             "ErrorRoute: response should be string or empty");
+  checkLogic(json.isObject() || json.isString() || json.isNull(),
+             "ErrorRoute: should be string or object");
   std::string response;
   if (json.isString()) {
     response = json.stringPiece().str();
+  } else if (json.isObject()) {
+    if (auto jResponse = json.get_ptr("response")) {
+      checkLogic(jResponse->isString(), "ErrorRoute: response is not a string");
+      response = jResponse->stringPiece().str();
+    }
   }
   return makeErrorRoute(std::move(response));
 }

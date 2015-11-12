@@ -64,7 +64,6 @@ namespace mcrouter {
 class McrouterClient;
 class McrouterInstance;
 class ProxyConfig;
-class ProxyClientCommon;
 class ProxyDestination;
 class ProxyDestinationMap;
 class ProxyRequestContext;

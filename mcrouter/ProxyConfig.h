@@ -11,8 +11,8 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
 
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -24,8 +24,6 @@ class dynamic;
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class PoolFactory;
-class ProxyClientCommon;
-class ProxyGenericPool;
 class ProxyRoute;
 class ServiceInfo;
 class proxy_t;
@@ -43,22 +41,35 @@ class ProxyConfig {
     return serviceInfo_;
   }
 
-  const std::vector<std::shared_ptr<const ProxyClientCommon>>&
-  getClients() const;
-
   std::string getConfigMd5Digest() const {
     return configMd5Digest_;
   }
 
   McrouterRouteHandlePtr
-  getRouteHandleForAsyncLog(const std::string& asyncLogName) const;
+  getRouteHandleForAsyncLog(folly::StringPiece asyncLogName) const;
+
+  const folly::StringKeyedUnorderedMap<std::vector<McrouterRouteHandlePtr>>&
+  getPools() const {
+    return pools_;
+  }
+
+  const folly::StringKeyedUnorderedMap<
+    std::vector<std::shared_ptr<const AccessPoint>>
+  >& getAccessPoints() const {
+    return accessPoints_;
+  }
+
+  size_t calcNumClients() const;
 
  private:
   std::shared_ptr<ProxyRoute> proxyRoute_;
   std::shared_ptr<ServiceInfo> serviceInfo_;
-  std::shared_ptr<PoolFactory> poolFactory_;
   std::string configMd5Digest_;
-  std::unordered_map<std::string, McrouterRouteHandlePtr> asyncLogRoutes_;
+  folly::StringKeyedUnorderedMap<McrouterRouteHandlePtr> asyncLogRoutes_;
+  folly::StringKeyedUnorderedMap<std::vector<McrouterRouteHandlePtr>> pools_;
+  folly::StringKeyedUnorderedMap<
+    std::vector<std::shared_ptr<const AccessPoint>>
+  > accessPoints_;
 
   /**
    * Parses config and creates ProxyRoute
@@ -68,7 +79,7 @@ class ProxyConfig {
   ProxyConfig(proxy_t& proxy,
               const folly::dynamic& json,
               std::string configMd5Digest,
-              std::shared_ptr<PoolFactory> poolFactory);
+              PoolFactory& poolFactory);
 
   friend class ProxyConfigBuilder;
 };

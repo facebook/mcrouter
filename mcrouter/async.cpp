@@ -34,7 +34,6 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/stats.h"
 
 #define ASYNCLOG_MAGIC  "AS1.0"
@@ -280,13 +279,13 @@ epilogue:
 
 /** Adds an asynchronous request to the event log. */
 void asynclog_delete(proxy_t* proxy,
-                     const ProxyClientCommon& pclient,
+                     const AccessPoint& ap,
                      folly::StringPiece key,
                      folly::StringPiece poolName) {
   dynamic json = {};
-  const auto& host = pclient.ap->getHost();
+  const auto& host = ap.getHost();
   const auto& port = proxy->router().opts().asynclog_port_override == 0
-    ? pclient.ap->getPort()
+    ? ap.getPort()
     : proxy->router().opts().asynclog_port_override;
 
   if (proxy->router().opts().use_asynclog_version2) {

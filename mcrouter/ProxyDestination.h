@@ -84,8 +84,12 @@ class ProxyDestination {
     return stats_;
   }
 
-  const AccessPoint& accessPoint() const {
-    return *accessPoint_;
+  const std::shared_ptr<const AccessPoint>& accessPoint() const {
+    return accessPoint_;
+  }
+
+  bool useSsl() const {
+    return useSsl_;
   }
 
   void resetInactive();
@@ -113,7 +117,7 @@ class ProxyDestination {
   std::shared_ptr<const AccessPoint> accessPoint_;
   mutable folly::SpinLock clientLock_; // AsyncMcClient lock for stats threads.
 
-  // Shortest timeout among all ProxyClientCommon's using this destination
+  // Shortest timeout among all DestinationRoutes using this destination
   std::chrono::milliseconds shortestTimeout_{0};
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
@@ -131,8 +135,14 @@ class ProxyDestination {
   const bool useSsl_{false};
   const bool useTyped_{false}; // for umbrella only
 
-  static std::shared_ptr<ProxyDestination> create(proxy_t* proxy,
-                                                  const ProxyClientCommon& ro);
+  static std::shared_ptr<ProxyDestination> create(
+    proxy_t& proxy,
+    std::shared_ptr<AccessPoint> ap,
+    std::chrono::milliseconds timeout,
+    bool useSsl,
+    bool useTyped,
+    uint64_t qosClass,
+    uint64_t qosPath);
 
   void setState(State st);
 
@@ -152,7 +162,13 @@ class ProxyDestination {
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
 
-  ProxyDestination(proxy_t* proxy, const ProxyClientCommon& ro);
+  ProxyDestination(proxy_t& proxy,
+                   std::shared_ptr<AccessPoint> ap,
+                   std::chrono::milliseconds timeout,
+                   bool useSsl,
+                   bool useTyped,
+                   uint64_t qosClass,
+                   uint64_t qosPath);
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 

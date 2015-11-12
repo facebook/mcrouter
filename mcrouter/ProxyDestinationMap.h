@@ -26,7 +26,6 @@ struct AccessPoint;
 
 namespace mcrouter {
 
-class ProxyClientCommon;
 class ProxyDestination;
 class proxy_t;
 
@@ -50,9 +49,20 @@ class ProxyDestinationMap {
 
   /**
    * If ProxyDestination is already stored in this object - returns it;
+   * otherwise, returns nullptr.
+   */
+  std::shared_ptr<ProxyDestination> find(
+      const AccessPoint& ap, std::chrono::milliseconds timeout) const;
+  /**
+   * If ProxyDestination is already stored in this object - returns it;
    * otherwise creates a new one.
    */
-  std::shared_ptr<ProxyDestination> fetch(const ProxyClientCommon& client);
+  std::shared_ptr<ProxyDestination> emplace(std::shared_ptr<AccessPoint> ap,
+                                            std::chrono::milliseconds timeout,
+                                            bool useSsl,
+                                            bool useTyped,
+                                            uint64_t qosClass,
+                                            uint64_t qosPath);
 
   /**
    * Remove destination from both active and inactive lists
@@ -99,13 +109,6 @@ class ProxyDestinationMap {
       }
     }
   }
-
-  /**
-   * If ProxyDestination is already stored in this object - returns it;
-   * otherwise, returns nullptr.
-   */
-  std::shared_ptr<ProxyDestination> find(
-      const AccessPoint& ap, std::chrono::milliseconds timeout) const;
 
   ~ProxyDestinationMap();
 

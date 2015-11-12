@@ -368,18 +368,6 @@ mcrouter_option_integer(
   "and regional-pools-timeout)")
 
 mcrouter_option_integer(
-  unsigned int, cluster_pools_timeout_ms, 0,
-  "cluster-pools-timeout", no_short,
-  "server timeout for cluster pools in ms. Default value 0 means using "
-  "deprecated server-timeout value for the flag")
-
-mcrouter_option_integer(
-  unsigned int, regional_pools_timeout_ms, 0,
-  "regional-pools-timeout", no_short,
-  "server timeout for regional pools in ms. Default value 0 means using "
-  "deprecated server-timeout value for the flag")
-
-mcrouter_option_integer(
   unsigned int, cross_region_timeout_ms, 0,
   "cross-region-timeout-ms", no_short,
   "Timeouts for talking to cross region pool. "

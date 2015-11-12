@@ -22,11 +22,11 @@ const char* const kFailoverTag = ":failover=1";
 
 std::string DestinationRoute::routeName() const {
   return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
-    client_->pool.getName(),
-    client_->indexInPool,
-    client_->useSsl,
-    client_->ap->toString(),
-    client_->server_timeout.count());
+    poolName_,
+    indexInPool_,
+    destination_->useSsl(),
+    destination_->accessPoint()->toString(),
+    timeout_.count());
 }
 
 bool DestinationRoute::spool(const McRequest& req) const {
@@ -35,16 +35,16 @@ bool DestinationRoute::spool(const McRequest& req) const {
     return false;
   }
 
-  folly::StringPiece key = client_->keep_routing_prefix ?
+  folly::StringPiece key = keepRoutingPrefix_ ?
     req.fullKey() :
     req.keyWithoutRoute();
 
   auto proxy = &fiber_local::getSharedCtx()->proxy();
-  auto& client = *client_;
+  auto& ap = *destination_->accessPoint();
   folly::fibers::Baton b;
   auto res = proxy->router().asyncWriter().run(
-    [&b, &client, proxy, key, asynclogName] () {
-      asynclog_delete(proxy, client, key, asynclogName);
+    [&b, &ap, proxy, key, asynclogName] () {
+      asynclog_delete(proxy, ap, key, asynclogName);
       b.post();
     }
   );
@@ -67,12 +67,18 @@ std::string DestinationRoute::keyWithFailoverTag(
 }
 
 McrouterRouteHandlePtr makeDestinationRoute(
-  std::shared_ptr<const ProxyClientCommon> client,
-  std::shared_ptr<ProxyDestination> destination) {
+  std::shared_ptr<ProxyDestination> destination,
+  std::string poolName,
+  size_t indexInPool,
+  std::chrono::milliseconds timeout,
+  bool keepRoutingPrefix) {
 
   return std::make_shared<McrouterRouteHandle<DestinationRoute>>(
-    std::move(client),
-    std::move(destination));
+    std::move(destination),
+    std::move(poolName),
+    indexInPool,
+    timeout,
+    keepRoutingPrefix);
 }
 
-}}}
+}}}  // facebook::memcache::mcrouter

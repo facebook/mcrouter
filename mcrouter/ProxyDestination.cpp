@@ -19,7 +19,6 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/OptionsUtil.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
 #include "mcrouter/TkoTracker.h"
@@ -191,10 +190,22 @@ std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
 }
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
-    proxy_t* proxy,
-    const ProxyClientCommon& ro) {
+    proxy_t& proxy,
+    std::shared_ptr<AccessPoint> ap,
+    std::chrono::milliseconds timeout,
+    bool useSsl,
+    bool useTyped,
+    uint64_t qosClass,
+    uint64_t qosPath) {
 
-  auto ptr = std::shared_ptr<ProxyDestination>(new ProxyDestination(proxy, ro));
+  std::shared_ptr<ProxyDestination> ptr(new ProxyDestination(
+    proxy,
+    std::move(ap),
+    timeout,
+    useSsl,
+    useTyped,
+    qosClass,
+    qosPath));
   ptr->selfPtr_ = ptr;
   return ptr;
 }
@@ -215,23 +226,30 @@ ProxyDestination::~ProxyDestination() {
   }
 
   stat_decr(proxy->stats, getStatName(stats_.state), 1);
+  stat_decr(proxy->stats, num_servers_stat, 1);
   magic_ = kDeadBeef;
 }
 
-ProxyDestination::ProxyDestination(proxy_t* proxy_,
-                                   const ProxyClientCommon& ro_)
-    : proxy(proxy_),
-      accessPoint_(ro_.ap),
-      shortestTimeout_(ro_.server_timeout),
-      qosClass_(ro_.qosClass),
-      qosPath_(ro_.qosPath),
-      poolName_(ro_.pool.getName()),
-      useSsl_(ro_.useSsl),
-      useTyped_(ro_.useTyped) {
+ProxyDestination::ProxyDestination(
+  proxy_t& proxy_,
+  std::shared_ptr<AccessPoint> ap,
+  std::chrono::milliseconds timeout,
+  bool useSsl__,
+  bool useTyped,
+  uint64_t qosClass,
+  uint64_t qosPath)
+    : proxy(&proxy_),
+      accessPoint_(std::move(ap)),
+      shortestTimeout_(timeout),
+      qosClass_(qosClass),
+      qosPath_(qosPath),
+      useSsl_(useSsl__),
+      useTyped_(useTyped) {
 
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);
   stat_incr(proxy->stats, num_servers_new_stat, 1);
+  stat_incr(proxy->stats, num_servers_stat, 1);
 }
 
 bool ProxyDestination::may_send() const {
@@ -316,7 +334,7 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(1) << accessPoint().toHostPortString() << " (" << poolName_ << ") "
+    VLOG(1) << accessPoint_->toHostPortString() << " (" << poolName_ << ") "
             << eventStr << ". Total hard TKOs: "
             << tracker->globalTkos().hardTkos << "; soft TKOs: "
             << tracker->globalTkos().softTkos << ". Reply: "
@@ -338,7 +356,7 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
       break;
   }
 
-  TkoLog tkoLog(accessPoint(), tracker->globalTkos());
+  TkoLog tkoLog(*accessPoint_, tracker->globalTkos());
   tkoLog.event = event;
   tkoLog.isHardTko = tracker->isHardTko();
   tkoLog.isSoftTko = tracker->isSoftTko();

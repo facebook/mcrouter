@@ -28,11 +28,10 @@ namespace facebook { namespace memcache { namespace mcrouter {
 ProxyConfig::ProxyConfig(proxy_t& proxy,
                          const folly::dynamic& json,
                          std::string configMd5Digest,
-                         std::shared_ptr<PoolFactory> poolFactory)
-  : poolFactory_(std::move(poolFactory)),
-    configMd5Digest_(std::move(configMd5Digest)) {
+                         PoolFactory& poolFactory)
+  : configMd5Digest_(std::move(configMd5Digest)) {
 
-  McRouteHandleProvider provider(proxy, *poolFactory_);
+  McRouteHandleProvider provider(proxy, poolFactory);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 
   checkLogic(json.isObject(), "Config is not an object");
@@ -82,18 +81,23 @@ ProxyConfig::ProxyConfig(proxy_t& proxy,
   }
 
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
+  pools_ = provider.releasePools();
+  accessPoints_ = provider.releaseAccessPoints();
   proxyRoute_ = std::make_shared<ProxyRoute>(&proxy, routeSelectors);
   serviceInfo_ = std::make_shared<ServiceInfo>(&proxy, *this);
 }
 
 McrouterRouteHandlePtr
-ProxyConfig::getRouteHandleForAsyncLog(const std::string& asyncLogName) const {
+ProxyConfig::getRouteHandleForAsyncLog(folly::StringPiece asyncLogName) const {
   return tryGet(asyncLogRoutes_, asyncLogName);
 }
 
-const std::vector<std::shared_ptr<const ProxyClientCommon>>&
-ProxyConfig::getClients() const {
-  return poolFactory_->clients();
+size_t ProxyConfig::calcNumClients() const {
+  size_t result = 0;
+  for (const auto& it : pools_) {
+    result += it.second.size();
+  }
+  return result;
 }
 
 }}} // facebook::memcache::mcrouter

@@ -25,7 +25,7 @@ TEST(RouteHandleFactoryTest, sanity) {
 
   auto router = getTestRouter();
   auto proxy = router->getProxy(0);
-  PoolFactory pf(folly::dynamic::object(), router->configApi(), router->opts());
+  PoolFactory pf(folly::dynamic::object(), router->configApi());
   McRouteHandleProvider provider(*proxy, pf);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
 

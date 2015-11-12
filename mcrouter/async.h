@@ -13,10 +13,13 @@
 
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
+
+struct AccessPoint;
+
+namespace mcrouter {
 
 class proxy_t;
-class ProxyClientCommon;
 
 /**
  * Appends a 'delete' request entry to the asynclog.
@@ -24,7 +27,7 @@ class ProxyClientCommon;
  * or an error occurs.
  */
 void asynclog_delete(proxy_t* proxy,
-                     const ProxyClientCommon& pclient,
+                     const AccessPoint& ap,
                      folly::StringPiece key,
                      folly::StringPiece poolName);
 

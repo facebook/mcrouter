@@ -42,7 +42,6 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -322,11 +321,7 @@ void ShadowSettings::registerOnUpdateCallback(McrouterInstance& router) {
     });
 }
 
-void proxy_config_swap(proxy_t* proxy,
-                       std::shared_ptr<ProxyConfig> config) {
-  /* Update the number of server stat for this proxy. */
-  stat_set_uint64(proxy->stats, num_servers_stat, config->getClients().size());
-
+void proxy_config_swap(proxy_t* proxy, std::shared_ptr<ProxyConfig> config) {
   auto oldConfig = proxy->swapConfig(std::move(config));
   stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
 

@@ -33,7 +33,6 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 using namespace boost::filesystem;

@@ -69,8 +69,7 @@ struct TestSetup {
   TestSetup()
     : router_(McrouterInstance::init("test_get_route", getOpts())),
       poolFactory_(folly::dynamic::object(),
-                   router_->configApi(),
-                   router_->opts()),
+                   router_->configApi()),
       rhProvider_(*router_->getProxy(0), poolFactory_),
       rhFactory_(rhProvider_) {
   }

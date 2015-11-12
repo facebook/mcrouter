@@ -19,7 +19,6 @@
 #include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/ClientPool.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/LeaseTokenMap.h"
@@ -31,10 +30,8 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
-#include "mcrouter/ProxyClientCommon.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/route.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -57,13 +54,18 @@ class DestinationRoute {
   std::string keyWithFailoverTag(folly::StringPiece fullKey) const;
 
   /**
-   * @param client Client to send request to
    * @param destination The destination where the request is to be sent
    */
-  DestinationRoute(std::shared_ptr<const ProxyClientCommon> client,
-                   std::shared_ptr<ProxyDestination> destination) :
-      client_(std::move(client)),
-      destination_(std::move(destination)) {
+  DestinationRoute(std::shared_ptr<ProxyDestination> destination,
+                   std::string poolName,
+                   size_t indexInPool,
+                   std::chrono::milliseconds timeout,
+                   bool keepRoutingPrefix) :
+      destination_(std::move(destination)),
+      poolName_(std::move(poolName)),
+      indexInPool_(indexInPool),
+      timeout_(timeout),
+      keepRoutingPrefix_(keepRoutingPrefix) {
   }
 
   template <class Operation, class Request>
@@ -71,7 +73,8 @@ class DestinationRoute {
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
-      ctx->recordDestination(*client_);
+      ctx->recordDestination(poolName_, indexInPool_,
+                             *destination_->accessPoint());
     }
   }
 
@@ -83,7 +86,7 @@ class DestinationRoute {
       auto& ctx = fiber_local::getSharedCtx();
       if (auto leaseTokenMap = ctx->proxy().router().leaseTokenMap()) {
         auto specialToken = leaseTokenMap->insert(
-            reply.leaseToken(), client_->ap, client_->server_timeout);
+            reply.leaseToken(), destination_->accessPoint(), timeout_);
         reply.setLeaseToken(specialToken);
       }
     }
@@ -96,7 +99,7 @@ class DestinationRoute {
     auto reply = routeImpl(req, Operation());
     if (reply.isFailoverError() && spool(req)) {
       reply = McReply(DefaultReply, Operation());
-      reply.setDestination(client_->ap);
+      reply.setDestination(destination_->accessPoint());
     }
     return reply;
   }
@@ -113,12 +116,13 @@ class DestinationRoute {
     auto now = nowUs();
     McReply reply(ErrorReply);
     SCOPE_EXIT {
-      reply.setDestination(client_->ap);
+      reply.setDestination(destination_->accessPoint());
     };
 
     if (!destination_->may_send()) {
       reply = McReply(TkoReply);
-      ctx->onReplyReceived(*client_,
+      ctx->onReplyReceived(poolName_,
+                           *destination_->accessPoint(),
                            req,
                            reply,
                            now,
@@ -128,7 +132,8 @@ class DestinationRoute {
     }
 
     if (ctx->recording()) {
-      ctx->recordDestination(*client_);
+      ctx->recordDestination(poolName_, indexInPool_,
+                             *destination_->accessPoint());
       reply = McReply(DefaultReply, McOperation<Op>());
       return reply;
     }
@@ -140,7 +145,8 @@ class DestinationRoute {
           pendingShadowReqs_ >=
           proxy->router().opts().target_max_shadow_requests) {
         reply = McReply(ErrorReply);
-        ctx->onReplyReceived(*client_,
+        ctx->onReplyReceived(poolName_,
+                             *destination_->accessPoint(),
                              req,
                              reply,
                              now,
@@ -161,7 +167,7 @@ class DestinationRoute {
 
     DestinationRequestCtx dctx(now);
     folly::Optional<McRequest> newReq;
-    if (!client_->keep_routing_prefix && !req.routingPrefix().empty()) {
+    if (!keepRoutingPrefix_ && !req.routingPrefix().empty()) {
       newReq.emplace(req.clone());
       newReq->stripRoutingPrefix();
     }
@@ -179,8 +185,9 @@ class DestinationRoute {
 
     const McRequest& reqToSend = newReq ? *newReq : req;
     reply = destination_->send(reqToSend, McOperation<Op>(), dctx,
-                               client_->server_timeout);
-    ctx->onReplyReceived(*client_,
+                               timeout_);
+    ctx->onReplyReceived(poolName_,
+                         *destination_->accessPoint(),
                          reqToSend,
                          reply,
                          dctx.startTime,
@@ -190,8 +197,11 @@ class DestinationRoute {
   }
 
  private:
-  std::shared_ptr<const ProxyClientCommon> client_;
-  std::shared_ptr<ProxyDestination> destination_;
+  const std::shared_ptr<ProxyDestination> destination_;
+  const std::string poolName_;
+  const size_t indexInPool_;
+  const std::chrono::milliseconds timeout_;
+  const bool keepRoutingPrefix_;
   size_t pendingShadowReqs_{0};
 };
 

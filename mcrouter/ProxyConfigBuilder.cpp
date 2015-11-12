@@ -48,19 +48,15 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
     importResolver,
     std::move(globalParams));
 
-  poolFactory_ = std::make_shared<PoolFactory>(json_, configApi, opts);
+  poolFactory_ = folly::make_unique<PoolFactory>(json_, configApi);
 
   configMd5Digest_ = Md5Hash(jsonC);
-}
-
-folly::dynamic ProxyConfigBuilder::preprocessedConfig() const {
-  return json_;
 }
 
 std::shared_ptr<ProxyConfig>
 ProxyConfigBuilder::buildConfig(proxy_t& proxy) const {
   return std::shared_ptr<ProxyConfig>(
-    new ProxyConfig(proxy, json_, configMd5Digest_, poolFactory_));
+    new ProxyConfig(proxy, json_, configMd5Digest_, *poolFactory_));
 }
 
 }}} // facebook::memcache::mcrouter
