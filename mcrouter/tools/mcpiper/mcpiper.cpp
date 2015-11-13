@@ -7,7 +7,9 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <cstring>
 #include <iostream>
+#include <signal.h>
 
 #include <glog/logging.h>
 
@@ -38,9 +40,16 @@ struct Settings {
   std::string matchExpression;
 
   // Named args
+  bool disableColor{false};
   std::string fifoRoot{getDefaultFifoRoot()};
-  bool quiet{false};
   std::string filenamePattern;
+  bool ignoreCase{false};
+  bool invertMatch{false};
+  uint32_t maxMessages{0};
+  uint32_t numAfterMatch{0};
+  bool quiet{false};
+  std::string timeFormat;
+  uint32_t valueMinSize{0};
 };
 
 // Constants
@@ -48,9 +57,14 @@ const PrettyFormat kFormat{}; // Default constructor = default coloring.
 
 // Globals
 AnsiColorCodeStream gTargetOut(std::cout);
+Settings gSettings;
 std::unique_ptr<boost::regex> gDataPattern;
 std::unique_ptr<ValueFormatter> gValueFormatter = createValueFormatter();
-Settings gSettings;
+uint64_t gTotalMessages{0};
+uint64_t gPrintedMessages{0};
+uint32_t afterMatchCount{0};
+std::function<std::string(const struct timeval& ts)> gPrintTime{nullptr};
+struct timeval gPrevTs = {0, 0};
 
 std::string getUsage(const char* binaryName) {
   return folly::sformat(
@@ -71,15 +85,37 @@ Settings parseOptions(int argc, char **argv) {
   po::options_description namedOpts("Allowed options");
   namedOpts.add_options()
     ("help,h", "Print this help message.")
+    ("disable-color,K",
+      po::bool_switch(&settings.disableColor)->default_value(false),
+      "Turn off colorized output.")
     ("fifo-root,f",
       po::value<std::string>(&settings.fifoRoot),
       "Path of mcrouter fifo's directory.")
     ("filename-pattern,P",
       po::value<std::string>(&settings.filenamePattern),
       "Basic regular expression (BRE) to match the name of the fifos.")
+    ("ignore-case,i",
+      po::bool_switch(&settings.ignoreCase)->default_value(false),
+      "Ignore case on search patterns")
+    ("invert-match,v",
+      po::bool_switch(&settings.invertMatch)->default_value(false),
+      "Invert match")
+    ("max-messages,n",
+      po::value<uint32_t>(&settings.maxMessages),
+      "Display only <arg> messages and exit.")
+    ("num-after-match,A",
+      po::value<uint32_t>(&settings.numAfterMatch),
+      "Shows <arg> messages after a matched message.")
     ("quiet,q",
       po::bool_switch(&settings.quiet)->default_value(false),
       "Doesn't display values.")
+    ("time-format,t",
+      po::value<std::string>(&settings.timeFormat),
+      "Displays timestamp on every match; "
+      "ARG is \"absolute\", \"diff\" or \"offset\".")
+    ("value-min-size,m",
+      po::value<uint32_t>(&settings.valueMinSize),
+      "Minimum size of the value of messages to display")
   ;
 
   // Positional arguments - hidden from the help message
@@ -118,11 +154,28 @@ Settings parseOptions(int argc, char **argv) {
     exit(0);
   }
 
-  // Check mandatory args
+  // Handles constraints
   CHECK(!settings.fifoRoot.empty())
     << "Fifo's directory (--fifo-root) cannot be empty";
 
   return settings;
+}
+
+void cleanExit(int32_t status) {
+  for (auto sig : {SIGINT, SIGABRT, SIGQUIT, SIGPIPE, SIGWINCH}) {
+    signal(sig, SIG_IGN);
+  }
+
+  if (status >= 0) {
+    gTargetOut << "exit\n"
+               << folly::format("{} messages received, {} printed",
+                                gTotalMessages, gPrintedMessages)
+               << '\n';
+  }
+
+  gTargetOut.flush();
+
+  exit(status);
 }
 
 /**
@@ -171,7 +224,21 @@ void msgReady(uint64_t reqid, McMsgRef msg) {
     return;
   }
 
+  ++gTotalMessages;
+
   StyledString out;
+  out.append("\n");
+
+  if (gPrintTime) {
+    timeval ts;
+    gettimeofday(&ts, nullptr);
+    out.append(gPrintTime(ts));
+    out.append("\n");
+  }
+
+  if (msg->value.len < gSettings.valueMinSize) {
+    return;
+  }
 
   out.append("{\n", kFormat.dataOpColor);
 
@@ -242,18 +309,46 @@ void msgReady(uint64_t reqid, McMsgRef msg) {
 
   out.append("}\n", kFormat.dataOpColor);
 
+  // Match pattern
   if (gDataPattern) {
     auto matches = matchAll(out.text(), *gDataPattern);
-    if (matches.empty()) {
+    auto success = matches.empty() == gSettings.invertMatch;
+
+    if (!success && afterMatchCount == 0) {
       return;
     }
-    for (auto& m : matches) {
-      out.setFg(m.first, m.second, kFormat.matchColor);
+    if (!gSettings.invertMatch) {
+      for (auto& m : matches) {
+        out.setFg(m.first, m.second, kFormat.matchColor);
+      }
+    }
+
+    // Reset after match
+    if (success && gSettings.numAfterMatch > 0) {
+      afterMatchCount = gSettings.numAfterMatch + 1;
     }
   }
 
   gTargetOut << out;
   gTargetOut.flush();
+
+  ++gPrintedMessages;
+
+  if (gSettings.maxMessages > 0 && gPrintedMessages >= gSettings.maxMessages) {
+    cleanExit(0);
+  }
+
+  if (gSettings.numAfterMatch > 0) {
+    --afterMatchCount;
+  }
+}
+
+boost::regex::flag_type getFlags() {
+  boost::regex::flag_type flags = boost::regex_constants::basic;
+  if (gSettings.ignoreCase) {
+    flags |= boost::regex_constants::icase;
+  }
+  return flags;
 }
 
 /**
@@ -263,7 +358,7 @@ std::unique_ptr<boost::regex> buildFilenameRegex() noexcept {
   if (!gSettings.filenamePattern.empty()) {
     try {
       return folly::make_unique<boost::regex>(gSettings.filenamePattern,
-                                              boost::regex_constants::basic);
+                                              getFlags());
     } catch (const std::exception& e) {
       LOG(ERROR) << "Invalid filename pattern: " << e.what();
       exit(1);
@@ -281,7 +376,7 @@ std::unique_ptr<boost::regex> buildDataRegex() noexcept {
   if (!gSettings.matchExpression.empty()) {
     try {
       return folly::make_unique<boost::regex>(gSettings.matchExpression,
-                                              boost::regex_constants::basic);
+                                              getFlags());
     } catch (const std::exception& e) {
       LOG(ERROR) << "Invalid pattern: " << e.what();
       exit(1);
@@ -300,7 +395,35 @@ void run() {
   // Builds data pattern
   gDataPattern = buildDataRegex();
   if (gDataPattern) {
-    std::cout << "Data pattern: " << *gDataPattern << std::endl;
+    if (gSettings.invertMatch) {
+      std::cout << "Don't match: ";
+    } else {
+      std::cout << "Match: ";
+    }
+    std::cout << *gDataPattern << std::endl;
+  }
+
+  // Coloring
+  if (gSettings.disableColor) {
+    gTargetOut.setColorOutput(false);
+  }
+
+  // Time Function
+  if (!gSettings.timeFormat.empty()) {
+    if (gSettings.timeFormat == "absolute") {
+      gPrintTime = printTimeAbsolute;
+    } else if (gSettings.timeFormat == "diff") {
+      gPrintTime = [](const struct timeval& ts) {
+        return printTimeDiff(ts, gPrevTs);
+      };
+      gettimeofday(&gPrevTs, nullptr);
+    } else if (gSettings.timeFormat == "offset") {
+      gPrintTime = [](const struct timeval& ts) {
+        return printTimeOffset(ts, gPrevTs);
+      };
+    } else {
+      LOG(ERROR) << "Invalid time format. Timestamps will not be shown.";
+    }
   }
 
   folly::EventBase evb;
@@ -314,6 +437,13 @@ void run() {
 } // anonymous namespace
 
 int main(int argc, char **argv) {
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(struct sigaction));
+  sa.sa_handler = cleanExit;
+  for (auto sig : {SIGINT, SIGABRT, SIGQUIT, SIGPIPE}) {
+    sigaction(sig, &sa, nullptr);
+  }
+
   google::InitGoogleLogging(argv[0]);
   gSettings = parseOptions(argc, argv);
 
