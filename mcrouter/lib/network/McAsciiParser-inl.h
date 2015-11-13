@@ -139,6 +139,14 @@ template <>
 void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_flushall>,
                                                 McRequest>();
 
+template<>
+void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_append>,
+                                                McRequest>();
+
+template<>
+void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_prepend>,
+                                                McRequest>();
+
 template <class Operation, class Request>
 void McClientAsciiParser::initializeReplyParser() {
   throwLogic(

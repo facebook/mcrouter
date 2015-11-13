@@ -557,6 +557,18 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_cas>,
 }
 
 template<>
+void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_append>,
+                                                McRequest>() {
+  initializeStorageReplyCommon();
+}
+
+template<>
+void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_prepend>,
+                                                McRequest>() {
+  initializeStorageReplyCommon();
+}
+
+template<>
 void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_incr>,
                                                 McRequest>() {
   initializeArithmReplyCommon();

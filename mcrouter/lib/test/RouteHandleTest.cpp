@@ -62,6 +62,18 @@ TEST(routeHandleTest, nullIncr) {
   EXPECT_TRUE(reply.result() == mc_res_notfound);
 }
 
+TEST(routeHandleTest, nullAppend) {
+  TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
+  auto reply = rh.route(McRequest("key"), McOperation<mc_op_append>());
+  EXPECT_TRUE(reply.result() == mc_res_notstored);
+}
+
+TEST(routeHandleTest, nullPrepend) {
+  TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
+  auto reply = rh.route(McRequest("key"), McOperation<mc_op_prepend>());
+  EXPECT_TRUE(reply.result() == mc_res_notstored);
+}
+
 TEST(routeHandleTest, error) {
   TestRouteHandle<ErrorRoute<TestRouteHandleIf>> rh;
   auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());

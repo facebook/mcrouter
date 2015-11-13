@@ -62,6 +62,18 @@ class MockMc {
   bool replace(folly::StringPiece key, Item item);
 
   /**
+   * Append suffix to the item with the given key only if the item with that
+   * key exists.
+   */
+  bool append(folly::StringPiece key, Item suffix);
+
+  /**
+   * Prepend prefix to the item with the given key only if the item with that
+   * key exists.
+   */
+  bool prepend(folly::StringPiece key, Item prefix);
+
+  /**
    * Increment the value at key by delta (positive or negative)
    *
    * @return  Pair (exists, old_value).  Exists is true iff the item

@@ -72,6 +72,29 @@ bool MockMc::replace(folly::StringPiece key, Item item) {
   return true;
 }
 
+bool MockMc::append(folly::StringPiece key, Item suffix) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return false;
+  }
+
+  auto& item = it->second.item;
+  item.value->appendChain(std::move(suffix.value));
+  return true;
+}
+
+bool MockMc::prepend(folly::StringPiece key, Item prefix) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return false;
+  }
+
+  auto& item = it->second.item;
+  prefix.value->appendChain(std::move(item.value));
+  item.value = std::move(prefix.value);
+  return true;
+}
+
 std::pair<bool, int64_t> MockMc::arith(folly::StringPiece key, int64_t delta) {
   auto it = findUnexpired(key);
   if (it == citems_.end() || it->second.state != CacheItem::CACHE) {

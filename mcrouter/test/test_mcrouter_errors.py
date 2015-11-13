@@ -23,6 +23,8 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
     get_cmd = 'get test_key\r\n'
     set_cmd = 'set test_key 0 0 3\r\nabc\r\n'
     delete_cmd = 'delete test_key\r\n'
+    append_cmd = 'append test_key 0 0 3\r\nabc\r\n'
+    prepend_cmd = 'prepend test_key 0 0 3\r\nabc\r\n'
     server_errors = [
             'SERVER_ERROR out of order',
             'SERVER_ERROR timeout',
@@ -69,6 +71,24 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
             self.assertEqual('END\r\n', res)
+
+    def test_server_replied_server_error_for_append(self):
+        cmd = self.append_cmd
+        self.server.setExpectedBytes(len(cmd))
+        for error in self.server_errors:
+            self.server.setError(error)
+            mcrouter = self.add_mcrouter(self.config)
+            res = mcrouter.issue_command(cmd)
+            self.assertEqual(error + '\r\n', res)
+
+    def test_server_replied_server_error_for_prepend(self):
+        cmd = self.prepend_cmd
+        self.server.setExpectedBytes(len(cmd))
+        for error in self.server_errors:
+            self.server.setError(error)
+            mcrouter = self.add_mcrouter(self.config)
+            res = mcrouter.issue_command(cmd)
+            self.assertEqual(error + '\r\n', res)
 
     def test_server_replied_server_error_for_get_with_no_miss_on_error(self):
         # With --disable-miss-on-get-errors, errors should be forwarded
@@ -240,6 +260,18 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
     def test_bad_key_delete(self):
         mcrouter = self.getMcrouter(Memcached())
         cmd = 'delete test.key' + ('x' * 10000) + '\r\n'
+        res = mcrouter.issue_command(cmd)
+        self.assertEqual('CLIENT_ERROR bad key\r\n', res)
+
+    def test_bad_key_append(self):
+        mcrouter = self.getMcrouter(Memcached())
+        cmd = 'append test.key' + ('x' * 10000) + ' 0 0 3\r\nabc\r\n'
+        res = mcrouter.issue_command(cmd)
+        self.assertEqual('CLIENT_ERROR bad key\r\n', res)
+
+    def test_bad_key_prepend(self):
+        mcrouter = self.getMcrouter(Memcached())
+        cmd = 'prepend test.key' + ('x' * 10000) + ' 0 0 3\r\nabc\r\n'
         res = mcrouter.issue_command(cmd)
         self.assertEqual('CLIENT_ERROR bad key\r\n', res)
 

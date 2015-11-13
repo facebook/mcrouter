@@ -34,3 +34,16 @@ class TestUmbrellaServer(McrouterTestCase):
         self.mcrouter.set(key, value)
         self.assertEqual(self.mcrouter.get(key), value)
         self.assertEqual(self.mc.get(key), value)
+
+    def test_umbrella_server_append_prepend(self):
+        key = 'foo'
+        value = 'value'
+        suffix = 'abc123'
+        prefix = 'xyz456'
+        self.mcrouter.set(key, value)
+        self.assertEqual(self.mcrouter.get(key), value)
+        self.assertEqual(self.mc.get(key), value)
+        self.assertEqual(self.mcrouter.append(key, suffix), "STORED")
+        self.assertEqual(self.mcrouter.get(key), value + suffix)
+        self.assertEqual(self.mcrouter.prepend(key, prefix), "STORED")
+        self.assertEqual(self.mcrouter.get(key), prefix + value + suffix)

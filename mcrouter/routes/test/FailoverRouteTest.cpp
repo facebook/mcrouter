@@ -197,8 +197,12 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_set>());
-  EXPECT_TRUE(reply.result() == mc_res_stored);
+  auto reply1 = rh->route(McRequest("0"), McOperation<mc_op_set>());
+  EXPECT_TRUE(reply1.result() == mc_res_stored);
+  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_append>());
+  EXPECT_TRUE(reply2.result() == mc_res_stored);
+  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_prepend>());
+  EXPECT_TRUE(reply3.result() == mc_res_stored);
 }
 
 TEST(failoverRouteTest, separateErrorsDelete) {

@@ -137,24 +137,6 @@ bool precheckRequest(
 
 template <class Request>
 bool precheckRequest(
-    ProxyRequestContextTyped<McOperation<mc_op_append>, Request>& preq,
-    const Request&) {
-  // Return 'Not supported' message
-  preq.sendReply(mc_res_local_error, kCommandNotSupportedStr);
-  return false;
-}
-
-template <class Request>
-bool precheckRequest(
-    ProxyRequestContextTyped<McOperation<mc_op_prepend>, Request>& preq,
-    const Request&) {
-  // Return 'Not supported' message
-  preq.sendReply(mc_res_local_error, kCommandNotSupportedStr);
-  return false;
-}
-
-template <class Request>
-bool precheckRequest(
     ProxyRequestContextTyped<McOperation<mc_op_flushre>, Request>& preq,
     const Request&) {
   // Return 'Not supported' message

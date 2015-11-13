@@ -99,3 +99,17 @@ class TestWarmup2(McrouterTestCase):
         self.assertEqual(len(self.mcrouter.metaget(k)), 0)
         self.assertTrue(self.mc_cold.set(k, v))
         self.assertEqual(self.mcrouter.metaget(k)['exptime'], '0')
+
+    def test_warmup_append_prepend(self):
+        k = 'key'
+        v = 'value'
+        suffix = 'suffix'
+        prefix = 'prefix'
+
+        # make sure appends and prepends go to cold route
+        self.assertTrue(self.mcrouter.set(k, v, exptime=1000))
+        self.assertEqual(self.mc_cold.get(k), v)
+        self.assertEqual(self.mcrouter.append(k, suffix), "STORED")
+        self.assertEqual(self.mc_cold.get(k), v + suffix)
+        self.assertEqual(self.mcrouter.prepend(k, prefix), "STORED")
+        self.assertEqual(self.mc_cold.get(k), prefix + v + suffix)

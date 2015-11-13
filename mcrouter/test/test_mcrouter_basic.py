@@ -157,6 +157,13 @@ class TestMcrouterInvalidRoute(McrouterTestCase):
         self.assertEqual(mcr.get("/a/a/key"), "value4")
         self.assertEqual(mcr.get("key"), "value4")
 
+        self.assertEqual(mcr.append("/*/*/key", "abc"), "STORED")
+        self.assertEqual(mcr.get("/a/a/key"), "value4abc")
+        self.assertEqual(mcr.get("key"), "value4abc")
+        self.assertEqual(mcr.prepend("/*/*/key", "123"), "STORED")
+        self.assertEqual(mcr.get("/a/a/key"), "123value4abc")
+        self.assertEqual(mcr.get("key"), "123value4abc")
+
 
 class TestMcrouterBasic2(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_2_1_1.json'
@@ -275,6 +282,40 @@ class TestBasicAllSync(McrouterTestCase):
 
         # the aggregated response should be NOT_FOUND
         self.assertFalse(mcr.delete("key"))
+
+    def test_append_prepend_all_sync(self):
+        """
+        Tests that append and prepend work with AllSync. We rely on these
+        tests to verify correctness of append/prepend since we don't use
+        these commands in production.
+        """
+        mcr = self.get_mcrouter()
+
+        mcr.set("key", "value")
+        self.assertEqual(self.mc1.get("key"), "value")
+        self.assertEqual(self.mc2.get("key"), "value")
+        self.assertEqual(self.mc3.get("key"), "value")
+        self.assertEqual(mcr.get("key"), "value")
+
+        self.assertEqual(mcr.append("key", "abc"), "STORED")
+        self.assertEqual(mcr.prepend("key", "123"), "STORED")
+        self.assertEqual(self.mc1.get("key"), "123valueabc")
+        self.assertEqual(self.mc2.get("key"), "123valueabc")
+        self.assertEqual(self.mc3.get("key"), "123valueabc")
+        self.assertEqual(mcr.get("key"), "123valueabc")
+
+        self.mc1.set("key2", "value")
+        self.assertEqual(self.mc1.get("key2"), "value")
+        self.assertEqual(self.mc1.append("key2", "xyz"), "STORED")
+        self.assertEqual(self.mc1.get("key2"), "valuexyz")
+        self.assertFalse(mcr.get("key2"))
+
+        self.mc1.set("key3", "value")
+        self.assertEqual(self.mc1.get("key3"), "value")
+        self.assertEqual(self.mc1.prepend("key3", "xyz"), "STORED")
+        self.assertEqual(self.mc1.get("key3"), "xyzvalue")
+        self.assertFalse(mcr.get("key3"))
+
 
 class TestBasicAllFirst(McrouterTestCase):
     config = './mcrouter/test/test_basic_all_first.json'

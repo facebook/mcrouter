@@ -77,6 +77,28 @@ class TestMcrouterSanity(McrouterTestCase):
             got = self.mcrouter.get(k)
             self.assertEqual(v, got)
 
+    def test_append_prepend(self):
+        """
+        This tests basic correctness of append/prepend.
+        """
+        k = "key"
+        v = "value"
+        suffix = "suffix"
+        prefix = "prefix"
+
+        # Non-existent key
+        self.assertEqual(self.mcrouter.append(k, v), "NOT_STORED")
+        self.assertEqual(self.mcrouter.prepend(k, v), "NOT_STORED")
+
+        # Successful append/prepend
+        self.mcrouter.set(k, v)
+        self.assertEqual(self.mcrouter.get(k), v)
+
+        self.assertEqual(self.mcrouter.append(k, suffix), "STORED")
+        self.assertEqual(self.mcrouter.prepend(k, prefix), "STORED")
+
+        self.assertEqual(self.mcrouter.get(k), prefix + v + suffix)
+
     def test_ops(self):
         mcr = self.mcrouter
         n = 100
@@ -108,6 +130,12 @@ class TestMcrouterSanity(McrouterTestCase):
             self.assertFalse(mcr.replace(k, v))
             self.assertTrue(mcr.add(k, v))
             self.assertEqual(mcr.get(k), v)
+
+            # append, prepend
+            self.assertEqual(mcr.append(k, v2), "STORED")
+            self.assertEqual(mcr.get(k), v + v2)
+            self.assertEqual(mcr.prepend(k, v2), "STORED")
+            self.assertEqual(mcr.get(k), v2 + v + v2)
 
             # arith
             i = 42
@@ -154,14 +182,14 @@ class TestMcrouterSanity(McrouterTestCase):
         # get => None (NOT_FOUND)
         self.assertIsNone(mcr.get(k))
 
-        # set => SERVER_ERRROR
+        # (set,append,prepend) => SERVER_ERRROR
         self.assertIsNone(mcr.set(k, 'abc'))
+        self.assertEqual(mcr.append(k, 'abc'), "SERVER_ERROR")
+        self.assertEqual(mcr.prepend(k, 'abc'), "SERVER_ERROR")
 
         # (delete,incr,decr) => NOT_FOUND
         self.assertIsNone(mcr.delete(k))
-
         self.assertIsNone(mcr.incr(k))
-
         self.assertIsNone(mcr.decr(k))
 
     def test_failover(self):
@@ -260,8 +288,6 @@ class TestMcrouterSanity(McrouterTestCase):
         exp = "SERVER_ERROR Command not supported\r\n"
         bad_commands = [
             'flush_regex .*\r\n',
-            'prepend a 0 0 3\r\nabc\r\n',
-            'append a 0 0 3\r\nabc\r\n',
             ]
         for bc in bad_commands:
             self.assertEqual(m.issue_command(bc), exp)
@@ -279,6 +305,9 @@ class TestMcrouterSanity(McrouterTestCase):
             assert False, "Expected exception"
         except:
             pass
+
+        self.assertEqual(m.append(bad_key, bad_key), "CLIENT_ERROR")
+        self.assertEqual(m.prepend(bad_key, bad_key), "CLIENT_ERROR")
 
     def test_bad_stats(self):
         m = self.mcrouter

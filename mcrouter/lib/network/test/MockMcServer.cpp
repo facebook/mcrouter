@@ -200,6 +200,30 @@ class MockMcOnRequest {
 
   void onRequest(McServerRequestContext&& ctx,
                  McRequest&& req,
+                 McOperation<mc_op_append>) {
+    auto key = req.fullKey().str();
+
+    if (mc_.append(key, MockMc::Item(req))) {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notstored));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
+                 McOperation<mc_op_prepend>) {
+    auto key = req.fullKey().str();
+
+    if (mc_.prepend(key, MockMc::Item(req))) {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_stored));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notstored));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_delete>) {
     auto key = req.fullKey().str();
 

@@ -52,3 +52,14 @@ class TestNoreply(McrouterTestCase):
 
         self.assertTrue(mcrouter.decr("arith", noreply=True))
         self.assertEqual(self.mc.get("arith"), "1")
+
+    def test_affix_noreply(self):
+        mcrouter = self.get_mcrouter()
+        self.assertTrue(mcrouter.set("key", "value"))
+        self.assertEqual(self.mc.get("key"), "value")
+
+        self.assertTrue(mcrouter.append("key", "123", noreply=True))
+        self.assertEqual(self.mc.get("key"), "value123")
+
+        self.assertTrue(mcrouter.prepend("key", "456", noreply=True))
+        self.assertEqual(self.mc.get("key"), "456value123")

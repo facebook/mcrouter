@@ -78,8 +78,6 @@ class MCProcess(object):
 
         self.addr = ('localhost', port)
         self.port = port
-        self.setCnt = 0
-        self.getCnt = 0
         self.deletes = 0
         self.others = 0
 
@@ -187,7 +185,6 @@ class MCProcess(object):
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
-        self.getCnt += len(keys)
         self.socket.sendall("{} {}\r\n".format(cmd, " ".join(keys)))
         res = dict([(key, None) for key in keys])
 
@@ -235,9 +232,7 @@ class MCProcess(object):
         #if not instance(keys, list):
         #    multi = False
         #    keys = [keys]
-        #self.getCnt += len(keys)
         res = {}
-        self.getCnt += 1
         self.socket.sendall("metaget %s\r\n" % keys)
 
         while True:
@@ -255,7 +250,6 @@ class MCProcess(object):
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
-        self.getCnt += len(keys)
         self.socket.sendall("lease-get %s\r\n" % " ".join(keys))
         res = dict([(key, None) for key in keys])
 
@@ -291,7 +285,6 @@ class MCProcess(object):
 
     def _set(self, command, key, value, replicate=False, noreply=False,
              exptime=0):
-        self.setCnt += 1
         value = str(value)
         flags = 1024 if replicate else 0
         self.socket.sendall("%s %s %d %d %d%s\r\n%s\r\n" %
@@ -308,7 +301,6 @@ class MCProcess(object):
         return re.match("STORED", answer)
 
     def leaseSet(self, key, value_token, is_stalestored=False):
-        self.setCnt += 1
         value = str(value_token["value"])
         token = int(value_token["token"])
         flags = 0
@@ -353,8 +345,6 @@ class MCProcess(object):
     def _arith(self, cmd, key, value, noreply):
         self.socket.sendall("%s %s %d%s\r\n" %
                             (cmd, key, value, (' noreply' if noreply else '')))
-        self.setCnt += 1
-
         if noreply:
             return self.expectNoReply()
 
@@ -369,6 +359,31 @@ class MCProcess(object):
 
     def decr(self, key, value=1, noreply=False):
         return self._arith('decr', key, value, noreply)
+
+    def _affix(self, cmd, key, value, noreply=False, flags=0, exptime=0):
+        self.socket.sendall("%s %s %d %d %d%s\r\n%s\r\n" %
+                            (cmd, key, flags, exptime, len(value),
+                            (' noreply' if noreply else ''), value))
+
+        if noreply:
+            return self.expectNoReply()
+
+        answer = self.fd.readline()
+        if answer == "STORED\r\n":
+            return "STORED"
+        if answer == "NOT_STORED\r\n":
+            return "NOT_STORED"
+        if re.match("^SERVER_ERROR", answer):
+            return "SERVER_ERROR"
+        if re.match("^CLIENT_ERROR", answer):
+            return "CLIENT_ERROR"
+        return None
+
+    def append(self, key, value, noreply=False, flags=0, exptime=0):
+        return self._affix('append', key, value, noreply, flags, exptime)
+
+    def prepend(self, key, value, noreply=False, flags=0, exptime=0):
+        return self._affix('prepend', key, value, noreply, flags, exptime)
 
     def cas(self, key, value, cas_token):
         value = str(value)
