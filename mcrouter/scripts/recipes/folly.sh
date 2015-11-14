@@ -10,6 +10,9 @@ if [ ! -d /usr/include/double-conversion ]; then
     fi
     cd "$PKG_DIR/double-conversion" || die "cd fail"
 
+    # Workaround double-conversion CMakeLists.txt changes that
+    # are incompatible with cmake-2.8
+    git checkout ea970f69edacf66bd3cba2892be284b76e9599b0
     cmake . -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR"
     make $MAKE_ARGS && make install $MAKE_ARGS
 
