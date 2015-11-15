@@ -13,19 +13,25 @@ from __future__ import unicode_literals
 from mcrouter.test.MCProcess import Mcrouter
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+from time import sleep
 
 class TestShadowWithFile(McrouterTestCase):
     config = './mcrouter/test/test_shadow_with_file.json'
-    extra_args = []
 
     def setUp(self):
-        self.mc1 = self.add_server(Memcached(port=11710))
-        self.mc2 = self.add_server(Memcached(port=11711))
-        self.mc_shadow = self.add_server(Memcached(port=11712))
+        self.mc1 = self.add_server(Memcached())
+        self.mc2 = self.add_server(Memcached())
+        self.mc_shadow = self.add_server(Memcached())
+        self.port_map = {}
+        self.extra_args = [
+            '--config-params',
+            'PORT_1:{},PORT_2:{},PORT_SHADOW:{}'.format(
+                self.mc1.getport(), self.mc2.getport(),
+                self.mc_shadow.getport())
+            ]
 
     def get_mcrouter(self):
-        return self.add_server(Mcrouter(self.config,
-                                        extra_args=self.extra_args))
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
 
     def test_shadow_with_file(self):
         mcr = self.get_mcrouter()
@@ -37,6 +43,13 @@ class TestShadowWithFile(McrouterTestCase):
             mcr.set(key, value)
             self.assertTrue(self.mc1.get(key) == value or
                             self.mc2.get(key) == value)
+
+        # Shadow requrests are async
+        sleep(1)
+
+        for i in range(100):
+            key = 'f' + str(i)
+            value = 'value' + str(i)
             if i in shadow_list:
                 self.assertEqual(self.mc_shadow.get(key), value)
             else:

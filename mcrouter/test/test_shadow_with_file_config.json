@@ -8,7 +8,7 @@
           "type": "PoolRoute",
           "pool": {
             "name": "foo-shadow",
-            "servers": [ "127.0.0.1:11712" ]
+            "servers": [ "127.0.0.1:%PORT_SHADOW%" ]
           }
         },
         "index_range": [0, 2],
