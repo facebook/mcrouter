@@ -13,32 +13,28 @@
 
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/Optional.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
 #include "mcrouter/LeaseTokenMap.h"
 
-using facebook::memcache::AccessPoint;
 using namespace facebook::memcache::mcrouter;
 
 namespace {
 
 void assertQueryTrue(LeaseTokenMap& map, uint64_t specialToken,
-                     uint64_t expectedOriginalToken,
-                     std::chrono::milliseconds expectedTimeout) {
-  uint64_t originalToken;
-  std::shared_ptr<const AccessPoint> ap;
-  std::chrono::milliseconds timeout;
-  EXPECT_TRUE(map.query(specialToken, originalToken, ap, timeout));
-  EXPECT_EQ(originalToken, expectedOriginalToken);
-  EXPECT_EQ(timeout, expectedTimeout);
+                     LeaseTokenMap::Item expectedItem) {
+  auto item = map.query(specialToken);
+  EXPECT_TRUE(item.hasValue());
+  EXPECT_EQ(item->originalToken, expectedItem.originalToken);
+  EXPECT_EQ(item->poolName, expectedItem.poolName);
+  EXPECT_EQ(item->indexInPool, expectedItem.indexInPool);
 }
 
 void assertQueryFalse(LeaseTokenMap& map, uint64_t specialToken) {
-  uint64_t originalToken;
-  std::shared_ptr<const AccessPoint> ap;
-  std::chrono::milliseconds timeout;
-  EXPECT_FALSE(map.query(specialToken, originalToken, ap, timeout));
+  auto item = map.query(specialToken);
+  EXPECT_FALSE(item.hasValue());
 }
 
 } // anonymous namespace
@@ -49,15 +45,15 @@ TEST(LeaseTokenMap, sanity) {
 
   EXPECT_EQ(map.size(), 0);
 
-  auto tkn1 = map.insert(10, nullptr, std::chrono::milliseconds(30));
-  auto tkn2 = map.insert(20, nullptr, std::chrono::milliseconds(20));
-  auto tkn3 = map.insert(30, nullptr, std::chrono::milliseconds(10));
+  auto tkn1 = map.insert({10, "pool", 1});
+  auto tkn2 = map.insert({20, "pool", 2});
+  auto tkn3 = map.insert({30, "pool", 3});
 
   EXPECT_EQ(map.size(), 3);
 
-  assertQueryTrue(map, tkn1, 10, std::chrono::milliseconds(30));
-  assertQueryTrue(map, tkn2, 20, std::chrono::milliseconds(20));
-  assertQueryTrue(map, tkn3, 30, std::chrono::milliseconds(10));
+  assertQueryTrue(map, tkn1, {10, "pool", 1});
+  assertQueryTrue(map, tkn2, {20, "pool", 2});
+  assertQueryTrue(map, tkn3, {30, "pool", 3});
 
   EXPECT_EQ(map.size(), 0); // read all data from map.
   assertQueryFalse(map, 1); // "existing" id but without magic.
@@ -76,12 +72,10 @@ TEST(LeaseTokenMap, magicConflict) {
   EXPECT_EQ(map.size(), 0);
 
   uint64_t originalToken = 0x7aceb00c0000000A;
-  uint64_t specialToken = map.insert(originalToken, nullptr,
-                                     std::chrono::milliseconds(10));
+  uint64_t specialToken = map.insert({originalToken, "pool", 1});
 
   EXPECT_EQ(map.size(), 1);
-  assertQueryTrue(map, specialToken, originalToken,
-                  std::chrono::milliseconds(10));
+  assertQueryTrue(map, specialToken, {originalToken, "pool", 1});
   assertQueryFalse(map, originalToken);
   EXPECT_EQ(map.size(), 0);
 }
@@ -93,8 +87,8 @@ TEST(LeaseTokenMap, shrink) {
 
   EXPECT_EQ(map.size(), 0);
 
-  for (int i = 0; i < 1000; ++i) {
-    map.insert(i * 10, nullptr, std::chrono::milliseconds(i));
+  for (size_t i = 0; i < 1000; ++i) {
+    map.insert({i * 10, "pool", i});
   }
 
   // Allow time for the map to shrink.
@@ -111,17 +105,16 @@ TEST(LeaseTokenMap, stress) {
 
   EXPECT_EQ(map.size(), 0);
 
-  for (int i = 0; i < 5000; ++i) {
+  for (size_t i = 0; i < 5000; ++i) {
     uint64_t origToken = i * 10;
-    uint64_t specToken = map.insert(origToken, nullptr,
-                                    std::chrono::milliseconds(i));
+    uint64_t specToken = map.insert({origToken, "pool", i});
 
     /* sleep override */
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     // leave some work for the shrink thread.
     if (i % 10 != 0) {
-      assertQueryTrue(map, specToken, origToken, std::chrono::milliseconds(i));
+      assertQueryTrue(map, specToken, {origToken, "pool", i});
     }
   }
 }

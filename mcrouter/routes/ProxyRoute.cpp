@@ -9,6 +9,8 @@
  */
 #include "mcrouter/routes/ProxyRoute.h"
 
+#include <folly/Optional.h>
+
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/RootRoute.h"
@@ -45,23 +47,19 @@ std::vector<McrouterRouteHandlePtr> ProxyRoute::getAllDestinations() const {
   return rh;
 }
 
-bool ProxyRoute::queryLeaseTokenMap(uint64_t leaseToken,
-    uint64_t& originalLeaseToken,
-    std::shared_ptr<ProxyDestination>& destination,
-    std::chrono::milliseconds& timeout) const {
-
+std::pair<McrouterRouteHandlePtr, uint64_t> ProxyRoute::queryLeaseTokenMap(
+    uint64_t leaseToken) const {
   if (auto leaseTokenMap = proxy_->router().leaseTokenMap()) {
-    std::shared_ptr<const AccessPoint> ap;
-    if (!leaseTokenMap->query(leaseToken, originalLeaseToken,
-                              ap, timeout)) {
-      return false;
+    if (auto item = leaseTokenMap->query(leaseToken)) {
+      auto& poolsMap = proxy_->getConfig()->getPools();
+      auto poolIt = poolsMap.find(item->poolName);
+      if (poolIt != poolsMap.end() &&
+          poolIt->second.size() > item->indexInPool) {
+        return { poolIt->second[item->indexInPool], item->originalToken };
+      }
     }
-
-    destination = proxy_->destinationMap->find(*ap, timeout);
-    return destination != nullptr;
   }
-
-  return false;
+  return { nullptr, 0 };
 }
 
 }

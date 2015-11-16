@@ -86,7 +86,7 @@ class DestinationRoute {
       auto& ctx = fiber_local::getSharedCtx();
       if (auto leaseTokenMap = ctx->proxy().router().leaseTokenMap()) {
         auto specialToken = leaseTokenMap->insert(
-            reply.leaseToken(), destination_->accessPoint(), timeout_);
+            {reply.leaseToken(), poolName_, indexInPool_});
         reply.setLeaseToken(specialToken);
       }
     }

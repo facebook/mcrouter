@@ -20,6 +20,7 @@
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
@@ -55,22 +56,22 @@ class ProxyRoute {
 
   template <class Request>
   typename ReplyType<McOperation<mc_op_lease_set>, Request>::type route(
-    const Request& req, McOperation<mc_op_lease_set> op) {
+    const Request& req, McOperation<mc_op_lease_set>) {
 
-    uint64_t originalLeaseToken;
-    std::shared_ptr<ProxyDestination> destination;
-    std::chrono::milliseconds timeout;
-    if (queryLeaseTokenMap(req.leaseToken(), originalLeaseToken,
-                           destination, timeout)) {
-      auto mutReq = req.clone();
-      mutReq.setLeaseToken(originalLeaseToken);
-
+    auto pair = queryLeaseTokenMap(req.leaseToken());
+    if (pair.first) {
       stat_incr(proxy_->stats, redirected_lease_set_count_stat, 1);
-      DestinationRequestCtx reqCtx(nowUs());
-      return destination->send(mutReq, op, reqCtx, timeout);
+
+      auto mutReq = req.clone();
+      mutReq.setLeaseToken(pair.second);
+      return fiber_local::runWithLocals(
+        [destRoute = pair.first, &mutReq]() {
+          fiber_local::addRequestClass(RequestClass::kFailover);
+          return destRoute->route(mutReq, McOperation<mc_op_lease_set>());
+        });
     }
 
-    return root_->route(req, op);
+    return root_->route(req, McOperation<mc_op_lease_set>());
   }
 
   template <class Request>
@@ -86,9 +87,9 @@ class ProxyRoute {
   McrouterRouteHandlePtr root_;
 
   std::vector<McrouterRouteHandlePtr> getAllDestinations() const;
-  bool queryLeaseTokenMap(uint64_t leaseToken, uint64_t& originalLeaseToken,
-                          std::shared_ptr<ProxyDestination>& destination,
-                          std::chrono::milliseconds& timeout) const;
+  // { destination, original token }
+  std::pair<McrouterRouteHandlePtr, uint64_t> queryLeaseTokenMap(
+      uint64_t leaseToken) const;
 };
 
 }}}  // facebook::memcache::mcrouter

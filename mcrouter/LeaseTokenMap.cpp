@@ -45,41 +45,34 @@ LeaseTokenMap::~LeaseTokenMap() {
   }
 }
 
-uint64_t LeaseTokenMap::insert(uint64_t originalToken,
-                               AccessPointPtr accessPoint,
-                               std::chrono::milliseconds serverTimeout) {
+uint64_t LeaseTokenMap::insert(Item item) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   uint64_t specialToken = applyMagic(nextId_++);
 
   auto it = data_.emplace(specialToken,
-                          LeaseTokenMap::Item(specialToken, originalToken,
-                                              std::move(accessPoint),
-                                              std::move(serverTimeout),
-                                              leaseTokenTtlMs_));
+                          LeaseTokenMap::ListItem(specialToken, std::move(item),
+                                                  leaseTokenTtlMs_));
   invalidationQueue_.push_back(it.first->second);
 
   return specialToken;
 }
 
-bool LeaseTokenMap::query(uint64_t token, uint64_t& originalToken,
-                          AccessPointPtr& accessPoint,
-                          std::chrono::milliseconds& serverTimeout) {
+folly::Optional<LeaseTokenMap::Item> LeaseTokenMap::query(uint64_t token) {
+  folly::Optional<LeaseTokenMap::Item> item;
+
   if (!hasMagic(token)) {
-    return false;
+    return item;
   }
 
   std::lock_guard<std::mutex> lock(mutex_);
-  auto item = data_.find(token);
-  if (item != data_.end()) {
-    originalToken = item->second.originalToken;
-    accessPoint = std::move(item->second.accessPoint);
-    serverTimeout = std::move(item->second.serverTimeout);
-    data_.erase(item);
-    return true;
+  auto it = data_.find(token);
+  if (it != data_.end()) {
+    item.emplace(std::move(it->second.item));
+    data_.erase(it);
   }
 
-  return false;
+  return item;
 }
 
 uint64_t LeaseTokenMap::getOriginalLeaseToken(uint64_t token) const {
@@ -88,9 +81,9 @@ uint64_t LeaseTokenMap::getOriginalLeaseToken(uint64_t token) const {
   }
 
   std::lock_guard<std::mutex> lock(mutex_);
-  auto item = data_.find(token);
-  if (item != data_.end()) {
-    return item->second.originalToken;
+  auto it = data_.find(token);
+  if (it != data_.end()) {
+    return it->second.item.originalToken;
   }
   return token;
 }
@@ -98,7 +91,7 @@ uint64_t LeaseTokenMap::getOriginalLeaseToken(uint64_t token) const {
 void LeaseTokenMap::onTimeout() {
   std::lock_guard<std::mutex> lock(mutex_);
 
-  auto now = Item::Clock::now();
+  auto now = ListItem::Clock::now();
   auto cur = invalidationQueue_.begin();
   while (cur != invalidationQueue_.end() && cur->tokenTimeout <= now) {
     uint64_t specialToken = cur->specialToken;
