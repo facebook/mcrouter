@@ -1569,23 +1569,6 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
   }
 }
 
-void ConfigPreprocessor::parseConstDefs(dynamic jconsts) {
-  auto consts = expandMacros(std::move(jconsts), emptyContext_);
-  checkLogic(consts.isArray(), "config consts is not an array");
-  for (const auto& it : consts) {
-    checkLogic(it.isObject(), "constDef is not an object");
-    auto type = asString(tryGet(it, "type", "constDef"), "constDef type");
-    checkLogic(type == "constDef", "constDef has invalid type: {}", type);
-    auto name = asString(tryGet(it, "name", "constDef"), "constDef name");
-    const auto& result = tryGet(it, "result", "constDef");
-    try {
-      consts_.emplace(name, folly::make_unique<Const>(*this, name, result));
-    } catch (const std::logic_error& e) {
-      throw std::logic_error("'" + name + "' const:\n" + e.what());
-    }
-  }
-}
-
 void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
                                        const dynamic& obj) {
   auto key = asString(jkey, "macro definition key");
@@ -1643,13 +1626,6 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
   checkLogic(config.isObject(), "config is not an object");
 
   ConfigPreprocessor prep(importResolver, std::move(globalParams), nestedLimit);
-
-  // parse and add consts. DEPRECATED.
-  auto jconsts = config.get_ptr("consts");
-  if (jconsts) {
-    prep.parseConstDefs(std::move(*jconsts));
-    config.erase("consts");
-  }
 
   // parse and add macros
   auto jmacros = config.get_ptr("macros");

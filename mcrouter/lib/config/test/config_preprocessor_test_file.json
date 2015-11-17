@@ -160,18 +160,11 @@
     }
   },
   "import": {
-    "consts": [
-      {
-        "type": "constDef",
-        "name": "importedConst",
-        "result": "%templGlobal%"
-      }
-    ],
     "macros": {
       "type": "merge",
       "params": [
         {
-          "imported": "@import(%importedConst%)"
+          "imported": "@import(%templGlobal%)"
         }
       ]
     },

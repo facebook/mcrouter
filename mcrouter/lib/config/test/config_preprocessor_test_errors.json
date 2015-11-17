@@ -13,15 +13,6 @@
       "a": "str"
     }
   },
-  "invalidConsts": {
-    "consts": "@a",
-    "macros": {
-      "a": {
-        "type": "macroDef",
-        "result": "a"
-      }
-    }
-  },
   "invalidMacroDefType": {
     "macros": {
       "a": {
