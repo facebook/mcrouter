@@ -10,7 +10,6 @@
 #include "ConfigPreprocessor.h"
 
 #include <random>
-#include <unordered_set>
 
 #include <folly/Format.h>
 #include <folly/json.h>
@@ -463,11 +462,11 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
-   * Selects element(s) from list/object.
-   * Usage: @select(obj,string/array of strings) or
-   *        @select(list,int/array of ints)
+   * Selects element from list/object.
+   * Usage: @select(obj,string) or
+   *        @select(list,int)
    *
-   * Returns value(s) of corresponding object property(ies)/list element(s)
+   * Returns value of corresponding object property/list element
    */
   static dynamic selectMacro(Context ctx) {
     auto& dictionary = ctx.at("dictionary");
@@ -477,48 +476,17 @@ class ConfigPreprocessor::BuiltIns {
                "Select: dictionary is not array/object");
 
     if (dictionary.isObject()) {
-      checkLogic(key.isString() || key.isArray(),
-                 "Select: dictionary is an object, key is not array/string");
-      if (key.isString()) {
-        // key should be in dictionary
-        return moveGet(dictionary, key, "Select");
-      } else { // array
-        dynamic result = dynamic::object();
-        for (size_t i = 0; i < key.size(); ++i) {
-          auto& it = key[i];
-          checkLogic(it.isString(),
-                     "Select: dictionary is an object, key item is not a "
-                     "string");
-          checkLogic(result.find(it) == result.items().end(),
-                     "Select: duplicate key");
-          auto val = moveGet(dictionary, it, "Select");
-          result.insert(std::move(it), std::move(val));
-        }
-        return result;
-      }
+      checkLogic(key.isString(),
+                 "Select: dictionary is an object, key is not a string");
+      // key should be in dictionary
+      return moveGet(dictionary, key, "Select");
     } else { // array
-      checkLogic(key.isInt() || key.isArray(),
-                 "Select: dictionary is an array, key is not array/integer");
-      if (key.isInt()) {
-        auto id = key.getInt();
-        checkLogic(id >= 0 && size_t(id) < dictionary.size(),
-                   "Select: index out of range");
-        return std::move(dictionary[id]);
-      } else { // array
-        dynamic result = {};
-        std::unordered_set<size_t> indicies;
-        for (size_t i = 0; i < key.size(); ++i) {
-          checkLogic(key[i].isInt(),
-                     "Select: dictionary is an array, key item is not an "
-                     "integer");
-          auto id = key[i].getInt();
-          checkLogic(id >= 0 && size_t(id) < dictionary.size(),
-                     "Select: index out of range");
-          checkLogic(indicies.insert(id).second, "Select: duplicate index");
-          result.push_back(std::move(dictionary[id]));
-        }
-        return result;
-      }
+      checkLogic(key.isInt(),
+                 "Select: dictionary is an array, key is not integer");
+      auto id = key.getInt();
+      checkLogic(id >= 0 && size_t(id) < dictionary.size(),
+                 "Select: index out of range");
+      return std::move(dictionary[id]);
     }
   }
 
