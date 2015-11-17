@@ -63,7 +63,7 @@ inline int awfulness(mc_res_t result) {
 }
 
 template <typename Operation>
-McReply::McReply(DefaultReplyT, Operation)
+McReply::McReply(DefaultReplyT, Operation) noexcept
     : McReply(UpdateLike<Operation>::value ?
                 mc_res_notstored :
                 mc_res_notfound) {
@@ -90,11 +90,11 @@ InputIterator McReply::reduce(InputIterator begin, InputIterator end) {
   return most_awful_it;
 }
 
-inline bool McReply::isError() const {
+inline bool McReply::isError() const noexcept {
   return mc_res_is_err(result_);
 }
 
-inline bool McReply::isFailoverError() const {
+inline bool McReply::isFailoverError() const noexcept {
   switch (result_) {
     case mc_res_busy:
     case mc_res_shutdown:

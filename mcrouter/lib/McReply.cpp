@@ -16,11 +16,11 @@
 
 namespace facebook { namespace memcache {
 
-bool McReply::worseThan(const McReply& other) const {
+bool McReply::worseThan(const McReply& other) const noexcept {
   return awfulness(result_) > awfulness(other.result_);
 }
 
-bool McReply::isSoftTkoError() const {
+bool McReply::isSoftTkoError() const noexcept {
   switch (result_) {
     case mc_res_timeout:
       return true;
@@ -29,7 +29,7 @@ bool McReply::isSoftTkoError() const {
   }
 }
 
-bool McReply::isHardTkoError() const {
+bool McReply::isHardTkoError() const noexcept {
   switch (result_) {
     case mc_res_connect_error:
     case mc_res_connect_timeout:
@@ -48,14 +48,7 @@ void McReply::setValue(folly::StringPiece str) {
   valueData_ = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
 }
 
-void McReply::setResult(mc_res_t res) {
-  result_ = res;
-}
-
-McReply::McReply() {
-}
-
-McReply::McReply(mc_res_t res)
+McReply::McReply(mc_res_t res) noexcept
     : result_(res) {
 }
 

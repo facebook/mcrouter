@@ -31,24 +31,29 @@ namespace facebook { namespace memcache {
  */
 template <class T, class RefPolicy>
 class Ref {
+  static_assert(noexcept(RefPolicy::increfOrNull),
+                "RefPolicy::increfOrNull should be noexcept");
+  static_assert(noexcept(RefPolicy::decref),
+                "RefPolicy::decref should be noexcept");
+
  public:
 
   /**
    * Construct an empty Ref.
    */
-  Ref() : ref_(nullptr) {}
+  Ref() = default;
 
   /**
    * Moves in the provided pointer (no reference count changes).
    */
-  static Ref moveRef(T* ref) {
+  static Ref moveRef(T* ref) noexcept {
     return Ref(ref);
   }
 
   /**
    * Clones the reference (bumps the reference count)
    */
-  static Ref cloneRef(T* ref) {
+  static Ref cloneRef(T* ref) noexcept {
     return Ref(RefPolicy::increfOrNull(ref));
   }
 
@@ -58,12 +63,13 @@ class Ref {
   }
 
   template <typename M, typename D>
-  /* implicit */ Ref(std::unique_ptr<M, D>&& from) : ref_(from.release()) {
+  /* implicit */ Ref(std::unique_ptr<M, D>&& from) noexcept
+      : ref_(from.release()) {
     static_assert(std::is_same<D, typename RefPolicy::Deleter>::value,
                   "unique_ptr deleter is not compatible with RefPolicy");
   }
 
-  Ref& operator=(Ref&& from) {
+  Ref& operator=(Ref&& from) noexcept {
     if (this != &from) {
       RefPolicy::decref(ref_);
       ref_ = from.ref_;
@@ -73,10 +79,11 @@ class Ref {
   }
 
   template <typename M, typename D>
-  Ref& operator=(std::unique_ptr<M, D>&& from) {
+  Ref& operator=(std::unique_ptr<M, D>&& from) noexcept {
     static_assert(std::is_same<D, typename RefPolicy::Deleter>::value,
                   "unique_ptr deleter is not compatible with RefPolicy");
 
+    RefPolicy::decref(ref_);
     ref_ = from.release();
     return *this;
   }
@@ -84,7 +91,7 @@ class Ref {
   /**
    * Explicitly obtains a new reference to the managed object.
    */
-  Ref clone() const {
+  Ref clone() const noexcept {
     return Ref(RefPolicy::increfOrNull(ref_));
   }
 
@@ -94,9 +101,9 @@ class Ref {
   /**
    * Access to the managed object
    */
-  T* operator->() const { return ref_; }
-  T* get() const { return ref_; }
-  T& operator*() const { return *ref_; }
+  T* operator->() const noexcept { return ref_; }
+  T* get() const noexcept { return ref_; }
+  T& operator*() const noexcept { return *ref_; }
 
   /**
    * Releases the managed object
@@ -105,7 +112,7 @@ class Ref {
    *         is responsible for managing reference count
    *         after the call.
    */
-  T* release() {
+  T* release() noexcept {
     auto t = ref_;
     ref_ = nullptr;
     return t;
@@ -116,9 +123,9 @@ class Ref {
   }
 
  private:
-  T* ref_;
+  T* ref_{nullptr};
 
-  explicit Ref(T* ref) : ref_(ref) {}
+  explicit Ref(T* ref) noexcept : ref_(ref) {}
 };
 
 

@@ -44,12 +44,12 @@ class McReply {
    * a reply for a delete queued for replay, etc.
    */
   template <typename Operation>
-  McReply(DefaultReplyT, Operation op);
+  McReply(DefaultReplyT, Operation op) noexcept;
 
   /**
    * Constructs an "error" reply, meaning that there was a routing error.
    */
-  explicit McReply(ErrorReplyT) : McReply(mc_res_local_error) {
+  explicit McReply(ErrorReplyT) noexcept : McReply(mc_res_local_error) {
   }
 
   /**
@@ -65,7 +65,7 @@ class McReply {
    * Used to signal that the Route Handle didn't attempt to send out a request.
    * A sending Route Handle might attempt an immediate failover on a TKO reply.
    */
-  explicit McReply(TkoReplyT)
+  explicit McReply(TkoReplyT) noexcept
       : McReply(mc_res_tko) {
   }
 
@@ -85,27 +85,27 @@ class McReply {
   /**
    * @return True if this reply's result is worse than other.result()
    */
-  bool worseThan(const McReply& other) const;
+  bool worseThan(const McReply& other) const noexcept;
 
   /**
    * Is this reply an error?
    */
-  inline bool isError() const;
+  inline bool isError() const noexcept;
 
   /**
    * Is this reply an error as far as failover logic is concerned?
    */
-  inline bool isFailoverError() const;
+  inline bool isFailoverError() const noexcept;
 
   /**
    * Is this reply a soft TKO error?
    */
-  bool isSoftTkoError() const;
+  bool isSoftTkoError() const noexcept;
 
   /**
    * Is this reply a hard TKO error?
    */
-  bool isHardTkoError() const;
+  bool isHardTkoError() const noexcept;
 
   /**
    * Did we not even attempt to send request out because at some point
@@ -115,7 +115,7 @@ class McReply {
    *
    * If isTko() is true, isError() must also be true.
    */
-  bool isTko() const {
+  bool isTko() const noexcept {
     return result_ == mc_res_tko;
   }
 
@@ -123,21 +123,21 @@ class McReply {
    * Did we not even attempt to send request out because it is invalid/we hit
    * per-destination rate limit
    */
-  bool isLocalError() const {
+  bool isLocalError() const noexcept {
     return result_ == mc_res_local_error;
   }
 
   /**
    * Was the connection attempt refused?
    */
-  bool isConnectError() const {
+  bool isConnectError() const noexcept {
     return result_ == mc_res_connect_error;
   }
 
   /**
    * Was there a timeout while attempting to establish a connection?
    */
-  bool isConnectTimeout() const {
+  bool isConnectTimeout() const noexcept {
     return result_ == mc_res_connect_timeout;
   }
 
@@ -146,7 +146,7 @@ class McReply {
    * Note: the distinction is important, since in this case we don't know
    * if the data reached the server or not.
    */
-  bool isDataTimeout() const {
+  bool isDataTimeout() const noexcept {
     return result_ == mc_res_timeout || result_ == mc_res_remote_error;
   }
 
@@ -154,35 +154,35 @@ class McReply {
    * Application-specific redirect code. Server is up, but doesn't want
    * to reply now.
    */
-  bool isRedirect() const {
+  bool isRedirect() const noexcept {
     return result_ == mc_res_busy || result_ == mc_res_try_again;
   }
 
   /**
    * Was the data found?
    */
-  bool isHit() const {
+  bool isHit() const noexcept {
     return result_ == mc_res_deleted || result_ == mc_res_found;
   }
 
   /**
    * Was data not found and no errors occured?
    */
-  bool isMiss() const {
+  bool isMiss() const noexcept {
     return result_ == mc_res_notfound;
   }
 
   /**
    * Lease hot miss?
    */
-  bool isHotMiss() const {
+  bool isHotMiss() const noexcept {
     return result_ == mc_res_foundstale || result_ == mc_res_notfoundhot;
   }
 
   /**
    * Was the data stored?
    */
-  bool isStored() const {
+  bool isStored() const noexcept {
     return result_ == mc_res_stored || result_ == mc_res_stalestored;
   }
 
@@ -191,9 +191,11 @@ class McReply {
    */
   void setValue(folly::IOBuf valueData);
   void setValue(folly::StringPiece str);
-  void setResult(mc_res_t res);
+  void setResult(mc_res_t res) noexcept {
+    result_ = res;
+  }
 
-  mc_res_t result() const {
+  mc_res_t result() const noexcept {
     return result_;
   }
 
@@ -211,67 +213,67 @@ class McReply {
                                  : folly::StringPiece();
   }
 
-  const std::shared_ptr<const AccessPoint>& destination() const {
+  const std::shared_ptr<const AccessPoint>& destination() const noexcept {
     return destination_;
   }
 
-  void setDestination(std::shared_ptr<const AccessPoint> ap) {
+  void setDestination(std::shared_ptr<const AccessPoint> ap) noexcept {
     destination_ = std::move(ap);
   }
 
-  uint32_t appSpecificErrorCode() const {
+  uint32_t appSpecificErrorCode() const noexcept {
     return errCode_;
   }
 
-  void setAppSpecificErrorCode(uint32_t ecode) {
+  void setAppSpecificErrorCode(uint32_t ecode) noexcept {
     errCode_ = ecode;
   }
 
-  uint64_t flags() const {
+  uint64_t flags() const noexcept {
     return flags_;
   }
 
-  void setFlags(uint64_t fl) {
+  void setFlags(uint64_t fl) noexcept {
     flags_ = fl;
   }
 
-  uint32_t exptime() const {
+  uint32_t exptime() const noexcept {
     return exptime_;
   }
 
-  void setExptime(uint32_t et) {
+  void setExptime(uint32_t et) noexcept {
     exptime_ = et;
   }
 
-  uint32_t number() const {
+  uint32_t number() const noexcept {
     return number_;
   }
 
-  void setNumber(uint32_t num) {
+  void setNumber(uint32_t num) noexcept {
     number_ = num;
   }
 
-  uint64_t leaseToken() const {
+  uint64_t leaseToken() const noexcept {
     return leaseToken_;
   }
 
-  void setLeaseToken(uint64_t lt) {
+  void setLeaseToken(uint64_t lt) noexcept {
     leaseToken_ = lt;
   }
 
-  uint64_t cas() const {
+  uint64_t cas() const noexcept {
     return cas_;
   }
 
-  void setCas(uint64_t c) {
+  void setCas(uint64_t c) noexcept {
     cas_ = c;
   }
 
-  uint64_t delta() const {
+  uint64_t delta() const noexcept {
     return delta_;
   }
 
-  void setDelta(uint64_t d) {
+  void setDelta(uint64_t d) noexcept {
     delta_ = d;
   }
 
@@ -319,10 +321,10 @@ class McReply {
     destructor_.assign(CUniquePtr(ctx, destructor));
   }
 
-  ~McReply() {};
+  ~McReply() = default;
 
-  explicit McReply(mc_res_t result);
-  McReply();
+  explicit McReply(mc_res_t result) noexcept;
+  McReply() = default;
   McReply(mc_res_t result, McMsgRef&& reply);
 
   McReply(mc_res_t result, folly::IOBuf value);

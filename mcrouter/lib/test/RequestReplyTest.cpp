@@ -406,3 +406,36 @@ TEST(requestReply, RequestMoveNoExcept) {
   vector <McRequest> req_vec;
   req_vec.push_back(std::move(req_b));
 }
+
+TEST(requestReply, ReplyNoExcept) {
+  EXPECT_TRUE(std::is_nothrow_move_constructible<McReply>::value);
+  EXPECT_TRUE(std::is_nothrow_default_constructible<McReply>::value);
+  EXPECT_TRUE(std::is_nothrow_move_assignable<McReply>::value);
+  EXPECT_TRUE(std::is_nothrow_destructible<McReply>::value);
+
+  // Constructors.
+  EXPECT_TRUE(noexcept(McReply(mc_res_found)));
+  EXPECT_TRUE(noexcept(McReply(DefaultReply, McOperation<mc_op_get>())));
+  EXPECT_TRUE(noexcept(McReply(ErrorReply)));
+  EXPECT_TRUE(noexcept(McReply(TkoReply)));
+
+  // Members.
+  EXPECT_TRUE(
+      noexcept(std::declval<McReply>().worseThan(std::declval<McReply>())));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isError()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isFailoverError()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isSoftTkoError()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isHardTkoError()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isTko()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isLocalError()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isConnectError()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isConnectTimeout()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isDataTimeout()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isRedirect()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isHit()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isMiss()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isHotMiss()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().isStored()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().result()));
+  EXPECT_TRUE(noexcept(std::declval<McReply>().setResult(mc_res_ok)));
+}
