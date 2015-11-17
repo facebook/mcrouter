@@ -55,7 +55,6 @@ class RootRoute {
   typename ReplyType<Operation, Request>::type route(
     const Request& req, Operation) const {
 
-    ReplyT<Operation, Request> reply;
     /* If we have to send to more than one prefix,
        wait for the first in the list to reply and let others
        run in the background.
@@ -63,13 +62,13 @@ class RootRoute {
        This is a good default for /star/star/ requests. */
     const auto* rhPtr =
       rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
-    if (UNLIKELY(rhPtr == nullptr)) {
-      auto rh = rhMap_.getTargetsForKeySlow(req.routingPrefix(),
-                                            req.routingKey());
-      reply = routeImpl(rh, req, Operation());
-    } else {
-      reply = routeImpl(*rhPtr, req, Operation());
-    }
+
+    auto reply = UNLIKELY(rhPtr == nullptr)
+                     ? routeImpl(rhMap_.getTargetsForKeySlow(
+                                     req.routingPrefix(), req.routingKey()),
+                                 req,
+                                 Operation())
+                     : routeImpl(*rhPtr, req, Operation());
 
     if (reply.isError() && opts_.group_remote_errors) {
       reply = ReplyT<Operation, Request>(mc_res_remote_error);
@@ -104,13 +103,11 @@ class RootRoute {
     typename ArithmeticLike<Operation>::Type = 0)
     const {
 
-    ReplyT<Operation, Request> reply(DefaultReply, Operation());
-
-    if (!opts_.allow_only_gets) {
-      reply = doRoute(rh, req, Operation());
-      if (reply.isError()) {
-        reply = ReplyT<Operation, Request>(DefaultReply, Operation());
-      }
+    auto reply = opts_.allow_only_gets
+                     ? ReplyT<Operation, Request>(DefaultReply, Operation())
+                     : doRoute(rh, req, Operation());
+    if (reply.isError()) {
+      reply = ReplyT<Operation, Request>(DefaultReply, Operation());
     }
     return reply;
   }
@@ -122,21 +119,17 @@ class RootRoute {
     OtherThanT(Operation, GetLike<>, ArithmeticLike<>) = 0)
     const {
 
-    ReplyT<Operation, Request> reply(DefaultReply, Operation());
-
     if (!opts_.allow_only_gets) {
-      reply = doRoute(rh, req, Operation());
+      return doRoute(rh, req, Operation());
     }
 
-    return reply;
+    return ReplyT<Operation, Request>(DefaultReply, Operation());
   }
 
   template <class Operation, class Request>
   typename ReplyType<Operation, Request>::type doRoute(
     const std::vector<McrouterRouteHandlePtr>& rh,
     const Request& req, Operation) const {
-
-    ReplyT<Operation, Request> reply(ErrorReply);
 
     if (!rh.empty()) {
       if (rh.size() > 1) {
@@ -149,9 +142,9 @@ class RootRoute {
             });
         }
       }
-      reply = rh[0]->route(req, Operation());
+      return rh[0]->route(req, Operation());
     }
-    return reply;
+    return ReplyT<Operation, Request>(ErrorReply);
   }
 };
 
