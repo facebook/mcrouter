@@ -271,7 +271,7 @@ class ConfigPreprocessor::Const {
         result_ = prep_.expandMacros(std::move(result_),
                                      ConfigPreprocessor::emptyContext_);
       } catch (const std::logic_error& e) {
-        throw std::logic_error("Const '" + name_ + "':\n" + e.what());
+        throwLogic("Const '{}':\n{}", name_, e.what());
       }
       expanded_ = true;
     }
@@ -308,7 +308,7 @@ class ConfigPreprocessor::BuiltIns {
       result = p->expandMacros(parseJsonString(stripComments(jsonC)),
                                ConfigPreprocessor::emptyContext_);
     } catch (const std::exception& e) {
-      throw std::logic_error("Import '" + path + "':\n" + e.what());
+      throwLogic("Import '{}':\n{}", path, e.what());
     }
     p->importCache_.emplace(std::move(path), result);
     return result;
@@ -327,7 +327,7 @@ class ConfigPreprocessor::BuiltIns {
       return folly::Hash()(val.stringPiece());
     } else {
       // invalid
-      throw std::logic_error("Hash: can not cast to int or string");
+      throwLogic("Hash: can not cast {} to int or string", val.typeName());
     }
   }
 
@@ -339,7 +339,8 @@ class ConfigPreprocessor::BuiltIns {
     try {
       return ctx.at("value").asInt();
     } catch (const std::exception& e) {
-      throw std::logic_error(string("Can not cast to int:\n") + e.what());
+      throwLogic("Can not cast {} to int:\n{}",
+                 ctx.at("value").typeName(), e.what());
     }
   }
 
@@ -351,7 +352,8 @@ class ConfigPreprocessor::BuiltIns {
     try {
       return ctx.at("value").asString();
     } catch (const std::exception& e) {
-      throw std::logic_error(string("Can not cast to string:\n") + e.what());
+      throwLogic("Can not cast {} to string:\n{}",
+                 ctx.at("value").typeName(), e.what());
     }
   }
 
@@ -363,7 +365,8 @@ class ConfigPreprocessor::BuiltIns {
     try {
       return ctx.at("value").asBool();
     } catch (const std::exception& e) {
-      throw std::logic_error(string("Can not cast to boolean:\n") + e.what());
+      throwLogic("Can not cast {} to boolean:\n{}",
+                 ctx.at("value").typeName(), e.what());
     }
   }
 
@@ -628,7 +631,8 @@ class ConfigPreprocessor::BuiltIns {
                  "Contains: dictionary is a string, key is not a string");
       return dictionary.stringPiece().find(key.stringPiece()) != string::npos;
     } else {
-      throw std::logic_error("Contains: dictionary is not object/array/string");
+      throwLogic("Contains: dictionary is {}, expected object/array/string",
+                 dictionary.typeName());
     }
   }
 
@@ -1215,13 +1219,13 @@ class ConfigPreprocessor::BuiltIns {
       try {
         return p->expandMacros(moveGet(json, "is_true", "If"), ctx);
       } catch (const std::logic_error& e) {
-        throw std::logic_error(string("If 'is_true':\n") + e.what());
+        throwLogic("If 'is_true':\n{}", e.what());
       }
     } else {
       try {
         return p->expandMacros(moveGet(json, "is_false", "If"), ctx);
       } catch (const std::logic_error& e) {
-        throw std::logic_error(string("If 'is_false':\n") + e.what());
+        throwLogic("If 'is_false':\n{}", e.what());
       }
     }
   }
@@ -1456,7 +1460,7 @@ dynamic ConfigPreprocessor::expandStringMacro(StringPiece str,
   try {
     return inner->getResult(inner->getContext(std::move(innerParams)));
   } catch (const std::logic_error& e) {
-    throw std::logic_error("Macro in string '" + nameStr + "':\n" + e.what());
+    throwLogic("Macro in string '{}':\n{}", nameStr, e.what());
   }
 }
 
@@ -1480,7 +1484,7 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
           try {
             return builtInIt->second(std::move(json), context);
           } catch (const std::logic_error& e) {
-            throw std::logic_error("Built-in '" + typeStr + "':\n" + e.what());
+            throwLogic("Built-in '{}':\n{}", typeStr, e.what());
           }
         }
         // long form macro substitution
@@ -1492,14 +1496,14 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
             try {
               it.second = expandMacros(std::move(it.second), context);
             } catch (const std::logic_error& e) {
-              throw std::logic_error("Macro '" + typeStr +
-                "', param '" + it.first + "':\n" + e.what());
+              throwLogic("Macro '{}', param '{}':\n{}",
+                         typeStr, it.first, e.what());
             }
           }
           try {
             return inner->getResult(std::move(innerContext));
           } catch (const std::logic_error& e) {
-            throw std::logic_error("Macro '" + typeStr + "':\n" + e.what());
+            throwLogic("Macro '{}':\n{}", typeStr, e.what());
           }
         }
       }
@@ -1515,8 +1519,8 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
         result.insert(std::move(nKey),
                       expandMacros(std::move(value), context));
       } catch (const std::logic_error& e) {
-        throw std::logic_error(string("Raw object property '") +
-          it.first.stringPiece().str() + "':\n" + e.what());
+        throwLogic("Raw object property '{}':\n{}",
+                   it.first.stringPiece(), e.what());
       }
     }
     return result;
@@ -1526,8 +1530,7 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
       try {
         value = expandMacros(std::move(value), context);
       } catch (const std::logic_error& e) {
-        throw std::logic_error("Array element #" + folly::to<string>(i) +
-          ":\n" + e.what());
+        throwLogic("Array element #{}:\n{}", i, e.what());
       }
     }
     return json;
@@ -1564,7 +1567,7 @@ void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
     const auto& result = tryGet(obj, "result", "constDef");
     consts_.emplace(key, folly::make_unique<Const>(*this, key, result));
   } else {
-    throw std::logic_error("Unknown macro definition type: " + objType);
+    throwLogic("Unknown macro definition type: {}", objType);
   }
 }
 
