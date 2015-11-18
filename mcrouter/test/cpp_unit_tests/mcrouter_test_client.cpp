@@ -74,7 +74,8 @@ MCRouterTestClient::MCRouterTestClient(const std::string& name,
   client_ = router_->createClient(
     {on_reply, nullptr, nullptr},
     rs_.get(),
-    0);
+    0,
+    false);
 }
 
 /* This must be here to destroy the unique_ptr<ResultsSet>, since ResultsSet

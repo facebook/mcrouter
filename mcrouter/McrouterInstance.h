@@ -95,7 +95,8 @@ class McrouterInstance :
    */
   McrouterClient::Pointer createClient(mcrouter_client_callbacks_t callbacks,
                                        void* client_context,
-                                       size_t maximum_outstanding_requests);
+                                       size_t maximum_outstanding_requests,
+                                       bool maximum_outstanding_requests_error);
 
   /**
    * Same as createClient(), but you must use it from the same thread that's

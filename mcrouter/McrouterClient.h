@@ -168,6 +168,9 @@ class McrouterClient {
 
   /// Maximum allowed requests in flight (unlimited if 0)
   const unsigned int maxOutstanding_;
+  /// If true, error is immediately returned when maxOutstanding_ limit is hit
+  /// If false, sender thread is blocked when maxOutstanding_ limit is hit
+  const bool maxOutstandingError_;
   counting_sem_t outstandingReqsSem_;
 
   /**
@@ -193,6 +196,7 @@ class McrouterClient {
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding,
+    bool maximum_outstanding_error,
     bool sameThread);
 
   static Pointer create(
@@ -200,6 +204,7 @@ class McrouterClient {
     mcrouter_client_callbacks_t callbacks,
     void *arg,
     size_t maximum_outstanding,
+    bool maximum_outstanding_error,
     bool sameThread);
 
   void sendRemoteThread(std::unique_ptr<ProxyRequestContext> req);

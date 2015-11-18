@@ -113,7 +113,8 @@ TEST(mcrouter, start_and_stop) {
       auto client = router->createClient(
         (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
         nullptr,
-        0);
+        0,
+        false);
     }
   }
 }
@@ -127,7 +128,8 @@ TEST(mcrouter, test_zeroreqs_mcroutersend) {
     auto client = router->createClient(
       (mcrouter_client_callbacks_t){nullptr, nullptr, nullptr},
       nullptr,
-      0);
+      0,
+      false);
 
     vector<mcrouter_msg_t> reqs(0);
 
@@ -154,7 +156,8 @@ TEST(mcrouter, disconnect_callback) {
     auto client = router->createClient(
       (mcrouter_client_callbacks_t){nullptr, nullptr, on_disconnect},
       &sem_disconnect,
-      0);
+      0,
+      false);
 
     const char test_key[] = "test_key_disconnect";
     vector<mcrouter_msg_t> reqs(1);
@@ -185,7 +188,8 @@ TEST(mcrouter, fork) {
     auto client = router->createClient(
       (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
       nullptr,
-      0);
+      0,
+      false);
 
     vector<McMsgRef> preqs;
     vector<McReply> preplies;
@@ -206,7 +210,8 @@ TEST(mcrouter, fork) {
     auto client = router->createClient(
       (mcrouter_client_callbacks_t){on_reply, nullptr, nullptr},
       nullptr,
-      0);
+      0,
+      false);
 
     vector<McMsgRef> reqs;
     vector<McReply> replies;
@@ -250,7 +255,7 @@ TEST(mcrouter, already_replied_failed_delete) {
   EXPECT_TRUE(router != nullptr);
 
   {
-    auto client = router->createClient(cb, nullptr, 0);
+    auto client = router->createClient(cb, nullptr, 0, false);
 
     vector<McMsgRef> reqs;
     vector<McReply> replies;

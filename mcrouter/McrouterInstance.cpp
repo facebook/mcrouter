@@ -203,12 +203,14 @@ std::shared_ptr<McrouterInstance> McrouterInstance::create(
 McrouterClient::Pointer McrouterInstance::createClient(
   mcrouter_client_callbacks_t callbacks,
   void* arg,
-  size_t max_outstanding) {
+  size_t max_outstanding,
+  bool max_outstanding_error) {
 
   return McrouterClient::create(shared_from_this(),
                                 callbacks,
                                 arg,
                                 max_outstanding,
+                                max_outstanding_error,
                                 /* sameThread= */ false);
 }
 
@@ -221,6 +223,7 @@ McrouterClient::Pointer McrouterInstance::createSameThreadClient(
                                 callbacks,
                                 arg,
                                 max_outstanding,
+                                /* maxOutstandingError= */ true,
                                 /* sameThread= */ true);
 }
 

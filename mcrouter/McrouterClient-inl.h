@@ -103,6 +103,14 @@ bool McrouterClient::send(const Request& req,
     sendSameThread(std::move(preq));
   } else if (maxOutstanding_ == 0) {
     sendRemoteThread(std::move(preq));
+  } else if (maxOutstandingError_) {
+    auto r = counting_sem_lazy_nonblocking(&outstandingReqsSem_, 1);
+    if (r == 0) {
+      callback(McReply(mc_res_local_error));
+    } else {
+      assert(r == 1);
+      sendRemoteThread(std::move(preq));
+    }
   } else {
     auto r = counting_sem_lazy_wait(&outstandingReqsSem_, 1);
     (void)r; // so that `r` not be unused under `NDEBUG`

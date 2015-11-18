@@ -138,7 +138,7 @@ TEST(libmcrouter, premature_disconnect) {
     {
       auto client = router->createClient(
         {on_reply, on_cancel, nullptr},
-        nullptr, 0);
+        nullptr, 0, false);
 
       const char key[] = "__mockmc__.want_timeout(50)";
       mc_msg_t *mc_msg = mc_msg_new(sizeof(key));

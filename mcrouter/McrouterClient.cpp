@@ -45,21 +45,48 @@ size_t McrouterClient::send(
     return preq;
   };
 
-  if (sameThread_) {
-    /*
-     * Skip the extra queue hop and directly call the queue callback,
-     * since we're staying in the same thread.
-     *
-     * Note: maxOutstanding_ is ignored in this case.
-     */
-    for (size_t i = 0; i < nreqs; i++) {
-      sendSameThread(makePreq(i));
+  if (maxOutstanding_ == 0) {
+    if (sameThread_) {
+      for (size_t i = 0; i < nreqs; i++) {
+        sendSameThread(makePreq(i));
+      }
+    } else {
+      for (size_t i = 0; i < nreqs; i++) {
+        sendRemoteThread(makePreq(i));
+      }
     }
-  } else if (maxOutstanding_ == 0) {
-    for (size_t i = 0; i < nreqs; i++) {
-      sendRemoteThread(makePreq(i));
+  } else if (maxOutstandingError_) {
+    for(size_t begin = 0; begin < nreqs;) {
+      auto end = begin + counting_sem_lazy_nonblocking(&outstandingReqsSem_,
+                                                       nreqs - begin);
+      if (begin == end) {
+        for (size_t i = begin; i < nreqs; ++i) {
+          mcrouter_msg_t error_reply;
+          error_reply.req = requests[i].req;
+          error_reply.reply = McReply(mc_res_local_error);
+          error_reply.context = requests[i].context;
+
+          callbacks_.on_reply(&error_reply, arg_);
+        }
+
+        break;
+      }
+
+      if (sameThread_) {
+        for (size_t i = begin; i < end; i++) {
+          sendSameThread(makePreq(i));
+        }
+      } else {
+        for (size_t i = begin; i < end; i++) {
+          sendRemoteThread(makePreq(i));
+        }
+      }
+
+      begin = end;
     }
   } else {
+    assert(!sameThread_);
+
     size_t i = 0;
     size_t n = 0;
 
@@ -91,12 +118,14 @@ McrouterClient::McrouterClient(
   mcrouter_client_callbacks_t callbacks,
   void* arg,
   size_t maxOutstanding,
+  bool maxOutstandingError,
   bool sameThread) :
     router_(std::move(rtr)),
     sameThread_(sameThread),
     callbacks_(callbacks),
     arg_(arg),
-    maxOutstanding_(maxOutstanding) {
+    maxOutstanding_(maxOutstanding),
+    maxOutstandingError_(maxOutstandingError) {
 
   static std::atomic<uint64_t> nextClientId(0ULL);
   clientId_ = nextClientId++;
@@ -119,12 +148,14 @@ McrouterClient::Pointer McrouterClient::create(
   mcrouter_client_callbacks_t callbacks,
   void* arg,
   size_t maxOutstanding,
+  bool maxOutstandingError,
   bool sameThread) {
 
   auto client = new McrouterClient(std::move(router),
                                    callbacks,
                                    arg,
                                    maxOutstanding,
+                                   maxOutstandingError,
                                    sameThread);
   client->self_ = std::shared_ptr<McrouterClient>(client);
   return Pointer(client);
