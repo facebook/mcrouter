@@ -307,6 +307,13 @@ struct proxy_t {
       std::unique_ptr<
           ProxyRequestContextTyped<McOperation<mc_op_stats>, Request>> ctx);
 
+  /** Process and reply to a version request */
+  template <class Request>
+  void routeHandlesProcessRequest(
+      const Request& req,
+      std::unique_ptr<
+          ProxyRequestContextTyped<McOperation<mc_op_version>, Request>> ctx);
+
   /** Route request through route handle tree */
   template <class Operation, class Request>
   typename std::enable_if<McOpListContains<Operation>::value, void>::type

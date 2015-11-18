@@ -128,6 +128,13 @@ bool precheckRequest(
 
 template <class Request>
 bool precheckRequest(
+  ProxyRequestContextTyped<McOperation<mc_op_version>, Request>& preq,
+  const Request&) {
+  return true;
+}
+
+template <class Request>
+bool precheckRequest(
     ProxyRequestContextTyped<McOperation<mc_op_shutdown>, Request>& preq,
     const Request&) {
   // Return error (pretend to not even understand the protocol)

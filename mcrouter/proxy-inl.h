@@ -80,6 +80,14 @@ void proxy_t::routeHandlesProcessRequest(
   ctx->sendReply(stats_reply(this, req.fullKey()));
 }
 
+template <class Request>
+void proxy_t::routeHandlesProcessRequest(
+    const Request& req,
+    std::unique_ptr<ProxyRequestContextTyped<McOperation<mc_op_version>,
+                                             Request>> ctx) {
+  ctx->sendReply(mc_res_ok, MCROUTER_PACKAGE_STRING);
+}
+
 template <class Operation, class Request>
 typename std::enable_if<McOpListContains<Operation>::value, void>::type
 proxy_t::routeHandlesProcessRequest(
