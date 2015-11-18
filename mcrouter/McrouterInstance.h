@@ -93,10 +93,11 @@ class McrouterInstance :
    * @throw std::runtime_error  If the client cannot be created
    *   (i.e. attempting to create multiple clients to transient mcrouter).
    */
-  McrouterClient::Pointer createClient(mcrouter_client_callbacks_t callbacks,
-                                       void* client_context,
-                                       size_t maximum_outstanding_requests,
-                                       bool maximum_outstanding_requests_error);
+  McrouterClient::Pointer
+  createClient(mcrouter_client_callbacks_t callbacks,
+               void* client_context,
+               size_t maximum_outstanding_requests,
+               bool maximum_outstanding_requests_error = false);
 
   /**
    * Same as createClient(), but you must use it from the same thread that's
