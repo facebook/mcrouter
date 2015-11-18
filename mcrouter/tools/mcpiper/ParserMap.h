@@ -9,21 +9,74 @@
  */
 #pragma once
 
+#include <chrono>
 #include <unordered_map>
+
+#include <folly/IntrusiveList.h>
 
 #include "mcrouter/tools/mcpiper/ClientServerMcParser.h"
 
 namespace facebook { namespace memcache {
 
+/**
+ * Wrapper around the parser that keeps context information
+ * (e.g. map of messages to be paired).
+ */
+class ParserContext {
+ public:
+  using Callback = std::function<void(uint64_t reqId,
+                                      McMsgRef msg,
+                                      std::string matchingMsgKey)>;
+
+  explicit ParserContext(const Callback& cb) noexcept;
+
+  ClientServerMcParser& parser() {
+    return parser_;
+  }
+
+ private:
+  using Clock = std::chrono::steady_clock;
+  using TimePoint = std::chrono::time_point<Clock>;
+
+  // Holds the id of the request and the key of the matching message.
+  struct Item {
+    Item(uint64_t id, std::string k, TimePoint now)
+        : reqId(id),
+          key(std::move(k)),
+          created(now) { }
+
+    uint64_t reqId;
+    std::string key;
+    TimePoint created;
+
+    folly::IntrusiveListHook listHook;
+  };
+
+  // Callback called when a message is ready
+  const Callback& callback_;
+  // The parser itself.
+  ClientServerMcParser parser_;
+  // Map (reqid -> key) of messages that haven't been paired yet.
+  std::unordered_map<uint64_t, Item> msgs_;
+  // Keeps an in-order list of what should be invalidated.
+  folly::IntrusiveList<Item, &Item::listHook> evictionQueue_;
+
+  void msgReady(uint64_t id, McMsgRef msg);
+  void evictOldItems(TimePoint now);
+};
+
+/**
+ * Map of parsers
+ */
 class ParserMap {
  public:
-  explicit ParserMap(ClientServerMcParser::CallbackFn cb);
+  explicit ParserMap(ParserContext::Callback cb) noexcept;
 
   ClientServerMcParser& fetch(uint64_t id);
 
  private:
-  ClientServerMcParser::CallbackFn callback_{nullptr};
-  std::unordered_map<uint64_t, ClientServerMcParser> parsers_;
+  ParserContext::Callback callback_{nullptr};
+  std::unordered_map<uint64_t, ParserContext> parsers_;
 };
 
 }} // facebook::memcache

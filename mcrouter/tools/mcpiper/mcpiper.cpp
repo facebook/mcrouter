@@ -197,7 +197,8 @@ std::vector<std::pair<size_t, size_t>> matchAll(folly::StringPiece text,
   return result;
 }
 
-std::string serializeMessageHeader(const McMsgRef& msg) {
+std::string serializeMessageHeader(const McMsgRef& msg,
+                                   std::string matchingKey) {
   std::string out;
 
   if (msg->op != mc_op_unknown) {
@@ -215,11 +216,15 @@ std::string serializeMessageHeader(const McMsgRef& msg) {
     }
     out.append(folly::backslashify(to<std::string>(msg->key)));
   }
+  if (!matchingKey.empty()) {
+    out.append(
+        " [" + folly::backslashify(matchingKey) + "]");
+  }
 
   return out;
 }
 
-void msgReady(uint64_t reqid, McMsgRef msg) {
+void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey) {
   if (msg->op == mc_op_end) {
     return;
   }
@@ -243,7 +248,7 @@ void msgReady(uint64_t reqid, McMsgRef msg) {
   out.append("{\n", kFormat.dataOpColor);
 
   // Msg header
-  auto msgHeader = serializeMessageHeader(msg);
+  auto msgHeader = serializeMessageHeader(msg, std::move(matchingKey));
   if (!msgHeader.empty()) {
     out.append("  ");
     out.append(std::move(msgHeader), kFormat.headerColor);
