@@ -545,6 +545,7 @@ bool McrouterInstance::reconfigure() {
 }
 
 bool McrouterInstance::configure(folly::StringPiece input) {
+  VLOG_IF(0, !opts_.constantly_reload_configs) << "started reconfiguring";
   std::vector<std::shared_ptr<ProxyConfig>> newConfigs;
   try {
     // assume default_route, default_region and default_cluster are same for
