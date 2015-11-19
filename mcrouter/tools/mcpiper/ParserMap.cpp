@@ -46,7 +46,7 @@ void ParserContext::msgReady(uint64_t id, McMsgRef msg) {
       evictionQueue_.push_back(msgIt.first->second);
     }
   }
-  callback_(id, std::move(msg), std::move(invKey));
+  callback_(id, std::move(msg), std::move(invKey), address_);
 }
 
 void ParserContext::evictOldItems(TimePoint now) {
@@ -63,14 +63,14 @@ ParserMap::ParserMap(ParserContext::Callback callback) noexcept
     : callback_(std::move(callback)) {
 }
 
-ClientServerMcParser& ParserMap::fetch(uint64_t id) {
+ParserContext& ParserMap::fetch(uint64_t id) {
   auto it = parsers_.find(id);
   if (it == parsers_.end()) {
     it = parsers_.emplace(std::piecewise_construct,
                           std::forward_as_tuple(id),
                           std::forward_as_tuple(callback_)).first;
   }
-  return it->second.parser();
+  return it->second;
 }
 
 }} // facebook::memcache

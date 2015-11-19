@@ -18,6 +18,8 @@
 
 #include <folly/Format.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/IPAddress.h>
+#include <folly/SocketAddress.h>
 
 #include "mcrouter/lib/mc/msg.h"
 
@@ -43,10 +45,12 @@ struct Settings {
   bool disableColor{false};
   std::string fifoRoot{getDefaultFifoRoot()};
   std::string filenamePattern;
+  std::string host;
   bool ignoreCase{false};
   bool invertMatch{false};
   uint32_t maxMessages{0};
   uint32_t numAfterMatch{0};
+  uint16_t port{0};
   bool quiet{false};
   std::string timeFormat;
   uint32_t valueMinSize{0};
@@ -65,6 +69,7 @@ uint64_t gPrintedMessages{0};
 uint32_t afterMatchCount{0};
 std::function<std::string(const struct timeval& ts)> gPrintTime{nullptr};
 struct timeval gPrevTs = {0, 0};
+folly::IPAddress gHost;
 
 std::string getUsage(const char* binaryName) {
   return folly::sformat(
@@ -94,6 +99,9 @@ Settings parseOptions(int argc, char **argv) {
     ("filename-pattern,P",
       po::value<std::string>(&settings.filenamePattern),
       "Basic regular expression (BRE) to match the name of the fifos.")
+    ("host,H",
+      po::value<std::string>(&settings.host),
+      "Show only messages sent/received to provided IP address.")
     ("ignore-case,i",
       po::bool_switch(&settings.ignoreCase)->default_value(false),
       "Ignore case on search patterns")
@@ -106,6 +114,9 @@ Settings parseOptions(int argc, char **argv) {
     ("num-after-match,A",
       po::value<uint32_t>(&settings.numAfterMatch),
       "Shows <arg> messages after a matched message.")
+    ("port,p",
+      po::value<uint16_t>(&settings.port),
+      "Show only messages transmitted in provided port.")
     ("quiet,q",
       po::bool_switch(&settings.quiet)->default_value(false),
       "Doesn't display values.")
@@ -224,12 +235,25 @@ std::string serializeMessageHeader(const McMsgRef& msg,
   return out;
 }
 
-void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey) {
+void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey,
+              const folly::SocketAddress& address) {
   if (msg->op == mc_op_end) {
     return;
   }
 
   ++gTotalMessages;
+
+  // Initial filters
+  if (!gHost.empty() && (address.empty() || address.getIPAddress() != gHost)) {
+    return;
+  }
+  if (gSettings.port != 0 &&
+      (address.empty() || address.getPort() != gSettings.port)) {
+    return;
+  }
+  if (msg->value.len < gSettings.valueMinSize) {
+    return;
+  }
 
   StyledString out;
   out.append("\n");
@@ -238,12 +262,13 @@ void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey) {
     timeval ts;
     gettimeofday(&ts, nullptr);
     out.append(gPrintTime(ts));
-    out.append("\n");
   }
 
-  if (msg->value.len < gSettings.valueMinSize) {
-    return;
+  if (!address.empty()) {
+    out.append(folly::sformat("{}:{}", address.getAddressStr(),
+                              address.getPort()));
   }
+  out.append("\n");
 
   out.append("{\n", kFormat.dataOpColor);
 
@@ -411,6 +436,20 @@ void run() {
   // Coloring
   if (gSettings.disableColor) {
     gTargetOut.setColorOutput(false);
+  }
+
+  // Host and Port
+  if (!gSettings.host.empty()) {
+    try {
+      gHost = folly::IPAddress(gSettings.host);
+      std::cout << "Host: " << gHost.toFullyQualified() << std::endl;
+    } catch (...) {
+      LOG(ERROR) << "Invalid IP address provided: " << gSettings.host;
+      exit(1);
+    }
+  }
+  if (gSettings.port != 0) {
+    std::cout << "Port: " << gSettings.port << std::endl;
   }
 
   // Time Function

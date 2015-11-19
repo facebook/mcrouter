@@ -9,6 +9,7 @@
  */
 #include "FifoReader.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fcntl.h>
 #include <vector>
@@ -16,6 +17,7 @@
 #include <boost/filesystem.hpp>
 
 #include <folly/io/async/EventBase.h>
+#include <folly/SocketAddress.h>
 
 #include "mcrouter/tools/mcpiper/ClientServerMcParser.h"
 #include "mcrouter/tools/mcpiper/ParserMap.h"
@@ -28,7 +30,7 @@ namespace {
 
 PacketHeader parsePacketHeader(folly::ByteRange buf) {
   CHECK(buf.size() == sizeof(PacketHeader))
-    << "Invalid header buffer size!";
+    << "Invalid packet header buffer size!";
 
   PacketHeader header;
   std::memcpy(&header, buf.data(), sizeof(PacketHeader));
@@ -37,6 +39,56 @@ PacketHeader parsePacketHeader(folly::ByteRange buf) {
     "Packet too large: " << header.packetSize();
 
   return header;
+}
+
+MessageHeader parseMessageHeader(folly::ByteRange buf) {
+  CHECK(buf.size() == sizeof(MessageHeader))
+    << "Invalid message header buffer size!";
+
+  MessageHeader header;
+  std::memcpy(&header, buf.data(), sizeof(MessageHeader));
+
+  return header;
+}
+
+folly::SocketAddress parseAddress(const MessageHeader& msgHeader) {
+  folly::SocketAddress address;
+
+  if (msgHeader.ipAddress()[0] == '\0') {
+    return address;
+  }
+
+  try {
+    address.setFromIpPort(msgHeader.ipAddress(), msgHeader.port());
+  } catch (const std::exception& ex) {
+    LOG(ERROR) << "Error parsing address: " << ex.what();
+  }
+
+  return address;
+}
+
+bool isMessageHeader(const folly::IOBufQueue& bufQueue) {
+  static_assert(sizeof(uint32_t) == sizeof(MessageHeader().magic()),
+                "Magic expected to be of size of uint32_t.");
+  CHECK(bufQueue.chainLength() >= sizeof(MessageHeader().magic()))
+    << "Buffer queue length is smaller than magic bytes.";
+
+  uint32_t magic = 0;
+  size_t i = 0;
+  auto buf = bufQueue.front();
+  while (i < sizeof(uint32_t)) {
+    size_t j = 0;
+    while (j < buf->length() && i < sizeof(uint32_t)) {
+      // data is sent in little endian format.
+      magic += (buf->data()[j] << (i * CHAR_BIT));
+      ++i;
+      ++j;
+    }
+    buf = buf->next();
+  }
+  magic = folly::Endian::little(magic);
+
+  return magic == MessageHeader().magic();
 }
 
 } // anonymous namespace
@@ -67,17 +119,24 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
       pendingHeader_.setPacketSize(0);
     }
 
-    while (readBuffer_.chainLength() >= sizeof(PacketHeader)) {
-      auto header = parsePacketHeader(
-          readBuffer_.split(sizeof(PacketHeader))->coalesce());
+    while (readBuffer_.chainLength() >= std::max(sizeof(MessageHeader),
+                                                 sizeof(PacketHeader))) {
+      if (isMessageHeader(readBuffer_)) {
+        auto msgHeader = parseMessageHeader(
+            readBuffer_.split(sizeof(MessageHeader))->coalesce());
+        parserMap_.fetch(msgHeader.msgId()).setAddress(parseAddress(msgHeader));
+        continue;
+      }
 
-      if (header.packetSize() > readBuffer_.chainLength()) {
+      auto packetHeader = parsePacketHeader(
+          readBuffer_.split(sizeof(PacketHeader))->coalesce());
+      if (packetHeader.packetSize() > readBuffer_.chainLength()) {
         // Wait for more data.
-        pendingHeader_ = std::move(header);
+        pendingHeader_ = std::move(packetHeader);
         return;
       }
 
-      feedParser(header, readBuffer_.split(header.packetSize()));
+      feedParser(packetHeader, readBuffer_.split(packetHeader.packetSize()));
     }
   } catch (const std::exception& ex) {
     CHECK(false) << "Unexpected exception: " << ex.what();
@@ -89,7 +148,7 @@ void FifoReadCallback::feedParser(const PacketHeader& header,
   auto bodyBuf = buf->coalesce();
   CHECK(bodyBuf.size() == header.packetSize())
     << "Invalid header buffer size!";
-  auto& parser = parserMap_.fetch(header.msgId());
+  auto& parser = parserMap_.fetch(header.msgId()).parser();
   if (header.packetId() == 0) {
     parser.reset();
   }

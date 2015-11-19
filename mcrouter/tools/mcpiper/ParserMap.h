@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 #include <folly/IntrusiveList.h>
+#include <folly/SocketAddress.h>
 
 #include "mcrouter/tools/mcpiper/ClientServerMcParser.h"
 
@@ -26,12 +27,17 @@ class ParserContext {
  public:
   using Callback = std::function<void(uint64_t reqId,
                                       McMsgRef msg,
-                                      std::string matchingMsgKey)>;
+                                      std::string matchingMsgKey,
+                                      const folly::SocketAddress& address)>;
 
   explicit ParserContext(const Callback& cb) noexcept;
 
   ClientServerMcParser& parser() {
     return parser_;
+  }
+
+  void setAddress(folly::SocketAddress address) {
+    address_ = std::move(address);
   }
 
  private:
@@ -56,6 +62,8 @@ class ParserContext {
   const Callback& callback_;
   // The parser itself.
   ClientServerMcParser parser_;
+  // Address of current message.
+  folly::SocketAddress address_;
   // Map (reqid -> key) of messages that haven't been paired yet.
   std::unordered_map<uint64_t, Item> msgs_;
   // Keeps an in-order list of what should be invalidated.
@@ -72,7 +80,7 @@ class ParserMap {
  public:
   explicit ParserMap(ParserContext::Callback cb) noexcept;
 
-  ClientServerMcParser& fetch(uint64_t id);
+  ParserContext& fetch(uint64_t id);
 
  private:
   ParserContext::Callback callback_{nullptr};

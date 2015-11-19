@@ -15,6 +15,7 @@
 #include <sys/uio.h>
 
 #include <folly/Bits.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/Portability.h>
 
 namespace facebook { namespace memcache {
@@ -52,15 +53,16 @@ class Fifo {
    * Note: Writes are best effort. If, for example, the pipe is full, this
    * method will fail (return false).
    *
-   * @param msgId   Identifier of this message.
-   * @param iov     Data of the message, to write to the pipe.
-   * @param iovcnt  Size of iov.
-   * @return        True if the data was written. False otherwise.
+   * @param transport   Transport from which data are being mirrored.
+   * @param iov         Data of the message, to write to the pipe.
+   * @param iovcnt      Size of iov.
+   * @return            True if the data was written. False otherwise.
    */
-  bool writeIfConnected(uint64_t msgId,
+  bool writeIfConnected(const folly::AsyncTransportWrapper* transport,
                         const struct iovec* iov,
                         size_t iovcnt) noexcept;
-  bool writeIfConnected(uint64_t msgId, void* buf, size_t len) noexcept;
+  bool writeIfConnected(const folly::AsyncTransportWrapper* transport,
+                        void* buf, size_t len) noexcept;
 
  private:
   explicit Fifo(std::string path);
@@ -80,6 +82,52 @@ class Fifo {
   bool isConnected() const noexcept;
 
   friend class FifoManager;
+};
+
+/**
+ * Header of the message.
+ */
+struct FOLLY_PACK_ATTR MessageHeader {
+ public:
+  constexpr static size_t kIpAddressMaxSize = 40;
+
+  uint32_t magic() const {
+    return folly::Endian::little(magicLE_);
+  }
+  uint8_t version() const {
+    return version_;
+  }
+  const char* ipAddress() const {
+    return ipAddress_;
+  }
+  uint16_t port() const {
+    return folly::Endian::little(portLE_);
+  }
+  uint64_t msgId() const {
+    return folly::Endian::little(msgIdLE_);
+  }
+
+  char* ipAddressModifiable() {
+    return ipAddress_;
+  }
+  void setPort(uint16_t val) {
+    portLE_ = folly::Endian::little(val);
+  }
+  void setMsgId(uint64_t val) {
+    msgIdLE_ = folly::Endian::little(val);
+  }
+
+ private:
+  // Control fields
+  const uint32_t magicLE_ = folly::Endian::little<uint32_t>(0xfaceb00c);
+  const uint8_t version_ = 1;
+
+  // Address fields
+  char ipAddress_[kIpAddressMaxSize]{'\0'}; // 0-terminated string of ip
+  uint16_t portLE_ = 0;
+
+  // Message fields
+  uint64_t msgIdLE_{0};
 };
 
 /**
@@ -114,7 +162,8 @@ struct FOLLY_PACK_ATTR PacketHeader {
   }
 };
 constexpr uint32_t kFifoMaxPacketSize = PIPE_BUF - sizeof(PacketHeader);
-static_assert(PIPE_BUF > sizeof(PacketHeader),
-              "sizeof(PacketHeader) must be smaller than PIPE_BUF.");
+static_assert(PIPE_BUF > sizeof(MessageHeader) + sizeof(PacketHeader),
+              "sizeof(PacketHeader) + sizeof(MessageHeader) "
+              "must be smaller than PIPE_BUF.");
 
 }} // facebook::memcache

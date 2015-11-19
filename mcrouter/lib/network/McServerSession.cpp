@@ -240,8 +240,7 @@ void McServerSession::readDataAvailable(size_t len) noexcept {
   DestructorGuard dg(this);
 
   if (debugFifo_) {
-    debugFifo_->writeIfConnected(reinterpret_cast<uintptr_t>(transport_.get()),
-                                  curBuffer_.first, len);
+    debugFifo_->writeIfConnected(transport_.get(), curBuffer_.first, len);
   }
 
   if (!parser_.readDataAvailable(len)) {
@@ -367,8 +366,7 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     writeBufs_->push(std::move(wb));
     transport_->writev(this, iovs, iovCount);
     if (debugFifo_) {
-      debugFifo_->writeIfConnected(
-          reinterpret_cast<uintptr_t>(transport_.get()), iovs, iovCount);
+      debugFifo_->writeIfConnected(transport_.get(), iovs, iovCount);
     }
     if (!writeBufs_->empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
@@ -411,8 +409,7 @@ void McServerSession::sendWrites() {
 
   transport_->writev(this, iovs.data(), iovs.size());
   if (debugFifo_) {
-    debugFifo_->writeIfConnected(reinterpret_cast<uintptr_t>(transport_.get()),
-                                  iovs.data(), iovs.size());
+    debugFifo_->writeIfConnected(transport_.get(), iovs.data(), iovs.size());
   }
 }
 
