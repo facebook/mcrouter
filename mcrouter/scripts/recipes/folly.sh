@@ -2,7 +2,17 @@
 
 source common.sh
 
-[ -d folly ] || git clone https://github.com/facebook/folly
+if [[ ! -d folly ]]; then
+  git clone https://github.com/facebook/folly
+  cd "$PKG_DIR/folly" || die "cd fail"
+  if [[ -f "$REPO_BASE_DIR/mcrouter/FOLLY_COMMIT" ]]; then
+    FOLLY_COMMIT="$(head -n 1 "$REPO_BASE_DIR/mcrouter/FOLLY_COMMIT")"
+    echo "FOLLY_COMMIT file found: using folly commit $FOLLY_COMMIT"
+    git checkout "$FOLLY_COMMIT"
+  else
+    echo "No FOLLY_COMMIT file, using folly HEAD=$(git rev-parse HEAD)"
+  fi
+fi
 
 if [ ! -d /usr/include/double-conversion ]; then
     if [ ! -d "$PKG_DIR/double-conversion" ]; then
