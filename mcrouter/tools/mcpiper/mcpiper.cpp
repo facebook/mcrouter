@@ -199,8 +199,8 @@ std::vector<std::pair<size_t, size_t>> matchAll(folly::StringPiece text,
                                                 const boost::regex& pattern) {
   std::vector<std::pair<size_t, size_t>> result;
 
-  boost::sregex_token_iterator it(text.begin(), text.end(), pattern);
-  boost::sregex_token_iterator end;
+  boost::cregex_token_iterator it(text.begin(), text.end(), pattern);
+  boost::cregex_token_iterator end;
   while (it != end) {
     result.emplace_back(it->first - text.begin(), it->length());
     ++it;

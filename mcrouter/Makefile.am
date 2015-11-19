@@ -1,4 +1,4 @@
-SUBDIRS = lib . routes test
+SUBDIRS = lib . routes tools test
 
 ACLOCAL_AMFLAGS = -I m4
 

@@ -94,12 +94,13 @@ fi
 
 # check for boost libs
 AX_BOOST_BASE([1.51.0], [], [AC_MSG_ERROR(
-              [Please install boost >= 1.51.0 (context, regex, filesystem and system)])])
+              [Please install boost >= 1.51.0 (context, filesystem, program_options, regex and system)])])
 # TODO: also check boost::ctx, not only boost::context
 AX_BOOST_CONTEXT
+AX_BOOST_FILESYSTEM
+AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_REGEX
 AX_BOOST_SYSTEM
-AX_BOOST_FILESYSTEM
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -239,7 +240,8 @@ AC_CHECK_FUNCS([gettimeofday \
                 ftruncate])
 
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
-     $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB -lpthread -pthread"
+      $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
+      -lpthread -pthread"
 
 AM_CONDITIONAL([HAVE_STD_THREAD], [test "$ac_cv_header_features" = "yes"])
 AM_CONDITIONAL([HAVE_X86_64], [test "$build_cpu" = "x86_64"])
@@ -271,6 +273,8 @@ AC_CONFIG_FILES([Makefile
                  routes/Makefile
                  routes/test/Makefile
                  test/Makefile
-                 test/cpp_unit_tests/Makefile])
+                 test/cpp_unit_tests/Makefile
+                 tools/Makefile
+                 tools/mcpiper/Makefile])
 
 AC_OUTPUT
