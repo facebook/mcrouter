@@ -487,6 +487,9 @@ class ConfigPreprocessor::BuiltIns {
       checkLogic(key.isInt(),
                  "Select: dictionary is an array, key is not integer");
       auto id = key.getInt();
+      if (id < 0) {
+        id += dictionary.size();
+      }
       checkLogic(id >= 0 && size_t(id) < dictionary.size(),
                  "Select: index out of range");
       return std::move(dictionary[id]);
