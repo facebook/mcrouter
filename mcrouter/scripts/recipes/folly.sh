@@ -16,6 +16,7 @@ fi
 
 if [ ! -d /usr/include/double-conversion ]; then
     if [ ! -d "$PKG_DIR/double-conversion" ]; then
+        cd "$PKG_DIR" || die "cd fail"
         git clone https://github.com/google/double-conversion.git
     fi
     cd "$PKG_DIR/double-conversion" || die "cd fail"
