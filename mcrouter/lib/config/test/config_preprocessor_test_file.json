@@ -212,6 +212,35 @@
       }
     }
   },
+  "split": {
+    "macros": {},
+    "cases": {
+      "simple": {
+        "orig": {
+          "type": "split",
+          "dictionary": "a.b.c.",
+          "delim": "."
+        },
+        "expand": [ "a", "b", "c", "" ]
+      },
+      "empty": {
+        "orig": "@split(,)",
+        "expand": [ "" ]
+      },
+      "emptyDelim": {
+        "orig": "@split(abacaba,)",
+        "expand": [ "abacaba" ]
+      },
+      "emplyPieces": {
+        "orig": "@split(abbabbabb, b)",
+        "expand": [ "a", "", "a", "", "a", "", "" ]
+      },
+      "multiCharDelim": {
+        "orig": "@split(abbabbabb, bb)",
+        "expand": [ "a", "a", "a", "" ]
+      }
+    }
+  },
   "shuffle": {
     "macros": {
     },

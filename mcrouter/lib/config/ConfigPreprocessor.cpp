@@ -16,6 +16,7 @@
 #include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/Random.h>
+#include <folly/String.h>
 
 #include "mcrouter/lib/config/ImportResolverIf.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -563,6 +564,23 @@ class ConfigPreprocessor::BuiltIns {
       }
       return res;
     }
+  }
+
+  /**
+   * Splits a string by delimiter. Returns list of strings.
+   * Usage:
+   *  "type": "split",
+   *  "dictionary": "a.b.c.",
+   *  "delim": "."
+   * => [ "a", "b", "c", "" ]
+   */
+  static dynamic splitMacro(Context ctx) {
+    auto dict = asStringPiece(ctx.at("dictionary"), "Split: dictionary");
+    auto delim = asStringPiece(ctx.at("delim"), "Split: delim");
+
+    vector<StringPiece> result;
+    folly::split(delim, dict, result);
+    return folly::dynamic(result.begin(), result.end());
   }
 
   /**
@@ -1278,6 +1296,8 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   addMacro("shuffle", { "dictionary" }, &BuiltIns::shuffleMacro);
 
   addMacro("slice", { "dictionary", "from", "to" }, &BuiltIns::sliceMacro);
+
+  addMacro("split", { "dictionary", "delim" }, &BuiltIns::splitMacro);
 
   addMacro("range", { "from", "to" }, &BuiltIns::rangeMacro);
 
