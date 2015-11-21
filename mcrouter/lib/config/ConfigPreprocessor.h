@@ -12,10 +12,10 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include <folly/dynamic.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 namespace facebook { namespace memcache {
 
@@ -42,7 +42,7 @@ class ConfigPreprocessor {
   static folly::dynamic getConfigWithoutMacros(
     folly::StringPiece jsonC,
     ImportResolverIf& importResolver,
-    std::unordered_map<std::string, folly::dynamic> globalParams,
+    folly::StringKeyedUnorderedMap<folly::dynamic> globalParams,
     size_t nestedLimit = 250);
 
  private:
@@ -61,13 +61,12 @@ class ConfigPreprocessor {
    */
   class BuiltIns;
 
-  typedef std::unordered_map<std::string, folly::dynamic> Context;
+  using Context = folly::StringKeyedUnorderedMap<folly::dynamic>;
 
-  std::unordered_map<std::string, std::unique_ptr<Macro>> macros_;
-  std::unordered_map<std::string, std::unique_ptr<Const>> consts_;
-  std::unordered_map<std::string, folly::dynamic> importCache_;
-  std::unordered_map<
-    std::string,
+  folly::StringKeyedUnorderedMap<std::unique_ptr<Macro>> macros_;
+  folly::StringKeyedUnorderedMap<std::unique_ptr<Const>> consts_;
+  folly::StringKeyedUnorderedMap<folly::dynamic> importCache_;
+  folly::StringKeyedUnorderedMap<
     std::function<folly::dynamic(const folly::dynamic&, const Context&)>
   > builtInCalls_;
 
@@ -104,8 +103,7 @@ class ConfigPreprocessor {
    *    ^...................^
    *             str
    */
-  std::vector<folly::dynamic>
-  getCallParams(folly::StringPiece str, const Context& context) const;
+  std::vector<folly::StringPiece> getCallParams(folly::StringPiece str) const;
 
   /**
    * Substitute params from context (substrings like %paramName%)
@@ -122,12 +120,15 @@ class ConfigPreprocessor {
   folly::dynamic
   expandStringMacro(folly::StringPiece str, const Context& params) const;
 
-  void addBuiltInMacro(std::string name, std::vector<folly::dynamic> params,
-                       std::function<folly::dynamic(Context)> func);
+  void addMacro(folly::StringPiece name,
+                const std::vector<folly::dynamic>& params,
+                std::function<folly::dynamic(Context)> func);
 
   void parseMacroDef(const folly::dynamic& key, const folly::dynamic& obj);
 
   void parseMacroDefs(folly::dynamic jmacros);
+
+  void addConst(folly::StringPiece name, folly::dynamic result);
 };
 
 }}  // facebook::memcache

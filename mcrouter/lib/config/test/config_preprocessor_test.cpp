@@ -32,7 +32,7 @@ const std::string kTestFileErrors =
 const std::string kTestFileComments =
   "mcrouter/lib/config/test/config_preprocessor_test_comments.json";
 
-const std::unordered_map<std::string, folly::dynamic> kGlobalParams = {
+const folly::StringKeyedUnorderedMap<folly::dynamic> kGlobalParams = {
   { "testGlobal", "test" },
   { "templGlobal", "templ" }
 };

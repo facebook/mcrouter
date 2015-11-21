@@ -29,7 +29,7 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
     : json_(nullptr) {
 
   McImportResolver importResolver(configApi);
-  std::unordered_map<std::string, folly::dynamic> globalParams{
+  folly::StringKeyedUnorderedMap<folly::dynamic> globalParams{
     { "default-route", opts.default_route.str() },
     { "default-region", opts.default_route.getRegion().str() },
     { "default-cluster", opts.default_route.getCluster().str() },
@@ -38,7 +38,9 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
     { "service-name", opts.service_name }
   };
   auto additionalParams = additionalConfigParams();
-  globalParams.insert(additionalParams.begin(), additionalParams.end());
+  for (auto& it : additionalParams) {
+    globalParams.emplace(it.first, std::move(it.second));
+  }
   for (const auto& param : opts.config_params) {
     globalParams.emplace(param.first, param.second);
   }
