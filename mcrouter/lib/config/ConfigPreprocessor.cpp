@@ -75,11 +75,9 @@ const Value& tryGet(const folly::StringKeyedUnorderedMap<Value>& map,
 }
 
 StringPiece trim(StringPiece sp) {
-  while (!sp.empty() && sp.front() == ' ') {
-    sp.pop_front();
-  }
+  sp = folly::ltrimWhitespace(sp);
   while (!sp.empty()) {
-    if (sp.back() != ' ') {
+    if (!isspace(sp.back())) {
       break;
     }
     // the space should be unescaped, i.e. number of consecutive slashes
