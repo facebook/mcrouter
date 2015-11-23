@@ -70,11 +70,13 @@ class TestRunner {
   TestRunner& run(folly::IOBuf data) {
     data.coalesce();
 
-    // Limit max piece size based on data length, since it may produce huge
-    // amount of combinations.
-    size_t pieceSize = data.length() < 20 ? 2 : 1;
-
-    auto splits = genChunkedDataSets(data.length(), pieceSize);
+    // Limit max piece size, since it may produce huge amount of combinations.
+    size_t pieceSize = 0;
+    size_t cnt = 0;
+    while (pieceSize <= data.length() && cnt < 20000) {
+      cnt = chunkedDataSetsCnt(data.length(), ++pieceSize);
+    }
+    auto splits = genChunkedDataSets(data.length(), pieceSize - 1);
     splits.push_back({data.length()});
     for (const auto& split : splits) {
       auto tmp = chunkData(data, split);
@@ -123,6 +125,8 @@ class TestRunner {
 
       return true;
     }
+
+    virtual ~ExpectedCallbackBase() = default;
    protected:
     template <class Operation, class Request>
     ExpectedCallbackBase(Operation, const Request& r, bool noreply)
@@ -144,7 +148,7 @@ class TestRunner {
     ExpectedRequestCallback(Operation, Request req, bool noreply = false)
         : ExpectedCallbackBase(Operation(), req, noreply),
           req_(std::move(req)) {}
-
+    virtual ~ExpectedRequestCallback() = default;
    private:
     Request req_;
 

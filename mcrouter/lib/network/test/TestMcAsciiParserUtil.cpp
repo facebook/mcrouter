@@ -9,42 +9,40 @@
  */
 #include "TestMcAsciiParserUtil.h"
 
-#include <unordered_map>
-
 #include <folly/io/IOBuf.h>
 
 namespace facebook { namespace memcache {
 
 std::vector<std::vector<size_t>> genChunkedDataSets(size_t length,
                                                     size_t maxPieceSize) {
-  if (maxPieceSize == 0) {
-    maxPieceSize = length;
+  std::vector<std::vector<std::vector<size_t>>> m(length + 1);
+  for (size_t i = 1; i <= std::min(length, maxPieceSize); ++i) {
+    m[i].push_back({i});
   }
-  static std::unordered_map<std::pair<size_t, size_t>,
-                            std::vector<std::vector<size_t>>> prec;
-
-  auto it = prec.find(std::make_pair(length, maxPieceSize));
-  if (it != prec.end()) {
-    return it->second;
-  }
-
-  std::vector<std::vector<size_t>> splits;
-  if (length <= maxPieceSize) {
-    splits.push_back({length});
-  }
-
-  for (auto piece = 1; piece < std::min(maxPieceSize + 1, length); ++piece) {
-    auto vecs = genChunkedDataSets(length - piece, maxPieceSize);
-    splits.reserve(splits.size() + vecs.size());
-    for (auto& v : vecs) {
-      v.emplace_back(piece);
-      splits.emplace_back(std::move(v));
+  for (size_t i = 2; i <= length; ++i) {
+    for (size_t piece = 1; piece <= std::min(i, maxPieceSize); ++piece) {
+      for (const auto& split : m[i - piece]) {
+        m[i].push_back(split);
+        m[i].back().push_back(piece);
+      }
     }
   }
+  return m[length];
+}
 
-  prec[std::make_pair(length, maxPieceSize)] = splits;
-
-  return splits;
+size_t chunkedDataSetsCnt(size_t length, size_t maxPieceSize) {
+  std::vector<size_t> m(length + 1, 0);
+  for (size_t i = 1; i <= std::min(length, maxPieceSize); ++i) {
+    m[i] = 1;
+  }
+  for (size_t i = 2; i <= length; ++i) {
+    for (size_t piece = 1; piece <= std::min(i, maxPieceSize); ++piece) {
+      m[i] += m[i - piece];
+      // do not overflow
+      m[i] = std::min(m[i], 1UL << 28);
+    }
+  }
+  return m[length];
 }
 
 std::unique_ptr<folly::IOBuf> chunkData(folly::IOBuf data,

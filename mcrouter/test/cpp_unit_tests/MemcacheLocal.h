@@ -7,17 +7,12 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef MEMCACHE_LOCAL_H
-#define MEMCACHE_LOCAL_H 1
-
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <time.h>
+#pragma once
 
 #include <random>
 #include <string>
 
+#include <folly/Range.h>
 #include <folly/Subprocess.h>
 
 /**
@@ -32,13 +27,11 @@ namespace facebook { namespace memcache { namespace test {
 class MemcacheLocal {
  public:
   /**
-   * Constructor: If no argument is passed, then it finds an appropriate port
-   * and starts the local memcached server. If a port has been passed then
-   * it tries to start the server on the specified  port.
+   * finds an appropriate port and starts the local memcached server.
    * Object construction blocks until the memcache server is ready.
-   * fatal error if can not start new process
+   * @throws runtime_error if can not start new process
    */
-  explicit MemcacheLocal(const int port = 0);
+  MemcacheLocal();
 
   /* which port memcache server is listening? */
   int getPort() const { return port_; }
@@ -51,53 +44,26 @@ class MemcacheLocal {
    */
   ~MemcacheLocal();
 
-  // constants
-  // hostname for the memcached server, memcached path, memcached binary
-  const static std::string kHostName, kMemcachedPath, kMemcachedBin;
-  // fail test if we searched PORT_SEARCH_TIMES for an open port
-  const static int kPortSearchOut;
-  // after starting local memcached, try to connect at most kTimeout times
-  const static int kTimeout;
-  // range of search for an open port
-  const static int kPortRangeBegin, kPortRangeEnd;
-
  private:
   /* process of the started memcache */
   std::unique_ptr<folly::Subprocess> process_;
   std::mt19937 random_;
-  int port_; /* port that was used to bind the server */
+  int port_{-1}; /* port that was used to bind the server */
 
   /**
    * Start memcached on a local port
    */
-  int startMemcachedServer(const int start_port, const int stop_port);
+  int startMemcachedServer(const int startPort, const int stopPort);
 
   /* translate a URN[0,n] to URN[a,a+n] */
-  int generateRandomPort(const int start_port, const int stop_port);
-
-  /* get sockaddr, IPv4 or IPv6 */
-  void* getSocketAddress(struct sockaddr *sa) const;
-
-  /**
-   * connects to a tcp server using hostname and port as input
-   * can be used for actual communication, or
-   * just to test if anything is running
-   * if successfully connected, returns a socket,
-   * if can not connect, returns -1
-   */
-  int connectTcpServer(const std::string& hostname, const int port) const;
-
-  /* send a message through an established socket */
-  int sendMessage(const int sockfd, const std::string& message) const;
+  int generateRandomPort(const int startPort, const int stopPort);
 
   /* start a memcache server on the specified port */
-  int startMemcachedOnPort(const std::string& path,
-                           const std::string& bin, const int port);
+  bool startMemcachedOnPort(folly::StringPiece path,
+                            folly::StringPiece bin, const int port);
 
   /* stop memcache server */
   void stopMemcachedServer(const int port) const;
 };
 
-} } } // !namespace facebook::memcache::test
-
-#endif
+}}} // !namespace facebook::memcache::test

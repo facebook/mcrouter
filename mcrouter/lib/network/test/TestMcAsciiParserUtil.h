@@ -26,6 +26,12 @@ namespace facebook { namespace memcache {
 std::vector<std::vector<size_t>> genChunkedDataSets(size_t length,
                                                     size_t maxPieceSize);
 
+/**
+ * Given total data length and max piece size, returns number of
+ * combinations to split data in chunks.
+ */
+size_t chunkedDataSetsCnt(size_t length, size_t maxPieceSize);
+
 std::unique_ptr<folly::IOBuf> chunkData(folly::IOBuf data,
                                         const std::vector<size_t>& pieces);
 
