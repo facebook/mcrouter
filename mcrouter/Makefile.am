@@ -27,6 +27,7 @@ libmcroutercore_a_SOURCES = \
   CallbackPool.h \
   ConfigApi.cpp \
   ConfigApi.h \
+  ConfigApiIf.h \
   CyclesObserver.cpp \
   CyclesObserver.h \
   ExponentialSmoothData.h \

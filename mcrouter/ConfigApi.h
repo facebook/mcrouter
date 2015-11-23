@@ -18,6 +18,7 @@
 #include <unordered_map>
 
 #include "mcrouter/CallbackPool.h"
+#include "mcrouter/ConfigApiIf.h"
 
 namespace folly {
 class dynamic;
@@ -31,16 +32,10 @@ namespace mcrouter {
 
 class FileDataProvider;
 
-enum class ConfigType {
-  ConfigFile = 0,
-  ConfigImport = 1,
-  Pool = 2
-};
-
 /**
  * Incapsulates logic of fetching configs from files.
  */
-class ConfigApi {
+class ConfigApi : public ConfigApiIf {
  public:
   typedef std::function<void()> Callback;
   typedef CallbackPool<>::CallbackHandle CallbackHandle;
@@ -62,8 +57,8 @@ class ConfigApi {
    *
    * @return true on success, false otherwise
    */
-  virtual bool get(ConfigType type, const std::string& path,
-                   std::string& contents);
+  bool get(ConfigType type, const std::string& path,
+           std::string& contents) override;
 
   /**
    * All files we 'get' after this call will be marked as 'tracked'. Once
@@ -89,7 +84,7 @@ class ConfigApi {
    * @param[out] config Will contain contents of configuration file on success
    * @return true on success, false otherwise
    */
-  virtual bool getConfigFile(std::string& config);
+  bool getConfigFile(std::string& config) override;
 
   /**
    * @return dynamic object with information about files used in configuration.

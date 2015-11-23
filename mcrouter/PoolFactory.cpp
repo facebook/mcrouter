@@ -16,7 +16,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-PoolFactory::PoolFactory(const folly::dynamic& config, ConfigApi& configApi)
+PoolFactory::PoolFactory(const folly::dynamic& config, ConfigApiIf& configApi)
   : configApi_(configApi) {
 
   checkLogic(config.isObject(), "config is not an object");
@@ -24,57 +24,58 @@ PoolFactory::PoolFactory(const folly::dynamic& config, ConfigApi& configApi)
     checkLogic(jpools->isObject(), "config: 'pools' is not an object");
 
     for (const auto& it : jpools->items()) {
-      pools_.emplace(it.first.stringPiece(), it.second);
+      pools_.emplace(it.first.stringPiece(),
+                     std::make_pair(it.second, PoolState::NEW));
     }
   }
 }
 
-PoolFactory::PoolJson
-PoolFactory::emplace(folly::StringPiece name, folly::dynamic jpool) {
-  auto it = pools_.emplace(name, std::move(jpool)).first;
-  return PoolJson(it->first, it->second);
-}
-
-PoolFactory::PoolJson
-PoolFactory::parsePool(folly::StringPiece name, const folly::dynamic& json) {
+PoolFactory::PoolJson PoolFactory::parseNamedPool(folly::StringPiece name) {
   auto existingIt = pools_.find(name);
-  if (existingIt != pools_.end()) {
-    return PoolJson(existingIt->first, existingIt->second);
-  }
-  if (json.isString()) {
+  if (existingIt == pools_.end()) {
     // get the pool from ConfigApi
     std::string jsonStr;
     checkLogic(configApi_.get(ConfigType::Pool, name.str(), jsonStr),
                "Can not read pool: {}", name);
-    return emplace(name, parseJsonString(jsonStr));
+    existingIt = pools_.emplace(
+      name,
+      std::make_pair(parseJsonString(jsonStr), PoolState::PARSED)
+    ).first;
+    return PoolJson(existingIt->first, existingIt->second.first);
   }
-  // one day we may add inheriting from local pool
-  if (auto jinherit = json.get_ptr("inherit")) {
-    checkLogic(jinherit->isString(),
+
+  name = existingIt->first;
+  auto& json = existingIt->second.first;
+  auto& state = existingIt->second.second;
+  switch (state) {
+    case PoolState::PARSED: return PoolJson(name, json);
+    case PoolState::PARSING: throwLogic("Cycle in pool inheritance");
+    case PoolState::NEW:
+      state = PoolState::PARSING;
+      break;
+  }
+
+  if (auto jInherit = json.get_ptr("inherit")) {
+    checkLogic(jInherit->isString(),
                "Pool {}: inherit is not a string", name);
-    auto path = jinherit->stringPiece().str();
-    std::string jsonStr;
-    checkLogic(configApi_.get(ConfigType::Pool, path, jsonStr),
-               "Can not read pool from: {}", path);
-    auto newJson = parseJsonString(jsonStr);
-    for (auto& it : json.items()) {
-      newJson.insert(it.first, it.second);
-    }
-    newJson.erase("inherit");
-    return emplace(name, std::move(newJson));
+    auto& newJson = parseNamedPool(jInherit->stringPiece()).json;
+    json.update_missing(newJson);
+    json.erase("inherit");
   }
-  return emplace(name, json);
+  state = PoolState::PARSED;
+  return PoolJson(name, json);
 }
 
 PoolFactory::PoolJson PoolFactory::parsePool(const folly::dynamic& json) {
   checkLogic(json.isString() || json.isObject(),
              "Pool should be a string (name of pool) or an object");
   if (json.isString()) {
-    return parsePool(json.stringPiece(), json);
+    return parseNamedPool(json.stringPiece());
   }
   auto jname = json.get_ptr("name");
   checkLogic(jname && jname->isString(), "Pool should have string 'name'");
-  return parsePool(jname->stringPiece(), json);
+  pools_.emplace(jname->stringPiece(), std::make_pair(json, PoolState::NEW));
+  return parseNamedPool(jname->stringPiece());
 }
 
 }}}  // facebook::memcache::mcrouter

@@ -14,7 +14,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class ConfigApi;
+class ConfigApiIf;
 
 /**
  * Parses mcrouter pools from mcrouter config.
@@ -34,7 +34,7 @@ class PoolFactory {
    * @param configApi API to fetch pools from files. Should be
    *                  reference once we'll remove 'routerless' mode.
    */
-  PoolFactory(const folly::dynamic& config, ConfigApi& configApi);
+  PoolFactory(const folly::dynamic& config, ConfigApiIf& configApi);
 
   /**
    * Load pool from ConfigApi, expand `inherit`, etc.
@@ -46,11 +46,15 @@ class PoolFactory {
   PoolJson parsePool(const folly::dynamic& json);
 
  private:
-  folly::StringKeyedUnorderedMap<folly::dynamic> pools_;
-  ConfigApi& configApi_;
+  enum class PoolState {
+    NEW,
+    PARSING,
+    PARSED
+  };
+  folly::StringKeyedUnorderedMap<std::pair<folly::dynamic, PoolState>> pools_;
+  ConfigApiIf& configApi_;
 
-  PoolJson parsePool(folly::StringPiece name, const folly::dynamic& json);
-  PoolJson emplace(folly::StringPiece name, folly::dynamic jpool);
+  PoolJson parseNamedPool(folly::StringPiece name);
 };
 
 }}} // facebook::memcache::mcrouter
