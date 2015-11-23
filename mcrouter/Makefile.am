@@ -25,6 +25,7 @@ libmcroutercore_a_SOURCES = \
   awriter.h \
   CallbackPool-inl.h \
   CallbackPool.h \
+  Clock.h \
   ConfigApi.cpp \
   ConfigApi.h \
   ConfigApiIf.h \

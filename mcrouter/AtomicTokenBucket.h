@@ -10,10 +10,12 @@
 #pragma once
 
 #include <algorithm>
+#include <chrono>
 
 #include <folly/detail/CacheLocality.h>
 
 #include "mcrouter/config.h"
+#include "mcrouter/Clock.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -29,9 +31,10 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * This implementation records the last time it was updated. This allows the
  * token bucket to add tokens "just in time" when tokens are requested.
  */
-class DynamicAtomicTokenBucket {
+template <typename ClockT>
+class ParameterizedDynamicAtomicTokenBucket {
  public:
-  DynamicAtomicTokenBucket() : zeroTime_(0) {
+  ParameterizedDynamicAtomicTokenBucket() : zeroTime_(0) {
   }
 
   /**
@@ -118,7 +121,7 @@ class DynamicAtomicTokenBucket {
   }
 
   static double defaultClockNow() {
-    return nowSec();
+    return ClockT::time_since_epoch().count();
   }
 
  private:
@@ -146,7 +149,8 @@ class DynamicAtomicTokenBucket {
   std::atomic<double> zeroTime_ FOLLY_ALIGN_TO_AVOID_FALSE_SHARING;
 };
 
-class AtomicTokenBucket {
+template <typename ClockT>
+class ParameterizedAtomicTokenBucket {
  public:
   /**
    * Construct a token bucket with a specific maximum rate and burst size.
@@ -157,7 +161,7 @@ class AtomicTokenBucket {
    *                     monotonically increasing clock.
    *
    */
-  AtomicTokenBucket(double rate, double burstSize,
+  ParameterizedAtomicTokenBucket(double rate, double burstSize,
                     double /*nowInSeconds*/ = defaultClockNow())
       : rate_(rate),
         burstSize_(burstSize) {
@@ -188,13 +192,19 @@ class AtomicTokenBucket {
   }
 
   static double defaultClockNow() {
-    return nowSec();
+    return ClockT::time_since_epoch().count();
   }
 
  private:
-  DynamicAtomicTokenBucket tokenBucket_;
+  ParameterizedDynamicAtomicTokenBucket<ClockT> tokenBucket_;
   const double rate_;
   const double burstSize_;
 };
+
+using DynamicAtomicTokenBucket = ParameterizedDynamicAtomicTokenBucket<
+    SteadyClock<std::chrono::duration<double>>>;
+using AtomicTokenBucket =
+    ParameterizedAtomicTokenBucket<SteadyClock<std::chrono::duration<double>>>;
+
 
 }}} // namespace facebook::memcache::mcrouter
