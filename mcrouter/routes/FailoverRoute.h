@@ -28,7 +28,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * until the first non-error reply.  If all replies result in errors, returns
  * the last destination's reply.
  */
-template <class RouteHandleIf>
+template <class RouteHandleIf, typename FailoverPolicyT>
 class FailoverRoute {
  public:
   static std::string routeName() { return "failover"; }
@@ -46,18 +46,18 @@ class FailoverRoute {
   FailoverRoute(std::vector<std::shared_ptr<RouteHandleIf>> targets,
                 FailoverErrorsSettings failoverErrors,
                 std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                bool failoverTagging)
+                bool failoverTagging,
+                const folly::dynamic& policyConfig = nullptr)
       : targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)),
         rateLimiter_(std::move(rateLimiter)),
-        failoverTagging_(failoverTagging) {
+        failoverTagging_(failoverTagging),
+        failoverPolicy_(targets_, policyConfig) {
     assert(targets_.size() > 1);
   }
 
   template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) {
-
+  ReplyT<Operation, Request> route(const Request& req, Operation) {
     auto normalReply = targets_[0]->route(req, Operation());
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
@@ -79,28 +79,34 @@ class FailoverRoute {
     return fiber_local::runWithLocals([this, &req, &proxy, &normalReply]() {
       fiber_local::setFailoverTag(failoverTagging_ && req.hasHashStop());
       fiber_local::addRequestClass(RequestClass::kFailover);
-      auto doFailover = [this, &req, &proxy, &normalReply](size_t i) {
-        auto failoverReply = targets_[i]->route(req, Operation());
+      auto doFailover = [this, &req, &proxy, &normalReply](
+          typename FailoverPolicyT::Iterator& child) {
+        auto failoverReply = child->route(req, Operation());
         logFailover(proxy,
                     Operation::name,
-                    i,
+                    child.getTrueIndex(),
                     targets_.size() - 1,
                     req,
                     normalReply,
                     failoverReply);
         return failoverReply;
       };
-      for (size_t i = 1; i + 1 < targets_.size(); ++i) {
-        auto failoverReply = doFailover(i);
+
+      auto cur = failoverPolicy_.begin();
+      auto nx = cur;
+      for (++nx; nx != failoverPolicy_.end(); ++cur, ++nx) {
+        auto failoverReply = doFailover(cur);
         if (!failoverErrors_.shouldFailover(failoverReply, Operation())) {
           return failoverReply;
         }
       }
-      auto reply = doFailover(targets_.size() - 1);
-      if (reply.isError()) {
+
+      auto failoverReply = doFailover(cur);
+      if (failoverReply.isError()) {
         stat_incr(proxy.stats, failover_all_failed_stat, 1);
       }
-      return reply;
+
+      return failoverReply;
     });
   }
 
@@ -109,6 +115,7 @@ class FailoverRoute {
   const FailoverErrorsSettings failoverErrors_;
   std::unique_ptr<FailoverRateLimiter> rateLimiter_;
   const bool failoverTagging_{false};
+  FailoverPolicyT failoverPolicy_;
 };
 
 }}} // facebook::memcache::mcrouter

@@ -38,11 +38,11 @@ McrouterRouteHandlePtr makeFailoverRoute(
     const folly::dynamic& json,
     std::vector<McrouterRouteHandlePtr> children);
 
-McrouterRouteHandlePtr makeFailoverRoute(
-    std::vector<McrouterRouteHandlePtr> rh,
-    FailoverErrorsSettings failoverErrors,
-    std::unique_ptr<FailoverRateLimiter> rateLimiter,
-    bool failoverTagging);
+McrouterRouteHandlePtr
+makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
+                         FailoverErrorsSettings failoverErrors,
+                         std::unique_ptr<FailoverRateLimiter> rateLimiter,
+                         bool failoverTagging);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     McrouterRouteHandlePtr normal,
@@ -53,10 +53,10 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   auto children = getFailoverChildren(std::move(normal),
                                       std::move(failover),
                                       failoverExptime);
-  return makeFailoverRoute(std::move(children),
-                           std::move(failoverErrors),
-                           std::move(rateLimiter),
-                           /* failoverTagging */ false);
+  return makeFailoverRouteInOrder(std::move(children),
+                                  std::move(failoverErrors),
+                                  std::move(rateLimiter),
+                                  /* failoverTagging */ false);
 }
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(

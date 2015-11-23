@@ -508,6 +508,41 @@ class TestBasicFailoverOverride(McrouterTestCase):
         self.assertEqual(mcr.get("key2"), "value2")
         self.assertEqual(mcr.get("key2"), "value2")
 
+class TestBasicFailoverLeastFailures(McrouterTestCase):
+    """
+    The main purpose of this test is to make sure LeastFailures policy
+    is parsed correctly from json config. We rely on cpp tests to stress
+    correctness of LeastFailures failover policy.
+    """
+    config = './mcrouter/test/test_basic_failover_least_failures.json'
+    extra_args = []
+
+    def setUp(self):
+        # The order here corresponds to the order of hosts in the .json
+        self.mc1 = self.add_server(Memcached())
+        self.mc2 = self.add_server(Memcached())
+        self.mc3 = self.add_server(Memcached())
+        self.mc4 = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(self.config, extra_args=self.extra_args)
+
+    def test_failover_least_failures(self):
+        mcr = self.get_mcrouter()
+
+        self.assertTrue(self.mc4.set("key", "value"))
+
+        self.mc1.terminate()
+        self.mc2.terminate()
+        self.mc3.terminate()
+
+        # Main child #1 fails, as do 2 and 3. No request to 4 since
+        # max_tries = 3
+        self.assertEqual(mcr.get("key"), None)
+
+        # Now 4 has least errors.
+        self.assertEqual(mcr.get("key"), "value")
+
 class TestMcrouterBasicL1L2(McrouterTestCase):
     config = './mcrouter/test/test_basic_l1_l2.json'
     config_ncache = './mcrouter/test/test_basic_l1_l2_ncache.json'
