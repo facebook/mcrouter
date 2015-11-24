@@ -129,5 +129,19 @@
       "key": 2,
       "value": 3
     }
+  },
+
+  "out_of_scope": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "result": "%item%"
+      }
+    },
+    "ret": {
+      "type": "transform",
+      "dictionary": [ 1, 2, 3 ],
+      "itemTransform": "@a"
+    }
   }
 }

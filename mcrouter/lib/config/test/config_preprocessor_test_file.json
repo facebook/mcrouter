@@ -78,6 +78,19 @@
       "hashInt": {
         "orig": "@hash(@int(2313))",
         "expand": -4996987850411076878
+      },
+      "ifElse": {
+        "orig": "@if(@bool(true), abc, @fail(oops))",
+        "expand": "abc"
+      },
+      "ifElseLong": {
+        "orig": {
+          "type": "if",
+          "condition": false,
+          "is_true": "@fail(oops)",
+          "is_false": "abc"
+        },
+        "expand": "abc"
       }
     }
   },
@@ -576,18 +589,8 @@
               "transform": {
                 "type": "merge",
                 "params": [
-                  {
-                    "type": "if",
-                    "condition": "@empty(%value%)",
-                    "is_true": "%key%:",
-                    "is_false": "%value%,%key%:"
-                  },
-                  {
-                    "type": "if",
-                    "condition": "@isObject(%item%)",
-                    "is_true": "@objectToString(%item%)",
-                    "is_false": "%item%"
-                  }
+                  "@if(@empty(%value%), %key%:, %value%\\,%key%:)",
+                  "@if(@isObject(%item%), @objectToString(%item%), %item%)"
                 ]
               }
             },

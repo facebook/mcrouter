@@ -57,22 +57,23 @@ class ConfigPreprocessor {
   class Const;
 
   /**
+   * Inner representation of arguments/locals.
+   */
+  class Context;
+
+  /**
    * Built-in calls and macros
    */
   class BuiltIns;
-
-  using Context = folly::StringKeyedUnorderedMap<folly::dynamic>;
 
   folly::StringKeyedUnorderedMap<std::unique_ptr<Macro>> macros_;
   folly::StringKeyedUnorderedMap<std::unique_ptr<Const>> consts_;
   folly::StringKeyedUnorderedMap<folly::dynamic> importCache_;
   folly::StringKeyedUnorderedMap<
-    std::function<folly::dynamic(const folly::dynamic&, const Context&)>
+    std::function<folly::dynamic(folly::dynamic&&, const Context&)>
   > builtInCalls_;
 
   mutable size_t nestedLimit_;
-
-  static const Context emptyContext_;
 
   /**
    * Create preprocessor with given macros
@@ -83,7 +84,7 @@ class ConfigPreprocessor {
    * @param nestedLimit maximum number of nested macros/objects.
    */
   ConfigPreprocessor(ImportResolverIf& importResolver,
-                     Context globals,
+                     folly::StringKeyedUnorderedMap<folly::dynamic> globals,
                      size_t nestedLimit);
 
   /**
@@ -122,7 +123,8 @@ class ConfigPreprocessor {
 
   void addMacro(folly::StringPiece name,
                 const std::vector<folly::dynamic>& params,
-                std::function<folly::dynamic(Context)> func);
+                std::function<folly::dynamic(Context&&)> func,
+                bool autoExpand = true);
 
   void parseMacroDef(const folly::dynamic& key, const folly::dynamic& obj);
 

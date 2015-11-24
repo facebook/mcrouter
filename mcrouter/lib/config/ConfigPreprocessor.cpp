@@ -160,29 +160,111 @@ size_t unescapeUntil(StringPiece from, string& to, char c) {
 
 } // namespace
 
-const ConfigPreprocessor::Context ConfigPreprocessor::emptyContext_{};
-
 ///////////////////////////////Macro////////////////////////////////////////////
+
+class ConfigPreprocessor::Context {
+ private:
+  enum class VarState {
+    DEAD,
+    RAW,
+    EXPAND
+  };
+ public:
+  enum ExtendedTypeT { Extended };
+
+  // not copyable
+  Context(const Context&) = delete;
+  Context& operator=(const Context&) = delete;
+
+  // movable
+  Context(Context&&) = default;
+  Context& operator=(Context&&) = default;
+
+  explicit Context(const ConfigPreprocessor& prep)
+    : prep_(prep),
+      baseContext_(true) {}
+
+  Context(ExtendedTypeT, const Context& outer, bool baseContext = false)
+    : prep_(outer.prep_),
+      outer_(&outer),
+      baseContext_(baseContext) {}
+
+  dynamic& addExpanded(StringPiece key, dynamic value) {
+    auto it = locals_.emplace(
+        key, std::make_pair(std::move(value), VarState::EXPAND));
+    checkLogic(it.second, "'{}' already exists in local scope", key);
+    return it.first->second.first;
+  }
+
+  dynamic& addRaw(StringPiece key, dynamic value) {
+    auto it = locals_.emplace(
+        key, std::make_pair(std::move(value), VarState::RAW));
+    checkLogic(it.second, "'{}' already exists in local scope", key);
+    return it.first->second.first;
+  }
+
+  dynamic expandRawArg(StringPiece key) {
+    auto& ret = locals_.find(key)->second;
+    assert(ret.second == VarState::RAW);
+    ret.second = VarState::DEAD;
+    if (outer_) {
+      return prep_.expandMacros(std::move(ret.first), *outer_);
+    } else {
+      return prep_.expandMacros(std::move(ret.first), Context(prep_));
+    }
+  }
+
+  const dynamic& at(StringPiece key) const {
+    auto it = locals_.find(key);
+    assert(it != locals_.end());
+    assert(it->second.second == VarState::EXPAND);
+    return it->second.first;
+  }
+
+  dynamic move(StringPiece key) {
+    auto& ret = locals_.find(key)->second;
+    assert(ret.second == VarState::EXPAND);
+    ret.second = VarState::DEAD;
+    return std::move(ret.first);
+  }
+
+  const dynamic* find(StringPiece key) const {
+    auto it = locals_.find(key);
+    if (it != locals_.end()) {
+      assert(it->second.second == VarState::EXPAND);
+      return &it->second.first;
+    }
+    if (outer_ && !baseContext_) {
+      return outer_->find(key);
+    }
+    return nullptr;
+  }
+ private:
+  const ConfigPreprocessor& prep_;
+  const Context* outer_{nullptr};
+  folly::StringKeyedUnorderedMap<std::pair<dynamic, VarState>> locals_;
+  bool baseContext_{false};
+};
 
 class ConfigPreprocessor::Macro {
  public:
-  typedef std::function<dynamic(Context)> Func;
+  using Func = std::function<dynamic(Context&&)>;
 
   Macro(const ConfigPreprocessor& prep,
-        StringPiece name, const vector<dynamic>& params, Func f)
+        StringPiece name,
+        const vector<dynamic>& params,
+        Func f,
+        bool autoExpand = true)
     : prep_(prep),
       f_(std::move(f)),
+      autoExpand_(autoExpand),
       name_(name) {
 
     initParams(params);
   }
 
-  dynamic getResult(Context context) const {
-    return f_(std::move(context));
-  }
-
-  Context getContext(const vector<StringPiece>& params,
-                     const Context& ctx) const {
+  dynamic getResult(const vector<StringPiece>& params,
+                    const Context& ctx) const {
     checkLogic(minParamCnt_ <= params.size(),
                "Too few arguments for macro {}. Expected at least {} got {}",
                name_, minParamCnt_, params.size());
@@ -191,36 +273,45 @@ class ConfigPreprocessor::Macro {
                "Too many arguments for macro {}. Expected at most {} got {}",
                name_, maxParamCnt_, params.size());
 
-    Context result;
+    Context result(Context::Extended, ctx, /* base */ true);
     for (size_t i = 0; i < params.size(); i++) {
-      result.emplace(paramNames_[i].first,
-                     prep_.expandStringMacro(params[i], ctx));
+      if (autoExpand_) {
+        result.addExpanded(paramNames_[i].first,
+                           prep_.expandStringMacro(params[i], ctx));
+      } else {
+        result.addRaw(paramNames_[i].first, params[i]);
+      }
     }
 
     for (size_t i = params.size(); i < paramNames_.size(); i++) {
-      result.emplace(paramNames_[i].first, paramNames_[i].second);
+      result.addExpanded(paramNames_[i].first, paramNames_[i].second);
     }
-    return result;
+    return f_(std::move(result));
   }
 
-  Context getContext(dynamic macroObj) const {
-    Context result;
+  dynamic getResult(dynamic&& obj, const Context& ctx) const {
+    Context result(Context::Extended, ctx, /* base */ true);
     for (const auto& pn : paramNames_) {
-      auto it = macroObj.get_ptr(pn.first);
+      auto it = obj.get_ptr(pn.first);
       if (!it) {
         checkLogic(!pn.second.isNull(),
                    "Macro call {}: '{}' parameter not found", name_, pn.first);
-        result.emplace(pn.first, pn.second);
+        result.addExpanded(pn.first, pn.second);
       } else {
-        result.emplace(pn.first, std::move(*it));
+        if (autoExpand_) {
+          result.addExpanded(pn.first, prep_.expandMacros(std::move(*it), ctx));
+        } else {
+          result.addRaw(pn.first, std::move(*it));
+        }
       }
     }
-    return result;
+    return f_(std::move(result));
   }
 
  private:
   const ConfigPreprocessor& prep_;
   Func f_;
+  bool autoExpand_{true};
   vector<std::pair<string, dynamic>> paramNames_;
   size_t maxParamCnt_{0};
   size_t minParamCnt_{0};
@@ -272,8 +363,7 @@ class ConfigPreprocessor::Const {
   const dynamic& getResult() const {
     if (!expanded_) {
       try {
-        result_ = prep_.expandMacros(std::move(result_),
-                                     ConfigPreprocessor::emptyContext_);
+        result_ = prep_.expandMacros(std::move(result_), Context(prep_));
       } catch (const std::logic_error& e) {
         throwLogic("Const '{}':\n{}", name_, e.what());
       }
@@ -296,25 +386,25 @@ class ConfigPreprocessor::BuiltIns {
    * Loads JSONM from external source via importResolver.
    * Usage: @import(path)
    */
-  static dynamic importMacro(ConfigPreprocessor* p,
+  static dynamic importMacro(ConfigPreprocessor& p,
                              ImportResolverIf& importResolver,
-                             Context ctx) {
+                             Context&& ctx) {
     auto path = asStringPiece(ctx.at("path"), "import path");
     // cache each result by path, so we won't import same path twice
-    auto it = p->importCache_.find(path);
-    if (it != p->importCache_.end()) {
+    auto it = p.importCache_.find(path);
+    if (it != p.importCache_.end()) {
       return it->second;
     }
     dynamic result = nullptr;
     try {
       auto jsonC = importResolver.import(path);
       // result may contain comments, macros, etc.
-      result = p->expandMacros(parseJsonString(stripComments(jsonC)),
-                               ConfigPreprocessor::emptyContext_);
+      result = p.expandMacros(parseJsonString(stripComments(jsonC)),
+                              Context(p));
     } catch (const std::exception& e) {
       throwLogic("Import '{}':\n{}", path, e.what());
     }
-    p->importCache_.emplace(path, result);
+    p.importCache_.emplace(path, result);
     return result;
   }
 
@@ -323,7 +413,7 @@ class ConfigPreprocessor::BuiltIns {
    * Usage: @hash(prn1c05)
    * Usage: @hash(@int(52135))
    */
-  static dynamic hashMacro(Context ctx) {
+  static dynamic hashMacro(Context&& ctx) {
     const auto& val = ctx.at("value");
     if (val.isInt()) {
       return folly::Hash()(val.getInt());
@@ -339,7 +429,7 @@ class ConfigPreprocessor::BuiltIns {
    * Casts its argument to int.
    * Usage: @int(5)
    */
-  static dynamic intMacro(Context ctx) {
+  static dynamic intMacro(Context&& ctx) {
     try {
       return ctx.at("value").asInt();
     } catch (const std::exception& e) {
@@ -352,7 +442,7 @@ class ConfigPreprocessor::BuiltIns {
    * Casts its argument to string.
    * Usage: @str(@int(5))
    */
-  static dynamic strMacro(Context ctx) {
+  static dynamic strMacro(Context&& ctx) {
     try {
       return ctx.at("value").asString();
     } catch (const std::exception& e) {
@@ -365,7 +455,7 @@ class ConfigPreprocessor::BuiltIns {
    * Casts its argument to boolean.
    * Usage: @bool(false); @bool(true); @bool(@int(0)); @bool(@int(1))
    */
-  static dynamic boolMacro(Context ctx) {
+  static dynamic boolMacro(Context&& ctx) {
     try {
       return ctx.at("value").asBool();
     } catch (const std::exception& e) {
@@ -378,7 +468,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns array of object keys
    * Usage: @keys(object)
    */
-  static dynamic keysMacro(Context ctx) {
+  static dynamic keysMacro(Context&& ctx) {
     const auto& dictionary = ctx.at("dictionary");
     checkLogic(dictionary.isObject(), "Keys: dictionary is not object");
     return dynamic(dictionary.keys().begin(), dictionary.keys().end());
@@ -388,7 +478,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns array of object values
    * Usage: @values(object)
    */
-  static dynamic valuesMacro(Context ctx) {
+  static dynamic valuesMacro(Context&& ctx) {
     const auto& dictionary = ctx.at("dictionary");
     checkLogic(dictionary.isObject(), "Values: dictionary is not object");
     return dynamic(dictionary.values().begin(), dictionary.values().end());
@@ -411,8 +501,8 @@ class ConfigPreprocessor::BuiltIns {
    * Note: properties of obj{N} will override properties of obj{N-1}.
    * In case params are strings, "merge" concatenates them.
    */
-  static dynamic mergeMacro(Context ctx) {
-    auto& mergeParams = ctx.at("params");
+  static dynamic mergeMacro(Context&& ctx) {
+    auto mergeParams = ctx.move("params");
 
     checkLogic(mergeParams.isArray(), "Merge: 'params' is not array");
     checkLogic(!mergeParams.empty(), "Merge: empty params");
@@ -451,8 +541,8 @@ class ConfigPreprocessor::BuiltIns {
    *
    * Returns list or object with randomly shuffled items.
    */
-  static dynamic shuffleMacro(Context ctx) {
-    auto& dictionary = ctx.at("dictionary");
+  static dynamic shuffleMacro(Context&& ctx) {
+    auto dictionary = ctx.move("dictionary");
 
     checkLogic(dictionary.isObject() || dictionary.isArray(),
                "Shuffle: dictionary is not array/object");
@@ -475,9 +565,9 @@ class ConfigPreprocessor::BuiltIns {
    *
    * Returns value of corresponding object property/list element
    */
-  static dynamic selectMacro(Context ctx) {
-    auto& dictionary = ctx.at("dictionary");
-    auto& key = ctx.at("key");
+  static dynamic selectMacro(Context&& ctx) {
+    auto dictionary = ctx.move("dictionary");
+    const auto& key = ctx.at("key");
 
     checkLogic(dictionary.isObject() || dictionary.isArray(),
                "Select: dictionary is not array/object");
@@ -519,10 +609,10 @@ class ConfigPreprocessor::BuiltIns {
    * - in case of string substring [from, to]
    * Note: from and to are inclusive
    */
-  static dynamic sliceMacro(Context ctx) {
+  static dynamic sliceMacro(Context&& ctx) {
     const auto& from = ctx.at("from");
     const auto& to = ctx.at("to");
-    auto& dict = ctx.at("dictionary");
+    auto dict = ctx.move("dictionary");
 
     checkLogic(dict.isObject() || dict.isArray() || dict.isString(),
                "Slice: dictionary is not array/object/string");
@@ -592,10 +682,10 @@ class ConfigPreprocessor::BuiltIns {
    * "key": string or int,
    * "value": jsonm
    */
-  static dynamic setMacro(Context ctx) {
+  static dynamic setMacro(Context&& ctx) {
     const auto& key = ctx.at("key");
-    auto& value = ctx.at("value");
-    auto& dict = ctx.at("dictionary");
+    auto value = ctx.move("value");
+    auto dict = ctx.move("dictionary");
 
     checkLogic(dict.isObject() || dict.isArray(),
                "Set: dictionary is not array/object");
@@ -617,7 +707,7 @@ class ConfigPreprocessor::BuiltIns {
   /**
    * Returns list of integers [from, from+1, ... to]
    */
-  static dynamic rangeMacro(Context ctx) {
+  static dynamic rangeMacro(Context&& ctx) {
     const auto& from = ctx.at("from");
     const auto& to = ctx.at("to");
     checkLogic(from.isInt(), "Range: from is not an integer");
@@ -636,7 +726,7 @@ class ConfigPreprocessor::BuiltIns {
    * - dictionary is string which contains key (param) as a substring.
    * Usage: @contains(dictionary,value)
    */
-  static dynamic containsMacro(Context ctx) {
+  static dynamic containsMacro(Context&& ctx) {
     const auto& dictionary = ctx.at("dictionary");
     const auto& key = ctx.at("key");
     if (dictionary.isObject()) {
@@ -664,7 +754,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if dictionary (object/array/string) is empty
    * Usage: @empty(dictionary)
    */
-  static dynamic emptyMacro(Context ctx) {
+  static dynamic emptyMacro(Context&& ctx) {
     const auto& dict = ctx.at("dictionary");
     checkLogic(dict.isObject() || dict.isArray() || dict.isString(),
                "empty: dictionary is not object/array/string");
@@ -675,7 +765,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if A == B
    * Usage: @equals(A,B)
    */
-  static dynamic equalsMacro(Context ctx) {
+  static dynamic equalsMacro(Context&& ctx) {
     return ctx.at("A") == ctx.at("B");
   }
 
@@ -683,7 +773,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if value is an array
    * Usage: @isArray(value)
    */
-  static dynamic isArrayMacro(Context ctx) {
+  static dynamic isArrayMacro(Context&& ctx) {
     return ctx.at("value").isArray();
   }
 
@@ -691,7 +781,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if value is boolean
    * Usage: @isBool(value)
    */
-  static dynamic isBoolMacro(Context ctx) {
+  static dynamic isBoolMacro(Context&& ctx) {
     return ctx.at("value").isBool();
   }
 
@@ -699,7 +789,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if value is an integer
    * Usage: @isInt(value)
    */
-  static dynamic isIntMacro(Context ctx) {
+  static dynamic isIntMacro(Context&& ctx) {
     return ctx.at("value").isInt();
   }
 
@@ -707,7 +797,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if value is an object
    * Usage: @isObject(value)
    */
-  static dynamic isObjectMacro(Context ctx) {
+  static dynamic isObjectMacro(Context&& ctx) {
     return ctx.at("value").isObject();
   }
 
@@ -715,7 +805,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if value is a string
    * Usage: @isString(value)
    */
-  static dynamic isStringMacro(Context ctx) {
+  static dynamic isStringMacro(Context&& ctx) {
     return ctx.at("value").isString();
   }
 
@@ -723,7 +813,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if A < B
    * Usage: @less(A,B)
    */
-  static dynamic lessMacro(Context ctx) {
+  static dynamic lessMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(!A.isObject() && !B.isObject(), "Can not compare objects");
@@ -734,7 +824,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if A && B. A and B should be booleans.
    * Usage: @and(A,B)
    */
-  static dynamic andMacro(Context ctx) {
+  static dynamic andMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isBool(), "and: A is not bool");
@@ -746,7 +836,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if A || B. A and B should be booleans.
    * Usage: @or(A,B)
    */
-  static dynamic orMacro(Context ctx) {
+  static dynamic orMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isBool(), "or: A is not bool");
@@ -758,7 +848,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns true if !A. A should be boolean.
    * Usage: @not(A)
    */
-  static dynamic notMacro(Context ctx) {
+  static dynamic notMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     checkLogic(A.isBool(), "not: A is not bool");
     return !A.getBool();
@@ -768,7 +858,7 @@ class ConfigPreprocessor::BuiltIns {
    * Returns size of object/array/string.
    * Usage: @size(dictionary)
    */
-  static dynamic sizeMacro(Context ctx) {
+  static dynamic sizeMacro(Context&& ctx) {
     const auto& dict = ctx.at("dictionary");
     checkLogic(dict.isObject() || dict.isArray() || dict.isString(),
                "size: dictionary is not object/array/string");
@@ -779,7 +869,7 @@ class ConfigPreprocessor::BuiltIns {
    * Adds two integers.
    * Usage: @add(A,B)
    */
-  static dynamic addMacro(Context ctx) {
+  static dynamic addMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "add: A is not an integer");
@@ -791,7 +881,7 @@ class ConfigPreprocessor::BuiltIns {
    * Subtracts two integers.
    * Usage: @sub(A,B)
    */
-  static dynamic subMacro(Context ctx) {
+  static dynamic subMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "sub: A is not an integer");
@@ -803,7 +893,7 @@ class ConfigPreprocessor::BuiltIns {
    * Multiplies two integers.
    * Usage: @mul(A,B)
    */
-  static dynamic mulMacro(Context ctx) {
+  static dynamic mulMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "mul: A is not an integer");
@@ -815,7 +905,7 @@ class ConfigPreprocessor::BuiltIns {
    * Divides two integers.
    * Usage: @div(A,B)
    */
-  static dynamic divMacro(Context ctx) {
+  static dynamic divMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "div: A is not an integer");
@@ -828,7 +918,7 @@ class ConfigPreprocessor::BuiltIns {
    * A % B.
    * Usage: @mod(A,B)
    */
-  static dynamic modMacro(Context ctx) {
+  static dynamic modMacro(Context&& ctx) {
     const auto& A = ctx.at("A");
     const auto& B = ctx.at("B");
     checkLogic(A.isInt(), "mod: A is not an integer");
@@ -841,7 +931,7 @@ class ConfigPreprocessor::BuiltIns {
    * Throw an exception with custom message
    * Usage: @fail(Your message here)
    */
-  static dynamic failMacro(Context ctx) {
+  static dynamic failMacro(Context&& ctx) {
     const auto& A = ctx.at("msg");
     checkLogic(A.isString(), "fail: msg is not a string");
     throw std::logic_error(A.data());
@@ -851,8 +941,8 @@ class ConfigPreprocessor::BuiltIns {
    * Sort an array of strings/integers
    * Usage: @sort(array)
    */
-  static dynamic sortMacro(Context ctx) {
-    auto dict = std::move(ctx.at("dictionary"));
+  static dynamic sortMacro(Context&& ctx) {
+    auto dict = ctx.move("dictionary");
     checkLogic(dict.isArray(), "sort: dictionary is not an array");
     vector<dynamic> v;
     v.reserve(dict.size());
@@ -867,11 +957,37 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * If condition is true, returns "is_true", otherwise "is_false"
+   * Usage:
+   * "type": "if",
+   * "condition": bool,
+   * "is_true": any object
+   * "is_false": any object
+   */
+  static dynamic ifMacro(Context&& ctx) {
+    auto condition = ctx.expandRawArg("condition");
+    checkLogic(condition.isBool(), "If: condition is not bool");
+    if (condition.getBool()) {
+      try {
+        return ctx.expandRawArg("is_true");
+      } catch (const std::logic_error& e) {
+        throwLogic("If 'is_true':\n{}", e.what());
+      }
+    } else {
+      try {
+        return ctx.expandRawArg("is_false");
+      } catch (const std::logic_error& e) {
+        throwLogic("If 'is_false':\n{}", e.what());
+      }
+    }
+  }
+
+  /**
    * Special built-in that prevents expanding 'macroDef' and 'constDef' objects
    * unless we parse them. For internal use only, nobody should call it
    * explicitly.
    */
-  static dynamic noop(const dynamic& json, const Context& ctx) {
+  static dynamic noop(dynamic&& json, const Context&) {
     return json;
   }
 
@@ -895,7 +1011,7 @@ class ConfigPreprocessor::BuiltIns {
    * %keyName% (key of current entry) and %itemName% (value of current entry)
    */
   static dynamic transform(ConfigPreprocessor* p,
-                           dynamic json,
+                           dynamic&& json,
                            const Context& ctx) {
     auto dictionary =
       p->expandMacros(moveGet(json, "dictionary", "Transform"), ctx);
@@ -917,22 +1033,21 @@ class ConfigPreprocessor::BuiltIns {
       keyNameStr = asStringPiece(*keyName, "Transform: keyName");
     }
 
+    Context extContext(Context::Extended, ctx);
+    auto& keyRef = extContext.addExpanded(keyNameStr, nullptr);
+    auto& itemRef = extContext.addExpanded(itemNameStr, nullptr);
     if (dictionary.isObject()) {
       auto keyTransform = json.get_ptr("keyTransform");
-      auto extContext = ctx;
       dynamic res = dynamic::object();
       for (const auto& it : dictionary.items()) {
         auto& key = const_cast<dynamic&>(it.first);
         auto& value = const_cast<dynamic&>(it.second);
         // add %key% and %item% to current context.
-        extContext.erase(keyNameStr);
-        extContext.erase(itemNameStr);
-        auto keyIt = extContext.emplace(keyNameStr, std::move(key)).first;
-        auto valueIt = extContext.emplace(itemNameStr, std::move(value)).first;
-
+        keyRef = std::move(key);
+        itemRef = std::move(value);
         auto nKey = keyTransform
           ? p->expandMacros(*keyTransform, extContext)
-          : keyIt->second;
+          : keyRef;
         checkLogic(nKey.isArray() || nKey.isString(),
                    "Transformed key is not array/string");
         if (nKey.isArray() && nKey.empty()) {
@@ -940,7 +1055,7 @@ class ConfigPreprocessor::BuiltIns {
         }
         auto nItem = itemTransform
           ? p->expandMacros(*itemTransform, extContext)
-          : std::move(valueIt->second);
+          : std::move(itemRef);
         if (nKey.isString()) {
           res.insert(std::move(nKey), std::move(nItem));
         } else { // array
@@ -955,14 +1070,11 @@ class ConfigPreprocessor::BuiltIns {
     } else { // array
       checkLogic(itemTransform,
                  "Transform: itemTransform is required for array");
-      auto extContext = ctx;
       for (size_t index = 0; index < dictionary.size(); ++index) {
         auto& item = dictionary[index];
         // add %key% and %item% to current context.
-        extContext.erase(keyNameStr);
-        extContext.erase(itemNameStr);
-        extContext.emplace(keyNameStr, index);
-        extContext.emplace(itemNameStr, std::move(item));
+        keyRef = index;
+        itemRef = std::move(item);
         item = p->expandMacros(*itemTransform, extContext);
       }
       return dictionary;
@@ -991,7 +1103,7 @@ class ConfigPreprocessor::BuiltIns {
    * and %valueName% - current value.
    */
   static dynamic process(ConfigPreprocessor* p,
-                         dynamic json,
+                         dynamic&& json,
                          const Context& ctx) {
     auto dictionary =
       p->expandMacros(moveGet(json, "dictionary", "Process"), ctx);
@@ -1014,32 +1126,28 @@ class ConfigPreprocessor::BuiltIns {
       valueNameStr = asStringPiece(*valueName, "Process: valueName");
     }
 
+    Context extContext(Context::Extended, ctx);
+    auto& keyRef = extContext.addExpanded(keyNameStr, nullptr);
+    auto& itemRef = extContext.addExpanded(itemNameStr, nullptr);
+    auto& valueRef = extContext.addExpanded(valueNameStr, nullptr);
     if (dictionary.isObject()) {
-      auto extContext = ctx;
       for (auto& item : dictionary.items()) {
         auto& key = const_cast<dynamic&>(item.first);
         auto& val = const_cast<dynamic&>(item.second);
         // add %key%, %item% and %value% to current context.
-        extContext.erase(keyNameStr);
-        extContext.erase(itemNameStr);
-        extContext.erase(valueNameStr);
-        extContext.emplace(keyNameStr, std::move(key));
-        extContext.emplace(itemNameStr, std::move(val));
-        extContext.emplace(valueNameStr, std::move(value));
+        keyRef = std::move(key);
+        itemRef = std::move(val);
+        valueRef = std::move(value);
         value = p->expandMacros(transform, extContext);
       }
       return value;
     } else { // array
-      auto extContext = ctx;
       for (size_t index = 0; index < dictionary.size(); ++index) {
         auto& item = dictionary[index];
         // add %key%, %item% and %value% to current context.
-        extContext.erase(keyNameStr);
-        extContext.erase(itemNameStr);
-        extContext.erase(valueNameStr);
-        extContext.emplace(keyNameStr, index);
-        extContext.emplace(itemNameStr, std::move(item));
-        extContext.emplace(valueNameStr, std::move(value));
+        keyRef = index;
+        itemRef = std::move(item);
+        valueRef = std::move(value);
         value = p->expandMacros(transform, extContext);
       }
       return value;
@@ -1080,7 +1188,7 @@ class ConfigPreprocessor::BuiltIns {
    *  "top": 2
    */
   static dynamic foreach(ConfigPreprocessor* p,
-                         dynamic json,
+                         dynamic&& json,
                          const Context& ctx) {
     auto from = p->expandMacros(moveGet(json, "from", "Foreach"), ctx);
     checkLogic(from.isObject() || from.isArray(),
@@ -1104,7 +1212,9 @@ class ConfigPreprocessor::BuiltIns {
     auto whereIt = json.find("where");
 
     dynamic result = nullptr;
-    auto extContext = ctx;
+    Context extContext(Context::Extended, ctx);
+    auto& keyRef = extContext.addExpanded(keyStr, nullptr);
+    auto& itemRef = extContext.addExpanded(itemStr, nullptr);
 
     auto appendUseToResult = [&]() {
       auto use = p->expandMacros(useIt->second, extContext);
@@ -1140,10 +1250,8 @@ class ConfigPreprocessor::BuiltIns {
 
     if (from.isArray()) {
       for (size_t i = 0; i < from.size() && top > 0; ++i) {
-        extContext.erase(keyStr);
-        extContext.erase(itemStr);
-        extContext.emplace(keyStr, i);
-        auto itemIt = extContext.emplace(itemStr, std::move(from[i])).first;
+        keyRef = i;
+        itemRef = std::move(from[i]);
         if (!satisfiesWhere()) {
           continue;
         }
@@ -1151,11 +1259,9 @@ class ConfigPreprocessor::BuiltIns {
         if (useIt == json.items().end()) {
           if (result.isNull()) {
             // array of one element
-            result = std::initializer_list<dynamic>{
-              std::move(itemIt->second)
-            };
+            result = std::initializer_list<dynamic>{ std::move(itemRef) };
           } else {
-            result.push_back(std::move(itemIt->second));
+            result.push_back(std::move(itemRef));
           }
         } else {
           appendUseToResult();
@@ -1170,20 +1276,17 @@ class ConfigPreprocessor::BuiltIns {
         auto& curKey = const_cast<dynamic&>(curIt.first);
         auto& curItem = const_cast<dynamic&>(curIt.second);
 
-        extContext.erase(keyStr);
-        extContext.erase(itemStr);
-        auto keyIt = extContext.emplace(keyStr, std::move(curKey)).first;
-        auto itemIt = extContext.emplace(itemStr, std::move(curItem)).first;
+        keyRef = std::move(curKey);
+        itemRef = std::move(curItem);
         if (!satisfiesWhere()) {
           continue;
         }
 
         if (useIt == json.items().end()) {
           if (result.isNull()) {
-            result = dynamic::object(std::move(keyIt->second),
-                                     std::move(itemIt->second));
+            result = dynamic::object(std::move(keyRef), std::move(itemRef));
           } else {
-            result.insert(std::move(keyIt->second), std::move(itemIt->second));
+            result.insert(std::move(keyRef), std::move(itemRef));
           }
         } else {
           appendUseToResult();
@@ -1211,61 +1314,26 @@ class ConfigPreprocessor::BuiltIns {
    * => "B"
    */
   static dynamic define(ConfigPreprocessor* p,
-                        dynamic json,
+                        dynamic&& json,
                         const Context& ctx) {
     auto vars = p->expandMacros(moveGet(json, "vars", "Define"), ctx);
     checkLogic(vars.isObject(), "Define: vars is not an object");
-    auto& mutContext = const_cast<Context&>(ctx);
-    std::vector<Context::iterator> added;
-    added.reserve(vars.size());
-    for (const auto& it : vars.items()) {
+    Context extContext(Context::Extended, ctx);
+    for (auto& it : vars.items()) {
       auto name = asStringPiece(it.first, "Define: vars key");
-      checkLogic(ctx.find(name) == ctx.end(),
-                 "Define: '{}' already exists", name);
-      auto value = const_cast<dynamic&>(it.second);
-      added.push_back(mutContext.emplace(name, std::move(value)).first);
+      auto& var = const_cast<dynamic&>(it.second);
+      extContext.addExpanded(name, std::move(var));
     }
-    auto result = p->expandMacros(moveGet(json, "result", "Define"), ctx);
-    for (const auto& it : added) {
-      mutContext.erase(it);
-    }
-    return result;
-  }
-
-  /**
-   * If condition is true, returns "is_true", otherwise "is_false"
-   * Usage:
-   * "type": "if",
-   * "condition": bool,
-   * "is_true": any object
-   * "is_false": any object
-   */
-  static dynamic if_(ConfigPreprocessor* p,
-                     dynamic json,
-                     const Context& ctx) {
-    auto condition = p->expandMacros(moveGet(json, "condition", "If"), ctx);
-    checkLogic(condition.isBool(), "If: condition is not bool");
-    if (condition.getBool()) {
-      try {
-        return p->expandMacros(moveGet(json, "is_true", "If"), ctx);
-      } catch (const std::logic_error& e) {
-        throwLogic("If 'is_true':\n{}", e.what());
-      }
-    } else {
-      try {
-        return p->expandMacros(moveGet(json, "is_false", "If"), ctx);
-      } catch (const std::logic_error& e) {
-        throwLogic("If 'is_false':\n{}", e.what());
-      }
-    }
+    return p->expandMacros(moveGet(json, "result", "Define"), extContext);
   }
 };
 
 ///////////////////////////////ConfigPreprocessor///////////////////////////////
 
-ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
-                                       Context globals,
-                                       size_t nestedLimit)
+ConfigPreprocessor::ConfigPreprocessor(
+      ImportResolverIf& importResolver,
+      folly::StringKeyedUnorderedMap<dynamic> globals,
+      size_t nestedLimit)
   : nestedLimit_(nestedLimit) {
 
   for (auto& it : globals) {
@@ -1273,7 +1341,9 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
   }
 
   addMacro("import", { "path" },
-    std::bind(&BuiltIns::importMacro, this, std::ref(importResolver), _1));
+    [this, &importResolver](Context&& ctx) {
+      return BuiltIns::importMacro(*this, importResolver, std::move(ctx));
+    });
 
   addMacro("hash", { "value" }, &BuiltIns::hashMacro);
 
@@ -1341,6 +1411,9 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
 
   addMacro("set", { "dictionary", "key", "value" }, &BuiltIns::setMacro);
 
+  addMacro("if", { "condition", "is_true", "is_false" },
+           &BuiltIns::ifMacro, false);
+
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
@@ -1349,8 +1422,6 @@ ConfigPreprocessor::ConfigPreprocessor(ImportResolverIf& importResolver,
     std::bind(&BuiltIns::transform, this, _1, _2));
 
   builtInCalls_.emplace("process", std::bind(&BuiltIns::process, this, _1, _2));
-
-  builtInCalls_.emplace("if", std::bind(&BuiltIns::if_, this, _1, _2));
 
   builtInCalls_.emplace("foreach", std::bind(&BuiltIns::foreach, this, _1, _2));
 
@@ -1364,10 +1435,11 @@ void ConfigPreprocessor::addConst(StringPiece name, folly::dynamic result) {
 
 void ConfigPreprocessor::addMacro(StringPiece name,
                                   const vector<dynamic>& params,
-                                  Macro::Func func) {
+                                  Macro::Func func,
+                                  bool autoExpand) {
   auto it = macros_.emplace(name, nullptr).first;
   it->second = folly::make_unique<Macro>(*this, it->first, params,
-                                         std::move(func));
+                                         std::move(func), autoExpand);
 }
 
 dynamic ConfigPreprocessor::replaceParams(StringPiece str,
@@ -1386,10 +1458,10 @@ dynamic ConfigPreprocessor::replaceParams(StringPiece str,
                "Odd number of percent signs in string around '{}'", str);
 
     // first check current context, then global context
-    auto paramIt = context.find(paramName);
-    const auto& substitution = paramIt == context.end()
-      ? tryGet(consts_, paramName, "Param in string")->getResult()
-      : paramIt->second;
+    auto paramPtr = context.find(paramName);
+    const auto& substitution = paramPtr
+      ? *paramPtr
+      : tryGet(consts_, paramName, "Param in string")->getResult();
 
     if (buf.empty() && nextPos == str.size() - 1) {
       // whole string is a parameter. May be substituted to any value.
@@ -1490,7 +1562,7 @@ dynamic ConfigPreprocessor::expandStringMacro(StringPiece str,
 
   const auto& inner = tryGet(macros_, nameStr, "Macro");
   try {
-    return inner->getResult(inner->getContext(innerParams, context));
+    return inner->getResult(innerParams, context);
   } catch (const std::logic_error& e) {
     throwLogic("Macro in string '{}':\n{}", nameStr, e.what());
   }
@@ -1523,17 +1595,8 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
         auto macroIt = macros_.find(typeStr);
         if (macroIt != macros_.end()) {
           const auto& inner = macroIt->second;
-          auto innerContext = inner->getContext(std::move(json));
-          for (auto& it : innerContext) {
-            try {
-              it.second = expandMacros(std::move(it.second), context);
-            } catch (const std::logic_error& e) {
-              throwLogic("Macro '{}', param '{}':\n{}",
-                         typeStr, it.first, e.what());
-            }
-          }
           try {
-            return inner->getResult(std::move(innerContext));
+            return inner->getResult(std::move(json), context);
           } catch (const std::logic_error& e) {
             throwLogic("Macro '{}':\n{}", typeStr, e.what());
           }
@@ -1590,8 +1653,8 @@ void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
         params.push_back(paramObj);
       }
     }
-    auto f = [res, this](const Context& ctx) {
-      return expandMacros(res, ctx);
+    auto f = [res, this](Context&& ctx) {
+      return expandMacros(res, std::move(ctx));
     };
     addMacro(key, params, std::move(f));
   } else if (objType == "constDef") {
@@ -1603,7 +1666,7 @@ void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
 }
 
 void ConfigPreprocessor::parseMacroDefs(dynamic jmacros) {
-  auto macros = expandMacros(std::move(jmacros), emptyContext_);
+  auto macros = expandMacros(std::move(jmacros), Context(*this));
   checkLogic(macros.isObject() || macros.isArray(),
              "config macros is not an array/object");
 
@@ -1636,7 +1699,7 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
     config.erase("macros");
   }
 
-  return prep.expandMacros(std::move(config), emptyContext_);
+  return prep.expandMacros(std::move(config), Context(prep));
 }
 
 }}  // facebook::memcache
