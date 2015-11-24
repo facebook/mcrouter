@@ -401,7 +401,7 @@ mcrouter_option_string(
   "Root directory for stats files")
 
 mcrouter_option_string(
-  debug_fifo_root, "",
+  debug_fifo_root, DEBUG_FIFO_ROOT_DEFAULT,
   "debug-fifo-root", no_short,
   "Root directory for debug fifos. If empty, debug fifos are disabled.")
 

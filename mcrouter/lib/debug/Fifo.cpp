@@ -241,8 +241,12 @@ bool Fifo::tryConnect() noexcept {
 
   if (!exists(path_.c_str())) {
     if (!create(path_.c_str())) {
-      PLOG(WARNING) << "Error creating debug fifo at \""
-                    << path_ << "\".";
+      static bool logged{false};
+      if (!logged) {
+        VLOG(1) << "Error creating debug fifo at \"" << path_ << "\": "
+                << strerror(errno) << " [" << errno << "]";
+        logged = true;
+      }
       return false;
     }
   }
