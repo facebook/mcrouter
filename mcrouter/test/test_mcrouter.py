@@ -129,7 +129,7 @@ class TestMigratedPoolsFailover(McrouterTestCase):
     def get_mcrouter(self):
         return self.add_mcrouter(
             self.config, extra_args=self.extra_args,
-            replace_map={"START_TIME": (int(time.time()) + 2)})
+            replace_map={"START_TIME": (int(time.time()) + 4)})
 
     def test_migrated_pools_failover(self):
         mcr = self.get_mcrouter()
@@ -153,13 +153,13 @@ class TestMigratedPoolsFailover(McrouterTestCase):
         self.assertEqual(self.b_old.get("set-key-1"), str(42))
 
         #next phase
-        time.sleep(2.5)
+        time.sleep(5)
         self.assertEqual(mcr.get("get-key-2"), str(200))
         mcr.set("set-key-2", str(42))
         self.assertEqual(self.b_old.get("set-key-2"), str(42))
 
         #next phase
-        time.sleep(2.5)
+        time.sleep(5)
         # gets/sets go to the new place
         self.assertEqual(mcr.get("get-key-3"), str(30))
         mcr.set("set-key-3", str(424242))
