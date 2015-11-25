@@ -15,6 +15,7 @@
 #include <folly/Hash.h>
 #include <folly/json.h>
 #include <folly/Memory.h>
+#include <folly/Optional.h>
 #include <folly/Random.h>
 #include <folly/String.h>
 
@@ -214,6 +215,13 @@ class ConfigPreprocessor::Context {
     }
   }
 
+  folly::Optional<dynamic> tryExpandRawArg(StringPiece key) {
+    if (locals_.find(key) != locals_.end()) {
+      return expandRawArg(key);
+    }
+    return folly::none;
+  }
+
   const dynamic& at(StringPiece key) const {
     auto it = locals_.find(key);
     assert(it != locals_.end());
@@ -276,32 +284,38 @@ class ConfigPreprocessor::Macro {
     Context result(Context::Extended, ctx, /* base */ true);
     for (size_t i = 0; i < params.size(); i++) {
       if (autoExpand_) {
-        result.addExpanded(paramNames_[i].first,
+        result.addExpanded(std::get<0>(params_[i]),
                            prep_.expandStringMacro(params[i], ctx));
       } else {
-        result.addRaw(paramNames_[i].first, params[i]);
+        result.addRaw(std::get<0>(params_[i]), params[i]);
       }
     }
 
-    for (size_t i = params.size(); i < paramNames_.size(); i++) {
-      result.addExpanded(paramNames_[i].first, paramNames_[i].second);
+    for (size_t i = params.size(); i < params_.size(); i++) {
+      if (!std::get<1>(params_[i]).isNull()) {
+        result.addExpanded(std::get<0>(params_[i]), std::get<1>(params_[i]));
+      }
     }
     return f_(std::move(result));
   }
 
   dynamic getResult(dynamic&& obj, const Context& ctx) const {
     Context result(Context::Extended, ctx, /* base */ true);
-    for (const auto& pn : paramNames_) {
-      auto it = obj.get_ptr(pn.first);
+    for (const auto& p : params_) {
+      auto it = obj.get_ptr(std::get<0>(p));
       if (!it) {
-        checkLogic(!pn.second.isNull(),
-                   "Macro call {}: '{}' parameter not found", name_, pn.first);
-        result.addExpanded(pn.first, pn.second);
+        checkLogic(!std::get<2>(p),
+                   "Macro call {}: '{}' parameter not found",
+                   name_, std::get<0>(p));
+        if (!std::get<1>(p).isNull()) {
+          result.addExpanded(std::get<0>(p), std::get<1>(p));
+        }
       } else {
         if (autoExpand_) {
-          result.addExpanded(pn.first, prep_.expandMacros(std::move(*it), ctx));
+          result.addExpanded(std::get<0>(p),
+                             prep_.expandMacros(std::move(*it), ctx));
         } else {
-          result.addRaw(pn.first, std::move(*it));
+          result.addRaw(std::get<0>(p), std::move(*it));
         }
       }
     }
@@ -312,38 +326,45 @@ class ConfigPreprocessor::Macro {
   const ConfigPreprocessor& prep_;
   Func f_;
   bool autoExpand_{true};
-  vector<std::pair<string, dynamic>> paramNames_;
+  // name, default, required?
+  vector<std::tuple<string, dynamic, bool>> params_;
   size_t maxParamCnt_{0};
   size_t minParamCnt_{0};
   StringPiece name_;
 
   void initParams(const vector<dynamic>& params) {
     maxParamCnt_ = minParamCnt_ = params.size();
-    bool needDefault = false;
+    bool needOptional = false;
     for (const auto& param : params) {
-      bool hasDefault = false;
+      bool hasOptional = false;
       if (param.isString()) { // param name
-        paramNames_.emplace_back(param.stringPiece().str(), nullptr);
+        params_.emplace_back(param.stringPiece().str(), nullptr, true);
       } else if (param.isObject()) { // object (name & default)
         auto name = asStringPiece(tryGet(param, "name", "Macro param object"),
                                   "Macro param object name");
 
-        auto defaultIt = param.find("default");
-        if (defaultIt != param.items().end()) {
-          hasDefault = true;
+        if (auto defaultPtr = param.get_ptr("default")) {
+          hasOptional = true;
           --minParamCnt_;
-          paramNames_.emplace_back(name.str(), defaultIt->second);
+          params_.emplace_back(name.str(), *defaultPtr, false);
+        } else if (param.get_ptr("optional") != nullptr) {
+          hasOptional = true;
+          --minParamCnt_;
+          params_.emplace_back(name.str(), nullptr, false);
+        } else {
+          params_.emplace_back(name.str(), nullptr, true);
         }
       } else {
         throwLogic("Macro param is {}, expected string/object",
                    param.typeName());
       }
 
-      checkLogic(hasDefault || !needDefault,
-                 "Incorrect defaults in macro {}. All params after one with "
-                 "default should also have defaults", name_);
+      checkLogic(hasOptional || !needOptional,
+                 "Incorrect defaults/optionals in macro {}. "
+                 "All params after optional/default one should also be "
+                 "optional or have default value", name_);
 
-      needDefault = needDefault || hasDefault;
+      needOptional = needOptional || hasOptional;
     }
   }
 };
@@ -566,27 +587,39 @@ class ConfigPreprocessor::BuiltIns {
    * Returns value of corresponding object property/list element
    */
   static dynamic selectMacro(Context&& ctx) {
-    auto dictionary = ctx.move("dictionary");
-    const auto& key = ctx.at("key");
+    auto dictionary = ctx.expandRawArg("dictionary");
+    const auto key = ctx.expandRawArg("key");
 
     checkLogic(dictionary.isObject() || dictionary.isArray(),
-               "Select: dictionary is not array/object");
+               "Select: dictionary is {}, expected array/object",
+               dictionary.typeName());
 
     if (dictionary.isObject()) {
       checkLogic(key.isString(),
                  "Select: dictionary is an object, key is not a string");
-      // key should be in dictionary
-      return moveGet(dictionary, key, "Select");
+      if (auto jValue = dictionary.get_ptr(key)) {
+        return std::move(*jValue);
+      }
+      if (auto defaultVal = ctx.tryExpandRawArg("default")) {
+        return std::move(*defaultVal);
+      }
+      throwLogic("Select: '{}' not found, default not specified",
+                 key.stringPiece());
     } else { // array
       checkLogic(key.isInt(),
-                 "Select: dictionary is an array, key is not integer");
+                 "Select: dictionary is an array, key is not an integer");
       auto id = key.getInt();
       if (id < 0) {
         id += dictionary.size();
       }
-      checkLogic(id >= 0 && size_t(id) < dictionary.size(),
-                 "Select: index out of range");
-      return std::move(dictionary[id]);
+      if (id >= 0 && size_t(id) < dictionary.size()) {
+        return std::move(dictionary[id]);
+      }
+      if (auto defaultVal = ctx.tryExpandRawArg("default")) {
+        return std::move(*defaultVal);
+      }
+      throwLogic("Select: index {} is out of range [0, {})",
+                 id, dictionary.size());
     }
   }
 
@@ -1359,7 +1392,10 @@ ConfigPreprocessor::ConfigPreprocessor(
 
   addMacro("merge", { "params" }, &BuiltIns::mergeMacro);
 
-  addMacro("select", { "dictionary", "key" }, &BuiltIns::selectMacro);
+  addMacro("select",
+           { "dictionary", "key", dynamic::object("name", "default")
+                                                 ("optional", true) },
+           &BuiltIns::selectMacro, false);
 
   addMacro("shuffle", { "dictionary" }, &BuiltIns::shuffleMacro);
 

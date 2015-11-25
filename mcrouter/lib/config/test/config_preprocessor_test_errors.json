@@ -40,6 +40,14 @@
       "dictionary": { "a": 1 }
     }
   },
+  "selectFailDefault": {
+    "ret": {
+      "type": "select",
+      "dictionary": [ "a" ],
+      "key": 2,
+      "default": "@fail(No key)"
+    }
+  },
   "invalidSelectArrayList": {
     "ret": {
       "type": "select",

@@ -177,6 +177,76 @@
       }
     }
   },
+  "default_args": {
+    "macros": {
+      "def": {
+        "type": "macroDef",
+        "params": [ { "name": "a", "default": 15 } ],
+        "result": "%a%"
+      },
+      "opt": {
+        "type": "macroDef",
+        "params": [ { "name": "a" }, { "name": "b", "optional": true } ],
+        "result": "@if(%a%, hello, %b%)"
+      },
+      "mix": {
+        "type": "macroDef",
+        "params": [
+          {
+            "name": "a",
+            "default": true
+          },
+          {
+            "name": "b",
+            "optional": true
+          },
+          {
+            "name": "c",
+            "default": true
+          },
+          {
+            "name": "d",
+            "optional": true
+          }
+        ],
+        "result": "@if(%a%, @if(%c%, bla, %d%), %b%)"
+      }
+    },
+    "cases": {
+      "default_param": {
+        "orig": "@def",
+        "expand": 15
+      },
+      "default_param_pass": {
+        "orig": "@def(abc)",
+        "expand": "abc"
+      },
+      "optional_param": {
+        "orig": "@opt(@bool(true))",
+        "expand": "hello"
+      },
+      "optional_param_pass": {
+        "orig": "@opt(@bool(false), world)",
+        "expand": "world"
+      },
+      "mix": {
+        "orig": "@mix",
+        "expand": "bla"
+      },
+      "mix2": {
+        "orig": "@mix(@bool(false), blah)",
+        "expand": "blah"
+      },
+      "mix3": {
+        "orig": "@mix(@bool(true))",
+        "expand": "bla"
+      },
+      "mix4": {
+        "orig": "@mix(@bool(true), 123, @bool(false), blabla)",
+        "expand": "blabla"
+      }
+    }
+  },
   "import": {
     "macros": {
       "type": "merge",
@@ -202,7 +272,12 @@
     }
   },
   "select": {
-    "macros": {},
+    "macros": {
+      "my-dict": {
+        "type": "constDef",
+        "result": { "a": "b" }
+      }
+    },
     "cases": {
       "dict": {
         "orig": {
@@ -227,7 +302,55 @@
           "key": -1
         },
         "expand": "c"
-      }
+      },
+      "selectDefault1": {
+        "orig": {
+          "type": "select",
+          "dictionary": { "a": 1, "b": 2 },
+          "key": "c",
+          "default": 3
+        },
+        "expand": 3
+      },
+      "selectDefault2": {
+        "orig": {
+          "type": "select",
+          "dictionary": { "a": 1, "b": 2 },
+          "key": "a",
+          "default": "@fail(No key)"
+        },
+        "expand": 1
+      },
+      "selectDefault3": {
+        "orig": {
+          "type": "select",
+          "dictionary": ["a", "b"],
+          "key": 2,
+          "default": 3
+        },
+        "expand": 3
+      },
+      "selectDefault4": {
+        "orig": {
+          "type": "select",
+          "dictionary": ["a", "b"],
+          "key": 1,
+          "default": "@fail(No key)"
+        },
+        "expand": "b"
+      },
+      "selectDefaultStr": {
+        "orig": "@select(%my-dict%, b, c)",
+        "expand": "c"
+      },
+      "selectFailDefaultStr": {
+        "orig": "@select(%my-dict%, a, @fail(oops))",
+        "expand": "b"
+      },
+      "selectNoDefaultStr": {
+        "orig": "@select(%my-dict%, a)",
+        "expand": "b"
+      },
     }
   },
   "split": {
