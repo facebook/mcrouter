@@ -410,22 +410,27 @@ class ConfigPreprocessor::BuiltIns {
   static dynamic importMacro(ConfigPreprocessor& p,
                              ImportResolverIf& importResolver,
                              Context&& ctx) {
-    auto path = asStringPiece(ctx.at("path"), "import path");
+    auto path = ctx.expandRawArg("path");
+    auto pathStr = asStringPiece(path, "import path");
     // cache each result by path, so we won't import same path twice
-    auto it = p.importCache_.find(path);
+    auto it = p.importCache_.find(pathStr);
     if (it != p.importCache_.end()) {
       return it->second;
     }
     dynamic result = nullptr;
     try {
-      auto jsonC = importResolver.import(path);
+      auto jsonC = importResolver.import(pathStr);
       // result may contain comments, macros, etc.
       result = p.expandMacros(parseJsonString(stripComments(jsonC)),
                               Context(p));
     } catch (const std::exception& e) {
-      throwLogic("Import '{}':\n{}", path, e.what());
+      if (auto defaultVal = ctx.tryExpandRawArg("default")) {
+        p.importCache_.emplace(pathStr, *defaultVal);
+        return std::move(*defaultVal);
+      }
+      throwLogic("Import '{}':\n{}", pathStr, e.what());
     }
-    p.importCache_.emplace(path, result);
+    p.importCache_.emplace(pathStr, result);
     return result;
   }
 
@@ -1373,10 +1378,11 @@ ConfigPreprocessor::ConfigPreprocessor(
     addConst(it.first, std::move(it.second));
   }
 
-  addMacro("import", { "path" },
+  addMacro("import", { "path", dynamic::object("name", "default")
+                                              ("optional", true) },
     [this, &importResolver](Context&& ctx) {
       return BuiltIns::importMacro(*this, importResolver, std::move(ctx));
-    });
+    }, false);
 
   addMacro("hash", { "value" }, &BuiltIns::hashMacro);
 

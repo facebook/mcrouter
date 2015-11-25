@@ -45,6 +45,9 @@ class MockImportResolver : public ImportResolverIf {
     if (path == "templ") {
       return "{ \"type\": \"macroDef\", \"result\": \"imported_macro\" }";
     }
+    if (path == "do_not_exist") {
+      throw std::runtime_error(std::string("Can not import") + path.str());
+    }
     return "";
   }
 };
