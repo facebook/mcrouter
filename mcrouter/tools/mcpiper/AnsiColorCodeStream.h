@@ -28,8 +28,8 @@ class AnsiColorCodeEncoder {
   /**
    * Resets the color state and outputs the string in the default color.
    */
-  void writePlain(const folly::StringPiece& sp);
-  void writePlain(char c);
+  template <class T>
+  void writePlain(const T& t);
 
   /**
    * Flushes the output stream.
@@ -46,3 +46,5 @@ class AnsiColorCodeEncoder {
 using AnsiColorCodeStream = StyleAwareStream<AnsiColorCodeEncoder>;
 
 }} // facebook::memcache
+
+#include "mcrouter/tools/mcpiper/AnsiColorCodeStream-inl.h"

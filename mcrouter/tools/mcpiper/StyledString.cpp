@@ -14,7 +14,7 @@ namespace facebook { namespace memcache {
 StyledString::StyledString() {
 }
 
-StyledString::StyledString(const std::string&& s, Color color)
+StyledString::StyledString(std::string s, Color color)
     : text_(std::move(s)) {
   fg_.resize(text_.size(), color);
 }

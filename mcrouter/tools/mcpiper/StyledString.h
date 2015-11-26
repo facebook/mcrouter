@@ -24,7 +24,7 @@ namespace facebook { namespace memcache {
 class StyledString {
  public:
   StyledString();
-  explicit StyledString(const std::string&& s, Color color = Color::DEFAULT);
+  explicit StyledString(std::string s, Color color = Color::DEFAULT);
 
   /**
    * Raw uncolored text of this StyledString.

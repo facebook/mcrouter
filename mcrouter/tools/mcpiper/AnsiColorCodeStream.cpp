@@ -79,22 +79,6 @@ void AnsiColorCodeEncoder::write(const StyledString& str) {
   isReset_ = false;
 }
 
-void AnsiColorCodeEncoder::writePlain(const folly::StringPiece& sp) {
-  if (!isReset_) {
-    reset();
-  }
-
-  out_ << sp;
-}
-
-void AnsiColorCodeEncoder::writePlain(char c) {
-  if (!isReset_) {
-    reset();
-  }
-
-  out_ << c;
-}
-
 void AnsiColorCodeEncoder::flush() const {
   out_.flush();
 }

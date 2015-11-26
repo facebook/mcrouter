@@ -12,6 +12,13 @@
 namespace facebook { namespace memcache {
 
 template <class Encoder>
+StyleAwareStream<Encoder>& endl(StyleAwareStream<Encoder>& stream) {
+  stream << '\n';
+  stream.flush();
+  return stream;
+}
+
+template <class Encoder>
 StyleAwareStream<Encoder>::StyleAwareStream(std::ostream& out)
     : encoder_(out), useColor_(true) {
 }
@@ -22,14 +29,14 @@ void StyleAwareStream<Encoder>::setColorOutput(bool useColor) {
 }
 
 template <class Encoder>
-void StyleAwareStream<Encoder>::writePlain(const folly::StringPiece& sp) {
+void StyleAwareStream<Encoder>::writePlain(folly::StringPiece sp) {
   encoder_.writePlain(sp);
 }
 
 template <class Encoder>
-StyleAwareStream<Encoder>&
-StyleAwareStream<Encoder>::operator<<(const std::string& s) {
-  encoder_.writePlain(s);
+template <class T>
+StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(const T& t) {
+  encoder_.writePlain(t);
   return *this;
 }
 
@@ -45,21 +52,21 @@ StyleAwareStream<Encoder>::operator<<(const StyledString& s) {
 }
 
 template <class Encoder>
-StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(char c) {
-  encoder_.writePlain(c);
-  return *this;
-}
-
-template <class Encoder>
 template <bool containerMode, class... Args>
 StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(
   const folly::Formatter<containerMode, Args...>& formatter) {
 
-  auto writer = [this] (const folly::StringPiece& sp) {
+  auto writer = [this] (folly::StringPiece sp) {
     this->writePlain(sp);
   };
   formatter(writer);
   return *this;
+}
+
+template <class Encoder>
+StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(
+    StyleAwareStream<Encoder>& (*f)(StyleAwareStream<Encoder>&)) {
+  return f(*this);
 }
 
 template <class Encoder>

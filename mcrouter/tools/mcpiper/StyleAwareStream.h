@@ -39,12 +39,16 @@ class StyleAwareStream {
   /**
    * Write a regular string in some default color.
    */
-  void writePlain(const folly::StringPiece& sp);
-  StyleAwareStream& operator<<(const std::string& s);
-  StyleAwareStream& operator<<(char c);
+  void writePlain(folly::StringPiece sp);
+
+  template <class T>
+  StyleAwareStream& operator<<(const T& t);
+
   template<bool containerMode, class... Args>
   StyleAwareStream& operator<<(
     const folly::Formatter<containerMode, Args...>& formatter);
+  StyleAwareStream& operator<<(
+   StyleAwareStream<Encoder>& (*f)(StyleAwareStream<Encoder>&));
 
   /**
    * Write a StyledString possibly in color (if enabled).
@@ -60,6 +64,9 @@ class StyleAwareStream {
   Encoder encoder_;
   bool useColor_;
 };
+
+template <class Encoder>
+StyleAwareStream<Encoder>& endl(StyleAwareStream<Encoder>&);
 
 }} // facebook::memcache
 

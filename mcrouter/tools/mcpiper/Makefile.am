@@ -1,6 +1,7 @@
 bin_PROGRAMS = mcpiper
 
 mcpiper_SOURCES = \
+	AnsiColorCodeStream-inl.h \
 	AnsiColorCodeStream.cpp \
 	AnsiColorCodeStream.h \
 	ClientServerMcParser-inl.h \
