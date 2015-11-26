@@ -12,7 +12,6 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/select.h>
 
 #include <folly/Conv.h>
 #include <folly/FileUtil.h>
@@ -101,24 +100,22 @@ std::string ClientSocket::sendRequest(folly::StringPiece request,
   write(request, timeout);
 
   // wait for some data to arrive
-  fd_set rfds;
-  FD_ZERO(&rfds);
-  FD_SET(socketFd_, &rfds);
-  auto tvTimeout = to<timeval_t>(timeout);
-  auto ret = ::select(socketFd_ + 1, &rfds, nullptr, nullptr, &tvTimeout);
-
-  if (ret == -1) {
-    throwRuntime("select() failed on socket: {}", folly::errnoStr(errno));
-  } if (ret > 0) {
+  auto timeoutMs = static_cast<size_t>(timeout.count());
+  for (size_t i = 0; i <= timeoutMs; ++i) {
     char replyBuf[kMaxReplySize + 1];
     ssize_t n = ::recv(socketFd_, replyBuf, kMaxReplySize, MSG_DONTWAIT);
     if (n == -1) {
+      if (errno == EWOULDBLOCK || errno == EAGAIN) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        continue;
+      }
       throwRuntime("failed to read from socket: {}", folly::errnoStr(errno));
+    } else if (n == 0) {
+      throwRuntime("peer closed the socket");
     }
     return std::string(replyBuf, n);
-  } else {
-    throwRuntime("No data available within {}ms", timeout.count());
   }
+  throwRuntime("timeout reading from socket");
 }
 
 }}  // facebook::memcache
