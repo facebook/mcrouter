@@ -132,7 +132,7 @@ const char* const Category::kSystemError = "system-error";
 const char* const Category::kOther = "other";
 
 bool addHandler(std::pair<std::string, HandlerFunc> handler) {
-  if (auto container = containerSingleton.get_weak().lock()) {
+  if (auto container = containerSingleton.try_get()) {
     std::lock_guard<std::mutex> lock(container->lock);
     for (const auto& it : container->handlers) {
       if (it.first == handler.first) {
@@ -146,7 +146,7 @@ bool addHandler(std::pair<std::string, HandlerFunc> handler) {
 }
 
 bool setHandler(std::pair<std::string, HandlerFunc> handler) {
-  if (auto container = containerSingleton.get_weak().lock()) {
+  if (auto container = containerSingleton.try_get()) {
     std::lock_guard<std::mutex> lock(container->lock);
     for (auto& it : container->handlers) {
       if (it.first == handler.first) {
@@ -161,7 +161,7 @@ bool setHandler(std::pair<std::string, HandlerFunc> handler) {
 }
 
 bool removeHandler(folly::StringPiece handlerName) {
-  if (auto container = containerSingleton.get_weak().lock()) {
+  if (auto container = containerSingleton.try_get()) {
     std::lock_guard<std::mutex> lock(container->lock);
     auto& handlers = container->handlers;
     for (auto it = handlers.begin(); it != handlers.end(); ++it) {
@@ -175,7 +175,7 @@ bool removeHandler(folly::StringPiece handlerName) {
 }
 
 void setServiceContext(folly::StringPiece service, std::string context) {
-  if (auto container = containerSingleton.get_weak().lock()) {
+  if (auto container = containerSingleton.try_get()) {
     std::lock_guard<std::mutex> lock(container->lock);
     container->contexts[service.str()] = std::move(context);
   }
@@ -190,7 +190,7 @@ void log(folly::StringPiece file,
          folly::StringPiece msg) {
   std::map<std::string, std::string> contexts;
   std::vector<std::pair<std::string, HandlerFunc>> handlers;
-  if (auto container = containerSingleton.get_weak().lock()) {
+  if (auto container = containerSingleton.try_get()) {
     std::lock_guard<std::mutex> lock(container->lock);
     contexts = container->contexts;
     handlers = container->handlers;

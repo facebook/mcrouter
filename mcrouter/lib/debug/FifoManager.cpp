@@ -92,7 +92,7 @@ Fifo& FifoManager::createAndStore(const std::string& fifoPath) {
 }
 
 std::shared_ptr<FifoManager> FifoManager::getInstance() {
-  return folly::Singleton<FifoManager>::get_weak().lock();
+  return folly::Singleton<FifoManager>::try_get();
 }
 
 }} // facebook::memcache

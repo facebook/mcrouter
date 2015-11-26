@@ -119,7 +119,7 @@ McrouterInstance* McrouterInstance::init(
   const McrouterOptions& options,
   const std::vector<folly::EventBase*>& evbs) {
 
-  if (auto manager = gMcrouterManager.get_weak().lock()) {
+  if (auto manager = gMcrouterManager.try_get()) {
     return manager->mcrouterGetCreate(persistence_id, options, evbs);
   }
 
@@ -127,7 +127,7 @@ McrouterInstance* McrouterInstance::init(
 }
 
 McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
-  if (auto manager = gMcrouterManager.get_weak().lock()) {
+  if (auto manager = gMcrouterManager.try_get()) {
     return manager->mcrouterGet(persistence_id);
   }
 
@@ -274,7 +274,7 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
 }
 
 void McrouterInstance::freeAllMcrouters() {
-  if (auto manager = gMcrouterManager.get_weak().lock()) {
+  if (auto manager = gMcrouterManager.try_get()) {
     manager->freeAllMcrouters();
   }
 }
