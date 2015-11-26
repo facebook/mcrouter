@@ -41,12 +41,14 @@ ClientSocket::ClientSocket(uint16_t port) {
   };
   socketFd_ = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (socketFd_ < 0) {
-    throwRuntime("Failed to create a socket: {}", folly::errnoStr(errno));
+    throwRuntime("Failed to create a socket for port {}: {}",
+                 port, folly::errnoStr(errno));
   }
 
   if (::connect(socketFd_, res->ai_addr, res->ai_addrlen) != 0) {
+    auto errStr = folly::errnoStr(errno);
     ::close(socketFd_);
-    throwRuntime("Failed to connect: {}", folly::errnoStr(errno));
+    throwRuntime("Failed to connect to port {}: {}", port, errStr);
   }
 }
 

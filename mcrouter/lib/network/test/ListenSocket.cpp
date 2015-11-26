@@ -43,18 +43,21 @@ std::pair<int, uint16_t> createAndBind(uint16_t port) {
 
   auto socketFd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (socketFd < 0) {
-    throwRuntime("Failed to create a socket: {}", folly::errnoStr(errno));
+    throwRuntime("Failed to create a socket for port {}: {}",
+                 port, folly::errnoStr(errno));
   }
   if (::bind(socketFd, res->ai_addr, res->ai_addrlen) != 0) {
+    auto errStr = folly::errnoStr(errno);
     ::close(socketFd);
-    throwRuntime("Failed to bind a socket: {}", folly::errnoStr(errno));
+    throwRuntime("Failed to bind a socket for port {}: {}", port, errStr);
   }
 
   struct sockaddr_in addr;
   socklen_t len = sizeof(struct sockaddr_in);
   if (::getsockname(socketFd, (struct sockaddr*)&addr, &len) != 0) {
+    auto errStr = folly::errnoStr(errno);
     ::close(socketFd);
-    throwRuntime("Failed to get socket name: {}", folly::errnoStr(errno));
+    throwRuntime("Failed to get socket name for port {}: {}", port, errStr);
   }
 
   return std::make_pair(socketFd, ntohs(addr.sin_port));
@@ -65,7 +68,8 @@ ListenSocket::ListenSocket() {
   socketFd_ = sockPort.first;
   port_ = sockPort.second;
   if (::listen(socketFd_, SOMAXCONN) != 0) {
-    throwRuntime("Failed to listen on a socket: {}", folly::errnoStr(errno));
+    throwRuntime("Failed to listen on a socket for port {}: {}",
+                 port_, folly::errnoStr(errno));
   }
 
   VLOG(1) << "Listening on " << socketFd_ << ", port " << port_;
