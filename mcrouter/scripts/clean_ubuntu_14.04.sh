@@ -5,7 +5,7 @@ set -ex
 sudo apt-get install -y libdouble-conversion1 libgflags2 \
     libboost-program-options1.54.0 libboost-filesystem1.54.0 \
     libboost-system1.54.0 libboost-regex1.54.0 libboost-thread1.54.0 \
-    libboost-context1.54.0 libgoogle-glog0 libevent-2.0-5
+    libboost-context1.54.0 libgoogle-glog0 libevent-2.0-5 libjemalloc1
 
 sudo apt-get purge -y gcc g++ ragel autoconf \
     git libtool python-dev libssl-dev libevent-dev \
