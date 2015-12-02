@@ -38,6 +38,7 @@ TESTS += \
   test_miss_on_error_arith_ops.py \
   test_modify_exptime.py \
   test_modify_key.py \
+  test_named_handles.py \
   test_noreply.py \
   test_probe_timeout.py \
   test_rates.py \

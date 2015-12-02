@@ -36,10 +36,18 @@ ProxyConfig::ProxyConfig(proxy_t& proxy,
 
   checkLogic(json.isObject(), "Config is not an object");
 
-  if (json.count("named_handles")) {
-    checkLogic(json["named_handles"].isArray(), "named_handles is not array");
-    for (const auto& it : json["named_handles"]) {
-      factory.create(it);
+  if (auto jNamedHandles = json.get_ptr("named_handles")) {
+    if (jNamedHandles->isArray()) {
+      for (const auto& it : *jNamedHandles) {
+        factory.create(it);
+      }
+    } else if (jNamedHandles->isObject()) {
+      for (const auto& it : jNamedHandles->items()) {
+        factory.addNamed(it.first.stringPiece(), it.second);
+      }
+    } else {
+      throwLogic("named_handles is {} expected array/object",
+                 jNamedHandles->typeName());
     }
   }
 
@@ -49,11 +57,10 @@ ProxyConfig::ProxyConfig(proxy_t& proxy,
   auto jRoutes = json.get_ptr("routes");
   checkLogic(!jRoute || !jRoutes,
              "Invalid config: both 'route' and 'routes' are specified");
-  checkLogic(jRoute || jRoutes, "No route/routes in config");
   if (jRoute) {
     routeSelectors[proxy.getRouterOptions().default_route] =
         std::make_shared<PrefixSelectorRoute>(factory, *jRoute);
-  } else { // jRoutes
+  } else if (jRoutes) { // jRoutes
     checkLogic(jRoutes->isArray() || jRoutes->isObject(),
                "Config: routes is not array/object");
     if (jRoutes->isArray()) {
@@ -78,6 +85,8 @@ ProxyConfig::ProxyConfig(proxy_t& proxy,
             std::make_shared<PrefixSelectorRoute>(factory, it.second);
       }
     }
+  } else {
+    throwLogic("No route/routes in config");
   }
 
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();

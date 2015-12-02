@@ -21,6 +21,23 @@ RouteHandleFactory<RouteHandleIf>::RouteHandleFactory(
 }
 
 template <class RouteHandleIf>
+void RouteHandleFactory<RouteHandleIf>::addNamed(
+  folly::StringPiece name,
+  folly::dynamic json) {
+
+  if (json.isObject()) {
+    if (auto jName = json.get_ptr("name")) {
+      checkLogic(jName->isString() && jName->stringPiece() == name,
+                 "Ambiguous RouteHandle name in object for {}", name);
+    } else {
+      json["name"] = name;
+    }
+  }
+  checkLogic(registered_.emplace(name, std::move(json)).second,
+             "Route handle '{}' was already registered", name);
+}
+
+template <class RouteHandleIf>
 std::shared_ptr<RouteHandleIf>
 RouteHandleFactory<RouteHandleIf>::create(const folly::dynamic& json) {
   auto result = createList(json);
@@ -32,39 +49,56 @@ RouteHandleFactory<RouteHandleIf>::create(const folly::dynamic& json) {
 }
 
 template <class RouteHandleIf>
+const std::vector<std::shared_ptr<RouteHandleIf>>&
+RouteHandleFactory<RouteHandleIf>::createNamed(folly::StringPiece name,
+                                               const folly::dynamic& json) {
+  auto seenIt = seen_.find(name);
+  if (seenIt != seen_.end()) {
+    // we had the same named handle already. Reuse it.
+    return seenIt->second;
+  }
+
+  // check if this name was registered
+  auto registeredIt = registered_.find(name);
+  if (registeredIt != registered_.end()) {
+    auto tmp = std::move(registeredIt->second);
+    registered_.erase(registeredIt);
+    return createNamed(name, tmp);
+  }
+
+  if (json.isObject()) {
+    auto jType = json.get_ptr("type");
+    checkLogic(jType, "No type field in RouteHandle json object");
+    checkLogic(jType->isString(), "Type field in RouteHandle is not a string");
+    auto ret = provider_.create(*this, jType->stringPiece(), json);
+    return seen_.emplace(name, std::move(ret)).first->second;
+  }
+
+  return seen_.emplace(name, createList(json)).first->second;
+}
+
+template <class RouteHandleIf>
 std::vector<std::shared_ptr<RouteHandleIf>>
 RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
   if (json.isArray()) {
-    std::vector<std::shared_ptr<RouteHandleIf>> ret;
+    std::vector<RouteHandlePtr> ret;
     // merge all inner lists into result
     for (const auto& it : json) {
-      auto list = createList(it);
-      ret.insert(ret.end(), list.begin(), list.end());
+      for (auto& listIt : createList(it)) {
+        ret.push_back(std::move(listIt));
+      }
     }
     return ret;
   } else if (json.isObject()) {
-    auto typeIt = json.find("type");
-    checkLogic(typeIt != json.items().end(),
-               "No type field in RouteHandle json object");
-    checkLogic(typeIt->second.isString(),
-               "Type field in RouteHandle is not a string");
-    auto type = typeIt->second.stringPiece();
-
-    auto nameIt = json.find("name");
-    if (nameIt != json.items().end() && nameIt->second.isString()) {
-      // got named handle
-      auto name = nameIt->second.stringPiece().str();
-      auto it = seen_.find(name);
-      if (it != seen_.end()) {
-        // we had the same named handle already. Reuse it.
-        return it->second;
-      }
-
-      auto ret = provider_.create(*this, type, json);
-      seen_.emplace(name, ret);
-      return ret;
+    auto jName = json.get_ptr("name");
+    if (jName && jName->isString()) {
+      return createNamed(jName->stringPiece(), json);
     } else {
-      return provider_.create(*this, type, json);
+      auto jType = json.get_ptr("type");
+      checkLogic(jType, "No type field in RouteHandle json object");
+      checkLogic(jType->isString(),
+                 "Type field in RouteHandle is not a string");
+      return provider_.create(*this, jType->stringPiece(), json);
     }
   } else if (json.isString()) {
     if (json.empty()) {
@@ -72,16 +106,23 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
       return {};
     }
 
-    // check if we already parsed same string. It can be named handle or short
-    // form of handle.
+    // check if we already parsed the same string. It can be named handle or
+    // short form handle.
     auto handlePiece = json.stringPiece();
-    auto handleString = handlePiece.str();
-    auto it = seen_.find(handleString);
-    if (it != seen_.end()) {
-      return it->second;
+    auto seenIt = seen_.find(handlePiece);
+    if (seenIt != seen_.end()) {
+      return seenIt->second;
     }
 
-    std::vector<std::shared_ptr<RouteHandleIf>> ret;
+    // check if this name was registered
+    auto registeredIt = registered_.find(handlePiece);
+    if (registeredIt != registered_.end()) {
+      auto tmp = std::move(registeredIt->second);
+      registered_.erase(registeredIt);
+      return createNamed(handlePiece, tmp);
+    }
+
+    std::vector<RouteHandlePtr> ret;
     auto pipeId = handlePiece.find("|");
     if (pipeId != std::string::npos) { // short form (e.g. HashRoute|ErrorRoute)
       auto type = handlePiece.subpiece(0, pipeId); // split by first '|'
@@ -92,10 +133,11 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
       ret = provider_.create(*this, handlePiece, nullptr);
     }
 
-    seen_.emplace(handleString, ret);
+    seen_.emplace(handlePiece, ret);
     return ret;
   }
-  throw std::logic_error("RouteHandle should be object, array or string");
+  throwLogic("RouteHandle is {}, expected object/array/string",
+             json.typeName());
 }
 
 }}  // facebook::memcache
