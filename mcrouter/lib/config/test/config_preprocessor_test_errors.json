@@ -151,5 +151,15 @@
       "dictionary": [ 1, 2, 3 ],
       "itemTransform": "@a"
     }
+  },
+  "duplicate_params": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [ "p", "p" ],
+        "result": "%p%"
+      }
+    },
+    "ret": "@a(1,2)"
   }
 }

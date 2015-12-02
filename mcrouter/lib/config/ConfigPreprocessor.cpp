@@ -168,7 +168,8 @@ class ConfigPreprocessor::Context {
   enum class VarState {
     DEAD,
     RAW,
-    EXPAND
+    EXPAND,
+    LAZY_EXPAND
   };
  public:
   enum ExtendedTypeT { Extended };
@@ -191,17 +192,15 @@ class ConfigPreprocessor::Context {
       baseContext_(baseContext) {}
 
   dynamic& addExpanded(StringPiece key, dynamic value) {
-    auto it = locals_.emplace(
-        key, std::make_pair(std::move(value), VarState::EXPAND));
-    checkLogic(it.second, "'{}' already exists in local scope", key);
-    return it.first->second.first;
+    return add(key, std::move(value), VarState::EXPAND);
   }
 
   dynamic& addRaw(StringPiece key, dynamic value) {
-    auto it = locals_.emplace(
-        key, std::make_pair(std::move(value), VarState::RAW));
-    checkLogic(it.second, "'{}' already exists in local scope", key);
-    return it.first->second.first;
+    return add(key, std::move(value), VarState::RAW);
+  }
+
+  dynamic& addLocal(StringPiece key, dynamic value) {
+    return add(key, std::move(value), VarState::LAZY_EXPAND);
   }
 
   dynamic expandRawArg(StringPiece key) {
@@ -239,6 +238,9 @@ class ConfigPreprocessor::Context {
   const dynamic* find(StringPiece key) const {
     auto it = locals_.find(key);
     if (it != locals_.end()) {
+      if (it->second.second == VarState::LAZY_EXPAND) {
+        const_cast<Context&>(*this).doLazyExpand(key);
+      }
       assert(it->second.second == VarState::EXPAND);
       return &it->second.first;
     }
@@ -247,11 +249,31 @@ class ConfigPreprocessor::Context {
     }
     return nullptr;
   }
+
+  void doLazyExpand(StringPiece key) {
+    auto& it = locals_.find(key)->second;
+    assert(it.second == VarState::LAZY_EXPAND || it.second == VarState::EXPAND);
+    if (it.second == VarState::LAZY_EXPAND) {
+      try {
+        it.first = prep_.expandMacros(std::move(it.first), *this);
+        it.second = VarState::EXPAND;
+      } catch (const std::exception& e) {
+        throwLogic("Variable '{}':\n{}", key, e.what());
+      }
+    }
+  }
+
  private:
   const ConfigPreprocessor& prep_;
   const Context* outer_{nullptr};
   folly::StringKeyedUnorderedMap<std::pair<dynamic, VarState>> locals_;
   bool baseContext_{false};
+
+  dynamic& add(StringPiece key, dynamic&& value, VarState state) {
+    auto it = locals_.emplace(key, std::make_pair(std::move(value), state));
+    checkLogic(it.second, "'{}' already exists in local scope", key);
+    return it.first->second.first;
+  }
 };
 
 class ConfigPreprocessor::Macro {
@@ -1021,6 +1043,18 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Return "result" field. Useful with vars, e.g.
+   * Usage:
+   *  "type": "define",
+   *  "vars": { "A": "B" },
+   *  "result": "%A%"
+   * => "B"
+   */
+  static dynamic defineMacro(Context&& ctx) {
+    return ctx.move("result");
+  }
+
+  /**
    * Special built-in that prevents expanding 'macroDef' and 'constDef' objects
    * unless we parse them. For internal use only, nobody should call it
    * explicitly.
@@ -1342,28 +1376,6 @@ class ConfigPreprocessor::BuiltIns {
     }
     return result;
   }
-
-  /**
-   * Add values to the context
-   * Usage:
-   *  "type": "define",
-   *  "vars": { "A": "B" },
-   *  "result": "%A%"
-   * => "B"
-   */
-  static dynamic define(ConfigPreprocessor* p,
-                        dynamic&& json,
-                        const Context& ctx) {
-    auto vars = p->expandMacros(moveGet(json, "vars", "Define"), ctx);
-    checkLogic(vars.isObject(), "Define: vars is not an object");
-    Context extContext(Context::Extended, ctx);
-    for (auto& it : vars.items()) {
-      auto name = asStringPiece(it.first, "Define: vars key");
-      auto& var = const_cast<dynamic&>(it.second);
-      extContext.addExpanded(name, std::move(var));
-    }
-    return p->expandMacros(moveGet(json, "result", "Define"), extContext);
-  }
 };
 
 ///////////////////////////////ConfigPreprocessor///////////////////////////////
@@ -1456,6 +1468,8 @@ ConfigPreprocessor::ConfigPreprocessor(
   addMacro("if", { "condition", "is_true", "is_false" },
            &BuiltIns::ifMacro, false);
 
+  addMacro("define", { "result" }, &BuiltIns::defineMacro);
+
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
@@ -1466,8 +1480,6 @@ ConfigPreprocessor::ConfigPreprocessor(
   builtInCalls_.emplace("process", std::bind(&BuiltIns::process, this, _1, _2));
 
   builtInCalls_.emplace("foreach", std::bind(&BuiltIns::foreach, this, _1, _2));
-
-  builtInCalls_.emplace("define", std::bind(&BuiltIns::define, this, _1, _2));
 }
 
 void ConfigPreprocessor::addConst(StringPiece name, folly::dynamic result) {
@@ -1618,17 +1630,37 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
     // look for macros in string
     return expandStringMacro(json.stringPiece(), context);
   } else if (json.isObject()) {
+    folly::Optional<Context> extContext;
+    if (auto jVars = json.get_ptr("vars")) {
+      checkLogic(jVars->isObject(), "vars is {}, expected object",
+                 jVars->typeName());
+
+      extContext.emplace(Context::Extended, context);
+      // since vars may use other vars from local context, we
+      // do the initialization in two steps: first add them to context,
+      // then lazily expand
+      for (auto& it : jVars->items()) {
+        auto var = const_cast<dynamic&>(it.second);
+        extContext->addLocal(it.first.stringPiece(), std::move(var));
+      }
+      for (const auto& varName : jVars->keys()) {
+        extContext->doLazyExpand(varName.stringPiece());
+      }
+      json.erase("vars");
+    }
+    const auto& localContext = extContext ? *extContext : context;
+
     // check for built-in calls and long-form macros
     auto typeIt = json.find("type");
     if (typeIt != json.items().end()) {
-      auto type = expandMacros(typeIt->second, context);
+      auto type = expandMacros(typeIt->second, localContext);
       if (type.isString()) {
         auto typeStr = type.stringPiece();
         // built-in call
         auto builtInIt = builtInCalls_.find(typeStr);
         if (builtInIt != builtInCalls_.end()) {
           try {
-            return builtInIt->second(std::move(json), context);
+            return builtInIt->second(std::move(json), localContext);
           } catch (const std::logic_error& e) {
             throwLogic("Built-in '{}':\n{}", typeStr, e.what());
           }
@@ -1638,7 +1670,7 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
         if (macroIt != macros_.end()) {
           const auto& inner = macroIt->second;
           try {
-            return inner->getResult(std::move(json), context);
+            return inner->getResult(std::move(json), localContext);
           } catch (const std::logic_error& e) {
             throwLogic("Macro '{}':\n{}", typeStr, e.what());
           }
@@ -1651,10 +1683,10 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
     for (const auto& it : json.items()) {
       auto& value = const_cast<dynamic&>(it.second);
       try {
-        auto nKey = expandMacros(it.first, context);
+        auto nKey = expandMacros(it.first, localContext);
         checkLogic(nKey.isString(), "Expanded key is not a string");
         result.insert(std::move(nKey),
-                      expandMacros(std::move(value), context));
+                      expandMacros(std::move(value), localContext));
       } catch (const std::logic_error& e) {
         throwLogic("Raw object property '{}':\n{}",
                    it.first.stringPiece(), e.what());

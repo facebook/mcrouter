@@ -982,5 +982,154 @@
         ]
       }
     }
+  },
+
+  "vars": {
+    "macros": {
+      "shadow_var": {
+        "type": "macroDef",
+        "params": [ "param" ],
+        "result": {
+          "vars": {
+            "param": 1
+          },
+          "ret": "%param%"
+        }
+      }
+    },
+    "cases": {
+      "simple": {
+        "orig": {
+          "vars": {
+            "a": "%b%",
+            "b": "abacaba"
+          },
+
+          "my_key": "%a%"
+        },
+        "expand": {
+          "my_key": "abacaba"
+        }
+      },
+      "vars_foreach": {
+        "orig": {
+          "vars": {
+            "a": "123"
+          },
+
+          "type": "foreach",
+          "from": [ "a", "b" ],
+          "use": [ "%item%%a%" ]
+        },
+        "expand": [ "a123", "b123" ]
+      },
+      "vars_foreach_inner": {
+        "orig": {
+          "type": "foreach",
+          "from": { "a": "b", "c": "d" },
+          "use": {
+            "vars": {
+              "concat": "%key%%item%"
+            },
+
+            "%key%": "%concat%"
+          }
+        },
+        "expand": {
+          "a": "ab",
+          "c": "cd"
+        }
+      },
+
+      "nested": {
+        "orig": {
+          "vars": {
+            "fst": "a"
+          },
+
+          "my_key1": {
+            "vars": {
+              "scnd": "b",
+              "thrd": "%fst%%scnd%"
+            },
+
+            "my_key2": "%fst%%scnd%%thrd%"
+          }
+        },
+        "expand": {
+          "my_key1": {
+            "my_key2": "abab"
+          }
+        }
+      },
+
+      "simbling_scope": {
+        "orig": {
+          "a": {
+            "vars": { "a": 5 },
+            "result": "%a%"
+          },
+          "b": {
+            "vars": { "a": 10 },
+            "result": "%a%"
+          },
+          "c": {
+            "vars": { "a": 15 },
+            "result": "%a%"
+          }
+        },
+        "expand": {
+          "a": {
+            "result": 5
+          },
+          "b": {
+            "result": 10
+          },
+          "c": {
+            "result": 15
+          }
+        }
+      },
+
+      "shadowing": {
+        "orig": "@shadow_var(2)",
+        "expand": { "ret": 1 }
+      },
+
+      "shadowing2": {
+        "orig": {
+          "vars": {
+            "item": 15
+          },
+
+          "type": "transform",
+          "dictionary": { "a": 1, "b": 2 },
+          "itemTransform": "@add(%item%, @int(1))"
+        },
+        "expand": { "a": 2, "b": 3 }
+      },
+
+      "shadowing3": {
+        "orig": {
+          "type": "transform",
+          "dictionary": { "a": 1, "b": 2 },
+          "itemTransform": {
+            "vars": {
+              "my_key": "%key%"
+            },
+            "type": "transform",
+            "dictionary": "@range(@int(0), %item%)",
+            "itemTransform": {
+              "type": "merge",
+              "params": [ "%my_key%", "@str(%item%)" ]
+            }
+          }
+        },
+        "expand": {
+          "a": [ "a0", "a1" ],
+          "b": [ "b0", "b1", "b2" ]
+        }
+      }
+    }
   }
 }
