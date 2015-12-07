@@ -132,6 +132,10 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_delete>,
                                                 McRequest>();
 
 template <>
+void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_touch>,
+                                                McRequest>();
+
+template <>
 void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_metaget>,
                                                 McRequest>();
 

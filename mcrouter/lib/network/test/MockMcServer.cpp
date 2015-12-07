@@ -236,6 +236,18 @@ class MockMcOnRequest {
 
   void onRequest(McServerRequestContext&& ctx,
                  McRequest&& req,
+                 McOperation<mc_op_touch>) {
+    auto key = req.fullKey().str();
+
+    if (mc_.touch(key, req.exptime())) {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_touched));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_notfound));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 McRequest&& req,
                  McOperation<mc_op_incr>) {
     auto key = req.fullKey().str();
     auto p = mc_.arith(key, req.delta());

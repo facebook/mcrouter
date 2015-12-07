@@ -150,7 +150,8 @@ using SupportedReqs = List<Pair<McOperation<mc_op_get>, McRequest>,
                            Pair<McOperation<mc_op_stats>, McRequest>,
                            Pair<McOperation<mc_op_exec>, McRequest>,
                            Pair<McOperation<mc_op_flushre>, McRequest>,
-                           Pair<McOperation<mc_op_flushall>, McRequest>>;
+                           Pair<McOperation<mc_op_flushall>, McRequest>,
+                           Pair<McOperation<mc_op_touch>, McRequest>>;
 
 template <class OpReqList> class CallbackBase;
 }  // detail
@@ -187,6 +188,7 @@ class McServerAsciiParser : public McAsciiParserBase {
   void consumeLeaseSet(folly::IOBuf& buffer);
 
   void consumeDelete(folly::IOBuf& buffer);
+  void consumeTouch(folly::IOBuf& buffer);
 
   void consumeShutdown(folly::IOBuf& buffer);
 

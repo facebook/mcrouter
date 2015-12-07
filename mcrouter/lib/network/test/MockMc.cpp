@@ -124,6 +124,16 @@ bool MockMc::del(folly::StringPiece key) {
   return false;
 }
 
+bool MockMc::touch(folly::StringPiece key, int32_t newExptime) {
+  auto it = findUnexpired(key);
+  if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
+    return false;
+  }
+  it->second.item.exptime = newExptime != 0 && newExptime <= 60*60*24*30
+    ? newExptime + time(nullptr) : newExptime;
+  return true;
+}
+
 /**
  * @return:  (item, 0)            On a hit.
  *           (stale_item, token)  On a miss.

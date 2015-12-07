@@ -48,6 +48,7 @@ UM_OP(mc_op_metaget,           24)
 UM_OP(mc_op_exec,              25)
 UM_OP(mc_op_gets,              26)
 UM_OP(mc_op_get_service_info,  27)
+UM_OP(mc_op_touch,             28)
 
 UM_RES(mc_res_unknown,          0)
 UM_RES(mc_res_deleted,          1)
@@ -80,6 +81,7 @@ UM_RES(mc_res_try_again,       27)
 UM_RES(mc_res_foundstale,      28)
 UM_RES(mc_res_notfoundhot,     29)
 UM_RES(mc_res_shutdown,        30)
+UM_RES(mc_res_touched,         31)
 
 #undef UM_OP
 #undef UM_RES

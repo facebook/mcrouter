@@ -113,3 +113,13 @@ class TestWarmup2(McrouterTestCase):
         self.assertEqual(self.mc_cold.get(k), v + suffix)
         self.assertEqual(self.mcrouter.prepend(k, prefix), "STORED")
         self.assertEqual(self.mc_cold.get(k), prefix + v + suffix)
+
+    def test_warmup_touch(self):
+        k = 'key'
+        v = 'value'
+
+        # make sure touch requests go to cold route
+        self.assertTrue(self.mcrouter.set(k, v, exptime=1000))
+        self.assertEqual(self.mc_cold.get(k), v)
+        self.assertEqual(self.mcrouter.touch(k, 0), "TOUCHED")
+        self.assertEqual(self.mcrouter.metaget(k)['exptime'], '0')

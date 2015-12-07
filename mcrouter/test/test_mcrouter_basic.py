@@ -121,6 +121,31 @@ class TestMcrouterBasic(McrouterTestCase):
         self.assertTrue(mcr.set('key', 'value', exptime=1432250000))
         self.assertIsNone(mcr.get('key'))
 
+    def test_basic_touch(self):
+        mcr = self.get_mcrouter()
+
+        # positive
+        self.assertTrue(mcr.set('key', 'value', exptime=0))
+        self.assertEqual(mcr.get('key'), 'value')
+        self.assertEqual(mcr.touch('key', 20), "TOUCHED")
+        self.assertEqual(mcr.get('key'), 'value')
+
+        # negative
+        self.assertEqual(mcr.touch('fake_key', 20), "NOT_FOUND")
+        self.assertIsNone(mcr.get('fake_key'))
+
+        # negative exptime
+        self.assertTrue(mcr.set('key1', 'value', exptime=10))
+        self.assertEqual(mcr.get('key1'), 'value')
+        self.assertEqual(mcr.touch('key1', -20), "TOUCHED")
+        self.assertIsNone(mcr.get('key1'))
+
+        # past
+        self.assertTrue(mcr.set('key2', 'value', exptime=10))
+        self.assertEqual(mcr.get('key'), 'value')
+        self.assertEqual(mcr.touch('key', 1432250000), "TOUCHED")
+        self.assertIsNone(mcr.get('key'))
+
 class TestMcrouterInvalidRoute(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
     extra_args = ['--send-invalid-route-to-default']
@@ -314,6 +339,34 @@ class TestBasicAllSync(McrouterTestCase):
         self.assertEqual(self.mc1.get("key3"), "value")
         self.assertEqual(self.mc1.prepend("key3", "xyz"), "STORED")
         self.assertEqual(self.mc1.get("key3"), "xyzvalue")
+        self.assertFalse(mcr.get("key3"))
+
+    def test_touch_all_sync(self):
+        mcr = self.get_mcrouter()
+
+        mcr.set("key", "value")
+        self.assertEqual(self.mc1.get("key"), "value")
+        self.assertEqual(self.mc2.get("key"), "value")
+        self.assertEqual(self.mc3.get("key"), "value")
+        self.assertEqual(mcr.get("key"), "value")
+
+        self.assertEqual(mcr.touch("key", 3600), "TOUCHED")
+        self.assertEqual(self.mc1.get("key"), "value")
+        self.assertEqual(self.mc2.get("key"), "value")
+        self.assertEqual(self.mc3.get("key"), "value")
+        self.assertEqual(mcr.get("key"), "value")
+
+        self.mc1.set("key2", "value")
+        self.assertEqual(self.mc1.get("key2"), "value")
+        self.assertEqual(self.mc1.touch("key2", 3600), "TOUCHED")
+        self.assertEqual(self.mc1.get("key2"), "value")
+        self.assertFalse(mcr.get("key2"))
+
+        mcr.set("key3", "value")
+        self.assertEqual(self.mc1.get("key3"), "value")
+        self.assertEqual(self.mc1.touch("key3", -10), "TOUCHED")
+        self.assertEqual(self.mc2.get("key3"), "value")
+        self.assertEqual(self.mc3.get("key3"), "value")
         self.assertFalse(mcr.get("key3"))
 
 

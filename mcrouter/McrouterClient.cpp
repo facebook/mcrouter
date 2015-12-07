@@ -210,6 +210,7 @@ void McrouterClient::onReply(McReply&& reply, McMsgRef&& req, void* context) {
     case mc_op_metaget:
     case mc_op_exec:
     case mc_op_get_service_info:
+    case mc_op_touch:
     case mc_nops:
       break;
   }

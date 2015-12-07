@@ -592,6 +592,29 @@ TEST(McServerAsciiParserHarness, delete) {
       .run("delete  test:stepan:1  1234123  noreply  \r\n");
 }
 
+TEST(McServerAsciiParserHarness, touch) {
+  McRequest r("test:key:1");
+  r.setExptime(-10);
+  TestRunner()
+      .expectNext(McOperation<mc_op_touch>(), r.clone())
+      .run("touch test:key:1 -10\r\n")
+      .run("touch  test:key:1  -10  \r\n");
+  TestRunner()
+      .expectNext(McOperation<mc_op_touch>(), r.clone(), true)
+      .run("touch test:key:1 -10 noreply\r\n")
+      .run("touch  test:key:1  -10  noreply   \r\n");
+
+  r.setExptime(1234567);
+  TestRunner()
+      .expectNext(McOperation<mc_op_touch>(), r.clone())
+      .run("touch test:key:1 1234567\r\n")
+      .run("touch  test:key:1  1234567  \r\n");
+  TestRunner()
+      .expectNext(McOperation<mc_op_touch>(), r.clone(), true)
+      .run("touch test:key:1 1234567 noreply\r\n")
+      .run("touch  test:key:1  1234567  noreply  \r\n");
+}
+
 TEST(McServerAsciiParserHarness, incr) {
   arithmeticTest(McOperation<mc_op_incr>(), "incr");
 }

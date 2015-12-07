@@ -141,6 +141,17 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }
 
+// Touch op.
+
+void AsciiSerializedRequest::prepareImpl(const McRequest& request,
+                                         McOperation<mc_op_touch>) {
+  auto len = snprintf(printBuffer_, kMaxBufferLength, " %u\r\n",
+                      request.exptime());
+  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
+  addStrings("touch ", request.fullKey(),
+             folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+}
+
 // Version op.
 
 void AsciiSerializedRequest::prepareImpl(const McRequest& request,

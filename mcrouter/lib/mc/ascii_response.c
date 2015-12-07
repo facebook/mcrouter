@@ -55,6 +55,7 @@ static inline const char* mc_res_to_response_string(const mc_res_t result) {
   switch (result) {
     case mc_res_unknown: return "SERVER_ERROR unknown result\r\n";
     case mc_res_deleted: return "DELETED\r\n";
+    case mc_res_touched: return "TOUCHED\r\n";
     case mc_res_found: return "FOUND\r\n";
     case mc_res_foundstale: return "FOUND_STALE\r\n";
     // hostmiss ?
@@ -227,6 +228,18 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
     case mc_op_delete:
       switch (reply->result) {
         case mc_res_deleted:
+        case mc_res_notfound:
+          IOV_WRITE_STR(mc_res_to_response_string(reply->result));
+          break;
+        default:
+          goto UNEXPECTED;
+      }
+
+      break;
+
+    case mc_op_touch:
+      switch (reply->result) {
+        case mc_res_touched:
         case mc_res_notfound:
           IOV_WRITE_STR(mc_res_to_response_string(reply->result));
           break;

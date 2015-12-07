@@ -56,6 +56,12 @@ TEST(routeHandleTest, nullDelete) {
   EXPECT_TRUE(reply.result() == mc_res_notfound);
 }
 
+TEST(routeHandleTest, nullTouch) {
+  TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
+  auto reply = rh.route(McRequest("key"), McOperation<mc_op_touch>());
+  EXPECT_TRUE(reply.result() == mc_res_notfound);
+}
+
 TEST(routeHandleTest, nullIncr) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
   auto reply = rh.route(McRequest("key"), McOperation<mc_op_incr>());

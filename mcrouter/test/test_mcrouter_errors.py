@@ -25,6 +25,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
     delete_cmd = 'delete test_key\r\n'
     append_cmd = 'append test_key 0 0 3\r\nabc\r\n'
     prepend_cmd = 'prepend test_key 0 0 3\r\nabc\r\n'
+    touch_cmd = 'touch test_key 3600\r\n'
     server_errors = [
             'SERVER_ERROR out of order',
             'SERVER_ERROR timeout',
@@ -104,6 +105,15 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
 
     def test_server_replied_server_error_for_delete(self):
         cmd = self.delete_cmd
+        self.server.setExpectedBytes(len(cmd))
+        for error in self.server_errors:
+            self.server.setError(error)
+            mcrouter = self.add_mcrouter(self.config)
+            res = mcrouter.issue_command(cmd)
+            self.assertEqual('NOT_FOUND\r\n', res)
+
+    def test_server_replied_server_error_for_touch(self):
+        cmd = self.touch_cmd
         self.server.setExpectedBytes(len(cmd))
         for error in self.server_errors:
             self.server.setError(error)

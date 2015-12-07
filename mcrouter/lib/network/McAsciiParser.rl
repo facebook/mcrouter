@@ -175,6 +175,7 @@ error_code = uint %{
 # Common storage replies.
 not_found = 'NOT_FOUND' @{ message.setResult(mc_res_notfound); };
 deleted = 'DELETED' @{ message.setResult(mc_res_deleted); };
+touched = 'TOUCHED' @{ message.setResult(mc_res_touched); };
 
 VALUE = 'VALUE' % { message.setResult(mc_res_found); };
 
@@ -422,6 +423,28 @@ void McClientAsciiParser::consumeMessage<McReply, McOperation<mc_op_delete>>(
   }%%
 }
 
+// McTouch reply.
+%%{
+machine mc_ascii_touch_reply;
+include mc_ascii_common;
+
+touch = touched | not_found;
+touch_reply := (touch | error) msg_end;
+
+write data;
+}%%
+
+template <>
+void McClientAsciiParser::consumeMessage<McReply, McOperation<mc_op_touch>>(
+    folly::IOBuf& buffer) {
+  McReply& message = currentMessage_.get<McReply>();
+  %%{
+    machine mc_ascii_touch_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
 //McMetaget reply.
 %%{
 machine mc_ascii_metaget_reply;
@@ -598,6 +621,16 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_delete>,
   errorCs_ = mc_ascii_delete_reply_error;
   consumer_ =
       &McClientAsciiParser::consumeMessage<McReply, McOperation<mc_op_delete>>;
+}
+
+template<>
+void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_touch>,
+                                                McRequest>() {
+  initializeCommon();
+  savedCs_ = mc_ascii_touch_reply_en_touch_reply;
+  errorCs_ = mc_ascii_touch_reply_error;
+  consumer_ =
+      &McClientAsciiParser::consumeMessage<McReply, McOperation<mc_op_touch>>;
 }
 
 template<>
@@ -799,6 +832,32 @@ void McServerAsciiParser::consumeDelete(folly::IOBuf& buffer) {
   McRequest& message = currentMessage_.get<McRequest>();
   %%{
     machine mc_ascii_delete_req_body;
+    write init nocs;
+    write exec;
+  }%%
+}
+
+// Touch request.
+
+%%{
+machine mc_ascii_touch_req_body;
+include mc_ascii_common;
+
+req_body := ' '* key ' '+ exptime_req (' '+ noreply)? ' '* new_line @{
+              callback_->onRequest(McOperation<mc_op_touch>(),
+                                   std::move(currentMessage_.get<McRequest>()),
+                                   noreply_);
+              finishReq();
+              fbreak;
+            };
+
+write data;
+}%%
+
+void McServerAsciiParser::consumeTouch(folly::IOBuf& buffer) {
+  McRequest& message = currentMessage_.get<McRequest>();
+  %%{
+    machine mc_ascii_touch_req_body;
     write init nocs;
     write exec;
   }%%
@@ -1055,6 +1114,15 @@ delete = 'delete ' @{
   fbreak;
 };
 
+touch = 'touch ' @{
+  savedCs_ = mc_ascii_touch_req_body_en_req_body;
+  errorCs_ = mc_ascii_touch_req_body_error;
+  state_ = State::PARTIAL;
+  currentMessage_.emplace<McRequest>();
+  consumer_ = &McServerAsciiParser::consumeTouch;
+  fbreak;
+};
+
 shutdown = 'shutdown' @{
   savedCs_ = mc_ascii_shutdown_req_body_en_req_body;
   errorCs_ = mc_ascii_shutdown_req_body_error;
@@ -1125,7 +1193,7 @@ flush_all = 'flush_all' @{
 
 command := get | gets | lease_get | metaget | set | add | replace | append |
            prepend | cas | lease_set | delete | shutdown | incr | decr |
-           version | quit | stats | exec | flush_re | flush_all;
+           version | quit | stats | exec | flush_re | flush_all | touch;
 
 write data;
 }%%

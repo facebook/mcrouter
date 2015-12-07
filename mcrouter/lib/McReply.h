@@ -162,7 +162,8 @@ class McReply {
    * Was the data found?
    */
   bool isHit() const noexcept {
-    return result_ == mc_res_deleted || result_ == mc_res_found;
+    return result_ == mc_res_deleted || result_ == mc_res_found
+      || result_ == mc_res_touched;
   }
 
   /**

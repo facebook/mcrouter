@@ -342,6 +342,25 @@ class MCProcess(object):
         assert re.match("DELETED|NOT_FOUND|SERVER_ERROR", answer), answer
         return re.match("DELETED", answer)
 
+    def touch(self, key, exptime, noreply=False):
+        self.socket.sendall("touch {} {}{}\r\n".format(
+                            key, exptime, (' noreply' if noreply else '')))
+
+        if noreply:
+            return self.expectNoReply()
+
+        answer = self.fd.readline()
+
+        if answer == "TOUCHED\r\n":
+            return "TOUCHED"
+        if answer == "NOT_FOUND\r\n":
+            return "NOT_FOUND"
+        if re.match("^SERVER_ERROR", answer):
+            return "SERVER_ERROR"
+        if re.match("^CLIENT_ERROR", answer):
+            return "CLIENT_ERROR"
+        return None
+
     def _arith(self, cmd, key, value, noreply):
         self.socket.sendall("%s %s %d%s\r\n" %
                             (cmd, key, value, (' noreply' if noreply else '')))

@@ -23,15 +23,15 @@
 #endif
 
 static_assert(
-  mc_nops == 27,
+  mc_nops == 28,
   "If you add a new mc_op, make sure to update lib/mc/umbrella_conv.h");
 
 static_assert(
-  UM_NOPS == 28,
+  UM_NOPS == 29,
   "If you add a new mc_op, make sure to update lib/mc/umbrella_conv.h");
 
 static_assert(
-  mc_nres == 31,
+  mc_nres == 32,
   "If you add a new mc_res, make sure to update lib/mc/umbrella_conv.h");
 
 namespace facebook { namespace memcache {

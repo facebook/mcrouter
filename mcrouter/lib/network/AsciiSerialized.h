@@ -81,6 +81,8 @@ class AsciiSerializedRequest {
   void prepareImpl(const McRequest& request, McOperation<mc_op_decr>);
   // Delete op.
   void prepareImpl(const McRequest& request, McOperation<mc_op_delete>);
+  // Touch op.
+  void prepareImpl(const McRequest& request, McOperation<mc_op_touch>);
   // Version op.
   void prepareImpl(const McRequest& request, McOperation<mc_op_version>);
   // FlushAll op.

@@ -104,6 +104,14 @@ class DestinationRoute {
     return reply;
   }
 
+  McReply route(const McRequest& req, McOperation<mc_op_touch>) const {
+    auto reply = routeWithDestination(req, McOperation<mc_op_touch>());
+    if (reply.isFailoverError()) {
+      reply = McReply(DefaultReply, McOperation<mc_op_touch>());
+    }
+    return reply;
+  }
+
   template <class Operation>
   McReply route(const McRequest& req, Operation,
                 OtherThanT(Operation, DeleteLike<>) = 0) const {

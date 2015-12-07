@@ -89,6 +89,11 @@ class MockMc {
   bool del(folly::StringPiece key);
 
   /**
+   * Touch the item with the given key only if the item with that key exists.
+   */
+  bool touch(folly::StringPiece key, int32_t newExptime);
+
+  /**
    * Leases
    */
 

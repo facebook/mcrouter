@@ -42,6 +42,13 @@ class TestNoreply(McrouterTestCase):
         self.assertTrue(mcrouter.delete("key", noreply=True))
         self.assertFalse(self.mc.get("key"))
 
+    def test_touch_noreply(self):
+        mcrouter = self.get_mcrouter()
+        self.assertTrue(mcrouter.set("key", "value"))
+        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(mcrouter.touch("key", 100, noreply=True))
+        self.assertEqual(self.mc.get("key"), "value")
+
     def test_arith_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("arith", "1"))

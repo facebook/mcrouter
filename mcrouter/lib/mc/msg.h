@@ -56,6 +56,7 @@ typedef enum mc_op_e {
   mc_op_exec,
   mc_op_gets,
   mc_op_get_service_info, ///< Queries various service state
+  mc_op_touch,
   mc_nops // placeholder
 } mc_op_t;
 
@@ -75,6 +76,7 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
     case mc_op_prepend: return "prepend";
     case mc_op_cas: return "cas";
     case mc_op_delete: return "delete";
+    case mc_op_touch: return "touch";
     case mc_op_incr: return "incr";
     case mc_op_decr: return "decr";
     case mc_op_flushall: return "flushall";
@@ -102,6 +104,7 @@ static inline const char* mc_op_to_string(const mc_op_t op) {
 typedef enum mc_res_e {
   mc_res_unknown = 0,
   mc_res_deleted,
+  mc_res_touched,
   mc_res_found,
   mc_res_foundstale, /* hot-miss w/ stale data */
   mc_res_notfound,
@@ -146,6 +149,7 @@ static inline const char* mc_res_to_string(const mc_res_t result) {
   switch (result) {
     case mc_res_unknown: return "mc_res_unknown";
     case mc_res_deleted: return "mc_res_deleted";
+    case mc_res_touched: return "mc_res_touched";
     case mc_res_found: return "mc_res_found";
     case mc_res_foundstale: return "mc_res_foundstale";
     case mc_res_notfound: return "mc_res_notfound";

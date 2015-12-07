@@ -420,6 +420,18 @@ TEST(McAsciiParserHarness, DeleteNotFound) {
   h.runTest(0);
 }
 
+TEST(McAsciiParserHarness, TouchTouched) {
+  McAsciiParserHarness h("TOUCHED\r\n");
+  h.expectNext<McOperation<mc_op_touch>, McRequest>(McReply(mc_res_touched));
+  h.runTest(0);
+}
+
+TEST(McAsciiParserHarness, TouchNotFound) {
+  McAsciiParserHarness h("NOT_FOUND\r\n");
+  h.expectNext<McOperation<mc_op_touch>, McRequest>(McReply(mc_res_notfound));
+  h.runTest(0);
+}
+
 TEST(McAsciiParserHarness, MetagetMiss) {
   McAsciiParserHarness h("END\r\n");
   h.expectNext<McOperation<mc_op_metaget>, McRequest>(McReply(mc_res_notfound));
@@ -500,7 +512,8 @@ TEST(McAsciiParserHarness, AllAtOnce) {
                          "META test:key age:  unknown; exptime:  37; "
                          "from: unknown; "
                          "is_transient:  48\r\nEND\r\n"
-                         "OK\r\n");
+                         "OK\r\n"
+                         "TOUCHED\r\n");
   h.expectNext<McOperation<mc_op_get>, McRequest>(
     setFlags(McReply(mc_res_found, "te"), 10));
   h.expectNext<McOperation<mc_op_get>, McRequest>(
@@ -555,5 +568,6 @@ TEST(McAsciiParserHarness, AllAtOnce) {
   h.expectNext<McOperation<mc_op_metaget>, McRequest>(
     createMetagetHitReply(-1, 37, 48, "unknown"));
   h.expectNext<McOperation<mc_op_flushall>, McRequest>(McReply(mc_res_ok));
+  h.expectNext<McOperation<mc_op_touch>, McRequest>(McReply(mc_res_touched));
   h.runTest(1);
 }

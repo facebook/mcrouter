@@ -630,6 +630,7 @@ const char* DELETED = "DELETED\r\n";
 const char* FOUND = "VALUE we:always:ignore:key:here 0 15\r\n"
                     "veryRandomValue\r\nEND\r\n";
 const char* STORED = "STORED\r\n";
+const char* TOUCHED = "TOUCHED\r\n";
 };
 
 template <>
@@ -665,6 +666,13 @@ const char*
 McClientRequestContext<McOperation<mc_op_delete>, McRequest>::
 fakeReply() const {
   return DELETED;
+}
+
+template <>
+const char*
+McClientRequestContext<McOperation<mc_op_touch>, McRequest>::
+fakeReply() const {
+  return TOUCHED;
 }
 
 void AsyncMcClientImpl::sendFakeReply(McClientRequestContextBase& request) {

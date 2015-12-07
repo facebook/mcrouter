@@ -35,6 +35,15 @@ class TestUmbrellaServer(McrouterTestCase):
         self.assertEqual(self.mcrouter.get(key), value)
         self.assertEqual(self.mc.get(key), value)
 
+    def test_umbrella_server_touch(self):
+        key = 'foo'
+        value = 'value'
+        self.assertIsNone(self.mcrouter.get(key))
+        self.assertEqual(self.mcrouter.touch(key, 100), "NOT_FOUND")
+        self.mcrouter.set(key, value)
+        self.assertEqual(self.mcrouter.get(key), value)
+        self.assertEqual(self.mcrouter.touch(key, 100), "TOUCHED")
+
     def test_umbrella_server_append_prepend(self):
         key = 'foo'
         value = 'value'

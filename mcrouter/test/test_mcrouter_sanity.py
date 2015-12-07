@@ -77,6 +77,17 @@ class TestMcrouterSanity(McrouterTestCase):
             got = self.mcrouter.get(k)
             self.assertEqual(v, got)
 
+    def test_settouch(self):
+        """
+        This test extends on test_basic by doing a bunch more in mcrouter
+        """
+        data = self.data(5000)
+        for k, v in data:
+            self.mcrouter.set(k, v)
+            self.assertEqual(self.mcrouter.touch(k, 100), "TOUCHED")
+            got = self.mcrouter.get(k)
+            self.assertEqual(v, got)
+
     def test_append_prepend(self):
         """
         This tests basic correctness of append/prepend.
@@ -187,8 +198,9 @@ class TestMcrouterSanity(McrouterTestCase):
         self.assertEqual(mcr.append(k, 'abc'), "SERVER_ERROR")
         self.assertEqual(mcr.prepend(k, 'abc'), "SERVER_ERROR")
 
-        # (delete,incr,decr) => NOT_FOUND
+        # (delete,incr,decr,touch) => NOT_FOUND
         self.assertIsNone(mcr.delete(k))
+        self.assertEqual(mcr.touch(k, 100), "NOT_FOUND")
         self.assertIsNone(mcr.incr(k))
         self.assertIsNone(mcr.decr(k))
 
@@ -308,6 +320,7 @@ class TestMcrouterSanity(McrouterTestCase):
 
         self.assertEqual(m.append(bad_key, bad_key), "CLIENT_ERROR")
         self.assertEqual(m.prepend(bad_key, bad_key), "CLIENT_ERROR")
+        self.assertEqual(m.touch(bad_key, 100), "CLIENT_ERROR")
 
     def test_bad_stats(self):
         m = self.mcrouter
