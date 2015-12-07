@@ -361,6 +361,44 @@
       },
     }
   },
+  "weightedHash": {
+    "macros": {},
+    "cases": {
+      "one_item": {
+        "orig": {
+          "type": "weightedHash",
+          "dictionary": { "a": 0.5 },
+          "key": 2015
+        },
+        "expand": "a"
+      },
+      "zero_weight": {
+        "orig": {
+          "type": "weightedHash",
+          "dictionary": {
+            "a": 0,
+            "b": 1
+          },
+          "key": "hello world"
+        },
+        "expand": "b"
+      },
+      "str": {
+        "orig": {
+          "type": "define",
+          "vars": {
+            "weights": {
+              "a": 0,
+              "b": 1,
+              "c": 0.5
+            }
+          },
+          "result": "@weightedHash(%weights%, @int(12345))"
+        },
+        "expand": "b"
+      }
+    }
+  },
   "split": {
     "macros": {},
     "cases": {

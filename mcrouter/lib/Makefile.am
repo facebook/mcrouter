@@ -34,6 +34,8 @@ libmcrouter_a_SOURCES = \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
   config/ImportResolverIf.h \
+  config/RendezvousHash.cpp \
+  config/RendezvousHash.h \
   config/RouteHandleBuilder.h \
   config/RouteHandleFactory-inl.h \
   config/RouteHandleFactory.h \

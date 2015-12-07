@@ -20,6 +20,7 @@
 #include <folly/String.h>
 
 #include "mcrouter/lib/config/ImportResolverIf.h"
+#include "mcrouter/lib/config/RendezvousHash.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 using folly::dynamic;
@@ -470,6 +471,61 @@ class ConfigPreprocessor::BuiltIns {
     } else {
       // invalid
       throwLogic("Hash: can not cast {} to int or string", val.typeName());
+    }
+  }
+
+  /**
+   * Computes weighted hash given a dictionary of choices and a key
+   *
+   * Usage: {
+   *  "type": "weightedHash",
+   *  "dictionary": { <string>: 0.0..1.0 },
+   *  "key": <string> or <int>
+   * }
+   * Example: {
+   *  "type": "weightedHash",
+   *  "dictionary": {
+   *    "a": 0.0,
+   *    "b": 1.0
+   *  },
+   *  "key": 5
+   * }
+   * => "b"
+   */
+  static dynamic weightedHashMacro(Context&& ctx) {
+    const auto& dictionary = ctx.at("dictionary");
+    checkLogic(dictionary.isObject(),
+               "WeightedHash: dictionary is {}, expected object",
+               dictionary.typeName());
+
+    const auto& key = ctx.at("key");
+    vector<std::pair<StringPiece, double>> weights;
+    for (const auto& it : dictionary.items()) {
+      auto name = it.first.stringPiece();
+      checkLogic(it.second.isNumber(),
+                 "WeightedHash: {} weight is {}, expected number",
+                 name, it.second.typeName());
+      auto weight = it.second.asDouble();
+      checkLogic(-0.01 <= weight, "WeightedHash: {} weight {} is negative",
+                 name, weight);
+      weights.emplace_back(name, std::max(weight, 0.0));
+    }
+    checkLogic(!weights.empty(), "WeightedHash: dictionary is empty");
+
+    uint64_t keyHash;
+    if (key.isInt()) {
+      keyHash = key.getInt();
+    } else if (key.isString()) {
+      keyHash = folly::Hash()(key.stringPiece());
+    } else {
+      throwLogic("WeightedHash: key is {}, expected string or int",
+                 key.typeName());
+    }
+    try {
+      auto id = RendezvousHash(weights.begin(), weights.end()).get(keyHash);
+      return weights[id].first;
+    } catch (const std::exception& e) {
+      throwLogic("WeightedHash: failed to compute hash: {}", e.what());
     }
   }
 
@@ -1397,6 +1453,9 @@ ConfigPreprocessor::ConfigPreprocessor(
     }, false);
 
   addMacro("hash", { "value" }, &BuiltIns::hashMacro);
+
+  addMacro("weightedHash", { "dictionary", "key" },
+           &BuiltIns::weightedHashMacro);
 
   addMacro("int", { "value" }, &BuiltIns::intMacro);
 
