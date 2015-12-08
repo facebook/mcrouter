@@ -50,6 +50,14 @@
         "orig": "@and(@not(@or(@bool(false),@bool(1))), @not(@bool(false)))",
         "expand": false
       },
+      "lazyAnd": {
+        "orig": "@and(@bool(false), @fail(Will not fire))",
+        "expand": false
+      },
+      "lazyOr": {
+        "orig": "@or(@bool(true), @fail(Will not fire))",
+        "expand": true
+      },
       "sortInts": {
         "orig": {
           "type": "sort",

@@ -956,27 +956,35 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
-   * Returns true if A && B. A and B should be booleans.
+   * Returns true if A && B. B is evaluated only if A is true.
+   * A and B should be booleans.
    * Usage: @and(A,B)
    */
   static dynamic andMacro(Context&& ctx) {
-    const auto& A = ctx.at("A");
-    const auto& B = ctx.at("B");
-    checkLogic(A.isBool(), "and: A is not bool");
-    checkLogic(B.isBool(), "and: B is not bool");
-    return A.getBool() && B.getBool();
+    auto A = ctx.expandRawArg("A");
+    checkLogic(A.isBool(), "and: A is {}, expected bool", A.typeName());
+    if (A.getBool()) {
+      auto B = ctx.expandRawArg("B");
+      checkLogic(B.isBool(), "and: B is {}, expected bool", B.typeName());
+      return B.getBool();
+    }
+    return false;
   }
 
   /**
-   * Returns true if A || B. A and B should be booleans.
+   * Returns true if A || B. B is evaluated only if A is true.
+   * A and B should be booleans.
    * Usage: @or(A,B)
    */
   static dynamic orMacro(Context&& ctx) {
-    const auto& A = ctx.at("A");
-    const auto& B = ctx.at("B");
-    checkLogic(A.isBool(), "or: A is not bool");
-    checkLogic(B.isBool(), "or: B is not bool");
-    return A.getBool() || B.getBool();
+    auto A = ctx.expandRawArg("A");
+    checkLogic(A.isBool(), "or: A is {}, expected bool", A.typeName());
+    if (!A.getBool()) {
+      auto B = ctx.expandRawArg("B");
+      checkLogic(B.isBool(), "or: B is {}, expected bool", B.typeName());
+      return B.getBool();
+    }
+    return true;
   }
 
   /**
@@ -1531,9 +1539,9 @@ ConfigPreprocessor::ConfigPreprocessor(
 
   addMacro("less", { "A", "B" }, &BuiltIns::lessMacro);
 
-  addMacro("and", { "A", "B" }, &BuiltIns::andMacro);
+  addMacro("and", { "A", "B" }, &BuiltIns::andMacro, false);
 
-  addMacro("or", { "A", "B" }, &BuiltIns::orMacro);
+  addMacro("or", { "A", "B" }, &BuiltIns::orMacro, false);
 
   addMacro("not", { "A" }, &BuiltIns::notMacro);
 
