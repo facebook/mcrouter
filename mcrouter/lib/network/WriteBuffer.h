@@ -85,6 +85,17 @@ class WriteBuffer {
    */
   void ensureType(UmbrellaVersion type);
 
+  /**
+   * Checks if we should send a reply for this request.
+   *
+   * A possible scenario of when request is marked as noreply after being
+   * serialized is when one key in multi-op batch had an error.
+   *
+   * @return false  iff the reply is marked as noreply and we shouldn't send it
+   *                over the network.
+   */
+  bool noReply() const;
+
  private:
   const mc_protocol_t protocol_;
   UmbrellaVersion version_{UmbrellaVersion::BASIC};

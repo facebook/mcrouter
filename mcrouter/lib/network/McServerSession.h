@@ -280,10 +280,7 @@ class McServerSession :
                  noreply);
   }
 
-  void multiOpEnd() {
-    requestReady(McRequest(), mc_op_end, 0 /* no reqid */,
-                 mc_res_unknown, false /* never noreply for read ops */);
-  }
+  void multiOpEnd();
 
   /**
    * Must be called after parser has detected the protocol (i.e.

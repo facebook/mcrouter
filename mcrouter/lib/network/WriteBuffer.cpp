@@ -11,6 +11,8 @@
 
 #include "mcrouter/lib/mc/protocol.h"
 
+#include "mcrouter/lib/network/MultiOpParent.h"
+
 namespace facebook { namespace memcache {
 
 WriteBuffer::WriteBuffer(mc_protocol_t protocol)
@@ -109,6 +111,10 @@ bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply) {
     default:
       CHECK(false);
   }
+}
+
+bool WriteBuffer::noReply() const {
+  return ctx_.hasValue() && ctx_->hasParent() && ctx_->parent().error();
 }
 
 AsciiSerializedReply::AsciiSerializedReply() {

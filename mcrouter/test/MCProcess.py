@@ -182,6 +182,7 @@ class MCProcess(object):
 
     def _get(self, cmd, keys, expect_cas, return_all_info):
         multi = True
+        hadValue = False
         if not isinstance(keys, list):
             multi = False
             keys = [keys]
@@ -197,6 +198,7 @@ class MCProcess(object):
                     assert len(res) == 1
                     return res.values()[0]
             elif l.startswith("VALUE"):
+                hadValue = True
                 parts = l.split()
                 k = parts[1]
                 f = int(parts[2])
@@ -214,6 +216,9 @@ class MCProcess(object):
                 else:
                     res[k] = payload
             elif l.startswith("SERVER_ERROR"):
+                if hadValue:
+                    raise Exception('Received hit reply + SERVER_ERROR for '
+                                    'multiget request')
                 return l
             else:
                 self.connect()

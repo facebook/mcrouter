@@ -260,6 +260,16 @@ void McServerSession::readErr(const folly::AsyncSocketException& ex) noexcept {
   close();
 }
 
+void McServerSession::multiOpEnd() {
+  DestructorGuard dg(this);
+
+  if (state_ != STREAMING) {
+    return;
+  }
+
+  processMultiOpEnd();
+}
+
 void McServerSession::requestReady(McRequest&& req,
                                    mc_op_t operation,
                                    uint64_t reqid,
@@ -275,11 +285,6 @@ void McServerSession::requestReady(McRequest&& req,
     if (isPartOfMultiget(parser_.protocol(), operation) &&
         !currentMultiop_) {
       currentMultiop_ = std::make_shared<MultiOpParent>(*this, tailReqid_++);
-    }
-
-    if (operation == mc_op_end) {
-      processMultiOpEnd();
-      return;
     }
 
     reqid = tailReqid_++;
@@ -400,9 +405,11 @@ void McServerSession::sendWrites() {
     auto wb = std::move(pendingWrites_.front());
     pendingWrites_.pop_front();
     ++count;
-    iovs.insert(iovs.end(),
-                wb->getIovsBegin(),
-                wb->getIovsBegin() + wb->getIovsCount());
+    if (!wb->noReply()) {
+      iovs.insert(iovs.end(),
+                  wb->getIovsBegin(),
+                  wb->getIovsBegin() + wb->getIovsCount());
+    }
     writeBufs_->push(std::move(wb));
   }
   writeBatches_.push_back(count);
