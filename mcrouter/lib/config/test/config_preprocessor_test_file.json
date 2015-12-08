@@ -1169,5 +1169,94 @@
         }
       }
     }
+  },
+  "defined": {
+    "macros": {
+      "myMacro": {
+        "type": "macroDef",
+        "params": [ "a", "b" ],
+        "result": {
+          "a": "@defined(a)",
+          "b": "@defined(b)",
+          "c": "@defined(c)",
+          "params": "@defined(params)",
+          "local": "@defined(local)",
+          "myMacro": "@defined(myMacro)",
+          "arg": "%a%"
+        }
+      }
+    },
+    "cases": {
+      "definedConst": {
+        "orig": "@defined(testGlobal)",
+        "expand": true
+      },
+      "definedLocal": {
+        "orig": {
+          "type": "transform",
+          "keyName": "my_key",
+          "dictionary": [ 1, 2, 3 ],
+          "itemTransform": "@and(@defined(my_key), @defined(item))"
+        },
+        "expand": [ true, true, true ]
+      },
+      "undefined": {
+        "orig": "@defined(name)",
+        "expand": false
+      },
+      "shortMacro": {
+        "orig": {
+          "vars": {
+            "local": true
+          },
+          "in_macro": "@myMacro(@defined(local),2)",
+          "outside_macro": {
+            "a": "@defined(a)",
+            "local": "@defined(local)",
+            "myMacro": "@defined(myMacro)",
+          }
+        },
+        "expand": {
+          "in_macro": {
+            "arg": true,
+            "a": true,
+            "b": true,
+            "c": false,
+            "local": false,
+            "myMacro": false,
+            "params": false
+          },
+          "outside_macro": {
+            "a": false,
+            "local": true,
+            "myMacro": false
+          }
+        }
+      },
+      "longMacro": {
+        "orig": {
+          "vars": {
+            "local": true
+          },
+
+          "type": "foreach",
+          "from": {
+            "type": "myMacro",
+            "a": "@defined(local)",
+            "b": 2
+          },
+          "use": { "%key%" : "%item%" }
+        },
+        "expand": {
+          "arg": true,
+          "a": true,
+          "b": true,
+          "c": false,
+          "params": false,
+          "local": false,
+          "myMacro": false
+        }
+      }
+    }
   }
 }

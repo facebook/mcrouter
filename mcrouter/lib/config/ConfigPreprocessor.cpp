@@ -192,6 +192,14 @@ class ConfigPreprocessor::Context {
       outer_(&outer),
       baseContext_(baseContext) {}
 
+  const ConfigPreprocessor& prep() const {
+    return prep_;
+  }
+
+  const Context* outer() const {
+    return outer_;
+  }
+
   dynamic& addExpanded(StringPiece key, dynamic value) {
     return add(key, std::move(value), VarState::EXPAND);
   }
@@ -249,6 +257,17 @@ class ConfigPreprocessor::Context {
       return outer_->find(key);
     }
     return nullptr;
+  }
+
+  bool contains(StringPiece key) const {
+    auto it = locals_.find(key);
+    if (it != locals_.end()) {
+      return true;
+    }
+    if (outer_ && !baseContext_) {
+      return outer_->find(key);
+    }
+    return false;
   }
 
   void doLazyExpand(StringPiece key) {
@@ -1099,6 +1118,18 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Returns true if name is defined in local context or in consts
+   * Usage: @defined(default-route)
+   * => true for mcrouter config
+   */
+  static dynamic definedMacro(Context&& ctx) {
+    auto name = asStringPiece(ctx.at("name"), "Defined: name");
+    auto& consts = ctx.prep().consts_;
+    return (ctx.outer() && ctx.outer()->contains(name))
+      || consts.find(name) != consts.end();
+  }
+
+  /**
    * Return "result" field. Useful with vars, e.g.
    * Usage:
    *  "type": "define",
@@ -1528,6 +1559,8 @@ ConfigPreprocessor::ConfigPreprocessor(
            &BuiltIns::ifMacro, false);
 
   addMacro("define", { "result" }, &BuiltIns::defineMacro);
+
+  addMacro("defined", { "name" }, &BuiltIns::definedMacro);
 
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
