@@ -196,11 +196,12 @@ TEST(libmcrouter, listenSock) {
   const std::string kGetReply = "VALUE testkey 0 1\r\nv\r\nEND\r\n";
 
   ClientSocket mcrSock(listenSock.getPort());
-  EXPECT_EQ(kStoredReply, mcrSock.sendRequest(kSetRequest));
-  EXPECT_EQ(kGetReply, mcrSock.sendRequest(kGetRequest));
+  EXPECT_EQ(kStoredReply,
+            mcrSock.sendRequest(kSetRequest, kStoredReply.size()));
+  EXPECT_EQ(kGetReply, mcrSock.sendRequest(kGetRequest, kGetReply.size()));
 
   ClientSocket mcSock(memcacheLocal->getPort());
-  EXPECT_EQ(kGetReply, mcSock.sendRequest(kGetRequest));
+  EXPECT_EQ(kGetReply, mcSock.sendRequest(kGetRequest, kGetReply.size()));
 }
 
 // for backward compatibility with gflags

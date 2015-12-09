@@ -76,48 +76,46 @@ ClientSocket::~ClientSocket() {
 
 void ClientSocket::write(folly::StringPiece data,
                          std::chrono::milliseconds timeout) {
-  size_t written = 0;
-  auto timeoutMs = static_cast<size_t>(timeout.count());
-  for (size_t i = 0; written < data.size() && i <= timeoutMs; ++i) {
-    ssize_t n = ::send(socketFd_,
-                       data.data() + written, data.size() - written,
-                       MSG_DONTWAIT);
-    if (n == -1) {
-      if (errno == EWOULDBLOCK || errno == EAGAIN) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        continue;
-      }
-      throwRuntime("failed to write to socket: {}", folly::errnoStr(errno));
+  auto tmo = to<timeval_t>(timeout);
+  ::setsockopt(socketFd_, SOL_SOCKET, SO_SNDTIMEO,
+               reinterpret_cast<char*>(&tmo), sizeof(timeval_t));
+
+  ssize_t n = folly::writeFull(socketFd_, data.data(), data.size());
+  if (n == -1) {
+    if (errno == EWOULDBLOCK || errno == EAGAIN) {
+      throwRuntime("timeout writing to socket");
     }
-    written += n;
+    throwRuntime("failed to write to socket: {}", folly::errnoStr(errno));
   }
 
-  checkRuntime(written == data.size(),
+  checkRuntime(n == data.size(),
                "failed to write to socket. Written {}, expected {}",
-               written, data.size());
+               n, data.size());
 }
 
 std::string ClientSocket::sendRequest(folly::StringPiece request,
+                                      size_t replySize,
                                       std::chrono::milliseconds timeout) {
   write(request, timeout);
 
-  // wait for some data to arrive
-  auto timeoutMs = static_cast<size_t>(timeout.count());
-  for (size_t i = 0; i <= timeoutMs; ++i) {
-    char replyBuf[kMaxReplySize + 1];
-    ssize_t n = ::recv(socketFd_, replyBuf, kMaxReplySize, MSG_DONTWAIT);
-    if (n == -1) {
-      if (errno == EWOULDBLOCK || errno == EAGAIN) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        continue;
-      }
-      throwRuntime("failed to read from socket: {}", folly::errnoStr(errno));
-    } else if (n == 0) {
-      throwRuntime("peer closed the socket");
+  auto tmo = to<timeval_t>(timeout);
+  ::setsockopt(socketFd_, SOL_SOCKET, SO_RCVTIMEO,
+               reinterpret_cast<char*>(&tmo), sizeof(timeval_t));
+
+  std::vector<char> replyBuf(replySize + 1);
+  ssize_t n = folly::readFull(socketFd_, replyBuf.data(), replySize);
+  if (n == -1) {
+    if (errno == EWOULDBLOCK || errno == EAGAIN) {
+      throwRuntime("timeout reading from socket");
     }
-    return std::string(replyBuf, n);
+    throwRuntime("failed to read from socket: {}", folly::errnoStr(errno));
+  } else if (n == 0) {
+    throwRuntime("peer closed the socket");
   }
-  throwRuntime("timeout reading from socket");
+  checkRuntime(n == replySize,
+               "failed to read from socket. Read {}, expected {}",
+               n, replySize);
+  return std::string(replyBuf.data(), n);
 }
 
 }}  // facebook::memcache

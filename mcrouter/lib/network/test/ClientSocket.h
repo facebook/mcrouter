@@ -41,8 +41,7 @@ class ClientSocket {
              std::chrono::milliseconds timeout = std::chrono::seconds(1));
 
   /**
-   * Send a request and receive a reply.
-   * NOTE: max reply size is `kMaxReplySize`
+   * Send a request and receive a reply of `replySize`.
    *
    * @param request  string to send
    * @param timeout  max time to wait for send/receive
@@ -51,6 +50,7 @@ class ClientSocket {
    */
   std::string sendRequest(
     folly::StringPiece request,
+    size_t replySize,
     std::chrono::milliseconds timeout = std::chrono::seconds(1));
 
   // movable, but not copyable
