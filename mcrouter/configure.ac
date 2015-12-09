@@ -9,9 +9,6 @@ m4_append([mcrouter_version], [.0])
 m4_append([mcrouter_version], [mcrouter_version_suffix])
 AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
 
-LT_VERSION=mcrouter_version_str:0
-AC_SUBST([LT_VERSION])
-
 AC_CONFIG_SRCDIR([McrouterInstance.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])
@@ -77,10 +74,10 @@ AC_CACHE_CHECK(
   [AC_RUN_IFELSE(
     [AC_LANG_SOURCE[
       #include <gflags/gflags.h>
-      DEFINE_bool(folly_truthy, true, "Sample truthy flag");
-      DEFINE_bool(folly_falsey, false, "Sample falsey flag");
+      DEFINE_bool(mcrouter_truthy, true, "Sample truthy flag");
+      DEFINE_bool(mcrouter_falsey, false, "Sample falsey flag");
       int main(int argc, char** argv) {
-        return (FLAGS_folly_truthy && !FLAGS_folly_falsey) ? 0 : 1;
+        return (FLAGS_mcrouter_truthy && !FLAGS_mcrouter_falsey) ? 0 : 1;
       }
     ]],
     [mcrouter_cv_prog_cc_gflags=yes],
@@ -125,7 +122,6 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_C_VOLATILE
-AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
@@ -136,94 +132,7 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
-AC_CHECK_TYPE([__int128],
-  [AC_DEFINE([HAVE_INT128_T], [1], [Define if __int128 exists])],
-  [AC_DEFINE([HAVE_INT128_T], [0], [Define if __int128 does not exist])])
 AC_CHECK_TYPES([ptrdiff_t])
-AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE[
-    #pragma GCC diagnostic error "-Wattributes"
-    extern "C" void (*test_ifunc(void))() { return 0; }
-    void func() __attribute__((ifunc("test_ifunc")));]
-  ],
-  [AC_DEFINE([HAVE_IFUNC], [1], [Define to 1 if the compiler supports ifunc])],
-  [AC_DEFINE([HAVE_IFUNC], [0], [Define to 0 if the compiler doesn't support ifunc])]
-)
-AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE[class C { virtual void f() final {} virtual void g() {} };
-                  class D : public C { virtual void g() override {} };]],
-  [AC_DEFINE([FINAL], [final],
-             [Define to "final" if the compiler supports C++11 "final"])
-   AC_DEFINE([OVERRIDE], [override],
-             [Define to "override" if the compiler supports C++11 "override"])],
-  [AC_DEFINE([FINAL], [],
-             [Define to "final" if the compiler supports C++11 "final"])
-   AC_DEFINE([OVERRIDE], [],
-             [Define to "override" if the compiler supports C++11 "override"])]
-)
-
-AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE[
-    #include <thread>
-    #include <chrono>
-    void func() { std::this_thread::sleep_for(std::chrono::seconds(1)); }]],
-  [AC_DEFINE([HAVE_STD__THIS_THREAD__SLEEP_FOR], [1],
-             [Define to 1 if std::this_thread::sleep_for() is defined.])])
-
-AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE[
-    #include <cstring>
-    static constexpr int val = strlen("foo");]],
-  [AC_DEFINE([HAVE_CONSTEXPR_STRLEN], [1],
-             [Define to 1 if strlen(3) is constexpr.])])
-
-AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE[
-    #include <type_traits>
-    #if !_LIBCPP_VERSION
-    #error No libc++
-    #endif
-    void func() {}]
-  ],
-  [AC_DEFINE([USE_LIBCPP], [1], [Define to 1 if we're using libc++.])])
-
-AC_COMPILE_IFELSE(
-  [AC_LANG_SOURCE[
-    #include <type_traits>
-    const bool val = std::is_trivially_copyable<bool>::value;]
-  ],
-  [AC_DEFINE([HAVE_STD__IS_TRIVIALLY_COPYABLE], [1],
-             [Define to 1 if we have a usable std::is_trivially_copyable<T>
-              implementation.])])
-
-# Figure out if we support weak symbols. If not, we will link in some null
-# stubs for functions that would otherwise be weak.
-AC_LINK_IFELSE(
-  [AC_LANG_SOURCE[
-    extern "C" void configure_link_extern_weak_test() __attribute__((weak));
-    int main(int argc, char** argv) {
-        return configure_link_extern_weak_test == nullptr;
-    }]
-  ],
-  [
-    ac_have_weak_symbols="yes"
-    AC_DEFINE([HAVE_WEAK_SYMBOLS], [1],
-              [Define to 1 if the linker supports weak symbols.])])
-
-AC_SEARCH_LIBS([cplus_demangle_v3_callback], [iberty])
-if test "$ac_cv_search_cplus_demangle_v3_callback" != "no" ; then
-  AC_DEFINE([HAVE_CPLUS_DEMANGLE_V3_CALLBACK], [1],
-            [Define to 1 if we have cplus_demangle_v3_callback.])
-fi
-
-# Check for clock_gettime(2). This is not in an AC_CHECK_FUNCS() because we
-# want to link with librt if necessary.
-AC_SEARCH_LIBS([clock_gettime], [rt],
-  AC_DEFINE(
-    [HAVE_CLOCK_GETTIME],
-    [1],
-    [Define to 1 if we support clock_gettime(2).]),
-  [])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday \
@@ -242,12 +151,6 @@ AC_CHECK_FUNCS([gettimeofday \
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
       -lpthread -pthread"
-
-AM_CONDITIONAL([HAVE_STD_THREAD], [test "$ac_cv_header_features" = "yes"])
-AM_CONDITIONAL([HAVE_X86_64], [test "$build_cpu" = "x86_64"])
-AM_CONDITIONAL([HAVE_LINUX], [test "$build_os" == "linux-gnu"])
-AM_CONDITIONAL([HAVE_WEAK_SYMBOLS], [test "$ac_have_weak_symbols" = "yes"])
-AM_CONDITIONAL([HAVE_BITS_FUNCTEXCEPT], [test "$ac_cv_header_bits_functexcept" = "yes"])
 
 AM_PATH_PYTHON([2.6],, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
