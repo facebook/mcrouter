@@ -118,4 +118,26 @@ std::string ClientSocket::sendRequest(folly::StringPiece request,
   return std::string(replyBuf.data(), n);
 }
 
+std::string ClientSocket::sendRequest(folly::StringPiece request,
+                                      std::chrono::milliseconds timeout) {
+  write(request, timeout);
+
+  auto tmo = to<timeval_t>(timeout);
+  ::setsockopt(socketFd_, SOL_SOCKET, SO_RCVTIMEO,
+               reinterpret_cast<char*>(&tmo), sizeof(timeval_t));
+
+  const size_t maxReplySize = 1000000;
+  std::vector<char> replyBuf(maxReplySize + 1);
+  ssize_t n = folly::readFull(socketFd_, replyBuf.data(), maxReplySize);
+  if (n == -1) {
+    if (errno == EWOULDBLOCK || errno == EAGAIN) {
+      throwRuntime("timeout reading from socket");
+    }
+    throwRuntime("failed to read from socket: {}", folly::errnoStr(errno));
+  }
+  checkRuntime(n < maxReplySize,
+               "the reply buffer may be too small because we used it up");
+  return std::string(replyBuf.data(), n);
+}
+
 }}  // facebook::memcache

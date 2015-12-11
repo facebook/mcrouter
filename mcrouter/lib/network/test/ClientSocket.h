@@ -52,6 +52,9 @@ class ClientSocket {
     folly::StringPiece request,
     size_t replySize,
     std::chrono::milliseconds timeout = std::chrono::seconds(1));
+  std::string sendRequest(
+    folly::StringPiece request,
+    std::chrono::milliseconds timeout = std::chrono::seconds(1));
 
   // movable, but not copyable
   ClientSocket(ClientSocket&& other) noexcept;
