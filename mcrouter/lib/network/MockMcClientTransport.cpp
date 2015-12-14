@@ -36,8 +36,7 @@ void MockMcClientTransport::write(
     folly::AsyncTransportWrapper::WriteCallback* callback,
     const void*,
     size_t,
-    WriteFlags,
-    folly::AsyncTransportWrapper::BufferCallback*) {
+    WriteFlags) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
@@ -46,8 +45,7 @@ void MockMcClientTransport::writev(
     folly::AsyncTransportWrapper::WriteCallback* callback,
     const iovec*,
     size_t,
-    WriteFlags,
-    folly::AsyncTransportWrapper::BufferCallback*) {
+    WriteFlags) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
@@ -55,8 +53,7 @@ void MockMcClientTransport::writev(
 void MockMcClientTransport::writeChain(
     folly::AsyncTransportWrapper::WriteCallback* callback,
     std::unique_ptr<folly::IOBuf>&&,
-    WriteFlags,
-    folly::AsyncTransportWrapper::BufferCallback*) {
+    WriteFlags) {
   writeCallbacks_.push(callback);
   ensureLoopScheduled();
 }
