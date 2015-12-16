@@ -54,7 +54,7 @@ McServerSession& McServerSession::create(
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
-  Fifo* debugFifo) {
+  std::shared_ptr<Fifo> debugFifo) {
 
   auto ptr = new McServerSession(
     std::move(transport),
@@ -89,7 +89,7 @@ McServerSession::McServerSession(
   std::function<void()> onShutdown,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
-  Fifo* debugFifo)
+  std::shared_ptr<Fifo> debugFifo)
     : transport_(std::move(transport)),
       onRequest_(std::move(cb)),
       onWriteQuiescence_(std::move(onWriteQuiescence)),

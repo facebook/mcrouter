@@ -40,7 +40,7 @@ class FifoManager {
    * @param fifoBasePath  Base path of the fifo.
    * @return              The "thread_local" fifo.
    */
-  Fifo& fetchThreadLocal(const std::string& fifoBasePath);
+  std::shared_ptr<Fifo> fetchThreadLocal(const std::string& fifoBasePath);
 
   /**
    * Returns the singleton instance of FifoManager.
@@ -51,7 +51,7 @@ class FifoManager {
  private:
   FifoManager();
 
-  std::unordered_map<std::string, std::unique_ptr<Fifo>> fifos_;
+  std::unordered_map<std::string, std::shared_ptr<Fifo>> fifos_;
   folly::SharedMutex fifosMutex_;
 
   // Thread that connects to fifos
@@ -67,7 +67,7 @@ class FifoManager {
    * @param fifoPath  Full path of the fifo.
    * @return          The fifo.
    */
-  Fifo& fetch(const std::string& fifoPath);
+  std::shared_ptr<Fifo> fetch(const std::string& fifoPath);
 
   /**
    * Finds a fifo by its full path. If not found, returns null.
@@ -75,7 +75,7 @@ class FifoManager {
    * @param fifoPath  Full path of the fifo.
    * @return          The fifo or null if not found.
    */
-  Fifo* find(const std::string& fifoPath);
+  std::shared_ptr<Fifo> find(const std::string& fifoPath);
 
   /**
    * Creates a fifo and stores it into the map.
@@ -83,7 +83,7 @@ class FifoManager {
    * @param fifoPath  Full path of the fifo.
    * @return          The newly created fifo.
    */
-  Fifo& createAndStore(const std::string& fifoPath);
+  std::shared_ptr<Fifo> createAndStore(const std::string& fifoPath);
 
   friend class folly::Singleton<FifoManager>;
 };

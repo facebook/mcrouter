@@ -70,10 +70,10 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
 AsyncMcClientImpl::AsyncMcClientImpl(
     folly::EventBase& eventBase,
     ConnectionOptions options,
-    Fifo* debugFifo)
+    std::shared_ptr<Fifo> debugFifo)
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
-      debugFifo_(debugFifo),
+      debugFifo_(std::move(debugFifo)),
       outOfOrder_(connectionOptions_.accessPoint->getProtocol() ==
                   mc_umbrella_protocol),
       queue_(outOfOrder_),
@@ -92,14 +92,14 @@ std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
                            "protocol yet!");
   }
 
-  Fifo* debugFifo{nullptr};
+  std::shared_ptr<Fifo> debugFifo;
   if (!options.debugFifoPath.empty()) {
     if (auto fifoManager = FifoManager::getInstance()) {
-      debugFifo = &fifoManager->fetchThreadLocal(options.debugFifoPath);
+      debugFifo = fifoManager->fetchThreadLocal(options.debugFifoPath);
     }
   }
   auto client = std::shared_ptr<AsyncMcClientImpl>(
-    new AsyncMcClientImpl(eventBase, std::move(options), debugFifo),
+    new AsyncMcClientImpl(eventBase, std::move(options), std::move(debugFifo)),
     Destructor());
   client->selfPtr_ = client;
   return client;

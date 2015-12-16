@@ -62,33 +62,33 @@ FifoManager::~FifoManager() {
   thread_.join();
 }
 
-Fifo& FifoManager::fetch(const std::string& fifoPath) {
+std::shared_ptr<Fifo> FifoManager::fetch(const std::string& fifoPath) {
   if (auto debugFifo = find(fifoPath)) {
-    return *debugFifo;
+    return debugFifo;
   }
   return createAndStore(fifoPath);
 }
 
-Fifo& FifoManager::fetchThreadLocal(const std::string& fifoBasePath) {
+std::shared_ptr<Fifo> FifoManager::fetchThreadLocal(
+    const std::string& fifoBasePath) {
   CHECK(!fifoBasePath.empty()) << "Fifo base path must not be empty";
 
   return fetch(folly::sformat("{0}.{1}", fifoBasePath, gettid()));
 }
 
-Fifo* FifoManager::find(const std::string& fifoPath) {
+std::shared_ptr<Fifo> FifoManager::find(const std::string& fifoPath) {
   folly::SharedMutex::ReadHolder lockGuard(fifosMutex_);
   auto it = fifos_.find(fifoPath);
   if (it != fifos_.end()) {
-    return it->second.get();
+    return it->second;
   }
   return nullptr;
 }
 
-Fifo& FifoManager::createAndStore(const std::string& fifoPath) {
+std::shared_ptr<Fifo> FifoManager::createAndStore(const std::string& fifoPath) {
   folly::SharedMutex::WriteHolder lockGuard(fifosMutex_);
-  auto it = fifos_.emplace(fifoPath,
-                           std::unique_ptr<Fifo>(new Fifo(fifoPath)));
-  return *it.first->second;
+  auto it = fifos_.emplace(fifoPath, std::shared_ptr<Fifo>(new Fifo(fifoPath)));
+  return it.first->second;
 }
 
 std::shared_ptr<FifoManager> FifoManager::getInstance() {

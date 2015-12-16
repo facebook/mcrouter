@@ -87,7 +87,7 @@ class McServerSession :
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
-    Fifo* debugFifo = nullptr);
+    std::shared_ptr<Fifo> debugFifo = nullptr);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
@@ -137,7 +137,7 @@ class McServerSession :
   std::function<void()> onShutdown_;
   AsyncMcServerWorkerOptions options_;
   void* userCtxt_{nullptr};
-  Fifo* debugFifo_{nullptr}; // Debug pipe.
+  std::shared_ptr<Fifo> debugFifo_;
 
   enum State {
     STREAMING,  /* close() was not called */
@@ -313,7 +313,7 @@ class McServerSession :
     std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
-    Fifo* debugFifo);
+    std::shared_ptr<Fifo> debugFifo);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

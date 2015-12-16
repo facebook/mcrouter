@@ -109,7 +109,7 @@ class McServerThread {
         // Set workers' debug fifo
         if (!server_.opts_.debugFifoPath.empty()) {
           if (auto fifoManager = FifoManager::getInstance()) {
-            worker_.setDebugFifo(&fifoManager->fetchThreadLocal(
+            worker_.setDebugFifo(fifoManager->fetchThreadLocal(
                   server_.opts_.debugFifoPath));
           }
         }

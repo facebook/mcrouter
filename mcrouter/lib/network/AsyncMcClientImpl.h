@@ -109,7 +109,7 @@ class AsyncMcClientImpl :
   ConnectionStatusCallbacks statusCallbacks_;
 
   // Debug pipe.
-  Fifo* debugFifo_{nullptr};
+  std::shared_ptr<Fifo> debugFifo_;
 
   bool outOfOrder_{false};
   McClientRequestContextQueue queue_;
@@ -132,7 +132,7 @@ class AsyncMcClientImpl :
 
   AsyncMcClientImpl(folly::EventBase& eventBase,
                     ConnectionOptions options,
-                    Fifo* debugFifo);
+                    std::shared_ptr<Fifo> debugFifo);
 
   ~AsyncMcClientImpl();
 

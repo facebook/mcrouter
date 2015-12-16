@@ -140,8 +140,8 @@ class AsyncMcServerWorker {
     onShutdown_ = std::move(cb);
   }
 
-  void setDebugFifo(Fifo* debugFifo) {
-    debugFifo_ = debugFifo;
+  void setDebugFifo(std::shared_ptr<Fifo> debugFifo) {
+    debugFifo_ = std::move(debugFifo);
   }
 
   /**
@@ -170,7 +170,7 @@ class AsyncMcServerWorker {
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
-  Fifo* debugFifo_{nullptr};
+  std::shared_ptr<Fifo> debugFifo_;
 
   struct McServerSessionDeleter {
     void operator() (McServerSession* session) const {
