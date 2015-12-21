@@ -629,7 +629,8 @@ class Mcrouter(McrouterBase):
                 config_file.write(replaced_config)
 
         self.config = config
-        args = [McrouterGlobals.InstallDir + '/mcrouter/mcrouter', '-f', config]
+        args = [McrouterGlobals.InstallDir + '/mcrouter/mcrouter',
+                '--config', 'file:' + config]
 
         if default_route:
             args.extend(['-R', default_route])

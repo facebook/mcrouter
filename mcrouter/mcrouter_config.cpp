@@ -8,6 +8,7 @@
  *
  */
 #include <folly/Memory.h>
+#include <folly/Range.h>
 
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
@@ -51,6 +52,15 @@ std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router) {
 }
 
 void extraValidateOptions(const McrouterOptions& opts) {
+  if (!opts.config.empty()) {
+    // If config option is used, other options are superseded
+    if (!opts.config_file.empty() || !opts.config_str.empty()) {
+      VLOG(1) << "config option will supersede config-file"
+        " and config-str options";
+    }
+    return;
+  }
+
   size_t numSources = 0;
   if (!opts.config_file.empty()) {
     ++numSources;

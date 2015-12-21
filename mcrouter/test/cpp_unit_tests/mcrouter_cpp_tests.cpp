@@ -104,7 +104,7 @@ void mcrouter_send_helper(McrouterClient& client,
 TEST(mcrouter, start_and_stop) {
   for (int i = 0; i < 2; i++) {
     auto opts = defaultTestOptions();
-    opts.config_file = kMemcacheConfig;
+    opts.config = std::string("file:") + kMemcacheConfig;
     opts.default_route = MEMCACHE_ROUTE;
     auto router = McrouterInstance::init("test_start_and_stop", opts);
     EXPECT_FALSE(router == nullptr);
@@ -121,7 +121,7 @@ TEST(mcrouter, start_and_stop) {
 
 TEST(mcrouter, test_zeroreqs_mcroutersend) {
   auto opts = defaultTestOptions();
-  opts.config_file = kMemcacheConfig;
+  opts.config = std::string("file:") + kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
   auto router = McrouterInstance::init("test_zeroreqs_mcroutersend", opts);
   {
@@ -147,7 +147,7 @@ TEST(mcrouter, disconnect_callback) {
   sem_init(&sem_disconnect, 0, 0);
 
   auto opts = defaultTestOptions();
-  opts.config_file = kMemcacheConfig;
+  opts.config  = std::string("file:") + kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
   auto router = McrouterInstance::init("test_disconnect_callback", opts);
   EXPECT_FALSE(router == nullptr);
@@ -176,7 +176,7 @@ TEST(mcrouter, disconnect_callback) {
 TEST(mcrouter, fork) {
   const char persistence_id[] = "fork";
   auto opts = defaultTestOptions();
-  opts.config_file = kMemcacheConfig;
+  opts.config = std::string("file:") + kMemcacheConfig;
   opts.default_route = MEMCACHE_ROUTE;
   auto router = McrouterInstance::init(persistence_id, opts);
   EXPECT_NE(static_cast<McrouterInstance*>(nullptr), router);
@@ -248,7 +248,7 @@ TEST(mcrouter, already_replied_failed_delete) {
   auto opts = defaultTestOptions();
   std::string configStr;
   EXPECT_TRUE(folly::readFile(kAlreadyRepliedConfig.data(), configStr));
-  opts.config_str = configStr;
+  opts.config = configStr;
   opts.async_spool = tmpdir.path().string();
   auto router = McrouterInstance::init("test_already_replied_failed_delete",
                                        opts);

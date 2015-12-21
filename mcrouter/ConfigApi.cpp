@@ -30,7 +30,7 @@ const char* const kConfigFile = "config_file";
 const char* const kConfigImport = "config_import";
 const int kConfigReloadInterval = 60;
 
-const char* const ConfigApi::kAbsoluteFilePrefix = "file:";
+const char* const ConfigApi::kFilePrefix = "file:";
 
 ConfigApi::~ConfigApi() {
   /* Must be here to forward declare FileDataProvider */
@@ -160,6 +160,15 @@ bool ConfigApi::FileInfo::checkMd5Changed() {
 }
 
 bool ConfigApi::getConfigFile(std::string& contents) {
+  folly::StringPiece configStr = opts_.config;
+  if (configStr.startsWith(kFilePrefix)) {
+    configStr.removePrefix(kFilePrefix);
+    return get(ConfigType::ConfigFile, configStr.str(), contents);
+  }
+  if (!configStr.empty()) {
+    contents = configStr.str();
+    return true;
+  }
   if (!opts_.config_str.empty()) {
     // explicit config, no automatic reload
     contents = opts_.config_str;
@@ -174,16 +183,26 @@ bool ConfigApi::getConfigFile(std::string& contents) {
 bool ConfigApi::get(ConfigType type, const std::string& path,
                     std::string& contents) {
   std::string fullPath;
+  folly::StringPiece configPath = path;
+  folly::StringPiece configOpt = opts_.config;
   if (type == ConfigType::ConfigImport) {
-    if (folly::StringPiece(path).startsWith(kAbsoluteFilePrefix)) {
-      fullPath = path.substr(strlen(kAbsoluteFilePrefix));
+    if (configPath.startsWith(kFilePrefix)) {
+      configPath.removePrefix(kFilePrefix);
+      fullPath = configPath.str();
+    } else if (!configOpt.empty()) {
+      if (configOpt.startsWith(kFilePrefix)) {
+        configOpt.removePrefix(kFilePrefix);
+      }
+      boost::filesystem::path filePath(configOpt.str());
+      fullPath = (filePath.parent_path() / path).string();
     } else {
       boost::filesystem::path filePath(opts_.config_file);
       fullPath = (filePath.parent_path() / path).string();
     }
   } else if (type == ConfigType::Pool) {
-    if (folly::StringPiece(path).startsWith(kAbsoluteFilePrefix)) {
-      fullPath = path.substr(strlen(kAbsoluteFilePrefix));
+    if (configPath.startsWith(kFilePrefix)) {
+      configPath.removePrefix(kFilePrefix);
+      fullPath = configPath.str();
     } else {
       return false;
     }
@@ -256,8 +275,12 @@ void ConfigApi::abandonTrackedSources() {
 folly::dynamic ConfigApi::getConfigSourcesInfo() {
   folly::dynamic reply_val = folly::dynamic::object;
 
-  // we have config_str, write its hash
-  if (!opts_.config_str.empty()) {
+  // we have config="<JSON-string>", write its hash
+  if (!opts_.config.empty() &&
+      !folly::StringPiece(opts_.config).startsWith(kFilePrefix)) {
+    reply_val[kMcrouterConfigKey] = Md5Hash(opts_.config);
+  } else if (!opts_.config_str.empty()) {
+    // we have config_str, write its hash
     reply_val[kMcrouterConfigKey] = Md5Hash(opts_.config_str);
   }
 

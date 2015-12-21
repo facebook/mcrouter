@@ -75,7 +75,7 @@ static McrouterStandaloneOptions standaloneOpts;
 static void print_usage_and_die(char* progname, int errorCode) {
 
   fprintf(stderr, "%s\n"
-          "usage: %s [options] -p port(s) -f config\n\n",
+          "usage: %s [options] -p port(s) --config file:<config-file>\n\n",
           MCROUTER_PACKAGE_STRING, progname);
 
   fprintf(stderr, "libmcrouter options:\n");

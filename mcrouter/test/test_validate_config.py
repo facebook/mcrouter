@@ -29,7 +29,7 @@ class TestValidateConfig(unittest.TestCase):
         cmd = McrouterGlobals.preprocessArgs([
             McrouterGlobals.InstallDir + '/mcrouter/mcrouter',
             '-L', '/tmp/test.log',
-            '-f', config,
+            '--config', 'file:' + config,
             '--listen-sock-fd', str(listen_sock.fileno()),
             '--stats-logging-interval', '0',
             '--validate-config'

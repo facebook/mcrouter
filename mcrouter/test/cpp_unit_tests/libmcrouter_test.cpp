@@ -63,7 +63,7 @@ std::string kInvalidPoolConfig =
 
 TEST(libmcrouter, sanity) {
   auto opts = defaultTestOptions();
-  opts.config_str = configString;
+  opts.config = configString;
 
   MCRouterTestClient client("sanity", opts);
 
@@ -128,7 +128,7 @@ void on_cancel(void* request_context,
 
 TEST(libmcrouter, premature_disconnect) {
   auto opts = defaultTestOptions();
-  opts.config_str = configString;
+  opts.config = configString;
   auto router = McrouterInstance::init("test_premature_disconnect", opts);
 
   for (int i = 0; i < 10; i++) {
@@ -165,7 +165,7 @@ TEST(libmcrouter, invalid_pools) {
   auto opts = defaultTestOptions();
   std::string configStr;
   EXPECT_TRUE(folly::readFile(kInvalidPoolConfig.data(), configStr));
-  opts.config_str = configStr;
+  opts.config = configStr;
   opts.default_route = "/a/b/";
   auto router = McrouterInstance::init("test_invalid_pools", opts);
   EXPECT_TRUE(router == nullptr);

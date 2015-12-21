@@ -31,7 +31,7 @@ TEST(ConfigApi, file_change) {
             contents.size());
 
   McrouterOptions opts;
-  opts.config_file = path;
+  opts.config = "file:" + path;
   ConfigApi api(opts);
   api.startObserving();
 

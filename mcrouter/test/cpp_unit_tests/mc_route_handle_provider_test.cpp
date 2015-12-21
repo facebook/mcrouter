@@ -89,7 +89,7 @@ struct TestSetup {
 
   static McrouterOptions getOpts() {
     auto opts = defaultTestOptions();
-    opts.config_file = kMemcacheConfig;
+    opts.config = std::string("file:") + kMemcacheConfig;
     return opts;
   }
 };

@@ -194,9 +194,16 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("config",
     [this] (const std::vector<folly::StringPiece>& args) -> std::string {
-      if (proxy_->router().opts().config_str.empty()) {
+      if (proxy_->router().opts().config.empty() &&
+          proxy_->router().opts().config_str.empty()) {
         return std::string(
           R"({"error": "config is loaded from file and not available"})");
+      }
+
+      if (!proxy_->router().opts().config.empty()) {
+        std::string contents;
+        proxy_->router().configApi().getConfigFile(contents);
+        return contents;
       }
       return proxy_->router().opts().config_str;
     }
@@ -211,6 +218,12 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
 
   commands_.emplace("config_file",
     [this] (const std::vector<folly::StringPiece>& args) {
+      folly::StringPiece configStr = proxy_->router().opts().config;
+      if (configStr.startsWith(ConfigApi::kFilePrefix)) {
+        configStr.removePrefix(ConfigApi::kFilePrefix);
+        return configStr.str();
+      }
+
       if (proxy_->router().opts().config_file.empty()) {
         throw std::runtime_error("no config file found!");
       }

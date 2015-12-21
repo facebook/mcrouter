@@ -13,7 +13,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterInstance* getTestRouter() {
   McrouterOptions opts = defaultTestOptions();
-  opts.config_str = "{ \"route\": \"NullRoute\" }";
+  opts.config = "{ \"route\": \"NullRoute\" }";
   return McrouterInstance::init("test", opts);
 }
 

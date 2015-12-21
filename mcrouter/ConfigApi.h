@@ -40,7 +40,7 @@ class ConfigApi : public ConfigApiIf {
   typedef std::function<void()> Callback;
   typedef CallbackPool<>::CallbackHandle CallbackHandle;
 
-  static const char* const kAbsoluteFilePrefix;
+  static const char* const kFilePrefix;
 
   explicit ConfigApi(const McrouterOptions& opts);
 

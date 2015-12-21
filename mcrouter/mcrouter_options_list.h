@@ -272,14 +272,23 @@ mcrouter_option_toggle(
   "")
 
 mcrouter_option_string(
+  config, "",
+  "config", no_short,
+  "Configuration to use. The provided string must be of one of two forms:"
+  " file:<path-to-config-file> OR <JSON-config-string>. If provided,"
+  " this option supersedes the deprecated config-file and config-str options.")
+
+mcrouter_option_string(
   config_file, "",
   "config-file", 'f',
-  "load configuration from file")
+  "DEPRECATED. Load configuration from file. This option has no effect if"
+  " --config option is used.")
 
 mcrouter_option_string(
   config_str, "",
   "config-str", no_short,
-  "Configuration string provided as a command line argument")
+  "DEPRECATED. Configuration string provided as a command line argument."
+  " This option has no effect if --config option is used.")
 
 mcrouter_option(
   facebook::memcache::mcrouter::RoutingPrefix, default_route, "/././",
