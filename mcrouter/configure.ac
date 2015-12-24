@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.62)
+AC_PREREQ(2.69)
 
 m4_define([mcrouter_version_str], m4_esyscmd_s([cut -d '-' -f 1 VERSION]))
 m4_define([mcrouter_version_suffix], m4_esyscmd_s([sed 's/^[0-9]*:[0-9]*//' VERSION]))
@@ -18,7 +18,7 @@ AC_CONFIG_LINKS([ServerOnRequest.h:ServerOnRequestImpl.h])
 AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])
 AC_CONFIG_AUX_DIR([build-aux])
 
-AM_INIT_AUTOMAKE([1.11.1 foreign dist-bzip2 nostdinc subdir-objects parallel-tests])
+AM_INIT_AUTOMAKE([1.14 foreign dist-bzip2 nostdinc subdir-objects parallel-tests])
 
 AC_CONFIG_MACRO_DIR([m4])
 

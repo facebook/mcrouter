@@ -9,16 +9,12 @@ sudo apt-get update
 sudo apt-get install -y \
     autoconf \
     binutils-dev \
+    bison \
+    flex \
     g++ \
     gcc \
     git \
-    libboost-context1.55-dev \
-    libboost-filesystem1.55-dev \
-    libboost-program-options1.55-dev \
-    libboost-regex1.55-dev \
-    libboost-system1.55-dev \
-    libboost-thread1.55-dev \
-    libboost1.55-dev \
+    libboost1.55-all-dev \
     libdouble-conversion-dev \
     libevent-dev \
     libgflags-dev \

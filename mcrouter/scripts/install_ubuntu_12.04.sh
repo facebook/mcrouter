@@ -17,13 +17,7 @@ sudo apt-get install -y \
     g++-4.8 \
     gcc-4.8 \
     git \
-    libboost-context1.54-dev \
-    libboost-filesystem1.54-dev \
-    libboost-program-options1.54-dev \
-    libboost-regex1.54-dev \
-    libboost-system1.54-dev \
-    libboost-thread1.54-dev \
-    libboost1.54-dev \
+    libboost1.54-all-dev \
     libevent-dev \
     libgflags-dev \
     libjemalloc-dev \
