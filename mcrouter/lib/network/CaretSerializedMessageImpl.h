@@ -9,11 +9,19 @@
  */
 #pragma once
 
+#include <folly/Range.h>
+
+#include "mcrouter/lib/network/McRequestToTypedConverter.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
+
 namespace facebook {
 namespace memcache {
 
-template <int Op>
-class McOperation;
+class McRequest;
+
+template <class T>
+class TypedThriftMessage;
+
 /**
  * Class for serializing requests in the form of thrift structs.
  */
@@ -23,31 +31,86 @@ class CaretSerializedMessage {
 
   CaretSerializedMessage(const CaretSerializedMessage&) = delete;
   CaretSerializedMessage& operator=(const CaretSerializedMessage&) = delete;
-  CaretSerializedMessage(CaretSerializedMessage&&) = delete;
+  CaretSerializedMessage(CaretSerializedMessage&&) noexcept = delete;
   CaretSerializedMessage& operator=(CaretSerializedMessage&&) = delete;
 
+  void clear() {
+    iovsUsed_ = 0;
+    ioBuf_.reset();
+  }
+
   /**
-   * Message serialization not supported for now.
+   * Prepare requests for serialization for an Operation
+   *
+   * @param req      Request
+   * @param iovOut   Set to the beginning of array of ivecs that
+   *                 reference serialized data.
+   * @param niovOut  number of valid iovecs referenced by iovOut.
+   *
+   * @return true iff message was successfully prepared.
    */
-  template <class Arg, int Op>
-  bool prepare(const Arg& arg,
+  template <int Op>
+  bool prepare(const McRequest& req,
                McOperation<Op>,
                size_t reqId,
                struct iovec*& iovOut,
-               size_t& niovOut) noexcept {
-    return false;
-  }
+               size_t& niovOut) noexcept;
 
+  /**
+   * Prepare replies for serialization
+   *
+   * @param  reply    TypedReply
+   * @param  iovOut   will be set to the beginning of array of ivecs
+   * @param  niovOut  number of valid iovecs referenced by iovOut.
+   * @return true iff message was successfully prepared.
+   */
   template <class Reply>
   bool prepare(Reply&& reply,
                size_t reqId,
                size_t typeId,
                struct iovec*& iovOut,
-               size_t& niovOut) noexcept {
-    return false;
-  }
+               size_t& niovOut) noexcept;
 
-  void clear() {}
+ private:
+  template <class TM>
+  bool fill(TM&& tres,
+            uint32_t reqId,
+            size_t typeId,
+            struct iovec*& iovOut,
+            size_t& niovOut);
+
+  void fillHeader(UmbrellaMessageInfo& info);
+
+  template <int Op>
+  typename std::enable_if<
+      !ConvertToTypedIfSupported<McRequest, McOperation<Op>>::value,
+      bool>::type
+  prepareImpl(const McRequest& req,
+              McOperation<Op>,
+              size_t reqId,
+              struct iovec*& iovOut,
+              size_t& niovOut);
+
+  template <int Op>
+  typename std::enable_if<
+      ConvertToTypedIfSupported<McRequest, McOperation<Op>>::value,
+      bool>::type
+  prepareImpl(const McRequest& req,
+              McOperation<Op>,
+              size_t reqId,
+              struct iovec*& iovOut,
+              size_t& niovOut);
+
+  template <class ThriftType>
+  void fillBody(TypedThriftMessage<ThriftType>&& treq);
+
+  std::unique_ptr<folly::IOBuf> ioBuf_;
+  static constexpr size_t kMaxIovs = 8;
+  struct iovec iovs_[kMaxIovs];
+  size_t iovsUsed_{0};
+  char headerBuf_[kMaxHeaderLength];
 };
 }
 } // facebook::memcache
+
+#include "mcrouter/lib/network/CaretSerializedMessageImpl-inl.h"

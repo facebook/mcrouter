@@ -9,20 +9,68 @@
  */
 #pragma once
 
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 
 namespace facebook {
 namespace memcache {
 
-class CaretReplyConverter {
+class CaretReplyConverter
+    : public ThriftMsgDispatcher<ReplyList, CaretReplyConverter, McReply&> {
+
  public:
-  void dispatchTypedRequest(size_t typeId,
-                            const folly::IOBuf& bodyBuffer,
-                            McReply& reply) {
+  template <class Unsupported>
+  void onTypedMessage(TypedThriftMessage<Unsupported>&& tres, McReply& reply) {
     reply.setResult(mc_res_remote_error);
-    reply.setValue("Not supported");
   }
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McGetReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McSetReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McDeleteReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McTouchReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McLeaseGetReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McLeaseSetReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McAddReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McReplaceReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McGetsReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McCasReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McIncrReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McDecrReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McMetagetReply>&& tres,
+                      McReply& reply);
+  void onTypedMessage(TypedThriftMessage<cpp2::McVersionReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McAppendReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftMessage<cpp2::McPrependReply>&& tres,
+                      McReply& reply);
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook

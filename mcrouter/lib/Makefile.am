@@ -136,7 +136,9 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
+  network/CaretReplyConverterImpl.cpp \
   network/CaretReplyConverterImpl.h \
+  network/CaretSerializedMessageImpl-inl.h \
   network/CaretSerializedMessageImpl.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
@@ -152,6 +154,10 @@ libmcrouter_a_SOURCES = \
   network/McClientRequestContext.h \
   network/McParser.cpp \
   network/McParser.h \
+  network/McReplyToTypedConverter.cpp \
+  network/McReplyToTypedConverter.h \
+  network/McRequestToTypedConverter.cpp \
+  network/McRequestToTypedConverter.h \
   network/McSerializedRequest.cpp \
   network/McSerializedRequest.h \
   network/McServerRequestContext-inl.h \
@@ -167,6 +173,11 @@ libmcrouter_a_SOURCES = \
   network/ServerMcParser.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
+  network/ThriftMessageList.h \
+  network/ThriftMsgDispatcher.h \
+  network/TypedToMcRequestConverter-inl.h \
+  network/TypedToMcRequestConverter.cpp \
+  network/TypedToMcRequestConverter.h \
   network/UmbrellaProtocol.cpp \
   network/UmbrellaProtocol.h \
   network/UniqueIntrusiveList.h \

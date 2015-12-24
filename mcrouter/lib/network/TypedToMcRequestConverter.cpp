@@ -1,0 +1,27 @@
+/*
+ *  Copyright (c) 2015, Facebook, Inc.
+ *  All rights reserved.
+ *
+ *  This source code is licensed under the BSD-style license found in the
+ *  LICENSE file in the root directory of this source tree. An additional grant
+ *  of patent rights can be found in the PATENTS file in the same directory.
+ *
+ */
+#include "TypedToMcRequestConverter.h"
+
+#include "mcrouter/lib/McRequest.h"
+
+namespace facebook {
+namespace memcache {
+
+McRequest convertToMcRequest(TypedThriftMessage<cpp2::McTouchRequest>&& treq,
+                             McOperation<mc_op_touch>) {
+  McRequest req;
+  req.setKey(std::move(*(treq->key)));
+  if (treq->__isset.exptime) {
+    req.setExptime(treq->exptime);
+  }
+  return req;
+}
+} // memcache
+} // faceboook
