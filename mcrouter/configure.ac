@@ -31,8 +31,17 @@ AC_LANG([C++])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_CPP
+AX_PYTHON_DEVEL()
 AX_CXX_COMPILE_STDCXX_11([],[mandatory])
 LT_INIT
+
+AC_ARG_VAR([THRIFT2_COMP_DIR], [Full path to directory containing fbthrift's \
+            main.py (cpp2 compiler)])
+AS_IF([test x"$THRIFT2_COMP_DIR" = x],
+      [AC_MSG_ERROR([Path to fbthrift cpp2 compiler must be specified])],
+      [THRIFT="python$PYTHON_VERSION $THRIFT2_COMP_DIR/main.py"])
+
+AC_SUBST([THRIFT])
 
 CXXFLAGS="-fno-strict-aliasing $CXXFLAGS"
 CXXFLAGS="-W -Wall -Wextra -Wno-unused-parameter $CXXFLAGS"
@@ -150,7 +159,7 @@ AC_CHECK_FUNCS([gettimeofday \
 
 LIBS="$LIBS $BOOST_LDFLAGS $BOOST_CONTEXT_LIB $BOOST_FILESYSTEM_LIB \
       $BOOST_PROGRAM_OPTIONS_LIB $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB \
-      -lpthread -pthread"
+      -lpthread -pthread -lthriftprotocol"
 
 AM_PATH_PYTHON([2.6],, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])

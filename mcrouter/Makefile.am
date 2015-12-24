@@ -199,3 +199,12 @@ libmcroutercore_a_CPPFLAGS = -I..
 
 mcrouter_LDADD = libmcroutercore.a lib/libmcrouter.a
 mcrouter_CPPFLAGS = -I..
+
+clean-local:
+	-rm -f lib/network/gen-cpp2/*.h \
+	       lib/network/gen-cpp2/*.cpp \
+	       lib/network/gen-cpp2/*.o \
+	       lib/network/gen-cpp2/*.tcc
+
+distclean-local:
+	-rm -rf lib/network/gen-cpp2/

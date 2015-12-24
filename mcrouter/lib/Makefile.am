@@ -2,6 +2,20 @@ SUBDIRS = . config cycles fbi mc network test
 
 noinst_LIBRARIES = libmcrouter.a
 
+BUILT_SOURCES = \
+  network/gen-cpp2/mc_caret_protocol_types.cpp \
+  network/gen-cpp2/mc_caret_protocol_types.h
+
+# The `sed` hack below is necessary until the Thrift compiler is modified
+# to not generate service-related includes when linking only against
+# libthriftprotocol.
+network/gen-cpp2/mc_caret_protocol_types.cpp: network/gen-cpp2/mc_caret_protocol_types.h
+network/gen-cpp2/mc_caret_protocol_types.h: network/mc_caret_protocol.thrift
+	PYTHONPATH=$(THRIFT2_COMP_DIR)/..:$$PYTHONPATH $(THRIFT) --gen cpp2 -o network/ $<
+	find network/gen-cpp2/ -name 'mc_caret_protocol*' -type f | xargs sed -i 's/^.*GeneratedCodeHelper\.h.*$$//g'
+	find network/gen-cpp2/ -name 'mc_caret_protocol*' -type f | xargs sed -i 's/^.*Cpp2ConnContext\.h.*$$//g'
+
+
 libmcrouter_a_SOURCES = \
   CacheClientStats.h \
   Ch3HashFunc.h \
@@ -145,6 +159,8 @@ libmcrouter_a_SOURCES = \
   network/ConnectionLRU-inl.h \
   network/ConnectionLRU.h \
   network/ConnectionOptions.h \
+  network/gen-cpp2/mc_caret_protocol_types.cpp \
+  network/gen-cpp2/mc_caret_protocol_types.h \
   network/McAsciiParser-gen.cpp \
   network/McAsciiParser-inl.h \
   network/McAsciiParser.cpp \
