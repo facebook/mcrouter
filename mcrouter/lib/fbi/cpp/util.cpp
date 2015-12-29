@@ -14,7 +14,6 @@
 #include <pthread.h>
 
 #include <chrono>
-#include <random>
 
 #include <boost/filesystem.hpp>
 
@@ -22,6 +21,7 @@
 
 #include <folly/FileUtil.h>
 #include <folly/json.h>
+#include <folly/Random.h>
 #include <folly/ScopeGuard.h>
 #include <folly/SpookyHashV2.h>
 
@@ -33,19 +33,9 @@ std::string randomString(size_t minLen, size_t maxLen,
   assert(minLen <= maxLen);
   assert(!range.empty());
 
-  thread_local std::ranlux24_base rng{
-    static_cast<size_t>(
-      std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()).count())
-  };
-  std::uniform_int_distribution<size_t> lenRange(minLen, maxLen);
-  std::uniform_int_distribution<size_t> charRange(0, range.size() - 1);
-
-  std::string result;
-  result.resize(lenRange(rng));
-
+  std::string result(folly::Random::rand32(minLen, maxLen + 1), '\0');
   for (char& c : result) {
-    c = range[charRange(rng)];
+    c = range[folly::Random::rand32(range.size())];
   }
   return result;
 }
