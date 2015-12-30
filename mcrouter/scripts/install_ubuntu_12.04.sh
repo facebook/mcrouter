@@ -14,6 +14,7 @@ sudo apt-get install -y \
     autoconf \
     binutils-dev \
     cmake \
+    flex \
     g++-4.8 \
     gcc-4.8 \
     git \

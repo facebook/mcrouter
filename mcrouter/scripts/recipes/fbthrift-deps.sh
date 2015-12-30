@@ -8,12 +8,10 @@ pushd "$PKG_DIR"
 #
 # Install all the automake packages:
 #  - bison: The base system version is too old, does not make 'thrify.hh'
-#  - flex: Just in case -- the base system version probably does suffice...
 #  - automake: default 1.11.1 has bad bison support, does not make 'thrifty.hh'
 #  - autoconf, libtool: newer so as to be compatible with the new automake
 for url in \
     http://ftp.gnu.org/gnu/bison/bison-3.0.4.tar.gz \
-    http://downloads.sourceforge.net/project/flex/flex-2.5.37.tar.gz \
     http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz \
     http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz \
     http://ftp.gnu.org/gnu/libtool/libtool-2.4.6.tar.gz \
