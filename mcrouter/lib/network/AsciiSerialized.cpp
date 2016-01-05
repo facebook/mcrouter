@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -134,11 +134,15 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 
 void AsciiSerializedRequest::prepareImpl(const McRequest& request,
                                          McOperation<mc_op_delete>) {
-  auto len = snprintf(printBuffer_, kMaxBufferLength, " %u\r\n",
-                      request.exptime());
-  assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
-  addStrings("delete ", request.fullKey(),
-             folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+  addStrings("delete ", request.fullKey());
+  if (request.exptime() != 0) {
+    auto len = snprintf(printBuffer_, kMaxBufferLength, " %d\r\n",
+                        request.exptime());
+    assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
+    addString(folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+  } else {
+    addString("\r\n");
+  }
 }
 
 // Touch op.
