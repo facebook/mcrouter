@@ -12,7 +12,7 @@ mkdir -p ./lib/gtest
 cp -r -f -t ./lib/gtest "$PKG_DIR/googletest/googletest"/*
 
 THRIFT2_COMPILER=$(readlink -f \
-  "$(find "$INSTALL_DIR/pymodules" | grep -m 1 'thrift_compiler/main\.py$')")
+  "$(find "$INSTALL_AUX_DIR" | grep -m 1 'thrift_compiler/main\.py$')")
 
 test "x$THRIFT2_COMPILER" != "x" || die "Couldn't find fbthrift cpp2 compiler"
 
