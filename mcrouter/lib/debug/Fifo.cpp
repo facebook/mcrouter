@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -84,9 +84,11 @@ bool isFifo(const char* fifoPath) {
   return (stat(fifoPath, &st) != -1) && S_ISFIFO(st.st_mode);
 }
 
-MessageHeader buildMsgHeader(const folly::AsyncTransportWrapper* transport) {
+MessageHeader buildMsgHeader(const folly::AsyncTransportWrapper* transport,
+                             MessageDirection direction) {
   MessageHeader header;
   header.setMsgId(reinterpret_cast<uintptr_t>(transport));
+  header.setDirection(direction);
 
   if (!transport) {
     return header;
@@ -94,11 +96,14 @@ MessageHeader buildMsgHeader(const folly::AsyncTransportWrapper* transport) {
 
   try {
     folly::SocketAddress address;
-    transport->getPeerAddress(&address);
 
-    address.getAddressStr(header.ipAddressModifiable(),
+    transport->getPeerAddress(&address);
+    address.getAddressStr(header.peerIpAddressModifiable(),
                           MessageHeader::kIpAddressMaxSize);
-    header.setPort(address.getPort());
+    header.setPeerPort(address.getPort());
+
+    transport->getLocalAddress(&address);
+    header.setLocalPort(address.getPort());
   } catch (const std::exception& e) {
     LOG(WARNING) << "Error getting host/port to write to debug fifo: "
                  << e.what();
@@ -275,14 +280,16 @@ void Fifo::disconnect() noexcept {
 }
 
 bool Fifo::writeIfConnected(const folly::AsyncTransportWrapper* transport,
+                            MessageDirection direction,
                             void* buf, size_t len) noexcept {
   iovec iov[1];
   iov[0].iov_base = buf;
   iov[0].iov_len = len;
-  return writeIfConnected(transport, iov, 1);
+  return writeIfConnected(transport, direction, iov, 1);
 }
 
 bool Fifo::writeIfConnected(const folly::AsyncTransportWrapper* transport,
+                            MessageDirection direction,
                             const struct iovec* iov,
                             size_t iovcnt) noexcept {
   if (!isConnected()) {
@@ -290,11 +297,57 @@ bool Fifo::writeIfConnected(const folly::AsyncTransportWrapper* transport,
   }
 
 
-  auto written = writeMsg(fd_, buildMsgHeader(transport), iov, iovcnt);
+  auto written = writeMsg(fd_, buildMsgHeader(transport, direction),
+                          iov, iovcnt);
   if (!written && errno == EPIPE) {
     disconnect();
   }
   return written;
+}
+
+
+// MessageHeader
+folly::SocketAddress MessageHeader::getLocalAddress() {
+  folly::SocketAddress address;
+
+  if (version() < 2) {
+    return address;
+  }
+
+  try {
+    address.setFromLocalPort(localPort());
+  } catch (const std::exception& ex) {
+    LOG(ERROR) << "Error parsing address: " << ex.what();
+  }
+
+  return address;
+}
+
+folly::SocketAddress MessageHeader::getPeerAddress() {
+  folly::SocketAddress address;
+
+  if (peerIpAddress()[0] == '\0') {
+    return address;
+  }
+
+  try {
+    address.setFromIpPort(peerIpAddress(), peerPort());
+  } catch (const std::exception& ex) {
+    LOG(ERROR) << "Error parsing address: " << ex.what();
+  }
+
+  return address;
+}
+
+/* static */ size_t MessageHeader::size(uint8_t v) {
+  switch (v) {
+    case 1:
+      return sizeof(MessageHeader) - sizeof(localPortLE_) - sizeof(direction_);
+    case 2:
+      return sizeof(MessageHeader);
+    default:
+      throw std::logic_error(folly::sformat("Invalid version {}", v));
+  }
 }
 
 }} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,6 +19,14 @@
 #include <folly/Portability.h>
 
 namespace facebook { namespace memcache {
+
+/**
+ * Represents the direction of a message.
+ */
+enum class MessageDirection : uint8_t {
+  Sent = 0,
+  Received = 1
+};
 
 /**
  * Writes data to a named pipe (fifo) for debugging purposes.
@@ -54,14 +62,17 @@ class Fifo {
    * method will fail (return false).
    *
    * @param transport   Transport from which data are being mirrored.
+   * @param direction   Whether the data was received or sent by transport.
    * @param iov         Data of the message, to write to the pipe.
    * @param iovcnt      Size of iov.
    * @return            True if the data was written. False otherwise.
    */
   bool writeIfConnected(const folly::AsyncTransportWrapper* transport,
+                        MessageDirection direction,
                         const struct iovec* iov,
                         size_t iovcnt) noexcept;
   bool writeIfConnected(const folly::AsyncTransportWrapper* transport,
+                        MessageDirection direction,
                         void* buf, size_t len) noexcept;
 
  private:
@@ -97,37 +108,60 @@ struct FOLLY_PACK_ATTR MessageHeader {
   uint8_t version() const {
     return version_;
   }
-  const char* ipAddress() const {
-    return ipAddress_;
+  const char* peerIpAddress() const {
+    return peerIpAddress_;
   }
-  uint16_t port() const {
-    return folly::Endian::little(portLE_);
+  uint16_t peerPort() const {
+    return folly::Endian::little(peerPortLE_);
   }
   uint64_t msgId() const {
     return folly::Endian::little(msgIdLE_);
   }
-
-  char* ipAddressModifiable() {
-    return ipAddress_;
+  uint16_t localPort() const {
+    return folly::Endian::little(localPortLE_);
   }
-  void setPort(uint16_t val) {
-    portLE_ = folly::Endian::little(val);
+  MessageDirection direction() const {
+    return direction_;
+  }
+
+  char* peerIpAddressModifiable() {
+    return peerIpAddress_;
+  }
+  void setPeerPort(uint16_t val) {
+    peerPortLE_ = folly::Endian::little(val);
   }
   void setMsgId(uint64_t val) {
     msgIdLE_ = folly::Endian::little(val);
   }
+  void setLocalPort(uint16_t val) {
+    localPortLE_ = folly::Endian::little(val);
+  }
+  void setDirection(MessageDirection val) {
+    direction_ = val;
+  }
+
+  folly::SocketAddress getLocalAddress();
+  folly::SocketAddress getPeerAddress();
+
+  static size_t size(uint8_t v);
 
  private:
   // Control fields
   const uint32_t magicLE_ = folly::Endian::little<uint32_t>(0xfaceb00c);
-  const uint8_t version_ = 1;
+  const uint8_t version_{2};
 
-  // Address fields
-  char ipAddress_[kIpAddressMaxSize]{'\0'}; // 0-terminated string of ip
-  uint16_t portLE_ = 0;
+  // Peer address fields
+  char peerIpAddress_[kIpAddressMaxSize]{'\0'}; // 0-terminated string of ip
+  uint16_t peerPortLE_{0};
 
   // Message fields
   uint64_t msgIdLE_{0};
+
+  // Local address fields
+  uint16_t localPortLE_{0};
+
+  // Direction of the message sent
+  MessageDirection direction_{MessageDirection::Sent};
 };
 
 /**

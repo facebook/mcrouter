@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -226,7 +226,8 @@ void AsyncMcClientImpl::pushMessages() {
                     numToSend == 1 ? folly::WriteFlags::NONE
                     : folly::WriteFlags::CORK);
     if (debugFifo_) {
-      debugFifo_->writeIfConnected(socket_.get(), iov, iovcnt);
+      debugFifo_->writeIfConnected(socket_.get(), MessageDirection::Sent,
+                                   iov, iovcnt);
     }
     --numToSend;
   }
@@ -527,7 +528,8 @@ void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
   assert(curBuffer_.first != nullptr && curBuffer_.second >= len);
   DestructorGuard dg(this);
   if (debugFifo_) {
-    debugFifo_->writeIfConnected(socket_.get(), curBuffer_.first, len);
+    debugFifo_->writeIfConnected(socket_.get(), MessageDirection::Received,
+                                 curBuffer_.first, len);
   }
   parser_->readDataAvailable(len);
 }

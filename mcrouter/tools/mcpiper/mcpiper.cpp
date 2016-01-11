@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -208,6 +208,15 @@ std::vector<std::pair<size_t, size_t>> matchAll(folly::StringPiece text,
   return result;
 }
 
+bool matchIPAddress(const folly::IPAddress& expectedIp,
+                    const folly::SocketAddress& address) {
+  return !address.empty() && expectedIp == address.getIPAddress();
+}
+
+bool matchPort(uint16_t expectedPort, const folly::SocketAddress& address) {
+  return !address.empty() && expectedPort == address.getPort();
+}
+
 std::string serializeMessageHeader(const McMsgRef& msg,
                                    std::string matchingKey) {
   std::string out;
@@ -235,8 +244,26 @@ std::string serializeMessageHeader(const McMsgRef& msg,
   return out;
 }
 
+std::string serializeAddresses(const folly::SocketAddress& fromAddress,
+                               const folly::SocketAddress& toAddress) {
+  std::string out;
+
+  if (!fromAddress.empty()) {
+    out.append(fromAddress.describe());
+  }
+  if (!fromAddress.empty() || !toAddress.empty()) {
+    out.append(" -> ");
+  }
+  if (!toAddress.empty()) {
+    out.append(toAddress.describe());
+  }
+
+  return out;
+}
+
 void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey,
-              const folly::SocketAddress& address) {
+              const folly::SocketAddress& fromAddress,
+              const folly::SocketAddress& toAddress) {
   if (msg->op == mc_op_end) {
     return;
   }
@@ -244,11 +271,14 @@ void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey,
   ++gTotalMessages;
 
   // Initial filters
-  if (!gHost.empty() && (address.empty() || address.getIPAddress() != gHost)) {
+  if (!gHost.empty() &&
+      !matchIPAddress(gHost, fromAddress) &&
+      !matchIPAddress(gHost, toAddress)) {
     return;
   }
   if (gSettings.port != 0 &&
-      (address.empty() || address.getPort() != gSettings.port)) {
+      !matchPort(gSettings.port, fromAddress) &&
+      !matchPort(gSettings.port, toAddress)) {
     return;
   }
   if (msg->value.len < gSettings.valueMinSize) {
@@ -264,10 +294,7 @@ void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey,
     out.append(gPrintTime(ts));
   }
 
-  if (!address.empty()) {
-    out.append(folly::sformat("{}:{}", address.getAddressStr(),
-                              address.getPort()));
-  }
+  out.append(serializeAddresses(fromAddress, toAddress));
   out.append("\n");
 
   out.append("{\n", kFormat.dataOpColor);

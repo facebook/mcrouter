@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -46,7 +46,7 @@ void ParserContext::msgReady(uint64_t id, McMsgRef msg) {
       evictionQueue_.push_back(msgIt.first->second);
     }
   }
-  callback_(id, std::move(msg), std::move(invKey), address_);
+  callback_(id, std::move(msg), std::move(invKey), fromAddress_, toAddress_);
 }
 
 void ParserContext::evictOldItems(TimePoint now) {

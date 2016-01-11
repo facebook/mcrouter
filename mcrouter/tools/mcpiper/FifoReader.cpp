@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -42,30 +42,36 @@ PacketHeader parsePacketHeader(folly::ByteRange buf) {
   return header;
 }
 
-MessageHeader parseMessageHeader(folly::ByteRange buf) {
-  CHECK(buf.size() == sizeof(MessageHeader))
-    << "Invalid message header buffer size!";
+uint8_t getVersion(const folly::IOBufQueue& bufQueue) {
+  const size_t kLength = sizeof(MessageHeader().magic()) +
+                         sizeof(MessageHeader().version());
+  CHECK(bufQueue.chainLength() >= kLength)
+    << "Buffer queue length is smaller than (magic + version) bytes.";
 
-  MessageHeader header;
-  std::memcpy(&header, buf.data(), sizeof(MessageHeader));
-
-  return header;
+  size_t offset = 0;
+  auto buf = bufQueue.front();
+  while ((offset + buf->length()) < kLength) {
+    offset += buf->length();
+    buf = buf->next();
+  }
+  return buf->data()[kLength - offset - 1];
 }
 
-folly::SocketAddress parseAddress(const MessageHeader& msgHeader) {
-  folly::SocketAddress address;
+MessageHeader parseMessageHeader(folly::IOBufQueue& bufQueue) {
+  const size_t version = getVersion(bufQueue);
+  const size_t messageHeaderSize = MessageHeader::size(version);
 
-  if (msgHeader.ipAddress()[0] == '\0') {
-    return address;
-  }
+  CHECK(messageHeaderSize <= sizeof(MessageHeader))
+    << "MessageHeader struct cannot hold message header data";
+  CHECK(bufQueue.chainLength() >= messageHeaderSize)
+    << "Invalid message header buffer size!";
 
-  try {
-    address.setFromIpPort(msgHeader.ipAddress(), msgHeader.port());
-  } catch (const std::exception& ex) {
-    LOG(ERROR) << "Error parsing address: " << ex.what();
-  }
+  auto buf = bufQueue.split(messageHeaderSize)->coalesce();
 
-  return address;
+  MessageHeader header;
+  std::memcpy(&header, buf.data(), messageHeaderSize);
+
+  return header;
 }
 
 bool isMessageHeader(const folly::IOBufQueue& bufQueue) {
@@ -123,9 +129,14 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
     while (readBuffer_.chainLength() >= std::max(sizeof(MessageHeader),
                                                  sizeof(PacketHeader))) {
       if (isMessageHeader(readBuffer_)) {
-        auto msgHeader = parseMessageHeader(
-            readBuffer_.split(sizeof(MessageHeader))->coalesce());
-        parserMap_.fetch(msgHeader.msgId()).setAddress(parseAddress(msgHeader));
+        auto msgHeader = parseMessageHeader(readBuffer_);
+
+        auto fromAddr = msgHeader.getLocalAddress();
+        auto toAddr = msgHeader.getPeerAddress();
+        if (msgHeader.direction() == MessageDirection::Received) {
+          std::swap(fromAddr, toAddr);
+        }
+        parserMap_.fetch(msgHeader.msgId()).setAddresses(fromAddr, toAddr);
         continue;
       }
 

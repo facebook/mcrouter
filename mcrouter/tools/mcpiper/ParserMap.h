@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,7 +28,8 @@ class ParserContext {
   using Callback = std::function<void(uint64_t reqId,
                                       McMsgRef msg,
                                       std::string matchingMsgKey,
-                                      const folly::SocketAddress& address)>;
+                                      const folly::SocketAddress& fromAddress,
+                                      const folly::SocketAddress& toAddress)>;
 
   explicit ParserContext(const Callback& cb) noexcept;
 
@@ -36,8 +37,10 @@ class ParserContext {
     return parser_;
   }
 
-  void setAddress(folly::SocketAddress address) {
-    address_ = std::move(address);
+  void setAddresses(folly::SocketAddress fromAddress,
+                    folly::SocketAddress toAddress) {
+    fromAddress_ = std::move(fromAddress);
+    toAddress_ = std::move(toAddress);
   }
 
  private:
@@ -62,8 +65,9 @@ class ParserContext {
   const Callback& callback_;
   // The parser itself.
   ClientServerMcParser parser_;
-  // Address of current message.
-  folly::SocketAddress address_;
+  // Addresses of current message.
+  folly::SocketAddress fromAddress_;
+  folly::SocketAddress toAddress_;
   // Map (reqid -> key) of messages that haven't been paired yet.
   std::unordered_map<uint64_t, Item> msgs_;
   // Keeps an in-order list of what should be invalidated.
