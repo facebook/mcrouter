@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -217,6 +217,7 @@ void McrouterLogger::loggerThreadSleep() {
 void McrouterLogger::logStartupOptions() {
   auto json_options = folly::toDynamic(router_.getStartupOpts());
   json_options["pid"] = folly::to<std::string>(getpid());
+  insertCustomStartupOpts(json_options);
   write_stats_file(router_.opts(), kStatsStartupOptionsSfx, json_options);
 }
 

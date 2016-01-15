@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -150,6 +150,8 @@ std::unordered_map<std::string, folly::dynamic> additionalConfigParams();
 inline bool isMetagetAvailable() {
   return false;
 }
+
+void insertCustomStartupOpts(folly::dynamic& options);
 
 #ifdef PACKAGE_STRING
   #define MCROUTER_PACKAGE_STRING PACKAGE_STRING

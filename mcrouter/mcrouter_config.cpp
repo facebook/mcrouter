@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -114,6 +114,9 @@ void scheduleSingletonCleanup() { }
 
 std::unordered_map<std::string, folly::dynamic> additionalConfigParams() {
   return std::unordered_map<std::string, folly::dynamic>();
+}
+
+void insertCustomStartupOpts(folly::dynamic& options) {
 }
 
 }}}  // facebook::memcache::mcrouter
