@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,12 +14,12 @@
 
 #include <boost/intrusive/unordered_set.hpp>
 
-#include <folly/IntrusiveList.h>
 #include <folly/experimental/fibers/Baton.h>
+#include <folly/IntrusiveList.h>
 
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
+#include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
 
 namespace facebook { namespace memcache {

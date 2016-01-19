@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_QUEUE_H
-#define FBI_QUEUE_H
+#pragma once
+
 /* libfbi users:
  * This is a full-featured queue.h from FreeBSD, with some
  * slightly-fancy macro magic to try to minimize confusion with sys/queue.h
@@ -635,5 +635,3 @@ struct {                                                                \
         else                                                            \
                 (head2)->tqh_last = &(head2)->tqh_first;                \
 } while (0)
-
-#endif

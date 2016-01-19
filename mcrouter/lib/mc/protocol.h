@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_MC_PROTOCOL_H
-#define FB_MEMCACHE_MC_PROTOCOL_H
+#pragma once
 
 #include <assert.h>
 #include <netinet/in.h>
@@ -140,5 +139,3 @@ int mc_serialize_req_ascii(const mc_msg_t* req, char* headerBuffer,
     size_t headerBufferLength, struct iovec* iovs, const size_t max);
 
 __END_DECLS
-
-#endif /* !defined(_facebook_mcp_protocol_h_) */

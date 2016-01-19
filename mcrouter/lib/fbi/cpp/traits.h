@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_CPP_TRAITS_H
-#define FBI_CPP_TRAITS_H
+#pragma once
 
 #include <boost/type_traits.hpp>
 
@@ -63,5 +62,3 @@ struct FirstArgOf<F, typename std::enable_if<std::is_class<F>::value>::type> {
 };
 
 }}  // facebook::memcache
-
-#endif

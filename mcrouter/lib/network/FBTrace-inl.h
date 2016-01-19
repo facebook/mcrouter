@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,9 +9,11 @@
  */
 #ifndef LIBMC_FBTRACE_DISABLE
 #include <folly/experimental/fibers/FiberManager.h>
+
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
+
 #endif
 
 namespace facebook { namespace memcache {

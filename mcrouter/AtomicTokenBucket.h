@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,8 +14,8 @@
 
 #include <folly/detail/CacheLocality.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/Clock.h"
+#include "mcrouter/config.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

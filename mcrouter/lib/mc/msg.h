@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_MC_MSG_H
-#define FB_MEMCACHE_MC_MSG_H
+#pragma once
 
 #include <inttypes.h>
 #include <netinet/in.h>
@@ -471,5 +470,3 @@ mc_req_err_t mc_client_req_check(const mc_msg_t* req);
 mc_req_err_t mc_client_req_key_check(nstring_t key);
 
 __END_DECLS
-
-#endif

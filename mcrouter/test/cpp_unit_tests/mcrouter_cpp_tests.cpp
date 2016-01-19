@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,9 +24,9 @@
 #include <gtest/gtest.h>
 
 #include <folly/experimental/TestUtil.h>
-#include <folly/Singleton.h>
 #include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/Singleton.h>
 
 #include "mcrouter/config.h"
 #include "mcrouter/McrouterClient.h"
@@ -39,10 +39,10 @@ using namespace boost::filesystem;
 using namespace facebook::memcache::mcrouter;
 using namespace std;
 
-using facebook::memcache::createMcMsgRef;
 using facebook::memcache::McMsgRef;
 using facebook::memcache::McReply;
 using facebook::memcache::McrouterOptions;
+using facebook::memcache::createMcMsgRef;
 
 const std::string kAlreadyRepliedConfig =
   "mcrouter/test/cpp_unit_tests/files/already_replied.json";

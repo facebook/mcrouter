@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,8 +10,8 @@
 #include "util.h"
 
 #include <assert.h>
-#include <utime.h>
 #include <pthread.h>
+#include <utime.h>
 
 #include <chrono>
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,14 +13,14 @@
 #include <string>
 
 #include <folly/experimental/fibers/Baton.h>
-#include <folly/io/IOBufQueue.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
+#include <folly/io/IOBufQueue.h>
 
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
+#include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
-#include "mcrouter/lib/network/ClientMcParser.h"
 
 namespace facebook { namespace memcache {
 

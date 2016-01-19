@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,8 +15,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "debug.h"
-#include "util.h"
+#include "mcrouter/lib/fbi/debug.h"
+#include "mcrouter/lib/fbi/util.h"
 
 #define CWLOCK_LOCKED 0x01
 #define CWLOCK_WAITER 0x02

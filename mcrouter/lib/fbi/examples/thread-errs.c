@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,18 +11,14 @@
     using libfbi's error service.  libfbi creates an error-log context for
     each thread, thus no locks are required either in the error log
     implementation or calling application.
-
     Example:
-
     $ ./thread-errs
 */
-
-
+#include <pthread.h>
 #include <stdio.h>
+
 #include <fbi/error.h>
 #include <fbi/time.h>
-
-#include <pthread.h>
 
 typedef struct blob_s {
   int id;

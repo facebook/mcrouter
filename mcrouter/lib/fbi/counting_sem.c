@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "util.h"
+#include "mcrouter/lib/fbi/util.h"
 
 #define fbi_futex_wait(p, val)                                          \
   syscall(SYS_futex, (p), FUTEX_WAIT | FUTEX_PRIVATE_FLAG, (val),       \

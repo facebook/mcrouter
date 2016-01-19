@@ -7,14 +7,15 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <cstring>
-#include <iostream>
 #include <signal.h>
 
-#include <glog/logging.h>
+#include <cstring>
+#include <iostream>
 
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
+
+#include <glog/logging.h>
 
 #include <folly/Format.h>
 #include <folly/io/async/EventBase.h>
@@ -22,7 +23,6 @@
 #include <folly/SocketAddress.h>
 
 #include "mcrouter/lib/mc/msg.h"
-
 #include "mcrouter/tools/mcpiper/AnsiColorCodeStream.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"

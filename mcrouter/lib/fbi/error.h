@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_ERROR_H
-#define FBI_ERROR_H
+#pragma once
 
 #include <errno.h>
 #include <stdio.h>
@@ -103,5 +102,3 @@ void fbi_set_err_flush_cb(fbi_err_flush_cb cb);
    printf(m, ##args))
 
 __END_DECLS
-
-#endif

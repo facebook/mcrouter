@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -8,24 +8,23 @@
  *
  */
 /** Debug Utilities
-
     Author:
     Marc Kwiatkowski
     Tony Tung
     $Id:$ */
+#include "debug.h"
 
 #include <assert.h>
 #include <errno.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <pthread.h>
 
-#include "debug.h"
 #define SZ_FORMAT_STR 2048
 
 static volatile assert_hook_fn _assert_hook;

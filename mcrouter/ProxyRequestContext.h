@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,12 +14,12 @@
 
 #include <folly/experimental/fibers/FiberManager.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/config-impl.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/ProxyConfig.h"
-#include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/ProxyRequestLogger.h"
+#include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/routes/McOpList.h"
 
 namespace facebook {

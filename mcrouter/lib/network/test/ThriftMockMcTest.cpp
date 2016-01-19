@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -8,6 +8,7 @@
  *
  */
 #include <gtest/gtest.h>
+
 #include <folly/GroupVarint.h>
 #include <folly/io/IOBuf.h>
 
@@ -15,9 +16,9 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/test/MockMc.h"
 #include "mcrouter/lib/network/test/ClientSocket.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
+#include "mcrouter/lib/network/test/MockMc.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 #include "mcrouter/lib/network/TypedMsg.h"

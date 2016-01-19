@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_CPP_SFRLOCK_H
-#define FBI_CPP_SFRLOCK_H
+#pragma once
 
 #include "mcrouter/lib/fbi/sfrlock.h"
 
@@ -97,5 +96,3 @@ class SFRLock {
   SFRReadLock readLock_;
   SFRWriteLock writeLock_;
 };
-
-#endif

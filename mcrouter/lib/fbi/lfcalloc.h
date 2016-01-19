@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_LFCALLOC_H
-#define FBI_LFCALLOC_H
+#pragma once
 
 #include <stddef.h>
 
@@ -56,5 +55,3 @@ void *lfca_alloc(lfchunk_allocator_t *a, size_t size);
  * other calls to the allocator are known not to be happening in parallel.
  */
 size_t lfca_space_left(lfchunk_allocator_t *a);
-
-#endif

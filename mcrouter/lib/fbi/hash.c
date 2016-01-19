@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,15 +7,15 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <assert.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <sys/time.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-
 #include "hash.h"
+
+#include <assert.h>
+#include <math.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
 
 /**
  * FurcHash -- a consistent hash function using a binary decision tree.

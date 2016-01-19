@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,10 +9,10 @@
  */
 #include "ShadowRoute.h"
 
-#include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

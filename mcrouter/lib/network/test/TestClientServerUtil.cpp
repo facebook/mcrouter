@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,10 +9,10 @@
  */
 #include "TestClientServerUtil.h"
 
-#include <glog/logging.h>
-
 #include <chrono>
 #include <thread>
+
+#include <glog/logging.h>
 
 #include <folly/experimental/fibers/EventBaseLoopController.h>
 #include <folly/experimental/fibers/FiberManager.h>

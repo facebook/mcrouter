@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,8 +9,8 @@
  */
 #include "ProxyDestination.h"
 
-#include <folly/Memory.h>
 #include <folly/experimental/fibers/Fiber.h>
+#include <folly/Memory.h>
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"

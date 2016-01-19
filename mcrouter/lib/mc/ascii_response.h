@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_ASCII_RESPONSE_H
-#define FB_MEMCACHE_ASCII_RESPONSE_H
+#pragma once
 
 #include "mcrouter/lib/fbi/decls.h"
 
@@ -53,5 +52,3 @@ size_t mc_ascii_response_write_iovs(mc_ascii_response_buf_t* buf,
                                     size_t max_iovs);
 
 __END_DECLS
-
-#endif

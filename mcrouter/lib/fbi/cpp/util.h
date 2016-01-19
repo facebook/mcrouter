@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_CPP_UTIL_H
-#define FBI_CPP_UTIL_H
+#pragma once
 
 #include <chrono>
 #include <string>
@@ -280,5 +279,3 @@ std::string toPrettySortedJson(const folly::dynamic& json);
 bool ensureDirExistsAndWritable(const std::string& path);
 
 }}  // facebook::memcache
-
-#endif

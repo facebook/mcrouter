@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,11 +16,11 @@
 #include <folly/IntrusiveList.h>
 #include <folly/SpinLock.h>
 
-#include "mcrouter/lib/network/AccessPoint.h"
-#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/TkoLog.h"
 
 using asox_timer_t = void*;

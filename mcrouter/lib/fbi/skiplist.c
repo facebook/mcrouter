@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,14 +11,12 @@
 // The license can be found on http://www.epaperpress.com/sortsearch/ -- "Source
 // code, when part of a software project, may be used freely without reference
 // to the author."
-
 /* skip list */
+#include "skiplist.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "skiplist.h"
 
 /* implementation dependent declarations */
 #define compLT(a,b) (a < b)

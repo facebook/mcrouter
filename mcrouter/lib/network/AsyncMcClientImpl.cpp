@@ -9,9 +9,9 @@
  */
 #include "AsyncMcClientImpl.h"
 
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
-#include <folly/io/async/AsyncSSLSocket.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"

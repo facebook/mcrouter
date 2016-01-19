@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_MC_UMBRELLA_H
-#define FB_MEMCACHE_MC_UMBRELLA_H
+#pragma once
 
 #include <arpa/inet.h>
 #include <stdint.h>
@@ -248,5 +247,3 @@ extern uint32_t const umbrella_res_from_mc[mc_nres];
 extern uint32_t const umbrella_res_to_mc[mc_nres];
 
 __END_DECLS
-
-#endif

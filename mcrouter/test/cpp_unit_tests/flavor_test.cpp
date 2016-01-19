@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,8 +19,8 @@
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-using folly::test::TemporaryFile;
 using facebook::memcache::mcrouter::readFlavor;
+using folly::test::TemporaryFile;
 
 std::string eraseStr(std::string str, const std::string& substr) {
   return str.erase(str.find(substr), substr.size());

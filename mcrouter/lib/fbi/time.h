@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_TIME_H
-#define FBI_TIME_H
+#pragma once
+
 /** timeval inline functions */
 #include <stdint.h>
 #include <sys/time.h>
@@ -80,5 +80,3 @@ static inline timeval_t ms_to_timeval(const uint32_t ms) {
 
     return t;
 }
-
-#endif

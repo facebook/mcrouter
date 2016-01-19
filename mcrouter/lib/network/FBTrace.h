@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,8 +12,8 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 
 // Forward declare struct, we wouldn't use it if it wasn't enabled.

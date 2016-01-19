@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_SFRLOCK_H
-#define FBI_SFRLOCK_H
+#pragma once
+
 /**
  * This file and its matching .c file contain the implementation of a small
  * (8 bytes) non-recursive unfair read/write lock that is optimized for uses
@@ -247,5 +247,3 @@ exit:
 }
 
 __END_DECLS
-
-#endif

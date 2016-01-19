@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,8 +17,8 @@
 #include <folly/Conv.h>
 #include <folly/String.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/proxy.h"
 
 using std::string;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_NSTRING_H
-#define FBI_NSTRING_H
+#pragma once
+
 /** A collection of fixed length string utility functions.  */
 #include <assert.h>
 #include <stdint.h>
@@ -493,5 +493,3 @@ nstring_t* nstring_map_iter_get_key(nstring_map_iter_t *iter);
 const void* nstring_map_iter_get_value(nstring_map_iter_t *iter);
 
 __END_DECLS
-
-#endif

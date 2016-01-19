@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_ASOX_SEMAPHORE_H
-#define FB_MEMCACHE_ASOX_SEMAPHORE_H
+#pragma once
 
 #include <event.h>
 #include <stdbool.h>
@@ -114,5 +113,3 @@ int asox_sem_signal(asox_sem_t asox_sem,
                     uint64_t num_signals);
 
 __END_DECLS
-
-#endif /*FB_MEMCACHE_ASOX_SEMAPHORE_H*/

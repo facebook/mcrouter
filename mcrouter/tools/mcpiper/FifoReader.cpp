@@ -9,9 +9,10 @@
  */
 #include "FifoReader.h"
 
+#include <fcntl.h>
+
 #include <algorithm>
 #include <cstring>
-#include <fcntl.h>
 #include <vector>
 
 #include <boost/filesystem.hpp>

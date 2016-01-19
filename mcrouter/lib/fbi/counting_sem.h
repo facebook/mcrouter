@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_COUNTING_SEM_H
-#define FBI_COUNTING_SEM_H
+#pragma once
+
 /**
  * A counting semaphore.
  *
@@ -85,5 +85,3 @@ int32_t counting_sem_lazy_nonblocking(counting_sem_t* sem, int32_t n);
 void counting_sem_post(counting_sem_t* sem, int32_t n);
 
 __END_DECLS
-
-#endif

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_CWLOCK_H
-#define FBI_CWLOCK_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -93,5 +92,3 @@ void cwlock_init(cwlock_t *l);
 bool cwlock_lock(cwlock_t *l);
 void cwlock_unlock(cwlock_t *l);
 __END_DECLS
-
-#endif

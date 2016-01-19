@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,10 +9,10 @@
  */
 #pragma once
 
-#include <folly/io/Cursor.h>
-#include <folly/io/IOBuf.h>
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/experimental/fibers/WhenN.h>
+#include <folly/io/Cursor.h>
+#include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
 

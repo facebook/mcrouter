@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
-#include <folly/Memory.h>
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/experimental/fibers/SimpleLoopController.h>
 #include <folly/experimental/fibers/WhenN.h>
+#include <folly/Memory.h>
 
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/IOBufUtil.h"

@@ -9,13 +9,15 @@
  */
 #include "Fifo.h"
 
-#include <cstring>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cstring>
+
 #include <boost/filesystem.hpp>
+
 #include <glog/logging.h>
 
 #include <folly/FileUtil.h>

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef MCROUTER_LIB_FBI_ASOX_TIMER_H
-#define MCROUTER_LIB_FBI_ASOX_TIMER_H
+#pragma once
 
 #include <event.h>
 
@@ -37,5 +36,3 @@ asox_timer_t asox_add_timer(struct event_base* event_base,
 void asox_remove_timer(asox_timer_t timer);
 
 __END_DECLS
-
-#endif

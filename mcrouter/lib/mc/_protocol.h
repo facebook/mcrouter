@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_MC_INTERNAL_PROTOCOL_H
-#define FB_MEMCACHE_MC_INTERNAL_PROTOCOL_H
+#pragma once
+
 //#include "protocol.h"
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/mc/msg.h"
@@ -126,5 +126,3 @@ static inline size_t mc_ascii_req_max_hdr_len(const mc_msg_t* req) {
 }
 
 __END_DECLS
-
-#endif

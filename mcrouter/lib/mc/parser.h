@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FB_MEMCACHE_MC_PARSER_H
-#define FB_MEMCACHE_MC_PARSER_H
+#pragma once
 
 #include <inttypes.h>
 #include <stdbool.h>
@@ -161,5 +160,3 @@ unsigned long mc_parser_num_partial_messages();
 void mc_parser_reset_num_partial_messages();
 
 __END_DECLS
-
-#endif

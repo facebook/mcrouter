@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,8 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#ifndef FBI_SKIPLIST_H
-#define FBI_SKIPLIST_H
+#pragma once
 
 #include <stdint.h>
 
@@ -60,5 +59,3 @@ skiplist_t* skiplist_new();
 void skiplist_del(skiplist_t* skiplist);
 
 __END_DECLS
-
-#endif

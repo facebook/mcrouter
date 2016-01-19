@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,8 +14,8 @@
 #include <string>
 #include <utility>
 
-#include <folly/Range.h>
 #include <folly/Format.h>
+#include <folly/Range.h>
 
 namespace facebook { namespace memcache { namespace failure {
 

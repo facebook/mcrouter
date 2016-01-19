@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,11 +13,10 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/uio.h>
 
-#include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/mc/util.h"
 
 static inline size_t entries_array_size(int num_entries) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,19 +7,21 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <arpa/inet.h>
+
 #include <typeindex>
 
-#include <arpa/inet.h>
 #include <gtest/gtest.h>
 
 #include <folly/io/IOBuf.h>
 
-#include <mcrouter/lib/McReply.h>
-#include <mcrouter/lib/network/McAsciiParser.h>
-#include <mcrouter/lib/network/ClientMcParser.h>
-#include <mcrouter/lib/network/test/TestMcAsciiParserUtil.h>
+#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/network/ClientMcParser.h"
+#include "mcrouter/lib/network/McAsciiParser.h"
+#include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
 
 using namespace facebook::memcache;
+
 using folly::IOBuf;
 
 namespace {
