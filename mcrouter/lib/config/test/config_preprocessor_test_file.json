@@ -99,6 +99,22 @@
           "is_false": "abc"
         },
         "expand": "abc"
+      },
+      "isLocalIp": {
+        "orig": "@isLocalIp(::1)",
+        "expand": true
+      },
+      "isLocalIp2": {
+        "orig": "@isLocalIp(::0001)",
+        "expand": true
+      },
+      "isLocalIp3": {
+        "orig": "@isLocalIp(not an ip)",
+        "expand": false
+      },
+      "isLocalIp4": {
+        "orig": "@isLocalIp(127.0.0.1)",
+        "expand": true
       }
     }
   },

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,6 +13,7 @@
 
 #include <folly/Format.h>
 #include <folly/Hash.h>
+#include <folly/IPAddress.h>
 #include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/Optional.h>
@@ -22,6 +23,7 @@
 #include "mcrouter/lib/config/ImportResolverIf.h"
 #include "mcrouter/lib/config/RendezvousHash.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/fbi/network.h"
 
 using folly::dynamic;
 using folly::json::stripComments;
@@ -1150,6 +1152,41 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Return true if "ip" is a local address
+   * Usage:
+   *  @isLocalIp(::1) => true
+   *  @isLocalIp(blah) => false
+   */
+  static dynamic isLocalIpMacro(Context&& ctx) {
+    auto compareIp = [](const struct sockaddr* addr, void* res) {
+      auto* result = reinterpret_cast<std::pair<folly::IPAddress, bool>*>(res);
+      try {
+        folly::IPAddress ip(addr);
+        if (ip == result->first) {
+          result->second = true;
+          // found matching ip, no need to continue
+          return false;
+        }
+      } catch (const std::exception&) { }
+      return true;
+    };
+
+    auto ipStr = asStringPiece(ctx.at("ip"), "isLocalIp: ip");
+    std::pair<folly::IPAddress, bool> result;
+    try {
+      result.second = false;
+      result.first = folly::IPAddress(ipStr);
+    } catch (const std::exception&) {
+      // not an ip
+      return false;
+    }
+    if (!for_each_localaddr(compareIp, &result)) {
+      throwLogic("Can not enumerate local ips: {}", folly::errnoStr(errno));
+    }
+    return result.second;
+  }
+
+  /**
    * Special built-in that prevents expanding 'macroDef' and 'constDef' objects
    * unless we parse them. For internal use only, nobody should call it
    * explicitly.
@@ -1569,6 +1606,8 @@ ConfigPreprocessor::ConfigPreprocessor(
   addMacro("define", { "result" }, &BuiltIns::defineMacro);
 
   addMacro("defined", { "name" }, &BuiltIns::definedMacro);
+
+  addMacro("isLocalIp", { "ip" }, &BuiltIns::isLocalIpMacro);
 
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
