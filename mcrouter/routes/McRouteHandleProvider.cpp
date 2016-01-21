@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -329,7 +329,8 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
         destinations.push_back(factory.create(server));
         continue;
       }
-      auto ap = AccessPoint::create(server.stringPiece(), protocol, port);
+      auto ap = AccessPoint::create(server.stringPiece(), protocol, useSsl,
+                                    port);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
       checkLogic(!useTyped || ap->getProtocol() == mc_umbrella_protocol,
                  "Typed requests only supported with Umbrella");
@@ -339,7 +340,7 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
       auto pdstn = proxy_.destinationMap->find(*ap, timeout);
       if (!pdstn) {
         pdstn = proxy_.destinationMap->emplace(
-          std::move(ap), timeout, useSsl, useTyped, qosClass, qosPath
+          std::move(ap), timeout, useTyped, qosClass, qosPath
         );
       }
       pdstn->updatePoolName(name);

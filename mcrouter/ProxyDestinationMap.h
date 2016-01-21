@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -59,7 +59,6 @@ class ProxyDestinationMap {
    */
   std::shared_ptr<ProxyDestination> emplace(std::shared_ptr<AccessPoint> ap,
                                             std::chrono::milliseconds timeout,
-                                            bool useSsl,
                                             bool useTyped,
                                             uint64_t qosClass,
                                             uint64_t qosPath);

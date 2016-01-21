@@ -193,7 +193,6 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     proxy_t& proxy,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    bool useSsl,
     bool useTyped,
     uint64_t qosClass,
     uint64_t qosPath) {
@@ -202,7 +201,6 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     proxy,
     std::move(ap),
     timeout,
-    useSsl,
     useTyped,
     qosClass,
     qosPath));
@@ -234,7 +232,6 @@ ProxyDestination::ProxyDestination(
   proxy_t& proxy_,
   std::shared_ptr<AccessPoint> ap,
   std::chrono::milliseconds timeout,
-  bool useSsl__,
   bool useTyped,
   uint64_t qosClass,
   uint64_t qosPath)
@@ -243,7 +240,6 @@ ProxyDestination::ProxyDestination(
       shortestTimeout_(timeout),
       qosClass_(qosClass),
       qosPath_(qosPath),
-      useSsl_(useSsl__),
       useTyped_(useTyped) {
 
   static uint64_t next_magic = 0x12345678900000LL;
@@ -288,7 +284,7 @@ void ProxyDestination::initializeAsyncMcClient() {
     options.qosPath = qosPath_;
   }
 
-  if (useSsl_) {
+  if (accessPoint_->useSsl()) {
     checkLogic(!opts.pem_cert_path.empty() &&
                !opts.pem_key_path.empty() &&
                !opts.pem_ca_path.empty(),

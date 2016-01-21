@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,10 +21,9 @@ namespace facebook { namespace memcache { namespace mcrouter {
 const char* const kFailoverTag = ":failover=1";
 
 std::string DestinationRoute::routeName() const {
-  return folly::sformat("host|pool={}|id={}|ssl={}|ap={}|timeout={}ms",
+  return folly::sformat("host|pool={}|id={}|ap={}|timeout={}ms",
     poolName_,
     indexInPool_,
-    destination_->useSsl(),
     destination_->accessPoint()->toString(),
     timeout_.count());
 }

@@ -88,10 +88,6 @@ class ProxyDestination {
     return accessPoint_;
   }
 
-  bool useSsl() const {
-    return useSsl_;
-  }
-
   void resetInactive();
 
   size_t getPendingRequestCount() const;
@@ -132,14 +128,12 @@ class ProxyDestination {
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
 
-  const bool useSsl_{false};
   const bool useTyped_{false}; // for umbrella only
 
   static std::shared_ptr<ProxyDestination> create(
     proxy_t& proxy,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    bool useSsl,
     bool useTyped,
     uint64_t qosClass,
     uint64_t qosPath);
@@ -165,7 +159,6 @@ class ProxyDestination {
   ProxyDestination(proxy_t& proxy,
                    std::shared_ptr<AccessPoint> ap,
                    std::chrono::milliseconds timeout,
-                   bool useSsl,
                    bool useTyped,
                    uint64_t qosClass,
                    uint64_t qosPath);

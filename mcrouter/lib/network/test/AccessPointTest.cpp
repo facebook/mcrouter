@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,26 +19,26 @@ TEST(AccessPoint, host_port) {
   auto proto = mc_unknown_protocol;
   auto ap = AccessPoint::create("127.0.0.1:12345", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 12345);
-  EXPECT_EQ(ap->getProtocol(), proto);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
   ap = AccessPoint::create("127.0.0.1:1", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 1);
-  EXPECT_EQ(ap->getProtocol(), proto);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(1, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
   ap = AccessPoint::create("[127.0.0.1]:12345", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 12345);
-  EXPECT_EQ(ap->getProtocol(), proto);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
   EXPECT_TRUE(AccessPoint::create("127.0.0.1", proto) == nullptr);
   EXPECT_TRUE(AccessPoint::create("127.0.0.1::", proto) == nullptr);
   ap = AccessPoint::create("[::1]:12345", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
-  EXPECT_EQ(ap->getPort(), 12345);
-  EXPECT_EQ(ap->getProtocol(), proto);
+  EXPECT_EQ("0000:0000:0000:0000:0000:0000:0000:0001", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
   EXPECT_TRUE(AccessPoint::create("[::1]", proto) == nullptr);
 }
 
@@ -46,54 +46,84 @@ TEST(AccessPoint, host_port_proto) {
   auto proto = mc_unknown_protocol;
   auto ap = AccessPoint::create("127.0.0.1:12345:ascii", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 12345);
-  EXPECT_EQ(ap->getProtocol(), mc_ascii_protocol);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
   ap = AccessPoint::create("127.0.0.1:1:umbrella", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 1);
-  EXPECT_EQ(ap->getProtocol(), mc_umbrella_protocol);
-  ap = AccessPoint::create("[127.0.0.1]:12345:binary", proto);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(1, ap->getPort());
+  EXPECT_EQ(mc_umbrella_protocol, ap->getProtocol());
+  ap = AccessPoint::create("[127.0.0.1]:12345:ascii", proto);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 12345);
-  EXPECT_EQ(ap->getProtocol(), mc_binary_protocol);
-  ap = AccessPoint::create("[::1]:12345:fhgsdg", proto);
-  EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
-  EXPECT_EQ(ap->getPort(), 12345);
-  EXPECT_EQ(ap->getProtocol(), proto);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
+  EXPECT_TRUE(AccessPoint::create("[::1]:12345:fhgsdg", proto) == nullptr);
   EXPECT_TRUE(AccessPoint::create("[::1]", proto) == nullptr);
+}
+
+TEST(AccessPoint, host_port_proto_ssl) {
+  auto proto = mc_unknown_protocol;
+  auto ap = AccessPoint::create("127.0.0.1:12345:ascii:ssl", proto);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
+  EXPECT_TRUE(ap->useSsl());
+  ap = AccessPoint::create("127.0.0.1:1:umbrella:plain", proto);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(1, ap->getPort());
+  EXPECT_EQ(mc_umbrella_protocol, ap->getProtocol());
+  EXPECT_FALSE(ap->useSsl());
+  ap = AccessPoint::create("127.0.0.1:12345:ascii", proto, true);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
+  EXPECT_TRUE(ap->useSsl());
+  ap = AccessPoint::create("[::1]:12345:ascii", proto, false);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("0000:0000:0000:0000:0000:0000:0000:0001", ap->getHost());
+  EXPECT_EQ(12345, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
+  EXPECT_FALSE(ap->useSsl());
+  EXPECT_TRUE(AccessPoint::create("[::1]:12345:ascii:blah", proto) == nullptr);
 }
 
 TEST(AccessPoint, port_override) {
   auto proto = mc_unknown_protocol;
-  auto ap = AccessPoint::create("127.0.0.1:12345", proto, 44);
+  auto ap = AccessPoint::create("127.0.0.1:12345", proto, false, 44);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 44);
-  EXPECT_EQ(ap->getProtocol(), proto);
-  ap = AccessPoint::create("127.0.0.1:12345:ascii", proto, 11);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(44, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
+  EXPECT_FALSE(ap->useSsl());
+  ap = AccessPoint::create("127.0.0.1:12345:ascii", proto, true, 11);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 11);
-  EXPECT_EQ(ap->getProtocol(), mc_ascii_protocol);
-  ap = AccessPoint::create("127.0.0.1", proto, 22);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(11, ap->getPort());
+  EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
+  EXPECT_TRUE(ap->useSsl());
+  ap = AccessPoint::create("127.0.0.1", proto, false, 22);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "127.0.0.1");
-  EXPECT_EQ(ap->getPort(), 22);
-  EXPECT_EQ(ap->getProtocol(), proto);
-  ap = AccessPoint::create("[::1]:12345", proto, 33);
+  EXPECT_EQ("127.0.0.1", ap->getHost());
+  EXPECT_EQ(22, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
+  EXPECT_FALSE(ap->useSsl());
+  ap = AccessPoint::create("[::1]:12345", proto, true, 33);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
-  EXPECT_EQ(ap->getPort(), 33);
-  EXPECT_EQ(ap->getProtocol(), proto);
-  ap = AccessPoint::create("[::1]", proto, 55);
+  EXPECT_EQ("0000:0000:0000:0000:0000:0000:0000:0001", ap->getHost());
+  EXPECT_EQ(33, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
+  EXPECT_TRUE(ap->useSsl());
+  ap = AccessPoint::create("[::1]", proto, true, 55);
   EXPECT_TRUE(ap != nullptr);
-  EXPECT_EQ(ap->getHost(), "0000:0000:0000:0000:0000:0000:0000:0001");
-  EXPECT_EQ(ap->getPort(), 55);
-  EXPECT_EQ(ap->getProtocol(), proto);
+  EXPECT_EQ("0000:0000:0000:0000:0000:0000:0000:0001", ap->getHost());
+  EXPECT_EQ(55, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
+  EXPECT_TRUE(ap->useSsl());
 }
 
 } // namespace
