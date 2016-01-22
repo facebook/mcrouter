@@ -4,6 +4,14 @@ source common.sh
 
 if [[ ! -d "$PKG_DIR/fbthrift" ]]; then
   git clone https://github.com/facebook/fbthrift
+  if [[ -f "$REPO_BASE_DIR/mcrouter/FBTHRIFT_COMMIT" ]]; then
+    cd "$PKG_DIR/fbthrift" || die "cd fail"
+    FBTHRIFT_COMMIT="$(head -n 1 "$REPO_BASE_DIR/mcrouter/FBTHRIFT_COMMIT")"
+    echo "FBTHRIFT_COMMIT file found: using fbthrift commit $FBTHRIFT_COMMIT"
+    git checkout "$FBTHRIFT_COMMIT"
+  else
+    echo "No FBTHRIFT_COMMIT file, using fbthrift HEAD=$(git rev-parse HEAD)"
+  fi
 fi
 
 cd "$PKG_DIR/fbthrift/thrift" || die "cd fbthrift failed"
