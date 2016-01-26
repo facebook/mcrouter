@@ -7,5 +7,10 @@
       ]
     }
   },
-  "route": "FailoverRoute|Pool|A"
+  "route": {
+    "type": "FailoverRoute",
+    "name": "01",
+    "enable_lease_pairing": true,
+    "children": "Pool|A"
+  }
 }

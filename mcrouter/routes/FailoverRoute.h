@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -31,7 +31,12 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf, typename FailoverPolicyT>
 class FailoverRoute {
  public:
-  static std::string routeName() { return "failover"; }
+  std::string routeName() const {
+    if (name_.empty()) {
+      return "failover";
+    }
+    return "failover:" + name_;
+  }
 
   template <class Operation, class Request>
   void traverse(const Request& req, Operation,
@@ -47,13 +52,18 @@ class FailoverRoute {
                 FailoverErrorsSettings failoverErrors,
                 std::unique_ptr<FailoverRateLimiter> rateLimiter,
                 bool failoverTagging,
+                bool enableLeasePairing,
+                std::string name,
                 const folly::dynamic& policyConfig = nullptr)
       : targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)),
         rateLimiter_(std::move(rateLimiter)),
         failoverTagging_(failoverTagging),
-        failoverPolicy_(targets_, policyConfig) {
+        failoverPolicy_(targets_, policyConfig),
+        enableLeasePairing_(enableLeasePairing),
+        name_(std::move(name)) {
     assert(targets_.size() > 1);
+    assert(!enableLeasePairing_ || !name_.empty());
   }
 
   template <class Operation, class Request>
@@ -116,6 +126,8 @@ class FailoverRoute {
   std::unique_ptr<FailoverRateLimiter> rateLimiter_;
   const bool failoverTagging_{false};
   FailoverPolicyT failoverPolicy_;
+  const bool enableLeasePairing_{false};
+  const std::string name_;
 };
 
 }}} // facebook::memcache::mcrouter

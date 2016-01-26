@@ -33,13 +33,17 @@ McrouterRouteHandlePtr
 makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
                          FailoverErrorsSettings failoverErrors,
                          std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                         bool failoverTagging);
+                         bool failoverTagging,
+                         bool enableLeasePairing = false,
+                         std::string name = "");
 
 McrouterRouteHandlePtr
 makeFailoverRouteLeastFailures(std::vector<McrouterRouteHandlePtr> rh,
                                FailoverErrorsSettings failoverErrors,
                                std::unique_ptr<FailoverRateLimiter> rateLimiter,
                                bool failoverTagging,
+                               bool enableLeasePairing,
+                               std::string name,
                                const folly::dynamic& json);
 
 }}}  // facebook::memcache::mcrouter
@@ -277,6 +281,8 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -297,6 +303,8 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -317,6 +325,8 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -338,6 +348,8 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply1= rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -371,6 +383,8 @@ TEST(failoverRouteTest, leastFailuresCycle) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply1= rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -406,6 +420,8 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -426,6 +442,8 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
@@ -452,6 +470,8 @@ TEST(failoverRouteTest, leastFailuresComplex) {
                                            FailoverErrorsSettings(),
                                            nullptr,
                                            /* failoverTagging */ false,
+                                           /* enableLeasePairing */ false,
+                                           "route01",
                                            json);
 
   auto reply1 = rh->route(McRequest("0"), McOperation<mc_op_get>());

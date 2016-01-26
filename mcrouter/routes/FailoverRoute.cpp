@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -33,7 +33,9 @@ McrouterRouteHandlePtr
 makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
                          FailoverErrorsSettings failoverErrors,
                          std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                         bool failoverTagging) {
+                         bool failoverTagging,
+                         bool enableLeasePairing,
+                         std::string name) {
   if (rh.size() <= 1) {
     return makeNullOrSingletonRoute(std::move(rh));
   }
@@ -43,7 +45,9 @@ makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
       std::move(rh),
       std::move(failoverErrors),
       std::move(rateLimiter),
-      failoverTagging);
+      failoverTagging,
+      enableLeasePairing,
+      std::move(name));
 }
 
 McrouterRouteHandlePtr
@@ -51,6 +55,8 @@ makeFailoverRouteLeastFailures(std::vector<McrouterRouteHandlePtr> rh,
                                FailoverErrorsSettings failoverErrors,
                                std::unique_ptr<FailoverRateLimiter> rateLimiter,
                                bool failoverTagging,
+                               bool enableLeasePairing,
+                               std::string name,
                                const folly::dynamic& json) {
   if (rh.size() <= 1) {
     return makeNullOrSingletonRoute(std::move(rh));
@@ -62,6 +68,8 @@ makeFailoverRouteLeastFailures(std::vector<McrouterRouteHandlePtr> rh,
       std::move(failoverErrors),
       std::move(rateLimiter),
       failoverTagging,
+      enableLeasePairing,
+      std::move(name),
       json);
 }
 
@@ -72,7 +80,21 @@ McrouterRouteHandlePtr makeFailoverRoute(
   FailoverErrorsSettings failoverErrors;
   std::unique_ptr<FailoverRateLimiter> rateLimiter;
   bool failoverTagging = false;
+  bool enableLeasePairing = false;
+  std::string name;
   if (json.isObject()) {
+    if (auto jLeasePairing = json.get_ptr("enable_lease_pairing")) {
+      checkLogic(jLeasePairing->isBool(),
+                 "Failover: enable_lease_pairing is not bool");
+      enableLeasePairing = jLeasePairing->getBool();
+    }
+    if (auto jName = json.get_ptr("name")) {
+      checkLogic(jName->isString(), "Failover: name is not a string");
+      name = jName->getString().toStdString();
+    } else {
+      checkLogic(!enableLeasePairing,
+                 "Failover: name is required when lease pairing is enabled");
+    }
     if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
       failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
     }
@@ -94,13 +116,15 @@ McrouterRouteHandlePtr makeFailoverRoute(
         return makeFailoverRouteLeastFailures(
             std::move(children), std::move(failoverErrors),
             std::move(rateLimiter), failoverTagging,
+            enableLeasePairing, std::move(name),
             *jFailoverPolicy);
       }
     }
   }
   return makeFailoverRouteInOrder(
       std::move(children), std::move(failoverErrors),
-      std::move(rateLimiter), failoverTagging);
+      std::move(rateLimiter), failoverTagging,
+      enableLeasePairing, std::move(name));
 }
 
 McrouterRouteHandlePtr makeFailoverRoute(

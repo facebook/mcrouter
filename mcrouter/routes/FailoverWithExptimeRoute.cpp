@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -42,7 +42,9 @@ McrouterRouteHandlePtr
 makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
                          FailoverErrorsSettings failoverErrors,
                          std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                         bool failoverTagging);
+                         bool failoverTagging,
+                         bool enableLeasePairing = false,
+                         std::string name = "");
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     McrouterRouteHandlePtr normal,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -69,4 +69,37 @@ TEST(latestRouteTest, one) {
   /* three boxes are now TKO, we hit the failover limit */
   auto reply = rh->route(McRequest("key"), McOperation<mc_op_get>());
   EXPECT_EQ(reply.result(), mc_res_tko);
+}
+
+TEST(latestRouteTest, leasePairingNoName) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+  };
+
+  mockFiberContext();
+  folly::dynamic settings = folly::dynamic::object(
+      "enable_lease_pairing", true)("failover_count", 3);
+
+  EXPECT_ANY_THROW({
+    auto rh = makeLatestRoute(settings, get_route_handles(test_handles));
+  });
+}
+
+TEST(latestRouteTest, leasePairingWithName) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+  };
+
+  mockFiberContext();
+  folly::dynamic settings = folly::dynamic::object(
+      "enable_lease_pairing", true)("name", "01")("failover_count", 3);
+
+  // Should not throw, as the name was provided
+  auto rh = makeLatestRoute(settings, get_route_handles(test_handles));
 }
