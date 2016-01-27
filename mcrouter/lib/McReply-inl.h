@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -62,9 +62,17 @@ inline int awfulness(mc_res_t result) {
 }
 }
 
-template <typename Operation>
-McReply::McReply(DefaultReplyT, Operation) noexcept
-    : McReply(UpdateLike<Operation>::value ?
+template <int op>
+McReply::McReply(DefaultReplyT, McOperation<op>) noexcept
+    : McReply(UpdateLike<McOperation<op>>::value ?
+                mc_res_notstored :
+                mc_res_notfound) {
+}
+
+template <class Request,
+          typename std::enable_if<!IsCustomRequest<Request>::value>::type*>
+McReply::McReply(DefaultReplyT, const Request&) noexcept
+    : McReply(UpdateLike<typename Request::OpType>::value ?
                 mc_res_notstored :
                 mc_res_notfound) {
 }

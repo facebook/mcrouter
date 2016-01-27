@@ -36,21 +36,19 @@ class AllSyncRoute {
     assert(!children_.empty());
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(children_, req, Operation());
+    t(children_, req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-
-    typedef typename ReplyType<Operation, Request>::type Reply;
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
+    using Reply = ReplyT<Request>;
 
     const auto& children = children_;
     auto fs = makeFuncGenerator([&req, &children](size_t id) {
-      return children[id]->route(req, Operation());
+      return children[id]->route(req);
     }, children_.size());
 
     folly::Optional<Reply> reply;

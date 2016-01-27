@@ -124,23 +124,22 @@ public:
   /**
    * Called once a reply is received to record a stats sample if required.
    */
-  template <class Operation, class Request>
+  template <class Request>
   void onReplyReceived(const std::string& poolName,
                        const AccessPoint& ap,
                        const Request& request,
-                       const ReplyT<Operation, Request>& reply,
+                       const ReplyT<Request>& reply,
                        const int64_t startTimeUs,
-                       const int64_t endTimeUs,
-                       Operation) {
+                       const int64_t endTimeUs) {
     if (recording_) {
       return;
     }
 
     assert(logger_.hasValue());
-    logger_->log(request, reply, startTimeUs, endTimeUs, Operation());
+    logger_->log(request, reply, startTimeUs, endTimeUs);
     assert(additionalLogger_.hasValue());
     additionalLogger_->log(
-      poolName, ap, request, reply, startTimeUs, endTimeUs, Operation());
+      poolName, ap, request, reply, startTimeUs, endTimeUs);
   }
 
   /**
@@ -248,16 +247,16 @@ private:
   friend class proxy_t;
 };
 
-template <class Operation, class Request>
+template <class Request>
 class ProxyRequestContextTyped : public ProxyRequestContext {
  public:
-  using Type = ProxyRequestContextTyped<Operation, Request>;
+  using Type = ProxyRequestContextTyped<Request>;
   /**
    * Sends the reply for this proxy request.
    * @param newReply the message that we are sending out as the reply
    *   for the request we are currently handling
    */
-  void sendReply(ReplyT<Operation, Request>&& reply);
+  void sendReply(ReplyT<Request>&& reply);
 
   /**
    * Convenience method, that constructs reply and calls non-template
@@ -265,7 +264,7 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
    */
   template <class... Args>
   void sendReply(Args&&... args) {
-    sendReply(ReplyT<Operation, Request>(std::forward<Args>(args)...));
+    sendReply(ReplyT<Request>(std::forward<Args>(args)...));
   }
 
   virtual void startProcessing() override;
@@ -285,7 +284,7 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
                            ProxyRequestPriority priority__)
       : ProxyRequestContext(pr, priority__), req_(&req) {}
 
-  virtual void sendReplyImpl(ReplyT<Operation, Request>&& reply) = 0;
+  virtual void sendReplyImpl(ReplyT<Request>&& reply) = 0;
 
   // It's guaranteed to point to an existing request until we call user callback
   // (i.e. replied_ changes to true), after that it's nullptr.
@@ -295,12 +294,11 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
 /**
  * Creates a new proxy request context
  */
-template <class Operation, class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<Operation, Request>>
+template <class Request, class F>
+std::unique_ptr<ProxyRequestContextTyped<Request>>
 createProxyRequestContext(
     proxy_t& pr,
     const Request& req,
-    Operation,
     F&& f,
     ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
 

@@ -154,8 +154,8 @@ template <class RouteHandleIf>
 struct RecordingRoute {
   static std::string routeName() { return "test"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const { }
 
   GetRouteTestData dataGet_;
@@ -169,11 +169,10 @@ struct RecordingRoute {
                  TestHandleImpl<RouteHandleIf>* h)
       : dataGet_(g_td), dataUpdate_(u_td), dataDelete_(d_td), h_(h) {}
 
-  template <int M, class Request>
-  typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>) {
-
-    using Reply = typename ReplyType<McOperation<M>, Request>::type;
+  template <int M>
+  McReply route(const McRequestWithMcOp<M>& req) {
+    using Request = McRequestWithMcOp<M>;
+    using Reply = McReply;
 
     if (h_->isTko) {
       return Reply(TkoReply);
@@ -189,12 +188,12 @@ struct RecordingRoute {
     }
     h_->sawOperations.push_back((mc_op_t) M);
     h_->sawExptimes.push_back(req.exptime());
-    if (GetLike<McOperation<M>>::value) {
+    if (GetLike<Request>::value) {
       auto msg = createMcMsgRef(req.fullKey(), dataGet_.value_);
       msg->flags = dataGet_.flags_;
       return Reply(dataGet_.result_, std::move(msg));
     }
-    if (UpdateLike<McOperation<M>>::value) {
+    if (UpdateLike<Request>::value) {
       auto val = req.value().clone();
       folly::StringPiece sp_value = coalesceAndGetRange(val);
       h_->sawValues.push_back(sp_value.str());
@@ -202,11 +201,11 @@ struct RecordingRoute {
       msg->flags = dataUpdate_.flags_;
       return Reply(dataUpdate_.result_, std::move(msg));
     }
-    if (DeleteLike<McOperation<M>>::value) {
+    if (DeleteLike<Request>::value) {
       auto msg = createMcMsgRef(req.fullKey());
       return Reply(dataDelete_.result_, std::move(msg));
     }
-    return Reply(DefaultReply, McOperation<M>());
+    return Reply(DefaultReply, req);
   }
 };
 
@@ -263,7 +262,7 @@ inline std::string toString(const folly::IOBuf& buf) {
 
 template <class Rh>
 std::string replyFor(Rh& rh, const std::string& key) {
-  auto reply = rh.route(McRequest(key), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>(key));
   return toString(reply.value());
 }
 

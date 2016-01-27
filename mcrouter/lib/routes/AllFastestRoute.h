@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,10 +30,10 @@ class AllFastestRoute {
  public:
   static std::string routeName() { return "all-fastest"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(children_, req, Operation());
+    t(children_, req);
   }
 
   explicit AllFastestRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
@@ -41,11 +41,9 @@ class AllFastestRoute {
     assert(!children_.empty());
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-
-    typedef typename ReplyType<Operation, Request>::type Reply;
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
+    using Reply = ReplyT<Request>;
 
     std::vector<std::function<Reply()>> funcs;
     funcs.reserve(children_.size());
@@ -53,7 +51,7 @@ class AllFastestRoute {
     for (auto& rh : children_) {
       funcs.push_back(
         [reqCopy, rh]() {
-          return rh->route(*reqCopy, Operation());
+          return rh->route(*reqCopy);
         }
       );
     }

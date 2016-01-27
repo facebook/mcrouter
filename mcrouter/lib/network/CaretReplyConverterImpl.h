@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,7 +17,7 @@ namespace facebook {
 namespace memcache {
 
 class CaretReplyConverter
-    : public ThriftMsgDispatcher<ReplyList, CaretReplyConverter, McReply&> {
+    : public ThriftMsgDispatcher<TReplyList, CaretReplyConverter, McReply&> {
 
  public:
   template <class Unsupported>

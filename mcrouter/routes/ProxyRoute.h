@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -42,22 +42,18 @@ class ProxyRoute {
 
   ProxyRoute(proxy_t* proxy, const RouteSelectorMap& routeSelectors);
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*root_, req, Operation());
-  }
-
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-    return root_->route(req, Operation());
+    t(*root_, req);
   }
 
   template <class Request>
-  typename ReplyType<McOperation<mc_op_lease_set>, Request>::type route(
-    const Request& req, McOperation<mc_op_lease_set>) {
+  ReplyT<Request> route(const Request& req) const {
+    return root_->route(req);
+  }
 
+  McReply route(const McRequestWithMcOp<mc_op_lease_set>& req) {
     auto pair = queryLeaseTokenMap(req.leaseToken());
     if (pair.first) {
       stat_incr(proxy_->stats, redirected_lease_set_count_stat, 1);
@@ -67,19 +63,16 @@ class ProxyRoute {
       return fiber_local::runWithLocals(
         [destRoute = pair.first, &mutReq]() {
           fiber_local::addRequestClass(RequestClass::kFailover);
-          return destRoute->route(mutReq, McOperation<mc_op_lease_set>());
+          return destRoute->route(mutReq);
         });
     }
 
-    return root_->route(req, McOperation<mc_op_lease_set>());
+    return root_->route(req);
   }
 
-  template <class Request>
-  typename ReplyType<McOperation<mc_op_flushall>, Request>::type route(
-      const Request& req, McOperation<mc_op_flushall> op) const {
+  McReply route(const McRequestWithMcOp<mc_op_flushall>& req) const {
     // route to all destinations in the config.
-    return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations())
-        .route(req, op);
+    return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations()).route(req);
   }
 
  private:

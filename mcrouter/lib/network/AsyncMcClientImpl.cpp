@@ -637,42 +637,42 @@ const char* TOUCHED = "TOUCHED\r\n";
 
 template <>
 const char*
-McClientRequestContext<McOperation<mc_op_get>, McRequest>::
+McClientRequestContext<McRequestWithMcOp<mc_op_get>>::
 fakeReply() const {
   return FOUND;
 }
 
 template <>
 const char*
-McClientRequestContext<McOperation<mc_op_lease_get>, McRequest>::
+McClientRequestContext<McRequestWithMcOp<mc_op_lease_get>>::
 fakeReply() const {
   return FOUND;
 }
 
 template <>
 const char*
-McClientRequestContext<McOperation<mc_op_set>, McRequest>::
+McClientRequestContext<McRequestWithMcOp<mc_op_set>>::
 fakeReply() const {
   return STORED;
 }
 
 template <>
 const char*
-McClientRequestContext<McOperation<mc_op_lease_set>, McRequest>::
+McClientRequestContext<McRequestWithMcOp<mc_op_lease_set>>::
 fakeReply() const {
   return STORED;
 }
 
 template <>
 const char*
-McClientRequestContext<McOperation<mc_op_delete>, McRequest>::
+McClientRequestContext<McRequestWithMcOp<mc_op_delete>>::
 fakeReply() const {
   return DELETED;
 }
 
 template <>
 const char*
-McClientRequestContext<McOperation<mc_op_touch>, McRequest>::
+McClientRequestContext<McRequestWithMcOp<mc_op_touch>>::
 fakeReply() const {
   return TOUCHED;
 }

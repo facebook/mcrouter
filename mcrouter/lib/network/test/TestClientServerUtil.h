@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,17 +28,14 @@ class TestServerOnRequest {
   TestServerOnRequest(bool& shutdown, bool outOfOrder);
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_get>);
+                 McRequestWithMcOp<mc_op_get>&& req);
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_set>);
+                 McRequestWithMcOp<mc_op_set>&& req);
 
   template <int M>
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<M>) {
+                 McRequestWithMcOp<M>&& req) {
     LOG(ERROR) << "Unhandled operation " << M;
   }
 

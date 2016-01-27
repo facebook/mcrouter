@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,7 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/stats.h"
@@ -26,28 +27,43 @@ namespace {
       stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat, 1); \
     } while(0)
 
-template <int operation>
-inline void logOutlier(proxy_t& proxy, McOperation<operation>) {
-  auto reqClass = fiber_local::getRequestClass();
-  switch (operation) {
-    case mc_op_get:
-      REQUEST_CLASS_STATS(proxy, get, outlier, reqClass);
-      break;
-    case mc_op_set:
-      REQUEST_CLASS_STATS(proxy, set, outlier, reqClass);
-      break;
-    case mc_op_delete:
-      REQUEST_CLASS_STATS(proxy, delete, outlier, reqClass);
-      break;
-    default:
-      REQUEST_CLASS_STATS(proxy, other, outlier, reqClass);
-      break;
-  }
+template <class Request>
+inline void logOutlier(proxy_t& proxy, GetLikeT<Request> = 0) {
+  REQUEST_CLASS_STATS(proxy, get, outlier, fiber_local::getRequestClass());
 }
 
-template <int operation>
-inline void logRequestClass(proxy_t& proxy, McOperation<operation>) {
+template <class Request>
+inline void logOutlier(proxy_t& proxy, UpdateLikeT<Request> = 0) {
+  REQUEST_CLASS_STATS(proxy, set, outlier, fiber_local::getRequestClass());
+}
+
+template <class Request>
+inline void logOutlier(proxy_t& proxy, DeleteLikeT<Request> = 0) {
+  REQUEST_CLASS_STATS(proxy, delete, outlier, fiber_local::getRequestClass());
+}
+
+template <class Request>
+inline void logOutlier(proxy_t& proxy, OtherThanT<Request,
+                                                  GetLike<>,
+                                                  UpdateLike<>,
+                                                  DeleteLike<>> = 0) {
+  REQUEST_CLASS_STATS(proxy, other, outlier, fiber_local::getRequestClass());
+}
+
+// TODO(jmswen) Implement logRequestClass for custom Thrift requests
+template <
+  class Request,
+  typename std::enable_if<IsCustomRequest<Request>::value, int>::type = 0>
+inline void logRequestClass(proxy_t& proxy, const Request& request) {
+}
+
+template <
+  class Request,
+  typename std::enable_if<!IsCustomRequest<Request>::value, int>::type = 0>
+inline void logRequestClass(proxy_t& proxy, const Request& request) {
   auto reqClass = fiber_local::getRequestClass();
+  auto operation = Request::OpType::mc_op;
+
   switch (operation) {
     case mc_op_get:
       REQUEST_CLASS_STATS(proxy, get, out, reqClass);
@@ -129,12 +145,11 @@ void ProxyRequestLogger::logError(const Reply& reply) {
   }
 }
 
-template <class Operation, class Request>
+template <class Request>
 void ProxyRequestLogger::log(const Request& request,
-                             const ReplyT<Operation, Request>& reply,
+                             const ReplyT<Request>& reply,
                              const int64_t startTimeUs,
-                             const int64_t endTimeUs,
-                             Operation) {
+                             const int64_t endTimeUs) {
 
   auto durationUs = endTimeUs - startTimeUs;
   bool isOutlier =
@@ -142,11 +157,11 @@ void ProxyRequestLogger::log(const Request& request,
       durationUs >= proxy_->getRouterOptions().logging_rtt_outlier_threshold_us;
 
   logError(reply);
-  logRequestClass(*proxy_, Operation());
+  logRequestClass(*proxy_, request);
   proxy_->durationUs.insertSample(durationUs);
 
   if (isOutlier) {
-    logOutlier(*proxy_, Operation());
+    logOutlier<Request>(*proxy_);
   }
 }
 

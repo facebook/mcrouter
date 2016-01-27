@@ -16,32 +16,30 @@
 
 namespace facebook { namespace memcache {
 
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-AsyncMcClientImpl::sendSync(const Request& request, Operation,
-                            std::chrono::milliseconds timeout) {
+template <class Request>
+ReplyT<Request> AsyncMcClientImpl::sendSync(
+    const Request& request,
+    std::chrono::milliseconds timeout) {
   auto selfPtr = selfPtr_.lock();
   // shouldn't happen.
   assert(selfPtr);
   assert(folly::fibers::onFiber());
 
-  using Reply = typename ReplyType<Operation, Request>::type;
-
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    return Reply(mc_res_local_error);
+    return ReplyT<Request>(mc_res_local_error);
   }
 
   // We need to send fbtrace before serializing, or otherwise we are going to
   // miss fbtrace id.
-  fbTraceOnSend(Operation(), request, *connectionOptions_.accessPoint);
+  fbTraceOnSend(request, *connectionOptions_.accessPoint);
 
-  McClientRequestContext<Operation, Request> ctx(
+  McClientRequestContext<Request> ctx(
       request,
       nextMsgId_,
       connectionOptions_.accessPoint->getProtocol(),
       std::move(selfPtr),
       queue_,
-      [](ParserT& parser) { parser.expectNext<Operation, Request>(); },
+      [](ParserT& parser) { parser.expectNext<Request>(); },
       connectionOptions_.useTyped);
   sendCommon(ctx);
 

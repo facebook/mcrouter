@@ -15,7 +15,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
-#include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/OptionsUtil.h"
@@ -93,9 +93,7 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
   probe_timer = nullptr;
   // Note that the previous probe might still be in flight
   if (!probe_req) {
-    auto mutReq = createMcMsgRef();
-    mutReq->op = mc_op_version;
-    probe_req = folly::make_unique<McRequest>(std::move(mutReq));
+    probe_req = folly::make_unique<McRequestWithMcOp<mc_op_version>>();
     ++stats_.probesSent;
     auto selfPtr = selfPtr_;
     proxy->fiberManager.addTask([selfPtr]() mutable {
@@ -105,9 +103,8 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
       }
       pdstn->proxy->destinationMap->markAsActive(*pdstn);
       // will reconnect if connection was closed
-      McReply reply = pdstn->getAsyncMcClient().sendSync(
+      auto reply = pdstn->getAsyncMcClient().sendSync(
         *pdstn->probe_req,
-        McOperation<mc_op_version>(),
         pdstn->shortestTimeout_);
       pdstn->handle_tko(reply, true);
       pdstn->probe_req.reset();

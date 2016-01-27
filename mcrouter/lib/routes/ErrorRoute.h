@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,20 +28,16 @@ struct ErrorRoute {
     return "error" + (valueToSet_.empty() ? "" : "|" + valueToSet_);
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const { }
 
   explicit ErrorRoute(std::string valueToSet = "")
     : valueToSet_(std::move(valueToSet)) {}
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) {
-
-    typedef typename ReplyType<Operation, Request>::type Reply;
-
-    return Reply(ErrorReply, valueToSet_);
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    return ReplyT<Request>(ErrorReply, valueToSet_);
   }
 
  private:

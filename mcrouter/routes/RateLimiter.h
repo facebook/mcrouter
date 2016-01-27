@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -42,29 +42,29 @@ class RateLimiter {
    */
   explicit RateLimiter(const folly::dynamic& json);
 
-  template <class Operation>
-  bool canPassThrough(Operation, typename GetLike<Operation>::Type = 0) {
+  template <class Request>
+  bool canPassThrough(GetLikeT<Request> = 0) {
     return LIKELY(
       !getsTb_ || getsTb_->consume(1.0, TokenBucket::defaultClockNow()));
   }
 
-  template <class Operation>
-  bool canPassThrough(Operation, typename UpdateLike<Operation>::Type = 0) {
+  template <class Request>
+  bool canPassThrough(UpdateLikeT<Request> = 0) {
     return LIKELY(
       !setsTb_ || setsTb_->consume(1.0, TokenBucket::defaultClockNow()));
   }
 
-  template <class Operation>
-  bool canPassThrough(Operation, typename DeleteLike<Operation>::Type = 0) {
+  template <class Request>
+  bool canPassThrough(DeleteLikeT<Request> = 0) {
     return LIKELY(
       !deletesTb_ || deletesTb_->consume(1.0, TokenBucket::defaultClockNow()));
   }
 
-  template <class Operation>
-  bool canPassThrough(Operation, OtherThanT(Operation,
-                                            GetLike<>,
-                                            UpdateLike<>,
-                                            DeleteLike<>) = 0) {
+  template <class Request>
+  bool canPassThrough(OtherThanT<Request,
+                                 GetLike<>,
+                                 UpdateLike<>,
+                                 DeleteLike<>> = 0) {
     return true;
   }
 

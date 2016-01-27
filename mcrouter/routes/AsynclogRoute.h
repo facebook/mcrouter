@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,29 +30,25 @@ class AsynclogRoute {
         asynclogName_(std::move(asynclogName)) {
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*rh_, req, Operation());
+    t(*rh_, req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    typename DeleteLike<Operation>::Type = 0) const {
-
+  template <class Request>
+  ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
     return fiber_local::runWithLocals([this, &req]() {
       fiber_local::setAsynclogName(asynclogName_);
-      return rh_->route(req, Operation());
+      return rh_->route(req);
     });
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    OtherThanT(Operation, DeleteLike<>) = 0) const {
+  template <class Request>
+  ReplyT<Request> route(const Request& req,
+                        OtherThanT<Request, DeleteLike<>> = 0) const {
 
-    return rh_->route(req, Operation());
+    return rh_->route(req);
   }
  private:
   const McrouterRouteHandlePtr rh_;

@@ -39,55 +39,55 @@ void AsciiSerializedRequest::keyValueRequestCommon(folly::StringPiece prefix,
 
 // Get-like ops.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_get>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_get>& request) {
   addStrings("get ", request.fullKey(), "\r\n");
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_gets>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_gets>& request) {
   addStrings("gets ", request.fullKey(), "\r\n");
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_metaget>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_metaget>& request) {
   addStrings("metaget ", request.fullKey(), "\r\n");
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_lease_get>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_lease_get>& request) {
   addStrings("lease-get ", request.fullKey(), "\r\n");
 }
 
 // Update-like ops.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_set>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_set>& request) {
   keyValueRequestCommon("set ", request);
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_add>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_add>& request) {
   keyValueRequestCommon("add ", request);
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_replace>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_replace>& request) {
   keyValueRequestCommon("replace ", request);
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_append>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_append>& request) {
   keyValueRequestCommon("append ", request);
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_prepend>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_prepend>& request) {
   keyValueRequestCommon("prepend ", request);
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_cas>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_cas>& request) {
   auto value = request.valueRangeSlow();
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %d %zd %lu\r\n",
                       request.flags(), request.exptime(), value.size(),
@@ -98,8 +98,8 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
              "\r\n");
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_lease_set>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_lease_set>& request) {
   auto value = request.valueRangeSlow();
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu %lu %d %zd\r\n",
                       request.leaseToken(), request.flags(), request.exptime(),
@@ -112,8 +112,8 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 
 // Arithmetic ops.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_incr>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_incr>& request) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu\r\n",
                       request.delta());
   assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
@@ -121,8 +121,8 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_decr>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_decr>& request) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %lu\r\n",
                       request.delta());
   assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
@@ -132,8 +132,8 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 
 // Delete op.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_delete>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_delete>& request) {
   addStrings("delete ", request.fullKey());
   if (request.exptime() != 0) {
     auto len = snprintf(printBuffer_, kMaxBufferLength, " %d\r\n",
@@ -147,8 +147,8 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 
 // Touch op.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_touch>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_touch>& request) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %u\r\n",
                       request.exptime());
   assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
@@ -158,15 +158,15 @@ void AsciiSerializedRequest::prepareImpl(const McRequest& request,
 
 // Version op.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_version>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_version>& request) {
   addString("version\r\n");
 }
 
 // FlushAll op.
 
-void AsciiSerializedRequest::prepareImpl(const McRequest& request,
-                                         McOperation<mc_op_flushall>) {
+void AsciiSerializedRequest::prepareImpl(
+    const McRequestWithMcOp<mc_op_flushall>& request) {
   auto len = snprintf(printBuffer_, kMaxBufferLength, " %u\r\n",
                       request.number());
   assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);

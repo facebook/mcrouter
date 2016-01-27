@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,9 +9,16 @@
  */
 #pragma once
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include <chrono>
+#include <functional>
+#include <utility>
+
 #include "mcrouter/lib/network/ConnectionOptions.h"
+#include "mcrouter/lib/Operation.h"
+
+namespace folly {
+class EventBase;
+}
 
 namespace facebook { namespace memcache {
 
@@ -59,10 +66,9 @@ class AsyncMcClient {
    * Note: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.
    */
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  sendSync(const Request& request, Operation,
-           std::chrono::milliseconds timeout);
+  template <class Request>
+  ReplyT<Request> sendSync(const Request& request,
+                           std::chrono::milliseconds timeout);
 
   /**
    * Set throttling options.

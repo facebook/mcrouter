@@ -33,30 +33,30 @@ class FailoverErrorsSettings {
                          std::vector<std::string> errorsDelete);
   explicit FailoverErrorsSettings(const folly::dynamic& json);
 
-  template <class Operation>
-  bool shouldFailover(const McReply& reply, Operation,
-                      typename DeleteLike<Operation>::Type = 0) const {
+  template <class Request>
+  bool shouldFailover(const McReply& reply, const Request&,
+                      DeleteLikeT<Request> = 0) const {
     return deletes_.shouldFailover(reply);
   }
 
-  template <class Operation>
-  bool shouldFailover(const McReply& reply, Operation,
-                      typename GetLike<Operation>::Type = 0) const {
+  template <class Request>
+  bool shouldFailover(const McReply& reply, const Request&,
+                      GetLikeT<Request> = 0) const {
     return gets_.shouldFailover(reply);
   }
 
-  template <class Operation>
-  bool shouldFailover(const McReply& reply, Operation,
-                      typename UpdateLike<Operation>::Type = 0) const {
+  template <class Request>
+  bool shouldFailover(const McReply& reply, const Request&,
+                      UpdateLikeT<Request> = 0) const {
     return updates_.shouldFailover(reply);
   }
 
-  template <class Operation>
-  bool shouldFailover(const McReply& reply, Operation,
-                      OtherThanT(Operation,
+  template <class Request>
+  bool shouldFailover(const McReply& reply, const Request&,
+                      OtherThanT<Request,
                                  DeleteLike<>,
                                  GetLike<>,
-                                 UpdateLike<>) = 0) const {
+                                 UpdateLike<>> = 0) const {
     return reply.isFailoverError();
   }
 

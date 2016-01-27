@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -200,6 +200,54 @@ struct PairListSecond<List<Pair<First, Second>...>> {
 
 template <class List>
 using PairListSecondT = typename PairListSecond<List>::type;
+
+/**
+ * ListContains<L, T>::value == true if and only if T appears in L
+ */
+namespace detail {
+
+template <class List, class T>
+struct ListContainsImpl {
+  static constexpr bool value = false;
+};
+
+template <class T>
+struct ListContainsImpl<List<>, T> {
+  static constexpr bool value = false;
+};
+
+template <class T, class X, class... Xs>
+struct ListContainsImpl<List<X, Xs...>, T> {
+  static constexpr bool value =
+    std::is_same<T, X>::value ||
+    ListContainsImpl<List<Xs...>, T>::value;
+};
+
+} // detail
+
+template <class L, class T>
+using ListContains = typename detail::ListContainsImpl<L, T>;
+
+/**
+ * Map a template template over a List of types.
+ */
+namespace detail {
+template <template<typename> class F, class List>
+struct MapTImpl;
+
+template <template<typename> class F>
+struct MapTImpl<F, List<>> {
+  using type = List<>;
+};
+
+template <template<typename> class F, typename X, typename... Xs>
+struct MapTImpl<F, List<X, Xs...>> {
+  using type = PrependT<F<X>, typename MapTImpl<F, List<Xs...>>::type>;
+};
+} // detail
+
+template <template<typename> class F, typename List>
+using MapT = typename detail::MapTImpl<F, List>::type;
 
 }}
 

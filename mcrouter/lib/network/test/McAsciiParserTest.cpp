@@ -47,9 +47,8 @@ class McAsciiParserHarness {
   explicit McAsciiParserHarness(const char* str)
     : data_(IOBuf::COPY_BUFFER, str, strlen(str)) {}
 
-  template <class Operation, class Request>
-  void expectNext(typename ReplyType<Operation, Request>::type reply,
-                  bool failure = false);
+  template <class Request>
+  void expectNext(ReplyT<Request> reply, bool failure = false);
 
   void runTest(int maxPieceSize);
  private:
@@ -79,18 +78,18 @@ class McAsciiParserHarness {
     }
   };
 
-  template <class Operation, class Request>
+  template <class Request>
   class ReplyInfo :
-    public ReplyInfoWithReply<typename ReplyType<Operation, Request>::type> {
+    public ReplyInfoWithReply<ReplyT<Request>> {
    public:
-    using ReplyT = typename ReplyType<Operation, Request>::type;
+    using Reply = ReplyT<Request>;
 
-    ReplyInfo(ReplyT reply, bool failure)
-      : ReplyInfoWithReply<ReplyT>(std::move(reply), failure) {
+    ReplyInfo(Reply reply, bool failure)
+      : ReplyInfoWithReply<Reply>(std::move(reply), failure) {
     }
 
     virtual void initializeParser(ParserT& parser) const override {
-      parser.expectNext<Operation, Request>();
+      parser.expectNext<Request>();
     }
   };
 
@@ -145,10 +144,9 @@ class McAsciiParserHarness {
   }
 };
 
-template <class Operation, class Request>
-void McAsciiParserHarness::expectNext(
-  typename ReplyType<Operation, Request>::type reply, bool failure) {
-  replies_.push_back(folly::make_unique<ReplyInfo<Operation, Request>>(
+template <class Request>
+void McAsciiParserHarness::expectNext(ReplyT<Request> reply, bool failure) {
+  replies_.push_back(folly::make_unique<ReplyInfo<Request>>(
     std::move(reply), failure));
 }
 
@@ -231,97 +229,98 @@ McReply createMetagetHitReply(uint32_t age, uint32_t exptime,
 
 TEST(McAsciiParserHarness, GetHit) {
   McAsciiParserHarness h("VALUE t 10 2\r\nte\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "te"), 10));
   h.runTest(2);
 }
 
 TEST(McAsciiParserHarness, GetHit_Empty) {
   McAsciiParserHarness h("VALUE t 5 0\r\n\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, ""), 5));
   h.runTest(2);
 }
 
 TEST(McAsciiParserHarness, GetHit_WithSpaces) {
   McAsciiParserHarness h("VALUE  test  15889  5\r\ntest \r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "test "), 15889));
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, GetHit_Error) {
   McAsciiParserHarness h("VALUE  test  15a889  5\r\ntest \r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(McReply(), true);
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(McReply(), true);
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, GetMiss) {
   McAsciiParserHarness h("END\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
+      McReply(mc_res_notfound));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, GetMiss_Error) {
   McAsciiParserHarness h("EnD\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(McReply(), true);
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(McReply(), true);
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, GetClientError) {
   McAsciiParserHarness h("CLIENT_ERROR what\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     McReply(mc_res_client_error, "what"));
   h.runTest(3);
 }
 
 TEST(McAsciiParserHarness, GetServerError) {
   McAsciiParserHarness h("SERVER_ERROR what\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     McReply(mc_res_remote_error, "what"));
   h.runTest(3);
 }
 
 TEST(McAsciiParserHarness, GetHitMiss) {
   McAsciiParserHarness h("VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "test "), 17));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     McReply(mc_res_notfound), false);
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, GetsHit) {
   McAsciiParserHarness h("VALUE test 1120 10 573\r\ntest test \r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_gets>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_gets>>(
     setCas(setFlags(McReply(mc_res_found, "test test "), 1120), 573));
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, LeaseGetHit) {
   McAsciiParserHarness h("VALUE test 1120 10\r\ntest test \r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setFlags(McReply(mc_res_found, "test test "), 1120));
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, LeaseGetFoundStale) {
   McAsciiParserHarness h("LVALUE test 1 1120 10\r\ntest test \r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setLeaseToken(setFlags(McReply(mc_res_notfound, "test test "), 1120), 1));
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, LeaseGetHotMiss) {
   McAsciiParserHarness h("LVALUE test 1 1120 0\r\n\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setLeaseToken(setFlags(McReply(mc_res_notfound), 1120), 1));
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, LeaseGetMiss) {
   McAsciiParserHarness h("LVALUE test 162481237786486239 112 0\r\n\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setLeaseToken(setFlags(McReply(mc_res_notfound), 112),
                   162481237786486239ull));
   h.runTest(1);
@@ -329,114 +328,124 @@ TEST(McAsciiParserHarness, LeaseGetMiss) {
 
 TEST(McAsciiParserHarness, SetStored) {
   McAsciiParserHarness h("STORED\r\n");
-  h.expectNext<McOperation<mc_op_set>, McRequest>(McReply(mc_res_stored));
+  h.expectNext<McRequestWithMcOp<mc_op_set>>(McReply(mc_res_stored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, SetNotStored) {
   McAsciiParserHarness h("NOT_STORED\r\n");
-  h.expectNext<McOperation<mc_op_set>, McRequest>(McReply(mc_res_notstored));
+  h.expectNext<McRequestWithMcOp<mc_op_set>>(
+      McReply(mc_res_notstored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, AddStored) {
   McAsciiParserHarness h("STORED\r\n");
-  h.expectNext<McOperation<mc_op_add>, McRequest>(McReply(mc_res_stored));
+  h.expectNext<McRequestWithMcOp<mc_op_add>>(McReply(mc_res_stored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, AddNotStored) {
   McAsciiParserHarness h("NOT_STORED\r\n");
-  h.expectNext<McOperation<mc_op_add>, McRequest>(McReply(mc_res_notstored));
+  h.expectNext<McRequestWithMcOp<mc_op_add>>(
+      McReply(mc_res_notstored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, AddExists) {
   McAsciiParserHarness h("EXISTS\r\n");
-  h.expectNext<McOperation<mc_op_add>, McRequest>(McReply(mc_res_exists));
+  h.expectNext<McRequestWithMcOp<mc_op_add>>(McReply(mc_res_exists));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, LeaseSetStored) {
   McAsciiParserHarness h("STORED\r\n");
-  h.expectNext<McOperation<mc_op_lease_set>, McRequest>(McReply(mc_res_stored));
+  h.expectNext<McRequestWithMcOp<mc_op_lease_set>>(
+      McReply(mc_res_stored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, LeaseSetNotStored) {
   McAsciiParserHarness h("NOT_STORED\r\n");
-  h.expectNext<McOperation<mc_op_lease_set>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_set>>(
     McReply(mc_res_notstored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, LeaseSetStaleStored) {
   McAsciiParserHarness h("STALE_STORED\r\n");
-  h.expectNext<McOperation<mc_op_lease_set>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_set>>(
     McReply(mc_res_stalestored));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, IncrSuccess) {
   McAsciiParserHarness h("3636\r\n");
-  h.expectNext<McOperation<mc_op_incr>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_incr>>(
     setDelta(McReply(mc_res_stored), 3636));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, IncrNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<McOperation<mc_op_incr>, McRequest>(McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_incr>>(
+      McReply(mc_res_notfound));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, DecrSuccess) {
   McAsciiParserHarness h("1534\r\n");
-  h.expectNext<McOperation<mc_op_decr>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_decr>>(
     setDelta(McReply(mc_res_stored), 1534));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, DecrNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<McOperation<mc_op_decr>, McRequest>(McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_decr>>(
+      McReply(mc_res_notfound));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, Version) {
   McAsciiParserHarness h("VERSION HarnessTest\r\n");
-  h.expectNext<McOperation<mc_op_version>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_version>>(
     McReply(mc_res_ok, "HarnessTest"));
   h.runTest(2);
 }
 
 TEST(McAsciiParserHarness, DeleteDeleted) {
   McAsciiParserHarness h("DELETED\r\n");
-  h.expectNext<McOperation<mc_op_delete>, McRequest>(McReply(mc_res_deleted));
+  h.expectNext<McRequestWithMcOp<mc_op_delete>>(
+      McReply(mc_res_deleted));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, DeleteNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<McOperation<mc_op_delete>, McRequest>(McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_delete>>(
+      McReply(mc_res_notfound));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, TouchTouched) {
   McAsciiParserHarness h("TOUCHED\r\n");
-  h.expectNext<McOperation<mc_op_touch>, McRequest>(McReply(mc_res_touched));
+  h.expectNext<McRequestWithMcOp<mc_op_touch>>(
+      McReply(mc_res_touched));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, TouchNotFound) {
   McAsciiParserHarness h("NOT_FOUND\r\n");
-  h.expectNext<McOperation<mc_op_touch>, McRequest>(McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_touch>>(
+      McReply(mc_res_notfound));
   h.runTest(0);
 }
 
 TEST(McAsciiParserHarness, MetagetMiss) {
   McAsciiParserHarness h("END\r\n");
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
+      McReply(mc_res_notfound));
   h.runTest(0);
 }
 
@@ -444,7 +453,7 @@ TEST(McAsciiParserHarness, MetagetHit_Ipv6) {
   McAsciiParserHarness h("META test:key age:345644; exptime:35; "
                          "from:2001:dbaf:7654:7578:12:06ef::1; "
                          "is_transient:38\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
     createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
   h.runTest(1);
 }
@@ -453,7 +462,7 @@ TEST(McAsciiParserHarness, MetagetHit_Ipv4) {
   McAsciiParserHarness h("META test:key age:  345644; exptime:  35; "
                          "from:  23.84.127.32; "
                          "is_transient:  48\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
     createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
   h.runTest(1);
 }
@@ -462,14 +471,15 @@ TEST(McAsciiParserHarness, MetagetHit_Unknown) {
   McAsciiParserHarness h("META test:key age:  unknown; exptime:  37; "
                          "from: unknown; "
                          "is_transient:  48\r\nEND\r\n");
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
     createMetagetHitReply(-1, 37, 48, "unknown"));
   h.runTest(1);
 }
 
 TEST(McAsciiParserHarness, FlushAll) {
   McAsciiParserHarness h("OK\r\n");
-  h.expectNext<McOperation<mc_op_flushall>, McRequest>(McReply(mc_res_ok));
+  h.expectNext<McRequestWithMcOp<mc_op_flushall>>(
+      McReply(mc_res_ok));
   h.runTest(0);
 }
 
@@ -516,60 +526,71 @@ TEST(McAsciiParserHarness, AllAtOnce) {
                          "is_transient:  48\r\nEND\r\n"
                          "OK\r\n"
                          "TOUCHED\r\n");
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "te"), 10));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, ""), 5));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "test "), 15889));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(McReply(mc_res_notfound));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
+      McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     McReply(mc_res_client_error, "what"));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     McReply(mc_res_remote_error, "what"));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "test "), 17));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     McReply(mc_res_notfound));
-  h.expectNext<McOperation<mc_op_gets>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_gets>>(
     setCas(setFlags(McReply(mc_res_found, "test test "), 1120), 573));
-  h.expectNext<McOperation<mc_op_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_get>>(
     setFlags(McReply(mc_res_found, "test test "), 1120));
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setLeaseToken(setFlags(McReply(mc_res_notfound, "test test "), 1120), 1));
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setLeaseToken(setFlags(McReply(mc_res_notfound), 1120), 1));
-  h.expectNext<McOperation<mc_op_lease_get>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_get>>(
     setLeaseToken(setFlags(McReply(mc_res_notfound), 112),
                   162481237786486239ull));
-  h.expectNext<McOperation<mc_op_set>, McRequest>(McReply(mc_res_stored));
-  h.expectNext<McOperation<mc_op_set>, McRequest>(McReply(mc_res_notstored));
-  h.expectNext<McOperation<mc_op_add>, McRequest>(McReply(mc_res_stored));
-  h.expectNext<McOperation<mc_op_add>, McRequest>(McReply(mc_res_notstored));
-  h.expectNext<McOperation<mc_op_add>, McRequest>(McReply(mc_res_exists));
-  h.expectNext<McOperation<mc_op_lease_set>, McRequest>(McReply(mc_res_stored));
-  h.expectNext<McOperation<mc_op_lease_set>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_set>>(McReply(mc_res_stored));
+  h.expectNext<McRequestWithMcOp<mc_op_set>>(
+      McReply(mc_res_notstored));
+  h.expectNext<McRequestWithMcOp<mc_op_add>>(McReply(mc_res_stored));
+  h.expectNext<McRequestWithMcOp<mc_op_add>>(
+      McReply(mc_res_notstored));
+  h.expectNext<McRequestWithMcOp<mc_op_add>>(McReply(mc_res_exists));
+  h.expectNext<McRequestWithMcOp<mc_op_lease_set>>(
+      McReply(mc_res_stored));
+  h.expectNext<McRequestWithMcOp<mc_op_lease_set>>(
     McReply(mc_res_notstored));
-  h.expectNext<McOperation<mc_op_lease_set>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_lease_set>>(
     McReply(mc_res_stalestored));
-  h.expectNext<McOperation<mc_op_incr>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_incr>>(
     setDelta(McReply(mc_res_stored), 3636));
-  h.expectNext<McOperation<mc_op_incr>, McRequest>(McReply(mc_res_notfound));
-  h.expectNext<McOperation<mc_op_decr>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_incr>>(
+      McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_decr>>(
     setDelta(McReply(mc_res_stored), 1534));
-  h.expectNext<McOperation<mc_op_decr>, McRequest>(McReply(mc_res_notfound));
-  h.expectNext<McOperation<mc_op_version>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_decr>>(
+      McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_version>>(
     McReply(mc_res_ok, "HarnessTest"));
-  h.expectNext<McOperation<mc_op_delete>, McRequest>(McReply(mc_res_deleted));
-  h.expectNext<McOperation<mc_op_delete>, McRequest>(McReply(mc_res_notfound));
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(McReply(mc_res_notfound));
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_delete>>(
+      McReply(mc_res_deleted));
+  h.expectNext<McRequestWithMcOp<mc_op_delete>>(
+      McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
+      McReply(mc_res_notfound));
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
     createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
     createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
-  h.expectNext<McOperation<mc_op_metaget>, McRequest>(
+  h.expectNext<McRequestWithMcOp<mc_op_metaget>>(
     createMetagetHitReply(-1, 37, 48, "unknown"));
-  h.expectNext<McOperation<mc_op_flushall>, McRequest>(McReply(mc_res_ok));
-  h.expectNext<McOperation<mc_op_touch>, McRequest>(McReply(mc_res_touched));
+  h.expectNext<McRequestWithMcOp<mc_op_flushall>>(
+      McReply(mc_res_ok));
+  h.expectNext<McRequestWithMcOp<mc_op_touch>>(
+      McReply(mc_res_touched));
   h.runTest(1);
 }

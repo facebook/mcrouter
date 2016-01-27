@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -31,10 +31,10 @@ class MissFailoverRoute {
  public:
   static std::string routeName() { return "miss-failover"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(targets_, req, Operation());
+    t(targets_, req);
   }
 
   explicit MissFailoverRoute(
@@ -43,11 +43,9 @@ class MissFailoverRoute {
     assert(targets_.size() > 1);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type routeImpl(
-    const Request& req, Operation) const {
-
-    auto reply = targets_[0]->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> routeImpl(const Request& req) const {
+    auto reply = targets_[0]->route(req);
     if (reply.isHit()) {
       return reply;
     }
@@ -56,36 +54,31 @@ class MissFailoverRoute {
     return fiber_local::runWithLocals([this, &req]() {
       fiber_local::addRequestClass(RequestClass::kFailover);
       for (size_t i = 1; i < targets_.size() - 1; ++i) {
-        auto failoverReply = targets_[i]->route(req, Operation());
+        auto failoverReply = targets_[i]->route(req);
         if (failoverReply.isHit()) {
           return failoverReply;
         }
       }
-      return targets_.back()->route(req, Operation());
+      return targets_.back()->route(req);
     });
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0)
-    const {
-    return routeImpl(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
+    return routeImpl(req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename DeleteLike<Operation>::Type = 0)
-    const {
-    return routeImpl(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
+    return routeImpl(req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    OtherThanT(Operation, GetLike<>, DeleteLike<>) = 0)
-    const {
+  template <class Request>
+  ReplyT<Request> route(
+      const Request& req,
+      OtherThanT<Request, GetLike<>, DeleteLike<>> = 0) const {
 
-    return targets_[0]->route(req, Operation());
+    return targets_[0]->route(req);
   }
 
  private:

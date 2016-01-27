@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,22 +19,30 @@
 #include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/async.h"
+#include "mcrouter/awriter.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
+
+class McRequest;
+template <class Operation>
+class McRequestWithOp;
+
+namespace mcrouter {
 
 /**
  * Routes a request to a single ProxyClient.
@@ -68,8 +76,8 @@ class DestinationRoute {
       keepRoutingPrefix_(keepRoutingPrefix) {
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
@@ -78,8 +86,8 @@ class DestinationRoute {
     }
   }
 
-  McReply route(const McRequest& req, McOperation<mc_op_lease_get> op) const {
-    auto reply = routeWithDestination(req, op);
+  McReply route(const McRequestWithMcOp<mc_op_lease_get>& req) const {
+    auto reply = routeWithDestination(req);
     if (reply.leaseToken() > 1 &&
         (fiber_local::getRequestClass().is(RequestClass::kFailover) ||
          LeaseTokenMap::conflicts(reply.leaseToken()))) {
@@ -93,29 +101,28 @@ class DestinationRoute {
     return reply;
   }
 
-  template <class Operation>
-  McReply route(const McRequest& req, Operation,
-                typename DeleteLike<Operation>::Type = 0) const {
-    auto reply = routeWithDestination(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
+    auto reply = routeWithDestination(req);
     if (reply.isFailoverError() && spool(req)) {
-      reply = McReply(DefaultReply, Operation());
+      reply = ReplyT<Request>(DefaultReply, req);
       reply.setDestination(destination_->accessPoint());
     }
     return reply;
   }
 
-  McReply route(const McRequest& req, McOperation<mc_op_touch>) const {
-    auto reply = routeWithDestination(req, McOperation<mc_op_touch>());
+  McReply route(const McRequestWithMcOp<mc_op_touch>& req) const {
+    auto reply = routeWithDestination(req);
     if (reply.isFailoverError()) {
       reply = McReply(DefaultReply, McOperation<mc_op_touch>());
     }
     return reply;
   }
 
-  template <class Operation>
-  McReply route(const McRequest& req, Operation,
-                OtherThanT(Operation, DeleteLike<>) = 0) const {
-    return routeWithDestination(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req,
+                        OtherThanT<Request, DeleteLike<>> = 0) const {
+    return routeWithDestination(req);
   }
 
  private:
@@ -126,25 +133,24 @@ class DestinationRoute {
   const bool keepRoutingPrefix_;
   size_t pendingShadowReqs_{0};
 
-  template <int Op>
-  McReply routeWithDestination(const McRequest& req, McOperation<Op>) const {
-    auto reply = checkAndRoute(req, McOperation<Op>());
+  template <class Request>
+  ReplyT<Request> routeWithDestination(const Request& req) const {
+    auto reply = checkAndRoute(req);
     reply.setDestination(destination_->accessPoint());
     return reply;
   }
 
-  template <int Op>
-  McReply checkAndRoute(const McRequest& req, McOperation<Op>) const {
+  template <class Request>
+  ReplyT<Request> checkAndRoute(const Request& req) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (!destination_->may_send()) {
-      return constructAndLog(req, McOperation<Op>(), *ctx, TkoReply);
+      return constructAndLog(req, *ctx, TkoReply);
     }
 
     if (ctx->recording()) {
       ctx->recordDestination(poolName_, indexInPool_,
                              *destination_->accessPoint());
-      return constructAndLog(
-          req, McOperation<Op>(), *ctx, DefaultReply, McOperation<Op>());
+      return constructAndLog(req, *ctx, DefaultReply, req);
     }
 
     auto proxy = &ctx->proxy();
@@ -153,7 +159,7 @@ class DestinationRoute {
       if (proxy->router().opts().target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >=
           proxy->router().opts().target_max_shadow_requests) {
-        return constructAndLog(req, McOperation<Op>(), *ctx, ErrorReply);
+        return constructAndLog(req, *ctx, ErrorReply);
       }
       auto& mutableCounter = const_cast<size_t&>(pendingShadowReqs_);
       ++mutableCounter;
@@ -166,14 +172,13 @@ class DestinationRoute {
       }
     };
 
-    return doRoute(req, McOperation<Op>(), *ctx);
+    return doRoute(req, *ctx);
   }
 
-  template <int Op, class... Args>
-  McReply constructAndLog(const McRequest& req,
-                          McOperation<Op>,
-                          ProxyRequestContext& ctx,
-                          Args&&... args) const {
+  template <class Request, class... Args>
+  ReplyT<Request> constructAndLog(const Request& req,
+                                  ProxyRequestContext& ctx,
+                                  Args&&... args) const {
     auto now = nowUs();
     auto reply = McReply(std::forward<Args>(args)...);
     ctx.onReplyReceived(poolName_,
@@ -181,17 +186,15 @@ class DestinationRoute {
                         req,
                         reply,
                         now,
-                        now,
-                        McOperation<Op>());
+                        now);
     return reply;
   }
 
-  template <int Op>
-  McReply doRoute(const McRequest& req,
-                  McOperation<Op>,
-                  ProxyRequestContext& ctx) const {
+  template <class Request>
+  ReplyT<Request> doRoute(const Request& req,
+                          ProxyRequestContext& ctx) const {
     DestinationRequestCtx dctx(nowUs());
-    folly::Optional<McRequest> newReq;
+    folly::Optional<Request> newReq;
     if (!keepRoutingPrefix_ && !req.routingPrefix().empty()) {
       newReq.emplace(req.clone());
       newReq->stripRoutingPrefix();
@@ -208,17 +211,48 @@ class DestinationRoute {
       }
     }
 
-    const McRequest& reqToSend = newReq ? *newReq : req;
-    auto reply =
-        destination_->send(reqToSend, McOperation<Op>(), dctx, timeout_);
+    const auto& reqToSend = newReq ? *newReq : req;
+    auto reply = destination_->send(reqToSend, dctx, timeout_);
     ctx.onReplyReceived(poolName_,
                         *destination_->accessPoint(),
                         reqToSend,
                         reply,
                         dctx.startTime,
-                        dctx.endTime,
-                        McOperation<Op>());
+                        dctx.endTime);
     return reply;
+  }
+
+  template <class Request>
+  bool spool(const Request& req) const {
+    auto asynclogName = fiber_local::getAsynclogName();
+    if (asynclogName.empty()) {
+      return false;
+    }
+
+    folly::StringPiece key = keepRoutingPrefix_ ?
+      req.fullKey() :
+      req.keyWithoutRoute();
+
+    auto proxy = &fiber_local::getSharedCtx()->proxy();
+    auto& ap = *destination_->accessPoint();
+    folly::fibers::Baton b;
+    auto res = proxy->router().asyncWriter().run(
+      [&b, &ap, proxy, key, asynclogName] () {
+        asynclog_delete(proxy, ap, key, asynclogName);
+        b.post();
+      }
+    );
+    if (!res) {
+      MC_LOG_FAILURE(proxy->router().opts(),
+                     memcache::failure::Category::kOutOfResources,
+                     "Could not enqueue asynclog request (key {}, pool {})",
+                     key, asynclogName);
+    } else {
+      /* Don't reply to the user until we safely logged the request to disk */
+      b.wait();
+      stat_incr(proxy->stats, asynclog_requests_stat, 1);
+    }
+    return true;
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -35,7 +35,7 @@ TEST(randomRouteTest, success) {
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(reply.isHit());
 }
 
@@ -51,7 +51,7 @@ TEST(randomRouteTest, cover) {
   int hit = 0, miss = 0;
   const int rounds = 32;
   for (int i = 0; i < rounds; i++) {
-    auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
     hit += reply.isHit();
     miss += reply.isMiss();
   }
@@ -71,7 +71,7 @@ TEST(randomRouteTest, fail) {
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
 
   EXPECT_TRUE(!reply.isHit());
 }

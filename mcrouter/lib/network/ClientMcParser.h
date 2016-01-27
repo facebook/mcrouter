@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -48,7 +48,7 @@ class ClientMcParser : private McParser::ParserCallback {
    * This method should be called by client when it received nextAvailable(id)
    * callback. It explicitly tells parser what type of message is expected.
    */
-  template <class Operation, class Request>
+  template <class Request>
   void expectNext();
  private:
   McParser parser_;
@@ -63,10 +63,10 @@ class ClientMcParser : private McParser::ParserCallback {
 
   void replyReadyHelper(McReply&& reply, uint64_t reqid);
 
-  template <class Operation, class Request>
+  template <class Request>
   void forwardAsciiReply();
 
-  template <class Operation, class Request>
+  template <class Request>
   void forwardUmbrellaReply(const UmbrellaMessageInfo& info,
                             const uint8_t* header,
                             const uint8_t* body,

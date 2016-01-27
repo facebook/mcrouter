@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,10 +28,10 @@ class RandomRoute {
  public:
   static std::string routeName() { return "random"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(children_, req, Operation());
+    t(children_, req);
   }
 
   explicit RandomRoute(std::vector<std::shared_ptr<RouteHandleIf>> children)
@@ -41,10 +41,9 @@ class RandomRoute {
     assert(!children_.empty());
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) {
-    return children_[gen_() % children_.size()]->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    return children_[gen_() % children_.size()]->route(req);
   }
 
  private:

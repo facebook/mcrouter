@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,44 +17,31 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace {
+namespace detail {
+
+bool processGetServiceInfoRequest(
+    const McRequestWithMcOp<mc_op_get>& req,
+    std::shared_ptr<ProxyRequestContextTyped<
+        McRequestWithMcOp<mc_op_get>>>& ctx);
 
 template <class Request>
 bool processGetServiceInfoRequest(
-    const Request& req,
-    std::shared_ptr<ProxyRequestContextTyped<McOperation<mc_op_get>, Request>>&
-        ctx) {
-
-  static const char* const kInternalGetPrefix = "__mcrouter__.";
-
-  if (!req.fullKey().startsWith(kInternalGetPrefix)) {
-    return false;
-  }
-  auto& config = ctx->proxyConfig();
-  auto key = req.fullKey();
-  key.advance(strlen(kInternalGetPrefix));
-  config.serviceInfo()->handleRequest(key, ctx);
-  return true;
-}
-
-template <class Operation, class Request>
-bool processGetServiceInfoRequest(
-    const Request& req,
-    std::shared_ptr<ProxyRequestContextTyped<Operation, Request>>& ctx) {
+    const Request&,
+    std::shared_ptr<ProxyRequestContextTyped<Request>>&) {
 
   return false;
 }
 
-} // anonymous
+} // detail
 
-template <class Operation, class Request>
-proxy_t::WaitingRequest<Operation, Request>::WaitingRequest(
+template <class Request>
+proxy_t::WaitingRequest<Request>::WaitingRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx)
+    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx)
     : req_(req), ctx_(std::move(ctx)) {}
 
-template <class Operation, class Request>
-void proxy_t::WaitingRequest<Operation, Request>::process(proxy_t* proxy) {
+template <class Request>
+void proxy_t::WaitingRequest<Request>::process(proxy_t* proxy) {
   // timePushedOnQueue_ is nonnegative only if waiting-requests-timeout is
   // enabled
   if (timePushedOnQueue_ >= 0) {
@@ -72,32 +59,17 @@ void proxy_t::WaitingRequest<Operation, Request>::process(proxy_t* proxy) {
 }
 
 template <class Request>
-void proxy_t::routeHandlesProcessRequest(
-    const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<McOperation<mc_op_stats>, Request>>
-        ctx) {
-
-  ctx->sendReply(stats_reply(this, req.fullKey()));
-}
-
-template <class Request>
-void proxy_t::routeHandlesProcessRequest(
-    const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<McOperation<mc_op_version>,
-                                             Request>> ctx) {
-  ctx->sendReply(mc_res_ok, MCROUTER_PACKAGE_STRING);
-}
-
-template <class Operation, class Request>
-typename std::enable_if<McOpListContains<Operation>::value, void>::type
+typename std::enable_if<RequestListContains<Request>::value ||
+                        TRequestListContains<Request>::value,
+                        void>::type
 proxy_t::routeHandlesProcessRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> uctx) {
+    std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
 
-  auto sharedCtx = ProxyRequestContextTyped<Operation, Request>::process(
+  auto sharedCtx = ProxyRequestContextTyped<Request>::process(
       std::move(uctx), getConfig());
 
-  if (processGetServiceInfoRequest(req, sharedCtx)) {
+  if (detail::processGetServiceInfoRequest(req, sharedCtx)) {
     return;
   }
 
@@ -108,45 +80,47 @@ proxy_t::routeHandlesProcessRequest(
         try {
           auto& proute = ctx->proxyRoute();
           fiber_local::setSharedCtx(std::move(ctx));
-          return proute.route(req, Operation());
+          return proute.route(req);
         } catch (const std::exception& e) {
           auto err = folly::sformat(
-              "Error routing request of type {} with operation {}!"
+              "Error routing request of type {}!"
               " Exception: {}",
-              typeid(Request).name(), typeid(Operation).name(), e.what());
-          return ReplyT<Operation, Request>(mc_res_local_error, err);
+              typeid(Request).name(), e.what());
+          return ReplyT<Request>(mc_res_local_error, err);
         }
       },
       [ctx = std::move(sharedCtx)](
-          folly::Try<ReplyT<Operation, Request>>&& reply) {
+          folly::Try<ReplyT<Request>>&& reply) {
         ctx->sendReply(std::move(*reply));
       });
 }
 
-template <class Operation, class Request>
-typename std::enable_if<!McOpListContains<Operation>::value, void>::type
+template <class Request>
+typename std::enable_if<!RequestListContains<Request>::value &&
+                        !TRequestListContains<Request>::value,
+                        void>::type
 proxy_t::routeHandlesProcessRequest(
-    const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> uctx) {
+    const Request&,
+    std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
 
   auto err = folly::sformat(
-      "Couldn't route request of type {} with operation {}, "
+      "Couldn't route request of type {} "
       "because the operation is not supported by RouteHandles "
       "library!",
-      typeid(Request).name(), typeid(Operation).name());
+      typeid(Request).name());
   uctx->sendReply(mc_res_local_error, err);
 }
 
-template <class Operation, class Request>
+template <class Request>
 void proxy_t::processRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx) {
+    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx) {
 
   assert(!ctx->processing_);
   ctx->processing_ = true;
   ++numRequestsProcessing_;
   stat_incr(stats, proxy_reqs_processing_stat, 1);
-  bumpStats(Operation());
+  bumpStats(req);
 
   routeHandlesProcessRequest(req, std::move(ctx));
 
@@ -154,12 +128,12 @@ void proxy_t::processRequest(
   stat_incr(stats, request_sent_count_stat, 1);
 }
 
-template <class Operation, class Request>
+template <class Request>
 void proxy_t::dispatchRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx) {
+    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx) {
 
-  if (rateLimited(ctx->priority(), Operation())) {
+  if (rateLimited(ctx->priority(), req)) {
     if (getRouterOptions().proxy_max_throttled_requests > 0 &&
         numRequestsWaiting_ >=
             getRouterOptions().proxy_max_throttled_requests) {
@@ -167,7 +141,7 @@ void proxy_t::dispatchRequest(
       return;
     }
     auto& queue = waitingRequests_[static_cast<int>(ctx->priority())];
-    auto w = folly::make_unique<WaitingRequest<Operation, Request>>(
+    auto w = folly::make_unique<WaitingRequest<Request>>(
         req, std::move(ctx));
     // Only enable timeout on waitingRequests_ queue when queue throttling is
     // enabled
@@ -185,109 +159,125 @@ void proxy_t::dispatchRequest(
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_stats>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_stats>&) {
   stat_incr(stats, cmd_stats_stat, 1);
   stat_incr(stats, cmd_stats_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_cas>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_cas>&) {
   stat_incr(stats, cmd_cas_stat, 1);
   stat_incr(stats, cmd_cas_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_get>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_get>&) {
   stat_incr(stats, cmd_get_stat, 1);
   stat_incr(stats, cmd_get_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_gets>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_gets>&) {
   stat_incr(stats, cmd_gets_stat, 1);
   stat_incr(stats, cmd_gets_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_metaget>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_metaget>&) {
   stat_incr(stats, cmd_meta_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_add>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_add>&) {
   stat_incr(stats, cmd_add_stat, 1);
   stat_incr(stats, cmd_add_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_replace>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_replace>&) {
   stat_incr(stats, cmd_replace_stat, 1);
   stat_incr(stats, cmd_replace_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_set>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_set>&) {
   stat_incr(stats, cmd_set_stat, 1);
   stat_incr(stats, cmd_set_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_incr>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_incr>&) {
   stat_incr(stats, cmd_incr_stat, 1);
   stat_incr(stats, cmd_incr_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_decr>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_decr>&) {
   stat_incr(stats, cmd_decr_stat, 1);
   stat_incr(stats, cmd_decr_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_delete>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_delete>&) {
   stat_incr(stats, cmd_delete_stat, 1);
   stat_incr(stats, cmd_delete_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_lease_set>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_lease_set>&) {
   stat_incr(stats, cmd_lease_set_stat, 1);
   stat_incr(stats, cmd_lease_set_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(McOperation<mc_op_lease_get>) {
+inline void proxy_t::bumpStats(
+    const McRequestWithMcOp<mc_op_lease_get>&) {
   stat_incr(stats, cmd_lease_get_stat, 1);
   stat_incr(stats, cmd_lease_get_count_stat, 1);
 }
 
-template <class Operation>
-inline void proxy_t::bumpStats(Operation) {
+template <class Request>
+inline void proxy_t::bumpStats(const Request&) {
   stat_incr(stats, cmd_other_stat, 1);
   stat_incr(stats, cmd_other_count_stat, 1);
 }
 
 template <>
-inline bool proxy_t::rateLimited(ProxyRequestPriority priority,
-                                 McOperation<mc_op_stats>) const {
+inline bool proxy_t::rateLimited(
+    ProxyRequestPriority priority,
+    const McRequestWithMcOp<mc_op_stats>&) const {
   return false;
 }
 
 template <>
-inline bool proxy_t::rateLimited(ProxyRequestPriority priority,
-                                 McOperation<mc_op_version>) const {
+inline bool proxy_t::rateLimited(
+    ProxyRequestPriority priority,
+    const McRequestWithMcOp<mc_op_version>&) const {
   return false;
 }
 
 template <>
-inline bool proxy_t::rateLimited(ProxyRequestPriority priority,
-                                 McOperation<mc_op_get_service_info>) const {
+inline bool proxy_t::rateLimited(
+    ProxyRequestPriority priority,
+    const McRequestWithMcOp<mc_op_get_service_info>&) const {
   return false;
 }
 
-template <class Operation>
+template <class Request>
 inline bool proxy_t::rateLimited(ProxyRequestPriority priority,
-                                 Operation) const {
+                                 const Request&) const {
   if (!getRouterOptions().proxy_max_inflight_requests) {
     return false;
   }

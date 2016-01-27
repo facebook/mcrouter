@@ -15,21 +15,19 @@
 namespace facebook {
 namespace memcache {
 
-template <int Op>
-bool CaretSerializedMessage::prepare(const McRequest& req,
-                                     McOperation<Op>,
+template <class Op>
+bool CaretSerializedMessage::prepare(const McRequestWithOp<Op>& req,
                                      size_t reqId,
                                      struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
-  return prepareImpl(req, McOperation<Op>(), reqId, iovOut, niovOut);
+  return prepareImpl(req, reqId, iovOut, niovOut);
 }
 
 template <int Op>
 typename std::enable_if<
-    !ConvertToTypedIfSupported<McRequest, McOperation<Op>>::value,
+    !ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value,
     bool>::type
-CaretSerializedMessage::prepareImpl(const McRequest& req,
-                                    McOperation<Op>,
+CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
                                     size_t reqId,
                                     struct iovec*& iovOut,
                                     size_t& niovOut) {
@@ -38,18 +36,16 @@ CaretSerializedMessage::prepareImpl(const McRequest& req,
 
 template <int Op>
 typename std::enable_if<
-    ConvertToTypedIfSupported<McRequest, McOperation<Op>>::value,
+    ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value,
     bool>::type
-CaretSerializedMessage::prepareImpl(const McRequest& req,
-                                    McOperation<Op>,
+CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
                                     size_t reqId,
                                     struct iovec*& iovOut,
                                     size_t& niovOut) {
-
-  auto treq = convertToTyped(req, McOperation<Op>());
+  auto treq = convertToTyped(req);
 
   constexpr size_t typeId =
-      IdFromType<typename decltype(treq)::rawType, RequestList>::value;
+      IdFromType<typename decltype(treq)::rawType, TRequestList>::value;
 
   return fill(std::move(treq), reqId, typeId, iovOut, niovOut);
 }
@@ -69,7 +65,6 @@ bool CaretSerializedMessage::fill(TM&& typedMsg,
                                   size_t typeId,
                                   struct iovec*& iovOut,
                                   size_t& niovOut) {
-
   fillBody(std::move(typedMsg));
 
   UmbrellaMessageInfo info;

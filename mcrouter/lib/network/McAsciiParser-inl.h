@@ -84,79 +84,78 @@ T McClientAsciiParser::getReply() {
 
 // Forward-declare initializers.
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_get>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_get>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_gets>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_gets>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_lease_get>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_lease_get>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_set>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_set>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_add>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_add>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_replace>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_replace>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_lease_set>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_lease_set>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_cas>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_cas>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_incr>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_incr>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_decr>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_decr>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_version>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_version>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_delete>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_delete>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_touch>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_touch>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_metaget>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_metaget>>();
 
 template <>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_flushall>,
-                                                McRequest>();
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_flushall>>();
 
-template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_append>,
-                                                McRequest>();
+template <>
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_append>>();
 
-template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_prepend>,
-                                                McRequest>();
+template <>
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_prepend>>();
 
-template <class Operation, class Request>
+template <class Request>
 void McClientAsciiParser::initializeReplyParser() {
   throwLogic(
       "Unexpected call to McAsciiParser::initializeReplyParser "
-      "with template arguments [Operation = {}, Request = {}]",
-      typeid(Operation).name(),
+      "with template arguments [Request = {}]",
       typeid(Request).name());
 }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -50,27 +50,23 @@ class BigValueRoute {
  public:
   static std::string routeName() { return "big-value"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const;
 
   BigValueRoute(McrouterRouteHandlePtr ch,
                 BigValueRouteOptions options);
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    typename GetLike<Operation>::Type = 0) const;
+  template <class Request>
+  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const;
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    typename UpdateLike<Operation>::Type = 0) const;
+  template <class Request>
+  ReplyT<Request> route(const Request& req, UpdateLikeT<Request> = 0) const;
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    OtherThanT(Operation, GetLike<>, UpdateLike<>) = 0) const;
+  template <class Request>
+  ReplyT<Request> route(
+    const Request& req,
+    OtherThanT<Request, GetLike<>, UpdateLike<>> = 0) const;
 
  private:
   const McrouterRouteHandlePtr ch_;
@@ -100,14 +96,13 @@ class BigValueRoute {
   std::vector<Reply> collectAllByBatches(
     std::vector<std::function<Reply()>>& fs) const;
 
-  template <class Operation, class Request>
-  std::pair<std::vector<Request>, ChunksInfo>
-  chunkUpdateRequests(const Request& req, Operation) const;
+  template <class ToRequest, class FromRequest>
+  std::pair<std::vector<ToRequest>, ChunksInfo>
+  chunkUpdateRequests(const FromRequest& req) const;
 
-  template <class Operation, class Request>
-  std::vector<Request> chunkGetRequests(const Request& req,
-                                        const ChunksInfo& info,
-                                        Operation) const;
+  template <class ToRequest, class FromRequest>
+  std::vector<ToRequest> chunkGetRequests(const FromRequest& req,
+                                          const ChunksInfo& info) const;
 
   template <typename InputIterator, class Reply>
   Reply mergeChunkGetReplies(

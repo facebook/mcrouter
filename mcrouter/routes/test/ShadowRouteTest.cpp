@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -57,7 +57,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   fm.run([&] () {
     mockFiberContext();
-    auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+    auto reply = rh.route(McRequestWithMcOp<mc_op_get>("key"));
 
     EXPECT_TRUE(reply.result() == mc_res_found);
     EXPECT_TRUE(toString(reply.value()) == "a");
@@ -70,7 +70,7 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   fm.run([&] () {
     mockFiberContext();
-    auto reply = rh.route(McRequest("key"), McOperation<mc_op_get>());
+    auto reply = rh.route(McRequestWithMcOp<mc_op_get>("key"));
 
     EXPECT_TRUE(reply.result() == mc_res_found);
     EXPECT_TRUE(toString(reply.value()) == "a");

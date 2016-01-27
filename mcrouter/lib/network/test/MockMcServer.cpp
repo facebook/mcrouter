@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -42,7 +42,8 @@ using facebook::memcache::AsyncMcServer;
 using facebook::memcache::AsyncMcServerWorker;
 using facebook::memcache::McOperation;
 using facebook::memcache::McReply;
-using facebook::memcache::McRequest;
+using facebook::memcache::McRequestWithMcOp;
+using facebook::memcache::McRequestWithOp;
 using facebook::memcache::McServerRequestContext;
 using facebook::memcache::MockMc;
 using facebook::memcache::createMcMsgRef;
@@ -51,14 +52,12 @@ class MockMcOnRequest {
  public:
   template <class Operation>
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 Operation) {
+                 McRequestWithOp<Operation>&& req) {
     McServerRequestContext::reply(std::move(ctx), McReply(mc_res_remote_error));
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_metaget>) {
+                 McRequestWithMcOp<mc_op_metaget>&& req) {
     auto key = req.fullKey().str();
 
     auto item = mc_.get(key);
@@ -80,8 +79,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_get>) {
+                 McRequestWithMcOp<mc_op_get>&& req) {
     auto key = req.fullKey();
 
     if (key == "__mockmc__.want_busy") {
@@ -120,8 +118,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_lease_get>) {
+                 McRequestWithMcOp<mc_op_lease_get>&& req) {
     auto key = req.fullKey().str();
 
     auto out = mc_.leaseGet(key);
@@ -137,8 +134,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_lease_set>) {
+                 McRequestWithMcOp<mc_op_lease_set>&& req) {
     auto key = req.fullKey().str();
 
     switch (mc_.leaseSet(key, MockMc::Item(req), req.leaseToken())) {
@@ -159,8 +155,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_set>) {
+                 McRequestWithMcOp<mc_op_set>&& req) {
     auto key = req.fullKey().str();
 
     if (key == "__mockmc__.trigger_server_error") {
@@ -175,8 +170,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_add>) {
+                 McRequestWithMcOp<mc_op_add>&& req) {
     auto key = req.fullKey().str();
 
     if (mc_.add(key, MockMc::Item(req))) {
@@ -187,8 +181,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_replace>) {
+                 McRequestWithMcOp<mc_op_replace>&& req) {
     auto key = req.fullKey().str();
 
     if (mc_.replace(key, MockMc::Item(req))) {
@@ -199,8 +192,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_append>) {
+                 McRequestWithMcOp<mc_op_append>&& req) {
     auto key = req.fullKey().str();
 
     if (mc_.append(key, MockMc::Item(req))) {
@@ -211,8 +203,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_prepend>) {
+                 McRequestWithMcOp<mc_op_prepend>&& req) {
     auto key = req.fullKey().str();
 
     if (mc_.prepend(key, MockMc::Item(req))) {
@@ -223,8 +214,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_delete>) {
+                 McRequestWithMcOp<mc_op_delete>&& req) {
     auto key = req.fullKey().str();
 
     if (mc_.del(key)) {
@@ -235,8 +225,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_touch>) {
+                 McRequestWithMcOp<mc_op_touch>&& req) {
     auto key = req.fullKey().str();
 
     if (mc_.touch(key, req.exptime())) {
@@ -247,8 +236,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_incr>) {
+                 McRequestWithMcOp<mc_op_incr>&& req) {
     auto key = req.fullKey().str();
     auto p = mc_.arith(key, req.delta());
     if (!p.first) {
@@ -261,8 +249,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_decr>) {
+                 McRequestWithMcOp<mc_op_decr>&& req) {
     auto key = req.fullKey().str();
     auto p = mc_.arith(key, -req.delta());
     if (!p.first) {
@@ -275,8 +262,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_flushall>) {
+                 McRequestWithMcOp<mc_op_flushall>&& req) {
     std::this_thread::sleep_for(std::chrono::seconds(req.number()));
     mc_.flushAll();
     McReply reply(mc_res_ok);
@@ -284,8 +270,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_gets>) {
+                 McRequestWithMcOp<mc_op_gets>&& req) {
     auto key = req.fullKey().str();
     auto p = mc_.gets(key);
     if (!p.first) {
@@ -302,8 +287,7 @@ class MockMcOnRequest {
   }
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_cas>) {
+                 McRequestWithMcOp<mc_op_cas>&& req) {
     auto key = req.fullKey().str();
     auto ret = mc_.cas(key, MockMc::Item(req), req.cas());
     switch (ret) {

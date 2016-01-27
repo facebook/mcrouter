@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,20 +9,12 @@
  */
 #pragma once
 
-#include <type_traits>
-
 namespace facebook { namespace memcache {
 
-/**
- * Operation + Request type uniquely define the Reply type.
- *
- * We leave the door open for multiple Request types for the same operation,
- * but given any two of (Operation, Request, Reply) we should know
- * the third one.
- */
-template <typename Operation, typename Request>
+template <typename Request>
 struct ReplyType;
 
-template <typename Operation, typename Request>
-using ReplyT = typename ReplyType<Operation, Request>::type;
+template <typename Request>
+using ReplyT = typename ReplyType<Request>::type;
+
 }}

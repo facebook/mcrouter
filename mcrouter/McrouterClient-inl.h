@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,54 +14,49 @@ namespace memcache {
 namespace mcrouter {
 
 namespace detail {
-template <class Operation, class Request>
+template <class Request>
 void bumpMcrouterClientStats(CacheClientStats& stats,
                              const Request& req,
-                             const ReplyT<Operation, Request>& reply,
-                             Operation,
-                             GetLikeT<Operation> = 0) {
+                             const ReplyT<Request>& reply,
+                             GetLikeT<Request> = 0) {
 
   auto replyBytes = reply.value().computeChainDataLength();
   stats.recordFetchRequest(req.fullKey().size(), replyBytes);
 }
 
-template <class Operation, class Request>
+template <class Request>
 void bumpMcrouterClientStats(CacheClientStats& stats,
                              const Request& req,
-                             const ReplyT<Operation, Request>& reply,
-                             Operation,
-                             UpdateLikeT<Operation> = 0) {
+                             const ReplyT<Request>& reply,
+                             UpdateLikeT<Request> = 0) {
 
   auto valueBytes = req.value().computeChainDataLength();
   stats.recordUpdateRequest(req.fullKey().size(), valueBytes);
 }
 
-template <class Operation, class Request>
+template <class Request>
 void bumpMcrouterClientStats(CacheClientStats& stats,
                              const Request& req,
-                             const ReplyT<Operation, Request>& reply,
-                             Operation,
-                             ArithmeticLikeT<Operation> = 0) {
+                             const ReplyT<Request>& reply,
+                             ArithmeticLikeT<Request> = 0) {
 
   stats.recordUpdateRequest(req.fullKey().size(), 0);
 }
 
-template <class Operation, class Request>
+template <class Request>
 void bumpMcrouterClientStats(CacheClientStats& stats,
                              const Request& req,
-                             const ReplyT<Operation, Request>& reply,
-                             Operation,
-                             DeleteLikeT<Operation> = 0) {
+                             const ReplyT<Request>& reply,
+                             DeleteLikeT<Request> = 0) {
 
   stats.recordInvalidateRequest(req.fullKey().size());
 }
 
-template <class Operation, class Request>
+template <class Request>
 void bumpMcrouterClientStats(CacheClientStats& stats,
                              const Request& req,
-                             const ReplyT<Operation, Request>& reply,
-                             Operation,
-                             OtherThanT<Operation,
+                             const ReplyT<Request>& reply,
+                             OtherThanT<Request,
                                         GetLike<>,
                                         UpdateLike<>,
                                         ArithmeticLike<>,
@@ -70,11 +65,13 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
 }
 } // detail
 
-template <class Operation, class Request, class F>
-bool McrouterClient::send(const Request& req,
-                          Operation,
-                          F&& callback,
-                          folly::StringPiece ipAddr) {
+template <class Request, class F>
+typename
+  std::enable_if<!std::is_convertible<Request, const mcrouter_msg_t*>::value,
+                 bool>::type
+McrouterClient::send(const Request& req,
+                     F&& callback,
+                     folly::StringPiece ipAddr) {
   auto router = router_.lock();
   if (!router) {
     return false;
@@ -83,13 +80,12 @@ bool McrouterClient::send(const Request& req,
   auto preq = createProxyRequestContext(
       *proxy_,
       req,
-      Operation(),
       [this, cb = std::forward<F>(callback)](
-          const Request& request, ReplyT<Operation, Request>&& reply) {
-        detail::bumpMcrouterClientStats(stats_, request, reply, Operation());
+          const Request& request, ReplyT<Request>&& reply) {
+        detail::bumpMcrouterClientStats(stats_, request, reply);
         if (disconnected_) {
           // "Cancelled" reply.
-          cb(ReplyT<Operation, Request>(mc_res_unknown));
+          cb(ReplyT<Request>(mc_res_unknown));
         } else {
           cb(std::move(reply));
         }

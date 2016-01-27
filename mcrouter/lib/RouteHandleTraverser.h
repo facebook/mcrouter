@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -31,22 +31,22 @@ class RouteHandleTraverser {
       end_(std::move(end)) {
   }
 
-  template <class Request, class Operation>
-  void operator()(const RouteHandleIf& r, const Request& req, Operation) const {
+  template <class Request>
+  void operator()(const RouteHandleIf& r, const Request& req) const {
     if (start_) {
       start_(r);
     }
-    r.traverse(req, Operation(), *this);
+    r.traverse(req, *this);
     if (end_) {
       end_();
     }
   }
 
-  template <class Request, class Operation>
+  template <class Request>
   void operator()(const std::vector<std::shared_ptr<RouteHandleIf>>& v,
-                  const Request& req, Operation) const {
+                  const Request& req) const {
     for (const auto& child : v) {
-      operator()(*child, req, Operation());
+      operator()(*child, req);
     }
   }
 

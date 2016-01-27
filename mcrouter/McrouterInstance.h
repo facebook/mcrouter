@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,6 +25,7 @@
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
+#include "mcrouter/proxy.h"
 #include "mcrouter/TkoTracker.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

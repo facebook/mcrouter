@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,6 +21,8 @@
 
 namespace facebook { namespace memcache {
 
+class McReply;
+
 /**
  * For existing memcache operations, we use a template trick:
  * Each operation is McOperation<N> where N is one of the mc_op_* constants.
@@ -34,22 +36,13 @@ struct McOperation {
 template <int op>
 const char* const McOperation<op>::name = mc_op_to_string((mc_op_t)op);
 
-struct McRequest;
-template <typename Ctx> struct McRequestWithContext;
-
 /**
- * For now, any Operation + McRequest = McReply
+ * TODO(jmswen) Soon we will use custom reply types for custom request types,
+ * not simply McReply.
  */
-template <typename Operation>
-struct ReplyType<Operation, McRequest> {
+template <typename Request>
+struct ReplyType {
   typedef class McReply type;
-};
-
-/**
- * We explicitly leave it to the user to define a reply type
- */
-template <typename Operation, typename Ctx>
-struct ReplyType<Operation, McRequestWithContext<Ctx>> {
 };
 
 }}

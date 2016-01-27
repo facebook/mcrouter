@@ -168,20 +168,19 @@ class SessionTestHarness {
 
   template <class Operation>
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 Operation) {
-    auto reply = makeReply(req, Operation());
-    transactions_.emplace_back(std::move(ctx), std::move(req),
+                 McRequestWithOp<Operation>&& req) {
+    auto reply = makeReply(req);
+    transactions_.emplace_back(std::move(ctx), req.moveMcRequest(),
                                std::move(reply));
     fulfillTransactions();
   }
 
   template <class Operation>
-  McReply makeReply(const McRequest& req, Operation) {
+  McReply makeReply(const McRequestWithOp<Operation>& req) {
     return McReply(DefaultReply, Operation());
   }
 
-  McReply makeReply(const McRequest& req, McOperation<mc_op_get>) {
+  McReply makeReply(const McRequestWithMcOp<mc_op_get>& req) {
     return McReply(mc_res_found,
                    req.fullKey().str() + "_value");
   }
@@ -193,9 +192,8 @@ class SessionTestHarness {
 
     template <class Operation>
     void onRequest(McServerRequestContext&& ctx,
-                   McRequest&& req,
-                   Operation) {
-      harness_.onRequest(std::move(ctx), std::move(req), Operation());
+                   McRequestWithOp<Operation>&& req) {
+      harness_.onRequest(std::move(ctx), std::move(req));
     }
 
    private:

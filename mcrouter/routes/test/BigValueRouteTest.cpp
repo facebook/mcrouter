@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -50,8 +50,8 @@ TEST(BigValueRouteTest, smallvalue) {
       std::string key = "key_get";
       auto msg = createMcMsgRef(key, "value");
       msg->op = mc_op_get;
-      McRequest req_get(std::move(msg));
-      auto f_get = rh.route(req_get, McOperation<mc_op_get>());
+      McRequestWithMcOp<mc_op_get> req_get(std::move(msg));
+      auto f_get = rh.route(req_get);
 
       EXPECT_EQ("a", toString(f_get.value()));
       EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_get"});
@@ -60,8 +60,8 @@ TEST(BigValueRouteTest, smallvalue) {
       std::string key_set = "key_set";
       auto msg_set = createMcMsgRef(key_set, "value");
       msg_set->op = mc_op_set;
-      McRequest req_set(std::move(msg_set));
-      auto f_set = rh.route(req_set, McOperation<mc_op_set>());
+      McRequestWithMcOp<mc_op_set> req_set(std::move(msg_set));
+      auto f_set = rh.route(req_set);
       EXPECT_EQ("value", toString(f_set.value()));
       EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_set"});
     }
@@ -96,9 +96,9 @@ TEST(BigValueRouteTest, bigvalue) {
 
         auto msg = createMcMsgRef("key_get");
         msg->op = mc_op_get;
-        McRequest req_get(std::move(msg));
+        McRequestWithMcOp<mc_op_get> req_get(std::move(msg));
 
-        auto f_get = rh.route(req_get, McOperation<mc_op_get>());
+        auto f_get = rh.route(req_get);
         auto keys_get = test_handles[0]->saw_keys;
         EXPECT_EQ(num_chunks + 1, keys_get.size());
         // first get the result for original key
@@ -124,9 +124,9 @@ TEST(BigValueRouteTest, bigvalue) {
 
         auto msg = createMcMsgRef("key_get");
         msg->op = mc_op_get;
-        McRequest req_get(std::move(msg));
+        McRequestWithMcOp<mc_op_get> req_get(std::move(msg));
 
-        auto f_get = rh.route(req_get, McOperation<mc_op_get>());
+        auto f_get = rh.route(req_get);
         auto keys_get = test_handles[1]->saw_keys;
         EXPECT_EQ(1, keys_get.size());
         // first get the result for original key, then return mc_res_notfound
@@ -145,9 +145,9 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string chunk_type_2(threshold, 's');
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_set;
-        McRequest req_set(std::move(msg_set));
+        McRequestWithMcOp<mc_op_set> req_set(std::move(msg_set));
 
-        auto f_set = rh.route(req_set, McOperation<mc_op_set>());
+        auto f_set = rh.route(req_set);
         auto keys_set = test_handles[2]->saw_keys;
         auto values_set = test_handles[2]->sawValues;
         EXPECT_EQ(num_chunks + 1, keys_set.size());
@@ -189,9 +189,10 @@ TEST(BigValueRouteTest, bigvalue) {
           std::string(threshold*(num_chunks/2), 's'));
         auto msg_set = createMcMsgRef("key_set", big_value);
         msg_set->op = mc_op_lease_set;
-        McRequest req_set(std::move(msg_set));
+        McRequestWithMcOp<mc_op_lease_set> req_set(
+            std::move(msg_set));
 
-        auto f_set = rh.route(req_set, McOperation<mc_op_lease_set>());
+        auto f_set = rh.route(req_set);
         auto keys_set = test_handles[3]->saw_keys;
         auto operations_set = test_handles[3]->sawOperations;
         EXPECT_EQ(num_chunks + 1, keys_set.size());

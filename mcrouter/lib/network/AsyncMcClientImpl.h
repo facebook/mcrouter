@@ -21,14 +21,11 @@
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
+#include "mcrouter/lib/Operation.h"
 
 namespace facebook { namespace memcache {
 
 class Fifo;
-template <int op>
-class McOperation;
-class McReply;
-class McRequest;
 
 namespace detail {
 class OnEventBaseDestructionCallback;
@@ -60,10 +57,9 @@ class AsyncMcClientImpl :
     std::function<void()> onUp,
     std::function<void(bool)> onDown);
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  sendSync(const Request& request, Operation,
-           std::chrono::milliseconds timeout);
+  template <class Request>
+  ReplyT<Request> sendSync(const Request& request,
+                           std::chrono::milliseconds timeout);
 
   void setThrottle(size_t maxInflight, size_t maxPending);
 

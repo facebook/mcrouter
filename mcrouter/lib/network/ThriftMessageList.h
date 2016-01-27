@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -42,9 +42,9 @@ using RequestReplyPairs = List<
          TypedMsg<30, cpp2::McPrependReply>>,
     Pair<TypedMsg<31, cpp2::McTouchRequest>, TypedMsg<32, cpp2::McTouchReply>>>;
 
-using RequestList = PairListFirstT<RequestReplyPairs>;
-using ReplyList = PairListSecondT<RequestReplyPairs>;
-using ThriftMessageList = ConcatenateListsT<RequestList, ReplyList>;
+using TRequestList = PairListFirstT<RequestReplyPairs>;
+using TReplyList = PairListSecondT<RequestReplyPairs>;
+using ThriftMessageList = ConcatenateListsT<TRequestList, TReplyList>;
 
 struct ListChecker {
   StaticChecker<ThriftMessageList> checker;
@@ -85,5 +85,9 @@ struct OpFromType<T, List<KV1, KVs...>> {
                                        ? static_cast<mc_op_t>(KV1::Key)
                                        : OpFromType<T, List<KVs...>>::value;
 };
+
+template <class T>
+using TRequestListContains = ListContains<TRequestList, T>;
+
 }
 } // facebook::memcache

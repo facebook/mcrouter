@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -34,23 +34,21 @@ class LoggingRoute {
   explicit LoggingRoute(McrouterRouteHandlePtr rh)
     : child_(std::move(rh)) {}
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     if (child_) {
-      t(*child_, req, Operation());
+      t(*child_, req);
     }
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) {
-
-    typename ReplyType<Operation,Request>::type reply;
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    ReplyT<Request> reply;
     if (child_ == nullptr) {
-      reply = NullRoute<McrouterRouteHandleIf>::route(req, Operation());
+      reply = NullRoute<McrouterRouteHandleIf>::route(req);
     } else {
-      reply = child_->route(req, Operation());
+      reply = child_->route(req);
     }
 
     // Pull the IP (if available) out of the saved request
@@ -67,7 +65,8 @@ class LoggingRoute {
     if (callback) {
       if (reply.isHit()) {
         callback(req.fullKey(), reply.flags(), reply.valueRangeSlow(),
-                 Operation::name, userIp);
+                 Request::OpType::name, /* TODO Won't work with Thrift reqs */
+                 userIp);
       }
     } else {
       LOG(INFO) << "request key: " << req.fullKey()

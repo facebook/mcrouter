@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -61,14 +61,14 @@ bool ClientServerMcParser::umMessageReady(const UmbrellaMessageInfo& info,
 #define MC_OP(MC_OPERATION)                                             \
         case MC_OPERATION::mc_op:                                       \
           replyReady(reqid, op,                                         \
-                     parseReply(info, header, body,                     \
-                                bodyBuffer, MC_OPERATION()));           \
+                     parseReply<McRequestWithOp<MC_OPERATION>>(         \
+                       info, header, body, bodyBuffer));                \
           break;
 #include "mcrouter/lib/McOpList.h"
         default:
           replyReady(reqid, op,
-                     parseReply(info, header, body, bodyBuffer,
-                                McOperation<mc_op_unknown>()));
+                     parseReply<McRequestWithMcOp<mc_op_unknown>>(
+                       info, header, body, bodyBuffer));
           break;
       }
     } else {

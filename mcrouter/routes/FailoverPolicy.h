@@ -101,10 +101,10 @@ class FailoverLeastFailuresPolicy {
                size_t index)
       : failoverPolicy_(failoverPolicy), index_(index) {}
 
-    template <typename Operation, typename Request>
-    ReplyT<Operation, Request> route(const Request& req, Operation) {
+    template <class Request>
+    ReplyT<Request> route(const Request& req) {
       auto& child = failoverPolicy_.children_[index_];
-      auto reply = child->route(req, Operation());
+      auto reply = child->route(req);
       if (reply.isError()) {
         failoverPolicy_.recentErrorCount_[index_]++;
       } else {

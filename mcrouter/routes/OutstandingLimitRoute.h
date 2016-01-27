@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -37,19 +37,18 @@ class OutstandingLimitRoute {
     return folly::to<std::string>("outstanding-limit|limit=", maxOutstanding_);
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*target_, req, Operation());
+    t(*target_, req);
   }
 
   OutstandingLimitRoute(McrouterRouteHandlePtr target, size_t maxOutstanding)
     : target_(std::move(target)), maxOutstanding_(maxOutstanding) {
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) {
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
     if (outstanding_ == maxOutstanding_) {
       auto& ctx = fiber_local::getSharedCtx();
       auto senderId = ctx->senderId();
@@ -93,7 +92,7 @@ class OutstandingLimitRoute {
       }
     };
 
-    return target_->route(req, Operation());
+    return target_->route(req);
   }
 
  private:

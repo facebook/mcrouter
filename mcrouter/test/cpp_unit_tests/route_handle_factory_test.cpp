@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -32,63 +32,63 @@ TEST(RouteHandleFactoryTest, sanity) {
   auto rh = factory.create("AllAsyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("AllFastestRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("AllInitialRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("AllMajorityRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("AllSyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("FailoverRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("HashRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("HostIdRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 
   rh = factory.create("LatestRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
@@ -96,21 +96,21 @@ TEST(RouteHandleFactoryTest, sanity) {
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
     mockFiberContext();
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("MissFailoverRoute|NullRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_EQ(reply.result(), mc_res_notfound);
   });
 
   rh = factory.create("RandomRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);
   fm.run([&rh]() {
-    auto reply = rh->route(McRequest("a"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("a"));
     EXPECT_TRUE(reply.isError());
   });
 }

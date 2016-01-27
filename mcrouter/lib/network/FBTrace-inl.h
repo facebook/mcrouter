@@ -13,13 +13,13 @@
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
-
+#include "mcrouter/lib/McRequest.h"
 #endif
 
 namespace facebook { namespace memcache {
 
-template<class Operation, class Request>
-bool fbTraceOnSend(Operation, const Request& request, const AccessPoint& ap) {
+template <class Request>
+bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
   // Do nothing for non-mc operations.
   return false;
 }
@@ -48,9 +48,10 @@ inline void fbtraceAddItem(fbtrace_item_t* info, size_t& idx,
 
 }  // namespace
 
-template<int McOp, class Request>
-typename std::enable_if<RequestHasFbTraceInfo<Request>::value, bool>::type
-fbTraceOnSend(McOperation<McOp>, const Request& request,
+template<int McOp>
+typename std::enable_if<
+  RequestHasFbTraceInfo<McRequestWithMcOp<McOp>>::value, bool>::type
+fbTraceOnSend(const McRequestWithMcOp<McOp>& request,
               const AccessPoint& ap) {
 
   mc_fbtrace_info_s* fbtraceInfo = request.fbtraceInfo();

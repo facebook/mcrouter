@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -36,7 +36,7 @@ TEST(missMissFailoverRouteTest, success) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "a");
 }
 
@@ -50,7 +50,7 @@ TEST(missMissFailoverRouteTest, once) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
@@ -64,7 +64,7 @@ TEST(missMissFailoverRouteTest, twice) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
@@ -78,7 +78,7 @@ TEST(missMissFailoverRouteTest, fail) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
 
   // Should get the last reply
   EXPECT_TRUE(toString(reply.value()) == "c");
@@ -96,7 +96,8 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
     get_route_handles(test_handles));
 
   auto msg = createMcMsgRef("0", "a");
-  auto reply = rh.route(McRequest(std::move(msg)), McOperation<mc_op_set>());
+  auto reply = rh.route(
+      McRequestWithMcOp<mc_op_set>(std::move(msg)));
   EXPECT_TRUE(toString(reply.value()) == "a");
   // only first handle sees the key
   EXPECT_TRUE(test_handles[0]->saw_keys == vector<std::string>{"0"});

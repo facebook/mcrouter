@@ -7,7 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/proxy.h"
 
@@ -20,19 +19,19 @@ namespace detail {
 /**
  * Implementation class for storing the callback along with the context.
  */
-template <class Operation, class Request, class F>
+template <class Request, class F>
 class ProxyRequestContextTypedWithCallback
-    : public ProxyRequestContextTyped<Operation, Request> {
+    : public ProxyRequestContextTyped<Request> {
  public:
   ProxyRequestContextTypedWithCallback(proxy_t& pr,
                                        const Request& req,
                                        F&& f,
                                        ProxyRequestPriority priority__)
-      : ProxyRequestContextTyped<Operation, Request>(pr, req, priority__),
+      : ProxyRequestContextTyped<Request>(pr, req, priority__),
         f_(std::forward<F>(f)) {}
 
  protected:
-  virtual void sendReplyImpl(ReplyT<Operation, Request>&& reply) override {
+  virtual void sendReplyImpl(ReplyT<Request>&& reply) override {
     auto req = this->req_;
     fiber_local::runWithoutLocals(
         [this, req, &reply]() { f_(*req, std::move(reply)); });
@@ -47,26 +46,28 @@ class ProxyRequestContextTypedWithCallback
  */
 template <class Operation, class F>
 class LegacyProxyRequestContext
-    : public ProxyRequestContextTyped<Operation, McRequest> {
+    : public ProxyRequestContextTyped<McRequestWithOp<Operation>> {
  public:
   LegacyProxyRequestContext(proxy_t& pr,
                             McMsgRef req,
                             F&& f,
                             ProxyRequestPriority priority__)
-      : ProxyRequestContextTyped<Operation, McRequest>(
+      : ProxyRequestContextTyped<McRequestWithOp<Operation>>(
             pr, request_, priority__),
         f_(std::forward<F>(f)),
         request_(std::move(req)) {}
 
  protected:
-  virtual void sendReplyImpl(ReplyT<Operation, McRequest>&& reply) override {
+  virtual void sendReplyImpl(
+      ReplyT<McRequestWithOp<Operation>>&& reply) override {
+
     fiber_local::runWithoutLocals(
         [this, &reply]() { f_(*this, std::move(reply)); });
   }
 
  private:
   F f_;
-  McRequest request_;
+  McRequestWithOp<Operation> request_;
 };
 
 template <class F>
@@ -101,8 +102,8 @@ std::unique_ptr<ProxyRequestContext> legacyCreator(
 
 constexpr const char* kCommandNotSupportedStr = "Command not supported";
 
-template <class Operation, class Request>
-bool precheckKey(ProxyRequestContextTyped<Operation, Request>& preq,
+template <class Request>
+bool precheckKey(ProxyRequestContextTyped<Request>& preq,
                  const Request& req) {
   auto k = req.fullKey();
   const nstring_t key{const_cast<char*>(k.begin()), k.size()};
@@ -118,42 +119,42 @@ bool precheckKey(ProxyRequestContextTyped<Operation, Request>& preq,
 // otherwise they reply it with error and return false;
 
 template <class Request>
-bool precheckRequest(
-    ProxyRequestContextTyped<McOperation<mc_op_stats>, Request>& preq,
-    const Request&) {
+bool precheckRequest(ProxyRequestContextTyped<Request>& preq,
+                     const Request& req) {
+  return precheckKey(preq, req);
+}
 
+inline bool precheckRequest(
+    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_stats>>&,
+    const McRequestWithMcOp<mc_op_stats>&) {
   return true;
 }
 
-template <class Request>
-bool precheckRequest(
-  ProxyRequestContextTyped<McOperation<mc_op_version>, Request>& preq,
-  const Request&) {
+inline bool precheckRequest(
+    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_version>>&,
+    const McRequestWithMcOp<mc_op_version>&) {
   return true;
 }
 
-template <class Request>
-bool precheckRequest(
-    ProxyRequestContextTyped<McOperation<mc_op_shutdown>, Request>& preq,
-    const Request&) {
+inline bool precheckRequest(
+    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_shutdown>>& preq,
+    const McRequestWithMcOp<mc_op_shutdown>&) {
   // Return error (pretend to not even understand the protocol)
   preq.sendReply(mc_res_bad_command);
   return false;
 }
 
-template <class Request>
-bool precheckRequest(
-    ProxyRequestContextTyped<McOperation<mc_op_flushre>, Request>& preq,
-    const Request&) {
+inline bool precheckRequest(
+    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_flushre>>& preq,
+    const McRequestWithMcOp<mc_op_flushre>&) {
   // Return 'Not supported' message
   preq.sendReply(mc_res_local_error, kCommandNotSupportedStr);
   return false;
 }
 
-template <class Request>
-bool precheckRequest(
-    ProxyRequestContextTyped<McOperation<mc_op_flushall>, Request>& preq,
-    const Request& req) {
+inline bool precheckRequest(
+    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_flushall>>& preq,
+    const McRequestWithMcOp<mc_op_flushall>&) {
 
   if (!preq.proxy().getRouterOptions().enable_flush_cmd) {
     preq.sendReply(mc_res_local_error, "Command disabled");
@@ -162,19 +163,10 @@ bool precheckRequest(
   return true;
 }
 
-template <class Operation, class Request>
-bool precheckRequest(ProxyRequestContextTyped<Operation, Request>& preq,
-                     const Request& req) {
-
-  return precheckKey(preq, req);
-}
-
 } // detail
 
-template <class Operation, class Request>
-void ProxyRequestContextTyped<Operation, Request>::sendReply(
-    ReplyT<Operation, Request>&& reply) {
-
+template <class Request>
+void ProxyRequestContextTyped<Request>::sendReply(ReplyT<Request>&& reply) {
   if (this->recording()) {
     return;
   }
@@ -199,9 +191,9 @@ void ProxyRequestContextTyped<Operation, Request>::sendReply(
   }
 }
 
-template <class Operation, class Request>
-void ProxyRequestContextTyped<Operation, Request>::startProcessing() {
-  std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> self(this);
+template <class Request>
+void ProxyRequestContextTyped<Request>::startProcessing() {
+  std::unique_ptr<ProxyRequestContextTyped<Request>> self(this);
 
   if (!detail::precheckRequest(*this, *req_)) {
     return;
@@ -212,16 +204,16 @@ void ProxyRequestContextTyped<Operation, Request>::startProcessing() {
        and 2) the clients are winding down, so we wouldn't get any
        meaningful response back anyway. */
     LOG(ERROR) << "Outstanding request on a proxy that's being destroyed";
-    sendReply(ReplyT<Operation, Request>(mc_res_unknown));
+    sendReply(ReplyT<Request>(mc_res_unknown));
     return;
   }
 
   proxy().dispatchRequest(*req_, std::move(self));
 }
 
-template <class Operation, class Request>
-std::shared_ptr<ProxyRequestContextTyped<Operation, Request>>
-ProxyRequestContextTyped<Operation, Request>::process(
+template <class Request>
+std::shared_ptr<ProxyRequestContextTyped<Request>>
+ProxyRequestContextTyped<Request>::process(
     std::unique_ptr<Type> preq, std::shared_ptr<const ProxyConfig> config) {
 
   preq->config_ = std::move(config);
@@ -236,15 +228,13 @@ ProxyRequestContextTyped<Operation, Request>::process(
       });
 }
 
-template <class Operation, class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<Operation, Request>>
+template <class Request, class F>
+std::unique_ptr<ProxyRequestContextTyped<Request>>
 createProxyRequestContext(proxy_t& pr,
                           const Request& req,
-                          Operation,
                           F&& f,
                           ProxyRequestPriority priority) {
-  using Type =
-      detail::ProxyRequestContextTypedWithCallback<Operation, Request, F>;
+  using Type = detail::ProxyRequestContextTypedWithCallback<Request, F>;
   return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 

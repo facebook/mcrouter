@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -30,28 +31,25 @@ class OperationSelectorRoute {
         defaultPolicy_(std::move(defaultPolicy)) {
   }
 
-  template <int M, class Request>
-  void traverse(const Request& req, McOperation<M>,
+  template <int M>
+  void traverse(const McRequestWithMcOp<M>& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     if (operationPolicies_[M]) {
-      t(*operationPolicies_[M], req, McOperation<M>());
+      t(*operationPolicies_[M], req);
     } else if (defaultPolicy_) {
-      t(*defaultPolicy_, req, McOperation<M>());
+      t(*defaultPolicy_, req);
     }
   }
 
-  template<int M, class Request>
-  typename ReplyType<McOperation<M>, Request>::type route(
-    const Request& req, McOperation<M>) const {
-
+  template <int M>
+  McReply route(const McRequestWithMcOp<M>& req) const {
     if (operationPolicies_[M]) {
-      return operationPolicies_[M]->route(req, McOperation<M>());
+      return operationPolicies_[M]->route(req);
     } else if (defaultPolicy_) {
-      return defaultPolicy_->route(req, McOperation<M>());
+      return defaultPolicy_->route(req);
     }
 
-    using Reply = typename ReplyType<McOperation<M>, Request>::type;
-    return Reply(DefaultReply, McOperation<M>());
+    return McReply(DefaultReply, req);
   }
 
 private:

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -73,41 +73,35 @@ class SlowWarmUpRoute {
         settings_(std::move(settings)) {
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*target_, req, Operation());
-    t(*failoverTarget_, req, Operation());
+    t(*target_, req);
+    t(*failoverTarget_, req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-      const Request& req, Operation,
-      typename GetLike<Operation>::Type = 0) const {
-
+  template <class Request>
+  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
     auto& proxy = fiber_local::getSharedCtx()->proxy();
     if (warmingUp() && !shouldSendRequest(proxy.randomGenerator)) {
       return fiber_local::runWithLocals([this, &req]() {
         fiber_local::addRequestClass(RequestClass::kFailover);
-        return failoverTarget_->route(req, Operation());
+        return failoverTarget_->route(req);
       });
     }
 
-    return routeImpl(req, Operation());
+    return routeImpl(req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-      const Request& req, Operation,
-      OtherThanT(Operation, GetLike<>) = 0) const {
-    return routeImpl(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req,
+                        OtherThanT<Request, GetLike<>> = 0) const {
+    return routeImpl(req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type routeImpl(
-      const Request& req, Operation) const {
-
-    auto reply = target_->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> routeImpl(const Request& req) const {
+    auto reply = target_->route(req);
     if (reply.isHit()) {
       ++stats_.hits;
     } else if (reply.isMiss()) {

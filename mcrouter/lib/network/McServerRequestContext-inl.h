@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -39,8 +39,9 @@ void McServerOnRequestWrapper<OnRequest>::requestReady(
   switch (operation) {
 #define MC_OP(MC_OPERATION)                                             \
     case MC_OPERATION::mc_op:                                           \
-      onRequest_.onRequest(std::move(ctx), std::move(req),              \
-                           MC_OPERATION());                             \
+      onRequest_.onRequest(                                             \
+          std::move(ctx),                                               \
+          McRequestWithOp<MC_OPERATION>(std::move(req)));               \
       break;
 #include "mcrouter/lib/McOpList.h"
 

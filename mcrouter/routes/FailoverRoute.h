@@ -38,13 +38,13 @@ class FailoverRoute {
     return "failover:" + name_;
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (fiber_local::getFailoverDisabled()) {
-      t(*targets_[0], req, Operation());
+      t(*targets_[0], req);
     } else {
-      t(targets_, req, Operation());
+      t(targets_, req);
     }
   }
 
@@ -66,14 +66,14 @@ class FailoverRoute {
     assert(!enableLeasePairing_ || !name_.empty());
   }
 
-  template <class Operation, class Request>
-  ReplyT<Operation, Request> route(const Request& req, Operation) {
-    auto normalReply = targets_[0]->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    auto normalReply = targets_[0]->route(req);
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
     }
     if (fiber_local::getSharedCtx()->failoverDisabled() ||
-        !failoverErrors_.shouldFailover(normalReply, Operation())) {
+        !failoverErrors_.shouldFailover(normalReply, req)) {
       return normalReply;
     }
 
@@ -91,12 +91,12 @@ class FailoverRoute {
       fiber_local::addRequestClass(RequestClass::kFailover);
       auto doFailover = [this, &req, &proxy, &normalReply](
           typename FailoverPolicyT::Iterator& child) {
-        auto failoverReply = child->route(req, Operation());
+        auto failoverReply = child->route(req);
         logFailover(proxy,
-                    Operation::name,
+                    Request::name,
                     child.getTrueIndex(),
                     targets_.size() - 1,
-                    req,
+                    req.getMcRequest(), /* TODO(jmswen) Support Thrift types */
                     normalReply,
                     failoverReply);
         return failoverReply;
@@ -106,7 +106,7 @@ class FailoverRoute {
       auto nx = cur;
       for (++nx; nx != failoverPolicy_.end(); ++cur, ++nx) {
         auto failoverReply = doFailover(cur);
-        if (!failoverErrors_.shouldFailover(failoverReply, Operation())) {
+        if (!failoverErrors_.shouldFailover(failoverReply, req)) {
           return failoverReply;
         }
       }

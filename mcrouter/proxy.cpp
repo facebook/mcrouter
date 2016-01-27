@@ -68,8 +68,28 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
   return fmOpts;
 }
 
-}  // anonymous namespace
+} // anonymous
 
+namespace detail {
+
+bool processGetServiceInfoRequest(
+    const McRequestWithMcOp<mc_op_get>& req,
+    std::shared_ptr<ProxyRequestContextTyped<
+        McRequestWithMcOp<mc_op_get>>>& ctx) {
+
+  static const char* const kInternalGetPrefix = "__mcrouter__.";
+
+  if (!req.fullKey().startsWith(kInternalGetPrefix)) {
+    return false;
+  }
+  auto& config = ctx->proxyConfig();
+  auto key = req.fullKey();
+  key.advance(strlen(kInternalGetPrefix));
+  config.serviceInfo()->handleRequest(key, ctx);
+  return true;
+}
+
+} // detail
 
 proxy_t::proxy_t(McrouterInstance& rtr)
     : router_(rtr),
@@ -215,6 +235,22 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
        */
       break;
   }
+}
+
+void proxy_t::routeHandlesProcessRequest(
+    const McRequestWithMcOp<mc_op_stats>& req,
+    std::unique_ptr<ProxyRequestContextTyped<
+      McRequestWithMcOp<mc_op_stats>>> ctx) {
+
+  ctx->sendReply(stats_reply(this, req.fullKey()));
+}
+
+void proxy_t::routeHandlesProcessRequest(
+    const McRequestWithMcOp<mc_op_version>& req,
+    std::unique_ptr<ProxyRequestContextTyped<
+      McRequestWithMcOp<mc_op_version>>> ctx) {
+
+  ctx->sendReply(mc_res_ok, MCROUTER_PACKAGE_STRING);
 }
 
 void proxy_t::pump() {

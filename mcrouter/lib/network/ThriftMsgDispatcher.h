@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,34 +13,12 @@
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
 #include "mcrouter/lib/network/TypedMsg.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
 
-/**
- * A thin wrapper for Thrift structs
- */
-template <class M>
-class TypedThriftMessage {
- public:
-  using rawType = M;
-        M& operator*()        { return  raw_; }
-  const M& operator*()  const { return  raw_; }
-        M* operator->()       { return &raw_; }
-  const M* operator->() const { return &raw_; }
-        M* get()              { return &raw_; }
-  const M* get()        const { return &raw_; }
-
- private:
-  M raw_;
-
-  template <class Protocol>
-  uint32_t read(Protocol* iprot) {
-    return raw_.read(iprot);
-  }
-
-  template <class TMList, class Derived, class... Args>
-  friend class ThriftMsgDispatcher;
-};
+template <class ThriftStruct>
+class TypedThriftMessage;
 
 /*
  * Takes a Thrift struct and serializes it to an IOBuf
@@ -50,6 +28,7 @@ class TypedThriftMessage {
 template <class ThriftType>
 std::unique_ptr<folly::IOBuf> serializeThriftStruct(
     TypedThriftMessage<ThriftType>&& thriftStruct) {
+
   apache::thrift::CompactProtocolWriter writer(
       apache::thrift::SHARE_EXTERNAL_BUFFER);
   folly::IOBufQueue queue;

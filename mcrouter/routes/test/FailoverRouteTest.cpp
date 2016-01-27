@@ -61,7 +61,7 @@ TEST(failoverRouteTest, success) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "a");
 }
 
@@ -78,7 +78,7 @@ TEST(failoverRouteTest, once) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
@@ -95,7 +95,7 @@ TEST(failoverRouteTest, twice) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
@@ -112,7 +112,7 @@ TEST(failoverRouteTest, fail) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
 
   /* Will return the last reply when ran out of targets */
   EXPECT_EQ("c", toString(reply.value()));
@@ -132,7 +132,7 @@ TEST(failoverRouteTest, customErrorOnce) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
@@ -151,7 +151,7 @@ TEST(failoverRouteTest, customErrorTwice) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "c");
 }
 
@@ -169,7 +169,7 @@ TEST(failoverRouteTest, customErrorUpdate) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_set>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_set>("0"));
   EXPECT_TRUE(reply.result() == mc_res_local_error);
 }
 
@@ -190,7 +190,7 @@ TEST(failoverRouteTest, separateErrorsGet) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_TRUE(toString(reply.value()) == "b");
 }
 
@@ -211,11 +211,11 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply1 = rh->route(McRequest("0"), McOperation<mc_op_set>());
+  auto reply1 = rh->route(McRequestWithMcOp<mc_op_set>("0"));
   EXPECT_TRUE(reply1.result() == mc_res_stored);
-  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_append>());
+  auto reply2 = rh->route(McRequestWithMcOp<mc_op_append>("0"));
   EXPECT_TRUE(reply2.result() == mc_res_stored);
-  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_prepend>());
+  auto reply3 = rh->route(McRequestWithMcOp<mc_op_prepend>("0"));
   EXPECT_TRUE(reply3.result() == mc_res_stored);
 }
 
@@ -236,7 +236,7 @@ TEST(failoverRouteTest, separateErrorsDelete) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_delete>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_delete>("0"));
   EXPECT_TRUE(reply.result() == mc_res_remote_error);
 }
 
@@ -254,16 +254,16 @@ TEST(failoverRouteTest, rateLimit) {
     /* failoverTagging */ false);
 
   // tokens: 1
-  auto reply1 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply1 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ(mc_res_found, reply1.result());
   // tokens: 0
-  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ(mc_res_timeout, reply2.result());
   // tokens: 0.5
-  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ(mc_res_found, reply3.result());
   // tokens: 0
-  auto reply4 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ(mc_res_timeout, reply4.result());
 }
 
@@ -285,7 +285,7 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("a", toString(reply.value()));
 }
 
@@ -307,7 +307,7 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply.value()));
 }
 
@@ -329,7 +329,7 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply.value()));
 }
 
@@ -352,19 +352,19 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
                                            "route01",
                                            json);
 
-  auto reply1= rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply1= rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply1.value()));
 
-  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply2.value()));
 
-  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("d", toString(reply3.value()));
 
-  auto reply4 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("d", toString(reply4.value()));
 
-  auto reply5 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply5 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("d", toString(reply5.value()));
 }
 
@@ -387,22 +387,22 @@ TEST(failoverRouteTest, leastFailuresCycle) {
                                            "route01",
                                            json);
 
-  auto reply1= rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply1= rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply1.value()));
 
-  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply2.value()));
 
-  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("d", toString(reply3.value()));
 
-  auto reply4 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply4.value()));
 
-  auto reply5 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply5 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply5.value()));
 
-  auto reply6 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply6 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("d", toString(reply6.value()));
 }
 
@@ -424,7 +424,7 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply.value()));
 }
 
@@ -446,7 +446,7 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply.value()));
 }
 
@@ -474,34 +474,34 @@ TEST(failoverRouteTest, leastFailuresComplex) {
                                            "route01",
                                            json);
 
-  auto reply1 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply1 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply1.value()));
 
-  auto reply2 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply2.value()));
 
-  auto reply3 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply3.value()));
 
   // At this point, b has failed 2 times, c has failed 1 time
   // Next request is routed to c
-  rh->route(McRequest("0"), McOperation<mc_op_set>());
+  rh->route(McRequestWithMcOp<mc_op_set>("0"));
 
   // Now both b and c have error count 2.  Next request routed to b.
   // b's error count will be reset to 0 on success
   // c still has error count 2
-  rh->route(McRequest("0"), McOperation<mc_op_set>());
+  rh->route(McRequestWithMcOp<mc_op_set>("0"));
 
   // Fail b twice
-  auto reply4 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply4.value()));
-  auto reply5 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply5 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply5.value()));
 
   // Now b and c have same error count (2)
-  auto reply6 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply6 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("b", toString(reply6.value()));
 
-  auto reply7 = rh->route(McRequest("0"), McOperation<mc_op_get>());
+  auto reply7 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
   EXPECT_EQ("c", toString(reply7.value()));
 }

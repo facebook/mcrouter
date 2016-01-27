@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -51,22 +51,24 @@ void test(Data data, Operation,
     normalRh,
     RateLimiter(json));
 
+  const McRequestWithOp<Operation> req("key");
+
   if (burst) {
     usleep(1001000);
     /* Rate is 4/sec, but we can only have 3 at a time */
-    auto reply = rh.route(McRequest("key"), Operation());
+    auto reply = rh.route(req);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(McRequest("key"), Operation());
+    reply = rh.route(req);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(McRequest("key"), Operation());
+    reply = rh.route(req);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(McRequest("key"), Operation());
+    reply = rh.route(req);
     EXPECT_EQ(reply.result(), reject);
   } else {
     usleep(501000);
-    auto reply = rh.route(McRequest("key"), Operation());
+    auto reply = rh.route(req);
     EXPECT_EQ(reply.result(), ok);
-    reply = rh.route(McRequest("key"), Operation());
+    reply = rh.route(req);
     EXPECT_EQ(reply.result(), reject);
   }
 }

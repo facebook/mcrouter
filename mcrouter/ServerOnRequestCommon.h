@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,11 +20,12 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
+template <class Request>
 struct ServerRequestContext {
   McServerRequestContext ctx;
-  McRequest req;
+  Request req;
 
-  ServerRequestContext(McServerRequestContext&& ctx_, McRequest&& req_)
+  ServerRequestContext(McServerRequestContext&& ctx_, Request&& req_)
       : ctx(std::move(ctx_)), req(std::move(req_)) {}
 };
 
@@ -36,29 +37,27 @@ class ServerOnRequestCommon {
       : client_(client), retainSourceIp_(retainSourceIp) {}
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<mc_op_version>) {
+                 McRequestWithMcOp<mc_op_version>&& req) {
     McServerRequestContext::reply(std::move(ctx),
                                   McReply(mc_res_ok, MCROUTER_PACKAGE_STRING));
   }
 
-  template <int M>
+  template <class Request>
   void onRequest(McServerRequestContext&& ctx,
-                 McRequest&& req,
-                 McOperation<M>) {
+                 Request&& req) {
     send(std::move(ctx),
          std::move(req),
-         McOperation<M>(),
          &McServerRequestContext::reply);
   }
 
-  template <int M>
+  template <class Request>
   void send(McServerRequestContext&& ctx,
-            McRequest&& req,
-            McOperation<M>,
+            Request&& req,
             ReplyFunction replyFn) {
-    auto rctx = folly::make_unique<ServerRequestContext>(std::move(ctx),
-                                                         std::move(req));
+
+    auto rctx = folly::make_unique<ServerRequestContext<Request>>(
+        std::move(ctx),
+        std::move(req));
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();
 
@@ -68,9 +67,9 @@ class ServerOnRequestCommon {
 
     if (retainSourceIp_) {
       auto peerIp = sessionRef.getSocketAddress().getAddressStr();
-      client_.send(reqRef, McOperation<M>(), std::move(cb), peerIp);
+      client_.send(reqRef, std::move(cb), peerIp);
     } else {
-      client_.send(reqRef, McOperation<M>(), std::move(cb));
+      client_.send(reqRef, std::move(cb));
     }
   }
 

@@ -66,66 +66,61 @@ class ShardSplitRoute {
       shardSplitter_(std::move(shardSplitter)) {
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
       ctx->recordShardSplitter(shardSplitter_);
     }
 
-    if (!GetLike<Operation>::value && !DeleteLike<Operation>::value) {
-      t(*rh_, req, Operation());
+    if (!GetLike<Request>::value && !DeleteLike<Request>::value) {
+      t(*rh_, req);
       return;
     }
 
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     if (cnt == 1) {
-      t(*rh_, req, Operation());
+      t(*rh_, req);
       return;
     }
-    if (GetLike<Operation>::value) {
+    if (GetLike<Request>::value) {
       size_t i = globals::hostid() % cnt;
       if (i == 0) {
-        t(*rh_, req, Operation());
+        t(*rh_, req);
         return;
       }
-      t(*rh_, splitReq(req, i - 1, shard), Operation());
+      t(*rh_, splitReq(req, i - 1, shard));
       return;
     }
 
-    assert(DeleteLike<Operation>::value);
-    t(*rh_, req, Operation());
+    assert(DeleteLike<Request>::value);
+    t(*rh_, req);
     for (size_t i = 0; i < cnt - 1; ++i) {
-      t(*rh_, splitReq(req, i, shard), Operation());
+      t(*rh_, splitReq(req, i, shard));
     }
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    typename GetLike<Operation>::Type = 0) const {
-
+  template <class Request>
+  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
     // Gets are routed to one of the splits.
     folly::StringPiece shard;
     auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
     size_t i = globals::hostid() % cnt;
     if (i == 0) {
-      return rh_->route(req, Operation());
+      return rh_->route(req);
     }
-    return rh_->route(splitReq(req, i - 1, shard), Operation());
+    return rh_->route(splitReq(req, i - 1, shard));
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation,
-    OtherThanT(Operation, GetLike<>) = 0) const {
-
+  template <class Request>
+  ReplyT<Request> route(const Request& req,
+                        OtherThanT<Request, GetLike<>> = 0) const {
     // Anything that is not a Get or Delete goes to the primary split.
-    static_assert(!GetLike<Operation>::value, "");
-    if (!DeleteLike<Operation>::value) {
-      return rh_->route(req, Operation());
+    static_assert(!GetLike<Request>::value, "");
+    if (!DeleteLike<Request>::value) {
+      return rh_->route(req);
     }
 
     // Deletes are broadcast to all splits.
@@ -134,10 +129,10 @@ class ShardSplitRoute {
     for (size_t i = 0; i < cnt - 1; ++i) {
       folly::fibers::addTask(
         [r = rh_, req_ = splitReq(req, i, shard)]() {
-          r->route(req_, Operation());
+          r->route(req_);
         });
     }
-    return rh_->route(req, Operation());
+    return rh_->route(req);
   }
 
  private:

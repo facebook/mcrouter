@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,8 +12,12 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McRequest.h"
 
 namespace facebook { namespace memcache {
+
+template <class Operation>
+class McRequestWithOp;
 
 /**
  * Class for serializing requests in ascii protocol.
@@ -37,9 +41,8 @@ class AsciiSerializedRequest {
    * @param niovOut  number of valid iovecs referenced by iovOut.
    * @return true iff message was successfully prepared.
    */
-  template <class Operation, class Request>
-  bool prepare(const Request& request, Operation,
-               struct iovec*& iovOut, size_t& niovOut);
+  template <class Request>
+  bool prepare(const Request& request, struct iovec*& iovOut, size_t& niovOut);
  private:
   // We need at most 5 iovecs (lease-set):
   //   command + key + printBuffer + value + "\r\n"
@@ -64,33 +67,33 @@ class AsciiSerializedRequest {
   void keyValueRequestCommon(folly::StringPiece prefix, const Request& request);
 
   // Get-like ops.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_get>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_gets>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_metaget>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_lease_get>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_get>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_gets>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_metaget>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_lease_get>& request);
   // Update-like ops.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_set>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_add>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_replace>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_append>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_prepend>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_cas>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_lease_set>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_set>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_add>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_replace>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_append>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_prepend>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_cas>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_lease_set>& request);
   // Arithmetic ops.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_incr>);
-  void prepareImpl(const McRequest& request, McOperation<mc_op_decr>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_incr>& request);
+  void prepareImpl(const McRequestWithMcOp<mc_op_decr>& request);
   // Delete op.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_delete>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_delete>& request);
   // Touch op.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_touch>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_touch>& request);
   // Version op.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_version>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_version>& request);
   // FlushAll op.
-  void prepareImpl(const McRequest& request, McOperation<mc_op_flushall>);
+  void prepareImpl(const McRequestWithMcOp<mc_op_flushall>& request);
 
   // Everything else is false.
-  template <class Request, class Operation>
-  std::false_type prepareImpl(const Request& request, Operation);
+  template <class Request>
+  std::false_type prepareImpl(const Request& request);
 
   struct PrepareImplWrapper;
 };

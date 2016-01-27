@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,137 +11,157 @@
 
 namespace facebook { namespace memcache {
 
+template <class M>
+class TypedThriftMessage;
+
 /**
- * Operation traits allow grouping operations with similar semantics. This way
+ * Request traits allow grouping requests with similar semantics. This way
  * we can write code that deals with for example get, lease-get or metaget in a
  * similar way only once.
  *
- * For example the following method will exist only if Operation is get,
- * lease-get or metaget.
+ * For example the following method will exist only if Request represents
+ * a memcached ASCII get, lease-get or metaget, or the corresponding Caret
+ * analogs (McGetRequest, McLeaseGetRqeuest, and McMetagetRequest).
  *
- * template <typename Operation>
- * Result method(..., Operation, GetLike<Operation>::Type = 0)
+ * template <typename Request>
+ * Result method(..., Request, GetLike<Request>::Type = 0)
  */
 
 /**
  * @class GetLike
- * @tparam Operation operation type
- * @brief Utility class to check if operation type is get-like (get, metaget or
+ * @tparam Request Request type
+ * @brief Utility class to check if Request type is get-like (get, metaget or
  *        lease-get)
  *
- * Boolean 'value' field will be true if and only if operation is get-like
+ * Boolean 'value' field will be true if and only if Request is get-like
  * Public member typedef 'Type' equal to void* will exist if and only if
- * operation is get-like.
+ * Request is get-like.
  */
-template <typename Operation = void>
+template <typename Request = void>
 struct GetLike {
   static const bool value = false;
 };
 
-template <typename Operation = void>
-using GetLikeT = typename GetLike<Operation>::Type;
+template <typename Request = void>
+using GetLikeT = typename GetLike<Request>::Type;
 
 /**
  * @class UpdateLike
- * @tparam Operation operation type
- * @brief Utility class to check if operation type is update-like (set, add,
+ * @tparam Request Request type
+ * @brief Utility class to check if Request type is update-like (set, add,
  *        replace or lease-set)
  *
- * Boolean 'value' field will be true if and only if operation is update-like
+ * Boolean 'value' field will be true if and only if Request is update-like
  * Public member typedef 'Type' equal to void* will exist if and only if
- * operation is update-like.
+ * Request is update-like.
  */
-template <typename Operation = void>
+template <typename Request = void>
 struct UpdateLike {
   static const bool value = false;
 };
 
-template <typename Operation = void>
-using UpdateLikeT = typename UpdateLike<Operation>::Type;
+template <typename Request = void>
+using UpdateLikeT = typename UpdateLike<Request>::Type;
 
 /**
  * @class DeleteLike
- * @tparam Operation operation type
- * @brief Utility class to check if operation type is delete-like (delete)
+ * @tparam Request Request type
+ * @brief Utility class to check if Request type is delete-like (delete)
  *
- * Boolean 'value' field will be true if and only if operation is delete-like
+ * Boolean 'value' field will be true if and only if Request is delete-like
  * Public member typedef 'Type' equal to void* will exist if and only if
- * operation is delete-like.
+ * Request is delete-like.
  */
-template <typename Operation = void>
+template <typename Request = void>
 struct DeleteLike {
   static const bool value = false;
 };
 
-template <typename Operation = void>
-using DeleteLikeT = typename DeleteLike<Operation>::Type;
+template <typename Request = void>
+using DeleteLikeT = typename DeleteLike<Request>::Type;
 
 /**
  * @class ArithmeticLike
- * @tparam Operation operation type
- * @brief Utility class to check if operation type is arithmetic-like (incr,
+ * @tparam Request Request type
+ * @brief Utility class to check if Request type is arithmetic-like (incr,
  *        decr)
  *
- * Boolean 'value' field will be true if and only if operation is
+ * Boolean 'value' field will be true if and only if Request is
  * arithmetic-like
  * Public member typedef 'Type' equal to void* will exist if and only if
- * operation is arithmetic-like.
+ * Request is arithmetic-like.
  */
-template <typename Operation = void>
+template <typename Request = void>
 struct ArithmeticLike {
   static const bool value = false;
 };
 
-template <typename Operation = void>
-using ArithmeticLikeT = typename ArithmeticLike<Operation>::Type;
+template <typename Request = void>
+using ArithmeticLikeT = typename ArithmeticLike<Request>::Type;
 
 /**
  * @class OtherThan
- * @tparam Operation operation type
- * @tparam OperationTraitOrType list of operation types/traits
- * @brief Utility class to check if operator does not belong to any of the
+ * @tparam Request Request type
+ * @tparam RequestTraitOrType list of Request types/traits
+ * @brief Utility class to check if Request does not belong to any of the
  *        categories/types
  *
- * Boolean 'value' field will be true if and only if operation is not matched
- * by any of the listed traits and is different from all listed operations.
+ * Boolean 'value' field will be true if and only if Request is not matched
+ * by any of the listed traits and is different from all listed Requests.
  */
-template <typename Operation, typename OperationTraitOrType, typename... Rest>
+template <typename Request, typename RequestTraitOrType, typename... Rest>
 struct OtherThan {
   static const bool value =
-    OtherThan<Operation, OperationTraitOrType>::value &&
-    OtherThan<Operation, Rest...>::value;
+    OtherThan<Request, RequestTraitOrType>::value &&
+    OtherThan<Request, Rest...>::value;
 };
 
-template <typename Operation, typename OperationTraitOrType>
-struct OtherThan<Operation, OperationTraitOrType> {
+template <typename Request, typename RequestTraitOrType>
+struct OtherThan<Request, RequestTraitOrType> {
   static const bool value =
-    !std::is_same<Operation, OperationTraitOrType>::value;
+    !std::is_same<Request, RequestTraitOrType>::value;
 };
 
-template <typename Operation>
-struct OtherThan<Operation, GetLike<>> {
-  static const bool value = !GetLike<Operation>::value;
+template <typename Request>
+struct OtherThan<Request, GetLike<>> {
+  static const bool value = !GetLike<Request>::value;
 };
-template <typename Operation>
-struct OtherThan<Operation, UpdateLike<>> {
-  static const bool value = !UpdateLike<Operation>::value;
+template <typename Request>
+struct OtherThan<Request, UpdateLike<>> {
+  static const bool value = !UpdateLike<Request>::value;
 };
-template <typename Operation>
-struct OtherThan<Operation, DeleteLike<>> {
-  static const bool value = !DeleteLike<Operation>::value;
+template <typename Request>
+struct OtherThan<Request, DeleteLike<>> {
+  static const bool value = !DeleteLike<Request>::value;
 };
-template <typename Operation>
-struct OtherThan<Operation, ArithmeticLike<>> {
-  static const bool value = !ArithmeticLike<Operation>::value;
+template <typename Request>
+struct OtherThan<Request, ArithmeticLike<>> {
+  static const bool value = !ArithmeticLike<Request>::value;
 };
 
-template <typename Operation, typename... OperationTraitOrType>
+template <typename Request, typename... RequestTraitOrType>
 using OtherThanT = typename std::enable_if<
-    OtherThan<Operation, OperationTraitOrType...>::value,
+    OtherThan<Request, RequestTraitOrType...>::value,
     void*>::type;
 
-// This should be type alias in GCC >= 4.7
-// TODO(t8000319): migrate everything to OtherThanT template alias.
-#define OtherThanT(_Op,...) typename std::enable_if<OtherThan<_Op, __VA_ARGS__>::value, void*>::type
+/*
+ * @class IsCustomRequest
+ * @tparam Request Request type
+ * @brief Utility class to check if a Request type is a TypedThriftMessage
+ *        or not. (Currently, the only supported alternatives are the classic
+ *        McRequestWithOp/McRequest types.)
+ *
+ * Boolean 'value' field will be true if and only if Request is a specialization
+ * of TypedThriftMessage.
+ */
+template <class Request>
+struct IsCustomRequest {
+  static constexpr bool value = false;
+};
+
+template <class M>
+struct IsCustomRequest<TypedThriftMessage<M>> {
+  static constexpr bool value = true;
+};
 
 }}

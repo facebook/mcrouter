@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -34,24 +34,22 @@ class AllAsyncRoute {
     assert(!children_.empty());
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(children_, req, Operation());
+    t(children_, req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
     auto reqCopy = std::make_shared<Request>(req.clone());
     for (auto& rh : children_) {
       folly::fibers::addTask(
         [rh, reqCopy]() {
-          rh->route(*reqCopy, Operation());
+          rh->route(*reqCopy);
         });
     }
-    return NullRoute<RouteHandleIf>::route(req, Operation());
+    return NullRoute<RouteHandleIf>::route(req);
   }
 
  private:

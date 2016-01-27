@@ -48,40 +48,38 @@ class ShadowRoute {
         shadowPolicy_(std::move(shadowPolicy)) {
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*normal_, req, Operation());
+    t(*normal_, req);
     for (auto& shadowData : shadowData_) {
-      t(*shadowData.first, req, Operation());
+      t(*shadowData.first, req);
     }
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
     std::shared_ptr<Request> adjustedReq;
-    folly::Optional<typename ReplyType<Operation, Request>::type> normalReply;
+    folly::Optional<ReplyT<Request>> normalReply;
     for (const auto& iter : shadowData_) {
       if (shouldShadow(req, iter.second.get())) {
         if (!adjustedReq) {
           adjustedReq = std::make_shared<Request>(
-            shadowPolicy_.updateRequestForShadowing(req, Operation()));
+            shadowPolicy_.updateRequestForShadowing(req));
         }
-        if (!normalReply && shadowPolicy_.shouldDelayShadow(req, Operation())) {
-          normalReply = normal_->route(*adjustedReq, Operation());
+        if (!normalReply && shadowPolicy_.shouldDelayShadow(req)) {
+          normalReply = normal_->route(*adjustedReq);
         }
         auto shadow = iter.first;
         if (iter.second->validateRepliesFlag()) {
-          normalReply = normal_->route(*adjustedReq, Operation());
+          normalReply = normal_->route(*adjustedReq);
           // this will spawn the fiber after copying required data
           // to validate from the normal Reply
           sendAndValidateRequest(
-              *normalReply , std::move(shadow), adjustedReq, Operation());
+              *normalReply , std::move(shadow), adjustedReq);
 
         } else {
-          dispatchShadowRequest(std::move(shadow), adjustedReq, Operation());
+          dispatchShadowRequest(std::move(shadow), adjustedReq);
         }
       }
     }
@@ -89,7 +87,7 @@ class ShadowRoute {
     if (normalReply) {
       return std::move(*normalReply);
     } else {
-      return normal_->route(adjustedReq ? *adjustedReq : req, Operation());
+      return normal_->route(adjustedReq ? *adjustedReq : req);
     }
   }
 
@@ -105,22 +103,20 @@ class ShadowRoute {
                           req.routingKeyHash() <= range.second;
   }
 
-  template <class Operation, class Request>
+  template <class Request>
   void dispatchShadowRequest(std::shared_ptr<McrouterRouteHandleIf> shadow,
-                             std::shared_ptr<Request> adjustedReq,
-                             Operation) const;
-
-  template <class Operation, class Request, class Reply>
-  void sendAndValidateRequest(const Reply& normalReply,
-                              std::shared_ptr<McrouterRouteHandleIf> shadow,
-                              std::shared_ptr<Request> adjustedReq,
-                              Operation) const;
+                             std::shared_ptr<Request> adjustedReq) const;
 
   template <class Request, class Reply>
   void sendAndValidateRequest(const Reply& normalReply,
                               std::shared_ptr<McrouterRouteHandleIf> shadow,
-                              std::shared_ptr<Request> adjustedReq,
-                              McOperation<mc_op_get>) const;
+                              std::shared_ptr<Request> adjustedReq) const;
+
+  void sendAndValidateRequest(
+      const McReply& normalReply,
+      std::shared_ptr<McrouterRouteHandleIf> shadow,
+      std::shared_ptr<McRequestWithMcOp<mc_op_get>> adjustedReq)
+      const;
 };
 
 }}}  // facebook::memcache::mcrouter

@@ -33,7 +33,7 @@ namespace memcache {
 namespace {
 
 struct TypedMockMcOnRequest
-    : public ThriftMsgDispatcher<RequestList,
+    : public ThriftMsgDispatcher<TRequestList,
                                  TypedMockMcOnRequest,
                                  McServerRequestContext&&> {
   MockMc& mc_;
@@ -41,7 +41,7 @@ struct TypedMockMcOnRequest
   explicit TypedMockMcOnRequest(MockMc& mc) : mc_(mc) {}
 
   template <class Operation>
-  void onRequest(McServerRequestContext&& ctx, McRequest&&, Operation) {
+  void onRequest(McServerRequestContext&& ctx, McRequestWithOp<Operation>&&) {
     /* non-typed requests not supported */
     McServerRequestContext::reply(std::move(ctx), McReply(mc_res_client_error));
   }

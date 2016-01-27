@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,27 +10,25 @@
 namespace facebook { namespace memcache {
 
 struct AsciiSerializedRequest::PrepareImplWrapper {
-  template <class Request, class Operation>
+  template <class Request>
   using PrepareType =
     decltype(std::declval<AsciiSerializedRequest>().prepareImpl(
-      std::declval<const Request&>(), std::declval<Operation>()));
+      std::declval<const Request&>()));
 
-  template <class Request, class Operation>
+  template <class Request>
   typename std::enable_if<
-    std::is_same<PrepareType<Request, Operation>, std::false_type>::value,
+    std::is_same<PrepareType<Request>, std::false_type>::value,
     bool>::type
-  static prepare(AsciiSerializedRequest& s, const Request& request,
-                      Operation) {
+  static prepare(AsciiSerializedRequest& s, const Request& request) {
     return false;
   }
 
-  template <class Request, class Operation>
+  template <class Request>
   typename std::enable_if<
-    std::is_same<PrepareType<Request, Operation>, void>::value,
+    std::is_same<PrepareType<Request>, void>::value,
     bool>::type
-  static prepare(AsciiSerializedRequest& s, const Request& request,
-                      Operation) {
-    s.prepareImpl(request, Operation());
+  static prepare(AsciiSerializedRequest& s, const Request& request) {
+    s.prepareImpl(request);
     return true;
   }
 };
@@ -47,11 +45,11 @@ void AsciiSerializedRequest::addStrings(Arg&& arg, Args&&... args) {
   addStrings(std::forward<Args>(args)...);
 }
 
-template <class Operation, class Request>
-bool AsciiSerializedRequest::prepare(const Request& request, Operation,
+template <class Request>
+bool AsciiSerializedRequest::prepare(const Request& request,
                                      struct iovec*& iovOut, size_t& niovOut) {
   iovsCount_ = 0;
-  auto r = PrepareImplWrapper::prepare(*this, request, Operation());
+  auto r = PrepareImplWrapper::prepare(*this, request);
   iovOut = iovs_;
   niovOut = iovsCount_;
   return r;

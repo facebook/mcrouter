@@ -85,15 +85,13 @@ class McClientRequestContextBase
 
   virtual ~McClientRequestContextBase();
 
-  template <class Operation, class Request>
+  template <class Request>
   McClientRequestContextBase(
-      Operation,
       const Request& request,
       uint64_t reqid,
       mc_protocol_t protocol,
       std::shared_ptr<AsyncMcClientImpl> client,
-      folly::Optional<typename ReplyType<Operation, Request>::type>&
-          replyStorage,
+      folly::Optional<ReplyT<Request>>& replyStorage,
       McClientRequestContextQueue& queue,
       InitializerFuncPtr initializer,
       bool useTyped);
@@ -155,10 +153,10 @@ class McClientRequestContextBase
                                     boost::intrusive::hash<Hash>>;
 };
 
-template <class Operation, class Request>
+template <class Request>
 class McClientRequestContext : public McClientRequestContextBase {
  public:
-  using Reply = typename ReplyType<Operation, Request>::type;
+  using Reply = ReplyT<Request>;
 
   McClientRequestContext(const Request& request,
                          uint64_t reqid,
@@ -270,7 +268,7 @@ class McClientRequestContextQueue {
   static constexpr size_t kDefaultNumBuckets = 128;
 
   // Friend to allow access to remove* mothods.
-  template<class Operation, class Request>
+  template <class Request>
   friend class McClientRequestContext;
 
   using State = McClientRequestContextBase::ReqState;

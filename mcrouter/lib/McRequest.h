@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,6 +17,7 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McOperation.h"
 
 #ifndef LIBMC_FBTRACE_DISABLE
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
@@ -289,6 +290,8 @@ class McRequest {
   McFbtraceRef fbtraceInfo_;
 #endif
 
+  McRequest(const McRequest& other);
+
   /**
    * Direct key/value construction from the parsing code for efficiency.
    */
@@ -312,9 +315,164 @@ class McRequest {
   bool setValueFrom(const folly::IOBuf& source,
                     const uint8_t* valueBegin, size_t valueSize);
 
-  McRequest(const McRequest& other);
-
   friend class McServerAsciiParser;
+
+  template <class Operation>
+  friend class McRequestWithOp;
 };
+
+/*
+ * TODO(jmswen) Change all instances of `McRequest` to `McRequestWithOp`.
+ *
+ * The coexistence of `McRequest` and `McRequestWithOp` (which copies the
+ * API of `McRequest` and merely forwards all work to its `McRequest` member)
+ * is a temporary hack. New code should use `McRequestWithOp`, if feasible.
+ * This hack eases development for support for custom Thrift structures, which
+ * inherently have the notion of `Operation` built into each request type.
+ */
+template <class Operation>
+class McRequestWithOp {
+ public:
+  using OpType = Operation;
+  static const char* const name;
+
+  McRequestWithOp() = default;
+  explicit McRequestWithOp(McMsgRef&& msg)
+    : req_(std::move(msg)) {}
+  explicit McRequestWithOp(folly::StringPiece k)
+    : req_(k) {}
+  explicit McRequestWithOp(folly::IOBuf keyData)
+    : req_(std::move(keyData)) {}
+  template <typename OtherOp>
+  /* impilcit */ McRequestWithOp(McRequestWithOp<OtherOp>&& other)
+    : req_(std::move(other.req_)) {}
+
+  McRequestWithOp& operator=(const McRequestWithOp&) = delete;
+
+  McRequestWithOp(McRequestWithOp&& other) noexcept = default;
+  McRequestWithOp& operator=(McRequestWithOp&& other) = default;
+
+  explicit McRequestWithOp(McRequest&& other) noexcept
+    : req_(std::move(other)) {}
+
+  ~McRequestWithOp() = default;
+
+  McRequestWithOp clone() const {
+    return *this;
+  }
+
+  McRequest moveMcRequest() {
+    return std::move(req_);
+  }
+
+  folly::StringPiece routingPrefix() const {
+    return req_.routingPrefix();
+  }
+  folly::StringPiece routingKey() const {
+    return req_.routingKey();
+  }
+  uint32_t routingKeyHash() const {
+    return req_.routingKeyHash();
+  }
+  bool hasHashStop() const {
+    return req_.hasHashStop();
+  }
+  void setExptime(int32_t expt) {
+    req_.setExptime(expt);
+  }
+  void setKey(folly::StringPiece k) {
+    req_.setKey(k);
+  }
+  void setKey(folly::IOBuf keyData) {
+    req_.setKey(std::move(keyData));
+  }
+  void stripRoutingPrefix() {
+    req_.stripRoutingPrefix();
+  }
+  void setValue(folly::IOBuf valueData) {
+    req_.setValue(std::move(valueData));
+  }
+  void setFlags(uint64_t f) {
+    req_.setFlags(f);
+  }
+
+  McMsgRef dependentMsg(mc_op_t op) const {
+    return req_.dependentMsg(op);
+  }
+  folly::StringPiece keyWithoutRoute() const {
+    return req_.keyWithoutRoute();
+  }
+
+  int32_t exptime() const {
+    return req_.exptime();
+  }
+  uint32_t number() const {
+    return req_.number();
+  }
+  void setNumber(uint32_t num) {
+    req_.setNumber(num);
+  }
+  uint64_t flags() const {
+    return req_.flags();
+  }
+  uint64_t delta() const {
+    return req_.delta();
+  }
+  void setDelta(uint64_t d) {
+    req_.setDelta(d);
+  }
+  uint64_t leaseToken() const {
+    return req_.leaseToken();
+  }
+  void setLeaseToken(uint64_t lt) {
+    req_.setLeaseToken(lt);
+  }
+  uint64_t cas() const {
+    return req_.cas();
+  }
+  void setCas(uint64_t c) {
+    req_.setCas(c);
+  }
+  folly::StringPiece fullKey() const {
+    return req_.fullKey();
+  }
+  const folly::IOBuf& value() const {
+    return req_.value();
+  }
+  folly::StringPiece valueRangeSlow() const {
+    return req_.valueRangeSlow();
+  }
+  const folly::IOBuf& key() const {
+    return req_.key();
+  }
+#ifndef LIBMC_FBTRACE_DISABLE
+  mc_fbtrace_info_s* fbtraceInfo() const {
+    return req_.fbtraceInfo();
+  }
+  void setFbtraceInfo(mc_fbtrace_info_s* info) {
+    req_.setFbtraceInfo(info);
+  }
+#endif
+
+  const McRequest& getMcRequest() const {
+    return req_;
+  }
+
+ private:
+  McRequest req_;
+
+  McRequestWithOp(const McRequestWithOp&) = default;
+
+  template <class OtherOp>
+  friend class McRequestWithOp;
+};
+
+// Initialize from Operation::mc_op instead of Operation::name to avoid SIOF.
+template <class Operation>
+const char* const McRequestWithOp<Operation>::name =
+  mc_op_to_string(Operation::mc_op);
+
+template <int op>
+using McRequestWithMcOp = McRequestWithOp<McOperation<op>>;
 
 }}  // facebook::memcache

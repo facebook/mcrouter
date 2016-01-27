@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -29,10 +29,10 @@ class RateLimitRoute {
  public:
   static std::string routeName() { return "rate-limit"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*target_, req, Operation());
+    t(*target_, req);
   }
 
   RateLimitRoute(McrouterRouteHandlePtr target, RateLimiter rl)
@@ -40,15 +40,12 @@ class RateLimitRoute {
         rl_(std::move(rl)) {
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) {
-    if (LIKELY(rl_.canPassThrough(Operation()))) {
-      return target_->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    if (LIKELY(rl_.canPassThrough<Request>())) {
+      return target_->route(req);
     }
-
-    using Reply = typename ReplyType<Operation, Request>::type;
-    return Reply(DefaultReply, Operation());
+    return ReplyT<Request>(DefaultReply, req);
   }
 
  private:

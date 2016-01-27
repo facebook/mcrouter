@@ -19,6 +19,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/TkoLog.h"
@@ -28,7 +29,6 @@ using asox_timer_t = void*;
 namespace facebook { namespace memcache {
 
 class McReply;
-class McRequest;
 
 namespace mcrouter {
 
@@ -70,10 +70,10 @@ class ProxyDestination {
   ~ProxyDestination();
 
   // This is a blocking call that will return reply, once it's ready.
-  template <int Op, class Request>
-  typename ReplyType<McOperation<Op>, Request>::type
-  send(const Request& request, McOperation<Op>, DestinationRequestCtx& req_ctx,
-       std::chrono::milliseconds timeout);
+  template <class Request>
+  ReplyT<Request> send(const Request& request, DestinationRequestCtx& req_ctx,
+                       std::chrono::milliseconds timeout);
+
   // returns true if okay to send req using this client
   bool may_send() const;
 
@@ -122,7 +122,7 @@ class ProxyDestination {
   Stats stats_;
 
   int probe_delay_next_ms{0};
-  std::unique_ptr<McRequest> probe_req;
+  std::unique_ptr<McRequestWithMcOp<mc_op_version>> probe_req;
   asox_timer_t probe_timer{nullptr};
   std::string poolName_;
   // The string is stored in ProxyDestinationMap::destinations_

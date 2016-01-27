@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -31,11 +31,11 @@ class AllInitialRoute {
  public:
   static std::string routeName() { return "all-initial"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*firstChild_, req, Operation());
-    asyncRoute_.traverse(req, Operation(), t);
+    t(*firstChild_, req);
+    asyncRoute_.traverse(req, t);
   }
 
   explicit AllInitialRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
@@ -44,12 +44,10 @@ class AllInitialRoute {
           rh.begin() + 1, rh.end())) {
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-
-    asyncRoute_.route(req, Operation());
-    return firstChild_->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
+    asyncRoute_.route(req);
+    return firstChild_->route(req);
   }
 
  private:

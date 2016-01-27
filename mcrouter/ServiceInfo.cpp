@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,7 +30,6 @@
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
-#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McOpList.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/standalone_options.h"
@@ -83,14 +82,14 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
           destinations->push_back(dest.toHostPortString());
         }
       );
-      McRequest recordingReq(keyStr);
+      McRequestWithOp<Operation> recordingReq(keyStr);
 
       fiber_local::runWithLocals([ctx = std::move(rctx),
                                   &recordingReq,
                                   &proxyRoute = proxyRoute_]() mutable {
         fiber_local::setSharedCtx(std::move(ctx));
         /* ignore the reply */
-        proxyRoute.route(recordingReq, Operation());
+        proxyRoute.route(recordingReq);
       });
       baton.wait();
       return destinations;
@@ -111,12 +110,10 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
 }
 
 template <int op_id>
-inline std::string routeHandlesCommandHelper(
-  folly::StringPiece op,
-  const McRequest& req,
-  const ProxyRoute& proxyRoute,
-  McOpList::Item<op_id>) {
-
+inline std::string routeHandlesCommandHelper(folly::StringPiece op,
+                                             folly::StringPiece key,
+                                             const ProxyRoute& proxyRoute,
+                                             McOpList::Item<op_id>) {
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
      std::string tree;
      int level = 0;
@@ -129,17 +126,18 @@ inline std::string routeHandlesCommandHelper(
         --level;
       }
      );
-     proxyRoute.traverse(req, typename McOpList::Item<op_id>::op(), t);
+     proxyRoute.traverse(
+         McRequestWithOp<typename McOpList::Item<op_id>::op>(key), t);
      return tree;
   }
 
   return routeHandlesCommandHelper(
-    op, req, proxyRoute, McOpList::Item<op_id-1>());
+    op, key, proxyRoute, McOpList::Item<op_id-1>());
 }
 
 inline std::string routeHandlesCommandHelper(
   folly::StringPiece op,
-  const McRequest& req,
+  folly::StringPiece key,
   const ProxyRoute& proxyRoute,
   McOpList::Item<0>) {
 
@@ -278,9 +276,8 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
       }
       auto op = args[0];
       auto key = args[1];
-      McRequest req(key);
 
-      return routeHandlesCommandHelper(op, req, proxyRoute_,
+      return routeHandlesCommandHelper(op, key, proxyRoute_,
                                        McOpList::LastItem());
     }
   );

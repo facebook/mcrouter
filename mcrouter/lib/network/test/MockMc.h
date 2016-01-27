@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,13 +15,13 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/McRequest.h"
+
 namespace folly {
 class IOBuf;
 }
 
 namespace facebook { namespace memcache {
-
-class McRequest;
 
 /**
  * Mock Memcached hash table implementation.
@@ -35,7 +35,13 @@ class MockMc {
     uint64_t flags{0};
 
     explicit Item(std::unique_ptr<folly::IOBuf> v);
-    explicit Item(const McRequest& req);
+    template <class Operation>
+    explicit Item(const McRequestWithOp<Operation>& req)
+      : value(req.value().clone()),
+        exptime(req.exptime() != 0 && req.exptime() <= 60*60*24*30
+            ? req.exptime() + time(nullptr)
+            : req.exptime()),
+        flags(req.flags()) {}
 
     Item(const folly::IOBuf& v, int32_t t, uint64_t f);
   };

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,6 +11,7 @@
 
 #include <memory>
 
+#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
@@ -25,23 +26,20 @@ template <typename Route>
 class McrouterRouteHandle :
       public RouteHandle<Route,
                          McrouterRouteHandleIf,
-                         List<McRequest>,
-                         McOpList> {
+                         RequestList> {
  public:
   template<typename... Args>
   explicit McrouterRouteHandle(Args&&... args)
     : RouteHandle<Route,
                   McrouterRouteHandleIf,
-                  List<McRequest>,
-                  McOpList>(
+                  RequestList>(
                     std::forward<Args>(args)...) {
   }
 };
 
 class McrouterRouteHandleIf :
       public RouteHandleIf<McrouterRouteHandleIf,
-                           List<McRequest>,
-                           McOpList> {
+                           RequestList> {
  public:
   template <class Route>
   using Impl = McrouterRouteHandle<Route>;

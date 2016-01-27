@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,6 +18,8 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache {
@@ -43,8 +45,13 @@ class McReply {
    * Example uses would be an immediate reply for an async operation;
    * a reply for a delete queued for replay, etc.
    */
-  template <typename Operation>
-  McReply(DefaultReplyT, Operation op) noexcept;
+  template <int op>
+  McReply(DefaultReplyT, McOperation<op>) noexcept;
+
+  template <class Request,
+            typename
+              std::enable_if<!IsCustomRequest<Request>::value>::type* = nullptr>
+  McReply(DefaultReplyT, const Request&) noexcept;
 
   /**
    * Constructs an "error" reply, meaning that there was a routing error.

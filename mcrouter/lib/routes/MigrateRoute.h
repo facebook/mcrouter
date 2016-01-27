@@ -45,15 +45,15 @@ class MigrateRoute {
  public:
   static std::string routeName() { return "migrate"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    auto mask = routeMask(req, Operation());
+    auto mask = routeMask(req);
     if (mask & kFromMask) {
-      t(*from_, req, Operation());
+      t(*from_, req);
     }
     if (mask & kToMask) {
-      t(*to_, req, Operation());
+      t(*to_, req);
     }
   }
 
@@ -72,26 +72,24 @@ class MigrateRoute {
     assert(to_ != nullptr);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
+    using Reply = ReplyT<Request>;
 
-    typedef typename ReplyType<Operation, Request>::type Reply;
-
-    auto mask = routeMask(req, Operation());
+    auto mask = routeMask(req);
 
     switch (mask) {
-      case kFromMask: return from_->route(req, Operation());
-      case kToMask: return to_->route(req, Operation());
+      case kFromMask: return from_->route(req);
+      case kToMask: return to_->route(req);
       default: {
         auto& from = from_;
         auto& to = to_;
         std::function<Reply()> fs[2] {
           [&req, &from]() {
-            return from->route(req, Operation());
+            return from->route(req);
           },
           [&req, &to]() {
-            return to->route(req, Operation());
+            return to->route(req);
           }
         };
 
@@ -116,13 +114,9 @@ class MigrateRoute {
   time_t intervalSec_;
   const TimeProvider tp_;
 
-  template <class Operation, class Request>
-  int routeMask(
-    const Request& req, Operation, typename DeleteLike<Operation>::Type = 0)
-    const {
-
-    const auto& creq = req;
-    time_t curr = tp_(creq);
+  template <class Request>
+  int routeMask(const Request& req, DeleteLikeT<Request> = 0) const {
+    time_t curr = tp_();
 
     if (curr < startTimeSec_) {
       return kFromMask;
@@ -136,13 +130,11 @@ class MigrateRoute {
     return kToMask;
   }
 
-  template <class Operation, class Request>
-  int routeMask(
-    const Request& req, Operation, OtherThanT(Operation, DeleteLike<>) = 0)
-    const {
+  template <class Request>
+  int routeMask(const Request& req,
+                OtherThanT<Request, DeleteLike<>> = 0) const {
 
-    const auto& creq = req;
-    time_t curr = tp_(creq);
+    time_t curr = tp_();
 
     if (curr < (startTimeSec_ + intervalSec_)) {
       return kFromMask;

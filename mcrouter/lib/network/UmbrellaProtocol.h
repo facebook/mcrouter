@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,6 +14,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McRequest.h"
 
 namespace folly {
 class IOBuf;
@@ -100,11 +101,10 @@ bool umbrellaIsReply(const uint8_t* header, size_t nheader);
  * @return                 Parsed request.
  * @throws                 std::runtime_error on any parse error.
  */
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-umbrellaParseReply(const folly::IOBuf& source,
-                   const uint8_t* header, size_t nheader,
-                   const uint8_t* body, size_t nbody);
+template <class Request>
+ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
+                                   const uint8_t* header, size_t nheader,
+                                   const uint8_t* body, size_t nbody);
 
 /**
  * Parse an on-the-wire Umbrella request.
@@ -132,8 +132,8 @@ class UmbrellaSerializedMessage {
   bool prepare(const McReply& reply, mc_op_t op, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut);
 
-  template<int Op>
-  bool prepare(const McRequest& request, McOperation<Op>, uint64_t reqid,
+  template <int Op>
+  bool prepare(const McRequestWithMcOp<Op>& request, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut);
 
  private:

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -95,11 +95,9 @@ class McrouterClient {
    *
    * @returns 0 if McrouterInstance was destroyed, nreqs otherwise
    */
-  size_t send(
-    const mcrouter_msg_t* requests,
-    size_t nreqs,
-    folly::StringPiece ipAddr = folly::StringPiece()
-  );
+  size_t send(const mcrouter_msg_t* requests,
+              size_t nreqs,
+              folly::StringPiece ipAddr = folly::StringPiece());
 
   /**
    * Asynchronously send a single request with the given operation.
@@ -117,11 +115,14 @@ class McrouterClient {
    * Note: the caller is responsible for keeping the request alive until the
    *       callback is called.
    */
-  template <class Operation, class Request, class F>
-  bool send(const Request& req,
-            Operation,
-            F&& callback,
-            folly::StringPiece ipAddr = folly::StringPiece());
+  template <class Request, class F>
+  /* Don't attempt instantiation when we want the other overload of send() */
+  typename
+    std::enable_if<!std::is_convertible<Request, const mcrouter_msg_t*>::value,
+                   bool>::type
+  send(const Request& req,
+       F&& callback,
+       folly::StringPiece ipAddr = folly::StringPiece());
 
   /**
    * Change the context passed back to the callbacks.

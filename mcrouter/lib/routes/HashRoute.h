@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -43,16 +43,15 @@ class HashRoute {
     assert(!rh_.empty());
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*rh_[pickInMainContext(req)], req, Operation());
+    t(*rh_[pickInMainContext(req)], req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
-    return rh_[pickInMainContext(req)]->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
+    return rh_[pickInMainContext(req)]->route(req);
   }
 
  private:

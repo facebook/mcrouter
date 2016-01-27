@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -33,11 +33,10 @@ TEST(migrateRouteTest, migrate) {
   auto curr_time = time(nullptr);
   auto interval = 50;
 
-  auto tp_func =
-    [](const McRequest& req) {
-      return time(nullptr);
-    };
-   typedef decltype(tp_func) TimeProviderFunc;
+  auto tp_func = []() {
+    return time(nullptr);
+  };
+  typedef decltype(tp_func) TimeProviderFunc;
 
   vector<std::shared_ptr<TestHandle>> test_handles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
@@ -56,27 +55,27 @@ TEST(migrateRouteTest, migrate) {
       TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
         route_handles[0], route_handles[1], curr_time + 25, interval, tp_func);
 
-      McRequest req_get("key_get");
+      McRequestWithMcOp<mc_op_get> req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
       };
-      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      rh.traverse(req_get, t);
       EXPECT_EQ(cnt, 1);
 
-      auto reply_get = rh.route(req_get, McOperation<mc_op_get>());
+      auto reply_get = rh.route(req_get);
       EXPECT_TRUE(toString(reply_get.value()) == "a");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_FALSE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      McRequest req_del("key_del");
+      McRequestWithMcOp<mc_op_delete> req_del("key_del");
       cnt = 0;
-      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      rh.traverse(req_del, t);
       EXPECT_EQ(cnt, 1);
 
-      auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
+      auto reply_del = rh.route(req_del);
       EXPECT_TRUE(reply_del.result() == mc_res_deleted);
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_del"});
       EXPECT_FALSE(test_handles[1]->saw_keys == vector<string>{"key_del"});
@@ -96,27 +95,27 @@ TEST(migrateRouteTest, migrate) {
         route_handles_c2[0], route_handles_c2[1],
         curr_time -  25, interval, tp_func);
 
-      McRequest req_get("key_get");
+      McRequestWithMcOp<mc_op_get> req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
       };
-      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      rh.traverse(req_get, t);
       EXPECT_EQ(cnt, 1);
 
-      auto reply_get = rh.route(req_get, McOperation<mc_op_get>());
+      auto reply_get = rh.route(req_get);
       EXPECT_TRUE(toString(reply_get.value()) == "a");
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_FALSE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      McRequest req_del("key_del");
+      McRequestWithMcOp<mc_op_delete> req_del("key_del");
       cnt = 0;
-      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      rh.traverse(req_del, t);
       EXPECT_EQ(cnt, 2);
 
-      auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
+      auto reply_del = rh.route(req_del);
       EXPECT_TRUE(reply_del.result() == mc_res_notfound);
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_del"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_del"});
@@ -136,27 +135,27 @@ TEST(migrateRouteTest, migrate) {
         route_handles_c3[0], route_handles_c3[1],
         curr_time - 75, interval, tp_func);
 
-      McRequest req_get("key_get");
+      McRequestWithMcOp<mc_op_get> req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
       };
-      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      rh.traverse(req_get, t);
       EXPECT_EQ(cnt, 1);
 
-      auto reply_get = rh.route(McRequest("key_get"), McOperation<mc_op_get>());
+      auto reply_get = rh.route(req_get);
       EXPECT_TRUE(toString(reply_get.value()) == "b");
       EXPECT_FALSE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      McRequest req_del("key_del");
+      McRequestWithMcOp<mc_op_delete> req_del("key_del");
       cnt = 0;
-      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      rh.traverse(req_del, t);
       EXPECT_EQ(cnt, 2);
 
-      auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
+      auto reply_del = rh.route(req_del);
       EXPECT_TRUE(reply_del.result() == mc_res_notfound);
       EXPECT_TRUE(test_handles[0]->saw_keys == vector<string>{"key_del"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_del"});
@@ -166,27 +165,27 @@ TEST(migrateRouteTest, migrate) {
       TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
         route_handles[0], route_handles[1], curr_time - 125, interval, tp_func);
 
-      McRequest req_get("key_get");
+      McRequestWithMcOp<mc_op_get> req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
       };
-      rh.traverse(req_get, McOperation<mc_op_get>(), t);
+      rh.traverse(req_get, t);
       EXPECT_EQ(cnt, 1);
 
-      auto reply_get = rh.route(req_get, McOperation<mc_op_get>());
+      auto reply_get = rh.route(req_get);
       EXPECT_TRUE(toString(reply_get.value()) == "b");
       EXPECT_FALSE(test_handles[0]->saw_keys == vector<string>{"key_get"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_get"});
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      McRequest req_del("key_del");
+      McRequestWithMcOp<mc_op_delete> req_del("key_del");
       cnt = 0;
-      rh.traverse(req_del, McOperation<mc_op_delete>(), t);
+      rh.traverse(req_del, t);
       EXPECT_EQ(cnt, 1);
 
-      auto reply_del = rh.route(req_del, McOperation<mc_op_delete>());
+      auto reply_del = rh.route(req_del);
       EXPECT_TRUE(reply_del.result() == mc_res_notfound);
       EXPECT_FALSE(test_handles[0]->saw_keys == vector<string>{"key_del"});
       EXPECT_TRUE(test_handles[1]->saw_keys == vector<string>{"key_del"});

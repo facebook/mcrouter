@@ -31,6 +31,7 @@
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
@@ -56,18 +57,22 @@ typedef class fb_timer_s fb_timer_t;
 
 namespace facebook { namespace memcache {
 
+template <int op_id>
+class McOperation;
 template <class T>
 class MessageQueue;
 
 namespace mcrouter {
 // forward declaration
+template <class Operation>
+class McRequestWithOperation;
 class McrouterClient;
 class McrouterInstance;
 class ProxyConfig;
 class ProxyDestination;
 class ProxyDestinationMap;
 class ProxyRequestContext;
-template <class Operation, class Request>
+template <class Request>
 class ProxyRequestContextTyped;
 class RuntimeVarsData;
 class ShardSplitter;
@@ -232,13 +237,13 @@ struct proxy_t {
    * the config pointer
    */
   std::shared_ptr<ProxyConfig> swapConfig(
-    std::shared_ptr<ProxyConfig> newConfig);
+      std::shared_ptr<ProxyConfig> newConfig);
 
   /** Queue up and route the new incoming request */
-  template <class Operation, class Request>
+  template <class Request>
   void dispatchRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
 
   /**
    * Put a new proxy message into the queue.
@@ -301,42 +306,44 @@ struct proxy_t {
   void messageReady(ProxyMessage::Type t, void* data);
 
   /** Process and reply stats request */
-  template <class Request>
   void routeHandlesProcessRequest(
-      const Request& req,
-      std::unique_ptr<
-          ProxyRequestContextTyped<McOperation<mc_op_stats>, Request>> ctx);
+      const McRequestWithMcOp<mc_op_stats>& req,
+      std::unique_ptr<ProxyRequestContextTyped<
+        McRequestWithMcOp<mc_op_stats>>> ctx);
 
   /** Process and reply to a version request */
-  template <class Request>
   void routeHandlesProcessRequest(
-      const Request& req,
-      std::unique_ptr<
-          ProxyRequestContextTyped<McOperation<mc_op_version>, Request>> ctx);
+      const McRequestWithMcOp<mc_op_version>& req,
+      std::unique_ptr<ProxyRequestContextTyped<
+        McRequestWithMcOp<mc_op_version>>> ctx);
 
   /** Route request through route handle tree */
-  template <class Operation, class Request>
-  typename std::enable_if<McOpListContains<Operation>::value, void>::type
+  template <class Request>
+  typename std::enable_if<RequestListContains<Request>::value ||
+                          TRequestListContains<Request>::value,
+                          void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
 
   /** Fail all unknown operations */
-  template <class Operation, class Request>
-  typename std::enable_if<!McOpListContains<Operation>::value, void>::type
+  template <class Request>
+  typename std::enable_if<!RequestListContains<Request>::value &&
+                          !TRequestListContains<Request>::value,
+                          void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
 
   /** Process request (update stats and route the request) */
-  template <class Operation, class Request>
+  template <class Request>
   void processRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
 
   /** Increase requests sent stats counters for given operation type */
-  template <class Operation>
-  void bumpStats(Operation);
+  template <class Request>
+  void bumpStats(const Request&);
 
   /**
    * Incoming request rate limiting.
@@ -379,18 +386,18 @@ struct proxy_t {
     virtual void process(proxy_t* proxy) = 0;
   };
 
-  template <class Operation, class Request>
+  template <class Request>
   class WaitingRequest : public WaitingRequestBase {
    public:
     WaitingRequest(
         const Request& req,
-        std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx);
+        std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
     void process(proxy_t* proxy) override;
     void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:
     const Request& req_;
-    std::unique_ptr<ProxyRequestContextTyped<Operation, Request>> ctx_;
+    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx_;
 
     int64_t timePushedOnQueue_{-1};
   };
@@ -400,8 +407,8 @@ struct proxy_t {
       waitingRequests_[static_cast<int>(ProxyRequestPriority::kNumPriorities)];
 
   /** If true, we can't start processing this request right now */
-  template <class Operation>
-  bool rateLimited(ProxyRequestPriority priority, Operation) const;
+  template <class Request>
+  bool rateLimited(ProxyRequestPriority priority, const Request&) const;
 
   /** Will let through requests from the above queue if we have capacity */
   void pump();

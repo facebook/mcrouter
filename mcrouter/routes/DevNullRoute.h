@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,17 +25,15 @@ class DevNullRoute {
  public:
   static std::string routeName() { return "devnull"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const { }
 
-  template <class Operation, class Request>
-  static typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) {
+  template <class Request>
+  static ReplyT<Request> route(const Request& req) {
     auto& ctx = fiber_local::getSharedCtx();
     stat_incr(ctx->proxy().stats, dev_null_requests_stat, 1);
-    using Reply = typename ReplyType<Operation, Request>::type;
-    return Reply(DefaultReply, Operation());
+    return ReplyT<Request>(DefaultReply, req);
   }
 };
 

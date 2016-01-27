@@ -411,9 +411,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
     });
 
   fiberManager->addTask([&client, &replied] {
-    McRequest req("hold");
-    auto reply = client->sendSync(req, McOperation<mc_op_get>(),
-                                  std::chrono::milliseconds(100));
+    McRequestWithMcOp<mc_op_get> req("hold");
+    auto reply = client->sendSync(req, std::chrono::milliseconds(100));
     EXPECT_STREQ(mc_res_to_string(reply.result()),
                  mc_res_to_string(mc_res_connect_timeout));
     replied = true;

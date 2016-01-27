@@ -62,9 +62,10 @@ TestServerOnRequest::TestServerOnRequest(bool& shutdown, bool outOfOrder) :
     outOfOrder_(outOfOrder) {
 }
 
-void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
-                                    McRequest&& req,
-                                    McOperation<mc_op_get>) {
+void TestServerOnRequest::onRequest(
+    McServerRequestContext&& ctx,
+    McRequestWithMcOp<mc_op_get>&& req) {
+
   if (req.fullKey() == "sleep") {
     /* sleep override */
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -88,9 +89,10 @@ void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
   }
 }
 
-void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
-                                    McRequest&&,
-                                    McOperation<mc_op_set>) {
+void TestServerOnRequest::onRequest(
+    McServerRequestContext&& ctx,
+    McRequestWithMcOp<mc_op_set>&& req) {
+
   processReply(std::move(ctx), McReply(mc_res_stored));
 }
 
@@ -206,9 +208,9 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
   fm_.addTask([key, expectedResult, this, timeoutMs]() {
       auto msg = createMcMsgRef(key.c_str());
       msg->op = mc_op_get;
-      McRequest req{std::move(msg)};
+      McRequestWithMcOp<mc_op_get> req{std::move(msg)};
       try {
-        auto reply = client_->sendSync(req, McOperation<mc_op_get>(),
+        auto reply = client_->sendSync(req,
                                        std::chrono::milliseconds(timeoutMs));
         if (reply.result() == mc_res_found) {
           auto value = getRange(reply.value());
@@ -236,9 +238,9 @@ void TestClient::sendSet(std::string key, std::string value,
   fm_.addTask([key, value, expectedResult, this]() {
       auto msg = createMcMsgRef(key.c_str(), value.c_str());
       msg->op = mc_op_set;
-      McRequest req{std::move(msg)};
+      McRequestWithMcOp<mc_op_set> req{std::move(msg)};
 
-      auto reply = client_->sendSync(req, McOperation<mc_op_set>(),
+      auto reply = client_->sendSync(req,
                                      std::chrono::milliseconds(200));
 
       CHECK(expectedResult == reply.result())

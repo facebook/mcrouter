@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -74,17 +74,16 @@ using ReplyFromRequestType =
  * whether the convertToTyped() methods for the corresponding
  * operations are present or not
  */
-template <class Arg, class Operation, class Supported = void>
+template <class Request, class Supported = void>
 struct ConvertToTypedIfSupported {
   static constexpr std::false_type value{};
 };
 
-template <class Arg, class Operation>
+template <class Request>
 struct ConvertToTypedIfSupported<
-    Arg,
-    Operation,
+    Request,
     typename std::enable_if<!std::is_same<
-        decltype(convertToTyped(std::declval<Arg>(), Operation())),
+        decltype(convertToTyped(std::declval<Request>())),
         void>::value>::type> {
   static constexpr std::true_type value{};
 };

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,6 +12,7 @@
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McRequest.h"
 
 namespace facebook { namespace memcache {
 
@@ -72,5 +73,31 @@ template <> struct McOpList::Item<17> { typedef McOperation<mc_op_set> op; };
 template <> struct McOpList::Item<18> { typedef McOperation<mc_op_delete> op; };
 template <> struct McOpList::Item<19> { typedef McOperation<mc_op_lease_get> op; };
 template <> struct McOpList::Item<20> { typedef McOperation<mc_op_get> op; };
+
+namespace detail {
+
+template <int op>
+struct McOpListToMcOperationList;
+
+template <>
+struct McOpListToMcOperationList<0> {
+  using Result = List<>;
+};
+
+template <int op>
+struct McOpListToMcOperationList {
+  using Result = PrependT<typename McOpList::Item<op>::op,
+                          typename McOpListToMcOperationList<op-1>::Result>;
+};
+
+} // detail
+
+using McOperationList =
+  typename detail::McOpListToMcOperationList<McOpList::kLastItemId>::Result;
+
+using RequestList = MapT<McRequestWithOp, McOperationList>;
+
+template <class T>
+using RequestListContains = ListContains<RequestList, T>;
 
 }}

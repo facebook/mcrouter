@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,6 +18,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
@@ -46,11 +47,11 @@ class L1L2CacheRoute {
  public:
   static std::string routeName() { return "l1l2-cache"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*l1_, req, Operation());
-    t(*l2_, req, Operation());
+    t(*l1_, req);
+    t(*l2_, req);
   }
 
   L1L2CacheRoute(std::shared_ptr<RouteHandleIf> l1,
@@ -69,18 +70,14 @@ class L1L2CacheRoute {
     assert(l2_ != nullptr);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, typename GetLike<Operation>::Type = 0) {
-
-    using Reply = typename ReplyType<Operation, Request>::type;
-
-    auto l1Reply = l1_->route(req, Operation());
+  template <class Request>
+  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) {
+    auto l1Reply = l1_->route(req);
     if (l1Reply.isHit()) {
       if (l1Reply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
         if (ncacheUpdatePeriod_) {
           if (ncacheUpdateCounter_ == 1) {
-            updateL1Ncache(req, Operation());
+            updateL1Ncache(req);
             ncacheUpdateCounter_ = ncacheUpdatePeriod_;
           } else {
             --ncacheUpdateCounter_;
@@ -88,33 +85,38 @@ class L1L2CacheRoute {
         }
 
         /* return a miss */
-        l1Reply = Reply(DefaultReply, Operation());
+        l1Reply = ReplyT<Request>(DefaultReply, req);
       }
       return l1Reply;
     }
 
     /* else */
-    auto l2Reply = l2_->route(req, Operation());
+    auto l2Reply = l2_->route(req);
     if (l2Reply.isHit()) {
       folly::fibers::addTask(
         [l1 = l1_,
-         addReq = l1UpdateFromL2(req, l2Reply, upgradingL1Exptime_)]() {
-          l1->route(addReq, McOperation<mc_op_add>());
+         addReq = l1UpdateFromL2<McRequestWithMcOp<mc_op_add>>(
+           req, l2Reply, upgradingL1Exptime_)]() {
+
+          l1->route(addReq);
         });
     } else if (l2Reply.isMiss() && ncacheUpdatePeriod_) {
-      folly::fibers::addTask([ l1 = l1_,
-                               addReq = l1Ncache(req, ncacheExptime_) ]() {
-        l1->route(addReq, McOperation<mc_op_add>());
+      folly::fibers::addTask(
+        [l1 = l1_,
+         addReq = McRequestWithMcOp<mc_op_add>(
+           l1Ncache(req, ncacheExptime_))]() {
+
+        l1->route(addReq);
       });
     }
     return l2Reply;
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation, OtherThanT(Operation, GetLike<>) = 0) const {
+  template <class Request>
+  ReplyT<Request> route(const Request& req,
+                        OtherThanT<Request, GetLike<>> = 0) const {
 
-    return l1_->route(req, Operation());
+    return l1_->route(req);
   }
 
  private:
@@ -125,17 +127,17 @@ class L1L2CacheRoute {
   size_t ncacheUpdatePeriod_{0};
   size_t ncacheUpdateCounter_{0};
 
-  template <class Request, class Reply>
-  static Request l1UpdateFromL2(const Request& origReq,
-                                const Reply& reply,
-                                size_t upgradingL1Exptime) {
-    auto req = origReq.clone();
+  template <class ToRequest, class Request, class Reply>
+  static ToRequest l1UpdateFromL2(const Request& origReq,
+                                  const Reply& reply,
+                                  size_t upgradingL1Exptime) {
+    ToRequest req(origReq.clone());
     folly::IOBuf cloned;
     reply.value().cloneInto(cloned);
     req.setValue(std::move(cloned));
     req.setFlags(reply.flags());
     req.setExptime(upgradingL1Exptime);
-    return std::move(req);
+    return req;
   }
 
   template <class Request>
@@ -147,19 +149,21 @@ class L1L2CacheRoute {
     return std::move(req);
   }
 
-  template <class Request, class Operation>
-  void updateL1Ncache(const Request& req, Operation) {
+  // TODO(jmswen) Make this work with Thrift requests.
+  template <int op>
+  void updateL1Ncache(const McRequestWithMcOp<op>& req) {
     folly::fibers::addTask(
-      [l1 = l1_, l2 = l2_, creq = Request(req.clone()),
+      [l1 = l1_, l2 = l2_, creq = req.clone(),
        upgradingL1Exptime = upgradingL1Exptime_,
        ncacheExptime = ncacheExptime_]() {
-        auto l2Reply = l2->route(creq, Operation());
+        auto l2Reply = l2->route(creq);
         if (l2Reply.isHit()) {
-          l1->route(l1UpdateFromL2(creq, l2Reply, upgradingL1Exptime),
-                    McOperation<mc_op_set>());
+          l1->route(l1UpdateFromL2<McRequestWithMcOp<mc_op_set>>(
+                creq, l2Reply, upgradingL1Exptime));
         } else {
           /* bump TTL on the ncache entry */
-          l1->route(l1Ncache(creq, ncacheExptime), McOperation<mc_op_set>());
+          l1->route(McRequestWithMcOp<mc_op_set>(
+                l1Ncache(creq, ncacheExptime)));
         }
       }
     );

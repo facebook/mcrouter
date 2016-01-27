@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -55,7 +55,7 @@ TEST(failoverWithExptimeRouteTest, success) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
     EXPECT_TRUE(toString(reply.value()) == "a");
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   });
@@ -81,7 +81,7 @@ TEST(failoverWithExptimeRouteTest, once) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
     EXPECT_TRUE(toString(reply.value()) == "b");
 
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -109,7 +109,7 @@ TEST(failoverWithExptimeRouteTest, twice) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
     EXPECT_TRUE(toString(reply.value()) == "c");
 
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
@@ -138,7 +138,7 @@ TEST(failoverWithExptimeRouteTest, fail) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
 
     /* Will return the last reply when ran out of targets */
     EXPECT_TRUE(toString(reply.value()) == "c");
@@ -170,7 +170,7 @@ void testFailoverGet(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhNoFail->route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rhNoFail->route(McRequestWithMcOp<mc_op_get>("0"));
     EXPECT_EQ(toString(reply.value()), "a");
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   });
@@ -184,7 +184,7 @@ void testFailoverGet(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhFail->route(McRequest("0"), McOperation<mc_op_get>());
+    auto reply = rhFail->route(McRequestWithMcOp<mc_op_get>("0"));
     EXPECT_EQ(toString(reply.value()), "b");
   });
 }
@@ -210,8 +210,8 @@ void testFailoverUpdate(mc_res_t res) {
   fm.run([&]{
     mockFiberContext();
     auto msg = createMcMsgRef("0", "a");
-    auto reply = rhNoFail->route(McRequest(std::move(msg)),
-                                 McOperation<mc_op_set>());
+    auto reply = rhNoFail->route(
+        McRequestWithMcOp<mc_op_set>(std::move(msg)));
     EXPECT_EQ(toString(reply.value()), "a");
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
     // only normal handle sees the key
@@ -230,8 +230,8 @@ void testFailoverUpdate(mc_res_t res) {
   fm.run([&]{
     mockFiberContext();
     auto msg = createMcMsgRef("0", "a");
-    auto reply = rhFail->route(McRequest(std::move(msg)),
-                               McOperation<mc_op_set>());
+    auto reply = rhFail->route(
+        McRequestWithMcOp<mc_op_set>(std::move(msg)));
     EXPECT_EQ(toString(reply.value()), "a");
     EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
     EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
@@ -259,8 +259,8 @@ void testFailoverDelete(mc_res_t res) {
   fm.run([&]{
     mockFiberContext();
     auto msg = createMcMsgRef("0");
-    auto reply = rhNoFail->route(McRequest(std::move(msg)),
-                                 McOperation<mc_op_delete>());
+    auto reply = rhNoFail->route(
+        McRequestWithMcOp<mc_op_delete>(std::move(msg)));
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
     // only normal handle sees the key
     EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
@@ -278,8 +278,8 @@ void testFailoverDelete(mc_res_t res) {
   fm.run([&]{
     mockFiberContext();
     auto msg = createMcMsgRef("0");
-    auto reply = rhFail->route(McRequest(std::move(msg)),
-                               McOperation<mc_op_delete>());
+    auto reply = rhFail->route(
+        McRequestWithMcOp<mc_op_delete>(std::move(msg)));
     EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
     EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
   });
@@ -324,8 +324,8 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
   fm.run([&]{
     mockFiberContext();
     auto msg = createMcMsgRef("0", "1");
-    auto reply = rh->route(McRequest(std::move(msg)),
-                           McOperation<mc_op_incr>());
+    auto reply = rh->route(
+        McRequestWithMcOp<mc_op_incr>(std::move(msg)));
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
     // only normal handle sees the key
     EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});

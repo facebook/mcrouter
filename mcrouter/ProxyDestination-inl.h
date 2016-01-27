@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -8,18 +8,18 @@
  *
  */
 #include "mcrouter/config-impl.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestinationMap.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-template <int Op, class Request>
-typename ReplyType<McOperation<Op>, Request>::type
-ProxyDestination::send(const Request& request, McOperation<Op>,
-                       DestinationRequestCtx& req_ctx,
-                       std::chrono::milliseconds timeout) {
+template <class Request>
+ReplyT<Request> ProxyDestination::send(const Request& request,
+                                       DestinationRequestCtx& req_ctx,
+                                       std::chrono::milliseconds timeout) {
   proxy->destinationMap->markAsActive(*this);
-  auto reply = getAsyncMcClient().sendSync(request, McOperation<Op>(), timeout);
+  auto reply = getAsyncMcClient().sendSync(request, timeout);
   onReply(reply, req_ctx);
   return reply;
 }

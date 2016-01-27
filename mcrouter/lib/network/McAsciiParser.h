@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -98,7 +98,7 @@ class McClientAsciiParser : public McAsciiParserBase {
   /**
    * Prepares parser for parsing reply for given request type and operation.
    */
-  template<class Operation, class Request>
+  template <class Request>
   void initializeReplyParser();
 
   /**
@@ -109,7 +109,7 @@ class McClientAsciiParser : public McAsciiParserBase {
    *
    * @tparam T  type of expected reply.
    */
-  template<class T>
+  template <class T>
   T getReply();
  private:
   void initializeCommon();
@@ -120,7 +120,7 @@ class McClientAsciiParser : public McAsciiParserBase {
   void consumeArithmReplyCommon(folly::IOBuf& buffer);
   void consumeStorageReplyCommon(folly::IOBuf& buffer);
 
-  template<class Msg, class Op>
+  template <class Msg, class Op>
   void consumeMessage(folly::IOBuf& buffer);
 
   MessageStorage<List<McReply>> currentMessage_;

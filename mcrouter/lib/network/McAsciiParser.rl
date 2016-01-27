@@ -519,8 +519,9 @@ void McClientAsciiParser::consumeMessage<McReply, McOperation<mc_op_flushall>>(
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_get>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_get>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_get_reply_en_get_reply;
   errorCs_ = mc_ascii_get_reply_error;
@@ -529,8 +530,9 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_get>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_gets>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_gets>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_gets_reply_en_gets_reply;
   errorCs_ = mc_ascii_gets_reply_error;
@@ -539,8 +541,9 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_gets>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_lease_get>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_lease_get>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_lease_get_reply_en_lease_get_reply;
   errorCs_ = mc_ascii_lease_get_reply_error;
@@ -550,62 +553,72 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_lease_get>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_set>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_set>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_add>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_add>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_replace>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_replace>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_lease_set>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_lease_set>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_cas>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_cas>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_append>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_append>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_prepend>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_prepend>>() {
+
   initializeStorageReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_incr>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_incr>>() {
+
   initializeArithmReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_decr>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_decr>>() {
+
   initializeArithmReplyCommon();
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_version>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_version>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_version_reply_en_version_reply;
   errorCs_ = mc_ascii_version_reply_error;
@@ -614,8 +627,9 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_version>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_delete>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_delete>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_delete_reply_en_delete_reply;
   errorCs_ = mc_ascii_delete_reply_error;
@@ -624,8 +638,9 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_delete>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_touch>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_touch>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_touch_reply_en_touch_reply;
   errorCs_ = mc_ascii_touch_reply_error;
@@ -634,8 +649,9 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_touch>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_metaget>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_metaget>>() {
+
   initializeCommon();
   // Since mc_op_metaget has A LOT of specific fields, just create McMsgRef for
   // now.
@@ -648,8 +664,9 @@ void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_metaget>,
 }
 
 template<>
-void McClientAsciiParser::initializeReplyParser<McOperation<mc_op_flushall>,
-                                                McRequest>() {
+void McClientAsciiParser::initializeReplyParser<
+    McRequestWithMcOp<mc_op_flushall>>() {
+
   initializeCommon();
   savedCs_ = mc_ascii_flushall_reply_en_flushall_reply;
   errorCs_ = mc_ascii_flushall_reply_error;

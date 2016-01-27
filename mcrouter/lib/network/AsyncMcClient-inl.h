@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,11 +28,10 @@ inline void AsyncMcClient::setStatusCallbacks(
   base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
 }
 
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-AsyncMcClient::sendSync(const Request& request, Operation,
-                        std::chrono::milliseconds timeout) {
-  return base_->sendSync(request, Operation(), timeout);
+template <class Request>
+ReplyT<Request> AsyncMcClient::sendSync(const Request& request,
+                                        std::chrono::milliseconds timeout) {
+  return base_->sendSync(request, timeout);
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {

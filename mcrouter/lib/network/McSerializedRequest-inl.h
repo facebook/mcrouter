@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,9 +9,8 @@
  */
 namespace facebook { namespace memcache {
 
-template <int Op>
-McSerializedRequest::McSerializedRequest(const McRequest& req,
-                                         McOperation<Op>,
+template <class Request>
+McSerializedRequest::McSerializedRequest(const Request& req,
                                          size_t reqId,
                                          mc_protocol_t protocol,
                                          bool useTyped)
@@ -24,8 +23,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
         result_ = Result::BAD_KEY;
         return;
       }
-      if (!asciiRequest_.prepare(req, McOperation<Op>(), iovsBegin_,
-                                 iovsCount_)) {
+      if (!asciiRequest_.prepare(req, iovsBegin_, iovsCount_)) {
         result_ = Result::ERROR;
       }
       break;
@@ -35,8 +33,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
         if (!checkKeyLength(req.key())) {
           return;
         }
-        if (!umbrellaMessage_.prepare(
-                req, McOperation<Op>(), reqId, iovsBegin_, iovsCount_)) {
+        if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
           result_ = Result::ERROR;
         }
       } else {
@@ -44,8 +41,7 @@ McSerializedRequest::McSerializedRequest(const McRequest& req,
         if (!checkKeyLength(req.key())) {
           return;
         }
-        if (!caretRequest_.prepare(
-                req, McOperation<Op>(), reqId, iovsBegin_, iovsCount_)) {
+        if (!caretRequest_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
           result_ = Result::ERROR;
         }
       }

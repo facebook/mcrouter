@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,16 +13,12 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McRequest.h"
 
-namespace facebook { namespace memcache {
-
-class McRequest;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyConfig;
-template <class Operation, class Request>
+template <class Request>
 class ProxyRequestContextTyped;
 class proxy_t;
 
@@ -32,8 +28,7 @@ class proxy_t;
  */
 class ServiceInfo {
  public:
-  using ContextType =
-      ProxyRequestContextTyped<McOperation<mc_op_get>, McRequest>;
+  using ContextType = ProxyRequestContextTyped<McRequestWithMcOp<mc_op_get>>;
   ServiceInfo(proxy_t* proxy, const ProxyConfig& config);
 
   void handleRequest(folly::StringPiece req,

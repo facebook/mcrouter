@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,7 @@ namespace facebook { namespace memcache { namespace detail {
 template <class Proc, class... Args>
 using DispatchFunc = void (*)(Proc&, Args...);
 
-/* Function pointer for Proc::processMsg<M> */
+ /* Function pointer for Proc::processMsg<M> */
 template <class M, class Proc, class... Args>
 struct DispatchImpl {
   static constexpr DispatchFunc<Proc, Args...> func =

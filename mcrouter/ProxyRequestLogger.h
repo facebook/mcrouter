@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,12 +23,11 @@ class ProxyRequestLogger {
     : proxy_(proxy) {
   }
 
-  template <class Operation, class Request>
+  template <class Request>
   void log(const Request& request,
-           const ReplyT<Operation, Request>& reply,
+           const ReplyT<Request>& reply,
            const int64_t startTimeUs,
-           const int64_t endTimeUs,
-           Operation);
+           const int64_t endTimeUs);
 
  protected:
   proxy_t* proxy_;

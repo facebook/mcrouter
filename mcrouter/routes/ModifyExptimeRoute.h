@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -50,32 +50,31 @@ class ModifyExptimeRoute {
     assert(action_ != Action::Min || exptime_ != 0);
   }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    t(*target_, req, Operation());
+    t(*target_, req);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) const {
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
     switch (action_) {
       case Action::Set: {
         auto mutReq = req.clone();
         mutReq.setExptime(exptime_);
-        return target_->route(mutReq, Operation());
+        return target_->route(mutReq);
       }
       case Action::Min: {
         /* 0 means infinite exptime. Set minimum of request exptime, exptime. */
         if (req.exptime() == 0 || req.exptime() > exptime_) {
           auto mutReq = req.clone();
           mutReq.setExptime(exptime_);
-          return target_->route(mutReq, Operation());
+          return target_->route(mutReq);
         }
-        return target_->route(req, Operation());
+        return target_->route(req);
       }
     }
-    return target_->route(req, Operation());
+    return target_->route(req);
   }
 
   static const char* actionToString(Action action);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -62,11 +62,11 @@ class WarmUpRoute {
  public:
   static std::string routeName() { return "warm-up"; }
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*cold_, req, Operation());
-    t(*warm_, req, Operation());
+    t(*cold_, req);
+    t(*warm_, req);
   }
 
   WarmUpRoute(std::shared_ptr<RouteHandleIf> warm,
@@ -81,52 +81,48 @@ class WarmUpRoute {
   }
 
   ////////////////////////////////mc_op_get/////////////////////////////////////
-  template <class Request>
-  typename ReplyType<McOperation<mc_op_get>, Request>::type
-  route(const Request& req, McOperation<mc_op_get> op) {
-    auto coldReply = cold_->route(req, op);
+  McReply route(const McRequestWithMcOp<mc_op_get>& req) {
+    auto coldReply = cold_->route(req);
     if (coldReply.isHit()) {
       return coldReply;
     }
 
     /* else */
-    auto warmReply = warm_->route(req, op);
+    auto warmReply = warm_->route(req);
     uint32_t exptime;
     if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
       folly::fibers::addTask([
           cold = cold_,
-          addReq = coldUpdateFromWarm(req, warmReply, exptime)]() {
-        cold->route(addReq, McOperation<mc_op_add>());
+          addReq = coldUpdateFromWarm<McRequestWithMcOp<mc_op_add>>(
+            req, warmReply, exptime)]() {
+        cold->route(addReq);
       });
     }
     return warmReply;
   }
 
   ///////////////////////////////mc_op_metaget//////////////////////////////////
-  template <class Request>
-  typename ReplyType<McOperation<mc_op_metaget>, Request>::type
-  route(const Request& req, McOperation<mc_op_metaget> op) {
-    auto coldReply = cold_->route(req, op);
+  McReply route(const McRequestWithMcOp<mc_op_metaget>& req) {
+    auto coldReply = cold_->route(req);
     if (coldReply.isHit()) {
       return coldReply;
     }
-    return warm_->route(req, op);
+    return warm_->route(req);
   }
 
   /////////////////////////////mc_op_lease_get//////////////////////////////////
-  template <class Request>
-  typename ReplyType<McOperation<mc_op_lease_get>, Request>::type
-  route(const Request& req, McOperation<mc_op_lease_get> op) {
-    auto coldReply = cold_->route(req, op);
+  McReply route(const McRequestWithMcOp<mc_op_lease_get>& req) {
+    auto coldReply = cold_->route(req);
     if (coldReply.isHit() || coldReply.isHotMiss()) {
       // in case of a hot miss somebody else will set the value
       return coldReply;
     }
 
     // miss with lease token from cold route: send simple get to warm route
-    auto warmReply = warm_->route(req, McOperation<mc_op_get>());
+    McRequestWithMcOp<mc_op_get> reqOpGet(req.clone());
+    auto warmReply = warm_->route(reqOpGet);
     uint32_t exptime;
-    if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
+    if (warmReply.isHit() && getExptimeForCold(reqOpGet, exptime)) {
       // get lease token
       uint64_t leaseToken = coldReply.leaseToken();
       if (auto map =
@@ -135,11 +131,12 @@ class WarmUpRoute {
       }
 
       // update cold route with lease set
-      auto setReq = coldUpdateFromWarm(req, warmReply, exptime);
+      auto setReq = coldUpdateFromWarm<McRequestWithMcOp<mc_op_lease_set>>(
+          reqOpGet, warmReply, exptime);
       setReq.setLeaseToken(leaseToken);
 
       folly::fibers::addTask([cold = cold_, req = std::move(setReq)]() {
-        cold->route(req, McOperation<mc_op_lease_set>());
+        cold->route(req);
       });
       return warmReply;
     }
@@ -147,33 +144,32 @@ class WarmUpRoute {
   }
 
   ////////////////////////////////mc_op_gets////////////////////////////////////
-  template <class Request>
-  typename ReplyType<McOperation<mc_op_gets>, Request>::type
-  route(const Request& req, McOperation<mc_op_gets> op) {
-    auto coldReply = cold_->route(req, op);
+  McReply route(const McRequestWithMcOp<mc_op_gets>& req) {
+    auto coldReply = cold_->route(req);
     if (coldReply.isHit()) {
       return coldReply;
     }
 
     // miss: send simple get to warm route
-    auto warmReply = warm_->route(req, McOperation<mc_op_get>());
+    McRequestWithMcOp<mc_op_get> reqGet(req.clone());
+    auto warmReply = warm_->route(reqGet);
     uint32_t exptime;
     if (warmReply.isHit() && getExptimeForCold(req, exptime)) {
       // update cold route if we have the value
-      auto addReq = coldUpdateFromWarm(req, warmReply, exptime);
-      cold_->route(addReq, McOperation<mc_op_add>());
+      auto addReq = coldUpdateFromWarm<McRequestWithMcOp<mc_op_add>>(
+          req, warmReply, exptime);
+      cold_->route(addReq);
       // and grab cas token again
-      return cold_->route(req, op);
+      return cold_->route(req);
     }
     return coldReply;
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type route(
-    const Request& req, Operation) const {
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
     // client is responsible for consistency of warm route, do not replicate
     // any update/delete operations
-    return cold_->route(req, Operation());
+    return cold_->route(req);
   }
 
  private:
@@ -181,17 +177,17 @@ class WarmUpRoute {
   const std::shared_ptr<RouteHandleIf> cold_;
   const folly::Optional<uint32_t> exptime_;
 
-  template <class Request, class Reply>
-  static Request coldUpdateFromWarm(const Request& origReq,
-                                    const Reply& reply,
-                                    uint32_t exptime) {
-    auto req = origReq.clone();
+  template <class ToRequest, class Request, class Reply>
+  static ToRequest coldUpdateFromWarm(const Request& origReq,
+                                      const Reply& reply,
+                                      uint32_t exptime) {
+    ToRequest req(origReq.clone());
     folly::IOBuf cloned;
     reply.value().cloneInto(cloned);
     req.setValue(std::move(cloned));
     req.setFlags(reply.flags());
     req.setExptime(exptime);
-    return std::move(req);
+    return req;
   }
 
   template <class Request>
@@ -200,7 +196,8 @@ class WarmUpRoute {
       exptime = *exptime_;
       return true;
     }
-    auto warmMeta = warm_->route(req, McOperation<mc_op_metaget>());
+    McRequestWithMcOp<mc_op_metaget> reqMetaget(req.clone());
+    auto warmMeta = warm_->route(reqMetaget);
     if (warmMeta.isHit()) {
       exptime = warmMeta.exptime();
       if (exptime != 0) {

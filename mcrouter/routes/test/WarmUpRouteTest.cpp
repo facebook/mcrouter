@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -48,15 +48,16 @@ TEST(warmUpRouteTest, warmUp) {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[1], 1);
 
-    auto reply_get = rh.route(McRequest("key_get"), McOperation<mc_op_get>());
+    auto reply_get = rh.route(
+        McRequestWithMcOp<mc_op_get>("key_get"));
     EXPECT_TRUE("b" == toString(reply_get.value()));
     EXPECT_TRUE(vector<string>{"key_get"} != test_handles[0]->saw_keys);
     EXPECT_TRUE(vector<string>{"key_get"} == test_handles[1]->saw_keys);
     (test_handles[0]->saw_keys).clear();
     (test_handles[1]->saw_keys).clear();
 
-    auto reply_del = rh.route(McRequest("key_del"),
-                              McOperation<mc_op_delete>());
+    auto reply_del = rh.route(
+        McRequestWithMcOp<mc_op_delete>("key_del"));
     EXPECT_TRUE(mc_res_notfound == reply_del.result());
     EXPECT_TRUE(vector<string>{"key_del"} != test_handles[0]->saw_keys);
     EXPECT_TRUE(vector<string>{"key_del"} == test_handles[1]->saw_keys);
@@ -65,7 +66,8 @@ TEST(warmUpRouteTest, warmUp) {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[2], 1);
 
-    auto reply_get = rh.route(McRequest("key_get"), McOperation<mc_op_get>());
+    auto reply_get = rh.route(
+        McRequestWithMcOp<mc_op_get>("key_get"));
     EXPECT_TRUE("a" == toString(reply_get.value()));
     EXPECT_TRUE(vector<string>{"key_get"} == test_handles[0]->saw_keys);
     EXPECT_TRUE(vector<string>{"key_get"} == test_handles[2]->saw_keys);
@@ -81,8 +83,8 @@ TEST(warmUpRouteTest, warmUp) {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[2], 1);
 
-    auto reply_del = rh.route(McRequest("key_del"),
-                              McOperation<mc_op_delete>());
+    auto reply_del = rh.route(
+        McRequestWithMcOp<mc_op_delete>("key_del"));
     EXPECT_TRUE(mc_res_notfound == reply_del.result());
     EXPECT_TRUE(vector<string>{"key_del"} != test_handles[0]->saw_keys);
     EXPECT_TRUE(vector<string>{"key_del"} == test_handles[2]->saw_keys);

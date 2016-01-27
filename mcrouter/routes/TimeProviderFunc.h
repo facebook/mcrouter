@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,8 +16,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 /* Time Provider Func for Migrate route */
 class TimeProviderFunc {
  public:
-  template <class Request>
-  time_t operator() (const Request& req) const {
+  time_t operator() () const {
     return nowWallSec();
   }
 };

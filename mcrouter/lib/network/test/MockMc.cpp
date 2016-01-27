@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,14 +27,6 @@ void MockMc::CacheItem::updateCasToken() {
 
 MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v)
     : value(std::move(v)) {
-}
-
-MockMc::Item::Item(const McRequest& req)
-    : value(req.value().clone()),
-      exptime(req.exptime() != 0 && req.exptime() <= 60*60*24*30
-          ? req.exptime() + time(nullptr)
-          : req.exptime()),
-      flags(req.flags()) {
 }
 
 MockMc::Item::Item(const folly::IOBuf& v, int32_t t, uint64_t f)

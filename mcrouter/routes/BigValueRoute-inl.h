@@ -41,31 +41,31 @@ std::vector<Reply> BigValueRoute::collectAllByBatches(
   return allReplies;
 }
 
-template <class Operation, class Request>
+template <class Request>
 void BigValueRoute::traverse(
-    const Request& req, Operation,
+    const Request& req,
     const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-  t(*ch_, req, Operation());
+  t(*ch_, req);
 }
 
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type BigValueRoute::route(
-    const Request& req, Operation,
-    typename GetLike<Operation>::Type) const {
-  auto initialReply = ch_->route(req, Operation());
+template <class Request>
+ReplyT<Request> BigValueRoute::route(const Request& req,
+                                     GetLikeT<Request>) const {
+  using Reply = ReplyT<Request>;
+
+  auto initialReply = ch_->route(req);
   if (!initialReply.isHit() ||
       !(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE)) {
     return initialReply;
   }
 
-  typedef typename ReplyType<Operation, Request>::type Reply;
   auto buf = initialReply.value().clone();
   ChunksInfo chunks_info(coalesceAndGetRange(buf));
   if (!chunks_info.valid()) {
-    return Reply(DefaultReply, Operation());
+    return Reply(DefaultReply, req);
   }
 
-  auto reqs = chunkGetRequests(req, chunks_info, Operation());
+  auto reqs = chunkGetRequests<McRequestWithOp<ChunkGetOP>>(req, chunks_info);
   std::vector<std::function<Reply()>> fs;
   fs.reserve(reqs.size());
 
@@ -73,7 +73,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
   for (const auto& req_b : reqs) {
     fs.push_back(
       [&target, &req_b]() {
-        return target.route(req_b, ChunkGetOP());
+        return target.route(req_b);
       }
     );
   }
@@ -83,17 +83,18 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     replies.begin(), replies.end(), std::move(initialReply));
 }
 
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type BigValueRoute::route(
-  const Request& req, Operation,
-  typename UpdateLike<Operation>::Type) const {
+template <class Request>
+ReplyT<Request> BigValueRoute::route(const Request& req,
+                                     UpdateLikeT<Request>) const {
 
-  typedef typename ReplyType<Operation, Request>::type Reply;
+  using Reply = ReplyT<Request>;
+
   if (req.value().computeChainDataLength() <= options_.threshold_) {
-    return ch_->route(req, Operation());
+    return ch_->route(req);
   }
 
-  auto reqs_info_pair = chunkUpdateRequests(req, Operation());
+  auto reqs_info_pair = chunkUpdateRequests<McRequestWithOp<ChunkUpdateOP>>(
+      req);
   std::vector<std::function<Reply()>> fs;
   fs.reserve(reqs_info_pair.first.size());
 
@@ -101,7 +102,7 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
   for (const auto& req_b : reqs_info_pair.first) {
     fs.push_back(
       [&target, &req_b]() {
-        return target.route(req_b, ChunkUpdateOP());
+        return target.route(req_b);
       }
     );
   }
@@ -115,31 +116,30 @@ typename ReplyType<Operation, Request>::type BigValueRoute::route(
     auto new_req = req.clone();
     new_req.setFlags(req.flags() | MC_MSG_FLAG_BIG_VALUE);
     new_req.setValue(reqs_info_pair.second.toStringType());
-    return ch_->route(std::move(new_req), Operation());
+    return ch_->route(new_req);
   } else {
     return Reply(reducedReply->result());
   }
 }
 
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type BigValueRoute::route(
-  const Request& req, Operation,
-  OtherThanT(Operation, GetLike<>, UpdateLike<>)) const {
+template <class Request>
+ReplyT<Request> BigValueRoute::route(
+    const Request& req,
+    OtherThanT<Request, GetLike<>, UpdateLike<>>) const {
 
-  return ch_->route(req, Operation());
+  return ch_->route(req);
 }
 
-template <class Operation, class Request>
-std::pair<std::vector<Request>,
-  typename BigValueRoute::ChunksInfo>
-BigValueRoute::chunkUpdateRequests(const Request& req, Operation) const {
+template <class ToRequest, class FromRequest>
+std::pair<std::vector<ToRequest>,
+          typename BigValueRoute::ChunksInfo>
+BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
   int num_chunks =
       (req.value().computeChainDataLength() + options_.threshold_ - 1) /
       options_.threshold_;
   ChunksInfo info(num_chunks);
 
-  // Type for Request and ChunkUpdateRequest is same for now.
-  std::vector<Request> big_set_reqs;
+  std::vector<ToRequest> big_set_reqs;
   big_set_reqs.reserve(num_chunks);
 
   auto base_key = req.fullKey();
@@ -155,13 +155,11 @@ BigValueRoute::chunkUpdateRequests(const Request& req, Operation) const {
   return std::make_pair(std::move(big_set_reqs), info);
 }
 
-template<class Operation, class Request>
-std::vector<Request>
-BigValueRoute::chunkGetRequests(const Request& req,
-                                const ChunksInfo& info,
-                                Operation) const {
-  // Type for Request and ChunkGetRequest is same for now.
-  std::vector<Request> big_get_reqs;
+template<class ToRequest, class FromRequest>
+std::vector<ToRequest>
+BigValueRoute::chunkGetRequests(const FromRequest& req,
+                                const ChunksInfo& info) const {
+  std::vector<ToRequest> big_get_reqs;
   big_get_reqs.reserve(info.numChunks());
 
   auto base_key = req.fullKey();

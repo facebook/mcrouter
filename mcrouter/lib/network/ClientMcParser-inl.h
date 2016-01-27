@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -8,6 +8,7 @@
  *
  */
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/McRequest.h"
 
 namespace facebook { namespace memcache {
 
@@ -41,15 +42,15 @@ bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
 }
 
 template <class Callback>
-template <class Operation, class Request>
+template <class Request>
 void ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
-    asciiParser_.initializeReplyParser<Operation, Request>();
+    asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ =
-      &ClientMcParser<Callback>::forwardAsciiReply<Operation, Request>;
+      &ClientMcParser<Callback>::forwardAsciiReply<Request>;
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaForwarder_ =
-      &ClientMcParser<Callback>::forwardUmbrellaReply<Operation, Request>;
+      &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   }
 }
 
@@ -61,17 +62,16 @@ void ClientMcParser<Callback>::replyReadyHelper(McReply&& reply,
 }
 
 template <class Callback>
-template <class Operation, class Request>
+template <class Request>
 void ClientMcParser<Callback>::forwardAsciiReply() {
   parser_.reportMsgRead();
   callback_.replyReady(
-    asciiParser_.getReply<typename ReplyType<Operation,
-                                             Request>::type>(), 0 /* reqId */);
+    asciiParser_.getReply<ReplyT<Request>>(), 0 /* reqId */);
   replyForwarder_ = nullptr;
 }
 
 template <class Callback>
-template <class Operation, class Request>
+template <class Request>
 void ClientMcParser<Callback>::forwardUmbrellaReply(
   const UmbrellaMessageInfo& info,
   const uint8_t* header,
@@ -80,11 +80,11 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
   uint64_t reqId) {
 
   if (info.version == UmbrellaVersion::BASIC) {
-    auto reply = umbrellaParseReply<Operation, Request>(
+    auto reply = umbrellaParseReply<Request>(
         bodyBuffer, header, info.headerSize, body, info.bodySize);
     callback_.replyReady(std::move(reply), reqId);
   } else {
-    ReplyT<Operation, Request> reply;
+    ReplyT<Request> reply;
     folly::IOBuf trim;
     bodyBuffer.cloneOneInto(trim);
     trim.trimStart(info.headerSize);

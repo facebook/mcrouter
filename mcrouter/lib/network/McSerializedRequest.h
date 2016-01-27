@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,8 +20,6 @@
 
 namespace facebook { namespace memcache {
 
-class McRequest;
-
 /**
  * A class for serializing memcache requests into iovs.
  */
@@ -39,12 +37,12 @@ class McSerializedRequest {
    * @param req  request to serialize, caller is responsible to keep it alive
    *             for the whole lifecycle of this serialized request.
    */
-  template <int Op>
-  McSerializedRequest(const McRequest& req,
-                      McOperation<Op>,
+  template <class Request>
+  McSerializedRequest(const Request& req,
                       size_t reqId,
                       mc_protocol_t protocol,
                       bool useTyped);
+
   ~McSerializedRequest();
 
   McSerializedRequest(const McSerializedRequest&) = delete;

@@ -253,24 +253,25 @@ struct TagSet<McOperation<mc_op_lease_get>> {
 
 }  // detail
 
-template <class Operation, class Request>
-typename ReplyType<Operation, Request>::type
-umbrellaParseReply(const folly::IOBuf& source,
-                   const uint8_t* header, size_t nheader,
-                   const uint8_t* body, size_t nbody) {
+template <class Request>
+ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
+                                    const uint8_t* header, size_t nheader,
+                                    const uint8_t* body, size_t nbody) {
   using namespace detail;
 
-  typename ReplyType<Operation, Request>::type reply;
-  umbrellaParseMessage<typename TagSet<Operation>::Tags>(
-    reply, Operation(), source, header, nheader, body, nbody);
+  ReplyT<Request> reply;
+  umbrellaParseMessage<typename TagSet<Request>::Tags>(
+    reply, typename Request::OpType(), source, header, nheader, body, nbody);
   return reply;
 }
 
 template<int Op>
-bool UmbrellaSerializedMessage::prepare(const McRequest& request,
-                                        McOperation<Op>, uint64_t reqid,
-                                        struct iovec*& iovOut,
-                                        size_t& niovOut) {
+bool UmbrellaSerializedMessage::prepare(
+    const McRequestWithMcOp<Op>& request,
+    uint64_t reqid,
+    struct iovec*& iovOut,
+    size_t& niovOut) {
+
   niovOut = 0;
 
   appendInt(I32, msg_op, umbrella_op_from_mc[Op]);

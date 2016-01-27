@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -48,8 +48,8 @@ class ModifyKeyRoute {
                  folly::Optional<std::string> routingPrefix,
                  std::string keyPrefix);
 
-  template <class Operation, class Request>
-  void traverse(const Request& req, Operation,
+  template <class Request>
+  void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     folly::StringPiece rp = routingPrefix_.hasValue()
       ? routingPrefix_.value()
@@ -61,24 +61,23 @@ class ModifyKeyRoute {
     } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
       cloneReq.setKey(folly::to<std::string>(rp, req.keyWithoutRoute()));
     }
-    t(*target_, cloneReq, Operation());
+    t(*target_, cloneReq);
   }
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  route(const Request& req, Operation) const {
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
     folly::StringPiece rp = routingPrefix_.hasValue()
       ? routingPrefix_.value()
       : req.routingPrefix();
 
     if (!req.keyWithoutRoute().startsWith(keyPrefix_)) {
       auto key = folly::to<std::string>(rp, keyPrefix_, req.keyWithoutRoute());
-      return routeReqWithKey(req, key, Operation());
+      return routeReqWithKey(req, key);
     } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
       auto key = folly::to<std::string>(rp, req.keyWithoutRoute());
-      return routeReqWithKey(req, key, Operation());
+      return routeReqWithKey(req, key);
     }
-    return target_->route(req, Operation());
+    return target_->route(req);
   }
 
  private:
@@ -86,19 +85,17 @@ class ModifyKeyRoute {
   const folly::Optional<std::string> routingPrefix_;
   const std::string keyPrefix_;
 
-  template <class Operation, class Request>
-  typename ReplyType<Operation, Request>::type
-  routeReqWithKey(const Request& req, folly::StringPiece key, Operation) const {
-    typedef typename ReplyType<Operation, Request>::type Reply;
-
+  template <class Request>
+  ReplyT<Request>
+  routeReqWithKey(const Request& req, folly::StringPiece key) const {
     auto err = mc_client_req_key_check(to<nstring_t>(key));
     if (err != mc_req_err_valid) {
-      return Reply(ErrorReply, "ModifyKeyRoute: invalid key: " +
+      return ReplyT<Request>(ErrorReply, "ModifyKeyRoute: invalid key: " +
           std::string(mc_req_err_to_string(err)));
     }
     auto cloneReq = req.clone();
     cloneReq.setKey(key);
-    return target_->route(cloneReq, Operation());
+    return target_->route(cloneReq);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,57 +21,57 @@ namespace memcache {
 
 /**
  * The following convertToTypedRequest() methods,
- * convert McRequest to TypedRequest
+ * convert McRequestWithOp to TypedRequest
  *
- * @param req  McRequest
+ * @param req  McRequestWithOp
  * @return TypedThriftMessage corresponding to the operation
  */
-TypedThriftMessage<cpp2::McGetRequest> convertToTyped(const McRequest& req,
-                                                      McOperation<mc_op_get>);
+TypedThriftMessage<cpp2::McGetRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_get>& req);
 
-TypedThriftMessage<cpp2::McSetRequest> convertToTyped(const McRequest& req,
-                                                      McOperation<mc_op_set>);
+TypedThriftMessage<cpp2::McSetRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_set>& req);
 
 TypedThriftMessage<cpp2::McDeleteRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_delete>);
+    const McRequestWithMcOp<mc_op_delete>& req);
 
 TypedThriftMessage<cpp2::McTouchRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_touch>);
+    const McRequestWithMcOp<mc_op_touch>& req);
 
 TypedThriftMessage<cpp2::McLeaseGetRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_lease_get>);
+    const McRequestWithMcOp<mc_op_lease_get>& req);
 
 TypedThriftMessage<cpp2::McLeaseSetRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_lease_set>);
+    const McRequestWithMcOp<mc_op_lease_set>& req);
 
-TypedThriftMessage<cpp2::McAddRequest> convertToTyped(const McRequest& req,
-                                                      McOperation<mc_op_add>);
+TypedThriftMessage<cpp2::McAddRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_add>& req);
 
 TypedThriftMessage<cpp2::McReplaceRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_replace>);
+    const McRequestWithMcOp<mc_op_replace>& req);
 
-TypedThriftMessage<cpp2::McGetsRequest> convertToTyped(const McRequest& req,
-                                                       McOperation<mc_op_gets>);
+TypedThriftMessage<cpp2::McGetsRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_gets>& req);
 
-TypedThriftMessage<cpp2::McCasRequest> convertToTyped(const McRequest& req,
-                                                      McOperation<mc_op_cas>);
+TypedThriftMessage<cpp2::McCasRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_cas>& req);
 
-TypedThriftMessage<cpp2::McIncrRequest> convertToTyped(const McRequest& req,
-                                                       McOperation<mc_op_incr>);
+TypedThriftMessage<cpp2::McIncrRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_incr>& req);
 
-TypedThriftMessage<cpp2::McDecrRequest> convertToTyped(const McRequest& req,
-                                                       McOperation<mc_op_decr>);
+TypedThriftMessage<cpp2::McDecrRequest> convertToTyped(
+    const McRequestWithMcOp<mc_op_decr>& req);
 
 TypedThriftMessage<cpp2::McMetagetRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_metaget>);
+    const McRequestWithMcOp<mc_op_metaget>& req);
 
 TypedThriftMessage<cpp2::McVersionRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_version>);
+    const McRequestWithMcOp<mc_op_version>& req);
 
 TypedThriftMessage<cpp2::McAppendRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_append>);
+    const McRequestWithMcOp<mc_op_append>& req);
 
 TypedThriftMessage<cpp2::McPrependRequest> convertToTyped(
-    const McRequest& req, McOperation<mc_op_prepend>);
+    const McRequestWithMcOp<mc_op_prepend>& req);
 }
 }

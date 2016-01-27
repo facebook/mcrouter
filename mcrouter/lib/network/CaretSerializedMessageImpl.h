@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,13 +11,12 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/McRequestToTypedConverter.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
 namespace memcache {
-
-class McRequest;
 
 template <class T>
 class TypedThriftMessage;
@@ -49,9 +48,8 @@ class CaretSerializedMessage {
    *
    * @return true iff message was successfully prepared.
    */
-  template <int Op>
-  bool prepare(const McRequest& req,
-               McOperation<Op>,
+  template <class Op>
+  bool prepare(const McRequestWithOp<Op>& req,
                size_t reqId,
                struct iovec*& iovOut,
                size_t& niovOut) noexcept;
@@ -83,20 +81,16 @@ class CaretSerializedMessage {
 
   template <int Op>
   typename std::enable_if<
-      !ConvertToTypedIfSupported<McRequest, McOperation<Op>>::value,
-      bool>::type
-  prepareImpl(const McRequest& req,
-              McOperation<Op>,
+    !ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
+  prepareImpl(const McRequestWithMcOp<Op>& req,
               size_t reqId,
               struct iovec*& iovOut,
               size_t& niovOut);
 
   template <int Op>
   typename std::enable_if<
-      ConvertToTypedIfSupported<McRequest, McOperation<Op>>::value,
-      bool>::type
-  prepareImpl(const McRequest& req,
-              McOperation<Op>,
+    ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
+  prepareImpl(const McRequestWithMcOp<Op>& req,
               size_t reqId,
               struct iovec*& iovOut,
               size_t& niovOut);

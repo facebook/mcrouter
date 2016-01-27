@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -51,48 +51,43 @@ void McClientRequestContextBase::reply(Reply&& r) {
   sendTraceOnReply();
 }
 
-template <class Operation, class Request>
+template <class Request>
 McClientRequestContextBase::McClientRequestContextBase(
-    Operation,
     const Request& request,
     uint64_t reqid,
     mc_protocol_t protocol,
     std::shared_ptr<AsyncMcClientImpl> client,
-    folly::Optional<typename ReplyType<Operation, Request>::type>& replyStorage,
+    folly::Optional<ReplyT<Request>>& replyStorage,
     McClientRequestContextQueue& queue,
     InitializerFuncPtr initializer,
     bool useTyped)
-    : reqContext(request, Operation(), reqid, protocol, useTyped),
+    : reqContext(request, reqid, protocol, useTyped),
       id(reqid),
       queue_(queue),
       client_(std::move(client)),
-      replyType_(typeid(typename ReplyType<Operation, Request>::type)),
+      replyType_(typeid(ReplyT<Request>)),
       replyStorage_(reinterpret_cast<void*>(&replyStorage)),
       initializer_(std::move(initializer)) {}
 
-template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::replyErrorImpl(
-    mc_res_t result) {
+template <class Request>
+void McClientRequestContext<Request>::replyErrorImpl(mc_res_t result) {
   assert(!replyStorage_.hasValue());
   replyStorage_.emplace(result);
 }
 
-template <class Operation, class Request>
-const char*
-McClientRequestContext<Operation, Request>::fakeReply() const {
+template <class Request>
+const char* McClientRequestContext<Request>::fakeReply() const {
   return "CLIENT_ERROR unsupported operation\r\n";
 }
 
-template <class Operation, class Request>
-std::string
-McClientRequestContext<Operation, Request>::getContextTypeStr() const {
-  return folly::sformat("OperationT is {}, RequestT is {}",
-                        typeid(Operation).name(), typeid(Request).name());
+template <class Request>
+std::string McClientRequestContext<Request>::getContextTypeStr() const {
+  return folly::sformat("RequestT is {}", typeid(Request).name());
 }
 
-template <class Operation, class Request>
-typename McClientRequestContext<Operation, Request>::Reply
-McClientRequestContext<Operation, Request>::waitForReply(
+template <class Request>
+typename McClientRequestContext<Request>::Reply
+McClientRequestContext<Request>::waitForReply(
     std::chrono::milliseconds timeout) {
 
   batonWaitTimeout_ = timeout;
@@ -139,8 +134,8 @@ McClientRequestContext<Operation, Request>::waitForReply(
   return Reply(mc_res_local_error);
 }
 
-template <class Operation, class Request>
-McClientRequestContext<Operation, Request>::McClientRequestContext(
+template <class Request>
+McClientRequestContext<Request>::McClientRequestContext(
     const Request& request,
     uint64_t reqid,
     mc_protocol_t protocol,
@@ -148,8 +143,7 @@ McClientRequestContext<Operation, Request>::McClientRequestContext(
     McClientRequestContextQueue& queue,
     McClientRequestContextBase::InitializerFuncPtr func,
     bool useTyped)
-    : McClientRequestContextBase(Operation(),
-                                 request,
+    : McClientRequestContextBase(request,
                                  reqid,
                                  protocol,
                                  std::move(client),
@@ -164,9 +158,11 @@ McClientRequestContext<Operation, Request>::McClientRequestContext(
 {
 }
 
-template <class Operation, class Request>
-void McClientRequestContext<Operation, Request>::sendTraceOnReply() {
+// TODO(jmswen) Extend for Thrift types.
+template <class Request>
+void McClientRequestContext<Request>::sendTraceOnReply() {
 #ifndef LIBMC_FBTRACE_DISABLE
+  using Operation = typename Request::OpType;
   fbTraceOnReceive(Operation(), fbtraceInfo_, replyStorage_.value());
 #endif
 }

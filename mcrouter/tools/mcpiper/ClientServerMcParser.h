@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -58,13 +58,11 @@ class ClientServerMcParser : private McParser::ParserCallback {
 
   CallbackFn callbackFn_;
 
-  template <class Operation>
-  typename ReplyType<Operation, McRequest>::type
-  parseReply(const UmbrellaMessageInfo& info,
-             const uint8_t* header,
-             const uint8_t* body,
-             const folly::IOBuf& bodyBuffer,
-             Operation);
+  template <class Request>
+  ReplyT<Request> parseReply(const UmbrellaMessageInfo& info,
+                             const uint8_t* header,
+                             const uint8_t* body,
+                             const folly::IOBuf& bodyBuffer);
 
   /* Callback helpers */
   void requestReady(uint64_t reqid, mc_op_t op, McRequest req);

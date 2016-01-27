@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,23 +25,21 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class ShadowPolicy>
-template <class Operation, class Request, class Reply>
-void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
-    const Reply& normalReply,
-    std::shared_ptr<McrouterRouteHandleIf> shadow,
-    std::shared_ptr<Request> adjustedReq,
-    Operation) const {
-
-  dispatchShadowRequest(std::move(shadow), std::move(adjustedReq), Operation());
-};
-
-template <class ShadowPolicy>
 template <class Request, class Reply>
 void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
     const Reply& normalReply,
     std::shared_ptr<McrouterRouteHandleIf> shadow,
-    std::shared_ptr<Request> adjustedReq,
-    McOperation<mc_op_get>) const {
+    std::shared_ptr<Request> adjustedReq) const {
+
+  dispatchShadowRequest(std::move(shadow), std::move(adjustedReq));
+};
+
+template <class ShadowPolicy>
+void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
+    const McReply& normalReply,
+    std::shared_ptr<McrouterRouteHandleIf> shadow,
+    std::shared_ptr<McRequestWithMcOp<mc_op_get>> adjustedReq)
+    const {
 
   uint64_t flags = normalReply.flags();
   mc_res_t result = normalReply.result();
@@ -60,8 +58,7 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
       fiber_local::clearAsynclogName();
       fiber_local::addRequestClass(RequestClass::kShadow);
 
-      auto shadowReply = shadow->route(*adjustedReq,
-                                       McOperation<mc_op_get>());
+      auto shadowReply = shadow->route(*adjustedReq);
       uint64_t shadowFlags = shadowReply.flags();
       mc_res_t shadowResult = shadowReply.result();
       size_t shadowHash = folly::IOBufHash()(shadowReply.value());
@@ -86,18 +83,17 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
 };
 
 template <class ShadowPolicy>
-template <class Operation, class Request>
+template <class Request>
 void ShadowRoute<ShadowPolicy>::dispatchShadowRequest(
     std::shared_ptr<McrouterRouteHandleIf> shadow,
-    std::shared_ptr<Request> adjustedReq,
-    Operation) const {
+    std::shared_ptr<Request> adjustedReq) const {
 
   folly::fibers::addTask(
     [shadow = std::move(shadow), adjustedReq = std::move(adjustedReq)]() {
       // we don't want to spool shadow requests
       fiber_local::clearAsynclogName();
       fiber_local::addRequestClass(RequestClass::kShadow);
-      shadow->route(*adjustedReq, Operation());
+      shadow->route(*adjustedReq);
     });
 };
 
