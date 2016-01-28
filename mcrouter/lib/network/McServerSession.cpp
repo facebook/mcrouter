@@ -416,11 +416,11 @@ void McServerSession::sendWrites() {
   }
   writeBatches_.push_back(count);
 
-  transport_->writev(this, iovs.data(), iovs.size());
   if (debugFifo_) {
     debugFifo_->writeIfConnected(transport_.get(), MessageDirection::Sent,
                                  iovs.data(), iovs.size());
   }
+  transport_->writev(this, iovs.data(), iovs.size());
 }
 
 void McServerSession::completeWrite() {

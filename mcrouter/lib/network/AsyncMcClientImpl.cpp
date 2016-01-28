@@ -222,13 +222,13 @@ void AsyncMcClientImpl::pushMessages() {
 
     auto iov = req.reqContext.getIovs();
     auto iovcnt = req.reqContext.getIovsCount();
-    socket_->writev(this, iov, iovcnt,
-                    numToSend == 1 ? folly::WriteFlags::NONE
-                    : folly::WriteFlags::CORK);
     if (debugFifo_) {
       debugFifo_->writeIfConnected(socket_.get(), MessageDirection::Sent,
                                    iov, iovcnt);
     }
+    socket_->writev(this, iov, iovcnt,
+                    numToSend == 1 ? folly::WriteFlags::NONE
+                    : folly::WriteFlags::CORK);
     --numToSend;
   }
   writeScheduled_ = false;
