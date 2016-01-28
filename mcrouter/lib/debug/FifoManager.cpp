@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -91,7 +91,12 @@ std::shared_ptr<Fifo> FifoManager::createAndStore(const std::string& fifoPath) {
   return it.first->second;
 }
 
-std::shared_ptr<FifoManager> FifoManager::getInstance() {
+void FifoManager::clear() {
+  folly::SharedMutex::WriteHolder lockGuard(fifosMutex_);
+  fifos_.clear();
+}
+
+/* static  */ std::shared_ptr<FifoManager> FifoManager::getInstance() {
   return folly::Singleton<FifoManager>::try_get();
 }
 

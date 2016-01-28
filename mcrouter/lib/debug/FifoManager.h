@@ -43,6 +43,11 @@ class FifoManager {
   std::shared_ptr<Fifo> fetchThreadLocal(const std::string& fifoBasePath);
 
   /**
+   * Removes all elements from the fifo manager.
+   */
+  void clear();
+
+  /**
    * Returns the singleton instance of FifoManager.
    * Note: Keep FifoManager's shared pointer for as little as possible.
    */
