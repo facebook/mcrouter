@@ -169,12 +169,8 @@ class McrouterInstance :
     return tkoTrackerMap_;
   }
 
-  /**
-   * If lease pairing is enabled, return the lease token map.
-   * Otherwise, return nullptr.
-   */
-  LeaseTokenMap* leaseTokenMap() {
-    return leaseTokenMap_.get();
+  LeaseTokenMap& leaseTokenMap() {
+    return *leaseTokenMap_;
   }
 
   ObservableRuntimeVars& rtVarsData() {

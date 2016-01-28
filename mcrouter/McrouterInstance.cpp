@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -320,9 +320,7 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     asyncWriter_(folly::make_unique<AsyncWriter>()),
     statsLogWriter_(folly::make_unique<AsyncWriter>(
                       opts_.stats_async_queue_length)),
-    leaseTokenMap_(opts_.enable_lease_pairing
-        ? folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)
-        : nullptr) {
+    leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
   fb_timer_set_cycle_timer_func(
     []() -> uint64_t { return nowUs(); },
     1.0);

@@ -9,12 +9,10 @@
  */
 #pragma once
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Reply.h"
@@ -27,7 +25,6 @@
 #include "mcrouter/routes/McOpList.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
-#include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -53,23 +50,6 @@ class ProxyRoute {
     return root_->route(req);
   }
 
-  McReply route(const McRequestWithMcOp<mc_op_lease_set>& req) {
-    auto pair = queryLeaseTokenMap(req.leaseToken());
-    if (pair.first) {
-      stat_incr(proxy_->stats, redirected_lease_set_count_stat, 1);
-
-      auto mutReq = req.clone();
-      mutReq.setLeaseToken(pair.second);
-      return fiber_local::runWithLocals(
-        [destRoute = pair.first, &mutReq]() {
-          fiber_local::addRequestClass(RequestClass::kFailover);
-          return destRoute->route(mutReq);
-        });
-    }
-
-    return root_->route(req);
-  }
-
   McReply route(const McRequestWithMcOp<mc_op_flushall>& req) const {
     // route to all destinations in the config.
     return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations()).route(req);
@@ -80,9 +60,6 @@ class ProxyRoute {
   McrouterRouteHandlePtr root_;
 
   std::vector<McrouterRouteHandlePtr> getAllDestinations() const;
-  // { destination, original token }
-  std::pair<McrouterRouteHandlePtr, uint64_t> queryLeaseTokenMap(
-      uint64_t leaseToken) const;
 };
 
 }}}  // facebook::memcache::mcrouter

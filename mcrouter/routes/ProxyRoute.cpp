@@ -47,21 +47,6 @@ std::vector<McrouterRouteHandlePtr> ProxyRoute::getAllDestinations() const {
   return rh;
 }
 
-std::pair<McrouterRouteHandlePtr, uint64_t> ProxyRoute::queryLeaseTokenMap(
-    uint64_t leaseToken) const {
-  if (auto leaseTokenMap = proxy_->router().leaseTokenMap()) {
-    if (auto item = leaseTokenMap->query(leaseToken)) {
-      auto& poolsMap = proxy_->getConfig()->getPools();
-      auto poolIt = poolsMap.find(item->poolName);
-      if (poolIt != poolsMap.end() &&
-          poolIt->second.size() > item->indexInPool) {
-        return { poolIt->second[item->indexInPool], item->originalToken };
-      }
-    }
-  }
-  return { nullptr, 0 };
-}
-
 }
 }
 } // facebook::memcache::mcrouter

@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -14,59 +14,117 @@ from mcrouter.test.MCProcess import Memcached, McrouterClients
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestLeasePairing(McrouterTestCase):
-    config = './mcrouter/test/test_lease_pairing.json'
+    config_pairing_basic = './mcrouter/test/test_lease_pairing_basic.json'
+    config_pairing_disabled = './mcrouter/test/test_lease_pairing_disabled.json'
+    config_pairing_nested = './mcrouter/test/test_lease_pairing_nested.json'
 
-    def create_mcrouter(self, extra_args=[]):
-        extra_args += ['--proxy-threads', '2']
+    def create_mcrouter(self, config, num_memcached=2):
+        extra_args = ['--proxy-threads', '2']
 
-        self.memcached1 = self.add_server(Memcached())
-        self.memcached2 = self.add_server(Memcached())
-        self.mcrouter = self.add_mcrouter(self.config,
-                                          extra_args=extra_args)
+        self.memcacheds = []
+        for i in range(0, num_memcached):
+            self.memcacheds.append(self.add_server(Memcached()))
+
+        self.mcrouter = self.add_mcrouter(config, extra_args=extra_args)
         self.clients = McrouterClients(self.mcrouter.port, 2)
 
-    def test_lease_pairing_enabled(self):
+    def test_lease_pairing_basic(self):
         # The lease-get and it's corresponding lease-set
         # should go to the same server.
 
-        self.create_mcrouter(extra_args=['--enable-lease-pairing'])
+        self.create_mcrouter(self.config_pairing_basic)
 
-        # kill memcached1
-        self.memcached1.pause()
+        # kill memcacheds[0]
+        self.memcacheds[0].pause()
 
-        # lease get - should go to memcache2
+        # lease get - should go to memcache[1]
         get_reply = self.clients[0].leaseGet("key")
         self.assertTrue(get_reply is not None)
 
-        # bring memcached1 up
-        self.memcached1.resume()
+        # bring memcacheds[0] up
+        self.memcacheds[0].resume()
 
-        # lease set should go to the same server as lease get - memcache2
+        # lease set should go to the same server as lease get - memcache[1]
         set_reply = self.clients[1].leaseSet("key",
                 {"value": "abc", "token": get_reply['token']})
         self.assertTrue(set_reply is not None)
-        self.assertTrue(self.memcached1.get("key") is None)
-        self.assertTrue(self.memcached2.get("key") is not None)
+        self.assertTrue(self.memcacheds[0].get("key") is None)
+        self.assertTrue(self.memcacheds[1].get("key") is not None)
 
     def test_lease_pairing_disabled(self):
-        # The lease-get and it's corresponding lease-set
-        # should go to the same server.
+        # With lease pairing disabled, lease-set should not be failed over
+        # nor redirected.
 
-        self.create_mcrouter()
+        self.create_mcrouter(self.config_pairing_disabled)
 
-        # kill memcached1
-        self.memcached1.pause()
+        # kill memcacheds[0]
+        self.memcacheds[0].pause()
 
-        # lease get - should go to memcache2
+        # lease get - should go to memcacheds[1]
         get_reply = self.clients[0].leaseGet("key")
         self.assertTrue(get_reply is not None)
 
-        # bring memcached1 up
-        self.memcached1.resume()
+        # bring memcacheds[0] up
+        self.memcacheds[0].resume()
 
-        # lease set should go to memcache1
+        # lease set should go to memcacheds[0]
         set_reply = self.clients[1].leaseSet("key",
                 {"value": "abc", "token": get_reply['token']})
         self.assertTrue(set_reply is not None)
-        self.assertTrue(self.memcached1.get("key") is not None)
-        self.assertTrue(self.memcached2.get("key") is None)
+        self.assertTrue(self.memcacheds[0].get("key") is not None)
+        self.assertTrue(self.memcacheds[1].get("key") is None)
+
+    def test_lease_pairing_nested_basic(self):
+        # The lease-get and it's corresponding lease-set
+        # should go to the same server.
+
+        # Nested config has 4 memcached instances
+        self.create_mcrouter(self.config_pairing_nested, 4)
+
+        # kill memcacheds[0]
+        self.memcacheds[0].pause()
+
+        # lease get - should go to memcache[1]
+        get_reply = self.clients[0].leaseGet("key")
+        self.assertTrue(get_reply is not None)
+
+        # bring memcacheds[0] up
+        self.memcacheds[0].resume()
+
+        # lease set should go to the same server as lease get - memcache[1]
+        set_reply = self.clients[1].leaseSet("key",
+                {"value": "abc", "token": get_reply['token']})
+        self.assertTrue(set_reply is not None)
+        self.assertTrue(self.memcacheds[0].get("key") is None)
+        self.assertTrue(self.memcacheds[1].get("key") is not None)
+
+    def test_lease_pairing_nested_two_failovers(self):
+        # The lease-get and it's corresponding lease-set
+        # should go to the same server.
+
+        # Nested config has 4 memcached instances
+        self.create_mcrouter(self.config_pairing_nested, 4)
+
+        # Completely kill pool A (memcached 0 and 1)
+        # and one box in pool B (memcached[2])
+        self.memcacheds[0].pause()
+        self.memcacheds[1].pause()
+        self.memcacheds[2].pause()
+
+        # lease get - should go to poolB memcache[2]
+        get_reply = self.clients[0].leaseGet("key")
+        self.assertTrue(get_reply is not None)
+
+        # bring up all memcacheds
+        self.memcacheds[0].resume()
+        self.memcacheds[1].resume()
+        self.memcacheds[2].resume()
+
+        # lease set should go to the same server as lease get - memcache[3]
+        set_reply = self.clients[1].leaseSet("key",
+                {"value": "abc", "token": get_reply['token']})
+        self.assertTrue(set_reply is not None)
+        self.assertTrue(self.memcacheds[0].get("key") is None)
+        self.assertTrue(self.memcacheds[1].get("key") is None)
+        self.assertTrue(self.memcacheds[2].get("key") is None)
+        self.assertTrue(self.memcacheds[3].get("key") is not None)

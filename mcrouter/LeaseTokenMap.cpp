@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -45,45 +45,53 @@ LeaseTokenMap::~LeaseTokenMap() {
   }
 }
 
-uint64_t LeaseTokenMap::insert(Item item) {
+uint64_t LeaseTokenMap::insert(std::string routeName, Item item) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   uint64_t specialToken = applyMagic(nextId_++);
 
   auto it = data_.emplace(specialToken,
-                          LeaseTokenMap::ListItem(specialToken, std::move(item),
+                          LeaseTokenMap::ListItem(specialToken,
+                                                  std::move(routeName),
+                                                  std::move(item),
                                                   leaseTokenTtlMs_));
   invalidationQueue_.push_back(it.first->second);
 
   return specialToken;
 }
 
-folly::Optional<LeaseTokenMap::Item> LeaseTokenMap::query(uint64_t token) {
+folly::Optional<LeaseTokenMap::Item> LeaseTokenMap::query(
+    folly::StringPiece routeName, uint64_t token) {
   folly::Optional<LeaseTokenMap::Item> item;
 
   if (!hasMagic(token)) {
     return item;
   }
 
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto it = data_.find(token);
-  if (it != data_.end()) {
-    item.emplace(std::move(it->second.item));
-    data_.erase(it);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = data_.find(token);
+    if (it != data_.end() && it->second.routeName == routeName) {
+      item.emplace(std::move(it->second.item));
+      data_.erase(it);
+    }
   }
 
   return item;
 }
 
-uint64_t LeaseTokenMap::getOriginalLeaseToken(uint64_t token) const {
+uint64_t LeaseTokenMap::getOriginalLeaseToken(folly::StringPiece routeName,
+                                              uint64_t token) const {
   if (!hasMagic(token)) {
     return token;
   }
 
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto it = data_.find(token);
-  if (it != data_.end()) {
-    return it->second.item.originalToken;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = data_.find(token);
+    if (it != data_.end() && it->second.routeName == routeName) {
+      return it->second.item.originalToken;
+    }
   }
   return token;
 }

@@ -23,7 +23,6 @@
 #include "mcrouter/awriter.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
@@ -84,21 +83,6 @@ class DestinationRoute {
       ctx->recordDestination(poolName_, indexInPool_,
                              *destination_->accessPoint());
     }
-  }
-
-  McReply route(const McRequestWithMcOp<mc_op_lease_get>& req) const {
-    auto reply = routeWithDestination(req);
-    if (reply.leaseToken() > 1 &&
-        (fiber_local::getRequestClass().is(RequestClass::kFailover) ||
-         LeaseTokenMap::conflicts(reply.leaseToken()))) {
-      auto& ctx = fiber_local::getSharedCtx();
-      if (auto leaseTokenMap = ctx->proxy().router().leaseTokenMap()) {
-        auto specialToken = leaseTokenMap->insert(
-            {reply.leaseToken(), poolName_, indexInPool_});
-        reply.setLeaseToken(specialToken);
-      }
-    }
-    return reply;
   }
 
   template <class Request>

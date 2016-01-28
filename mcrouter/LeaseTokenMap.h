@@ -19,9 +19,7 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/Optional.h>
 
-namespace facebook { namespace memcache {
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Class responsible for mapping lease-tokens to destinations.
@@ -29,10 +27,12 @@ namespace mcrouter {
  */
 class LeaseTokenMap {
  public:
+  /**
+   * Item stored in this data structure.
+   */
   struct Item {
     uint64_t originalToken;
-    std::string poolName;
-    size_t indexInPool;
+    size_t routeHandleChildIndex;
   };
 
   /**
@@ -49,35 +49,41 @@ class LeaseTokenMap {
   /**
    * Inserts a lease token into the map and returns a special token.
    *
-   * @param item  Item to insert into the map, containing the original
-   *              token (i.e. lease token returned by memcached) and the
-   *              destination that requests with this token should be
-   *              redirected to.
-   * @return      Special token, that should be returned to the client.
+   * @param routeName   The name of the route handle that processed the
+   *                    lease-get.
+   * @param item        Item to insert into the map, containing the original
+   *                    token (i.e. lease token returned by memcached) and
+   *                    the destination that requests with this token should
+   *                    be redirected to.
+   * @return            Special token, that should be returned to
+   *                    the client.
    */
-  uint64_t insert(Item item);
+  uint64_t insert(std::string routeName, Item item);
 
   /**
    * Queries the map for a special token. If found, the entry is
    * deleted from the map.
    *
-   * @param token   Lease token provided by the client.
-   * @return        If found, return an Item, containing the original
-   *                lease token and the destination. If not found, return
-   *                an empty folly::Optional.
+   * @param routeName   Name of the route handle.
+   * @param token       Lease token provided by the client.
+   * @return            If found, return an Item, containing the original
+   *                    lease token and the destination. If not found, return
+   *                    and empty folly::Optional.
    */
-  folly::Optional<Item> query(uint64_t token);
+  folly::Optional<Item> query(folly::StringPiece routeName, uint64_t token);
 
   /**
    * Return the original lease token (i.e. the lease token returned by
    * memcached).
    *
-   * @param token   Lease token. Can be either a special token or an ordinary
-   *                lease token.
-   * @return        The original lease token (i.e. the one returned by
-   *                memcached).
+   * @param routeName   Name of the route handle.
+   * @param token       Lease token. Can be either a special token or an
+   *                    ordinary lease token.
+   * @return            The original lease token (i.e. the one returned by
+   *                    memcached).
    */
-  uint64_t getOriginalLeaseToken(uint64_t token) const;
+  uint64_t getOriginalLeaseToken(folly::StringPiece routeName,
+                                 uint64_t token) const;
 
   /**
    * Return the size of the data structure (i.e. how many tokens are stored).
@@ -96,14 +102,17 @@ class LeaseTokenMap {
     using Clock = std::chrono::steady_clock;
     using TimePoint = std::chrono::time_point<Clock>;
 
-    ListItem(uint64_t sToken, Item it, uint32_t tokenTimeoutMs)
+    ListItem(uint64_t sToken, std::string route,
+             Item it, uint32_t tokenTimeoutMs)
         : specialToken(sToken),
+          routeName(std::move(route)),
           item(std::move(it)),
           tokenTimeout(Clock::now() +
                        std::chrono::milliseconds(tokenTimeoutMs)) {
     }
 
     uint64_t specialToken;
+    std::string routeName;
     Item item;
     TimePoint tokenTimeout;
 
