@@ -19,7 +19,7 @@
 #include "mcrouter/lib/fbi/nstring.h"
 
 namespace folly {
-class dynamic;
+struct dynamic;
 }
 
 namespace facebook { namespace memcache {

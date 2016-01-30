@@ -19,7 +19,7 @@
 #include "mcrouter/lib/OperationTraits.h"
 
 namespace folly {
-class dynamic;
+struct dynamic;
 }
 
 namespace facebook { namespace memcache {

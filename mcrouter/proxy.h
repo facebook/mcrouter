@@ -48,7 +48,7 @@
 #define MOVING_AVERAGE_BIN_SIZE_IN_SECOND (1)
 
 namespace folly {
-  class dynamic;
+  struct dynamic;
   class File;
 }
 

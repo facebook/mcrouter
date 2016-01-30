@@ -33,7 +33,7 @@ static_assert(false, "mcrouter: invalid build");
 #define DEBUG_FIFO_ROOT_DEFAULT "/var/mcrouter/fifos"
 
 namespace folly {
-class dynamic;
+struct dynamic;
 }
 
 namespace facebook { namespace memcache {

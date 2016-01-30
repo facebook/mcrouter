@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,7 @@
 #include <folly/Random.h>
 
 namespace folly {
-class dynamic;
+struct dynamic;
 }
 
 namespace facebook { namespace memcache { namespace mcrouter {

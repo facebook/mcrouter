@@ -15,7 +15,7 @@
 #include "mcrouter/TokenBucket.h"
 
 namespace folly {
-class dynamic;
+struct dynamic;
 }
 
 namespace facebook { namespace memcache { namespace mcrouter {
