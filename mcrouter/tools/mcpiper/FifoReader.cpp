@@ -67,10 +67,10 @@ MessageHeader parseMessageHeader(folly::IOBufQueue& bufQueue) {
   CHECK(bufQueue.chainLength() >= messageHeaderSize)
     << "Invalid message header buffer size!";
 
-  auto buf = bufQueue.split(messageHeaderSize)->coalesce();
+  auto buf = bufQueue.split(messageHeaderSize);
 
   MessageHeader header;
-  std::memcpy(&header, buf.data(), messageHeaderSize);
+  std::memcpy(&header, buf->coalesce().data(), messageHeaderSize);
 
   return header;
 }
