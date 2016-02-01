@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,7 @@ struct AccessPoint;
 
 namespace mcrouter {
 
-class proxy_t;
+struct proxy_t;
 
 /**
  * Appends a 'delete' request entry to the asynclog.

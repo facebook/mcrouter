@@ -58,7 +58,7 @@ typedef class fb_timer_s fb_timer_t;
 namespace facebook { namespace memcache {
 
 template <int op_id>
-class McOperation;
+struct McOperation;
 template <class T>
 class MessageQueue;
 

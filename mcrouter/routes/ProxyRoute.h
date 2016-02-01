@@ -28,7 +28,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class proxy_t;
+struct proxy_t;
 
 /**
  * This is the top-most level of Mcrouter's RouteHandle tree.

@@ -15,7 +15,7 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-class proxy_t;
+struct proxy_t;
 
 class ProxyRequestLogger {
  public:

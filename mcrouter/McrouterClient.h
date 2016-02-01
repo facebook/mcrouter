@@ -20,9 +20,9 @@
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 
-class asox_queue_s;
+struct asox_queue_s;
 using asox_queue_t = asox_queue_s*;
-class asox_queue_entry_s;
+struct asox_queue_entry_s;
 using asox_queue_entry_t = asox_queue_entry_s;
 
 namespace folly {
@@ -33,8 +33,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterClient;
 class McrouterInstance;
-class proxy_t;
-class ProxyMessage;
+struct proxy_t;
+struct ProxyMessage;
 class ProxyRequestContext;
 
 struct mcrouter_msg_t {

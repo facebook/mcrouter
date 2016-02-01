@@ -43,7 +43,7 @@ using ResultTag = Tag<msg_result>;
 using ValueTag = Tag<msg_value>;
 
 template <class Tags>
-class FieldPolicyHandler;
+struct FieldPolicyHandler;
 
 template <class... Tags>
 struct FieldPolicyHandler<List<Tags...>> {

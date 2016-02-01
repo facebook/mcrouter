@@ -63,7 +63,7 @@ class ExtraRouteHandleProviderIf;
 class McrouterInstance;
 class McrouterLogger;
 class McrouterStandaloneOptions;
-class proxy_t;
+struct proxy_t;
 struct ShadowValidationData;
 struct TkoLog;
 

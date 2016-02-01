@@ -20,7 +20,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class ProxyConfig;
 template <class Request>
 class ProxyRequestContextTyped;
-class proxy_t;
+struct proxy_t;
 
 /**
  * Answers mc_op_get_service_info requests of the form

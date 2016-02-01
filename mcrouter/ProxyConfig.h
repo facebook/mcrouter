@@ -26,7 +26,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class PoolFactory;
 class ProxyRoute;
 class ServiceInfo;
-class proxy_t;
+struct proxy_t;
 
 /**
  * Topmost struct for mcrouter configs.

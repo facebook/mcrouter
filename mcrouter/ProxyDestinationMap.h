@@ -27,7 +27,7 @@ struct AccessPoint;
 namespace mcrouter {
 
 class ProxyDestination;
-class proxy_t;
+struct proxy_t;
 
 /**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same

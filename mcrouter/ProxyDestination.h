@@ -35,7 +35,7 @@ namespace mcrouter {
 class ProxyClientCommon;
 class ProxyDestinationMap;
 class TkoTracker;
-class proxy_t;
+struct proxy_t;
 
 struct DestinationRequestCtx {
   int64_t startTime{0};

@@ -28,7 +28,7 @@ struct dynamic;
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ExtraRouteHandleProviderIf;
-class proxy_t;
+struct proxy_t;
 
 /**
  * RouteHandleProviderIf implementation that can create mcrouter-specific

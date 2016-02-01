@@ -244,7 +244,7 @@ public:
 
 private:
   friend class McrouterClient;
-  friend class proxy_t;
+  friend struct proxy_t;
 };
 
 template <class Request>
