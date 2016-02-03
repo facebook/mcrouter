@@ -40,10 +40,17 @@ namespace facebook { namespace memcache {
  * Note that if all weights are 1.0, the algorithm returns the same indices
  * as simply CH3(key, n).
  *
- * The algorithm is consistent both with respect to n and to individual weights,
- * i.e. reducing any single weight slightly will only spread out
- * a small fraction of the load from that server to all other servers.
+ * The algorithm is consistent both with respect to individual weights and
+ * mostly consistent wrt n. i.e. reducing any single weight slightly will
+ * only spread out a small fraction of the load from that server to all other
+ * servers, but changing the number of servers may involve some spillover.
+ * Consistency is a function of how far the weights are from 1, with all weights
+ * at 1 being perfectly consistent
  */
+
+size_t weightedCh3Hash(
+  folly::StringPiece key, const std::vector<double>& weights);
+
 class WeightedCh3HashFunc {
  public:
   /**
