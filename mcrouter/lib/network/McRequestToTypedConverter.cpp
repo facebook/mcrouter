@@ -24,14 +24,14 @@ namespace {
 template <class GetType, class GetOperation>
 void getLikeCommon(TypedThriftMessage<GetType>& treq,
                    const McRequestWithOp<GetOperation>& req) {
-  treq->key = req.key().clone();
+  treq->key = req.key();
 }
 
 template <class UpdateType, class UpdateOperation>
 void updateLikeCommon(TypedThriftMessage<UpdateType>& treq,
                       const McRequestWithOp<UpdateOperation>& req) {
-  treq->key = req.key().clone();
-  treq->value = req.value().clone();
+  treq->key = req.key();
+  treq->value = req.value();
   treq->exptime = req.exptime();
   treq->flags = req.flags();
 }
@@ -39,7 +39,7 @@ void updateLikeCommon(TypedThriftMessage<UpdateType>& treq,
 template <class ArithType, class ArithOperation>
 void arithmeticLikeCommon(TypedThriftMessage<ArithType>& treq,
                           const McRequestWithOp<ArithOperation>& req) {
-  treq->key = req.key().clone();
+  treq->key = req.key();
   treq->delta = req.delta();
 }
 
@@ -65,7 +65,7 @@ TypedThriftMessage<cpp2::McDeleteRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_delete>& req) {
 
   TypedThriftMessage<cpp2::McDeleteRequest> treq;
-  treq->key = req.key().clone();
+  treq->key = req.key();
   if (req.exptime() != 0) {
     treq->__isset.exptime = true;
     treq->exptime = req.exptime();
@@ -77,7 +77,7 @@ TypedThriftMessage<cpp2::McTouchRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_touch>& req) {
 
   TypedThriftMessage<cpp2::McTouchRequest> treq;
-  treq->key = req.key().clone();
+  treq->key = req.key();
   if (req.exptime() != 0) {
     treq->__isset.exptime = true;
     treq->exptime = req.exptime();

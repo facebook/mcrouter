@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -32,7 +32,7 @@ bool fillResult(TypedThriftMessage<ThriftType>& tres, McReply& reply) {
   reply.setResult(static_cast<mc_res_t>(tres->result));
   if (mc_res_is_err(static_cast<mc_res_t>(tres->result))) {
     if (tres->__isset.message) {
-      reply.setValue(std::move(*tres->message));
+      reply.setValue(std::move(tres->message));
     }
     return false;
   }
@@ -45,7 +45,7 @@ void onGetCommon(TypedThriftMessage<GetType>&& tres, McReply& reply) {
     return;
   }
   if (tres->__isset.value) {
-    reply.setValue(std::move(*tres->value));
+    reply.setValue(std::move(tres->value));
   }
   if (tres->__isset.flags) {
     reply.setFlags(tres->flags);

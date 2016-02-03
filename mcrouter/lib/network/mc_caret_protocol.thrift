@@ -1,6 +1,6 @@
 namespace cpp2 facebook.memcache.cpp2
 
-typedef binary (cpp2.type = "std::unique_ptr<folly::IOBuf>") IOBuf
+typedef binary (cpp2.type = "folly::IOBuf") IOBuf
 
 struct McGetRequest {
   1: IOBuf key;

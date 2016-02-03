@@ -15,7 +15,7 @@ namespace memcache {
 McRequestWithMcOp<mc_op_touch>
 convertToMcRequest(TypedThriftMessage<cpp2::McTouchRequest>&& treq) {
   McRequestWithMcOp<mc_op_touch> req;
-  req.setKey(std::move(*(treq->key)));
+  req.setKey(std::move(treq->key));
   if (treq->__isset.exptime) {
     req.setExptime(treq->exptime);
   }

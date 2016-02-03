@@ -35,7 +35,7 @@ McRequestWithMcOp<OpFromType<GetType, RequestOpMapping>::value>
 convertToMcRequest(TypedThriftMessage<GetType>&& treq, GetLikeT<GetType>) {
   constexpr mc_op_t op = OpFromType<GetType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
-  req.setKey(std::move(*(treq->key)));
+  req.setKey(std::move(treq->key));
   return req;
 }
 
@@ -45,10 +45,10 @@ convertToMcRequest(TypedThriftMessage<UpdateType>&& treq,
                    UpdateLikeT<UpdateType>) {
   constexpr mc_op_t op = OpFromType<UpdateType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
-  req.setKey(std::move(*(treq->key)));
+  req.setKey(std::move(treq->key));
   req.setExptime(treq->exptime);
   req.setFlags(treq->flags);
-  req.setValue(std::move(*(treq->value)));
+  req.setValue(std::move(treq->value));
   updateHelper(std::move(treq), req);
   return req;
 }
@@ -59,7 +59,7 @@ convertToMcRequest(TypedThriftMessage<DeleteType>&& treq,
                    DeleteLikeT<DeleteType>) {
   constexpr mc_op_t op = OpFromType<DeleteType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
-  req.setKey(std::move(*(treq->key)));
+  req.setKey(std::move(treq->key));
   if (treq->__isset.exptime) {
     req.setExptime(treq->exptime);
   }
@@ -72,7 +72,7 @@ convertToMcRequest(TypedThriftMessage<ArithType>&& treq,
                    ArithmeticLikeT<ArithType>) {
   constexpr mc_op_t op = OpFromType<ArithType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
-  req.setKey(std::move(*(treq->key)));
+  req.setKey(std::move(treq->key));
   req.setDelta(treq->delta);
   return req;
 }

@@ -33,7 +33,7 @@ class TypedServerOnRequest
   void onTypedMessage(TypedThriftMessage<cpp2::McGetRequest>&& treq,
                       McServerRequestContext&& ctx) {
     McRequestWithMcOp<mc_op_get> req;
-    req.setKey(std::move(*treq->key));
+    req.setKey(std::move(treq->key));
     onRequest(std::move(ctx), std::move(req));
   }
 

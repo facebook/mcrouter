@@ -48,7 +48,7 @@ struct TypedMockMcOnRequest
 
   void onTypedMessage(TypedThriftMessage<cpp2::McGetRequest>&& treq,
                       McServerRequestContext&& ctx) {
-    auto item = mc_.get(folly::StringPiece(treq->key->coalesce()));
+    auto item = mc_.get(folly::StringPiece(treq->key.coalesce()));
     TypedThriftMessage<cpp2::McGetReply> tres;
     if (!item) {
       tres->result = mc_res_notfound;
@@ -56,7 +56,7 @@ struct TypedMockMcOnRequest
       tres->result = mc_res_found;
       tres->__isset.value = true;
       tres->__isset.flags = true;
-      tres->value = item->value->clone();
+      tres->value = *item->value;
       tres->flags = item->flags;
     }
     McServerRequestContext::reply(
@@ -65,8 +65,8 @@ struct TypedMockMcOnRequest
 
   void onTypedMessage(TypedThriftMessage<cpp2::McSetRequest>&& treq,
                       McServerRequestContext&& ctx) {
-    mc_.set(folly::StringPiece(treq->key->coalesce()),
-            MockMc::Item(*treq->value,
+    mc_.set(folly::StringPiece(treq->key.coalesce()),
+            MockMc::Item(treq->value,
                          (treq->__isset.exptime ? treq->exptime : 0),
                          (treq->__isset.flags ? treq->flags : 0)));
     TypedThriftMessage<cpp2::McSetReply> tres;
@@ -78,7 +78,7 @@ struct TypedMockMcOnRequest
   void onTypedMessage(TypedThriftMessage<cpp2::McDeleteRequest>&& treq,
                       McServerRequestContext&& ctx) {
     TypedThriftMessage<cpp2::McDeleteReply> tres;
-    if (mc_.del(folly::StringPiece(treq->key->coalesce()))) {
+    if (mc_.del(folly::StringPiece(treq->key.coalesce()))) {
       tres->result = mc_res_deleted;
     } else {
       tres->result = mc_res_notfound;
@@ -121,7 +121,7 @@ TEST(CaretMockMc, basic) {
 
   facebook::memcache::cpp2::McGetRequest getreq;
   folly::StringPiece key("key");
-  getreq.key = folly::make_unique<folly::IOBuf>(folly::IOBuf::WRAP_BUFFER, key);
+  getreq.key = folly::IOBuf(folly::IOBuf::WRAP_BUFFER, key);
 
   char buffer[18];
   buffer[0] = '^';
@@ -166,7 +166,7 @@ TEST(CaretMockMc, basic) {
 
   EXPECT_EQ(mc_res_found, treply.result);
 
-  folly::StringPiece resultVal(treply.value->coalesce());
+  folly::StringPiece resultVal(treply.value.coalesce());
 
   EXPECT_EQ("value", resultVal.str());
   server.shutdown();

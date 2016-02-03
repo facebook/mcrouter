@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,7 +30,7 @@ bool fillResult(const McReply& reply, TypedThriftMessage<ThriftType>& tres) {
   if (reply.isError()) {
     if (reply.hasValue()) {
       tres->__isset.message = true;
-      tres->message = reply.value().clone();
+      tres->message = reply.value();
     }
     return false;
   }
@@ -45,7 +45,7 @@ void getLikeCommon(McReply&& reply, TypedThriftMessage<GetType>& tres) {
 
   if (reply.hasValue()) {
     tres->__isset.value = true;
-    tres->value = reply.value().clone();
+    tres->value = reply.value();
     if (reply.flags() != 0) {
       tres->__isset.flags = true;
       tres->flags = reply.flags();
