@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,8 +22,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 ** 3K.
 */
 #define OUTSTANDING_REQ_BYTES (3 * 1024)
-#define DEFAULT_MAX_GLOBAL_OUTSTANDING_REQS \
-  (uint32_t)((1024 * 1024 * 200) / OUTSTANDING_REQ_BYTES)
 #define DEFAULT_MAX_CLIENT_OUTSTANDING_REQS \
   (uint32_t)((1024 * 1024 * 100) / OUTSTANDING_REQ_BYTES)
 
