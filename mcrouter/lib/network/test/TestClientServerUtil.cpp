@@ -258,7 +258,7 @@ void TestClient::waitForReplies(size_t remaining) {
 }
 
 std::string genBigValue() {
-  const size_t kBigValueSize = 1024 * 1024 * 4;
+  const size_t kBigValueSize = 1024 * 1024 * 16;
   std::string bigValue(kBigValueSize, '.');
   for (size_t i = 0; i < kBigValueSize; ++i) {
     bigValue[i] = 65 + (i % 26);
