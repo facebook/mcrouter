@@ -23,6 +23,7 @@ Makefile.in
 /lib/network/CaretReplyConverter.h
 /lib/network/CaretSerializedMessage.h
 /lib/network/McAsciiParser-gen.cpp
+/lib/network/gen-cpp2/*
 /libtool
 /m4/libtool.m4
 /m4/ltoptions.m4
