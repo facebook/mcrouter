@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,7 @@ constexpr uint32_t kMaxTimeout = 1000000;
 
 int64_t parseInt(const folly::dynamic& json,
                  folly::StringPiece name, int64_t min, int64_t max) {
-  checkLogic(json.isInt(), "{} expected int, found {}", json.typeName());
+  checkLogic(json.isInt(), "{} expected int, found {}", name, json.typeName());
   auto t = json.getInt();
   checkLogic(min <= t && t <= max,
              "{} should be in range [{},{}], got {}", name, min, max, t);
