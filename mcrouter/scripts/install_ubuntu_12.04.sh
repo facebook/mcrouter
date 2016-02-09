@@ -4,6 +4,9 @@ set -ex
 
 [ -n "$1" ] || ( echo "Install dir missing"; exit 1 )
 
+echo "WARNING: mcrouter support for Ubuntu 12.04 will soon be phased out."
+echo "We strongly encourage that you use mcrouter on Ubuntu 14.04 or newer."
+
 sudo apt-get install -y python-software-properties
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository -y ppa:boost-latest/ppa
