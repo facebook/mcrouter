@@ -31,6 +31,112 @@ namespace detail {
 inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);
 }  // detail
 
+
+/**
+ * mc_res_t convenience functions, useful for McReply and Thrift replies
+ */
+/**
+ * Is this reply an error?
+ */
+inline bool isErrorResult(const mc_res_t result);
+
+/**
+ * Is this reply an error as far as failover logic is concerned?
+ */
+inline bool isFailoverErrorResult(const mc_res_t result);
+
+
+/**
+ * Is this reply a soft TKO error?
+ */
+inline bool isSoftTkoErrorResult(const mc_res_t result);
+
+/**
+ * Is this reply a hard TKO error?
+ */
+inline bool isHardTkoErrorResult(const mc_res_t result);
+
+/**
+ * Did we not even attempt to send request out because at some point
+ * we decided the destination is in TKO state?
+ *
+ * Used to short-circuit failover decisions in certain RouteHandles.
+ *
+ * If isTkoResult() is true, isErrorResult() must also be true.
+ */
+inline bool isTkoResult(const mc_res_t result) {
+  return result == mc_res_tko;
+}
+
+/**
+ * Did we not even attempt to send request out because it is invalid/we hit
+ * per-destination rate limit
+ */
+inline bool isLocalErrorResult(const mc_res_t result) {
+  return result == mc_res_local_error;
+}
+
+/**
+ * Was the connection attempt refused?
+ */
+inline bool isConnectErrorResult(const mc_res_t result) {
+  return result == mc_res_connect_error;
+}
+
+/**
+ * Was there a timeout while attempting to establish a connection?
+ */
+inline bool isConnectTimeoutResult(const mc_res_t result) {
+  return result == mc_res_connect_timeout;
+}
+
+/**
+ * Was there a timeout when sending data on an established connection?
+ * Note: the distinction is important, since in this case we don't know
+ * if the data reached the server or not.
+ */
+inline bool isDataTimeoutResult(const mc_res_t result) {
+  return result == mc_res_timeout || result == mc_res_remote_error;
+}
+
+/**
+ * Application-specific redirect code. Server is up, but doesn't want
+ * to reply now.
+ */
+inline bool isRedirectResult(const mc_res_t result) {
+  return result == mc_res_busy || result == mc_res_try_again;
+}
+
+/**
+ * Was the data found?
+ */
+inline bool isHitResult(const mc_res_t result) {
+  return result == mc_res_deleted || result == mc_res_found
+    || result == mc_res_touched;
+}
+
+/**
+ * Was data not found and no errors occured?
+ */
+inline bool isMissResult(const mc_res_t result) {
+  return result == mc_res_notfound;
+}
+
+/**
+ * Lease hot miss?
+ */
+inline bool isHotMissResult(const mc_res_t result) {
+  return result == mc_res_foundstale || result == mc_res_notfoundhot;
+}
+
+/**
+ * Was the data stored?
+ */
+inline bool isStoredResult(const mc_res_t result) {
+  return result == mc_res_stored || result == mc_res_stalestored;
+}
+
+
 /**
  * mc_msg_t-based Reply implementation.
  */
@@ -94,104 +200,60 @@ class McReply {
    */
   bool worseThan(const McReply& other) const noexcept;
 
-  /**
-   * Is this reply an error?
-   */
-  inline bool isError() const noexcept;
+  bool isError() const noexcept {
+    return isErrorResult(result_);
+  }
 
-  /**
-   * Is this reply an error as far as failover logic is concerned?
-   */
-  inline bool isFailoverError() const noexcept;
+  bool isFailoverError() const noexcept {
+    return isFailoverErrorResult(result_);
+  }
 
-  /**
-   * Is this reply a soft TKO error?
-   */
-  bool isSoftTkoError() const noexcept;
+  bool isSoftTkoError() const noexcept {
+    return isSoftTkoErrorResult(result_);
+  }
 
-  /**
-   * Is this reply a hard TKO error?
-   */
-  bool isHardTkoError() const noexcept;
+  bool isHardTkoError() const noexcept {
+    return isHardTkoErrorResult(result_);
+  }
 
-  /**
-   * Did we not even attempt to send request out because at some point
-   * we decided the destination is in TKO state?
-   *
-   * Used to short-circuit failover decisions in certain RouteHandles.
-   *
-   * If isTko() is true, isError() must also be true.
-   */
   bool isTko() const noexcept {
-    return result_ == mc_res_tko;
+    return isTkoResult(result_);
   }
 
-  /**
-   * Did we not even attempt to send request out because it is invalid/we hit
-   * per-destination rate limit
-   */
   bool isLocalError() const noexcept {
-    return result_ == mc_res_local_error;
+    return isLocalErrorResult(result_);
   }
 
-  /**
-   * Was the connection attempt refused?
-   */
   bool isConnectError() const noexcept {
-    return result_ == mc_res_connect_error;
+    return isConnectErrorResult(result_);
   }
 
-  /**
-   * Was there a timeout while attempting to establish a connection?
-   */
   bool isConnectTimeout() const noexcept {
-    return result_ == mc_res_connect_timeout;
+    return isConnectTimeoutResult(result_);
   }
 
-  /**
-   * Was there a timeout when sending data on an established connection?
-   * Note: the distinction is important, since in this case we don't know
-   * if the data reached the server or not.
-   */
   bool isDataTimeout() const noexcept {
-    return result_ == mc_res_timeout || result_ == mc_res_remote_error;
+    return isDataTimeoutResult(result_);
   }
 
-  /**
-   * Application-specific redirect code. Server is up, but doesn't want
-   * to reply now.
-   */
   bool isRedirect() const noexcept {
-    return result_ == mc_res_busy || result_ == mc_res_try_again;
+    return isRedirectResult(result_);
   }
 
-  /**
-   * Was the data found?
-   */
   bool isHit() const noexcept {
-    return result_ == mc_res_deleted || result_ == mc_res_found
-      || result_ == mc_res_touched;
+    return isHitResult(result_);
   }
 
-  /**
-   * Was data not found and no errors occured?
-   */
   bool isMiss() const noexcept {
-    return result_ == mc_res_notfound;
+    return isMissResult(result_);
   }
 
-  /**
-   * Lease hot miss?
-   */
   bool isHotMiss() const noexcept {
-    return result_ == mc_res_foundstale || result_ == mc_res_notfoundhot;
+    return isHotMissResult(result_);
   }
 
-  /**
-   * Was the data stored?
-   */
   bool isStored() const noexcept {
-    return result_ == mc_res_stored || result_ == mc_res_stalestored;
+    return isStoredResult(result_);
   }
 
   /**

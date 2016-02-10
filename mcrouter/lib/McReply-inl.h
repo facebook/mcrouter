@@ -98,12 +98,12 @@ InputIterator McReply::reduce(InputIterator begin, InputIterator end) {
   return most_awful_it;
 }
 
-inline bool McReply::isError() const noexcept {
-  return mc_res_is_err(result_);
+inline bool isErrorResult(const mc_res_t result) {
+  return mc_res_is_err(result);
 }
 
-inline bool McReply::isFailoverError() const noexcept {
-  switch (result_) {
+inline bool isFailoverErrorResult(const mc_res_t result) {
+  switch (result) {
     case mc_res_busy:
     case mc_res_shutdown:
     case mc_res_tko:
@@ -113,6 +113,26 @@ inline bool McReply::isFailoverError() const noexcept {
     case mc_res_connect_timeout:
     case mc_res_timeout:
     case mc_res_remote_error:
+      return true;
+    default:
+      return false;
+  }
+}
+
+inline bool isSoftTkoErrorResult(const mc_res_t result) {
+  switch (result) {
+    case mc_res_timeout:
+      return true;
+    default:
+      return false;
+  }
+}
+
+inline bool isHardTkoErrorResult(const mc_res_t result) {
+  switch (result) {
+    case mc_res_connect_error:
+    case mc_res_connect_timeout:
+    case mc_res_shutdown:
       return true;
     default:
       return false;

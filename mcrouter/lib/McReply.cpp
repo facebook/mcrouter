@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,26 +18,6 @@ namespace facebook { namespace memcache {
 
 bool McReply::worseThan(const McReply& other) const noexcept {
   return awfulness(result_) > awfulness(other.result_);
-}
-
-bool McReply::isSoftTkoError() const noexcept {
-  switch (result_) {
-    case mc_res_timeout:
-      return true;
-    default:
-      return false;
-  }
-}
-
-bool McReply::isHardTkoError() const noexcept {
-  switch (result_) {
-    case mc_res_connect_error:
-    case mc_res_connect_timeout:
-    case mc_res_shutdown:
-      return true;
-    default:
-      return false;
-  }
 }
 
 void McReply::setValue(folly::IOBuf valueData) {
