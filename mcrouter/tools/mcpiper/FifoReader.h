@@ -19,6 +19,7 @@
 #include <folly/io/async/AsyncPipe.h>
 #include <folly/io/async/AsyncSocketException.h>
 #include <folly/io/IOBufQueue.h>
+#include <folly/Optional.h>
 
 #include "mcrouter/lib/debug/Fifo.h"
 
@@ -48,10 +49,12 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
 
   // Indicates if there is a pending message, i.e. a header has being read
   // (pendingHeader_) but its data hasn't being processed yet
-  PacketHeader pendingHeader_;
+  folly::Optional<PacketHeader> pendingHeader_;
 
   void feedParser(const PacketHeader& header,
                   std::unique_ptr<folly::IOBuf>&& buf);
+
+  void handleMessageHeader(MessageHeader msgHeader) noexcept;
 };
 
 /**

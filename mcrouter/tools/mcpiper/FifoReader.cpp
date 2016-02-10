@@ -30,22 +30,10 @@ namespace facebook { namespace memcache {
 
 namespace {
 
-PacketHeader parsePacketHeader(folly::ByteRange buf) {
-  CHECK(buf.size() == sizeof(PacketHeader))
-    << "Invalid packet header buffer size!";
-
-  PacketHeader header;
-  std::memcpy(&header, buf.data(), sizeof(PacketHeader));
-
-  CHECK(header.packetSize() <= kFifoMaxPacketSize) <<
-    "Packet too large: " << header.packetSize();
-
-  return header;
-}
+constexpr size_t kHeaderMagicSize = sizeof(MessageHeader().magic());
 
 uint8_t getVersion(const folly::IOBufQueue& bufQueue) {
-  const size_t kLength = sizeof(MessageHeader().magic()) +
-                         sizeof(MessageHeader().version());
+  const size_t kLength = kHeaderMagicSize + sizeof(MessageHeader().version());
   CHECK(bufQueue.chainLength() >= kLength)
     << "Buffer queue length is smaller than (magic + version) bytes.";
 
@@ -56,6 +44,22 @@ uint8_t getVersion(const folly::IOBufQueue& bufQueue) {
     buf = buf->next();
   }
   return buf->data()[kLength - offset - 1];
+}
+
+PacketHeader parsePacketHeader(folly::IOBufQueue& bufQueue) {
+  CHECK(bufQueue.chainLength() >= sizeof(PacketHeader))
+    << "Invalid packet header buffer size!";
+
+  auto buf = bufQueue.split(sizeof(PacketHeader));
+  auto bytes = buf->coalesce();
+
+  PacketHeader header;
+  std::memcpy(&header, bytes.data(), sizeof(PacketHeader));
+
+  CHECK(header.packetSize() <= kFifoMaxPacketSize) <<
+    "Packet too large: " << header.packetSize();
+
+  return header;
 }
 
 MessageHeader parseMessageHeader(folly::IOBufQueue& bufQueue) {
@@ -76,9 +80,7 @@ MessageHeader parseMessageHeader(folly::IOBufQueue& bufQueue) {
 }
 
 bool isMessageHeader(const folly::IOBufQueue& bufQueue) {
-  static_assert(sizeof(uint32_t) == sizeof(MessageHeader().magic()),
-                "Magic expected to be of size of uint32_t.");
-  CHECK(bufQueue.chainLength() >= sizeof(MessageHeader().magic()))
+  CHECK(bufQueue.chainLength() >= kHeaderMagicSize)
     << "Buffer queue length is smaller than magic bytes.";
 
   uint32_t magic = 0;
@@ -118,34 +120,32 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
     readBuffer_.postallocate(len);
 
     // Process any pending packet headers.
-    if (pendingHeader_.packetSize() > 0) {
-      if (readBuffer_.chainLength() < pendingHeader_.packetSize()) {
+    if (pendingHeader_) {
+      if (readBuffer_.chainLength() < pendingHeader_->packetSize()) {
         return;
       }
-      feedParser(pendingHeader_,
-                 readBuffer_.split(pendingHeader_.packetSize()));
-      pendingHeader_.setPacketSize(0);
+      feedParser(pendingHeader_.value(),
+                 readBuffer_.split(pendingHeader_->packetSize()));
+      pendingHeader_.clear();
     }
 
-    while (readBuffer_.chainLength() >= std::max(sizeof(MessageHeader),
-                                                 sizeof(PacketHeader))) {
+    while (readBuffer_.chainLength() >= kHeaderMagicSize) {
       if (isMessageHeader(readBuffer_)) {
-        auto msgHeader = parseMessageHeader(readBuffer_);
-
-        auto fromAddr = msgHeader.getLocalAddress();
-        auto toAddr = msgHeader.getPeerAddress();
-        if (msgHeader.direction() == MessageDirection::Received) {
-          std::swap(fromAddr, toAddr);
+        if (readBuffer_.chainLength() < sizeof(MessageHeader)) {
+          // Wait for more data
+          return;
         }
-        parserMap_.fetch(msgHeader.msgId()).setAddresses(fromAddr, toAddr);
-        continue;
+        handleMessageHeader(parseMessageHeader(readBuffer_));
       }
 
-      auto packetHeader = parsePacketHeader(
-          readBuffer_.split(sizeof(PacketHeader))->coalesce());
+      if (readBuffer_.chainLength() < sizeof(PacketHeader)) {
+        // Wait for more data
+        return;
+      }
+      auto packetHeader = parsePacketHeader(readBuffer_);
       if (packetHeader.packetSize() > readBuffer_.chainLength()) {
         // Wait for more data.
-        pendingHeader_ = std::move(packetHeader);
+        pendingHeader_.assign(std::move(packetHeader));
         return;
       }
 
@@ -154,6 +154,15 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
   } catch (const std::exception& ex) {
     CHECK(false) << "Unexpected exception: " << ex.what();
   }
+}
+
+void FifoReadCallback::handleMessageHeader(MessageHeader msgHeader) noexcept {
+  auto fromAddr = msgHeader.getLocalAddress();
+  auto toAddr = msgHeader.getPeerAddress();
+  if (msgHeader.direction() == MessageDirection::Received) {
+    std::swap(fromAddr, toAddr);
+  }
+  parserMap_.fetch(msgHeader.msgId()).setAddresses(fromAddr, toAddr);
 }
 
 void FifoReadCallback::feedParser(const PacketHeader& header,
