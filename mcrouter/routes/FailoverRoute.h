@@ -15,6 +15,7 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/LeaseTokenMap.h"
+#include "mcrouter/lib/FailoverContext.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -158,13 +159,12 @@ class FailoverRoute {
       auto doFailover = [this, &req, &proxy, &normalReply](
           typename FailoverPolicyT::Iterator& child) {
         auto failoverReply = child->route(req);
-        logFailover(proxy,
-                    Request::name,
-                    child.getTrueIndex(),
-                    targets_.size() - 1,
-                    req.getMcRequest(), /* TODO(jmswen) Support Thrift types */
-                    normalReply,
-                    failoverReply);
+        FailoverContext failoverContext(child.getTrueIndex(),
+                                        targets_.size() - 1,
+                                        req,
+                                        normalReply,
+                                        failoverReply);
+        logFailover(proxy, failoverContext);
         return failoverReply;
       };
 
