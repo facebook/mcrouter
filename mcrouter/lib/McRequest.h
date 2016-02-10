@@ -15,6 +15,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/Keys.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"
@@ -59,7 +60,7 @@ class McRequest {
    * Valid as long as this Request object exists.
    */
   folly::StringPiece routingPrefix() const {
-    return keys_.routingPrefix;
+    return keys_.routingPrefix();
   }
 
   /**
@@ -67,7 +68,7 @@ class McRequest {
    * Valid as long as this Request object exists.
    */
   folly::StringPiece routingKey() const {
-    return keys_.routingKey;
+    return keys_.routingKey();
   }
 
   /**
@@ -82,7 +83,7 @@ class McRequest {
    * @return true if "|#|" is present
    */
   bool hasHashStop() const {
-    return keys_.routingKey.size() != keys_.keyWithoutRoute.size();
+    return keys_.routingKey().size() != keys_.keyWithoutRoute().size();
   }
 
   /**
@@ -102,8 +103,8 @@ class McRequest {
     keys_.update(getRange(keyData_));
   }
   void stripRoutingPrefix() {
-    keyData_.trimStart(keys_.routingPrefix.size());
-    keys_.routingPrefix.clear();
+    keyData_.trimStart(keys_.routingPrefix().size());
+    keys_.clearRoutingPrefix();
   }
   void setValue(folly::IOBuf valueData) {
     valueData_ = std::move(valueData);
@@ -247,20 +248,7 @@ class McRequest {
    * routingPrefix:         ^^^^^^^^^^^^^^^^
    * routingKey:                            ^^^^^^^
    */
-  struct Keys {
-    folly::StringPiece keyWithoutRoute;
-    folly::StringPiece routingPrefix;
-    folly::StringPiece routingKey;
-
-    constexpr Keys() = default;
-    explicit Keys(folly::StringPiece key) noexcept;
-    Keys(const Keys& other) = default;
-
-    void update(folly::StringPiece key);
-    uint32_t routingKeyHash() const;
-   private:
-    uint32_t routingKeyHash_{0};
-  } keys_;
+  Keys keys_;
 
   int32_t exptime_{0};
   uint32_t number_{0};

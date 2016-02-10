@@ -9,6 +9,7 @@
  */
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -76,7 +77,7 @@ TEST(warmUpRouteTest, warmUp) {
     EXPECT_TRUE((vector<uint32_t>{0, 1}) == test_handles[2]->sawExptimes);
     (test_handles[0]->saw_keys).clear();
     (test_handles[2]->saw_keys).clear();
-    EXPECT_TRUE((vector<mc_op_t>{ mc_op_get, mc_op_add }) ==
+    EXPECT_EQ((vector<std::string>{ "get", "add" }),
               test_handles[2]->sawOperations);
   });
   fm.run([&]() {

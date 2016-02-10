@@ -11,9 +11,6 @@
 
 namespace facebook { namespace memcache {
 
-template <class M>
-class TypedThriftMessage;
-
 /**
  * Request traits allow grouping requests with similar semantics. This way
  * we can write code that deals with for example get, lease-get or metaget in a
@@ -143,25 +140,5 @@ template <typename Request, typename... RequestTraitOrType>
 using OtherThanT = typename std::enable_if<
     OtherThan<Request, RequestTraitOrType...>::value,
     void*>::type;
-
-/*
- * @class IsCustomRequest
- * @tparam Request Request type
- * @brief Utility class to check if a Request type is a TypedThriftMessage
- *        or not. (Currently, the only supported alternatives are the classic
- *        McRequestWithOp/McRequest types.)
- *
- * Boolean 'value' field will be true if and only if Request is a specialization
- * of TypedThriftMessage.
- */
-template <class Request>
-struct IsCustomRequest {
-  static constexpr bool value = false;
-};
-
-template <class M>
-struct IsCustomRequest<TypedThriftMessage<M>> {
-  static constexpr bool value = true;
-};
 
 }}

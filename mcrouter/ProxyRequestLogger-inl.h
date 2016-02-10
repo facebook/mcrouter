@@ -8,6 +8,7 @@
  *
  */
 #include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/McrouterFiberContext.h"

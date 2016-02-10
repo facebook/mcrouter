@@ -9,10 +9,15 @@
  */
 #pragma once
 
+#include <type_traits>
+
 #include <folly/io/IOBuf.h>
 #include <folly/Range.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
+#include "mcrouter/lib/Keys.h"
+#include "mcrouter/lib/network/RawThriftMessageTraits.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 
 namespace facebook { namespace memcache {
@@ -21,7 +26,17 @@ namespace facebook { namespace memcache {
  * A thin wrapper for Thrift structs
  */
 template <class M>
-class TypedThriftMessage {
+class TypedThriftMessage : private std::conditional<HasKey<M>::value,
+                                                    Keys,
+                                                    DefaultKeys>::type {
+ private:
+  using KeysT = typename std::conditional<HasKey<M>::value,
+                                          Keys,
+                                          DefaultKeys>::type;
+
+  template <class T, bool enable>
+  using WithKeyT = typename std::enable_if<HasKey<M>::value == enable, T>::type;
+
  public:
   using rawType = M;
   /* TODO(jmswen) Add names for Thrift types */
@@ -53,13 +68,71 @@ class TypedThriftMessage {
 
   TypedThriftMessage() = default;
 
+  TypedThriftMessage clone() const {
+    return *this;
+  }
+
   TypedThriftMessage& operator=(const TypedThriftMessage& other) = delete;
 
   TypedThriftMessage(TypedThriftMessage&& other) noexcept = default;
   TypedThriftMessage& operator=(TypedThriftMessage&& other) = default;
 
+  template <class T = folly::StringPiece>
+  WithKeyT<T, true> fullKey() const {
+    return getRange(raw_.key);
+  }
+
+  template <class T = folly::StringPiece>
+  WithKeyT<T, false> fullKey() const {
+    return "";
+  }
+
+  template <class T = void>
+  WithKeyT<T, true> setKey(folly::StringPiece k) {
+    // TODO(jmswen) Update to use thrift setters, here and elsewhere
+    auto& key = raw_.key;
+    key = folly::IOBuf(folly::IOBuf::COPY_BUFFER, k);
+    raw_.__isset.key = true;
+    KeysT::update(getRange(key));
+  }
+
+  template <class T = void>
+  WithKeyT<T, false> setKey(folly::StringPiece k) {
+  }
+
+  template <class T = void>
+  WithKeyT<T, true> setKey(folly::IOBuf k) {
+    auto& key = raw_.key;
+    key = std::move(k);
+    raw_.__isset.key = true;
+    key.coalesce();
+    KeysT::update(getRange(key));
+  }
+
+  template <class T = void>
+  WithKeyT<T, false> setKey(folly::IOBuf k) {
+  }
+
+  folly::StringPiece keyWithoutRoute() const {
+    return KeysT::keyWithoutRoute();
+  }
+
+  folly::StringPiece routingKey() const {
+    return KeysT::routingKey();
+  }
+
+  folly::StringPiece routingPrefix() const {
+    return KeysT::routingPrefix();
+  }
+
+  uint32_t routingKeyHash() const {
+    return KeysT::routingKeyHash();
+  }
+
  private:
   M raw_;
+
+  TypedThriftMessage(const TypedThriftMessage& other) = default;
 
   template <class Protocol>
   uint32_t read(Protocol* iprot) {

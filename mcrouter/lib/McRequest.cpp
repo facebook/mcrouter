@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,8 +12,6 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Memory.h>
 #include <folly/Range.h>
-
-#include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook { namespace memcache {
 
@@ -80,7 +78,7 @@ McMsgRef McRequest::dependentMsg(mc_op_t op) const {
 }
 
 folly::StringPiece McRequest::keyWithoutRoute() const {
-  return keys_.keyWithoutRoute;
+  return keys_.keyWithoutRoute();
 }
 
 int32_t McRequest::exptime() const {
@@ -89,44 +87,6 @@ int32_t McRequest::exptime() const {
 
 uint64_t McRequest::flags() const {
   return flags_;
-}
-
-McRequest::Keys::Keys(folly::StringPiece key) noexcept {
-  update(key);
-}
-
-void McRequest::Keys::update(folly::StringPiece key) {
-  keyWithoutRoute = key;
-  if (!key.empty()) {
-    if (*key.begin() == '/') {
-      size_t pos = 1;
-      for (int i = 0; i < 2; ++i) {
-        pos = key.find('/', pos);
-        if (pos == std::string::npos) {
-          break;
-        }
-        ++pos;
-      }
-      if (pos != std::string::npos) {
-        keyWithoutRoute.advance(pos);
-        routingPrefix.reset(key.begin(), pos);
-      }
-    }
-  }
-  routingKey = keyWithoutRoute;
-  size_t pos = keyWithoutRoute.find("|#|");
-  if (pos != std::string::npos) {
-    routingKey.reset(keyWithoutRoute.begin(), pos);
-  }
-  routingKeyHash_ = 0;
-}
-
-uint32_t McRequest::Keys::routingKeyHash() const {
-  if (routingKeyHash_ == 0) {
-    const_cast<uint32_t&>(routingKeyHash_)
-      = getMemcacheKeyHashValue(routingKey);
-  }
-  return routingKeyHash_;
 }
 
 McRequest::McRequest(const McRequest& other)
@@ -154,4 +114,4 @@ McRequest::McRequest(const McRequest& other)
 McRequest::~McRequest() {
 }
 
-}}
+}} // facebook::memcache

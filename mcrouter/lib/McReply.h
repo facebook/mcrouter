@@ -154,9 +154,7 @@ class McReply {
   template <int op>
   McReply(DefaultReplyT, McOperation<op>) noexcept;
 
-  template <class Request,
-            typename
-              std::enable_if<!IsCustomRequest<Request>::value>::type* = nullptr>
+  template <class Request>
   McReply(DefaultReplyT, const Request&) noexcept;
 
   /**

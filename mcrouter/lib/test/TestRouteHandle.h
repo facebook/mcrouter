@@ -11,15 +11,22 @@
 
 #include <memory>
 
+#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleIf.h"
 #include "mcrouter/routes/McOpList.h"
 
 namespace facebook { namespace memcache {
 
+using TestRequestList = ConcatenateListsT<
+                          RequestList,
+                          List<TypedThriftMessage<cpp2::McGetRequest>>>;
+
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
-                                               RequestList> {
+                                               TestRequestList> {
 };
 
 typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
@@ -27,6 +34,6 @@ typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
 template <typename Route>
 using TestRouteHandle = RouteHandle<Route,
                                     TestRouteHandleIf,
-                                    RequestList>;
+                                    TestRequestList>;
 
 }}  // facebook::memcache

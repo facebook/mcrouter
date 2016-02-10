@@ -203,13 +203,13 @@ TEST(BigValueRouteTest, bigvalue) {
           auto saw_prefix = keys_set[i].substr(0, length);
           EXPECT_EQ(chunk_key_prefix, saw_prefix);
 
-          EXPECT_EQ(mc_op_set, operations_set[i]);
+          EXPECT_EQ("set", operations_set[i]);
         }
 
         // if set for chunk keys succeed,
         // set original key with chunks info as modified value
         EXPECT_EQ("key_set", keys_set[num_chunks]);
-        EXPECT_EQ(mc_op_lease_set, operations_set[num_chunks]);
+        EXPECT_EQ("lease-set", operations_set[num_chunks]);
       }
     }
   });

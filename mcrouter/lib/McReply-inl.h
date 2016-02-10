@@ -69,10 +69,9 @@ McReply::McReply(DefaultReplyT, McOperation<op>) noexcept
                 mc_res_notfound) {
 }
 
-template <class Request,
-          typename std::enable_if<!IsCustomRequest<Request>::value>::type*>
+template <class Request>
 McReply::McReply(DefaultReplyT, const Request&) noexcept
-    : McReply(UpdateLike<typename Request::OpType>::value ?
+    : McReply(UpdateLike<Request>::value ?
                 mc_res_notstored :
                 mc_res_notfound) {
 }

@@ -24,6 +24,8 @@ libmcrouter_a_SOURCES = \
   FailoverErrorsSettings.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
+  Keys.cpp \
+  Keys.h \
   MessageStorage.h \
   MessageQueue.cpp \
   MessageQueue.h \

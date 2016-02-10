@@ -23,22 +23,23 @@ namespace memcache {
  */
 template <class GetType>
 McRequestWithMcOp<OpFromType<GetType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<GetType>&& treq, GetLikeT<GetType> = 0);
+convertToMcRequest(TypedThriftMessage<GetType>&& treq,
+                   GetLikeT<TypedThriftMessage<GetType>> = 0);
 
 template <class UpdateType>
 McRequestWithMcOp<OpFromType<UpdateType, RequestOpMapping>::value>
 convertToMcRequest(TypedThriftMessage<UpdateType>&& treq,
-                   UpdateLikeT<UpdateType> = 0);
+                   UpdateLikeT<TypedThriftMessage<UpdateType>> = 0);
 
 template <class DeleteType>
 McRequestWithMcOp<OpFromType<DeleteType, RequestOpMapping>::value>
 convertToMcRequest(TypedThriftMessage<DeleteType>&& treq,
-                   DeleteLikeT<DeleteType> = 0);
+                   DeleteLikeT<TypedThriftMessage<DeleteType>> = 0);
 
 template <class ArithType>
 McRequestWithMcOp<OpFromType<ArithType, RequestOpMapping>::value>
 convertToMcRequest(TypedThriftMessage<ArithType>&& treq,
-                   ArithmeticLikeT<ArithType> = 0);
+                   ArithmeticLikeT<TypedThriftMessage<ArithType>> = 0);
 
 McRequestWithMcOp<mc_op_version>
 convertToMcRequest(TypedThriftMessage<cpp2::McVersionRequest>&& treq);

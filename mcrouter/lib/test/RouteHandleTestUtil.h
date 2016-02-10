@@ -22,7 +22,9 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RequestUtil.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
@@ -77,7 +79,7 @@ struct TestHandleImpl {
 
   std::vector<uint32_t> sawExptimes;
 
-  std::vector<mc_op_t> sawOperations;
+  std::vector<std::string> sawOperations;
 
   bool isTko;
 
@@ -169,10 +171,9 @@ struct RecordingRoute {
                  TestHandleImpl<RouteHandleIf>* h)
       : dataGet_(g_td), dataUpdate_(u_td), dataDelete_(d_td), h_(h) {}
 
-  template <int M>
-  McReply route(const McRequestWithMcOp<M>& req) {
-    using Request = McRequestWithMcOp<M>;
-    using Reply = McReply;
+  template <class Request>
+  ReplyT<Request> route(const Request& req) {
+    using Reply = ReplyT<Request>;
 
     if (h_->isTko) {
       return Reply(TkoReply);
@@ -182,19 +183,16 @@ struct RecordingRoute {
       h_->wait();
     }
 
-    {
-      auto key = req.key().clone();
-      h_->saw_keys.push_back(coalesceAndGetRange(key).str());
-    }
-    h_->sawOperations.push_back((mc_op_t) M);
-    h_->sawExptimes.push_back(req.exptime());
+    h_->saw_keys.push_back(req.fullKey().str());
+    h_->sawOperations.push_back(Request::name);
+    h_->sawExptimes.push_back(exptime(req));
     if (GetLike<Request>::value) {
       auto msg = createMcMsgRef(req.fullKey(), dataGet_.value_);
       msg->flags = dataGet_.flags_;
       return Reply(dataGet_.result_, std::move(msg));
     }
     if (UpdateLike<Request>::value) {
-      auto val = req.value().clone();
+      auto val = value(req).clone();
       folly::StringPiece sp_value = coalesceAndGetRange(val);
       h_->sawValues.push_back(sp_value.str());
       auto msg = createMcMsgRef(req.fullKey(), sp_value);
