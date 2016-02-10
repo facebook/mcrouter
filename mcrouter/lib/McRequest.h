@@ -454,10 +454,6 @@ class McRequestWithOp {
   }
 #endif
 
-  const McRequest& getMcRequest() const {
-    return req_;
-  }
-
  private:
   McRequest req_;
 

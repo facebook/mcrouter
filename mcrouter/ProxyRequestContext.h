@@ -17,6 +17,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestLogger.h"
 #include "mcrouter/ProxyRequestPriority.h"
@@ -135,11 +136,12 @@ public:
       return;
     }
 
+    RequestLoggerContext loggerContext(
+        poolName, ap, request, reply, startTimeUs, endTimeUs);
     assert(logger_.hasValue());
-    logger_->log(request, reply, startTimeUs, endTimeUs);
+    logger_->log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());
-    additionalLogger_->log(
-      poolName, ap, request, reply, startTimeUs, endTimeUs);
+    additionalLogger_->log(loggerContext);
   }
 
   /**

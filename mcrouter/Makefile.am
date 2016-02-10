@@ -80,6 +80,7 @@ libmcroutercore_a_SOURCES = \
   ProxyRequestContext.cpp \
   ProxyRequestContext.h \
   ProxyRequestLogger-inl.h \
+  ProxyRequestLogger.cpp \
   ProxyRequestLogger.h \
   ProxyThread.cpp \
   ProxyThread.h \

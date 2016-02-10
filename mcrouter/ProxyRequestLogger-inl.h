@@ -9,13 +9,12 @@
  */
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-namespace {
 
 #define REQUEST_CLASS_STATS(proxy, OP, SUFFIX, reqClass)                       \
     do {                                                                       \
@@ -26,6 +25,8 @@ namespace {
       stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_stat, 1);       \
       stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat, 1); \
     } while(0)
+
+namespace detail {
 
 template <class Request>
 inline void logOutlier(proxy_t& proxy, GetLikeT<Request> = 0) {
@@ -54,13 +55,13 @@ inline void logOutlier(proxy_t& proxy, OtherThanT<Request,
 template <
   class Request,
   typename std::enable_if<IsCustomRequest<Request>::value, int>::type = 0>
-inline void logRequestClass(proxy_t& proxy, const Request& request) {
+inline void logRequestClass(proxy_t& proxy) {
 }
 
 template <
   class Request,
   typename std::enable_if<!IsCustomRequest<Request>::value, int>::type = 0>
-inline void logRequestClass(proxy_t& proxy, const Request& request) {
+inline void logRequestClass(proxy_t& proxy) {
   auto reqClass = fiber_local::getRequestClass();
   auto operation = Request::OpType::mc_op;
 
@@ -107,61 +108,21 @@ inline void logRequestClass(proxy_t& proxy, const Request& request) {
   }
 }
 
-#define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)                      \
-    do {                                                                       \
-      if (reqClass.isNormal()) {                                               \
-        stat_incr(proxy->stats, result_ ## ERROR ## _stat, 1);                 \
-        stat_incr(proxy->stats, result_ ## ERROR ## _count_stat, 1);           \
-      }                                                                        \
-      stat_incr(proxy->stats, result_ ## ERROR ## _all_stat, 1);               \
-      stat_incr(proxy->stats, result_ ## ERROR ## _all_count_stat, 1);         \
-    } while(0)
-
-}
-
-template <class Reply>
-void ProxyRequestLogger::logError(const Reply& reply) {
-  auto reqClass = fiber_local::getRequestClass();
-  if (reply.isError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);
-  }
-  if (reply.isConnectError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, connect_error, reqClass);
-  }
-  if (reply.isConnectTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, connect_timeout, reqClass);
-  }
-  if (reply.isDataTimeout()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, data_timeout, reqClass);
-  }
-  if (reply.isRedirect()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, busy, reqClass);
-  }
-  if (reply.isTko()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, tko, reqClass);
-  }
-  if (reply.isLocalError()) {
-    REQUEST_CLASS_ERROR_STATS(proxy_, local_error, reqClass);
-  }
-}
+} // detail
 
 template <class Request>
-void ProxyRequestLogger::log(const Request& request,
-                             const ReplyT<Request>& reply,
-                             const int64_t startTimeUs,
-                             const int64_t endTimeUs) {
-
-  auto durationUs = endTimeUs - startTimeUs;
+void ProxyRequestLogger::log(const RequestLoggerContext& loggerContext) {
+  const auto durationUs = loggerContext.endTimeUs - loggerContext.startTimeUs;
   bool isOutlier =
       proxy_->getRouterOptions().logging_rtt_outlier_threshold_us > 0 &&
       durationUs >= proxy_->getRouterOptions().logging_rtt_outlier_threshold_us;
 
-  logError(reply);
-  logRequestClass(*proxy_, request);
+  logError(loggerContext.replyResult);
+  detail::logRequestClass<Request>(*proxy_);
   proxy_->durationUs.insertSample(durationUs);
 
   if (isOutlier) {
-    logOutlier<Request>(*proxy_);
+    detail::logOutlier<Request>(*proxy_);
   }
 }
 

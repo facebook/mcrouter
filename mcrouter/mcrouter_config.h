@@ -63,6 +63,7 @@ class McrouterLogger;
 class McrouterStandaloneOptions;
 struct FailoverContext;
 struct proxy_t;
+struct RequestLoggerContext;
 struct ShadowValidationData;
 struct TkoLog;
 
@@ -75,8 +76,7 @@ struct AdditionalProxyRequestLogger {
   /**
    * Called once a reply is received to record a stats sample if required.
    */
-  template <typename... Args>
-  void log(Args&&...) {
+  void log(const RequestLoggerContext&) {
   }
 };
 

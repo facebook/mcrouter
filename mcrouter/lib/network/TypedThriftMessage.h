@@ -24,6 +24,8 @@ template <class M>
 class TypedThriftMessage {
  public:
   using rawType = M;
+  /* TODO(jmswen) Add names for Thrift types */
+  static constexpr const char* name = "TypedThriftMessagePlaceholder";
 
   M& operator*() {
     return raw_;
