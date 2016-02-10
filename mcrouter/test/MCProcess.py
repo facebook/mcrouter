@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -458,6 +458,26 @@ class MCProcess(object):
                 s.append(a[1])
 
         return s
+
+    def issue_command_and_read_all(self, command):
+        self.others += 1
+        self.socket.sendall(command)
+
+        # Handle no response
+        fds = select.select([self.fd], [], [], 2.0)
+        if len(fds[0]) == 0:
+            return None
+
+        answer = ""
+        l = None
+        while l != 'END':
+            l = self.fd.readline().strip()
+            # Handle error
+            if not answer and 'ERROR' in l:
+                self.connect()
+                return l
+            answer += l + "\r\n"
+        return answer
 
     def issue_command(self, command):
         self.others += 1

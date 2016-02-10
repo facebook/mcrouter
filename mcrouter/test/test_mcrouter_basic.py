@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -58,6 +58,40 @@ class TestMcrouterBasic(McrouterTestCase):
         invalid_key = '/blah/bloh/key'
         self.assertFalse(mcr.set(invalid_key, 'value'))
         self.assertEqual(mcr.get(invalid_key), "SERVER_ERROR local error")
+
+    def test_stats(self):
+        mcr = self.get_mcrouter(['--proxy-threads=8'])
+
+        # Stats without args
+        res = mcr.issue_command_and_read_all('stats\r\n')
+        self.assertTrue(res)
+        res = mcr.issue_command_and_read_all('stats \r\n')
+        self.assertTrue(res)
+        res = mcr.issue_command_and_read_all('stats\n')
+        self.assertTrue(res)
+        res = mcr.issue_command_and_read_all('stats \n')
+        self.assertTrue(res)
+
+        # Stats with args
+        args = ['detailed', 'cmd', 'cmd-in', 'cmd-out', 'cmd-error',
+                'servers', 'suspect_servers', 'memory', 'count', 'outlier']
+        for arg in args:
+            res = mcr.issue_command_and_read_all('stats{0}\r\n'.format(arg))
+            self.assertTrue('CLIENT_ERROR' in res)
+            res = mcr.issue_command_and_read_all('stats {0}\r\n'.format(arg))
+            self.assertTrue('END' in res)
+            res = mcr.issue_command_and_read_all('stats {0} \r\n'.format(arg))
+            self.assertTrue('END' in res)
+            res = mcr.issue_command_and_read_all('stats{0}\n'.format(arg))
+            self.assertTrue('CLIENT_ERROR' in res)
+            res = mcr.issue_command_and_read_all('stats {0}\n'.format(arg))
+            self.assertTrue('END' in res)
+            res = mcr.issue_command_and_read_all('stats {0} \n'.format(arg))
+            self.assertTrue('END' in res)
+
+        # Stats with invalid arg
+        res = mcr.issue_command_and_read_all('stats invalid_option\r\n')
+        self.assertTrue('CLIENT_ERROR' in res)
 
     def test_stats_deadlock(self):
         mcr = self.get_mcrouter(['--proxy-threads=8'])

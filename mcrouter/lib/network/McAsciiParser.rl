@@ -949,7 +949,7 @@ void McServerAsciiParser::initArithmetic() {
 machine mc_ascii_stats_req_body;
 include mc_ascii_common;
 
-req_body := (' ' multi_token)? new_line @{
+req_body := ' '* (' ' multi_token)? new_line @{
               callback_->onRequest(McOperation<mc_op_stats>(),
                                    std::move(currentMessage_.get<McRequest>()),
                                    noreply_);
