@@ -23,9 +23,7 @@
 #include <folly/ThreadName.h>
 
 #include "mcrouter/config.h"
-#include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"

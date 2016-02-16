@@ -52,9 +52,6 @@ namespace folly {
   class File;
 }
 
-class fb_timer_s;
-typedef class fb_timer_s fb_timer_t;
-
 namespace facebook { namespace memcache {
 
 template <int op_id>

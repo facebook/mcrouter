@@ -321,9 +321,6 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
     statsLogWriter_(folly::make_unique<AsyncWriter>(
                       opts_.stats_async_queue_length)),
     leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
-  fb_timer_set_cycle_timer_func(
-    []() -> uint64_t { return nowUs(); },
-    1.0);
 }
 
 void McrouterInstance::shutdownImpl() noexcept {

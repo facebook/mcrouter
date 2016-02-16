@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -40,8 +40,6 @@
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
-#include "mcrouter/lib/fbi/error.h"
-#include "mcrouter/lib/fbi/fb_cpu_util.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
@@ -362,12 +360,6 @@ static void raise_fdlimit() {
   }
 }
 
-static void error_flush_cb(const fbi_err_t *err) {
-  fbi_dbg_log("mcrouter", err->source, "", err->lineno,
-              fbi_errtype_to_string(err->type), 0, 0, "%s",
-              nstring_safe(&err->message));
-}
-
 void notify_command_line(int argc, char ** argv) {
   size_t len = 0;
   int ii;
@@ -467,8 +459,6 @@ int main(int argc, char **argv) {
   }
 
   srand(time(nullptr) + getpid());
-
-  fbi_set_err_flush_cb(error_flush_cb);
 
   // act on options
   if (standaloneOpts.log_file != "") {
