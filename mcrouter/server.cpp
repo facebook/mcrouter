@@ -99,7 +99,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
   opts.worker.defaultVersionHandler = false;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;
   opts.worker.sendTimeout = std::chrono::milliseconds{
-    mcrouterOpts.server_timeout_ms};
+    standaloneOpts.client_timeout_ms};
 
   /* Default to one read per event to help latency-sensitive workloads.
      We can make this an option if this needs to be adjusted. */
