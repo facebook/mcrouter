@@ -62,6 +62,17 @@ class AsyncMcClient {
     std::function<void(bool aborting)> onDown);
 
   /**
+   * Set callbacks for when requests state change.
+   *
+   * @param onStateChange   Will be called whenever a request changes state.
+   *                        pendingDiff and inflightDiff will hold the
+   *                        difference in the number of pending and inflight
+   *                        requests, respectively.
+   */
+  void setRequestStatusCallbacks(
+      std::function<void(int pendingDiff, int inflightDiff)> onStateChange);
+
+  /**
    * Send request synchronously (i.e. blocking call).
    * Note: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.

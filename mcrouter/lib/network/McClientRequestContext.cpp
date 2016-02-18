@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,15 +14,57 @@ namespace facebook { namespace memcache {
 constexpr size_t kSerializedRequestContextLength = 1024;
 
 void McClientRequestContextBase::replyError(mc_res_t result) {
-  assert(state_ == ReqState::NONE);
+  assert(state() == ReqState::NONE);
   replyErrorImpl(result);
-  state_ = ReqState::COMPLETE;
+  setState(ReqState::COMPLETE);
   baton_.post();
 }
 
 void McClientRequestContextBase::canceled() {
-  state_ = ReqState::NONE;
+  setState(ReqState::NONE);
   baton_.post();
+}
+
+void McClientRequestContextBase::setStateChangeCallback(
+    std::function<void(int pendingDiff, int inflightDiff)> onStateChange) {
+  onStateChange_ = std::move(onStateChange);
+}
+
+void McClientRequestContextBase::fireStateChangeCallbacks(
+    ReqState old, ReqState current) const {
+  int pending = 0;
+  int inflight = 0;
+
+  switch (old) {
+    case ReqState::PENDING_QUEUE:
+      pending--;
+      break;
+    case ReqState::WRITE_QUEUE:
+    case ReqState::WRITE_QUEUE_CANCELED:
+    case ReqState::PENDING_REPLY_QUEUE:
+    case ReqState::REPLIED_QUEUE:
+      inflight--;
+      break;
+    default:
+      break;
+  }
+  switch (current) {
+    case ReqState::PENDING_QUEUE:
+      pending++;
+      break;
+    case ReqState::WRITE_QUEUE:
+    case ReqState::WRITE_QUEUE_CANCELED:
+    case ReqState::PENDING_REPLY_QUEUE:
+    case ReqState::REPLIED_QUEUE:
+      inflight++;
+      break;
+    default:
+      break;
+  }
+
+  if (onStateChange_ && (pending != 0 || inflight != 0)) {
+    onStateChange_(pending, inflight);
+  }
 }
 
 void McClientRequestContextBase::scheduleTimeout() {
@@ -30,7 +72,7 @@ void McClientRequestContextBase::scheduleTimeout() {
 }
 
 McClientRequestContextBase::~McClientRequestContextBase() {
-  assert(state_ == ReqState::NONE || state_ == ReqState::COMPLETE);
+  assert(state() == ReqState::NONE || state() == ReqState::COMPLETE);
 }
 
 McClientRequestContextQueue::McClientRequestContextQueue(
@@ -84,8 +126,8 @@ size_t McClientRequestContextQueue::getFirstId() const {
 
 void McClientRequestContextQueue::markAsPending(
     McClientRequestContextBase& req) {
-  assert(req.state_ == State::NONE);
-  req.state_ = State::PENDING_QUEUE;
+  assert(req.state() == State::NONE);
+  req.setState(State::PENDING_QUEUE);
   pendingQueue_.push_back(req);
 
   if (outOfOrder_) {
@@ -100,8 +142,8 @@ void McClientRequestContextQueue::markAsPending(
 McClientRequestContextBase& McClientRequestContextQueue::markNextAsSending() {
   auto& req = pendingQueue_.front();
   pendingQueue_.pop_front();
-  assert(req.state_ == State::PENDING_QUEUE);
-  req.state_ = State::WRITE_QUEUE;
+  assert(req.state() == State::PENDING_QUEUE);
+  req.setState(State::WRITE_QUEUE);
   writeQueue_.push_back(req);
   return req;
 }
@@ -110,14 +152,14 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
   if (!repliedQueue_.empty()) {
     auto& req = repliedQueue_.front();
     repliedQueue_.pop_front();
-    req.state_ = State::COMPLETE;
+    req.setState(State::COMPLETE);
     req.baton_.post();
     return req;
   }
 
   auto& req = writeQueue_.front();
   writeQueue_.pop_front();
-  if (req.state_ == State::WRITE_QUEUE_CANCELED) {
+  if (req.state() == State::WRITE_QUEUE_CANCELED) {
     removeFromSet(req);
     // We already sent this request, so we're going to get a reply in future.
     if (!outOfOrder_) {
@@ -125,8 +167,8 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
     }
     req.canceled();
   } else {
-    assert(req.state_ == State::WRITE_QUEUE);
-    req.state_ = State::PENDING_REPLY_QUEUE;
+    assert(req.state() == State::WRITE_QUEUE);
+    req.setState(State::PENDING_REPLY_QUEUE);
     pendingReplyQueue_.push_back(req);
   }
   return req;
@@ -138,7 +180,7 @@ void McClientRequestContextQueue::failQueue(
     auto& req = queue.front();
     queue.pop_front();
     removeFromSet(req);
-    req.state_ = State::NONE;
+    req.setState(State::NONE);
     req.replyError(error);
   }
 }
@@ -163,19 +205,19 @@ void McClientRequestContextQueue::removeFromSet(
 
 void McClientRequestContextQueue::removePending(
     McClientRequestContextBase& req) {
-  assert(req.state_ == State::PENDING_QUEUE);
+  assert(req.state() == State::PENDING_QUEUE);
   removeFromSet(req);
   pendingQueue_.erase(pendingQueue_.iterator_to(req));
-  req.state_ = State::NONE;
+  req.setState(State::NONE);
 }
 
 void McClientRequestContextQueue::removePendingReply(
     McClientRequestContextBase& req) {
-  assert(req.state_ == State::PENDING_REPLY_QUEUE);
+  assert(req.state() == State::PENDING_REPLY_QUEUE);
   assert(&req == &pendingReplyQueue_.front() || outOfOrder_);
   removeFromSet(req);
   pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(req));
-  req.state_ = State::NONE;
+  req.setState(State::NONE);
   // We need timedOutInitializers_ only for in order protocol.
   if (!outOfOrder_) {
     timedOutInitializers_.push(req.initializer_);

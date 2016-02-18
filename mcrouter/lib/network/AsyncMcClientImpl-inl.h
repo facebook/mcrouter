@@ -41,6 +41,7 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       queue_,
       [](ParserT& parser) { parser.expectNext<Request>(); },
       connectionOptions_.useTyped);
+  ctx.setStateChangeCallback(requestStatusCallbacks_.onStateChange);
   sendCommon(ctx);
 
   // Wait for the reply.

@@ -33,9 +33,9 @@ inline getFbTraceInfo(const Request& request) {
 
 template <class Reply>
 void McClientRequestContextBase::reply(Reply&& r) {
-  assert(state_ == ReqState::PENDING_REPLY_QUEUE ||
-         state_ == ReqState::WRITE_QUEUE ||
-         state_ == ReqState::WRITE_QUEUE_CANCELED);
+  assert(state() == ReqState::PENDING_REPLY_QUEUE ||
+         state() == ReqState::WRITE_QUEUE ||
+         state() == ReqState::WRITE_QUEUE_CANCELED);
   if (replyType_ != typeid(Reply)) {
     LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
                 "Attempt to forward a reply of a wrong type. Expected '{}', "
@@ -93,23 +93,23 @@ McClientRequestContext<Request>::waitForReply(
   batonWaitTimeout_ = timeout;
   baton_.wait(batonTimeoutHandler_);
 
-  switch (state_) {
+  switch (state()) {
     case ReqState::REPLIED_QUEUE:
       // The request was already replied, but we're still waiting for socket
       // write to succeed.
       baton_.reset();
       baton_.wait();
-      assert(state_ == ReqState::COMPLETE);
+      assert(state() == ReqState::COMPLETE);
       return std::move(replyStorage_.value());
     case ReqState::WRITE_QUEUE:
       // Request is being written into socket, we need to wait for it to be
       // completely written, then reply with timeout.
-      state_ = ReqState::WRITE_QUEUE_CANCELED;
+      setState(ReqState::WRITE_QUEUE_CANCELED);
       baton_.reset();
       baton_.wait();
-      assert(state_ == ReqState::COMPLETE || state_ == ReqState::NONE);
+      assert(state() == ReqState::COMPLETE || state() == ReqState::NONE);
       // It is still possible that we'll receive a reply while waiting.
-      if (state_ == ReqState::COMPLETE) {
+      if (state() == ReqState::COMPLETE) {
         return std::move(replyStorage_.value());
       }
       return Reply(mc_res_timeout);
@@ -129,7 +129,7 @@ McClientRequestContext<Request>::waitForReply(
     case ReqState::NONE:
       LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
                   "Unexpected state of request: {}!",
-                  static_cast<uint64_t>(state_));
+                  static_cast<uint64_t>(state()));
   }
   return Reply(mc_res_local_error);
 }
@@ -175,7 +175,7 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
     auto iter = getContextById(id);
     if (iter != set_.end()) {
       ctx = &(*iter);
-      assert(iter->state_ == State::PENDING_REPLY_QUEUE);
+      assert(iter->state() == State::PENDING_REPLY_QUEUE);
       pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(*iter));
       set_.erase(iter);
     }
@@ -199,12 +199,12 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
 
   if (ctx) {
     ctx->reply(std::move(r));
-    if (ctx->state_ == State::PENDING_REPLY_QUEUE) {
-      ctx->state_ = State::COMPLETE;
+    if (ctx->state() == State::PENDING_REPLY_QUEUE) {
+      ctx->setState(State::COMPLETE);
       ctx->baton_.post();
     } else {
       // Move the request to the replied queue.
-      ctx->state_ = State::REPLIED_QUEUE;
+      ctx->setState(State::REPLIED_QUEUE);
       repliedQueue_.push_back(*ctx);
     }
   }

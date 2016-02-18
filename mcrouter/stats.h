@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -65,6 +65,7 @@ enum stat_group_t {
   rate_stats           =      0x100,
   count_stats          =      0x200,
   outlier_stats        =      0x400,
+  max_stats            =      0x800,
   all_stats            =     0xffff,
   server_stats         =    0x10000,
   memory_stats         =    0x20000,
@@ -99,6 +100,12 @@ void stat_decr_safe(stat_t*, stat_name_t);
  * rate stat), units will be per second.
  */
 double stats_aggregate_rate_value(const McrouterInstance& router, int idx);
+
+/**
+ * Current max between all buckets of stats[idx] (which must be an aggregated
+ * max stat)
+ */
+uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx);
 
 void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
 uint64_t stat_get_uint64(stat_t*, stat_name_t);

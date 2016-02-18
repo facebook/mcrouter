@@ -161,6 +161,8 @@ void inflightThrottleTest(SSLContextProvider ssl) {
     client.sendGet("hold", mc_res_timeout);
   }
   client.waitForReplies();
+  EXPECT_EQ(5, client.getMaxPendingReqs());
+  EXPECT_EQ(5, client.getMaxInflightReqs());
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server->join();
@@ -185,6 +187,8 @@ void inflightThrottleFlushTest(SSLContextProvider ssl) {
   }
   client.sendGet("flush", mc_res_found);
   client.waitForReplies();
+  EXPECT_EQ(6, client.getMaxPendingReqs());
+  EXPECT_EQ(6, client.getMaxInflightReqs());
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server->join();
@@ -209,6 +213,8 @@ void outstandingThrottleTest(SSLContextProvider ssl) {
   }
   client.sendGet("flush", mc_res_local_error);
   client.waitForReplies();
+  EXPECT_EQ(5, client.getMaxPendingReqs());
+  EXPECT_EQ(5, client.getMaxInflightReqs());
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server->join();

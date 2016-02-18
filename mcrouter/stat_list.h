@@ -27,9 +27,9 @@
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats
   /* Total reqs in mc client yet to be sent to memcache. */
-  STUI(mcc_txbuf_reqs, 0, 1)
+  STUI(destination_pending_reqs, 0, 1)
   /* Total reqs waiting for reply from memcache. */
-  STUI(mcc_waiting_replies, 0, 1)
+  STUI(destination_inflight_reqs, 0, 1)
   STAT(destination_batch_size, stat_double, 0, .dbl = 0.0)
   STUI(asynclog_requests, 0, 1)
   /* Proxy requests we started routing */
@@ -64,6 +64,10 @@
   STUI(cycles_p99, 0, 1)
   STUI(cycles_num, 0, 1)
   STAT(duration_us, stat_double, 0, .dbl = 0.0)
+#undef GROUP
+#define GROUP ods_stats | mcproxy_stats | max_stats
+  STUI(destination_max_pending_reqs, 0, 1)
+  STUI(destination_max_inflight_reqs, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | count_stats
   STUI(rate_limited_log_count, 0, 1)

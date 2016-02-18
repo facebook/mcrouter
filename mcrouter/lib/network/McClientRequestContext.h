@@ -72,6 +72,16 @@ class McClientRequestContextBase
    */
   void scheduleTimeout();
 
+  /**
+   * Set callbacks for when the request changes its state.
+   *
+   * @param onStateChange   Will be called whenever the request moves into
+   *                        (diff = +1) or out of (diff = -1) the
+   *                        pending/inflight queues.
+   */
+  void setStateChangeCallback(
+      std::function<void(int pendingDiff, int inflightDiff)> onStateChange);
+
  protected:
   enum class ReqState {
     NONE,
@@ -100,9 +110,17 @@ class McClientRequestContextBase
 
   virtual void replyErrorImpl(mc_res_t result) = 0;
 
+  ReqState state() const {
+    return state_;
+  }
+
+  void setState(ReqState newState) {
+    fireStateChangeCallbacks(state_, newState);
+    state_ = newState;
+  }
+
   folly::fibers::Baton baton_;
   McClientRequestContextQueue& queue_;
-  ReqState state_{ReqState::NONE};
 
   folly::fibers::Baton::TimeoutHandler batonTimeoutHandler_;
   std::chrono::milliseconds batonWaitTimeout_{0};
@@ -115,6 +133,15 @@ class McClientRequestContextBase
   folly::SafeIntrusiveListHook hook_;
   void* replyStorage_;
   InitializerFuncPtr initializer_;
+
+  ReqState state_{ReqState::NONE};
+
+  std::function<void(int pendingDiff, int inflightDiff)> onStateChange_;
+
+  /**
+   * Fire the request state change callbacks.
+   */
+  void fireStateChangeCallbacks(ReqState old, ReqState current) const;
 
   /**
    * Notify context that request was canceled in AsyncMcClientImpl

@@ -187,6 +187,20 @@ TestClient::TestClient(std::string host,
   client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks([] { LOG(INFO) << "Client UP."; },
                               [] (bool) { LOG(INFO) << "Client DOWN."; });
+  client_->setRequestStatusCallbacks(
+    [this](int pendingDiff, int inflightDiff) {
+      CHECK(pendingDiff != inflightDiff)
+        << "A request can't be pending and inflight at the same time";
+
+      pendingStat_ += pendingDiff;
+      inflightStat_ += inflightDiff;
+
+      CHECK(pendingStat_ >= 0 && inflightStat_ >= 0)
+        << "Pending and inflight stats should always be 0 or more.";
+
+      pendingStatMax_ = std::max(pendingStatMax_, pendingStat_);
+      inflightStatMax_ = std::max(inflightStatMax_, inflightStat_);
+    });
 }
 
 void TestClient::setStatusCallbacks(std::function<void()> onUp,
@@ -254,6 +268,10 @@ void TestClient::sendSet(std::string key, std::string value,
 void TestClient::waitForReplies(size_t remaining) {
   while (inflight_ > remaining) {
     loopOnce();
+  }
+  if (remaining == 0) {
+    CHECK(pendingStat_ == 0) << "pendingStat_ should be 0";
+    CHECK(inflightStat_ == 0) << "inflightStat_ should be 0";
   }
 }
 

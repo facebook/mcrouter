@@ -450,11 +450,14 @@ void McrouterInstance::statUpdaterThreadRun() {
         ++proxy->num_bins_used;
       }
 
-      for(int j = 0; j < num_stats; ++j) {
+      for (int j = 0; j < num_stats; ++j) {
         if (proxy->stats[j].group & rate_stats) {
           proxy->stats_num_within_window[j] -= proxy->stats_bin[j][idx];
           proxy->stats_bin[j][idx] = proxy->stats[j].data.uint64;
           proxy->stats_num_within_window[j] += proxy->stats_bin[j][idx];
+          proxy->stats[j].data.uint64 = 0;
+        } else if (proxy->stats[j].group & max_stats) {
+          proxy->stats_bin[j][idx] = proxy->stats[j].data.uint64;
           proxy->stats[j].data.uint64 = 0;
         }
       }

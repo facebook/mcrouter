@@ -132,6 +132,15 @@ void AsyncMcClientImpl::setStatusCallbacks(
   }
 }
 
+void AsyncMcClientImpl::setRequestStatusCallbacks(
+    std::function<void(int pendingDiff, int inflightDiff)> onStateChange) {
+  DestructorGuard dg(this);
+
+  requestStatusCallbacks_ = RequestStatusCallbacks {
+    std::move(onStateChange)
+  };
+}
+
 AsyncMcClientImpl::~AsyncMcClientImpl() {
   assert(getPendingRequestCount() == 0);
   assert(getInflightRequestCount() == 0);
@@ -710,6 +719,5 @@ void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
       }
     });
 }
-
 
 }} // facebook::memcache

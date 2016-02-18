@@ -105,10 +105,6 @@ struct ServerStat {
  * Represents a set of aggregated stats across all destinations in a map.
  */
 struct AggregatedDestinationStats {
-  // Number of requests pending to be sent over network.
-  uint64_t pendingRequests{0};
-  // Number of requests been sent over network or already waiting for reply.
-  uint64_t inflightRequests{0};
   // Average batches size in form of (num_request, num_batches).
   // This value is based on some subset of most recent requests (each
   // destination maintains its own window).
@@ -142,6 +138,10 @@ double stats_rate_value(proxy_t* proxy, int idx) {
   return rate;
 }
 
+uint64_t stats_max_value(proxy_t* proxy, int idx) {
+  return stats_aggregate_max_value(proxy->router(), idx);
+}
+
 }  // anonymous namespace
 
 // This is a subset of what's in proc(5).
@@ -169,10 +169,27 @@ double stats_aggregate_rate_value(const McrouterInstance& router, int idx) {
   return rate;
 }
 
+uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx) {
+  uint64_t max = 0;
+  int num_bins_used = get_num_bins_used(router);
 
+  for (size_t j = 0; j < num_bins_used; ++j) {
+    uint64_t binSum = 0;
+    for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+      binSum += router.getProxy(i)->stats_bin[idx][j];
+    }
+    max = std::max(max, binSum);
+  }
+
+  return max;
+}
 
 static std::string rate_stat_to_str(proxy_t * proxy, int idx) {
   return folly::stringPrintf("%g", stats_rate_value(proxy, idx));
+}
+
+static std::string max_stat_to_str(proxy_t* proxy, int idx) {
+  return folly::to<std::string>(stats_max_value(proxy, idx));
 }
 
 /**
@@ -298,8 +315,6 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
       proxy->stats[config_last_success_stat].data.uint64);
     proxy->destinationMap->foreachDestinationSynced(
       [&destStats](folly::StringPiece, const ProxyDestination& destination) {
-        destStats.pendingRequests += destination.getPendingRequestCount();
-        destStats.inflightRequests += destination.getInflightRequestCount();
         auto batch = destination.getBatchingStat();
         destStats.batches.first += batch.first;
         destStats.batches.second += batch.second;
@@ -309,9 +324,6 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
 
   stat_set_uint64(stats, num_suspect_servers_stat,
                   router.tkoTrackerMap().getSuspectServersCount());
-
-  stat_set_uint64(stats, mcc_txbuf_reqs_stat, destStats.pendingRequests);
-  stat_set_uint64(stats, mcc_waiting_replies_stat, destStats.inflightRequests);
 
   double avgBatchSize = 0;
   if (destStats.batches.second != 0) {
@@ -485,6 +497,8 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
     if (stat->group & groups) {
       if (stat->group & rate_stats) {
         reply.addStat(stat->name, rate_stat_to_str(proxy, ii));
+      } else if (stat->group & max_stats) {
+        reply.addStat(stat->name, max_stat_to_str(proxy, ii));
       } else {
         reply.addStat(stat->name, stat_to_str(stat, nullptr));
       }

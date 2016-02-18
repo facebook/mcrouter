@@ -145,11 +145,31 @@ class TestClient {
     return *client_;
   }
 
+  /**
+   * Get the max number of pending requests at any point in time.
+   */
+  int getMaxPendingReqs() {
+    return pendingStatMax_;
+  }
+
+  /**
+   * Get the max number of inflight requests at any point in time.
+   */
+  int getMaxInflightReqs() {
+    return inflightStatMax_;
+  }
+
  private:
   size_t inflight_{0};
   std::unique_ptr<AsyncMcClient> client_;
   folly::EventBase eventBase_;
   folly::fibers::FiberManager fm_;
+
+  // Stats
+  int pendingStat_{0};
+  int inflightStat_{0};
+  int pendingStatMax_{0};
+  int inflightStatMax_{0};
 };
 
 std::string genBigValue();

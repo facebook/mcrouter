@@ -227,6 +227,9 @@ void McrouterLogger::log() {
     if (stats[i].group & rate_stats) {
       stats[i].type = stat_double;
       stats[i].data.dbl = stats_aggregate_rate_value(router_, i);
+    } else if (stats[i].group & max_stats) {
+      stats[i].type = stat_uint64;
+      stats[i].data.uint64 = stats_aggregate_max_value(router_, i);
     }
   }
 

@@ -174,10 +174,11 @@ struct proxy_t {
 
   /*
    * stats_bin[stat_name] is a circular array associated with stat "stat_name",
-   * where each element (stats_bin[stat_name][idx]) is the count of "stat_name"
-   * in the "idx"th time bin. The updater thread updates these circular arrays
-   * once every MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND second by setting the
-   * oldest time bin to stats[stat_name], and then reset stats[stat_name] to 0.
+   * where each element (stats_bin[stat_name][idx]) is either the count (if it
+   * is a rate_stat) or the max (if it is a max_stat) of "stat_name" in the
+   * "idx"th time bin. The updater thread updates these circular arrays once
+   * every MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND second by setting the oldest
+   * time bin to stats[stat_name], and then reset stats[stat_name] to 0.
    */
   uint64_t stats_bin[num_stats][MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
                                 MOVING_AVERAGE_BIN_SIZE_IN_SECOND];

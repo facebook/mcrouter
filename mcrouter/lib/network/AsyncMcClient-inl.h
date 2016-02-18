@@ -28,6 +28,11 @@ inline void AsyncMcClient::setStatusCallbacks(
   base_->setStatusCallbacks(std::move(onUp), std::move(onDown));
 }
 
+inline void AsyncMcClient::setRequestStatusCallbacks(
+    std::function<void(int pendingDiff, int inflightDiff)> onStateChange) {
+  base_->setRequestStatusCallbacks(std::move(onStateChange));
+}
+
 template <class Request>
 ReplyT<Request> AsyncMcClient::sendSync(const Request& request,
                                         std::chrono::milliseconds timeout) {

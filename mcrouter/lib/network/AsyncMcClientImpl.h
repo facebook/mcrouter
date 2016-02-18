@@ -57,6 +57,9 @@ class AsyncMcClientImpl :
     std::function<void()> onUp,
     std::function<void(bool)> onDown);
 
+  void setRequestStatusCallbacks(
+      std::function<void(int pendingDiff, int inflightDiff)> onStateChange);
+
   template <class Request>
   ReplyT<Request> sendSync(const Request& request,
                            std::chrono::milliseconds timeout);
@@ -83,6 +86,9 @@ class AsyncMcClientImpl :
     std::function<void()> onUp;
     std::function<void(bool)> onDown;
   };
+  struct RequestStatusCallbacks {
+    std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
+  };
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()
   // doesn't work correctly with DelayedDestruction.
@@ -103,6 +109,7 @@ class AsyncMcClientImpl :
   ConnectionOptions connectionOptions_;
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
+  RequestStatusCallbacks requestStatusCallbacks_;
 
   // Debug pipe.
   std::shared_ptr<Fifo> debugFifo_;

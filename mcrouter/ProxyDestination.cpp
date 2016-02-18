@@ -299,6 +299,30 @@ void ProxyDestination::initializeAsyncMcClient() {
     client_ = std::move(client);
   }
 
+  client_->setRequestStatusCallbacks(
+    [this](int pending, int inflight) {
+      if (pending != 0) {
+        stat_incr(proxy->stats, destination_pending_reqs_stat, pending);
+        stat_set_uint64(
+            proxy->stats,
+            destination_max_pending_reqs_stat,
+            std::max(stat_get_uint64(proxy->stats,
+                                     destination_max_pending_reqs_stat),
+                     stat_get_uint64(proxy->stats,
+                                     destination_pending_reqs_stat)));
+      }
+      if (inflight != 0) {
+        stat_incr(proxy->stats, destination_inflight_reqs_stat, inflight);
+        stat_set_uint64(
+            proxy->stats,
+            destination_max_inflight_reqs_stat,
+            std::max(stat_get_uint64(proxy->stats,
+                                     destination_max_inflight_reqs_stat),
+                     stat_get_uint64(proxy->stats,
+                                     destination_inflight_reqs_stat)));
+      }
+    });
+
   client_->setStatusCallbacks(
     [this] () mutable {
       setState(State::kUp);
