@@ -68,9 +68,14 @@ class AsyncMcClient {
    *                        pendingDiff and inflightDiff will hold the
    *                        difference in the number of pending and inflight
    *                        requests, respectively.
+   * @param onWrite           Will be called everytime AsyncMcClient is about to
+   *                          write data to network. The numToSend argument
+   *                          holds the number of requests that will be sent in
+   *                          a single batch.
    */
   void setRequestStatusCallbacks(
-      std::function<void(int pendingDiff, int inflightDiff)> onStateChange);
+      std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
+      std::function<void(int numToSend)> onWrite);
 
   /**
    * Send request synchronously (i.e. blocking call).
@@ -116,14 +121,6 @@ class AsyncMcClient {
    * retransmitted in case of error.
    */
   size_t getInflightRequestCount() const;
-
-  /**
-   * Get batching statistics (i.e. what is the average size of requests batch
-   * sent in one write loop).
-   * The value returned is a fraction requests_sent / batches_count.
-   * This statistic is collected over certain number of most recent batches.
-   */
-  std::pair<uint64_t, uint64_t> getBatchingStat() const;
 
   /**
    * Update send and connect timeout. If new value is larger than current

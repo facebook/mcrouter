@@ -29,8 +29,10 @@ inline void AsyncMcClient::setStatusCallbacks(
 }
 
 inline void AsyncMcClient::setRequestStatusCallbacks(
-    std::function<void(int pendingDiff, int inflightDiff)> onStateChange) {
-  base_->setRequestStatusCallbacks(std::move(onStateChange));
+    std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
+    std::function<void(int numToSend)> onWrite) {
+  base_->setRequestStatusCallbacks(std::move(onStateChange),
+                                   std::move(onWrite));
 }
 
 template <class Request>
@@ -49,10 +51,6 @@ inline size_t AsyncMcClient::getPendingRequestCount() const {
 
 inline size_t AsyncMcClient::getInflightRequestCount() const {
   return base_->getInflightRequestCount();
-}
-
-inline std::pair<uint64_t, uint64_t> AsyncMcClient::getBatchingStat() const {
-  return base_->getBatchingStat();
 }
 
 inline void AsyncMcClient::updateWriteTimeout(

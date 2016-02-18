@@ -23,7 +23,6 @@ namespace facebook { namespace memcache {
 
 constexpr size_t kReadBufferSizeMin = 256;
 constexpr size_t kReadBufferSizeMax = 4096;
-constexpr uint16_t kBatchSizeStatWindow = 1024;
 
 namespace detail {
 class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
@@ -133,11 +132,13 @@ void AsyncMcClientImpl::setStatusCallbacks(
 }
 
 void AsyncMcClientImpl::setRequestStatusCallbacks(
-    std::function<void(int pendingDiff, int inflightDiff)> onStateChange) {
+    std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
+    std::function<void(int numToSend)> onWrite) {
   DestructorGuard dg(this);
 
   requestStatusCallbacks_ = RequestStatusCallbacks {
-    std::move(onStateChange)
+    std::move(onStateChange),
+    std::move(onWrite)
   };
 }
 
@@ -158,11 +159,6 @@ size_t AsyncMcClientImpl::getPendingRequestCount() const {
 
 size_t AsyncMcClientImpl::getInflightRequestCount() const {
   return queue_.getInflightRequestCount();
-}
-
-std::pair<uint64_t, uint64_t> AsyncMcClientImpl::getBatchingStat() const {
-  return { batchStatPrevious.first + batchStatCurrent.first,
-           batchStatPrevious.second + batchStatCurrent.second };
 }
 
 void AsyncMcClientImpl::setThrottle(size_t maxInflight, size_t maxPending) {
@@ -216,12 +212,9 @@ void AsyncMcClientImpl::pushMessages() {
                            maxInflight_ - getInflightRequestCount());
     }
   }
-  // Record current batch size.
-  batchStatCurrent.first += numToSend;
-  ++batchStatCurrent.second;
-  if (batchStatCurrent.second == kBatchSizeStatWindow) {
-    batchStatPrevious = batchStatCurrent;
-    batchStatCurrent = {0, 0};
+  // Call batch statis callback
+  if (requestStatusCallbacks_.onWrite) {
+    requestStatusCallbacks_.onWrite(numToSend);
   }
 
   while (getPendingRequestCount() != 0 && numToSend > 0 &&

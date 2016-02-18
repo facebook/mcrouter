@@ -93,13 +93,6 @@ class ProxyDestination {
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
 
-  /**
-   * Get average request batch size that is sent over network in one write.
-   *
-   * See AsyncMcClient::getBatchingStat for more details.
-   */
-  std::pair<uint64_t, uint64_t> getBatchingStat() const;
-
   void updateShortestTimeout(std::chrono::milliseconds timeout);
 
   void updatePoolName(std::string poolName) {

@@ -58,7 +58,8 @@ class AsyncMcClientImpl :
     std::function<void(bool)> onDown);
 
   void setRequestStatusCallbacks(
-      std::function<void(int pendingDiff, int inflightDiff)> onStateChange);
+      std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
+      std::function<void(int numToSend)> onWrite);
 
   template <class Request>
   ReplyT<Request> sendSync(const Request& request,
@@ -68,7 +69,6 @@ class AsyncMcClientImpl :
 
   size_t getPendingRequestCount() const;
   size_t getInflightRequestCount() const;
-  std::pair<uint64_t, uint64_t> getBatchingStat() const;
 
   void updateWriteTimeout(std::chrono::milliseconds timeout);
  private:
@@ -88,6 +88,7 @@ class AsyncMcClientImpl :
   };
   struct RequestStatusCallbacks {
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
+    std::function<void(size_t numToSend)> onWrite;
   };
 
   // We need to be able to get shared_ptr to ourself and shared_from_this()

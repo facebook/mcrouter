@@ -200,7 +200,8 @@ TestClient::TestClient(std::string host,
 
       pendingStatMax_ = std::max(pendingStatMax_, pendingStat_);
       inflightStatMax_ = std::max(inflightStatMax_, inflightStat_);
-    });
+    },
+    nullptr);
 }
 
 void TestClient::setStatusCallbacks(std::function<void()> onUp,

@@ -181,11 +181,6 @@ size_t ProxyDestination::getInflightRequestCount() const {
   return client_ ? client_->getInflightRequestCount() : 0;
 }
 
-std::pair<uint64_t, uint64_t> ProxyDestination::getBatchingStat() const {
-  folly::SpinLockGuard g(clientLock_);
-  return client_ ? client_->getBatchingStat() : std::make_pair(0UL, 0UL);
-}
-
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
     proxy_t& proxy,
     std::shared_ptr<AccessPoint> ap,
@@ -321,6 +316,10 @@ void ProxyDestination::initializeAsyncMcClient() {
                      stat_get_uint64(proxy->stats,
                                      destination_inflight_reqs_stat)));
       }
+    },
+    [this](size_t numToSend) {
+      stat_incr(proxy->stats, destination_batches_sum_stat, 1);
+      stat_incr(proxy->stats, destination_requests_sum_stat, numToSend);
     });
 
   client_->setStatusCallbacks(

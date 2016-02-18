@@ -101,17 +101,6 @@ struct ServerStat {
   }
 };
 
-/**
- * Represents a set of aggregated stats across all destinations in a map.
- */
-struct AggregatedDestinationStats {
-  // Average batches size in form of (num_request, num_batches).
-  // This value is based on some subset of most recent requests (each
-  // destination maintains its own window).
-  // See AsyncMcClient::getBatchingStat() for more details.
-  std::pair<uint64_t, uint64_t> batches{0, 0};
-};
-
 int get_num_bins_used(const McrouterInstance& router) {
   if (router.opts().num_proxies > 0) {
     const proxy_t* anyProxy = router.getProxy(0);
@@ -307,27 +296,25 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
 void prepare_stats(McrouterInstance& router, stat_t* stats) {
   init_stats(stats);
 
-  AggregatedDestinationStats destStats;
   uint64_t config_last_success = 0;
+  uint64_t destinationBatchesSum = 0;
+  uint64_t destinationRequestsSum = 0;
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto proxy = router.getProxy(i);
     config_last_success = std::max(config_last_success,
       proxy->stats[config_last_success_stat].data.uint64);
-    proxy->destinationMap->foreachDestinationSynced(
-      [&destStats](folly::StringPiece, const ProxyDestination& destination) {
-        auto batch = destination.getBatchingStat();
-        destStats.batches.first += batch.first;
-        destStats.batches.second += batch.second;
-      }
-    );
+    destinationBatchesSum +=
+      proxy->stats_num_within_window[destination_batches_sum_stat];
+    destinationRequestsSum +=
+      proxy->stats_num_within_window[destination_requests_sum_stat];
   }
 
   stat_set_uint64(stats, num_suspect_servers_stat,
                   router.tkoTrackerMap().getSuspectServersCount());
 
   double avgBatchSize = 0;
-  if (destStats.batches.second != 0) {
-    avgBatchSize = destStats.batches.first / (double)destStats.batches.second;
+  if (destinationBatchesSum != 0) {
+    avgBatchSize = destinationRequestsSum / (double)destinationBatchesSum;
   }
   stats[destination_batch_size_stat].data.dbl = avgBatchSize;
 
