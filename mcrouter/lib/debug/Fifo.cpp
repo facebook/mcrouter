@@ -344,7 +344,7 @@ folly::SocketAddress MessageHeader::getPeerAddress() {
 /* static */ size_t MessageHeader::size(uint8_t v) {
   switch (v) {
     case 1:
-      return sizeof(MessageHeader) - sizeof(localPortLE_) - sizeof(direction_);
+      return sizeof(MessageHeader) - sizeof(localPort_) - sizeof(direction_);
     case 2:
       return sizeof(MessageHeader);
     default:

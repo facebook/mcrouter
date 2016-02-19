@@ -104,7 +104,7 @@ struct FOLLY_PACK_ATTR MessageHeader {
   constexpr static size_t kIpAddressMaxSize = 40;
 
   uint32_t magic() const {
-    return folly::Endian::little(magicLE_);
+    return folly::Endian::little(magic_);
   }
   uint8_t version() const {
     return version_;
@@ -113,13 +113,13 @@ struct FOLLY_PACK_ATTR MessageHeader {
     return peerIpAddress_;
   }
   uint16_t peerPort() const {
-    return folly::Endian::little(peerPortLE_);
+    return folly::Endian::little(peerPort_);
   }
   uint64_t msgId() const {
-    return folly::Endian::little(msgIdLE_);
+    return folly::Endian::little(msgId_);
   }
   uint16_t localPort() const {
-    return folly::Endian::little(localPortLE_);
+    return folly::Endian::little(localPort_);
   }
   MessageDirection direction() const {
     return direction_;
@@ -129,13 +129,13 @@ struct FOLLY_PACK_ATTR MessageHeader {
     return peerIpAddress_;
   }
   void setPeerPort(uint16_t val) {
-    peerPortLE_ = folly::Endian::little(val);
+    peerPort_ = folly::Endian::little(val);
   }
   void setMsgId(uint64_t val) {
-    msgIdLE_ = folly::Endian::little(val);
+    msgId_ = folly::Endian::little(val);
   }
   void setLocalPort(uint16_t val) {
-    localPortLE_ = folly::Endian::little(val);
+    localPort_ = folly::Endian::little(val);
   }
   void setDirection(MessageDirection val) {
     direction_ = val;
@@ -148,18 +148,18 @@ struct FOLLY_PACK_ATTR MessageHeader {
 
  private:
   // Control fields
-  const uint32_t magicLE_ = folly::Endian::little<uint32_t>(0xfaceb00c);
+  const uint32_t magic_ = folly::Endian::little<uint32_t>(0xfaceb00c);
   const uint8_t version_{2};
 
   // Peer address fields
   char peerIpAddress_[kIpAddressMaxSize]{'\0'}; // 0-terminated string of ip
-  uint16_t peerPortLE_{0};
+  uint16_t peerPort_{0};
 
   // Message fields
-  uint64_t msgIdLE_{0};
+  uint64_t msgId_{0};
 
   // Local address fields
-  uint16_t localPortLE_{0};
+  uint16_t localPort_{0};
 
   // Direction of the message sent
   MessageDirection direction_{MessageDirection::Sent};
@@ -172,29 +172,30 @@ struct FOLLY_PACK_ATTR MessageHeader {
  * are broke down into packets.
  */
 struct FOLLY_PACK_ATTR PacketHeader {
- private:
-  uint64_t msgIdLE_{0};
-  uint32_t packetSizeLE_{0};
-  uint32_t packetIdLE_{0};
  public:
   uint64_t msgId() const {
-    return folly::Endian::little(msgIdLE_);
+    return folly::Endian::little(msgId_);
   }
   uint32_t packetSize() const {
-    return folly::Endian::little(packetSizeLE_);
+    return folly::Endian::little(packetSize_);
   }
   uint32_t packetId() const {
-    return folly::Endian::little(packetIdLE_);
+    return folly::Endian::little(packetId_);
   }
   void setMsgId(uint64_t val) {
-    msgIdLE_ = folly::Endian::little(val);
+    msgId_ = folly::Endian::little(val);
   }
   void setPacketSize(uint32_t val) {
-    packetSizeLE_ = folly::Endian::little(val);
+    packetSize_ = folly::Endian::little(val);
   }
   void setPacketId(uint32_t val) {
-    packetIdLE_ = folly::Endian::little(val);
+    packetId_ = folly::Endian::little(val);
   }
+
+ private:
+  uint64_t msgId_{0};
+  uint32_t packetSize_{0};
+  uint32_t packetId_{0};
 };
 constexpr uint32_t kFifoMaxPacketSize = PIPE_BUF - sizeof(PacketHeader);
 static_assert(PIPE_BUF > sizeof(MessageHeader) + sizeof(PacketHeader),
