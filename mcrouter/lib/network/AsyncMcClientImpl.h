@@ -95,10 +95,6 @@ class AsyncMcClientImpl :
   // doesn't work correctly with DelayedDestruction.
   std::weak_ptr<AsyncMcClientImpl> selfPtr_;
 
-  // Stats.
-  std::pair<uint64_t, uint16_t> batchStatPrevious{0, 0};
-  std::pair<uint64_t, uint16_t> batchStatCurrent{0, 0};
-
   folly::EventBase& eventBase_;
   std::unique_ptr<ParserT> parser_;
 
