@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -277,7 +277,7 @@ class TestMcrouterSanity(McrouterTestCase):
 
     def test_version(self):
         v = self.mcrouter.version()
-        self.assertTrue(v.startswith('VERSION mcrouter'))
+        self.assertTrue(v.startswith('VERSION'))
 
     def test_server_stats(self):
         stats = self.mcrouter.stats('servers')
