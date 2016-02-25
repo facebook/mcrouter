@@ -26,21 +26,21 @@ namespace facebook { namespace memcache {
  * A thin wrapper for Thrift structs
  */
 template <class M>
-class TypedThriftMessage : private std::conditional<HasKey<M>::value,
+class TypedThriftMessage : private std::conditional<RequestTraits<M>::hasKey,
                                                     Keys,
                                                     DefaultKeys>::type {
  private:
-  using KeysT = typename std::conditional<HasKey<M>::value,
+  using KeysT = typename std::conditional<RequestTraits<M>::hasKey,
                                           Keys,
                                           DefaultKeys>::type;
 
   template <class T, bool enable>
-  using WithKeyT = typename std::enable_if<HasKey<M>::value == enable, T>::type;
+  using WithKeyT = typename std::enable_if<RequestTraits<M>::hasKey == enable,
+                                           T>::type;
 
  public:
   using rawType = M;
-  /* TODO(jmswen) Add names for Thrift types */
-  static constexpr const char* name = "TypedThriftMessagePlaceholder";
+  static constexpr const char* name = RequestTraits<M>::name;
 
   M& operator*() {
     return raw_;

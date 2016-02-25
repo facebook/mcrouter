@@ -20,23 +20,139 @@ namespace facebook { namespace memcache {
  * without a `key` field.
  */
 template <class M>
-struct HasKey {
-  static constexpr bool value = false;
+struct RequestTraits {
+  static constexpr const char* name = "other";
+  static constexpr bool hasKey = false;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
 };
 
 template <>
-struct HasKey<cpp2::McGetRequest> {
-  static constexpr bool value = true;
+struct RequestTraits<cpp2::McGetRequest> {
+  static constexpr const char* name = "get";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
 };
 
-template <class M>
-struct HasExptime {
-  static constexpr bool value = false;
+template <>
+struct RequestTraits<cpp2::McSetRequest> {
+  static constexpr const char* name = "set";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
 };
 
-template <class M>
-struct HasValue {
-  static constexpr bool value = false;
+template <>
+struct RequestTraits<cpp2::McDeleteRequest> {
+  static constexpr const char* name = "delete";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McLeaseGetRequest> {
+  static constexpr const char* name = "lease-get";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McLeaseSetRequest> {
+  static constexpr const char* name = "lease-set";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
+};
+
+template <>
+struct RequestTraits<cpp2::McAddRequest> {
+  static constexpr const char* name = "add";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
+};
+
+template <>
+struct RequestTraits<cpp2::McReplaceRequest> {
+  static constexpr const char* name = "replace";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
+};
+
+template <>
+struct RequestTraits<cpp2::McGetsRequest> {
+  static constexpr const char* name = "gets";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McCasRequest> {
+  static constexpr const char* name = "cas";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
+};
+
+template <>
+struct RequestTraits<cpp2::McIncrRequest> {
+  static constexpr const char* name = "incr";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McDecrRequest> {
+  static constexpr const char* name = "decr";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McMetagetRequest> {
+  static constexpr const char* name = "metaget";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McVersionRequest> {
+  static constexpr const char* name = "version";
+  static constexpr bool hasKey = false;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McAppendRequest> {
+  static constexpr const char* name = "append";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
+};
+
+template <>
+struct RequestTraits<cpp2::McPrependRequest> {
+  static constexpr const char* name = "prepend";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = true;
+};
+
+template <>
+struct RequestTraits<cpp2::McTouchRequest> {
+  static constexpr const char* name = "touch";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = false;
 };
 
 }} // facebook::memcache
