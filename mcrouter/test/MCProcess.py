@@ -33,20 +33,16 @@ class BaseDirectory(object):
 def MCPopen(cmd, stdout=None, stderr=None, env=None):
     return subprocess.Popen(cmd, stdout=stdout, stderr=stderr, env=env)
 
-class MCProcess(object):
+class ProcessBase(object):
     """
-    It would be best to use mc.client and support all requests. But we can't do
-    that until mc.client supports ASCII (because mcproxy doesn't support
-    binary). For now, be hacky and just talk ASCII by hand.
+    Generic process, extended by mcrouter, memcached, mcpiper, etc
     """
 
     proc = None
 
-    def __init__(self, cmd, port, base_dir=None, junk_fill=False):
-        port = int(port)
-
+    def __init__(self, cmd, base_dir=None, junk_fill=False):
         if base_dir is None:
-            base_dir = BaseDirectory('MCProcess')
+            base_dir = BaseDirectory('ProcessBase')
         self.base_dir = base_dir
         self.stdout = os.path.join(base_dir.path, 'stdout')
         self.stderr = os.path.join(base_dir.path, 'stderr')
@@ -76,10 +72,9 @@ class MCProcess(object):
         else:
             self.proc = None
 
-        self.addr = ('localhost', port)
-        self.port = port
-        self.deletes = 0
-        self.others = 0
+    def __del__(self):
+        if self.proc:
+            self.proc.terminate()
 
     def getprocess(self):
         return self.proc
@@ -91,6 +86,61 @@ class MCProcess(object):
     def resume(self):
         if self.proc:
             self.proc.send_signal(signal.SIGCONT)
+
+    def is_alive(self):
+        self.proc.poll()
+        return self.proc.returncode is None
+
+    def dump(self):
+        """ dump stderr, stdout, and the log file to stdout with nice headers.
+        This allows us to get all this information in a test failure (hidden by
+        default) so we can debug better. """
+
+        # Grumble... this would be so much easier if I could just pass
+        # sys.stdout/stderr to Popen.
+        with open(self.stdout, 'r') as stdout_f:
+            stdout = stdout_f.read()
+
+        with open(self.stderr, 'r') as stderr_f:
+            stderr = stderr_f.read()
+
+        if hasattr(self, 'log'):
+            print(self.base_dir)
+            try:
+                with open(self.log, 'r') as log_f:
+                    log = log_f.read()
+            except:
+                log = ""
+        else:
+            log = ""
+
+        if log:
+            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, log))
+        if stdout:
+            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stdout))
+        if stderr:
+            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stderr))
+
+class MCProcess(ProcessBase):
+    """
+    It would be best to use mc.client and support all requests. But we can't do
+    that until mc.client supports ASCII (because mcproxy doesn't support
+    binary). For now, be hacky and just talk ASCII by hand.
+    """
+
+    proc = None
+
+    def __init__(self, cmd, port, base_dir=None, junk_fill=False):
+        port = int(port)
+
+        if base_dir is None:
+            base_dir = BaseDirectory('MCProcess')
+
+        ProcessBase.__init__(self, cmd, base_dir, junk_fill)
+        self.addr = ('localhost', port)
+        self.port = port
+        self.deletes = 0
+        self.others = 0
 
     def getport(self):
         return self.port
@@ -141,44 +191,6 @@ class MCProcess(object):
             self.proc = None
 
         return proc
-
-    def is_alive(self):
-        self.proc.poll()
-        return self.proc.returncode is None
-
-    def dump(self):
-        """ dump stderr, stdout, and the log file to stdout with nice headers.
-        This allows us to get all this information in a test failure (hidden by
-        default) so we can debug better. """
-
-        # Grumble... this would be so much easier if I could just pass
-        # sys.stdout/stderr to Popen.
-        with open(self.stdout, 'r') as stdout_f:
-            stdout = stdout_f.read()
-
-        with open(self.stderr, 'r') as stderr_f:
-            stderr = stderr_f.read()
-
-        if hasattr(self, 'log'):
-            print(self.base_dir)
-            try:
-                with open(self.log, 'r') as log_f:
-                    log = log_f.read()
-            except:
-                log = ""
-        else:
-            log = ""
-
-        if log:
-            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, log))
-        if stdout:
-            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stdout))
-        if stderr:
-            print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stderr))
-
-    def __del__(self):
-        if self.proc:
-            self.proc.terminate()
 
     def _get(self, cmd, keys, expect_cas, return_all_info):
         multi = True
@@ -595,13 +607,13 @@ class McrouterBase(MCProcess):
         os.mkdir(self.async_spool)
         self.stats_dir = os.path.join(base_dir.path, 'stats')
         os.mkdir(self.stats_dir)
-        self.fifos_dir = os.path.join(base_dir.path, 'fifos')
-        os.mkdir(self.fifos_dir)
+        self.debug_fifo_root = os.path.join(base_dir.path, 'fifos')
+        os.mkdir(self.debug_fifo_root)
 
         args.extend(['-L', self.log,
                      '-a', self.async_spool,
                      '--stats-root', self.stats_dir,
-                     '--debug-fifo-root', self.fifos_dir])
+                     '--debug-fifo-root', self.debug_fifo_root])
 
         listen_sock = None
         if port is None:
@@ -715,3 +727,21 @@ class Memcached(MCProcess):
 
         if listen_sock is not None:
             listen_sock.close()
+
+class Mcpiper(ProcessBase):
+    def __init__(self, fifos_dir, extra_args=None):
+        base_dir = BaseDirectory('mcpiper')
+        args = [McrouterGlobals.InstallDir + '/mcrouter/tools/mcpiper/mcpiper',
+                '--fifo-root', fifos_dir]
+
+        if extra_args:
+            args.extend(extra_args)
+
+        ProcessBase.__init__(self, args, base_dir)
+
+    def output(self):
+        with open(self.stdout, 'r') as stdout_f:
+            return stdout_f.read().decode('ascii', errors='ignore')
+
+    def contains(self, needle):
+        return needle in self.output()

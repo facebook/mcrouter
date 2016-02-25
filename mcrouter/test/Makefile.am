@@ -29,6 +29,7 @@ TESTS += \
   test_largeobj.py \
   test_logical_routing_policies.py \
   test_max_shadow_requests.py \
+  test_mcpiper.py \
   test_mcrouter.py \
   test_mcrouter_basic.py \
   test_mcrouter_errors.py \

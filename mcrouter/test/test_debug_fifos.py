@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -26,14 +26,14 @@ class TestDebugFifos(McrouterTestCase):
                                           extra_args=self.extra_args)
 
     def get_fifo(self, substr):
-        fifos = os.listdir(self.mcrouter.fifos_dir)
+        fifos = os.listdir(self.mcrouter.debug_fifo_root)
         self.assertEqual(2, len(fifos))
 
         fifos = [f for f in fifos if substr in f]
         self.assertEqual(1, len(fifos))
-        return os.path.join(self.mcrouter.fifos_dir, fifos[0])
+        return os.path.join(self.mcrouter.debug_fifo_root, fifos[0])
 
-    def test_mcgrep_fifo(self):
+    def test_mcpiper_fifo(self):
         key = 'test.abc'
         value = 'abc123'
         self.assertTrue(self.mcrouter.set(key, value))
