@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,7 +27,7 @@ namespace facebook { namespace memcache {
  * A struct for storing all connection related options.
  */
 struct ConnectionOptions {
-  typedef folly::AsyncSocket::OptionMap SocketOptions;
+  using SocketOptions = folly::AsyncSocket::OptionMap;
 
   ConnectionOptions(folly::StringPiece host_,
                     uint16_t port_,
@@ -75,11 +75,6 @@ struct ConnectionOptions {
    * Interval between two consequent TCP KeepAlive probes.
    */
   int tcpKeepAliveInterval{0};
-
-  /**
-   * Send timeout in ms. Shoud be used only for async (non-fiber) mode.
-   */
-  std::chrono::milliseconds sendTimeout{0};
 
   /**
    * Write/connect timeout in ms.
