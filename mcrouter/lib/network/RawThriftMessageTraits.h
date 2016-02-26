@@ -38,12 +38,7 @@ struct ThriftMsgIsRequest<cpp2::McVersionRequest> {
  * without a `key` field.
  */
 template <class M>
-struct RequestTraits {
-  static constexpr const char* name = "other";
-  static constexpr bool hasKey = false;
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasValue = false;
-};
+struct RequestTraits;
 
 template <>
 struct RequestTraits<cpp2::McGetRequest> {

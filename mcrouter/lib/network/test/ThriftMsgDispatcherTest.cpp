@@ -7,69 +7,72 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <cstring>
+
 #include <gtest/gtest.h>
+
+#include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 
-#include "mcrouter/lib/network/gen-cpp2/mock_protocol_types.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 
 using namespace facebook::memcache;
 
 using ThriftMsgList =
   List<
-    TypedMsg<1, cpp2::FooRequest>,
-    TypedMsg<3, cpp2::BarRequest>
+    TypedMsg<1, cpp2::McGetRequest>,
+    TypedMsg<3, cpp2::McSetRequest>
   >;
 
 struct TestCallback :
     public ThriftMsgDispatcher<ThriftMsgList, TestCallback> {
 
-  std::function<void(TypedThriftRequest<cpp2::FooRequest>&&)> onFoo_;
-  std::function<void(TypedThriftRequest<cpp2::BarRequest>&&)> onBar_;
+  std::function<void(TypedThriftRequest<cpp2::McGetRequest>&&)> onGet_;
+  std::function<void(TypedThriftRequest<cpp2::McSetRequest>&&)> onSet_;
 
   template <class F, class B>
-  TestCallback(F&& onFoo, B&& onBar)
-      : onFoo_(std::move(onFoo)),
-        onBar_(std::move(onBar)) {
+  TestCallback(F&& onGet, B&& onSet)
+      : onGet_(std::move(onGet)),
+        onSet_(std::move(onSet)) {
   }
 
-  void onTypedMessage(TypedThriftRequest<cpp2::FooRequest>&& treq) {
-    onFoo_(std::move(treq));
+  void onTypedMessage(TypedThriftRequest<cpp2::McGetRequest>&& treq) {
+    onGet_(std::move(treq));
   }
 
-  void onTypedMessage(TypedThriftRequest<cpp2::BarRequest>&& treq) {
-    onBar_(std::move(treq));
+  void onTypedMessage(TypedThriftRequest<cpp2::McSetRequest>&& treq) {
+    onSet_(std::move(treq));
   }
 };
 
 TEST(ThriftMsg, basic) {
   /* construct a request */
-  cpp2::FooRequest foo;
-  foo.id = 12345;
-  foo.__isset.data = true;
-  foo.data = "abc";
+  cpp2::McGetRequest get;
+  get.key = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "12345");
+  get.__isset.key = true;
 
   /* serialize into an iobuf */
   apache::thrift::CompactProtocolWriter writer;
   folly::IOBufQueue queue;
   writer.setOutput(&queue);
-  foo.write(&writer);
+  get.write(&writer);
   auto iobuf = queue.move();
 
-  bool fooCalled = false;
-  bool barCalled = false;
+  bool getCalled = false;
+  bool setCalled = false;
   TestCallback cb(
-      [&fooCalled](TypedThriftRequest<cpp2::FooRequest>&& treq) {
+      [&getCalled](TypedThriftRequest<cpp2::McGetRequest>&& treq) {
         /* check unserialized request is the same as sent */
-        fooCalled = true;
-        EXPECT_TRUE(treq->id == 12345);
-        EXPECT_TRUE(treq->__isset.id);
-        EXPECT_TRUE(treq->data == "abc");
-        EXPECT_TRUE(treq->__isset.data);
+        getCalled = true;
+        EXPECT_EQ(0,
+                  std::strcmp(reinterpret_cast<const char*>(treq->key.data()),
+                              "12345"));
+        EXPECT_TRUE(treq->__isset.key);
       },
-      [&barCalled](TypedThriftRequest<cpp2::BarRequest>&&) {
-        barCalled = true;
+      [&setCalled](TypedThriftRequest<cpp2::McSetRequest>&&) {
+        setCalled = true;
       });
 
   bool ret;
@@ -78,10 +81,10 @@ TEST(ThriftMsg, basic) {
   ret = cb.dispatchTypedRequest(2, *iobuf);
   /* there's no type id 2, expect false */
   EXPECT_FALSE(ret);
-  EXPECT_FALSE(fooCalled);
-  EXPECT_FALSE(barCalled);
+  EXPECT_FALSE(getCalled);
+  EXPECT_FALSE(setCalled);
 
   ret = cb.dispatchTypedRequest(1, *iobuf);
   EXPECT_TRUE(ret);
-  EXPECT_TRUE(fooCalled);
+  EXPECT_TRUE(getCalled);
 }
