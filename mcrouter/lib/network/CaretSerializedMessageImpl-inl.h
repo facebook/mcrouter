@@ -47,7 +47,7 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
   constexpr size_t typeId =
       IdFromType<typename decltype(treq)::rawType, TRequestList>::value;
 
-  return fill(std::move(treq), reqId, typeId, iovOut, niovOut);
+  return fill(treq, reqId, typeId, iovOut, niovOut);
 }
 
 template <class Reply>
@@ -56,16 +56,16 @@ bool CaretSerializedMessage::prepare(Reply&& reply,
                                      size_t typeId,
                                      struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
-  return fill(std::move(reply), reqId, typeId, iovOut, niovOut);
+  return fill(reply, reqId, typeId, iovOut, niovOut);
 }
 
-template <class TM>
-bool CaretSerializedMessage::fill(TM&& typedMsg,
+template <class ThriftType>
+bool CaretSerializedMessage::fill(TypedThriftMessage<ThriftType>& tmsg,
                                   uint32_t reqId,
                                   size_t typeId,
                                   struct iovec*& iovOut,
                                   size_t& niovOut) {
-  fillBody(std::move(typedMsg));
+  fillBody(tmsg);
 
   UmbrellaMessageInfo info;
   info.bodySize = ioBuf_->computeChainDataLength();
@@ -87,8 +87,8 @@ inline void CaretSerializedMessage::fillHeader(UmbrellaMessageInfo& info) {
 }
 
 template <class ThriftType>
-void CaretSerializedMessage::fillBody(TypedThriftMessage<ThriftType>&& treq) {
-  ioBuf_ = serializeThriftStruct(std::move(treq));
+void CaretSerializedMessage::fillBody(TypedThriftMessage<ThriftType>& tmsg) {
+  ioBuf_ = serializeThriftStruct(tmsg);
 
   /* the first iov in the iovs_ array is reserved for the protocol header,
    * remaining kMaxIovs - 1 are used for serializing a thrift structure itself.

@@ -15,91 +15,91 @@
 namespace facebook { namespace memcache {
 
 template <class M>
-class TypedThriftMessage;
+class TypedThriftRequest;
 
 /*
  * GetLike<> et al. for Typed Thrift requests.
  */
 template <>
-struct GetLike<TypedThriftMessage<cpp2::McGetRequest>> {
+struct GetLike<TypedThriftRequest<cpp2::McGetRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<TypedThriftMessage<cpp2::McGetsRequest>> {
+struct GetLike<TypedThriftRequest<cpp2::McGetsRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<TypedThriftMessage<cpp2::McMetagetRequest>> {
+struct GetLike<TypedThriftRequest<cpp2::McMetagetRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<TypedThriftMessage<cpp2::McLeaseGetRequest>> {
+struct GetLike<TypedThriftRequest<cpp2::McLeaseGetRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McSetRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McSetRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McAddRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McAddRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McReplaceRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McReplaceRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McLeaseSetRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McLeaseSetRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McAppendRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McAppendRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McPrependRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McPrependRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftMessage<cpp2::McCasRequest>> {
+struct UpdateLike<TypedThriftRequest<cpp2::McCasRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct DeleteLike<TypedThriftMessage<cpp2::McDeleteRequest>> {
+struct DeleteLike<TypedThriftRequest<cpp2::McDeleteRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct ArithmeticLike<TypedThriftMessage<cpp2::McIncrRequest>> {
+struct ArithmeticLike<TypedThriftRequest<cpp2::McIncrRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct ArithmeticLike<TypedThriftMessage<cpp2::McDecrRequest>> {
+struct ArithmeticLike<TypedThriftRequest<cpp2::McDecrRequest>> {
   static const bool value = true;
   typedef void* Type;
 };
@@ -107,12 +107,12 @@ struct ArithmeticLike<TypedThriftMessage<cpp2::McDecrRequest>> {
 /*
  * @class IsCustomRequest
  * @tparam Request Request type
- * @brief Utility class to check if a Request type is a TypedThriftMessage
+ * @brief Utility class to check if a Request type is a TypedThriftRequest
  *        or not. (Currently, the only supported alternatives are the classic
  *        McRequestWithOp/McRequest types.)
  *
  * Boolean 'value' field will be true if and only if Request is a specialization
- * of TypedThriftMessage.
+ * of TypedThriftRequest.
  */
 template <class Request>
 struct IsCustomRequest {
@@ -120,7 +120,7 @@ struct IsCustomRequest {
 };
 
 template <class M>
-struct IsCustomRequest<TypedThriftMessage<M>> {
+struct IsCustomRequest<TypedThriftRequest<M>> {
   static constexpr bool value = true;
 };
 

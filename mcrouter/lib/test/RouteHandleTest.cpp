@@ -48,7 +48,7 @@ TEST(routeHandleTest, nullGet) {
 TEST(routeHandleTest, nullGetTyped) {
   TestRouteHandle<NullRoute<TestRouteHandleIf>> rh;
 
-  TypedThriftMessage<cpp2::McGetRequest> req;
+  TypedThriftRequest<cpp2::McGetRequest> req;
   req.setKey("key");
 
   auto reply = rh.route(req);
@@ -100,7 +100,7 @@ TEST(routeHandleTest, error) {
 TEST(routeHandleTest, errorTyped) {
   TestRouteHandle<ErrorRoute<TestRouteHandleIf>> rh;
 
-  TypedThriftMessage<cpp2::McGetRequest> req;
+  TypedThriftRequest<cpp2::McGetRequest> req;
   req.setKey("key");
 
   auto reply = rh.route(req);
@@ -150,7 +150,7 @@ TEST(routeHandleTest, allSyncTyped) {
   fm.runAll(
     {
       [&]() {
-        TypedThriftMessage<cpp2::McGetRequest> req;
+        TypedThriftRequest<cpp2::McGetRequest> req;
         req.setKey("key");
 
         auto reply = rh.route(req);
@@ -209,7 +209,7 @@ TEST(routeHandleTest, allAsyncTyped) {
   fm.runAll(
     {
       [&]() {
-        TypedThriftMessage<cpp2::McGetRequest> req;
+        TypedThriftRequest<cpp2::McGetRequest> req;
         req.setKey("key");
 
         auto reply = rh.route(req);
@@ -272,7 +272,7 @@ TEST(routeHandleTest, allInitialTyped) {
   auto routeHandles = get_route_handles(test_handles);
   TestRouteHandle<AllInitialRoute<TestRouteHandleIf>> rh(routeHandles);
 
-  TypedThriftMessage<cpp2::McGetRequest> req;
+  TypedThriftRequest<cpp2::McGetRequest> req;
   req.setKey("key");
 
   fm.runAll(
@@ -354,7 +354,7 @@ TEST(routeHandleTest, allMajorityTyped) {
   fm.runAll(
     {
       [&]() {
-        TypedThriftMessage<cpp2::McGetRequest> req;
+        TypedThriftRequest<cpp2::McGetRequest> req;
         req.setKey("key");
 
         auto reply = rh.route(req);
@@ -422,7 +422,7 @@ TEST(routeHandleTest, allMajorityTieTyped) {
   fm.runAll(
     {
       [&]() {
-        TypedThriftMessage<cpp2::McGetRequest> req;
+        TypedThriftRequest<cpp2::McGetRequest> req;
         req.setKey("key");
 
         auto reply = rh.route(req);
@@ -493,7 +493,7 @@ TEST(routeHandleTest, allFastestTyped) {
   fm.runAll(
     {
       [&]() {
-        TypedThriftMessage<cpp2::McGetRequest> req;
+        TypedThriftRequest<cpp2::McGetRequest> req;
         req.setKey("key");
 
         auto reply = rh.route(req);
@@ -576,7 +576,7 @@ TEST(routeHandleTest, hashNoSaltTyped) {
     HashFunc(test_handles.size()));
 
   fm.run([&]() {
-      TypedThriftMessage<cpp2::McGetRequest> req;
+      TypedThriftRequest<cpp2::McGetRequest> req;
       req.setKey("0");
 
       auto reply = rh.route(req);
@@ -584,7 +584,7 @@ TEST(routeHandleTest, hashNoSaltTyped) {
     });
 
   fm.run([&]() {
-      TypedThriftMessage<cpp2::McGetRequest> req;
+      TypedThriftRequest<cpp2::McGetRequest> req;
       req.setKey("1");
 
       auto reply = rh.route(req);
@@ -592,7 +592,7 @@ TEST(routeHandleTest, hashNoSaltTyped) {
     });
 
   fm.run([&]() {
-      TypedThriftMessage<cpp2::McGetRequest> req;
+      TypedThriftRequest<cpp2::McGetRequest> req;
       req.setKey("2");
 
       auto reply = rh.route(req);
@@ -648,7 +648,7 @@ TEST(routeHandleTest, hashSaltTyped) {
     HashFunc(test_handles.size()));
 
   fm.run([&]() {
-      TypedThriftMessage<cpp2::McGetRequest> req;
+      TypedThriftRequest<cpp2::McGetRequest> req;
       req.setKey("0");
 
       auto reply = rh.route(req);
@@ -657,7 +657,7 @@ TEST(routeHandleTest, hashSaltTyped) {
     });
 
   fm.run([&]() {
-      TypedThriftMessage<cpp2::McGetRequest> req;
+      TypedThriftRequest<cpp2::McGetRequest> req;
       req.setKey("1");
 
       auto reply = rh.route(req);
@@ -666,7 +666,7 @@ TEST(routeHandleTest, hashSaltTyped) {
     });
 
   fm.run([&]() {
-      TypedThriftMessage<cpp2::McGetRequest> req;
+      TypedThriftRequest<cpp2::McGetRequest> req;
       req.setKey("2");
 
       auto reply = rh.route(req);

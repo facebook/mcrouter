@@ -29,13 +29,13 @@ uint32_t exptime(const McRequestWithMcOp<op>& request) {
 
 template <class M>
 typename std::enable_if<RequestTraits<M>::hasExptime, uint32_t>::type
-exptime(const TypedThriftMessage<M>& request) {
+exptime(const TypedThriftRequest<M>& request) {
   return request->exptime;
 }
 
 template <class M>
 typename std::enable_if<!RequestTraits<M>::hasExptime, uint32_t>::type
-exptime(const TypedThriftMessage<M>& request) {
+exptime(const TypedThriftRequest<M>& request) {
   return 0;
 }
 
@@ -46,13 +46,13 @@ const folly::IOBuf& value(const McRequestWithMcOp<op>& request) {
 
 template <class M>
 typename std::enable_if<RequestTraits<M>::hasValue, const folly::IOBuf&>::type
-value(const TypedThriftMessage<M>& request) {
+value(const TypedThriftRequest<M>& request) {
   return request->value;
 }
 
 template <class M>
 typename std::enable_if<!RequestTraits<M>::hasValue, folly::IOBuf>::type
-value(const TypedThriftMessage<M>& request) {
+value(const TypedThriftRequest<M>& request) {
   LOG(DFATAL) << "value() called on Thrift message of type "
     << typeid(M).name();
   return folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");

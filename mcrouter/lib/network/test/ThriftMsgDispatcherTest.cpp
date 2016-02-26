@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,8 +25,8 @@ using ThriftMsgList =
 struct TestCallback :
     public ThriftMsgDispatcher<ThriftMsgList, TestCallback> {
 
-  std::function<void(TypedThriftMessage<cpp2::FooRequest>&&)> onFoo_;
-  std::function<void(TypedThriftMessage<cpp2::BarRequest>&&)> onBar_;
+  std::function<void(TypedThriftRequest<cpp2::FooRequest>&&)> onFoo_;
+  std::function<void(TypedThriftRequest<cpp2::BarRequest>&&)> onBar_;
 
   template <class F, class B>
   TestCallback(F&& onFoo, B&& onBar)
@@ -34,11 +34,11 @@ struct TestCallback :
         onBar_(std::move(onBar)) {
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::FooRequest>&& treq) {
+  void onTypedMessage(TypedThriftRequest<cpp2::FooRequest>&& treq) {
     onFoo_(std::move(treq));
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::BarRequest>&& treq) {
+  void onTypedMessage(TypedThriftRequest<cpp2::BarRequest>&& treq) {
     onBar_(std::move(treq));
   }
 };
@@ -60,7 +60,7 @@ TEST(ThriftMsg, basic) {
   bool fooCalled = false;
   bool barCalled = false;
   TestCallback cb(
-      [&fooCalled](TypedThriftMessage<cpp2::FooRequest>&& treq) {
+      [&fooCalled](TypedThriftRequest<cpp2::FooRequest>&& treq) {
         /* check unserialized request is the same as sent */
         fooCalled = true;
         EXPECT_TRUE(treq->id == 12345);
@@ -68,7 +68,7 @@ TEST(ThriftMsg, basic) {
         EXPECT_TRUE(treq->data == "abc");
         EXPECT_TRUE(treq->__isset.data);
       },
-      [&barCalled](TypedThriftMessage<cpp2::BarRequest>&& treq) {
+      [&barCalled](TypedThriftRequest<cpp2::BarRequest>&&) {
         barCalled = true;
       });
 

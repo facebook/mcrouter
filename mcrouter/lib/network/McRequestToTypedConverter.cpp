@@ -22,13 +22,13 @@ namespace memcache {
 namespace {
 
 template <class GetType, class GetOperation>
-void getLikeCommon(TypedThriftMessage<GetType>& treq,
+void getLikeCommon(TypedThriftRequest<GetType>& treq,
                    const McRequestWithOp<GetOperation>& req) {
   treq->key = req.key();
 }
 
 template <class UpdateType, class UpdateOperation>
-void updateLikeCommon(TypedThriftMessage<UpdateType>& treq,
+void updateLikeCommon(TypedThriftRequest<UpdateType>& treq,
                       const McRequestWithOp<UpdateOperation>& req) {
   treq->key = req.key();
   treq->value = req.value();
@@ -37,7 +37,7 @@ void updateLikeCommon(TypedThriftMessage<UpdateType>& treq,
 }
 
 template <class ArithType, class ArithOperation>
-void arithmeticLikeCommon(TypedThriftMessage<ArithType>& treq,
+void arithmeticLikeCommon(TypedThriftRequest<ArithType>& treq,
                           const McRequestWithOp<ArithOperation>& req) {
   treq->key = req.key();
   treq->delta = req.delta();
@@ -45,26 +45,26 @@ void arithmeticLikeCommon(TypedThriftMessage<ArithType>& treq,
 
 } // anoymous
 
-TypedThriftMessage<cpp2::McGetRequest> convertToTyped(
+TypedThriftRequest<cpp2::McGetRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_get>& req) {
 
-  TypedThriftMessage<cpp2::McGetRequest> treq;
+  TypedThriftRequest<cpp2::McGetRequest> treq;
   getLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McSetRequest> convertToTyped(
+TypedThriftRequest<cpp2::McSetRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_set>& req) {
 
-  TypedThriftMessage<cpp2::McSetRequest> treq;
+  TypedThriftRequest<cpp2::McSetRequest> treq;
   updateLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McDeleteRequest> convertToTyped(
+TypedThriftRequest<cpp2::McDeleteRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_delete>& req) {
 
-  TypedThriftMessage<cpp2::McDeleteRequest> treq;
+  TypedThriftRequest<cpp2::McDeleteRequest> treq;
   treq->key = req.key();
   if (req.exptime() != 0) {
     treq->__isset.exptime = true;
@@ -73,10 +73,10 @@ TypedThriftMessage<cpp2::McDeleteRequest> convertToTyped(
   return treq;
 }
 
-TypedThriftMessage<cpp2::McTouchRequest> convertToTyped(
+TypedThriftRequest<cpp2::McTouchRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_touch>& req) {
 
-  TypedThriftMessage<cpp2::McTouchRequest> treq;
+  TypedThriftRequest<cpp2::McTouchRequest> treq;
   treq->key = req.key();
   if (req.exptime() != 0) {
     treq->__isset.exptime = true;
@@ -85,98 +85,98 @@ TypedThriftMessage<cpp2::McTouchRequest> convertToTyped(
   return treq;
 }
 
-TypedThriftMessage<cpp2::McLeaseGetRequest> convertToTyped(
+TypedThriftRequest<cpp2::McLeaseGetRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_lease_get>& req) {
 
-  TypedThriftMessage<cpp2::McLeaseGetRequest> treq;
+  TypedThriftRequest<cpp2::McLeaseGetRequest> treq;
   getLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McLeaseSetRequest> convertToTyped(
+TypedThriftRequest<cpp2::McLeaseSetRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_lease_set>& req) {
 
-  TypedThriftMessage<cpp2::McLeaseSetRequest> treq;
+  TypedThriftRequest<cpp2::McLeaseSetRequest> treq;
   treq->leaseToken = req.leaseToken();
   updateLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McAddRequest> convertToTyped(
+TypedThriftRequest<cpp2::McAddRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_add>& req) {
 
-  TypedThriftMessage<cpp2::McAddRequest> treq;
+  TypedThriftRequest<cpp2::McAddRequest> treq;
   updateLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McReplaceRequest> convertToTyped(
+TypedThriftRequest<cpp2::McReplaceRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_replace>& req) {
 
-  TypedThriftMessage<cpp2::McReplaceRequest> treq;
+  TypedThriftRequest<cpp2::McReplaceRequest> treq;
   updateLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McGetsRequest> convertToTyped(
+TypedThriftRequest<cpp2::McGetsRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_gets>& req) {
 
-  TypedThriftMessage<cpp2::McGetsRequest> treq;
+  TypedThriftRequest<cpp2::McGetsRequest> treq;
   getLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McCasRequest> convertToTyped(
+TypedThriftRequest<cpp2::McCasRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_cas>& req) {
 
-  TypedThriftMessage<cpp2::McCasRequest> treq;
+  TypedThriftRequest<cpp2::McCasRequest> treq;
   treq->casToken = req.cas();
   updateLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McIncrRequest> convertToTyped(
+TypedThriftRequest<cpp2::McIncrRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_incr>& req) {
 
-  TypedThriftMessage<cpp2::McIncrRequest> treq;
+  TypedThriftRequest<cpp2::McIncrRequest> treq;
   arithmeticLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McDecrRequest> convertToTyped(
+TypedThriftRequest<cpp2::McDecrRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_decr>& req) {
 
-  TypedThriftMessage<cpp2::McDecrRequest> treq;
+  TypedThriftRequest<cpp2::McDecrRequest> treq;
   arithmeticLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McMetagetRequest> convertToTyped(
+TypedThriftRequest<cpp2::McMetagetRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_metaget>& req) {
 
-  TypedThriftMessage<cpp2::McMetagetRequest> treq;
+  TypedThriftRequest<cpp2::McMetagetRequest> treq;
   getLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McVersionRequest> convertToTyped(
+TypedThriftRequest<cpp2::McVersionRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_version>&) {
 
-  return TypedThriftMessage<cpp2::McVersionRequest>();
+  return TypedThriftRequest<cpp2::McVersionRequest>();
 }
 
-TypedThriftMessage<cpp2::McAppendRequest> convertToTyped(
+TypedThriftRequest<cpp2::McAppendRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_append>& req) {
 
-  TypedThriftMessage<cpp2::McAppendRequest> treq;
+  TypedThriftRequest<cpp2::McAppendRequest> treq;
   updateLikeCommon(treq, req);
   return treq;
 }
 
-TypedThriftMessage<cpp2::McPrependRequest> convertToTyped(
+TypedThriftRequest<cpp2::McPrependRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_prepend>& req) {
 
-  TypedThriftMessage<cpp2::McPrependRequest> treq;
+  TypedThriftRequest<cpp2::McPrependRequest> treq;
   updateLikeCommon(treq, req);
   return treq;
 }

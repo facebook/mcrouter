@@ -20,7 +20,7 @@ namespace facebook { namespace memcache {
  *
  * Note: the use of GetLike<McOperation<...>> and friends is deprecated.
  * New code should prefer GetLike<RequestType>, where RequestType is a
- * specialization of McRequestWithOp or TypedThriftMessage.
+ * specialization of McRequestWithOp or TypedThriftRequest.
  * See also mcrouter/lib/network/ThriftMessageTraits.h.
  */
 template <>

@@ -21,55 +21,56 @@ class CaretReplyConverter
 
  public:
   template <class Unsupported>
-  void onTypedMessage(TypedThriftMessage<Unsupported>&& tres, McReply& reply) {
+  void onTypedMessage(TypedThriftReply<Unsupported>&&, McReply& reply) {
     reply.setResult(mc_res_remote_error);
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McGetReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McGetReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McSetReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McSetReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McDeleteReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McDeleteReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McTouchReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McTouchReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McLeaseGetReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McLeaseGetReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McLeaseSetReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McLeaseSetReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McAddReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McAddReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McReplaceReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McReplaceReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McGetsReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McGetsReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McCasReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McCasReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McIncrReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McIncrReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McDecrReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McDecrReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McMetagetReply>&& tres,
-                      McReply& reply);
-  void onTypedMessage(TypedThriftMessage<cpp2::McVersionReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McMetagetReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McAppendReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McVersionReply>&& tres,
                       McReply& reply);
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McPrependReply>&& tres,
+  void onTypedMessage(TypedThriftReply<cpp2::McAppendReply>&& tres,
+                      McReply& reply);
+
+  void onTypedMessage(TypedThriftReply<cpp2::McPrependReply>&& tres,
                       McReply& reply);
 };
 } // memcache

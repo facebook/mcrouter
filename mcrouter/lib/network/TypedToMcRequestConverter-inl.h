@@ -12,19 +12,19 @@ namespace memcache {
 
 namespace {
 template <class UpdateType>
-void updateHelper(TypedThriftMessage<UpdateType>&& treq,
+void updateHelper(TypedThriftRequest<UpdateType>&& treq,
                   McRequestWithMcOp<mc_op_lease_get>& req) {
   req.setLeaseToken(treq->leaseToken);
 }
 
 template <class UpdateType>
-void updateHelper(TypedThriftMessage<UpdateType>&& treq,
+void updateHelper(TypedThriftRequest<UpdateType>&& treq,
                   McRequestWithMcOp<mc_op_cas>& req) {
   req.setCas(treq->casToken);
 }
 
 template <class UpdateType, class Operation>
-void updateHelper(TypedThriftMessage<UpdateType>&& treq,
+void updateHelper(TypedThriftRequest<UpdateType>&& treq,
                   McRequestWithOp<Operation>& req) {
   // no-op
 }
@@ -32,8 +32,8 @@ void updateHelper(TypedThriftMessage<UpdateType>&& treq,
 
 template <class GetType>
 McRequestWithMcOp<OpFromType<GetType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<GetType>&& treq,
-                   GetLikeT<TypedThriftMessage<GetType>>) {
+convertToMcRequest(TypedThriftRequest<GetType>&& treq,
+                   GetLikeT<TypedThriftRequest<GetType>>) {
   constexpr mc_op_t op = OpFromType<GetType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
   req.setKey(std::move(treq->key));
@@ -42,8 +42,8 @@ convertToMcRequest(TypedThriftMessage<GetType>&& treq,
 
 template <class UpdateType>
 McRequestWithMcOp<OpFromType<UpdateType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<UpdateType>&& treq,
-                   UpdateLikeT<TypedThriftMessage<UpdateType>>) {
+convertToMcRequest(TypedThriftRequest<UpdateType>&& treq,
+                   UpdateLikeT<TypedThriftRequest<UpdateType>>) {
   constexpr mc_op_t op = OpFromType<UpdateType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
   req.setKey(std::move(treq->key));
@@ -56,8 +56,8 @@ convertToMcRequest(TypedThriftMessage<UpdateType>&& treq,
 
 template <class DeleteType>
 McRequestWithMcOp<OpFromType<DeleteType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<DeleteType>&& treq,
-                   DeleteLikeT<TypedThriftMessage<DeleteType>>) {
+convertToMcRequest(TypedThriftRequest<DeleteType>&& treq,
+                   DeleteLikeT<TypedThriftRequest<DeleteType>>) {
   constexpr mc_op_t op = OpFromType<DeleteType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
   req.setKey(std::move(treq->key));
@@ -69,8 +69,8 @@ convertToMcRequest(TypedThriftMessage<DeleteType>&& treq,
 
 template <class ArithType>
 McRequestWithMcOp<OpFromType<ArithType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<ArithType>&& treq,
-                   ArithmeticLikeT<TypedThriftMessage<ArithType>>) {
+convertToMcRequest(TypedThriftRequest<ArithType>&& treq,
+                   ArithmeticLikeT<TypedThriftRequest<ArithType>>) {
   constexpr mc_op_t op = OpFromType<ArithType, RequestOpMapping>::value;
   McRequestWithMcOp<op> req;
   req.setKey(std::move(treq->key));
@@ -79,7 +79,7 @@ convertToMcRequest(TypedThriftMessage<ArithType>&& treq,
 }
 
 inline McRequestWithMcOp<mc_op_version> convertToMcRequest(
-    TypedThriftMessage<cpp2::McVersionRequest>&& treq) {
+    TypedThriftRequest<cpp2::McVersionRequest>&& treq) {
   return {};
 }
 

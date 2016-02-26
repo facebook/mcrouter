@@ -23,7 +23,7 @@ namespace facebook { namespace memcache {
 
 using TestRequestList = ConcatenateListsT<
                           RequestList,
-                          List<TypedThriftMessage<cpp2::McGetRequest>>>;
+                          List<TypedThriftRequest<cpp2::McGetRequest>>>;
 
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
                                                TestRequestList> {

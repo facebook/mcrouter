@@ -12,6 +12,7 @@
 #include <folly/io/IOBuf.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
+#include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -19,6 +20,10 @@ namespace facebook { namespace memcache {
 
 template <class ThriftStruct>
 class TypedThriftMessage;
+template <class ThriftStruct>
+class TypedThriftReply;
+template <class ThriftStruct>
+class TypedThriftRequest;
 
 /*
  * Takes a Thrift struct and serializes it to an IOBuf
@@ -27,7 +32,7 @@ class TypedThriftMessage;
  */
 template <class ThriftType>
 std::unique_ptr<folly::IOBuf> serializeThriftStruct(
-    TypedThriftMessage<ThriftType>&& thriftStruct) {
+    TypedThriftMessage<ThriftType>& thriftStruct) {
 
   apache::thrift::CompactProtocolWriter writer(
       apache::thrift::SHARE_EXTERNAL_BUFFER);
@@ -67,12 +72,16 @@ class ThriftMsgDispatcher {
   template <class M>
   static void processMsg(ThriftMsgDispatcher& me,
                          const folly::IOBuf& reqBody, Args... args) {
+    using TMsg = typename std::conditional<ThriftMsgIsRequest<M>::value,
+                                           TypedThriftRequest<M>,
+                                           TypedThriftReply<M>>::type;
+
     apache::thrift::CompactProtocolReader reader;
     reader.setInput(&reqBody);
-    TypedThriftMessage<M> treq;
-    treq.read(&reader);
+    TMsg tmsg;
+    tmsg.read(&reader);
     static_cast<Proc&>(me)
-        .onTypedMessage(std::move(treq), std::forward<Args>(args)...);
+        .onTypedMessage(std::move(tmsg), std::forward<Args>(args)...);
   }
 
  private:

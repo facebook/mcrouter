@@ -13,6 +13,24 @@
 
 namespace facebook { namespace memcache {
 
+namespace detail {
+struct HasKey {
+  template <class M>
+  static auto check(M* m) -> decltype(m->key, std::true_type());
+  template <class>
+  static auto check(...) -> std::false_type;
+};
+} // detail
+
+template <class M>
+struct ThriftMsgIsRequest : public decltype(detail::HasKey::check<M>(0)) {};
+
+/* McVersionRequest is the only Thrift request type without a key. */
+template <>
+struct ThriftMsgIsRequest<cpp2::McVersionRequest> {
+  static constexpr bool value = true;
+};
+
 /**
  * Type traits on the raw Thrift-generated structures. Useful in conditionally
  * defining functions, e.g., instantiate one version of the function template

@@ -25,7 +25,7 @@ namespace {
  * If its an error reply, fills up the error message and returns false
  */
 template <class ThriftType>
-bool fillResult(const McReply& reply, TypedThriftMessage<ThriftType>& tres) {
+bool fillResult(const McReply& reply, TypedThriftReply<ThriftType>& tres) {
   tres->result = reply.result();
   if (reply.isError()) {
     if (reply.hasValue()) {
@@ -38,7 +38,7 @@ bool fillResult(const McReply& reply, TypedThriftMessage<ThriftType>& tres) {
 }
 
 template <class GetType>
-void getLikeCommon(McReply&& reply, TypedThriftMessage<GetType>& tres) {
+void getLikeCommon(McReply&& reply, TypedThriftReply<GetType>& tres) {
   if (!fillResult(reply, tres)) {
     return;
   }
@@ -54,13 +54,12 @@ void getLikeCommon(McReply&& reply, TypedThriftMessage<GetType>& tres) {
 }
 
 template <class UpdateType>
-void updateLikeCommon(McReply&& reply, TypedThriftMessage<UpdateType>& tres) {
+void updateLikeCommon(McReply&& reply, TypedThriftReply<UpdateType>& tres) {
   fillResult(reply, tres);
 }
 
 template <class ArithType>
-void arithmeticLikeCommon(McReply&& reply,
-                          TypedThriftMessage<ArithType>& tres) {
+void arithmeticLikeCommon(McReply&& reply, TypedThriftReply<ArithType>& tres) {
   if (!fillResult(reply, tres)) {
     return;
   }
@@ -70,37 +69,37 @@ void arithmeticLikeCommon(McReply&& reply,
 
 } // anoymous
 
-TypedThriftMessage<cpp2::McGetReply> convertToTyped(McReply&& reply,
-                                                    McOperation<mc_op_get>) {
-  TypedThriftMessage<cpp2::McGetReply> tres;
+TypedThriftReply<cpp2::McGetReply> convertToTyped(McReply&& reply,
+                                                  McOperation<mc_op_get>) {
+  TypedThriftReply<cpp2::McGetReply> tres;
   getLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McSetReply> convertToTyped(McReply&& reply,
-                                                    McOperation<mc_op_set>) {
-  TypedThriftMessage<cpp2::McSetReply> tres;
+TypedThriftReply<cpp2::McSetReply> convertToTyped(McReply&& reply,
+                                                  McOperation<mc_op_set>) {
+  TypedThriftReply<cpp2::McSetReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McDeleteReply> convertToTyped(
+TypedThriftReply<cpp2::McDeleteReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_delete>) {
-  TypedThriftMessage<cpp2::McDeleteReply> tres;
+  TypedThriftReply<cpp2::McDeleteReply> tres;
   fillResult(reply, tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McTouchReply> convertToTyped(
+TypedThriftReply<cpp2::McTouchReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_touch>) {
-  TypedThriftMessage<cpp2::McTouchReply> tres;
+  TypedThriftReply<cpp2::McTouchReply> tres;
   fillResult(reply, tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McLeaseGetReply> convertToTyped(
+TypedThriftReply<cpp2::McLeaseGetReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_lease_get>) {
-  TypedThriftMessage<cpp2::McLeaseGetReply> tres;
+  TypedThriftReply<cpp2::McLeaseGetReply> tres;
   if (!reply.isError()) {
     tres->__isset.leaseToken = true;
     tres->leaseToken = reply.leaseToken();
@@ -109,30 +108,30 @@ TypedThriftMessage<cpp2::McLeaseGetReply> convertToTyped(
   return tres;
 }
 
-TypedThriftMessage<cpp2::McLeaseSetReply> convertToTyped(
+TypedThriftReply<cpp2::McLeaseSetReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_lease_set>) {
-  TypedThriftMessage<cpp2::McLeaseSetReply> tres;
+  TypedThriftReply<cpp2::McLeaseSetReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McAddReply> convertToTyped(McReply&& reply,
-                                                    McOperation<mc_op_add>) {
-  TypedThriftMessage<cpp2::McAddReply> tres;
+TypedThriftReply<cpp2::McAddReply> convertToTyped(McReply&& reply,
+                                                  McOperation<mc_op_add>) {
+  TypedThriftReply<cpp2::McAddReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McReplaceReply> convertToTyped(
+TypedThriftReply<cpp2::McReplaceReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_replace>) {
-  TypedThriftMessage<cpp2::McReplaceReply> tres;
+  TypedThriftReply<cpp2::McReplaceReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McGetsReply> convertToTyped(McReply&& reply,
-                                                     McOperation<mc_op_gets>) {
-  TypedThriftMessage<cpp2::McGetsReply> tres;
+TypedThriftReply<cpp2::McGetsReply> convertToTyped(McReply&& reply,
+                                                   McOperation<mc_op_gets>) {
+  TypedThriftReply<cpp2::McGetsReply> tres;
   if (!reply.isError()) {
     tres->__isset.casToken = true;
     tres->casToken = reply.cas();
@@ -141,30 +140,30 @@ TypedThriftMessage<cpp2::McGetsReply> convertToTyped(McReply&& reply,
   return tres;
 }
 
-TypedThriftMessage<cpp2::McCasReply> convertToTyped(McReply&& reply,
-                                                    McOperation<mc_op_cas>) {
-  TypedThriftMessage<cpp2::McCasReply> tres;
+TypedThriftReply<cpp2::McCasReply> convertToTyped(McReply&& reply,
+                                                  McOperation<mc_op_cas>) {
+  TypedThriftReply<cpp2::McCasReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McIncrReply> convertToTyped(McReply&& reply,
-                                                     McOperation<mc_op_incr>) {
-  TypedThriftMessage<cpp2::McIncrReply> tres;
+TypedThriftReply<cpp2::McIncrReply> convertToTyped(McReply&& reply,
+                                                   McOperation<mc_op_incr>) {
+  TypedThriftReply<cpp2::McIncrReply> tres;
   arithmeticLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McDecrReply> convertToTyped(McReply&& reply,
-                                                     McOperation<mc_op_decr>) {
-  TypedThriftMessage<cpp2::McDecrReply> tres;
+TypedThriftReply<cpp2::McDecrReply> convertToTyped(McReply&& reply,
+                                                   McOperation<mc_op_decr>) {
+  TypedThriftReply<cpp2::McDecrReply> tres;
   arithmeticLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McMetagetReply> convertToTyped(
+TypedThriftReply<cpp2::McMetagetReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_metaget>) {
-  TypedThriftMessage<cpp2::McMetagetReply> tres;
+  TypedThriftReply<cpp2::McMetagetReply> tres;
   if (!fillResult(reply, tres)) {
     return tres;
   }
@@ -196,16 +195,16 @@ TypedThriftMessage<cpp2::McMetagetReply> convertToTyped(
   return tres;
 }
 
-TypedThriftMessage<cpp2::McAppendReply> convertToTyped(
+TypedThriftReply<cpp2::McAppendReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_append>) {
-  TypedThriftMessage<cpp2::McAppendReply> tres;
+  TypedThriftReply<cpp2::McAppendReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }
 
-TypedThriftMessage<cpp2::McPrependReply> convertToTyped(
+TypedThriftReply<cpp2::McPrependReply> convertToTyped(
     McReply&& reply, McOperation<mc_op_prepend>) {
-  TypedThriftMessage<cpp2::McPrependReply> tres;
+  TypedThriftReply<cpp2::McPrependReply> tres;
   updateLikeCommon(std::move(reply), tres);
   return tres;
 }

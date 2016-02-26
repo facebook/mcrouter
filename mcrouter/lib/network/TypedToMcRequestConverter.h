@@ -23,29 +23,29 @@ namespace memcache {
  */
 template <class GetType>
 McRequestWithMcOp<OpFromType<GetType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<GetType>&& treq,
-                   GetLikeT<TypedThriftMessage<GetType>> = 0);
+convertToMcRequest(TypedThriftRequest<GetType>&& treq,
+                   GetLikeT<TypedThriftRequest<GetType>> = 0);
 
 template <class UpdateType>
 McRequestWithMcOp<OpFromType<UpdateType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<UpdateType>&& treq,
-                   UpdateLikeT<TypedThriftMessage<UpdateType>> = 0);
+convertToMcRequest(TypedThriftRequest<UpdateType>&& treq,
+                   UpdateLikeT<TypedThriftRequest<UpdateType>> = 0);
 
 template <class DeleteType>
 McRequestWithMcOp<OpFromType<DeleteType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<DeleteType>&& treq,
-                   DeleteLikeT<TypedThriftMessage<DeleteType>> = 0);
+convertToMcRequest(TypedThriftRequest<DeleteType>&& treq,
+                   DeleteLikeT<TypedThriftRequest<DeleteType>> = 0);
 
 template <class ArithType>
 McRequestWithMcOp<OpFromType<ArithType, RequestOpMapping>::value>
-convertToMcRequest(TypedThriftMessage<ArithType>&& treq,
-                   ArithmeticLikeT<TypedThriftMessage<ArithType>> = 0);
+convertToMcRequest(TypedThriftRequest<ArithType>&& treq,
+                   ArithmeticLikeT<TypedThriftRequest<ArithType>> = 0);
 
 McRequestWithMcOp<mc_op_version>
-convertToMcRequest(TypedThriftMessage<cpp2::McVersionRequest>&& treq);
+convertToMcRequest(TypedThriftRequest<cpp2::McVersionRequest>&& treq);
 
 McRequestWithMcOp<mc_op_touch>
-convertToMcRequest(TypedThriftMessage<cpp2::McTouchRequest>&& treq);
+convertToMcRequest(TypedThriftRequest<cpp2::McTouchRequest>&& treq);
 
 } // memcache
 } // facebook

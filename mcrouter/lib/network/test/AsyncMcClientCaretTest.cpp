@@ -30,14 +30,14 @@ class TypedServerOnRequest
   TypedServerOnRequest(bool& shutdown, bool outOfOrder)
       : TestServerOnRequest(shutdown, outOfOrder) {}
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McGetRequest>&& treq,
+  void onTypedMessage(TypedThriftRequest<cpp2::McGetRequest>&& treq,
                       McServerRequestContext&& ctx) {
     McRequestWithMcOp<mc_op_get> req;
     req.setKey(std::move(treq->key));
     onRequest(std::move(ctx), std::move(req));
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McSetRequest>&&,
+  void onTypedMessage(TypedThriftRequest<cpp2::McSetRequest>&&,
                       McServerRequestContext&& ctx) {
     processReply(std::move(ctx), McReply(mc_res_stored));
   }

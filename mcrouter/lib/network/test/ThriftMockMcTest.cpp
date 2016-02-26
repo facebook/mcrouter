@@ -46,10 +46,10 @@ struct TypedMockMcOnRequest
     McServerRequestContext::reply(std::move(ctx), McReply(mc_res_client_error));
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McGetRequest>&& treq,
+  void onTypedMessage(TypedThriftRequest<cpp2::McGetRequest>&& treq,
                       McServerRequestContext&& ctx) {
     auto item = mc_.get(folly::StringPiece(treq->key.coalesce()));
-    TypedThriftMessage<cpp2::McGetReply> tres;
+    TypedThriftReply<cpp2::McGetReply> tres;
     if (!item) {
       tres->result = mc_res_notfound;
     } else {
@@ -63,21 +63,21 @@ struct TypedMockMcOnRequest
         std::move(ctx), std::move(tres), 2 /* GetReply*/);
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McSetRequest>&& treq,
+  void onTypedMessage(TypedThriftRequest<cpp2::McSetRequest>&& treq,
                       McServerRequestContext&& ctx) {
     mc_.set(folly::StringPiece(treq->key.coalesce()),
             MockMc::Item(treq->value,
                          (treq->__isset.exptime ? treq->exptime : 0),
                          (treq->__isset.flags ? treq->flags : 0)));
-    TypedThriftMessage<cpp2::McSetReply> tres;
+    TypedThriftReply<cpp2::McSetReply> tres;
     tres->result = mc_res_stored;
     McServerRequestContext::reply(
         std::move(ctx), std::move(tres), 4 /* McSetReply */);
   }
 
-  void onTypedMessage(TypedThriftMessage<cpp2::McDeleteRequest>&& treq,
+  void onTypedMessage(TypedThriftRequest<cpp2::McDeleteRequest>&& treq,
                       McServerRequestContext&& ctx) {
-    TypedThriftMessage<cpp2::McDeleteReply> tres;
+    TypedThriftReply<cpp2::McDeleteReply> tres;
     if (mc_.del(folly::StringPiece(treq->key.coalesce()))) {
       tres->result = mc_res_deleted;
     } else {

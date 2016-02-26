@@ -28,7 +28,7 @@ namespace {
  * @return true if TypedMessage is not an error reply
  */
 template <class ThriftType>
-bool fillResult(TypedThriftMessage<ThriftType>& tres, McReply& reply) {
+bool fillResult(TypedThriftReply<ThriftType>& tres, McReply& reply) {
   reply.setResult(static_cast<mc_res_t>(tres->result));
   if (mc_res_is_err(static_cast<mc_res_t>(tres->result))) {
     if (tres->__isset.message) {
@@ -40,7 +40,7 @@ bool fillResult(TypedThriftMessage<ThriftType>& tres, McReply& reply) {
 }
 
 template <class GetType>
-void onGetCommon(TypedThriftMessage<GetType>&& tres, McReply& reply) {
+void onGetCommon(TypedThriftReply<GetType>&& tres, McReply& reply) {
   if (!fillResult(tres, reply)) {
     return;
   }
@@ -53,12 +53,12 @@ void onGetCommon(TypedThriftMessage<GetType>&& tres, McReply& reply) {
 }
 
 template <class UpdateType>
-void onUpdateCommon(TypedThriftMessage<UpdateType>&& tres, McReply& reply) {
+void onUpdateCommon(TypedThriftReply<UpdateType>&& tres, McReply& reply) {
   fillResult(tres, reply);
 }
 
 template <class ArithType>
-void onArithmeticCommon(TypedThriftMessage<ArithType>&& tres, McReply& reply) {
+void onArithmeticCommon(TypedThriftReply<ArithType>&& tres, McReply& reply) {
   if (!fillResult(tres, reply)) {
     return;
   }
@@ -71,27 +71,27 @@ void onArithmeticCommon(TypedThriftMessage<ArithType>&& tres, McReply& reply) {
 } // anonymous
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McGetReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McGetReply>&& tres, McReply& reply) {
   onGetCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McSetReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McSetReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McDeleteReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McDeleteReply>&& tres, McReply& reply) {
   fillResult(tres, reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McTouchReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McTouchReply>&& tres, McReply& reply) {
   fillResult(tres, reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McLeaseGetReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McLeaseGetReply>&& tres, McReply& reply) {
   if (tres->__isset.leaseToken) {
     reply.setLeaseToken(tres->leaseToken);
   }
@@ -99,22 +99,22 @@ void CaretReplyConverter::onTypedMessage(
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McLeaseSetReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McLeaseSetReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McAddReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McAddReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McReplaceReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McReplaceReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McGetsReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McGetsReply>&& tres, McReply& reply) {
   if (tres->__isset.casToken) {
     reply.setCas(tres->casToken);
   }
@@ -122,22 +122,22 @@ void CaretReplyConverter::onTypedMessage(
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McCasReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McCasReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McIncrReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McIncrReply>&& tres, McReply& reply) {
   onArithmeticCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McDecrReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McDecrReply>&& tres, McReply& reply) {
   onArithmeticCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McMetagetReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McMetagetReply>&& tres, McReply& reply) {
 
   if (!fillResult(tres, reply)) {
     return;
@@ -172,7 +172,7 @@ void CaretReplyConverter::onTypedMessage(
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McVersionReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McVersionReply>&& tres, McReply& reply) {
   if (!fillResult(tres, reply)) {
     return;
   }
@@ -184,12 +184,12 @@ void CaretReplyConverter::onTypedMessage(
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McAppendReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McAppendReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
-    TypedThriftMessage<cpp2::McPrependReply>&& tres, McReply& reply) {
+    TypedThriftReply<cpp2::McPrependReply>&& tres, McReply& reply) {
   onUpdateCommon(std::move(tres), reply);
 }
 

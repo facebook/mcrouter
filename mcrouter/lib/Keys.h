@@ -55,33 +55,4 @@ class Keys {
   uint32_t routingKeyHash_{0};
 };
 
-/**
- * This class is used for TypedThriftMessages that don't actually have a
- * key field. It provides useful default values for routingPrefix and friends.
- */
-class DefaultKeys {
- public:
-  folly::StringPiece keyWithoutRoute() const {
-    return "";
-  }
-
-  folly::StringPiece routingPrefix() const {
-    return "";
-  }
-
-  folly::StringPiece routingKey() const {
-    return "";
-  }
-
-  void update(folly::StringPiece) {
-  }
-
-  uint32_t routingKeyHash() const {
-    return 0;
-  }
-
-  void clearRoutingPrefix() {
-  }
-};
-
 }} // facebook::memcache

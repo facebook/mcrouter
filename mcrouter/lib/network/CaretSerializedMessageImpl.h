@@ -70,8 +70,8 @@ class CaretSerializedMessage {
                size_t& niovOut) noexcept;
 
  private:
-  template <class TM>
-  bool fill(TM&& tres,
+  template <class ThriftType>
+  bool fill(TypedThriftMessage<ThriftType>& tsg,
             uint32_t reqId,
             size_t typeId,
             struct iovec*& iovOut,
@@ -96,7 +96,7 @@ class CaretSerializedMessage {
               size_t& niovOut);
 
   template <class ThriftType>
-  void fillBody(TypedThriftMessage<ThriftType>&& treq);
+  void fillBody(TypedThriftMessage<ThriftType>& tmsg);
 
   std::unique_ptr<folly::IOBuf> ioBuf_;
   static constexpr size_t kMaxIovs = 8;
