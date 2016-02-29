@@ -88,10 +88,16 @@ struct stat_t {
   } data;
 };
 
-/** prototypes are stupid */
 void init_stats(stat_t* stats);
-void stat_incr(stat_t*, stat_name_t, int64_t);
-void stat_decr(stat_t*, stat_name_t, int64_t);
+
+inline void stat_incr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+  stats[stat_num].data.uint64 += amount;
+}
+
+inline void stat_decr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
+  stat_incr(stats, stat_num, -amount);
+}
+
 void stat_incr_safe(stat_t*, stat_name_t);
 void stat_decr_safe(stat_t*, stat_name_t);
 

@@ -395,14 +395,6 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
   }
 }
 
-void stat_incr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
-  stats[stat_num].data.uint64 += amount;
-}
-
-void stat_decr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
-  stat_incr(stats, stat_num, -amount);
-}
-
 // Thread-safe increment of the given counter
 void stat_incr_safe(stat_t* stats, stat_name_t stat_name) {
   __sync_fetch_and_add(&stats[stat_name].data.uint64, 1);
