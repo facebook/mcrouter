@@ -20,6 +20,7 @@
 #include <folly/io/async/AsyncSocketException.h>
 #include <folly/io/IOBufQueue.h>
 #include <folly/Optional.h>
+#include <folly/SocketAddress.h>
 
 #include "mcrouter/lib/debug/Fifo.h"
 
@@ -30,11 +31,26 @@ class EventBase;
 namespace facebook { namespace memcache {
 
 class FifoReader;
-class ParserMap;
+
+/**
+ * Function called when a message is completely read from the fifo.
+ *
+ * @param connectionId  Id of the connection.
+ * @param packetId      Id of the packet.
+ * @param from          Address of the endpoint that sent the message.
+ * @param to            Address of the endpoint that received the message.
+ * @param data          The data of the message.
+ */
+using MessageReadyFn = std::function<void(uint64_t connectionId,
+                                          uint64_t packetId,
+                                          folly::SocketAddress from,
+                                          folly::SocketAddress to,
+                                          folly::ByteRange data)>;
 
 class FifoReadCallback : public folly::AsyncReader::ReadCallback {
  public:
-  FifoReadCallback(std::string fifoName, ParserMap& parserMap) noexcept;
+  FifoReadCallback(std::string fifoName,
+                   const MessageReadyFn& messageReady) noexcept;
 
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
   void readDataAvailable(size_t len) noexcept override;
@@ -45,14 +61,18 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
   static constexpr uint64_t kMinSize{256};
   folly::IOBufQueue readBuffer_{folly::IOBufQueue::cacheChainLength()};
   const std::string fifoName_;
-  ParserMap& parserMap_;
+  const MessageReadyFn& messageReady_;
 
   // Indicates if there is a pending message, i.e. a header has being read
   // (pendingHeader_) but its data hasn't being processed yet
   folly::Optional<PacketHeader> pendingHeader_;
 
-  void feedParser(const PacketHeader& header,
-                  std::unique_ptr<folly::IOBuf>&& buf);
+  // Addresses of the endpoints of the message currently being read.
+  folly::SocketAddress from_;
+  folly::SocketAddress to_;
+
+  void forwardMessage(const PacketHeader& header,
+                      std::unique_ptr<folly::IOBuf>&& buf);
 
   void handleMessageHeader(MessageHeader msgHeader) noexcept;
 };
@@ -70,11 +90,13 @@ class FifoReaderManager {
    *
    * @param evb             EventBase to run FifoReaderManager and
    *                        its FifoReaders.
-   * @param map             Map of parsers.
+   * @param messageReadyCb  Callback to be called when a message is completely
+   *                        read from the fifo.
    * @param dir             Directory to watch.
    * @param filenamePattern Regex that file names must match.
    */
-  FifoReaderManager(folly::EventBase& evb, ParserMap& map,
+  FifoReaderManager(folly::EventBase& evb,
+                    MessageReadyFn messageReady,
                     std::string dir,
                     std::unique_ptr<boost::regex> filenamePattern);
 
@@ -88,7 +110,7 @@ class FifoReaderManager {
 
   static constexpr size_t kPollDirectoryIntervalMs = 1000;
   folly::EventBase& evb_;
-  ParserMap& parserMap_;
+  MessageReadyFn messageReady_;
   const std::string directory_;
   const std::unique_ptr<boost::regex> filenamePattern_;
   std::unordered_map<std::string, FifoReader> fifoReaders_;

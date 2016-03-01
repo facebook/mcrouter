@@ -15,25 +15,25 @@
 #include <folly/IntrusiveList.h>
 #include <folly/SocketAddress.h>
 
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/tools/mcpiper/ClientServerMcParser.h"
 
 namespace facebook { namespace memcache {
 
 /**
- * Wrapper around the parser that keeps context information
- * (e.g. map of messages to be paired).
+ * Wrapper around ClientServerMcParser that also tracks of information
+ * useful for sniffer (e.g. socket addresses, keys for replies).
+ *
+ * @param Callback  Callback containing two functions:
+ *                  void requestReady(msgId, request, fromAddress, toAddress);
+ *                  void replyReady(msgId, reply, key, fromAddress, toAddress);
  */
-class ParserContext {
+template <class Callback>
+class SnifferParser {
  public:
-  using Callback = std::function<void(uint64_t reqId,
-                                      McMsgRef msg,
-                                      std::string matchingMsgKey,
-                                      const folly::SocketAddress& fromAddress,
-                                      const folly::SocketAddress& toAddress)>;
+  explicit SnifferParser(Callback& cb) noexcept;
 
-  explicit ParserContext(const Callback& cb) noexcept;
-
-  ClientServerMcParser& parser() {
+  ClientServerMcParser<SnifferParser>& parser() {
     return parser_;
   }
 
@@ -62,33 +62,28 @@ class ParserContext {
   };
 
   // Callback called when a message is ready
-  const Callback& callback_;
+  Callback& callback_;
   // The parser itself.
-  ClientServerMcParser parser_;
+  ClientServerMcParser<SnifferParser> parser_;
   // Addresses of current message.
   folly::SocketAddress fromAddress_;
   folly::SocketAddress toAddress_;
-  // Map (reqid -> key) of messages that haven't been paired yet.
+  // Map (msgId -> key) of messages that haven't been paired yet.
   std::unordered_map<uint64_t, Item> msgs_;
   // Keeps an in-order list of what should be invalidated.
   folly::IntrusiveList<Item, &Item::listHook> evictionQueue_;
 
-  void msgReady(uint64_t id, McMsgRef msg);
   void evictOldItems(TimePoint now);
-};
 
-/**
- * Map of parsers
- */
-class ParserMap {
- public:
-  explicit ParserMap(ParserContext::Callback cb) noexcept;
+  // ClientServerMcParser callbacks
+  template <class Request>
+  void requestReady(uint64_t msgId, Request request);
+  template <class Request>
+  void replyReady(uint64_t msgId, ReplyT<Request> reply);
 
-  ParserContext& fetch(uint64_t id);
-
- private:
-  ParserContext::Callback callback_{nullptr};
-  std::unordered_map<uint64_t, ParserContext> parsers_;
+  friend class ClientServerMcParser<SnifferParser>;
 };
 
 }} // facebook::memcache
+
+#include "SnifferParser-inl.h"

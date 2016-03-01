@@ -27,10 +27,9 @@
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 #include "mcrouter/tools/mcpiper/FifoReader.h"
-#include "mcrouter/tools/mcpiper/ParserMap.h"
+#include "mcrouter/tools/mcpiper/MessagePrinter.h"
 #include "mcrouter/tools/mcpiper/PrettyFormat.h"
 #include "mcrouter/tools/mcpiper/StyledString.h"
-#include "mcrouter/tools/mcpiper/Util.h"
 #include "mcrouter/tools/mcpiper/ValueFormatter.h"
 
 using namespace facebook::memcache;
@@ -56,20 +55,8 @@ struct Settings {
   uint32_t valueMinSize{0};
 };
 
-// Constants
-const PrettyFormat kFormat{}; // Default constructor = default coloring.
-
 // Globals
-AnsiColorCodeStream gTargetOut(std::cout);
-Settings gSettings;
-std::unique_ptr<boost::regex> gDataPattern;
-std::unique_ptr<ValueFormatter> gValueFormatter = createValueFormatter();
-uint64_t gTotalMessages{0};
-uint64_t gPrintedMessages{0};
-uint32_t afterMatchCount{0};
-std::function<std::string(const struct timeval& ts)> gPrintTime{nullptr};
-struct timeval gPrevTs = {0, 0};
-folly::IPAddress gHost;
+std::pair<uint64_t, uint64_t> gStats{0, 0};
 
 std::string getUsage(const char* binaryName) {
   return folly::sformat(
@@ -178,231 +165,17 @@ void cleanExit(int32_t status) {
   }
 
   if (status >= 0) {
-    gTargetOut << "exit\n"
-               << folly::format("{} messages received, {} printed",
-                                gTotalMessages, gPrintedMessages)
-               << '\n';
+    std::cout << "exit" << std::endl
+              << gStats.first << " messages received, "
+              << gStats.second << " printed" << std::endl;
   }
-
-  gTargetOut.flush();
 
   exit(status);
 }
 
-/**
- * Matches all the occurences of "pattern" in "text"
- *
- * @return A vector of pairs containing the index and size (respectively)
- *         of all ocurrences.
- */
-std::vector<std::pair<size_t, size_t>> matchAll(folly::StringPiece text,
-                                                const boost::regex& pattern) {
-  std::vector<std::pair<size_t, size_t>> result;
-
-  boost::cregex_token_iterator it(text.begin(), text.end(), pattern);
-  boost::cregex_token_iterator end;
-  while (it != end) {
-    result.emplace_back(it->first - text.begin(), it->length());
-    ++it;
-  }
-  return result;
-}
-
-bool matchIPAddress(const folly::IPAddress& expectedIp,
-                    const folly::SocketAddress& address) {
-  return !address.empty() && expectedIp == address.getIPAddress();
-}
-
-bool matchPort(uint16_t expectedPort, const folly::SocketAddress& address) {
-  return !address.empty() && expectedPort == address.getPort();
-}
-
-std::string serializeMessageHeader(const McMsgRef& msg,
-                                   std::string matchingKey) {
-  std::string out;
-
-  if (msg->op != mc_op_unknown) {
-    out.append(mc_op_to_string(msg->op));
-  }
-  if (msg->result != mc_res_unknown) {
-    if (out.size() > 0) {
-      out.push_back(' ');
-    }
-    out.append(mc_res_to_string(msg->result));
-  }
-  if (msg->key.len) {
-    if (out.size() > 0) {
-      out.push_back(' ');
-    }
-    out.append(folly::backslashify(to<std::string>(msg->key)));
-  }
-  if (!matchingKey.empty()) {
-    out.append(
-        " [" + folly::backslashify(matchingKey) + "]");
-  }
-
-  return out;
-}
-
-std::string serializeAddresses(const folly::SocketAddress& fromAddress,
-                               const folly::SocketAddress& toAddress) {
-  std::string out;
-
-  if (!fromAddress.empty()) {
-    out.append(fromAddress.describe());
-  }
-  if (!fromAddress.empty() || !toAddress.empty()) {
-    out.append(" -> ");
-  }
-  if (!toAddress.empty()) {
-    out.append(toAddress.describe());
-  }
-
-  return out;
-}
-
-void msgReady(uint64_t reqid, McMsgRef msg, std::string matchingKey,
-              const folly::SocketAddress& fromAddress,
-              const folly::SocketAddress& toAddress) {
-  if (msg->op == mc_op_end) {
-    return;
-  }
-
-  ++gTotalMessages;
-
-  // Initial filters
-  if (!gHost.empty() &&
-      !matchIPAddress(gHost, fromAddress) &&
-      !matchIPAddress(gHost, toAddress)) {
-    return;
-  }
-  if (gSettings.port != 0 &&
-      !matchPort(gSettings.port, fromAddress) &&
-      !matchPort(gSettings.port, toAddress)) {
-    return;
-  }
-  if (msg->value.len < gSettings.valueMinSize) {
-    return;
-  }
-
-  StyledString out;
-  out.append("\n");
-
-  if (gPrintTime) {
-    timeval ts;
-    gettimeofday(&ts, nullptr);
-    out.append(gPrintTime(ts));
-  }
-
-  out.append(serializeAddresses(fromAddress, toAddress));
-  out.append("\n");
-
-  out.append("{\n", kFormat.dataOpColor);
-
-  // Msg header
-  auto msgHeader = serializeMessageHeader(msg, std::move(matchingKey));
-  if (!msgHeader.empty()) {
-    out.append("  ");
-    out.append(std::move(msgHeader), kFormat.headerColor);
-  }
-
-  // Msg attributes
-  out.append("\n  reqid: ", kFormat.msgAttrColor);
-  out.append(folly::sformat("0x{:x}", reqid), kFormat.dataValueColor);
-  out.append("\n  flags: ", kFormat.msgAttrColor);
-  out.append(folly::sformat("0x{:x}", msg->flags), kFormat.dataValueColor);
-  if (msg->flags) {
-    auto flagDesc = describeFlags(msg->flags);
-
-    if (!flagDesc.empty()) {
-      out.pushAppendColor(kFormat.attrColor);
-      out.append(" [");
-      bool first = true;
-      for (auto& s : flagDesc) {
-        if (!first) {
-          out.append(", ");
-        }
-        first = false;
-        out.append(s);
-      }
-      out.pushBack(']');
-      out.popAppendColor();
-    }
-  }
-  if (msg->exptime) {
-      out.append("\n  exptime: ", kFormat.msgAttrColor);
-      out.append(folly::format("{:d}", msg->exptime).str(),
-                 kFormat.dataValueColor);
-  }
-
-  out.pushBack('\n');
-
-  if (msg->value.len) {
-    auto value = to<folly::StringPiece>(msg->value);
-    size_t uncompressedSize;
-    auto formattedValue =
-      gValueFormatter->uncompressAndFormat(value,
-                                           msg->flags,
-                                           kFormat,
-                                           uncompressedSize);
-
-    out.append("  value size: ", kFormat.msgAttrColor);
-    if (uncompressedSize != value.size()) {
-      out.append(
-        folly::sformat("{} uncompressed, {} compressed, {:.2f}% savings",
-                       uncompressedSize, value.size(),
-                       100.0 - 100.0 * value.size()/uncompressedSize),
-        kFormat.dataValueColor);
-    } else {
-      out.append(folly::to<std::string>(value.size()), kFormat.dataValueColor);
-    }
-
-    if (!gSettings.quiet) {
-      out.append("\n  value: ", kFormat.msgAttrColor);
-      out.append(formattedValue);
-    }
-    out.pushBack('\n');
-  }
-
-  out.append("}\n", kFormat.dataOpColor);
-
-  // Match pattern
-  if (gDataPattern) {
-    auto matches = matchAll(out.text(), *gDataPattern);
-    auto success = matches.empty() == gSettings.invertMatch;
-
-    if (!success && afterMatchCount == 0) {
-      return;
-    }
-    if (!gSettings.invertMatch) {
-      for (auto& m : matches) {
-        out.setFg(m.first, m.second, kFormat.matchColor);
-      }
-    }
-
-    // Reset after match
-    if (success && gSettings.numAfterMatch > 0) {
-      afterMatchCount = gSettings.numAfterMatch + 1;
-    }
-  }
-
-  gTargetOut << out;
-  gTargetOut.flush();
-
-  ++gPrintedMessages;
-
-  if (gSettings.maxMessages > 0 && gPrintedMessages >= gSettings.maxMessages) {
-    cleanExit(0);
-  }
-
-  if (gSettings.numAfterMatch > 0) {
-    --afterMatchCount;
-  }
-}
-
-boost::regex::flag_type getFlags() {
+boost::regex::flag_type getRegexFlags(const Settings& settings) {
   boost::regex::flag_type flags = boost::regex_constants::basic;
-  if (gSettings.ignoreCase) {
+  if (settings.ignoreCase) {
     flags |= boost::regex_constants::icase;
   }
   return flags;
@@ -411,11 +184,12 @@ boost::regex::flag_type getFlags() {
 /**
  * Builds the regex to match fifos' names.
  */
-std::unique_ptr<boost::regex> buildFilenameRegex() noexcept {
-  if (!gSettings.filenamePattern.empty()) {
+std::unique_ptr<boost::regex> buildFilenameRegex(
+    const Settings& settings) noexcept {
+  if (!settings.filenamePattern.empty()) {
     try {
-      return folly::make_unique<boost::regex>(gSettings.filenamePattern,
-                                              getFlags());
+      return folly::make_unique<boost::regex>(settings.filenamePattern,
+                                              getRegexFlags(settings));
     } catch (const std::exception& e) {
       LOG(ERROR) << "Invalid filename pattern: " << e.what();
       exit(1);
@@ -429,11 +203,12 @@ std::unique_ptr<boost::regex> buildFilenameRegex() noexcept {
  *
  * @returns   The regex or null (to match everything).
  */
-std::unique_ptr<boost::regex> buildDataRegex() noexcept {
-  if (!gSettings.matchExpression.empty()) {
+std::unique_ptr<boost::regex> buildDataRegex(
+    const Settings& settings) noexcept {
+  if (!settings.matchExpression.empty()) {
     try {
-      return folly::make_unique<boost::regex>(gSettings.matchExpression,
-                                              getFlags());
+      return folly::make_unique<boost::regex>(settings.matchExpression,
+                                              getRegexFlags(settings));
     } catch (const std::exception& e) {
       LOG(ERROR) << "Invalid pattern: " << e.what();
       exit(1);
@@ -442,67 +217,123 @@ std::unique_ptr<boost::regex> buildDataRegex() noexcept {
   return nullptr;
 }
 
-void run() {
-  // Builds filename pattern
-  auto filenamePattern = buildFilenameRegex();
-  if (filenamePattern) {
-    std::cout << "Filename pattern: " << *filenamePattern << std::endl;
+MessagePrinter::Options getOptions(const Settings& settings) {
+  MessagePrinter::Options options;
+
+  options.numAfterMatch = settings.numAfterMatch;
+  options.quiet = settings.quiet;
+  options.maxMessages = settings.maxMessages;
+  options.disableColor = settings.disableColor;
+
+  // Time Function
+  static struct timeval prevTs = {0, 0};
+  if (!settings.timeFormat.empty()) {
+    if (settings.timeFormat == "absolute") {
+      options.printTimeFn = printTimeAbsolute;
+    } else if (settings.timeFormat == "diff") {
+      options.printTimeFn = [](const struct timeval& ts) {
+        return printTimeDiff(ts, prevTs);
+      };
+      gettimeofday(&prevTs, nullptr);
+    } else if (settings.timeFormat == "offset") {
+      options.printTimeFn = [](const struct timeval& ts) {
+        return printTimeOffset(ts, prevTs);
+      };
+    } else {
+      LOG(ERROR) << "Invalid time format. absolute|diff|offset expected, got "
+                 << settings.timeFormat << ". Timestamps will not be shown.";
+    }
+  }
+
+  // Exit function
+  options.stopRunningFn = [](const MessagePrinter& printer) {
+    gStats = printer.getStats();
+    cleanExit(0);
+  };
+
+  return options;
+}
+
+MessagePrinter::Filter getFilter(const Settings& settings) {
+  MessagePrinter::Filter filter;
+
+  filter.valueMinSize = settings.valueMinSize;
+  filter.invertMatch = settings.invertMatch;
+
+  // Host
+  if (!settings.host.empty()) {
+    try {
+      filter.host = folly::IPAddress(settings.host);
+      std::cout << "Host: " << filter.host.toFullyQualified() << std::endl;
+    } catch (...) {
+      LOG(ERROR) << "Invalid IP address provided: " << filter.host;
+      exit(1);
+    }
+  }
+
+  // Port
+  if (settings.port != 0) {
+    filter.port = settings.port;
+    std::cout << "Port: " << filter.port << std::endl;
   }
 
   // Builds data pattern
-  gDataPattern = buildDataRegex();
-  if (gDataPattern) {
-    if (gSettings.invertMatch) {
+  filter.pattern = buildDataRegex(settings);
+  if (filter.pattern) {
+    if (settings.invertMatch) {
       std::cout << "Don't match: ";
     } else {
       std::cout << "Match: ";
     }
-    std::cout << *gDataPattern << std::endl;
+    std::cout << *filter.pattern << std::endl;
   }
 
-  // Coloring
-  if (gSettings.disableColor) {
-    gTargetOut.setColorOutput(false);
+  return filter;
+}
+
+void run(Settings settings) {
+  // Builds filename pattern
+  auto filenamePattern = buildFilenameRegex(settings);
+  if (filenamePattern) {
+    std::cout << "Filename pattern: " << *filenamePattern << std::endl;
   }
 
-  // Host and Port
-  if (!gSettings.host.empty()) {
-    try {
-      gHost = folly::IPAddress(gSettings.host);
-      std::cout << "Host: " << gHost.toFullyQualified() << std::endl;
-    } catch (...) {
-      LOG(ERROR) << "Invalid IP address provided: " << gSettings.host;
-      exit(1);
-    }
-  }
-  if (gSettings.port != 0) {
-    std::cout << "Port: " << gSettings.port << std::endl;
-  }
+  MessagePrinter messagePrinter(getOptions(settings),
+                                getFilter(settings),
+                                createValueFormatter());
+  std::unordered_map<uint64_t, SnifferParser<MessagePrinter>> parserMap;
 
-  // Time Function
-  if (!gSettings.timeFormat.empty()) {
-    if (gSettings.timeFormat == "absolute") {
-      gPrintTime = printTimeAbsolute;
-    } else if (gSettings.timeFormat == "diff") {
-      gPrintTime = [](const struct timeval& ts) {
-        return printTimeDiff(ts, gPrevTs);
-      };
-      gettimeofday(&gPrevTs, nullptr);
-    } else if (gSettings.timeFormat == "offset") {
-      gPrintTime = [](const struct timeval& ts) {
-        return printTimeOffset(ts, gPrevTs);
-      };
-    } else {
-      LOG(ERROR) << "Invalid time format. Timestamps will not be shown.";
-    }
+  // Callback from fifoManager. Read the data and feed the correct parser.
+  auto fifoReaderCallback =
+    [&parserMap, &messagePrinter](uint64_t connectionId,
+                                  uint64_t packetId,
+                                  folly::SocketAddress from,
+                                  folly::SocketAddress to,
+                                  folly::ByteRange data) {
+      auto it = parserMap.find(connectionId);
+      if (it == parserMap.end()) {
+        it = parserMap.emplace(std::piecewise_construct,
+                               std::forward_as_tuple(connectionId),
+                               std::forward_as_tuple(messagePrinter)).first;
+      }
+      auto& snifferParser = it->second;
+
+      if (packetId == 0) {
+        snifferParser.parser().reset();
+      }
+
+      snifferParser.setAddresses(std::move(from), std::move(to));
+      snifferParser.parser().parse(data);
+    };
+
+  folly::EventBase eventBase;
+  FifoReaderManager fifoManager(eventBase, fifoReaderCallback,
+                                settings.fifoRoot, std::move(filenamePattern));
+
+  while (eventBase.loopOnce()) {
+    // Update stats
+    gStats = messagePrinter.getStats();
   }
-
-  folly::EventBase evb;
-  ParserMap parserMap(msgReady);
-  FifoReaderManager fifoManager(evb, parserMap,
-                                gSettings.fifoRoot, std::move(filenamePattern));
-
-  evb.loopForever();
 }
 
 } // anonymous namespace
@@ -516,9 +347,8 @@ int main(int argc, char **argv) {
   }
 
   google::InitGoogleLogging(argv[0]);
-  gSettings = parseOptions(argc, argv);
 
-  run();
+  run(parseOptions(argc, argv));
 
   return 0;
 }

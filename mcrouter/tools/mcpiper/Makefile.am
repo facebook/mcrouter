@@ -5,7 +5,6 @@ mcpiper_SOURCES = \
 	AnsiColorCodeStream.cpp \
 	AnsiColorCodeStream.h \
 	ClientServerMcParser-inl.h \
-	ClientServerMcParser.cpp \
 	ClientServerMcParser.h \
 	Color.h \
 	Config.cpp \
@@ -13,9 +12,13 @@ mcpiper_SOURCES = \
 	FifoReader.cpp \
 	FifoReader.h \
 	mcpiper.cpp \
-	ParserMap.cpp \
-	ParserMap.h \
+	MessagePrinter-inl.h \
+	MessagePrinter.cpp \
+	MessagePrinter.h \
 	PrettyFormat.h \
+	StyleAwareStream.h \
+	SnifferParser-inl.h \
+	SnifferParser.h \
 	StyleAwareStream-inl.h \
 	StyleAwareStream.h \
 	StyledString.cpp \

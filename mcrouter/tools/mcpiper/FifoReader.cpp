@@ -19,10 +19,6 @@
 #include <boost/regex.hpp>
 
 #include <folly/io/async/EventBase.h>
-#include <folly/SocketAddress.h>
-
-#include "mcrouter/tools/mcpiper/ClientServerMcParser.h"
-#include "mcrouter/tools/mcpiper/ParserMap.h"
 
 namespace fs = boost::filesystem;
 
@@ -104,9 +100,9 @@ bool isMessageHeader(const folly::IOBufQueue& bufQueue) {
 } // anonymous namespace
 
 FifoReadCallback::FifoReadCallback(std::string fifoName,
-                                   ParserMap& parserMap) noexcept
+                                   const MessageReadyFn& messageReady) noexcept
     : fifoName_(std::move(fifoName)),
-      parserMap_(parserMap) {
+      messageReady_(messageReady) {
 }
 
 void FifoReadCallback::getReadBuffer(void** bufReturn, size_t* lenReturn) {
@@ -124,8 +120,8 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
       if (readBuffer_.chainLength() < pendingHeader_->packetSize()) {
         return;
       }
-      feedParser(pendingHeader_.value(),
-                 readBuffer_.split(pendingHeader_->packetSize()));
+      forwardMessage(pendingHeader_.value(),
+                     readBuffer_.split(pendingHeader_->packetSize()));
       pendingHeader_.clear();
     }
 
@@ -149,7 +145,8 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
         return;
       }
 
-      feedParser(packetHeader, readBuffer_.split(packetHeader.packetSize()));
+      forwardMessage(packetHeader,
+                     readBuffer_.split(packetHeader.packetSize()));
     }
   } catch (const std::exception& ex) {
     CHECK(false) << "Unexpected exception: " << ex.what();
@@ -157,24 +154,19 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
 }
 
 void FifoReadCallback::handleMessageHeader(MessageHeader msgHeader) noexcept {
-  auto fromAddr = msgHeader.getLocalAddress();
-  auto toAddr = msgHeader.getPeerAddress();
+  from_ = msgHeader.getLocalAddress();
+  to_ = msgHeader.getPeerAddress();
   if (msgHeader.direction() == MessageDirection::Received) {
-    std::swap(fromAddr, toAddr);
+    std::swap(from_, to_);
   }
-  parserMap_.fetch(msgHeader.msgId()).setAddresses(fromAddr, toAddr);
 }
 
-void FifoReadCallback::feedParser(const PacketHeader& header,
-                                  std::unique_ptr<folly::IOBuf>&& buf) {
-  auto bodyBuf = buf->coalesce();
-  CHECK(bodyBuf.size() == header.packetSize())
-    << "Invalid header buffer size!";
-  auto& parser = parserMap_.fetch(header.msgId()).parser();
-  if (header.packetId() == 0) {
-    parser.reset();
-  }
-  parser.parse(bodyBuf);
+void FifoReadCallback::forwardMessage(const PacketHeader& header,
+                                      std::unique_ptr<folly::IOBuf>&& buf) {
+  auto data = buf->coalesce();
+  CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
+  messageReady_(header.msgId(), header.packetId(),
+                std::move(from_), std::move(to_), data);
 }
 
 void FifoReadCallback::readEOF() noexcept {
@@ -186,10 +178,10 @@ void FifoReadCallback::readErr(const folly::AsyncSocketException& e) noexcept {
 }
 
 FifoReaderManager::FifoReaderManager(
-    folly::EventBase& evb, ParserMap& map, std::string dir,
+    folly::EventBase& evb, MessageReadyFn messageReady, std::string dir,
     std::unique_ptr<boost::regex> filenamePattern)
     : evb_(evb),
-      parserMap_(map),
+      messageReady_(std::move(messageReady)),
       directory_(std::move(dir)),
       filenamePattern_(std::move(filenamePattern)) {
   runScanDirectory();
@@ -236,7 +228,7 @@ void FifoReaderManager::runScanDirectory() {
     if (fd >= 0) {
       auto pipeReader = folly::AsyncPipeReader::UniquePtr(
           new folly::AsyncPipeReader(&evb_, fd));
-      auto callback = folly::make_unique<FifoReadCallback>(fifo, parserMap_);
+      auto callback = folly::make_unique<FifoReadCallback>(fifo, messageReady_);
       pipeReader->setReadCB(callback.get());
       fifoReaders_.emplace(fifo,
                            FifoReader(std::move(pipeReader),

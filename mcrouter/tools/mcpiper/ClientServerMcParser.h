@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/Operation.h"
 
 namespace folly {
 class IOBuf;
@@ -27,25 +28,27 @@ constexpr size_t kReadBufferSizeMax = 4096;
 
 /**
  * A parser that can handle both client and server data.
- * Useful for sniffers.
+ *
+ * @param Callback  Callback containing two functions:
+ *                  void requestReady(msgId, request);
+ *                  void replyReady(msgId, reply);
  */
+template <class Callback>
 class ClientServerMcParser : private McParser::ParserCallback {
  public:
-  using CallbackFn = std::function<void(uint64_t, McMsgRef)>;
-
   /**
    * Creates the client/server parser.
    *
    * @param callbackFn  Callback function that will be called when a
    *                    request/reply is successfully parsed.
    */
-  explicit ClientServerMcParser(CallbackFn callbackFn);
+  explicit ClientServerMcParser(Callback& callback);
 
   /**
    * Feed data into the parser. The callback will be called as soon
    * as a message is completely parsed.
    */
-  void parse(const folly::ByteRange& data);
+  void parse(folly::ByteRange data);
 
   /**
    * Resets parser
@@ -56,7 +59,7 @@ class ClientServerMcParser : private McParser::ParserCallback {
   McParser parser_{*this, 0, kReadBufferSizeMin, kReadBufferSizeMax};
   mc_parser_t oldParser_;
 
-  CallbackFn callbackFn_;
+  Callback& callback_;
 
   template <class Request>
   ReplyT<Request> parseReply(const UmbrellaMessageInfo& info,
@@ -65,9 +68,10 @@ class ClientServerMcParser : private McParser::ParserCallback {
                              const folly::IOBuf& bodyBuffer);
 
   /* Callback helpers */
-  void requestReady(uint64_t reqid, mc_op_t op, McRequest req);
-  template <class Reply>
-  void replyReady(uint64_t reqid, mc_op_t op, Reply reply);
+  template <class Request>
+  void forwardRequest(uint64_t id, Request req);
+  template <class Request>
+  void forwardReply(uint64_t id, ReplyT<Request> reply);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
@@ -79,7 +83,7 @@ class ClientServerMcParser : private McParser::ParserCallback {
 
   /* mc_parser_t callbacks and helpers */
   void initOldParser();
-  static void oldParserMsgReady(void* context, uint64_t reqid, mc_msg_t* req);
+  static void oldParserMsgReady(void* context, uint64_t msgId, mc_msg_t* msg);
   static void oldParserParseError(void* context, parser_error_t error);
 };
 
