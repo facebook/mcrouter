@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,10 +10,23 @@
 #include "Util.h"
 
 #include <folly/Format.h>
+#include <folly/Memory.h>
 
 #include "mcrouter/lib/mc/msg.h"
 
 namespace facebook { namespace memcache {
+
+namespace {
+
+boost::regex::flag_type getRegexFlags(bool ignoreCase) {
+  boost::regex::flag_type flags = boost::regex_constants::basic;
+  if (ignoreCase) {
+    flags |= boost::regex_constants::icase;
+  }
+  return flags;
+}
+
+} // anonymous namespace
 
 std::vector<std::string> describeFlags(uint64_t flags) {
   std::vector<std::string> out;
@@ -77,6 +90,21 @@ std::string printTimeOffset(const struct timeval& ts,
   }
 
   return folly::sformat("+{}.{:06} ", secs, usecs);
+}
+
+std::unique_ptr<boost::regex> buildRegex(const std::string& pattern,
+                                         bool ignoreCase) noexcept {
+  if (!pattern.empty()) {
+    try {
+      return folly::make_unique<boost::regex>(pattern,
+                                              getRegexFlags(ignoreCase));
+    } catch (const std::exception& e) {
+      LOG(ERROR) << folly::sformat("Invalid pattern ({}) provided: ", pattern)
+                 << e.what();
+      exit(1);
+    }
+  }
+  return nullptr;
 }
 
 }} // facebook::memcache

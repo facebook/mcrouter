@@ -13,7 +13,6 @@
 #include <iostream>
 
 #include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 
 #include <glog/logging.h>
 
@@ -173,50 +172,6 @@ void cleanExit(int32_t status) {
   exit(status);
 }
 
-boost::regex::flag_type getRegexFlags(const Settings& settings) {
-  boost::regex::flag_type flags = boost::regex_constants::basic;
-  if (settings.ignoreCase) {
-    flags |= boost::regex_constants::icase;
-  }
-  return flags;
-}
-
-/**
- * Builds the regex to match fifos' names.
- */
-std::unique_ptr<boost::regex> buildFilenameRegex(
-    const Settings& settings) noexcept {
-  if (!settings.filenamePattern.empty()) {
-    try {
-      return folly::make_unique<boost::regex>(settings.filenamePattern,
-                                              getRegexFlags(settings));
-    } catch (const std::exception& e) {
-      LOG(ERROR) << "Invalid filename pattern: " << e.what();
-      exit(1);
-    }
-  }
-  return nullptr;
-}
-
-/**
- * Builds the regex to match data.
- *
- * @returns   The regex or null (to match everything).
- */
-std::unique_ptr<boost::regex> buildDataRegex(
-    const Settings& settings) noexcept {
-  if (!settings.matchExpression.empty()) {
-    try {
-      return folly::make_unique<boost::regex>(settings.matchExpression,
-                                              getRegexFlags(settings));
-    } catch (const std::exception& e) {
-      LOG(ERROR) << "Invalid pattern: " << e.what();
-      exit(1);
-    }
-  }
-  return nullptr;
-}
-
 MessagePrinter::Options getOptions(const Settings& settings) {
   MessagePrinter::Options options;
 
@@ -278,7 +233,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   }
 
   // Builds data pattern
-  filter.pattern = buildDataRegex(settings);
+  filter.pattern = buildRegex(settings.matchExpression, settings.ignoreCase);
   if (filter.pattern) {
     if (settings.invertMatch) {
       std::cout << "Don't match: ";
@@ -293,7 +248,8 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
 
 void run(Settings settings) {
   // Builds filename pattern
-  auto filenamePattern = buildFilenameRegex(settings);
+  auto filenamePattern = buildRegex(settings.filenamePattern,
+                                    settings.ignoreCase);
   if (filenamePattern) {
     std::cout << "Filename pattern: " << *filenamePattern << std::endl;
   }
