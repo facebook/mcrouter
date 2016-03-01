@@ -22,8 +22,9 @@ void MessagePrinter::requestReady(uint64_t msgId,
                                   Request request,
                                   const folly::SocketAddress& from,
                                   const folly::SocketAddress& to) {
-  printMessage(msgId, std::move(request), request.fullKey().str(),
-               Request::OpType::mc_op, mc_res_unknown, from, to);
+  auto keyCopy = request.fullKey().str();
+  printMessage(msgId, std::move(request), keyCopy, Request::OpType::mc_op,
+               mc_res_unknown, from, to);
 }
 
 template <class Request>
@@ -33,14 +34,14 @@ void MessagePrinter::replyReady(uint64_t msgId,
                                 const folly::SocketAddress& from,
                                 const folly::SocketAddress& to) {
   auto res = reply.result();
-  printMessage(msgId, std::move(reply), std::move(key),
+  printMessage(msgId, std::move(reply), key,
                Request::OpType::mc_op, res, from, to);
 }
 
 template <class Message>
 void MessagePrinter::printMessage(uint64_t msgId,
                                   Message message,
-                                  std::string key,
+                                  const std::string& key,
                                   mc_op_t op,
                                   mc_res_t result,
                                   const folly::SocketAddress& from,
@@ -74,7 +75,7 @@ void MessagePrinter::printMessage(uint64_t msgId,
 
   out.append("{\n", format_.dataOpColor);
 
-  auto msgHeader = serializeMessageHeader(op, result, std::move(key));
+  auto msgHeader = serializeMessageHeader(op, result, key);
   if (!msgHeader.empty()) {
     out.append("  ");
     out.append(std::move(msgHeader), format_.headerColor);

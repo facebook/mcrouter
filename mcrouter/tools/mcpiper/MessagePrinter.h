@@ -88,7 +88,7 @@ class MessagePrinter {
   template <class Message>
   void printMessage(uint64_t msgId,
                     Message message,
-                    std::string key,
+                    const std::string& key,
                     mc_op_t op,
                     mc_res_t result,
                     const folly::SocketAddress& from,
