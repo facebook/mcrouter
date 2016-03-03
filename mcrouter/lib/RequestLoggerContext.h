@@ -40,7 +40,7 @@ struct RequestLoggerContext {
       routingKey(request.routingKey()),
       routingPrefix(request.routingPrefix()),
       requestName(Request::name),
-      requestValue(request.value()),
+      requestValue(request.valuePtrUnsafe()),
       requestClass(fiber_local::getRequestClass()),
       routingKeyHash(request.routingKeyHash()),
       replyValue(reply.value()),
@@ -60,7 +60,7 @@ struct RequestLoggerContext {
   const folly::StringPiece routingKey;
   const folly::StringPiece routingPrefix;
   const char* const requestName;
-  const folly::IOBuf& requestValue;
+  const folly::IOBuf* requestValue;
   const RequestClass requestClass;
   const uint32_t routingKeyHash;
 

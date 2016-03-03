@@ -24,7 +24,6 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
-#include "mcrouter/lib/RequestUtil.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
@@ -185,14 +184,15 @@ struct RecordingRoute {
 
     h_->saw_keys.push_back(req.fullKey().str());
     h_->sawOperations.push_back(Request::name);
-    h_->sawExptimes.push_back(exptime(req));
+    h_->sawExptimes.push_back(req.exptime());
     if (GetLike<Request>::value) {
       auto msg = createMcMsgRef(req.fullKey(), dataGet_.value_);
       msg->flags = dataGet_.flags_;
       return Reply(dataGet_.result_, std::move(msg));
     }
     if (UpdateLike<Request>::value) {
-      auto val = value(req).clone();
+      assert(req.valuePtrUnsafe() != nullptr);
+      auto val = req.valuePtrUnsafe()->clone();
       folly::StringPiece sp_value = coalesceAndGetRange(val);
       h_->sawValues.push_back(sp_value.str());
       auto msg = createMcMsgRef(req.fullKey(), sp_value);

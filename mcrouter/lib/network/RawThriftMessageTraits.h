@@ -46,6 +46,7 @@ struct RequestTraits<cpp2::McGetRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -54,6 +55,7 @@ struct RequestTraits<cpp2::McSetRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -62,6 +64,7 @@ struct RequestTraits<cpp2::McDeleteRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -70,6 +73,7 @@ struct RequestTraits<cpp2::McLeaseGetRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -78,6 +82,7 @@ struct RequestTraits<cpp2::McLeaseSetRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -86,6 +91,7 @@ struct RequestTraits<cpp2::McAddRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -94,6 +100,7 @@ struct RequestTraits<cpp2::McReplaceRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -102,6 +109,7 @@ struct RequestTraits<cpp2::McGetsRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -110,6 +118,7 @@ struct RequestTraits<cpp2::McCasRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -118,6 +127,7 @@ struct RequestTraits<cpp2::McIncrRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -126,6 +136,7 @@ struct RequestTraits<cpp2::McDecrRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -134,6 +145,7 @@ struct RequestTraits<cpp2::McMetagetRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -142,6 +154,7 @@ struct RequestTraits<cpp2::McVersionRequest> {
   static constexpr bool hasKey = false;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 template <>
@@ -150,6 +163,7 @@ struct RequestTraits<cpp2::McAppendRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -158,6 +172,7 @@ struct RequestTraits<cpp2::McPrependRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -166,6 +181,7 @@ struct RequestTraits<cpp2::McTouchRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
 };
 
 }} // facebook::memcache

@@ -15,7 +15,9 @@
 #include <folly/Range.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Keys.h"
+#include "mcrouter/lib/network/detail/RequestUtil.h"
 #include "mcrouter/lib/network/RawThriftMessageTraits.h"
 #include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
@@ -121,6 +123,30 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
 
   uint32_t routingKeyHash() const {
     return Keys::routingKeyHash();
+  }
+
+  uint32_t exptime() const {
+    return detail::exptime(*this);
+  }
+
+  void setExptime(int32_t expt) {
+    detail::setExptime(*this, expt);
+  }
+
+  const folly::IOBuf* valuePtrUnsafe() const {
+    return detail::valuePtrUnsafe(*this);
+  }
+
+  void setValue(folly::IOBuf valueData) {
+    detail::setValue(*this, std::move(valueData));
+  }
+
+  uint64_t flags() const {
+    return detail::flags(*this);
+  }
+
+  void setFlags(uint64_t f) {
+    detail::setFlags(*this, f);
   }
 
  private:

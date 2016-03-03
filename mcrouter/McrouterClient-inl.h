@@ -30,7 +30,7 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                              const ReplyT<Request>& reply,
                              UpdateLikeT<Request> = 0) {
 
-  auto valueBytes = req.value().computeChainDataLength();
+  auto valueBytes = req->get_value().computeChainDataLength();
   stats.recordUpdateRequest(req.fullKey().size(), valueBytes);
 }
 

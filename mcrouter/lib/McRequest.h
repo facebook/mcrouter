@@ -211,6 +211,14 @@ class McRequest {
     return valueData_;
   }
 
+  /**
+   * Hack to make interface of McRequestWithOp compatible with
+   * TypedThriftRequest in a few places, such as BigValueRoute.
+   */
+  const folly::IOBuf& get_value() const {
+    return value();
+  }
+
   folly::StringPiece valueRangeSlow() const {
     return folly::StringPiece(valueData_.coalesce());
   }
@@ -349,6 +357,14 @@ class McRequestWithOp {
     return *this;
   }
 
+  /**
+   * Hack to make interface of McRequestWithOp compatible with
+   * TypedThriftRequest in a few places, such as BigValueRoute.
+   */
+  const McRequest* operator->() const {
+    return &req_;
+  }
+
   McRequest moveMcRequest() {
     return std::move(req_);
   }
@@ -426,6 +442,9 @@ class McRequestWithOp {
   }
   const folly::IOBuf& value() const {
     return req_.value();
+  }
+  const folly::IOBuf* valuePtrUnsafe() const {
+    return &value();
   }
   folly::StringPiece valueRangeSlow() const {
     return req_.valueRangeSlow();

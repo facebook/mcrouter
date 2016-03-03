@@ -89,7 +89,7 @@ ReplyT<Request> BigValueRoute::route(const Request& req,
 
   using Reply = ReplyT<Request>;
 
-  if (req.value().computeChainDataLength() <= options_.threshold_) {
+  if (req->get_value().computeChainDataLength() <= options_.threshold_) {
     return ch_->route(req);
   }
 
@@ -135,7 +135,7 @@ std::pair<std::vector<ToRequest>,
           typename BigValueRoute::ChunksInfo>
 BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
   int num_chunks =
-      (req.value().computeChainDataLength() + options_.threshold_ - 1) /
+      (req->get_value().computeChainDataLength() + options_.threshold_ - 1) /
       options_.threshold_;
   ChunksInfo info(num_chunks);
 
@@ -144,7 +144,7 @@ BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
 
   auto base_key = req.fullKey();
   folly::IOBuf chunkValue;
-  folly::io::Cursor cursor(&req.value());
+  folly::io::Cursor cursor(&req->get_value());
   for (int i = 0; i < num_chunks; ++i) {
     cursor.cloneAtMost(chunkValue, options_.threshold_);
     big_set_reqs.emplace_back(createChunkKey(base_key, i, info.randSuffix()));

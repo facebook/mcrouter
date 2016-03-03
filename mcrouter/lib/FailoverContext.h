@@ -37,7 +37,7 @@ struct FailoverContext {
       fullKey(request.fullKey()),
       routingKey(request.routingKey()),
       keyWithoutRoute(request.keyWithoutRoute()),
-      requestValue(request.value()),
+      requestValue(request.valuePtrUnsafe()),
       normalValue(normal.value()),
       normalDestination(normal.destination().get()),
       normalResult(normal.result()),
@@ -56,7 +56,7 @@ struct FailoverContext {
   const folly::StringPiece routingKey;
   const folly::StringPiece routingPrefix;
   const folly::StringPiece keyWithoutRoute;
-  const folly::IOBuf& requestValue;
+  const folly::IOBuf* requestValue;
 
   /* Normal reply data */
   const folly::IOBuf& normalValue;
