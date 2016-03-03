@@ -32,7 +32,7 @@ class TypedThriftRequest;
  */
 template <class ThriftType>
 std::unique_ptr<folly::IOBuf> serializeThriftStruct(
-    TypedThriftMessage<ThriftType>& thriftStruct) {
+    const TypedThriftMessage<ThriftType>& thriftStruct) {
 
   apache::thrift::CompactProtocolWriter writer(
       apache::thrift::SHARE_EXTERNAL_BUFFER);

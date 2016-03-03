@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -60,7 +60,7 @@ class AsyncMcServerWorker {
       void* userCtxt = nullptr);
 
   /**
-   * Install onRequest callback to call for all new connections.
+   * Install onRequest callback to call for each request.
    *
    * The callback must be a class with public methods specializing the template
    * onRequest:
@@ -68,9 +68,8 @@ class AsyncMcServerWorker {
    * struct OnRequest {
    *   // ctx and req are guaranteed to be alive
    *   // until ctx.sendReply() is called, even after this method exits
-   *   template <class Request, class Operation>
-   *   void onRequest(McServerRequestContext& ctx,
-   *                  const Request& req, Operation);
+   *   template <class Request>
+   *   void onRequest(McServerRequestContext& ctx, const Request& req);
    * };
    *
    * Each onRequest call must eventually result in a call to ctx.sendReply().

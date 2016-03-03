@@ -15,6 +15,7 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace folly {
 class IOBuf;
@@ -135,6 +136,18 @@ class UmbrellaSerializedMessage {
   template <int Op>
   bool prepare(const McRequestWithMcOp<Op>& request, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut);
+
+  template <class ThriftType>
+  bool prepare(const TypedThriftRequest<ThriftType>&, uint64_t,
+               struct iovec*&, size_t&) {
+    return false;
+  }
+
+  template <class ThriftType>
+  bool prepare(const TypedThriftReply<ThriftType>&, uint64_t,
+               struct iovec*&, size_t&) {
+    return false;
+  }
 
  private:
   static constexpr size_t kMaxIovs = 16;

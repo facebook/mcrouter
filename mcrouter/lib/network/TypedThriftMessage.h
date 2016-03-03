@@ -67,6 +67,10 @@ class TypedThriftMessage {
 
 template <class M>
 class TypedThriftReply : public TypedThriftMessage<M> {
+ public:
+  mc_res_t result() const {
+    return this->get_result();
+  }
  private:
   template <class TMList, class Derived, class... Args>
   friend class ThriftMsgDispatcher;
@@ -107,6 +111,11 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     this->raw_.__isset.key = true;
     key.coalesce();
     Keys::update(getRange(key));
+  }
+
+  void stripRoutingPrefix() {
+    this->raw_.key.trimStart(routingPrefix().size());
+    Keys::clearRoutingPrefix();
   }
 
   folly::StringPiece keyWithoutRoute() const {

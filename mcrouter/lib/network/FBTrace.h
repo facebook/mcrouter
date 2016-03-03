@@ -33,12 +33,11 @@ class RequestHasFbTraceInfo {
   static constexpr bool value = sizeof(check<Request>(0)) == sizeof(char);
 };
 
-template<class Operation, class Request>
+template <class Operation, class Request>
 bool fbTraceOnSend(Operation, const McRequest& request, const AccessPoint& ap);
 
-template<class Operation, class Reply>
-void fbTraceOnReceive(Operation, const mc_fbtrace_info_s* fbtraceInfo,
-                      const Reply& reply);
+inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
+                             const mc_res_t result);
 
 }}  // facebook::memcache
 

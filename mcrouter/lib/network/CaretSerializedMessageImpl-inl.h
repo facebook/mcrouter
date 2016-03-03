@@ -34,6 +34,18 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
   return false;
 }
 
+template <class ThriftType>
+bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
+                                     size_t reqId,
+                                     struct iovec*& iovOut,
+                                     size_t& niovOut) noexcept {
+  constexpr size_t typeId =
+      IdFromType<typename TypedThriftRequest<ThriftType>::rawType,
+                 TRequestList>::value;
+
+  return fill(req, reqId, typeId, iovOut, niovOut);
+}
+
 template <int Op>
 typename std::enable_if<
     ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value,
@@ -60,7 +72,7 @@ bool CaretSerializedMessage::prepare(Reply&& reply,
 }
 
 template <class ThriftType>
-bool CaretSerializedMessage::fill(TypedThriftMessage<ThriftType>& tmsg,
+bool CaretSerializedMessage::fill(const TypedThriftMessage<ThriftType>& tmsg,
                                   uint32_t reqId,
                                   size_t typeId,
                                   struct iovec*& iovOut,
@@ -87,7 +99,9 @@ inline void CaretSerializedMessage::fillHeader(UmbrellaMessageInfo& info) {
 }
 
 template <class ThriftType>
-void CaretSerializedMessage::fillBody(TypedThriftMessage<ThriftType>& tmsg) {
+void CaretSerializedMessage::fillBody(
+    const TypedThriftMessage<ThriftType>& tmsg) {
+
   ioBuf_ = serializeThriftStruct(tmsg);
 
   /* the first iov in the iovs_ array is reserved for the protocol header,

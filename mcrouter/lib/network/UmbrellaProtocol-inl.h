@@ -12,10 +12,40 @@
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
 
 namespace detail {
+
+template <msg_field_t TagId> class Tag{};
+using CasTag = Tag<msg_cas>;
+using DeltaTag = Tag<msg_delta>;
+using ErrCodeTag = Tag<msg_err_code>;
+using ExptimeTag = Tag<msg_exptime>;
+using FlagsTag = Tag<msg_flags>;
+using LeaseTokenTag = Tag<msg_lease_id>;
+using NumberTag = Tag<msg_number>;
+using ResultTag = Tag<msg_result>;
+using ValueTag = Tag<msg_value>;
+
+template <class Operation>
+struct TagSet {
+  using Tags =
+    List<CasTag, DeltaTag, ErrCodeTag, ExptimeTag, FlagsTag,
+         LeaseTokenTag, NumberTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_get>> {
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_lease_get>> {
+  using Tags = List<FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
+};
 
 inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg) {
   reply.msg_ = std::move(msg);
@@ -30,17 +60,6 @@ uint32_t const kUmbrellaOpToMc[UM_NOPS] = {
 #define UM_OP(mc, um) [um] = mc,
 #include "mcrouter/lib/mc/umbrella_conv.h" /* nolint */
 };
-
-template <msg_field_t TagId> class Tag{};
-using CasTag = Tag<msg_cas>;
-using DeltaTag = Tag<msg_delta>;
-using ErrCodeTag = Tag<msg_err_code>;
-using ExptimeTag = Tag<msg_exptime>;
-using FlagsTag = Tag<msg_flags>;
-using LeaseTokenTag = Tag<msg_lease_id>;
-using NumberTag = Tag<msg_number>;
-using ResultTag = Tag<msg_result>;
-using ValueTag = Tag<msg_value>;
 
 template <class Tags>
 struct FieldPolicyHandler;
@@ -169,18 +188,28 @@ inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
   }
 }
 
-template <class Tags, class Op, class Message>
-void umbrellaParseMessage(Message& message, Op,
-                          const folly::IOBuf& source,
-                          const uint8_t* header, size_t nheader,
-                          const uint8_t* body, size_t nbody) {
+template <class Request>
+typename std::enable_if<IsCustomRequest<Request>::value, void>::type
+umbrellaParseMessage(ReplyT<Request>& message, const folly::IOBuf& source,
+                     const uint8_t* header, size_t nheader,
+                     const uint8_t* body, size_t nbody) {
+  LOG(ERROR) << "umbrellaParseMessage(TypedThriftRequest) not implemented";
+}
+
+template <class Request>
+typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
+umbrellaParseMessage(ReplyT<Request>& message, const folly::IOBuf& source,
+                     const uint8_t* header, size_t nheader,
+                     const uint8_t* body, size_t nbody) {
+  using Op = typename Request::OpType;
+
   auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
   size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
   if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
       != header + nheader) {
     throw std::runtime_error("Invalid number of entries");
   }
-  using Handler = FieldPolicyHandler<Tags>;
+  using Handler = FieldPolicyHandler<typename TagSet<Op>::Tags>;
   for (size_t i = 0; i < nentries; ++i) {
     // Process entries in the reverse order, since it's easier to handle
     // double fields that way.
@@ -234,38 +263,20 @@ void umbrellaParseMessage(Message& message, Op,
   }
 }
 
-template <class Operation>
-struct TagSet {
-  using Tags =
-    List<CasTag, DeltaTag, ErrCodeTag, ExptimeTag, FlagsTag,
-         LeaseTokenTag, NumberTag, ResultTag, ValueTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_get>> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_lease_get>> {
-  using Tags = List<FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
-};
-
 }  // detail
 
 template <class Request>
 ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
-                                    const uint8_t* header, size_t nheader,
-                                    const uint8_t* body, size_t nbody) {
+                                   const uint8_t* header, size_t nheader,
+                                   const uint8_t* body, size_t nbody) {
   using namespace detail;
 
   ReplyT<Request> reply;
-  umbrellaParseMessage<typename TagSet<Request>::Tags>(
-    reply, typename Request::OpType(), source, header, nheader, body, nbody);
+  umbrellaParseMessage<Request>(reply, source, header, nheader, body, nbody);
   return reply;
 }
 
-template<int Op>
+template <int Op>
 bool UmbrellaSerializedMessage::prepare(
     const McRequestWithMcOp<Op>& request,
     uint64_t reqid,

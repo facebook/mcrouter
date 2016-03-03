@@ -20,6 +20,8 @@ namespace memcache {
 
 template <class T>
 class TypedThriftMessage;
+template <class T>
+class TypedThriftRequest;
 
 /**
  * Class for serializing requests in the form of thrift structs.
@@ -54,6 +56,12 @@ class CaretSerializedMessage {
                struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
+  template <class ThriftType>
+  bool prepare(const TypedThriftRequest<ThriftType>& req,
+               size_t reqId,
+               struct iovec*& iovOut,
+               size_t& niovOut) noexcept;
+
   /**
    * Prepare replies for serialization
    *
@@ -71,7 +79,7 @@ class CaretSerializedMessage {
 
  private:
   template <class ThriftType>
-  bool fill(TypedThriftMessage<ThriftType>& tsg,
+  bool fill(const TypedThriftMessage<ThriftType>& tmsg,
             uint32_t reqId,
             size_t typeId,
             struct iovec*& iovOut,
@@ -96,7 +104,7 @@ class CaretSerializedMessage {
               size_t& niovOut);
 
   template <class ThriftType>
-  void fillBody(TypedThriftMessage<ThriftType>& tmsg);
+  void fillBody(const TypedThriftMessage<ThriftType>& tmsg);
 
   std::unique_ptr<folly::IOBuf> ioBuf_;
   static constexpr size_t kMaxIovs = 8;

@@ -29,10 +29,12 @@ struct ServerRequestContext {
       : ctx(std::move(ctx_)), req(std::move(req_)) {}
 };
 
-using ReplyFunction = void (*)(McServerRequestContext&& ctx, McReply&& reply);
-
 class ServerOnRequestCommon {
  public:
+  template <class Request>
+  using ReplyFunction = void (*)(McServerRequestContext&& ctx,
+                                 ReplyT<Request>&& reply);
+
   ServerOnRequestCommon(McrouterClient& client, bool retainSourceIp)
       : client_(client), retainSourceIp_(retainSourceIp) {}
 
@@ -53,7 +55,7 @@ class ServerOnRequestCommon {
   template <class Request>
   void send(McServerRequestContext&& ctx,
             Request&& req,
-            ReplyFunction replyFn) {
+            ReplyFunction<Request> replyFn) {
 
     auto rctx = folly::make_unique<ServerRequestContext<Request>>(
         std::move(ctx),
@@ -61,7 +63,7 @@ class ServerOnRequestCommon {
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();
 
-    auto cb = [sctx = std::move(rctx), replyFn](McReply&& reply) {
+    auto cb = [sctx = std::move(rctx), replyFn](ReplyT<Request>&& reply) {
       replyFn(std::move(sctx->ctx), std::move(reply));
     };
 

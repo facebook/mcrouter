@@ -162,8 +162,7 @@ McClientRequestContext<Request>::McClientRequestContext(
 template <class Request>
 void McClientRequestContext<Request>::sendTraceOnReply() {
 #ifndef LIBMC_FBTRACE_DISABLE
-  using Operation = typename Request::OpType;
-  fbTraceOnReceive(Operation(), fbtraceInfo_, replyStorage_.value());
+  fbTraceOnReceive(fbtraceInfo_, replyStorage_.value().result());
 #endif
 }
 

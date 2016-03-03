@@ -24,13 +24,14 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
   return false;
 }
 
-template<class Operation, class Reply>
-void fbTraceOnReceive(Operation, const mc_fbtrace_info_s* fbtraceInfo,
-                      const Reply& reply) {
+#ifdef LIBMC_FBTRACE_DISABLE
+
+inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
+                             const mc_res_t result) {
   // Do nothing by default.
 }
 
-#ifndef LIBMC_FBTRACE_DISABLE
+#else
 
 namespace {
 
@@ -99,9 +100,8 @@ fbTraceOnSend(const McRequestWithMcOp<McOp>& request,
     });
 }
 
-template<int McOp, class Reply>
-void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
-                      const Reply& reply) {
+inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
+                             const mc_res_t result) {
   if (fbtraceInfo == nullptr) {
     return;
   }
@@ -111,7 +111,7 @@ void fbTraceOnReceive(McOperation<McOp>, const mc_fbtrace_info_s* fbtraceInfo,
   fbtrace_item_t info[2];
   int idx = 0;
 
-  fbtrace_add_item(info, &idx, "result", mc_res_to_string(reply.result()));
+  fbtrace_add_item(info, &idx, "result", mc_res_to_string(result));
   fbtrace_add_item(info, &idx, nullptr, nullptr);
 
   /* fbtrace talks to scribe via thrift,

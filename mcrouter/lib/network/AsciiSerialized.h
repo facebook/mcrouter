@@ -32,7 +32,7 @@ class AsciiSerializedRequest {
   AsciiSerializedRequest& operator=(AsciiSerializedRequest&&) = delete;
 
   /**
-   * Prepare buffers for given Request/Operation pair.
+   * Prepare buffers for given Request.
    *
    * @param request
    * @param op

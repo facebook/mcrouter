@@ -102,7 +102,7 @@ McrouterClient::send(const Request& req,
   } else if (maxOutstandingError_) {
     auto r = counting_sem_lazy_nonblocking(&outstandingReqsSem_, 1);
     if (r == 0) {
-      callback(McReply(mc_res_local_error));
+      callback(ReplyT<Request>(mc_res_local_error));
     } else {
       assert(r == 1);
       sendRemoteThread(std::move(preq));
