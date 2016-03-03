@@ -135,15 +135,6 @@ class McRequest {
   explicit McRequest(folly::IOBuf keyData);
 
   /**
-   * Returns a reference to an mc_msg_t representing this request
-   * with the correct op set.
-   *
-   * The returned mc_msg_t might reference data owned by this McRequest,
-   * so the McRequest must be kept alive (thus "dependent").
-   */
-  McMsgRef dependentMsg(mc_op_t op) const;
-
-  /**
    * Full key without any routing prefix.
    * Note: differs from routing_key() if "|#|" is present.
    * routing_key() returns only the hashable part, where this method returns
@@ -400,9 +391,6 @@ class McRequestWithOp {
     req_.setFlags(f);
   }
 
-  McMsgRef dependentMsg(mc_op_t op) const {
-    return req_.dependentMsg(op);
-  }
   folly::StringPiece keyWithoutRoute() const {
     return req_.keyWithoutRoute();
   }

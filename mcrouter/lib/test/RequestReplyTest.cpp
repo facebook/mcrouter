@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -374,24 +374,20 @@ TEST(requestReply, mutableRequest) {
        Data referenced by req_c should still be kept alive. */
     McRequest req_c("dummy");
     {
-      mc_msg_t* mc_msg_a = mc_msg_new_with_key("test");
-      McRequest req_a(McMsgRef::moveRef(mc_msg_a));
+      McRequest req_a("test");
       auto req_b = req_a.clone();
       req_b.setExptime(1);
-      auto msg_a = req_a.dependentMsg(mc_op_get);
-      auto msg_b = req_b.dependentMsg(mc_op_get);
-      EXPECT_EQ(msg_a->exptime, 0);
-      EXPECT_TRUE(to<string>(msg_a->key) == "test");
-      EXPECT_EQ(msg_b->exptime, 1);
-      EXPECT_TRUE(to<string>(msg_b->key) == "test");
+      EXPECT_EQ(req_a.exptime(), 0);
+      EXPECT_TRUE(req_a.fullKey() == "test");
+      EXPECT_EQ(req_b.exptime(), 1);
+      EXPECT_TRUE(req_b.fullKey() == "test");
 
       req_c = req_b.clone();
       req_c.setExptime(2);
     }
 
-    auto msg_c = req_c.dependentMsg(mc_op_get);
-    EXPECT_EQ(msg_c->exptime, 2);
-    EXPECT_TRUE(to<string>(msg_c->key) == "test");
+    EXPECT_EQ(req_c.exptime(), 2);
+    EXPECT_TRUE(req_c.fullKey() == "test");
   }
 
   EXPECT_TRUE(mc_msg_num_outstanding() == 0);

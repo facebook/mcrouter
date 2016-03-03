@@ -58,25 +58,6 @@ bool McRequest::setValueFrom(const folly::IOBuf& source,
   return valueSize && cloneInto(valueData_, source, valueBegin, valueSize);
 }
 
-McMsgRef McRequest::dependentMsg(mc_op_t op) const {
-  auto into = createMcMsgRef();
-
-  into->op = op;
-  into->exptime = exptime_;
-  into->number = number_;
-  into->flags = flags_;
-  into->delta = delta_;
-  into->lease_id = leaseToken_;
-  into->cas = cas_;
-#ifndef LIBMC_FBTRACE_DISABLE
-  into->fbtrace_info = fbtraceInfo_.clone().release();
-#endif
-  into->key = to<nstring_t>(getRange(keyData_));
-  into->value = to<nstring_t>(valueRangeSlow());
-
-  return std::move(into);
-}
-
 folly::StringPiece McRequest::keyWithoutRoute() const {
   return keys_.keyWithoutRoute();
 }
