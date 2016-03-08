@@ -770,7 +770,7 @@ class ConfigPreprocessor::BuiltIns {
       }
       return res;
     } else if (dict.isArray()) {
-      dynamic res = {};
+      dynamic res = dynamic::array;
       checkLogic(from.isInt() && to.isInt(), "Slice: from/to is not an int");
       auto fromId = std::max(0L, from.asInt());
       auto toId = std::min(to.asInt() + 1, (int64_t)dict.size());
@@ -849,7 +849,7 @@ class ConfigPreprocessor::BuiltIns {
     const auto& to = ctx.at("to");
     checkLogic(from.isInt(), "Range: from is not an integer");
     checkLogic(to.isInt(), "Range: to is not an integer");
-    dynamic result = {};
+    dynamic result = dynamic::array;
     for (auto i = from.asInt(); i <= to.asInt(); ++i) {
       result.push_back(i);
     }
@@ -1462,8 +1462,7 @@ class ConfigPreprocessor::BuiltIns {
 
         if (useIt == json.items().end()) {
           if (result.isNull()) {
-            // array of one element
-            result = std::initializer_list<dynamic>{ std::move(itemRef) };
+            result = dynamic::array(std::move(itemRef));
           } else {
             result.push_back(std::move(itemRef));
           }
@@ -1502,9 +1501,7 @@ class ConfigPreprocessor::BuiltIns {
       if (auto jnoMatchResult = json.get_ptr("noMatchResult")) {
         return p->expandMacros(std::move(*jnoMatchResult), ctx);
       }
-      return from.isObject()
-        ? dynamic::object()
-        : dynamic(std::initializer_list<dynamic>{});
+      return from.isObject() ? dynamic::object() : dynamic::array();
     }
     return result;
   }

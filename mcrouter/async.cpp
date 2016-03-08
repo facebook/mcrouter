@@ -281,7 +281,7 @@ void asynclog_delete(proxy_t* proxy,
                      const AccessPoint& ap,
                      folly::StringPiece key,
                      folly::StringPiece poolName) {
-  dynamic json = {};
+  dynamic json = dynamic::array;
   const auto& host = ap.getHost();
   const auto& port = proxy->router().opts().asynclog_port_override == 0
     ? ap.getPort()
@@ -312,7 +312,7 @@ void asynclog_delete(proxy_t* proxy,
   // ["AS1.0", 1289416829.836, "C", ["10.0.0.1", 11302, "delete foo\r\n"]]
   // OR ["AS2.0", 1289416829.836, "C", {"f":"flavor","h":"[10.0.0.1]:11302",
   //                                    "p":"pool_name","k":"foo\r\n"}]
-  dynamic jsonOut = {};
+  dynamic jsonOut = dynamic::array;
   if (proxy->router().opts().use_asynclog_version2) {
     jsonOut.push_back(ASYNCLOG_MAGIC2);
   } else {
