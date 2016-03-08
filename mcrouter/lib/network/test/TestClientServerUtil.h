@@ -25,7 +25,7 @@ namespace facebook { namespace memcache { namespace test {
 
 class TestServerOnRequest {
  public:
-  TestServerOnRequest(bool& shutdown, bool outOfOrder);
+  TestServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder);
 
   void onRequest(McServerRequestContext&& ctx,
                  McRequestWithMcOp<mc_op_get>&& req);
@@ -43,7 +43,7 @@ class TestServerOnRequest {
   void processReply(McServerRequestContext&& context, McReply&& reply);
 
  private:
-  bool& shutdown_;
+  std::atomic<bool>& shutdown_;
   bool outOfOrder_;
   std::vector<std::pair<McServerRequestContext, McReply>> waitingReplies_;
 
@@ -80,12 +80,17 @@ class TestServer {
   size_t getAcceptedConns() const {
     return acceptedConns_.load();
   }
+
+  void shutdown() {
+    shutdown_.store(true);
+  }
+
  private:
   ListenSocket sock_;
   AsyncMcServer::Options opts_;
   std::unique_ptr<AsyncMcServer> server_;
   bool outOfOrder_{false};
-  bool shutdown_{false};
+  std::atomic<bool> shutdown_{false};
   std::atomic<size_t> acceptedConns_{0};
 
   TestServer(bool outOfOrder, bool useSsl,

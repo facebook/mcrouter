@@ -57,10 +57,9 @@ SSLContextProvider brokenSsl() {
   };
 }
 
-TestServerOnRequest::TestServerOnRequest(bool& shutdown, bool outOfOrder) :
-    shutdown_(shutdown),
-    outOfOrder_(outOfOrder) {
-}
+TestServerOnRequest::TestServerOnRequest(std::atomic<bool>& shutdown,
+                                         bool outOfOrder)
+    : shutdown_(shutdown), outOfOrder_(outOfOrder) {}
 
 void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
@@ -71,7 +70,7 @@ void TestServerOnRequest::onRequest(
     std::this_thread::sleep_for(std::chrono::seconds(1));
     processReply(std::move(ctx), McReply(mc_res_notfound));
   } else if (req.fullKey() == "shutdown") {
-    shutdown_ = true;
+    shutdown_.store(true);
     processReply(std::move(ctx), McReply(mc_res_notfound));
     flushQueue();
   } else {
@@ -148,8 +147,8 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
         ++acceptedConns_;
       });
 
-      while (!shutdown_) {
-        evb.loopOnce();
+      while (!shutdown_.load()) {
+        evb.loopOnce(EVLOOP_NONBLOCK);
       }
 
       LOG(INFO) << "Shutting down AsyncMcServer";

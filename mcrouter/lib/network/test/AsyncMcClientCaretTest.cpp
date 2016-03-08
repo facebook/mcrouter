@@ -27,7 +27,7 @@ class TypedServerOnRequest
       public TestServerOnRequest {
 
  public:
-  TypedServerOnRequest(bool& shutdown, bool outOfOrder)
+  TypedServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder)
       : TestServerOnRequest(shutdown, outOfOrder) {}
 
   void onTypedMessage(TypedThriftRequest<cpp2::McGetRequest>&& treq,

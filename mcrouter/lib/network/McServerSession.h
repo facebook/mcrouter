@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,6 +10,8 @@
 #pragma once
 
 #include <folly/IntrusiveList.h>
+#include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
 #include <folly/io/async/EventBase.h>
@@ -30,6 +32,7 @@ class WriteBufferQueue;
  */
 class McServerSession :
       public folly::DelayedDestruction,
+      private folly::AsyncSSLSocket::HandshakeCB,
       private folly::AsyncTransportWrapper::ReadCallback,
       private folly::AsyncTransportWrapper::WriteCallback {
  private:
@@ -127,6 +130,15 @@ class McServerSession :
     return socketAddress_;
   }
 
+  /**
+   * @return  the client's common name obtained from the
+   *          SSL cert if this is an SSL session. Else it
+   *          returns empty string.
+   */
+  folly::StringPiece getClientCommonName() const noexcept {
+    return clientCommonName_;
+  }
+
  private:
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::SocketAddress socketAddress_;
@@ -138,6 +150,12 @@ class McServerSession :
   AsyncMcServerWorkerOptions options_;
   void* userCtxt_{nullptr};
   std::shared_ptr<Fifo> debugFifo_;
+
+  /**
+   * If this session corresponds to an SSL session then
+   * this is set to the common name from client cert
+   */
+  std::string clientCommonName_;
 
   enum State {
     STREAMING,  /* close() was not called */
@@ -300,6 +318,16 @@ class McServerSession :
   void writeErr(size_t bytesWritten,
                 const folly::AsyncSocketException& ex)
     noexcept override;
+
+
+  /* AsyncSSLSocket::HandshakeCB interface */
+  bool handshakeVer(folly::AsyncSSLSocket* sock,
+                    bool preverifyOk,
+                    X509_STORE_CTX* ctx) noexcept override;
+  void handshakeSuc(folly::AsyncSSLSocket* sock) noexcept override;
+  void handshakeErr(
+      folly::AsyncSSLSocket* sock,
+      const folly::AsyncSocketException& ex) noexcept override;
 
   void onTransactionStarted(bool isSubRequest);
   void onTransactionCompleted(bool isSubRequest);

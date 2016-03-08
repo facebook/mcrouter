@@ -19,51 +19,6 @@
 #include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook { namespace memcache {
-namespace {
-using folly::AsyncSSLSocket;
-
-class SimpleHandshakeCallback : public AsyncSSLSocket::HandshakeCB {
- public:
-  bool handshakeVer(AsyncSSLSocket* sock,
-                    bool preverifyOk,
-                    X509_STORE_CTX* ctx) noexcept override {
-    if (!preverifyOk) {
-      return false;
-    }
-    // XXX I'm assuming that this will be the case as a result of
-    // preverifyOk being true
-    DCHECK(X509_STORE_CTX_get_error(ctx) == X509_V_OK);
-
-    // So the interesting thing is that this always returns the depth of
-    // the cert it's asking you to verify, and the error_ assumes to be
-    // just a poorly named function.
-    auto certDepth = X509_STORE_CTX_get_error_depth(ctx);
-
-    // Depth is numbered from the peer cert going up.  For anything in the
-    // chain, let's just leave it to openssl to figure out it's validity.
-    // We may want to limit the chain depth later though.
-    if (certDepth != 0) {
-      return preverifyOk;
-    }
-
-    auto cert = X509_STORE_CTX_get_current_cert(ctx);
-    sockaddr_storage addrStorage;
-    socklen_t addrLen = 0;
-    if (!folly::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
-            ctx, &addrStorage, &addrLen)) {
-      return false;
-    }
-    return folly::OpenSSLUtils::validatePeerCertNames(
-        cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
-  }
-  void handshakeSuc(AsyncSSLSocket *sock) noexcept override { }
-  void handshakeErr(
-      AsyncSSLSocket *sock,
-      const folly::AsyncSocketException& ex)
-    noexcept override { }
-};
-SimpleHandshakeCallback simpleHandshakeCallback;
-} // anonymous
 
 AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
                                          folly::EventBase& eventBase)
@@ -81,7 +36,6 @@ bool AsyncMcServerWorker::addSecureClientSocket(
   folly::AsyncSSLSocket::UniquePtr sslSocket(
       new folly::AsyncSSLSocket(
           context, &eventBase_, fd, /* server = */ true));
-  sslSocket->sslAccept(&simpleHandshakeCallback, /* timeout = */ 0);
   return addClientSocket(std::move(sslSocket), userCtxt);
 }
 

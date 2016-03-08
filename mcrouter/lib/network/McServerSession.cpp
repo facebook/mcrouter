@@ -111,6 +111,11 @@ McServerSession::McServerSession(
     // std::system_error or other exception, leave IP address empty
     LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
+
+  auto socket = transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
+  if (socket != nullptr) {
+    socket->sslAccept(this, /* timeout = */ 0);
+  }
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -462,4 +467,56 @@ void McServerSession::writeErr(
   close();
 }
 
-}}  // facebook::memcache
+bool McServerSession::handshakeVer(folly::AsyncSSLSocket*,
+                                   bool preverifyOk,
+                                   X509_STORE_CTX* ctx) noexcept {
+  if (!preverifyOk) {
+    return false;
+  }
+  // XXX I'm assuming that this will be the case as a result of
+  // preverifyOk being true
+  DCHECK(X509_STORE_CTX_get_error(ctx) == X509_V_OK);
+
+  // So the interesting thing is that this always returns the depth of
+  // the cert it's asking you to verify, and the error_ assumes to be
+  // just a poorly named function.
+  auto certDepth = X509_STORE_CTX_get_error_depth(ctx);
+
+  // Depth is numbered from the peer cert going up.  For anything in the
+  // chain, let's just leave it to openssl to figure out it's validity.
+  // We may want to limit the chain depth later though.
+  if (certDepth != 0) {
+    return preverifyOk;
+  }
+
+  auto cert = X509_STORE_CTX_get_current_cert(ctx);
+  sockaddr_storage addrStorage;
+  socklen_t addrLen = 0;
+  if (!folly::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
+          ctx, &addrStorage, &addrLen)) {
+    return false;
+  }
+  return folly::OpenSSLUtils::validatePeerCertNames(
+      cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
+}
+
+void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
+  auto cert = sock->getPeerCert();
+  if (cert == nullptr) {
+    return;
+  }
+  auto sub = X509_get_subject_name(cert.get());
+  if (sub != nullptr) {
+    char cn[ub_common_name + 1];
+    const auto res =
+        X509_NAME_get_text_by_NID(sub, NID_commonName, cn, ub_common_name);
+    if (res > 0) {
+      clientCommonName_.assign(std::string(cn, res));
+    }
+  }
+}
+
+void McServerSession::handshakeErr(
+    folly::AsyncSSLSocket*, const folly::AsyncSocketException&) noexcept {}
+}
+} // facebook::memcache
