@@ -65,7 +65,7 @@ McServerSession& McServerSession::create(
     std::move(onShutdown),
     std::move(options),
     userCtxt,
-    debugFifo
+    std::move(debugFifo)
   );
 
   assert(ptr->state_ == STREAMING);
@@ -98,7 +98,7 @@ McServerSession::McServerSession(
       onShutdown_(std::move(onShutdown)),
       options_(std::move(options)),
       userCtxt_(userCtxt),
-      debugFifo_(debugFifo),
+      debugFifo_(std::move(debugFifo)),
       parser_(*this,
               options_.requestsPerRead,
               options_.minBufferSize,
