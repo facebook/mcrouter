@@ -492,11 +492,11 @@ bool McServerSession::handshakeVer(folly::AsyncSSLSocket*,
   auto cert = X509_STORE_CTX_get_current_cert(ctx);
   sockaddr_storage addrStorage;
   socklen_t addrLen = 0;
-  if (!folly::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
+  if (!folly::ssl::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
           ctx, &addrStorage, &addrLen)) {
     return false;
   }
-  return folly::OpenSSLUtils::validatePeerCertNames(
+  return folly::ssl::OpenSSLUtils::validatePeerCertNames(
       cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
 }
 
