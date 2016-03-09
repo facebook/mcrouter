@@ -87,7 +87,7 @@ void runTest(const std::string& testName, const folly::dynamic& testObj) {
   if (!testObj.count("macros")) {
     throw std::logic_error("TestObj without macros");
   }
-  folly::dynamic consts = {};
+  folly::dynamic consts = folly::dynamic::array;
   if (testObj.count("consts")) {
     consts = testObj["consts"];
   }

@@ -68,7 +68,7 @@ TEST(libmcrouter, sanity) {
   MCRouterTestClient client("sanity", opts);
 
   int nkeys = 100;
-  dynamic keys = {};
+  dynamic keys = dynamic::array;
   dynamic kv_pairs = dynamic::object;
   keys.resize(nkeys);
   for (dynamic i = 0; i < nkeys; i ++) {
