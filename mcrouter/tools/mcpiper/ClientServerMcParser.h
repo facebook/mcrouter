@@ -75,9 +75,7 @@ class ClientServerMcParser : private McParser::ParserCallback {
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
-                      const uint8_t* header,
-                      const uint8_t* body,
-                      const folly::IOBuf& bodyBuffer) override;
+                      const folly::IOBuf& buffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
 

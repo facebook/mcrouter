@@ -43,35 +43,44 @@ void ClientServerMcParser<Callback>::reset() noexcept {
 
 template <class Callback>
 bool ClientServerMcParser<Callback>::umMessageReady(
-    const UmbrellaMessageInfo& info, const uint8_t* header,
-    const uint8_t* body, const folly::IOBuf& bodyBuffer) {
+    const UmbrellaMessageInfo& info, const folly::IOBuf& buffer) {
   try {
-    if (umbrellaIsReply(header, info.headerSize)) {
+    if (umbrellaIsReply(buffer.data(), info.headerSize)) {
       // Reply
-      uint64_t id = umbrellaDetermineReqId(header, info.headerSize);
-      mc_op_t op = umbrellaDetermineOperation(header, info.headerSize);
+      uint64_t id = umbrellaDetermineReqId(buffer.data(), info.headerSize);
+      mc_op_t op = umbrellaDetermineOperation(buffer.data(), info.headerSize);
       switch (op) {
-#define MC_OP(MC_OPERATION)                                                   \
-        case MC_OPERATION::mc_op:                                             \
-          forwardReply<McRequestWithOp<MC_OPERATION>>(id,                     \
-              parseReply<McRequestWithOp<MC_OPERATION>>(info, header,         \
-                                                        body, bodyBuffer));   \
+#define MC_OP(MC_OPERATION)                                                 \
+        case MC_OPERATION::mc_op:                                           \
+          forwardReply<McRequestWithOp<MC_OPERATION>>(                      \
+              id,                                                           \
+              parseReply<McRequestWithOp<MC_OPERATION>>(                    \
+                  info, buffer.data(),                                      \
+                  buffer.data() + info.headerSize,                          \
+                  buffer));                                                 \
           break;
 #include "mcrouter/lib/McOpList.h"
         default:
-          forwardReply<McRequestWithMcOp<mc_op_unknown>>(id,
-              parseReply<McRequestWithMcOp<mc_op_unknown>>(info, header,
-                                                           body, bodyBuffer));
+          forwardReply<McRequestWithMcOp<mc_op_unknown>>(
+              id,
+              parseReply<McRequestWithMcOp<mc_op_unknown>>(
+                  info,
+                  buffer.data(),
+                  buffer.data() + info.headerSize,
+                  buffer));
           break;
       }
     } else {
       // Request
       mc_op_t op;
       uint64_t id;
-      auto req = umbrellaParseRequest(bodyBuffer,
-                                      header, info.headerSize,
-                                      body, info.bodySize,
-                                      op, id);
+      auto req = umbrellaParseRequest(buffer,
+                                      buffer.data(),
+                                      info.headerSize,
+                                      buffer.data() + info.headerSize,
+                                      info.bodySize,
+                                      op,
+                                      id);
       switch (op) {
 #define MC_OP(MC_OPERATION)                                                   \
         case MC_OPERATION::mc_op:                                             \

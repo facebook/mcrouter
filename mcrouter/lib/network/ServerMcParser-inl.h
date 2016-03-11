@@ -58,23 +58,24 @@ void ServerMcParser<Callback>::requestReadyHelper(McRequest&& req,
 
 template <class Callback>
 bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
-                                              const uint8_t* header,
-                                              const uint8_t* body,
-                                              const folly::IOBuf& bodyBuffer) {
+                                              const folly::IOBuf& buffer) {
 
   try {
     if (info.version == UmbrellaVersion::TYPED_MESSAGE) {
       folly::IOBuf trim;
-      bodyBuffer.cloneOneInto(trim);
-      trim.trimStart(body - bodyBuffer.data());
+      buffer.cloneOneInto(trim);
+      trim.trimStart(info.headerSize);
       callback_.typedRequestReady(info.typeId, trim, info.reqId);
     } else {
       mc_op_t op;
       uint64_t reqid;
-      auto req = umbrellaParseRequest(bodyBuffer,
-                                      header, info.headerSize,
-                                      body, info.bodySize,
-                                      op, reqid);
+      auto req = umbrellaParseRequest(buffer,
+                                      buffer.data(),
+                                      info.headerSize,
+                                      buffer.data() + info.headerSize,
+                                      info.bodySize,
+                                      op,
+                                      reqid);
       /* Umbrella requests never include a result and are never 'noreply' */
       requestReadyHelper(std::move(req), op, reqid,
                          /* result= */ mc_res_unknown,

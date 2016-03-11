@@ -65,6 +65,9 @@ void umbrellaCaretTest(SSLContextProvider ssl) {
   client.sendGet("hold", mc_res_found);
   client.sendGet("test3", mc_res_found);
   client.sendGet("test4", mc_res_found);
+  client.sendGet("value_size:4096", mc_res_found);
+  client.sendGet("value_size:8192", mc_res_found);
+  client.sendGet("value_size:16384", mc_res_found);
   client.waitForReplies(3);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();

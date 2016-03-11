@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -46,15 +46,15 @@ void McParser::shrinkBuffers() {
 
 void McParser::reset() {
   readBuffer_.clear();
-  umBodyBuffer_.reset();
+  umMsgBuffer_.reset();
 }
 
 std::pair<void*, size_t> McParser::getReadBuffer() {
-  if (protocol_ == mc_umbrella_protocol
-      && umBodyBuffer_) {
+  if (protocol_ == mc_umbrella_protocol && umMsgBuffer_) {
     /* We're reading in umbrella message body */
-    return std::make_pair(umBodyBuffer_->writableTail(),
-                          umMsgInfo_.bodySize - umBodyBuffer_->length());
+    return std::make_pair(
+        umMsgBuffer_->writableTail(),
+        umMsgInfo_.headerSize + umMsgInfo_.bodySize - umMsgBuffer_->length());
   } else {
     readBuffer_.unshare();
     if (!readBuffer_.length() && readBuffer_.capacity() > 0) {
@@ -111,11 +111,7 @@ bool McParser::readUmbrellaData() {
     auto messageSize = umMsgInfo_.headerSize + umMsgInfo_.bodySize;
     if (readBuffer_.length() >= messageSize) {
       /* 1) we already have the entire message */
-      if (!callback_.umMessageReady(
-            umMsgInfo_,
-            readBuffer_.data(),
-            readBuffer_.data() + umMsgInfo_.headerSize,
-            readBuffer_)) {
+      if (!callback_.umMessageReady(umMsgInfo_, readBuffer_)) {
         readBuffer_.clear();
         return false;
       }
@@ -126,15 +122,15 @@ bool McParser::readUmbrellaData() {
                messageSize - readBuffer_.length() >
                minBufferSize_) {
       /* 2) we have the entire header, but body is incomplete.
-         Copy the partially read body into the new buffer.
+         Copy the read data into the new buffer.
          TODO: this copy could be eliminated, but needs
          some modification of umbrella library. */
-      auto partial = readBuffer_.length() - umMsgInfo_.headerSize;
-      umBodyBuffer_ = folly::IOBuf::copyBuffer(
-        readBuffer_.data() + umMsgInfo_.headerSize,
-        partial,
-        /* headroom= */ 0,
-        /* minTailroom= */ umMsgInfo_.bodySize - partial);
+      umMsgBuffer_ = folly::IOBuf::copyBuffer(
+          readBuffer_.data(),
+          readBuffer_.length(),
+          /* headroom= */ 0,
+          /* minTailroom= */ umMsgInfo_.headerSize + umMsgInfo_.bodySize -
+              readBuffer_.length());
       return true;
     }
     /* 3) else header is incomplete */
@@ -150,15 +146,12 @@ bool McParser::readDataAvailable(size_t len) {
     }
   };
 
-  if (umBodyBuffer_) {
-    umBodyBuffer_->append(len);
-    if (umBodyBuffer_->length() == umMsgInfo_.bodySize) {
-      auto res = callback_.umMessageReady(umMsgInfo_,
-                                          readBuffer_.data(),
-                                          umBodyBuffer_->data(),
-                                          *umBodyBuffer_);
+  if (umMsgBuffer_) {
+    umMsgBuffer_->append(len);
+    if (umMsgBuffer_->length() == umMsgInfo_.headerSize + umMsgInfo_.bodySize) {
+      auto res = callback_.umMessageReady(umMsgInfo_, *umMsgBuffer_);
       readBuffer_.clear();
-      umBodyBuffer_.reset();
+      umMsgBuffer_.reset();
       return res;
     }
     return true;

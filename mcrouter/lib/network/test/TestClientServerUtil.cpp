@@ -74,7 +74,15 @@ void TestServerOnRequest::onRequest(
     processReply(std::move(ctx), McReply(mc_res_notfound));
     flushQueue();
   } else {
-    std::string value = req.fullKey() == "empty" ? "" : req.fullKey().str();
+    std::string value;
+    if (req.fullKey().startsWith("value_size:")) {
+      auto key = req.fullKey();
+      key.removePrefix("value_size:");
+      size_t valSize = folly::to<size_t>(key);
+      value = std::string(valSize, 'a');
+    } else if (req.fullKey() != "empty") {
+      value = req.fullKey().str();
+    }
     McReply foundReply = McReply(mc_res_found, createMcMsgRef(req.fullKey(),
                                                               value));
     if (req.fullKey() == "hold") {
@@ -231,6 +239,13 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
           if (req.fullKey() == "empty") {
             checkLogic(reply.hasValue(), "Reply has no value");
             checkLogic(value.empty(), "Expected empty value, got {}", value);
+          } else if (req.fullKey().startsWith("value_size:")) {
+            auto key = req.fullKey();
+            key.removePrefix("value_size:");
+            size_t valSize = folly::to<size_t>(key);
+            checkLogic(value.size() == valSize,
+                       "Expected value of size {}, got {}",
+                       valSize, value.size());
           } else {
             checkLogic(value == req.fullKey(),
                        "Expected {}, got {}", req.fullKey(), value);

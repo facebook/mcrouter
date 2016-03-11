@@ -55,8 +55,7 @@ class ClientMcParser : private McParser::ParserCallback {
   McClientAsciiParser asciiParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
   void (ClientMcParser<Callback>::*umbrellaForwarder_)(
-    const UmbrellaMessageInfo&, const uint8_t*, const uint8_t*,
-    const folly::IOBuf&, uint64_t){nullptr};
+      const UmbrellaMessageInfo&, const folly::IOBuf&, uint64_t){nullptr};
   CaretReplyConverter converter_;
 
   Callback& callback_;
@@ -68,16 +67,12 @@ class ClientMcParser : private McParser::ParserCallback {
 
   template <class Request>
   void forwardUmbrellaReply(const UmbrellaMessageInfo& info,
-                            const uint8_t* header,
-                            const uint8_t* body,
-                            const folly::IOBuf& bodyBuffer,
+                            const folly::IOBuf& buffer,
                             uint64_t reqId);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
-                      const uint8_t* header,
-                      const uint8_t* body,
-                      const folly::IOBuf& bodyBuffer) override;
+                      const folly::IOBuf& buffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
 

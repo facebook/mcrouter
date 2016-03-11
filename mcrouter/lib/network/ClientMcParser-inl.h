@@ -73,20 +73,20 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardUmbrellaReply(
-  const UmbrellaMessageInfo& info,
-  const uint8_t* header,
-  const uint8_t* body,
-  const folly::IOBuf& bodyBuffer,
-  uint64_t reqId) {
-
+    const UmbrellaMessageInfo& info,
+    const folly::IOBuf& buffer,
+    uint64_t reqId) {
   if (info.version == UmbrellaVersion::BASIC) {
-    auto reply = umbrellaParseReply<Request>(
-        bodyBuffer, header, info.headerSize, body, info.bodySize);
+    auto reply = umbrellaParseReply<Request>(buffer,
+                                             buffer.data(),
+                                             info.headerSize,
+                                             buffer.data() + info.headerSize,
+                                             info.bodySize);
     callback_.replyReady(std::move(reply), reqId);
   } else {
     ReplyT<Request> reply;
     folly::IOBuf trim;
-    bodyBuffer.cloneOneInto(trim);
+    buffer.cloneOneInto(trim);
     trim.trimStart(info.headerSize);
 
     // Task: 8257655 - Conversion should be moved to ProxyDestination
@@ -97,9 +97,7 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
 
 template <class Callback>
 bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
-                                              const uint8_t* header,
-                                              const uint8_t* body,
-                                              const folly::IOBuf& bodyBuffer) {
+                                              const folly::IOBuf& buffer) {
   if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
     std::string reason =
         folly::sformat("Expected {} protocol, but received umbrella!",
@@ -111,12 +109,12 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
   try {
     size_t reqId;
     if (info.version == UmbrellaVersion::BASIC) {
-      reqId = umbrellaDetermineReqId(header, info.headerSize);
+      reqId = umbrellaDetermineReqId(buffer.data(), info.headerSize);
     } else {
       reqId = info.reqId;
     }
     if (callback_.nextReplyAvailable(reqId)) {
-      (this->*umbrellaForwarder_)(info, header, body, bodyBuffer, reqId);
+      (this->*umbrellaForwarder_)(info, buffer, reqId);
     }
     // Consume the message, but don't fail.
     return true;

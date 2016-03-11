@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,19 +30,13 @@ class McParser {
      * We fully parsed an umbrella message and want to call RequestReady or
      * ReplyReady callback.
      *
-     * @param umMsgInfo
-     * @param header      Pointer to a contigous block of headerSize bytes
-     * @param headerSize
-     * @param body        Pointer to a contigous block of bodySize bytes,
-     *                    must point inside bodyBuffer.
-     * @param bodySize
-     * @param bodyBuffer  Cloneable buffer that holds body bytes.
+     * @param umMsgInfo   Message information
+     * @param buffer      Coalesced IOBuf that holds the entire message
+     *                    (header and body)
      * @return            False on any parse errors.
      */
     virtual bool umMessageReady(const UmbrellaMessageInfo& info,
-                                const uint8_t* header,
-                                const uint8_t* body,
-                                const folly::IOBuf& bodyBuffer) = 0;
+                                const folly::IOBuf& buffer) = 0;
 
     /**
      * Handle ascii data read.
@@ -122,10 +116,11 @@ class McParser {
   UmbrellaMessageInfo umMsgInfo_;
 
   /**
-   * If this is nonempty, we're currently reading in umbrella message body.
-   * We know we're done when this has as much data as umMsgInfo_.body_size
+   * If this is nonempty, we're currently reading in umbrella message.
+   * We know we're done when this has as much data as
+   * umMsgInfo_.headerSize + umMsgInfo_.body_size.
    */
-  std::unique_ptr<folly::IOBuf> umBodyBuffer_;
+  std::unique_ptr<folly::IOBuf> umMsgBuffer_;
 
   bool readUmbrellaData();
 
