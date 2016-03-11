@@ -18,6 +18,7 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/AccessPoint.h"
@@ -27,8 +28,6 @@
 using asox_timer_t = void*;
 
 namespace facebook { namespace memcache {
-
-class McReply;
 
 namespace mcrouter {
 
@@ -138,13 +137,13 @@ class ProxyDestination {
 
   void schedule_next_probe();
 
-  void handle_tko(const McReply& reply, bool is_probe_req);
+  void handle_tko(const mc_res_t result, bool is_probe_req);
 
   // on probe timer
   void on_timer(const asox_timer_t timer);
 
   // Process tko, stats and duration timer.
-  void onReply(const McReply& reply, DestinationRequestCtx& destreqCtx);
+  void onReply(const mc_res_t result, DestinationRequestCtx& destreqCtx);
 
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();

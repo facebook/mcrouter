@@ -16,6 +16,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/OptionsUtil.h"
@@ -106,7 +107,7 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
       auto reply = pdstn->getAsyncMcClient().sendSync(
         *pdstn->probe_req,
         pdstn->shortestTimeout_);
-      pdstn->handle_tko(reply, true);
+      pdstn->handle_tko(reply.result(), true);
       pdstn->probe_req.reset();
     });
   }
@@ -126,20 +127,20 @@ void ProxyDestination::stop_sending_probes() {
   }
 }
 
-void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
+void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
   if (proxy->router().opts().disable_tko_tracking) {
     return;
   }
 
-  if (reply.isError()) {
-    if (reply.isHardTkoError()) {
+  if (isErrorResult(result)) {
+    if (isHardTkoErrorResult(result)) {
       if (tracker->recordHardFailure(this)) {
-        onTkoEvent(TkoLogEvent::MarkHardTko, reply.result());
+        onTkoEvent(TkoLogEvent::MarkHardTko, result);
         start_sending_probes();
       }
-    } else if (reply.isSoftTkoError()) {
+    } else if (isSoftTkoErrorResult(result)) {
       if (tracker->recordSoftFailure(this)) {
-        onTkoEvent(TkoLogEvent::MarkSoftTko, reply.result());
+        onTkoEvent(TkoLogEvent::MarkSoftTko, result);
         start_sending_probes();
       }
     }
@@ -148,7 +149,7 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
 
   if (tracker->isTko()) {
     if (is_probe_req && tracker->recordSuccess(this)) {
-      onTkoEvent(TkoLogEvent::UnMarkTko, reply.result());
+      onTkoEvent(TkoLogEvent::UnMarkTko, result);
       stop_sending_probes();
     }
     return;
@@ -157,14 +158,14 @@ void ProxyDestination::handle_tko(const McReply& reply, bool is_probe_req) {
   tracker->recordSuccess(this);
 }
 
-void ProxyDestination::onReply(const McReply& reply,
+void ProxyDestination::onReply(const mc_res_t result,
                                DestinationRequestCtx& destreqCtx) {
-  handle_tko(reply, false);
+  handle_tko(result, false);
 
   if (!stats_.results) {
     stats_.results = folly::make_unique<std::array<uint64_t, mc_nres>>();
   }
-  ++(*stats_.results)[reply.result()];
+  ++(*stats_.results)[result];
   destreqCtx.endTime = nowUs();
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
@@ -331,7 +332,7 @@ void ProxyDestination::initializeAsyncMcClient() {
         setState(State::kClosed);
       } else {
         setState(State::kDown);
-        handle_tko(McReply(mc_res_connect_error), /* is_probe_req= */ false);
+        handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
       }
     });
 

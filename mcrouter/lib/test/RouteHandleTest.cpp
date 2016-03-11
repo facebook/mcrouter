@@ -157,7 +157,7 @@ TEST(routeHandleTest, allSyncTyped) {
 
         /* Check that we got the worst result back */
         EXPECT_EQ(mc_res_remote_error, reply.result());
-        EXPECT_EQ("c", toString(reply.value()));
+        EXPECT_EQ("c", toString(*reply->get_value()));
 
         for (auto& h : test_handles) {
           EXPECT_EQ(vector<string>{"key"}, h->saw_keys);
@@ -282,7 +282,7 @@ TEST(routeHandleTest, allInitialTyped) {
 
         /* Check that we got the initial result back */
         EXPECT_EQ(mc_res_found, reply.result());
-        EXPECT_EQ("a", toString(reply.value()));
+        EXPECT_EQ("a", toString(*reply->get_value()));
       }
     });
 
@@ -501,7 +501,7 @@ TEST(routeHandleTest, allFastestTyped) {
         /* Check that we got the fastest non-error result back
            ('b' is paused) */
         EXPECT_EQ(mc_res_found, reply.result());
-        EXPECT_EQ("c", toString(reply.value()));
+        EXPECT_EQ("c", toString(*reply->get_value()));
 
         EXPECT_EQ(vector<string>{"key"}, test_handles[0]->saw_keys);
         EXPECT_EQ(vector<string>{}, test_handles[1]->saw_keys);
@@ -580,7 +580,7 @@ TEST(routeHandleTest, hashNoSaltTyped) {
       req.setKey("0");
 
       auto reply = rh.route(req);
-      EXPECT_EQ("a", toString(reply.value()));
+      EXPECT_EQ("a", toString(*reply->get_value()));
     });
 
   fm.run([&]() {
@@ -588,7 +588,7 @@ TEST(routeHandleTest, hashNoSaltTyped) {
       req.setKey("1");
 
       auto reply = rh.route(req);
-      EXPECT_EQ("b", toString(reply.value()));
+      EXPECT_EQ("b", toString(*reply->get_value()));
     });
 
   fm.run([&]() {
@@ -596,7 +596,7 @@ TEST(routeHandleTest, hashNoSaltTyped) {
       req.setKey("2");
 
       auto reply = rh.route(req);
-      EXPECT_EQ("c", toString(reply.value()));
+      EXPECT_EQ("c", toString(*reply->get_value()));
     });
 }
 
@@ -653,7 +653,7 @@ TEST(routeHandleTest, hashSaltTyped) {
 
       auto reply = rh.route(req);
       /* 01 % 3 == 1 */
-      EXPECT_EQ("b", toString(reply.value()));
+      EXPECT_EQ("b", toString(*reply->get_value()));
     });
 
   fm.run([&]() {
@@ -662,7 +662,7 @@ TEST(routeHandleTest, hashSaltTyped) {
 
       auto reply = rh.route(req);
       /* 11 % 3 == 2 */
-      EXPECT_EQ("c", toString(reply.value()));
+      EXPECT_EQ("c", toString(*reply->get_value()));
     });
 
   fm.run([&]() {
@@ -671,6 +671,6 @@ TEST(routeHandleTest, hashSaltTyped) {
 
       auto reply = rh.route(req);
       /* 21 % 3 == 0 */
-      EXPECT_EQ("a", toString(reply.value()));
+      EXPECT_EQ("a", toString(*reply->get_value()));
     });
 }

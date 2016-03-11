@@ -13,6 +13,7 @@
 #include <folly/experimental/fibers/WhenN.h>
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
+#include <folly/Range.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
 
@@ -52,6 +53,7 @@ template <class Request>
 ReplyT<Request> BigValueRoute::route(const Request& req,
                                      GetLikeT<Request>) const {
   using Reply = ReplyT<Request>;
+  using GetReply = ReplyT<ChunkGetT<Request>>;
 
   auto initialReply = ch_->route(req);
   if (!initialReply.isHit() ||
@@ -59,14 +61,17 @@ ReplyT<Request> BigValueRoute::route(const Request& req,
     return initialReply;
   }
 
-  auto buf = initialReply.value().clone();
-  ChunksInfo chunks_info(coalesceAndGetRange(buf));
+  /* McMetagetReply does not have a value field, even though it is get-like. */
+  auto* value = initialReply.valuePtrUnsafe();
+  ChunksInfo chunks_info(value
+                         ? coalesceAndGetRange(*value)
+                         : folly::StringPiece(""));
   if (!chunks_info.valid()) {
     return Reply(DefaultReply, req);
   }
 
-  auto reqs = chunkGetRequests<McRequestWithOp<ChunkGetOP>>(req, chunks_info);
-  std::vector<std::function<Reply()>> fs;
+  auto reqs = chunkGetRequests<ChunkGetT<Request>>(req, chunks_info);
+  std::vector<std::function<GetReply()>> fs;
   fs.reserve(reqs.size());
 
   auto& target = *ch_;
@@ -88,14 +93,14 @@ ReplyT<Request> BigValueRoute::route(const Request& req,
                                      UpdateLikeT<Request>) const {
 
   using Reply = ReplyT<Request>;
+  using UpdateReply = ReplyT<ChunkUpdateT<Request>>;
 
   if (req->get_value().computeChainDataLength() <= options_.threshold_) {
     return ch_->route(req);
   }
 
-  auto reqs_info_pair = chunkUpdateRequests<McRequestWithOp<ChunkUpdateOP>>(
-      req);
-  std::vector<std::function<Reply()>> fs;
+  auto reqs_info_pair = chunkUpdateRequests<ChunkUpdateT<Request>>(req);
+  std::vector<std::function<UpdateReply()>> fs;
   fs.reserve(reqs_info_pair.first.size());
 
   auto& target = *ch_;
@@ -110,7 +115,7 @@ ReplyT<Request> BigValueRoute::route(const Request& req,
   auto replies = collectAllByBatches(fs);
 
   // reply for all chunk update requests
-  auto reducedReply = Reply::reduce(replies.begin(), replies.end());
+  auto reducedReply = UpdateReply::reduce(replies.begin(), replies.end());
   if (reducedReply->isStored()) {
     // original key with modified value stored at the back
     auto new_req = req.clone();
@@ -184,7 +189,9 @@ Reply BigValueRoute::mergeChunkGetReplies(
 
   std::vector<std::unique_ptr<folly::IOBuf>> data_vec;
   while (begin != end) {
-    data_vec.push_back(begin->value().clone());
+    if (const auto* value = begin->valuePtrUnsafe()) {
+      data_vec.push_back(value->clone());
+    }
     ++begin;
   }
 

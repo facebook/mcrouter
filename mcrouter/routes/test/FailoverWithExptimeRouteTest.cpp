@@ -171,7 +171,7 @@ void testFailoverGet(mc_res_t res) {
   fm.run([&]{
     mockFiberContext();
     auto reply = rhNoFail->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_EQ(toString(reply.value()), "a");
+    EXPECT_EQ("a", toString(reply.value()));
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
   });
 
@@ -185,7 +185,7 @@ void testFailoverGet(mc_res_t res) {
   fm.run([&]{
     mockFiberContext();
     auto reply = rhFail->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_EQ(toString(reply.value()), "b");
+    EXPECT_EQ("b", toString(reply.value()));
   });
 }
 
@@ -212,12 +212,12 @@ void testFailoverUpdate(mc_res_t res) {
     auto msg = createMcMsgRef("0", "a");
     auto reply = rhNoFail->route(
         McRequestWithMcOp<mc_op_set>(std::move(msg)));
-    EXPECT_EQ(toString(reply.value()), "a");
+    EXPECT_EQ(res, reply.result());
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
     // only normal handle sees the key
     EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
-    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 0);
-    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+    EXPECT_EQ(0, failoverHandles[0]->saw_keys.size());
+    EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 
   auto rhFail = makeFailoverWithExptimeRoute(
@@ -232,9 +232,9 @@ void testFailoverUpdate(mc_res_t res) {
     auto msg = createMcMsgRef("0", "a");
     auto reply = rhFail->route(
         McRequestWithMcOp<mc_op_set>(std::move(msg)));
-    EXPECT_EQ(toString(reply.value()), "a");
-    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
-    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+    EXPECT_EQ(mc_res_stored, reply.result());
+    EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
+    EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 }
 
@@ -264,8 +264,8 @@ void testFailoverDelete(mc_res_t res) {
     EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
     // only normal handle sees the key
     EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
-    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 0);
-    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+    EXPECT_EQ(0, failoverHandles[0]->saw_keys.size());
+    EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 
   auto rhFail = makeFailoverWithExptimeRoute(
@@ -280,8 +280,8 @@ void testFailoverDelete(mc_res_t res) {
     auto msg = createMcMsgRef("0");
     auto reply = rhFail->route(
         McRequestWithMcOp<mc_op_delete>(std::move(msg)));
-    EXPECT_EQ(failoverHandles[0]->saw_keys.size(), 1);
-    EXPECT_EQ(failoverHandles[1]->saw_keys.size(), 0);
+    EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
+    EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 }
 

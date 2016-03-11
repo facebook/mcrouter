@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,6 +13,8 @@
 
 #include <folly/dynamic.h>
 #include <folly/Memory.h>
+
+#include "mcrouter/lib/McResUtil.h"
 
 namespace facebook { namespace memcache {
 
@@ -33,11 +35,11 @@ FailoverErrorsSettings::List::List(const folly::dynamic& json) {
   init(std::move(errors));
 }
 
-bool FailoverErrorsSettings::List::shouldFailover(const McReply& reply) const {
+bool FailoverErrorsSettings::List::shouldFailover(const mc_res_t result) const {
   if (failover_ != nullptr) {
-    return (*failover_)[reply.result()];
+    return (*failover_)[result];
   }
-  return reply.isFailoverError();
+  return isFailoverErrorResult(result);
 }
 
 void FailoverErrorsSettings::List::init(std::vector<std::string> errors) {

@@ -43,7 +43,7 @@ struct RequestLoggerContext {
       requestValue(request.valuePtrUnsafe()),
       requestClass(fiber_local::getRequestClass()),
       routingKeyHash(request.routingKeyHash()),
-      replyValue(reply.value()),
+      replyValue(reply.valuePtrUnsafe()),
       replyResult(reply.result()),
       replyFlags(reply.flags()),
       poolName(poolName_),
@@ -65,7 +65,7 @@ struct RequestLoggerContext {
   const uint32_t routingKeyHash;
 
   /* Reply-specific data */
-  const folly::IOBuf& replyValue;
+  const folly::IOBuf* replyValue;
   const mc_res_t replyResult;
   const uint32_t replyFlags;
 

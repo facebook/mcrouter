@@ -167,7 +167,9 @@ class L1L2CacheRoute {
     ToRequest req;
     req.setKey(origReq.key());
     folly::IOBuf cloned;
-    reply.value().cloneInto(cloned);
+    if (reply.valuePtrUnsafe() != nullptr) {
+      reply.valuePtrUnsafe()->cloneInto(cloned);
+    }
     req.setValue(std::move(cloned));
     req.setFlags(reply.flags());
     req.setExptime(upgradingL1Exptime);

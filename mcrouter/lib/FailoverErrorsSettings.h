@@ -34,25 +34,25 @@ class FailoverErrorsSettings {
   explicit FailoverErrorsSettings(const folly::dynamic& json);
 
   template <class Request>
-  bool shouldFailover(const McReply& reply, const Request&,
+  bool shouldFailover(const ReplyT<Request>& reply, const Request&,
                       DeleteLikeT<Request> = 0) const {
-    return deletes_.shouldFailover(reply);
+    return deletes_.shouldFailover(reply.result());
   }
 
   template <class Request>
-  bool shouldFailover(const McReply& reply, const Request&,
+  bool shouldFailover(const ReplyT<Request>& reply, const Request&,
                       GetLikeT<Request> = 0) const {
-    return gets_.shouldFailover(reply);
+    return gets_.shouldFailover(reply.result());
   }
 
   template <class Request>
-  bool shouldFailover(const McReply& reply, const Request&,
+  bool shouldFailover(const ReplyT<Request>& reply, const Request&,
                       UpdateLikeT<Request> = 0) const {
-    return updates_.shouldFailover(reply);
+    return updates_.shouldFailover(reply.result());
   }
 
   template <class Request>
-  bool shouldFailover(const McReply& reply, const Request&,
+  bool shouldFailover(const ReplyT<Request>& reply, const Request&,
                       OtherThanT<Request,
                                  DeleteLike<>,
                                  GetLike<>,
@@ -66,7 +66,7 @@ class FailoverErrorsSettings {
     explicit List(std::vector<std::string> errors);
     explicit List(const folly::dynamic& json);
 
-    bool shouldFailover(const McReply& reply) const;
+    bool shouldFailover(const mc_res_t result) const;
 
    private:
     std::unique_ptr<std::array<bool, mc_nres>> failover_;

@@ -89,8 +89,37 @@ class BigValueRoute {
     bool valid_;
   };
 
-  typedef McOperation<mc_op_get> ChunkGetOP;
-  typedef McOperation<mc_op_set> ChunkUpdateOP;
+  /**
+   * Type of request to use when chunking get-like requests.
+   */
+  template <class Request>
+  struct ChunkGet;
+  template <class M>
+  struct ChunkGet<TypedThriftRequest<M>> {
+    using type = TypedThriftRequest<cpp2::McGetRequest>;
+  };
+  template <int op>
+  struct ChunkGet<McRequestWithMcOp<op>> {
+    using type = McRequestWithMcOp<mc_op_get>;
+  };
+  template <class Request>
+  using ChunkGetT = typename ChunkGet<Request>::type;
+
+  /**
+   * Type of request to use when chunking update-like requests.
+   */
+  template <class Request>
+  struct ChunkUpdate;
+  template <class M>
+  struct ChunkUpdate<TypedThriftRequest<M>> {
+    using type = TypedThriftRequest<cpp2::McSetRequest>;
+  };
+  template <int op>
+  struct ChunkUpdate<McRequestWithMcOp<op>> {
+    using type = McRequestWithMcOp<mc_op_set>;
+  };
+  template <class Request>
+  using ChunkUpdateT = typename ChunkUpdate<Request>::type;
 
   template <class Reply>
   std::vector<Reply> collectAllByBatches(

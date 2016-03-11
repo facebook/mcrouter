@@ -174,7 +174,9 @@ class WarmUpRoute {
                                       uint32_t exptime) {
     ToRequest req(origReq.clone());
     folly::IOBuf cloned;
-    reply.value().cloneInto(cloned);
+    if (const auto* valuePtr = reply.valuePtrUnsafe()) {
+      valuePtr->cloneInto(cloned);
+    }
     req.setValue(std::move(cloned));
     req.setFlags(reply.flags());
     req.setExptime(exptime);

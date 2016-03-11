@@ -7,8 +7,12 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
+
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
 
@@ -43,7 +47,8 @@ bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
 
 template <class Callback>
 template <class Request>
-void ClientMcParser<Callback>::expectNext() {
+typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
+ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ =
@@ -52,6 +57,14 @@ void ClientMcParser<Callback>::expectNext() {
     umbrellaForwarder_ =
       &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   }
+}
+
+template <class Callback>
+template <class Request>
+typename std::enable_if<IsCustomRequest<Request>::value, void>::type
+ClientMcParser<Callback>::expectNext() {
+  umbrellaForwarder_ =
+    &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
 }
 
 template <class Callback>
@@ -72,10 +85,12 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
 
 template <class Callback>
 template <class Request>
-void ClientMcParser<Callback>::forwardUmbrellaReply(
+typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
+ClientMcParser<Callback>::forwardUmbrellaReply(
     const UmbrellaMessageInfo& info,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
+
   if (info.version == UmbrellaVersion::BASIC) {
     auto reply = umbrellaParseReply<Request>(buffer,
                                              buffer.data(),
@@ -93,6 +108,27 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
     converter_.dispatchTypedRequest(info.typeId, trim, reply);
     callback_.replyReady(std::move(reply), reqId);
   }
+}
+
+template <class Callback>
+template <class Request>
+typename std::enable_if<IsCustomRequest<Request>::value, void>::type
+ClientMcParser<Callback>::forwardUmbrellaReply(
+    const UmbrellaMessageInfo& info,
+    const folly::IOBuf& buffer,
+    uint64_t reqId) {
+
+  ReplyT<Request> reply;
+
+  folly::IOBuf trim;
+  buffer.cloneOneInto(trim);
+  trim.trimStart(info.headerSize);
+
+  apache::thrift::CompactProtocolReader reader;
+  reader.setInput(&trim);
+  reply.read(&reader);
+
+  callback_.replyReady(std::move(reply), reqId);
 }
 
 template <class Callback>

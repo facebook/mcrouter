@@ -173,6 +173,7 @@ struct RecordingRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req) {
     using Reply = ReplyT<Request>;
+    ReplyT<Request> reply;
 
     if (h_->isTko) {
       return Reply(TkoReply);
@@ -186,22 +187,23 @@ struct RecordingRoute {
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(req.exptime());
     if (GetLike<Request>::value) {
-      auto msg = createMcMsgRef(req.fullKey(), dataGet_.value_);
-      msg->flags = dataGet_.flags_;
-      return Reply(dataGet_.result_, std::move(msg));
+      reply.setResult(dataGet_.result_);
+      reply.setValue(dataGet_.value_);
+      reply.setFlags(dataGet_.flags_);
+      return reply;
     }
     if (UpdateLike<Request>::value) {
       assert(req.valuePtrUnsafe() != nullptr);
       auto val = req.valuePtrUnsafe()->clone();
       folly::StringPiece sp_value = coalesceAndGetRange(val);
       h_->sawValues.push_back(sp_value.str());
-      auto msg = createMcMsgRef(req.fullKey(), sp_value);
-      msg->flags = dataUpdate_.flags_;
-      return Reply(dataUpdate_.result_, std::move(msg));
+      reply.setResult(dataUpdate_.result_);
+      reply.setFlags(dataUpdate_.flags_);
+      return reply;
     }
     if (DeleteLike<Request>::value) {
-      auto msg = createMcMsgRef(req.fullKey());
-      return Reply(dataDelete_.result_, std::move(msg));
+      reply.setResult(dataDelete_.result_);
+      return reply;
     }
     return Reply(DefaultReply, req);
   }

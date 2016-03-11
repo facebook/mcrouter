@@ -20,7 +20,7 @@ ReplyT<Request> ProxyDestination::send(const Request& request,
                                        std::chrono::milliseconds timeout) {
   proxy->destinationMap->markAsActive(*this);
   auto reply = getAsyncMcClient().sendSync(request, timeout);
-  onReply(reply, req_ctx);
+  onReply(reply.result(), req_ctx);
   return reply;
 }
 

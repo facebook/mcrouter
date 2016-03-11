@@ -164,7 +164,7 @@ class DestinationRoute {
                                   ProxyRequestContext& ctx,
                                   Args&&... args) const {
     auto now = nowUs();
-    auto reply = McReply(std::forward<Args>(args)...);
+    auto reply = ReplyT<Request>(std::forward<Args>(args)...);
     ctx.onReplyReceived(poolName_,
                         *destination_->accessPoint(),
                         req,

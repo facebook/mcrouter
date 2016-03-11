@@ -19,6 +19,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 
@@ -30,112 +31,6 @@ struct AccessPoint;
 namespace detail {
 inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);
 }  // detail
-
-
-/**
- * mc_res_t convenience functions, useful for McReply and Thrift replies
- */
-/**
- * Is this reply an error?
- */
-inline bool isErrorResult(const mc_res_t result);
-
-/**
- * Is this reply an error as far as failover logic is concerned?
- */
-inline bool isFailoverErrorResult(const mc_res_t result);
-
-
-/**
- * Is this reply a soft TKO error?
- */
-inline bool isSoftTkoErrorResult(const mc_res_t result);
-
-/**
- * Is this reply a hard TKO error?
- */
-inline bool isHardTkoErrorResult(const mc_res_t result);
-
-/**
- * Did we not even attempt to send request out because at some point
- * we decided the destination is in TKO state?
- *
- * Used to short-circuit failover decisions in certain RouteHandles.
- *
- * If isTkoResult() is true, isErrorResult() must also be true.
- */
-inline bool isTkoResult(const mc_res_t result) {
-  return result == mc_res_tko;
-}
-
-/**
- * Did we not even attempt to send request out because it is invalid/we hit
- * per-destination rate limit
- */
-inline bool isLocalErrorResult(const mc_res_t result) {
-  return result == mc_res_local_error;
-}
-
-/**
- * Was the connection attempt refused?
- */
-inline bool isConnectErrorResult(const mc_res_t result) {
-  return result == mc_res_connect_error;
-}
-
-/**
- * Was there a timeout while attempting to establish a connection?
- */
-inline bool isConnectTimeoutResult(const mc_res_t result) {
-  return result == mc_res_connect_timeout;
-}
-
-/**
- * Was there a timeout when sending data on an established connection?
- * Note: the distinction is important, since in this case we don't know
- * if the data reached the server or not.
- */
-inline bool isDataTimeoutResult(const mc_res_t result) {
-  return result == mc_res_timeout || result == mc_res_remote_error;
-}
-
-/**
- * Application-specific redirect code. Server is up, but doesn't want
- * to reply now.
- */
-inline bool isRedirectResult(const mc_res_t result) {
-  return result == mc_res_busy || result == mc_res_try_again;
-}
-
-/**
- * Was the data found?
- */
-inline bool isHitResult(const mc_res_t result) {
-  return result == mc_res_deleted || result == mc_res_found
-    || result == mc_res_touched;
-}
-
-/**
- * Was data not found and no errors occured?
- */
-inline bool isMissResult(const mc_res_t result) {
-  return result == mc_res_notfound;
-}
-
-/**
- * Lease hot miss?
- */
-inline bool isHotMissResult(const mc_res_t result) {
-  return result == mc_res_foundstale || result == mc_res_notfoundhot;
-}
-
-/**
- * Was the data stored?
- */
-inline bool isStoredResult(const mc_res_t result) {
-  return result == mc_res_stored || result == mc_res_stalestored;
-}
-
 
 /**
  * mc_msg_t-based Reply implementation.
@@ -267,6 +162,16 @@ class McReply {
     return result_;
   }
 
+  /**
+   * TypedThriftReply allows syntax like
+   *   reply->get_value()
+   * In order to ease the transition to TypedThriftReply, we hack McReply
+   * to allow similar syntax.
+   */
+  const McReply* operator->() const {
+    return this;
+  }
+
   bool hasValue() const {
     return valueData_.hasValue();
   }
@@ -274,6 +179,21 @@ class McReply {
   const folly::IOBuf& value() const {
     static folly::IOBuf emptyBuffer;
     return hasValue() ? valueData_.value() : emptyBuffer;
+  }
+
+  /**
+   * Hack. TypedThriftReply comment above applies here, as well.
+   */
+  const folly::IOBuf& get_value() const {
+    return value();
+  }
+
+  folly::IOBuf* valuePtrUnsafe() {
+    return valueData_.get_pointer();
+  }
+
+  const folly::IOBuf* valuePtrUnsafe() const {
+    return valueData_.get_pointer();
   }
 
   folly::StringPiece valueRangeSlow() const {
@@ -398,7 +318,7 @@ class McReply {
   McReply(mc_res_t result, folly::IOBuf value);
   McReply(mc_res_t result, folly::StringPiece value);
   McReply(mc_res_t result, const char* value);
-  McReply(mc_res_t result, const std::string& value);
+  McReply(mc_res_t result, std::string value);
   McReply(McReply&& other) = default;
   McReply& operator=(McReply&& other) = default;
 

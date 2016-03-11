@@ -68,9 +68,11 @@ class LoggingRoute {
                  Request::name, userIp);
       }
     } else {
+      const auto replyLength = reply.valuePtrUnsafe() ?
+        reply.valuePtrUnsafe()->computeChainDataLength() : 0;
       LOG(INFO) << "request key: " << req.fullKey()
                 << " response: " << mc_res_to_string(reply.result())
-                << " responseLength: " << reply.value().computeChainDataLength()
+                << " responseLength: " << replyLength
                 << " user ip: " << userIp;
     }
     return reply;

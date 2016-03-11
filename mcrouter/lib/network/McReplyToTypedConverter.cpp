@@ -30,7 +30,7 @@ bool fillResult(const McReply& reply, TypedThriftReply<ThriftType>& tres) {
   if (reply.isError()) {
     if (reply.hasValue()) {
       tres->__isset.message = true;
-      tres->message = reply.value();
+      tres->message = reply.valueRangeSlow().str();
     }
     return false;
   }

@@ -372,9 +372,7 @@ class MockMcOnRequest : public ThriftMsgDispatcher<TRequestList,
 
     if (key == "__mockmc__.trigger_server_error") {
       reply->set_result(mc_res_remote_error);
-      reply->set_message(folly::IOBuf(
-            folly::IOBuf::COPY_BUFFER,
-            "returned error msg with binary data \xdd\xab"));
+      reply->set_message("returned error msg with binary data \xdd\xab");
     } else {
       mc_.set(key, MockMc::Item(req->get_value().clone()));
       reply->set_result(mc_res_stored);

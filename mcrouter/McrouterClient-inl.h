@@ -20,7 +20,9 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                              const ReplyT<Request>& reply,
                              GetLikeT<Request> = 0) {
 
-  auto replyBytes = reply.value().computeChainDataLength();
+  auto replyBytes = reply.valuePtrUnsafe()
+    ? reply.valuePtrUnsafe()->computeChainDataLength()
+    : 0;
   stats.recordFetchRequest(req.fullKey().size(), replyBytes);
 }
 

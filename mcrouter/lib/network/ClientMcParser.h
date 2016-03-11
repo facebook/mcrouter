@@ -9,11 +9,21 @@
  */
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
+#include <folly/io/IOBuf.h>
+#include <folly/Range.h>
+
 #include "mcrouter/lib/network/CaretReplyConverter.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
+
+class McReply;
 
 template <class Callback>
 class ClientMcParser : private McParser::ParserCallback {
@@ -49,7 +59,12 @@ class ClientMcParser : private McParser::ParserCallback {
    * callback. It explicitly tells parser what type of message is expected.
    */
   template <class Request>
-  void expectNext();
+  typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
+  expectNext();
+
+  template <class Request>
+  typename std::enable_if<IsCustomRequest<Request>::value, void>::type
+  expectNext();
  private:
   McParser parser_;
   McClientAsciiParser asciiParser_;
@@ -66,9 +81,16 @@ class ClientMcParser : private McParser::ParserCallback {
   void forwardAsciiReply();
 
   template <class Request>
-  void forwardUmbrellaReply(const UmbrellaMessageInfo& info,
-                            const folly::IOBuf& buffer,
-                            uint64_t reqId);
+  typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
+  forwardUmbrellaReply(const UmbrellaMessageInfo& info,
+                       const folly::IOBuf& buffer,
+                       uint64_t reqId);
+
+  template <class Request>
+  typename std::enable_if<IsCustomRequest<Request>::value, void>::type
+  forwardUmbrellaReply(const UmbrellaMessageInfo& info,
+                       const folly::IOBuf& buffer,
+                       uint64_t reqId);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,

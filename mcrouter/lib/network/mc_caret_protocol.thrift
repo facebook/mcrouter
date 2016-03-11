@@ -10,7 +10,7 @@ struct McGetReply {
   1: i16 result;
   2: optional IOBuf value;
   3: optional i64 flags;
-  4: optional IOBuf message;
+  4: optional string message;
 }
 
 struct McSetRequest {
@@ -22,7 +22,7 @@ struct McSetRequest {
 
 struct McSetReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McDeleteRequest {
@@ -32,7 +32,7 @@ struct McDeleteRequest {
 
 struct McDeleteReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McLeaseGetRequest {
@@ -44,7 +44,7 @@ struct McLeaseGetReply {
   2: optional i64 leaseToken;
   3: optional IOBuf value;
   4: optional i64 flags;
-  5: optional IOBuf message;
+  5: optional string message;
 }
 
 struct McLeaseSetRequest {
@@ -57,7 +57,7 @@ struct McLeaseSetRequest {
 
 struct McLeaseSetReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McAddRequest {
@@ -69,7 +69,7 @@ struct McAddRequest {
 
 struct McAddReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McReplaceRequest {
@@ -81,7 +81,7 @@ struct McReplaceRequest {
 
 struct McReplaceReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McGetsRequest {
@@ -93,7 +93,7 @@ struct McGetsReply {
   2: optional i64 casToken;
   3: optional IOBuf value;
   4: optional i64 flags;
-  5: optional IOBuf message;
+  5: optional string message;
 }
 
 struct McCasRequest {
@@ -106,7 +106,7 @@ struct McCasRequest {
 
 struct McCasReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McIncrRequest {
@@ -117,7 +117,7 @@ struct McIncrRequest {
 struct McIncrReply {
   1: i16 result;
   2: optional i64 delta;
-  3: optional IOBuf message;
+  3: optional string message;
 }
 
 struct McDecrRequest {
@@ -128,7 +128,7 @@ struct McDecrRequest {
 struct McDecrReply {
   1: i16 result;
   2: optional i64 delta;
-  3: optional IOBuf message;
+  3: optional string message;
 }
 
 struct McMetagetRequest {
@@ -142,7 +142,7 @@ struct McMetagetReply {
   4: optional bool isTransient;
   5: optional i16 ipv;
   6: optional string ipAddress;
-  7: optional IOBuf message;
+  7: optional string message;
 }
 
 struct McVersionRequest {
@@ -153,7 +153,7 @@ struct McVersionRequest {
 struct McVersionReply {
   1: i16 result;
   2: optional string version;
-  3: optional IOBuf message;
+  3: optional string message;
 }
 
 struct McAppendRequest {
@@ -165,7 +165,7 @@ struct McAppendRequest {
 
 struct McAppendReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McPrependRequest {
@@ -177,7 +177,7 @@ struct McPrependRequest {
 
 struct McPrependReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }
 
 struct McTouchRequest {
@@ -187,5 +187,5 @@ struct McTouchRequest {
 
 struct McTouchReply {
   1: i16 result;
-  2: optional IOBuf message;
+  2: optional string message;
 }

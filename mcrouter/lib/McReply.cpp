@@ -17,7 +17,7 @@
 namespace facebook { namespace memcache {
 
 bool McReply::worseThan(const McReply& other) const noexcept {
-  return awfulness(result_) > awfulness(other.result_);
+  return resultSeverity(result_) > resultSeverity(other.result_);
 }
 
 void McReply::setValue(folly::IOBuf valueData) {
@@ -48,7 +48,7 @@ McReply::McReply(mc_res_t res, const char* value)
                               strlen(value))) {
 }
 
-McReply::McReply(mc_res_t res, const std::string& value)
+McReply::McReply(mc_res_t res, std::string value)
     : result_(res),
       valueData_(folly::IOBuf(folly::IOBuf::COPY_BUFFER, value)) {
 }

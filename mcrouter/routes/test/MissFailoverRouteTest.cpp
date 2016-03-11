@@ -98,7 +98,7 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
   auto msg = createMcMsgRef("0", "a");
   auto reply = rh.route(
       McRequestWithMcOp<mc_op_set>(std::move(msg)));
-  EXPECT_TRUE(toString(reply.value()) == "a");
+  EXPECT_EQ(mc_res_notstored, reply.result());
   // only first handle sees the key
   EXPECT_TRUE(test_handles[0]->saw_keys == vector<std::string>{"0"});
   EXPECT_TRUE(test_handles[1]->saw_keys.size() == 0);

@@ -38,10 +38,10 @@ struct FailoverContext {
       routingKey(request.routingKey()),
       keyWithoutRoute(request.keyWithoutRoute()),
       requestValue(request.valuePtrUnsafe()),
-      normalValue(normal.value()),
+      normalValue(normal.valuePtrUnsafe()),
       normalDestination(normal.destination().get()),
       normalResult(normal.result()),
-      failoverValue(failover.value()),
+      failoverValue(failover.valuePtrUnsafe()),
       failoverDestination(failover.destination().get()),
       failoverResult(failover.result()),
       numRetries(numRetries_),
@@ -59,12 +59,12 @@ struct FailoverContext {
   const folly::IOBuf* requestValue;
 
   /* Normal reply data */
-  const folly::IOBuf& normalValue;
+  const folly::IOBuf* normalValue;
   const AccessPoint* normalDestination;
   const mc_res_t normalResult;
 
   /* Failover reply data */
-  const folly::IOBuf& failoverValue;
+  const folly::IOBuf* failoverValue;
   const AccessPoint* failoverDestination;
   const mc_res_t failoverResult;
 

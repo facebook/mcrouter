@@ -62,7 +62,7 @@ TEST(BigValueRouteTest, smallvalue) {
       msg_set->op = mc_op_set;
       McRequestWithMcOp<mc_op_set> req_set(std::move(msg_set));
       auto f_set = rh.route(req_set);
-      EXPECT_EQ("value", toString(f_set.value()));
+      EXPECT_EQ(mc_res_stored, f_set.result());
       EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_set"});
     }
   });
@@ -178,7 +178,6 @@ TEST(BigValueRouteTest, bigvalue) {
         auto chunks_info = folly::sformat(
             "{}-{}-{}", version, num_chunks, rand_suffix_set);
         EXPECT_EQ(chunks_info, values_set[num_chunks]);
-        EXPECT_EQ(values_set[num_chunks], toString(f_set.value()));
       }
 
       { // Test Update Like path with mc_op_lease_set op

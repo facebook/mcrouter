@@ -86,7 +86,7 @@ proxy_t::routeHandlesProcessRequest(
               "Error routing request of type {}!"
               " Exception: {}",
               typeid(Request).name(), e.what());
-          return ReplyT<Request>(mc_res_local_error, err);
+          return ReplyT<Request>(mc_res_local_error, std::move(err));
         }
       },
       [ctx = std::move(sharedCtx)](
