@@ -93,24 +93,23 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
   TypedThriftRequest(TypedThriftRequest&& other) noexcept = default;
   TypedThriftRequest& operator=(TypedThriftRequest&& other) = default;
 
+  const folly::IOBuf& key() const {
+    return this->raw_.key;
+  }
+
   folly::StringPiece fullKey() const {
     return getRange(this->raw_.key);
   }
 
   void setKey(folly::StringPiece k) {
-    // TODO(jmswen) Update to use thrift setters, here and elsewhere
-    auto& key = this->raw_.key;
-    key = folly::IOBuf(folly::IOBuf::COPY_BUFFER, k);
-    this->raw_.__isset.key = true;
-    Keys::update(getRange(key));
+    this->raw_.set_key(folly::IOBuf(folly::IOBuf::COPY_BUFFER, k));
+    Keys::update(getRange(this->raw_.key));
   }
 
   void setKey(folly::IOBuf k) {
-    auto& key = this->raw_.key;
-    key = std::move(k);
-    this->raw_.__isset.key = true;
-    key.coalesce();
-    Keys::update(getRange(key));
+    this->raw_.set_key(std::move(k));
+    this->raw_.key.coalesce();
+    Keys::update(getRange(this->raw_.key));
   }
 
   void stripRoutingPrefix() {
@@ -132,6 +131,10 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
 
   uint32_t routingKeyHash() const {
     return Keys::routingKeyHash();
+  }
+
+  bool hasHashStop() const {
+    return Keys::routingKey().size() != Keys::keyWithoutRoute().size();
   }
 
   uint32_t exptime() const {

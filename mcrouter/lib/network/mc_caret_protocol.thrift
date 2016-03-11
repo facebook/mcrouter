@@ -146,6 +146,8 @@ struct McMetagetReply {
 }
 
 struct McVersionRequest {
+  // TODO(jmswen) Can we get rid of this hack?
+  1: IOBuf key;
 }
 
 struct McVersionReply {

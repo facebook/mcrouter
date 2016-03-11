@@ -13,8 +13,7 @@
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 
-namespace facebook {
-namespace memcache {
+namespace facebook { namespace memcache {
 
 /* List of operations */
 using RequestReplyPairs = List<
@@ -86,8 +85,12 @@ struct OpFromType<T, List<KV1, KVs...>> {
                                        : OpFromType<T, List<KVs...>>::value;
 };
 
-template <class T>
-using TRequestListContains = ListContains<TRequestList, T>;
+template <class M>
+class TypedThriftRequest;
 
-}
-} // facebook::memcache
+using ThriftRequestList = MapT<TypedThriftRequest, Values<TRequestList>>;
+
+template <class T>
+using TRequestListContains = ListContains<ThriftRequestList, T>;
+
+}} // facebook::memcache

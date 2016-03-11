@@ -65,8 +65,7 @@ class LoggingRoute {
     if (callback) {
       if (reply.isHit()) {
         callback(req.fullKey(), reply.flags(), reply.valueRangeSlow(),
-                 Request::OpType::name, /* TODO Won't work with Thrift reqs */
-                 userIp);
+                 Request::name, userIp);
       }
     } else {
       LOG(INFO) << "request key: " << req.fullKey()

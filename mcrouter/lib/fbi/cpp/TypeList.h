@@ -68,6 +68,27 @@ struct Prepend<T, List<Ts...>> {
 };
 
 /**
+ * Values<List<KV<Id, T>...> -> List<T,...>
+ */
+namespace detail {
+template <class KVList>
+struct ValuesImpl;
+
+template <>
+struct ValuesImpl<List<>> {
+  using type = List<>;
+};
+
+template <int Id, class T, class... KVs>
+struct ValuesImpl<List<KV<Id, T>, KVs...>> {
+  using type = PrependT<T, typename ValuesImpl<List<KVs...>>::type>;
+};
+} // detail
+
+template <class KVList>
+using Values = typename detail::ValuesImpl<KVList>::type;
+
+/**
  * Sorts a list of KVs by Id.
  * List<KV<Id, T>...> -> List<KV<Id, T>...>
  */

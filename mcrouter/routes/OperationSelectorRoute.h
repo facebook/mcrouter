@@ -41,6 +41,12 @@ class OperationSelectorRoute {
     }
   }
 
+  template <class Request>
+  void traverse(const Request&,
+                const RouteHandleTraverser<McrouterRouteHandleIf>&) const {
+    /* TODO(jmswen) Implement. */
+  }
+
   template <int M>
   McReply route(const McRequestWithMcOp<M>& req) const {
     if (operationPolicies_[M]) {
@@ -50,6 +56,12 @@ class OperationSelectorRoute {
     }
 
     return McReply(DefaultReply, req);
+  }
+
+  template <class Request>
+  ReplyT<Request> route(const Request&) const {
+    /* TODO(jmswen) Implement. */
+    return ReplyT<Request>();
   }
 
 private:
