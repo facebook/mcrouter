@@ -40,6 +40,12 @@ struct ThriftMsgIsRequest<cpp2::McVersionRequest> {
 template <class M>
 struct RequestTraits;
 
+template <class M>
+struct ReplyTraits;
+
+/**
+ * Request traits
+ */
 template <>
 struct RequestTraits<cpp2::McGetRequest> {
   static constexpr const char* name = "get";
@@ -180,6 +186,105 @@ struct RequestTraits<cpp2::McTouchRequest> {
   static constexpr const char* name = "touch";
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+/**
+ * Reply traits
+ */
+template <>
+struct ReplyTraits<cpp2::McGetReply> {
+  static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
+};
+
+template <>
+struct ReplyTraits<cpp2::McSetReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McDeleteReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McLeaseGetReply> {
+  static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
+};
+
+template <>
+struct ReplyTraits<cpp2::McLeaseSetReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McAddReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McReplaceReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McGetsReply> {
+  static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
+};
+
+template <>
+struct ReplyTraits<cpp2::McCasReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McIncrReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McDecrReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McMetagetReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McVersionReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McAppendReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McPrependReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McTouchReply> {
   static constexpr bool hasValue = false;
   static constexpr bool hasFlags = false;
 };
