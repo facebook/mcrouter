@@ -299,6 +299,13 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
   uint64_t config_last_success = 0;
   uint64_t destinationBatchesSum = 0;
   uint64_t destinationRequestsSum = 0;
+  uint64_t outstandingGetReqsTotal = 0;
+  uint64_t outstandingGetReqsHelper = 0;
+  uint64_t outstandingGetWaitTimeSumUs = 0;
+  uint64_t outstandingUpdateReqsTotal = 0;
+  uint64_t outstandingUpdateReqsHelper = 0;
+  uint64_t outstandingUpdateWaitTimeSumUs = 0;
+
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto proxy = router.getProxy(i);
     config_last_success = std::max(config_last_success,
@@ -307,16 +314,47 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
       proxy->stats_num_within_window[destination_batches_sum_stat];
     destinationRequestsSum +=
       proxy->stats_num_within_window[destination_requests_sum_stat];
+
+    outstandingGetReqsTotal +=
+      proxy->stats_num_within_window[outstanding_route_get_reqs_queued_stat];
+    outstandingGetReqsHelper += proxy->stats_num_within_window[
+      outstanding_route_get_reqs_queued_helper_stat];
+    outstandingGetWaitTimeSumUs += proxy->stats_num_within_window[
+      outstanding_route_get_wait_time_sum_us_stat];
+    outstandingUpdateReqsTotal +=
+      proxy->stats_num_within_window[outstanding_route_update_reqs_queued_stat];
+    outstandingUpdateReqsHelper += proxy->stats_num_within_window[
+      outstanding_route_update_reqs_queued_helper_stat];
+    outstandingUpdateWaitTimeSumUs += proxy->stats_num_within_window[
+      outstanding_route_update_wait_time_sum_us_stat];
   }
 
   stat_set_uint64(stats, num_suspect_servers_stat,
                   router.tkoTrackerMap().getSuspectServersCount());
 
-  double avgBatchSize = 0;
+  double avgBatchSize = 0.0;
   if (destinationBatchesSum != 0) {
     avgBatchSize = destinationRequestsSum / (double)destinationBatchesSum;
   }
   stats[destination_batch_size_stat].data.dbl = avgBatchSize;
+
+  stats[outstanding_route_get_avg_queue_size_stat].data.dbl = 0.0;
+  stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl = 0.0;
+  if (outstandingGetReqsTotal > 0) {
+    stats[outstanding_route_get_avg_queue_size_stat].data.dbl =
+      outstandingGetReqsHelper / (double)outstandingGetReqsTotal;
+    stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl =
+      outstandingGetWaitTimeSumUs / (1000000.0 * outstandingGetReqsTotal);
+  }
+
+  stats[outstanding_route_update_avg_queue_size_stat].data.dbl = 0.0;
+  stats[outstanding_route_update_avg_wait_time_sec_stat].data.dbl = 0.0;
+  if (outstandingUpdateReqsTotal > 0) {
+    stats[outstanding_route_update_avg_queue_size_stat].data.dbl =
+      outstandingUpdateReqsHelper / (double)outstandingUpdateReqsTotal;
+    stats[outstanding_route_update_avg_wait_time_sec_stat].data.dbl =
+      outstandingUpdateWaitTimeSumUs / (1000000.0 * outstandingUpdateReqsTotal);
+  }
 
   stats[commandargs_stat].data.string = gStandaloneArgs;
 

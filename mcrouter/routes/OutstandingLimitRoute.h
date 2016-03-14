@@ -17,10 +17,15 @@
 #include <folly/experimental/fibers/Baton.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/options.h"
+#include "mcrouter/proxy.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -64,9 +69,35 @@ class OutstandingLimitRoute {
         return *blockedRequests_.back();
       }();
 
+      auto& stats = ctx->proxy().stats;
       folly::fibers::Baton baton;
+      int64_t waitingSince = 0;
+      if (GetLike<Request>::value) {
+        ++currentGetReqsWaiting_;
+        waitingSince = nowUs();
+      } else if (UpdateLike<Request>::value) {
+        ++currentUpdateReqsWaiting_;
+        waitingSince = nowUs();
+      }
       entry.batons.push_back(&baton);
       baton.wait();
+      if (waitingSince > 0) {
+        if (GetLike<Request>::value) {
+          stat_incr(stats, outstanding_route_get_wait_time_sum_us_stat,
+                    static_cast<uint64_t>(nowUs() - waitingSince));
+          stat_incr(stats, outstanding_route_get_reqs_queued_helper_stat,
+                    currentGetReqsWaiting_);
+          --currentGetReqsWaiting_;
+          stat_incr(stats, outstanding_route_get_reqs_queued_stat, 1);
+        } else if (UpdateLike<Request>::value) {
+          stat_incr(stats, outstanding_route_update_wait_time_sum_us_stat,
+                    static_cast<uint64_t>(nowUs() - waitingSince));
+          stat_incr(stats, outstanding_route_update_reqs_queued_helper_stat,
+                    currentUpdateReqsWaiting_);
+          --currentUpdateReqsWaiting_;
+          stat_incr(stats, outstanding_route_update_reqs_queued_stat, 1);
+        }
+      }
     } else {
       outstanding_++;
       assert(outstanding_ <= maxOutstanding_);
@@ -99,6 +130,8 @@ class OutstandingLimitRoute {
   const McrouterRouteHandlePtr target_;
   const size_t maxOutstanding_;
   size_t outstanding_{0};
+  size_t currentGetReqsWaiting_{0};
+  size_t currentUpdateReqsWaiting_{0};
 
   struct QueueEntry {
     QueueEntry(QueueEntry&&) = delete;

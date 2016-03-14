@@ -29,6 +29,30 @@
   STUI(destination_batches_sum, 0, 1)
   STUI(destination_requests_sum, 0, 1)
 #undef GROUP
+/**
+ * OutstandingLimitRoute (OLR) queue-related stats, broken down by request type
+ * (get-like and update-like).
+ */
+#define GROUP ods_stats | mcproxy_stats | rate_stats
+  /* Number of requests/second that couldn't be processed immediately in OLR */
+  STUI(outstanding_route_get_reqs_queued, 0, 1)
+  STUI(outstanding_route_update_reqs_queued, 0, 1)
+#undef GROUP
+#define GROUP ods_stats | mcproxy_stats
+  /* Average number of requests waiting in OLR at any given time */
+  STAT(outstanding_route_get_avg_queue_size, stat_double, 0, .dbl = 0.0)
+  STAT(outstanding_route_update_avg_queue_size, stat_double, 0, .dbl = 0.0)
+  /* Average time a request had to wait in OLR */
+  STAT(outstanding_route_get_avg_wait_time_sec, stat_double, 0, .dbl = 0.0)
+  STAT(outstanding_route_update_avg_wait_time_sec, stat_double, 0, .dbl = 0.0)
+#undef GROUP
+#define GROUP rate_stats
+  /* OutstandingLimitRoute queue-related helper stats */
+  STUI(outstanding_route_get_reqs_queued_helper, 0, 0)
+  STUI(outstanding_route_update_reqs_queued_helper, 0, 0)
+  STUI(outstanding_route_get_wait_time_sum_us, 0, 0)
+  STUI(outstanding_route_update_wait_time_sum_us, 0, 0)
+#undef GROUP
 #define GROUP ods_stats | mcproxy_stats
   /* Total reqs in mc client yet to be sent to memcache. */
   STUI(destination_pending_reqs, 0, 1)

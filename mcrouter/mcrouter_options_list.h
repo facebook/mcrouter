@@ -367,7 +367,7 @@ mcrouter_option_group("Timeouts")
 
 mcrouter_option_integer(
   unsigned int, server_timeout_ms, 1000,
-  "server-timeout", 't', 
+  "server-timeout", 't',
   "Timeout for talking to destination servers (e.g. memcached), "
   "in milliseconds. Must be greater than 0.")
 
