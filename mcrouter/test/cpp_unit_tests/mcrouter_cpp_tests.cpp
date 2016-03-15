@@ -65,7 +65,7 @@ namespace {
 std::atomic<size_t> gReplies;
 std::mutex gMutex;
 std::condition_variable gCv;
-}
+} // anonymous
 
 void on_reply(mcrouter_msg_t* router_req,
               void* context) {

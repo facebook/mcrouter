@@ -289,6 +289,6 @@ inline bool proxy_t::rateLimited(ProxyRequestPriority priority,
 
   return true;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

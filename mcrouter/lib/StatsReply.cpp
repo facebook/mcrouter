@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,7 +27,7 @@ void copy(nstring_t& to, folly::StringPiece from,
   memcpy(p, from.data(), from.size());
   p += from.size();
 }
-}
+} // anonymous
 
 McReply StatsReply::getMcReply() {
   /* In a single allocation, we store:

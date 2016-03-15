@@ -43,7 +43,7 @@ bool isPartOfMultiget(mc_protocol_t protocol, mc_op_t operation) {
   return false;
 }
 
-}  // namespace
+} // anonymous
 
 McServerSession& McServerSession::create(
   folly::AsyncTransportWrapper::UniquePtr transport,
@@ -518,5 +518,5 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
 
 void McServerSession::handshakeErr(
     folly::AsyncSSLSocket*, const folly::AsyncSocketException&) noexcept {}
-}
-} // facebook::memcache
+} // memcache
+} // facebook

@@ -29,7 +29,7 @@ class Fifo;
 
 namespace detail {
 class OnEventBaseDestructionCallback;
-}
+} // detail
 
 /**
  * A base class for network communication with memcache protocol.

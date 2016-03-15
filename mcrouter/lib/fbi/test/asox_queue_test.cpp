@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -126,7 +126,7 @@ void queue_test_common(int num_rounds, int increment, int mode) {
 
   EXPECT_EQ((NUM_THREADS)*increment*num_rounds, queue_value);
 }
-}
+} // anonymous
 
 TEST(libasox_queuetest, flood) {
   queue_test_common(1, 1, FLOOD_MODE);
@@ -190,7 +190,7 @@ void libasox_queuetest_multicount_common(asox_queue_flags_t flags) {
   EXPECT_EQ(N * NUM_THREADS * ((nentries * (nentries + 1)) / 2), counter);
   asox_queue_del(queue);
 }
-}
+} // anonymous
 
 TEST(libasox_queuetest, multicount) {
   libasox_queuetest_multicount_common(ASOX_QUEUE_INTRA_PROCESS);
@@ -213,7 +213,7 @@ asox_queue_callbacks_t counter_test_callbacks = {
     c->sweep++;
   },
 };
-}
+} // anonymous
 
 TEST(libasox_queuetest, sweep) {
   folly::EventBase base;
@@ -404,7 +404,7 @@ std::vector<std::unique_ptr<Info>> concurrent_queueing(asox_queue_t queue,
 
   return ti;
 }
-}
+} // anonymous
 
 TEST(libasox_queuetest, concurrent_enqueuing) {
   counts cnt;

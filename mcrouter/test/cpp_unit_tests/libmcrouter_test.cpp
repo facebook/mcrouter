@@ -205,8 +205,8 @@ TEST(libmcrouter, listenSock) {
 }
 
 // for backward compatibility with gflags
-namespace gflags { }
-namespace google { using namespace gflags; }
+namespace gflags { } // gflags
+namespace google { using namespace gflags; } // google
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

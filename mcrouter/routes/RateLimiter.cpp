@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -39,7 +39,7 @@ double asPositiveDoubleDefault(const dynamic& obj, const string& keyName,
   return def;
 }
 
-}  // namespace
+} // anonymous
 
 RateLimiter::RateLimiter(const folly::dynamic& json) {
   checkLogic(json.isObject(), "RateLimiter settings json is not an object");

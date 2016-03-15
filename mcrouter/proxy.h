@@ -50,7 +50,7 @@
 namespace folly {
   struct dynamic;
   class File;
-}
+} // folly
 
 namespace facebook { namespace memcache {
 

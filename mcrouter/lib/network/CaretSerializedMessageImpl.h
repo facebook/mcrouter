@@ -112,7 +112,7 @@ class CaretSerializedMessage {
   size_t iovsUsed_{0};
   char headerBuf_[kMaxHeaderLength];
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "mcrouter/lib/network/CaretSerializedMessageImpl-inl.h"

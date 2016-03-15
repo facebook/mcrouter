@@ -69,4 +69,4 @@ class AllFastestRoute {
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
 
-}}
+}} // facebook::memcache

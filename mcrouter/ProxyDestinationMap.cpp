@@ -40,7 +40,7 @@ std::string genProxyDestinationKey(const AccessPoint& ap,
   }
 }
 
-} // namespace
+} // anonymous
 
 struct ProxyDestinationMap::StateList {
   using List = folly::IntrusiveList<ProxyDestination,

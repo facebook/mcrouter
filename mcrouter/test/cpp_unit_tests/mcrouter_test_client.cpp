@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -55,7 +55,7 @@ private:
   std::queue<std::pair<mc_msg_t*, McReply>> replies_;
   sem_t outstanding_;
 };
-}}}
+}}} // facebook::memcache::test
 
 using namespace facebook::memcache::test;
 

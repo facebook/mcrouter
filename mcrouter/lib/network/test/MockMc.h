@@ -19,7 +19,7 @@
 
 namespace folly {
 class IOBuf;
-}
+} // folly
 
 namespace facebook { namespace memcache {
 

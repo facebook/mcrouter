@@ -126,4 +126,4 @@ TEST(AccessPoint, port_override) {
   EXPECT_TRUE(ap->useSsl());
 }
 
-} // namespace
+} // anonymous

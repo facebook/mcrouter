@@ -141,4 +141,4 @@ using OtherThanT = typename std::enable_if<
     OtherThan<Request, RequestTraitOrType...>::value,
     void*>::type;
 
-}}
+}} // facebook::memcache

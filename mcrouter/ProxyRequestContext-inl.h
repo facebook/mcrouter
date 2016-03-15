@@ -245,6 +245,6 @@ std::unique_ptr<ProxyRequestContext> createLegacyProxyRequestContext(
   return detail::legacyCreator(pr, std::move(req), op, McOpList::LastItem(),
                                std::forward<F>(f), priority);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

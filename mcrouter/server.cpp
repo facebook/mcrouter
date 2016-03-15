@@ -70,7 +70,7 @@ void serverLoop(
   router.releaseProxy(threadId);
 }
 
-}  // namespace
+} // anonymous
 
 bool runServer(const McrouterStandaloneOptions& standaloneOpts,
                const McrouterOptions& mcrouterOpts) {

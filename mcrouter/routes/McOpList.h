@@ -100,4 +100,4 @@ using RequestList = MapT<McRequestWithOp, McOperationList>;
 template <class T>
 using RequestListContains = ListContains<RequestList, T>;
 
-}}
+}} // facebook::memcache

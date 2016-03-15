@@ -22,4 +22,4 @@ convertToMcRequest(TypedThriftRequest<cpp2::McTouchRequest>&& treq) {
   return req;
 }
 } // memcache
-} // faceboook
+} // facebook

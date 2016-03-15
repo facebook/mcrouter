@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -103,7 +103,7 @@ void sem_test_common(asox_sem_flags_t flags, int increment, int num_rounds) {
 
   EXPECT_TRUE(value == (NUM_THREADS)*increment*num_rounds);
 }
-}
+} // anonymous
 
 TEST(libasox_semtest, single_1) {
   sem_test_common((asox_sem_flags_t)0, 1, 1);
@@ -157,7 +157,7 @@ bool compat_overflow_on_signal(asox_sem_t sem,
   (*val)++;
   return true;
 }
-}
+} // anonymous
 
 TEST(libasox_semtest, compat_overflow) {
   folly::EventBase base;

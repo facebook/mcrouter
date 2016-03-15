@@ -635,7 +635,7 @@ const char* FOUND = "VALUE we:always:ignore:key:here 0 15\r\n"
                     "veryRandomValue\r\nEND\r\n";
 const char* STORED = "STORED\r\n";
 const char* TOUCHED = "TOUCHED\r\n";
-};
+} // anonymous
 
 template <>
 const char*

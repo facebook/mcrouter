@@ -27,7 +27,7 @@ using asox_queue_entry_t = asox_queue_entry_s;
 
 namespace folly {
 class EventBase;
-}
+} // folly
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

@@ -86,7 +86,7 @@ bool writeToFile(folly::StringPiece contents, const std::string& path,
   }
   return written >= 0 && size_t(written) == contents.size();
 }
-}
+} // anonymous
 
 bool writeStringToFile(folly::StringPiece contents, const std::string& path) {
   return writeToFile(contents, path, O_CREAT | O_WRONLY | O_TRUNC);

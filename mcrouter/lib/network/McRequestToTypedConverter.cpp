@@ -43,7 +43,7 @@ void arithmeticLikeCommon(TypedThriftRequest<ArithType>& treq,
   treq->delta = req.delta();
 }
 
-} // anoymous
+} // anonymous
 
 TypedThriftRequest<cpp2::McGetRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_get>& req) {

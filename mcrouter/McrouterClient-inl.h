@@ -118,6 +118,6 @@ McrouterClient::send(const Request& req,
 
   return true;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

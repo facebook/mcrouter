@@ -430,4 +430,4 @@ size_t UmbrellaSerializedMessage::finalizeMessage() {
   return niovOut;
 }
 
-}}
+}} // facebook::memcache

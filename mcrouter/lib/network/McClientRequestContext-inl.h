@@ -29,7 +29,7 @@ inline getFbTraceInfo(const Request& request) {
 }
 
 #endif
-}
+} // anonymous
 
 template <class Reply>
 void McClientRequestContextBase::reply(Reply&& r) {

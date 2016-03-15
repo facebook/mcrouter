@@ -73,5 +73,5 @@ TypedThriftRequest<cpp2::McAppendRequest> convertToTyped(
 
 TypedThriftRequest<cpp2::McPrependRequest> convertToTyped(
     const McRequestWithMcOp<mc_op_prepend>& req);
-}
-}
+} // memcache
+} // facebook

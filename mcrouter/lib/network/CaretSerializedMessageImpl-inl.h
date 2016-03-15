@@ -114,5 +114,5 @@ void CaretSerializedMessage::fillBody(
     iovsUsed_ = ioBuf_->fillIov(iovs_ + 1, kMaxIovs - 1);
   }
 }
-}
-} // facebook::memcache
+} // memcache
+} // facebook

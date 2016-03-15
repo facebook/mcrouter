@@ -47,7 +47,7 @@ inline void fbtraceAddItem(fbtrace_item_t* info, size_t& idx,
   item->val_len = value.size();
 }
 
-}  // namespace
+} // anonymous
 
 template<int McOp>
 typename std::enable_if<

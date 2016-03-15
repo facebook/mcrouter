@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,5 +26,5 @@ bool WriteBuffer::prepareTyped(McServerRequestContext&& ctx,
   return caretReply_.prepare(
       std::move(reply), ctx_->reqid_, typeId, iovsBegin_, iovsCount_);
 }
-}
-} // facebook::memcache
+} // memcache
+} // facebook

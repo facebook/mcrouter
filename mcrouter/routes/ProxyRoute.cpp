@@ -47,6 +47,6 @@ std::vector<McrouterRouteHandlePtr> ProxyRoute::getAllDestinations() const {
   return rh;
 }
 
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

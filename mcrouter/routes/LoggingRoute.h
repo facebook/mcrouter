@@ -82,4 +82,4 @@ class LoggingRoute {
   const McrouterRouteHandlePtr child_;
 };
 
-}}}
+}}} // facebook::memcache::mcrouter

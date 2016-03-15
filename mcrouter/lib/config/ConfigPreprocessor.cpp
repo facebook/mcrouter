@@ -162,7 +162,7 @@ size_t unescapeUntil(StringPiece from, string& to, char c) {
   return string::npos;
 }
 
-} // namespace
+} // anonymous
 
 ///////////////////////////////Macro////////////////////////////////////////////
 

@@ -51,4 +51,4 @@ class RandomRoute {
   std::ranlux24_base gen_;
 };
 
-}}
+}} // facebook::memcache

@@ -56,8 +56,8 @@ BENCHMARK_RELATIVE(RUsageClock, n) {
  */
 
 // for backward compatibility with gflags
-namespace gflags { }
-namespace google { using namespace gflags; }
+namespace gflags { } // gflags
+namespace google { using namespace gflags; } // google
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);

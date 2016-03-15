@@ -270,6 +270,6 @@ struct MapTImpl<F, List<X, Xs...>> {
 template <template<typename> class F, typename List>
 using MapT = typename detail::MapTImpl<F, List>::type;
 
-}}
+}} // facebook::memcache
 
 #include "TypeList-inl.h"

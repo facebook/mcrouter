@@ -24,7 +24,7 @@
 namespace folly {
 class EventBase;
 class SSLContext;
-}
+} // folly
 
 namespace facebook { namespace memcache {
 

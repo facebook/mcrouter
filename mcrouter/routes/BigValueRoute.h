@@ -22,7 +22,7 @@
 
 namespace folly {
 class IOBuf;
-}
+} // folly
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

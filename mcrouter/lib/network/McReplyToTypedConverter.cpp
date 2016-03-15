@@ -67,7 +67,7 @@ void arithmeticLikeCommon(McReply&& reply, TypedThriftReply<ArithType>& tres) {
   tres->delta = reply.delta();
 }
 
-} // anoymous
+} // anonymous
 
 TypedThriftReply<cpp2::McGetReply> convertToTyped(McReply&& reply,
                                                   McOperation<mc_op_get>) {

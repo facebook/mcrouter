@@ -91,7 +91,7 @@ void testDeletes(bool burst = false) {
        "deletes", burst);
 }
 
-}  // namespace
+} // anonymous
 
 TEST(rateLimitRouteTest, setsBasic) { testSets(); }
 TEST(rateLimitRouteTest, setsBurst) { testSets(true); }

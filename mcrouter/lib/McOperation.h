@@ -57,4 +57,4 @@ struct ReplyType<TypedThriftRequest<M>> {
   using type = TypedThriftReply<ReplyFromRequestType<M, RequestReplyPairs>>;
 };
 
-}}
+}} // facebook::memcache

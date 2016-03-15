@@ -17,4 +17,4 @@ struct ReplyType;
 template <typename Request>
 using ReplyT = typename ReplyType<Request>::type;
 
-}}
+}} // facebook::memcache

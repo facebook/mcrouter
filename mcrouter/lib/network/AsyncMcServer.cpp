@@ -31,7 +31,7 @@ namespace facebook { namespace memcache {
 namespace {
 /* Global pointer to the server for signal handlers */
 facebook::memcache::AsyncMcServer* gServer;
-}
+} // anonymous
 
 
 class ShutdownPipe : public folly::EventHandler {

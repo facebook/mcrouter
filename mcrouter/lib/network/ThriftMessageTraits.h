@@ -124,4 +124,4 @@ struct IsCustomRequest<TypedThriftRequest<M>> {
   static constexpr bool value = true;
 };
 
-}}
+}} // facebook::memcache

@@ -22,7 +22,7 @@
 
 namespace folly {
 struct dynamic;
-}
+} // folly
 
 namespace facebook { namespace memcache {
 

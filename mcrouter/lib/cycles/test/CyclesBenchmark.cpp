@@ -20,7 +20,7 @@ using namespace facebook::memcache;
 
 namespace {
 cycles::CyclesClock cyclesClock;
-}
+} // anonymous
 
 // Benchmark if we were using simply two RDTSC calls.
 BENCHMARK(CyclesClock, n) {

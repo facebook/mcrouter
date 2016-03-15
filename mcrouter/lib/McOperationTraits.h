@@ -197,4 +197,4 @@ struct ArithmeticLike<McRequestWithMcOp<mc_op_decr>> {
   typedef void* Type;
 };
 
-}}
+}} // facebook::memcache
