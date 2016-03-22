@@ -338,6 +338,14 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     detail::setValue(*this, folly::IOBuf(folly::IOBuf::COPY_BUFFER, str));
   }
 
+  /* Treat value IOBuf as mutable, as in McRequest */
+  folly::StringPiece valueRangeSlow() const {
+    auto* valuePtr = const_cast<folly::IOBuf*>(valuePtrUnsafe());
+
+    return valuePtr ? folly::StringPiece(valuePtr->coalesce())
+                    : folly::StringPiece();
+  }
+
   uint64_t flags() const {
     return detail::flags(*this);
   }
