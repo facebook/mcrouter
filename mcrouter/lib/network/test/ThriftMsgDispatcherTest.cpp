@@ -26,8 +26,11 @@ using ThriftMsgList =
     TypedMsg<3, cpp2::McSetRequest>
   >;
 
-struct TestCallback :
-    public ThriftMsgDispatcher<ThriftMsgList, TestCallback> {
+// using facebook::memcache::ThriftMsgDispatcher; will break the GCC build
+// until https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59815 is fixed
+struct TestCallback
+    : public facebook::memcache::ThriftMsgDispatcher<ThriftMsgList,
+                                                     TestCallback> {
 
   std::function<void(TypedThriftRequest<cpp2::McGetRequest>&&)> onGet_;
   std::function<void(TypedThriftRequest<cpp2::McSetRequest>&&)> onSet_;

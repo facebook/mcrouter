@@ -59,12 +59,8 @@ class ClientMcParser : private McParser::ParserCallback {
    * callback. It explicitly tells parser what type of message is expected.
    */
   template <class Request>
-  typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-  expectNext();
+  void expectNext();
 
-  template <class Request>
-  typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-  expectNext();
  private:
   McParser parser_;
   McClientAsciiParser asciiParser_;

@@ -54,16 +54,16 @@ using facebook::memcache::McServerRequestContext;
 using facebook::memcache::MockMc;
 using facebook::memcache::TReplyList;
 using facebook::memcache::TRequestList;
-using facebook::memcache::ThriftMsgDispatcher;
 using facebook::memcache::TypedThriftReply;
 using facebook::memcache::TypedThriftRequest;
 using facebook::memcache::createMcMsgRef;
 
 using namespace facebook::memcache::cpp2;
 
-class MockMcOnRequest : public ThriftMsgDispatcher<TRequestList,
-                                                   MockMcOnRequest,
-                                                   McServerRequestContext&&> {
+class MockMcOnRequest
+    : public facebook::memcache::ThriftMsgDispatcher<TRequestList,
+                                                     MockMcOnRequest,
+                                                     McServerRequestContext&&> {
  public:
   template <class Operation>
   void onRequest(McServerRequestContext&& ctx,

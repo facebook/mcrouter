@@ -61,16 +61,13 @@ class TypedThriftMessage {
     return &raw_;
   }
 
- protected:
-  M raw_;
-
   template <class Protocol>
   uint32_t read(Protocol* iprot) {
     return raw_.read(iprot);
   }
 
-  template <class Callback>
-  friend class ClientMcParser;
+ protected:
+  M raw_;
 };
 
 template <class M>
@@ -153,9 +150,11 @@ class TypedThriftReply : public TypedThriftMessage<M> {
     return detail::valuePtrUnsafe(*this);
   }
 
-  folly::StringPiece valueRangeSlow() {
-    return valuePtrUnsafe() ? folly::StringPiece(valuePtrUnsafe()->coalesce())
-                            : folly::StringPiece();
+  folly::StringPiece valueRangeSlow() const {
+    auto* valuePtr = const_cast<folly::IOBuf*>(valuePtrUnsafe());
+
+    return valuePtr ? folly::StringPiece(valuePtr->coalesce())
+                    : folly::StringPiece();
   }
 
   void setValue(folly::IOBuf valueData) noexcept {
@@ -180,6 +179,15 @@ class TypedThriftReply : public TypedThriftMessage<M> {
 
   void setDestination(std::shared_ptr<const AccessPoint> ap) noexcept {
     destination_ = std::move(ap);
+  }
+
+  uint16_t appSpecificErrorCode() const noexcept {
+    const auto errorCode = this->raw_.get_appSpecificErrorCode();
+    return errorCode ? *errorCode : 0;
+  }
+
+  void setAppSpecificErrorCode(uint16_t c) {
+    this->raw_.set_appSpecificErrorCode(c);
   }
 
   bool worseThan(const TypedThriftReply& other) const noexcept {

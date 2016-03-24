@@ -55,6 +55,10 @@ class McRequest {
     return *this;
   }
 
+  McRequest* operator->() {
+    return this;
+  }
+
   /**
    * The routing prefix.
    * Valid as long as this Request object exists.
@@ -188,6 +192,19 @@ class McRequest {
 
   void setCas(uint64_t c) {
     cas_ = c;
+  }
+
+  /**
+   * Hacks for compatibility with TypedThriftRequest API. Use sparingly.
+   */
+  void set_casToken(uint64_t c) noexcept {
+    setCas(c);
+  }
+  void set_leaseToken(uint64_t lt) noexcept {
+    setLeaseToken(lt);
+  }
+  void set_delta(uint64_t d) noexcept {
+    setDelta(d);
   }
 
   /**

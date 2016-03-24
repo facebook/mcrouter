@@ -19,7 +19,8 @@ namespace facebook { namespace memcache {
 constexpr size_t kProtocolTailContextLength = 128;
 
 McAsciiParserBase::State McClientAsciiParser::consume(folly::IOBuf& buffer) {
-  assert(state_ == State::PARTIAL && !hasReadBuffer());
+  assert(state_ == State::PARTIAL);
+  assert(!hasReadBuffer());
 
   p_ = reinterpret_cast<const char*>(buffer.data());
   pe_ = p_ + buffer.length();

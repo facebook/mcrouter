@@ -18,6 +18,9 @@
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/MessageStorage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
 
@@ -67,6 +70,13 @@ class McAsciiParserBase {
    */
   bool readValue(folly::IOBuf& buffer, folly::IOBuf& to);
 
+  static void appendKeyPiece(const folly::IOBuf& from,
+                             folly::IOBuf& to,
+                             const char* posStart,
+                             const char* posEnd);
+  static void trimIOBufToRange(folly::IOBuf& buffer, const char* posStart,
+                               const char* posEnd);
+
   std::string currentErrorDescription_;
 
   uint64_t currentUInt_{0};
@@ -112,18 +122,46 @@ class McClientAsciiParser : public McAsciiParserBase {
   template <class T>
   T getReply();
  private:
+  template <class Reply>
   void initializeCommon();
 
+  template <class Reply>
   void initializeArithmReplyCommon();
+  template <class Reply>
   void initializeStorageReplyCommon();
 
+  template <class Reply>
   void consumeArithmReplyCommon(folly::IOBuf& buffer);
+  template <class Reply>
   void consumeStorageReplyCommon(folly::IOBuf& buffer);
 
-  template <class Msg, class Op>
+  template <class Request>
   void consumeMessage(folly::IOBuf& buffer);
 
-  MessageStorage<List<McReply>> currentMessage_;
+  void stringValueHelper(const folly::IOBuf& buffer);
+
+  template <class Reply>
+  void consumeErrorMessage(const folly::IOBuf& buffer);
+
+  template <class Reply>
+  void consumeVersion(const folly::IOBuf& buffer);
+
+  template <class Reply>
+  void consumeIpAddr(const folly::IOBuf& buffer);
+  template <class Reply>
+  void consumeIpAddrHelper(const folly::IOBuf& buffer);
+
+  template <class Reply>
+  void resetErrorMessage(Reply& message);
+
+  static void initFirstCharIOBuf(const folly::IOBuf& from,
+                                 folly::IOBuf& to,
+                                 const char* pos);
+  static void appendCurrentCharTo(const folly::IOBuf& from, folly::IOBuf& to,
+                                  const char* pos);
+
+  MessageStorage<ConcatenateListsT<List<McReply>,
+                 MapT<ReplyT, ThriftRequestList>>> currentMessage_;
 
   using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};

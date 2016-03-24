@@ -171,12 +171,6 @@ TypedThriftReply<cpp2::McMetagetReply> convertToTyped(
   tres->age = reply.number();
   tres->__isset.exptime = true;
   tres->exptime = reply.exptime();
-  tres->__isset.isTransient = true;
-  if (reply.flags() == 1) {
-    tres->isTransient = true;
-  } else {
-    tres->isTransient = false;
-  }
   char ipStr[INET6_ADDRSTRLEN];
 
   if (reply.ipv() != 0) {

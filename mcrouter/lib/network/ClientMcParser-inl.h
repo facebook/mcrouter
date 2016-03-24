@@ -47,8 +47,7 @@ bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
 
 template <class Callback>
 template <class Request>
-typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-ClientMcParser<Callback>::expectNext() {
+void ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ =
@@ -57,14 +56,6 @@ ClientMcParser<Callback>::expectNext() {
     umbrellaForwarder_ =
       &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   }
-}
-
-template <class Callback>
-template <class Request>
-typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-ClientMcParser<Callback>::expectNext() {
-  umbrellaForwarder_ =
-    &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
 }
 
 template <class Callback>

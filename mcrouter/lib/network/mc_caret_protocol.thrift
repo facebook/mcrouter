@@ -11,6 +11,9 @@ struct McGetReply {
   2: optional IOBuf value;
   3: optional i64 flags;
   4: optional string message;
+  // appSpecificErrorCode is a short-term hack that will be removed from all
+  // Mc*Reply structures in the future.
+  5: optional i16 appSpecificErrorCode;
 }
 
 struct McSetRequest {
@@ -23,6 +26,7 @@ struct McSetRequest {
 struct McSetReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McDeleteRequest {
@@ -33,6 +37,7 @@ struct McDeleteRequest {
 struct McDeleteReply {
   1: i16 result;
   2: optional string message;
+  3:  optional i16 appSpecificErrorCode;
 }
 
 struct McLeaseGetRequest {
@@ -45,6 +50,7 @@ struct McLeaseGetReply {
   3: optional IOBuf value;
   4: optional i64 flags;
   5: optional string message;
+  6: optional i16 appSpecificErrorCode;
 }
 
 struct McLeaseSetRequest {
@@ -58,6 +64,7 @@ struct McLeaseSetRequest {
 struct McLeaseSetReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McAddRequest {
@@ -70,6 +77,7 @@ struct McAddRequest {
 struct McAddReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McReplaceRequest {
@@ -82,6 +90,7 @@ struct McReplaceRequest {
 struct McReplaceReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McGetsRequest {
@@ -94,6 +103,7 @@ struct McGetsReply {
   3: optional IOBuf value;
   4: optional i64 flags;
   5: optional string message;
+  6: optional i16 appSpecificErrorCode;
 }
 
 struct McCasRequest {
@@ -107,6 +117,7 @@ struct McCasRequest {
 struct McCasReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McIncrRequest {
@@ -118,6 +129,7 @@ struct McIncrReply {
   1: i16 result;
   2: optional i64 delta;
   3: optional string message;
+  4: optional i16 appSpecificErrorCode;
 }
 
 struct McDecrRequest {
@@ -129,6 +141,7 @@ struct McDecrReply {
   1: i16 result;
   2: optional i64 delta;
   3: optional string message;
+  4: optional i16 appSpecificErrorCode;
 }
 
 struct McMetagetRequest {
@@ -139,10 +152,10 @@ struct McMetagetReply {
   1: i16 result;
   2: optional i32 age;
   3: optional i32 exptime;
-  4: optional bool isTransient;
-  5: optional i16 ipv;
-  6: optional string ipAddress;
-  7: optional string message;
+  4: optional i16 ipv;
+  5: optional string ipAddress;
+  6: optional string message;
+  7: optional i16 appSpecificErrorCode;
 }
 
 struct McVersionRequest {
@@ -154,6 +167,7 @@ struct McVersionReply {
   1: i16 result;
   2: optional string version;
   3: optional string message;
+  4: optional i16 appSpecificErrorCode;
 }
 
 struct McAppendRequest {
@@ -166,6 +180,7 @@ struct McAppendRequest {
 struct McAppendReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McPrependRequest {
@@ -178,6 +193,7 @@ struct McPrependRequest {
 struct McPrependReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }
 
 struct McTouchRequest {
@@ -188,4 +204,5 @@ struct McTouchRequest {
 struct McTouchReply {
   1: i16 result;
   2: optional string message;
+  3: optional i16 appSpecificErrorCode;
 }

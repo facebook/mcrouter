@@ -163,12 +163,6 @@ void CaretReplyConverter::onTypedMessage(
       reply.setIpAddress(addr, tres->ipv);
     }
   }
-
-  if (tres->__isset.isTransient && tres->isTransient) {
-    reply.setFlags(1);
-  } else {
-    reply.setFlags(0);
-  }
 }
 
 void CaretReplyConverter::onTypedMessage(

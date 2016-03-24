@@ -172,6 +172,10 @@ class McReply {
     return this;
   }
 
+  McReply* operator->() {
+    return this;
+  }
+
   bool hasValue() const {
     return valueData_.hasValue();
   }
@@ -280,6 +284,25 @@ class McReply {
     msg->ip_addr = addr;
     msg->ipv = ipVersion;
     msg_ = std::move(msg);
+  }
+
+  /**
+   * Hacks for compatibility with TypedThriftRequest API. Use sparingly.
+   */
+  void set_casToken(uint64_t c) noexcept {
+    setCas(c);
+  }
+  void set_leaseToken(uint64_t lt) noexcept {
+    setLeaseToken(lt);
+  }
+  void set_delta(uint64_t d) noexcept {
+    setDelta(d);
+  }
+  void set_exptime(uint64_t et) noexcept {
+    setExptime(et);
+  }
+  void set_age(uint64_t a) noexcept {
+    setNumber(a);
   }
 
   /**
