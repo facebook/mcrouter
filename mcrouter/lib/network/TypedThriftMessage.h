@@ -19,11 +19,16 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Keys.h"
+#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/detail/RequestUtil.h"
 #include "mcrouter/lib/network/RawThriftMessageTraits.h"
 #include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/Reply.h"
+
+#ifndef LIBMC_FBTRACE_DISABLE
+#include "mcrouter/lib/mc/mc_fbtrace_info.h"
+#endif
 
 namespace facebook { namespace memcache {
 
@@ -150,9 +155,11 @@ class TypedThriftReply : public TypedThriftMessage<M> {
     return detail::valuePtrUnsafe(*this);
   }
 
+  /**
+   * Treat 'value' IOBuf as mutable, as in McRequest.
+   */
   folly::StringPiece valueRangeSlow() const {
     auto* valuePtr = const_cast<folly::IOBuf*>(valuePtrUnsafe());
-
     return valuePtr ? folly::StringPiece(valuePtr->coalesce())
                     : folly::StringPiece();
   }
@@ -326,6 +333,14 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     return Keys::routingKey().size() != Keys::keyWithoutRoute().size();
   }
 
+  uint64_t flags() const {
+    return detail::flags(*this);
+  }
+
+  void setFlags(uint64_t f) {
+    detail::setFlags(*this, f);
+  }
+
   uint32_t exptime() const {
     return detail::exptime(*this);
   }
@@ -338,6 +353,11 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     return detail::valuePtrUnsafe(*this);
   }
 
+  folly::IOBuf* valuePtrUnsafe() {
+    return const_cast<folly::IOBuf*>(
+        detail::valuePtrUnsafe(const_cast<const TypedThriftRequest&>(*this)));
+  }
+
   void setValue(folly::IOBuf valueData) {
     detail::setValue(*this, std::move(valueData));
   }
@@ -346,24 +366,60 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     detail::setValue(*this, folly::IOBuf(folly::IOBuf::COPY_BUFFER, str));
   }
 
-  /* Treat value IOBuf as mutable, as in McRequest */
+  /**
+   * Treat 'value' IOBuf as mutable, as in McRequest.
+   */
   folly::StringPiece valueRangeSlow() const {
     auto* valuePtr = const_cast<folly::IOBuf*>(valuePtrUnsafe());
-
     return valuePtr ? folly::StringPiece(valuePtr->coalesce())
                     : folly::StringPiece();
   }
 
-  uint64_t flags() const {
-    return detail::flags(*this);
+#ifndef LIBMC_FBTRACE_DISABLE
+  mc_fbtrace_info_s* fbtraceInfo() const {
+    return fbtraceInfo_.get();
   }
 
-  void setFlags(uint64_t f) {
-    detail::setFlags(*this, f);
+  /**
+   * Note: will not incref info, it's up to the caller.
+   */
+  void setFbtraceInfo(mc_fbtrace_info_s* info) {
+    fbtraceInfo_ = McFbtraceRef::moveRef(info);
   }
+#endif
 
  private:
-  TypedThriftRequest(const TypedThriftRequest& other) = default;
+#ifndef LIBMC_FBTRACE_DISABLE
+  struct McFbtraceRefPolicy {
+    struct Deleter {
+      void operator()(mc_fbtrace_info_t* info) const {
+        mc_fbtrace_info_decref(info);
+      }
+    };
+
+    static mc_fbtrace_info_t* increfOrNull(mc_fbtrace_info_t* info) {
+      return mc_fbtrace_info_incref(info);
+    }
+
+    static void decref(mc_fbtrace_info_t* info) {
+      mc_fbtrace_info_decref(info);
+    }
+  };
+
+  using McFbtraceRef = Ref<mc_fbtrace_info_t, McFbtraceRefPolicy>;
+  McFbtraceRef fbtraceInfo_;
+#endif
+
+  TypedThriftRequest(const TypedThriftRequest& other)
+    : TypedThriftMessage<M>(other),
+      Keys(other) {
+#ifndef LIBMC_FBTRACE_DISABLE
+    if (other.fbtraceInfo_.get()) {
+      fbtraceInfo_ = McFbtraceRef::moveRef(
+          mc_fbtrace_info_deep_copy(other.fbtraceInfo_.get()));
+    }
+#endif
+  }
 
   template <class TMList, class Derived, class... Args>
   friend class ThriftMsgDispatcher;

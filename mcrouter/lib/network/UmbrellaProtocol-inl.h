@@ -276,16 +276,15 @@ ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
   return reply;
 }
 
-template <int Op>
-bool UmbrellaSerializedMessage::prepare(
-    const McRequestWithMcOp<Op>& request,
-    uint64_t reqid,
-    struct iovec*& iovOut,
-    size_t& niovOut) {
-
+template <class Request>
+bool UmbrellaSerializedMessage::prepareImpl(const Request& request,
+                                            uint64_t reqid,
+                                            mc_op_t op,
+                                            struct iovec*& iovOut,
+                                            size_t& niovOut) {
   niovOut = 0;
 
-  appendInt(I32, msg_op, umbrella_op_from_mc[Op]);
+  appendInt(I32, msg_op, umbrella_op_from_mc[op]);
   appendInt(U64, msg_reqid, reqid);
   if (request.flags()) {
     appendInt(U64, msg_flags, request.flags());
@@ -293,15 +292,9 @@ bool UmbrellaSerializedMessage::prepare(
   if (request.exptime()) {
     appendInt(U64, msg_exptime, request.exptime());
   }
-  if (request.delta()) {
-    appendInt(U64, msg_delta, request.delta());
-  }
-  if (request.leaseToken()) {
-    appendInt(U64, msg_lease_id, request.leaseToken());
-  }
-  if (request.cas()) {
-    appendInt(U64, msg_cas, request.cas());
-  }
+
+  // Serialize type-specific fields, e.g., cas token for cas requests
+  prepareHelper(request);
 
   auto key = request.fullKey();
   if (key.begin() != nullptr) {

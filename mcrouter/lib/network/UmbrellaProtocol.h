@@ -15,6 +15,7 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace folly {
@@ -133,14 +134,19 @@ class UmbrellaSerializedMessage {
   bool prepare(const McReply& reply, mc_op_t op, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut);
 
-  template <int Op>
-  bool prepare(const McRequestWithMcOp<Op>& request, uint64_t reqid,
-               struct iovec*& iovOut, size_t& niovOut);
+  template <int op>
+  bool prepare(const McRequestWithMcOp<op>& request, uint64_t reqid,
+               struct iovec*& iovOut, size_t& niovOut) {
+    return prepareImpl(
+        request, reqid, static_cast<mc_op_t>(op), iovOut, niovOut);
+  }
 
   template <class ThriftType>
-  bool prepare(const TypedThriftRequest<ThriftType>&, uint64_t,
-               struct iovec*&, size_t&) {
-    return false;
+  bool prepare(const TypedThriftRequest<ThriftType>& request, uint64_t reqid,
+               struct iovec*& iovOut, size_t& niovOut) {
+    static constexpr mc_op_t op =
+      OpFromType<ThriftType, RequestOpMapping>::value;
+    return prepareImpl(request, reqid, op, iovOut, niovOut);
   }
 
   template <class ThriftType>
@@ -169,6 +175,57 @@ class UmbrellaSerializedMessage {
   void appendInt(entry_type_t type, int32_t tag, uint64_t val);
   void appendString(int32_t tag, const uint8_t* data, size_t len,
                     entry_type_t type = BSTRING);
+
+  template <class Request>
+  bool prepareImpl(const Request& request, uint64_t reqid, mc_op_t op,
+                   struct iovec*& iovOut, size_t& niovOut);
+
+  /**
+   * TypedThriftRequest helpers used to serialize fields specific to a
+   * request type. For example, serialize cas token for McCasRequest (which is
+   * the only request type where serializing the cas field makes sense).
+   */
+
+  /**
+   * Most request types don't have any type-specific fields that need to be
+   * serialized, so we have a catch-all helper that does nothing.
+   */
+  template <class Request>
+  void prepareHelper(const Request&) {
+  }
+
+  template <int op>
+  void prepareHelper(const McRequestWithMcOp<op>& request) {
+    if (request.delta()) {
+      appendInt(U64, msg_delta, request.delta());
+    }
+    if (request.leaseToken()) {
+      appendInt(U64, msg_lease_id, request.leaseToken());
+    }
+    if (request.cas()) {
+      appendInt(U64, msg_cas, request.cas());
+    }
+  }
+
+  inline void prepareHelper(
+      const TypedThriftRequest<cpp2::McCasRequest>& request) {
+    appendInt(U64, msg_cas, request->get_casToken());
+  }
+
+  inline void prepareHelper(
+      const TypedThriftRequest<cpp2::McLeaseSetRequest>& request) {
+    appendInt(U64, msg_lease_id, request->get_leaseToken());
+  }
+
+  inline void prepareHelper(
+      const TypedThriftRequest<cpp2::McIncrRequest>& request) {
+    appendInt(U64, msg_delta, request->get_delta());
+  }
+
+  inline void prepareHelper(
+      const TypedThriftRequest<cpp2::McDecrRequest>& request) {
+    appendInt(U64, msg_delta, request->get_delta());
+  }
 
   /**
    * Put message header and all added entries/strings into iovecs.
