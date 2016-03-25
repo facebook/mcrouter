@@ -269,6 +269,7 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
                            private Keys {
  public:
   static constexpr const char* name = RequestTraits<M>::name;
+  using OpType = McOperation<OpFromType<M, RequestOpMapping>::value>;
 
   TypedThriftRequest() = default;
 

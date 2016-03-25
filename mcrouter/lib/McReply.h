@@ -287,7 +287,7 @@ class McReply {
   }
 
   /**
-   * Hacks for compatibility with TypedThriftRequest API. Use sparingly.
+   * Hacks for compatibility with TypedThriftReply API. Use sparingly.
    */
   void set_casToken(uint64_t c) noexcept {
     setCas(c);

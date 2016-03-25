@@ -10,6 +10,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include <folly/io/IOBuf.h>
 
@@ -86,6 +87,35 @@ inline bool cloneInto(folly::IOBuf& out, const folly::IOBuf& source,
   out.trimStart(begin - out.data());
   out.trimEnd(out.length() - size);
   return true;
+}
+
+/**
+ * Given a coalesced IOBuf and a range of bytes [begin, begin + size) inside it,
+ * copies range as a string str such that str[i] == *(char*)(begin+i)
+ * for i = 0..size-1.
+ *
+ * Required that size > 0
+ *
+ * @return  On success, a string copy of input byte range.
+ *          On failure, empty string.
+ */
+inline std::string copyAsString(const folly::IOBuf& source,
+                                const uint8_t* begin,
+                                size_t size) {
+  assert(size > 0);
+
+  std::string ret;
+
+  if (!(begin >= source.data() &&
+        begin + size <= source.data() + source.length())) {
+    return ret;
+  }
+
+  ret.reserve(size);
+  for (size_t i = 0; i < size; ++i) {
+    ret.push_back(*reinterpret_cast<const char*>(begin + i));
+  }
+  return ret;
 }
 
 }} // facebook::memcache

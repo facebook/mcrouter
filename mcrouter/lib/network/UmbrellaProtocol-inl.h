@@ -10,6 +10,7 @@
 #include <folly/Bits.h>
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/ThriftMessageTraits.h"
@@ -37,15 +38,106 @@ struct TagSet {
          LeaseTokenTag, NumberTag, ResultTag, ValueTag>;
 };
 
+/**
+ * TagSet specializations for most memcache operations. Note that we include
+ * ExptimeTag, FlagsTag, and ValueTag in every TagSet.
+ * McReply uses the value field for error messages, despite the fact that
+ * most operations don't logically have a 'value' field. The flags field is
+ * used in certain TAO update operations. Otherwise, ExptimeTag and FlagsTag
+ * are included in most operations (except get) just to be safe.
+ */
+
+// Get-like ops
 template <>
 struct TagSet<McOperation<mc_op_get>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_lease_get>> {
-  using Tags = List<FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
+struct TagSet<McOperation<mc_op_gets>> {
+  using Tags = List<CasTag, ErrCodeTag, ExptimeTag, FlagsTag, ResultTag,
+                    ValueTag>;
 };
+
+template <>
+struct TagSet<McOperation<mc_op_metaget>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, NumberTag, ResultTag,
+                    ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_lease_get>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, LeaseTokenTag, ResultTag,
+                    ValueTag>;
+};
+
+// Update-like ops
+template <>
+struct TagSet<McOperation<mc_op_set>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_add>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_replace>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_append>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_prepend>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_cas>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_lease_set>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+// Arithmetic-like ops
+template <>
+struct TagSet<McOperation<mc_op_incr>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, DeltaTag, ResultTag,
+                    ValueTag>;
+};
+
+template <>
+struct TagSet<McOperation<mc_op_decr>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, DeltaTag, ResultTag,
+                    ValueTag>;
+};
+
+// Delete-like ops
+template <>
+struct TagSet<McOperation<mc_op_delete>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+// Touch op
+template <>
+struct TagSet<McOperation<mc_op_touch>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
+// Version op
+template <>
+struct TagSet<McOperation<mc_op_version>> {
+  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+};
+
 
 inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg) {
   reply.msg_ = std::move(msg);
@@ -84,26 +176,26 @@ struct FieldPolicyHandler<List<Tags...>> {
 template <class Op, class Message>
 void parseFieldImpl(Op, CasTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message.setCas(folly::Endian::big((uint64_t)entry.data.val));
+  message->set_casToken(folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, DeltaTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message.setDelta(folly::Endian::big((uint64_t)entry.data.val));
+  message->set_delta(folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, ErrCodeTag, Message& message,
-                    const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+                    const folly::IOBuf& source, const uint8_t* body,
+                    const um_elist_entry_t& entry) {
   message.setAppSpecificErrorCode(folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, ExptimeTag, Message& message,
-                    const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+                    const folly::IOBuf& source, const uint8_t* body,
+                    const um_elist_entry_t& entry) {
   message.setExptime(folly::Endian::big((uint64_t)entry.data.val));
 }
 
@@ -115,15 +207,15 @@ void parseFieldImpl(Op, FlagsTag, Message& message, const folly::IOBuf& source,
 
 template <class Op, class Message>
 void parseFieldImpl(Op, LeaseTokenTag, Message& message,
-                    const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
-  message.setLeaseToken(folly::Endian::big((uint64_t)entry.data.val));
+                    const folly::IOBuf& source, const uint8_t* body,
+                    const um_elist_entry_t& entry) {
+  message->set_leaseToken(folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, NumberTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message.setNumber(folly::Endian::big((uint64_t)entry.data.val));
+  message->set_age(folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
@@ -188,19 +280,45 @@ inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
   }
 }
 
-template <class Request>
-typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-umbrellaParseMessage(ReplyT<Request>& message, const folly::IOBuf& source,
-                     const uint8_t* header, size_t nheader,
-                     const uint8_t* body, size_t nbody) {
-  LOG(ERROR) << "umbrellaParseMessage(TypedThriftRequest) not implemented";
+inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
+                           TypedThriftReply<cpp2::McMetagetReply>& message,
+                           const folly::IOBuf& source, const uint8_t* body,
+                           const um_elist_entry_t& entry) {
+  const auto ipAddrLen = folly::Endian::big((uint32_t)entry.data.str.len);
+  // Avoid wraparound; copyAsString (below) requires that ipAddrLen - 1 > 0
+  if (ipAddrLen <= 1) {
+    return;
+  }
+  const auto begin = body + folly::Endian::big((uint32_t)entry.data.str.offset);
+  auto strCopy = copyAsString(source, begin, ipAddrLen - 1);
+  if (strCopy.empty()) { // range to copy was invalid
+    throw std::runtime_error("Value: invalid offset/length");
+  }
+
+  // Ignore bad addresses.
+  if (strCopy.size() >= INET6_ADDRSTRLEN) {
+    return;
+  }
+
+  message->set_ipAddress(std::move(strCopy));
+
+  char buffer[INET6_ADDRSTRLEN] = {0};
+  char scratchBuffer[INET6_ADDRSTRLEN];
+  memcpy(buffer, message->ipAddress.data(), message->ipAddress.size());
+  if (inet_pton(AF_INET6, buffer, scratchBuffer) > 0) {
+    message->set_ipv(6);
+  } else if (inet_pton(AF_INET, buffer, scratchBuffer) > 0) {
+    message->set_ipv(4);
+  } else { // Bad IP address, unset IP-related fields
+    message->ipAddress.clear();
+    message->__isset.ipAddress = false;
+  }
 }
 
 template <class Request>
-typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-umbrellaParseMessage(ReplyT<Request>& message, const folly::IOBuf& source,
-                     const uint8_t* header, size_t nheader,
-                     const uint8_t* body, size_t nbody) {
+void umbrellaParseMessage(ReplyT<Request>& message, const folly::IOBuf& source,
+                          const uint8_t* header, size_t nheader,
+                          const uint8_t* body, size_t nbody) {
   using Op = typename Request::OpType;
 
   auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
