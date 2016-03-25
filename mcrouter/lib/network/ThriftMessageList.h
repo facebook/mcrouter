@@ -66,6 +66,23 @@ using RequestOpMapping = List<KV<mc_op_get, cpp2::McGetRequest>,
                               KV<mc_op_prepend, cpp2::McPrependRequest>,
                               KV<mc_op_touch, cpp2::McTouchRequest>>;
 
+using ReplyOpMapping = List<KV<mc_op_get, cpp2::McGetReply>,
+                            KV<mc_op_set, cpp2::McSetReply>,
+                            KV<mc_op_delete, cpp2::McDeleteReply>,
+                            KV<mc_op_lease_get, cpp2::McLeaseGetReply>,
+                            KV<mc_op_lease_set, cpp2::McLeaseSetReply>,
+                            KV<mc_op_add, cpp2::McAddReply>,
+                            KV<mc_op_replace, cpp2::McReplaceReply>,
+                            KV<mc_op_gets, cpp2::McGetsReply>,
+                            KV<mc_op_cas, cpp2::McCasReply>,
+                            KV<mc_op_incr, cpp2::McIncrReply>,
+                            KV<mc_op_decr, cpp2::McDecrReply>,
+                            KV<mc_op_metaget, cpp2::McMetagetReply>,
+                            KV<mc_op_version, cpp2::McVersionReply>,
+                            KV<mc_op_append, cpp2::McAppendReply>,
+                            KV<mc_op_prepend, cpp2::McPrependReply>,
+                            KV<mc_op_touch, cpp2::McTouchReply>>;
+
 /**
  * Given a Request Type T and a Mapping of mc_op_t to Request Type,
  * gives, the mc_op_t corresponding to the Type T

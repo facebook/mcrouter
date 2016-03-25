@@ -15,6 +15,7 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -131,14 +132,24 @@ class UmbrellaSerializedMessage {
  public:
   UmbrellaSerializedMessage() noexcept;
   void clear();
+
   bool prepare(const McReply& reply, mc_op_t op, uint64_t reqid,
-               struct iovec*& iovOut, size_t& niovOut);
+               struct iovec*& iovOut, size_t& niovOut) {
+    return prepareReplyImpl(reply, op, reqid, iovOut, niovOut);
+  }
+
+  template <class ThriftType>
+  bool prepare(const TypedThriftReply<ThriftType>& reply, uint64_t reqid,
+               struct iovec*& iovOut, size_t& niovOut) {
+    static constexpr mc_op_t op = OpFromType<ThriftType, ReplyOpMapping>::value;
+    return prepareReplyImpl(reply, op, reqid, iovOut, niovOut);
+  }
 
   template <int op>
   bool prepare(const McRequestWithMcOp<op>& request, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut) {
-    return prepareImpl(
-        request, reqid, static_cast<mc_op_t>(op), iovOut, niovOut);
+    return prepareRequestImpl(
+        request, static_cast<mc_op_t>(op), reqid, iovOut, niovOut);
   }
 
   template <class ThriftType>
@@ -146,13 +157,7 @@ class UmbrellaSerializedMessage {
                struct iovec*& iovOut, size_t& niovOut) {
     static constexpr mc_op_t op =
       OpFromType<ThriftType, RequestOpMapping>::value;
-    return prepareImpl(request, reqid, op, iovOut, niovOut);
-  }
-
-  template <class ThriftType>
-  bool prepare(const TypedThriftReply<ThriftType>&, uint64_t,
-               struct iovec*&, size_t&) {
-    return false;
+    return prepareRequestImpl(request, op, reqid, iovOut, niovOut);
   }
 
  private:
@@ -177,21 +182,25 @@ class UmbrellaSerializedMessage {
                     entry_type_t type = BSTRING);
 
   template <class Request>
-  bool prepareImpl(const Request& request, uint64_t reqid, mc_op_t op,
-                   struct iovec*& iovOut, size_t& niovOut);
+  bool prepareRequestImpl(const Request& request, mc_op_t op, uint64_t reqid,
+                          struct iovec*& iovOut, size_t& niovOut);
+  template <class Reply>
+  bool prepareReplyImpl(const Reply& reply, mc_op_t op, uint64_t reqid,
+                        struct iovec*& iovOut, size_t& niovOut);
 
   /**
-   * TypedThriftRequest helpers used to serialize fields specific to a
-   * request type. For example, serialize cas token for McCasRequest (which is
-   * the only request type where serializing the cas field makes sense).
+   * Request and reply helpers used to serialize fields specific to a
+   * request/reply type. For example, serialize cas token for McCasRequest
+   * and McGetsReply, which are the only types where serializing the cas field
+   * makes sense.
    */
 
   /**
-   * Most request types don't have any type-specific fields that need to be
-   * serialized, so we have a catch-all helper that does nothing.
+   * Most request and reply types don't have any type-specific fields that need
+   * to be serialized, so we have a catch-all helper that does nothing.
    */
-  template <class Request>
-  void prepareHelper(const Request&) {
+  template <class RequestOrReply>
+  void prepareHelper(const RequestOrReply&) {
   }
 
   template <int op>
@@ -207,9 +216,34 @@ class UmbrellaSerializedMessage {
     }
   }
 
+  inline void prepareHelper(const McReply& reply) {
+    if (reply.delta()) {
+      appendInt(U64, msg_delta, reply.delta());
+    }
+    if (reply.exptime()) {
+      appendInt(U64, msg_exptime, reply.exptime());
+    }
+    if (reply.leaseToken()) {
+      appendInt(U64, msg_lease_id, reply.leaseToken());
+    }
+    if (reply.cas()) {
+      appendInt(U64, msg_cas, reply.cas());
+    }
+    if (reply.number()) {
+      appendInt(U64, msg_number, reply.number());
+    }
+  }
+
   inline void prepareHelper(
       const TypedThriftRequest<cpp2::McCasRequest>& request) {
     appendInt(U64, msg_cas, request->get_casToken());
+  }
+
+  inline void prepareHelper(
+      const TypedThriftReply<cpp2::McGetsReply>& reply) {
+    if (reply->get_casToken()) {
+      appendInt(U64, msg_cas, *reply->get_casToken());
+    }
   }
 
   inline void prepareHelper(
@@ -218,13 +252,42 @@ class UmbrellaSerializedMessage {
   }
 
   inline void prepareHelper(
+      const TypedThriftReply<cpp2::McLeaseGetReply>& reply) {
+    if (reply->get_leaseToken()) {
+      appendInt(U64, msg_lease_id, *reply->get_leaseToken());
+    }
+  }
+
+  inline void prepareHelper(
       const TypedThriftRequest<cpp2::McIncrRequest>& request) {
     appendInt(U64, msg_delta, request->get_delta());
+  }
+
+  inline void prepareHelper(const TypedThriftReply<cpp2::McIncrReply>& reply) {
+    if (reply->get_delta()) {
+      appendInt(U64, msg_delta, *reply->get_delta());
+    }
   }
 
   inline void prepareHelper(
       const TypedThriftRequest<cpp2::McDecrRequest>& request) {
     appendInt(U64, msg_delta, request->get_delta());
+  }
+
+  inline void prepareHelper(const TypedThriftReply<cpp2::McDecrReply>& reply) {
+    if (reply->get_delta()) {
+      appendInt(U64, msg_delta, *reply->get_delta());
+    }
+  }
+
+  inline void prepareHelper(
+      const TypedThriftReply<cpp2::McMetagetReply>& reply) {
+    if (reply->get_exptime()) {
+      appendInt(U64, msg_exptime, *reply->get_exptime());
+    }
+    if (reply->get_age()) {
+      appendInt(U64, msg_number, *reply->get_age());
+    }
   }
 
   /**

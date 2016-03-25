@@ -323,56 +323,6 @@ void UmbrellaSerializedMessage::clear() {
   error_ = false;
 }
 
-bool UmbrellaSerializedMessage::prepare(const McReply& reply, mc_op_t op,
-                                        uint64_t reqid, struct iovec*& iovOut,
-                                        size_t& niovOut) {
-  niovOut = 0;
-
-  appendInt(I32, msg_op, umbrella_op_from_mc[op]);
-  appendInt(U64, msg_reqid, reqid);
-  appendInt(I32, msg_result, umbrella_res_from_mc[reply.result()]);
-
-  if (reply.appSpecificErrorCode()) {
-    appendInt(I32, msg_err_code, reply.appSpecificErrorCode());
-  }
-  if (reply.flags()) {
-    appendInt(U64, msg_flags, reply.flags());
-  }
-  if (reply.exptime()) {
-    appendInt(U64, msg_exptime, reply.exptime());
-  }
-  if (reply.delta()) {
-    appendInt(U64, msg_delta, reply.delta());
-  }
-  if (reply.leaseToken()) {
-    appendInt(U64, msg_lease_id, reply.leaseToken());
-  }
-  if (reply.cas()) {
-    appendInt(U64, msg_cas, reply.cas());
-  }
-  if (reply.number()) {
-    appendInt(U64, msg_number, reply.number());
-  }
-
-  /* TODO: if we intend to pass chained IOBufs as values,
-     we can optimize this to write multiple iovs directly */
-  if (reply.hasValue()) {
-    auto valueRange = reply.valueRangeSlow();
-    appendString(msg_value,
-                 reinterpret_cast<const uint8_t*>(valueRange.begin()),
-                 valueRange.size());
-  }
-
-  /* NOTE: this check must come after all append*() calls */
-  if (error_) {
-    return false;
-  }
-
-  niovOut = finalizeMessage();
-  iovOut = iovs_;
-  return true;
-}
-
 void UmbrellaSerializedMessage::appendInt(
   entry_type_t type, int32_t tag, uint64_t val) {
 

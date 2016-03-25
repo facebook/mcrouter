@@ -40,11 +40,10 @@ struct TagSet {
 
 /**
  * TagSet specializations for most memcache operations. Note that we include
- * ExptimeTag, FlagsTag, and ValueTag in every TagSet.
- * McReply uses the value field for error messages, despite the fact that
- * most operations don't logically have a 'value' field. The flags field is
- * used in certain TAO update operations. Otherwise, ExptimeTag and FlagsTag
- * are included in most operations (except get) just to be safe.
+ * FlagsTag and ValueTag in every TagSet. McReply uses the value field for error
+ * messages, despite the fact that most operations don't logically have a
+ * 'value' field. The flags field is used in certain TAO update operations.
+ * Otherwise, FlagsTag is included (except for get) just to be safe.
  */
 
 // Get-like ops
@@ -55,8 +54,7 @@ struct TagSet<McOperation<mc_op_get>> {
 
 template <>
 struct TagSet<McOperation<mc_op_gets>> {
-  using Tags = List<CasTag, ErrCodeTag, ExptimeTag, FlagsTag, ResultTag,
-                    ValueTag>;
+  using Tags = List<CasTag, ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
@@ -67,75 +65,72 @@ struct TagSet<McOperation<mc_op_metaget>> {
 
 template <>
 struct TagSet<McOperation<mc_op_lease_get>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, LeaseTokenTag, ResultTag,
-                    ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
 };
 
 // Update-like ops
 template <>
 struct TagSet<McOperation<mc_op_set>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_add>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_replace>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_append>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_prepend>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_cas>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_lease_set>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 // Arithmetic-like ops
 template <>
 struct TagSet<McOperation<mc_op_incr>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, DeltaTag, ResultTag,
-                    ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
 };
 
 template <>
 struct TagSet<McOperation<mc_op_decr>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, DeltaTag, ResultTag,
-                    ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
 };
 
 // Delete-like ops
 template <>
 struct TagSet<McOperation<mc_op_delete>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 // Touch op
 template <>
 struct TagSet<McOperation<mc_op_touch>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 // Version op
 template <>
 struct TagSet<McOperation<mc_op_version>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, ResultTag, ValueTag>;
+  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 
@@ -196,7 +191,7 @@ template <class Op, class Message>
 void parseFieldImpl(Op, ExptimeTag, Message& message,
                     const folly::IOBuf& source, const uint8_t* body,
                     const um_elist_entry_t& entry) {
-  message.setExptime(folly::Endian::big((uint64_t)entry.data.val));
+  message->set_exptime(folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
@@ -395,11 +390,11 @@ ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
 }
 
 template <class Request>
-bool UmbrellaSerializedMessage::prepareImpl(const Request& request,
-                                            uint64_t reqid,
-                                            mc_op_t op,
-                                            struct iovec*& iovOut,
-                                            size_t& niovOut) {
+bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
+                                                   mc_op_t op,
+                                                   uint64_t reqid,
+                                                   struct iovec*& iovOut,
+                                                   size_t& niovOut) {
   niovOut = 0;
 
   appendInt(I32, msg_op, umbrella_op_from_mc[op]);
@@ -438,6 +433,47 @@ bool UmbrellaSerializedMessage::prepareImpl(const Request& request,
   }
 
 #endif
+
+  /* NOTE: this check must come after all append*() calls */
+  if (error_) {
+    return false;
+  }
+
+  niovOut = finalizeMessage();
+  iovOut = iovs_;
+  return true;
+}
+
+template <class Reply>
+bool UmbrellaSerializedMessage::prepareReplyImpl(const Reply& reply,
+                                                 mc_op_t op,
+                                                 uint64_t reqid,
+                                                 struct iovec*& iovOut,
+                                                 size_t& niovOut) {
+  niovOut = 0;
+
+  appendInt(I32, msg_op, umbrella_op_from_mc[op]);
+  appendInt(U64, msg_reqid, reqid);
+  appendInt(I32, msg_result, umbrella_res_from_mc[reply.result()]);
+
+  if (reply.appSpecificErrorCode()) {
+    appendInt(I32, msg_err_code, reply.appSpecificErrorCode());
+  }
+  if (reply.flags()) {
+    appendInt(U64, msg_flags, reply.flags());
+  }
+
+  // Serialize type-specific fields, e.g., cas token for gets reply
+  prepareHelper(reply);
+
+  /* TODO: if we intend to pass chained IOBufs as values,
+     we can optimize this to write multiple iovs directly */
+  if (reply.hasValue()) {
+    auto valueRange = reply.valueRangeSlow();
+    appendString(msg_value,
+                 reinterpret_cast<const uint8_t*>(valueRange.begin()),
+                 valueRange.size());
+  }
 
   /* NOTE: this check must come after all append*() calls */
   if (error_) {
