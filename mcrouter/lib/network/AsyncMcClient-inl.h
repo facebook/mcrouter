@@ -58,4 +58,7 @@ inline void AsyncMcClient::updateWriteTimeout(
   base_->updateWriteTimeout(timeout);
 }
 
+inline const folly::AsyncTransportWrapper* AsyncMcClient::getTransport() {
+  return base_->getTransport();
+}
 }} // facebook::memcache

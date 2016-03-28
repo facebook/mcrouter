@@ -106,9 +106,15 @@ struct ConnectionOptions {
 
   /**
    * Path of the debug fifo.
-     * If empty, debug fifo is disabled.
+   * If empty, debug fifo is disabled.
    */
   std::string debugFifoPath;
+
+
+  /**
+   * enable ssl session caching
+   */
+  bool sessionCachingEnabled{false};
 };
 
 }} // facebook::memcache

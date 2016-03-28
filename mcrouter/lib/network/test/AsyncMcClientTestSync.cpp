@@ -777,3 +777,30 @@ TEST(AsyncMcClient, curruptedUmbrellaReply) {
 
   umbrellaBinaryReply(data, mc_res_remote_error);
 }
+
+TEST(AsyncMcClient, SslSessionCache) {
+  auto server = TestServer::create(true, true);
+  auto constexpr nConnAttempts = 10;
+
+  for (int i = 0; i < nConnAttempts; i++) {
+    TestClient client("::1",
+                      server->getListenPort(),
+                      200, mc_umbrella_protocol,
+                      validSsl());
+    LOG(INFO) << "Connection attempt: " << i;
+    client.sendGet("test", mc_res_found);
+    client.waitForReplies();
+    auto transport = client.getClient().getTransport();
+    auto* socket = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
+    if (i != 0) {
+      EXPECT_TRUE(socket->getSSLSessionReused());
+    } else {
+      EXPECT_FALSE(socket->getSSLSessionReused());
+    }
+    if (i == nConnAttempts - 1) {
+      client.sendGet("shutdown", mc_res_notfound);
+      client.waitForReplies();
+    }
+  }
+  server->join();
+}

@@ -71,6 +71,14 @@ class AsyncMcClientImpl :
   size_t getInflightRequestCount() const;
 
   void updateWriteTimeout(std::chrono::milliseconds timeout);
+
+  /**
+   * @return        The transport used to manage socket
+   */
+  const folly::AsyncTransportWrapper* getTransport() {
+    return socket_.get();
+  }
+
  private:
   using ParserT = ClientMcParser<AsyncMcClientImpl>;
   friend ParserT;

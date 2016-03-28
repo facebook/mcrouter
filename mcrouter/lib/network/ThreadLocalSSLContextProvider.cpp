@@ -20,6 +20,10 @@ using folly::SSLContext;
 namespace facebook { namespace memcache {
 
 namespace {
+
+/* Sessions are valid for upto 30 mins */
+constexpr size_t kSessionLifeTime = 1800;
+
 struct CertPaths {
   folly::StringPiece pemCertPath;
   folly::StringPiece pemKeyPath;
@@ -105,7 +109,6 @@ std::shared_ptr<SSLContext> handleSSLCertsUpdate(folly::StringPiece pemCertPath,
     // use.
   }
 #endif
-
   return sslContext;
 }
 }  // anonymous
@@ -146,8 +149,11 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
             handleSSLCertsUpdate(pemCertPath, pemKeyPath, pemCaPath)) {
       contextInfo.lastLoadTime = now;
       contextInfo.context = std::move(updated);
+      contextInfo.context->setSessionCacheContext("async-server");
+      SSL_CTX_set_timeout(contextInfo.context->getSSLCtx(), kSessionLifeTime);
     }
   }
+
   return contextInfo.context;
 }
 

@@ -128,6 +128,11 @@ class AsyncMcClient {
    */
   void updateWriteTimeout(std::chrono::milliseconds timeout);
 
+  /**
+   * @return        The transport used to manage socket
+   */
+  const folly::AsyncTransportWrapper* getTransport();
+
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;
 };

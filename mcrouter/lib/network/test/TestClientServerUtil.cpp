@@ -185,6 +185,7 @@ TestClient::TestClient(std::string host,
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   if (ssl) {
     opts.sslContextProvider = std::move(ssl);
+    opts.sessionCachingEnabled = true;
   }
   if (qosClass != 0 || qosPath != 0) {
     opts.enableQoS = true;

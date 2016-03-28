@@ -9,6 +9,7 @@
  */
 #include "AsyncMcClientImpl.h"
 
+#include <folly/EvictingCacheMap.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
@@ -359,6 +360,55 @@ folly::AsyncSocket::OptionMap createSocketOptions(
   return options;
 }
 
+/////////////////////////////  SslSessionCache //////////////////////////////
+
+class SslSessionDestructor {
+ public:
+  void operator()(SSL_SESSION* session) {
+    if (session != nullptr) {
+      SSL_SESSION_free(session);
+    }
+  }
+};
+
+using SslSessionUniquePtr =
+    std::unique_ptr<SSL_SESSION, SslSessionDestructor>;
+
+using SslSessionCache =
+    folly::EvictingCacheMap<std::string, SslSessionUniquePtr>;
+
+SslSessionCache& sslSessionCache() {
+  constexpr size_t kCacheSize = 10000;
+  static folly::SingletonThreadLocal<SslSessionCache> cache(
+      []() { return new SslSessionCache(kCacheSize); });
+  return cache.get();
+}
+
+std::string getSessionCacheKey(const AccessPoint& ap) {
+  return ap.toHostPortString();
+}
+
+void storeSslSession(const AccessPoint& ap, SslSessionUniquePtr session) {
+  const auto& key = getSessionCacheKey(ap);
+  if (session != nullptr) {
+    sslSessionCache().set(key, std::move(session));
+  }
+}
+
+void removeSslSession(const AccessPoint& ap) {
+  const auto& key = getSessionCacheKey(ap);
+  sslSessionCache().erase(key);
+}
+
+SSL_SESSION* getSslSession(const AccessPoint& ap) {
+  const auto& key = getSessionCacheKey(ap);
+  auto it = sslSessionCache().find(key);
+  return it != sslSessionCache().end() ? it->second.get() : nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+
 } // anonymous namespace
 
 void AsyncMcClientImpl::attemptConnection() {
@@ -384,8 +434,14 @@ void AsyncMcClientImpl::attemptConnection() {
                      "check SSL certificates"));
         return;
       }
-      socket_.reset(new folly::AsyncSSLSocket(
-        sslContext, &eventBase_));
+
+      auto* sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
+      if (connectionOptions_.sessionCachingEnabled) {
+        /* If we have an existing session try to re-use */
+        auto* session = getSslSession(*connectionOptions_.accessPoint);
+        sslSocket->setSSLSession(session);
+      }
+      socket_.reset(sslSocket);
     } else {
       socket_.reset(new folly::AsyncSocket(&eventBase_));
     }
@@ -428,6 +484,17 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     statusCallbacks_.onUp();
   }
 
+  if (connectionOptions_.sslContextProvider &&
+      connectionOptions_.sessionCachingEnabled) {
+    auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
+    assert(sslSocket != nullptr);
+    if (!sslSocket->getSSLSessionReused()) {
+      /* store the new ssl session for future re-use */
+      auto session = SslSessionUniquePtr(sslSocket->getSSLSession());
+      storeSslSession(*connectionOptions_.accessPoint, std::move(session));
+    }
+  }
+
   assert(getInflightRequestCount() == 0);
   assert(queue_.getParserInitializer() == nullptr);
 
@@ -444,6 +511,12 @@ void AsyncMcClientImpl::connectErr(
   DestructorGuard dg(this);
 
   mc_res_t error;
+
+  if (connectionOptions_.sslContextProvider &&
+      connectionOptions_.sessionCachingEnabled) {
+    /* clear the ssl session from cache */
+    removeSslSession(*connectionOptions_.accessPoint);
+  }
 
   if (ex.getType() == folly::AsyncSocketException::SSL_ERROR) {
     LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
