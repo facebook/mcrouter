@@ -41,7 +41,7 @@ TEST(shadowRouteTest, defaultPolicy) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
 
   auto settings = ShadowSettings::create(
-      folly::dynamic::object("index_range", folly::dynamic{ 0, 1 }),
+      folly::dynamic::object("index_range", folly::dynamic::array(0, 1)),
       *getTestRouter());
 
   auto shadowRhs = get_route_handles(shadowHandles);
@@ -72,8 +72,8 @@ TEST(shadowRouteTest, defaultPolicy) {
     mockFiberContext();
     auto reply = rh.route(McRequestWithMcOp<mc_op_get>("key"));
 
-    EXPECT_TRUE(reply.result() == mc_res_found);
-    EXPECT_TRUE(toString(reply.value()) == "a");
+    EXPECT_EQ(mc_res_found, reply.result());
+    EXPECT_EQ("a", toString(reply.value()));
   });
 
   EXPECT_TRUE(shadowHandles[0]->saw_keys == vector<string>{"key"});
