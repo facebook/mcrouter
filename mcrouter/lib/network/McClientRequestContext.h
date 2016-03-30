@@ -103,8 +103,7 @@ class McClientRequestContextBase
       std::shared_ptr<AsyncMcClientImpl> client,
       folly::Optional<ReplyT<Request>>& replyStorage,
       McClientRequestContextQueue& queue,
-      InitializerFuncPtr initializer,
-      bool useTyped);
+      InitializerFuncPtr initializer);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -190,8 +189,7 @@ class McClientRequestContext : public McClientRequestContextBase {
                          mc_protocol_t protocol,
                          std::shared_ptr<AsyncMcClientImpl> client,
                          McClientRequestContextQueue& queue,
-                         McClientRequestContextBase::InitializerFuncPtr,
-                         bool useTyped);
+                         McClientRequestContextBase::InitializerFuncPtr);
 
   const char* fakeReply() const override;
 

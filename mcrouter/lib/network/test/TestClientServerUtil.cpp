@@ -175,13 +175,11 @@ TestClient::TestClient(std::string host,
                        mc_protocol_t protocol,
                        SSLContextProvider ssl,
                        uint64_t qosClass,
-                       uint64_t qosPath,
-                       bool useTyped)
+                       uint64_t qosPath)
       : fm_(folly::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController()).
     attachEventBase(eventBase_);
   ConnectionOptions opts(host, port, protocol);
-  opts.useTyped = useTyped;
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
   if (ssl) {
     opts.sslContextProvider = std::move(ssl);

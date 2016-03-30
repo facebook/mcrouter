@@ -277,6 +277,8 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
       auto str = parseString(*jProtocol, "protocol");
       if (equalStr("ascii", str, folly::AsciiCaseInsensitive())) {
         protocol = mc_ascii_protocol;
+      } else if (equalStr("caret", str, folly::AsciiCaseInsensitive())) {
+        protocol = mc_caret_protocol;
       } else if (equalStr("umbrella", str, folly::AsciiCaseInsensitive())) {
         protocol = mc_umbrella_protocol;
       } else {
@@ -305,10 +307,6 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
     if (auto jUseSsl = json.get_ptr("use_ssl")) {
       useSsl = parseBool(*jUseSsl, "use_ssl");
     }
-    bool useTyped = false;
-    if (auto jUseTyped = json.get_ptr("use_typed")) {
-      useTyped = parseBool(*jUseTyped, "use_typed");
-    }
 
     // default to 0, which doesn't override
     uint16_t port = 0;
@@ -332,15 +330,13 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
       auto ap = AccessPoint::create(server.stringPiece(), protocol, useSsl,
                                     port);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
-      checkLogic(!useTyped || ap->getProtocol() == mc_umbrella_protocol,
-                 "Typed requests only supported with Umbrella");
 
       accessPoints_[name].push_back(ap);
 
       auto pdstn = proxy_.destinationMap->find(*ap, timeout);
       if (!pdstn) {
         pdstn = proxy_.destinationMap->emplace(
-          std::move(ap), timeout, useTyped, qosClass, qosPath
+          std::move(ap), timeout, qosClass, qosPath
         );
       }
       pdstn->updatePoolName(name);

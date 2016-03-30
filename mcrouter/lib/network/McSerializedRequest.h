@@ -40,8 +40,7 @@ class McSerializedRequest {
   template <class Request>
   McSerializedRequest(const Request& req,
                       size_t reqId,
-                      mc_protocol_t protocol,
-                      bool useTyped);
+                      mc_protocol_t protocol);
 
   ~McSerializedRequest();
 
@@ -64,7 +63,6 @@ class McSerializedRequest {
   struct iovec* iovsBegin_{nullptr};
   size_t iovsCount_{0};
   mc_protocol_t protocol_{mc_unknown_protocol};
-  const bool useTyped_{false};
   Result result_{Result::OK};
 
   bool checkKeyLength(const folly::IOBuf& key);

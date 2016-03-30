@@ -55,6 +55,8 @@ bool parseSsl(folly::StringPiece s) {
 mc_protocol_t parseProtocol(folly::StringPiece str) {
   if (str == "ascii") {
     return mc_ascii_protocol;
+  } else if (str == "caret") {
+    return mc_caret_protocol;
   } else if (str == "umbrella") {
     return mc_umbrella_protocol;
   }

@@ -44,14 +44,9 @@ struct ConnectionOptions {
    * If this flag is set, each request won't be sent over network, instead it
    * will be processed by fake transport, that will reply each request with some
    * basic reply (e.g. STORED, DELETED, or some random string for get requests).
-   * Currently has no effect if protocol is mc_umbrella_protocol.
+   * Currently works only for ascii protocol.
    */
   bool noNetwork{false};
-
-  /**
-   * Flag to enable serialization in the Caret format for the umbrellaProtocol.
-   */
-  bool useTyped{false};
 
   /**
    * Access point of the destination.

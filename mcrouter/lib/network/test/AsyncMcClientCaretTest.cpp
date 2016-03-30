@@ -54,11 +54,10 @@ void umbrellaCaretTest(SSLContextProvider ssl) {
   TestClient client("localhost",
                     server->getListenPort(),
                     200,
-                    mc_umbrella_protocol,
+                    mc_caret_protocol,
                     ssl,
                     0,
-                    0,
-                    /* useTyped */ true);
+                    0);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
   client.sendGet("empty", mc_res_found);

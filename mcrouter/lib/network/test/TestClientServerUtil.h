@@ -119,8 +119,7 @@ class TestClient {
              mc_protocol_t protocol = mc_ascii_protocol,
              SSLContextProvider ssl = noSsl(),
              uint64_t qosClass = 0,
-             uint64_t qosPath = 0,
-             bool useTyped = false);
+             uint64_t qosPath = 0);
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
     client_->setThrottle(maxInflight, maxOutstanding);

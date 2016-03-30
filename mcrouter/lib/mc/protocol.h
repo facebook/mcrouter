@@ -30,6 +30,7 @@ typedef enum mc_protocol_e {
   mc_ascii_protocol = 1,
   mc_binary_protocol = 2,
   mc_umbrella_protocol = 3,
+  mc_caret_protocol = 4,
   mc_nprotocols, // placeholder
 } mc_protocol_t;
 
@@ -41,6 +42,8 @@ static inline mc_protocol_t mc_string_to_protocol(const char * str) {
     return mc_binary_protocol;
   } else if (!strcmp(str, "umbrella")) {
     return mc_umbrella_protocol;
+  } else if (!strcmp(str, "caret")) {
+    return mc_caret_protocol;
   } else {
     return mc_unknown_protocol;
   }
@@ -52,6 +55,7 @@ static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
     "ascii",
     "binary",
     "umbrella",
+    "caret",
   };
   return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
 }

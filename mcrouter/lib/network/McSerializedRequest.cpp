@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,12 +19,11 @@ McSerializedRequest::~McSerializedRequest() {
     case mc_ascii_protocol:
       asciiRequest_.~AsciiSerializedRequest();
       break;
+    case mc_caret_protocol:
+      caretRequest_.~CaretSerializedMessage();
+      break;
     case mc_umbrella_protocol:
-      if (!useTyped_) {
-        umbrellaMessage_.~UmbrellaSerializedMessage();
-      } else {
-        caretRequest_.~CaretSerializedMessage();
-      }
+      umbrellaMessage_.~UmbrellaSerializedMessage();
       break;
     case mc_unknown_protocol:
     case mc_binary_protocol:

@@ -59,7 +59,6 @@ class ProxyDestinationMap {
    */
   std::shared_ptr<ProxyDestination> emplace(std::shared_ptr<AccessPoint> ap,
                                             std::chrono::milliseconds timeout,
-                                            bool useTyped,
                                             uint64_t qosClass,
                                             uint64_t qosPath);
 

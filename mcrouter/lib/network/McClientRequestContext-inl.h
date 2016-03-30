@@ -59,9 +59,8 @@ McClientRequestContextBase::McClientRequestContextBase(
     std::shared_ptr<AsyncMcClientImpl> client,
     folly::Optional<ReplyT<Request>>& replyStorage,
     McClientRequestContextQueue& queue,
-    InitializerFuncPtr initializer,
-    bool useTyped)
-    : reqContext(request, reqid, protocol, useTyped),
+    InitializerFuncPtr initializer)
+    : reqContext(request, reqid, protocol),
       id(reqid),
       queue_(queue),
       client_(std::move(client)),
@@ -141,16 +140,14 @@ McClientRequestContext<Request>::McClientRequestContext(
     mc_protocol_t protocol,
     std::shared_ptr<AsyncMcClientImpl> client,
     McClientRequestContextQueue& queue,
-    McClientRequestContextBase::InitializerFuncPtr func,
-    bool useTyped)
+    McClientRequestContextBase::InitializerFuncPtr func)
     : McClientRequestContextBase(request,
                                  reqid,
                                  protocol,
                                  std::move(client),
                                  replyStorage_,
                                  queue,
-                                 std::move(func),
-                                 useTyped)
+                                 std::move(func))
 #ifndef LIBMC_FBTRACE_DISABLE
       ,
       fbtraceInfo_(getFbTraceInfo(request))

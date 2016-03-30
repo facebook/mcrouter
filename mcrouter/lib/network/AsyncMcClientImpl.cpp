@@ -74,8 +74,8 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
       debugFifo_(std::move(debugFifo)),
-      outOfOrder_(connectionOptions_.accessPoint->getProtocol() ==
-                  mc_umbrella_protocol),
+      outOfOrder_(connectionOptions_.accessPoint->getProtocol() !=
+                  mc_ascii_protocol),
       queue_(outOfOrder_),
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
@@ -86,10 +86,9 @@ AsyncMcClientImpl::AsyncMcClientImpl(
 std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
     folly::EventBase& eventBase,
     ConnectionOptions options) {
-  if (options.accessPoint->getProtocol() == mc_umbrella_protocol &&
+  if (options.accessPoint->getProtocol() != mc_ascii_protocol &&
       options.noNetwork) {
-    throw std::logic_error("No network mode is not supported for umbrella "
-                           "protocol yet!");
+    throw std::logic_error("No network mode is supported only for ascii");
   }
 
   std::shared_ptr<Fifo> debugFifo;
@@ -499,9 +498,13 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   assert(queue_.getParserInitializer() == nullptr);
 
   scheduleNextWriterLoop();
+  // HACK. TODO: properly separate umbrella and caret
+  auto protocol = connectionOptions_.accessPoint->getProtocol();
+  if (protocol == mc_caret_protocol) {
+    protocol = mc_umbrella_protocol;
+  }
   parser_ = folly::make_unique<ParserT>(
-      *this, 0, kReadBufferSizeMin, kReadBufferSizeMax,
-      connectionOptions_.accessPoint->getProtocol());
+      *this, 0, kReadBufferSizeMin, kReadBufferSizeMax, protocol);
   socket_->setReadCB(this);
 }
 

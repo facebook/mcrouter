@@ -12,9 +12,8 @@ namespace facebook { namespace memcache {
 template <class Request>
 McSerializedRequest::McSerializedRequest(const Request& req,
                                          size_t reqId,
-                                         mc_protocol_t protocol,
-                                         bool useTyped)
-    : protocol_(protocol), useTyped_(useTyped) {
+                                         mc_protocol_t protocol)
+    : protocol_(protocol) {
 
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -27,23 +26,22 @@ McSerializedRequest::McSerializedRequest(const Request& req,
         result_ = Result::ERROR;
       }
       break;
+    case mc_caret_protocol:
+      new (&caretRequest_) CaretSerializedMessage;
+      if (!checkKeyLength(req.key())) {
+        return;
+      }
+      if (!caretRequest_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
+        result_ = Result::ERROR;
+      }
+      break;
     case mc_umbrella_protocol:
-      if (!useTyped_) {
-        new (&umbrellaMessage_) UmbrellaSerializedMessage;
-        if (!checkKeyLength(req.key())) {
-          return;
-        }
-        if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
-          result_ = Result::ERROR;
-        }
-      } else {
-        new (&caretRequest_) CaretSerializedMessage;
-        if (!checkKeyLength(req.key())) {
-          return;
-        }
-        if (!caretRequest_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
-          result_ = Result::ERROR;
-        }
+      new (&umbrellaMessage_) UmbrellaSerializedMessage;
+      if (!checkKeyLength(req.key())) {
+        return;
+      }
+      if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
+        result_ = Result::ERROR;
       }
       break;
     case mc_unknown_protocol:

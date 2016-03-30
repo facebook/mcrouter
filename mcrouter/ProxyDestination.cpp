@@ -186,7 +186,6 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     proxy_t& proxy,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
-    bool useTyped,
     uint64_t qosClass,
     uint64_t qosPath) {
 
@@ -194,7 +193,6 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     proxy,
     std::move(ap),
     timeout,
-    useTyped,
     qosClass,
     qosPath));
   ptr->selfPtr_ = ptr;
@@ -225,15 +223,13 @@ ProxyDestination::ProxyDestination(
   proxy_t& proxy_,
   std::shared_ptr<AccessPoint> ap,
   std::chrono::milliseconds timeout,
-  bool useTyped,
   uint64_t qosClass,
   uint64_t qosPath)
     : proxy(&proxy_),
       accessPoint_(std::move(ap)),
       shortestTimeout_(timeout),
       qosClass_(qosClass),
-      qosPath_(qosPath),
-      useTyped_(useTyped) {
+      qosPath_(qosPath) {
 
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);
@@ -267,7 +263,6 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
-  options.useTyped = useTyped_;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }

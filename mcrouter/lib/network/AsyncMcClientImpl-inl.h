@@ -39,8 +39,7 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       connectionOptions_.accessPoint->getProtocol(),
       std::move(selfPtr),
       queue_,
-      [](ParserT& parser) { parser.expectNext<Request>(); },
-      connectionOptions_.useTyped);
+      [](ParserT& parser) { parser.expectNext<Request>(); });
   ctx.setStateChangeCallback(requestStatusCallbacks_.onStateChange);
   sendCommon(ctx);
 
