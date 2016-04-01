@@ -258,6 +258,11 @@ mcrouter_option_integer(
   "0 (lowest priority) to 3 (highest priority) and act on the lowest-order "
   "bits of DSCP.")
 
+mcrouter_option_toggle(
+  ssl_connection_cache, false,
+  "ssl-connection-cache", no_short,
+  "If enabled, limited number of SSL sessions will be cached")
+
 
 mcrouter_option_group("Routing configuration")
 
