@@ -50,7 +50,7 @@ void proxy_t::WaitingRequest<Request>::process(proxy_t* proxy) {
     if (durationInQueueUs >
         1000 * static_cast<int64_t>(
           proxy->getRouterOptions().waiting_request_timeout_ms)) {
-      ctx_->sendReply(mc_res_timeout, "Waiting request timeout exceeded");
+      ctx_->sendReply(mc_res_busy);
       return;
     }
   }
@@ -137,7 +137,7 @@ void proxy_t::dispatchRequest(
     if (getRouterOptions().proxy_max_throttled_requests > 0 &&
         numRequestsWaiting_ >=
             getRouterOptions().proxy_max_throttled_requests) {
-      ctx->sendReply(mc_res_local_error, "Max throttled exceeded");
+      ctx->sendReply(mc_res_busy);
       return;
     }
     auto& queue = waitingRequests_[static_cast<int>(ctx->priority())];
