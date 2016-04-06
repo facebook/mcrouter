@@ -123,20 +123,14 @@ void TestServerOnRequest::flushQueue() {
   waitingReplies_.clear();
 }
 
-TestServer::TestServer(bool outOfOrder, bool useSsl,
-                       int maxInflight, int timeoutMs, size_t maxConns,
-                       size_t unreapableTime, size_t updateThreshold)
+TestServer::TestServer(bool outOfOrder, bool useSsl, int maxInflight,
+                       int timeoutMs, size_t maxConns)
       : outOfOrder_(outOfOrder) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = 1;
   opts_.worker.maxInFlight = maxInflight;
   opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
-  opts_.worker.connLRUopts.maxConns =
-    (maxConns + opts_.numThreads - 1) / opts_.numThreads;
-  opts_.worker.connLRUopts.updateThreshold =
-    std::chrono::milliseconds(updateThreshold);
-  opts_.worker.connLRUopts.unreapableTime =
-    std::chrono::milliseconds(unreapableTime);
+  opts_.setPerThreadMaxConns(maxConns, opts_.numThreads);
   if (useSsl) {
     opts_.pemKeyPath = kValidKeyPath;
     opts_.pemCertPath = kValidCertPath;

@@ -15,7 +15,6 @@
 #include <folly/io/async/SSLContext.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/lib/network/ConnectionLRU.h"
 #include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook { namespace memcache {
@@ -23,10 +22,8 @@ namespace facebook { namespace memcache {
 AsyncMcServerWorker::AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
                                          folly::EventBase& eventBase)
     : opts_(std::move(opts)),
-      eventBase_(eventBase) {
-  if (opts_.connLRUopts.maxConns) {
-    connLRU_.emplace(opts.connLRUopts);
-  }
+      eventBase_(eventBase),
+      tracker_(opts_.maxConns) {
 }
 
 bool AsyncMcServerWorker::addSecureClientSocket(
@@ -59,48 +56,20 @@ bool AsyncMcServerWorker::addClientSocket(
   socket->setSendTimeout(opts_.sendTimeout.count());
   socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
   socket->setNoDelay(true);
-  int fd = socket->getFd();
 
   try {
-    auto& session = McServerSession::create(
-        std::move(socket),
-        onRequest_,
-        [this, fd](McServerSession& session) {
-          if (connLRU_) {
-            connLRU_->touchConnection(fd);
-          }
-          if (onWriteQuiescence_) {
-            onWriteQuiescence_(session);
-          }
-        },
-        onCloseStart_,
-        [this, fd](McServerSession& session) {
-          if (onCloseFinish_) {
-            onCloseFinish_(session);
-          }
-          if (session.isLinked()) {
-            sessions_.erase(sessions_.iterator_to(session));
-          }
-          if (connLRU_) {
-            connLRU_->removeConnection(fd);
-          }
-        },
-        onShutdown_,
-        opts_,
-        userCtxt,
-        debugFifo_);
-
-    sessions_.push_back(session);
-
-    if (connLRU_ &&
-        !connLRU_->addConnection(
-            fd,
-            std::unique_ptr<McServerSession, McServerSessionDeleter>(
-                &session))) {
-      // TODO: record stats about failure
-    }
+    tracker_.add(std::move(socket),
+                 onRequest_,
+                 onWriteQuiescence_,
+                 onCloseStart_,
+                 onCloseFinish_,
+                 onShutdown_,
+                 opts_,
+                 userCtxt,
+                 debugFifo_);
     return true;
-  } catch (std::exception& ex) {
+  } catch (const std::exception& ex) {
+    // TODO: record stats about failure
     return false;
   }
 }
@@ -111,23 +80,11 @@ void AsyncMcServerWorker::shutdown() {
   }
 
   isAlive_ = false;
-  /* Closing a session might cause it to remove itself from sessions_,
-     so we should be careful with the iterator */
-  auto it = sessions_.begin();
-  while (it != sessions_.end()) {
-    auto& session = *it;
-    ++it;
-    session.close();
-  }
+  tracker_.closeAll();
 }
 
 bool AsyncMcServerWorker::writesPending() const {
-  for (auto& session : sessions_) {
-    if (session.writesPending()) {
-      return true;
-    }
-  }
-  return false;
+  return tracker_.writesPending();
 }
 
 }}  // facebook::memcache

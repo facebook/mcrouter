@@ -94,8 +94,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
     opts.debugFifoPath = getServerDebugFifoFullPath(mcrouterOpts);
   }
 
-  opts.worker.connLRUopts.maxConns =
-    (standaloneOpts.max_conns + opts.numThreads - 1) / opts.numThreads;
+  opts.setPerThreadMaxConns(standaloneOpts.max_conns, opts.numThreads);
   opts.worker.defaultVersionHandler = false;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;
   opts.worker.sendTimeout = std::chrono::milliseconds{

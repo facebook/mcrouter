@@ -158,9 +158,9 @@ libmcrouter_a_SOURCES = \
   network/CaretSerializedMessageImpl.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
-  network/ConnectionLRU-inl.h \
-  network/ConnectionLRU.h \
   network/ConnectionOptions.h \
+  network/ConnectionTracker.cpp \
+  network/ConnectionTracker.h \
   network/gen-cpp2/mc_caret_protocol_types.cpp \
   network/gen-cpp2/mc_caret_protocol_types.h \
   network/McAsciiParser-gen.cpp \

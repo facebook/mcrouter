@@ -17,7 +17,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
-#include "mcrouter/lib/network/ConnectionLRU.h"
+#include "mcrouter/lib/network/ConnectionTracker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/McServerSession.h"
 
@@ -171,14 +171,6 @@ class AsyncMcServerWorker {
   folly::EventBase& eventBase_;
   std::shared_ptr<Fifo> debugFifo_;
 
-  struct McServerSessionDeleter {
-    void operator() (McServerSession* session) const {
-      session->close();
-    }
-  };
-
-  folly::Optional<ConnectionLRU<std::unique_ptr<McServerSession,
-                                McServerSessionDeleter>>> connLRU_{folly::none};
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
@@ -189,7 +181,7 @@ class AsyncMcServerWorker {
   bool isAlive_{true};
 
   /* Open sessions and closing sessions that still have pending writes */
-  McServerSession::Queue sessions_;
+  ConnectionTracker tracker_;
 
   AsyncMcServerWorker(const AsyncMcServerWorker&) = delete;
   AsyncMcServerWorker& operator=(const AsyncMcServerWorker&) = delete;

@@ -61,7 +61,9 @@ mcrouter_option_integer(
 mcrouter_option_integer(
   size_t, max_conns, 0,
   "max-conns", no_short,
-  "Maximum number of connections maintained by server")
+  "Maximum number of connections maintained by server. Special values: "
+  "0 - disable connection eviction logic; 1 - calculate number of maximum "
+  "connections based on rlimits. Eviction logic is disabled by default.")
 
 mcrouter_option_integer(
   uint32_t, max_client_outstanding_reqs, DEFAULT_MAX_CLIENT_OUTSTANDING_REQS,
@@ -89,7 +91,7 @@ mcrouter_option_toggle(
 
 mcrouter_option_integer(
   unsigned int, client_timeout_ms, 1000,
-  "client-timeout", no_short, 
+  "client-timeout", no_short,
   "Timeout for sending replies back to clients, in milliseconds. "
   "(0 to disable)");
 

@@ -86,6 +86,15 @@ class AsyncMcServer {
      * Worker-specific options
      */
     AsyncMcServerWorkerOptions worker;
+
+    /**
+     * @param globalMaxConns
+     *  0  - do not reap connections;
+     *  1  - calculate maximum based on rlimits;
+     *  >1 - set per worker limits to ceil(globalMaxConns / numThreads)
+     * @param numThreads_  usually the same as `numThreads` field.
+     */
+    void setPerThreadMaxConns(size_t globalMaxConns, size_t numThreads_);
   };
 
   /**

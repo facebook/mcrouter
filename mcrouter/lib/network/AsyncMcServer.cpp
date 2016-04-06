@@ -10,6 +10,8 @@
 #include "AsyncMcServer.h"
 
 #include <signal.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
 #include <chrono>
 #include <condition_variable>
@@ -21,6 +23,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/SSLContext.h>
 #include <folly/Memory.h>
+#include <folly/String.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -299,6 +302,30 @@ class McServerThread {
     acceptorCv_.notify_all();
   }
 };
+
+void AsyncMcServer::Options::setPerThreadMaxConns(size_t globalMaxConns,
+                                                  size_t numThreads_) {
+  if (globalMaxConns == 0) {
+    worker.maxConns = 0;
+    return;
+  }
+  assert(numThreads_ > 0);
+  if (globalMaxConns == 1) {
+    rlimit rlim;
+    if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+      LOG(ERROR) << "getrlimit failed. Errno: " << folly::errnoStr(errno)
+                 << ". Disabling connection limits.";
+      worker.maxConns = 0;
+      return;
+    }
+
+    size_t softLimit = rlim.rlim_cur;
+    globalMaxConns = std::max<size_t>(softLimit, 3) - 3;
+    VLOG(1) << "Setting max conns to " << globalMaxConns
+            << " based on soft resource limit of " << softLimit;
+  }
+  worker.maxConns = (globalMaxConns + numThreads_ - 1) / numThreads_;
+}
 
 AsyncMcServer::AsyncMcServer(Options opts)
     : opts_(std::move(opts)) {
