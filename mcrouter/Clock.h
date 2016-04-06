@@ -42,7 +42,7 @@ template <typename DurationT>
 class FakeClock : public MockableClockBase<DurationT> {
  public:
   using duration_type = typename MockableClockBase<DurationT>::duration_type;
-  explicit FakeClock(duration_type ticks = duration_type::zero)
+  explicit FakeClock(duration_type ticks = duration_type::zero())
       : ticks_(ticks) {}
   duration_type time_since_epoch() const override {
     return this->ticks_;
