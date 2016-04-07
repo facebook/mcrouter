@@ -10,9 +10,12 @@
 #pragma once
 
 #include <deque>
+#include <string>
 
+#include <folly/Function.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/Memory.h>
 #include <folly/Range.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
@@ -109,7 +112,7 @@ class SessionTestHarness {
   std::vector<std::string> pausedKeys() {
     std::vector<std::string> keys;
     for (auto& t : transactions_) {
-      keys.push_back(t.req.fullKey().str());
+      keys.push_back(t->key());
     }
     return keys;
   }
@@ -124,15 +127,31 @@ class SessionTestHarness {
   /* Paused state. -1 means reply to everything; >= 0 means
      reply only to that many requests */
   int allowed_{-1};
-  struct Transaction {
-    McServerRequestContext ctx;
-    McRequest req;
-    McReply reply;
-    Transaction(McServerRequestContext&& c, McRequest&& r, McReply p)
-        : ctx(std::move(c)), req(std::move(r)), reply(std::move(p)) {
-    }
+  class TransactionIf {
+   public:
+    virtual std::string key() const = 0;
+    virtual void reply() = 0;
+    virtual ~TransactionIf() = 0;
   };
-  std::deque<Transaction> transactions_;
+
+  template <class Request>
+  class Transaction : public TransactionIf {
+   public:
+    Transaction(Request&& req, folly::Function<void(const Request&)> replyFn)
+      : req_(std::move(req)),
+        replyFn_(std::move(replyFn)) {}
+    std::string key() const override {
+      return req_.fullKey().str();
+    }
+    void reply() override {
+      replyFn_(req_);
+    }
+   private:
+    const Request req_;
+    folly::Function<void(const Request&)> replyFn_;
+  };
+
+  std::deque<std::unique_ptr<TransactionIf>> transactions_;
 
   void inputPackets() {}
   void flushSavedInputs();
@@ -155,7 +174,7 @@ class SessionTestHarness {
   void fulfillTransactions() {
     while (!transactions_.empty() && (allowed_ == -1 || allowed_ > 0)) {
       auto& t = transactions_.front();
-      McServerRequestContext::reply(std::move(t.ctx), std::move(t.reply));
+      t->reply();
       transactions_.pop_front();
       if (allowed_ != -1) {
         --allowed_;
@@ -166,23 +185,35 @@ class SessionTestHarness {
     eventBase_.loopOnce();
   }
 
-  template <class Operation>
-  void onRequest(McServerRequestContext&& ctx,
-                 McRequestWithOp<Operation>&& req) {
-    auto reply = makeReply(req);
-    transactions_.emplace_back(std::move(ctx), req.moveMcRequest(),
-                               std::move(reply));
+  template <class Request>
+  void onRequest(McServerRequestContext&& ctx, Request&& req) {
+    transactions_.push_back(makeTransaction(std::move(ctx), std::move(req)));
     fulfillTransactions();
   }
 
-  template <class Operation>
-  McReply makeReply(const McRequestWithOp<Operation>& req) {
-    return McReply(DefaultReply, Operation());
+  template <class Request>
+  std::unique_ptr<Transaction<Request>> makeTransaction(
+      McServerRequestContext&& ctx,
+      Request&& req) {
+    auto replyFn = [ctx = std::move(ctx)](const Request& req) mutable {
+      McServerRequestContext::reply(
+          std::move(ctx), ReplyT<Request>(DefaultReply, req));
+    };
+    return folly::make_unique<Transaction<Request>>(
+        std::move(req), std::move(replyFn));
   }
 
-  McReply makeReply(const McRequestWithMcOp<mc_op_get>& req) {
-    return McReply(mc_res_found,
-                   req.fullKey().str() + "_value");
+  std::unique_ptr<Transaction<McRequestWithMcOp<mc_op_get>>>
+  makeTransaction(McServerRequestContext&& ctx,
+                  McRequestWithMcOp<mc_op_get>&& req) {
+    auto value = req.fullKey().str() + "_value";
+    auto replyFn = [ctx = std::move(ctx), value = std::move(value)](
+        const McRequestWithMcOp<mc_op_get>&) mutable {
+      McServerRequestContext::reply(
+          std::move(ctx), McReply(mc_res_found, value));
+    };
+    return folly::make_unique<Transaction<McRequestWithMcOp<mc_op_get>>>(
+        std::move(req), std::move(replyFn));
   }
 
   class OnRequest {
@@ -202,5 +233,7 @@ class SessionTestHarness {
 
   friend class MockAsyncSocket;
 };
+
+inline SessionTestHarness::TransactionIf::~TransactionIf() {}
 
 }}  // facebook::memcache
