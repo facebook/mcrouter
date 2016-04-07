@@ -34,6 +34,13 @@ void mc_ascii_response_buf_init(mc_ascii_response_buf_t* buf);
 void mc_ascii_response_buf_cleanup(mc_ascii_response_buf_t* buf);
 
 /**
+ * @param result Result code
+ *
+ * @return Human-readable ASCII string for result.
+ */
+const char* mc_res_to_response_string(const mc_res_t result);
+
+/**
  * For given request and reply, builds the Ascii protocol response.
  *
  * @param buf    Storage to use for response substrings

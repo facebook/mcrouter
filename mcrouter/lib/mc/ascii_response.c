@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -51,7 +51,7 @@
     scratch->offset += length + 1;                              \
   }
 
-static inline const char* mc_res_to_response_string(const mc_res_t result) {
+const char* mc_res_to_response_string(const mc_res_t result) {
   switch (result) {
     case mc_res_unknown: return "SERVER_ERROR unknown result\r\n";
     case mc_res_deleted: return "DELETED\r\n";

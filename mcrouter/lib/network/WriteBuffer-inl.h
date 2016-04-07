@@ -13,8 +13,19 @@
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-namespace facebook {
-namespace memcache {
+namespace facebook { namespace memcache {
+
+template <class Arg1, class Arg2>
+void AsciiSerializedReply::addStrings(Arg1&& arg1, Arg2&& arg2) {
+  addString(std::forward<Arg1>(arg1));
+  addString(std::forward<Arg2>(arg2));
+}
+
+template <class Arg, class... Args>
+void AsciiSerializedReply::addStrings(Arg&& arg, Args&&... args) {
+  addString(std::forward<Arg>(arg));
+  addStrings(std::forward<Args>(args)...);
+}
 
 template <class Reply>
 bool WriteBuffer::prepareTyped(McServerRequestContext&& ctx,
@@ -26,5 +37,5 @@ bool WriteBuffer::prepareTyped(McServerRequestContext&& ctx,
   return caretReply_.prepare(
       std::move(reply), ctx_->reqid_, typeId, iovsBegin_, iovsCount_);
 }
-} // memcache
-} // facebook
+
+}} // facebook::memcache
