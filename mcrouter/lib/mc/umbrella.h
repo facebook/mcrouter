@@ -15,7 +15,6 @@
 #include <string.h>
 #include <sys/uio.h>
 
-#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella_protocol.h"

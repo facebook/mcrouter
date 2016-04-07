@@ -11,6 +11,7 @@
 
 #include <arpa/inet.h>
 
+#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/mc/util.h"
 
 #define ASCII_TERM "\r\n"

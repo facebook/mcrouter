@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sys/uio.h>
 
+#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/mc/util.h"
 
 static inline size_t entries_array_size(int num_entries) {

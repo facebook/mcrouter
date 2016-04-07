@@ -15,7 +15,6 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/fbi/util.h"
 
 #define CWLOCK_LOCKED 0x01

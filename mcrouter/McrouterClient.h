@@ -20,11 +20,6 @@
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
 
-struct asox_queue_s;
-using asox_queue_t = asox_queue_s*;
-struct asox_queue_entry_s;
-using asox_queue_entry_t = asox_queue_entry_s;
-
 namespace folly {
 class EventBase;
 } // folly

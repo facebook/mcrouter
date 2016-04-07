@@ -12,6 +12,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/mc/_protocol.h"
 
 static inline int nstring_len_for_printf(const nstring_t* ns) {

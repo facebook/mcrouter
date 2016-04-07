@@ -14,7 +14,6 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/fbi/util.h"
 
 void sfrlock_init(sfrlock_t *l) {

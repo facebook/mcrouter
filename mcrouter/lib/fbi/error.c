@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/lib/fbi/queue.h"
 
 #define fbi_err_alloc(s) malloc(s)

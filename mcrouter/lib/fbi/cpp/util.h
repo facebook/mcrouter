@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <sys/time.h>
+
 #include <chrono>
 #include <string>
 
@@ -17,6 +19,8 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/nstring.h"
+
+using timeval_t = struct timeval;
 
 namespace folly {
 struct dynamic;

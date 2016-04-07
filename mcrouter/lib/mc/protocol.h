@@ -102,16 +102,6 @@ static inline void mc_accesspoint_copy(mc_accesspoint_t* dest,
   return;
 }
 
-static inline int mc_accesspoint_eq(const mc_accesspoint_t* a,
-                                    const mc_accesspoint_t* b) {
-  FBI_ASSERT(a);
-  FBI_ASSERT(b);
-  return (a->transport == b->transport &&
-          nstring_cmp(&a->host, &b->host) == 0 &&
-          nstring_cmp(&a->port, &b->port) == 0 &&
-          a->protocol == b->protocol);
-}
-
 /** Is this a reliable stream accesspoint */
 static inline int mc_accesspoint_isstream(const mc_accesspoint_t* accesspoint) {
   return accesspoint->transport == mc_stream;

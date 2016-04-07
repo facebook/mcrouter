@@ -169,8 +169,6 @@ static inline nstring_map_t* nstring_map_new(const size_t buckets,
   return map;
 }
 
-#include "debug.h"
-
 static inline void nstring_map_clear(nstring_map_t* map) {
   nstring_map_entry_t** head;
 
@@ -185,7 +183,7 @@ static inline void nstring_map_clear(nstring_map_t* map) {
     }
     *head = NULL;
   }
-  FBI_ASSERT(map->count == 0);
+  assert(map->count == 0);
 }
 
 static inline void nstring_map_del(nstring_map_t* map) {
@@ -449,7 +447,7 @@ static inline nstring_map_sorted_iter_t nstring_map_sorted_iter_new(const nstrin
   while ((entry = nstring_map_iter_next(&j)) != NULL) {
     i->keys[index++] = entry->key;
   }
-  FBI_ASSERT(index == count);
+  assert(index == count);
   qsort(i->keys, count, sizeof(nstring_t),
         (int (*)(const void *, const void *))nstring_map_sorted_iter_compare);
   return i;

@@ -28,7 +28,6 @@
 #include "mcrouter/config.h"
 #include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
-#include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McRequestList.h"

@@ -9,7 +9,8 @@
  */
 #pragma once
 
-//#include "protocol.h"
+#include <assert.h>
+
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/mc/msg.h"
 
@@ -78,7 +79,7 @@ static inline size_t mc_ascii_req_max_hdr_len(const mc_msg_t* req) {
                                 req->op : mc_op_unknown];
   size_t variable_len;
   // if not, we are probably missing something in the table above
-  FBI_ASSERT(fixed_len > 0);
+  assert(fixed_len > 0);
 
   switch(req->op) {
   case mc_op_echo:
@@ -117,7 +118,7 @@ static inline size_t mc_ascii_req_max_hdr_len(const mc_msg_t* req) {
     break;
 
   default:
-    FBI_ASSERT(0);
+    assert(0);
     variable_len = 0;
     break;
   }
