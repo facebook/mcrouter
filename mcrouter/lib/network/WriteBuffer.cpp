@@ -193,8 +193,8 @@ void AsciiSerializedReply::handleUnexpected(mc_res_t result,
   // Note: this is not totally compatible with the old way of handling
   // unexpected behavior in mc_ascii_response_write_iovs()
   const auto len = snprintf(printBuffer_, kMaxBufferLength,
-                           "SERVER_ERROR unexpected result (%u) for %s\r\n",
-                           result, requestName);
+                           "SERVER_ERROR unexpected result %s (%d) for %s\r\n",
+                           mc_res_to_string(result), result, requestName);
   assert(len > 0);
   assert(static_cast<size_t>(len) < kMaxBufferLength);
   addString(folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
