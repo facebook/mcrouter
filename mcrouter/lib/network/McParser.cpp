@@ -50,7 +50,8 @@ void McParser::reset() {
 }
 
 std::pair<void*, size_t> McParser::getReadBuffer() {
-  if (protocol_ == mc_umbrella_protocol && umMsgBuffer_) {
+  if ((protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol) &&
+      umMsgBuffer_) {
     /* We're reading in umbrella message body */
     return std::make_pair(
         umMsgBuffer_->writableTail(),
@@ -164,7 +165,7 @@ bool McParser::readDataAvailable(size_t len) {
     if (UNLIKELY(!seenFirstByte_)) {
       seenFirstByte_ = true;
       protocol_ = determineProtocol(*readBuffer_.data());
-      if (protocol_ == mc_umbrella_protocol) {
+      if (protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol) {
         outOfOrder_ = true;
       } else if (protocol_ == mc_ascii_protocol) {
         outOfOrder_ = false;
@@ -173,7 +174,7 @@ bool McParser::readDataAvailable(size_t len) {
       }
     }
 
-    if (protocol_ == mc_umbrella_protocol) {
+    if (protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol) {
       const bool ret = readUmbrellaData();
       shrinkBuffers(); /* no-op if buffer is not large */
       return ret;

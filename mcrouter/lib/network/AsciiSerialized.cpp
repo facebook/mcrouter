@@ -288,4 +288,18 @@ void AsciiSerializedRequest::prepareImpl(
              folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
 }
 
+// FlushAll op.
+
+void AsciiSerializedRequest::prepareImpl(
+    const TypedThriftRequest<cpp2::McFlushAllRequest>& request) {
+  addString("flush_all");
+  if (const auto* delay = request->get_delay()) {
+    auto len = snprintf(printBuffer_, kMaxBufferLength, " %u",
+                        *delay);
+    assert(len > 0 && static_cast<size_t>(len) < kMaxBufferLength);
+    addString(folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
+  }
+  addString("\r\n");
+}
+
 }} // facebook::memcache

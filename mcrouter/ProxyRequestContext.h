@@ -17,11 +17,11 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestLogger.h"
 #include "mcrouter/ProxyRequestPriority.h"
-#include "mcrouter/routes/McOpList.h"
 
 namespace facebook {
 namespace memcache {
@@ -263,6 +263,13 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
   /**
    * Convenience method, that constructs reply and calls non-template
    * method.
+   *
+   * WARNING: This function was convenient with old McRequests, but it can be
+   * dangerous with new TypedThriftRequests. For TypedThriftRequests,
+   * ctx->sendReply(mc_res_local_error, "Error message") does the right thing,
+   * while
+   * ctx->sendReply(mc_res_found, "value") does the wrong thing.
+   * For McRequests, both statements do the right thing.
    */
   template <class... Args>
   void sendReply(Args&&... args) {

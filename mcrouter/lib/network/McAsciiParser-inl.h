@@ -13,63 +13,56 @@
 
 namespace facebook { namespace memcache { namespace detail {
 
-template <class OpReq>
-class CallbackBase<List<OpReq>> {
+template <class Request>
+class CallbackBase<List<Request>> {
  public:
   virtual ~CallbackBase() = default;
   virtual void multiOpEnd() noexcept = 0;
-  virtual void onRequest(typename OpReq::First op,
-                         typename OpReq::Second&& req,
-                         bool noreply = false) noexcept = 0;
+  virtual void onRequest(Request&& req, bool noreply = false) noexcept = 0;
 };
 
-template <class OpReq, class... OpReqs>
-class CallbackBase<List<OpReq, OpReqs...>>
-    : public CallbackBase<List<OpReqs...>> {
+template <class Request, class... Requests>
+class CallbackBase<List<Request, Requests...>>
+    : public CallbackBase<List<Requests...>> {
  public:
-  using CallbackBase<List<OpReqs...>>::onRequest;
+  using CallbackBase<List<Requests...>>::onRequest;
 
-  virtual void onRequest(typename OpReq::First op,
-                         typename OpReq::Second&& req,
-                         bool noreply = false) noexcept = 0;
+  virtual void onRequest(Request&& req, bool noreply = false) noexcept = 0;
 };
 
-template <class Callback, class OpReqs>
+template <class Callback, class Requests>
 class CallbackWrapper;
 
-template <class Callback, class OpReq>
-class CallbackWrapper<Callback, List<OpReq>>
-    : public CallbackBase<SupportedReqs> {
+template <class Callback, class Request>
+class CallbackWrapper<Callback, List<Request>>
+    : public CallbackBase<ThriftRequestList> {
  public:
   explicit CallbackWrapper(Callback& callback) : callback_(callback) {}
 
   virtual void multiOpEnd() noexcept override { callback_.multiOpEnd(); }
 
-  using CallbackBase<SupportedReqs>::onRequest;
+  using CallbackBase<ThriftRequestList>::onRequest;
 
-  virtual void onRequest(typename OpReq::First op,
-                         typename OpReq::Second&& req,
+  virtual void onRequest(Request&& req,
                          bool noreply = false) noexcept override {
-    callback_.onRequest(op, std::move(req), noreply);
+    callback_.onRequest(std::move(req), noreply);
   }
 
  protected:
   Callback& callback_;
 };
 
-template <class Callback, class OpReq, class... OpReqs>
-class CallbackWrapper<Callback, List<OpReq, OpReqs...>>
-    : public CallbackWrapper<Callback, List<OpReqs...>> {
+template <class Callback, class Request, class... Requests>
+class CallbackWrapper<Callback, List<Request, Requests...>>
+    : public CallbackWrapper<Callback, List<Requests...>> {
  public:
   explicit CallbackWrapper(Callback& callback)
-      : CallbackWrapper<Callback, List<OpReqs...>>(callback) {}
+      : CallbackWrapper<Callback, List<Requests...>>(callback) {}
 
-  using CallbackWrapper<Callback, List<OpReqs...>>::onRequest;
+  using CallbackWrapper<Callback, List<Requests...>>::onRequest;
 
-  void onRequest(typename OpReq::First op,
-                 typename OpReq::Second&& req,
-                 bool noreply = false) noexcept override {
-    this->callback_.onRequest(op, std::move(req), noreply);
+  void onRequest(Request&& req, bool noreply = false) noexcept override {
+    this->callback_.onRequest(std::move(req), noreply);
   }
 };
 
@@ -199,7 +192,9 @@ template <>
 void McClientAsciiParser::initializeReplyParser<
     McRequestWithMcOp<mc_op_flushall>>();
 
-/* TODO(jmswen) Add support for McFlushAllRequest */
+template <>
+void McClientAsciiParser::initializeReplyParser<
+    TypedThriftRequest<cpp2::McFlushAllRequest>>();
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
@@ -260,7 +255,7 @@ inline void McAsciiParserBase::trimIOBufToRange(folly::IOBuf& buffer,
 template <class Callback>
 McServerAsciiParser::McServerAsciiParser(Callback& callback)
     : callback_(folly::make_unique<
-          detail::CallbackWrapper<Callback, detail::SupportedReqs>>(callback)) {
+          detail::CallbackWrapper<Callback, ThriftRequestList>>(callback)) {
 }
 
 // Only used for McReply to fill in 'value' field for error messages or

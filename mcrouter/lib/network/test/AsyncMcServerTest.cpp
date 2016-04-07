@@ -17,8 +17,8 @@ using namespace facebook::memcache::test;
 struct VeryifyCommonNameOnRequest {
   VeryifyCommonNameOnRequest(std::atomic<bool>&, bool) {}
 
-  template<int N>
-  void onRequest(McServerRequestContext&& ctx, McRequestWithMcOp<N>&&) {
+  template <class Request>
+  void onRequest(McServerRequestContext&& ctx, Request&&) {
     constexpr folly::StringPiece expectedCommonName{"Asox Company"};
     auto& session = ctx.session();
     auto clientCommonName = session.getClientCommonName();

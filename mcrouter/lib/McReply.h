@@ -92,6 +92,7 @@ class McReply {
    * @return True if this reply's result is worse than other.result()
    */
   bool worseThan(const McReply& other) const noexcept;
+  bool worseThan(mc_res_t otherResult) const noexcept;
 
   bool isError() const noexcept {
     return isErrorResult(result_);

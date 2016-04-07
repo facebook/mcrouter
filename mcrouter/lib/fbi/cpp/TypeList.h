@@ -56,6 +56,19 @@ struct KV {
   using Value = T;
 };
 
+template <int Id, class KVList>
+struct HasKey;
+
+template <int Id>
+struct HasKey<Id, List<>> {
+  static constexpr bool value = false;
+};
+
+template <int Id, int K, class V, class... KVs>
+struct HasKey<Id, List<KV<K, V>, KVs...>> {
+  static constexpr bool value = (Id == K) || HasKey<Id, List<KVs...>>::value;
+};
+
 /**
  * (T, List<Ts...>) -> List<T, Ts...>
  */

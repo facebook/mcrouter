@@ -12,6 +12,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -51,7 +52,10 @@ action reply_value_data {
 
 # Action that initializes/performs data parsing for requests.
 action req_value_data {
-  if (!readValue(buffer, message.valueData_)) {
+  // Note: order is important here. Must set __isset.value = true before
+  // possibly breaking.
+  message->__isset.value = true;
+  if (!readValue(buffer, message->value)) {
     fbreak;
   }
 }
@@ -127,8 +131,12 @@ flags = uint %{
   message.setFlags(currentUInt_);
 };
 
+delay = uint %{
+  message->set_delay(currentUInt_);
+};
+
 exptime = uint %{
-  message->set_exptime(static_cast<uint32_t>(currentUInt_));
+  message->set_exptime(static_cast<int32_t>(currentUInt_));
 };
 
 exptime_req = negative? uint %{
@@ -549,6 +557,19 @@ void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_flushall>>(
 }
 
 template <>
+void McClientAsciiParser::consumeMessage<
+    TypedThriftRequest<cpp2::McFlushAllRequest>>(folly::IOBuf& buffer) {
+  using Request = TypedThriftRequest<cpp2::McFlushAllRequest>;
+
+  auto& message = currentMessage_.get<ReplyT<Request>>();
+  %%{
+    machine mc_ascii_flushall_reply;
+    write init nocs;
+    write exec;
+  }%%
+}
+
+template <>
 void McClientAsciiParser::initializeReplyParser<
     McRequestWithMcOp<mc_op_get>>() {
 
@@ -894,7 +915,18 @@ void McClientAsciiParser::initializeReplyParser<
   consumer_ = &McClientAsciiParser::consumeMessage<Request>;
 }
 
-/* TODO(jmswen) initializeReplyParser for McFlushAllRequest */
+template <>
+void McClientAsciiParser::initializeReplyParser<
+    TypedThriftRequest<cpp2::McFlushAllRequest>>() {
+
+  using Request = TypedThriftRequest<cpp2::McFlushAllRequest>;
+
+  initializeCommon<ReplyT<Request>>();
+  savedCs_ = mc_ascii_flushall_reply_en_flushall_reply;
+  errorCs_ = mc_ascii_flushall_reply_error;
+  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
+}
+
 
 template <class Reply>
 void McClientAsciiParser::initializeArithmReplyCommon() {
@@ -933,8 +965,7 @@ machine mc_ascii_get_like_req_body;
 include mc_ascii_common;
 
 action on_full_key {
-  callback_->onRequest(Operation(),
-                       std::move(currentMessage_.get<Request>()));
+  callback_->onRequest(std::move(message));
 }
 
 req_body := ' '* key % on_full_key (' '+ key % on_full_key)* ' '* multi_op_end;
@@ -942,9 +973,9 @@ req_body := ' '* key % on_full_key (' '+ key % on_full_key)* ' '* multi_op_end;
 write data;
 }%%
 
-template <class Operation, class Request>
+template <class Request>
 void McServerAsciiParser::consumeGetLike(folly::IOBuf& buffer) {
-  Request& message = currentMessage_.get<Request>();
+  auto& message = currentMessage_.get<Request>();
   %%{
     machine mc_ascii_get_like_req_body;
     write init nocs;
@@ -952,13 +983,13 @@ void McServerAsciiParser::consumeGetLike(folly::IOBuf& buffer) {
   }%%
 }
 
-template <class Operation, class Request>
+template <class Request>
 void McServerAsciiParser::initGetLike() {
   savedCs_ = mc_ascii_get_like_req_body_en_req_body;
   errorCs_ = mc_ascii_get_like_req_body_error;
   state_ = State::PARTIAL;
   currentMessage_.emplace<Request>();
-  consumer_ = &McServerAsciiParser::consumeGetLike<Operation, Request>;
+  consumer_ = &McServerAsciiParser::consumeGetLike<Request>;
 }
 
 // Set-like requests (set, add, replace, append, prepend).
@@ -969,9 +1000,7 @@ include mc_ascii_common;
 
 req_body := ' '* key ' '+ flags ' '+ exptime_req ' '+ value_bytes
             (' '+ noreply)? ' '* new_line @req_value_data new_line @{
-              callback_->onRequest(Operation(),
-                                   std::move(currentMessage_.get<Request>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -979,9 +1008,9 @@ req_body := ' '* key ' '+ flags ' '+ exptime_req ' '+ value_bytes
 write data;
 }%%
 
-template <class Operation, class Request>
+template <class Request>
 void McServerAsciiParser::consumeSetLike(folly::IOBuf& buffer) {
-  Request& message = currentMessage_.get<Request>();
+  auto& message = currentMessage_.get<Request>();
   %%{
     machine mc_ascii_set_like_req_body;
     write init nocs;
@@ -989,13 +1018,13 @@ void McServerAsciiParser::consumeSetLike(folly::IOBuf& buffer) {
   }%%
 }
 
-template <class Operation, class Request>
+template <class Request>
 void McServerAsciiParser::initSetLike() {
   savedCs_ = mc_ascii_set_like_req_body_en_req_body;
   errorCs_ = mc_ascii_set_like_req_body_error;
   state_ = State::PARTIAL;
   currentMessage_.emplace<Request>();
-  consumer_ = &McServerAsciiParser::consumeSetLike<Operation, Request>;
+  consumer_ = &McServerAsciiParser::consumeSetLike<Request>;
 }
 
 // Cas request.
@@ -1006,9 +1035,7 @@ include mc_ascii_common;
 
 req_body := ' '* key ' '+ flags ' '+ exptime_req ' '+ value_bytes ' '+ cas_id
             (' '+ noreply)? ' '* new_line @req_value_data new_line @{
-              callback_->onRequest(McOperation<mc_op_cas>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1017,7 +1044,7 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeCas(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message = currentMessage_.get<TypedThriftRequest<cpp2::McCasRequest>>();
   %%{
     machine mc_ascii_cas_req_body;
     write init nocs;
@@ -1034,9 +1061,7 @@ include mc_ascii_common;
 req_body := ' '* key ' '+ lease_token ' '+ flags ' '+ exptime_req ' '+
             value_bytes (' '+ noreply)? ' '* new_line @req_value_data
             new_line @{
-              callback_->onRequest(McOperation<mc_op_lease_set>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1045,7 +1070,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeLeaseSet(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message = 
+    currentMessage_.get<TypedThriftRequest<cpp2::McLeaseSetRequest>>();
   %%{
     machine mc_ascii_lease_set_req_body;
     write init nocs;
@@ -1060,9 +1086,7 @@ machine mc_ascii_delete_req_body;
 include mc_ascii_common;
 
 req_body := ' '* key (' '+ exptime_req)? (' '+ noreply)? ' '* new_line @{
-              callback_->onRequest(McOperation<mc_op_delete>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1071,7 +1095,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeDelete(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message = 
+    currentMessage_.get<TypedThriftRequest<cpp2::McDeleteRequest>>();
   %%{
     machine mc_ascii_delete_req_body;
     write init nocs;
@@ -1086,9 +1111,7 @@ machine mc_ascii_touch_req_body;
 include mc_ascii_common;
 
 req_body := ' '* key ' '+ exptime_req (' '+ noreply)? ' '* new_line @{
-              callback_->onRequest(McOperation<mc_op_touch>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1097,7 +1120,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeTouch(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message =
+    currentMessage_.get<TypedThriftRequest<cpp2::McTouchRequest>>();
   %%{
     machine mc_ascii_touch_req_body;
     write init nocs;
@@ -1112,10 +1136,8 @@ machine mc_ascii_shutdown_req_body;
 include mc_ascii_common;
 
 # Note we ignore shutdown delay, since mcrouter does not honor it anyway.
-req_body := (' '+ number)? ' '* new_line @{
-              callback_->onRequest(McOperation<mc_op_shutdown>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+req_body := (' '+ digit+)? ' '* new_line @{
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1124,7 +1146,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeShutdown(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message =
+    currentMessage_.get<TypedThriftRequest<cpp2::McShutdownRequest>>();
   %%{
     machine mc_ascii_shutdown_req_body;
     write init nocs;
@@ -1139,9 +1162,7 @@ machine mc_ascii_arithmetic_req_body;
 include mc_ascii_common;
 
 req_body := ' '* key ' '+ delta (' '* noreply)? ' '* new_line @{
-              callback_->onRequest(Operation(),
-                                   std::move(currentMessage_.get<Request>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1149,9 +1170,9 @@ req_body := ' '* key ' '+ delta (' '* noreply)? ' '* new_line @{
 write data;
 }%%
 
-template <class Operation, class Request>
+template <class Request>
 void McServerAsciiParser::consumeArithmetic(folly::IOBuf& buffer) {
-  Request& message = currentMessage_.get<Request>();
+  auto& message = currentMessage_.get<Request>();
   %%{
     machine mc_ascii_arithmetic_req_body;
     write init nocs;
@@ -1159,13 +1180,13 @@ void McServerAsciiParser::consumeArithmetic(folly::IOBuf& buffer) {
   }%%
 }
 
-template <class Operation, class Request>
+template <class Request>
 void McServerAsciiParser::initArithmetic() {
   savedCs_ = mc_ascii_arithmetic_req_body_en_req_body;
   errorCs_ = mc_ascii_arithmetic_req_body_error;
   state_ = State::PARTIAL;
   currentMessage_.emplace<Request>();
-  consumer_ = &McServerAsciiParser::consumeArithmetic<Operation, Request>;
+  consumer_ = &McServerAsciiParser::consumeArithmetic<Request>;
 }
 
 // Stats request.
@@ -1175,9 +1196,7 @@ machine mc_ascii_stats_req_body;
 include mc_ascii_common;
 
 req_body := ' '* (' ' multi_token)? new_line @{
-              callback_->onRequest(McOperation<mc_op_stats>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1186,7 +1205,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeStats(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message =
+    currentMessage_.get<TypedThriftRequest<cpp2::McStatsRequest>>();
   %%{
     machine mc_ascii_stats_req_body;
     write init nocs;
@@ -1201,9 +1221,7 @@ machine mc_ascii_exec_req_body;
 include mc_ascii_common;
 
 req_body := multi_token new_line @{
-              callback_->onRequest(McOperation<mc_op_exec>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1212,7 +1230,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeExec(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message =
+    currentMessage_.get<TypedThriftRequest<cpp2::McExecRequest>>();
   %%{
     machine mc_ascii_exec_req_body;
     write init nocs;
@@ -1227,9 +1246,7 @@ machine mc_ascii_flush_re_req_body;
 include mc_ascii_common;
 
 req_body := ' '* key ' '* new_line @{
-              callback_->onRequest(McOperation<mc_op_flushre>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1238,7 +1255,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeFlushRe(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message =
+    currentMessage_.get<TypedThriftRequest<cpp2::McFlushReRequest>>();
   %%{
     machine mc_ascii_flush_re_req_body;
     write init nocs;
@@ -1252,10 +1270,8 @@ void McServerAsciiParser::consumeFlushRe(folly::IOBuf& buffer) {
 machine mc_ascii_flush_all_req_body;
 include mc_ascii_common;
 
-req_body := ' '* number? ' '* new_line @{
-              callback_->onRequest(McOperation<mc_op_flushall>(),
-                                   std::move(currentMessage_.get<McRequest>()),
-                                   noreply_);
+req_body := (' '* delay)? ' '* new_line @{
+              callback_->onRequest(std::move(message), noreply_);
               finishReq();
               fbreak;
             };
@@ -1264,7 +1280,8 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeFlushAll(folly::IOBuf& buffer) {
-  McRequest& message = currentMessage_.get<McRequest>();
+  auto& message =
+    currentMessage_.get<TypedThriftRequest<cpp2::McFlushAllRequest>>();
   %%{
     machine mc_ascii_flush_all_req_body;
     write init nocs;
@@ -1275,7 +1292,7 @@ void McServerAsciiParser::consumeFlushAll(folly::IOBuf& buffer) {
 // Operation keyword parser.
 
 %%{
-machine mc_ascii_req_op_type;
+machine mc_ascii_req_type;
 
 # Define binding to class member variables.
 variable p p_;
@@ -1285,47 +1302,47 @@ variable cs savedCs_;
 new_line = '\r'? '\n';
 
 get = 'get ' @{
-  initGetLike<McOperation<mc_op_get>, McRequest>();
+  initGetLike<TypedThriftRequest<cpp2::McGetRequest>>();
   fbreak;
 };
 
 gets = 'gets ' @{
-  initGetLike<McOperation<mc_op_gets>, McRequest>();
+  initGetLike<TypedThriftRequest<cpp2::McGetsRequest>>();
   fbreak;
 };
 
 lease_get = 'lease-get ' @{
-  initGetLike<McOperation<mc_op_lease_get>, McRequest>();
+  initGetLike<TypedThriftRequest<cpp2::McLeaseGetRequest>>();
   fbreak;
 };
 
 metaget = 'metaget ' @{
-  initGetLike<McOperation<mc_op_metaget>, McRequest>();
+  initGetLike<TypedThriftRequest<cpp2::McMetagetRequest>>();
   fbreak;
 };
 
 set = 'set ' @{
-  initSetLike<McOperation<mc_op_set>, McRequest>();
+  initSetLike<TypedThriftRequest<cpp2::McSetRequest>>();
   fbreak;
 };
 
 add = 'add ' @{
-  initSetLike<McOperation<mc_op_add>, McRequest>();
+  initSetLike<TypedThriftRequest<cpp2::McAddRequest>>();
   fbreak;
 };
 
 replace = 'replace ' @{
-  initSetLike<McOperation<mc_op_replace>, McRequest>();
+  initSetLike<TypedThriftRequest<cpp2::McReplaceRequest>>();
   fbreak;
 };
 
 append = 'append ' @{
-  initSetLike<McOperation<mc_op_append>, McRequest>();
+  initSetLike<TypedThriftRequest<cpp2::McAppendRequest>>();
   fbreak;
 };
 
 prepend = 'prepend ' @{
-  initSetLike<McOperation<mc_op_prepend>, McRequest>();
+  initSetLike<TypedThriftRequest<cpp2::McPrependRequest>>();
   fbreak;
 };
 
@@ -1333,7 +1350,7 @@ cas = 'cas ' @{
   savedCs_ = mc_ascii_cas_req_body_en_req_body;
   errorCs_ = mc_ascii_cas_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McCasRequest>>();
   consumer_ = &McServerAsciiParser::consumeCas;
   fbreak;
 };
@@ -1342,7 +1359,7 @@ lease_set = 'lease-set ' @{
   savedCs_ = mc_ascii_lease_set_req_body_en_req_body;
   errorCs_ = mc_ascii_lease_set_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McLeaseSetRequest>>();
   consumer_ = &McServerAsciiParser::consumeLeaseSet;
   fbreak;
 };
@@ -1351,7 +1368,7 @@ delete = 'delete ' @{
   savedCs_ = mc_ascii_delete_req_body_en_req_body;
   errorCs_ = mc_ascii_delete_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McDeleteRequest>>();
   consumer_ = &McServerAsciiParser::consumeDelete;
   fbreak;
 };
@@ -1360,7 +1377,7 @@ touch = 'touch ' @{
   savedCs_ = mc_ascii_touch_req_body_en_req_body;
   errorCs_ = mc_ascii_touch_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McTouchRequest>>();
   consumer_ = &McServerAsciiParser::consumeTouch;
   fbreak;
 };
@@ -1369,29 +1386,29 @@ shutdown = 'shutdown' @{
   savedCs_ = mc_ascii_shutdown_req_body_en_req_body;
   errorCs_ = mc_ascii_shutdown_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McShutdownRequest>>();
   consumer_ = &McServerAsciiParser::consumeShutdown;
   fbreak;
 };
 
 incr = 'incr ' @{
-  initArithmetic<McOperation<mc_op_incr>, McRequest>();
+  initArithmetic<TypedThriftRequest<cpp2::McIncrRequest>>();
   fbreak;
 };
 
 decr = 'decr ' @{
-  initArithmetic<McOperation<mc_op_decr>, McRequest>();
+  initArithmetic<TypedThriftRequest<cpp2::McDecrRequest>>();
   fbreak;
 };
 
 version = 'version' ' '* new_line @{
-  callback_->onRequest(McOperation<mc_op_version>(), McRequest());
+  callback_->onRequest(TypedThriftRequest<cpp2::McVersionRequest>());
   finishReq();
   fbreak;
 };
 
 quit = 'quit' ' '* new_line @{
-  callback_->onRequest(McOperation<mc_op_quit>(), McRequest(),
+  callback_->onRequest(TypedThriftRequest<cpp2::McQuitRequest>(), 
                        true /* noReply */);
   finishReq();
   fbreak;
@@ -1401,7 +1418,7 @@ stats = 'stats' @{
   savedCs_ = mc_ascii_stats_req_body_en_req_body;
   errorCs_ = mc_ascii_stats_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McStatsRequest>>();
   consumer_ = &McServerAsciiParser::consumeStats;
   fbreak;
 };
@@ -1410,7 +1427,7 @@ exec = ('exec ' | 'admin ') @{
   savedCs_ = mc_ascii_exec_req_body_en_req_body;
   errorCs_ = mc_ascii_exec_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McExecRequest>>();
   consumer_ = &McServerAsciiParser::consumeExec;
   fbreak;
 };
@@ -1419,7 +1436,7 @@ flush_re = 'flush_regex ' @{
   savedCs_ = mc_ascii_flush_re_req_body_en_req_body;
   errorCs_ = mc_ascii_flush_re_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McFlushReRequest>>();
   consumer_ = &McServerAsciiParser::consumeFlushRe;
   fbreak;
 };
@@ -1428,7 +1445,7 @@ flush_all = 'flush_all' @{
   savedCs_ = mc_ascii_flush_all_req_body_en_req_body;
   errorCs_ = mc_ascii_flush_all_req_body_error;
   state_ = State::PARTIAL;
-  currentMessage_.emplace<McRequest>();
+  currentMessage_.emplace<TypedThriftRequest<cpp2::McFlushAllRequest>>();
   consumer_ = &McServerAsciiParser::consumeFlushAll;
   fbreak;
 };
@@ -1442,7 +1459,7 @@ write data;
 
 void McServerAsciiParser::opTypeConsumer(folly::IOBuf& buffer) {
   %%{
-    machine mc_ascii_req_op_type;
+    machine mc_ascii_req_type;
     write init nocs;
     write exec;
   }%%
@@ -1461,8 +1478,8 @@ McAsciiParserBase::State McServerAsciiParser::consume(folly::IOBuf& buffer) {
   while (p_ != pe_) {
     // Initialize operation parser.
     if (state_ == State::UNINIT) {
-      savedCs_ = mc_ascii_req_op_type_en_command;
-      errorCs_ = mc_ascii_req_op_type_error;
+      savedCs_ = mc_ascii_req_type_en_command;
+      errorCs_ = mc_ascii_req_type_error;
 
       // Reset all fields.
       currentUInt_ = 0;

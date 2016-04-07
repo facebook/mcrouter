@@ -9,15 +9,18 @@
  */
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 using namespace facebook::memcache;
 
 namespace {
 
-template <class Request>
-bool compareRequests(const Request& expected, const Request& actual) {
+template <int op>
+bool compareRequests(const McRequestWithMcOp<op>& expected,
+                     const McRequestWithMcOp<op>& actual) {
   EXPECT_EQ(expected.fullKey(), actual.fullKey());
   EXPECT_EQ(expected.flags(), actual.flags());
   EXPECT_EQ(expected.exptime(), actual.exptime());
@@ -37,6 +40,14 @@ bool compareRequests(const Request& expected, const Request& actual) {
          expected.valueRangeSlow() == actual.valueRangeSlow();
 }
 
+template <class ThriftType>
+bool compareRequests(const TypedThriftRequest<ThriftType>& expected,
+                     const TypedThriftRequest<ThriftType>& actual) {
+  expected.valueRangeSlow();
+  actual.valueRangeSlow();
+  return *expected == *actual;
+}
+
 class TestRunner {
  public:
   TestRunner() {}
@@ -44,11 +55,11 @@ class TestRunner {
   TestRunner(const TestRunner&) = delete;
   TestRunner operator=(const TestRunner&) = delete;
 
-  template <class Operation, class Request>
-  TestRunner& expectNext(Operation, Request req, bool noreply = false) {
+  template <class Request>
+  TestRunner& expectNext(Request req, bool noreply = false) {
     callbacks_.emplace_back(
-        folly::make_unique<ExpectedRequestCallback<Operation, Request>>(
-            Operation(), std::move(req), noreply));
+        folly::make_unique<ExpectedRequestCallback<Request>>(
+            std::move(req), noreply));
     return *this;
   }
 
@@ -99,24 +110,20 @@ class TestRunner {
   }
 
  private:
-  template <class Operation, class Request> class ExpectedRequestCallback;
+  template <class Request> class ExpectedRequestCallback;
 
   class ExpectedCallbackBase {
    public:
-    template <class Operation, class Request>
-    bool validate(Operation, const Request& req, bool noreply) const {
-      EXPECT_TRUE(opType_ == typeid(Operation))
-          << "Parsed wrong op type, expected " << opName_ << ", but parsed "
-          << Operation::name;
+    template <class Request>
+    bool validate(const Request& req, bool noreply) const {
       EXPECT_TRUE(reqType_ == typeid(Request))
           << "Parsed wrong type of request!";
       EXPECT_EQ(noreply_, noreply);
 
-      if (opType_ == typeid(Operation) && reqType_ == typeid(Request) &&
-          noreply == noreply_) {
+      if (reqType_ == typeid(Request) && noreply == noreply_) {
         auto& message =
             *reinterpret_cast<
-                const ExpectedRequestCallback<Operation, Request>*>(this);
+                const ExpectedRequestCallback<Request>*>(this);
         return compareRequests(message.req_, req);
       } else {
         return false;
@@ -127,25 +134,21 @@ class TestRunner {
 
     virtual ~ExpectedCallbackBase() = default;
    protected:
-    template <class Operation, class Request>
-    ExpectedCallbackBase(Operation, const Request& r, bool noreply)
-        : opName_(Operation::name),
-          opType_(typeid(Operation)),
-          reqType_(typeid(Request)),
+    template <class Request>
+    ExpectedCallbackBase(const Request&, bool noreply)
+        : reqType_(typeid(Request)),
           noreply_(noreply) {}
 
    private:
-    const char* opName_;
-    std::type_index opType_;
     std::type_index reqType_;
     bool noreply_{false};
   };
 
-  template <class Operation, class Request>
+  template <class Request>
   class ExpectedRequestCallback : public ExpectedCallbackBase {
    public:
-    ExpectedRequestCallback(Operation, Request req, bool noreply = false)
-        : ExpectedCallbackBase(Operation(), req, noreply),
+    explicit ExpectedRequestCallback(Request req, bool noreply = false)
+        : ExpectedCallbackBase(req, noreply),
           req_(std::move(req)) {}
     virtual ~ExpectedRequestCallback() = default;
    private:
@@ -155,10 +158,10 @@ class TestRunner {
   };
 
   class ExpectedMultiOpEndCallback
-      : public ExpectedRequestCallback<McOperation<mc_op_end>, McRequest> {
+      : public ExpectedRequestCallback<McRequestWithMcOp<mc_op_end>> {
    public:
     ExpectedMultiOpEndCallback()
-        : ExpectedRequestCallback(McOperation<mc_op_end>(), McRequest()) {}
+        : ExpectedRequestCallback(McRequestWithMcOp<mc_op_end>()) {}
   };
 
   class ParserOnRequest {
@@ -195,6 +198,12 @@ class TestRunner {
           << "typedRequestReady should never be called for ASCII";
     }
 
+    template <class Request>
+    void umbrellaRequestReady(Request&&, uint64_t) {
+      ASSERT_TRUE(false)
+        << "umbrellaRequestReady should never be called for ASCII";
+    }
+
     void parseError(mc_res_t, folly::StringPiece reason) {
       ASSERT_NE(nullptr, parser_)
           << "Test framework bug, didn't provide parser to callback!";
@@ -207,12 +216,12 @@ class TestRunner {
       failed_ = !isError_ || callbacks_.size() != id_;
     }
 
-    template <class Operation, class Request>
-    void checkNext(Operation, Request&& req, bool noreply) {
+    template <class Request>
+    void checkNext(Request&& req, bool noreply) {
       EXPECT_LT(id_, callbacks_.size()) << "Unexpected callback!";
       if (id_ < callbacks_.size()) {
         bool validationRes =
-            callbacks_[id_]->validate(Operation(), req, noreply);
+            callbacks_[id_]->validate(req, noreply);
         EXPECT_TRUE(validationRes)
           << "Wrong callback was called or parsed incorrect request!";
         if (!validationRes) {
@@ -233,14 +242,13 @@ class TestRunner {
       }
     }
 
-    // Ascii parser callbacks.
-    template <class Operation, class Request>
-    void onRequest(Operation, Request&& req, bool noreply) {
-      checkNext(Operation(), std::move(req), noreply);
+    template <class ThriftType>
+    void onRequest(TypedThriftRequest<ThriftType>&& req, bool noreply) {
+      checkNext(std::move(req), noreply);
     }
 
     void multiOpEnd() {
-      checkNext(McOperation<mc_op_end>(), McRequest(), false);
+      checkNext(McRequestWithMcOp<mc_op_end>(), false);
     }
 
     friend class ServerMcParser<ParserOnRequest>;
@@ -296,12 +304,13 @@ std::string createBigValue() {
   return std::string(bigValue, bigValue + kSize);
 }
 
-McRequest createSetRequest(folly::StringPiece key,
-                           folly::StringPiece value,
-                           uint64_t flags,
-                           int32_t exptime) {
+template <class Request>
+Request createUpdateLike(folly::StringPiece key,
+                         folly::StringPiece value,
+                         uint64_t flags,
+                         int32_t exptime) {
   // Test regular request
-  McRequest r(key);
+  Request r(key);
   r.setValue(
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, value.begin(), value.size()));
   r.setFlags(flags);
@@ -309,39 +318,40 @@ McRequest createSetRequest(folly::StringPiece key,
   return r;
 }
 
-McRequest createArithmRequest(folly::StringPiece key, double delta) {
-  McRequest r(key);
-  r.setDelta(delta);
+template <class Request>
+Request createArithmeticLike(folly::StringPiece key, double delta) {
+  Request r(key);
+  r->set_delta(delta);
   return r;
 }
 
 // Test body for get, gets, lease-get, metaget.
-template <class Operation>
-void getLikeTest(Operation, std::string opCmd) {
+template <class Request>
+void getLikeTest(std::string opCmd) {
   // Test single key requests.
   TestRunner()
-      .expectNext(Operation(), McRequest("test:stepan:1"))
+      .expectNext(Request("test:stepan:1"))
       .expectMultiOpEnd()
       .run(opCmd + " test:stepan:1\r\n")
       .run(opCmd + "   test:stepan:1\r\n")
       .run(opCmd + "   test:stepan:1\n")
       .run(opCmd + " test:stepan:1  \r\n")
       .run(opCmd + " test:stepan:1  \n")
-      .expectNext(Operation(), McRequest("test:stepan:2"))
+      .expectNext(Request("test:stepan:2"))
       .expectMultiOpEnd()
       .run(opCmd + " test:stepan:1\r\n" + opCmd + " test:stepan:2\r\n");
 
   // Test multi key.
   TestRunner()
-      .expectNext(Operation(), McRequest("test:stepan:1"))
-      .expectNext(Operation(), McRequest("test:stepan:2"))
+      .expectNext(Request("test:stepan:1"))
+      .expectNext(Request("test:stepan:2"))
       .expectMultiOpEnd()
       .run(opCmd + " test:stepan:1 test:stepan:2\r\n")
       .run(opCmd + " test:stepan:1   test:stepan:2\r\n")
       .run(opCmd + " test:stepan:1 test:stepan:2 \r\n")
       .run(opCmd + " test:stepan:1 test:stepan:2 \n")
       .run(opCmd + " test:stepan:1 test:stepan:2\n")
-      .expectNext(Operation(), McRequest("test:stepan:3"))
+      .expectNext(Request("test:stepan:3"))
       .expectMultiOpEnd()
       .run(opCmd + " test:stepan:1 test:stepan:2\r\n" +
            opCmd + " test:stepan:3\r\n");
@@ -355,11 +365,11 @@ void getLikeTest(Operation, std::string opCmd) {
 const char* kTestValue = "someSmallTestValue";
 
 // Test body for set, add, replace, append, prepend.
-template <class Operation>
-void setLikeTest(Operation, std::string opCmd) {
+template <class Request>
+void setLikeTest(std::string opCmd) {
   TestRunner()
-      .expectNext(Operation(),
-                  createSetRequest("test:stepan:1", kTestValue, 123, 651342))
+      .expectNext(createUpdateLike<Request>(
+            "test:stepan:1", kTestValue, 123, 651342))
       .run("{} test:stepan:1 123 651342 {}\r\n{}\r\n",
            opCmd,
            strlen(kTestValue),
@@ -395,8 +405,8 @@ void setLikeTest(Operation, std::string opCmd) {
 
   // Test negative exptime.
   TestRunner()
-      .expectNext(Operation(),
-                  createSetRequest("test:stepan:1", kTestValue, 123, -12341232))
+      .expectNext(createUpdateLike<Request>(
+            "test:stepan:1", kTestValue, 123, -12341232))
       .run("{} test:stepan:1 123 -12341232 {}\r\n{}\r\n",
            opCmd,
            strlen(kTestValue),
@@ -411,9 +421,9 @@ void setLikeTest(Operation, std::string opCmd) {
 
   // Test noreply.
   TestRunner()
-      .expectNext(Operation(),
-                  createSetRequest("test:stepan:1", kTestValue, 123, 651342),
-                  true)
+      .expectNext(createUpdateLike<Request>(
+            "test:stepan:1", kTestValue, 123, 651342),
+            true)
       .run("{} test:stepan:1 123 651342 {} noreply\r\n{}\r\n",
            opCmd,
            strlen(kTestValue),
@@ -430,44 +440,43 @@ void setLikeTest(Operation, std::string opCmd) {
   // Test big value.
   std::string bigValue = createBigValue();
   TestRunner()
-      .expectNext(Operation(),
-                  createSetRequest("test:stepan:1", bigValue, 345, -2))
+      .expectNext(createUpdateLike<Request>("test:stepan:1", bigValue, 345, -2))
       .run("{} test:stepan:1 345 -2 {}\r\n{}\r\n",
            opCmd,
            bigValue.size(),
            bigValue);
 }
 
-template <class Operation>
-void multiTokenOpTest(Operation, std::string opCmd) {
+template <class Request>
+void multiTokenOpTest(std::string opCmd) {
   // With parameter.
   TestRunner()
-      .expectNext(Operation(), McRequest("token1"))
+      .expectNext(Request("token1"))
       .run(opCmd + " token1\r\n")
       .run(opCmd + "  token1  \r\n");
 
   // With multiple parameters.
   TestRunner()
-      .expectNext(Operation(), McRequest("token1 token2"))
+      .expectNext(Request("token1 token2"))
       .run(opCmd + " token1 token2\r\n")
       .run(opCmd + "  token1 token2  \r\n");
 
   TestRunner()
-      .expectNext(Operation(), McRequest("token1   token2"))
+      .expectNext(Request("token1   token2"))
       .run(opCmd + " token1   token2\r\n")
       .run(opCmd + "  token1   token2  \r\n");
 }
 
-template <class Operation>
-void arithmeticTest(Operation, std::string opCmd) {
+template <class Request>
+void arithmeticTest(std::string opCmd) {
   TestRunner()
-    .expectNext(Operation(), createArithmRequest("test:stepan:1", 1324123))
+    .expectNext(createArithmeticLike<Request>("test:stepan:1", 1324123))
     .run(opCmd + " test:stepan:1 1324123\r\n")
     .run(opCmd + "     test:stepan:1    1324123   \r\n")
     .run(opCmd + " test:stepan:1  1324123 \r\n");
 
   TestRunner()
-    .expectNext(Operation(), createArithmRequest("test:stepan:1", 1324),
+    .expectNext(createArithmeticLike<Request>("test:stepan:1", 1324),
                 true)
     .run(opCmd + " test:stepan:1 1324 noreply\r\n")
     .run(opCmd + "     test:stepan:1    1324   noreply  \r\n")
@@ -483,44 +492,44 @@ void arithmeticTest(Operation, std::string opCmd) {
 }  // anonymous
 
 TEST(McServerAsciiParserHarness, get) {
-  getLikeTest(McOperation<mc_op_get>(), "get");
+  getLikeTest<TypedThriftRequest<cpp2::McGetRequest>>("get");
 }
 
 TEST(McServerAsciiParserHarness, gets) {
-  getLikeTest(McOperation<mc_op_gets>(), "gets");
+  getLikeTest<TypedThriftRequest<cpp2::McGetsRequest>>("gets");
 }
 
 TEST(McServerAsciiParserHarness, lease_get) {
-  getLikeTest(McOperation<mc_op_lease_get>(), "lease-get");
+  getLikeTest<TypedThriftRequest<cpp2::McLeaseGetRequest>>("lease-get");
 }
 
 TEST(McServerAsciiParserHarness, metaget) {
-  getLikeTest(McOperation<mc_op_metaget>(), "metaget");
+  getLikeTest<TypedThriftRequest<cpp2::McMetagetRequest>>("metaget");
 }
 
 TEST(McServerAsciiParserHarness, set) {
-  setLikeTest(McOperation<mc_op_set>(), "set");
+  setLikeTest<TypedThriftRequest<cpp2::McSetRequest>>("set");
 }
 
 TEST(McServerAsciiParserHarness, add) {
-  setLikeTest(McOperation<mc_op_add>(), "add");
+  setLikeTest<TypedThriftRequest<cpp2::McAddRequest>>("add");
 }
 
 TEST(McServerAsciiParserHarness, replace) {
-  setLikeTest(McOperation<mc_op_replace>(), "replace");
+  setLikeTest<TypedThriftRequest<cpp2::McReplaceRequest>>("replace");
 }
 
 TEST(McServerAsciiParserHarness, append) {
-  setLikeTest(McOperation<mc_op_append>(), "append");
+  setLikeTest<TypedThriftRequest<cpp2::McAppendRequest>>("append");
 }
 
 TEST(McServerAsciiParserHarness, prepend) {
-  setLikeTest(McOperation<mc_op_prepend>(), "prepend");
+  setLikeTest<TypedThriftRequest<cpp2::McPrependRequest>>("prepend");
 }
 
 TEST(McServerAsciiParserHarness, quit) {
   TestRunner()
-      .expectNext(McOperation<mc_op_quit>(), McRequest(),
+      .expectNext(TypedThriftRequest<cpp2::McQuitRequest>(),
                   true /* quit is always noreply */)
       .run("quit\r\n")
       .run("quit    \r\n");
@@ -528,110 +537,102 @@ TEST(McServerAsciiParserHarness, quit) {
 
 TEST(McServerAsciiParserHarness, version) {
   TestRunner()
-      .expectNext(McOperation<mc_op_version>(), McRequest())
+      .expectNext(TypedThriftRequest<cpp2::McVersionRequest>())
       .run("version\r\n")
       .run("version    \r\n");
 }
 
 TEST(McServerAsciiParserHarness, shutdown) {
   TestRunner()
-      .expectNext(McOperation<mc_op_shutdown>(), McRequest())
+      .expectNext(TypedThriftRequest<cpp2::McShutdownRequest>())
       .run("shutdown\r\n")
       .run("shutdown    \r\n");
-
-  // With delay.
-  McRequest r;
-  r.setNumber(10);
-  TestRunner()
-      .expectNext(McOperation<mc_op_shutdown>(), std::move(r))
-      .run("shutdown 10\r\n")
-      .run("shutdown   10  \r\n");
 }
 
 TEST(McServerAsciiParserHarness, stats) {
   TestRunner()
-      .expectNext(McOperation<mc_op_stats>(), McRequest())
+      .expectNext(TypedThriftRequest<cpp2::McStatsRequest>())
       .run("stats\r\n")
       .run("stats    \r\n");
 
-  multiTokenOpTest(McOperation<mc_op_stats>(), "stats");
+  multiTokenOpTest<TypedThriftRequest<cpp2::McStatsRequest>>("stats");
 }
 
 TEST(McServerAsciiParserHarness, exec) {
-  multiTokenOpTest(McOperation<mc_op_exec>(), "exec");
-  multiTokenOpTest(McOperation<mc_op_exec>(), "admin");
+  multiTokenOpTest<TypedThriftRequest<cpp2::McExecRequest>>("exec");
+  multiTokenOpTest<TypedThriftRequest<cpp2::McExecRequest>>("admin");
 }
 
 TEST(McServerAsciiParserHarness, delete) {
   TestRunner()
-      .expectNext(McOperation<mc_op_delete>(), McRequest("test:stepan:1"))
+      .expectNext(TypedThriftRequest<cpp2::McDeleteRequest>("test:stepan:1"))
       .run("delete test:stepan:1\r\n")
       .run("delete  test:stepan:1  \r\n");
   TestRunner()
-      .expectNext(McOperation<mc_op_delete>(), McRequest("test:stepan:1"),
+      .expectNext(TypedThriftRequest<cpp2::McDeleteRequest>("test:stepan:1"),
                   true)
       .run("delete test:stepan:1 noreply\r\n")
       .run("delete  test:stepan:1  noreply   \r\n");
 
-  McRequest r("test:stepan:1");
+  TypedThriftRequest<cpp2::McDeleteRequest> r("test:stepan:1");
   r.setExptime(-10);
   TestRunner()
-      .expectNext(McOperation<mc_op_delete>(), r.clone())
+      .expectNext(r.clone())
       .run("delete test:stepan:1 -10\r\n")
       .run("delete  test:stepan:1  -10  \r\n");
 
   r.setExptime(1234123);
   TestRunner()
-      .expectNext(McOperation<mc_op_delete>(), r.clone())
+      .expectNext(r.clone())
       .run("delete test:stepan:1 1234123\r\n")
       .run("delete  test:stepan:1  1234123  \r\n");
   TestRunner()
-      .expectNext(McOperation<mc_op_delete>(), r.clone(), true)
+      .expectNext(r.clone(), true)
       .run("delete test:stepan:1 1234123 noreply\r\n")
       .run("delete  test:stepan:1  1234123  noreply  \r\n");
 }
 
 TEST(McServerAsciiParserHarness, touch) {
-  McRequest r("test:key:1");
+  TypedThriftRequest<cpp2::McTouchRequest> r("test:key:1");
   r.setExptime(-10);
   TestRunner()
-      .expectNext(McOperation<mc_op_touch>(), r.clone())
+      .expectNext(r.clone())
       .run("touch test:key:1 -10\r\n")
       .run("touch  test:key:1  -10  \r\n");
   TestRunner()
-      .expectNext(McOperation<mc_op_touch>(), r.clone(), true)
+      .expectNext(r.clone(), true)
       .run("touch test:key:1 -10 noreply\r\n")
       .run("touch  test:key:1  -10  noreply   \r\n");
 
   r.setExptime(1234567);
   TestRunner()
-      .expectNext(McOperation<mc_op_touch>(), r.clone())
+      .expectNext(r.clone())
       .run("touch test:key:1 1234567\r\n")
       .run("touch  test:key:1  1234567  \r\n");
   TestRunner()
-      .expectNext(McOperation<mc_op_touch>(), r.clone(), true)
+      .expectNext(r.clone(), true)
       .run("touch test:key:1 1234567 noreply\r\n")
       .run("touch  test:key:1  1234567  noreply  \r\n");
 }
 
 TEST(McServerAsciiParserHarness, incr) {
-  arithmeticTest(McOperation<mc_op_incr>(), "incr");
+  arithmeticTest<TypedThriftRequest<cpp2::McIncrRequest>>("incr");
 }
 
 TEST(McServerAsciiParserHarness, decr) {
-  arithmeticTest(McOperation<mc_op_decr>(), "decr");
+  arithmeticTest<TypedThriftRequest<cpp2::McDecrRequest>>("decr");
 }
 
 TEST(McServerAsciiParserHarness, flush_all) {
   TestRunner()
-      .expectNext(McOperation<mc_op_flushall>(), McRequest())
+      .expectNext(TypedThriftRequest<cpp2::McFlushAllRequest>())
       .run("flush_all\r\n")
       .run("flush_all     \r\n");
 
-  McRequest r;
-  r.setNumber(123456789);
+  TypedThriftRequest<cpp2::McFlushAllRequest> r;
+  r->set_delay(123456789);
   TestRunner()
-      .expectNext(McOperation<mc_op_flushall>(), std::move(r))
+      .expectNext(std::move(r))
       .run("flush_all 123456789\r\n")
       .run("flush_all    123456789\r\n")
       .run("flush_all    123456789   \r\n");
@@ -645,24 +646,25 @@ TEST(McServerAsciiParserHarness, flush_regex) {
       .run("flush_regex     \r\n");
 
   TestRunner()
-      .expectNext(McOperation<mc_op_flushre>(), McRequest("test:stepan:1"))
+      .expectNext(TypedThriftRequest<cpp2::McFlushReRequest>("test:stepan:1"))
       .run("flush_regex test:stepan:1\r\n")
       .run("flush_regex    test:stepan:1\r\n")
       .run("flush_regex   test:stepan:1   \r\n");
 }
 
 TEST(McServerAsciiParserHarness, lease_set) {
-  McRequest r = createSetRequest("test:stepan:1", kTestValue, 1, 65);
-  r.setLeaseToken(123);
+  auto r = createUpdateLike<TypedThriftRequest<cpp2::McLeaseSetRequest>>(
+      "test:stepan:1", kTestValue, 1, 65);
+  r->set_leaseToken(123);
 
   TestRunner()
-      .expectNext(McOperation<mc_op_lease_set>(), r.clone())
+      .expectNext(r.clone())
       .run("lease-set test:stepan:1 123 1 65 18\r\nsomeSmallTestValue\r\n")
       .run("lease-set   test:stepan:1   123   1   65   18  \r\n"
            "someSmallTestValue\r\n");
 
   TestRunner()
-      .expectNext(McOperation<mc_op_lease_set>(), r.clone(), true)
+      .expectNext(r.clone(), true)
       .run("lease-set test:stepan:1 123 1 65 18 noreply\r\n"
            "someSmallTestValue\r\n")
       .run("lease-set   test:stepan:1   123   1   65   18  noreply  \r\n"
@@ -670,17 +672,18 @@ TEST(McServerAsciiParserHarness, lease_set) {
 }
 
 TEST(McServerAsciiParserHarness, cas) {
-  McRequest r = createSetRequest("test:stepan:1", kTestValue, 1, 65);
-  r.setCas(123);
+  auto r = createUpdateLike<TypedThriftRequest<cpp2::McCasRequest>>(
+      "test:stepan:1", kTestValue, 1, 65);
+  r->set_casToken(123);
 
   TestRunner()
-      .expectNext(McOperation<mc_op_cas>(), r.clone())
+      .expectNext(r.clone())
       .run("cas test:stepan:1 1 65 18 123\r\nsomeSmallTestValue\r\n")
       .run("cas   test:stepan:1   1   65   18  123  \r\n"
            "someSmallTestValue\r\n");
 
   TestRunner()
-      .expectNext(McOperation<mc_op_cas>(), r.clone(), true)
+      .expectNext(r.clone(), true)
       .run("cas test:stepan:1 1 65 18 123 noreply\r\n"
            "someSmallTestValue\r\n")
       .run("cas   test:stepan:1   1   65   18   123   noreply  \r\n"
@@ -688,49 +691,52 @@ TEST(McServerAsciiParserHarness, cas) {
 }
 
 TEST(McServerAsciiParserHarness, allOps) {
-  McRequest casRequest =
-      createSetRequest("test:stepan:11", "Facebook", 765, -1);
-  casRequest.setCas(893);
+  auto casRequest = createUpdateLike<TypedThriftRequest<cpp2::McCasRequest>>(
+      "test:stepan:11", "Facebook", 765, -1);
+  casRequest->set_casToken(893);
 
-  McRequest leaseSetRequest =
-      createSetRequest("test:stepan:12", "hAcK", 294, 563);
-  leaseSetRequest.setLeaseToken(846);
+  auto leaseSetRequest =
+    createUpdateLike<TypedThriftRequest<cpp2::McLeaseSetRequest>>(
+        "test:stepan:12", "hAcK", 294, 563);
+  leaseSetRequest->set_leaseToken(846);
 
-  McRequest deleteRequest("test:stepan:13");
+  TypedThriftRequest<cpp2::McDeleteRequest> deleteRequest("test:stepan:13");
   deleteRequest.setExptime(2345234);
 
   TestRunner()
-      .expectNext(McOperation<mc_op_get>(), McRequest("test:stepan:1"))
+      .expectNext(TypedThriftRequest<cpp2::McGetRequest>("test:stepan:1"))
       .expectMultiOpEnd()
-      .expectNext(McOperation<mc_op_gets>(), McRequest("test:stepan:2"))
-      .expectNext(McOperation<mc_op_gets>(), McRequest("test:stepan:10"))
+      .expectNext(TypedThriftRequest<cpp2::McGetsRequest>("test:stepan:2"))
+      .expectNext(TypedThriftRequest<cpp2::McGetsRequest>("test:stepan:10"))
       .expectMultiOpEnd()
-      .expectNext(McOperation<mc_op_lease_get>(), McRequest("test:stepan:3"))
+      .expectNext(TypedThriftRequest<cpp2::McLeaseGetRequest>("test:stepan:3"))
       .expectMultiOpEnd()
-      .expectNext(McOperation<mc_op_metaget>(), McRequest("test:stepan:4"))
+      .expectNext(TypedThriftRequest<cpp2::McMetagetRequest>("test:stepan:4"))
       .expectMultiOpEnd()
-      .expectNext(McOperation<mc_op_set>(),
-                  createSetRequest("test:stepan:5", "Abc", 1, 2))
-      .expectNext(McOperation<mc_op_add>(),
-                  createSetRequest("test:stepan:6", "abcdefgHiJklMNo", 3, 4))
-      .expectNext(McOperation<mc_op_replace>(),
-                  createSetRequest("test:stepan:7", "A", 6, 7))
-      .expectNext(McOperation<mc_op_append>(),
-                  createSetRequest("test:stepan:8", "", 8, 9))
-      .expectNext(McOperation<mc_op_prepend>(),
-                  createSetRequest("test:stepan:9", "xYZ", 10, 11))
-      .expectNext(McOperation<mc_op_cas>(), casRequest.clone())
-      .expectNext(McOperation<mc_op_lease_set>(), leaseSetRequest.clone())
-      .expectNext(McOperation<mc_op_delete>(), deleteRequest.clone())
-      .expectNext(McOperation<mc_op_stats>(), McRequest("test stats"))
-      .expectNext(McOperation<mc_op_exec>(), McRequest("reboot server"))
-      .expectNext(McOperation<mc_op_quit>(), McRequest(), true)
-      .expectNext(McOperation<mc_op_version>(), McRequest())
-      .expectNext(McOperation<mc_op_shutdown>(), McRequest())
-      .expectNext(McOperation<mc_op_incr>(), createArithmRequest("arithm!", 90))
-      .expectNext(McOperation<mc_op_decr>(), createArithmRequest("ArItHm!", 87))
-      .expectNext(McOperation<mc_op_flushall>(), McRequest())
-      .expectNext(McOperation<mc_op_flushre>(), McRequest("^reGex$"))
+      .expectNext(createUpdateLike<TypedThriftRequest<cpp2::McSetRequest>>(
+            "test:stepan:5", "Abc", 1, 2))
+      .expectNext(createUpdateLike<TypedThriftRequest<cpp2::McAddRequest>>(
+            "test:stepan:6", "abcdefgHiJklMNo", 3, 4))
+      .expectNext(createUpdateLike<TypedThriftRequest<cpp2::McReplaceRequest>>(
+            "test:stepan:7", "A", 6, 7))
+      .expectNext(createUpdateLike<TypedThriftRequest<cpp2::McAppendRequest>>(
+            "test:stepan:8", "", 8, 9))
+      .expectNext(createUpdateLike<TypedThriftRequest<cpp2::McPrependRequest>>(
+            "test:stepan:9", "xYZ", 10, 11))
+      .expectNext(casRequest.clone())
+      .expectNext(leaseSetRequest.clone())
+      .expectNext(deleteRequest.clone())
+      .expectNext(TypedThriftRequest<cpp2::McStatsRequest>("test stats"))
+      .expectNext(TypedThriftRequest<cpp2::McExecRequest>("reboot server"))
+      .expectNext(TypedThriftRequest<cpp2::McQuitRequest>(), true)
+      .expectNext(TypedThriftRequest<cpp2::McVersionRequest>())
+      .expectNext(TypedThriftRequest<cpp2::McShutdownRequest>())
+      .expectNext(createArithmeticLike<TypedThriftRequest<cpp2::McIncrRequest>>(
+            "arithm!", 90))
+      .expectNext(createArithmeticLike<TypedThriftRequest<cpp2::McDecrRequest>>(
+            "ArItHm!", 87))
+      .expectNext(TypedThriftRequest<cpp2::McFlushAllRequest>())
+      .expectNext(TypedThriftRequest<cpp2::McFlushReRequest>("^reGex$"))
       .run(
           "get test:stepan:1\r\n"
           "gets test:stepan:2 test:stepan:10\r\n"

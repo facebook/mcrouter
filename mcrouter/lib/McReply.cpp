@@ -20,6 +20,10 @@ bool McReply::worseThan(const McReply& other) const noexcept {
   return resultSeverity(result_) > resultSeverity(other.result_);
 }
 
+bool McReply::worseThan(mc_res_t otherResult) const noexcept {
+  return resultSeverity(result_) > resultSeverity(otherResult);
+}
+
 void McReply::setValue(folly::IOBuf valueData) {
   valueData_ = std::move(valueData);
 }

@@ -31,12 +31,12 @@
 #include "mcrouter/lib/fbi/asox_queue.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ProxyRequestPriority.h"
-#include "mcrouter/routes/McOpList.h"
 #include "mcrouter/stats.h"
 
 // make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
@@ -305,15 +305,21 @@ struct proxy_t {
 
   /** Process and reply stats request */
   void routeHandlesProcessRequest(
-      const McRequestWithMcOp<mc_op_stats>& req,
+      const TypedThriftRequest<cpp2::McStatsRequest>& req,
       std::unique_ptr<ProxyRequestContextTyped<
-        McRequestWithMcOp<mc_op_stats>>> ctx);
+        TypedThriftRequest<cpp2::McStatsRequest>>> ctx);
 
   /** Process and reply to a version request */
+  // TODO(jmswen) Get rid of McRequestWithMcOp overloaded.
+  // Needed temporarily for HHVM extension.
   void routeHandlesProcessRequest(
       const McRequestWithMcOp<mc_op_version>& req,
       std::unique_ptr<ProxyRequestContextTyped<
         McRequestWithMcOp<mc_op_version>>> ctx);
+  void routeHandlesProcessRequest(
+      const TypedThriftRequest<cpp2::McVersionRequest>& req,
+      std::unique_ptr<ProxyRequestContextTyped<
+        TypedThriftRequest<cpp2::McVersionRequest>>> ctx);
 
   /** Route request through route handle tree */
   template <class Request>

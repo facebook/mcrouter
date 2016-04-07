@@ -523,6 +523,8 @@ static void _msg_to_elist(entry_list_t* elist,
   if (reqid != 0) {
     entry_list_append_U64(elist, msg_reqid, reqid);
   }
+  // It is important that we write msg_result before msg_value. Parsing
+  // depends on this ordering.
   if (msg->result != 0) {
     entry_list_append_I32(elist, msg_result, umbrella_res_from_mc[msg->result]);
   }

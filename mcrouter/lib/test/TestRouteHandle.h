@@ -14,16 +14,15 @@
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleIf.h"
-#include "mcrouter/routes/McOpList.h"
 
 namespace facebook { namespace memcache {
 
-using TestRequestList = ConcatenateListsT<
-                          RequestList,
-                          List<TypedThriftRequest<cpp2::McGetRequest>>>;
+using TestRequestList = ConcatenateListsT<RequestList, ThriftRequestList>;
 
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
                                                TestRequestList> {

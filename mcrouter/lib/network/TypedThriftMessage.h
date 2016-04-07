@@ -20,6 +20,7 @@
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Keys.h"
 #include "mcrouter/lib/McMsgRef.h"
+#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/detail/RequestUtil.h"
 #include "mcrouter/lib/network/RawThriftMessageTraits.h"
@@ -78,6 +79,8 @@ class TypedThriftMessage {
 template <class M>
 class TypedThriftReply : public TypedThriftMessage<M> {
  public:
+  using OpType = McOperation<OpFromType<M, ReplyOpMapping>::value>;
+
   TypedThriftReply() = default;
   TypedThriftReply(TypedThriftReply&&) = default;
   TypedThriftReply& operator=(TypedThriftReply&&) = default;
@@ -155,9 +158,7 @@ class TypedThriftReply : public TypedThriftMessage<M> {
     return detail::valuePtrUnsafe(*this);
   }
 
-  /**
-   * Treat 'value' IOBuf as mutable, as in McRequest.
-   */
+  // Treat 'value' IOBuf as mutable.
   folly::StringPiece valueRangeSlow() const {
     auto* valuePtr = const_cast<folly::IOBuf*>(valuePtrUnsafe());
     return valuePtr ? folly::StringPiece(valuePtr->coalesce())
@@ -284,10 +285,11 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
 
   explicit TypedThriftRequest(folly::IOBuf k) noexcept {
     this->raw_.set_key(std::move(k));
+    Keys::update(getRange(this->raw_.key));
   }
 
   explicit TypedThriftRequest(folly::StringPiece k) {
-    this->raw_.set_key(folly::IOBuf(folly::IOBuf::COPY_BUFFER, k));
+    setKey(k);
   }
 
   const folly::IOBuf& key() const {
@@ -342,7 +344,7 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     detail::setFlags(*this, f);
   }
 
-  uint32_t exptime() const {
+  int32_t exptime() const {
     return detail::exptime(*this);
   }
 
@@ -350,13 +352,13 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     detail::setExptime(*this, expt);
   }
 
-  const folly::IOBuf* valuePtrUnsafe() const {
-    return detail::valuePtrUnsafe(*this);
-  }
-
   folly::IOBuf* valuePtrUnsafe() {
     return const_cast<folly::IOBuf*>(
         detail::valuePtrUnsafe(const_cast<const TypedThriftRequest&>(*this)));
+  }
+
+  const folly::IOBuf* valuePtrUnsafe() const {
+    return detail::valuePtrUnsafe(*this);
   }
 
   void setValue(folly::IOBuf valueData) {
@@ -367,9 +369,7 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     detail::setValue(*this, folly::IOBuf(folly::IOBuf::COPY_BUFFER, str));
   }
 
-  /**
-   * Treat 'value' IOBuf as mutable, as in McRequest.
-   */
+  // Treat 'value' IOBuf as mutable.
   folly::StringPiece valueRangeSlow() const {
     auto* valuePtr = const_cast<folly::IOBuf*>(valuePtrUnsafe());
     return valuePtr ? folly::StringPiece(valuePtr->coalesce())

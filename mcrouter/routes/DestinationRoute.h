@@ -26,6 +26,8 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
@@ -99,6 +101,15 @@ class DestinationRoute {
     auto reply = routeWithDestination(req);
     if (reply.isFailoverError()) {
       reply = McReply(DefaultReply, McOperation<mc_op_touch>());
+    }
+    return reply;
+  }
+
+  TypedThriftReply<cpp2::McTouchReply> route(
+      const TypedThriftRequest<cpp2::McTouchRequest>& req) const {
+    auto reply = routeWithDestination(req);
+    if (reply.isFailoverError()) {
+      reply.setResult(mc_res_notfound);
     }
     return reply;
   }

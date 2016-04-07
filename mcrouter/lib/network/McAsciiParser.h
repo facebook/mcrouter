@@ -168,30 +168,7 @@ class McClientAsciiParser : public McAsciiParserBase {
 };
 
 namespace detail {
-using SupportedReqs = List<Pair<McOperation<mc_op_get>, McRequest>,
-                           Pair<McOperation<mc_op_gets>, McRequest>,
-                           Pair<McOperation<mc_op_lease_get>, McRequest>,
-                           Pair<McOperation<mc_op_metaget>, McRequest>,
-                           Pair<McOperation<mc_op_set>, McRequest>,
-                           Pair<McOperation<mc_op_add>, McRequest>,
-                           Pair<McOperation<mc_op_replace>, McRequest>,
-                           Pair<McOperation<mc_op_append>, McRequest>,
-                           Pair<McOperation<mc_op_prepend>, McRequest>,
-                           Pair<McOperation<mc_op_cas>, McRequest>,
-                           Pair<McOperation<mc_op_lease_set>, McRequest>,
-                           Pair<McOperation<mc_op_delete>, McRequest>,
-                           Pair<McOperation<mc_op_shutdown>, McRequest>,
-                           Pair<McOperation<mc_op_incr>, McRequest>,
-                           Pair<McOperation<mc_op_decr>, McRequest>,
-                           Pair<McOperation<mc_op_version>, McRequest>,
-                           Pair<McOperation<mc_op_quit>, McRequest>,
-                           Pair<McOperation<mc_op_stats>, McRequest>,
-                           Pair<McOperation<mc_op_exec>, McRequest>,
-                           Pair<McOperation<mc_op_flushre>, McRequest>,
-                           Pair<McOperation<mc_op_flushall>, McRequest>,
-                           Pair<McOperation<mc_op_touch>, McRequest>>;
-
-template <class OpReqList> class CallbackBase;
+template <class RequestList> class CallbackBase;
 }  // detail
 
 class McServerAsciiParser : public McAsciiParserBase {
@@ -212,15 +189,15 @@ class McServerAsciiParser : public McAsciiParserBase {
   void opTypeConsumer(folly::IOBuf& buffer);
 
   // Get-like.
-  template <class Operation, class Request>
+  template <class Request>
   void initGetLike();
-  template <class Operation, class Request>
+  template <class Request>
   void consumeGetLike(folly::IOBuf& buffer);
 
   // Update-like.
-  template <class Operation, class Request>
+  template <class Request>
   void initSetLike();
-  template <class Operation, class Request>
+  template <class Request>
   void consumeSetLike(folly::IOBuf& buffer);
   void consumeCas(folly::IOBuf& buffer);
   void consumeLeaseSet(folly::IOBuf& buffer);
@@ -231,9 +208,9 @@ class McServerAsciiParser : public McAsciiParserBase {
   void consumeShutdown(folly::IOBuf& buffer);
 
   // Arithmetic.
-  template <class Operation, class Request>
+  template <class Request>
   void initArithmetic();
-  template <class Operation, class Request>
+  template <class Request>
   void consumeArithmetic(folly::IOBuf& buffer);
 
   void consumeStats(folly::IOBuf& buffer);
@@ -245,12 +222,12 @@ class McServerAsciiParser : public McAsciiParserBase {
 
   void finishReq();
 
-  std::unique_ptr<detail::CallbackBase<detail::SupportedReqs>> callback_;
+  std::unique_ptr<detail::CallbackBase<ThriftRequestList>> callback_;
 
   const char* keyPieceStart_{nullptr};
   folly::IOBuf currentKey_;
   bool noreply_{false};
-  MessageStorage<List<McRequest>> currentMessage_;
+  MessageStorage<ThriftRequestList> currentMessage_;
 
   using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};

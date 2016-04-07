@@ -206,6 +206,9 @@ class McRequest {
   void set_delta(uint64_t d) noexcept {
     setDelta(d);
   }
+  void set_delay(uint32_t d) noexcept {
+    setNumber(d);
+  }
 
   /**
    * @return Full key, including the routing prefix and

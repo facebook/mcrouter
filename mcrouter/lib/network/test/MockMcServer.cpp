@@ -68,9 +68,13 @@ class MockMcOnRequest
   template <class Operation>
   void onRequest(McServerRequestContext&& ctx,
                  McRequestWithOp<Operation>&& req) {
-    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_remote_error));
+    McServerRequestContext::reply(
+        std::move(ctx),
+        McReply(mc_res_remote_error, "not supported by MockMcServer"));
   }
 
+  // TODO(jmswen) Once Umbrella requests are parsed into TypedThriftRequest,
+  // kill all onRequest() overloads taking McRequestWithOp
   void onRequest(McServerRequestContext&& ctx,
                  McRequestWithMcOp<mc_op_metaget>&& req) {
     auto key = req.fullKey().str();
@@ -102,7 +106,7 @@ class MockMcOnRequest
       msg->result = mc_res_busy;
       msg->err_code = SERVER_ERROR_BUSY;
       McServerRequestContext::reply(std::move(ctx),
-                                    McReply(mc_res_busy, std::move(msg)));
+          McReply(mc_res_busy, std::move(msg)));
       return;
     } else if (key == "__mockmc__.want_try_again") {
       McServerRequestContext::reply(std::move(ctx), McReply(mc_res_try_again));
@@ -112,7 +116,7 @@ class MockMcOnRequest
       auto argStart = key.find('(');
       if (argStart != std::string::npos) {
         timeout = folly::to<size_t>(key.subpiece(argStart + 1,
-                                                 key.size() - argStart - 2));
+              key.size() - argStart - 2));
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
       McServerRequestContext::reply(std::move(ctx), McReply(mc_res_timeout));
@@ -155,7 +159,7 @@ class MockMcOnRequest
     switch (mc_.leaseSet(key, MockMc::Item(req), req.leaseToken())) {
       case MockMc::LeaseSetResult::NOT_STORED:
         McServerRequestContext::reply(std::move(ctx),
-                                      McReply(mc_res_notstored));
+            McReply(mc_res_notstored));
         return;
 
       case MockMc::LeaseSetResult::STORED:
@@ -164,7 +168,7 @@ class MockMcOnRequest
 
       case MockMc::LeaseSetResult::STALE_STORED:
         McServerRequestContext::reply(std::move(ctx),
-                                      McReply(mc_res_stalestored));
+            McReply(mc_res_stalestored));
         return;
     }
   }
@@ -175,8 +179,8 @@ class MockMcOnRequest
 
     if (key == "__mockmc__.trigger_server_error") {
       McServerRequestContext::reply(std::move(ctx),
-        McReply(mc_res_remote_error,
-                "returned error msg with binary data \xdd\xab"));
+          McReply(mc_res_remote_error,
+            "returned error msg with binary data \xdd\xab"));
       return;
     }
 
@@ -318,6 +322,289 @@ class MockMcOnRequest
     }
   }
 
+  /**
+   * TypedThriftRequest overloads
+   */
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McMetagetRequest>&& req) {
+    using Reply = TypedThriftReply<McMetagetReply>;
+
+    auto key = req.fullKey().str();
+
+    auto item = mc_.get(key);
+    if (!item) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+      return;
+    }
+
+    Reply reply(mc_res_found);
+    reply->set_exptime(item->exptime);
+    reply->set_age(123);
+    reply->set_ipAddress("127.0.0.1");
+    reply->set_ipv(4);
+
+    McServerRequestContext::reply(std::move(ctx), std::move(reply));
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McGetRequest>&& req) {
+    using Reply = TypedThriftReply<McGetReply>;
+
+    auto key = req.fullKey();
+
+    if (key == "__mockmc__.want_busy") {
+      Reply reply;
+      reply.setResult(mc_res_busy);
+      reply.setAppSpecificErrorCode(SERVER_ERROR_BUSY);
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+      return;
+    } else if (key == "__mockmc__.want_try_again") {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_try_again));
+      return;
+    } else if (key.startsWith("__mockmc__.want_timeout")) {
+      size_t timeout = 500;
+      auto argStart = key.find('(');
+      if (argStart != std::string::npos) {
+        timeout = folly::to<size_t>(key.subpiece(argStart + 1,
+                                                 key.size() - argStart - 2));
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_timeout));
+      return;
+    }
+
+    auto item = mc_.get(key);
+    if (!item) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+    } else {
+      Reply reply(mc_res_found);
+      folly::IOBuf cloned;
+      item->value->cloneInto(cloned);
+      reply.setValue(std::move(cloned));
+      reply.setFlags(item->flags);
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McLeaseGetRequest>&& req) {
+    using Reply = TypedThriftReply<McLeaseGetReply>;
+
+    auto key = req.fullKey().str();
+
+    auto out = mc_.leaseGet(key);
+    Reply reply(mc_res_found);
+    folly::IOBuf cloned;
+    out.first->value->cloneInto(cloned);
+    reply.setValue(std::move(cloned));
+    reply->set_leaseToken(out.second);
+    if (out.second) {
+      reply.setResult(mc_res_notfound);
+    }
+    McServerRequestContext::reply(std::move(ctx), std::move(reply));
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McLeaseSetRequest>&& req) {
+    using Reply = TypedThriftReply<McLeaseSetReply>;
+
+    auto key = req.fullKey().str();
+
+    switch (mc_.leaseSet(key, MockMc::Item(req), req->get_leaseToken())) {
+      case MockMc::LeaseSetResult::NOT_STORED:
+        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+        return;
+
+      case MockMc::LeaseSetResult::STORED:
+        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+        return;
+
+      case MockMc::LeaseSetResult::STALE_STORED:
+        McServerRequestContext::reply(std::move(ctx),
+                                      Reply(mc_res_stalestored));
+        return;
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McSetRequest>&& req) {
+    TypedThriftReply<McSetReply> reply;
+    auto key = req.fullKey().str();
+    if (key == "__mockmc__.trigger_server_error") {
+      reply->set_result(mc_res_remote_error);
+      reply->set_message("returned error msg with binary data \xdd\xab");
+    } else {
+      // This assert is here to catch bugs where a value is expected but
+      // __isset.value is not set.
+      assert(req.valuePtrUnsafe());
+
+      mc_.set(key, MockMc::Item(req));
+      reply->set_result(mc_res_stored);
+    }
+
+    McServerRequestContext::reply(std::move(ctx), std::move(reply));
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McAddRequest>&& req) {
+    using Reply = TypedThriftReply<McAddReply>;
+
+    auto key = req.fullKey().str();
+
+    if (mc_.add(key, MockMc::Item(req))) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McReplaceRequest>&& req) {
+    using Reply = TypedThriftReply<McReplaceReply>;
+
+    auto key = req.fullKey().str();
+
+    if (mc_.replace(key, MockMc::Item(req))) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McAppendRequest>&& req) {
+    using Reply = TypedThriftReply<McAppendReply>;
+
+    auto key = req.fullKey().str();
+
+    if (mc_.append(key, MockMc::Item(req))) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McPrependRequest>&& req) {
+    using Reply = TypedThriftReply<McPrependReply>;
+
+    auto key = req.fullKey().str();
+
+    if (mc_.prepend(key, MockMc::Item(req))) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notstored));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McDeleteRequest>&& req) {
+    using Reply = TypedThriftReply<McDeleteReply>;
+
+    auto key = req.fullKey().str();
+
+    if (mc_.del(key)) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_deleted));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McTouchRequest>&& req) {
+    using Reply = TypedThriftReply<McTouchReply>;
+
+    auto key = req.fullKey().str();
+
+    if (mc_.touch(key, req.exptime())) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_touched));
+    } else {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McIncrRequest>&& req) {
+    using Reply = TypedThriftReply<McIncrReply>;
+
+    auto key = req.fullKey().str();
+    auto p = mc_.arith(key, req->get_delta());
+    if (!p.first) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+    } else {
+      Reply reply(mc_res_stored);
+      reply->set_delta(p.second);
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McDecrRequest>&& req) {
+    using Reply = TypedThriftReply<McDecrReply>;
+
+    auto key = req.fullKey().str();
+    auto p = mc_.arith(key, -req->get_delta());
+    if (!p.first) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+    } else {
+      Reply reply(mc_res_stored);
+      reply->set_delta(p.second);
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McFlushAllRequest>&& req) {
+    using Reply = TypedThriftReply<McFlushAllReply>;
+
+    int32_t delay = 0;
+    if (req->get_delay()) {
+      delay = *req->get_delay();
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(delay));
+    mc_.flushAll();
+    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McGetsRequest>&& req) {
+    using Reply = TypedThriftReply<McGetsReply>;
+
+    auto key = req.fullKey().str();
+    auto p = mc_.gets(key);
+    if (!p.first) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+    } else {
+      Reply reply(mc_res_found);
+      folly::IOBuf cloned;
+      p.first->value->cloneInto(cloned);
+      reply.setValue(std::move(cloned));
+      reply.setFlags(p.first->flags);
+      reply->set_casToken(p.second);
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    }
+  }
+
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<McCasRequest>&& req) {
+    using Reply = TypedThriftReply<McCasReply>;
+
+    auto key = req.fullKey().str();
+    auto ret = mc_.cas(key, MockMc::Item(req), req->get_casToken());
+    switch (ret) {
+      case MockMc::CasResult::NOT_FOUND:
+        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
+        break;
+      case MockMc::CasResult::EXISTS:
+        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_exists));
+        break;
+      case MockMc::CasResult::STORED:
+        McServerRequestContext::reply(std::move(ctx), Reply(mc_res_stored));
+        break;
+    }
+  }
+
   void onTypedMessage(TypedThriftRequest<McGetRequest>&& req,
                       McServerRequestContext&& ctx) {
     using Reply = TypedThriftReply<McGetReply>;
@@ -363,6 +650,11 @@ class MockMcOnRequest
     McServerRequestContext::reply(std::move(ctx), std::move(reply), typeId);
   }
 
+  template <class T>
+  void onRequest(McServerRequestContext&&, TypedThriftRequest<T>&&) {
+    throw std::runtime_error("Unsupported");
+  }
+
   void onTypedMessage(TypedThriftRequest<McSetRequest>&& req,
                       McServerRequestContext&& ctx) {
     constexpr size_t typeId = IdFromType<McSetReply, TReplyList>::value;
@@ -374,7 +666,7 @@ class MockMcOnRequest
       reply->set_result(mc_res_remote_error);
       reply->set_message("returned error msg with binary data \xdd\xab");
     } else {
-      mc_.set(key, MockMc::Item(req->get_value().clone()));
+      mc_.set(key, MockMc::Item(req));
       reply->set_result(mc_res_stored);
     }
 
@@ -388,7 +680,7 @@ class MockMcOnRequest
 
     auto key = req.fullKey().str();
 
-    if (mc_.add(key, MockMc::Item(req->get_value().clone()))) {
+    if (mc_.add(key, MockMc::Item(req))) {
       reply->set_result(mc_res_stored);
     } else {
       reply->set_result(mc_res_notstored);
@@ -404,7 +696,7 @@ class MockMcOnRequest
 
     auto key = req.fullKey().str();
 
-    if (mc_.replace(key, MockMc::Item(req->get_value().clone()))) {
+    if (mc_.replace(key, MockMc::Item(req))) {
       reply->set_result(mc_res_stored);
     } else {
       reply->set_result(mc_res_notstored);
@@ -449,7 +741,7 @@ class MockMcOnRequest
 
   void onTypedMessage(TypedThriftRequest<McDeleteRequest>&& req,
                       McServerRequestContext&& ctx) {
-    constexpr size_t typeId = IdFromType<McSetReply, TReplyList>::value;
+    constexpr size_t typeId = IdFromType<McDeleteReply, TReplyList>::value;
     TypedThriftReply<McDeleteReply> reply;
 
     auto key = req.fullKey();
@@ -470,7 +762,7 @@ class MockMcOnRequest
 
     auto key = req.fullKey().str();
 
-    if (mc_.append(key, MockMc::Item(req->get_value().clone()))) {
+    if (mc_.append(key, MockMc::Item(req))) {
       reply->set_result(mc_res_stored);
     } else {
       reply->set_result(mc_res_notstored);
@@ -486,7 +778,7 @@ class MockMcOnRequest
 
     auto key = req.fullKey().str();
 
-    if (mc_.prepend(key, MockMc::Item(req->get_value().clone()))) {
+    if (mc_.prepend(key, MockMc::Item(req))) {
       reply->set_result(mc_res_stored);
     } else {
       reply->set_result(mc_res_notstored);

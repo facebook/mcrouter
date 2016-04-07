@@ -7,6 +7,10 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/ProxyRoute.h"
@@ -20,6 +24,11 @@ namespace mcrouter {
 namespace detail {
 
 bool processGetServiceInfoRequest(
+    const TypedThriftRequest<cpp2::McGetRequest>& req,
+    std::shared_ptr<ProxyRequestContextTyped<
+        TypedThriftRequest<cpp2::McGetRequest>>>& ctx);
+
+bool processGetServiceInfoRequest(
     const McRequestWithMcOp<mc_op_get>& req,
     std::shared_ptr<ProxyRequestContextTyped<
         McRequestWithMcOp<mc_op_get>>>& ctx);
@@ -31,6 +40,12 @@ bool processGetServiceInfoRequest(
 
   return false;
 }
+
+template <class GetRequest>
+bool processGetServiceInfoRequestImpl(
+    const GetRequest& req,
+    std::shared_ptr<ProxyRequestContextTyped<GetRequest>>& ctx,
+    GetLikeT<GetRequest> = 0);
 
 } // detail
 

@@ -9,6 +9,9 @@
  */
 #pragma once
 
+#include <string>
+
+#include <folly/io/IOBuf.h>
 #include <folly/Range.h>
 
 #include "mcrouter/lib/mc/msg.h"
@@ -128,21 +131,33 @@ McRequest umbrellaParseRequest(const folly::IOBuf& source,
                                const uint8_t* body, size_t nbody,
                                mc_op_t& opOut, uint64_t& reqidOut);
 
+/**
+ * Similar to above, but allows the user to supply a Request structure that
+ * should be filled in by parsing the supplied source IOBuf.
+ * req is assumed to be default-constructed. Its existing fields will be
+ * overwritten with the newly parsed data.
+ */
+template <class Request>
+void umbrellaParseRequest(Request& req, const folly::IOBuf& source,
+                          const uint8_t* header, size_t nheader,
+                          const uint8_t* body, size_t nbody,
+                          mc_op_t& opOut, uint64_t& reqidOut);
+
 class UmbrellaSerializedMessage {
  public:
   UmbrellaSerializedMessage() noexcept;
   void clear();
 
-  bool prepare(const McReply& reply, mc_op_t op, uint64_t reqid,
+  bool prepare(McReply&& reply, mc_op_t op, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut) {
-    return prepareReplyImpl(reply, op, reqid, iovOut, niovOut);
+    return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
   }
 
   template <class ThriftType>
-  bool prepare(const TypedThriftReply<ThriftType>& reply, uint64_t reqid,
+  bool prepare(TypedThriftReply<ThriftType>&& reply, uint64_t reqid,
                struct iovec*& iovOut, size_t& niovOut) {
     static constexpr mc_op_t op = OpFromType<ThriftType, ReplyOpMapping>::value;
-    return prepareReplyImpl(reply, op, reqid, iovOut, niovOut);
+    return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
   }
 
   template <int op>
@@ -173,6 +188,9 @@ class UmbrellaSerializedMessage {
   size_t nStrings_{0};
   folly::StringPiece strings_[kInlineStrings];
 
+  folly::Optional<folly::IOBuf> iobuf_;
+  folly::Optional<std::string> auxString_;
+
   size_t offset_{0};
 
   bool error_{false};
@@ -185,7 +203,7 @@ class UmbrellaSerializedMessage {
   bool prepareRequestImpl(const Request& request, mc_op_t op, uint64_t reqid,
                           struct iovec*& iovOut, size_t& niovOut);
   template <class Reply>
-  bool prepareReplyImpl(const Reply& reply, mc_op_t op, uint64_t reqid,
+  bool prepareReplyImpl(Reply&& reply, mc_op_t op, uint64_t reqid,
                         struct iovec*& iovOut, size_t& niovOut);
 
   /**
@@ -287,6 +305,14 @@ class UmbrellaSerializedMessage {
     }
     if (reply->get_age()) {
       appendInt(U64, msg_number, *reply->get_age());
+    }
+    if (reply->get_ipAddress()) {
+      assert(!auxString_.hasValue());
+      // TODO(jmswen) Move, not copy. Can't move here since reply is const ref.
+      auxString_.emplace(*reply->get_ipAddress());
+      appendString(msg_value,
+                   reinterpret_cast<const uint8_t*>(auxString_->data()),
+                   auxString_->size());
     }
   }
 

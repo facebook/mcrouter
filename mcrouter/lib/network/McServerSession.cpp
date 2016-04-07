@@ -324,6 +324,49 @@ void McServerSession::requestReady(McRequest&& req,
   }
 }
 
+void McServerSession::onRequest(
+    TypedThriftRequest<cpp2::McVersionRequest>&& req,
+    bool /* noreply = false */) {
+
+  uint64_t reqid = 0;
+  if (!parser_.outOfOrder()) {
+    reqid = tailReqid_++;
+  }
+
+  McServerRequestContext ctx(*this, mc_op_version, reqid, false, nullptr);
+
+  if (options_.defaultVersionHandler) {
+    TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
+    reply->set_version(options_.versionString);
+    McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    return;
+  }
+
+  onRequest_->requestReady(std::move(ctx), std::move(req));
+}
+
+void McServerSession::onRequest(TypedThriftRequest<cpp2::McShutdownRequest>&&,
+                                bool) {
+  uint64_t reqid = 0;
+  if (!parser_.outOfOrder()) {
+    reqid = tailReqid_++;
+  }
+  McServerRequestContext ctx(*this, mc_op_shutdown, reqid, true, nullptr);
+  McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
+  onShutdown_();
+}
+
+void McServerSession::onRequest(TypedThriftRequest<cpp2::McQuitRequest>&&,
+                                bool) {
+  uint64_t reqid = 0;
+  if (!parser_.outOfOrder()) {
+    reqid = tailReqid_++;
+  }
+  McServerRequestContext ctx(*this, mc_op_quit, reqid, true, nullptr);
+  McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
+  close();
+}
+
 void McServerSession::typedRequestReady(uint32_t typeId,
                                         const folly::IOBuf& reqBody,
                                         uint64_t reqid) {

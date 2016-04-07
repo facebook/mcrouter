@@ -20,7 +20,9 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 
@@ -41,7 +43,7 @@ class AsciiSerializedReply {
 
   void clear();
 
-  bool prepare(const McReply& reply, mc_op_t operation,
+  bool prepare(McReply&& reply, mc_op_t operation,
                const folly::Optional<folly::IOBuf>& key,
                struct iovec*& iovOut, size_t& niovOut);
 
@@ -105,7 +107,10 @@ class AsciiSerializedReply {
   // We also keep an auxiliary string for a similar purpose.
   folly::IOBuf iobuf_;
   std::string auxString_;
-  mc_ascii_response_buf_t asciiResponse_; // Only for McReply
+
+  // Only for McReply
+  folly::Optional<McReply> reply_;
+  mc_ascii_response_buf_t asciiResponse_;
 
   void addString(folly::ByteRange range);
   void addString(folly::StringPiece str);
@@ -147,6 +152,13 @@ class AsciiSerializedReply {
   // Version
   void prepareImpl(const TypedThriftReply<cpp2::McVersionReply>& reply);
   void prepareImpl(TypedThriftReply<cpp2::McVersionReply>&& reply);
+  // Miscellaneous
+  void prepareImpl(TypedThriftReply<cpp2::McStatsReply>&&);
+  void prepareImpl(TypedThriftReply<cpp2::McShutdownReply>&&);
+  void prepareImpl(TypedThriftReply<cpp2::McQuitReply>&&) {} // always noreply
+  void prepareImpl(TypedThriftReply<cpp2::McExecReply>&&);
+  void prepareImpl(TypedThriftReply<cpp2::McFlushReReply>&&);
+  void prepareImpl(TypedThriftReply<cpp2::McFlushAllReply>&&);
   // Server and client error helper
   void handleError(mc_res_t result, uint16_t errorCode, std::string&& message);
   void handleUnexpected(mc_res_t result, const char* requestName);
@@ -187,13 +199,6 @@ class WriteBuffer {
   size_t getIovsCount() { return iovsCount_; }
 
   /**
-   * For umbrellaProtocol only
-   * Ensure that the WriteBuffer uses the same type of
-   * umbrella protocol. If not, reinitialize accordingly
-   */
-  void ensureType(UmbrellaVersion type);
-
-  /**
    * Checks if we should send a reply for this request.
    *
    * A possible scenario of when request is marked as noreply after being
@@ -206,7 +211,6 @@ class WriteBuffer {
 
  private:
   const mc_protocol_t protocol_;
-  UmbrellaVersion version_{UmbrellaVersion::BASIC};
 
   /* Write buffers */
   union {
@@ -216,7 +220,6 @@ class WriteBuffer {
   };
 
   folly::Optional<McServerRequestContext> ctx_;
-  folly::Optional<McReply> reply_;
   struct iovec* iovsBegin_;
   size_t iovsCount_{0};
 
@@ -231,7 +234,8 @@ class WriteBufferQueue {
   explicit WriteBufferQueue(mc_protocol_t protocol)
       : protocol_(protocol) {
     if (protocol_ != mc_ascii_protocol &&
-        protocol_ != mc_umbrella_protocol) {
+        protocol_ != mc_umbrella_protocol &&
+        protocol_ != mc_caret_protocol) {
       throw std::runtime_error("Invalid protocol");
     }
   }

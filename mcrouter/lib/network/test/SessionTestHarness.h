@@ -216,14 +216,28 @@ class SessionTestHarness {
         std::move(req), std::move(replyFn));
   }
 
+  std::unique_ptr<Transaction<TypedThriftRequest<cpp2::McGetRequest>>>
+  makeTransaction(McServerRequestContext&& ctx,
+                  TypedThriftRequest<cpp2::McGetRequest>&& req) {
+    auto value = req.fullKey().str() + "_value";
+    auto replyFn = [ctx = std::move(ctx), value = std::move(value)](
+        const TypedThriftRequest<cpp2::McGetRequest>&) mutable {
+      TypedThriftReply<cpp2::McGetReply> reply(mc_res_found);
+      reply.setValue(std::move(value));
+      McServerRequestContext::reply(std::move(ctx), std::move(reply));
+    };
+    return
+      folly::make_unique<Transaction<TypedThriftRequest<cpp2::McGetRequest>>>(
+        std::move(req), std::move(replyFn));
+  }
+
   class OnRequest {
    public:
     explicit OnRequest(SessionTestHarness& harness) :
         harness_(harness) {}
 
-    template <class Operation>
-    void onRequest(McServerRequestContext&& ctx,
-                   McRequestWithOp<Operation>&& req) {
+    template <class Request>
+    void onRequest(McServerRequestContext&& ctx, Request&& req) {
       harness_.onRequest(std::move(ctx), std::move(req));
     }
 

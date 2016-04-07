@@ -40,8 +40,8 @@ struct TypedMockMcOnRequest
 
   explicit TypedMockMcOnRequest(MockMc& mc) : mc_(mc) {}
 
-  template <class Operation>
-  void onRequest(McServerRequestContext&& ctx, McRequestWithOp<Operation>&&) {
+  template <class Request>
+  void onRequest(McServerRequestContext&& ctx, Request&&) {
     /* non-typed requests not supported */
     McServerRequestContext::reply(std::move(ctx), McReply(mc_res_client_error));
   }
@@ -87,6 +87,7 @@ struct TypedMockMcOnRequest
     McServerRequestContext::reply(
         std::move(ctx), std::move(tres), 6 /* McDeleteReply*/);
   }
+
   template <class T>
   void onTypedMessage(TypedThriftMessage<T>&&, McServerRequestContext&&) {
     LOG(INFO) << "Type Ignored for this test";

@@ -15,10 +15,10 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleIf.h"
-#include "mcrouter/routes/McOpList.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

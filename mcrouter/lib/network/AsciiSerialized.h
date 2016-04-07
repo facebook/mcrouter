@@ -108,6 +108,7 @@ class AsciiSerializedRequest {
   void prepareImpl(const TypedThriftRequest<cpp2::McVersionRequest>& request);
   // FlushAll op.
   void prepareImpl(const McRequestWithMcOp<mc_op_flushall>& request);
+  void prepareImpl(const TypedThriftRequest<cpp2::McFlushAllRequest>& request);
 
   // Everything else is false.
   template <class Request>

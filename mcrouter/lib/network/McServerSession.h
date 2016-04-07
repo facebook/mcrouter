@@ -17,7 +17,9 @@
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
 
@@ -273,8 +275,7 @@ class McServerSession :
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
   void readDataAvailable(size_t len) noexcept override;
   void readEOF() noexcept override;
-  void readErr(const folly::AsyncSocketException& ex)
-    noexcept override;
+  void readErr(const folly::AsyncSocketException& ex) noexcept override;
 
   /* McParser's parseCallback */
   void requestReady(McRequest&& req,
@@ -282,6 +283,15 @@ class McServerSession :
                     uint64_t reqid,
                     mc_res_t result,
                     bool noreply);
+  /* McParser's callback if ASCII request is read into a TypedThriftRequest */
+  template <class ThriftType>
+  void asciiRequestReady(TypedThriftRequest<ThriftType>&& req,
+                         mc_res_t result,
+                         bool noreply);
+  template <class ThriftType>
+  void umbrellaRequestReady(TypedThriftRequest<ThriftType>&& req,
+                            uint64_t reqid);
+
   void parseError(mc_res_t result, folly::StringPiece reason);
   void typedRequestReady(uint32_t typeId,
                          const folly::IOBuf& reqBody,
@@ -297,6 +307,29 @@ class McServerSession :
     requestReady(std::move(req), (mc_op_t)op, 0 /* no reqid */, result,
                  noreply);
   }
+  template <int op>
+  void onRequest(McRequestWithMcOp<op>&& req, bool noreply) {
+    onRequest(McOperation<op>(), req.moveMcRequest(), noreply);
+  }
+
+  template <class ThriftType>
+  void onRequest(TypedThriftRequest<ThriftType>&& req, bool noreply) {
+    mc_res_t result = mc_res_unknown;
+    if (req.fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
+      result = mc_res_bad_key;
+    }
+    asciiRequestReady(std::move(req), result, noreply);
+  }
+
+  /* ASCII parser callbacks for special commands */
+  void onRequest(TypedThriftRequest<cpp2::McVersionRequest>&& req,
+                 bool noreply);
+
+  void onRequest(TypedThriftRequest<cpp2::McShutdownRequest>&& req,
+                 bool noreply);
+
+  void onRequest(TypedThriftRequest<cpp2::McQuitRequest>&& req,
+                 bool noreply);
 
   void multiOpEnd();
 
@@ -352,3 +385,5 @@ class McServerSession :
 
 
 }}  // facebook::memcache
+
+#include "McServerSession-inl.h"

@@ -43,10 +43,6 @@ struct McOperation {
 template <int op>
 const char* const McOperation<op>::name = mc_op_to_string((mc_op_t)op);
 
-/**
- * TODO(jmswen) Soon we will use custom reply types for custom request types,
- * not simply McReply.
- */
 template <class Request>
 struct ReplyType {
   using type = McReply;

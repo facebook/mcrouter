@@ -119,7 +119,6 @@ libmcroutercore_a_SOURCES = \
   routes/McExtraRouteHandleProvider.h \
   routes/McImportResolver.cpp \
   routes/McImportResolver.h \
-  routes/McOpList.h \
   routes/McRouteHandleBuilder.h \
   routes/McRouteHandleProvider.cpp \
   routes/McRouteHandleProvider.h \
@@ -191,8 +190,7 @@ mcrouter_SOURCES = \
   main.cpp \
   server.cpp \
   server.h \
-  ServerOnRequestImpl.h \
-  ServerOnRequestCommon.h \
+  ServerOnRequest.h \
   standalone_options.h \
   standalone_options_list.h
 

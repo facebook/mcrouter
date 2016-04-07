@@ -52,7 +52,8 @@ void ClientMcParser<Callback>::expectNext() {
     asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ =
       &ClientMcParser<Callback>::forwardAsciiReply<Request>;
-  } else if (parser_.protocol() == mc_umbrella_protocol) {
+  } else if (parser_.protocol() == mc_umbrella_protocol ||
+             parser_.protocol() == mc_caret_protocol) {
     umbrellaForwarder_ =
       &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   }
@@ -83,14 +84,16 @@ ClientMcParser<Callback>::forwardUmbrellaReply(
     uint64_t reqId) {
 
   if (info.version == UmbrellaVersion::BASIC) {
-    auto reply = umbrellaParseReply<Request>(buffer,
-                                             buffer.data(),
-                                             info.headerSize,
-                                             buffer.data() + info.headerSize,
-                                             info.bodySize);
+    auto reply = umbrellaParseReply<Request>(
+        buffer,
+        buffer.data(),
+        info.headerSize,
+        buffer.data() + info.headerSize,
+        info.bodySize);
     callback_.replyReady(std::move(reply), reqId);
   } else {
     ReplyT<Request> reply;
+
     folly::IOBuf trim;
     buffer.cloneOneInto(trim);
     trim.trimStart(info.headerSize);
@@ -109,23 +112,33 @@ ClientMcParser<Callback>::forwardUmbrellaReply(
     const folly::IOBuf& buffer,
     uint64_t reqId) {
 
-  ReplyT<Request> reply;
+  if (info.version == UmbrellaVersion::BASIC) {
+    auto reply = umbrellaParseReply<Request>(
+        buffer,
+        buffer.data(),
+        info.headerSize,
+        buffer.data() + info.headerSize,
+        info.bodySize);
+    callback_.replyReady(std::move(reply), reqId);
+  } else {
+    ReplyT<Request> reply;
+    folly::IOBuf trim;
+    buffer.cloneOneInto(trim);
+    trim.trimStart(info.headerSize);
 
-  folly::IOBuf trim;
-  buffer.cloneOneInto(trim);
-  trim.trimStart(info.headerSize);
+    apache::thrift::CompactProtocolReader reader;
+    reader.setInput(&trim);
+    reply.read(&reader);
 
-  apache::thrift::CompactProtocolReader reader;
-  reader.setInput(&trim);
-  reply.read(&reader);
-
-  callback_.replyReady(std::move(reply), reqId);
+    callback_.replyReady(std::move(reply), reqId);
+  }
 }
 
 template <class Callback>
 bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const folly::IOBuf& buffer) {
-  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
+  if (UNLIKELY((parser_.protocol() != mc_umbrella_protocol) &&
+                (parser_.protocol() != mc_caret_protocol))) {
     std::string reason =
         folly::sformat("Expected {} protocol, but received umbrella!",
                        mc_protocol_to_string(parser_.protocol()));

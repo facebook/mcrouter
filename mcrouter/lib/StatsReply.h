@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,6 +17,11 @@
 namespace facebook { namespace memcache {
 
 class McReply;
+namespace cpp2 {
+class McStatsReply;
+}
+template <class ThriftType>
+class TypedThriftReply;
 
 class StatsReply {
  public:
@@ -26,6 +31,7 @@ class StatsReply {
   }
 
   McReply getMcReply();
+  TypedThriftReply<cpp2::McStatsReply> getReply();
 
  private:
   std::vector<std::pair<std::string, std::string>> stats_;

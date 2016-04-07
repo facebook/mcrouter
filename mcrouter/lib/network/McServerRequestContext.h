@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,17 +9,22 @@
  */
 #pragma once
 
+#include <string>
 #include <utility>
 
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/McRequestList.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
 
 namespace facebook { namespace memcache {
 
-template <class OnRequest>
+template <class OnRequest, class RequestList>
 class McServerOnRequestWrapper;
 class McServerSession;
 class MultiOpParent;
+template <class ThriftType>
+class TypedThriftReply;
 
 /**
  * API for users of McServer to send back a reply for a request.
@@ -37,6 +42,9 @@ class McServerRequestContext {
    */
   static void reply(McServerRequestContext&& ctx, McReply&& reply);
 
+  template <class ThriftType>
+  static void reply(McServerRequestContext&& ctx,
+                    TypedThriftReply<ThriftType>&& reply);
   template <class Reply>
   static void reply(McServerRequestContext&& ctx, Reply&& reply, size_t typeId);
 
@@ -65,9 +73,13 @@ class McServerRequestContext {
   };
   std::unique_ptr<AsciiState> asciiState_;
 
-  bool noReply(const McReply& reply) const;
+  bool noReply(mc_res_t result) const;
 
   static void replyImpl(McServerRequestContext&& ctx, McReply&& reply);
+  template <class Reply>
+  static void replyImpl(McServerRequestContext&& ctx,
+                        Reply&& reply,
+                        size_t typeId);
 
   folly::Optional<folly::IOBuf>& asciiKey() {
     if (!asciiState_) {
@@ -82,6 +94,16 @@ class McServerRequestContext {
     assert(hasParent());
     return *asciiState_->parent_;
   }
+  /**
+   * If reply is error, multi-op parent may inform this context that it will
+   * assume responsibility for reporting the error. If so, this context should
+   * not call McServerSession::reply. Returns true iff parent assumes
+   * responsibility for reporting error. If true is returned, errorMessage is
+   * moved to parent.
+   */
+  bool moveReplyToParent(mc_res_t result,
+                         uint32_t errorCode,
+                         std::string&& errorMessage) const;
 
   McServerRequestContext(const McServerRequestContext&) = delete;
   const McServerRequestContext& operator=(const McServerRequestContext&)
@@ -97,14 +119,25 @@ class McServerRequestContext {
 };
 
 /**
+ * McServerOnRequest is a polymorphic base class used as a callback
+ * by AsyncMcServerWorker and McAsciiParser to hand off a request (either
+ * McRequest or TypedThriftRequest<...>) to McrouterClient.
+ *
+ * The complexity in the implementation below is due to the fact that we
+ * effectively need templated virtual member functions (which do not really
+ * exist in C++).
+ */
+using OnRequestList = ConcatenateListsT<RequestList, ThriftRequestList>;
+
+template <class RequestList>
+class McServerOnRequestIf;
+
+/**
  * OnRequest callback interface. This is an implementation detail.
  */
-class McServerOnRequest {
-public:
-  virtual ~McServerOnRequest() {}
-
-private:
-  McServerOnRequest() {}
+template <>
+class McServerOnRequestIf<List<>> {
+ public:
   virtual void requestReady(McServerRequestContext&& ctx,
                             McRequest&& req,
                             mc_op_t operation) = 0;
@@ -113,28 +146,44 @@ private:
                                  const folly::IOBuf& reqBody,
                                  McServerRequestContext&& ctx) = 0;
 
-  friend class McServerSession;
-  template <class OnRequest>
-  friend class McServerOnRequestWrapper;
+  virtual ~McServerOnRequestIf() = default;
+};
+
+template <class Request, class... Requests>
+class McServerOnRequestIf<List<Request, Requests...>> :
+      public McServerOnRequestIf<List<Requests...>> {
+
+ public:
+  using McServerOnRequestIf<List<Requests...>>::requestReady;
+
+  virtual void requestReady(McServerRequestContext&& ctx, Request&& req) = 0;
+
+  virtual ~McServerOnRequestIf() = default;
+};
+
+class McServerOnRequest : public McServerOnRequestIf<OnRequestList> {
 };
 
 /**
  * Helper class to wrap user-defined callbacks in a correct virtual interface.
  * This is needed since we're mixing templates and virtual functions.
  */
+template <class OnRequest, class RequestList = OnRequestList>
+class McServerOnRequestWrapper;
+
 template <class OnRequest>
-class McServerOnRequestWrapper : public McServerOnRequest {
+class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
  public:
-  template <typename... Args>
+  using McServerOnRequest::requestReady;
+
+  template <class... Args>
   explicit McServerOnRequestWrapper(Args&&... args)
       : onRequest_(std::forward<Args>(args)...) {
   }
 
- private:
-  OnRequest onRequest_;
-
   void requestReady(McServerRequestContext&& ctx, McRequest&& req,
                     mc_op_t operation) override;
+
   void typedRequestReady(uint32_t typeId,
                          const folly::IOBuf& reqBody,
                          McServerRequestContext&& ctx) override;
@@ -145,6 +194,7 @@ class McServerOnRequestWrapper : public McServerOnRequest {
                                      std::true_type) {
     onRequest_.dispatchTypedRequest(typeId, reqBody, std::move(ctx));
   }
+
   void dispatchTypedRequestIfDefined(size_t typeId,
                                      const folly::IOBuf& reqBody,
                                      McServerRequestContext&& ctx,
@@ -153,9 +203,28 @@ class McServerOnRequestWrapper : public McServerOnRequest {
                                   McReply(mc_res_client_error));
   }
 
-  friend class McServerSession;
+ protected:
+  OnRequest onRequest_;
 };
 
-}}  // facebook::memcache
+template <class OnRequest, class Request, class... Requests>
+class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>> :
+      public McServerOnRequestWrapper<OnRequest, List<Requests...>> {
+
+ public:
+  using McServerOnRequestWrapper<OnRequest, List<Requests...>>::requestReady;
+
+  template <class... Args>
+  explicit McServerOnRequestWrapper(Args&&... args)
+    : McServerOnRequestWrapper<OnRequest, List<Requests...>>(
+        std::forward<Args>(args)...) {
+  }
+
+  void requestReady(McServerRequestContext&& ctx, Request&& req) override {
+    this->onRequest_.onRequest(std::move(ctx), std::move(req));
+  }
+};
+
+}} // facebook::memcache
 
 #include "McServerRequestContext-inl.h"

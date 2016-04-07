@@ -25,25 +25,29 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class ShadowPolicy>
-template <class Request, class Reply>
+template <class Request>
 void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
-    const Reply& normalReply,
+    const ReplyT<Request>& normalReply,
     std::shared_ptr<McrouterRouteHandleIf> shadow,
     std::shared_ptr<Request> adjustedReq) const {
 
   dispatchShadowRequest(std::move(shadow), std::move(adjustedReq));
-};
+}
 
 template <class ShadowPolicy>
-void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
-    const McReply& normalReply,
+template <class GetRequest>
+void ShadowRoute<ShadowPolicy>::sendAndValidateRequestGetImpl(
+    const ReplyT<GetRequest>& normalReply,
     std::shared_ptr<McrouterRouteHandleIf> shadow,
-    std::shared_ptr<McRequestWithMcOp<mc_op_get>> adjustedReq)
+    std::shared_ptr<GetRequest> adjustedReq)
     const {
 
   uint64_t flags = normalReply.flags();
+
   mc_res_t result = normalReply.result();
-  size_t hashVal = folly::IOBufHash()(normalReply.value());
+  size_t hashVal = folly::IOBufHash()(
+      normalReply.valuePtrUnsafe()
+        ? *normalReply.valuePtrUnsafe() : folly::IOBuf());
 
   auto normalDest = normalReply.destination();
 
@@ -61,7 +65,9 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
       auto shadowReply = shadow->route(*adjustedReq);
       uint64_t shadowFlags = shadowReply.flags();
       mc_res_t shadowResult = shadowReply.result();
-      size_t shadowHash = folly::IOBufHash()(shadowReply.value());
+      size_t shadowHash = folly::IOBufHash()(
+          shadowReply.valuePtrUnsafe()
+            ? *shadowReply.valuePtrUnsafe() : folly::IOBuf());
 
       if (shadowFlags != flags || shadowResult != result ||
           hashVal != shadowHash) {
@@ -80,7 +86,7 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequest(
         logShadowValidationError(proxy, validationData);
       }
     });
-};
+}
 
 template <class ShadowPolicy>
 template <class Request>
@@ -95,6 +101,6 @@ void ShadowRoute<ShadowPolicy>::dispatchShadowRequest(
       fiber_local::addRequestClass(RequestClass::kShadow);
       shadow->route(*adjustedReq);
     });
-};
+}
 
 }}} // facebook::memcache::mcrouter

@@ -38,6 +38,8 @@ libmcrouter_a_SOURCES = \
   McReply.h \
   McRequest.cpp \
   McRequest.h \
+  McRequestList.h \
+  McResUtil.h \
   Operation.h \
   OperationTraits.h \
   Reply.h \

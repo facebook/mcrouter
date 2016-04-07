@@ -107,16 +107,35 @@ class ShadowRoute {
   void dispatchShadowRequest(std::shared_ptr<McrouterRouteHandleIf> shadow,
                              std::shared_ptr<Request> adjustedReq) const;
 
-  template <class Request, class Reply>
-  void sendAndValidateRequest(const Reply& normalReply,
+  template <class Request>
+  void sendAndValidateRequest(const ReplyT<Request>& normalReply,
                               std::shared_ptr<McrouterRouteHandleIf> shadow,
                               std::shared_ptr<Request> adjustedReq) const;
+
+  template <class GetRequest>
+  void sendAndValidateRequestGetImpl(
+      const ReplyT<GetRequest>& normalReply,
+      std::shared_ptr<McrouterRouteHandleIf> shadow,
+      std::shared_ptr<GetRequest> adjustedReq)
+      const;
 
   void sendAndValidateRequest(
       const McReply& normalReply,
       std::shared_ptr<McrouterRouteHandleIf> shadow,
       std::shared_ptr<McRequestWithMcOp<mc_op_get>> adjustedReq)
-      const;
+      const {
+
+    sendAndValidateRequestGetImpl(normalReply, shadow, adjustedReq);
+  }
+
+  void sendAndValidateRequest(
+      const TypedThriftReply<cpp2::McGetReply>& normalReply,
+      std::shared_ptr<McrouterRouteHandleIf> shadow,
+      std::shared_ptr<TypedThriftRequest<cpp2::McGetRequest>> adjustedReq)
+      const {
+
+    sendAndValidateRequestGetImpl(normalReply, shadow, adjustedReq);
+  }
 };
 
 }}}  // facebook::memcache::mcrouter

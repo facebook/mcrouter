@@ -39,7 +39,16 @@ using RequestReplyPairs = List<
          TypedMsg<28, cpp2::McAppendReply>>,
     Pair<TypedMsg<29, cpp2::McPrependRequest>,
          TypedMsg<30, cpp2::McPrependReply>>,
-    Pair<TypedMsg<31, cpp2::McTouchRequest>, TypedMsg<32, cpp2::McTouchReply>>>;
+    Pair<TypedMsg<31, cpp2::McTouchRequest>, TypedMsg<32, cpp2::McTouchReply>>,
+    Pair<TypedMsg<33, cpp2::McShutdownRequest>,
+         TypedMsg<34, cpp2::McShutdownReply>>,
+    Pair<TypedMsg<35, cpp2::McQuitRequest>, TypedMsg<36, cpp2::McQuitReply>>,
+    Pair<TypedMsg<37, cpp2::McStatsRequest>, TypedMsg<38, cpp2::McStatsReply>>,
+    Pair<TypedMsg<39, cpp2::McExecRequest>, TypedMsg<40, cpp2::McExecReply>>,
+    Pair<TypedMsg<41, cpp2::McFlushReRequest>,
+         TypedMsg<42, cpp2::McFlushReReply>>,
+    Pair<TypedMsg<43, cpp2::McFlushAllRequest>,
+         TypedMsg<44, cpp2::McFlushAllReply>>>;
 
 using TRequestList = PairListFirstT<RequestReplyPairs>;
 using TReplyList = PairListSecondT<RequestReplyPairs>;
@@ -64,7 +73,13 @@ using RequestOpMapping = List<KV<mc_op_get, cpp2::McGetRequest>,
                               KV<mc_op_version, cpp2::McVersionRequest>,
                               KV<mc_op_append, cpp2::McAppendRequest>,
                               KV<mc_op_prepend, cpp2::McPrependRequest>,
-                              KV<mc_op_touch, cpp2::McTouchRequest>>;
+                              KV<mc_op_touch, cpp2::McTouchRequest>,
+                              KV<mc_op_shutdown, cpp2::McShutdownRequest>,
+                              KV<mc_op_quit, cpp2::McQuitRequest>,
+                              KV<mc_op_stats, cpp2::McStatsRequest>,
+                              KV<mc_op_exec, cpp2::McExecRequest>,
+                              KV<mc_op_flushre, cpp2::McFlushReRequest>,
+                              KV<mc_op_flushall, cpp2::McFlushAllRequest>>;
 
 using ReplyOpMapping = List<KV<mc_op_get, cpp2::McGetReply>,
                             KV<mc_op_set, cpp2::McSetReply>,
@@ -81,7 +96,13 @@ using ReplyOpMapping = List<KV<mc_op_get, cpp2::McGetReply>,
                             KV<mc_op_version, cpp2::McVersionReply>,
                             KV<mc_op_append, cpp2::McAppendReply>,
                             KV<mc_op_prepend, cpp2::McPrependReply>,
-                            KV<mc_op_touch, cpp2::McTouchReply>>;
+                            KV<mc_op_touch, cpp2::McTouchReply>,
+                            KV<mc_op_shutdown, cpp2::McShutdownReply>,
+                            KV<mc_op_quit, cpp2::McQuitReply>,
+                            KV<mc_op_stats, cpp2::McStatsReply>,
+                            KV<mc_op_exec, cpp2::McExecReply>,
+                            KV<mc_op_flushre, cpp2::McFlushReReply>,
+                            KV<mc_op_flushall, cpp2::McFlushAllReply>>;
 
 /**
  * Given a Request Type T and a Mapping of mc_op_t to Request Type,
@@ -100,6 +121,22 @@ struct OpFromType<T, List<KV1, KVs...>> {
   static constexpr mc_op_t value = std::is_same<T, typename KV1::Value>::value
                                        ? static_cast<mc_op_t>(KV1::Key)
                                        : OpFromType<T, List<KVs...>>::value;
+};
+
+template <int op, class Mapping>
+struct TypeFromOp;
+
+template <int op>
+struct TypeFromOp<op, List<>> {
+    using type = void;
+};
+
+template <int op, class KV1, class... KVs>
+struct TypeFromOp<op, List<KV1, KVs...>> {
+    using type =
+      typename std::conditional<op == KV1::Key,
+                            typename KV1::Value,
+                            typename TypeFromOp<op, List<KVs...>>::type>::type;
 };
 
 template <class M>

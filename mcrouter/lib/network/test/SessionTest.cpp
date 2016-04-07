@@ -177,9 +177,8 @@ struct NoOpOnRequest {
  public:
   NoOpOnRequest() {}
 
-  template <class Operation>
-  void onRequest(McServerRequestContext&& ctx,
-                 McRequestWithOp<Operation>&& req) {}
+  template <class Request>
+  void onRequest(McServerRequestContext&&, Request&&) {}
 };
 
 TEST(Session, invalidSocketAdd) {

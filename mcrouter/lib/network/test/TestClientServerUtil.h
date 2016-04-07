@@ -13,13 +13,16 @@
 #include <functional>
 
 #include <folly/experimental/fibers/FiberManager.h>
+#include <folly/Function.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache { namespace test {
 
@@ -31,21 +34,40 @@ class TestServerOnRequest {
                  McRequestWithMcOp<mc_op_get>&& req);
 
   void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<cpp2::McGetRequest>&& req);
+
+  void onRequest(McServerRequestContext&& ctx,
                  McRequestWithMcOp<mc_op_set>&& req);
 
-  template <int M>
   void onRequest(McServerRequestContext&& ctx,
-                 McRequestWithMcOp<M>&& req) {
-    LOG(ERROR) << "Unhandled operation " << M;
+                 TypedThriftRequest<cpp2::McSetRequest>&& req);
+
+  template <class Request>
+  void onRequest(McServerRequestContext&&, Request&&) {
+    LOG(ERROR) << "Unhandled operation " << typeid(Request).name();
   }
 
  protected:
-  void processReply(McServerRequestContext&& context, McReply&& reply);
+  template <class Reply>
+  void processReply(McServerRequestContext&& context, Reply&& reply) {
+    if (outOfOrder_) {
+      McServerRequestContext::reply(
+          std::move(context), std::forward<Reply>(reply));
+    } else {
+      waitingReplies_.push_back(
+        [ctx = std::move(context), reply = std::move(reply)]() mutable {
+          McServerRequestContext::reply(std::move(ctx), std::move(reply));
+        });
+      if (waitingReplies_.size() == 1) {
+        flushQueue();
+      }
+    }
+  }
 
  private:
   std::atomic<bool>& shutdown_;
   bool outOfOrder_;
-  std::vector<std::pair<McServerRequestContext, McReply>> waitingReplies_;
+  std::vector<folly::Function<void()>> waitingReplies_;
 
   void flushQueue();
 };

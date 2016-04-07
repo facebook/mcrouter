@@ -33,9 +33,26 @@ bool WriteBuffer::prepareTyped(McServerRequestContext&& ctx,
                                size_t typeId) {
   ctx_.emplace(std::move(ctx));
 
-  ensureType(UmbrellaVersion::TYPED_MESSAGE);
-  return caretReply_.prepare(
-      std::move(reply), ctx_->reqid_, typeId, iovsBegin_, iovsCount_);
+  switch (protocol_) {
+    case mc_ascii_protocol:
+      return asciiReply_.prepare(
+          std::move(reply), ctx_->asciiKey(), iovsBegin_, iovsCount_);
+      break;
+
+    case mc_umbrella_protocol:
+      return umbrellaReply_.prepare(
+          std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
+      break;
+
+    case mc_caret_protocol:
+      return caretReply_.prepare(
+          std::move(reply), ctx_->reqid_, typeId, iovsBegin_, iovsCount_);
+      break;
+
+    default:
+      CHECK(false);
+  }
+  return false;
 }
 
 }} // facebook::memcache

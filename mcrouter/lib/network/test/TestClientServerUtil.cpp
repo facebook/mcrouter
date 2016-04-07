@@ -25,6 +25,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook { namespace memcache { namespace test {
@@ -86,7 +87,11 @@ void TestServerOnRequest::onRequest(
     McReply foundReply = McReply(mc_res_found, createMcMsgRef(req.fullKey(),
                                                               value));
     if (req.fullKey() == "hold") {
-      waitingReplies_.emplace_back(std::move(ctx), std::move(foundReply));
+      waitingReplies_.push_back(
+        [ctx = folly::makeMoveWrapper(ctx),
+         reply = folly::makeMoveWrapper(foundReply)]() mutable {
+         McServerRequestContext::reply(std::move(*ctx), std::move(*reply));
+        });
     } else if (req.fullKey() == "flush") {
       processReply(std::move(ctx), std::move(foundReply));
       flushQueue();
@@ -98,27 +103,60 @@ void TestServerOnRequest::onRequest(
 
 void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
-    McRequestWithMcOp<mc_op_set>&& req) {
+    TypedThriftRequest<cpp2::McGetRequest>&& req) {
+  using Reply = TypedThriftReply<cpp2::McGetReply>;
 
-  processReply(std::move(ctx), McReply(mc_res_stored));
-}
-
-void TestServerOnRequest::processReply(McServerRequestContext&& context,
-                                       McReply&& reply) {
-  if (outOfOrder_) {
-    McServerRequestContext::reply(std::move(context), std::move(reply));
+  if (req.fullKey() == "sleep") {
+    /* sleep override */
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    processReply(std::move(ctx), Reply(mc_res_notfound));
+  } else if (req.fullKey() == "shutdown") {
+    shutdown_.store(true);
+    processReply(std::move(ctx), Reply(mc_res_notfound));
+    flushQueue();
   } else {
-    waitingReplies_.emplace_back(std::move(context), std::move(reply));
-    if (waitingReplies_.size() == 1) {
+    std::string value;
+    if (req.fullKey().startsWith("value_size:")) {
+      auto key = req.fullKey();
+      key.removePrefix("value_size:");
+      size_t valSize = folly::to<size_t>(key);
+      value = std::string(valSize, 'a');
+    } else if (req.fullKey() != "empty") {
+      value = req.fullKey().str();
+    }
+
+    Reply foundReply(mc_res_found);
+    foundReply.setValue(value);
+
+    if (req.fullKey() == "hold") {
+      waitingReplies_.push_back(
+        [ctx = folly::makeMoveWrapper(ctx),
+         reply = folly::makeMoveWrapper(foundReply)]() mutable {
+         McServerRequestContext::reply(std::move(*ctx), std::move(*reply));
+        });
+    } else if (req.fullKey() == "flush") {
+      processReply(std::move(ctx), std::move(foundReply));
       flushQueue();
+    } else {
+      processReply(std::move(ctx), std::move(foundReply));
     }
   }
 }
 
+void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
+                                    McRequestWithMcOp<mc_op_set>&&) {
+  processReply(std::move(ctx), McReply(mc_res_stored));
+}
+
+void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
+                                    TypedThriftRequest<cpp2::McSetRequest>&&) {
+  processReply(
+      std::move(ctx), TypedThriftReply<cpp2::McSetReply>(mc_res_stored));
+}
+
 void TestServerOnRequest::flushQueue() {
   for (size_t i = 0; i < waitingReplies_.size(); ++i) {
-    McServerRequestContext::reply(std::move(waitingReplies_[i].first),
-                                  std::move(waitingReplies_[i].second));
+    waitingReplies_[i]();
   }
   waitingReplies_.clear();
 }
@@ -221,14 +259,13 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
                          uint32_t timeoutMs) {
   inflight_++;
   fm_.addTask([key, expectedResult, this, timeoutMs]() {
-      auto msg = createMcMsgRef(key.c_str());
-      msg->op = mc_op_get;
-      McRequestWithMcOp<mc_op_get> req{std::move(msg)};
+      TypedThriftRequest<cpp2::McGetRequest> req(key);
+
       try {
         auto reply = client_->sendSync(req,
                                        std::chrono::milliseconds(timeoutMs));
         if (reply.result() == mc_res_found) {
-          auto value = getRange(reply.value());
+          auto value = reply.valueRangeSlow();
           if (req.fullKey() == "empty") {
             checkLogic(reply.hasValue(), "Reply has no value");
             checkLogic(value.empty(), "Expected empty value, got {}", value);
@@ -258,9 +295,8 @@ void TestClient::sendSet(std::string key, std::string value,
                          mc_res_t expectedResult) {
   inflight_++;
   fm_.addTask([key, value, expectedResult, this]() {
-      auto msg = createMcMsgRef(key.c_str(), value.c_str());
-      msg->op = mc_op_set;
-      McRequestWithMcOp<mc_op_set> req{std::move(msg)};
+      TypedThriftRequest<cpp2::McSetRequest> req(key);
+      req.setValue(value);
 
       auto reply = client_->sendSync(req,
                                      std::chrono::milliseconds(200));

@@ -21,7 +21,8 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/StatsReply.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"
@@ -490,19 +491,22 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
 /**
  * @param proxy_t proxy
  */
-McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
+TypedThriftReply<cpp2::McStatsReply> stats_reply(proxy_t* proxy,
+                                                 folly::StringPiece group_str) {
   std::lock_guard<std::mutex> guard(proxy->stats_lock);
 
   StatsReply reply;
 
   if (group_str == "version") {
     reply.addStat("mcrouter-version", MCROUTER_PACKAGE_STRING);
-    return reply.getMcReply();
+    return reply.getReply();
   }
 
   auto groups = stat_parse_group_str(group_str);
   if (groups == unknown_stats) {
-    return McReply(mc_res_client_error, "bad stats command");
+    TypedThriftReply<cpp2::McStatsReply> errorReply(mc_res_client_error);
+    errorReply->set_message("bad stats command");
+    return errorReply;
   }
 
   stat_t stats[num_stats];
@@ -561,7 +565,7 @@ McReply stats_reply(proxy_t* proxy, folly::StringPiece group_str) {
     }
   }
 
-  return reply.getMcReply();
+  return reply.getReply();
 }
 
 void set_standalone_args(folly::StringPiece args) {

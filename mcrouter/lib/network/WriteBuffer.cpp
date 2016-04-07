@@ -9,6 +9,7 @@
  */
 #include <folly/Conv.h>
 
+#include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/mc/ascii_response.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McResUtil.h"
@@ -28,6 +29,10 @@ WriteBuffer::WriteBuffer(mc_protocol_t protocol)
       new (&umbrellaReply_) UmbrellaSerializedMessage;
       break;
 
+    case mc_caret_protocol:
+      new (&caretReply_) CaretSerializedMessage;
+      break;
+
     default:
       CHECK(false) << "Unknown protocol";
   }
@@ -40,11 +45,11 @@ WriteBuffer::~WriteBuffer() {
       break;
 
     case mc_umbrella_protocol:
-      if (version_ == UmbrellaVersion::BASIC) {
-        umbrellaReply_.~UmbrellaSerializedMessage();
-      } else {
-        caretReply_.~CaretSerializedMessage();
-      }
+      umbrellaReply_.~UmbrellaSerializedMessage();
+      break;
+
+    case mc_caret_protocol:
+      caretReply_.~CaretSerializedMessage();
       break;
 
     default:
@@ -52,23 +57,8 @@ WriteBuffer::~WriteBuffer() {
   }
 }
 
-void WriteBuffer::ensureType(UmbrellaVersion version) {
-  if (version_ == version) {
-    return;
-  }
-  if (version == UmbrellaVersion::TYPED_MESSAGE) {
-    umbrellaReply_.~UmbrellaSerializedMessage();
-    new (&caretReply_) CaretSerializedMessage;
-  } else {
-    caretReply_.~CaretSerializedMessage();
-    new (&umbrellaReply_) UmbrellaSerializedMessage;
-  }
-  version_ = version;
-}
-
 void WriteBuffer::clear() {
   ctx_.clear();
-  reply_.clear();
 
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -76,11 +66,11 @@ void WriteBuffer::clear() {
       break;
 
     case mc_umbrella_protocol:
-      if (version_ == UmbrellaVersion::BASIC) {
-        umbrellaReply_.clear();
-      } else {
-        caretReply_.clear();
-      }
+      umbrellaReply_.clear();
+      break;
+
+    case mc_caret_protocol:
+      caretReply_.clear();
       break;
 
     default:
@@ -90,27 +80,24 @@ void WriteBuffer::clear() {
 
 bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply) {
   ctx_.emplace(std::move(ctx));
-  reply_.emplace(std::move(reply));
 
   switch (protocol_) {
     case mc_ascii_protocol:
-      return asciiReply_.prepare(reply_.value(),
+      return asciiReply_.prepare(std::move(reply),
                                  ctx_->operation_,
                                  ctx_->asciiKey(),
                                  iovsBegin_,
                                  iovsCount_);
-      break;
 
     case mc_umbrella_protocol:
-      ensureType(UmbrellaVersion::BASIC);
-      return umbrellaReply_.prepare(reply_.value(),
+      return umbrellaReply_.prepare(std::move(reply),
                                     ctx_->operation_,
                                     ctx_->reqid_,
                                     iovsBegin_,
                                     iovsCount_);
-      break;
 
     default:
+      // mc_caret_protocol not supported with old McRequest/McReply
       CHECK(false);
   }
 }
@@ -130,15 +117,18 @@ AsciiSerializedReply::~AsciiSerializedReply() {
 void AsciiSerializedReply::clear() {
   mc_ascii_response_buf_cleanup(&asciiResponse_);
   mc_ascii_response_buf_init(&asciiResponse_);
+  reply_.clear();
 }
 
-bool AsciiSerializedReply::prepare(const McReply& reply,
+bool AsciiSerializedReply::prepare(McReply&& reply,
                                    mc_op_t operation,
                                    const folly::Optional<folly::IOBuf>& key,
                                    struct iovec*& iovOut, size_t& niovOut) {
+  reply_.emplace(std::move(reply));
+
   mc_msg_t replyMsg;
   mc_msg_init_not_refcounted(&replyMsg);
-  reply.dependentMsg(operation, &replyMsg);
+  reply_->dependentMsg(operation, &replyMsg);
 
   nstring_t k;
   if (key.hasValue()) {
@@ -217,8 +207,11 @@ void AsciiSerializedReply::prepareImpl(
 
   if (reply.isHit()) {
     if (key.empty()) {
-      // Multi-op hack: if key is empty, this is not a real hit and we should
-      // just print 'END'
+      // Multi-op hack: if key is empty, this is the END context
+      if (reply.isError()) {
+        handleError(reply.result(), reply.appSpecificErrorCode(),
+                    std::move(reply->message));
+      }
       addString("END\r\n");
     } else {
       const auto valueStr = reply.valueRangeSlow();
@@ -322,7 +315,7 @@ void AsciiSerializedReply::prepareImpl(
 
   const auto valueStr = reply.valueRangeSlow();
 
-  if (reply.isHit()) {
+  if (reply.result() == mc_res_found) {
     const auto len = snprintf(printBuffer_, kMaxBufferLength,
                               " %lu %zu\r\n",
                               reply.flags(), valueStr.size());
@@ -335,7 +328,7 @@ void AsciiSerializedReply::prepareImpl(
     // value was coalesced in valueRangeSlow()
     iobuf_ = std::move(reply->value);
     addStrings(valueStr, "\r\n");
-  } else if (reply.isMiss()) {
+  } else if (reply.result() == mc_res_notfound) {
     const uint64_t leaseToken =
       reply->get_leaseToken() ? *reply->get_leaseToken() : 0;
 
@@ -346,10 +339,14 @@ void AsciiSerializedReply::prepareImpl(
                folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     iobuf_ = std::move(reply->value);
     addStrings(valueStr, "\r\n");
+  } else if (reply.result() == mc_res_notfoundhot) {
+    addString("NOT_FOUND_HOT\r\n");
   } else if (reply.isError()) {
+    LOG(ERROR) << "Got reply result " << reply.result();
     handleError(reply.result(), reply.appSpecificErrorCode(),
                 std::move(reply->message));
   } else {
+    LOG(ERROR) << "Got unexpected reply result " << reply.result();
     handleUnexpected(reply.result(), "lease-get");
   }
 }
@@ -512,6 +509,77 @@ void AsciiSerializedReply::prepareImpl(
                 std::move(reply->message));
   } else {
     handleUnexpected(reply.result(), "version");
+  }
+}
+
+// Stats
+void AsciiSerializedReply::prepareImpl(
+    TypedThriftReply<cpp2::McStatsReply>&& reply) {
+  if (reply.result() == mc_res_ok) {
+    if (reply->get_stats()) {
+      iobuf_ = std::move(const_cast<folly::IOBuf&>(*reply->get_stats()));
+      addString(coalesceAndGetRange(iobuf_));
+      reply->__isset.stats = false;
+    }
+    addString("END\r\n");
+  } else if (reply.isError()) {
+    handleError(reply.result(), reply.appSpecificErrorCode(),
+                std::move(reply->message));
+  } else {
+    handleUnexpected(reply.result(), "stats");
+  }
+}
+
+// FlushAll
+void AsciiSerializedReply::prepareImpl(
+    TypedThriftReply<cpp2::McFlushAllReply>&& reply) {
+  if (reply.isError()) {
+    handleError(reply.result(), reply.appSpecificErrorCode(),
+                std::move(reply->message));
+  } else { // Don't handleUnexpected(), just return OK
+    addString("OK\r\n");
+  }
+}
+
+// FlushRe
+void AsciiSerializedReply::prepareImpl(
+    TypedThriftReply<cpp2::McFlushReReply>&& reply) {
+  if (reply.isError()) {
+    handleError(reply.result(), reply.appSpecificErrorCode(),
+                std::move(reply->message));
+  } else { // Don't handleUnexpected(), just return OK
+    addString("OK\r\n");
+  }
+}
+
+// Exec
+void AsciiSerializedReply::prepareImpl(
+    TypedThriftReply<cpp2::McExecReply>&& reply) {
+  if (reply.result() == mc_res_ok) {
+    if (reply->get_response()) {
+      auxString_ = std::move(reply->response);
+      addStrings(auxString_, "\r\n");
+    } else {
+      addString("OK\r\n");
+    }
+  } else if (reply.isError()) {
+    handleError(reply.result(), reply.appSpecificErrorCode(),
+                std::move(reply->message));
+  } else {
+    handleUnexpected(reply.result(), "exec");
+  }
+}
+
+// Shutdown
+void AsciiSerializedReply::prepareImpl(
+    TypedThriftReply<cpp2::McShutdownReply>&& reply) {
+  if (reply.result() == mc_res_ok) {
+    addString("OK\r\n");
+  } else if (reply.isError()) {
+    handleError(reply.result(), reply.appSpecificErrorCode(),
+                std::move(reply->message));
+  } else {
+    handleUnexpected(reply.result(), "shutdown");
   }
 }
 

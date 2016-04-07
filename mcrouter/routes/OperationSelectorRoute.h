@@ -14,6 +14,8 @@
 #include <vector>
 
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -42,9 +44,16 @@ class OperationSelectorRoute {
   }
 
   template <class Request>
-  void traverse(const Request&,
-                const RouteHandleTraverser<McrouterRouteHandleIf>&) const {
-    /* TODO(jmswen) Implement. */
+  void traverse(const Request& req,
+                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    static constexpr int op =
+      OpFromType<typename Request::rawType, RequestOpMapping>::value;
+
+    if (operationPolicies_[op]) {
+      t(*operationPolicies_[op], req);
+    } else if (defaultPolicy_) {
+      t(*defaultPolicy_, req);
+    }
   }
 
   template <int M>
@@ -59,8 +68,16 @@ class OperationSelectorRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request&) const {
-    /* TODO(jmswen) Implement. */
+  ReplyT<Request> route(const Request& req) const {
+    static constexpr int op =
+      OpFromType<typename Request::rawType, RequestOpMapping>::value;
+
+    if (operationPolicies_[op]) {
+      return operationPolicies_[op]->route(req);
+    } else if (defaultPolicy_) {
+      return defaultPolicy_->route(req);
+    }
+
     return ReplyT<Request>();
   }
 

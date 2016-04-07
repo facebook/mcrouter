@@ -4,6 +4,7 @@ typedef binary (cpp2.type = "folly::IOBuf") IOBuf
 
 struct McGetRequest {
   1: IOBuf key;
+  2: optional i64 flags;
 }
 
 struct McGetReply {
@@ -25,19 +26,22 @@ struct McSetRequest {
 
 struct McSetReply {
   1: i16 result;
-  2: optional string message;
-  3: optional i16 appSpecificErrorCode;
+  2: optional IOBuf value;
+  3: optional string message;
+  4: optional i16 appSpecificErrorCode;
 }
 
 struct McDeleteRequest {
   1: IOBuf key;
   2: optional i32 exptime;
+  3: optional IOBuf value;
 }
 
 struct McDeleteReply {
   1: i16 result;
-  2: optional string message;
-  3:  optional i16 appSpecificErrorCode;
+  2: optional IOBuf value;
+  3: optional string message;
+  4: optional i16 appSpecificErrorCode;
 }
 
 struct McLeaseGetRequest {
@@ -198,10 +202,73 @@ struct McPrependReply {
 
 struct McTouchRequest {
   1: IOBuf key;
-  2: optional i32 exptime;
+  2: i32 exptime;
 }
 
 struct McTouchReply {
+  1: i16 result;
+  2: optional string message;
+  3: optional i16 appSpecificErrorCode;
+}
+
+struct McStatsRequest {
+  1: IOBuf key;
+}
+
+struct McStatsReply {
+  1: i16 result;
+  2: optional string message;
+  3: optional IOBuf stats;
+  4: optional i16 appSpecificErrorCode;
+}
+
+struct McShutdownRequest {
+  1: IOBuf key; // unused
+}
+
+struct McShutdownReply {
+  1: i16 result;
+  2: optional string message;
+  3: optional i16 appSpecificErrorCode;
+}
+
+struct McQuitRequest {
+  1: IOBuf key; // unused
+}
+
+struct McQuitReply {
+  1: i16 result;
+  2: optional string message;
+  3: optional i16 appSpecificErrorCode;
+}
+
+struct McExecRequest {
+  1: IOBuf key;
+}
+
+struct McExecReply {
+  1: i16 result;
+  2: optional string response;
+  3: optional string message;
+  4: optional i16 appSpecificErrorCode;
+}
+
+struct McFlushReRequest {
+  1: IOBuf key;
+}
+
+struct McFlushReReply {
+  1: i16 result;
+  2: optional string message;
+  3: optional i16 appSpecificErrorCode;
+}
+
+struct McFlushAllRequest {
+  1: IOBuf key; // unused
+  2: optional i32 delay;
+}
+
+struct McFlushAllReply {
   1: i16 result;
   2: optional string message;
   3: optional i16 appSpecificErrorCode;

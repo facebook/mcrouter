@@ -12,6 +12,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/TokenBucket.h"
 
 namespace folly {

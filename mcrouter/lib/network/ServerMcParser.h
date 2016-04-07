@@ -66,6 +66,10 @@ class ServerMcParser : private McParser::ParserCallback {
                           uint64_t reqid, mc_res_t result,
                           bool noreply);
 
+  template <class ThriftType>
+  void requestReadyHelper(TypedThriftRequest<ThriftType>&& req,
+                          uint64_t reqid);
+
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
                       const folly::IOBuf& buffer) override;
@@ -73,13 +77,13 @@ class ServerMcParser : private McParser::ParserCallback {
   void parseError(mc_res_t result, folly::StringPiece reason) override;
   bool shouldReadToAsciiBuffer() const;
 
-  template <class Operation, class Request>
-  void onRequest(Operation, Request&&, bool noreply);
+  template <class Request>
+  void onRequest(Request&&, bool noreply);
 
   void multiOpEnd();
 
   // McServerAsciiParser callback wrapper.
-  template <class C, class OpReqsList>
+  template <class C, class ReqsList>
   friend class detail::CallbackWrapper;
 };
 

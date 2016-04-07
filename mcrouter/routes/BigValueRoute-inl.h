@@ -184,7 +184,7 @@ Reply BigValueRoute::mergeChunkGetReplies(
 
   auto reduced_reply_it = Reply::reduce(begin, end);
   if (!reduced_reply_it->isHit()) {
-      return Reply(reduced_reply_it->result());
+    return Reply(reduced_reply_it->result());
   }
 
   std::vector<std::unique_ptr<folly::IOBuf>> data_vec;

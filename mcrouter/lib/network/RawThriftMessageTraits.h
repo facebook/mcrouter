@@ -52,7 +52,7 @@ struct RequestTraits<cpp2::McGetRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
-  static constexpr bool hasFlags = false;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -69,7 +69,7 @@ struct RequestTraits<cpp2::McDeleteRequest> {
   static constexpr const char* name = "delete";
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
-  static constexpr bool hasValue = false;
+  static constexpr bool hasValue = true;
   static constexpr bool hasFlags = false;
 };
 
@@ -190,6 +190,60 @@ struct RequestTraits<cpp2::McTouchRequest> {
   static constexpr bool hasFlags = false;
 };
 
+template <>
+struct RequestTraits<cpp2::McShutdownRequest> {
+  static constexpr const char* name = "shutdown";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McQuitRequest> {
+  static constexpr const char* name = "quit";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McStatsRequest> {
+  static constexpr const char* name = "stats";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McExecRequest> {
+  static constexpr const char* name = "exec";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McFlushReRequest> {
+  static constexpr const char* name = "flushre";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct RequestTraits<cpp2::McFlushAllRequest> {
+  static constexpr const char* name = "flushall";
+  static constexpr bool hasKey = true;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
 /**
  * Reply traits
  */
@@ -201,7 +255,7 @@ struct ReplyTraits<cpp2::McGetReply> {
 
 template <>
 struct ReplyTraits<cpp2::McSetReply> {
-  static constexpr bool hasValue = false;
+  static constexpr bool hasValue = true;
   static constexpr bool hasFlags = false;
 };
 
@@ -285,6 +339,42 @@ struct ReplyTraits<cpp2::McPrependReply> {
 
 template <>
 struct ReplyTraits<cpp2::McTouchReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McShutdownReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McQuitReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McStatsReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McExecReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McFlushReReply> {
+  static constexpr bool hasValue = false;
+  static constexpr bool hasFlags = false;
+};
+
+template <>
+struct ReplyTraits<cpp2::McFlushAllReply> {
   static constexpr bool hasValue = false;
   static constexpr bool hasFlags = false;
 };

@@ -19,6 +19,8 @@
 namespace facebook { namespace memcache {
 
 template <class M>
+class TypedThriftReply;
+template <class M>
 class TypedThriftRequest;
 
 namespace detail {
@@ -27,13 +29,13 @@ namespace detail {
  * Request-related helpers.
  */
 template <class M>
-typename std::enable_if<RequestTraits<M>::hasExptime, uint32_t>::type
+typename std::enable_if<RequestTraits<M>::hasExptime, int32_t>::type
 exptime(const TypedThriftRequest<M>& request) {
   return request->__isset.exptime ? request->exptime : 0;
 }
 
 template <class M>
-typename std::enable_if<!RequestTraits<M>::hasExptime, uint32_t>::type
+typename std::enable_if<!RequestTraits<M>::hasExptime, int32_t>::type
 exptime(const TypedThriftRequest<M>& request) {
   return 0;
 }

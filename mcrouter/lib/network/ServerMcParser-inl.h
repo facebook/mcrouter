@@ -57,9 +57,16 @@ void ServerMcParser<Callback>::requestReadyHelper(McRequest&& req,
 }
 
 template <class Callback>
+template <class ThriftType>
+void ServerMcParser<Callback>::requestReadyHelper(
+    TypedThriftRequest<ThriftType>&& req, uint64_t reqid) {
+  parser_.reportMsgRead();
+  callback_.umbrellaRequestReady(std::move(req), reqid);
+}
+
+template <class Callback>
 bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const folly::IOBuf& buffer) {
-
   try {
     if (info.version == UmbrellaVersion::TYPED_MESSAGE) {
       folly::IOBuf trim;
@@ -67,19 +74,28 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
       trim.trimStart(info.headerSize);
       callback_.typedRequestReady(info.typeId, trim, info.reqId);
     } else {
-      mc_op_t op;
       uint64_t reqid;
-      auto req = umbrellaParseRequest(buffer,
-                                      buffer.data(),
-                                      info.headerSize,
-                                      buffer.data() + info.headerSize,
-                                      info.bodySize,
-                                      op,
-                                      reqid);
-      /* Umbrella requests never include a result and are never 'noreply' */
-      requestReadyHelper(std::move(req), op, reqid,
-                         /* result= */ mc_res_unknown,
-                         /* noreply= */ false);
+      const mc_op_t op = umbrellaDetermineOperation(
+          buffer.data(), info.headerSize);
+      switch (op) {
+#define THRIFT_OP(MC_OPERATION)                                                \
+        case MC_OPERATION::mc_op:                                              \
+        {                                                                      \
+          TypedThriftRequest<typename TypeFromOp<MC_OPERATION::mc_op,          \
+                                                 RequestOpMapping>::type> req; \
+          umbrellaParseRequest(                                                \
+              req, buffer, buffer.data(), info.headerSize,                     \
+              buffer.data() + info.headerSize, info.bodySize,                  \
+              reqid);                                                          \
+          requestReadyHelper(std::move(req), reqid);                           \
+          break;                                                               \
+        }
+#include "mcrouter/lib/McOpList.h"
+        default:
+          LOG(ERROR) << "Unexpected Umbrella message of type "
+            << mc_op_to_string(op) << " (" << int(op) << ")";
+          break;
+      }
     }
   } catch (const std::runtime_error& e) {
     std::string reason(
@@ -124,12 +140,10 @@ bool ServerMcParser<Callback>::shouldReadToAsciiBuffer() const {
 }
 
 template <class Callback>
-template <class Operation, class Request>
-void ServerMcParser<Callback>::onRequest(Operation,
-                                         Request&& req,
-                                         bool noreply) {
+template <class Request>
+void ServerMcParser<Callback>::onRequest(Request&& req, bool noreply) {
   parser_.reportMsgRead();
-  callback_.onRequest(Operation(), std::move(req), noreply);
+  callback_.onRequest(std::move(req), noreply);
 }
 
 template <class Callback>

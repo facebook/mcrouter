@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,13 +9,18 @@
  */
 #pragma once
 
+#include <string>
+
 #include <folly/Optional.h>
 
-#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+
 
 namespace facebook { namespace memcache {
 
+class McReply;
 class McServerSession;
 
 /**
@@ -48,11 +53,15 @@ class MultiOpParent {
   MultiOpParent(McServerSession& session, uint64_t blockReqid);
 
   /**
-   * Examine a reply of one of the sub-requests, and steal it if
-   * it's an error reply.
-   * @return true if the reply was moved (stolen) by this parent
+   * Examine the reply result of one of the sub-requests. If it's an error
+   * result, inform the caller that this parent will assume responsibility
+   * of reporting an error and that the caller should not reply.
+   *
+   * @return true if the parent assumed ownership of reporting an error.
+   *         On true, errorMessage is moved out of.
    */
-  bool reply(McReply&& r);
+  bool reply(McReply&& reply);
+  bool reply(mc_res_t result, uint32_t errorCode, std::string&& errorMessage);
 
   /**
    * Notify that a sub request is waiting for a reply.
@@ -76,7 +85,7 @@ class MultiOpParent {
 
  private:
   size_t waiting_{0};
-  folly::Optional<McReply> reply_;
+  folly::Optional<TypedThriftReply<cpp2::McGetReply>> reply_;
   bool error_{false};
 
   McServerSession& session_;

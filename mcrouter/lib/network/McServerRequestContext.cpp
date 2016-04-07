@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,14 +19,12 @@ McServerSession& McServerRequestContext::session() {
   return *session_;
 }
 
-void McServerRequestContext::reply(
-  McServerRequestContext&& ctx,
-  McReply&& reply) {
-
+void McServerRequestContext::reply(McServerRequestContext&& ctx,
+                                   McReply&& reply) {
   ctx.replied_ = true;
 
   if (ctx.hasParent() && ctx.parent().reply(std::move(reply))) {
-    /* parent stole the reply */
+    /* multi-op parent informed us not to reply */
     replyImpl(std::move(ctx), McReply());
   } else {
     replyImpl(std::move(ctx), std::move(reply));
@@ -38,7 +36,7 @@ void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
 
   auto session = ctx.session_;
 
-  if (ctx.noReply(reply)) {
+  if (ctx.noReply(reply.result())) {
     session->reply(nullptr, ctx.reqid_);
     return;
   }
@@ -56,7 +54,7 @@ void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
   session->reply(std::move(wb), reqid);
 }
 
-bool McServerRequestContext::noReply(const McReply& reply) const {
+bool McServerRequestContext::noReply(mc_res_t result) const {
   if (noReply_) {
     return true;
   }
@@ -70,7 +68,7 @@ bool McServerRequestContext::noReply(const McReply& reply) const {
      2) This is a miss, except for lease_get (lease get misses still have
      'LVALUE' replies with the token) */
   return (parent().error() ||
-          !(reply.result() == mc_res_found ||
+          !(result == mc_res_found ||
             operation_ == mc_op_lease_get));
 }
 
@@ -122,6 +120,14 @@ McServerRequestContext::~McServerRequestContext() {
     assert(replied_);
     session_->onTransactionCompleted(hasParent() || operation_ == mc_op_end);
   }
+}
+
+// Note: defined in .cpp in order to avoid circular dependency between
+// McServerRequestContext.h and MultiOpParent.h.
+bool McServerRequestContext::moveReplyToParent(
+    mc_res_t result, uint32_t errorCode, std::string&& errorMessage) const {
+  return hasParent() &&
+         parent().reply(result, errorCode, std::move(errorMessage));
 }
 
 }}  // facebook::memcache
