@@ -182,7 +182,21 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McStatsRequest>&) {
+  stat_incr(stats, cmd_stats_stat, 1);
+  stat_incr(stats, cmd_stats_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_cas>&) {
+  stat_incr(stats, cmd_cas_stat, 1);
+  stat_incr(stats, cmd_cas_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McCasRequest>&) {
   stat_incr(stats, cmd_cas_stat, 1);
   stat_incr(stats, cmd_cas_count_stat, 1);
 }
@@ -196,7 +210,21 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McGetRequest>&) {
+  stat_incr(stats, cmd_get_stat, 1);
+  stat_incr(stats, cmd_get_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_gets>&) {
+  stat_incr(stats, cmd_gets_stat, 1);
+  stat_incr(stats, cmd_gets_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McGetsRequest>&) {
   stat_incr(stats, cmd_gets_stat, 1);
   stat_incr(stats, cmd_gets_count_stat, 1);
 }
@@ -209,7 +237,20 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McMetagetRequest>&) {
+  stat_incr(stats, cmd_meta_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_add>&) {
+  stat_incr(stats, cmd_add_stat, 1);
+  stat_incr(stats, cmd_add_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McAddRequest>&) {
   stat_incr(stats, cmd_add_stat, 1);
   stat_incr(stats, cmd_add_count_stat, 1);
 }
@@ -223,7 +264,21 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McReplaceRequest>&) {
+  stat_incr(stats, cmd_replace_stat, 1);
+  stat_incr(stats, cmd_replace_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_set>&) {
+  stat_incr(stats, cmd_set_stat, 1);
+  stat_incr(stats, cmd_set_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McSetRequest>&) {
   stat_incr(stats, cmd_set_stat, 1);
   stat_incr(stats, cmd_set_count_stat, 1);
 }
@@ -237,7 +292,21 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McIncrRequest>&) {
+  stat_incr(stats, cmd_incr_stat, 1);
+  stat_incr(stats, cmd_incr_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_decr>&) {
+  stat_incr(stats, cmd_decr_stat, 1);
+  stat_incr(stats, cmd_decr_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McDecrRequest>&) {
   stat_incr(stats, cmd_decr_stat, 1);
   stat_incr(stats, cmd_decr_count_stat, 1);
 }
@@ -251,6 +320,13 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McDeleteRequest>&) {
+  stat_incr(stats, cmd_delete_stat, 1);
+  stat_incr(stats, cmd_delete_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_lease_set>&) {
   stat_incr(stats, cmd_lease_set_stat, 1);
   stat_incr(stats, cmd_lease_set_count_stat, 1);
@@ -258,7 +334,21 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McLeaseSetRequest>&) {
+  stat_incr(stats, cmd_lease_set_stat, 1);
+  stat_incr(stats, cmd_lease_set_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
     const McRequestWithMcOp<mc_op_lease_get>&) {
+  stat_incr(stats, cmd_lease_get_stat, 1);
+  stat_incr(stats, cmd_lease_get_count_stat, 1);
+}
+
+template <>
+inline void proxy_t::bumpStats(
+    const TypedThriftRequest<cpp2::McLeaseGetRequest>&) {
   stat_incr(stats, cmd_lease_get_stat, 1);
   stat_incr(stats, cmd_lease_get_count_stat, 1);
 }
@@ -279,7 +369,21 @@ inline bool proxy_t::rateLimited(
 template <>
 inline bool proxy_t::rateLimited(
     ProxyRequestPriority priority,
+    const TypedThriftRequest<cpp2::McStatsRequest>&) const {
+  return false;
+}
+
+template <>
+inline bool proxy_t::rateLimited(
+    ProxyRequestPriority priority,
     const McRequestWithMcOp<mc_op_version>&) const {
+  return false;
+}
+
+template <>
+inline bool proxy_t::rateLimited(
+    ProxyRequestPriority priority,
+    const TypedThriftRequest<cpp2::McVersionRequest>&) const {
   return false;
 }
 
