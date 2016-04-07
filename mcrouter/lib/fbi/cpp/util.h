@@ -26,6 +26,12 @@ namespace folly {
 struct dynamic;
 } // folly
 
+inline void parseTo(folly::StringPiece sp, nstring_t& ns) {
+  ns.str = (sp.empty() ? nullptr : (char*)sp.begin());
+  ns.len = sp.size();
+}
+
+
 namespace facebook { namespace memcache {
 
 /**
@@ -75,16 +81,14 @@ template <typename T, typename F> T to(const F& x);
 template <>
 inline nstring_t to<nstring_t>(const folly::StringPiece& sp) {
   nstring_t ns;
-  ns.str = (sp.empty() ? nullptr : (char*)sp.begin());
-  ns.len = sp.size();
+  parseTo(sp, ns);
   return ns;
 }
 
 template <>
 inline nstring_t to<nstring_t>(const std::string& s) {
   nstring_t ns;
-  ns.str = (s.empty() ? nullptr : (char*)s.data());
-  ns.len = s.size();
+  parseTo(s, ns);
   return ns;
 }
 
