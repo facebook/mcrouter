@@ -52,16 +52,7 @@ inline void logOutlier(proxy_t& proxy, OtherThanT<Request,
   REQUEST_CLASS_STATS(proxy, other, outlier, fiber_local::getRequestClass());
 }
 
-// TODO(jmswen) Implement logRequestClass for custom Thrift requests
-template <
-  class Request,
-  typename std::enable_if<IsCustomRequest<Request>::value, int>::type = 0>
-inline void logRequestClass(proxy_t& proxy) {
-}
-
-template <
-  class Request,
-  typename std::enable_if<!IsCustomRequest<Request>::value, int>::type = 0>
+template <class Request>
 inline void logRequestClass(proxy_t& proxy) {
   auto reqClass = fiber_local::getRequestClass();
   auto operation = Request::OpType::mc_op;
