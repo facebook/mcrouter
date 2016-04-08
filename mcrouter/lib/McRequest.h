@@ -218,8 +218,12 @@ class McRequest {
     return getRange(keyData_);
   }
 
-  const folly::IOBuf& value() const {
+  const folly::IOBuf& value() const & {
     return valueData_;
+  }
+
+  folly::IOBuf value() && {
+    return std::move(valueData_);
   }
 
   /**
@@ -234,8 +238,12 @@ class McRequest {
     return folly::StringPiece(valueData_.coalesce());
   }
 
-  const folly::IOBuf& key() const {
+  const folly::IOBuf& key() const & {
     return keyData_;
+  }
+
+  folly::IOBuf key() && {
+    return std::move(keyData_);
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE

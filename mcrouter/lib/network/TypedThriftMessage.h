@@ -292,8 +292,12 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     setKey(k);
   }
 
-  const folly::IOBuf& key() const {
+  const folly::IOBuf& key() const& {
     return this->raw_.key;
+  }
+
+  folly::IOBuf key() && {
+    return std::move(this->raw_.key);
   }
 
   folly::StringPiece fullKey() const {
