@@ -8,6 +8,7 @@
  *
  */
 #include <folly/Conv.h>
+#include <folly/String.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/mc/ascii_response.h"
@@ -520,9 +521,8 @@ void AsciiSerializedReply::prepareImpl(
     TypedThriftReply<cpp2::McStatsReply>&& reply) {
   if (reply.result() == mc_res_ok) {
     if (reply->get_stats()) {
-      iobuf_ = std::move(const_cast<folly::IOBuf&>(*reply->get_stats()));
-      addString(coalesceAndGetRange(iobuf_));
-      reply->__isset.stats = false;
+      auxString_ = folly::join("\r\n", *reply->get_stats());
+      addStrings(auxString_, "\r\n");
     }
     addString("END\r\n");
   } else if (reply.isError()) {

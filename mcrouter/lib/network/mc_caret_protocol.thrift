@@ -221,7 +221,7 @@ struct McStatsRequest {
 struct McStatsReply {
   1: i16 result;
   2: optional string message;
-  3: optional IOBuf stats;
+  3: optional list<string> stats;
   4: optional i16 appSpecificErrorCode;
 }
 

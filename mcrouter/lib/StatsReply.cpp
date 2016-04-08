@@ -12,7 +12,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.tcc"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
@@ -74,40 +74,14 @@ TypedThriftReply<cpp2::McStatsReply> StatsReply::getReply() {
    */
 
   TypedThriftReply<cpp2::McStatsReply> reply(mc_res_ok);
-
-  size_t stringsSize = 0;
-  for (const auto& s : stats_) {
-    // Extra room is for 'STAT ', another space and "\r\n"
-    stringsSize += s.first.size() + s.second.size() + 8;
-  }
-
-  folly::IOBuf statsBuf(folly::IOBuf::CREATE, stringsSize);
+  std::vector<std::string> statsList;
 
   for (const auto& s : stats_) {
-    // Write 'STAT'
-    char* tail = reinterpret_cast<char*>(statsBuf.writableTail());
-    memcpy(tail, "STAT ", 5);
-    statsBuf.append(5);
-    // Write stat name
-    memcpy(statsBuf.writableTail(), s.first.data(), s.first.size());
-    statsBuf.append(s.first.size());
-    // Write space
-    tail = reinterpret_cast<char*>(statsBuf.writableTail());
-    tail[0] = ' ';
-    statsBuf.append(1);
-    // Write stat value
-    memcpy(statsBuf.writableTail(), s.second.data(), s.second.size());
-    statsBuf.append(s.second.size());
-    // Write trailing "\r\n"
-    tail = reinterpret_cast<char*>(statsBuf.writableTail());
-    tail[0] = '\r';
-    tail[1] = '\n';
-    statsBuf.append(2);
+    statsList.emplace_back(
+        folly::to<std::string>("STAT ", s.first, ' ', s.second));
   }
 
-  assert(stringsSize == statsBuf.length());
-
-  reply->set_stats(std::move(statsBuf));
+  reply->set_stats(std::move(statsList));
 
   return reply;
 }
