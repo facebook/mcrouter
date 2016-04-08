@@ -277,7 +277,7 @@ struct TagSet<McOperation<mc_op_delete>,
 template <>
 struct TagSet<McOperation<mc_op_delete>,
               TypedThriftRequest<cpp2::McDeleteRequest>> {
-  using Tags = List<ExptimeTag, KeyTag, ValueTag>;
+  using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 // Touch op

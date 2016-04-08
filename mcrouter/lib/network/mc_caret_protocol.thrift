@@ -26,22 +26,25 @@ struct McSetRequest {
 
 struct McSetReply {
   1: i16 result;
-  2: optional IOBuf value;
-  3: optional string message;
-  4: optional i16 appSpecificErrorCode;
+  2: optional i64 flags;
+  3: optional IOBuf value;
+  4: optional string message;
+  5: optional i16 appSpecificErrorCode;
 }
 
 struct McDeleteRequest {
   1: IOBuf key;
-  2: optional i32 exptime;
-  3: optional IOBuf value;
+  2: optional i64 flags;
+  3: optional i32 exptime;
+  4: optional IOBuf value;
 }
 
 struct McDeleteReply {
   1: i16 result;
-  2: optional IOBuf value;
-  3: optional string message;
-  4: optional i16 appSpecificErrorCode;
+  2: optional i64 flags;
+  3: optional IOBuf value;
+  4: optional string message;
+  5: optional i16 appSpecificErrorCode;
 }
 
 struct McLeaseGetRequest {

@@ -70,7 +70,7 @@ struct RequestTraits<cpp2::McDeleteRequest> {
   static constexpr bool hasKey = true;
   static constexpr bool hasExptime = true;
   static constexpr bool hasValue = true;
-  static constexpr bool hasFlags = false;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
@@ -256,13 +256,13 @@ struct ReplyTraits<cpp2::McGetReply> {
 template <>
 struct ReplyTraits<cpp2::McSetReply> {
   static constexpr bool hasValue = true;
-  static constexpr bool hasFlags = false;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
 struct ReplyTraits<cpp2::McDeleteReply> {
-  static constexpr bool hasValue = false;
-  static constexpr bool hasFlags = false;
+  static constexpr bool hasValue = true;
+  static constexpr bool hasFlags = true;
 };
 
 template <>
