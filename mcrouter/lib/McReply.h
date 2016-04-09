@@ -323,16 +323,6 @@ class McReply {
    */
   McMsgRef releasedMsg(mc_op_t op) const;
 
-
-  /**
-   * Set the destructor. If destructor/ctx are non-null, will call
-   * destructor(ctx) when this reply is destroyed.
-   */
-  void setDestructor(void (*destructor) (void*), void* ctx) {
-    assert(!destructor_.hasValue());
-    destructor_.assign(CUniquePtr(ctx, destructor));
-  }
-
   ~McReply() = default;
 
   explicit McReply(mc_res_t result) noexcept;
@@ -358,12 +348,6 @@ class McReply {
   uint32_t errCode_{0};
   uint32_t number_{0};
   uint32_t exptime_{0};
-
-  /**
-   * Container for a C-style destructor
-   */
-  using CUniquePtr = std::unique_ptr<void, void(*)(void*)>;
-  folly::Optional<CUniquePtr> destructor_;
 
   friend class McClientAsciiParser;
   inline friend void detail::mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg);

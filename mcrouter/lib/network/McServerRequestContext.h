@@ -34,19 +34,53 @@ class TypedThriftReply;
  */
 class McServerRequestContext {
  public:
+  using DesctructorFunc = void (*)(void*);
   /**
    * Notify the server that the request-reply exchange is complete.
    *
-   * @param ctx  The original context.
-   * @param msg  Reply to hand off.
+   * @param ctx    The original context.
+   * @param reply  Reply to hand off.
    */
   static void reply(McServerRequestContext&& ctx, McReply&& reply);
+  /**
+   * Notify the server that the request-reply exchange is complete.
+   *
+   * @param ctx         The original context.
+   * @param reply       Reply to hand off.
+   * @param destructor  Callback to destruct toDestruct, called when all
+   *                    data is written to network and is not needed
+   *                    anymore, either on success or error. Must not
+   *                    be null if toDestruct is not null
+   * @param toDestruct  Target to destruct, destructed by destructor callback
+   */
+  static void reply(
+      McServerRequestContext&& ctx,
+      McReply&& reply,
+      DesctructorFunc destructor,
+      void* toDestruct);
 
   template <class ThriftType>
-  static void reply(McServerRequestContext&& ctx,
-                    TypedThriftReply<ThriftType>&& reply);
+  static void reply(
+      McServerRequestContext&& ctx,
+      TypedThriftReply<ThriftType>&& reply);
+
+  template <class ThriftType>
+  static void reply(
+      McServerRequestContext&& ctx,
+      TypedThriftReply<ThriftType>&& reply,
+      DesctructorFunc destructor,
+      void* toDestruct);
+
   template <class Reply>
   static void reply(McServerRequestContext&& ctx, Reply&& reply, size_t typeId);
+
+  template <class Reply>
+  static void reply(
+      McServerRequestContext&& ctx,
+      Reply&& reply,
+      size_t typeId,
+      DesctructorFunc destructor,
+      void* toDestruct);
 
   ~McServerRequestContext();
 
@@ -75,11 +109,18 @@ class McServerRequestContext {
 
   bool noReply(mc_res_t result) const;
 
-  static void replyImpl(McServerRequestContext&& ctx, McReply&& reply);
+  static void replyImpl(
+      McServerRequestContext&& ctx,
+      McReply&& reply,
+      DesctructorFunc destructor = nullptr,
+      void* toDestruct = nullptr);
   template <class Reply>
-  static void replyImpl(McServerRequestContext&& ctx,
-                        Reply&& reply,
-                        size_t typeId);
+  static void replyImpl(
+      McServerRequestContext&& ctx,
+      Reply&& reply,
+      size_t typeId,
+      DesctructorFunc destructor = nullptr,
+      void* toDestruct = nullptr);
 
   folly::Optional<folly::IOBuf>& asciiKey() {
     if (!asciiState_) {

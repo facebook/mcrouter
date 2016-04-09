@@ -167,6 +167,8 @@ class AsciiSerializedReply {
 class WriteBuffer {
  private:
   UniqueIntrusiveListHook hook_;
+  using Destructor = std::unique_ptr<void, void (*)(void*)>;
+  folly::Optional<Destructor> destructor_;
 
  public:
   using Queue = UniqueIntrusiveList<WriteBuffer,
@@ -186,12 +188,23 @@ class WriteBuffer {
    * contained within this struct which will contain a serialized
    * representation of the given reply.
    *
+   * @param destructor  Callback to destruct data used by this reply, called
+   *                    when this WriteBuffer is cleared for reuse, or is
+   *                    destroyed
+   *
    * @return true On success
    */
-  bool prepare(McServerRequestContext&& ctx, McReply&& reply);
+  bool prepare(
+      McServerRequestContext&& ctx,
+      McReply&& reply,
+      Destructor destructor = Destructor(nullptr, nullptr));
 
   template <class Reply>
-  bool prepareTyped(McServerRequestContext&& ctx, Reply&& reply, size_t typeId);
+  bool prepareTyped(
+      McServerRequestContext&& ctx,
+      Reply&& reply,
+      size_t typeId,
+      Destructor destructor = Destructor(nullptr, nullptr));
 
   struct iovec* getIovsBegin() {
     return iovsBegin_;

@@ -28,10 +28,16 @@ void AsciiSerializedReply::addStrings(Arg&& arg, Args&&... args) {
 }
 
 template <class Reply>
-bool WriteBuffer::prepareTyped(McServerRequestContext&& ctx,
-                               Reply&& reply,
-                               size_t typeId) {
+bool WriteBuffer::prepareTyped(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    size_t typeId,
+    Destructor destructor) {
   ctx_.emplace(std::move(ctx));
+  assert(!destructor_.hasValue());
+  if (destructor) {
+    destructor_ = std::move(destructor);
+  }
 
   switch (protocol_) {
     case mc_ascii_protocol:

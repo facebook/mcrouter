@@ -60,6 +60,7 @@ WriteBuffer::~WriteBuffer() {
 
 void WriteBuffer::clear() {
   ctx_.clear();
+  destructor_.clear();
 
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -79,8 +80,15 @@ void WriteBuffer::clear() {
   }
 }
 
-bool WriteBuffer::prepare(McServerRequestContext&& ctx, McReply&& reply) {
+bool WriteBuffer::prepare(
+    McServerRequestContext&& ctx,
+    McReply&& reply,
+    Destructor destructor) {
   ctx_.emplace(std::move(ctx));
+  assert(!destructor_.hasValue());
+  if (destructor) {
+    destructor_ = std::move(destructor);
+  }
 
   switch (protocol_) {
     case mc_ascii_protocol:

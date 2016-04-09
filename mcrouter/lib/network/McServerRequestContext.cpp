@@ -31,10 +31,33 @@ void McServerRequestContext::reply(McServerRequestContext&& ctx,
   }
 }
 
-void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
-                                       McReply&& reply) {
+void McServerRequestContext::reply(
+    McServerRequestContext&& ctx,
+    McReply&& reply,
+    DesctructorFunc destructor,
+    void* toDestruct) {
+  ctx.replied_ = true;
 
+  if (ctx.hasParent() && ctx.parent().reply(std::move(reply))) {
+    /* parent stole the reply */
+    replyImpl(std::move(ctx), McReply(), destructor, toDestruct);
+  } else {
+    replyImpl(std::move(ctx), std::move(reply), destructor, toDestruct);
+  }
+}
+
+void McServerRequestContext::replyImpl(
+    McServerRequestContext&& ctx,
+    McReply&& reply,
+    DesctructorFunc destructor,
+    void* toDestruct) {
   auto session = ctx.session_;
+  if (toDestruct != nullptr) {
+    assert(destructor != nullptr);
+  }
+  // Call destructor(toDestruct) on error, or pass ownership to write buffer
+  std::unique_ptr<void, void (*)(void*)> destructorContainer(
+      toDestruct, destructor);
 
   if (ctx.noReply(reply.result())) {
     session->reply(nullptr, ctx.reqid_);
@@ -47,7 +70,8 @@ void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
 
   uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
-  if (!wb->prepare(std::move(ctx), std::move(reply))) {
+  if (!wb->prepare(
+          std::move(ctx), std::move(reply), std::move(destructorContainer))) {
     session->transport_->close();
     return;
   }

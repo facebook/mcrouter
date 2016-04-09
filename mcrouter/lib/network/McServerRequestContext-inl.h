@@ -15,16 +15,29 @@
 namespace facebook { namespace memcache {
 
 template <class ThriftType>
-void McServerRequestContext::reply(McServerRequestContext&& ctx,
-                                   TypedThriftReply<ThriftType>&& reply) {
+void McServerRequestContext::reply(
+    McServerRequestContext&& ctx,
+    TypedThriftReply<ThriftType>&& reply) {
   static constexpr size_t typeId = IdFromType<ThriftType, TReplyList>::value;
   McServerRequestContext::reply(std::move(ctx), std::move(reply), typeId);
 }
 
+template <class ThriftType>
+void McServerRequestContext::reply(
+    McServerRequestContext&& ctx,
+    TypedThriftReply<ThriftType>&& reply,
+    DesctructorFunc destructor,
+    void* toDestruct) {
+  static constexpr size_t typeId = IdFromType<ThriftType, TReplyList>::value;
+  McServerRequestContext::reply(
+      std::move(ctx), std::move(reply), typeId, destructor, toDestruct);
+}
+
 template <class Reply>
-void McServerRequestContext::reply(McServerRequestContext&& ctx,
-                                   Reply&& reply,
-                                   size_t typeId) {
+void McServerRequestContext::reply(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    size_t typeId) {
   ctx.replied_ = true;
 
   // On error, multi-op parent may assume responsiblity of replying
@@ -38,10 +51,38 @@ void McServerRequestContext::reply(McServerRequestContext&& ctx,
 }
 
 template <class Reply>
-void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
-                                       Reply&& reply,
-                                       size_t typeId) {
+void McServerRequestContext::reply(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    size_t typeId,
+    DesctructorFunc destructor,
+    void* toDestruct) {
+  ctx.replied_ = true;
+
+  // On error, multi-op parent may assume responsiblity of replying
+  if (ctx.moveReplyToParent(
+        reply.result(), reply.appSpecificErrorCode(),
+        std::move(reply->message))) {
+    replyImpl(std::move(ctx), Reply(), typeId, destructor, toDestruct);
+  } else {
+    replyImpl(std::move(ctx), std::move(reply), typeId, destructor, toDestruct);
+  }
+}
+
+template <class Reply>
+void McServerRequestContext::replyImpl(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    size_t typeId,
+    DesctructorFunc destructor,
+    void* toDestruct) {
   auto session = ctx.session_;
+  if (toDestruct != nullptr) {
+    assert(destructor != nullptr);
+  }
+  // Call destructor(toDestruct) on error, or pass ownership to write buffer
+  std::unique_ptr<void, void (*)(void*)> destructorContainer(
+      toDestruct, destructor);
 
   if (ctx.noReply(reply.result())) {
     session->reply(nullptr, ctx.reqid_);
@@ -54,7 +95,11 @@ void McServerRequestContext::replyImpl(McServerRequestContext&& ctx,
 
   uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
-  if (!wb->prepareTyped(std::move(ctx), std::move(reply), typeId)) {
+  if (!wb->prepareTyped(
+          std::move(ctx),
+          std::move(reply),
+          typeId,
+          std::move(destructorContainer))) {
     session->transport_->close();
     return;
   }
