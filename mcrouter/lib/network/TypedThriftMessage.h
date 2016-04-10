@@ -67,11 +67,6 @@ class TypedThriftMessage {
     return &raw_;
   }
 
-  template <class Protocol>
-  uint32_t read(Protocol* iprot) {
-    return raw_.read(iprot);
-  }
-
  protected:
   M raw_;
 };
@@ -258,6 +253,11 @@ class TypedThriftReply : public TypedThriftMessage<M> {
     return isStoredResult(result());
   }
 
+  template <class Protocol>
+  uint32_t read(Protocol* iprot) {
+    return this->raw_.read(iprot);
+  }
+
  private:
   std::shared_ptr<const AccessPoint> destination_;
 
@@ -392,6 +392,13 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
     fbtraceInfo_ = McFbtraceRef::moveRef(info);
   }
 #endif
+
+  template <class Protocol>
+  uint32_t read(Protocol* iprot) {
+    const auto nread = this->raw_.read(iprot);
+    Keys::update(getRange(this->raw_.key));
+    return nread;
+  }
 
  private:
 #ifndef LIBMC_FBTRACE_DISABLE

@@ -30,6 +30,8 @@ namespace {
 template <class ThriftType>
 bool fillResult(TypedThriftReply<ThriftType>& tres, McReply& reply) {
   reply.setResult(static_cast<mc_res_t>(tres->result));
+  reply.setAppSpecificErrorCode(tres.appSpecificErrorCode());
+  reply.setFlags(tres.flags());
   if (mc_res_is_err(static_cast<mc_res_t>(tres->result))) {
     if (tres->__isset.message) {
       reply.setValue(std::move(tres->message));
@@ -41,14 +43,11 @@ bool fillResult(TypedThriftReply<ThriftType>& tres, McReply& reply) {
 
 template <class GetType>
 void onGetCommon(TypedThriftReply<GetType>&& tres, McReply& reply) {
-  if (!fillResult(tres, reply)) {
-    return;
-  }
-  if (tres->__isset.value) {
+  if (tres->get_value()) {
     reply.setValue(std::move(tres->value));
   }
-  if (tres->__isset.flags) {
-    reply.setFlags(tres->flags);
+  if (!fillResult(tres, reply)) {
+    return;
   }
 }
 
@@ -77,11 +76,17 @@ void CaretReplyConverter::onTypedMessage(
 
 void CaretReplyConverter::onTypedMessage(
     TypedThriftReply<cpp2::McSetReply>&& tres, McReply& reply) {
+  if (tres->get_value()) {
+    reply.setValue(std::move(tres->value));
+  }
   onUpdateCommon(std::move(tres), reply);
 }
 
 void CaretReplyConverter::onTypedMessage(
     TypedThriftReply<cpp2::McDeleteReply>&& tres, McReply& reply) {
+  if (tres->get_value()) {
+    reply.setValue(std::move(tres->value));
+  }
   fillResult(tres, reply);
 }
 
