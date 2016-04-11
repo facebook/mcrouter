@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <string>
+
 #include <gtest/gtest.h>
 
 #include <folly/experimental/fibers/EventBaseLoopController.h>
@@ -639,4 +641,35 @@ TEST(AsyncMcClient, SslSessionCache) {
     }
   }
   server->join();
+}
+
+void versionTest(mc_protocol_t protocol, bool useDefaultVersion) {
+  auto server = TestServer::create(protocol != mc_ascii_protocol /* OOO */,
+                                   false /* useSsl */,
+                                   10    /* maxInflight */,
+                                   200   /* timeoutMs */,
+                                   10    /* maxConns */,
+                                   useDefaultVersion);
+  TestClient client("localhost", server->getListenPort(), 200, protocol);
+
+  client.sendVersion(server->version());
+  client.waitForReplies();
+  server->shutdown();
+  server->join();
+}
+
+TEST(AsyncMcClient, asciiVersionDefault) {
+  versionTest(mc_ascii_protocol, true);
+}
+
+TEST(AsyncMcClient, asciiVersionUserSpecified) {
+  versionTest(mc_ascii_protocol, false);
+}
+
+TEST(AsyncMcClient, umbrellaVersionDefault) {
+  versionTest(mc_umbrella_protocol, true);
+}
+
+TEST(AsyncMcClient, umbrellaVersionUserSpecified) {
+  versionTest(mc_umbrella_protocol, false);
 }

@@ -10,6 +10,7 @@
 #include "TestClientServerUtil.h"
 
 #include <chrono>
+#include <string>
 #include <thread>
 
 #include <glog/logging.h>
@@ -39,6 +40,8 @@ const char* const kBrokenCertPath = "mcrouter/lib/network/test/broken_cert.pem";
 
 const char* const kInvalidKeyPath = "/do/not/exist";
 const char* const kInvalidCertPath = "/do/not/exist";
+
+const char* const kServerVersion = "TestServer-1.0";
 
 SSLContextProvider validSsl() {
   return []() {
@@ -154,6 +157,14 @@ void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
       std::move(ctx), TypedThriftReply<cpp2::McSetReply>(mc_res_stored));
 }
 
+void TestServerOnRequest::onRequest(
+    McServerRequestContext&& ctx,
+    TypedThriftRequest<cpp2::McVersionRequest>&&) {
+  TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
+  reply.setValue(kServerVersion);
+  processReply(std::move(ctx), std::move(reply));
+}
+
 void TestServerOnRequest::flushQueue() {
   for (size_t i = 0; i < waitingReplies_.size(); ++i) {
     waitingReplies_[i]();
@@ -162,10 +173,11 @@ void TestServerOnRequest::flushQueue() {
 }
 
 TestServer::TestServer(bool outOfOrder, bool useSsl, int maxInflight,
-                       int timeoutMs, size_t maxConns)
+                       int timeoutMs, size_t maxConns, bool useDefaultVersion)
       : outOfOrder_(outOfOrder) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = 1;
+  opts_.worker.defaultVersionHandler = useDefaultVersion;
   opts_.worker.maxInFlight = maxInflight;
   opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
   opts_.setPerThreadMaxConns(maxConns, opts_.numThreads);
@@ -199,6 +211,14 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
   // allow server some time to startup
   /* sleep override */
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+std::string TestServer::version() const {
+  if (opts_.worker.defaultVersionHandler) {
+    return opts_.worker.versionString;
+  } else {
+    return kServerVersion;
+  }
 }
 
 TestClient::TestClient(std::string host,
@@ -298,14 +318,32 @@ void TestClient::sendSet(std::string key, std::string value,
       TypedThriftRequest<cpp2::McSetRequest> req(key);
       req.setValue(value);
 
-      auto reply = client_->sendSync(req,
-                                     std::chrono::milliseconds(200));
+      auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
 
       CHECK(expectedResult == reply.result())
         << "Expected: " << mc_res_to_string(expectedResult)
         << " got " << mc_res_to_string(reply.result());
 
       inflight_--;
+    });
+}
+
+void TestClient::sendVersion(std::string expectedVersion) {
+  ++inflight_;
+  fm_.addTask([this, expectedVersion = std::move(expectedVersion)]() {
+      TypedThriftRequest<cpp2::McVersionRequest> req;
+
+      auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
+
+      CHECK_EQ(mc_res_ok, reply.result())
+        << "Expected result " << mc_res_to_string(mc_res_ok)
+        << ", got " << mc_res_to_string(reply.result());
+
+      CHECK_EQ(expectedVersion, reply.valueRangeSlow())
+        << "Expected version " << expectedVersion
+        << ", got " << reply.valueRangeSlow();
+
+      --inflight_;
     });
 }
 

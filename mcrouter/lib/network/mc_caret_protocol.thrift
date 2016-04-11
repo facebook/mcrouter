@@ -172,7 +172,7 @@ struct McVersionRequest {
 
 struct McVersionReply {
   1: i16 result;
-  2: optional string version;
+  2: optional IOBuf value;
   3: optional string message;
   4: optional i16 appSpecificErrorCode;
 }

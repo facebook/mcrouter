@@ -275,7 +275,7 @@ void proxy_t::routeHandlesProcessRequest(
       TypedThriftRequest<cpp2::McVersionRequest>>> ctx) {
 
   TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-  reply->set_version(MCROUTER_PACKAGE_STRING);
+  reply.setValue(MCROUTER_PACKAGE_STRING);
   ctx->sendReply(std::move(reply));
 }
 

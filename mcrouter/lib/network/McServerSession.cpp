@@ -337,7 +337,7 @@ void McServerSession::onRequest(
 
   if (options_.defaultVersionHandler) {
     TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-    reply->set_version(options_.versionString);
+    reply.setValue(options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
     return;
   }

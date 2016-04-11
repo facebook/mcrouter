@@ -294,8 +294,8 @@ template <class Reply>
 void McClientAsciiParser::consumeVersion(const folly::IOBuf& buffer) {
   auto& message = currentMessage_.get<Reply>();
 
-  message->version.push_back(*p_);
-  message->__isset.version = true;
+  appendCurrentCharTo(buffer, message->value, p_);
+  message->__isset.value = true;
 }
 
 template <>

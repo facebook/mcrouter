@@ -321,7 +321,7 @@ struct ReplyTraits<cpp2::McMetagetReply> {
 
 template <>
 struct ReplyTraits<cpp2::McVersionReply> {
-  static constexpr bool hasValue = false;
+  static constexpr bool hasValue = true;
   static constexpr bool hasFlags = false;
 };
 

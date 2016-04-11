@@ -175,11 +175,11 @@ void CaretReplyConverter::onTypedMessage(
   if (!fillResult(tres, reply)) {
     return;
   }
-  if (tres->__isset.version != true) {
+  if (tres->__isset.value != true) {
     reply.setResult(mc_res_bad_value);
     return;
   }
-  reply.setValue(tres->version);
+  reply.setValue(std::move(tres->value));
 }
 
 void CaretReplyConverter::onTypedMessage(

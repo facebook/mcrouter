@@ -512,10 +512,15 @@ void AsciiSerializedReply::prepareImpl(
     TypedThriftReply<cpp2::McVersionReply>&& reply) {
   if (reply.result() == mc_res_ok) {
     // TODO(jmswen) Do something sane when version is empty
-    if (reply->get_version()) {
-      auxString_ = std::move(reply->version);
+    addString("VERSION ");
+    if (reply->get_value()) {
+      const auto valueStr = reply.valueRangeSlow();
+      assert(iobuf_.empty());
+      // value was coalesced in valueRangeSlow()
+      iobuf_ = std::move(reply->value);
+      addString(valueStr);
     }
-    addStrings("VERSION ", auxString_, "\r\n");
+    addString("\r\n");
   } else if (reply.isError()) {
     handleError(reply.result(), reply.appSpecificErrorCode(),
                 std::move(reply->message));

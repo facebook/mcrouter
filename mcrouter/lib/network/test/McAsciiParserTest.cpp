@@ -239,7 +239,7 @@ McReply setVersion(McReply reply, std::string version) {
 
 template <class Reply>
 Reply setVersion(Reply reply, std::string version) {
-  reply->set_version(std::move(version));
+  reply.setValue(version);
   return reply;
 }
 

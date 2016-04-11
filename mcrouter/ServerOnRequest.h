@@ -68,7 +68,7 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
   void onRequest(McServerRequestContext&& ctx,
                  TypedThriftRequest<cpp2::McVersionRequest>&&) {
     TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-    reply->set_version(MCROUTER_PACKAGE_STRING);
+    reply.setValue(MCROUTER_PACKAGE_STRING);
 
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
@@ -94,11 +94,10 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
          &McServerRequestContext::reply<ReplyType>);
   }
 
-  void onTypedMessage(TypedThriftRequest<cpp2::McVersionRequest>&& treq,
+  void onTypedMessage(TypedThriftRequest<cpp2::McVersionRequest>&&,
                       McServerRequestContext&& ctx) {
-    TypedThriftReply<cpp2::McVersionReply> reply;
-    reply->set_result(mc_res_ok);
-    reply->set_version(MCROUTER_PACKAGE_STRING);
+    TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
+    reply.setValue(MCROUTER_PACKAGE_STRING);
     constexpr size_t typeId =
         IdFromType<cpp2::McVersionReply, TReplyList>::value;
     McServerRequestContext::reply(std::move(ctx), std::move(reply), typeId);

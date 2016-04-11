@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <functional>
+#include <string>
 
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/Function.h>
@@ -42,6 +43,9 @@ class TestServerOnRequest {
   void onRequest(McServerRequestContext&& ctx,
                  TypedThriftRequest<cpp2::McSetRequest>&& req);
 
+  void onRequest(McServerRequestContext&& ctx,
+                 TypedThriftRequest<cpp2::McVersionRequest>&& req);
+
   template <class Request>
   void onRequest(McServerRequestContext&&, Request&&) {
     LOG(ERROR) << "Unhandled operation " << typeid(Request).name();
@@ -51,8 +55,7 @@ class TestServerOnRequest {
   template <class Reply>
   void processReply(McServerRequestContext&& context, Reply&& reply) {
     if (outOfOrder_) {
-      McServerRequestContext::reply(
-          std::move(context), std::forward<Reply>(reply));
+      McServerRequestContext::reply(std::move(context), std::move(reply));
     } else {
       waitingReplies_.push_back(
         [ctx = std::move(context), reply = std::move(reply)]() mutable {
@@ -79,9 +82,10 @@ class TestServer {
                                             bool useSsl,
                                             int maxInflight = 10,
                                             int timeoutMs = 250,
-                                            size_t maxConns = 100) {
+                                            size_t maxConns = 100,
+                                            bool useDefaultVersion = false) {
     std::unique_ptr<TestServer> server(new TestServer(
-      outOfOrder, useSsl, maxInflight, timeoutMs, maxConns));
+      outOfOrder, useSsl, maxInflight, timeoutMs, maxConns, useDefaultVersion));
     server->run([&s = *server](AsyncMcServerWorker& worker) {
       worker.setOnRequest(OnRequest(s.shutdown_, s.outOfOrder_));
     });
@@ -104,6 +108,8 @@ class TestServer {
     shutdown_.store(true);
   }
 
+  std::string version() const;
+
  private:
   ListenSocket sock_;
   AsyncMcServer::Options opts_;
@@ -113,7 +119,7 @@ class TestServer {
   std::atomic<size_t> acceptedConns_{0};
 
   TestServer(bool outOfOrder, bool useSsl, int maxInflight, int timeoutMs,
-             size_t maxConns);
+             size_t maxConns, bool useDefaultVersion);
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };
@@ -150,6 +156,8 @@ class TestClient {
                uint32_t timeoutMs = 200);
 
   void sendSet(std::string key, std::string value, mc_res_t expectedResult);
+
+  void sendVersion(std::string expectedVersion);
 
   /**
    * Wait until there're more than remaining requests in queue.
