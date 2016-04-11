@@ -13,7 +13,6 @@
 #include <stdio.h>
 
 #include "mcrouter/lib/fbi/debug.h"
-#include "mcrouter/lib/mc/_protocol.h"
 
 static inline int nstring_len_for_printf(const nstring_t* ns) {
   int len = (int)ns->len;
@@ -208,7 +207,7 @@ nstring_t* mc_accesspoint_hash(const mc_accesspoint_t* accesspoint) {
   *s++ = ':';
 
   FBI_ASSERT(n > 3);
-  strncpy(s, (accesspoint->transport == mc_stream) ? "TCP" : "UDP", n);
+  strncpy(s, "TCP", n);
   n -= 4;
   s += 3;
   *s++ = ':';
@@ -227,7 +226,80 @@ nstring_t* mc_accesspoint_hash(const mc_accesspoint_t* accesspoint) {
 }
 
 size_t mc_ascii_req_max_hdr_length(const mc_msg_t* req) {
-  return mc_ascii_req_max_hdr_len(req);
+  static size_t const fixed_lens[] = {
+    [mc_op_unknown] = 0  /* unknown */,
+    [mc_op_echo] = 6  /* echo\r\n */,
+    [mc_op_quit] = 6  /* quit\r\n */,
+    [mc_op_version] = 9  /* version\r\n */,
+    [mc_op_servererr] = 0  /* servererr - place holder */,
+    [mc_op_get] = 6  /* get <key>\r\n */,
+    [mc_op_metaget] = 10 /* metaget <key> \r\n */,
+    [mc_op_set] = 41 /* set <key> <flags> <exptime> <size>\r\n<value>\r\n */,
+    [mc_op_add] = 41 /* add <key> <flags> <exptime> <size>\r\n<value>\r\n */,
+    [mc_op_replace] = 45 /* replace <key> <flags> <exptime> <size>\r\n<value>\r\n */,
+    [mc_op_append] = 44 /* append <key> <flags> <exptime> <size>\r\n<value>\r\n */,
+    [mc_op_prepend] = 45 /* prepend <key> <flags> <exptime> <size>\r\n<value>\r\n */,
+    [mc_op_cas] = 70 /* cas <key> <flags> <exptime> <bytes> <cas unique>\r\n */,
+    [mc_op_delete] = 20 /* delete <key> <exptime>\r\n */,
+    [mc_op_incr] = 28 /* incr <key> <value>\r\n */,
+    [mc_op_decr] = 28 /* decr <key> <value>\r\n */,
+    [mc_op_flushall] = 22 /* flush_all <delay>\r\n */,
+    [mc_op_flushre] = 14 /* flush_regex <re>\r\n */,
+    [mc_op_stats] = 8  /* stats <args>\r\n */,
+    [mc_op_lease_get] = 12  /* lease-get <key>\r\n */,
+    [mc_op_lease_set] = 47 /* lease-set <key> <flags> <exptime> <size>\r\n<value>\r\n */,
+    [mc_op_gets] = 7 /* gets <key>\r\n */,
+  };
+
+  size_t fixed_len = fixed_lens[req->op <= mc_nops ?
+                                req->op : mc_op_unknown];
+  size_t variable_len;
+  // if not, we are probably missing something in the table above
+  assert(fixed_len > 0);
+
+  switch(req->op) {
+  case mc_op_echo:
+  case mc_op_quit:
+  case mc_op_version:
+    variable_len = 0;
+    break;
+
+  case mc_op_get:
+  case mc_op_lease_get:
+  case mc_op_metaget:
+  case mc_op_gets:
+    variable_len = req->key.len;
+    break;
+
+  case mc_op_set:
+  case mc_op_add:
+  case mc_op_replace:
+  case mc_op_append:
+  case mc_op_lease_set:
+  case mc_op_cas:
+    variable_len = req->key.len +
+      req->value.len;
+    break;
+
+  case mc_op_delete:
+  case mc_op_incr:
+  case mc_op_decr:
+  case mc_op_flushre:
+  case mc_op_stats:
+    variable_len = req->key.len;
+    break;
+
+  case mc_op_flushall:
+    variable_len = 64; // 2**64 << 10**64
+    break;
+
+  default:
+    assert(0);
+    variable_len = 0;
+    break;
+  }
+
+  return fixed_len + variable_len + 1;
 }
 
 int mc_serialize_req_ascii(const mc_msg_t* req, char* headerBuffer,

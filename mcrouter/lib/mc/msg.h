@@ -303,8 +303,6 @@ typedef struct mc_msg_s {
  * memcache request functions
  */
 
-const char* mc_req_to_string(const mc_msg_t* req);
-
 static inline int mc_op_has_key(mc_op_t op) {
   switch (op) {
     case mc_op_get:
@@ -393,17 +391,6 @@ mc_msg_t *mc_msg_new_with_key_and_value_full(const char *key,
 
 void mc_msg_copy(mc_msg_t *dst, const mc_msg_t *src);
 void mc_msg_shallow_copy(mc_msg_t *dst, const mc_msg_t *src);
-mc_msg_t* mc_msg_dup(const mc_msg_t *msg);
-
-/**
- * Contruct a copy of 'msg' with 'key_append' appended to the key. The new key
- * will always be embedded as if constructed via mc_msg_new_with_key().
- * Note: This function does not support the 'stats' field and will return NULL
- * if 'msg->stats' is not NULL.
- */
-mc_msg_t* mc_msg_dup_append_key_full(const mc_msg_t *msg,
-                                     const char* key_append,
-                                     size_t nkey_append);
 
 mc_msg_t* mc_msg_realloc(mc_msg_t *msg, size_t new_exta_size);
 int mc_msg_grow(mc_msg_t **msg, size_t len, void **field_ptr);
@@ -438,12 +425,6 @@ void mc_msg_use_atomic_refcounts(int enable);
  */
 void mc_msg_track_num_outstanding(int enable);
 uint64_t mc_msg_num_outstanding();
-
-/* Return 1 if pointer p lies within mc_msg_t msg's body
- *        0 if pointer p to p + len does not overlap at all
- * assert that p <-> p + len does not partially overlap
- */
-int mc_msg_contains(const mc_msg_t *msg, void *p, size_t n);
 
 /**
  * Returns whether the given request has a valid memcache key (if it should).

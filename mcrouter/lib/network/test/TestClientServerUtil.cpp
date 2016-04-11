@@ -77,6 +77,8 @@ void TestServerOnRequest::onRequest(
     shutdown_.store(true);
     processReply(std::move(ctx), McReply(mc_res_notfound));
     flushQueue();
+  } else if (req.fullKey() == "busy") {
+    processReply(std::move(ctx), McReply(mc_res_busy));
   } else {
     std::string value;
     if (req.fullKey().startsWith("value_size:")) {
@@ -117,6 +119,8 @@ void TestServerOnRequest::onRequest(
     shutdown_.store(true);
     processReply(std::move(ctx), Reply(mc_res_notfound));
     flushQueue();
+  } else if (req.fullKey() == "busy") {
+    processReply(std::move(ctx), Reply(mc_res_busy));
   } else {
     std::string value;
     if (req.fullKey().startsWith("value_size:")) {

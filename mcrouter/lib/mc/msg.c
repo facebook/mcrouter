@@ -148,10 +148,6 @@ mc_msg_t *mc_msg_new_with_key_and_value_full(const char *key,
   return msg;
 }
 
-int mc_msg_contains(const mc_msg_t *msg, void *p, size_t n) {
-  return _in_msg(msg, p, n);
-}
-
 /* copy src's contents into dst
  * dst->_extra_size must be greater than or equal to src->_extra_size
  * If any string fields occur within src's whole message, they will be
@@ -228,58 +224,6 @@ void mc_msg_shallow_copy(mc_msg_t *dst, const mc_msg_t *src) {
     dst->fbtrace_info = mc_fbtrace_info_deep_copy(src->fbtrace_info);
   }
 #endif
-}
-
-mc_msg_t* mc_msg_dup(const mc_msg_t *msg) {
-  FBI_ASSERT(msg);
-  FBI_ASSERT(msg->_refcount > 0 || msg->_refcount == MSG_NOT_REFCOUNTED);
-  mc_msg_t *msg_copy = mc_msg_new(msg->_extra_size);
-  if (msg_copy == NULL) {
-    return NULL;
-  }
-  _msgcpy(msg_copy, msg);
-  return msg_copy;
-}
-
-mc_msg_t* mc_msg_dup_append_key_full(const mc_msg_t *msg,
-                                     const char* key_append,
-                                     size_t nkey_append) {
-  FBI_ASSERT(msg);
-  FBI_ASSERT(msg->_refcount > 0 || msg->_refcount == MSG_NOT_REFCOUNTED);
-  FBI_ASSERT(key_append);
-
-  // Stats are not supported.
-  if (msg->stats) {
-    return NULL;
-  }
-
-  if (!nkey_append) {
-    return mc_msg_dup(msg);
-  }
-
-  size_t new_extra_size = msg->_extra_size + nkey_append;
-  if (!_in_msg(msg, msg->key.str, msg->key.len)) {
-    new_extra_size += msg->key.len + 1; // +1 for null terminator
-  }
-  mc_msg_t* const msg_copy = mc_msg_new(new_extra_size);
-  if (msg_copy == NULL) {
-    return NULL;
-  }
-  mc_msg_shallow_copy(msg_copy, msg);
-
-  // The new message's key is always embedded.
-  msg_copy->key.len = msg->key.len + nkey_append;
-  msg_copy->key.str = (void*) msg_copy + sizeof(*msg_copy);
-  memcpy(msg_copy->key.str, msg->key.str, msg->key.len);
-  memcpy(msg_copy->key.str + msg->key.len, key_append, nkey_append);
-  msg_copy->key.str[msg_copy->key.len] = 0;
-
-  if (_in_msg(msg, msg->value.str, msg->value.len)) {
-    // The value starts after the key, including the null terminator.
-    msg_copy->value.str = msg_copy->key.str + msg_copy->key.len + 1;
-    memcpy(msg_copy->value.str, msg->value.str, msg_copy->value.len);
-  }
-  return msg_copy;
 }
 
 /* reallocate a mc_msg_t

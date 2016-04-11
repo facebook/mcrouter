@@ -21,7 +21,6 @@
 #include "mcrouter/FileObserver.h"
 #include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/fbi/timer.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/McrouterLogger.h"
 #include "mcrouter/proxy.h"

@@ -14,7 +14,6 @@
 
 #include "mcrouter/lib/fbi/decls.h"
 #include "mcrouter/lib/fbi/nstring.h"
-#include "mcrouter/lib/fbi/util.h"
 #include "mcrouter/lib/mc/msg.h"
 
 __BEGIN_DECLS
@@ -22,7 +21,6 @@ __BEGIN_DECLS
 #define MC_KEY_MAX_LEN_ASCII (250)
 #define MC_KEY_MAX_LEN_UMBRELLA (2 * 1024)
 #define MC_KEY_MAX_LEN (MC_KEY_MAX_LEN_UMBRELLA)
-#define MC_VALUE_MAX_LEN (1024 * 1024)
 
 
 typedef enum mc_protocol_e {
@@ -60,24 +58,8 @@ static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
   return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
 }
 
-typedef enum mc_transport_e {
-  mc_unknown_transport = 0,
-  mc_stream = IPPROTO_TCP,
-  // We used to support IPPROTO_UDP, kind of, sort of, but that's why this
-  // is an enum still...
-} mc_transport_t;
-
-static inline const char* mc_transport_to_string(const mc_transport_t value) {
-  if (value == mc_stream) {
-    return "tcp";
-  } else {
-    return "unknown";
-  }
-}
-
 /** Accesspoint descriptor */
 typedef struct mc_accesspoint_s {
-  mc_transport_t transport;
   nstring_t host;
   nstring_t port;
   mc_protocol_t protocol;
@@ -95,27 +77,10 @@ static inline size_t mc_accesspoint_len(const mc_accesspoint_t* accesspoint) {
     enough memory. */
 static inline void mc_accesspoint_copy(mc_accesspoint_t* dest,
                                        const mc_accesspoint_t* src) {
-  dest->transport = src->transport;
   dest->protocol = src->protocol;
   nstring_copy(&dest->host, &src->host);
   nstring_copy(&dest->port, &src->port);
   return;
-}
-
-/** Is this a reliable stream accesspoint */
-static inline int mc_accesspoint_isstream(const mc_accesspoint_t* accesspoint) {
-  return accesspoint->transport == mc_stream;
-}
-
-/** Is this a binary protocol accesspoint */
-static inline int mc_accesspoint_isbinary(const mc_accesspoint_t* accesspoint) {
-  return accesspoint->protocol == mc_binary_protocol;
-}
-
-
-/** Is this an ascii protocol accesspoint */
-static inline int mc_accesspoint_isascii(const mc_accesspoint_t* accesspoint) {
-  return accesspoint->protocol == mc_ascii_protocol;
 }
 
 /** host:port:transport:protocol */

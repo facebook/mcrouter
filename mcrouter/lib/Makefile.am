@@ -90,7 +90,6 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/ParsingUtil.cpp \
   fbi/cpp/ParsingUtil.h \
   fbi/cpp/sfrlock.h \
-  fbi/cpp/traits.h \
   fbi/cpp/util.cpp \
   fbi/cpp/util.h \
   fbi/cwlock.c \
@@ -113,16 +112,12 @@ libmcrouter_a_SOURCES = \
   fbi/queue.h \
   fbi/sfrlock.c \
   fbi/sfrlock.h \
-  fbi/skiplist.c \
-  fbi/skiplist.h \
   fbi/time.h \
   fbi/timer.c \
   fbi/timer.h \
-  fbi/unix.h \
   fbi/util.h \
   fbi/waitable_count.c \
   fbi/waitable_count.h \
-  mc/_protocol.h \
   mc/ascii_client.c \
   mc/ascii_client.h \
   mc/ascii_response.c \

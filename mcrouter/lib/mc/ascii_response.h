@@ -11,7 +11,6 @@
 
 #include "mcrouter/lib/fbi/decls.h"
 
-//#include "mcrouter/lib/mc/generic.h"
 #include "mcrouter/lib/mc/msg.h"
 
 __BEGIN_DECLS

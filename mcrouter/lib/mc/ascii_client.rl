@@ -4,8 +4,8 @@
 #include <ctype.h>
 
 #include "mcrouter/lib/fbi/debug.h"
-#include "mcrouter/lib/mc/_protocol.h"
 #include "mcrouter/lib/mc/parser.h"
+#include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/util.h"
 
