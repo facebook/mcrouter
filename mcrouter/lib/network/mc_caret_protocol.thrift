@@ -5,6 +5,7 @@ typedef binary (cpp2.type = "folly::IOBuf") IOBuf
 struct McGetRequest {
   1: IOBuf key;
   2: optional i64 flags;
+  3: optional i32 exptime;
 }
 
 struct McGetReply {
