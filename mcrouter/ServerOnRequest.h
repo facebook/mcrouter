@@ -59,10 +59,10 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
   template <class ThriftType>
   void onRequest(McServerRequestContext&& ctx,
                  TypedThriftRequest<ThriftType>&& req) {
-    using ReplyType = ReplyFromRequestType<ThriftType, RequestReplyPairs>;
+    using Reply = ReplyT<TypedThriftRequest<ThriftType>>;
     send(std::move(ctx),
          std::move(req),
-         &McServerRequestContext::reply<ReplyType>);
+         &McServerRequestContext::reply<Reply>);
   }
 
   void onRequest(McServerRequestContext&& ctx,
@@ -83,24 +83,6 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
                  TypedThriftRequest<cpp2::McShutdownRequest>&&) {
     using Reply = TypedThriftReply<cpp2::McShutdownReply>;
     McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-  }
-
-  template <class RequestType>
-  void onTypedMessage(TypedThriftRequest<RequestType>&& req,
-                      McServerRequestContext&& ctx) {
-    using ReplyType = ReplyFromRequestType<RequestType, RequestReplyPairs>;
-    send(std::move(ctx),
-         std::move(req),
-         &McServerRequestContext::reply<ReplyType>);
-  }
-
-  void onTypedMessage(TypedThriftRequest<cpp2::McVersionRequest>&&,
-                      McServerRequestContext&& ctx) {
-    TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-    reply.setValue(MCROUTER_PACKAGE_STRING);
-    constexpr size_t typeId =
-        IdFromType<cpp2::McVersionReply, TReplyList>::value;
-    McServerRequestContext::reply(std::move(ctx), std::move(reply), typeId);
   }
 
   template <class Request>

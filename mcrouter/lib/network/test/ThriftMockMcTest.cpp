@@ -59,8 +59,7 @@ struct TypedMockMcOnRequest
       tres->value = *item->value;
       tres->flags = item->flags;
     }
-    McServerRequestContext::reply(
-        std::move(ctx), std::move(tres), 2 /* GetReply*/);
+    McServerRequestContext::reply(std::move(ctx), std::move(tres));
   }
 
   void onTypedMessage(TypedThriftRequest<cpp2::McSetRequest>&& treq,
@@ -71,8 +70,7 @@ struct TypedMockMcOnRequest
                          (treq->__isset.flags ? treq->flags : 0)));
     TypedThriftReply<cpp2::McSetReply> tres;
     tres->result = mc_res_stored;
-    McServerRequestContext::reply(
-        std::move(ctx), std::move(tres), 4 /* McSetReply */);
+    McServerRequestContext::reply(std::move(ctx), std::move(tres));
   }
 
   void onTypedMessage(TypedThriftRequest<cpp2::McDeleteRequest>&& treq,
@@ -84,8 +82,7 @@ struct TypedMockMcOnRequest
       tres->result = mc_res_notfound;
     }
 
-    McServerRequestContext::reply(
-        std::move(ctx), std::move(tres), 6 /* McDeleteReply*/);
+    McServerRequestContext::reply(std::move(ctx), std::move(tres));
   }
 
   template <class T>

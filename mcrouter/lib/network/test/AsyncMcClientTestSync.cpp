@@ -258,7 +258,8 @@ void basicTest(mc_protocol_t protocol,
                SSLContextProvider ssl,
                uint64_t qosClass = 0,
                uint64_t qosPath = 0) {
-  auto server = TestServer::create(true, ssl != noSsl());
+  auto server = TestServer::create(protocol != mc_ascii_protocol,
+                                   ssl != noSsl());
   TestClient client("localhost", server->getListenPort(), 200, protocol,
                     ssl, qosClass, qosPath);
   client.sendGet("test1", mc_res_found);
@@ -267,23 +268,38 @@ void basicTest(mc_protocol_t protocol,
   client.sendGet("hold", mc_res_found);
   client.sendGet("test3", mc_res_found);
   client.sendGet("test4", mc_res_found);
-  client.waitForReplies(3);
+  client.sendGet("value_size:4096", mc_res_found);
+  client.sendGet("value_size:8192", mc_res_found);
+  client.sendGet("value_size:16384", mc_res_found);
+  client.waitForReplies(6);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server->join();
   EXPECT_EQ(1, server->getAcceptedConns());
 }
 
-void umbrellaTest(SSLContextProvider ssl) {
-  basicTest(mc_umbrella_protocol, ssl);
+TEST(AsyncMcClient, basicAscii) {
+  basicTest(mc_ascii_protocol, noSsl());
 }
 
-TEST(AsyncMcClient, umbrella) {
-  umbrellaTest(noSsl());
+TEST(AsyncMcClient, basicUmbrella) {
+  basicTest(mc_umbrella_protocol, noSsl());
 }
 
-TEST(AsyncMcClient, umbrellaSsl) {
-  umbrellaTest(validSsl());
+TEST(AsyncMcClient, basicCaret) {
+  basicTest(mc_caret_protocol, noSsl());
+}
+
+TEST(AsyncMcClient, basicAsciiSsl) {
+  basicTest(mc_ascii_protocol, validSsl());
+}
+
+TEST(AsyncMcClient, basicUmbrellaSsl) {
+  basicTest(mc_umbrella_protocol, validSsl());
+}
+
+TEST(AsyncMcClient, basicCaretSsl) {
+  basicTest(mc_caret_protocol, validSsl());
 }
 
 void qosTest(mc_protocol_t protocol, SSLContextProvider ssl,
@@ -672,4 +688,12 @@ TEST(AsyncMcClient, umbrellaVersionDefault) {
 
 TEST(AsyncMcClient, umbrellaVersionUserSpecified) {
   versionTest(mc_umbrella_protocol, false);
+}
+
+TEST(AsyncMcClient, caretVersionDefault) {
+  versionTest(mc_caret_protocol, true);
+}
+
+TEST(AsyncMcClient, caretVersionUserSpecified) {
+  versionTest(mc_caret_protocol, false);
 }

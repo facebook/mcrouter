@@ -34,7 +34,7 @@ class TypedThriftReply;
  */
 class McServerRequestContext {
  public:
-  using DesctructorFunc = void (*)(void*);
+  using DestructorFunc = void (*)(void*);
   /**
    * Notify the server that the request-reply exchange is complete.
    *
@@ -56,30 +56,17 @@ class McServerRequestContext {
   static void reply(
       McServerRequestContext&& ctx,
       McReply&& reply,
-      DesctructorFunc destructor,
-      void* toDestruct);
-
-  template <class ThriftType>
-  static void reply(
-      McServerRequestContext&& ctx,
-      TypedThriftReply<ThriftType>&& reply);
-
-  template <class ThriftType>
-  static void reply(
-      McServerRequestContext&& ctx,
-      TypedThriftReply<ThriftType>&& reply,
-      DesctructorFunc destructor,
+      DestructorFunc destructor,
       void* toDestruct);
 
   template <class Reply>
-  static void reply(McServerRequestContext&& ctx, Reply&& reply, size_t typeId);
+  static void reply(McServerRequestContext&& ctx, Reply&& reply);
 
   template <class Reply>
   static void reply(
       McServerRequestContext&& ctx,
       Reply&& reply,
-      size_t typeId,
-      DesctructorFunc destructor,
+      DestructorFunc destructor,
       void* toDestruct);
 
   ~McServerRequestContext();
@@ -112,14 +99,14 @@ class McServerRequestContext {
   static void replyImpl(
       McServerRequestContext&& ctx,
       McReply&& reply,
-      DesctructorFunc destructor = nullptr,
+      DestructorFunc destructor = nullptr,
       void* toDestruct = nullptr);
+
   template <class Reply>
   static void replyImpl(
       McServerRequestContext&& ctx,
       Reply&& reply,
-      size_t typeId,
-      DesctructorFunc destructor = nullptr,
+      DestructorFunc destructor = nullptr,
       void* toDestruct = nullptr);
 
   folly::Optional<folly::IOBuf>& asciiKey() {

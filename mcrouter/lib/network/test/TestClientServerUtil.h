@@ -23,11 +23,16 @@
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache { namespace test {
 
-class TestServerOnRequest {
+class TestServerOnRequest
+    : public ThriftMsgDispatcher<TRequestList,
+                                 TestServerOnRequest,
+                                 McServerRequestContext&&> {
  public:
   TestServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder);
 

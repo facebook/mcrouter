@@ -93,9 +93,8 @@ void TestServerOnRequest::onRequest(
                                                               value));
     if (req.fullKey() == "hold") {
       waitingReplies_.push_back(
-        [ctx = folly::makeMoveWrapper(ctx),
-         reply = folly::makeMoveWrapper(foundReply)]() mutable {
-         McServerRequestContext::reply(std::move(*ctx), std::move(*reply));
+        [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
+         McServerRequestContext::reply(std::move(ctx), std::move(reply));
         });
     } else if (req.fullKey() == "flush") {
       processReply(std::move(ctx), std::move(foundReply));
@@ -137,9 +136,8 @@ void TestServerOnRequest::onRequest(
 
     if (req.fullKey() == "hold") {
       waitingReplies_.push_back(
-        [ctx = folly::makeMoveWrapper(ctx),
-         reply = folly::makeMoveWrapper(foundReply)]() mutable {
-         McServerRequestContext::reply(std::move(*ctx), std::move(*reply));
+        [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
+         McServerRequestContext::reply(std::move(ctx), std::move(reply));
         });
     } else if (req.fullKey() == "flush") {
       processReply(std::move(ctx), std::move(foundReply));

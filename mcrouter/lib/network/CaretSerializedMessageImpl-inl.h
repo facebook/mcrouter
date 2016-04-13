@@ -62,12 +62,12 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
   return fill(treq, reqId, typeId, iovOut, niovOut);
 }
 
-template <class Reply>
-bool CaretSerializedMessage::prepare(Reply&& reply,
+template <class ThriftType>
+bool CaretSerializedMessage::prepare(TypedThriftReply<ThriftType>&& reply,
                                      size_t reqId,
-                                     size_t typeId,
                                      struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
+  constexpr size_t typeId = IdFromType<ThriftType, TReplyList>::value;
   return fill(reply, reqId, typeId, iovOut, niovOut);
 }
 

@@ -2,7 +2,6 @@ check_PROGRAMS = mcrouter_network_test
 
 mcrouter_network_test_SOURCES = \
   AccessPointTest.cpp \
-  AsyncMcClientCaretTest.cpp \
   AsyncMcClientTestSync.cpp \
   ../gen-cpp2/mc_caret_protocol_types.cpp \
   ../gen-cpp2/mc_caret_protocol_types.h \

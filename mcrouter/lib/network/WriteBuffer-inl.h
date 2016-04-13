@@ -31,7 +31,6 @@ template <class Reply>
 bool WriteBuffer::prepareTyped(
     McServerRequestContext&& ctx,
     Reply&& reply,
-    size_t typeId,
     Destructor destructor) {
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
@@ -52,7 +51,7 @@ bool WriteBuffer::prepareTyped(
 
     case mc_caret_protocol:
       return caretReply_.prepare(
-          std::move(reply), ctx_->reqid_, typeId, iovsBegin_, iovsCount_);
+          std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
       break;
 
     default:

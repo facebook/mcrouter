@@ -372,14 +372,23 @@ void McServerSession::typedRequestReady(uint32_t typeId,
                                         uint64_t reqid) {
   DestructorGuard dg(this);
 
+  assert(parser_.protocol() == mc_caret_protocol);
+  assert(parser_.outOfOrder());
+
   if (state_ != STREAMING) {
     return;
   }
 
-  assert(parser_.outOfOrder());
-
   McServerRequestContext ctx(*this, mc_op_unknown, reqid);
-  onRequest_->typedRequestReady(typeId, reqBody, std::move(ctx));
+
+  if (IdFromType<cpp2::McVersionRequest, TRequestList>::value == typeId &&
+      options_.defaultVersionHandler) {
+    TypedThriftReply<cpp2::McVersionReply> versionReply(mc_res_ok);
+    versionReply.setValue(options_.versionString);
+    McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
+  } else {
+    onRequest_->typedRequestReady(typeId, reqBody, std::move(ctx));
+  }
 }
 
 void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {

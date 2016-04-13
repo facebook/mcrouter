@@ -34,7 +34,7 @@ void McServerRequestContext::reply(McServerRequestContext&& ctx,
 void McServerRequestContext::reply(
     McServerRequestContext&& ctx,
     McReply&& reply,
-    DesctructorFunc destructor,
+    DestructorFunc destructor,
     void* toDestruct) {
   ctx.replied_ = true;
 
@@ -49,7 +49,7 @@ void McServerRequestContext::reply(
 void McServerRequestContext::replyImpl(
     McServerRequestContext&& ctx,
     McReply&& reply,
-    DesctructorFunc destructor,
+    DestructorFunc destructor,
     void* toDestruct) {
   auto session = ctx.session_;
   if (toDestruct != nullptr) {

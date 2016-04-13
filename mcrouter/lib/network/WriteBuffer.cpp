@@ -183,7 +183,7 @@ void AsciiSerializedReply::handleError(mc_res_t result,
     }
     if (errorCode != 0) {
       const auto len = snprintf(printBuffer_, kMaxBufferLength,
-                               "%d ", errorCode);
+                                "%d ", errorCode);
       assert(len > 0);
       assert(static_cast<size_t>(len) < kMaxBufferLength);
       addString(folly::StringPiece(printBuffer_, static_cast<size_t>(len)));

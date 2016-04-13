@@ -18,6 +18,7 @@
 
 namespace facebook { namespace memcache {
 
+class McServerRequestContext;
 template <class ThriftStruct>
 class TypedThriftMessage;
 template <class ThriftStruct>
@@ -50,10 +51,17 @@ std::unique_ptr<folly::IOBuf> serializeThriftStruct(
  *
  * @param TMList  List of supported typed messages: List<TypedMsg<Id, M>, ...>
  *                All Ms in the list must be Thrift struct types.
- * @param Proc    Process class, must provide
- *                  void onTypedMessage(TypedThriftMessage<M>&&, args...)
- *                overloaded for every Thrift struct in TMList
+ * @param Proc    Derived processor class, may provide
+ *                  void onTypedMessage(TypedThriftMessage<M>&&, args...).
+ *                If not provided, default implementation that forwards to
+ *                  void onRequest(McServerRequestContext&&,
+ *                                 TypedThriftMessage<M>&& req)
+ *                will be used.
+ *                Overloaded for every Thrift struct in TMList.
  * @param Args    Additional arguments to pass through to onTypedMessage.
+ *
+ * WARNING: Using ThriftMsgDispatcher with multiple inheritance is not
+ *          recommended.
  */
 template <class TMList, class Proc, class... Args>
 class ThriftMsgDispatcher {
@@ -63,15 +71,22 @@ class ThriftMsgDispatcher {
    */
   bool dispatchTypedRequest(size_t typeId,
                             const folly::IOBuf& reqBody,
-                            Args... args) {
+                            Args&&... args) {
     return dispatcher_.dispatch(typeId, *this, reqBody,
                                 std::forward<Args>(args)...);
+  }
+
+  // Default onTypedMessage() implementation
+  template <class M>
+  void onTypedMessage(TypedThriftRequest<M>&& req,
+                      McServerRequestContext&& ctx) {
+    static_cast<Proc&>(*this).onRequest(std::move(ctx), std::move(req));
   }
 
   /* CallDispatcher callback */
   template <class M>
   static void processMsg(ThriftMsgDispatcher& me,
-                         const folly::IOBuf& reqBody, Args... args) {
+                         const folly::IOBuf& reqBody, Args&&... args) {
     using TMsg = typename std::conditional<ThriftMsgIsRequest<M>::value,
                                            TypedThriftRequest<M>,
                                            TypedThriftReply<M>>::type;

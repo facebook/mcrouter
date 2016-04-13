@@ -70,10 +70,9 @@ class CaretSerializedMessage {
    * @param  niovOut  number of valid iovecs referenced by iovOut.
    * @return true iff message was successfully prepared.
    */
-  template <class Reply>
-  bool prepare(Reply&& reply,
+  template <class ThriftType>
+  bool prepare(TypedThriftReply<ThriftType>&& reply,
                size_t reqId,
-               size_t typeId,
                struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 

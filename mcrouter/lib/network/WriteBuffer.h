@@ -203,7 +203,6 @@ class WriteBuffer {
   bool prepareTyped(
       McServerRequestContext&& ctx,
       Reply&& reply,
-      size_t typeId,
       Destructor destructor = Destructor(nullptr, nullptr));
 
   struct iovec* getIovsBegin() {
