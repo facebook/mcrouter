@@ -110,6 +110,10 @@ struct ConnectionOptions {
    * enable ssl session caching
    */
   bool sessionCachingEnabled{false};
-};
+
+  /**
+   * Use JemallocNodumpAllocator
+   */
+  bool useJemallocNodumpAllocator{false};};
 
 }} // facebook::memcache

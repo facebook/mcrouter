@@ -272,6 +272,7 @@ void ProxyDestination::initializeAsyncMcClient() {
     options.qosClass = qosClass_;
     options.qosPath = qosPath_;
   }
+  options.useJemallocNodumpAllocator = opts.jemalloc_nodump_buffers;
 
   if (accessPoint_->useSsl()) {
     checkLogic(!opts.pem_cert_path.empty() &&

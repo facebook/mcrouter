@@ -55,7 +55,8 @@ class McParser {
   McParser(ParserCallback& cb,
            size_t requestsPerRead,
            size_t minBufferSize,
-           size_t maxBufferSize);
+           size_t maxBufferSize,
+           const bool useJemallocNodumpAllocator = false);
 
   ~McParser();
 
@@ -121,6 +122,11 @@ class McParser {
    * umMsgInfo_.headerSize + umMsgInfo_.body_size.
    */
   std::unique_ptr<folly::IOBuf> umMsgBuffer_;
+
+  /**
+   * Custom allocator states and method
+   */
+  bool useJemallocNodumpAllocator_{false};
 
   bool readUmbrellaData();
 

@@ -1,6 +1,7 @@
 SUBDIRS = cpp_unit_tests .
 
 TESTS = \
+  ../lib/allocator/test/jemalloc_nodump_allocator_test \
   ../lib/config/test/mcrouter_config_test \
   ../lib/cycles/test/mcrouter_cycles_test \
   ../lib/fbi/cpp/test/mcrouter_fbi_cpp_test \

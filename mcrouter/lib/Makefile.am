@@ -1,4 +1,4 @@
-SUBDIRS = . config cycles fbi mc network test
+SUBDIRS = . allocator config cycles fbi mc network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -49,6 +49,8 @@ libmcrouter_a_SOURCES = \
   StatsReply.h \
   WeightedCh3HashFunc.cpp \
   WeightedCh3HashFunc.h \
+  allocator/JemallocNodumpAllocator.h \
+  allocator/JemallocNodumpAllocator.cpp \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
   config/ImportResolverIf.h \

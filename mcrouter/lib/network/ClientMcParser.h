@@ -32,7 +32,8 @@ class ClientMcParser : private McParser::ParserCallback {
                  size_t requestsPerRead,
                  size_t minBufferSize,
                  size_t maxBufferSize,
-                 mc_protocol_t protocol);
+                 mc_protocol_t protocol,
+                 const bool useJemallocNodumpAllocator = false);
 
   /**
    * TAsyncTransport-style getReadBuffer().

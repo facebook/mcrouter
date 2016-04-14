@@ -504,7 +504,12 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     protocol = mc_umbrella_protocol;
   }
   parser_ = folly::make_unique<ParserT>(
-      *this, 0, kReadBufferSizeMin, kReadBufferSizeMax, protocol);
+      *this,
+      0,
+      kReadBufferSizeMin,
+      kReadBufferSizeMax,
+      protocol,
+      connectionOptions_.useJemallocNodumpAllocator);
   socket_->setReadCB(this);
 }
 

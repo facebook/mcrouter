@@ -11,10 +11,45 @@
 
 #include <folly/Bits.h>
 #include <folly/Memory.h>
+#include <folly/ThreadLocal.h>
+#include <folly/io/Cursor.h>
 
+#include "mcrouter/lib/allocator/JemallocNodumpAllocator.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
+
+#ifdef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+
+folly::ThreadLocal<JemallocNodumpAllocator> allocator;
+
+std::unique_ptr<folly::IOBuf> copyToNodumpBuffer(
+    const UmbrellaMessageInfo& umMsgInfo,
+    const folly::IOBuf& readBuffer) {
+  // Allocate buffer
+  const size_t bufSize = umMsgInfo.headerSize + umMsgInfo.bodySize;
+  void* p = allocator->allocate(bufSize);
+  if (!p) {
+    LOG(WARNING) << "Not enough memory to create a nodump buffer";
+    throw std::bad_alloc();
+  }
+  // Copy data
+  folly::io::Cursor c(&readBuffer);
+  c.pull(p, readBuffer.length());
+  // Transfer ownership to a new IOBuf
+  std::unique_ptr<folly::IOBuf> nodumpBuf =
+    folly::IOBuf::takeOwnership(
+      p,
+      bufSize,
+      readBuffer.length(),
+      JemallocNodumpAllocator::deallocate,
+      reinterpret_cast<void*> (allocator->getFlags()));
+
+  return nodumpBuf;
+}
+
+#endif
+
 
 /* Adjust buffer size after this many requests */
 const size_t kAdjustBufferSizeInterval = 10000;
@@ -25,13 +60,18 @@ const double kBprDecay = 0.9;
 McParser::McParser(ParserCallback& callback,
                    size_t requestsPerRead,
                    size_t minBufferSize,
-                   size_t maxBufferSize)
+                   size_t maxBufferSize,
+                   const bool useJemallocNodumpAllocator)
     : callback_(callback),
       messagesPerRead_(requestsPerRead),
       minBufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
       bufferSize_(maxBufferSize),
-      readBuffer_(folly::IOBuf::CREATE, bufferSize_) {
+      readBuffer_(folly::IOBuf::CREATE, bufferSize_),
+      useJemallocNodumpAllocator_(useJemallocNodumpAllocator) {
+#ifndef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+  useJemallocNodumpAllocator_ = false;
+#endif
 }
 
 McParser::~McParser() {
@@ -126,12 +166,25 @@ bool McParser::readUmbrellaData() {
          Copy the read data into the new buffer.
          TODO: this copy could be eliminated, but needs
          some modification of umbrella library. */
+#ifdef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+      if (UNLIKELY(useJemallocNodumpAllocator_)) {
+        umMsgBuffer_ = copyToNodumpBuffer(umMsgInfo_, readBuffer_);
+      } else {
+        umMsgBuffer_ = folly::IOBuf::copyBuffer(
+            readBuffer_.data(),
+            readBuffer_.length(),
+            /* headroom= */ 0,
+            /* minTailroom= */ umMsgInfo_.headerSize + umMsgInfo_.bodySize -
+                readBuffer_.length());
+      }
+#else
       umMsgBuffer_ = folly::IOBuf::copyBuffer(
           readBuffer_.data(),
           readBuffer_.length(),
           /* headroom= */ 0,
           /* minTailroom= */ umMsgInfo_.headerSize + umMsgInfo_.bodySize -
               readBuffer_.length());
+#endif
       return true;
     }
     /* 3) else header is incomplete */

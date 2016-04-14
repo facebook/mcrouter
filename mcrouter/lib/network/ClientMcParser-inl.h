@@ -21,8 +21,13 @@ ClientMcParser<Callback>::ClientMcParser(Callback& cb,
                                          size_t requestsPerRead,
                                          size_t minBufferSize,
                                          size_t maxBufferSize,
-                                         mc_protocol_t protocol)
-  : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
+                                         mc_protocol_t protocol,
+                                         const bool useJemallocNodumpAllocator)
+  : parser_(*this,
+            requestsPerRead,
+            minBufferSize,
+            maxBufferSize,
+            useJemallocNodumpAllocator),
     callback_(cb) {
 }
 

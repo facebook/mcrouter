@@ -401,6 +401,16 @@ mcrouter_option_integer(
   " discarded. Enabled only if value is non-zero and"
   " if proxy-max-throttled-requests is enabled.")
 
+mcrouter_option_group("Custom Memory Allocation")
+
+mcrouter_option_toggle(
+  jemalloc_nodump_buffers, false,
+  "jemalloc-nodump-buffers", no_short,
+  "Use the JemallocNodumpAllocator custom allocator. "
+  "As the name suggests the memory allocated by this allocator will not be"
+  " part of any core dump. This is achieved by setting MADV_DONTDUMP on"
+  " explicitly created jemalloc arenas. The default value is false.")
+
 
 mcrouter_option_group("Logging")
 
