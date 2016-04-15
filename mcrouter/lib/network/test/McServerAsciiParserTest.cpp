@@ -16,6 +16,10 @@
 
 using namespace facebook::memcache;
 
+namespace facebook { namespace memcache {
+class UmbrellaMessageInfo;
+}}
+
 namespace {
 
 template <int op>
@@ -193,7 +197,7 @@ class TestRunner {
       ASSERT_TRUE(false) << "requestReady should never be called for ASCII";
     }
 
-    void typedRequestReady(uint32_t, const folly::IOBuf&, uint64_t) {
+    void typedRequestReady(const UmbrellaMessageInfo&, const folly::IOBuf&) {
       ASSERT_TRUE(false)
           << "typedRequestReady should never be called for ASCII";
     }

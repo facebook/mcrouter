@@ -393,6 +393,14 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
   }
 #endif
 
+  uint64_t traceId() const {
+    return traceId_;
+  }
+
+  void setTraceId(uint64_t id) {
+    traceId_ = id;
+  }
+
   template <class Protocol>
   uint32_t read(Protocol* iprot) {
     const auto nread = this->raw_.read(iprot);
@@ -421,6 +429,7 @@ class TypedThriftRequest : public TypedThriftMessage<M>,
   using McFbtraceRef = Ref<mc_fbtrace_info_t, McFbtraceRefPolicy>;
   McFbtraceRef fbtraceInfo_;
 #endif
+  uint64_t traceId_{0};
 
   TypedThriftRequest(const TypedThriftRequest& other)
     : TypedThriftMessage<M>(other),

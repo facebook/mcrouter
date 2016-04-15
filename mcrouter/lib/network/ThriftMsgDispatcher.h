@@ -15,6 +15,7 @@
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 
@@ -69,10 +70,10 @@ class ThriftMsgDispatcher {
   /**
    * @return true iff typeId is present in TMList
    */
-  bool dispatchTypedRequest(size_t typeId,
+  bool dispatchTypedRequest(const UmbrellaMessageInfo& headerInfo,
                             const folly::IOBuf& reqBody,
                             Args&&... args) {
-    return dispatcher_.dispatch(typeId, *this, reqBody,
+    return dispatcher_.dispatch(headerInfo.typeId, *this, headerInfo, reqBody,
                                 std::forward<Args>(args)...);
   }
 
@@ -83,24 +84,35 @@ class ThriftMsgDispatcher {
     static_cast<Proc&>(*this).onRequest(std::move(ctx), std::move(req));
   }
 
-  /* CallDispatcher callback */
+  // CallDispatcher callback for requests
   template <class M>
-  static void processMsg(ThriftMsgDispatcher& me,
-                         const folly::IOBuf& reqBody, Args&&... args) {
-    using TMsg = typename std::conditional<ThriftMsgIsRequest<M>::value,
-                                           TypedThriftRequest<M>,
-                                           TypedThriftReply<M>>::type;
-
+  static typename std::enable_if<ThriftMsgIsRequest<M>::value, void>::type
+  processMsg(ThriftMsgDispatcher& me, const UmbrellaMessageInfo& headerInfo,
+             const folly::IOBuf& reqBody, Args&&... args) {
     apache::thrift::CompactProtocolReader reader;
     reader.setInput(&reqBody);
-    TMsg tmsg;
-    tmsg.read(&reader);
+    TypedThriftRequest<M> req;
+    req.setTraceId(headerInfo.traceId);
+    req.read(&reader);
     static_cast<Proc&>(me)
-        .onTypedMessage(std::move(tmsg), std::forward<Args>(args)...);
+        .onTypedMessage(std::move(req), std::forward<Args>(args)...);
+  }
+
+  // CallDispatcher callback for replies
+  template <class M>
+  static typename std::enable_if<!ThriftMsgIsRequest<M>::value, void>::type
+  processMsg(ThriftMsgDispatcher& me, const UmbrellaMessageInfo&,
+             const folly::IOBuf& reqBody, Args&&... args) {
+    apache::thrift::CompactProtocolReader reader;
+    reader.setInput(&reqBody);
+    TypedThriftReply<M> reply;
+    reply.read(&reader);
+    static_cast<Proc&>(me)
+        .onTypedMessage(std::move(reply), std::forward<Args>(args)...);
   }
 
  private:
-  CallDispatcher<TMList, ThriftMsgDispatcher,
+  CallDispatcher<TMList, ThriftMsgDispatcher, const UmbrellaMessageInfo&,
                  const folly::IOBuf&, Args...> dispatcher_;
 };
 

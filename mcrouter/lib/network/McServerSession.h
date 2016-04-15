@@ -293,9 +293,8 @@ class McServerSession :
                             uint64_t reqid);
 
   void parseError(mc_res_t result, folly::StringPiece reason);
-  void typedRequestReady(uint32_t typeId,
-                         const folly::IOBuf& reqBody,
-                         uint64_t reqid);
+  void typedRequestReady(const UmbrellaMessageInfo& headerInfo,
+                         const folly::IOBuf& reqBody);
 
   /* Ascii parser callbacks */
   template <int op, class Request>

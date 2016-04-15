@@ -697,3 +697,17 @@ TEST(AsyncMcClient, caretVersionDefault) {
 TEST(AsyncMcClient, caretVersionUserSpecified) {
   versionTest(mc_caret_protocol, false);
 }
+
+TEST(AsyncMcClient, caretAdditionalFields) {
+  auto server = TestServer::create(true /* OOO */, false /* useSsl */);
+  TestClient client("localhost", server->getListenPort(), 200,
+                    mc_caret_protocol);
+  // Mix in some normal get requests
+  for (int i = 0; i < 1000; ++i) {
+    client.sendGet("trace_id", mc_res_found);
+    client.sendGet("test", mc_res_found);
+  }
+  client.waitForReplies();
+  server->shutdown();
+  server->join();
+}

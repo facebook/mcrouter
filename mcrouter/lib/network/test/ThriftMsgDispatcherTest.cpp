@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 
@@ -80,14 +81,18 @@ TEST(ThriftMsg, basic) {
 
   bool ret;
 
+  UmbrellaMessageInfo info;
+
   /* simulate receiving the iobuf over network with some type id */
-  ret = cb.dispatchTypedRequest(2, *iobuf);
+  info.typeId = 2;
+  ret = cb.dispatchTypedRequest(info, *iobuf);
   /* there's no type id 2, expect false */
   EXPECT_FALSE(ret);
   EXPECT_FALSE(getCalled);
   EXPECT_FALSE(setCalled);
 
-  ret = cb.dispatchTypedRequest(1, *iobuf);
+  info.typeId = 1;
+  ret = cb.dispatchTypedRequest(info, *iobuf);
   EXPECT_TRUE(ret);
   EXPECT_TRUE(getCalled);
 }

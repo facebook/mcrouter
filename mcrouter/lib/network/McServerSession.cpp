@@ -367,9 +367,8 @@ void McServerSession::onRequest(TypedThriftRequest<cpp2::McQuitRequest>&&,
   close();
 }
 
-void McServerSession::typedRequestReady(uint32_t typeId,
-                                        const folly::IOBuf& reqBody,
-                                        uint64_t reqid) {
+void McServerSession::typedRequestReady(const UmbrellaMessageInfo& headerInfo,
+                                        const folly::IOBuf& reqBody) {
   DestructorGuard dg(this);
 
   assert(parser_.protocol() == mc_caret_protocol);
@@ -379,15 +378,16 @@ void McServerSession::typedRequestReady(uint32_t typeId,
     return;
   }
 
-  McServerRequestContext ctx(*this, mc_op_unknown, reqid);
+  McServerRequestContext ctx(*this, mc_op_unknown, headerInfo.reqId);
 
-  if (IdFromType<cpp2::McVersionRequest, TRequestList>::value == typeId &&
+  if (IdFromType<cpp2::McVersionRequest, TRequestList>::value ==
+          headerInfo.typeId &&
       options_.defaultVersionHandler) {
     TypedThriftReply<cpp2::McVersionReply> versionReply(mc_res_ok);
     versionReply.setValue(options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
   } else {
-    onRequest_->typedRequestReady(typeId, reqBody, std::move(ctx));
+    onRequest_->typedRequestReady(headerInfo, reqBody, std::move(ctx));
   }
 }
 

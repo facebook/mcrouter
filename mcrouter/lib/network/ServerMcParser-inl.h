@@ -69,10 +69,10 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const folly::IOBuf& buffer) {
   try {
     if (info.version == UmbrellaVersion::TYPED_MESSAGE) {
-      folly::IOBuf trim;
-      buffer.cloneOneInto(trim);
-      trim.trimStart(info.headerSize);
-      callback_.typedRequestReady(info.typeId, trim, info.reqId);
+      folly::IOBuf body;
+      buffer.cloneOneInto(body);
+      body.trimStart(info.headerSize);
+      callback_.typedRequestReady(info, body);
     } else {
       uint64_t reqid;
       const mc_op_t op = umbrellaDetermineOperation(

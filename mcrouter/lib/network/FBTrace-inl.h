@@ -18,13 +18,13 @@
 
 namespace facebook { namespace memcache {
 
+#ifdef LIBMC_FBTRACE_DISABLE
+
 template <class Request>
 bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
   // Do nothing for non-mc operations.
   return false;
 }
-
-#ifdef LIBMC_FBTRACE_DISABLE
 
 inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
                              const mc_res_t result) {
@@ -49,11 +49,9 @@ inline void fbtraceAddItem(fbtrace_item_t* info, size_t& idx,
 
 } // anonymous
 
-template<int McOp>
-typename std::enable_if<
-  RequestHasFbTraceInfo<McRequestWithMcOp<McOp>>::value, bool>::type
-fbTraceOnSend(const McRequestWithMcOp<McOp>& request,
-              const AccessPoint& ap) {
+template <class Request>
+bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
+  constexpr mc_op_t McOp = Request::OpType::mc_op;
 
   mc_fbtrace_info_s* fbtraceInfo = request.fbtraceInfo();
 
@@ -72,7 +70,9 @@ fbTraceOnSend(const McRequestWithMcOp<McOp>& request,
 
   std::string valueLen;
   if (mc_op_has_value((mc_op_t)McOp)) {
-    valueLen = folly::to<std::string>(request.value().computeChainDataLength());
+    valueLen = folly::to<std::string>(
+        request.valuePtrUnsafe()
+          ? request.valuePtrUnsafe()->computeChainDataLength() : 0);
     fbtraceAddItem(info, idx, "value_len", valueLen);
   }
 

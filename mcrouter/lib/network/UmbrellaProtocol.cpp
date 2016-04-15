@@ -143,10 +143,15 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
   folly::StringPiece range(buf, nbuf);
   range.advance(encodedLength + 1);
 
-  /* Skip additional fields for now */
+  // Additional fields are sequence of (key,value) pairs
   for (uint32_t i = 0; i < additionalFields; i++) {
     try {
-      folly::decodeVarint(range);
+      uint64_t fieldType = folly::decodeVarint(range);
+      uint64_t fieldValue = folly::decodeVarint(range);
+      if (static_cast<CaretAdditionalFieldType>(fieldType) ==
+          CaretAdditionalFieldType::TRACE_ID) {
+        info.traceId = fieldValue;
+      }
     } catch (const std::invalid_argument& e) {
       // buffer was not sufficient for additional fields
       return UmbrellaParseStatus::NOT_ENOUGH_DATA;
@@ -159,18 +164,37 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
 }
 
 size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuf) {
-
   // Header is at most kMaxHeaderLength without extra fields.
 
   uint32_t bodySize = info.bodySize;
   uint32_t typeId = info.typeId;
   uint32_t reqId = info.reqId;
+  const uint64_t traceId = info.traceId;
+
+  uint32_t nAdditionalFields = 0;
 
   headerBuf[0] = kCaretMagicByte;
 
-  return folly::GroupVarint32::encode(
-             headerBuf + 1, bodySize, typeId, reqId, 0) -
-         headerBuf;
+  if (traceId != 0) {
+    ++nAdditionalFields;
+  }
+
+  char* additionalFields = folly::GroupVarint32::encode(
+      headerBuf + 1, bodySize, typeId, reqId, nAdditionalFields);
+
+  if (traceId != 0) {
+    size_t nUsed;
+    nUsed = folly::encodeVarint(
+        static_cast<uint64_t>(CaretAdditionalFieldType::TRACE_ID),
+        reinterpret_cast<uint8_t*>(additionalFields));
+    additionalFields += nUsed;
+
+    nUsed = folly::encodeVarint(
+        traceId, reinterpret_cast<uint8_t*>(additionalFields));
+    additionalFields += nUsed;
+  }
+
+  return additionalFields - headerBuf;
 }
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader) {

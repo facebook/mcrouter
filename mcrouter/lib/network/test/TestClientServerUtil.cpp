@@ -15,6 +15,7 @@
 
 #include <glog/logging.h>
 
+#include <folly/Conv.h>
 #include <folly/experimental/fibers/EventBaseLoopController.h>
 #include <folly/experimental/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
@@ -127,6 +128,8 @@ void TestServerOnRequest::onRequest(
       key.removePrefix("value_size:");
       size_t valSize = folly::to<size_t>(key);
       value = std::string(valSize, 'a');
+    } else if (req.fullKey() == "trace_id") {
+      value = folly::to<std::string>(req.traceId());
     } else if (req.fullKey() != "empty") {
       value = req.fullKey().str();
     }
@@ -282,6 +285,9 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
   inflight_++;
   fm_.addTask([key, expectedResult, this, timeoutMs]() {
       TypedThriftRequest<cpp2::McGetRequest> req(key);
+      if (req.fullKey() == "trace_id") {
+        req.setTraceId(12345);
+      }
 
       try {
         auto reply = client_->sendSync(req,
@@ -298,6 +304,10 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
             checkLogic(value.size() == valSize,
                        "Expected value of size {}, got {}",
                        valSize, value.size());
+          } else if (req.fullKey() == "trace_id") {
+            checkLogic(value == "12345",
+                       "Expected value to equal trace ID {}, got {}",
+                       12345, value);
           } else {
             checkLogic(value == req.fullKey(),
                        "Expected {}, got {}", req.fullKey(), value);

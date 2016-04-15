@@ -34,7 +34,8 @@ class McRequest;
 constexpr char kCaretMagicByte = '^';
 constexpr size_t kMaxHeaderLength =
     1 /* magic byte */ + 1 /* GroupVarint header (lengths of 4 ints) */ +
-    4 * sizeof(uint32_t); /* body size, typeId, req id, extra fields count */
+    4 * sizeof(uint32_t) /* body size, typeId, req id, extra fields count */ +
+    4 * sizeof(uint64_t) /* key, value for 2 supported additional fields */;
 
 enum class UmbrellaVersion : uint8_t {
   BASIC = 0,
@@ -47,12 +48,18 @@ struct UmbrellaMessageInfo {
   UmbrellaVersion version;
   size_t typeId;
   uint32_t reqId;
+  uint64_t traceId;
 };
 
 enum class UmbrellaParseStatus {
   OK,
   MESSAGE_PARSE_ERROR,
   NOT_ENOUGH_DATA,
+};
+
+enum class CaretAdditionalFieldType {
+  TRACE_ID = 0,
+  COMPRESSION_TYPE = 1,
 };
 
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,

@@ -43,7 +43,7 @@ bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
       IdFromType<typename TypedThriftRequest<ThriftType>::rawType,
                  TRequestList>::value;
 
-  return fill(req, reqId, typeId, iovOut, niovOut);
+  return fill(req, reqId, typeId, req.traceId(), iovOut, niovOut);
 }
 
 template <int Op>
@@ -59,7 +59,7 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
   constexpr size_t typeId =
       IdFromType<typename decltype(treq)::rawType, TRequestList>::value;
 
-  return fill(treq, reqId, typeId, iovOut, niovOut);
+  return fill(treq, reqId, typeId, 0 /* traceId */, iovOut, niovOut);
 }
 
 template <class ThriftType>
@@ -68,13 +68,14 @@ bool CaretSerializedMessage::prepare(TypedThriftReply<ThriftType>&& reply,
                                      struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
   constexpr size_t typeId = IdFromType<ThriftType, TReplyList>::value;
-  return fill(reply, reqId, typeId, iovOut, niovOut);
+  return fill(reply, reqId, typeId, 0 /* traceId */, iovOut, niovOut);
 }
 
 template <class ThriftType>
 bool CaretSerializedMessage::fill(const TypedThriftMessage<ThriftType>& tmsg,
                                   uint32_t reqId,
                                   size_t typeId,
+                                  uint64_t traceId,
                                   struct iovec*& iovOut,
                                   size_t& niovOut) {
   fillBody(tmsg);
@@ -84,6 +85,7 @@ bool CaretSerializedMessage::fill(const TypedThriftMessage<ThriftType>& tmsg,
   info.typeId = typeId;
   info.reqId = reqId;
   info.version = UmbrellaVersion::TYPED_MESSAGE;
+  info.traceId = traceId;
 
   fillHeader(info);
   niovOut = iovsUsed_;

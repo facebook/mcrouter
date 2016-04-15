@@ -16,6 +16,7 @@
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 
@@ -170,7 +171,7 @@ class McServerOnRequestIf<List<>> {
                             McRequest&& req,
                             mc_op_t operation) = 0;
 
-  virtual void typedRequestReady(uint32_t typeId,
+  virtual void typedRequestReady(const UmbrellaMessageInfo& headerInfo,
                                  const folly::IOBuf& reqBody,
                                  McServerRequestContext&& ctx) = 0;
 
@@ -212,18 +213,18 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   void requestReady(McServerRequestContext&& ctx, McRequest&& req,
                     mc_op_t operation) override;
 
-  void typedRequestReady(uint32_t typeId,
+  void typedRequestReady(const UmbrellaMessageInfo& headerInfo,
                          const folly::IOBuf& reqBody,
                          McServerRequestContext&& ctx) override;
 
-  void dispatchTypedRequestIfDefined(size_t typeId,
+  void dispatchTypedRequestIfDefined(const UmbrellaMessageInfo& headerInfo,
                                      const folly::IOBuf& reqBody,
                                      McServerRequestContext&& ctx,
                                      std::true_type) {
-    onRequest_.dispatchTypedRequest(typeId, reqBody, std::move(ctx));
+    onRequest_.dispatchTypedRequest(headerInfo, reqBody, std::move(ctx));
   }
 
-  void dispatchTypedRequestIfDefined(size_t typeId,
+  void dispatchTypedRequestIfDefined(const UmbrellaMessageInfo&,
                                      const folly::IOBuf& reqBody,
                                      McServerRequestContext&& ctx,
                                      std::false_type) {

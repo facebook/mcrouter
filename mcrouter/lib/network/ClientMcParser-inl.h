@@ -104,7 +104,7 @@ ClientMcParser<Callback>::forwardUmbrellaReply(
     trim.trimStart(info.headerSize);
 
     // Task: 8257655 - Conversion should be moved to ProxyDestination
-    converter_.dispatchTypedRequest(info.typeId, trim, reply);
+    converter_.dispatchTypedRequest(info, trim, reply);
     callback_.replyReady(std::move(reply), reqId);
   }
 }

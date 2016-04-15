@@ -33,8 +33,8 @@ class RequestHasFbTraceInfo {
   static constexpr bool value = sizeof(check<Request>(0)) == sizeof(char);
 };
 
-template <class Operation, class Request>
-bool fbTraceOnSend(Operation, const McRequest& request, const AccessPoint& ap);
+template <class Request>
+bool fbTraceOnSend(const Request& request, const AccessPoint& ap);
 
 inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
                              const mc_res_t result);

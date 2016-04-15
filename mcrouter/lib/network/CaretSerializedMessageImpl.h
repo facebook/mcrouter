@@ -81,6 +81,7 @@ class CaretSerializedMessage {
   bool fill(const TypedThriftMessage<ThriftType>& tmsg,
             uint32_t reqId,
             size_t typeId,
+            uint64_t traceId,
             struct iovec*& iovOut,
             size_t& niovOut);
 
