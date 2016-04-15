@@ -10,6 +10,7 @@ sudo apt-get install -y \
     autoconf \
     binutils-dev \
     bison \
+    cmake \
     flex \
     g++ \
     gcc \

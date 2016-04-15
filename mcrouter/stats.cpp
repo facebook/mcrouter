@@ -163,7 +163,7 @@ uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx) {
   uint64_t max = 0;
   int num_bins_used = get_num_bins_used(router);
 
-  for (size_t j = 0; j < num_bins_used; ++j) {
+  for (int j = 0; j < num_bins_used; ++j) {
     uint64_t binSum = 0;
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
       binSum += router.getProxy(i)->stats_bin[idx][j];

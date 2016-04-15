@@ -9,9 +9,6 @@
  */
 #pragma once
 
-#include <jemalloc/jemalloc.h>
-#include <sys/mman.h>
-
 #if !defined(FOLLY_SANITIZE_ADDRESS) && \
   (JEMALLOC_VERSION_MAJOR > 3) && \
   defined(MADV_DONTDUMP)
@@ -19,6 +16,9 @@
 #endif
 
 #ifdef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+
+#include <jemalloc/jemalloc.h>
+#include <sys/mman.h>
 
 namespace facebook { namespace memcache {
 
