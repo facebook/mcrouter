@@ -178,10 +178,11 @@ void TestServerOnRequest::flushQueue() {
 }
 
 TestServer::TestServer(bool outOfOrder, bool useSsl, int maxInflight,
-                       int timeoutMs, size_t maxConns, bool useDefaultVersion)
+                       int timeoutMs, size_t maxConns, bool useDefaultVersion,
+                       size_t numThreads)
       : outOfOrder_(outOfOrder) {
   opts_.existingSocketFd = sock_.getSocketFd();
-  opts_.numThreads = 1;
+  opts_.numThreads = numThreads;
   opts_.worker.defaultVersionHandler = useDefaultVersion;
   opts_.worker.maxInFlight = maxInflight;
   opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};

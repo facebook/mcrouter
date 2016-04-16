@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include <folly/io/async/SSLContext.h>
+#include <wangle/ssl/TLSTicketKeyManager.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
@@ -42,6 +43,7 @@ struct ContextInfo {
   std::string pemCaPath;
 
   std::shared_ptr<SSLContext> context;
+  std::unique_ptr<wangle::TLSTicketKeyManager> mgr;
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
 };
 
@@ -116,7 +118,7 @@ std::shared_ptr<SSLContext> handleSSLCertsUpdate(folly::StringPiece pemCertPath,
 std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
                                           folly::StringPiece pemKeyPath,
                                           folly::StringPiece pemCaPath) {
-  static constexpr std::chrono::minutes kSslReloadInterval{5};
+  static constexpr std::chrono::minutes kSslReloadInterval{30};
   thread_local std::unordered_map<CertPaths, ContextInfo, CertPathsHasher>
   localContexts;
 
@@ -151,6 +153,12 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
       contextInfo.context = std::move(updated);
       contextInfo.context->setSessionCacheContext("async-server");
       SSL_CTX_set_timeout(contextInfo.context->getSSLCtx(), kSessionLifeTime);
+
+      #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
+      contextInfo.mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
+          contextInfo.context.get(), nullptr);
+      contextInfo.mgr->setTLSTicketKeySeeds({"aaaa"}, {"bbbb"}, {"cccc"});
+      #endif
     }
   }
 

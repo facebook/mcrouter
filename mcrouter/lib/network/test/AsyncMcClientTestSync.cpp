@@ -633,7 +633,8 @@ TEST(AsyncMcClient, curruptedUmbrellaReply) {
 }
 
 TEST(AsyncMcClient, SslSessionCache) {
-  auto server = TestServer::create(true, true);
+  auto server =
+      TestServer::create(true, true, 10, 250, 100, true, 4 /* nThreads */);
   auto constexpr nConnAttempts = 10;
 
   for (int i = 0; i < nConnAttempts; i++) {

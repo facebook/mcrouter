@@ -88,9 +88,16 @@ class TestServer {
                                             int maxInflight = 10,
                                             int timeoutMs = 250,
                                             size_t maxConns = 100,
-                                            bool useDefaultVersion = false) {
+                                            bool useDefaultVersion = false,
+                                            size_t numThreads = 1) {
     std::unique_ptr<TestServer> server(new TestServer(
-      outOfOrder, useSsl, maxInflight, timeoutMs, maxConns, useDefaultVersion));
+        outOfOrder,
+        useSsl,
+        maxInflight,
+        timeoutMs,
+        maxConns,
+        useDefaultVersion,
+        numThreads));
     server->run([&s = *server](AsyncMcServerWorker& worker) {
       worker.setOnRequest(OnRequest(s.shutdown_, s.outOfOrder_));
     });
@@ -124,7 +131,7 @@ class TestServer {
   std::atomic<size_t> acceptedConns_{0};
 
   TestServer(bool outOfOrder, bool useSsl, int maxInflight, int timeoutMs,
-             size_t maxConns, bool useDefaultVersion);
+             size_t maxConns, bool useDefaultVersion, size_t numThreads);
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };
