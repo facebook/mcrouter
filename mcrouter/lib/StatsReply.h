@@ -26,8 +26,9 @@ class TypedThriftReply;
 class StatsReply {
  public:
   template <typename V>
-  void addStat(folly::StringPiece name, V value) {
-    stats_.push_back(make_pair(name.str(), folly::to<std::string>(value)));
+  void addStat(folly::StringPiece name, V&& value) {
+    stats_.emplace_back(name.str(),
+                        folly::to<std::string>(std::forward<V>(value)));
   }
 
   McReply getMcReply();
