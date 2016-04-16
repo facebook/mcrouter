@@ -27,6 +27,8 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+constexpr folly::StringPiece kFallbackCluster = "fallback";
+
 namespace {
 
 using RouteSelectorVector = std::vector<std::shared_ptr<PrefixSelectorRoute>>;
@@ -193,9 +195,19 @@ RouteHandleMap::getTargetsForKeyFast(folly::StringPiece prefix,
     if (starPos == std::string::npos) {
       // no stars at all
       auto it = byRoute_.find(prefix);
-      result = it == byRoute_.end()
-        ? &emptyV_
+      if (it != byRoute_.end()) {
+        result = &it->second->getTargetsForKey(key);
+      } else {
+        // cluster in question isn't in config, replace it with fallback
+        auto clusterStart = prefix.find('/', 1);
+        it = byRoute_.find(
+          folly::to<std::string>(
+            prefix.subpiece(0, clusterStart + 1), kFallbackCluster, "/"
+          )
+        );
+        result = it == byRoute_.end() ? &emptyV_
         : &it->second->getTargetsForKey(key);
+      }
     } else if (prefix.endsWith("/*/") && starPos == prefix.size() - 2) {
       // route to all clusters of some region (/region/*/)
       auto region = prefix.subpiece(1, prefix.size() - 4);

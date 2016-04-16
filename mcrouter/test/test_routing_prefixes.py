@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -59,6 +59,42 @@ class TestMcrouterRoutingPrefixOldNaming(TestMcrouterRoutingPrefixAscii):
 
 class TestMcrouterRoutingPrefixSimpleRoutes(TestMcrouterRoutingPrefixAscii):
     config = './mcrouter/test/routing_prefix_test_simple_routes.json'
+
+class TestFallbackRouting(McrouterTestCase):
+    config = './mcrouter/test/routing_prefix_test_fallback_route.json'
+    extra_args = []
+
+    def setUp(self):
+        self.aa = self.add_server(Memcached())
+        self.ab = self.add_server(Memcached())
+        self.ba = self.add_server(Memcached())
+        self.bb = self.add_server(Memcached())
+
+    def get_mcrouter(self):
+        return self.add_mcrouter(
+            self.config, '/a/a/', extra_args=self.extra_args)
+
+    def test_fallback_routing(self):
+        mcr = self.get_mcrouter()
+
+        key = "/*/*/key"
+        orig_value = "orig"
+
+        mcr.set(key, orig_value)
+        time.sleep(1)
+        self.assertEqual(self.aa.get('key'), orig_value)
+        self.assertEqual(self.ab.get('key'), orig_value)
+        self.assertEqual(self.ba.get('key'), orig_value)
+        self.assertEqual(self.bb.get('key'), orig_value)
+
+        key = "/a/foobar/key"
+        value1 = "value1"
+        mcr.set(key, value1)
+        time.sleep(1)
+        self.assertEqual(self.ab.get('key'), orig_value)
+        self.assertEqual(self.ba.get('key'), orig_value)
+        self.assertEqual(self.bb.get('key'), orig_value)
+        self.assertEqual(self.aa.get('key'), value1)
 
 class TestCustomRoutingPrefixes(McrouterTestCase):
     config = './mcrouter/test/routing_prefix_test_custom.json'
