@@ -27,7 +27,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-constexpr folly::StringPiece kFallbackCluster = "fallback";
+constexpr const char* kFallbackCluster = "fallback";
 
 namespace {
 
@@ -198,15 +198,8 @@ RouteHandleMap::getTargetsForKeyFast(folly::StringPiece prefix,
       if (it != byRoute_.end()) {
         result = &it->second->getTargetsForKey(key);
       } else {
-        // cluster in question isn't in config, replace it with fallback
-        auto clusterStart = prefix.find('/', 1);
-        it = byRoute_.find(
-          folly::to<std::string>(
-            prefix.subpiece(0, clusterStart + 1), kFallbackCluster, "/"
-          )
-        );
-        result = it == byRoute_.end() ? &emptyV_
-        : &it->second->getTargetsForKey(key);
+        // cluster in question isn't in config, try the fallback
+        result = getTargetsForKeyFallback(prefix, key);
       }
     } else if (prefix.endsWith("/*/") && starPos == prefix.size() - 2) {
       // route to all clusters of some region (/region/*/)
@@ -221,6 +214,33 @@ RouteHandleMap::getTargetsForKeyFast(folly::StringPiece prefix,
     return &defaultRouteMap_->getTargetsForKey(key);
   }
   return result;
+}
+
+const std::vector<McrouterRouteHandlePtr>*
+RouteHandleMap::getTargetsForKeyFallback(folly::StringPiece prefix,
+                                         folly::StringPiece key) const {
+  auto clusterStart = prefix.find('/', 1);
+  if (clusterStart == std::string::npos) {
+    return &emptyV_;
+  }
+
+  constexpr size_t kMaxBufLen = 128;
+  char routingPrefixBuf[kMaxBufLen];
+
+  // Construct /<region>/fallback/ prefix
+  auto len = snprintf(routingPrefixBuf,
+                      kMaxBufLen,
+                      "%.*s%s/",
+                      static_cast<int>(clusterStart + 1),
+                      prefix.data(),
+                      kFallbackCluster);
+  if (len > 0 && static_cast<size_t>(len) < kMaxBufLen) {
+    auto it = byRoute_.find(folly::StringPiece(routingPrefixBuf, len));
+    return it == byRoute_.end()
+      ? &emptyV_
+      : &it->second->getTargetsForKey(key);
+  }
+  return &emptyV_;
 }
 
 }}}  // facebook::memcache::mcrouter

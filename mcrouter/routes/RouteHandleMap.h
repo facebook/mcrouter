@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <folly/experimental/StringKeyedUnorderedMap.h>
+#include <folly/Portability.h>
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
@@ -48,7 +49,7 @@ class RouteHandleMap {
    * the given prefix and key should be forwarded to. Works for
    * prefixes with arbitrary amount of '*'
    */
-  std::vector<McrouterRouteHandlePtr> getTargetsForKeySlow(
+  FOLLY_NOINLINE std::vector<McrouterRouteHandlePtr> getTargetsForKeySlow(
     folly::StringPiece prefix,
     folly::StringPiece key) const;
 
@@ -64,6 +65,10 @@ class RouteHandleMap {
 
   void foreachRoutePolicy(folly::StringPiece prefix,
     std::function<void(const std::shared_ptr<RoutePolicyMap>&)> f) const;
+
+  FOLLY_NOINLINE const std::vector<McrouterRouteHandlePtr>*
+  getTargetsForKeyFallback(folly::StringPiece prefix,
+                           folly::StringPiece key) const;
 };
 
 }}}  // facebook::memcache::mcrouter
