@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,14 +19,12 @@
 #include "mcrouter/config.h"
 #include "mcrouter/RoutingPrefix.h"
 
-#define DEFAULT_NUM_PROXIES               1
+#define DEFAULT_NUM_PROXIES 1
 
 /**
  * NOTE: must be kept in sync with kLogLifetime in mcreplay2/EventReader.cpp
  */
 #define DEFAULT_ASYNCLOG_LIFETIME (15 * 60)  // New log every fifteen minutes
-
-#define DEFAULT_REALTIME_PRIORITY_LEVEL   (20)
 
 namespace facebook { namespace memcache {
 

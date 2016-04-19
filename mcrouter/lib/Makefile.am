@@ -95,8 +95,6 @@ libmcrouter_a_SOURCES = \
   fbi/debug.c \
   fbi/debug.h \
   fbi/decls.h \
-  fbi/fb_cpu_util.c \
-  fbi/fb_cpu_util.h \
   fbi/hash.c \
   fbi/hash.h \
   fbi/network.c \

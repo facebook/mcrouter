@@ -67,7 +67,7 @@ mcrouter_option_toggle(
   "Enable using the asynclog version 2.0")
 
 mcrouter_option_integer(
-  size_t, num_proxies, 1,
+  size_t, num_proxies, DEFAULT_NUM_PROXIES,
   "num-proxies", no_short,
   "adjust how many proxy threads to run")
 
