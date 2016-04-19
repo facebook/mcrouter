@@ -73,8 +73,6 @@ libmcrouter_a_SOURCES = \
   debug/Fifo.h \
   debug/FifoManager.cpp \
   debug/FifoManager.h \
-  fbi/asox_queue.c \
-  fbi/asox_queue.h \
   fbi/asox_semaphore.c \
   fbi/asox_semaphore.h \
   fbi/asox_timer.c \
@@ -94,19 +92,13 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/sfrlock.h \
   fbi/cpp/util.cpp \
   fbi/cpp/util.h \
-  fbi/cwlock.c \
-  fbi/cwlock.h \
   fbi/debug.c \
   fbi/debug.h \
   fbi/decls.h \
-  fbi/error.c \
-  fbi/error.h \
   fbi/fb_cpu_util.c \
   fbi/fb_cpu_util.h \
   fbi/hash.c \
   fbi/hash.h \
-  fbi/lfcalloc.c \
-  fbi/lfcalloc.h \
   fbi/network.c \
   fbi/network.h \
   fbi/nstring.c \
@@ -115,11 +107,7 @@ libmcrouter_a_SOURCES = \
   fbi/sfrlock.c \
   fbi/sfrlock.h \
   fbi/time.h \
-  fbi/timer.c \
-  fbi/timer.h \
   fbi/util.h \
-  fbi/waitable_count.c \
-  fbi/waitable_count.h \
   mc/ascii_client.c \
   mc/ascii_client.h \
   mc/ascii_response.c \
@@ -128,7 +116,6 @@ libmcrouter_a_SOURCES = \
   mc/msg.h \
   mc/parser.c \
   mc/parser.h \
-  mc/protocol.c \
   mc/protocol.h \
   mc/umbrella.c \
   mc/umbrella.h \

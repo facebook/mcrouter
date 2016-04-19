@@ -60,18 +60,6 @@ static inline const char* parser_state_to_string(const _parser_state_t state) {
   return strings[state <= reply_received ? state : receive_reply_unknown_state];
 }
 
-static inline const char* parser_error_to_string(const parser_error_t error) {
-  static const char* const strings [] = {
-    "parser_unspecified_error",
-    "parser_malformed_request",
-    "parser_out_of_memory",
-  };
-
-  return strings[error <= parser_out_of_memory ? error :
-                 parser_unspecified_error];
-}
-
-
 /*
  * ascii parser state
  */
