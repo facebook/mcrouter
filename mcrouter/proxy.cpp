@@ -110,7 +110,6 @@ bool processGetServiceInfoRequestImpl(
 proxy_t::proxy_t(McrouterInstance& rtr)
     : router_(rtr),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
-      randomGenerator(folly::randomNumberSeed()),
       fiberManager(
         fiber_local::ContextTypeTag(),
         folly::make_unique<folly::fibers::EventBaseLoopController>(),
@@ -120,6 +119,8 @@ proxy_t::proxy_t(McrouterInstance& rtr)
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
 
+  // Setup a full random seed sequence
+  folly::Random::seed(randomGenerator);
   static uint64_t next_magic = 0x12345678900000LL;
 
   magic = __sync_fetch_and_add(&next_magic, 1);
