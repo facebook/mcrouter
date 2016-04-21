@@ -232,7 +232,7 @@ bool touchFile(const std::string& path);
  * Make uint64 random number out of uint32. Especially useful for mt19937.
  */
 template <class RNG>
-std::enable_if_t<RNG::word_size == 32, uint64_t>
+typename std::enable_if<RNG::word_size == 32, uint64_t>::type
 randomInt64(RNG& rng) {
   return ((uint64_t)rng() << 32) | (uint64_t)rng();
 }
@@ -241,7 +241,7 @@ randomInt64(RNG& rng) {
  * Specialization for random generator with uint64 result type.
  */
 template <class RNG>
-std::enable_if_t<RNG::word_size == 64, uint64_t>
+typename std::enable_if<RNG::word_size == 64, uint64_t>::type
 randomInt64(RNG& rng) {
   return rng();
 }
