@@ -43,7 +43,6 @@ struct ContextInfo {
   std::string pemCaPath;
 
   std::shared_ptr<SSLContext> context;
-  std::unique_ptr<wangle::TLSTicketKeyManager> mgr;
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
 };
 
@@ -52,6 +51,27 @@ struct CertPathsHasher {
     return folly::hash::hash_combine_generic<folly::hash::StdHasher>(
       paths.pemCertPath.hash(), paths.pemKeyPath.hash(),
       paths.pemCaPath.hash());
+  }
+};
+
+using TicketMgrMap =
+    std::unordered_map<uintptr_t, std::unique_ptr<wangle::TLSTicketKeyManager>>;
+
+TicketMgrMap& contextToTicketMgr() {
+  thread_local TicketMgrMap* map = new TicketMgrMap;
+  return *map;
+}
+
+/* custom deleter to release TLSTicketKeyManager */
+struct SSLContextDeleter {
+  void operator()(folly::SSLContext* ctx) const {
+    if (ctx == nullptr) {
+      return;
+    }
+    const auto mapKey = reinterpret_cast<uintptr_t>(ctx);
+    contextToTicketMgr().erase(mapKey);
+    assert(contextToTicketMgr().find(mapKey) == contextToTicketMgr().end());
+    delete ctx;
   }
 };
 
@@ -64,7 +84,8 @@ void logCertFailure(folly::StringPiece name, folly::StringPiece path,
 std::shared_ptr<SSLContext> handleSSLCertsUpdate(folly::StringPiece pemCertPath,
                                                  folly::StringPiece pemKeyPath,
                                                  folly::StringPiece pemCaPath) {
-  auto sslContext = std::make_shared<SSLContext>();
+
+  std::shared_ptr<SSLContext> sslContext(new SSLContext(), SSLContextDeleter());
 
   // Load certificate.
   try {
@@ -155,9 +176,15 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
       SSL_CTX_set_timeout(contextInfo.context->getSSLCtx(), kSessionLifeTime);
 
       #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
-      contextInfo.mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
+      auto mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
           contextInfo.context.get(), nullptr);
-      contextInfo.mgr->setTLSTicketKeySeeds({"aaaa"}, {"bbbb"}, {"cccc"});
+      mgr->setTLSTicketKeySeeds({"aaaa"}, {"bbbb"}, {"cccc"});
+
+      /* store in the map */
+      const auto mapKey =
+          reinterpret_cast<uintptr_t>(contextInfo.context.get());
+      assert(contextToTicketMgr().find(mapKey) == contextToTicketMgr().end());
+      contextToTicketMgr()[mapKey] = std::move(mgr);
       #endif
     }
   }
