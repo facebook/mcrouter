@@ -37,12 +37,19 @@ struct CertPaths {
   }
 };
 
+using TicketMgrMap =
+    std::unordered_map<uintptr_t, std::unique_ptr<wangle::TLSTicketKeyManager>>;
+
 struct ContextInfo {
   std::string pemCertPath;
   std::string pemKeyPath;
   std::string pemCaPath;
 
+  /* mgrMapRef must be declared before context to control the construction
+   * destruction order. */
+  std::shared_ptr<TicketMgrMap> mgrMapRef;
   std::shared_ptr<SSLContext> context;
+
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
 };
 
@@ -54,12 +61,9 @@ struct CertPathsHasher {
   }
 };
 
-using TicketMgrMap =
-    std::unordered_map<uintptr_t, std::unique_ptr<wangle::TLSTicketKeyManager>>;
-
-TicketMgrMap& contextToTicketMgr() {
-  thread_local TicketMgrMap* map = new TicketMgrMap;
-  return *map;
+std::shared_ptr<TicketMgrMap> contextToTicketMgr() {
+  thread_local auto map = std::make_shared<TicketMgrMap>();
+  return map;
 }
 
 /* custom deleter to release TLSTicketKeyManager */
@@ -69,8 +73,8 @@ struct SSLContextDeleter {
       return;
     }
     const auto mapKey = reinterpret_cast<uintptr_t>(ctx);
-    contextToTicketMgr().erase(mapKey);
-    assert(contextToTicketMgr().find(mapKey) == contextToTicketMgr().end());
+    contextToTicketMgr()->erase(mapKey);
+    assert(contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
     delete ctx;
   }
 };
@@ -155,6 +159,7 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
     info.pemCertPath = pemCertPath.toString();
     info.pemKeyPath = pemKeyPath.toString();
     info.pemCaPath = pemCaPath.toString();
+    info.mgrMapRef = contextToTicketMgr();
     // Point all StringPiece's to our own strings.
     paths.pemCertPath = info.pemCertPath;
     paths.pemKeyPath = info.pemKeyPath;
@@ -183,8 +188,8 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
       /* store in the map */
       const auto mapKey =
           reinterpret_cast<uintptr_t>(contextInfo.context.get());
-      assert(contextToTicketMgr().find(mapKey) == contextToTicketMgr().end());
-      contextToTicketMgr()[mapKey] = std::move(mgr);
+      assert(contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
+      contextToTicketMgr()->emplace(mapKey, std::move(mgr));
       #endif
     }
   }
