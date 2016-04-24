@@ -13,7 +13,6 @@
 
 #include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
-#include <folly/ThreadLocal.h>
 
 #include "mcrouter/lib/mc/ascii_response.h"
 #include "mcrouter/lib/mc/protocol.h"
@@ -243,49 +242,54 @@ class WriteBuffer {
 
 class WriteBufferQueue {
  public:
+  /**
+   * @throws std::runtime_error if protocol is invalid
+   */
   explicit WriteBufferQueue(mc_protocol_t protocol)
-      : protocol_(protocol) {
-    if (protocol_ != mc_ascii_protocol &&
-        protocol_ != mc_umbrella_protocol &&
-        protocol_ != mc_caret_protocol) {
-      throw std::runtime_error("Invalid protocol");
-    }
+      : protocol_(protocol),
+        tlFreeQueue_(initFreeQueue()) {
   }
 
   std::unique_ptr<WriteBuffer> get() {
-    auto& freeQ = freeQueue();
-    if (freeQ.empty()) {
+    if (tlFreeQueue_.empty()) {
       return folly::make_unique<WriteBuffer>(protocol_);
     } else {
-      return freeQ.popFront();
+      return tlFreeQueue_.popFront();
     }
   }
 
   void push(std::unique_ptr<WriteBuffer> wb) { queue_.pushBack(std::move(wb)); }
 
   void pop() {
-    auto& freeQ = freeQueue();
-    if (freeQ.size() < kMaxFreeQueueSz) {
-      auto& wb = freeQ.pushBack(queue_.popFront());
+    if (tlFreeQueue_.size() < kMaxFreeQueueSz) {
+      auto& wb = tlFreeQueue_.pushBack(queue_.popFront());
       wb.clear();
     } else {
       queue_.popFront();
     }
   }
 
-  bool empty() {
+  bool empty() const noexcept {
     return queue_.empty();
   }
 
  private:
-  mc_protocol_t protocol_;
-  WriteBuffer::Queue& freeQueue() {
-    static folly::ThreadLocal<WriteBuffer::Queue> freeQ[mc_nprotocols];
-    assert((size_t)protocol_ < mc_nprotocols);
-    return *freeQ[(size_t)protocol_];
-  }
-  WriteBuffer::Queue queue_;
   constexpr static size_t kMaxFreeQueueSz = 50;
+
+  mc_protocol_t protocol_;
+  WriteBuffer::Queue& tlFreeQueue_;
+  WriteBuffer::Queue queue_;
+
+  WriteBuffer::Queue& initFreeQueue() {
+    if (protocol_ != mc_ascii_protocol &&
+        protocol_ != mc_umbrella_protocol &&
+        protocol_ != mc_caret_protocol) {
+      throw std::runtime_error("Invalid protocol");
+    }
+
+    static thread_local WriteBuffer::Queue freeQ[mc_nprotocols];
+    return freeQ[static_cast<size_t>(protocol_)];
+  }
 
   WriteBufferQueue(const WriteBufferQueue&) = delete;
   WriteBufferQueue& operator=(const WriteBufferQueue&) = delete;
