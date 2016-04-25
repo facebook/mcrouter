@@ -44,7 +44,8 @@ class AsciiSerializedRequest {
    * @return true iff message was successfully prepared.
    */
   template <class Request>
-  bool prepare(const Request& request, struct iovec*& iovOut, size_t& niovOut);
+  bool prepare(const Request& request, const struct iovec*& iovOut,
+               size_t& niovOut);
  private:
   // We need at most 5 iovecs (lease-set):
   //   command + key + printBuffer + value + "\r\n"

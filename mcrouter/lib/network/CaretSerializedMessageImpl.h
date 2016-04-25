@@ -12,6 +12,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/McQueueAppender.h"
 #include "mcrouter/lib/network/McRequestToTypedConverter.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
@@ -28,7 +29,7 @@ class TypedThriftRequest;
  */
 class CaretSerializedMessage {
  public:
-  CaretSerializedMessage() noexcept = default;
+  CaretSerializedMessage() = default;
 
   CaretSerializedMessage(const CaretSerializedMessage&) = delete;
   CaretSerializedMessage& operator=(const CaretSerializedMessage&) = delete;
@@ -36,8 +37,7 @@ class CaretSerializedMessage {
   CaretSerializedMessage& operator=(CaretSerializedMessage&&) = delete;
 
   void clear() {
-    iovsUsed_ = 0;
-    ioBuf_.reset();
+    storage_.reset();
   }
 
   /**
@@ -53,13 +53,13 @@ class CaretSerializedMessage {
   template <class Op>
   bool prepare(const McRequestWithOp<Op>& req,
                size_t reqId,
-               struct iovec*& iovOut,
+               const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
   template <class ThriftType>
   bool prepare(const TypedThriftRequest<ThriftType>& req,
                size_t reqId,
-               struct iovec*& iovOut,
+               const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
   /**
@@ -73,16 +73,18 @@ class CaretSerializedMessage {
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply,
                size_t reqId,
-               struct iovec*& iovOut,
+               const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
  private:
+  McQueueAppenderStorage storage_;
+
   template <class ThriftType>
   bool fill(const TypedThriftMessage<ThriftType>& tmsg,
             uint32_t reqId,
             size_t typeId,
             uint64_t traceId,
-            struct iovec*& iovOut,
+            const struct iovec*& iovOut,
             size_t& niovOut);
 
   void fillHeader(UmbrellaMessageInfo& info);
@@ -92,7 +94,7 @@ class CaretSerializedMessage {
     !ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
   prepareImpl(const McRequestWithMcOp<Op>& req,
               size_t reqId,
-              struct iovec*& iovOut,
+              const struct iovec*& iovOut,
               size_t& niovOut);
 
   template <int Op>
@@ -100,19 +102,10 @@ class CaretSerializedMessage {
     ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
   prepareImpl(const McRequestWithMcOp<Op>& req,
               size_t reqId,
-              struct iovec*& iovOut,
+              const struct iovec*& iovOut,
               size_t& niovOut);
-
-  template <class ThriftType>
-  void fillBody(const TypedThriftMessage<ThriftType>& tmsg);
-
-  std::unique_ptr<folly::IOBuf> ioBuf_;
-  static constexpr size_t kMaxIovs = 8;
-  struct iovec iovs_[kMaxIovs];
-  size_t iovsUsed_{0};
-  char headerBuf_[kMaxHeaderLength];
 };
-} // memcache
-} // facebook
+
+}} // facebook::memcache
 
 #include "mcrouter/lib/network/CaretSerializedMessageImpl-inl.h"

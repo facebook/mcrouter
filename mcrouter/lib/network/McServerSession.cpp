@@ -423,7 +423,7 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     return;
   }
   if (options_.singleWrite) {
-    struct iovec* iovs = wb->getIovsBegin();
+    const struct iovec* iovs = wb->getIovsBegin();
     size_t iovCount = wb->getIovsCount();
     writeBufs_->push(std::move(wb));
     transport_->writev(this, iovs, iovCount);

@@ -12,6 +12,9 @@
 #include <folly/io/IOBuf.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types_custom_protocol.h"
+#include "mcrouter/lib/network/McQueueAppender.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
@@ -33,15 +36,16 @@ class TypedThriftRequest;
  * @return a unique pointer to the IOBuf
  */
 template <class ThriftType>
-std::unique_ptr<folly::IOBuf> serializeThriftStruct(
-    const TypedThriftMessage<ThriftType>& thriftStruct) {
+void serializeThriftStruct(
+    const TypedThriftMessage<ThriftType>& msg,
+    McQueueAppenderStorage& storage) {
 
-  apache::thrift::CompactProtocolWriter writer(
-      apache::thrift::SHARE_EXTERNAL_BUFFER);
-  folly::IOBufQueue queue;
-  writer.setOutput(&queue);
-  thriftStruct.get()->write(&writer);
-  return queue.move();
+  apache::thrift::CompactProtocolWriterImpl<
+      McQueueAppender, McQueueAppenderStorage> writer(
+          apache::thrift::SHARE_EXTERNAL_BUFFER);
+
+  writer.setOutput(&storage);
+  msg->write(&writer);
 }
 
 /**

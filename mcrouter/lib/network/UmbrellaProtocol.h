@@ -156,27 +156,27 @@ class UmbrellaSerializedMessage {
   void clear();
 
   bool prepare(McReply&& reply, mc_op_t op, uint64_t reqid,
-               struct iovec*& iovOut, size_t& niovOut) {
+               const struct iovec*& iovOut, size_t& niovOut) {
     return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
   }
 
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply, uint64_t reqid,
-               struct iovec*& iovOut, size_t& niovOut) {
+               const struct iovec*& iovOut, size_t& niovOut) {
     static constexpr mc_op_t op = OpFromType<ThriftType, ReplyOpMapping>::value;
     return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
   }
 
   template <int op>
   bool prepare(const McRequestWithMcOp<op>& request, uint64_t reqid,
-               struct iovec*& iovOut, size_t& niovOut) {
+               const struct iovec*& iovOut, size_t& niovOut) {
     return prepareRequestImpl(
         request, static_cast<mc_op_t>(op), reqid, iovOut, niovOut);
   }
 
   template <class ThriftType>
   bool prepare(const TypedThriftRequest<ThriftType>& request, uint64_t reqid,
-               struct iovec*& iovOut, size_t& niovOut) {
+               const struct iovec*& iovOut, size_t& niovOut) {
     static constexpr mc_op_t op =
       OpFromType<ThriftType, RequestOpMapping>::value;
     return prepareRequestImpl(request, op, reqid, iovOut, niovOut);
@@ -208,10 +208,10 @@ class UmbrellaSerializedMessage {
 
   template <class Request>
   bool prepareRequestImpl(const Request& request, mc_op_t op, uint64_t reqid,
-                          struct iovec*& iovOut, size_t& niovOut);
+                          const struct iovec*& iovOut, size_t& niovOut);
   template <class Reply>
   bool prepareReplyImpl(Reply&& reply, mc_op_t op, uint64_t reqid,
-                        struct iovec*& iovOut, size_t& niovOut);
+                        const struct iovec*& iovOut, size_t& niovOut);
 
   /**
    * Request and reply helpers used to serialize fields specific to a

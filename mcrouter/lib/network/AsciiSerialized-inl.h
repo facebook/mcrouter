@@ -47,7 +47,8 @@ void AsciiSerializedRequest::addStrings(Arg&& arg, Args&&... args) {
 
 template <class Request>
 bool AsciiSerializedRequest::prepare(const Request& request,
-                                     struct iovec*& iovOut, size_t& niovOut) {
+                                     const struct iovec*& iovOut,
+                                     size_t& niovOut) {
   iovsCount_ = 0;
   auto r = PrepareImplWrapper::prepare(*this, request);
   iovOut = iovs_;

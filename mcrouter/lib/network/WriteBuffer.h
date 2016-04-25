@@ -44,12 +44,12 @@ class AsciiSerializedReply {
 
   bool prepare(McReply&& reply, mc_op_t operation,
                const folly::Optional<folly::IOBuf>& key,
-               struct iovec*& iovOut, size_t& niovOut);
+               const struct iovec*& iovOut, size_t& niovOut);
 
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply,
                folly::Optional<folly::IOBuf>& key,
-               struct iovec*& iovOut, size_t& niovOut,
+               const struct iovec*& iovOut, size_t& niovOut,
                GetLikeT<McOperation<OpFromType<ThriftType,
                                                ReplyOpMapping>::value>> = 0) {
     iovsCount_ = 0;
@@ -72,7 +72,7 @@ class AsciiSerializedReply {
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply,
                const folly::Optional<folly::IOBuf>& /* key */,
-               struct iovec*& iovOut, size_t& niovOut,
+               const struct iovec*& iovOut, size_t& niovOut,
                OtherThanT<McOperation<OpFromType<ThriftType,
                                       ReplyOpMapping>::value>,
                           GetLike<>> = 0) {
@@ -87,7 +87,7 @@ class AsciiSerializedReply {
 
   template <class Unsupported>
   bool prepare(Unsupported&&, const folly::Optional<folly::IOBuf>&,
-               struct iovec*&, size_t&) {
+               const struct iovec*&, size_t&) {
     return false;
   }
 
@@ -204,7 +204,7 @@ class WriteBuffer {
       Reply&& reply,
       Destructor destructor = Destructor(nullptr, nullptr));
 
-  struct iovec* getIovsBegin() {
+  const struct iovec* getIovsBegin() {
     return iovsBegin_;
   }
   size_t getIovsCount() { return iovsCount_; }
@@ -231,7 +231,7 @@ class WriteBuffer {
   };
 
   folly::Optional<McServerRequestContext> ctx_;
-  struct iovec* iovsBegin_;
+  const struct iovec* iovsBegin_;
   size_t iovsCount_{0};
 
   WriteBuffer(const WriteBuffer&) = delete;

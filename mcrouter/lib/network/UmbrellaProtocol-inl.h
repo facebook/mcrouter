@@ -709,7 +709,7 @@ template <class Request>
 bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
                                                    mc_op_t op,
                                                    uint64_t reqid,
-                                                   struct iovec*& iovOut,
+                                                   const struct iovec*& iovOut,
                                                    size_t& niovOut) {
   niovOut = 0;
 
@@ -764,7 +764,7 @@ template <class Reply>
 bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
                                                  mc_op_t op,
                                                  uint64_t reqid,
-                                                 struct iovec*& iovOut,
+                                                 const struct iovec*& iovOut,
                                                  size_t& niovOut) {
   niovOut = 0;
   iobuf_.clear();

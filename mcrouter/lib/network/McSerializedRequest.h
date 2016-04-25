@@ -49,7 +49,7 @@ class McSerializedRequest {
 
   Result serializationResult() const;
   size_t getIovsCount() const { return iovsCount_; }
-  struct iovec* getIovs() const { return iovsBegin_; }
+  const struct iovec* getIovs() const { return iovsBegin_; }
 
  private:
   static const size_t kMaxIovs = 20;
@@ -60,7 +60,7 @@ class McSerializedRequest {
     CaretSerializedMessage caretRequest_;
   };
 
-  struct iovec* iovsBegin_{nullptr};
+  const struct iovec* iovsBegin_{nullptr};
   size_t iovsCount_{0};
   mc_protocol_t protocol_{mc_unknown_protocol};
   Result result_{Result::OK};

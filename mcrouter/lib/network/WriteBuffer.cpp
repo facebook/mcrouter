@@ -132,7 +132,8 @@ void AsciiSerializedReply::clear() {
 bool AsciiSerializedReply::prepare(McReply&& reply,
                                    mc_op_t operation,
                                    const folly::Optional<folly::IOBuf>& key,
-                                   struct iovec*& iovOut, size_t& niovOut) {
+                                   const struct iovec*& iovOut,
+                                   size_t& niovOut) {
   reply_.emplace(std::move(reply));
 
   mc_msg_t replyMsg;
