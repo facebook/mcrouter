@@ -19,6 +19,8 @@ network/gen-cpp2/mc_caret_protocol_types.h: network/mc_caret_protocol.thrift
 libmcrouter_a_SOURCES = \
   CacheClientStats.h \
   Ch3HashFunc.h \
+  Compression.cpp \
+  Compression.h \
   Crc32HashFunc.h \
   FailoverErrorsSettings.cpp \
   FailoverErrorsSettings.h \

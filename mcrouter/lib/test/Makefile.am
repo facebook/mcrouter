@@ -2,6 +2,7 @@ check_PROGRAMS = mcrouter_lib_test
 
 mcrouter_lib_test_SOURCES = \
   Ch3HashTest.cpp \
+  CompressionTest.cpp \
   Crc32HashTest.cpp \
   Main.cpp \
   MigrateRouteTest.cpp \
