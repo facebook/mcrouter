@@ -26,6 +26,8 @@ libmcrouter_a_SOURCES = \
   IOBufUtil.h \
   Keys.cpp \
   Keys.h \
+  Lz4Immutable.cpp \
+  Lz4Immutable.h \
   MessageStorage.h \
   MessageQueue.cpp \
   MessageQueue.h \
