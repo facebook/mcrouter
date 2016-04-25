@@ -18,13 +18,10 @@ namespace facebook { namespace memcache {
 
 template <class Callback>
 ClientMcParser<Callback>::ClientMcParser(Callback& cb,
-                                         size_t requestsPerRead,
                                          size_t minBufferSize,
                                          size_t maxBufferSize,
-                                         mc_protocol_t protocol,
                                          const bool useJemallocNodumpAllocator)
   : parser_(*this,
-            requestsPerRead,
             minBufferSize,
             maxBufferSize,
             useJemallocNodumpAllocator),
@@ -55,95 +52,85 @@ template <class Request>
 void ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
-    replyForwarder_ =
-      &ClientMcParser<Callback>::forwardAsciiReply<Request>;
-  } else if (parser_.protocol() == mc_umbrella_protocol ||
-             parser_.protocol() == mc_caret_protocol) {
-    umbrellaForwarder_ =
+    replyForwarder_ = &ClientMcParser<Callback>::forwardAsciiReply<Request>;
+  } else if (parser_.protocol() == mc_umbrella_protocol) {
+    umbrellaOrCaretForwarder_ =
       &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
+  } else if (parser_.protocol() == mc_caret_protocol) {
+    umbrellaOrCaretForwarder_ =
+      &ClientMcParser<Callback>::forwardCaretReply<Request>;
   }
-}
-
-template <class Callback>
-void ClientMcParser<Callback>::replyReadyHelper(McReply&& reply,
-                                                uint64_t reqid) {
-  parser_.reportMsgRead();
-  callback_.replyReady(std::move(reply), reqid);
 }
 
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardAsciiReply() {
   parser_.reportMsgRead();
-  callback_.replyReady(
-    asciiParser_.getReply<ReplyT<Request>>(), 0 /* reqId */);
+  callback_.replyReady(asciiParser_.getReply<ReplyT<Request>>(), 0 /* reqId */);
   replyForwarder_ = nullptr;
 }
 
 template <class Callback>
 template <class Request>
-typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-ClientMcParser<Callback>::forwardUmbrellaReply(
+void ClientMcParser<Callback>::forwardUmbrellaReply(
     const UmbrellaMessageInfo& info,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
+  parser_.reportMsgRead();
 
-  if (info.version == UmbrellaVersion::BASIC) {
-    auto reply = umbrellaParseReply<Request>(
-        buffer,
-        buffer.data(),
-        info.headerSize,
-        buffer.data() + info.headerSize,
-        info.bodySize);
-    callback_.replyReady(std::move(reply), reqId);
-  } else {
-    ReplyT<Request> reply;
+  auto reply = umbrellaParseReply<Request>(
+      buffer,
+      buffer.data(),
+      info.headerSize,
+      buffer.data() + info.headerSize,
+      info.bodySize);
 
-    folly::IOBuf trim;
-    buffer.cloneOneInto(trim);
-    trim.trimStart(info.headerSize);
+  callback_.replyReady(std::move(reply), reqId);
+}
 
-    // Task: 8257655 - Conversion should be moved to ProxyDestination
-    converter_.dispatchTypedRequest(info, trim, reply);
-    callback_.replyReady(std::move(reply), reqId);
-  }
+template <class Callback>
+template <class Request>
+typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
+ClientMcParser<Callback>::forwardCaretReply(
+    const UmbrellaMessageInfo& headerInfo,
+    const folly::IOBuf& buffer,
+    uint64_t reqId) {
+  parser_.reportMsgRead();
+
+  folly::IOBuf body;
+  buffer.cloneOneInto(body);
+  body.trimStart(headerInfo.headerSize);
+
+  ReplyT<Request> reply;
+  converter_.dispatchTypedRequest(headerInfo, body, reply);
+  callback_.replyReady(std::move(reply), reqId);
 }
 
 template <class Callback>
 template <class Request>
 typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-ClientMcParser<Callback>::forwardUmbrellaReply(
-    const UmbrellaMessageInfo& info,
+ClientMcParser<Callback>::forwardCaretReply(
+    const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
+  parser_.reportMsgRead();
 
-  if (info.version == UmbrellaVersion::BASIC) {
-    auto reply = umbrellaParseReply<Request>(
-        buffer,
-        buffer.data(),
-        info.headerSize,
-        buffer.data() + info.headerSize,
-        info.bodySize);
-    callback_.replyReady(std::move(reply), reqId);
-  } else {
-    ReplyT<Request> reply;
-    folly::IOBuf trim;
-    buffer.cloneOneInto(trim);
-    trim.trimStart(info.headerSize);
+  folly::IOBuf body;
+  buffer.cloneOneInto(body);
+  body.trimStart(headerInfo.headerSize);
 
-    apache::thrift::CompactProtocolReader reader;
-    reader.setInput(&trim);
-    reply.read(&reader);
+  ReplyT<Request> reply;
+  apache::thrift::CompactProtocolReader reader;
+  reader.setInput(&body);
+  reply.read(&reader);
 
-    callback_.replyReady(std::move(reply), reqId);
-  }
+  callback_.replyReady(std::move(reply), reqId);
 }
 
 template <class Callback>
 bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const folly::IOBuf& buffer) {
-  if (UNLIKELY((parser_.protocol() != mc_umbrella_protocol) &&
-                (parser_.protocol() != mc_caret_protocol))) {
+  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
     std::string reason =
         folly::sformat("Expected {} protocol, but received umbrella!",
                        mc_protocol_to_string(parser_.protocol()));
@@ -152,14 +139,9 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
   }
 
   try {
-    size_t reqId;
-    if (info.version == UmbrellaVersion::BASIC) {
-      reqId = umbrellaDetermineReqId(buffer.data(), info.headerSize);
-    } else {
-      reqId = info.reqId;
-    }
+    const size_t reqId = umbrellaDetermineReqId(buffer.data(), info.headerSize);
     if (callback_.nextReplyAvailable(reqId)) {
-      (this->*umbrellaForwarder_)(info, buffer, reqId);
+      (this->*umbrellaOrCaretForwarder_)(info, buffer, reqId);
     }
     // Consume the message, but don't fail.
     return true;
@@ -167,6 +149,32 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
     std::string reason(
       std::string("Error parsing Umbrella message: ") + e.what());
     LOG(ERROR) << reason;
+    callback_.parseError(mc_res_local_error, reason);
+    return false;
+  }
+}
+
+template <class Callback>
+bool ClientMcParser<Callback>::caretMessageReady(
+    const UmbrellaMessageInfo& headerInfo,
+    const folly::IOBuf& buffer) {
+  if (UNLIKELY(parser_.protocol() != mc_caret_protocol)) {
+    const auto reason =
+      folly::sformat("Expected {} protocol, but received Caret!",
+                     mc_protocol_to_string(parser_.protocol()));
+    callback_.parseError(mc_res_local_error, reason);
+    return false;
+  }
+
+  try {
+    const size_t reqId = headerInfo.reqId;
+    if (callback_.nextReplyAvailable(reqId)) {
+      (this->*umbrellaOrCaretForwarder_)(headerInfo, buffer, reqId);
+    }
+    return true;
+  } catch (const std::runtime_error& e) {
+    const auto reason =
+      folly::sformat("Error parsing Caret message: {}", e.what());
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }

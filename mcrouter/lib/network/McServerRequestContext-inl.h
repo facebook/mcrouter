@@ -123,7 +123,7 @@ struct HasDispatchTypedRequest<
 };
 
 template <class OnRequest>
-void McServerOnRequestWrapper<OnRequest, List<>>::typedRequestReady(
+void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& reqBody,
     McServerRequestContext&& ctx) {

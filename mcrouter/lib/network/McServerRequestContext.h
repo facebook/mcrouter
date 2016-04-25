@@ -171,7 +171,7 @@ class McServerOnRequestIf<List<>> {
                             McRequest&& req,
                             mc_op_t operation) = 0;
 
-  virtual void typedRequestReady(const UmbrellaMessageInfo& headerInfo,
+  virtual void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                                  const folly::IOBuf& reqBody,
                                  McServerRequestContext&& ctx) = 0;
 
@@ -213,7 +213,7 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   void requestReady(McServerRequestContext&& ctx, McRequest&& req,
                     mc_op_t operation) override;
 
-  void typedRequestReady(const UmbrellaMessageInfo& headerInfo,
+  void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                          const folly::IOBuf& reqBody,
                          McServerRequestContext&& ctx) override;
 

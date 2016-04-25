@@ -291,10 +291,9 @@ class McServerSession :
   template <class ThriftType>
   void umbrellaRequestReady(TypedThriftRequest<ThriftType>&& req,
                             uint64_t reqid);
-
-  void parseError(mc_res_t result, folly::StringPiece reason);
-  void typedRequestReady(const UmbrellaMessageInfo& headerInfo,
+  void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                          const folly::IOBuf& reqBody);
+  void parseError(mc_res_t result, folly::StringPiece reason);
 
   /* Ascii parser callbacks */
   template <int op, class Request>

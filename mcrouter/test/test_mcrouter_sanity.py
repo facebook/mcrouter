@@ -353,3 +353,7 @@ class TestMcrouterSanityOverUmbrella(TestMcrouterSanity):
         # message in 'message' field of TypedThriftReply while Umbrella
         # stores error message in 'value' field.
         pass
+
+
+class TestCaretSanity(TestMcrouterSanity):
+    config = './mcrouter/test/test_caret.json'

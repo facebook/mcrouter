@@ -15,10 +15,9 @@ namespace facebook { namespace memcache {
 
 template <class Callback>
 ServerMcParser<Callback>::ServerMcParser(Callback& cb,
-                                         size_t requestsPerRead,
                                          size_t minBufferSize,
                                          size_t maxBufferSize)
-  : parser_(*this, requestsPerRead, minBufferSize, maxBufferSize),
+  : parser_(*this, minBufferSize, maxBufferSize),
     asciiParser_(*this),
     callback_(cb) {
 }
@@ -68,38 +67,50 @@ template <class Callback>
 bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
                                               const folly::IOBuf& buffer) {
   try {
-    if (info.version == UmbrellaVersion::TYPED_MESSAGE) {
-      folly::IOBuf body;
-      buffer.cloneOneInto(body);
-      body.trimStart(info.headerSize);
-      callback_.typedRequestReady(info, body);
-    } else {
-      uint64_t reqid;
-      const mc_op_t op = umbrellaDetermineOperation(
-          buffer.data(), info.headerSize);
-      switch (op) {
+    uint64_t reqid;
+    const mc_op_t op = umbrellaDetermineOperation(
+        buffer.data(), info.headerSize);
+    switch (op) {
 #define THRIFT_OP(MC_OPERATION)                                                \
-        case MC_OPERATION::mc_op:                                              \
-        {                                                                      \
-          TypedThriftRequest<typename TypeFromOp<MC_OPERATION::mc_op,          \
-                                                 RequestOpMapping>::type> req; \
-          umbrellaParseRequest(                                                \
-              req, buffer, buffer.data(), info.headerSize,                     \
-              buffer.data() + info.headerSize, info.bodySize,                  \
-              reqid);                                                          \
-          requestReadyHelper(std::move(req), reqid);                           \
-          break;                                                               \
-        }
-#include "mcrouter/lib/McOpList.h"
-        default:
-          LOG(ERROR) << "Unexpected Umbrella message of type "
-            << mc_op_to_string(op) << " (" << int(op) << ")";
-          break;
+      case MC_OPERATION::mc_op:                                              \
+      {                                                                      \
+        TypedThriftRequest<typename TypeFromOp<MC_OPERATION::mc_op,          \
+                                               RequestOpMapping>::type> req; \
+        umbrellaParseRequest(                                                \
+            req, buffer, buffer.data(), info.headerSize,                     \
+            buffer.data() + info.headerSize, info.bodySize,                  \
+            reqid);                                                          \
+        requestReadyHelper(std::move(req), reqid);                           \
+        break;                                                               \
       }
+#include "mcrouter/lib/McOpList.h"
+      default:
+        LOG(ERROR) << "Unexpected Umbrella message of type "
+          << mc_op_to_string(op) << " (" << int(op) << ")";
+        break;
     }
   } catch (const std::runtime_error& e) {
     std::string reason(
       std::string("Error parsing Umbrella message: ") + e.what());
+    callback_.parseError(mc_res_remote_error, reason);
+    return false;
+  }
+  return true;
+}
+
+template <class Callback>
+bool ServerMcParser<Callback>::caretMessageReady(
+    const UmbrellaMessageInfo& headerInfo,
+    const folly::IOBuf& buffer) {
+  try {
+    folly::IOBuf body;
+    // Caret header and body are assumed to be in one coalesced IOBuf
+    buffer.cloneOneInto(body);
+    body.trimStart(headerInfo.headerSize);
+    callback_.caretRequestReady(headerInfo, body);
+  } catch (const std::runtime_error& e) {
+    std::string reason(
+      std::string("Error parsing Caret message: ") + e.what());
     callback_.parseError(mc_res_remote_error, reason);
     return false;
   }

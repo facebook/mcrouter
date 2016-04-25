@@ -17,10 +17,7 @@ namespace facebook { namespace memcache {
 template <class Callback>
 class ServerMcParser : private McParser::ParserCallback {
  public:
-  ServerMcParser(Callback& cb,
-                 size_t requestsPerRead,
-                 size_t minBufferSize,
-                 size_t maxBufferSize);
+  ServerMcParser(Callback& cb, size_t minBufferSize, size_t maxBufferSize);
 
   ~ServerMcParser();
 
@@ -73,6 +70,8 @@ class ServerMcParser : private McParser::ParserCallback {
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
                       const folly::IOBuf& buffer) override;
+  bool caretMessageReady(const UmbrellaMessageInfo& headerInfo,
+                         const folly::IOBuf& buffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
   bool shouldReadToAsciiBuffer() const;

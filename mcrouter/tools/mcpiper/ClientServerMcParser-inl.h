@@ -100,6 +100,13 @@ bool ClientServerMcParser<Callback>::umMessageReady(
 }
 
 template <class Callback>
+bool ClientServerMcParser<Callback>::caretMessageReady(
+    const UmbrellaMessageInfo&, const folly::IOBuf&) {
+  // TODO(jmswen) Add Caret support
+  return false;
+}
+
+template <class Callback>
 void ClientServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
   // Call old parser for ascii
   auto bytes = readBuffer.coalesce();

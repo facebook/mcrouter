@@ -56,7 +56,7 @@ class ClientServerMcParser : private McParser::ParserCallback {
   void reset() noexcept;
 
  private:
-  McParser parser_{*this, 0, kReadBufferSizeMin, kReadBufferSizeMax};
+  McParser parser_{*this, kReadBufferSizeMin, kReadBufferSizeMax};
   mc_parser_t oldParser_;
 
   Callback& callback_;
@@ -76,6 +76,8 @@ class ClientServerMcParser : private McParser::ParserCallback {
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
                       const folly::IOBuf& buffer) override;
+  bool caretMessageReady(const UmbrellaMessageInfo& headerInfo,
+                         const folly::IOBuf& buffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
 

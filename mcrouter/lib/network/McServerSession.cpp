@@ -100,7 +100,6 @@ McServerSession::McServerSession(
       userCtxt_(userCtxt),
       debugFifo_(std::move(debugFifo)),
       parser_(*this,
-              options_.requestsPerRead,
               options_.minBufferSize,
               options_.maxBufferSize),
       sendWritesCallback_(*this) {
@@ -367,7 +366,7 @@ void McServerSession::onRequest(TypedThriftRequest<cpp2::McQuitRequest>&&,
   close();
 }
 
-void McServerSession::typedRequestReady(const UmbrellaMessageInfo& headerInfo,
+void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                                         const folly::IOBuf& reqBody) {
   DestructorGuard dg(this);
 
@@ -387,7 +386,7 @@ void McServerSession::typedRequestReady(const UmbrellaMessageInfo& headerInfo,
     versionReply.setValue(options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
   } else {
-    onRequest_->typedRequestReady(headerInfo, reqBody, std::move(ctx));
+    onRequest_->caretRequestReady(headerInfo, reqBody, std::move(ctx));
   }
 }
 

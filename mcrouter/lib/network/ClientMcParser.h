@@ -29,10 +29,8 @@ template <class Callback>
 class ClientMcParser : private McParser::ParserCallback {
  public:
   ClientMcParser(Callback& cb,
-                 size_t requestsPerRead,
                  size_t minBufferSize,
                  size_t maxBufferSize,
-                 mc_protocol_t protocol,
                  const bool useJemallocNodumpAllocator = false);
 
   /**
@@ -66,32 +64,37 @@ class ClientMcParser : private McParser::ParserCallback {
   McParser parser_;
   McClientAsciiParser asciiParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
-  void (ClientMcParser<Callback>::*umbrellaForwarder_)(
+  void (ClientMcParser<Callback>::*umbrellaOrCaretForwarder_)(
       const UmbrellaMessageInfo&, const folly::IOBuf&, uint64_t){nullptr};
   CaretReplyConverter converter_;
 
   Callback& callback_;
 
-  void replyReadyHelper(McReply&& reply, uint64_t reqid);
-
   template <class Request>
   void forwardAsciiReply();
 
   template <class Request>
+  void forwardUmbrellaReply(const UmbrellaMessageInfo& info,
+                            const folly::IOBuf& buffer,
+                            uint64_t reqId);
+
+  template <class Request>
   typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-  forwardUmbrellaReply(const UmbrellaMessageInfo& info,
-                       const folly::IOBuf& buffer,
-                       uint64_t reqId);
+  forwardCaretReply(const UmbrellaMessageInfo& headerInfo,
+                    const folly::IOBuf& buffer,
+                    uint64_t reqId);
 
   template <class Request>
   typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-  forwardUmbrellaReply(const UmbrellaMessageInfo& info,
-                       const folly::IOBuf& buffer,
-                       uint64_t reqId);
+  forwardCaretReply(const UmbrellaMessageInfo& headerInfo,
+                    const folly::IOBuf& buffer,
+                    uint64_t reqId);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
                       const folly::IOBuf& buffer) override;
+  bool caretMessageReady(const UmbrellaMessageInfo& headerInfo,
+                         const folly::IOBuf& buffer) override;
   void handleAscii(folly::IOBuf& readBuffer) override;
   void parseError(mc_res_t result, folly::StringPiece reason) override;
 

@@ -78,8 +78,6 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
 
   if (buf[0] == ENTRY_LIST_MAGIC_BYTE) {
     infoOut.version = UmbrellaVersion::BASIC;
-  } else if (buf[0] == kCaretMagicByte) {
-    infoOut.version = UmbrellaVersion::TYPED_MESSAGE;
   } else {
     return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
   }
@@ -101,8 +99,6 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
       return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
     }
     infoOut.bodySize = messageSize - infoOut.headerSize;
-  } else if (infoOut.version == UmbrellaVersion::TYPED_MESSAGE) {
-    return caretParseHeader(buf, nbuf, infoOut);
   } else {
     return UmbrellaParseStatus::MESSAGE_PARSE_ERROR;
   }
@@ -112,7 +108,7 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
 
 UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
                                      size_t nbuf,
-                                     UmbrellaMessageInfo& info) {
+                                     UmbrellaMessageInfo& headerInfo) {
 
   /* we need the magic byte and the first byte of encoded header
      to determine if we have enough data in the buffer to get the
@@ -136,10 +132,10 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
   }
 
   folly::GroupVarint32::decode_simple(
-      buf + 1, &bodySize, &typeId, &info.reqId, &additionalFields);
+      buf + 1, &bodySize, &typeId, &headerInfo.reqId, &additionalFields);
 
-  info.bodySize = bodySize;
-  info.typeId = typeId;
+  headerInfo.bodySize = bodySize;
+  headerInfo.typeId = typeId;
   folly::StringPiece range(buf, nbuf);
   range.advance(encodedLength + 1);
 
@@ -150,7 +146,7 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
       uint64_t fieldValue = folly::decodeVarint(range);
       if (static_cast<CaretAdditionalFieldType>(fieldType) ==
           CaretAdditionalFieldType::TRACE_ID) {
-        info.traceId = fieldValue;
+        headerInfo.traceId = fieldValue;
       }
     } catch (const std::invalid_argument& e) {
       // buffer was not sufficient for additional fields
@@ -158,7 +154,7 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
     }
   }
 
-  info.headerSize = range.cbegin() - buf;
+  headerInfo.headerSize = range.cbegin() - buf;
 
   return UmbrellaParseStatus::OK;
 }

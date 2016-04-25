@@ -197,9 +197,9 @@ class TestRunner {
       ASSERT_TRUE(false) << "requestReady should never be called for ASCII";
     }
 
-    void typedRequestReady(const UmbrellaMessageInfo&, const folly::IOBuf&) {
+    void caretRequestReady(const UmbrellaMessageInfo&, const folly::IOBuf&) {
       ASSERT_TRUE(false)
-          << "typedRequestReady should never be called for ASCII";
+          << "caretRequestReady should never be called for ASCII";
     }
 
     template <class Request>
@@ -264,7 +264,6 @@ class TestRunner {
   bool runImpl(folly::IOBuf data) {
     ParserOnRequest onRequest(callbacks_, isError_);
     ServerMcParser<ParserOnRequest> parser(onRequest,
-                                           1024 /* requests per read */,
                                            4096 /* min buffer size */,
                                            4096 /* max buffer size */);
     onRequest.setParser(&parser);

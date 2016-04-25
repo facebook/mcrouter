@@ -24,19 +24,31 @@ class McParser {
  public:
   class ParserCallback {
    public:
-    virtual ~ParserCallback() {};
+    virtual ~ParserCallback() = 0;
 
     /**
      * We fully parsed an umbrella message and want to call RequestReady or
      * ReplyReady callback.
      *
-     * @param umMsgInfo   Message information
+     * @param info        Message information
      * @param buffer      Coalesced IOBuf that holds the entire message
      *                    (header and body)
      * @return            False on any parse errors.
      */
     virtual bool umMessageReady(const UmbrellaMessageInfo& info,
                                 const folly::IOBuf& buffer) = 0;
+
+    /**
+     * caretMessageReady should be called after we have successfully parsed the
+     * Caret header and after the full Caret message body is in the read buffer.
+     *
+     * @param headerInfo  Parsed header data (header size, body size, etc.)
+     * @param buffer      Coalesced IOBuf that holds the entire message
+     *                    (header and body)
+     * @return            False on any parse errors.
+     */
+    virtual bool caretMessageReady(const UmbrellaMessageInfo& headerInfo,
+                                   const folly::IOBuf& buffer) = 0;
 
     /**
      * Handle ascii data read.
@@ -53,12 +65,11 @@ class McParser {
   };
 
   McParser(ParserCallback& cb,
-           size_t requestsPerRead,
            size_t minBufferSize,
            size_t maxBufferSize,
            const bool useJemallocNodumpAllocator = false);
 
-  ~McParser();
+  ~McParser() = default;
 
   mc_protocol_t protocol() const {
     return protocol_;
@@ -94,20 +105,13 @@ class McParser {
   bool seenFirstByte_{false};
   bool outOfOrder_{false};
 
-  /* We shrink the read buffer if we grow it beyond bufferSize_ */
-  bool bufferShrinkRequired_{false};
-
   mc_protocol_t protocol_{mc_unknown_protocol};
 
   ParserCallback& callback_;
-  size_t messagesPerRead_{0};
-  size_t minBufferSize_{256};
+  size_t bufferSize_{256};
   size_t maxBufferSize_{4096};
-  size_t bufferSize_{4096};
 
-  size_t readBytes_{0};
   size_t parsedMessages_{0};
-  double bytesPerRequest_{0.0};
 
   folly::IOBuf readBuffer_;
 
@@ -117,18 +121,11 @@ class McParser {
   UmbrellaMessageInfo umMsgInfo_;
 
   /**
-   * If this is nonempty, we're currently reading in umbrella message.
-   * We know we're done when this has as much data as
-   * umMsgInfo_.headerSize + umMsgInfo_.body_size.
-   */
-  std::unique_ptr<folly::IOBuf> umMsgBuffer_;
-
-  /**
    * Custom allocator states and method
    */
   bool useJemallocNodumpAllocator_{false};
 
-  bool readUmbrellaData();
+  bool readUmbrellaOrCaretData();
 
   /*
    * Determine the protocol by looking at the first byte
@@ -144,12 +141,12 @@ class McParser {
     }
   }
 
-  void recalculateBufferSize(size_t read);
+  void recalculateBufferSize();
 
-  /**
-   * Shrink all buffers used if possible to reduce memory footprint.
-   */
-  void shrinkBuffers();
+  // Shrink read buffer if possible to reduce memory footprint
+  void shrinkBuffer();
 };
+
+inline McParser::ParserCallback::~ParserCallback() {}
 
 }}  // facebook::memcache

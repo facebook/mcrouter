@@ -155,7 +155,6 @@ McClientRequestContext<Request>::McClientRequestContext(
 {
 }
 
-// TODO(jmswen) Extend for Thrift types.
 template <class Request>
 void McClientRequestContext<Request>::sendTraceOnReply() {
 #ifndef LIBMC_FBTRACE_DISABLE

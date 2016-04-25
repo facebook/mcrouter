@@ -498,17 +498,10 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   assert(queue_.getParserInitializer() == nullptr);
 
   scheduleNextWriterLoop();
-  // HACK. TODO: properly separate umbrella and caret
-  auto protocol = connectionOptions_.accessPoint->getProtocol();
-  if (protocol == mc_caret_protocol) {
-    protocol = mc_umbrella_protocol;
-  }
   parser_ = folly::make_unique<ParserT>(
       *this,
-      0,
       kReadBufferSizeMin,
       kReadBufferSizeMax,
-      protocol,
       connectionOptions_.useJemallocNodumpAllocator);
   socket_->setReadCB(this);
 }
