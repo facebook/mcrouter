@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -37,7 +37,7 @@ std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
   checkLogic(json.isObject() || json.isString(),
              "AsynclogRoute should be object or string");
   if (json.isString()) {
-    asynclogName = json.stringPiece().str();
+    asynclogName = json.getString();
     target = factory.create(json);
   } else { // object
     auto jname = json.get_ptr("name");
@@ -45,7 +45,7 @@ std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
                "AsynclogRoute: required string name");
     auto jtarget = json.get_ptr("target");
     checkLogic(jtarget, "AsynclogRoute: target not found");
-    asynclogName = jname->stringPiece().str();
+    asynclogName = jname->getString();
     target = factory.create(*jtarget);
   }
   return { std::move(target), std::move(asynclogName) };

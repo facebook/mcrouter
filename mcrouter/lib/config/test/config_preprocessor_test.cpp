@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -74,8 +74,8 @@ void runCase(const folly::dynamic& consts,
   opts.sort_keys = true;
   opts.pretty_formatting = false;
 
-  auto jsonExpand = folly::json::serialize(expand, opts).toStdString();
-  auto jsonOrigExpand = folly::json::serialize(origExpand, opts).toStdString();
+  auto jsonExpand = folly::json::serialize(expand, opts);
+  auto jsonOrigExpand = folly::json::serialize(origExpand, opts);
 
   ASSERT_EQ(jsonExpand, jsonOrigExpand) << "Case: " << caseName << " fail";
   LOG(INFO) << "  success";
@@ -92,7 +92,7 @@ void runTest(const std::string& testName, const folly::dynamic& testObj) {
     consts = testObj["consts"];
   }
   for (auto& it : testObj["cases"].items()) {
-    auto caseName = it.first.asString().toStdString();
+    auto caseName = it.first.asString();
     auto caseObj = it.second;
     runCase(consts, testObj["macros"], testName + ":" + caseName, it.second);
   }
@@ -107,7 +107,7 @@ TEST(ConfigPreprocessorTest, macros) {
   auto json = parseJsonString(jsonStr);
 
   for (auto& test : json.items()) {
-    auto testName = test.first.asString().toStdString();
+    auto testName = test.first.asString();
     auto testObj = test.second;
 
     runTest(testName, testObj);
@@ -153,8 +153,8 @@ TEST(ConfigPreprocessorTest, comments) {
   opts.sort_keys = true;
   opts.pretty_formatting = false;
 
-  auto orig = folly::json::serialize(json["orig"], opts).toStdString();
-  auto expand = folly::json::serialize(json["expand"], opts).toStdString();
+  auto orig = folly::json::serialize(json["orig"], opts);
+  auto expand = folly::json::serialize(json["expand"], opts);
 
   EXPECT_EQ(orig, expand);
 }

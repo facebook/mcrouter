@@ -326,7 +326,7 @@ ShadowSettings::create(const folly::dynamic& json, McrouterInstance& router) {
     if (auto jKeyFractionRangeRv = json.get_ptr("key_fraction_range_rv")) {
       checkLogic(jKeyFractionRangeRv->isString(),
                  "key_fraction_range_rv is not a string");
-      result->keyFractionRangeRv_ = jKeyFractionRangeRv->stringPiece().str();
+      result->keyFractionRangeRv_ = jKeyFractionRangeRv->getString();
     }
     if (auto jValidateReplies = json.get_ptr("validate_replies")) {
       checkLogic(jValidateReplies->isBool(),

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -50,7 +50,7 @@ McrouterRouteHandlePtr makeOperationSelectorRoute(
       checkLogic(it.first.isString(),
                  "OperationSelectorRoute: operation_policies' "
                  "key is not a string");
-      auto key = it.first.stringPiece().str();
+      auto key = it.first.getString();
       orderedPolicies.emplace(std::move(key), &it.second);
     }
 

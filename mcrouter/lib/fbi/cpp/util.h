@@ -270,8 +270,7 @@ std::string replaceAll(std::string s, const std::string& from,
                        const std::string& to);
 
 /**
- * Same as folly::toPrettyJson but also sorts keys in dictionaries and
- * converts fbstring to std::string
+ * Same as folly::toPrettyJson but also sorts keys in dictionaries
  */
 std::string toPrettySortedJson(const folly::dynamic& json);
 

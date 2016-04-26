@@ -170,8 +170,7 @@ McrouterInstance* McrouterInstance::createRaw(
     jsonOpts.sort_keys = true;
     auto dict = folly::toDynamic(router->getStartupOpts());
     auto jsonStr = folly::json::serialize(dict, jsonOpts);
-    failure::setServiceContext(routerName(router->opts()),
-                               jsonStr.toStdString());
+    failure::setServiceContext(routerName(router->opts()), std::move(jsonStr));
 
     if (router->spinUp(evbs)) {
       return router;

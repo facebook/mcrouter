@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,11 +27,11 @@ McrouterRouteHandlePtr makeErrorRoute(
              "ErrorRoute: should be string or object");
   std::string response;
   if (json.isString()) {
-    response = json.stringPiece().str();
+    response = json.getString();
   } else if (json.isObject()) {
     if (auto jResponse = json.get_ptr("response")) {
       checkLogic(jResponse->isString(), "ErrorRoute: response is not a string");
-      response = jResponse->stringPiece().str();
+      response = jResponse->getString();
     }
   }
   return makeErrorRoute(std::move(response));

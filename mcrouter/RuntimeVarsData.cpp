@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,7 +21,7 @@ RuntimeVarsData::RuntimeVarsData(folly::StringPiece json) {
     if (!key.isString()) {
       throw std::runtime_error("Bad config format, must have string keys");
     }
-    configData_.emplace(key.asString().toStdString(), value);
+    configData_.emplace(key.asString(), value);
   }
 }
 

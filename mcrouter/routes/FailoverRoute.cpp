@@ -90,7 +90,7 @@ McrouterRouteHandlePtr makeFailoverRoute(
     }
     if (auto jName = json.get_ptr("name")) {
       checkLogic(jName->isString(), "Failover: name is not a string");
-      name = jName->getString().toStdString();
+      name = jName->getString();
     } else {
       checkLogic(!enableLeasePairing,
                  "Failover: name is required when lease pairing is enabled");

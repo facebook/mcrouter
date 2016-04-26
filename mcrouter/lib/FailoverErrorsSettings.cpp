@@ -29,7 +29,7 @@ FailoverErrorsSettings::List::List(const folly::dynamic& json) {
   errors.reserve(json.size());
   for (const auto& elem : json) {
     checkLogic(elem.isString(), "Failover error {} is not a string", elem);
-    errors.push_back(elem.getString().toStdString());
+    errors.push_back(elem.getString());
   }
 
   init(std::move(errors));

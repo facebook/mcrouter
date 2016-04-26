@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -46,7 +46,7 @@ McrouterRouteHandlePtr makeModifyKeyRoute(
   }
   std::string keyPrefix;
   if (auto jkeyPrefix = json.get_ptr("ensure_key_prefix")) {
-    keyPrefix = jkeyPrefix->stringPiece().str();
+    keyPrefix = jkeyPrefix->getString();
     auto err = mc_client_req_key_check(to<nstring_t>(keyPrefix));
     checkLogic(keyPrefix.empty() || err == mc_req_err_valid,
                "ModifyKeyRoute: invalid key prefix '{}', {}", keyPrefix,

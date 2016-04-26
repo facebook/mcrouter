@@ -382,7 +382,7 @@ class ConfigPreprocessor::Macro {
     for (const auto& param : params) {
       bool hasOptional = false;
       if (param.isString()) { // param name
-        params_.emplace_back(param.stringPiece().str(), nullptr, true);
+        params_.emplace_back(param.getString(), nullptr, true);
       } else if (param.isObject()) { // object (name & default)
         auto name = asStringPiece(tryGet(param, "name", "Macro param object"),
                                   "Macro param object name");
