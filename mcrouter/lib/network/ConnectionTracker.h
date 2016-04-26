@@ -19,7 +19,7 @@ namespace facebook { namespace memcache {
 /**
  * Single threaded list of connections with LRU eviction logic.
  */
-class ConnectionTracker {
+class ConnectionTracker : public McServerSession::StateCallback {
  public:
   /**
    * Creates a new tracker with `maxConns` connections. Once there are
@@ -28,6 +28,23 @@ class ConnectionTracker {
    */
   explicit ConnectionTracker(size_t maxConns = 0);
 
+  // See AsyncMcServerWorker.h for details about the callbacks
+  void setOnWriteQuiescence(std::function<void(McServerSession&)> cb) {
+    onWriteQuiescence_ = std::move(cb);
+  }
+
+  void setOnConnectionCloseStart(std::function<void(McServerSession&)> cb) {
+    onCloseStart_ = std::move(cb);
+  }
+
+  void setOnConnectionCloseFinish(std::function<void(McServerSession&)> cb) {
+    onCloseFinish_ = std::move(cb);
+  }
+
+  void setOnShutdownOperation(std::function<void()> cb) {
+    onShutdown_ = std::move(cb);
+  }
+
   /**
    * Creates a new entry in the LRU and places the connection at the front.
    *
@@ -35,10 +52,6 @@ class ConnectionTracker {
    */
   void add(folly::AsyncTransportWrapper::UniquePtr transport,
            std::shared_ptr<McServerOnRequest> cb,
-           std::function<void(McServerSession&)> onWriteQuiescence,
-           std::function<void(McServerSession&)> onCloseStart,
-           std::function<void(McServerSession&)> onCloseFinish,
-           std::function<void()> onShutdown,
            AsyncMcServerWorkerOptions options,
            void* userCtxt,
            std::shared_ptr<Fifo> debugFifo);
@@ -54,11 +67,21 @@ class ConnectionTracker {
   bool writesPending() const;
  private:
   McServerSession::Queue sessions_;
+  std::function<void(McServerSession&)> onWriteQuiescence_;
+  std::function<void(McServerSession&)> onCloseStart_;
+  std::function<void(McServerSession&)> onCloseFinish_;
+  std::function<void()> onShutdown_;
   size_t maxConns_{0};
 
   void touch(McServerSession& session);
 
   void evict();
+
+  // McServerSession::StateCallback API
+  void onWriteQuiescence(McServerSession& session) override final;
+  void onCloseStart(McServerSession& session) override final;
+  void onCloseFinish(McServerSession& session) override final;
+  void onShutdown() override final;
 };
 
 }}  // facebook::memcache

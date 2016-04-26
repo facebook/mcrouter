@@ -48,10 +48,7 @@ bool isPartOfMultiget(mc_protocol_t protocol, mc_op_t operation) {
 McServerSession& McServerSession::create(
   folly::AsyncTransportWrapper::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
-  std::function<void(McServerSession&)> onWriteQuiescence,
-  std::function<void(McServerSession&)> onCloseStart,
-  std::function<void(McServerSession&)> onCloseFinish,
-  std::function<void()> onShutdown,
+  StateCallback& stateCb,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
   std::shared_ptr<Fifo> debugFifo) {
@@ -59,10 +56,7 @@ McServerSession& McServerSession::create(
   auto ptr = new McServerSession(
     std::move(transport),
     std::move(cb),
-    std::move(onWriteQuiescence),
-    std::move(onCloseStart),
-    std::move(onCloseFinish),
-    std::move(onShutdown),
+    stateCb,
     std::move(options),
     userCtxt,
     std::move(debugFifo)
@@ -83,19 +77,13 @@ McServerSession& McServerSession::create(
 McServerSession::McServerSession(
   folly::AsyncTransportWrapper::UniquePtr transport,
   std::shared_ptr<McServerOnRequest> cb,
-  std::function<void(McServerSession&)> onWriteQuiescence,
-  std::function<void(McServerSession&)> onCloseStart,
-  std::function<void(McServerSession&)> onCloseFinish,
-  std::function<void()> onShutdown,
+  StateCallback& stateCb,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
   std::shared_ptr<Fifo> debugFifo)
     : transport_(std::move(transport)),
       onRequest_(std::move(cb)),
-      onWriteQuiescence_(std::move(onWriteQuiescence)),
-      onCloseStart_(std::move(onCloseStart)),
-      onCloseFinish_(std::move(onCloseFinish)),
-      onShutdown_(std::move(onShutdown)),
+      stateCb_(stateCb),
       options_(std::move(options)),
       userCtxt_(userCtxt),
       debugFifo_(std::move(debugFifo)),
@@ -162,9 +150,7 @@ void McServerSession::checkClosed() {
         transport_->setReadCB(nullptr);
         transport_.reset();
       }
-      if (onCloseFinish_) {
-        onCloseFinish_(*this);
-      }
+      stateCb_.onCloseFinish(*this);
       destroy();
     }
   }
@@ -226,9 +212,7 @@ void McServerSession::close() {
 
   if (state_ == STREAMING) {
     state_ = CLOSING;
-    if (onCloseStart_) {
-      onCloseStart_(*this);
-    }
+    stateCb_.onCloseStart(*this);
   }
 
   checkClosed();
@@ -317,7 +301,7 @@ void McServerSession::requestReady(McRequest&& req,
     close();
   } else if (ctx.operation_ == mc_op_shutdown) {
     McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
-    onShutdown_();
+    stateCb_.onShutdown();
   } else {
     onRequest_->requestReady(std::move(ctx), std::move(req), ctx.operation_);
   }
@@ -352,7 +336,7 @@ void McServerSession::onRequest(TypedThriftRequest<cpp2::McShutdownRequest>&&,
   }
   McServerRequestContext ctx(*this, mc_op_shutdown, reqid, true, nullptr);
   McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
-  onShutdown_();
+  stateCb_.onShutdown();
 }
 
 void McServerSession::onRequest(TypedThriftRequest<cpp2::McQuitRequest>&&,
@@ -501,9 +485,7 @@ void McServerSession::writeSuccess() noexcept {
 
   assert(writeBufs_ != nullptr);
   if (writeBufs_->empty() && state_ == STREAMING) {
-    if (onWriteQuiescence_) {
-      onWriteQuiescence_(*this);
-    }
+    stateCb_.onWriteQuiescence(*this);
     /* No-op if not paused */
     resume(PAUSE_WRITE);
   }

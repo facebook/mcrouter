@@ -58,15 +58,7 @@ bool AsyncMcServerWorker::addClientSocket(
   socket->setNoDelay(true);
 
   try {
-    tracker_.add(std::move(socket),
-                 onRequest_,
-                 onWriteQuiescence_,
-                 onCloseStart_,
-                 onCloseFinish_,
-                 onShutdown_,
-                 opts_,
-                 userCtxt,
-                 debugFifo_);
+    tracker_.add(std::move(socket), onRequest_, opts_, userCtxt, debugFifo_);
     return true;
   } catch (const std::exception& ex) {
     // TODO: record stats about failure

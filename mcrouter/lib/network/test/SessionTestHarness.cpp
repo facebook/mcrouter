@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -119,19 +119,17 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
   std::string corkedOutput_;
 };
 
+SessionTestHarness::NoopCallback SessionTestHarness::noopCb;
+
 SessionTestHarness::SessionTestHarness(
     AsyncMcServerWorkerOptions opts,
-    std::function<void(McServerSession&)> onWriteQuiescence,
-    std::function<void(McServerSession&)> onCloseFinish)
+    McServerSession::StateCallback& cb)
     : session_(McServerSession::create(
           folly::AsyncTransportWrapper::UniquePtr(
               new MockAsyncSocket(*this)),
           std::make_shared<McServerOnRequestWrapper<OnRequest>>(
               OnRequest(*this)),
-          std::move(onWriteQuiescence),
-          nullptr /* onCloseStart */,
-          std::move(onCloseFinish),
-          nullptr,
+          cb,
           std::move(opts),
           nullptr)) {}
 

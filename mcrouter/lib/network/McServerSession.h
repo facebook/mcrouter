@@ -44,10 +44,19 @@ class McServerSession :
   using Queue = folly::CountedIntrusiveList<McServerSession,
                                             &McServerSession::hook_>;
 
+  class StateCallback {
+   public:
+    virtual ~StateCallback() {}
+    virtual void onWriteQuiescence(McServerSession&) = 0;
+    virtual void onCloseStart(McServerSession&) = 0;
+    virtual void onCloseFinish(McServerSession&) = 0;
+    virtual void onShutdown() = 0;
+  };
+
   /**
    * Returns true if this object is a part of an intrusive list
    */
-  bool isLinked() {
+  bool isLinked() const noexcept {
     return hook_.is_linked();
   }
 
@@ -86,10 +95,7 @@ class McServerSession :
   static McServerSession& create(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
-    std::function<void(McServerSession&)> onWriteQuiescence,
-    std::function<void(McServerSession&)> onCloseStart,
-    std::function<void(McServerSession&)> onCloseFinish,
-    std::function<void()> onShutdown,
+    StateCallback& stateCb,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
     std::shared_ptr<Fifo> debugFifo = nullptr);
@@ -145,10 +151,7 @@ class McServerSession :
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::SocketAddress socketAddress_;
   std::shared_ptr<McServerOnRequest> onRequest_;
-  std::function<void(McServerSession&)> onWriteQuiescence_;
-  std::function<void(McServerSession&)> onCloseStart_;
-  std::function<void(McServerSession&)> onCloseFinish_;
-  std::function<void()> onShutdown_;
+  StateCallback& stateCb_;
   AsyncMcServerWorkerOptions options_;
   void* userCtxt_{nullptr};
   std::shared_ptr<Fifo> debugFifo_;
@@ -366,10 +369,7 @@ class McServerSession :
   McServerSession(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
-    std::function<void(McServerSession&)> onWriteSuccess,
-    std::function<void(McServerSession&)> onCloseStart,
-    std::function<void(McServerSession&)> onCloseFinish,
-    std::function<void()> onShutdown,
+    StateCallback& stateCb,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
     std::shared_ptr<Fifo> debugFifo);

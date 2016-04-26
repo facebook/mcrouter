@@ -20,6 +20,7 @@
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/McServerSession.h"
 
 namespace facebook { namespace memcache {
 
@@ -27,6 +28,15 @@ class McServerSession;
 class MockAsyncSocket;
 
 class SessionTestHarness {
+ private:
+  class NoopCallback : public McServerSession::StateCallback {
+   public:
+    void onWriteQuiescence(McServerSession&) override {}
+    void onCloseStart(McServerSession&) override {}
+    void onCloseFinish(McServerSession&) override {}
+    void onShutdown() override {}
+  };
+  static NoopCallback noopCb;
  public:
   /**
    * Create a SessionTestHarness
@@ -41,8 +51,7 @@ class SessionTestHarness {
    */
   explicit SessionTestHarness(
       AsyncMcServerWorkerOptions opts = AsyncMcServerWorkerOptions(),
-      std::function<void(McServerSession&)> onWriteQuiescence = nullptr,
-      std::function<void(McServerSession&)> onTerminated = nullptr);
+      McServerSession::StateCallback& cb = SessionTestHarness::noopCb);
 
   /**
    * Input packets in order into the socket.

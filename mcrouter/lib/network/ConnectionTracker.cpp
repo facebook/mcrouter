@@ -19,10 +19,6 @@ ConnectionTracker::ConnectionTracker(size_t maxConns)
 void ConnectionTracker::add(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
-    std::function<void(McServerSession&)> onWriteQuiescence,
-    std::function<void(McServerSession&)> onCloseStart,
-    std::function<void(McServerSession&)> onCloseFinish,
-    std::function<void()> onShutdown,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
     std::shared_ptr<Fifo> debugFifo) {
@@ -33,24 +29,7 @@ void ConnectionTracker::add(
   auto& session = McServerSession::create(
       std::move(transport),
       std::move(cb),
-      [this, onWriteQuiescence = std::move(onWriteQuiescence)](
-          McServerSession& session) {
-        touch(session);
-        if (onWriteQuiescence) {
-          onWriteQuiescence(session);
-        }
-      },
-      std::move(onCloseStart),
-      [this, onCloseFinish = std::move(onCloseFinish)](
-          McServerSession& session) {
-        if (onCloseFinish) {
-          onCloseFinish(session);
-        }
-        if (session.isLinked()) {
-          sessions_.erase(sessions_.iterator_to(session));
-        }
-      },
-      std::move(onShutdown),
+      *this,
       std::move(options),
       userCtxt,
       std::move(debugFifo));
@@ -79,8 +58,10 @@ bool ConnectionTracker::writesPending() const {
 }
 
 void ConnectionTracker::touch(McServerSession& session) {
+  static uint64_t numCalls = 0;
   // Find the connection and bring it to the front of the LRU.
-  if (!session.isLinked()) {
+  // Do it only once in 16 requests because it's still expensive.
+  if (((numCalls++) & 15) || !session.isLinked()) {
     return;
   }
   sessions_.erase(sessions_.iterator_to(session));
@@ -93,6 +74,34 @@ void ConnectionTracker::evict() {
   }
   auto& session = sessions_.back();
   session.close();
+}
+
+void ConnectionTracker::onWriteQuiescence(McServerSession& session) {
+  touch(session);
+  if (onWriteQuiescence_) {
+    onWriteQuiescence_(session);
+  }
+}
+
+void ConnectionTracker::onCloseStart(McServerSession& session) {
+  if (onCloseStart_) {
+    onCloseStart_(session);
+  }
+}
+
+void ConnectionTracker::onCloseFinish(McServerSession& session) {
+  if (onCloseFinish_) {
+    onCloseFinish_(session);
+  }
+  if (session.isLinked()) {
+    sessions_.erase(sessions_.iterator_to(session));
+  }
+}
+
+void ConnectionTracker::onShutdown() {
+  if (onShutdown_) {
+    onShutdown_();
+  }
 }
 
 } // memcache

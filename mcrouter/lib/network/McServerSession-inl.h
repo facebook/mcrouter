@@ -59,7 +59,7 @@ void McServerSession::asciiRequestReady(TypedThriftRequest<ThriftType>&& req,
     close();
   } else if (ctx.operation_ == mc_op_shutdown) {
     McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-    onShutdown_();
+    stateCb_.onShutdown();
   } else {
     onRequest_->requestReady(std::move(ctx), std::move(req));
   }
@@ -95,7 +95,7 @@ void McServerSession::umbrellaRequestReady(TypedThriftRequest<ThriftType>&& req,
     close();
   } else if (ctx.operation_ == mc_op_shutdown) {
     McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-    onShutdown_();
+    stateCb_.onShutdown();
   } else {
     onRequest_->requestReady(std::move(ctx), std::move(req));
   }

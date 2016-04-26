@@ -144,14 +144,17 @@ TEST(Session, quit) {
 }
 
 TEST(Session, closeBeforeReply) {
-  struct Callbacks {
-    void onWriteQuiescence(McServerSession& session) {
+  struct Callbacks : public McServerSession::StateCallback {
+   public:
+    void onWriteQuiescence(McServerSession&) override {
       EXPECT_EQ(state_, ACTIVE);
     }
-    void onTerminate(McServerSession& session) {
+    void onCloseStart(McServerSession&) override {}
+    void onCloseFinish(McServerSession&) override {
       EXPECT_EQ(state_, ACTIVE);
       state_ = CLOSED;
     }
+    void onShutdown() override {}
    private:
     enum State {
       ACTIVE,
@@ -160,12 +163,8 @@ TEST(Session, closeBeforeReply) {
     State state_{ACTIVE};
   } callbacks;
 
-  using std::placeholders::_1;
-
   AsyncMcServerWorkerOptions opts;
-  SessionTestHarness t(opts,
-                       std::bind(&Callbacks::onWriteQuiescence, &callbacks, _1),
-                       std::bind(&Callbacks::onTerminate, &callbacks, _1));
+  SessionTestHarness t(opts, callbacks);
 
   // input packets, close session and then reply
   t.inputPackets("get key\r\n");

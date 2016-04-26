@@ -101,7 +101,7 @@ class AsyncMcServerWorker {
    * Note: This doesn't apply to already open connections
    */
   void setOnWriteQuiescence(std::function<void(McServerSession&)> cb) {
-    onWriteQuiescence_ = std::move(cb);
+    tracker_.setOnWriteQuiescence(std::move(cb));
   }
 
   /**
@@ -116,7 +116,7 @@ class AsyncMcServerWorker {
    * Can be nullptr for no action.
    */
   void setOnConnectionCloseStart(std::function<void(McServerSession&)> cb) {
-    onCloseStart_ = std::move(cb);
+    tracker_.setOnConnectionCloseStart(std::move(cb));
   }
 
   /**
@@ -129,14 +129,14 @@ class AsyncMcServerWorker {
    * Can be nullptr for no action.
    */
   void setOnConnectionCloseFinish(std::function<void(McServerSession&)> cb) {
-    onCloseFinish_ = std::move(cb);
+    tracker_.setOnConnectionCloseFinish(std::move(cb));
   }
 
   /**
    * Will be called when a 'SHUTDOWN' operation is processed.
    */
   void setOnShutdownOperation(std::function<void()> cb) {
-    onShutdown_ = std::move(cb);
+    tracker_.setOnShutdownOperation(std::move(cb));
   }
 
   void setDebugFifo(std::shared_ptr<Fifo> debugFifo) {
@@ -173,10 +173,6 @@ class AsyncMcServerWorker {
 
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
-  std::function<void(McServerSession&)> onWriteQuiescence_;
-  std::function<void(McServerSession&)> onCloseStart_;
-  std::function<void(McServerSession&)> onCloseFinish_;
-  std::function<void()> onShutdown_;
 
   bool isAlive_{true};
 
