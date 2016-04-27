@@ -72,16 +72,6 @@ class McClientRequestContextBase
    */
   void scheduleTimeout();
 
-  /**
-   * Set callbacks for when the request changes its state.
-   *
-   * @param onStateChange   Will be called whenever the request moves into
-   *                        (diff = +1) or out of (diff = -1) the
-   *                        pending/inflight queues.
-   */
-  void setStateChangeCallback(
-      std::function<void(int pendingDiff, int inflightDiff)> onStateChange);
-
  protected:
   enum class ReqState {
     NONE,
@@ -103,7 +93,9 @@ class McClientRequestContextBase
       std::shared_ptr<AsyncMcClientImpl> client,
       folly::Optional<ReplyT<Request>>& replyStorage,
       McClientRequestContextQueue& queue,
-      InitializerFuncPtr initializer);
+      InitializerFuncPtr initializer,
+      const std::function<void(int pendingDiff, int inflightDiff)>&
+          onStateChange);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -135,7 +127,7 @@ class McClientRequestContextBase
 
   ReqState state_{ReqState::NONE};
 
-  std::function<void(int pendingDiff, int inflightDiff)> onStateChange_;
+  const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange_;
 
   /**
    * Fire the request state change callbacks.
@@ -184,12 +176,15 @@ class McClientRequestContext : public McClientRequestContextBase {
  public:
   using Reply = ReplyT<Request>;
 
-  McClientRequestContext(const Request& request,
-                         uint64_t reqid,
-                         mc_protocol_t protocol,
-                         std::shared_ptr<AsyncMcClientImpl> client,
-                         McClientRequestContextQueue& queue,
-                         McClientRequestContextBase::InitializerFuncPtr);
+  McClientRequestContext(
+      const Request& request,
+      uint64_t reqid,
+      mc_protocol_t protocol,
+      std::shared_ptr<AsyncMcClientImpl> client,
+      McClientRequestContextQueue& queue,
+      McClientRequestContextBase::InitializerFuncPtr,
+      const std::function<void(int pendingDiff, int inflightDiff)>&
+          onStateChange);
 
   const char* fakeReply() const override;
 

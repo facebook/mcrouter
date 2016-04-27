@@ -59,14 +59,16 @@ McClientRequestContextBase::McClientRequestContextBase(
     std::shared_ptr<AsyncMcClientImpl> client,
     folly::Optional<ReplyT<Request>>& replyStorage,
     McClientRequestContextQueue& queue,
-    InitializerFuncPtr initializer)
+    InitializerFuncPtr initializer,
+    const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange)
     : reqContext(request, reqid, protocol),
       id(reqid),
       queue_(queue),
       client_(std::move(client)),
       replyType_(typeid(ReplyT<Request>)),
       replyStorage_(reinterpret_cast<void*>(&replyStorage)),
-      initializer_(std::move(initializer)) {}
+      initializer_(std::move(initializer)),
+      onStateChange_(onStateChange) {}
 
 template <class Request>
 void McClientRequestContext<Request>::replyErrorImpl(mc_res_t result) {
@@ -140,14 +142,17 @@ McClientRequestContext<Request>::McClientRequestContext(
     mc_protocol_t protocol,
     std::shared_ptr<AsyncMcClientImpl> client,
     McClientRequestContextQueue& queue,
-    McClientRequestContextBase::InitializerFuncPtr func)
-    : McClientRequestContextBase(request,
-                                 reqid,
-                                 protocol,
-                                 std::move(client),
-                                 replyStorage_,
-                                 queue,
-                                 std::move(func))
+    McClientRequestContextBase::InitializerFuncPtr func,
+    const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange)
+    : McClientRequestContextBase(
+          request,
+          reqid,
+          protocol,
+          std::move(client),
+          replyStorage_,
+          queue,
+          std::move(func),
+          onStateChange)
 #ifndef LIBMC_FBTRACE_DISABLE
       ,
       fbtraceInfo_(getFbTraceInfo(request))

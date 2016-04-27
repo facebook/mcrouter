@@ -39,8 +39,8 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       connectionOptions_.accessPoint->getProtocol(),
       std::move(selfPtr),
       queue_,
-      [](ParserT& parser) { parser.expectNext<Request>(); });
-  ctx.setStateChangeCallback(requestStatusCallbacks_.onStateChange);
+      [](ParserT& parser) { parser.expectNext<Request>(); },
+      requestStatusCallbacks_.onStateChange);
   sendCommon(ctx);
 
   // Wait for the reply.

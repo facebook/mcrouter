@@ -25,13 +25,12 @@ void McClientRequestContextBase::canceled() {
   baton_.post();
 }
 
-void McClientRequestContextBase::setStateChangeCallback(
-    std::function<void(int pendingDiff, int inflightDiff)> onStateChange) {
-  onStateChange_ = std::move(onStateChange);
-}
-
 void McClientRequestContextBase::fireStateChangeCallbacks(
     ReqState old, ReqState current) const {
+  if (!onStateChange_) {
+    return;
+  }
+
   int pending = 0;
   int inflight = 0;
 
@@ -62,7 +61,7 @@ void McClientRequestContextBase::fireStateChangeCallbacks(
       break;
   }
 
-  if (onStateChange_ && (pending != 0 || inflight != 0)) {
+  if (pending != 0 || inflight != 0) {
     onStateChange_(pending, inflight);
   }
 }
