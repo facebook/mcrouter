@@ -125,11 +125,11 @@ struct HasDispatchTypedRequest<
 template <class OnRequest>
 void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
     const UmbrellaMessageInfo& headerInfo,
-    const folly::IOBuf& reqBody,
+    const folly::IOBuf& reqBuf,
     McServerRequestContext&& ctx) {
 
   dispatchTypedRequestIfDefined(
-    headerInfo, reqBody, std::move(ctx),
+    headerInfo, reqBuf, std::move(ctx),
     HasDispatchTypedRequest<OnRequest>::value);
 }
 

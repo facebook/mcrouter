@@ -62,7 +62,27 @@ TEST(ThriftMsg, basic) {
   folly::IOBufQueue queue;
   writer.setOutput(&queue);
   get.write(&writer);
-  auto iobuf = queue.move();
+  auto body = queue.move();
+
+  UmbrellaMessageInfo headerInfo1;
+  UmbrellaMessageInfo headerInfo2;
+  headerInfo1.typeId = 1;
+  headerInfo2.typeId = 2;
+  headerInfo1.bodySize = body->computeChainDataLength();
+  headerInfo2.bodySize = headerInfo1.bodySize;
+
+  folly::IOBuf requestBuf1(folly::IOBuf::CREATE, 1024);
+  folly::IOBuf requestBuf2(folly::IOBuf::CREATE, 1024);
+
+  headerInfo1.headerSize = caretPrepareHeader(
+      headerInfo1, reinterpret_cast<char*>(requestBuf1.writableTail()));
+  requestBuf1.append(headerInfo1.headerSize);
+  headerInfo2.headerSize = caretPrepareHeader(
+      headerInfo2, reinterpret_cast<char*>(requestBuf2.writableTail()));
+  requestBuf2.append(headerInfo2.headerSize);
+
+  requestBuf1.appendChain(body->clone());
+  requestBuf2.appendChain(std::move(body));
 
   bool getCalled = false;
   bool setCalled = false;
@@ -84,15 +104,13 @@ TEST(ThriftMsg, basic) {
   UmbrellaMessageInfo info;
 
   /* simulate receiving the iobuf over network with some type id */
-  info.typeId = 2;
-  ret = cb.dispatchTypedRequest(info, *iobuf);
+  ret = cb.dispatchTypedRequest(headerInfo2, requestBuf2);
   /* there's no type id 2, expect false */
   EXPECT_FALSE(ret);
   EXPECT_FALSE(getCalled);
   EXPECT_FALSE(setCalled);
 
-  info.typeId = 1;
-  ret = cb.dispatchTypedRequest(info, *iobuf);
+  ret = cb.dispatchTypedRequest(headerInfo1, requestBuf1);
   EXPECT_TRUE(ret);
   EXPECT_TRUE(getCalled);
 }

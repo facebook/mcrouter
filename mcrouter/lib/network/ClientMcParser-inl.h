@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <folly/io/Cursor.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
@@ -97,12 +98,8 @@ ClientMcParser<Callback>::forwardCaretReply(
     uint64_t reqId) {
   parser_.reportMsgRead();
 
-  folly::IOBuf body;
-  buffer.cloneOneInto(body);
-  body.trimStart(headerInfo.headerSize);
-
   ReplyT<Request> reply;
-  converter_.dispatchTypedRequest(headerInfo, body, reply);
+  converter_.dispatchTypedRequest(headerInfo, buffer, reply);
   callback_.replyReady(std::move(reply), reqId);
 }
 
@@ -115,13 +112,11 @@ ClientMcParser<Callback>::forwardCaretReply(
     uint64_t reqId) {
   parser_.reportMsgRead();
 
-  folly::IOBuf body;
-  buffer.cloneOneInto(body);
-  body.trimStart(headerInfo.headerSize);
-
   ReplyT<Request> reply;
+  folly::io::Cursor cur(&buffer);
+  cur += headerInfo.headerSize;
   apache::thrift::CompactProtocolReader reader;
-  reader.setInput(&body);
+  reader.setInput(cur);
   reply.read(&reader);
 
   callback_.replyReady(std::move(reply), reqId);

@@ -103,11 +103,8 @@ bool ServerMcParser<Callback>::caretMessageReady(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   try {
-    folly::IOBuf body;
     // Caret header and body are assumed to be in one coalesced IOBuf
-    buffer.cloneOneInto(body);
-    body.trimStart(headerInfo.headerSize);
-    callback_.caretRequestReady(headerInfo, body);
+    callback_.caretRequestReady(headerInfo, buffer);
   } catch (const std::runtime_error& e) {
     std::string reason(
       std::string("Error parsing Caret message: ") + e.what());

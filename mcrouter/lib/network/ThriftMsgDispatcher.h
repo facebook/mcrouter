@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
@@ -75,9 +76,9 @@ class ThriftMsgDispatcher {
    * @return true iff typeId is present in TMList
    */
   bool dispatchTypedRequest(const UmbrellaMessageInfo& headerInfo,
-                            const folly::IOBuf& reqBody,
+                            const folly::IOBuf& buffer,
                             Args&&... args) {
-    return dispatcher_.dispatch(headerInfo.typeId, *this, headerInfo, reqBody,
+    return dispatcher_.dispatch(headerInfo.typeId, *this, headerInfo, buffer,
                                 std::forward<Args>(args)...);
   }
 
@@ -92,9 +93,11 @@ class ThriftMsgDispatcher {
   template <class M>
   static typename std::enable_if<ThriftMsgIsRequest<M>::value, void>::type
   processMsg(ThriftMsgDispatcher& me, const UmbrellaMessageInfo& headerInfo,
-             const folly::IOBuf& reqBody, Args&&... args) {
+             const folly::IOBuf& reqBuf, Args&&... args) {
+    folly::io::Cursor cur(&reqBuf);
+    cur += headerInfo.headerSize;
     apache::thrift::CompactProtocolReader reader;
-    reader.setInput(&reqBody);
+    reader.setInput(cur);
     TypedThriftRequest<M> req;
     req.setTraceId(headerInfo.traceId);
     req.read(&reader);
@@ -105,10 +108,12 @@ class ThriftMsgDispatcher {
   // CallDispatcher callback for replies
   template <class M>
   static typename std::enable_if<!ThriftMsgIsRequest<M>::value, void>::type
-  processMsg(ThriftMsgDispatcher& me, const UmbrellaMessageInfo&,
-             const folly::IOBuf& reqBody, Args&&... args) {
+  processMsg(ThriftMsgDispatcher& me, const UmbrellaMessageInfo& headerInfo,
+             const folly::IOBuf& repBuf, Args&&... args) {
+    folly::io::Cursor cur(&repBuf);
+    cur += headerInfo.headerSize;
     apache::thrift::CompactProtocolReader reader;
-    reader.setInput(&reqBody);
+    reader.setInput(cur);
     TypedThriftReply<M> reply;
     reply.read(&reader);
     static_cast<Proc&>(me)
