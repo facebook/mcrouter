@@ -395,7 +395,7 @@ struct proxy_t {
     WaitingRequest(
         const Request& req,
         std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
-    void process(proxy_t* proxy) override;
+    void process(proxy_t* proxy) override final;
     void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:

@@ -39,12 +39,11 @@ class CallbackWrapper<Callback, List<Request>>
  public:
   explicit CallbackWrapper(Callback& callback) : callback_(callback) {}
 
-  virtual void multiOpEnd() noexcept override { callback_.multiOpEnd(); }
+  void multiOpEnd() noexcept override final { callback_.multiOpEnd(); }
 
   using CallbackBase<ThriftRequestList>::onRequest;
 
-  virtual void onRequest(Request&& req,
-                         bool noreply = false) noexcept override {
+  void onRequest(Request&& req, bool noreply = false) noexcept override final {
     callback_.onRequest(std::move(req), noreply);
   }
 
@@ -61,7 +60,7 @@ class CallbackWrapper<Callback, List<Request, Requests...>>
 
   using CallbackWrapper<Callback, List<Requests...>>::onRequest;
 
-  void onRequest(Request&& req, bool noreply = false) noexcept override {
+  void onRequest(Request&& req, bool noreply = false) noexcept override final {
     this->callback_.onRequest(std::move(req), noreply);
   }
 };

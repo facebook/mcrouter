@@ -35,11 +35,12 @@ class NoCompressionCodec : public CompressionCodec {
   explicit NoCompressionCodec(std::unique_ptr<folly::IOBuf>)
       : CompressionCodec(CompressionCodecType::NO_COMPRESSION) {}
 
-  std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& data) override {
+  std::unique_ptr<folly::IOBuf>
+  compress(const folly::IOBuf& data) override final {
     return data.clone();
   }
   std::unique_ptr<folly::IOBuf> uncompress(
-      const folly::IOBuf& data, size_t uncompressedLength = 0) override {
+      const folly::IOBuf& data, size_t uncompressedLength = 0) override final {
     return data.clone();
   }
 };
@@ -52,9 +53,10 @@ class Lz4CompressionCodec : public CompressionCodec {
  public:
   explicit Lz4CompressionCodec(std::unique_ptr<folly::IOBuf> dictionary);
 
-  std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& data) override;
+  std::unique_ptr<folly::IOBuf>
+  compress(const folly::IOBuf& data) override final;
   std::unique_ptr<folly::IOBuf> uncompress(
-      const folly::IOBuf& data, size_t uncompressedLength = 0) override;
+      const folly::IOBuf& data, size_t uncompressedLength = 0) override final;
 
  private:
   static constexpr size_t kMaxDictionarySize = 64 * 1024;

@@ -186,9 +186,9 @@ class McClientRequestContext : public McClientRequestContextBase {
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange);
 
-  const char* fakeReply() const override;
+  const char* fakeReply() const override final;
 
-  virtual std::string getContextTypeStr() const override;
+  virtual std::string getContextTypeStr() const override final;
 
   Reply waitForReply(std::chrono::milliseconds timeout);
  private:
@@ -197,8 +197,8 @@ class McClientRequestContext : public McClientRequestContextBase {
 #ifndef LIBMC_FBTRACE_DISABLE
   const mc_fbtrace_info_s* fbtraceInfo_;
 #endif
-  void sendTraceOnReply() override;
-  void replyErrorImpl(mc_res_t result) override;
+  void sendTraceOnReply() override final;
+  void replyErrorImpl(mc_res_t result) override final;
 };
 
 class McClientRequestContextQueue {

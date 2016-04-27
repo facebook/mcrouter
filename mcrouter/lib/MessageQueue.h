@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -203,7 +203,7 @@ class MessageQueue {
   class EventHandler : public folly::EventHandler {
    public:
     explicit EventHandler(MessageQueue& q) : parent_(q) {}
-    void handlerReady(uint16_t events) noexcept override {
+    void handlerReady(uint16_t events) noexcept override final {
       parent_.onEvent();
     }
 
@@ -214,7 +214,7 @@ class MessageQueue {
   class TimeoutHandler : public folly::AsyncTimeout {
    public:
     explicit TimeoutHandler(MessageQueue& q) : parent_(q) {}
-    void timeoutExpired() noexcept override {
+    void timeoutExpired() noexcept override final {
       parent_.onTimeout();
     }
 

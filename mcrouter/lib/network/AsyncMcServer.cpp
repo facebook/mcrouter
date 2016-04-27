@@ -58,7 +58,7 @@ public:
   AsyncMcServer& server_;
   int fd_;
 
-  void handlerReady(uint16_t events) noexcept override {
+  void handlerReady(uint16_t events) noexcept override final {
     LOG(INFO) << "Shutting down on signal";
     server_.shutdown();
   }
@@ -174,7 +174,7 @@ class McServerThread {
         : mcServerThread_(mcServerThread), secure_(secure) { }
     void connectionAccepted(
         int fd,
-        const folly::SocketAddress& clientAddr) noexcept override {
+        const folly::SocketAddress& clientAddr) noexcept override final {
       if (secure_) {
         auto& opts = mcServerThread_->server_.opts_;
         auto sslCtx = getSSLContext(opts.pemCertPath, opts.pemKeyPath,
@@ -190,7 +190,7 @@ class McServerThread {
         mcServerThread_->worker_.addClientSocket(fd);
       }
     }
-    void acceptError(const std::exception& ex) noexcept override {
+    void acceptError(const std::exception& ex) noexcept override final {
       LOG(ERROR) << "Connection accept error: " << ex.what();
     }
    private:

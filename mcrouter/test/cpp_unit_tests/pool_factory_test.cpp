@@ -31,7 +31,7 @@ class MockConfigApi : public ConfigApiIf {
   }
 
   bool get(ConfigType type, const std::string& path,
-           std::string& contents) override {
+           std::string& contents) override final {
     ++getCalls_;
     if (type != ConfigType::Pool) {
       return false;
@@ -44,7 +44,7 @@ class MockConfigApi : public ConfigApiIf {
     return false;
   }
 
-  bool getConfigFile(std::string& config) override {
+  bool getConfigFile(std::string& config) override final {
     config = "{}";
     return true;
   }

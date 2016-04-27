@@ -33,7 +33,7 @@ class ProxyRequestContextTypedWithCallback
         f_(std::forward<F>(f)) {}
 
  protected:
-  virtual void sendReplyImpl(ReplyT<Request>&& reply) override {
+  void sendReplyImpl(ReplyT<Request>&& reply) override final {
     auto req = this->req_;
     fiber_local::runWithoutLocals(
         [this, req, &reply]() { f_(*req, std::move(reply)); });
@@ -60,8 +60,8 @@ class LegacyProxyRequestContext
         request_(std::move(req)) {}
 
  protected:
-  virtual void sendReplyImpl(
-      ReplyT<McRequestWithOp<Operation>>&& reply) override {
+  void sendReplyImpl(ReplyT<McRequestWithOp<Operation>>&& reply)
+      override final {
 
     fiber_local::runWithoutLocals(
         [this, &reply]() { f_(*this, std::move(reply)); });

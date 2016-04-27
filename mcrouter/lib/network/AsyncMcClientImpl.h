@@ -161,23 +161,24 @@ class AsyncMcClientImpl :
   folly::StringPiece clientStateToStr() const;
 
   // TAsyncSocket::ConnectCallback overrides
-  void connectSuccess() noexcept override;
-  void connectErr(const folly::AsyncSocketException& ex) noexcept override;
+  void connectSuccess() noexcept override final;
+  void connectErr(const folly::AsyncSocketException& ex)
+    noexcept override final;
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
   void processShutdown();
 
   // AsyncTransportWrapper::ReadCallback overrides
-  void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
-  void readDataAvailable(size_t len) noexcept override;
-  void readEOF() noexcept override;
-  void readErr(const folly::AsyncSocketException& ex) noexcept override;
+  void getReadBuffer(void** bufReturn, size_t* lenReturn) override final;
+  void readDataAvailable(size_t len) noexcept override final;
+  void readEOF() noexcept override final;
+  void readErr(const folly::AsyncSocketException& ex) noexcept override final;
 
   // AsyncTransportWrapper::WriteCallback overrides
-  void writeSuccess() noexcept override;
+  void writeSuccess() noexcept override final;
   void writeErr(size_t bytesWritten,
-                const folly::AsyncSocketException& ex) noexcept override;
+                const folly::AsyncSocketException& ex) noexcept override final;
 
   // Callbacks for McParser.
   template <class Reply>

@@ -92,11 +92,11 @@ class ClientMcParser : private McParser::ParserCallback {
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,
-                      const folly::IOBuf& buffer) override;
+                      const folly::IOBuf& buffer) override final;
   bool caretMessageReady(const UmbrellaMessageInfo& headerInfo,
-                         const folly::IOBuf& buffer) override;
-  void handleAscii(folly::IOBuf& readBuffer) override;
-  void parseError(mc_res_t result, folly::StringPiece reason) override;
+                         const folly::IOBuf& buffer) override final;
+  void handleAscii(folly::IOBuf& readBuffer) override final;
+  void parseError(mc_res_t result, folly::StringPiece reason) override final;
 
   bool shouldReadToAsciiBuffer() const;
 };

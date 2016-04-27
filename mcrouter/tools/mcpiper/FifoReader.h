@@ -52,10 +52,10 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
   FifoReadCallback(std::string fifoName,
                    const MessageReadyFn& messageReady) noexcept;
 
-  void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
-  void readDataAvailable(size_t len) noexcept override;
-  void readEOF() noexcept override;
-  void readErr(const folly::AsyncSocketException& ex) noexcept override;
+  void getReadBuffer(void** bufReturn, size_t* lenReturn) override final;
+  void readDataAvailable(size_t len) noexcept override final;
+  void readEOF() noexcept override final;
+  void readErr(const folly::AsyncSocketException& ex) noexcept override final;
 
  private:
   static constexpr uint64_t kMinSize{256};

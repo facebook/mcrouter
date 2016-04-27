@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -51,7 +51,7 @@ class Clock {
  */
 class CyclesClock : public Clock {
  public:
-  Metering read() const override;
+  Metering read() const override final;
 };
 
 /**
@@ -59,7 +59,7 @@ class CyclesClock : public Clock {
  */
 class RUsageClock : public Clock {
  public:
-  Metering read() const override;
+  Metering read() const override final;
 };
 
 }}} // namespace facebook::memcache::cycles

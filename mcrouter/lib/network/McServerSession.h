@@ -229,7 +229,7 @@ class McServerSession :
 
   struct SendWritesCallback : public folly::EventBase::LoopCallback {
     explicit SendWritesCallback(McServerSession& session) : session_(session) {}
-    void runLoopCallback() noexcept override;
+    void runLoopCallback() noexcept override final;
     McServerSession& session_;
   };
 
@@ -275,10 +275,10 @@ class McServerSession :
   void processMultiOpEnd();
 
   /* TAsyncTransport's readCallback */
-  void getReadBuffer(void** bufReturn, size_t* lenReturn) override;
-  void readDataAvailable(size_t len) noexcept override;
-  void readEOF() noexcept override;
-  void readErr(const folly::AsyncSocketException& ex) noexcept override;
+  void getReadBuffer(void** bufReturn, size_t* lenReturn) override final;
+  void readDataAvailable(size_t len) noexcept override final;
+  void readEOF() noexcept override final;
+  void readErr(const folly::AsyncSocketException& ex) noexcept override final;
 
   /* McParser's callback if ASCII request is read into a TypedThriftRequest */
   template <class ThriftType>
@@ -328,20 +328,20 @@ class McServerSession :
   void completeWrite();
 
   /* TAsyncTransport's writeCallback */
-  void writeSuccess() noexcept override;
+  void writeSuccess() noexcept override final;
   void writeErr(size_t bytesWritten,
                 const folly::AsyncSocketException& ex)
-    noexcept override;
+    noexcept override final;
 
 
   /* AsyncSSLSocket::HandshakeCB interface */
   bool handshakeVer(folly::AsyncSSLSocket* sock,
                     bool preverifyOk,
-                    X509_STORE_CTX* ctx) noexcept override;
-  void handshakeSuc(folly::AsyncSSLSocket* sock) noexcept override;
+                    X509_STORE_CTX* ctx) noexcept override final;
+  void handshakeSuc(folly::AsyncSSLSocket* sock) noexcept override final;
   void handshakeErr(
       folly::AsyncSSLSocket* sock,
-      const folly::AsyncSocketException& ex) noexcept override;
+      const folly::AsyncSocketException& ex) noexcept override final;
 
   void onTransactionStarted(bool isSubRequest);
   void onTransactionCompleted(bool isSubRequest);

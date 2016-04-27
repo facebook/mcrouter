@@ -31,7 +31,7 @@ public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
       : client_(client) {}
   ~OnEventBaseDestructionCallback() {}
-  virtual void runLoopCallback() noexcept override {
+  void runLoopCallback() noexcept override final {
     client_.closeNow();
   }
  private:
@@ -50,7 +50,7 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
   explicit WriterLoop(AsyncMcClientImpl& client)
       : client_(client) {}
   ~WriterLoop() {}
-  virtual void runLoopCallback() noexcept override {
+  void runLoopCallback() noexcept override final {
     // Delay this write until the end of current loop (e.g. after
     // runActiveFibers() callback). That way we achieve better batching without
     // affecting latency.

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,9 +14,9 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class CyclesObserver : public folly::ExecutionObserver {
-  void starting(uintptr_t id) noexcept override;
-  void runnable(uintptr_t id) noexcept override;
-  void stopped(uintptr_t id) noexcept override;
+  void starting(uintptr_t id) noexcept override final;
+  void runnable(uintptr_t id) noexcept override final;
+  void stopped(uintptr_t id) noexcept override final;
 };
 
 }}} // facebook::memcache::mcrouter

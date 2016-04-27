@@ -136,7 +136,7 @@ class LeaseTokenMap {
         : folly::AsyncTimeout(&evb),
           parent_(parent) {
     }
-    void timeoutExpired() noexcept override {
+    void timeoutExpired() noexcept override final {
       parent_.onTimeout();
     }
 

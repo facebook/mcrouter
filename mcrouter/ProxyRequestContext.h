@@ -276,7 +276,7 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
     sendReply(ReplyT<Request>(std::forward<Args>(args)...));
   }
 
-  virtual void startProcessing() override;
+  void startProcessing() override final;
 
   /**
    * Internally converts the context into one ready to route.

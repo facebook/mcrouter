@@ -41,7 +41,7 @@ class McRouteHandleProvider :
 
   std::vector<McrouterRouteHandlePtr>
   create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-         folly::StringPiece type, const folly::dynamic& json) override;
+         folly::StringPiece type, const folly::dynamic& json) override final;
 
   folly::StringKeyedUnorderedMap<McrouterRouteHandlePtr>
   releaseAsyncLogRoutes() {

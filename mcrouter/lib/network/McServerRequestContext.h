@@ -207,13 +207,13 @@ class McServerOnRequestWrapper<OnRequest, List<Request>>
       : onRequest_(std::forward<Args>(args)...) {
   }
 
-  void requestReady(McServerRequestContext&& ctx, Request&& req) override {
+  void requestReady(McServerRequestContext&& ctx, Request&& req) override final {
     this->onRequest_.onRequest(std::move(ctx), std::move(req));
   }
 
   void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                          const folly::IOBuf& reqBody,
-                         McServerRequestContext&& ctx) override;
+                         McServerRequestContext&& ctx) override final;
 
   void dispatchTypedRequestIfDefined(const UmbrellaMessageInfo& headerInfo,
                                      const folly::IOBuf& reqBody,
@@ -247,7 +247,8 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>> :
         std::forward<Args>(args)...) {
   }
 
-  void requestReady(McServerRequestContext&& ctx, Request&& req) override {
+  void requestReady(McServerRequestContext&& ctx, Request&& req)
+      override final {
     this->onRequest_.onRequest(std::move(ctx), std::move(req));
   }
 };
