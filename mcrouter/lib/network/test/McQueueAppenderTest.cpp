@@ -52,7 +52,7 @@ TEST(McQueueAppenderTest, longString) {
       info, reinterpret_cast<char*>(storage.getHeaderBuf()));
   storage.reportHeaderSize(headerSize);
 
-  folly::IOBuf input(folly::IOBuf::CREATE, 1024);
+  folly::IOBuf input(folly::IOBuf::CREATE, 2048);
   const auto iovs = storage.getIovecs();
   for (size_t i = 0; i < iovs.second; ++i) {
     const struct iovec* iov = iovs.first + i;
