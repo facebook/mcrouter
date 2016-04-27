@@ -47,19 +47,6 @@ void McServerSession::asciiRequestReady(TypedThriftRequest<ThriftType>&& req,
 
   if (result == mc_res_bad_key) {
     McServerRequestContext::reply(std::move(ctx), Reply(mc_res_bad_key));
-  } else if (ctx.operation_ == mc_op_version &&
-      options_.defaultVersionHandler) {
-    // Handle version command only if the user doesn't want to handle it
-    // themselves.
-    Reply versionReply(mc_res_ok);
-    versionReply.setValue(options_.versionString);
-    McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
-  } else if (ctx.operation_ == mc_op_quit) {
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-    close();
-  } else if (ctx.operation_ == mc_op_shutdown) {
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-    stateCb_.onShutdown();
   } else {
     onRequest_->requestReady(std::move(ctx), std::move(req));
   }

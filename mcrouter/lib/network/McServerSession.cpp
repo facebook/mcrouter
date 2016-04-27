@@ -21,29 +21,7 @@
 
 namespace facebook { namespace memcache {
 
-namespace {
-
 constexpr size_t kIovecVectorSize = 64;
-
-/**
- * @return true  If this incoming request is a part of a multiget request.
- */
-bool isPartOfMultiget(mc_protocol_t protocol, mc_op_t operation) {
-  if (protocol != mc_ascii_protocol) {
-    return false;
-  }
-
-  if (operation == mc_op_get ||
-      operation == mc_op_gets ||
-      operation == mc_op_lease_get ||
-      operation == mc_op_metaget) {
-    return true;
-  }
-
-  return false;
-}
-
-} // anonymous
 
 McServerSession& McServerSession::create(
   folly::AsyncTransportWrapper::UniquePtr transport,
@@ -259,54 +237,6 @@ void McServerSession::multiOpEnd() {
   processMultiOpEnd();
 }
 
-void McServerSession::requestReady(McRequest&& req,
-                                   mc_op_t operation,
-                                   uint64_t reqid,
-                                   mc_res_t result,
-                                   bool noreply) {
-  DestructorGuard dg(this);
-
-  if (state_ != STREAMING) {
-    return;
-  }
-
-  if (!parser_.outOfOrder()) {
-    if (isPartOfMultiget(parser_.protocol(), operation) &&
-        !currentMultiop_) {
-      currentMultiop_ = std::make_shared<MultiOpParent>(*this, tailReqid_++);
-    }
-
-    reqid = tailReqid_++;
-  }
-
-  McServerRequestContext ctx(*this, operation, reqid, noreply, currentMultiop_);
-
-  if (parser_.protocol() == mc_ascii_protocol) {
-    ctx.asciiKey().emplace();
-    req.key().cloneOneInto(ctx.asciiKey().value());
-  }
-
-  if (result == mc_res_bad_key) {
-    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_bad_key));
-  } else if (ctx.operation_ == mc_op_version &&
-             options_.defaultVersionHandler) {
-    /* Handle version command only if the user doesn't want to handle it
-     * themselves. */
-    McServerRequestContext::reply(std::move(ctx),
-                                  McReply(mc_res_ok, options_.versionString));
-  } else if (ctx.operation_ == mc_op_quit) {
-    /* mc_op_quit transaction will have `noreply` set, so this call
-       is solely to make sure the transaction is completed and cleaned up */
-    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
-    close();
-  } else if (ctx.operation_ == mc_op_shutdown) {
-    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
-    stateCb_.onShutdown();
-  } else {
-    onRequest_->requestReady(std::move(ctx), std::move(req), ctx.operation_);
-  }
-}
-
 void McServerSession::onRequest(
     TypedThriftRequest<cpp2::McVersionRequest>&& req,
     bool /* noreply = false */) {
@@ -335,7 +265,8 @@ void McServerSession::onRequest(TypedThriftRequest<cpp2::McShutdownRequest>&&,
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, mc_op_shutdown, reqid, true, nullptr);
-  McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
+  McServerRequestContext::reply(
+      std::move(ctx), TypedThriftReply<cpp2::McShutdownReply>(mc_res_ok));
   stateCb_.onShutdown();
 }
 
@@ -346,7 +277,8 @@ void McServerSession::onRequest(TypedThriftRequest<cpp2::McQuitRequest>&&,
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, mc_op_quit, reqid, true, nullptr);
-  McServerRequestContext::reply(std::move(ctx), McReply(mc_res_ok));
+  McServerRequestContext::reply(std::move(ctx),
+                                TypedThriftReply<cpp2::McQuitReply>(mc_res_ok));
   close();
 }
 

@@ -280,12 +280,6 @@ class McServerSession :
   void readEOF() noexcept override;
   void readErr(const folly::AsyncSocketException& ex) noexcept override;
 
-  /* McParser's parseCallback */
-  void requestReady(McRequest&& req,
-                    mc_op_t operation,
-                    uint64_t reqid,
-                    mc_res_t result,
-                    bool noreply);
   /* McParser's callback if ASCII request is read into a TypedThriftRequest */
   template <class ThriftType>
   void asciiRequestReady(TypedThriftRequest<ThriftType>&& req,
@@ -299,20 +293,6 @@ class McServerSession :
   void parseError(mc_res_t result, folly::StringPiece reason);
 
   /* Ascii parser callbacks */
-  template <int op, class Request>
-  void onRequest(McOperation<op>, Request&& req, bool noreply) {
-    mc_res_t result = mc_res_unknown;
-    if (req.fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
-      result = mc_res_bad_key;
-    }
-    requestReady(std::move(req), (mc_op_t)op, 0 /* no reqid */, result,
-                 noreply);
-  }
-  template <int op>
-  void onRequest(McRequestWithMcOp<op>&& req, bool noreply) {
-    onRequest(McOperation<op>(), req.moveMcRequest(), noreply);
-  }
-
   template <class ThriftType>
   void onRequest(TypedThriftRequest<ThriftType>&& req, bool noreply) {
     mc_res_t result = mc_res_unknown;

@@ -46,16 +46,6 @@ bool ServerMcParser<Callback>::readDataAvailable(size_t len) {
 }
 
 template <class Callback>
-void ServerMcParser<Callback>::requestReadyHelper(McRequest&& req,
-                                                  mc_op_t operation,
-                                                  uint64_t reqid,
-                                                  mc_res_t result,
-                                                  bool noreply) {
-  parser_.reportMsgRead();
-  callback_.requestReady(std::move(req), operation, reqid, result, noreply);
-}
-
-template <class Callback>
 template <class ThriftType>
 void ServerMcParser<Callback>::requestReadyHelper(
     TypedThriftRequest<ThriftType>&& req, uint64_t reqid) {

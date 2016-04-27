@@ -59,10 +59,6 @@ class ServerMcParser : private McParser::ParserCallback {
 
   Callback& callback_;
 
-  void requestReadyHelper(McRequest&& req, mc_op_t operation,
-                          uint64_t reqid, mc_res_t result,
-                          bool noreply);
-
   template <class ThriftType>
   void requestReadyHelper(TypedThriftRequest<ThriftType>&& req,
                           uint64_t reqid);

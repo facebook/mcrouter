@@ -83,27 +83,6 @@ void McServerRequestContext::replyImpl(
   session->reply(std::move(wb), reqid);
 }
 
-template <class OnRequest>
-void McServerOnRequestWrapper<OnRequest, List<>>::requestReady(
-  McServerRequestContext&& ctx, McRequest&& req, mc_op_t operation) {
-
-  switch (operation) {
-#define MC_OP(MC_OPERATION)                                             \
-    case MC_OPERATION::mc_op:                                           \
-      onRequest_.onRequest(                                             \
-          std::move(ctx),                                               \
-          McRequestWithOp<MC_OPERATION>(std::move(req)));               \
-      break;
-#include "mcrouter/lib/McOpList.h"
-
-    case mc_op_unknown:
-    case mc_op_servererr:
-    case mc_nops:
-      CHECK(false) << "internal operation type passed to requestReady()";
-      break;
-  }
-}
-
 template <class T, class Enable = void>
 struct HasDispatchTypedRequest {
   static constexpr std::false_type value{};
@@ -122,8 +101,8 @@ struct HasDispatchTypedRequest<
   static constexpr std::true_type value{};
 };
 
-template <class OnRequest>
-void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
+template <class OnRequest, class Request>
+void McServerOnRequestWrapper<OnRequest, List<Request>>::caretRequestReady(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& reqBuf,
     McServerRequestContext&& ctx) {

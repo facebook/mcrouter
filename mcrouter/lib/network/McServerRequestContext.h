@@ -149,31 +149,27 @@ class McServerRequestContext {
 
 /**
  * McServerOnRequest is a polymorphic base class used as a callback
- * by AsyncMcServerWorker and McAsciiParser to hand off a request (either
- * McRequest or TypedThriftRequest<...>) to McrouterClient.
+ * by AsyncMcServerWorker and McAsciiParser to hand off a request
+ * (TypedThriftRequest<...>) to McrouterClient.
  *
  * The complexity in the implementation below is due to the fact that we
  * effectively need templated virtual member functions (which do not really
  * exist in C++).
  */
-using OnRequestList = ConcatenateListsT<RequestList, ThriftRequestList>;
-
 template <class RequestList>
 class McServerOnRequestIf;
 
 /**
  * OnRequest callback interface. This is an implementation detail.
  */
-template <>
-class McServerOnRequestIf<List<>> {
+template <class Request>
+class McServerOnRequestIf<List<Request>> {
  public:
-  virtual void requestReady(McServerRequestContext&& ctx,
-                            McRequest&& req,
-                            mc_op_t operation) = 0;
-
   virtual void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                                  const folly::IOBuf& reqBody,
                                  McServerRequestContext&& ctx) = 0;
+
+  virtual void requestReady(McServerRequestContext&& ctx, Request&& req) = 0;
 
   virtual ~McServerOnRequestIf() = default;
 };
@@ -190,18 +186,19 @@ class McServerOnRequestIf<List<Request, Requests...>> :
   virtual ~McServerOnRequestIf() = default;
 };
 
-class McServerOnRequest : public McServerOnRequestIf<OnRequestList> {
+class McServerOnRequest : public McServerOnRequestIf<ThriftRequestList> {
 };
 
 /**
  * Helper class to wrap user-defined callbacks in a correct virtual interface.
  * This is needed since we're mixing templates and virtual functions.
  */
-template <class OnRequest, class RequestList = OnRequestList>
+template <class OnRequest, class RequestList = ThriftRequestList>
 class McServerOnRequestWrapper;
 
-template <class OnRequest>
-class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
+template <class OnRequest, class Request>
+class McServerOnRequestWrapper<OnRequest, List<Request>>
+    : public McServerOnRequest {
  public:
   using McServerOnRequest::requestReady;
 
@@ -210,8 +207,9 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
       : onRequest_(std::forward<Args>(args)...) {
   }
 
-  void requestReady(McServerRequestContext&& ctx, McRequest&& req,
-                    mc_op_t operation) override;
+  void requestReady(McServerRequestContext&& ctx, Request&& req) override {
+    this->onRequest_.onRequest(std::move(ctx), std::move(req));
+  }
 
   void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                          const folly::IOBuf& reqBody,
