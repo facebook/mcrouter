@@ -15,9 +15,7 @@
 
 namespace facebook { namespace memcache {
 
-void McQueueAppenderStorage::append(std::unique_ptr<folly::IOBuf> buf) {
-  assert(buf);
-
+void McQueueAppenderStorage::append(const folly::IOBuf& buf) {
   if (nIovsUsed_ == kMaxIovecs) {
     coalesce();
   }
@@ -25,21 +23,22 @@ void McQueueAppenderStorage::append(std::unique_ptr<folly::IOBuf> buf) {
   assert(nIovsUsed_ < kMaxIovecs);
 
   struct iovec* nextIov = iovs_ + nIovsUsed_;
-  const auto nFilled = buf->fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+  const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
 
-  if (nFilled > 0 || buf->length() == 0) {
+  if (nFilled > 0 || buf.length() == 0) {
     nIovsUsed_ += nFilled;
   } else {
-    buf->coalesce();
-    const auto nFilledRetry = buf->fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    auto bufCopy = buf;
+    bufCopy.coalesce();
+    const auto nFilledRetry = bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
     assert(nFilledRetry == 1);
     ++nIovsUsed_;
   }
 
-  if (!head_) {
-    head_ = std::move(buf);
+  if (head_.empty()) {
+    head_ = buf;
   } else {
-    head_->prependChain(std::move(buf));
+    head_.prependChain(buf.clone());
   }
 
   // If a push() comes after, it should not use the iovec we just filled in
@@ -77,7 +76,7 @@ void McQueueAppenderStorage::push(const uint8_t* buf, size_t len) {
     // used since we will write to storage_ where we left off.
     canUsePreviousIov_ = true;
   } else {
-    append(folly::IOBuf::copyBuffer(buf, len));
+    append(folly::IOBuf(folly::IOBuf::COPY_BUFFER, buf, len));
   }
 }
 
@@ -95,17 +94,17 @@ void McQueueAppenderStorage::coalesce() {
     newCapacity += iovs_[i].iov_len;
   }
 
-  auto newBuf = folly::IOBuf::create(newCapacity);
+  auto newBuf = folly::IOBuf(folly::IOBuf::CREATE, newCapacity);
 
   for (size_t i = 1; i < kMaxIovecs; ++i) {
-    std::memcpy(newBuf->writableTail(), iovs_[i].iov_base, iovs_[i].iov_len);
-    newBuf->append(iovs_[i].iov_len);
+    std::memcpy(newBuf.writableTail(), iovs_[i].iov_base, iovs_[i].iov_len);
+    newBuf.append(iovs_[i].iov_len);
   }
 
   // Release old IOBufs and reset head to new large buffer
   head_ = std::move(newBuf);
   ++nIovsUsed_;
-  iovs_[1] = {const_cast<uint8_t*>(head_->data()), head_->length()};
+  iovs_[1] = {const_cast<uint8_t*>(head_.data()), head_.length()};
 }
 
 }} // facebook::memcache

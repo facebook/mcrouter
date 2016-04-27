@@ -33,7 +33,7 @@ class McQueueAppenderStorage {
   McQueueAppenderStorage(const McQueueAppenderStorage&) = delete;
   McQueueAppenderStorage& operator=(const McQueueAppenderStorage&) = delete;
 
-  void append(std::unique_ptr<folly::IOBuf> buf);
+  void append(const folly::IOBuf& buf);
 
   void push(const uint8_t* buf, size_t len);
 
@@ -41,7 +41,7 @@ class McQueueAppenderStorage {
 
   void reset() {
     storageIdx_ = 0;
-    head_.reset();
+    head_ = folly::IOBuf();
     // Reserve first element of iovs_ for header, which won't be filled in
     // until after body data is serialized.
     iovs_[0] = {headerBuf_, 0};
@@ -94,7 +94,7 @@ class McQueueAppenderStorage {
 
   // Chain of IOBufs used for IOBuf fields, like key and value. Note that we
   // also maintain views into this data via iovs_.
-  std::unique_ptr<folly::IOBuf> head_;
+  folly::IOBuf head_;
 };
 
 
@@ -141,7 +141,13 @@ class McQueueAppender {
 
   void insert(std::unique_ptr<folly::IOBuf> buf) {
     assert(storage_);
-    storage_->append(std::move(buf));
+    assert(buf);
+    storage_->append(*buf);
+  }
+
+  void insert(const folly::IOBuf& buf) {
+    assert(storage_);
+    storage_->append(buf);
   }
 
  private:
