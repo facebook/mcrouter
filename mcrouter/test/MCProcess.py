@@ -661,7 +661,7 @@ class Mcrouter(McrouterBase):
                 config_file.write(replaced_config)
 
         self.config = config
-        args = [McrouterGlobals.InstallDir + '/mcrouter/mcrouter',
+        args = [McrouterGlobals.binPath('mcrouter'),
                 '--config', 'file:' + config]
 
         if default_route:
@@ -713,8 +713,7 @@ class McrouterClients:
 
 class Memcached(MCProcess):
     def __init__(self, port=None):
-        args = [McrouterGlobals.InstallDir +
-                    '/mcrouter/lib/network/mock_mc_server']
+        args = [McrouterGlobals.binPath('mockmc')]
         listen_sock = None
         if port is None:
             listen_sock = create_listen_socket()
@@ -731,8 +730,7 @@ class Memcached(MCProcess):
 class Mcpiper(ProcessBase):
     def __init__(self, fifos_dir, extra_args=None):
         base_dir = BaseDirectory('mcpiper')
-        args = [McrouterGlobals.InstallDir + '/mcrouter/tools/mcpiper/mcpiper',
-                '--fifo-root', fifos_dir]
+        args = [McrouterGlobals.binPath('mcpiper'), '--fifo-root', fifos_dir]
 
         if extra_args:
             args.extend(extra_args)

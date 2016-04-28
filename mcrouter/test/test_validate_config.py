@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -27,7 +27,7 @@ class TestValidateConfig(unittest.TestCase):
         listen_sock = socket.socket()
         listen_sock.listen(100)
         cmd = McrouterGlobals.preprocessArgs([
-            McrouterGlobals.InstallDir + '/mcrouter/mcrouter',
+            McrouterGlobals.binPath('mcrouter'),
             '-L', '/tmp/test.log',
             '--config', 'file:' + config,
             '--listen-sock-fd', str(listen_sock.fileno()),

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -29,9 +29,6 @@ constexpr int kPortSearchOut = 100;
 constexpr int kPortRangeBegin = 30000;
 constexpr int kPortRangeEnd = 50000;
 constexpr int kTimeout = 10;
-constexpr folly::StringPiece kMemcachedPath
-  = MCROUTER_INSTALL_PATH "mcrouter/lib/network/mock_mc_server";
-constexpr folly::StringPiece kMemcachedBin = "mock_mc_server";
 constexpr folly::StringPiece kConfig =
   "mcrouter/test/cpp_unit_tests/files/memcache_local_config.json";
 
@@ -48,9 +45,7 @@ MemcacheLocal::~MemcacheLocal() {
   stopMemcachedServer(port_);
 }
 
-bool MemcacheLocal::startMemcachedOnPort(folly::StringPiece path,
-                                         folly::StringPiece bin,
-                                         const int port) {
+bool MemcacheLocal::startMemcachedOnPort(std::string path, int port) {
   //open the output file
   int fd1 = open("/dev/null", O_RDWR);
 
@@ -62,10 +57,7 @@ bool MemcacheLocal::startMemcachedOnPort(folly::StringPiece path,
   options.stdout(fd1).stderr(fd1).parentDeathSignal(SIGTERM);
 
   process_ = folly::make_unique<folly::Subprocess>(
-      vector<string>{bin.str(), "-P", to_string(port)},
-      options,
-      path.str().c_str(),
-      nullptr);
+      vector<string>{path, "-P", to_string(port)}, options);
 
   // premature exit?
   sleep(1);
@@ -118,7 +110,7 @@ int MemcacheLocal::startMemcachedServer(const int startPort,
     int port = generateRandomPort(startPort, stopPort);
 
     // if memcached started successfully, return. Otherwise, keep begging.
-    if (startMemcachedOnPort(kMemcachedPath, kMemcachedBin, port)) {
+    if (startMemcachedOnPort(mcrouter::getBinPath("mockmc"), port)) {
       return port;
     }
   }

@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 class McrouterGlobals:
-    InstallDir = '.'
+    @staticmethod
+    def binPath(name):
+        bins = {
+            'mcrouter': './mcrouter/mcrouter',
+            'mcpiper': './mcrouter/tools/mcpiper/mcpiper',
+            'mockmc': './mcrouter/lib/network/mock_mc_server',
+        }
+        return bins[name]
 
     @staticmethod
     def preprocessArgs(args):

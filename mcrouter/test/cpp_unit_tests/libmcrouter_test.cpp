@@ -178,7 +178,7 @@ TEST(libmcrouter, listenSock) {
 
   ListenSocket listenSock;
 
-  std::vector<std::string> args{MCROUTER_INSTALL_PATH "mcrouter/mcrouter",
+  std::vector<std::string> args{getBinPath("mcrouter"),
         "--listen-sock-fd", folly::to<std::string>(listenSock.getSocketFd()),
         "--config-str", configString };
   auto testArgs = defaultTestCommandLineArgs();

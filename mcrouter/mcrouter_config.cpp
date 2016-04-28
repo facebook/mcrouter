@@ -116,4 +116,13 @@ std::unordered_map<std::string, folly::dynamic> additionalConfigParams() {
 void insertCustomStartupOpts(folly::dynamic& options) {
 }
 
+std::string getBinPath(folly::StringPiece name) {
+  if (name == "mcrouter") {
+    return "./mcrouter/mcrouter";
+  } else if (name == "mockmc") {
+    return "./mcrouter/lib/network/mock_mc_server";
+  }
+  return "unknown";
+}
+
 }}}  // facebook::memcache::mcrouter
