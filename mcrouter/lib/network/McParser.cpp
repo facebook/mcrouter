@@ -20,15 +20,27 @@
 #include "mcrouter/lib/allocator/JemallocNodumpAllocator.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
+namespace facebook { namespace memcache {
+
 namespace {
 // Adjust buffer size after this many requests
 constexpr size_t kAdjustBufferSizeInterval = 10000;
+
+/*
+ * Determine the protocol by looking at the first byte
+ */
+mc_protocol_t determineProtocol(uint8_t firstByte) {
+  switch (firstByte) {
+    case kCaretMagicByte:
+      return mc_caret_protocol;
+    case ENTRY_LIST_MAGIC_BYTE:
+      return mc_umbrella_protocol;
+    default:
+      return mc_ascii_protocol;
+  }
 }
 
-namespace facebook { namespace memcache {
-
 #ifdef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
-namespace {
 
 folly::ThreadLocal<JemallocNodumpAllocator> allocator;
 
@@ -54,8 +66,9 @@ folly::IOBuf copyToNodumpBuffer(
                       reinterpret_cast<void*> (allocator->getFlags()));
 }
 
-}
 #endif
+
+} // anonymous
 
 McParser::McParser(ParserCallback& callback,
                    size_t minBufferSize,
@@ -75,15 +88,6 @@ void McParser::reset() {
   readBuffer_.clear();
 }
 
-void McParser::shrinkBuffer() {
-  if (parsedMessages_ >= kAdjustBufferSizeInterval &&
-      readBuffer_.capacity() > maxBufferSize_ && readBuffer_.length() == 0) {
-    parsedMessages_ = 0;
-    bufferSize_ = std::min(bufferSize_, maxBufferSize_);
-    readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, bufferSize_);
-  }
-}
-
 std::pair<void*, size_t> McParser::getReadBuffer() {
   assert(!readBuffer_.isChained());
   readBuffer_.unshareOne();
@@ -97,12 +101,11 @@ std::pair<void*, size_t> McParser::getReadBuffer() {
     /* Reallocate more space if necessary */
     readBuffer_.reserve(0, bufferSize_);
   }
-  return std::make_pair(readBuffer_.writableTail(),
-                        std::min(readBuffer_.tailroom(), bufferSize_));
+  return std::make_pair(readBuffer_.writableTail(), readBuffer_.tailroom());
 }
 
 bool McParser::readUmbrellaOrCaretData() {
-  while (!readBuffer_.empty()) {
+  while (readBuffer_.length() > 0) {
     // Parse header
     UmbrellaParseStatus parseStatus;
     if (protocol_ == mc_umbrella_protocol) {
@@ -154,7 +157,8 @@ bool McParser::readUmbrellaOrCaretData() {
     // reallocate into a buffer large enough for full header and body. Then
     // return to wait for remaining data.
     if (readBuffer_.length() + readBuffer_.tailroom() < messageSize) {
-      readBuffer_.unshare();
+      assert(!readBuffer_.isChained());
+      readBuffer_.unshareOne();
       bufferSize_ = std::max(bufferSize_, messageSize);
       readBuffer_.reserve(
           0 /* minHeadroom */,
@@ -167,13 +171,22 @@ bool McParser::readUmbrellaOrCaretData() {
 #endif
     return true;
   }
+
+  // We parsed everything, read buffer is empty.
+  // Try to shrink it to reduce memory footprint
+  if (parsedMessages_ >= kAdjustBufferSizeInterval &&
+      readBuffer_.capacity() > maxBufferSize_) {
+    parsedMessages_ = 0;
+    bufferSize_ = std::min(bufferSize_, maxBufferSize_);
+    readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, bufferSize_);
+  }
   return true;
 }
 
 bool McParser::readDataAvailable(size_t len) {
   // Caller is responsible for ensuring the read buffer has enough tailroom
   readBuffer_.append(len);
-  if (UNLIKELY(readBuffer_.empty())) {
+  if (UNLIKELY(readBuffer_.length() == 0)) {
     return true;
   }
 
@@ -190,9 +203,7 @@ bool McParser::readDataAvailable(size_t len) {
   }
 
   if (protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol) {
-    const auto ret = readUmbrellaOrCaretData();
-    shrinkBuffer(); // no-op if buffer is not large
-    return ret;
+    return readUmbrellaOrCaretData();
   } else {
     callback_.handleAscii(readBuffer_);
     return true;

@@ -126,25 +126,6 @@ class McParser {
   bool useJemallocNodumpAllocator_{false};
 
   bool readUmbrellaOrCaretData();
-
-  /*
-   * Determine the protocol by looking at the first byte
-   */
-  mc_protocol_t determineProtocol(uint8_t first_byte) {
-    switch (first_byte) {
-      case kCaretMagicByte:
-        return mc_caret_protocol;
-      case ENTRY_LIST_MAGIC_BYTE:
-        return mc_umbrella_protocol;
-      default:
-        return mc_ascii_protocol;
-    }
-  }
-
-  void recalculateBufferSize();
-
-  // Shrink read buffer if possible to reduce memory footprint
-  void shrinkBuffer();
 };
 
 inline McParser::ParserCallback::~ParserCallback() {}

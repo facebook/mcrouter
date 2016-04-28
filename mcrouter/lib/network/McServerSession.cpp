@@ -358,7 +358,7 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
 
     if (!writeScheduled_) {
       auto eventBase = transport_->getEventBase();
-      CHECK(eventBase != nullptr);
+      DCHECK(eventBase != nullptr);
       eventBase->runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
       writeScheduled_ = true;
     }
