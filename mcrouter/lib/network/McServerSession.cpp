@@ -364,10 +364,6 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
   }
 }
 
-void McServerSession::SendWritesCallback::runLoopCallback() noexcept {
-  session_.sendWrites();
-}
-
 void McServerSession::sendWrites() {
   DestructorGuard dg(this);
 

@@ -85,7 +85,8 @@ void McParser::shrinkBuffer() {
 }
 
 std::pair<void*, size_t> McParser::getReadBuffer() {
-  readBuffer_.unshare();
+  assert(!readBuffer_.isChained());
+  readBuffer_.unshareOne();
   if (!readBuffer_.length() && readBuffer_.capacity() > 0) {
     /* If we read everything, reset pointers to 0 and re-use the buffer */
     readBuffer_.clear();

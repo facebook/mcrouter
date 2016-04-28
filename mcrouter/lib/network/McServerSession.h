@@ -229,7 +229,9 @@ class McServerSession :
 
   struct SendWritesCallback : public folly::EventBase::LoopCallback {
     explicit SendWritesCallback(McServerSession& session) : session_(session) {}
-    void runLoopCallback() noexcept override final;
+    void runLoopCallback() noexcept override final {
+      session_.sendWrites();
+    }
     McServerSession& session_;
   };
 
