@@ -61,6 +61,7 @@ WriteBuffer::~WriteBuffer() {
 void WriteBuffer::clear() {
   ctx_.clear();
   destructor_.clear();
+  isEndOfBatch_ = false;
 
   switch (protocol_) {
     case mc_ascii_protocol:

@@ -27,6 +27,7 @@ class Fifo;
 class McServerOnRequest;
 class MultiOpParent;
 class WriteBuffer;
+class WriteBufferIntrusiveList;
 class WriteBufferQueue;
 
 /**
@@ -190,18 +191,8 @@ class McServerSession :
   std::shared_ptr<MultiOpParent> currentMultiop_;
 
 
-  /* Batch writing state */
-
-  /**
-   * All writes to be written at the end of the loop in a single batch.
-   */
-  std::deque<std::unique_ptr<WriteBuffer>> pendingWrites_;
-
-  /**
-   * Each entry contains the count of requests with replies already written
-   * to the transport, waiting on write success.
-   */
-  std::deque<size_t> writeBatches_;
+  // All writes to be written at the end of the loop in a single batch.
+  std::unique_ptr<WriteBufferIntrusiveList> pendingWrites_;
 
   /**
    * Queue of write buffers.

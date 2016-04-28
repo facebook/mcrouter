@@ -68,6 +68,7 @@ McServerSession::McServerSession(
       parser_(*this,
               options_.minBufferSize,
               options_.maxBufferSize),
+      pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this) {
 
   try {
@@ -117,7 +118,7 @@ void McServerSession::onTransactionStarted(bool isSubRequest) {
 
 void McServerSession::checkClosed() {
   if (!inFlight_) {
-    assert(pendingWrites_.empty());
+    assert(pendingWrites_->empty());
 
     if (state_ == CLOSING) {
       /* It's possible to call close() more than once from the same stack.
@@ -353,7 +354,7 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
       pause(PAUSE_WRITE);
     }
   } else {
-    pendingWrites_.emplace_back(std::move(wb));
+    pendingWrites_->pushBack(std::move(wb));
 
     if (!writeScheduled_) {
       auto eventBase = transport_->getEventBase();
@@ -370,19 +371,18 @@ void McServerSession::sendWrites() {
   writeScheduled_ = false;
 
   folly::small_vector<struct iovec, kIovecVectorSize> iovs;
-  size_t count = 0;
-  while (!pendingWrites_.empty()) {
-    auto wb = std::move(pendingWrites_.front());
-    pendingWrites_.pop_front();
-    ++count;
+  while (!pendingWrites_->empty()) {
+    auto wb = pendingWrites_->popFront();
     if (!wb->noReply()) {
       iovs.insert(iovs.end(),
                   wb->getIovsBegin(),
                   wb->getIovsBegin() + wb->getIovsCount());
     }
+    if (pendingWrites_->empty()) {
+      wb->markEndOfBatch();
+    }
     writeBufs_->push(std::move(wb));
   }
-  writeBatches_.push_back(count);
 
   if (debugFifo_) {
     debugFifo_->writeIfConnected(transport_.get(), MessageDirection::Sent,
@@ -392,19 +392,7 @@ void McServerSession::sendWrites() {
 }
 
 void McServerSession::completeWrite() {
-  size_t count;
-  if (options_.singleWrite) {
-    count = 1;
-  } else {
-    assert(!writeBatches_.empty());
-    count = writeBatches_.front();
-    writeBatches_.pop_front();
-  }
-
-  while (count-- > 0) {
-    assert(!writeBufs_->empty());
-    writeBufs_->pop();
-  }
+  writeBufs_->pop(!options_.singleWrite /* popBatch */);
 }
 
 void McServerSession::writeSuccess() noexcept {

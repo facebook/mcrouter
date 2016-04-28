@@ -220,6 +220,13 @@ class WriteBuffer {
    */
   bool noReply() const;
 
+  bool isEndOfBatch() const {
+    return isEndOfBatch_;
+  }
+
+  void markEndOfBatch() {
+    isEndOfBatch_ = true;
+  }
  private:
   const mc_protocol_t protocol_;
 
@@ -233,11 +240,17 @@ class WriteBuffer {
   folly::Optional<McServerRequestContext> ctx_;
   const struct iovec* iovsBegin_;
   size_t iovsCount_{0};
+  bool isEndOfBatch_{false};
 
   WriteBuffer(const WriteBuffer&) = delete;
   WriteBuffer& operator=(const WriteBuffer&) = delete;
   WriteBuffer(WriteBuffer&&) noexcept = delete;
   WriteBuffer& operator=(WriteBuffer&&) = delete;
+};
+
+// The only purpose of this class is to avoid a circular #include dependency
+// between WriteBuffer.h and McServerSession.h.
+class WriteBufferIntrusiveList : public WriteBuffer::Queue {
 };
 
 class WriteBufferQueue {
@@ -260,13 +273,18 @@ class WriteBufferQueue {
 
   void push(std::unique_ptr<WriteBuffer> wb) { queue_.pushBack(std::move(wb)); }
 
-  void pop() {
-    if (tlFreeQueue_.size() < kMaxFreeQueueSz) {
-      auto& wb = tlFreeQueue_.pushBack(queue_.popFront());
-      wb.clear();
-    } else {
-      queue_.popFront();
-    }
+  void pop(bool popBatch) {
+    bool done = false;
+    do {
+      assert(!empty());
+      if (tlFreeQueue_.size() < kMaxFreeQueueSz) {
+        auto& wb = tlFreeQueue_.pushBack(queue_.popFront());
+        done = wb.isEndOfBatch();
+        wb.clear();
+      } else {
+        done = queue_.popFront()->isEndOfBatch();
+      }
+    } while (!done && popBatch);
   }
 
   bool empty() const noexcept {
