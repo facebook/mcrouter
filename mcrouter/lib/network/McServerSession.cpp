@@ -60,6 +60,7 @@ McServerSession::McServerSession(
   void* userCtxt,
   std::shared_ptr<Fifo> debugFifo)
     : transport_(std::move(transport)),
+      eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
       options_(std::move(options)),
@@ -103,16 +104,12 @@ void McServerSession::resume(PauseReason reason) {
 }
 
 void McServerSession::onTransactionStarted(bool isSubRequest) {
-  DestructorGuard dg(this);
-
   ++inFlight_;
-  if (!isSubRequest) {
-    ++realRequestsInFlight_;
-  }
-
-  if (options_.maxInFlight > 0 &&
-      realRequestsInFlight_ >= options_.maxInFlight) {
-    pause(PAUSE_THROTTLED);
+  if (options_.maxInFlight > 0 && !isSubRequest) {
+    if (++realRequestsInFlight_ >= options_.maxInFlight) {
+      DestructorGuard dg(this);
+      pause(PAUSE_THROTTLED);
+    }
   }
 }
 
@@ -140,14 +137,11 @@ void McServerSession::onTransactionCompleted(bool isSubRequest) {
 
   assert(inFlight_ > 0);
   --inFlight_;
-  if (!isSubRequest) {
+  if (options_.maxInFlight > 0 && !isSubRequest) {
     assert(realRequestsInFlight_ > 0);
-    --realRequestsInFlight_;
-  }
-
-  if (options_.maxInFlight > 0 &&
-      realRequestsInFlight_ < options_.maxInFlight) {
-    resume(PAUSE_THROTTLED);
+    if (--realRequestsInFlight_ < options_.maxInFlight) {
+      resume(PAUSE_THROTTLED);
+    }
   }
 
   checkClosed();
@@ -217,14 +211,10 @@ void McServerSession::readDataAvailable(size_t len) noexcept {
 }
 
 void McServerSession::readEOF() noexcept {
-  DestructorGuard dg(this);
-
   close();
 }
 
 void McServerSession::readErr(const folly::AsyncSocketException& ex) noexcept {
-  DestructorGuard dg(this);
-
   close();
 }
 
@@ -334,8 +324,6 @@ bool McServerSession::ensureWriteBufs() {
 }
 
 void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
-  DestructorGuard dg(this);
-
   if (wb == nullptr) {
     return;
   }
@@ -357,9 +345,7 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     pendingWrites_->pushBack(std::move(wb));
 
     if (!writeScheduled_) {
-      auto eventBase = transport_->getEventBase();
-      DCHECK(eventBase != nullptr);
-      eventBase->runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
+      eventBase_.runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
       writeScheduled_ = true;
     }
   }

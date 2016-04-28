@@ -150,6 +150,7 @@ class McServerSession :
 
  private:
   folly::AsyncTransportWrapper::UniquePtr transport_;
+  folly::EventBase& eventBase_;
   folly::SocketAddress socketAddress_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   StateCallback& stateCb_;
