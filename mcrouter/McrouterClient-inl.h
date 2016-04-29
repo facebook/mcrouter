@@ -65,6 +65,17 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                                         DeleteLike<>> = 0) {
   // We don't have any other operation specific stats.
 }
+
+template <class Request>
+const Request& unwrapRequest(const Request& req) {
+  return req;
+}
+
+template <class Request>
+const Request& unwrapRequest(std::reference_wrapper<const Request>& req) {
+  return req.get();
+}
+
 } // detail
 
 template <class Request, class F>
@@ -74,50 +85,141 @@ typename
 McrouterClient::send(const Request& req,
                      F&& callback,
                      folly::StringPiece ipAddr) {
+  auto makePreq = [this, ipAddr, &req, &callback] {
+    auto preq = createProxyRequestContext(*proxy_, req, [
+      this,
+      cb = std::forward<F>(callback)
+    ](const Request& request, ReplyT<Request>&& reply) mutable {
+      detail::bumpMcrouterClientStats(stats_, request, reply);
+      if (disconnected_) {
+        // "Cancelled" reply.
+        cb(request, ReplyT<Request>(mc_res_unknown));
+      } else {
+        cb(request, std::move(reply));
+      }
+    });
+
+    preq->requester_ = self_;
+    if (!ipAddr.empty()) {
+      preq->setUserIpAddress(ipAddr);
+    }
+    return preq;
+  };
+
+  auto cancelRemaining = [&req, &callback]() {
+    callback(req, ReplyT<Request>(mc_res_local_error));
+  };
+
+  return sendMultiImpl(1, makePreq, cancelRemaining);
+}
+
+template <class F, class G>
+bool McrouterClient::sendMultiImpl(
+    size_t nreqs,
+    F&& makeNextPreq,
+    G&& failRemaining) {
   auto router = router_.lock();
   if (!router) {
     return false;
   }
 
-  auto preq = createProxyRequestContext(
-      *proxy_,
-      req,
-      [this, cb = std::forward<F>(callback)](
-          const Request& request, ReplyT<Request>&& reply) {
-        detail::bumpMcrouterClientStats(stats_, request, reply);
-        if (disconnected_) {
-          // "Cancelled" reply.
-          cb(ReplyT<Request>(mc_res_unknown));
-        } else {
-          cb(std::move(reply));
-        }
-      });
-  preq->requester_ = self_;
-  if (!ipAddr.empty()) {
-    preq->setUserIpAddress(ipAddr);
-  }
-
-  if (sameThread_) {
-    sendSameThread(std::move(preq));
-  } else if (maxOutstanding_ == 0) {
-    sendRemoteThread(std::move(preq));
-  } else if (maxOutstandingError_) {
-    auto r = counting_sem_lazy_nonblocking(&outstandingReqsSem_, 1);
-    if (r == 0) {
-      callback(ReplyT<Request>(mc_res_local_error));
+  if (maxOutstanding_ == 0) {
+    if (sameThread_) {
+      for (size_t i = 0; i < nreqs; ++i) {
+        sendSameThread(makeNextPreq());
+      }
     } else {
-      assert(r == 1);
-      sendRemoteThread(std::move(preq));
+      for (size_t i = 0; i < nreqs; ++i) {
+        sendRemoteThread(makeNextPreq());
+      }
+    }
+  } else if (maxOutstandingError_) {
+    for (size_t begin = 0; begin < nreqs;) {
+      auto end = begin +
+          counting_sem_lazy_nonblocking(&outstandingReqsSem_, nreqs - begin);
+      if (begin == end) {
+        failRemaining();
+        break;
+      }
+
+      if (sameThread_) {
+        for (size_t i = begin; i < end; i++) {
+          sendSameThread(makeNextPreq());
+        }
+      } else {
+        for (size_t i = begin; i < end; i++) {
+          sendRemoteThread(makeNextPreq());
+        }
+      }
+
+      begin = end;
     }
   } else {
-    auto r = counting_sem_lazy_wait(&outstandingReqsSem_, 1);
-    (void)r; // so that `r` not be unused under `NDEBUG`
-    assert(r == 1);
-    sendRemoteThread(std::move(preq));
+    assert(!sameThread_);
+
+    size_t i = 0;
+    size_t n = 0;
+
+    while (i < nreqs) {
+      n += counting_sem_lazy_wait(&outstandingReqsSem_, nreqs - n);
+      for (size_t j = i; j < n; ++j) {
+        sendRemoteThread(makeNextPreq());
+      }
+      i = n;
+    }
   }
 
   return true;
 }
+
+template <class InputIt, class F>
+bool McrouterClient::send(
+    InputIt begin,
+    InputIt end,
+    F&& callback,
+    folly::StringPiece ipAddr) {
+  using IterReference = typename std::iterator_traits<InputIt>::reference;
+  using Request = typename std::decay<decltype(
+      detail::unwrapRequest(std::declval<IterReference>()))>::type;
+
+  auto makeNextPreq = [this, ipAddr, &callback, &begin]() {
+    auto preq = createProxyRequestContext(
+        *proxy_,
+        detail::unwrapRequest(*begin),
+        [this, callback](
+            const Request& request, ReplyT<Request>&& reply) mutable {
+          detail::bumpMcrouterClientStats(stats_, request, reply);
+          if (disconnected_) {
+            // "Cancelled" reply.
+            callback(request, ReplyT<Request>(mc_res_unknown));
+          } else {
+            callback(request, std::move(reply));
+          }
+        });
+
+    preq->requester_ = self_;
+    if (!ipAddr.empty()) {
+      preq->setUserIpAddress(ipAddr);
+    }
+
+    ++begin;
+    return preq;
+  };
+
+  auto cancelRemaining = [&begin, &end, &callback]() {
+    while (begin != end) {
+      callback(
+          detail::unwrapRequest(*begin), ReplyT<Request>(mc_res_local_error));
+      ++begin;
+    }
+  };
+
+  return sendMultiImpl(
+      std::distance(begin, end),
+      std::move(makeNextPreq),
+      std::move(cancelRemaining));
+}
+
 } // mcrouter
 } // memcache
 } // facebook

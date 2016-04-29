@@ -95,7 +95,8 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();
 
-    auto cb = [sctx = std::move(rctx), replyFn](ReplyT<Request>&& reply) {
+    auto cb = [ sctx = std::move(rctx), replyFn ](
+        const Request&, ReplyT<Request>&& reply) {
       replyFn(std::move(sctx->ctx), std::move(reply));
     };
 

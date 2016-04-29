@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,84 +23,44 @@ size_t McrouterClient::send(
 
   assert(!disconnected_);
 
-  auto router = router_.lock();
-  if (nreqs == 0 || !router) {
+  if (nreqs == 0) {
     return 0;
   }
 
-  auto makePreq = [this, &requests, ipAddr](size_t i) {
-    auto cb =
-      [this, context = requests[i].context,
-       req = McMsgRef::cloneRef(requests[i].req)]
-      (ProxyRequestContext&, McReply&& reply) mutable {
-        this->onReply(std::move(reply), std::move(req), context);
-      };
+  size_t id = 0;
+  auto makeNextPreq = [this, requests, &id, ipAddr]() {
+    auto cb = [
+      this,
+      context = requests[id].context,
+      req = McMsgRef::cloneRef(requests[id].req)
+    ](ProxyRequestContext&, McReply&& reply) mutable {
+      this->onReply(std::move(reply), std::move(req), context);
+    };
     auto preq = createLegacyProxyRequestContext(
-        *proxy_, McMsgRef::cloneRef(requests[i].req), std::move(cb));
+        *proxy_, McMsgRef::cloneRef(requests[id].req), std::move(cb));
     preq->requester_ = self_;
 
     if (!ipAddr.empty()) {
       preq->setUserIpAddress(ipAddr);
     }
+    ++id;
     return preq;
   };
 
-  if (maxOutstanding_ == 0) {
-    if (sameThread_) {
-      for (size_t i = 0; i < nreqs; i++) {
-        sendSameThread(makePreq(i));
-      }
-    } else {
-      for (size_t i = 0; i < nreqs; i++) {
-        sendRemoteThread(makePreq(i));
-      }
+  auto cancelRemaining = [this, requests, &id, nreqs]() {
+    for (; id < nreqs; ++id) {
+      mcrouter_msg_t error_reply;
+      error_reply.req = requests[id].req;
+      error_reply.reply = McReply(mc_res_local_error);
+      error_reply.context = requests[id].context;
+
+      callbacks_.on_reply(&error_reply, arg_);
     }
-  } else if (maxOutstandingError_) {
-    for(size_t begin = 0; begin < nreqs;) {
-      auto end = begin + counting_sem_lazy_nonblocking(&outstandingReqsSem_,
-                                                       nreqs - begin);
-      if (begin == end) {
-        for (size_t i = begin; i < nreqs; ++i) {
-          mcrouter_msg_t error_reply;
-          error_reply.req = requests[i].req;
-          error_reply.reply = McReply(mc_res_local_error);
-          error_reply.context = requests[i].context;
+  };
 
-          callbacks_.on_reply(&error_reply, arg_);
-        }
-
-        break;
-      }
-
-      if (sameThread_) {
-        for (size_t i = begin; i < end; i++) {
-          sendSameThread(makePreq(i));
-        }
-      } else {
-        for (size_t i = begin; i < end; i++) {
-          sendRemoteThread(makePreq(i));
-        }
-      }
-
-      begin = end;
-    }
-  } else {
-    assert(!sameThread_);
-
-    size_t i = 0;
-    size_t n = 0;
-
-    while (i < nreqs) {
-      n += counting_sem_lazy_wait(&outstandingReqsSem_, nreqs - n);
-      for (size_t j = i; j < n; ++j) {
-        sendRemoteThread(makePreq(j));
-      }
-
-      i = n;
-    }
-  }
-
-  return nreqs;
+  auto res =
+      sendMultiImpl(nreqs, std::move(makeNextPreq), std::move(cancelRemaining));
+  return res ? nreqs : 0;
 }
 
 void McrouterClient::sendRemoteThread(

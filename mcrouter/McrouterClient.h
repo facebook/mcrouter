@@ -98,7 +98,9 @@ class McrouterClient {
    * Asynchronously send a single request with the given operation.
    *
    * @param callback  the callback to call when request is completed,
-   *                  should accept ReplyT<Operation, Request> as an argument
+   *                  should be callable
+   *                    f(const Request& request, ReplyT<Request>&& reply)
+   *
    *                  result mc_res_unknown means that the request was canceled.
    *                  It will be moved into a temporary storage before being
    *                  called. Will be destroyed only after callback is called,
@@ -118,6 +120,28 @@ class McrouterClient {
   send(const Request& req,
        F&& callback,
        folly::StringPiece ipAddr = folly::StringPiece());
+
+  /**
+   * Multi requests version of send.
+   * @param callback  callback to call for each request, should be callable
+   *                    f(const Request& request, ReplyT<Request>&& reply)
+   *                  Note: callback should be copyable.
+   *
+   * @return true iff the requests were scheduled for sending,
+   *         false otherwise (e.g. McrouterInstance was destroyed).
+   *
+   * Note: the caller is responsible for keeping requests alive until the
+   *       callback is called for each of them.
+   * Note: the order in which callbacks will be called is undefined, but
+   *       it's guaranteed that the callback is called exactly once for
+   *       each request.
+   */
+  template <class InputIt, class F>
+  bool send(
+      InputIt begin,
+      InputIt end,
+      F&& callback,
+      folly::StringPiece ipAddr = folly::StringPiece());
 
   /**
    * Change the context passed back to the callbacks.
@@ -203,11 +227,21 @@ class McrouterClient {
     bool maximum_outstanding_error,
     bool sameThread);
 
+  /**
+   * Batch send requests.
+   *
+   * @param nreqs          number of requests to be sent.
+   * @param makeNextPreq   proxy request generator.
+   * @param failRemaining  will be called if all remaining requests should be
+   *                       canceled due to maxOutstandingError_ flag
+   */
+  template <class F, class G>
+  bool sendMultiImpl(size_t nreqs, F&& makeNextPreq, G&& failRemaining);
+
   void sendRemoteThread(std::unique_ptr<ProxyRequestContext> req);
   void sendSameThread(std::unique_ptr<ProxyRequestContext> req);
   void onReply(McReply&& reply, McMsgRef&& req, void* context);
 
- private:
   friend class McrouterInstance;
   friend class ProxyRequestContext;
 };
