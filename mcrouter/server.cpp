@@ -103,7 +103,6 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
   /* Default to one read per event to help latency-sensitive workloads.
      We can make this an option if this needs to be adjusted. */
   opts.worker.maxReadsPerEvent = 1;
-  opts.worker.requestsPerRead = standaloneOpts.requests_per_read;
 
   try {
     LOG(INFO) << "Spawning AsyncMcServer";

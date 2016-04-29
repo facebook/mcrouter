@@ -73,8 +73,7 @@ mcrouter_option_integer(
 mcrouter_option_integer(
   size_t, requests_per_read, 0,
   "reqs-per-read", no_short,
-  "Adjusts server buffer size to process this many requests per read."
-  " Smaller values may improve latency.")
+  "DEPRECATED. Does nothing.")
 
 mcrouter_option_toggle(
   retain_source_ip, false,

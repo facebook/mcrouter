@@ -193,21 +193,20 @@ bool McParser::readDataAvailable(size_t len) {
   if (UNLIKELY(!seenFirstByte_)) {
     seenFirstByte_ = true;
     protocol_ = determineProtocol(*readBuffer_.data());
-    if (protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol) {
-      outOfOrder_ = true;
-    } else if (protocol_ == mc_ascii_protocol) {
+    if (protocol_ == mc_ascii_protocol) {
       outOfOrder_ = false;
     } else {
-      return false;
+      assert(protocol_ == mc_umbrella_protocol ||
+             protocol_ == mc_caret_protocol);
+      outOfOrder_ = true;
     }
   }
 
-  if (protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol) {
-    return readUmbrellaOrCaretData();
-  } else {
+  if (protocol_ == mc_ascii_protocol) {
     callback_.handleAscii(readBuffer_);
     return true;
   }
+  return readUmbrellaOrCaretData();
 }
 
 }}  // facebook::memcache

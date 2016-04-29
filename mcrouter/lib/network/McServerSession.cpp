@@ -64,13 +64,13 @@ McServerSession::McServerSession(
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
       options_(std::move(options)),
-      userCtxt_(userCtxt),
       debugFifo_(std::move(debugFifo)),
+      pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
+      sendWritesCallback_(*this),
       parser_(*this,
               options_.minBufferSize,
               options_.maxBufferSize),
-      pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
-      sendWritesCallback_(*this) {
+      userCtxt_(userCtxt) {
 
   try {
     transport_->getPeerAddress(&socketAddress_);
@@ -310,17 +310,10 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   close();
 }
 
-bool McServerSession::ensureWriteBufs() {
+void McServerSession::ensureWriteBufs() {
   if (writeBufs_ == nullptr) {
-    try {
-      writeBufs_ = folly::make_unique<WriteBufferQueue>(parser_.protocol());
-    } catch (const std::runtime_error& e) {
-      LOG(ERROR) << "Invalid protocol detected";
-      transport_->close();
-      return false;
-    }
+    writeBufs_ = folly::make_unique<WriteBufferQueue>(parser_.protocol());
   }
-  return true;
 }
 
 void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {

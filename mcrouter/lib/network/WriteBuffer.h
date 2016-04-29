@@ -255,12 +255,9 @@ class WriteBufferIntrusiveList : public WriteBuffer::Queue {
 
 class WriteBufferQueue {
  public:
-  /**
-   * @throws std::runtime_error if protocol is invalid
-   */
-  explicit WriteBufferQueue(mc_protocol_t protocol)
+  explicit WriteBufferQueue(mc_protocol_t protocol) noexcept
       : protocol_(protocol),
-        tlFreeQueue_(initFreeQueue()) {
+        tlFreeQueue_(initFreeQueue(protocol_)) {
   }
 
   std::unique_ptr<WriteBuffer> get() {
@@ -298,15 +295,13 @@ class WriteBufferQueue {
   WriteBuffer::Queue& tlFreeQueue_;
   WriteBuffer::Queue queue_;
 
-  WriteBuffer::Queue& initFreeQueue() {
-    if (protocol_ != mc_ascii_protocol &&
-        protocol_ != mc_umbrella_protocol &&
-        protocol_ != mc_caret_protocol) {
-      throw std::runtime_error("Invalid protocol");
-    }
+  static WriteBuffer::Queue& initFreeQueue(mc_protocol_t protocol) noexcept {
+    assert(protocol == mc_ascii_protocol ||
+           protocol == mc_umbrella_protocol ||
+           protocol == mc_caret_protocol);
 
     static thread_local WriteBuffer::Queue freeQ[mc_nprotocols];
-    return freeQ[static_cast<size_t>(protocol_)];
+    return freeQ[static_cast<size_t>(protocol)];
   }
 
   WriteBufferQueue(const WriteBufferQueue&) = delete;

@@ -151,18 +151,10 @@ class McServerSession :
  private:
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::EventBase& eventBase_;
-  folly::SocketAddress socketAddress_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   StateCallback& stateCb_;
   AsyncMcServerWorkerOptions options_;
-  void* userCtxt_{nullptr};
   std::shared_ptr<Fifo> debugFifo_;
-
-  /**
-   * If this session corresponds to an SSL session then
-   * this is set to the common name from client cert
-   */
-  std::string clientCommonName_;
 
   enum State {
     STREAMING,  /* close() was not called */
@@ -174,23 +166,8 @@ class McServerSession :
   };
   State state_{STREAMING};
 
-  ServerMcParser<McServerSession> parser_;
-
   // Pointer to current buffer. Updated by getReadBuffer()
   std::pair<void*, size_t> curBuffer_;
-
-  /* In-order protocol state */
-
-  /* headReqid_ <= tailReqid_.  Since we must output replies sequentially,
-     headReqid_ tracks the last reply id we're allowed to sent out.
-     Out of order replies are stalled in the blockedReplies_ queue. */
-  uint64_t headReqid_{0}; /**< Id of next unblocked reply */
-  uint64_t tailReqid_{0}; /**< Id to assign to next request */
-  std::unordered_map<uint64_t, std::unique_ptr<WriteBuffer>> blockedReplies_;
-
-  /* If non-null, a multi-op operation is being parsed.*/
-  std::shared_ptr<MultiOpParent> currentMultiop_;
-
 
   // All writes to be written at the end of the loop in a single batch.
   std::unique_ptr<WriteBufferIntrusiveList> pendingWrites_;
@@ -238,6 +215,30 @@ class McServerSession :
 
   /* Reads are enabled iff pauseState_ == 0 */
   uint64_t pauseState_{0};
+
+  ServerMcParser<McServerSession> parser_;
+
+  /* In-order protocol state */
+
+  /* headReqid_ <= tailReqid_.  Since we must output replies sequentially,
+     headReqid_ tracks the last reply id we're allowed to sent out.
+     Out of order replies are stalled in the blockedReplies_ queue. */
+  uint64_t headReqid_{0}; /**< Id of next unblocked reply */
+  uint64_t tailReqid_{0}; /**< Id to assign to next request */
+  std::unordered_map<uint64_t, std::unique_ptr<WriteBuffer>> blockedReplies_;
+
+  /* If non-null, a multi-op operation is being parsed.*/
+  std::shared_ptr<MultiOpParent> currentMultiop_;
+
+  folly::SocketAddress socketAddress_;
+
+  /**
+   * If this session corresponds to an SSL session then
+   * this is set to the common name from client cert
+   */
+  std::string clientCommonName_;
+
+  void* userCtxt_{nullptr};
 
   /**
    * pause()/resume() reads from the socket (TODO: does not affect the already
@@ -315,7 +316,7 @@ class McServerSession :
    * @return True if writeBufs_ has value after this call,
    *         False on any protocol error.
    */
-  bool ensureWriteBufs();
+  void ensureWriteBufs();
 
   void queueWrite(std::unique_ptr<WriteBuffer> wb);
 

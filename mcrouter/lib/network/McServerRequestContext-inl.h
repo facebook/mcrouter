@@ -67,9 +67,7 @@ void McServerRequestContext::replyImpl(
     return;
   }
 
-  if (!session->ensureWriteBufs()) {
-    return;
-  }
+  session->ensureWriteBufs();
 
   uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
