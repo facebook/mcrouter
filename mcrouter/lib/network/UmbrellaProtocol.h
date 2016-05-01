@@ -43,10 +43,10 @@ enum class UmbrellaVersion : uint8_t {
 };
 
 struct UmbrellaMessageInfo {
-  size_t headerSize;
-  size_t bodySize;
+  uint32_t headerSize;
+  uint32_t bodySize;
   UmbrellaVersion version;
-  size_t typeId;
+  uint32_t typeId;
   uint32_t reqId;
   uint64_t traceId;
 };

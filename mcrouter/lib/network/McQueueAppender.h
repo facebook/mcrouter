@@ -77,20 +77,21 @@ class McQueueAppenderStorage {
  private:
   static constexpr size_t kMaxIovecs{32};
 
-  // Buffer used for non-IOBuf data, e.g., ints, strings, and Thrift delimiters
-  uint8_t storage_[512];
   size_t storageIdx_{0};
+  size_t nIovsUsed_{0};
+  bool canUsePreviousIov_{false};
+
   // For safety reasons, we use another buffer for the header data
   // TODO Current value of kMaxHeaderLength is larger than necessary. Shrink it.
   uint8_t headerBuf_[kMaxHeaderLength];
+  // Buffer used for non-IOBuf data, e.g., ints, strings, and Thrift delimiters
+  uint8_t storage_[512];
 
   // The first iovec in iovs_ points to Caret message header data, and nothing
   // else. The remaining iovecs are used for the message body. Note that we do
   // not share iovs_[0] with body data, even if it would be possible, e.g., we
   // do not append the CT_STRUCT (struct beginning delimiter) to iovs_[0].
   struct iovec iovs_[kMaxIovecs];
-  size_t nIovsUsed_{0};
-  bool canUsePreviousIov_{false};
 
   // Chain of IOBufs used for IOBuf fields, like key and value. Note that we
   // also maintain views into this data via iovs_.

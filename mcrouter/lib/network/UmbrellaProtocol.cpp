@@ -122,20 +122,20 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
   }
 
   const char* buf = reinterpret_cast<const char*>(buff);
-  uint32_t bodySize;
-  uint32_t additionalFields;
-  uint32_t typeId;
   size_t encodedLength = folly::GroupVarint32::encodedSize(buf + 1);
 
   if (nbuf < encodedLength + 1) {
     return UmbrellaParseStatus::NOT_ENOUGH_DATA;
   }
 
+  uint32_t additionalFields;
   folly::GroupVarint32::decode_simple(
-      buf + 1, &bodySize, &typeId, &headerInfo.reqId, &additionalFields);
+      buf + 1,
+      &headerInfo.bodySize,
+      &headerInfo.typeId,
+      &headerInfo.reqId,
+      &additionalFields);
 
-  headerInfo.bodySize = bodySize;
-  headerInfo.typeId = typeId;
   folly::StringPiece range(buf, nbuf);
   range.advance(encodedLength + 1);
 

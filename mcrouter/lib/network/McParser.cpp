@@ -159,7 +159,7 @@ bool McParser::readUmbrellaOrCaretData() {
     if (readBuffer_.length() + readBuffer_.tailroom() < messageSize) {
       assert(!readBuffer_.isChained());
       readBuffer_.unshareOne();
-      bufferSize_ = std::max(bufferSize_, messageSize);
+      bufferSize_ = std::max<size_t>(bufferSize_, messageSize);
       readBuffer_.reserve(
           0 /* minHeadroom */,
           bufferSize_ - readBuffer_.length() /* minTailroom */);
