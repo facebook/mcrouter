@@ -273,12 +273,12 @@ class McServerThread {
       }
 
       if (socket_) {
-        socket_->listen(SOMAXCONN);
+        socket_->listen(server_.opts_.tcpListenBacklog);
         socket_->startAccepting();
         socket_->attachEventBase(&evb_);
       }
       if (sslSocket_) {
-        sslSocket_->listen(SOMAXCONN);
+        sslSocket_->listen(server_.opts_.tcpListenBacklog);
         sslSocket_->startAccepting();
         sslSocket_->attachEventBase(&evb_);
       }

@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include <sys/socket.h>
+
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 
 namespace folly {
@@ -50,6 +52,11 @@ class AsyncMcServer {
      * existingSocketFd must be unset (-1).
      */
     std::string unixDomainSockPath;
+
+    /**
+     * TCP listen backlog
+     */
+    int tcpListenBacklog{SOMAXCONN};
 
     /**
      * The list of ports to listen on.
