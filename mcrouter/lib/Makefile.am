@@ -27,6 +27,9 @@ libmcrouter_a_SOURCES = \
   FailoverErrorsSettings.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
+	IovecCursor-inl.h \
+	IovecCursor.cpp \
+	IovecCursor.h \
   Keys.cpp \
   Keys.h \
   Lz4Immutable.cpp \
