@@ -22,6 +22,7 @@
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
@@ -200,6 +201,16 @@ class McrouterInstance :
     postprocessCallback_ = std::move(newCallback);
   }
 
+  void setUpCompressionDictionaries(
+      std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs) noexcept {
+    assert(!compressionCodecManager_);
+    if (codecConfigs.empty()) {
+      return;
+    }
+    compressionCodecManager_ =
+        folly::make_unique<CompressionCodecManager>(std::move(codecConfigs));
+  }
+
  private:
   const McrouterOptions opts_;
 
@@ -220,6 +231,8 @@ class McrouterInstance :
   std::mutex configReconfigLock_;
 
   LogPostprocessCallbackFunc postprocessCallback_;
+
+  std::unique_ptr<CompressionCodecManager> compressionCodecManager_;
 
   // Stat updater thread updates rate stat windows for each proxy
   std::thread statUpdaterThread_;

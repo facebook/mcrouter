@@ -22,12 +22,12 @@ enum class CompressionCodecType {
   // Does not compress.
   // Thread-safe.
   // Doesn't need uncompressed size.
-  NO_COMPRESSION,
+  NO_COMPRESSION = 0,
 
   // Use LZ4 compression.
   // Not thread-safe.
   // Requires uncompressed size.
-  LZ4,
+  LZ4 = 1
 };
 
 /**

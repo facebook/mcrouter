@@ -138,6 +138,11 @@ void logShadowValidationError(proxy_t& proxy,
 
 void initFailureLogger();
 
+/**
+ * Initializes compression dictionaries for the given mcrouter instance
+ */
+void initCompression(McrouterInstance& router);
+
 void scheduleSingletonCleanup();
 
 std::unordered_map<std::string, folly::dynamic> additionalConfigParams();

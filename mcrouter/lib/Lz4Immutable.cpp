@@ -12,6 +12,7 @@
 #include <type_traits>
 
 #include <folly/Bits.h>
+#include <folly/Format.h>
 
 #include "mcrouter/lib/IovecCursor.h"
 
@@ -73,11 +74,22 @@ struct iovec getDictionaryIovec(const Lz4ImmutableState& state) noexcept {
 }
 
 Lz4ImmutableState loadDictionary(std::unique_ptr<folly::IOBuf> dictionary) {
-  CHECK(!dictionary->isChained()) << "Dictionary has to be coalesced";
+  if (!dictionary) {
+    throw std::invalid_argument("Dictionary cannot be nullptr.");
+  }
+  if (dictionary->isChained()) {
+    throw std::invalid_argument("Dictionary has to be coalesced.");
+  }
 
   size_t dicSize = dictionary->length();
-  CHECK_GE(dicSize, kHashUnit) << "Dictionary too small";
-  CHECK_LE(dicSize, kMaxDictionarySize) << "Dictionary too big";
+  if (dicSize < kHashUnit) {
+    throw std::invalid_argument(
+        folly::sformat("Dictionary cannot be smaller than {}.", kHashUnit));
+  }
+  if (dicSize > kMaxDictionarySize) {
+    throw std::invalid_argument(folly::sformat(
+        "Dictionary cannot be larger than {}.", kMaxDictionarySize));
+  }
 
   Lz4ImmutableState state;
   state.dictionary = std::move(dictionary);
@@ -210,7 +222,7 @@ calculateMatchLength(IovecCursor& source, IovecCursor& match, size_t limit) {
 
 } // anonymous namespace
 
-Lz4Immutable::Lz4Immutable(std::unique_ptr<folly::IOBuf> dictionary) noexcept
+Lz4Immutable::Lz4Immutable(std::unique_ptr<folly::IOBuf> dictionary)
     : state_(loadDictionary(std::move(dictionary))) {}
 
 size_t Lz4Immutable::compressBound(size_t size) const noexcept {

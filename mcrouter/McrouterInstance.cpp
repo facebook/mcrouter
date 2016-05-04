@@ -228,6 +228,11 @@ McrouterClient::Pointer McrouterInstance::createSameThreadClient(
 bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
   CHECK(evbs.empty() || evbs.size() == opts_.num_proxies);
 
+  // Must init compression before creating proxies.
+  if (opts_.enable_compression) {
+    initCompression(*this);
+  }
+
   for (size_t i = 0; i < opts_.num_proxies; i++) {
     try {
       if (evbs.empty()) {

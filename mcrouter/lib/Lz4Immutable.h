@@ -40,10 +40,12 @@ class Lz4Immutable {
    * Builds Lz4Immutable.
    *
    * @param dictionary  Dictionary to use to compress the data.
-   *                    The dictionary have between sizeof(size_t)
-   *                    and 64 KB - otherwise it will crash!
+   *                    The dictionary has to be between sizeof(size_t)
+   *                    and 64 KB - otherwise it will throw!
+   *
+   * @throw std::invalid_argument If the dictionary is invalid.
    */
-  explicit Lz4Immutable(std::unique_ptr<folly::IOBuf> dictionary) noexcept;
+  explicit Lz4Immutable(std::unique_ptr<folly::IOBuf> dictionary);
 
   /**
    * Upper bound of compression size.

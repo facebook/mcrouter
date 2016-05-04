@@ -22,6 +22,8 @@ libmcrouter_a_SOURCES = \
   Ch3HashFunc.h \
   Compression.cpp \
   Compression.h \
+  CompressionCodecManager.cpp \
+  CompressionCodecManager.h \
   Crc32HashFunc.h \
   FailoverErrorsSettings.cpp \
   FailoverErrorsSettings.h \

@@ -263,6 +263,12 @@ mcrouter_option_toggle(
   "ssl-connection-cache", no_short,
   "If enabled, limited number of SSL sessions will be cached")
 
+mcrouter_option_toggle(
+  enable_compression, false,
+  "enable-compression", no_short,
+  "If enabled, mcrouter replies will be compressed according to the "
+  "compression algorithms/dictionaries supported by the client. Only "
+  "compresses caret protocol replies.")
 
 mcrouter_option_group("Routing configuration")
 

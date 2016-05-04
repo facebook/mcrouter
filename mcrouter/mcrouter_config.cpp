@@ -107,6 +107,8 @@ void logShadowValidationError(proxy_t& proxy,
 
 void initFailureLogger() { }
 
+void initCompression(McrouterInstance&) { }
+
 void scheduleSingletonCleanup() { }
 
 std::unordered_map<std::string, folly::dynamic> additionalConfigParams() {
