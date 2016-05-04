@@ -13,6 +13,8 @@
 
 #include <folly/Bits.h>
 
+#include "mcrouter/lib/IovecCursor.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -47,80 +49,33 @@ constexpr size_t kMlMask = (1U << kMlBits) - 1;
 constexpr size_t kRunBits = 8 - kMlBits;
 constexpr size_t kRunMask = (1U << kRunBits) - 1;
 
-/**
- * Read "size" bytes from position "pos" of "buffer"
- * NOTE: Buffer can be chained, but computeChainDataLength() MUST
- * be at least: ("pos" + "size").
- *
- * @param dest    Destination buffer.
- * @param buffer  Where to read the data from.
- * @param pos     Position to read within the buffer.
- * @param size    Number of bytes to read.
- */
-void readSlow(
-    uint8_t* dest,
-    const folly::IOBuf& buffer,
-    size_t pos,
-    size_t size) {
-  const folly::IOBuf* cur = &buffer;
-
-  // Skip previous buffers
-  while (cur->length() <= pos) {
-    pos -= cur->length();
-    cur = cur->next();
-  }
-
-  size_t bytesRead = 0;
-  while (bytesRead < size) {
-    size_t toRead = std::min(size - bytesRead, cur->length() - pos);
-    std::memcpy(dest, cur->data() + pos, toRead);
-    dest += toRead;
-    bytesRead += toRead;
-    cur = cur->next();
-    pos = 0;
-  }
-}
-
-/**
- * Read sizeof(T) bytes from position "pos" of "buffer"
- * NOTE: Buffer can be chained, but computeChainDataLength() MUST
- * be at least: ("pos" + "size").
- *
- * @param buffer  Where to read the data from.
- * @param pos     Position to read within the buffer.
- */
-template <class T>
-T read(const folly::IOBuf& buffer, size_t pos) {
-  static_assert(std::is_integral<T>::value, "Read requires an integral type");
-  if (LIKELY(buffer.length() >= pos + sizeof(T))) {
-    return folly::loadUnaligned<T>(buffer.data() + pos);
-  }
-  uint8_t buf[sizeof(T)];
-  readSlow(buf, buffer, pos, sizeof(T));
-  T val;
-  memcpy(&val, buf, sizeof(T));
-  return val;
-}
-
 uint32_t hashSequence(size_t sequence) {
   return ((sequence * kPrime5Bytes) >> (40 - kHashLog)) & kHashMask;
 }
 
-uint32_t hashPosition(const folly::IOBuf& source, size_t pos) {
-  return hashSequence(read<uint64_t>(source, pos));
+uint32_t hashPosition(const IovecCursor& cursor) {
+  return hashSequence(cursor.peek<uint64_t>());
 }
 
 uint32_t getPositionOnHash(const Hashtable& table, uint32_t hash) {
   return table[hash];
 }
 
-void putPosition(Lz4ImmutableState& state, size_t pos) {
-  uint32_t h = hashPosition(*state.dictionary, pos);
-  state.table[h] = pos;
+void putPosition(Hashtable& table, const IovecCursor& cursor) {
+  uint32_t h = hashPosition(cursor);
+  table[h] = cursor.tell();
+}
+
+struct iovec getDictionaryIovec(const Lz4ImmutableState& state) noexcept {
+  struct iovec iov;
+  state.dictionary->fillIov(&iov, 1);
+  return iov;
 }
 
 Lz4ImmutableState loadDictionary(std::unique_ptr<folly::IOBuf> dictionary) {
-  size_t dicSize = dictionary->computeChainDataLength();
+  CHECK(!dictionary->isChained()) << "Dictionary has to be coalesced";
+
+  size_t dicSize = dictionary->length();
   CHECK_GE(dicSize, kHashUnit) << "Dictionary too small";
   CHECK_LE(dicSize, kMaxDictionarySize) << "Dictionary too big";
 
@@ -128,10 +83,11 @@ Lz4ImmutableState loadDictionary(std::unique_ptr<folly::IOBuf> dictionary) {
   state.dictionary = std::move(dictionary);
   state.table.fill(0);
 
-  size_t pos = 0;
-  while (pos <= dicSize - kHashUnit) {
-    putPosition(state, pos);
-    pos += 3;
+  struct iovec dicIov = getDictionaryIovec(state);
+  IovecCursor dicCursor(&dicIov, 1);
+  while (dicCursor.tell() <= dicSize - kHashUnit) {
+    putPosition(state.table, dicCursor);
+    dicCursor.advance(3);
   }
 
   return state;
@@ -139,24 +95,22 @@ Lz4ImmutableState loadDictionary(std::unique_ptr<folly::IOBuf> dictionary) {
 
 /**
  * A customized version of std::memcpy that works with chained IOBufs.
+ *
+ * Note: cursor will point just past its current position + "count"
  */
-void safeCopy(
-    uint8_t* dest,
-    const folly::IOBuf& source,
-    size_t pos,
-    size_t count) {
+void safeCopy(uint8_t* dest, IovecCursor& source, size_t count) {
   int64_t left = count;
   uint64_t src;
   do {
     size_t toWrite = std::min(8l, left);
     if (LIKELY(toWrite == sizeof(uint64_t))) {
-      src = read<uint64_t>(source, pos);
+      src = source.peek<uint64_t>();
     } else {
-      readSlow(reinterpret_cast<uint8_t*>(&src), source, pos, toWrite);
+      source.peekInto(reinterpret_cast<uint8_t*>(&src), toWrite);
     }
     std::memcpy(dest, &src, toWrite);
     dest += toWrite;
-    pos += toWrite;
+    source.advance(toWrite);
     left -= toWrite;
   } while (left > 0);
 }
@@ -164,18 +118,16 @@ void safeCopy(
 /**
  * A customized (faster) version of safeCopy that may overwrite
  * up to 7 bytes more than "count".
+ *
+ * Note: cursor will point just past it's current position + "count" + up to
+ * 7 bytes.
  */
-void wildCopy(
-    uint8_t* dest,
-    const folly::IOBuf& source,
-    size_t pos,
-    size_t count) {
+void wildCopy(uint8_t* dest, IovecCursor& cursor, size_t count) {
   const uint8_t* destEnd = dest + count;
   do {
-    uint64_t src = read<uint64_t>(source, pos);
+    uint64_t src = cursor.read<uint64_t>();
     std::memcpy(dest, &src, sizeof(uint64_t));
     dest += sizeof(uint64_t);
-    pos += sizeof(uint64_t);
   } while (dest < destEnd);
 }
 
@@ -184,9 +136,8 @@ void writeLE(void* dest, uint16_t val) {
   std::memcpy(dest, &valLE, sizeof(uint16_t));
 }
 
-uint16_t readLE(const folly::IOBuf& source, size_t pos) {
-  uint16_t val = read<uint16_t>(source, pos);
-  return folly::Endian::little(val);
+uint16_t peekLE(const IovecCursor& cursor) {
+  return folly::Endian::little(cursor.peek<uint16_t>());
 }
 
 /**
@@ -215,51 +166,46 @@ size_t numCommonBytes(register size_t diff) {
 /**
  * Calculates the length of a match given a starting point.
  *
- * @param source      Source buffer.
- * @param pos         Starting index of the match inside source buffer.
- * @param dictionary  The dictionary.
- * @param match       Starting index of the match inside dictionary.
- * @param posLimit    Upper limit that points just past where
- *                    "pos" can go to find a match.
+ * @param source  Source cursor.
+ * @param match   Match cursor.
+ * @param limit   Upper limit that points just past where "source" can
+ *                go to find a match.
  *
- * @return            The size of the match, in bytes.
+ * @return              The size of the match, in bytes.
  */
-size_t calculateMatchLength(
-    const folly::IOBuf& source,
-    size_t pos,
-    const folly::IOBuf& dictionary,
-    size_t match,
-    size_t posLimit) {
+size_t
+calculateMatchLength(IovecCursor& source, IovecCursor& match, size_t limit) {
+  const size_t start = source.tell();
 
-  const size_t posStart = pos;
-
-  while (LIKELY(pos < posLimit - kStepSize - 1)) {
-    uint64_t diff =
-        read<uint64_t>(dictionary, match) ^ read<uint64_t>(source, pos);
+  while (LIKELY(source.tell() < limit - kStepSize - 1)) {
+    uint64_t diff = match.peek<uint64_t>() ^ source.peek<uint64_t>();
     if (!diff) {
-      pos += kStepSize;
-      match += kStepSize;
+      source.advance(kStepSize);
+      match.advance(kStepSize);
       continue;
     }
-    pos += numCommonBytes(diff);
-    return pos - posStart;
+    size_t commonBytes = numCommonBytes(diff);
+    source.advance(commonBytes);
+    match.advance(commonBytes);
+    return source.tell() - start;
   }
 
-  if ((pos < posLimit - 3) &&
-      (read<uint32_t>(dictionary, match) == read<uint32_t>(source, pos))) {
-    pos += 4;
-    match += 4;
+  if ((source.tell() < limit - 3) &&
+      (match.peek<uint32_t>() == source.peek<uint32_t>())) {
+    source.advance(sizeof(uint32_t));
+    match.advance(sizeof(uint32_t));
   }
-  if ((pos < posLimit - 1) &&
-      (read<uint16_t>(dictionary, match) == read<uint16_t>(source, pos))) {
-    pos += 2;
-    match += 2;
+  if ((source.tell() < limit - 1) &&
+      (match.peek<uint16_t>() == source.peek<uint16_t>())) {
+    source.advance(sizeof(uint16_t));
+    match.advance(sizeof(uint16_t));
   }
-  if ((pos < posLimit) &&
-      (read<uint8_t>(dictionary, match) == read<uint8_t>(source, pos))) {
-    ++pos;
+  if ((source.tell() < limit) &&
+      (match.peek<uint8_t>() == source.peek<uint8_t>())) {
+    source.advance(sizeof(uint8_t));
+    match.advance(sizeof(uint8_t));
   }
-  return pos - posStart;
+  return source.tell() - start;
 }
 
 } // anonymous namespace
@@ -273,20 +219,37 @@ size_t Lz4Immutable::compressBound(size_t size) const noexcept {
 
 std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     const folly::IOBuf& source) const noexcept {
-  const size_t sourceSize = source.computeChainDataLength();
-  CHECK_LE(sourceSize, kMaxInputSize) << "Data too large to compress!";
+  auto iov = source.getIov();
+  return compress(iov.data(), iov.size());
+}
 
-  const auto& dictionary = *state_.dictionary;
-  size_t dictionarySize = dictionary.computeChainDataLength();
-  size_t dictionaryDiff = kMaxDictionarySize - dictionarySize;
+std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
+    const struct iovec* iov,
+    size_t iovcnt) const noexcept {
+  IovecCursor source(iov, iovcnt);
+  CHECK_LE(source.totalLength(), kMaxInputSize)
+      << "Data too large to compress!";
+
+  // Creates a match cursor - a cursor that will keep track of matches
+  // found in the dictionary.
+  struct iovec dicIov = getDictionaryIovec(state_);
+  const IovecCursor dicCursor(&dicIov, 1);
+
+  // The difference between the dictionary size and the max we can look back
+  // to find a match (64KB).
+  // It is used to see if a match is valid to be used (it has to
+  // be, at most, 64KB "behind" the data we are compresing right now).
+  const size_t dictionaryDiff = kMaxDictionarySize - dicCursor.totalLength();
+
   // Upper limit of where we can look for a match.
-  const size_t matchFindLimit = sourceSize - kMatchFindLimit;
+  const size_t matchFindLimit = source.totalLength() - kMatchFindLimit;
   // Upper limit of where a match can go.
-  const size_t matchLimit = sourceSize - kLastLiterals;
-  const size_t maxOutputSize = compressBound(sourceSize);
+  const size_t matchLimit = source.totalLength() - kLastLiterals;
 
   // Destination (compressed) buffer.
+  const size_t maxOutputSize = compressBound(source.totalLength());
   auto destination = folly::IOBuf::create(maxOutputSize);
+
   // Pointer to where the next compressed position should be written.
   uint8_t* output = destination->writableTail();
   // Lower and upper limit to where the output buffer can go.
@@ -296,55 +259,53 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
   // Controls the compression main loop.
   bool running = true;
 
-  // Next position (0..sourceSize] in source buffer that was not
+  // Next position (0..sourceSize] in source that was not
   // yet written to destination buffer.
-  size_t anchor = 0;
-  // Next position (0..sourceSize] where compression is going to
-  // working on source buffer.
-  size_t pos = 0;
-  uint32_t forwardHash;
+  IovecCursor anchorCursor(iov, iovcnt);
 
-  if (sourceSize < kMinInputSize) {
-    // Not enough data to compress. Don't even enter the compress loop.
+  // Cursor that points to current match.
+  IovecCursor match = dicCursor;
+
+  if (source.totalLength() < kMinInputSize) {
+    // Not enough data to compress. Don't even enter the compress loop,
+    // skip directly to the part that encodes the last literals.
     running = false;
   } else {
     // Skip first byte.
-    ++pos;
-    forwardHash = hashPosition(source, pos);
+    source.advance(1);
   }
 
   // Main loop
   while (running) {
-    // Position (0..sourceSize] of current match in source buffer.
-    uint32_t match;
     // LZ4 token
     uint8_t* token;
 
     // Find a match
     {
-      size_t forwardPos = pos;
-      size_t step = 1;
-      size_t searchMatchNb = 1 << kSkipTrigger;
+      size_t step = 0;
+      size_t searchMatchNumBytes = 1 << kSkipTrigger;
 
       do {
-        uint32_t hash = forwardHash;
-        pos = forwardPos;
-        forwardPos += step;
-        step = (searchMatchNb++ >> kSkipTrigger);
+        // Advance cursor and calculate next step.
+        source.advance(step);
+        step = (searchMatchNumBytes++ >> kSkipTrigger);
 
-        if (UNLIKELY(forwardPos > matchFindLimit) ||
-            UNLIKELY(pos > kMaxDictionarySize)) {
-          // Not enough data to compress, break compression main loop.
+        // Hash current position
+        uint32_t hash = hashPosition(source);
+
+        // Verify if the current position in the source buffer
+        // can still be compressed.
+        if (UNLIKELY(source.tell() + step > matchFindLimit) ||
+            UNLIKELY(source.tell() > kMaxDictionarySize)) {
           running = false;
           break;
         }
 
-        match = getPositionOnHash(state_.table, hash);
-
-        forwardHash = hashPosition(source, forwardPos);
-      } while (
-          ((match + dictionaryDiff) <= pos) ||
-          (read<uint32_t>(dictionary, match) != read<uint32_t>(source, pos)));
+        uint32_t matchPos = getPositionOnHash(state_.table, hash);
+        match.seek(matchPos);
+      } while (((match.tell() + dictionaryDiff) <=
+                source.tell()) ||
+               (match.peek<uint32_t>() != source.peek<uint32_t>()));
 
       if (!running) {
         break;
@@ -352,17 +313,21 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     }
 
     // Catch up - try to expand the match backwards.
-    while ((pos > anchor) && (match > 0) &&
-           UNLIKELY(
-               read<uint8_t>(source, pos - 1) ==
-               read<uint8_t>(dictionary, match - 1))) {
-      --pos;
-      --match;
+    while (source.tell() > anchorCursor.tell() &&
+           match.tell() > 0) {
+      source.retreat(1);
+      match.retreat(1);
+      if (LIKELY(source.peek<uint8_t>() != match.peek<uint8_t>())) {
+        source.advance(1);
+        match.advance(1);
+        break;
+      }
     }
 
     // Write literal
     {
-      size_t literalLen = pos - anchor;
+      size_t literalLen =
+          source.tell() - anchorCursor.tell();
       token = output++;
 
       // Check output limit
@@ -383,25 +348,27 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
       }
 
       // Copy literals to output buffer.
-      wildCopy(output, source, anchor, literalLen);
+      wildCopy(output, anchorCursor, literalLen);
       output += literalLen;
     }
 
     // Encode offset
-    uint16_t offset = dictionarySize - match + pos;
+    uint16_t offset = dicCursor.totalLength() - match.tell() +
+        source.tell();
     writeLE(output, static_cast<uint16_t>(offset));
     output += 2;
 
     // Encode matchLength
     {
       // we cannot go past the dictionary
-      size_t posLimit = pos + (dictionarySize - match);
+      size_t posLimit = source.tell() +
+          (dicCursor.totalLength() - match.tell());
       // Nor go past the source buffer
       posLimit = std::min(posLimit, matchLimit);
 
-      size_t matchLen = calculateMatchLength(
-          source, pos + kMinMatch, dictionary, match + kMinMatch, posLimit);
-      pos += kMinMatch + matchLen;
+      source.advance(kMinMatch);
+      match.advance(kMinMatch);
+      size_t matchLen = calculateMatchLength(source, match, posLimit);
 
       assert(output + (1 + kLastLiterals) + (matchLen >> 8) <= outputLimit);
 
@@ -424,20 +391,17 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     }
 
     // Update anchor
-    anchor = pos;
+    anchorCursor.seek(source.tell());
 
     // Test end of chunk
-    if (pos > matchFindLimit) {
+    if (source.tell() > matchFindLimit) {
       break;
     }
-
-    // Prepare for next loop
-    forwardHash = hashPosition(source, +pos);
   }
 
   // Encode last literals
   {
-    size_t lastRun = sourceSize - anchor;
+    size_t lastRun = source.totalLength() - anchorCursor.tell();
 
     assert(
         (output - destination->data()) + lastRun + 1 +
@@ -454,7 +418,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     } else {
       *output++ = static_cast<uint8_t>(lastRun << kMlBits);
     }
-    safeCopy(output, source, anchor, lastRun);
+    safeCopy(output, anchorCursor, lastRun);
     output += lastRun;
   }
 
@@ -465,9 +429,18 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
 std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
     const folly::IOBuf& source,
     size_t uncompressedSize) const noexcept {
+  auto iov = source.getIov();
+  return decompress(iov.data(), iov.size(), uncompressedSize);
+}
 
-  const auto& dictionary = *state_.dictionary;
-  size_t dictionarySize = dictionary.computeChainDataLength();
+std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
+    const struct iovec* iov,
+    size_t iovcnt,
+    size_t uncompressedSize) const noexcept {
+  // Creates a match cursor - a cursor that will keep track of matches
+  // found in the dictionary.
+  struct iovec dicIov = getDictionaryIovec(state_);
+  const IovecCursor dicCursor(&dicIov, 1);
 
   // Destination (uncompressed) buffer.
   auto destination = folly::IOBuf::create(uncompressedSize);
@@ -477,19 +450,20 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
   const uint8_t* outputStart = output;
   const uint8_t* outputLimit = output + uncompressedSize;
 
-  size_t pos = 0;
+  IovecCursor source(iov, iovcnt);
+  IovecCursor match = dicCursor;
 
   // Main loop
   while (true) {
     // LZ4 token
-    size_t token = read<uint8_t>(source, pos++);
+    size_t token = source.read<uint8_t>();
 
     // Get literal length
     size_t literalLength = token >> kMlBits;
     if (literalLength == kRunMask) {
       size_t s;
       do {
-        s = read<uint8_t>(source, pos++);
+        s = source.read<uint8_t>();
         literalLength += s;
       } while (LIKELY(s == 255));
     }
@@ -500,33 +474,32 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
       if (cpy != outputLimit) {
         return nullptr;
       }
-      safeCopy(output, source, pos, literalLength);
-      pos += literalLength;
+      safeCopy(output, source, literalLength);
       output += literalLength;
       break; // Necessarily EOF, due to parsing restrictions
     }
-    wildCopy(output, source, pos, literalLength);
-    pos += literalLength;
+    safeCopy(output, source, literalLength);
     output = cpy;
 
     // Get match offset
-    uint16_t offset = readLE(source, pos);
-    size_t match = dictionarySize + (output - outputStart) - offset;
-    pos += 2;
+    uint16_t offset = peekLE(source);
+    size_t matchPos = dicCursor.totalLength() + (output - outputStart) - offset;
+    source.advance(2);
 
     // Get match length
     size_t matchLength = token & kMlMask;
     if (matchLength == kMlMask) {
       size_t s;
       do {
-        s = read<uint8_t>(source, pos++);
+        s = source.read<uint8_t>();
         matchLength += s;
       } while (s == 255);
     }
     matchLength += kMinMatch;
 
     // Copy match
-    safeCopy(output, dictionary, match, matchLength);
+    match.seek(matchPos);
+    safeCopy(output, match, matchLength);
     output += matchLength;
   }
 

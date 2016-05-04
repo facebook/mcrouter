@@ -60,6 +60,8 @@ class Lz4Immutable {
    */
   std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& source) const
       noexcept;
+  std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
+      const noexcept;
 
   /**
    * Decompress the data.
@@ -72,6 +74,10 @@ class Lz4Immutable {
    */
   std::unique_ptr<folly::IOBuf> decompress(
       const folly::IOBuf& source,
+      size_t uncompressedSize) const noexcept;
+  std::unique_ptr<folly::IOBuf> decompress(
+      const struct iovec* iov,
+      size_t iovcnt,
       size_t uncompressedSize) const noexcept;
 
  private:
