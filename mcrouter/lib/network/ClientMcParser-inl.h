@@ -66,7 +66,6 @@ void ClientMcParser<Callback>::expectNext() {
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardAsciiReply() {
-  parser_.reportMsgRead();
   callback_.replyReady(asciiParser_.getReply<ReplyT<Request>>(), 0 /* reqId */);
   replyForwarder_ = nullptr;
 }
@@ -77,7 +76,6 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
     const UmbrellaMessageInfo& info,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
-  parser_.reportMsgRead();
 
   auto reply = umbrellaParseReply<Request>(
       buffer,
@@ -96,7 +94,6 @@ ClientMcParser<Callback>::forwardCaretReply(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
-  parser_.reportMsgRead();
 
   ReplyT<Request> reply;
   converter_.dispatchTypedRequest(headerInfo, buffer, reply);
@@ -110,7 +107,6 @@ ClientMcParser<Callback>::forwardCaretReply(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
-  parser_.reportMsgRead();
 
   ReplyT<Request> reply;
   folly::io::Cursor cur(&buffer);

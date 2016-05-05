@@ -12,14 +12,11 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-#include <chrono>
 #include <stdexcept>
 
 namespace facebook { namespace memcache { namespace cycles {
 
-namespace {
-
-inline uint64_t rdtsc() {
+uint64_t getCpuCycles() noexcept {
 #if defined(__x86_64__)
   uint64_t hi, lo;
   __asm__ volatile("rdtsc" : "=a" (lo), "=d" (hi));
@@ -34,17 +31,11 @@ inline uint64_t rdtsc() {
 #endif
 }
 
-} // anonymous namespace
-
-Metering CyclesClock::read() const {
-  return Metering{rdtsc(), 0};
-}
-
 Metering RUsageClock::read() const {
   rusage res;
 #ifdef RUSAGE_THREAD
   getrusage(RUSAGE_THREAD, &res);
-  return Metering{rdtsc(), (uint64_t)res.ru_nvcsw + res.ru_nivcsw};
+  return Metering{getCpuCycles(), (uint64_t)res.ru_nvcsw + res.ru_nivcsw};
 #else
   throw std::runtime_error("RUSAGE_THREAD is not defined on this system.");
 #endif

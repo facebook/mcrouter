@@ -96,10 +96,6 @@ class McParser {
    */
   bool readDataAvailable(size_t len);
 
-  void reportMsgRead() {
-    ++parsedMessages_;
-  }
-
   void reset();
  private:
   bool seenFirstByte_{false};
@@ -111,7 +107,7 @@ class McParser {
   size_t bufferSize_{256};
   size_t maxBufferSize_{4096};
 
-  size_t parsedMessages_{0};
+  uint64_t lastShrinkCycles_{0};
 
   folly::IOBuf readBuffer_;
 

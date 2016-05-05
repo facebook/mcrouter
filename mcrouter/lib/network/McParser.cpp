@@ -18,13 +18,14 @@
 #include <folly/io/Cursor.h>
 
 #include "mcrouter/lib/allocator/JemallocNodumpAllocator.h"
+#include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 
 namespace {
-// Adjust buffer size after this many requests
-constexpr size_t kAdjustBufferSizeInterval = 10000;
+// Adjust buffer size after this many CPU cycles (~4 billion)
+constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 32;
 
 /*
  * Determine the protocol by looking at the first byte
@@ -91,7 +92,8 @@ void McParser::reset() {
 std::pair<void*, size_t> McParser::getReadBuffer() {
   assert(!readBuffer_.isChained());
   readBuffer_.unshareOne();
-  if (!readBuffer_.length() && readBuffer_.capacity() > 0) {
+  if (!readBuffer_.length()) {
+    assert(readBuffer_.capacity() > 0);
     /* If we read everything, reset pointers to 0 and re-use the buffer */
     readBuffer_.clear();
   } else if (readBuffer_.headroom() > 0) {
@@ -174,11 +176,13 @@ bool McParser::readUmbrellaOrCaretData() {
 
   // We parsed everything, read buffer is empty.
   // Try to shrink it to reduce memory footprint
-  if (parsedMessages_ >= kAdjustBufferSizeInterval &&
-      readBuffer_.capacity() > maxBufferSize_) {
-    parsedMessages_ = 0;
-    bufferSize_ = std::min(bufferSize_, maxBufferSize_);
-    readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, bufferSize_);
+  if (bufferSize_ > maxBufferSize_) {
+    auto curCycles = cycles::getCpuCycles();
+    if (curCycles > lastShrinkCycles_ + kAdjustBufferSizeCpuCycles) {
+      lastShrinkCycles_ = curCycles;
+      bufferSize_ = maxBufferSize_;
+      readBuffer_ = folly::IOBuf(folly::IOBuf::CREATE, bufferSize_);
+    }
   }
   return true;
 }

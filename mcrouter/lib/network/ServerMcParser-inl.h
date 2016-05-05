@@ -49,7 +49,6 @@ template <class Callback>
 template <class ThriftType>
 void ServerMcParser<Callback>::requestReadyHelper(
     TypedThriftRequest<ThriftType>&& req, uint64_t reqid) {
-  parser_.reportMsgRead();
   callback_.umbrellaRequestReady(std::move(req), reqid);
 }
 
@@ -140,7 +139,6 @@ bool ServerMcParser<Callback>::shouldReadToAsciiBuffer() const {
 template <class Callback>
 template <class Request>
 void ServerMcParser<Callback>::onRequest(Request&& req, bool noreply) {
-  parser_.reportMsgRead();
   callback_.onRequest(std::move(req), noreply);
 }
 

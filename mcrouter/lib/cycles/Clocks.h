@@ -49,9 +49,13 @@ class Clock {
  * implementations this clock might be inaccurate for measuring a really small
  * amount of instructions due to out-of-order execution.
  */
+uint64_t getCpuCycles() noexcept;
+
 class CyclesClock : public Clock {
  public:
-  Metering read() const override final;
+  Metering read() const override final {
+    return Metering{getCpuCycles(), 0};
+  }
 };
 
 /**
