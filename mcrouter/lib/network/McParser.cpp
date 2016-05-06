@@ -24,8 +24,8 @@
 namespace facebook { namespace memcache {
 
 namespace {
-// Adjust buffer size after this many CPU cycles (~4 billion)
-constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 32;
+// Adjust buffer size after this many CPU cycles (~2 billion)
+constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
 
 /*
  * Determine the protocol by looking at the first byte
