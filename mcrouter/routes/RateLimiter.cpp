@@ -10,8 +10,11 @@
 #include "RateLimiter.h"
 
 #include <string>
+#include <vector>
 
+#include <folly/Conv.h>
 #include <folly/dynamic.h>
+#include <folly/String.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -63,6 +66,23 @@ RateLimiter::RateLimiter(const folly::dynamic& json) {
     double burst = asPositiveDoubleDefault(json, "deletes_burst", rate);
     deletesTb_ = TokenBucket(rate, burst, now);
   }
+}
+
+std::string RateLimiter::toDebugStr() const {
+  std::vector<string> pieces;
+  if (getsTb_) {
+    pieces.push_back(folly::to<string>("gets_rate=", getsTb_->rate()));
+    pieces.push_back(folly::to<string>("gets_burst=", getsTb_->burst()));
+  }
+  if (setsTb_) {
+    pieces.push_back(folly::to<string>("sets_rate=", setsTb_->rate()));
+    pieces.push_back(folly::to<string>("sets_burst=", setsTb_->burst()));
+  }
+  if (deletesTb_) {
+    pieces.push_back(folly::to<string>("deletes_rate=", deletesTb_->rate()));
+    pieces.push_back(folly::to<string>("deletes_burst=", deletesTb_->burst()));
+  }
+  return folly::join('|', pieces);
 }
 
 }}}  // facebook::memcache::mcrouter

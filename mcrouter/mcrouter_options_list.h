@@ -233,11 +233,6 @@ mcrouter_option_string(
   "Path of pem-style CA cert for ssl")
 
 mcrouter_option_toggle(
-  destination_rate_limiting, false,
-  "destination-rate-limiting", no_short,
-  "If not enabled, ignore \"rates\" in pool configs.")
-
-mcrouter_option_toggle(
   enable_qos, false,
   "enable-qos", no_short,
   "If enabled, sets the DSCP field in IP header according "

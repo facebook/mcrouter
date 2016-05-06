@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -37,10 +37,10 @@ class TokenBucket {
    * @param nowInSeconds Current time in seconds according to some
    *                     monotonically increasing clock.
    */
-  TokenBucket(double rate, double burstSize, double nowInSeconds)
+  TokenBucket(double rate__, double burstSize, double nowInSeconds)
     : lastUpdateTime_(nowInSeconds),
       tokens_(0),
-      rate_(rate),
+      rate_(rate__),
       burstSize_(burstSize) {
     assert(rate_ > 0);
     assert(burstSize_ >= 1);
@@ -75,6 +75,14 @@ class TokenBucket {
    */
   double available() const {
     return tokens_;
+  }
+
+  double rate() const {
+    return rate_;
+  }
+
+  double burst() const {
+    return burstSize_;
   }
 
   static double defaultClockNow() {

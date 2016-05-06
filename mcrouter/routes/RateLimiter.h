@@ -69,6 +69,11 @@ class RateLimiter {
     return true;
   }
 
+  /**
+   * String representation useful for debugging
+   */
+  std::string toDebugStr() const;
+
  private:
   folly::Optional<TokenBucket> getsTb_;
   folly::Optional<TokenBucket> setsTb_;

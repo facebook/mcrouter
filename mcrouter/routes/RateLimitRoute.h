@@ -27,7 +27,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
  */
 class RateLimitRoute {
  public:
-  static std::string routeName() { return "rate-limit"; }
+  std::string routeName() const {
+    auto rlStr = rl_.toDebugStr();
+    if (rlStr.empty()) {
+      return "rate-limit";
+    }
+    return "rate-limit|" + rlStr;
+  }
 
   template <class Request>
   void traverse(const Request& req,

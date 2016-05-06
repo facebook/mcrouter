@@ -435,10 +435,8 @@ McRouteHandleProvider::makePoolRoute(McRouteHandleFactory& factory,
     auto asynclogName = poolJson.name;
     bool needAsynclog = true;
     if (json.isObject()) {
-      if (proxy_.router().opts().destination_rate_limiting) {
-        if (auto jrates = json.get_ptr("rates")) {
-          route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
-        }
+      if (auto jrates = json.get_ptr("rates")) {
+        route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
       }
       if (auto jsplits = json.get_ptr("shard_splits")) {
         route = makeShardSplitRoute(std::move(route), ShardSplitter(*jsplits));
