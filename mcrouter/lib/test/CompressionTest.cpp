@@ -155,19 +155,19 @@ void testUncompressChained(CompressionCodec* compressor,
 
 TEST(NoCompressionCodec, compressAndUncompress) {
   auto compressor = createCompressionCodec(CompressionCodecType::NO_COMPRESSION,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testCompressAndUncompress(compressor.get(), *getAsciiReply());
 }
 
 TEST(NoCompressionCodec, compressTwice) {
   auto compressor = createCompressionCodec(CompressionCodecType::NO_COMPRESSION,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testCompressTwice(compressor.get(), *getAsciiReply());
 }
 
 TEST(NoCompressionCodec, compressChained) {
   auto compressor = createCompressionCodec(CompressionCodecType::NO_COMPRESSION,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   auto data = getAsciiReply();
   for (size_t i = 2; i < data->length(); ++i) {
     testCompressChained(compressor.get(), *data, i);
@@ -176,7 +176,7 @@ TEST(NoCompressionCodec, compressChained) {
 
 TEST(NoCompressionCodec, uncompressChained) {
   auto compressor = createCompressionCodec(CompressionCodecType::NO_COMPRESSION,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
 
@@ -184,24 +184,24 @@ TEST(NoCompressionCodec, uncompressChained) {
 #if FOLLY_HAVE_LIBLZ4
 TEST(Lz4CompressionCodec, compressAndUncompress) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testCompressAndUncompress(compressor.get(), *getAsciiReply());
 }
 TEST(Lz4CompressionCodec, compressAndUncompress_largeValues) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testCompressAndUncompress(compressor.get(), *getRandomLargeReply());
 }
 
 TEST(Lz4CompressionCodec, compressTwice) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testCompressTwice(compressor.get(), *getAsciiReply());
 }
 
 TEST(Lz4CompressionCodec, compressChained) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   auto data = getAsciiReply();
   for (size_t i = 2; i < data->length(); ++i) {
     testCompressChained(compressor.get(), *data, i);
@@ -210,7 +210,7 @@ TEST(Lz4CompressionCodec, compressChained) {
 
 TEST(Lz4CompressionCodec, uncompressChained) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
-                                           getAsciiDictionary());
+                                           getAsciiDictionary(), 1);
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
 #endif // FOLLY_HAVE_LIBLZ4

@@ -95,12 +95,18 @@ void IovecCursor::advanceBufferIfEmpty() {
   }
 }
 
-size_t IovecCursor::computeTotalLength() const {
+/* static */ size_t IovecCursor::computeTotalLength(
+    const struct iovec* iov,
+    size_t iovcnt) {
   size_t len = 0;
-  for (size_t i = 0; i < iovLength_; ++i) {
-    len += iov_[i].iov_len;
+  for (size_t i = 0; i < iovcnt; ++i) {
+    len += iov[i].iov_len;
   }
   return len;
+}
+
+size_t IovecCursor::computeTotalLength() const {
+  return computeTotalLength(iov_, iovLength_);
 }
 
 } // memcache

@@ -16,6 +16,7 @@
 #include <folly/io/async/DelayedDestruction.h>
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
@@ -94,12 +95,13 @@ class McServerSession :
    *                   object
    */
   static McServerSession& create(
-    folly::AsyncTransportWrapper::UniquePtr transport,
-    std::shared_ptr<McServerOnRequest> cb,
-    StateCallback& stateCb,
-    AsyncMcServerWorkerOptions options,
-    void* userCtxt,
-    std::shared_ptr<Fifo> debugFifo = nullptr);
+      folly::AsyncTransportWrapper::UniquePtr transport,
+      std::shared_ptr<McServerOnRequest> cb,
+      StateCallback& stateCb,
+      AsyncMcServerWorkerOptions options,
+      void* userCtxt,
+      std::shared_ptr<Fifo> debugFifo = nullptr,
+      CompressionCodecMap* codecMap = nullptr);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
@@ -215,6 +217,11 @@ class McServerSession :
 
   /* Reads are enabled iff pauseState_ == 0 */
   uint64_t pauseState_{0};
+
+  // Compression
+  CompressionCodecMap* compressionCodecMap_{nullptr};
+  CodecIdRange lastSupportedCodecsRange_{0, 0};
+  CompressionCodec* lastCodec_{nullptr};
 
   ServerMcParser<McServerSession> parser_;
 
@@ -341,13 +348,20 @@ class McServerSession :
   void onTransactionStarted(bool isSubRequest);
   void onTransactionCompleted(bool isSubRequest);
 
+  /**
+   * Return the compression codec to use for compressing reply.
+   * Nullptr is returned if the reply shouldn't be compressed.
+   */
+  CompressionCodec* getCodec(const UmbrellaMessageInfo& headerInfo) noexcept;
+
   McServerSession(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     StateCallback& stateCb,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
-    std::shared_ptr<Fifo> debugFifo);
+    std::shared_ptr<Fifo> debugFifo,
+    CompressionCodecMap* codecMap);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

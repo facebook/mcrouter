@@ -13,6 +13,7 @@
 
 #include <folly/io/IOBuf.h>
 #include <folly/Range.h>
+#include <folly/Varint.h>
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella.h"
@@ -32,10 +33,12 @@ class McReply;
 class McRequest;
 
 constexpr char kCaretMagicByte = '^';
-constexpr size_t kMaxHeaderLength =
-    1 /* magic byte */ + 1 /* GroupVarint header (lengths of 4 ints) */ +
-    4 * sizeof(uint32_t) /* body size, typeId, req id, extra fields count */ +
-    4 * sizeof(uint64_t) /* key, value for 2 supported additional fields */;
+constexpr size_t kMaxAdditionalFields = 3;
+constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
+    1 /* GroupVarint header (lengths of 4 ints) */ +
+    4 * sizeof(uint32_t) /* body size, typeId, reqId, num additional fields */ +
+    2 * kMaxAdditionalFields * folly::kMaxVarintLength64; /* key and value for
+                                                          additional fields */
 
 enum class UmbrellaVersion : uint8_t {
   BASIC = 0,
@@ -48,7 +51,13 @@ struct UmbrellaMessageInfo {
   UmbrellaVersion version;
   uint32_t typeId;
   uint32_t reqId;
+
+  // Additional fields
   uint64_t traceId;
+  uint64_t supportedCodecsFirstId{0};
+  uint64_t supportedCodecsSize{0};
+  uint64_t usedCodecId{0};
+  uint64_t uncompressedBodySize{0};
 };
 
 enum class UmbrellaParseStatus {
@@ -59,7 +68,16 @@ enum class UmbrellaParseStatus {
 
 enum class CaretAdditionalFieldType {
   TRACE_ID = 0,
-  COMPRESSION_TYPE = 1,
+
+  // Range of supportted codecs
+  SUPPORTED_CODECS_FIRST_ID = 1,
+  SUPPORTED_CODECS_SIZE = 2,
+
+  // Id of codec used to compress the data.
+  USED_CODEC_ID = 3,
+
+  // Size of body after decompression.
+  UNCOMPRESSED_BODY_SIZE = 4,
 };
 
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
@@ -76,11 +94,13 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buf,
                                      UmbrellaMessageInfo& info);
 
 /**
- * Prepares the caret message header
- * @param header info and pointer to buffer
- * @return size of header
+ * Prepares the caret message header.
+ * @param info          Header info.
+ * @param headerBuffer  Pointer to buffer. Buffer must be large enough to
+ *                      hold header and extra fields.
+ * @return              Number of bytes written to buffer.
  */
-size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuf);
+size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuffer);
 
 uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 

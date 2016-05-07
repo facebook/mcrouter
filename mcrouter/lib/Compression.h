@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <sys/uio.h>
 #include <memory>
 
 namespace folly {
@@ -40,20 +41,25 @@ class CompressionCodec {
   /**
    * Compress data.
    *
-   * @param data  Data to compress.
-   * @return      Compressed data.
+   * @param iov     Iovec array containing the data to compress.
+   * @param iovcnt  Size of the array.
+   * @return        Compressed data.
    *
    * @throw std::runtime_error    On compression error.
    * @throw std::bad_alloc        On error to allocate output buffer.
    */
-  virtual std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& data) = 0;
+  virtual std::unique_ptr<folly::IOBuf> compress(
+      const struct iovec* iov,
+      size_t iovcnt) = 0;
+  std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& data);
+  std::unique_ptr<folly::IOBuf> compress(const void* data, size_t len);
 
   /**
    * Uncompress data.
    *
-   * @param data                Compressed data to uncompress.
-   * @param uncompressedLength  Size of the uncompressed data.
-   * @return                    Uncompressed data.
+   * @param iov     Iovec array containing the data to uncompress.
+   * @param iovcnt  Size of the array.
+   * @return        Uncompressed data.
    *
    * @throw std::invalid_argument If the codec expects uncompressedLength,
    *                              but 0 is provided.
@@ -61,33 +67,54 @@ class CompressionCodec {
    * @throw std::bad_alloc        On error to allocate output buffer.
    */
   virtual std::unique_ptr<folly::IOBuf> uncompress(
-      const folly::IOBuf& data, size_t uncompressedLength = 0) = 0;
+      const struct iovec* iov,
+      size_t iovcnt,
+      size_t uncompressedLength = 0) = 0;
+  std::unique_ptr<folly::IOBuf> uncompress(
+      const folly::IOBuf& data,
+      size_t uncompressedLength = 0);
+  std::unique_ptr<folly::IOBuf>
+  uncompress(const void* data, size_t len, size_t uncompressedLength = 0);
 
   /**
    * Return the codec's type.
    */
   CompressionCodecType type() const { return type_; }
 
+  /**
+   * Return the id of this codec.
+   */
+  uint32_t id() const { return id_; }
+
  protected:
   /**
    * Builds the compression codec
    *
    * @param type        Compression algorithm to use.
-   * @param dictionary  Pre-defined dictionary to compress/uncompress data.
+   * @param id          Id of the codec. This is merely informative - it has no
+   *                    impact in the behavior of the codec.
    */
-  explicit CompressionCodec(CompressionCodecType type);
+  CompressionCodec(CompressionCodecType type, uint32_t id);
 
  private:
   const CompressionCodecType type_;
+  const uint32_t id_;
 };
 
 /**
  * Creates a compression codec with a given pre-defined dictionary.
  *
+ * @param type        Type of the codec.
+ * @param dictionary  Dictionary to compress/uncompress data.
+ * @param id          Id of the codec. This is merely informative - it has no
+ *                    impact in the behavior of the codec.
+ *
  * @throw std::runtime_error    On any error to create the codec.
  */
 std::unique_ptr<CompressionCodec> createCompressionCodec(
-    CompressionCodecType type, std::unique_ptr<folly::IOBuf> dictionary);
+    CompressionCodecType type,
+    std::unique_ptr<folly::IOBuf> dictionary,
+    uint32_t id);
 
 } // memcache
 } // facebook

@@ -35,7 +35,8 @@ CompressionCodecManager::CompressionCodecManager(
       createCompressionCodec(
           config->codecType,
           folly::IOBuf::wrapBuffer(
-              config->dictionary.data(), config->dictionary.size()));
+              config->dictionary.data(), config->dictionary.size()),
+          codecId);
       largestId = std::max<int64_t>(largestId, codecId);
     } catch (const std::exception& e) {
       badCodecConfigs.push_back(codecId);
@@ -96,7 +97,8 @@ CompressionCodecMap::CompressionCodecMap(
     codecs_[index(id)] = createCompressionCodec(
         config->codecType,
         folly::IOBuf::wrapBuffer(
-            config->dictionary.data(), config->dictionary.size()));
+            config->dictionary.data(), config->dictionary.size()),
+        id);
   }
 }
 
@@ -105,6 +107,17 @@ CompressionCodec* CompressionCodecMap::get(uint32_t id) const noexcept {
     return nullptr;
   }
   return codecs_[index(id)].get();
+}
+
+CompressionCodec* CompressionCodecMap::getBest(
+    const CodecIdRange& codecRange) const noexcept {
+  uint32_t lastId = codecRange.firstId + codecRange.size - 1;
+  for (int64_t i = lastId; i >= codecRange.firstId; --i) {
+    if (auto codec = get(i)) {
+      return codec;
+    }
+  }
+  return nullptr;
 }
 
 uint32_t CompressionCodecMap::index(uint32_t id) const noexcept {

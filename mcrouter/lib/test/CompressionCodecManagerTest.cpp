@@ -59,6 +59,9 @@ TEST(CompressionCodecManager, basic) {
   CompressionCodecManager codecManager(std::move(codecConfigs));
   auto codecMap = codecManager.getCodecMap();
 
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(1, codecMap->getIdRange().firstId);
+  EXPECT_EQ(64, codecMap->getIdRange().size);
   for (uint32_t i = 1; i <= 64; ++ i) {
     validateCodec(codecMap->get(i));
   }
@@ -76,6 +79,9 @@ TEST(CompressionCodecManager, missingStart) {
   CompressionCodecManager codecManager(std::move(codecConfigs));
   auto codecMap = codecManager.getCodecMap();
 
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(10, codecMap->getIdRange().firstId);
+  EXPECT_EQ(55, codecMap->getIdRange().size);
   for (uint32_t i = 1; i <= 64; ++ i) {
     if (i < 10) {
       EXPECT_FALSE(codecMap->get(i));
@@ -103,6 +109,9 @@ TEST(CompressionCodecManager, missingMiddle) {
   CompressionCodecManager codecManager(std::move(codecConfigs));
   auto codecMap = codecManager.getCodecMap();
 
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(50, codecMap->getIdRange().firstId);
+  EXPECT_EQ(15, codecMap->getIdRange().size);
   for (uint32_t i = 1; i <= 64; ++ i) {
     if (i >= 50) {
       validateCodec(codecMap->get(i));
@@ -124,6 +133,9 @@ TEST(CompressionCodecManager, missingEnd) {
   CompressionCodecManager codecManager(std::move(codecConfigs));
   auto codecMap = codecManager.getCodecMap();
 
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(1, codecMap->getIdRange().firstId);
+  EXPECT_EQ(50, codecMap->getIdRange().size);
   for (uint32_t i = 1; i <= 64; ++ i) {
     if (i <= 50) {
       validateCodec(codecMap->get(i));
@@ -150,6 +162,10 @@ TEST(CompressionCodecManager, invalidDictionary) {
 
   CompressionCodecManager codecManager(std::move(codecConfigs));
   auto codecMap = codecManager.getCodecMap();
+
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(3, codecMap->getIdRange().firstId);
+  EXPECT_EQ(1, codecMap->getIdRange().size);
 
   EXPECT_FALSE(codecMap->get(1));
   EXPECT_FALSE(codecMap->get(2));

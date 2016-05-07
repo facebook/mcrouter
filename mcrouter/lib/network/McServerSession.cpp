@@ -29,7 +29,8 @@ McServerSession& McServerSession::create(
   StateCallback& stateCb,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
-  std::shared_ptr<Fifo> debugFifo) {
+  std::shared_ptr<Fifo> debugFifo,
+  CompressionCodecMap* codecMap) {
 
   auto ptr = new McServerSession(
     std::move(transport),
@@ -37,7 +38,8 @@ McServerSession& McServerSession::create(
     stateCb,
     std::move(options),
     userCtxt,
-    std::move(debugFifo)
+    std::move(debugFifo),
+    codecMap
   );
 
   assert(ptr->state_ == STREAMING);
@@ -58,7 +60,8 @@ McServerSession::McServerSession(
   StateCallback& stateCb,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
-  std::shared_ptr<Fifo> debugFifo)
+  std::shared_ptr<Fifo> debugFifo,
+  CompressionCodecMap* codecMap)
     : transport_(std::move(transport)),
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
@@ -67,6 +70,7 @@ McServerSession::McServerSession(
       debugFifo_(std::move(debugFifo)),
       pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
+      compressionCodecMap_(codecMap),
       parser_(*this,
               options_.minBufferSize,
               options_.maxBufferSize),
@@ -284,7 +288,13 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
     return;
   }
 
-  McServerRequestContext ctx(*this, mc_op_unknown, headerInfo.reqId);
+  McServerRequestContext ctx(
+      *this,
+      mc_op_unknown,
+      headerInfo.reqId,
+      false,
+      nullptr,
+      getCodec(headerInfo));
 
   if (IdFromType<cpp2::McVersionRequest, TRequestList>::value ==
           headerInfo.typeId &&
@@ -295,6 +305,23 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
   } else {
     onRequest_->caretRequestReady(headerInfo, reqBody, std::move(ctx));
   }
+}
+
+CompressionCodec* McServerSession::getCodec(
+    const UmbrellaMessageInfo& headerInfo) noexcept {
+
+  if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
+    return nullptr;
+  }
+
+  if (lastSupportedCodecsRange_.firstId != headerInfo.supportedCodecsFirstId &&
+      lastSupportedCodecsRange_.size != headerInfo.supportedCodecsSize) {
+    lastSupportedCodecsRange_ = {headerInfo.supportedCodecsFirstId,
+                                 headerInfo.supportedCodecsSize};
+    lastCodec_ = compressionCodecMap_->getBest(lastSupportedCodecsRange_);
+  }
+
+  return lastCodec_;
 }
 
 void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {

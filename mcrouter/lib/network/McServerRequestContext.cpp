@@ -95,13 +95,13 @@ bool McServerRequestContext::noReply(mc_res_t result) const {
 }
 
 McServerRequestContext::McServerRequestContext(
-  McServerSession& s, mc_op_t op, uint64_t r, bool nr,
-  std::shared_ptr<MultiOpParent> parent)
-    : session_(&s),
-      operation_(op),
-      noReply_(nr),
-      reqid_(r) {
-
+    McServerSession& s,
+    mc_op_t op,
+    uint64_t r,
+    bool nr,
+    std::shared_ptr<MultiOpParent> parent,
+    CompressionCodec* codec)
+    : session_(&s), operation_(op), noReply_(nr), reqid_(r), codec_(codec) {
   if (parent) {
     asciiState_ = folly::make_unique<AsciiState>();
     asciiState_->parent_ = std::move(parent);
@@ -118,7 +118,8 @@ McServerRequestContext::McServerRequestContext(
       noReply_(other.noReply_),
       replied_(other.replied_),
       reqid_(other.reqid_),
-      asciiState_(std::move(other.asciiState_)) {
+      asciiState_(std::move(other.asciiState_)),
+      codec_(other.codec_) {
   other.session_ = nullptr;
 }
 
@@ -131,6 +132,8 @@ McServerRequestContext& McServerRequestContext::operator=(
   noReply_ = other.noReply_;
   replied_ = other.replied_;
   asciiState_ = std::move(other.asciiState_);
+  codec_ = other.codec_;
+
   other.session_ = nullptr;
 
   return *this;

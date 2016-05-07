@@ -20,6 +20,7 @@
 
 namespace facebook { namespace memcache {
 
+class CompressionCodec;
 template <class OnRequest, class RequestList>
 class McServerOnRequestWrapper;
 class McServerSession;
@@ -95,6 +96,8 @@ class McServerRequestContext {
   };
   std::unique_ptr<AsciiState> asciiState_;
 
+  CompressionCodec* codec_{nullptr};
+
   bool noReply(mc_res_t result) const;
 
   static void replyImpl(
@@ -144,7 +147,8 @@ class McServerRequestContext {
   friend class WriteBuffer;
   McServerRequestContext(McServerSession& s, mc_op_t op, uint64_t r,
                          bool nr = false,
-                         std::shared_ptr<MultiOpParent> parent = nullptr);
+                         std::shared_ptr<MultiOpParent> parent = nullptr,
+                         CompressionCodec* codec = nullptr);
 };
 
 /**

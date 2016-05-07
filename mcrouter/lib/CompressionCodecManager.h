@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -65,7 +66,16 @@ class CompressionCodecManager {
 
 
 /**
- * Map of codec compressors
+ * Represent a range of valid compression codecs ids
+ */
+struct CodecIdRange {
+  uint64_t firstId;
+  size_t size;
+};
+
+
+/**
+ * Map of codec compressors.
  * The ids of the codecs held by this map must be contiguous.
  */
 class CompressionCodecMap {
@@ -79,10 +89,26 @@ class CompressionCodecMap {
   CompressionCodec* get(uint32_t id) const noexcept;
 
   /**
-   * Returns the size of the map.
+   * Get the compression codec that best matches the given range.
+   *
+   * @param codecRange  Range of codecs ids.
+   * @return            The codec that best matches the range
+   *                    (or nullptr if none found).
+   */
+  CompressionCodec* getBest(const CodecIdRange& codecRange) const noexcept;
+
+  /**
+   * Returns the size of this map.
    */
   size_t size() const noexcept {
     return codecs_.size();
+  }
+
+  /**
+   * Returns the range (firstId, size) of codec ids present in this map.
+   */
+  const CodecIdRange getIdRange() const noexcept {
+    return {firstId_, size()};
   }
 
  private:

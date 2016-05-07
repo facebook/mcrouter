@@ -26,6 +26,11 @@ class IovecCursor {
   IovecCursor(const struct iovec* iov, size_t iovcnt);
 
   /**
+   * Computes the total size of iovec.
+   */
+  static size_t computeTotalLength(const struct iovec* iov, size_t iovcnt);
+
+  /**
    * Tells whether there is data available to read.
    */
   bool hasDataAvailable() const;

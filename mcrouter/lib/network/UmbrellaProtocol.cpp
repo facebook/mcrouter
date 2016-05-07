@@ -67,6 +67,79 @@ bool umbrellaGetTagValue(const uint8_t* header, size_t nheader,
   return false;
 }
 
+void resetAdditionalFields(UmbrellaMessageInfo& info) {
+  info.traceId = 0;
+  info.supportedCodecsFirstId = 0;
+  info.supportedCodecsSize = 0;
+  info.usedCodecId = 0;
+  info.uncompressedBodySize = 0;
+}
+
+size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
+  size_t nAdditionalFields = 0;
+  if (info.traceId != 0) {
+    ++nAdditionalFields;
+  }
+  if (info.supportedCodecsFirstId != 0) {
+    ++nAdditionalFields;
+  }
+  if (info.supportedCodecsSize != 0) {
+    ++nAdditionalFields;
+  }
+  if (info.usedCodecId != 0) {
+    ++nAdditionalFields;
+  }
+  if (info.uncompressedBodySize != 0) {
+    ++nAdditionalFields;
+  }
+  return nAdditionalFields;
+}
+
+/**
+ * Serialize the additional field and return the number of bytes used to
+ * serialize it.
+ */
+size_t serializeAdditionalFieldIfNonZero(
+    uint8_t* destination,
+    CaretAdditionalFieldType type,
+    uint64_t value) {
+  uint8_t* buf = destination;
+  if (value > 0) {
+    buf += folly::encodeVarint(static_cast<uint64_t>(type), buf);
+    buf += folly::encodeVarint(value, buf);
+  }
+  return buf - destination;
+}
+
+size_t serializeAdditionalFields(
+    uint8_t* destination,
+    const UmbrellaMessageInfo& info) {
+  uint8_t* buf = destination;
+
+  buf += serializeAdditionalFieldIfNonZero(
+      buf,
+      CaretAdditionalFieldType::TRACE_ID,
+      info.traceId);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf,
+      CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID,
+      info.supportedCodecsFirstId);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf,
+      CaretAdditionalFieldType::SUPPORTED_CODECS_SIZE,
+      info.supportedCodecsSize);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf,
+      CaretAdditionalFieldType::USED_CODEC_ID,
+      info.usedCodecId);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf,
+      CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE,
+      info.uncompressedBodySize);
+
+  return buf - destination;
+}
+
 } // anonymous namespace
 
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
@@ -140,13 +213,34 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
   range.advance(encodedLength + 1);
 
   // Additional fields are sequence of (key,value) pairs
+  resetAdditionalFields(headerInfo);
   for (uint32_t i = 0; i < additionalFields; i++) {
     try {
       uint64_t fieldType = folly::decodeVarint(range);
       uint64_t fieldValue = folly::decodeVarint(range);
-      if (static_cast<CaretAdditionalFieldType>(fieldType) ==
-          CaretAdditionalFieldType::TRACE_ID) {
-        headerInfo.traceId = fieldValue;
+
+      if (fieldType > static_cast<uint64_t>(
+                          CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE)) {
+        // Additional Field Type not recognized, ignore.
+        continue;
+      }
+
+      switch (static_cast<CaretAdditionalFieldType>(fieldType)) {
+        case CaretAdditionalFieldType::TRACE_ID:
+          headerInfo.traceId = fieldValue;
+          break;
+        case CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID:
+          headerInfo.supportedCodecsFirstId = fieldValue;
+          break;
+        case CaretAdditionalFieldType::SUPPORTED_CODECS_SIZE:
+          headerInfo.supportedCodecsSize = fieldValue;
+          break;
+        case CaretAdditionalFieldType::USED_CODEC_ID:
+          headerInfo.usedCodecId = fieldValue;
+          break;
+        case CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE:
+          headerInfo.uncompressedBodySize = fieldValue;
+          break;
       }
     } catch (const std::invalid_argument& e) {
       // buffer was not sufficient for additional fields
@@ -165,30 +259,20 @@ size_t caretPrepareHeader(const UmbrellaMessageInfo& info, char* headerBuf) {
   uint32_t bodySize = info.bodySize;
   uint32_t typeId = info.typeId;
   uint32_t reqId = info.reqId;
-  const uint64_t traceId = info.traceId;
-
-  uint32_t nAdditionalFields = 0;
 
   headerBuf[0] = kCaretMagicByte;
 
-  if (traceId != 0) {
-    ++nAdditionalFields;
-  }
-
+  // Header
   char* additionalFields = folly::GroupVarint32::encode(
-      headerBuf + 1, bodySize, typeId, reqId, nAdditionalFields);
+      headerBuf + 1,
+      bodySize,
+      typeId,
+      reqId,
+      getNumAdditionalFields(info));
 
-  if (traceId != 0) {
-    size_t nUsed;
-    nUsed = folly::encodeVarint(
-        static_cast<uint64_t>(CaretAdditionalFieldType::TRACE_ID),
-        reinterpret_cast<uint8_t*>(additionalFields));
-    additionalFields += nUsed;
-
-    nUsed = folly::encodeVarint(
-        traceId, reinterpret_cast<uint8_t*>(additionalFields));
-    additionalFields += nUsed;
-  }
+  // Additional fields
+  additionalFields += serializeAdditionalFields(
+      reinterpret_cast<uint8_t*>(additionalFields), info);
 
   return additionalFields - headerBuf;
 }

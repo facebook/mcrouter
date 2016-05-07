@@ -19,6 +19,7 @@
 namespace facebook {
 namespace memcache {
 
+class CompressionCodec;
 template <class T>
 class TypedThriftMessage;
 template <class T>
@@ -66,6 +67,9 @@ class CaretSerializedMessage {
    * Prepare replies for serialization
    *
    * @param  reply    TypedReply
+   * @param  reqId    Id of the request.
+   * @param  codec    Codec to use to compress the reply. If nullptr, reply
+   *                  won't be compressed.
    * @param  iovOut   will be set to the beginning of array of ivecs
    * @param  niovOut  number of valid iovecs referenced by iovOut.
    * @return true iff message was successfully prepared.
@@ -73,6 +77,7 @@ class CaretSerializedMessage {
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply,
                size_t reqId,
+               CompressionCodec* codec,
                const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
@@ -80,14 +85,38 @@ class CaretSerializedMessage {
   McQueueAppenderStorage storage_;
 
   template <class ThriftType>
-  bool fill(const TypedThriftMessage<ThriftType>& tmsg,
+  bool fill(const TypedThriftRequest<ThriftType>& tmsg,
             uint32_t reqId,
             size_t typeId,
             uint64_t traceId,
             const struct iovec*& iovOut,
             size_t& niovOut);
 
-  void fillHeader(UmbrellaMessageInfo& info);
+  template <class ThriftType>
+  bool fill(const TypedThriftReply<ThriftType>& tmsg,
+            uint32_t reqId,
+            size_t typeId,
+            uint64_t traceId,
+            CompressionCodec* codec,
+            const struct iovec*& iovOut,
+            size_t& niovOut);
+
+  void fillImpl(UmbrellaMessageInfo& info,
+                uint32_t reqId,
+                size_t typeId,
+                uint64_t traceId,
+                const struct iovec*& iovOut,
+                size_t& niovOut);
+
+  /**
+   * Compress body of message in storage_
+   *
+   * @param codec             Compression codec to use in compression.
+   * @param uncompressedSize  Original (uncompressed) size of the body of the
+   *                          message.
+   * @return                  True if compression succeeds. Otherwise, false.
+   */
+  bool maybeCompress(CompressionCodec* codec, size_t uncompressedSize);
 
   template <int Op>
   typename std::enable_if<

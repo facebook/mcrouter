@@ -28,6 +28,7 @@ class SSLContext;
 
 namespace facebook { namespace memcache {
 
+class CompressionCodecMap;
 class Fifo;
 class McServerOnRequest;
 
@@ -139,6 +140,10 @@ class AsyncMcServerWorker {
     tracker_.setOnShutdownOperation(std::move(cb));
   }
 
+  void setCompressionCodecMap(CompressionCodecMap* codecMap) {
+    compressionCodecMap_ = codecMap;
+  }
+
   void setDebugFifo(std::shared_ptr<Fifo> debugFifo) {
     debugFifo_ = std::move(debugFifo);
   }
@@ -173,6 +178,8 @@ class AsyncMcServerWorker {
 
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
+
+  CompressionCodecMap* compressionCodecMap_{nullptr};
 
   bool isAlive_{true};
 

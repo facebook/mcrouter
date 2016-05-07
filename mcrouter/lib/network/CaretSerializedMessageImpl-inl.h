@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/lib/Compression.h"
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/McRequestToTypedConverter.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
@@ -64,14 +66,15 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
 template <class ThriftType>
 bool CaretSerializedMessage::prepare(TypedThriftReply<ThriftType>&& reply,
                                      size_t reqId,
+                                     CompressionCodec* codec,
                                      const struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
   constexpr size_t typeId = IdFromType<ThriftType, TReplyList>::value;
-  return fill(reply, reqId, typeId, 0 /* traceId */, iovOut, niovOut);
+  return fill(reply, reqId, typeId, 0 /* traceId */, codec, iovOut, niovOut);
 }
 
 template <class ThriftType>
-bool CaretSerializedMessage::fill(const TypedThriftMessage<ThriftType>& tmsg,
+bool CaretSerializedMessage::fill(const TypedThriftRequest<ThriftType>& tmsg,
                                   uint32_t reqId,
                                   size_t typeId,
                                   uint64_t traceId,
@@ -81,24 +84,84 @@ bool CaretSerializedMessage::fill(const TypedThriftMessage<ThriftType>& tmsg,
   serializeThriftStruct(tmsg, storage_);
 
   UmbrellaMessageInfo info;
+  fillImpl(info, reqId, typeId, traceId, iovOut, niovOut);
+  return true;
+}
+
+template <class ThriftType>
+bool CaretSerializedMessage::fill(const TypedThriftReply<ThriftType>& tmsg,
+                                  uint32_t reqId,
+                                  size_t typeId,
+                                  uint64_t traceId,
+                                  CompressionCodec* codec,
+                                  const struct iovec*& iovOut,
+                                  size_t& niovOut) {
+
+  // Serialize and (maybe) compress body of message.
+  serializeThriftStruct(tmsg, storage_);
+
+  UmbrellaMessageInfo info;
+
+  // Maybe compress.
+  auto uncompressedSize = storage_.computeBodySize();
+  if (maybeCompress(codec, uncompressedSize)) {
+    info.usedCodecId = codec->id();
+    info.uncompressedBodySize = uncompressedSize;
+  }
+
+  fillImpl(info, reqId, typeId, traceId, iovOut, niovOut);
+  return true;
+}
+
+inline bool CaretSerializedMessage::maybeCompress(
+    CompressionCodec* codec,
+    size_t uncompressedSize) {
+  if (!codec) {
+    return false;
+  }
+
+  if (UNLIKELY(uncompressedSize > std::numeric_limits<uint32_t>::max())) {
+    LOG(WARNING) << "Reply to large to compress: " << uncompressedSize;
+    return false;
+  }
+
+  static constexpr size_t kCompressionOverhead = 4;
+  try {
+    const auto iovs = storage_.getIovecs();
+    // The first iovec is the header - we need to compress just the data.
+    auto compressedBuf = codec->compress(iovs.first + 1, iovs.second - 1);
+    auto compressedSize = compressedBuf->computeChainDataLength();
+    if ((compressedSize + kCompressionOverhead) < uncompressedSize) {
+      storage_.reset();
+      storage_.append(*compressedBuf);
+      return true;
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Error compressing reply: " << e.what();
+  }
+
+  return false;
+}
+
+inline void CaretSerializedMessage::fillImpl(UmbrellaMessageInfo& info,
+                                             uint32_t reqId,
+                                             size_t typeId,
+                                             uint64_t traceId,
+                                             const struct iovec*& iovOut,
+                                             size_t& niovOut) {
   info.bodySize = storage_.computeBodySize();
   info.typeId = typeId;
   info.reqId = reqId;
   info.version = UmbrellaVersion::TYPED_MESSAGE;
   info.traceId = traceId;
 
-  fillHeader(info);
+  size_t headerSize = caretPrepareHeader(
+    info, reinterpret_cast<char*>(storage_.getHeaderBuf()));
+  storage_.reportHeaderSize(headerSize);
 
   const auto iovs = storage_.getIovecs();
   iovOut = iovs.first;
   niovOut = iovs.second;
-  return true;
-}
-
-inline void CaretSerializedMessage::fillHeader(UmbrellaMessageInfo& info) {
-  size_t headerSize = caretPrepareHeader(
-    info, reinterpret_cast<char*>(storage_.getHeaderBuf()));
-  storage_.reportHeaderSize(headerSize);
 }
 
 }} // facebook::memcache
