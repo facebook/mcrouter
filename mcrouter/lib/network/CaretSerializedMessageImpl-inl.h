@@ -120,8 +120,8 @@ inline bool CaretSerializedMessage::maybeCompress(
     return false;
   }
 
-  if (UNLIKELY(uncompressedSize > std::numeric_limits<uint32_t>::max())) {
-    LOG(WARNING) << "Reply to large to compress: " << uncompressedSize;
+  if (UNLIKELY(uncompressedSize > std::numeric_limits<uint32_t>::max()) ||
+      uncompressedSize < codec->options().compressionThreshold) {
     return false;
   }
 

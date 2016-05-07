@@ -19,6 +19,9 @@ class IOBuf;
 namespace facebook {
 namespace memcache {
 
+/**
+ * Types of the codecs available.
+ */
 enum class CompressionCodecType {
   // Does not compress.
   // Thread-safe.
@@ -29,6 +32,16 @@ enum class CompressionCodecType {
   // Not thread-safe.
   // Requires uncompressed size.
   LZ4 = 1
+};
+
+/**
+ * Options that can be provided to the compression codecs.
+ */
+struct CompressionCodecOptions {
+  /**
+   * Minimum value that the codec will start compressing data.
+   */
+  uint32_t compressionThreshold{0};
 };
 
 /**
@@ -86,6 +99,11 @@ class CompressionCodec {
    */
   uint32_t id() const { return id_; }
 
+  /**
+   * Return the options used by this codec.
+   */
+  CompressionCodecOptions options() const { return options_; }
+
  protected:
   /**
    * Builds the compression codec
@@ -93,12 +111,17 @@ class CompressionCodec {
    * @param type        Compression algorithm to use.
    * @param id          Id of the codec. This is merely informative - it has no
    *                    impact in the behavior of the codec.
+   * @param options     Options used by this codec.
    */
-  CompressionCodec(CompressionCodecType type, uint32_t id);
+  CompressionCodec(
+      CompressionCodecType type,
+      uint32_t id,
+      CompressionCodecOptions options);
 
  private:
   const CompressionCodecType type_;
   const uint32_t id_;
+  const CompressionCodecOptions options_;
 };
 
 /**
@@ -108,13 +131,15 @@ class CompressionCodec {
  * @param dictionary  Dictionary to compress/uncompress data.
  * @param id          Id of the codec. This is merely informative - it has no
  *                    impact in the behavior of the codec.
+ * @param options     Codec options.
  *
  * @throw std::runtime_error    On any error to create the codec.
  */
 std::unique_ptr<CompressionCodec> createCompressionCodec(
     CompressionCodecType type,
     std::unique_ptr<folly::IOBuf> dictionary,
-    uint32_t id);
+    uint32_t id,
+    CompressionCodecOptions options = {});
 
 } // memcache
 } // facebook

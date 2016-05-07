@@ -24,8 +24,11 @@
 namespace facebook {
 namespace memcache {
 
-CompressionCodec::CompressionCodec(CompressionCodecType type, uint32_t id)
-    : type_(type), id_(id) {}
+CompressionCodec::CompressionCodec(
+    CompressionCodecType type,
+    uint32_t id,
+    CompressionCodecOptions options)
+    : type_(type), id_(id), options_(options) {}
 
 std::unique_ptr<folly::IOBuf> CompressionCodec::compress(
     const folly::IOBuf& data) {
@@ -99,8 +102,11 @@ coalesce(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
  ************************/
 class NoCompressionCodec : public CompressionCodec {
  public:
-  NoCompressionCodec(std::unique_ptr<folly::IOBuf> dictionary, uint32_t id)
-    : CompressionCodec(CompressionCodecType::NO_COMPRESSION, id) {}
+  NoCompressionCodec(
+      std::unique_ptr<folly::IOBuf> dictionary,
+      uint32_t id,
+      CompressionCodecOptions options)
+      : CompressionCodec(CompressionCodecType::NO_COMPRESSION, id, options) {}
 
   std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
       override final {
@@ -120,7 +126,10 @@ class NoCompressionCodec : public CompressionCodec {
 #if FOLLY_HAVE_LIBLZ4
 class Lz4CompressionCodec : public CompressionCodec {
  public:
-  Lz4CompressionCodec(std::unique_ptr<folly::IOBuf> dictionary, uint32_t id);
+  Lz4CompressionCodec(
+      std::unique_ptr<folly::IOBuf> dictionary,
+      uint32_t id,
+      CompressionCodecOptions options);
 
   std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
       override final;
@@ -143,8 +152,9 @@ class Lz4CompressionCodec : public CompressionCodec {
 
 Lz4CompressionCodec::Lz4CompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
-    uint32_t id)
-    : CompressionCodec(CompressionCodecType::LZ4, id),
+    uint32_t id,
+    CompressionCodecOptions options)
+    : CompressionCodec(CompressionCodecType::LZ4, id, options),
       dictionary_(std::move(dictionary)),
       lz4Immutable_(dictionary_->clone()),
       lz4Stream_(LZ4_createStream()) {
@@ -235,13 +245,16 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
 std::unique_ptr<CompressionCodec> createCompressionCodec(
     CompressionCodecType type,
     std::unique_ptr<folly::IOBuf> dictionary,
-    uint32_t id) {
+    uint32_t id,
+    CompressionCodecOptions options) {
   switch (type) {
     case CompressionCodecType::NO_COMPRESSION:
-      return folly::make_unique<NoCompressionCodec>(std::move(dictionary), id);
+      return folly::make_unique<NoCompressionCodec>(
+          std::move(dictionary), id, options);
     case CompressionCodecType::LZ4:
 #if FOLLY_HAVE_LIBLZ4
-      return folly::make_unique<Lz4CompressionCodec>(std::move(dictionary), id);
+      return folly::make_unique<Lz4CompressionCodec>(
+          std::move(dictionary), id, options);
 #else
       LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
       return nullptr;

@@ -36,7 +36,8 @@ CompressionCodecManager::CompressionCodecManager(
           config->codecType,
           folly::IOBuf::wrapBuffer(
               config->dictionary.data(), config->dictionary.size()),
-          codecId);
+          codecId,
+          config->options);
       largestId = std::max<int64_t>(largestId, codecId);
     } catch (const std::exception& e) {
       badCodecConfigs.push_back(codecId);
@@ -98,7 +99,8 @@ CompressionCodecMap::CompressionCodecMap(
         config->codecType,
         folly::IOBuf::wrapBuffer(
             config->dictionary.data(), config->dictionary.size()),
-        id);
+        id,
+        config->options);
   }
 }
 
