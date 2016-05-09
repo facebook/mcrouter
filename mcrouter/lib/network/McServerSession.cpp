@@ -30,7 +30,7 @@ McServerSession& McServerSession::create(
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
   std::shared_ptr<Fifo> debugFifo,
-  CompressionCodecMap* codecMap) {
+  const CompressionCodecMap* codecMap) {
 
   auto ptr = new McServerSession(
     std::move(transport),
@@ -61,7 +61,7 @@ McServerSession::McServerSession(
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
   std::shared_ptr<Fifo> debugFifo,
-  CompressionCodecMap* codecMap)
+  const CompressionCodecMap* codecMap)
     : transport_(std::move(transport)),
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),

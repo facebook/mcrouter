@@ -15,6 +15,7 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Range.h>
 
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/network/CaretReplyConverter.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
@@ -31,7 +32,8 @@ class ClientMcParser : private McParser::ParserCallback {
   ClientMcParser(Callback& cb,
                  size_t minBufferSize,
                  size_t maxBufferSize,
-                 const bool useJemallocNodumpAllocator = false);
+                 const bool useJemallocNodumpAllocator = false,
+                 const CompressionCodecMap* compressionCodecMap = nullptr);
 
   /**
    * TAsyncTransport-style getReadBuffer().
@@ -70,6 +72,8 @@ class ClientMcParser : private McParser::ParserCallback {
 
   Callback& callback_;
 
+  const CompressionCodecMap* compressionCodecMap_{nullptr};
+
   template <class Request>
   void forwardAsciiReply();
 
@@ -89,6 +93,10 @@ class ClientMcParser : private McParser::ParserCallback {
   forwardCaretReply(const UmbrellaMessageInfo& headerInfo,
                     const folly::IOBuf& buffer,
                     uint64_t reqId);
+
+  std::unique_ptr<folly::IOBuf> decompress(
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& buffer);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,

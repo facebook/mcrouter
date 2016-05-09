@@ -58,7 +58,7 @@ class CompressionCodecManager {
    * Return the compression codec map.
    * Note: thread-safe.
    */
-  CompressionCodecMap* getCodecMap();
+  const CompressionCodecMap* getCodecMap() const;
 
  private:
   // Storage of compression codec configs (codecId -> codecConfig).

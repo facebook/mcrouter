@@ -25,6 +25,7 @@
 namespace facebook { namespace memcache {
 
 class AsyncMcClientImpl;
+struct CodecIdRange;
 class McClientRequestContextQueue;
 
 /**
@@ -95,7 +96,8 @@ class McClientRequestContextBase
       McClientRequestContextQueue& queue,
       InitializerFuncPtr initializer,
       const std::function<void(int pendingDiff, int inflightDiff)>&
-          onStateChange);
+          onStateChange,
+      const CodecIdRange& supportedCodecs);
 
   virtual void sendTraceOnReply() = 0;
 
@@ -184,7 +186,8 @@ class McClientRequestContext : public McClientRequestContextBase {
       McClientRequestContextQueue& queue,
       McClientRequestContextBase::InitializerFuncPtr,
       const std::function<void(int pendingDiff, int inflightDiff)>&
-          onStateChange);
+          onStateChange,
+      const CodecIdRange& supportedCodecs);
 
   const char* fakeReply() const override final;
 

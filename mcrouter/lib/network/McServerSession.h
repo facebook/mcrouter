@@ -101,7 +101,7 @@ class McServerSession :
       AsyncMcServerWorkerOptions options,
       void* userCtxt,
       std::shared_ptr<Fifo> debugFifo = nullptr,
-      CompressionCodecMap* codecMap = nullptr);
+      const CompressionCodecMap* codecMap = nullptr);
 
   /**
    * Eventually closes the transport. All pending writes will still be drained.
@@ -219,7 +219,7 @@ class McServerSession :
   uint64_t pauseState_{0};
 
   // Compression
-  CompressionCodecMap* compressionCodecMap_{nullptr};
+  const CompressionCodecMap* compressionCodecMap_{nullptr};
   CodecIdRange lastSupportedCodecsRange_{0, 0};
   CompressionCodec* lastCodec_{nullptr};
 
@@ -361,7 +361,7 @@ class McServerSession :
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
     std::shared_ptr<Fifo> debugFifo,
-    CompressionCodecMap* codecMap);
+    const CompressionCodecMap* codecMap);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;

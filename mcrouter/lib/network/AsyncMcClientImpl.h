@@ -17,6 +17,7 @@
 #include <folly/io/async/DelayedDestruction.h>
 #include <folly/io/IOBufQueue.h>
 
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
@@ -118,6 +119,8 @@ class AsyncMcClientImpl :
 
   // Debug pipe.
   std::shared_ptr<Fifo> debugFifo_;
+
+  CodecIdRange supportedCompressionCodecs_{0, 0};
 
   bool outOfOrder_{false};
   McClientRequestContextQueue queue_;

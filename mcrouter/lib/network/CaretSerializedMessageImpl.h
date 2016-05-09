@@ -10,6 +10,7 @@
 #pragma once
 
 #include <folly/Range.h>
+#include <folly/Varint.h>
 
 #include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/McQueueAppender.h"
@@ -19,6 +20,7 @@
 namespace facebook {
 namespace memcache {
 
+struct CodecIdRange;
 class CompressionCodec;
 template <class T>
 class TypedThriftMessage;
@@ -44,22 +46,25 @@ class CaretSerializedMessage {
   /**
    * Prepare requests for serialization for an Operation
    *
-   * @param req      Request
-   * @param iovOut   Set to the beginning of array of ivecs that
-   *                 reference serialized data.
-   * @param niovOut  number of valid iovecs referenced by iovOut.
+   * @param req               Request
+   * @param iovOut            Set to the beginning of array of ivecs that
+   *                          reference serialized data.
+   * @param supportedCodecs   Range of supported compression codecs.
+   * @param niovOut           Number of valid iovecs referenced by iovOut.
    *
    * @return true iff message was successfully prepared.
    */
   template <class Op>
   bool prepare(const McRequestWithOp<Op>& req,
                size_t reqId,
+               const CodecIdRange& supportedCodecs,
                const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
   template <class ThriftType>
   bool prepare(const TypedThriftRequest<ThriftType>& req,
                size_t reqId,
+               const CodecIdRange& supportedCodecs,
                const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
@@ -67,7 +72,6 @@ class CaretSerializedMessage {
    * Prepare replies for serialization
    *
    * @param  reply    TypedReply
-   * @param  reqId    Id of the request.
    * @param  codec    Codec to use to compress the reply. If nullptr, reply
    *                  won't be compressed.
    * @param  iovOut   will be set to the beginning of array of ivecs
@@ -89,6 +93,7 @@ class CaretSerializedMessage {
             uint32_t reqId,
             size_t typeId,
             uint64_t traceId,
+            const CodecIdRange& supportedCodecs,
             const struct iovec*& iovOut,
             size_t& niovOut);
 
@@ -123,6 +128,7 @@ class CaretSerializedMessage {
     !ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
   prepareImpl(const McRequestWithMcOp<Op>& req,
               size_t reqId,
+              const CodecIdRange& supportedCodecs,
               const struct iovec*& iovOut,
               size_t& niovOut);
 
@@ -131,10 +137,12 @@ class CaretSerializedMessage {
     ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
   prepareImpl(const McRequestWithMcOp<Op>& req,
               size_t reqId,
+              const CodecIdRange& supportedCodecs,
               const struct iovec*& iovOut,
               size_t& niovOut);
 };
 
-}} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "mcrouter/lib/network/CaretSerializedMessageImpl-inl.h"

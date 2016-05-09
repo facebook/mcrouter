@@ -14,6 +14,7 @@
 
 #include <folly/io/async/AsyncSocket.h>
 
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 
@@ -114,6 +115,13 @@ struct ConnectionOptions {
   /**
    * Use JemallocNodumpAllocator
    */
-  bool useJemallocNodumpAllocator{false};};
+  bool useJemallocNodumpAllocator{false};
+
+  /**
+   * Map of codecs to use for compression.
+   * If nullptr, compression will be disabled.
+   */
+  const CompressionCodecMap* compressionCodecMap{nullptr};
+};
 
 }} // facebook::memcache

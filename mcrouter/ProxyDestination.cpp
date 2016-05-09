@@ -273,6 +273,9 @@ void ProxyDestination::initializeAsyncMcClient() {
     options.qosPath = qosPath_;
   }
   options.useJemallocNodumpAllocator = opts.jemalloc_nodump_buffers;
+  if (auto codecManager = proxy->router().getCodecManager()) {
+    options.compressionCodecMap = codecManager->getCodecMap();
+  }
 
   if (accessPoint_->useSsl()) {
     checkLogic(!opts.pem_cert_path.empty() &&

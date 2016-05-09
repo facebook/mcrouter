@@ -19,9 +19,10 @@ namespace facebook { namespace memcache {
 template <class Op>
 bool CaretSerializedMessage::prepare(const McRequestWithOp<Op>& req,
                                      size_t reqId,
+                                     const CodecIdRange& supportedCodecs,
                                      const struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
-  return prepareImpl(req, reqId, iovOut, niovOut);
+  return prepareImpl(req, reqId, supportedCodecs, iovOut, niovOut);
 }
 
 template <int Op>
@@ -30,6 +31,7 @@ typename std::enable_if<
     bool>::type
 CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
                                     size_t reqId,
+                                    const CodecIdRange& supportedCodecs,
                                     const struct iovec*& iovOut,
                                     size_t& niovOut) {
   return false;
@@ -38,13 +40,20 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
 template <class ThriftType>
 bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
                                      size_t reqId,
+                                     const CodecIdRange& supportedCodecs,
                                      const struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
   constexpr size_t typeId =
       IdFromType<typename TypedThriftRequest<ThriftType>::rawType,
                  TRequestList>::value;
 
-  return fill(req, reqId, typeId, req.traceId(), iovOut, niovOut);
+  return fill(req,
+              reqId,
+              typeId,
+              req.traceId(),
+              supportedCodecs,
+              iovOut,
+              niovOut);
 }
 
 template <int Op>
@@ -53,6 +62,7 @@ typename std::enable_if<
     bool>::type
 CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
                                     size_t reqId,
+                                    const CodecIdRange& supportedCodecs,
                                     const struct iovec*& iovOut,
                                     size_t& niovOut) {
   auto treq = convertToTyped(req);
@@ -60,7 +70,8 @@ CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
   constexpr size_t typeId =
       IdFromType<typename decltype(treq)::rawType, TRequestList>::value;
 
-  return fill(treq, reqId, typeId, 0 /* traceId */, iovOut, niovOut);
+  return fill(
+      treq, reqId, typeId, 0 /* traceId */, supportedCodecs, iovOut, niovOut);
 }
 
 template <class ThriftType>
@@ -78,12 +89,15 @@ bool CaretSerializedMessage::fill(const TypedThriftRequest<ThriftType>& tmsg,
                                   uint32_t reqId,
                                   size_t typeId,
                                   uint64_t traceId,
+                                  const CodecIdRange& supportedCodecs,
                                   const struct iovec*& iovOut,
                                   size_t& niovOut) {
   // Serialize body into storage_. Note we must defer serialization of header.
   serializeThriftStruct(tmsg, storage_);
 
   UmbrellaMessageInfo info;
+  info.supportedCodecsFirstId = supportedCodecs.firstId;
+  info.supportedCodecsSize = supportedCodecs.size;
   fillImpl(info, reqId, typeId, traceId, iovOut, niovOut);
   return true;
 }
@@ -113,9 +127,8 @@ bool CaretSerializedMessage::fill(const TypedThriftReply<ThriftType>& tmsg,
   return true;
 }
 
-inline bool CaretSerializedMessage::maybeCompress(
-    CompressionCodec* codec,
-    size_t uncompressedSize) {
+inline bool CaretSerializedMessage::maybeCompress(CompressionCodec* codec,
+                                                  size_t uncompressedSize) {
   if (!codec) {
     return false;
   }

@@ -55,7 +55,7 @@ class ConnectionTracker : public McServerSession::StateCallback {
            AsyncMcServerWorkerOptions options,
            void* userCtxt,
            std::shared_ptr<Fifo> debugFifo,
-           CompressionCodecMap* compressionCodecMap);
+           const CompressionCodecMap* compressionCodecMap);
 
   /**
    * Close all connections (sessions)

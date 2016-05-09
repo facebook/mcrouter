@@ -208,7 +208,16 @@ class McrouterInstance :
       return;
     }
     compressionCodecManager_ =
-        folly::make_unique<CompressionCodecManager>(std::move(codecConfigs));
+        folly::make_unique<const CompressionCodecManager>(
+            std::move(codecConfigs));
+  }
+
+  /**
+   * Returns compression codec manager.
+   * If compression is disabled, this method will return nullptr.
+   */
+  const CompressionCodecManager* getCodecManager() const {
+    return compressionCodecManager_.get();
   }
 
  private:
@@ -232,7 +241,7 @@ class McrouterInstance :
 
   LogPostprocessCallbackFunc postprocessCallback_;
 
-  std::unique_ptr<CompressionCodecManager> compressionCodecManager_;
+  std::unique_ptr<const CompressionCodecManager> compressionCodecManager_;
 
   // Stat updater thread updates rate stat windows for each proxy
   std::thread statUpdaterThread_;

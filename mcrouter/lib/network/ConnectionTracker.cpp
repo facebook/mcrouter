@@ -22,7 +22,7 @@ void ConnectionTracker::add(
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
     std::shared_ptr<Fifo> debugFifo,
-    CompressionCodecMap* compressionCodecMap) {
+    const CompressionCodecMap* compressionCodecMap) {
   if (maxConns_ != 0 && sessions_.size() >= maxConns_) {
     evict();
   }

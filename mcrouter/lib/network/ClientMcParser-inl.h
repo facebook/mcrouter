@@ -18,16 +18,19 @@
 namespace facebook { namespace memcache {
 
 template <class Callback>
-ClientMcParser<Callback>::ClientMcParser(Callback& cb,
-                                         size_t minBufferSize,
-                                         size_t maxBufferSize,
-                                         const bool useJemallocNodumpAllocator)
-  : parser_(*this,
-            minBufferSize,
-            maxBufferSize,
-            useJemallocNodumpAllocator),
-    callback_(cb) {
-}
+ClientMcParser<Callback>::ClientMcParser(
+    Callback& cb,
+    size_t minBufferSize,
+    size_t maxBufferSize,
+    const bool useJemallocNodumpAllocator,
+    const CompressionCodecMap* compressionCodecMap)
+    : parser_(
+          *this,
+          minBufferSize,
+          maxBufferSize,
+          useJemallocNodumpAllocator),
+      callback_(cb),
+      compressionCodecMap_(compressionCodecMap) {}
 
 template <class Callback>
 std::pair<void*, size_t> ClientMcParser<Callback>::getReadBuffer() {
@@ -95,8 +98,25 @@ ClientMcParser<Callback>::forwardCaretReply(
     const folly::IOBuf& buffer,
     uint64_t reqId) {
 
+  const folly::IOBuf* finalBuffer = &buffer;
+
+  // Uncompress if compressed
+  std::unique_ptr<folly::IOBuf> uncompressedBuf;
+  if (headerInfo.usedCodecId > 0) {
+    uncompressedBuf = decompress(headerInfo, buffer);
+
+    // Prepend a sentinel of the size of the header, as dispatchTypedRequest
+    // expected a buffer containing the header and body.
+    // TODO(aap): improve.
+    auto headerBuf = folly::IOBuf::create(headerInfo.headerSize);
+    headerBuf->append(headerInfo.headerSize);
+    uncompressedBuf->prependChain(std::move(headerBuf));
+
+    finalBuffer = uncompressedBuf->prev();
+  }
+
   ReplyT<Request> reply;
-  converter_.dispatchTypedRequest(headerInfo, buffer, reply);
+  converter_.dispatchTypedRequest(headerInfo, *finalBuffer, reply);
   callback_.replyReady(std::move(reply), reqId);
 }
 
@@ -108,14 +128,39 @@ ClientMcParser<Callback>::forwardCaretReply(
     const folly::IOBuf& buffer,
     uint64_t reqId) {
 
+  const folly::IOBuf* finalBuffer = &buffer;
+  size_t offset = headerInfo.headerSize;
+
+  // Uncompress if compressed
+  std::unique_ptr<folly::IOBuf> uncompressedBuf;
+  if (headerInfo.usedCodecId > 0) {
+    uncompressedBuf = decompress(headerInfo, buffer);
+    finalBuffer = uncompressedBuf.get();
+    offset = 0;
+  }
+
   ReplyT<Request> reply;
-  folly::io::Cursor cur(&buffer);
-  cur += headerInfo.headerSize;
+  folly::io::Cursor cur(finalBuffer);
+  cur += offset;
   apache::thrift::CompactProtocolReader reader;
   reader.setInput(cur);
   reply.read(&reader);
 
   callback_.replyReady(std::move(reply), reqId);
+}
+
+template <class Callback>
+std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
+    const UmbrellaMessageInfo& headerInfo,
+    const folly::IOBuf& buffer) {
+  assert(compressionCodecMap_);
+  assert(!buffer.isChained());
+  auto codec = compressionCodecMap_->get(headerInfo.usedCodecId);
+  assert(codec);
+
+  auto buf = buffer.data() + headerInfo.headerSize;
+  return codec->uncompress(
+      buf, headerInfo.bodySize, headerInfo.uncompressedBodySize);
 }
 
 template <class Callback>

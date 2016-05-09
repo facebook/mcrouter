@@ -66,7 +66,7 @@ CompressionCodecManager::CompressionCodecManager(
   }
 }
 
-CompressionCodecMap* CompressionCodecManager::getCodecMap() {
+const CompressionCodecMap* CompressionCodecManager::getCodecMap() const {
   return compressionCodecMap_.get();
 }
 

@@ -81,6 +81,10 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       eventBaseDestructionCallback_(
         folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
   eventBase_.runOnDestruction(eventBaseDestructionCallback_.get());
+  if (connectionOptions_.compressionCodecMap) {
+    supportedCompressionCodecs_ =
+        connectionOptions_.compressionCodecMap->getIdRange();
+  }
 }
 
 std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
@@ -502,7 +506,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       *this,
       kReadBufferSizeMin,
       kReadBufferSizeMax,
-      connectionOptions_.useJemallocNodumpAllocator);
+      connectionOptions_.useJemallocNodumpAllocator,
+      connectionOptions_.compressionCodecMap);
   socket_->setReadCB(this);
 }
 

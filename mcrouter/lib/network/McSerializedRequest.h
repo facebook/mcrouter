@@ -20,6 +20,8 @@
 
 namespace facebook { namespace memcache {
 
+struct CodecIdRange;
+
 /**
  * A class for serializing memcache requests into iovs.
  */
@@ -34,13 +36,19 @@ class McSerializedRequest {
   /**
    * Creates serialized representation of request for a given mc_protocol.
    *
-   * @param req  request to serialize, caller is responsible to keep it alive
-   *             for the whole lifecycle of this serialized request.
+   * @param req               Request to serialize, caller is responsible to
+   *                          keep it alive for the whole lifecycle of this
+   *                          serialized request.
+   * @param reqId             Id of the request.
+   * @param protocol          Protocol to serialize the request.
+   * @param supportedCodecs   Range of supported compression codecs.
+   *                          Only used for caret.
    */
   template <class Request>
   McSerializedRequest(const Request& req,
                       size_t reqId,
-                      mc_protocol_t protocol);
+                      mc_protocol_t protocol,
+                      const CodecIdRange& supportedCodecs);
 
   ~McSerializedRequest();
 

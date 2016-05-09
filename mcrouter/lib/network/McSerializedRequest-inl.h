@@ -10,9 +10,11 @@
 namespace facebook { namespace memcache {
 
 template <class Request>
-McSerializedRequest::McSerializedRequest(const Request& req,
-                                         size_t reqId,
-                                         mc_protocol_t protocol)
+McSerializedRequest::McSerializedRequest(
+    const Request& req,
+    size_t reqId,
+    mc_protocol_t protocol,
+    const CodecIdRange& compressionCodecs)
     : protocol_(protocol) {
 
   switch (protocol_) {
@@ -31,7 +33,8 @@ McSerializedRequest::McSerializedRequest(const Request& req,
       if (!checkKeyLength(req.key())) {
         return;
       }
-      if (!caretRequest_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
+      if (!caretRequest_.prepare(
+              req, reqId, compressionCodecs, iovsBegin_, iovsCount_)) {
         result_ = Result::ERROR;
       }
       break;

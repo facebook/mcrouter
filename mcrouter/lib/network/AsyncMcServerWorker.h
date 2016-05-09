@@ -140,7 +140,7 @@ class AsyncMcServerWorker {
     tracker_.setOnShutdownOperation(std::move(cb));
   }
 
-  void setCompressionCodecMap(CompressionCodecMap* codecMap) {
+  void setCompressionCodecMap(const CompressionCodecMap* codecMap) {
     compressionCodecMap_ = codecMap;
   }
 
@@ -179,7 +179,7 @@ class AsyncMcServerWorker {
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;
 
-  CompressionCodecMap* compressionCodecMap_{nullptr};
+  const CompressionCodecMap* compressionCodecMap_{nullptr};
 
   bool isAlive_{true};
 

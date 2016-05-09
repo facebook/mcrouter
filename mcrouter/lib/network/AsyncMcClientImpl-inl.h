@@ -40,7 +40,8 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       std::move(selfPtr),
       queue_,
       [](ParserT& parser) { parser.expectNext<Request>(); },
-      requestStatusCallbacks_.onStateChange);
+      requestStatusCallbacks_.onStateChange,
+      supportedCompressionCodecs_);
   sendCommon(ctx);
 
   // Wait for the reply.
