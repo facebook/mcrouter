@@ -767,8 +767,6 @@ bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
                                                  const struct iovec*& iovOut,
                                                  size_t& niovOut) {
   niovOut = 0;
-  iobuf_.clear();
-  auxString_.clear();
 
   appendInt(I32, msg_op, umbrella_op_from_mc[op]);
   appendInt(U64, msg_reqid, reqid);

@@ -425,6 +425,9 @@ UmbrellaSerializedMessage::UmbrellaSerializedMessage() noexcept {
 void UmbrellaSerializedMessage::clear() {
   nEntries_ = nStrings_ = offset_ = 0;
   error_ = false;
+
+  iobuf_.clear();
+  auxString_.clear();
 }
 
 void UmbrellaSerializedMessage::appendInt(

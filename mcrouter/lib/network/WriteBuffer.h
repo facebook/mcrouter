@@ -52,9 +52,6 @@ class AsciiSerializedReply {
                const struct iovec*& iovOut, size_t& niovOut,
                GetLikeT<McOperation<OpFromType<ThriftType,
                                                ReplyOpMapping>::value>> = 0) {
-    iovsCount_ = 0;
-    iobuf_.clear();
-    auxString_.clear();
     if (key.hasValue()) {
       key->coalesce();
     }
@@ -76,9 +73,6 @@ class AsciiSerializedReply {
                OtherThanT<McOperation<OpFromType<ThriftType,
                                       ReplyOpMapping>::value>,
                           GetLike<>> = 0) {
-    iovsCount_ = 0;
-    iobuf_.clear();
-    auxString_.clear();
     prepareImpl(std::move(reply));
     iovOut = iovs_;
     niovOut = iovsCount_;
@@ -104,8 +98,8 @@ class AsciiSerializedReply {
   // the iovs_ will point into the data managed by this IOBuf. A serialized
   // reply should not set iobuf_ more than once.
   // We also keep an auxiliary string for a similar purpose.
-  folly::IOBuf iobuf_;
-  std::string auxString_;
+  folly::Optional<folly::IOBuf> iobuf_;
+  folly::Optional<std::string> auxString_;
 
   // Only for McReply
   folly::Optional<McReply> reply_;

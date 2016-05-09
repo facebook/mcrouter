@@ -127,6 +127,9 @@ AsciiSerializedReply::~AsciiSerializedReply() {
 void AsciiSerializedReply::clear() {
   mc_ascii_response_buf_cleanup(&asciiResponse_);
   mc_ascii_response_buf_init(&asciiResponse_);
+  iovsCount_ = 0;
+  iobuf_.clear();
+  auxString_.clear();
   reply_.clear();
 }
 
@@ -191,7 +194,7 @@ void AsciiSerializedReply::handleError(mc_res_t result,
       addString(folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
     }
     auxString_ = std::move(message);
-    addStrings(auxString_, "\r\n");
+    addStrings(*auxString_, "\r\n");
   } else {
     addString(mc_res_to_response_string(result));
   }
@@ -234,7 +237,7 @@ void AsciiSerializedReply::prepareImpl(
 
       addStrings("VALUE ", key,
                  folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-      assert(iobuf_.empty());
+      assert(!iobuf_.hasValue());
       // value was coalesced in valueRangeSlow()
       iobuf_ = std::move(reply->value);
       addStrings(valueStr, "\r\n");
@@ -264,7 +267,7 @@ void AsciiSerializedReply::prepareImpl(
 
     addStrings("VALUE ", key,
                folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    assert(iobuf_.empty());
+    assert(!iobuf_.hasValue());
     // value was coalesced in valueRangeSlow()
     iobuf_ = std::move(reply->value);
     addStrings(valueStr, "\r\n");
@@ -335,7 +338,7 @@ void AsciiSerializedReply::prepareImpl(
 
     addStrings("VALUE ", key,
                folly::StringPiece(printBuffer_, static_cast<size_t>(len)));
-    assert(iobuf_.empty());
+    assert(!iobuf_.hasValue());
     // value was coalesced in valueRangeSlow()
     iobuf_ = std::move(reply->value);
     addStrings(valueStr, "\r\n");
@@ -517,7 +520,7 @@ void AsciiSerializedReply::prepareImpl(
     addString("VERSION ");
     if (reply->get_value()) {
       const auto valueStr = reply.valueRangeSlow();
-      assert(iobuf_.empty());
+      assert(!iobuf_.hasValue());
       // value was coalesced in valueRangeSlow()
       iobuf_ = std::move(reply->value);
       addString(valueStr);
@@ -537,7 +540,7 @@ void AsciiSerializedReply::prepareImpl(
   if (reply.result() == mc_res_ok) {
     if (reply->get_stats()) {
       auxString_ = folly::join("\r\n", *reply->get_stats());
-      addStrings(auxString_, "\r\n");
+      addStrings(*auxString_, "\r\n");
     }
     addString("END\r\n");
   } else if (reply.isError()) {
@@ -576,7 +579,7 @@ void AsciiSerializedReply::prepareImpl(
   if (reply.result() == mc_res_ok) {
     if (reply->get_response()) {
       auxString_ = std::move(reply->response);
-      addStrings(auxString_, "\r\n");
+      addStrings(*auxString_, "\r\n");
     } else {
       addString("OK\r\n");
     }
