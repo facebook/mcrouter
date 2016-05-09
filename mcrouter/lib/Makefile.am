@@ -83,8 +83,6 @@ libmcrouter_a_SOURCES = \
   debug/Fifo.h \
   debug/FifoManager.cpp \
   debug/FifoManager.h \
-  fbi/asox_semaphore.c \
-  fbi/asox_semaphore.h \
   fbi/asox_timer.c \
   fbi/asox_timer.h \
   fbi/counting_sem.c \
