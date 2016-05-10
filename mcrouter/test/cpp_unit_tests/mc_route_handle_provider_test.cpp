@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -71,7 +71,7 @@ struct TestSetup {
       poolFactory_(folly::dynamic::object(),
                    router_->configApi()),
       rhProvider_(*router_->getProxy(0), poolFactory_),
-      rhFactory_(rhProvider_) {
+      rhFactory_(rhProvider_, 0) {
   }
 
   McRouteHandleProvider& provider() {

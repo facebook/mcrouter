@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,8 +16,10 @@ namespace facebook { namespace memcache {
 
 template <class RouteHandleIf>
 RouteHandleFactory<RouteHandleIf>::RouteHandleFactory(
-    RouteHandleProviderIf<RouteHandleIf>& provider)
-    : provider_(provider) {
+    RouteHandleProviderIf<RouteHandleIf>& provider,
+    size_t threadId)
+    : provider_(provider),
+      threadId_(threadId) {
 }
 
 template <class RouteHandleIf>

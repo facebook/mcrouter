@@ -107,13 +107,14 @@ bool processGetServiceInfoRequestImpl(
 
 } // detail
 
-proxy_t::proxy_t(McrouterInstance& rtr)
+proxy_t::proxy_t(McrouterInstance& rtr, size_t id)
     : router_(rtr),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       fiberManager(
         fiber_local::ContextTypeTag(),
         folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(router_.opts())) {
+        getFiberManagerOptions(router_.opts())),
+      id_(id) {
 
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
@@ -144,10 +145,11 @@ proxy_t::proxy_t(McrouterInstance& rtr)
 }
 
 proxy_t::Pointer proxy_t::createProxy(McrouterInstance& router,
-                                      folly::EventBase& eventBase) {
+                                      folly::EventBase& eventBase,
+                                      size_t id) {
   /* This hack is needed to make sure proxy_t stays alive
      until at least event base managed to run the callback below */
-  auto proxy = std::shared_ptr<proxy_t>(new proxy_t(router));
+  auto proxy = std::shared_ptr<proxy_t>(new proxy_t(router, id));
   proxy->self_ = proxy;
 
   eventBase.runInEventBaseThread(

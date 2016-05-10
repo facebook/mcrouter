@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,10 @@ McrouterRouteHandlePtr makeNullRoute();
 
 McrouterRouteHandlePtr makeLatestRoute(
   const folly::dynamic& json,
-  std::vector<McrouterRouteHandlePtr> targets);
+  std::vector<McrouterRouteHandlePtr> targets,
+  size_t threadId);
+
+namespace {
 
 McrouterRouteHandlePtr makeHashRouteCrc32(
   std::vector<McrouterRouteHandlePtr> rh,
@@ -98,16 +101,19 @@ McrouterRouteHandlePtr makeHashRouteWeightedCh3(
     std::move(func));
 }
 
+}  // anonymous
+
 McrouterRouteHandlePtr makeHashRoute(
   const folly::dynamic& json,
-  std::vector<McrouterRouteHandlePtr> rh) {
+  std::vector<McrouterRouteHandlePtr> rh,
+  size_t threadId) {
 
   std::string salt;
   folly::StringPiece funcType = Ch3HashFunc::type();
   if (json.isObject()) {
     if (auto jsalt = json.get_ptr("salt")) {
       checkLogic(jsalt->isString(), "HashRoute: salt is not a string");
-      salt = jsalt->stringPiece().str();
+      salt = jsalt->getString();
     }
     if (auto jhashFunc = json.get_ptr("hash_func")) {
       checkLogic(jhashFunc->isString(),
@@ -127,10 +133,9 @@ McrouterRouteHandlePtr makeHashRoute(
   } else if (funcType == ConstShardHashFunc::type()) {
     return makeHashRouteConstShard(std::move(rh), std::move(salt));
   } else if (funcType == "Latest") {
-    return makeLatestRoute(json, std::move(rh));
+    return makeLatestRoute(json, std::move(rh), threadId);
   }
-  checkLogic(false, "Unknown hash function: {}", funcType);
-  return nullptr;
+  throwLogic("Unknown hash function: {}", funcType);
 }
 
 McrouterRouteHandlePtr makeHashRoute(
@@ -145,7 +150,7 @@ McrouterRouteHandlePtr makeHashRoute(
   } else {
     children = factory.createList(json);
   }
-  return makeHashRoute(json, std::move(children));
+  return makeHashRoute(json, std::move(children), factory.getThreadId());
 }
 
 }}}  // facebook::memcache::mcrouter

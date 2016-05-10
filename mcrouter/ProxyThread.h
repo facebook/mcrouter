@@ -24,7 +24,7 @@ struct proxy_t;
 
 class ProxyThread {
  public:
-  explicit ProxyThread(McrouterInstance& router);
+  ProxyThread(McrouterInstance& router, size_t id);
 
   /**
    * Stops the underlying proxy thread and joins it.

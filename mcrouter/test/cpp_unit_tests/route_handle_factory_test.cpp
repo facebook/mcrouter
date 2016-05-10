@@ -27,7 +27,7 @@ TEST(RouteHandleFactoryTest, sanity) {
   auto proxy = router->getProxy(0);
   PoolFactory pf(folly::dynamic::object(), router->configApi());
   McRouteHandleProvider provider(*proxy, pf);
-  RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
+  RouteHandleFactory<McrouterRouteHandleIf> factory(provider, proxy->getId());
 
   auto rh = factory.create("AllAsyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);

@@ -32,7 +32,7 @@ ProxyConfig::ProxyConfig(proxy_t& proxy,
   : configMd5Digest_(std::move(configMd5Digest)) {
 
   McRouteHandleProvider provider(proxy, poolFactory);
-  RouteHandleFactory<McrouterRouteHandleIf> factory(provider);
+  RouteHandleFactory<McrouterRouteHandleIf> factory(provider, proxy.getId());
 
   checkLogic(json.isObject(), "Config is not an object");
 

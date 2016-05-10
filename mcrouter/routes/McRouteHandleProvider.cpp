@@ -88,7 +88,8 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeHashRoute(const folly::dynamic& json,
-                                     std::vector<McrouterRouteHandlePtr> rh);
+                                     std::vector<McrouterRouteHandlePtr> rh,
+                                     size_t threadId);
 
 McrouterRouteHandlePtr makeHashRoute(McRouteHandleFactory& factory,
                                      const folly::dynamic& json);
@@ -430,7 +431,8 @@ McRouteHandleProvider::makePoolRoute(McRouteHandleFactory& factory,
         }
       }
     }
-    auto route = makeHashRoute(jhashWithWeights, std::move(destinations));
+    auto route = makeHashRoute(jhashWithWeights, std::move(destinations),
+                               factory.getThreadId());
 
     auto asynclogName = poolJson.name;
     bool needAsynclog = true;

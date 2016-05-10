@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,10 +23,14 @@ namespace {
 std::vector<McrouterRouteHandlePtr>
 getTargets(std::vector<McrouterRouteHandlePtr> targets,
            size_t failoverCount,
+           size_t threadId,
            folly::StringPiece salt) {
   std::vector<McrouterRouteHandlePtr> failovers;
   failoverCount = std::min(failoverCount, targets.size());
   size_t curHash = folly::hash::hash_combine(0, globals::hostid());
+  if (threadId != 0) {
+    curHash = folly::hash::hash_combine(curHash, threadId);
+  }
   if (!salt.empty()) {
     curHash = folly::Hash()(curHash, salt);
   }
@@ -48,9 +52,11 @@ McrouterRouteHandlePtr makeFailoverRoute(
 
 McrouterRouteHandlePtr makeLatestRoute(
   const folly::dynamic& json,
-  std::vector<McrouterRouteHandlePtr> targets) {
+  std::vector<McrouterRouteHandlePtr> targets,
+  size_t threadId) {
 
   size_t failoverCount = 5;
+  size_t failoverThreadId = 0;
   folly::StringPiece salt;
 
   if (json.isObject()) {
@@ -63,10 +69,17 @@ McrouterRouteHandlePtr makeLatestRoute(
       checkLogic(jsalt->isString(), "LatestRoute: salt is not a string");
       salt = jsalt->stringPiece();
     }
+    if (auto jthreadLocalFailover = json.get_ptr("thread_local_failover")) {
+      checkLogic(jthreadLocalFailover->isBool(),
+                 "LatestRoute: thread_local_failover is not a boolean");
+      if (jthreadLocalFailover->getBool()) {
+        failoverThreadId = threadId;
+      }
+    }
   }
 
   return makeFailoverRoute(json, getTargets(std::move(targets), failoverCount,
-      salt));
+      failoverThreadId, salt));
 }
 
 McrouterRouteHandlePtr makeLatestRoute(
@@ -80,7 +93,7 @@ McrouterRouteHandlePtr makeLatestRoute(
   } else {
     children = factory.createList(json);
   }
-  return makeLatestRoute(json, std::move(children));
+  return makeLatestRoute(json, std::move(children), factory.getThreadId());
 }
 
 }}}  // facebook::memcache::mcrouter

@@ -236,10 +236,10 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
   for (size_t i = 0; i < opts_.num_proxies; i++) {
     try {
       if (evbs.empty()) {
-        proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this));
+        proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
       } else {
         CHECK(evbs[i] != nullptr);
-        proxies_.emplace_back(proxy_t::createProxy(*this, *evbs[i]));
+        proxies_.emplace_back(proxy_t::createProxy(*this, *evbs[i], i));
       }
     } catch (...) {
       LOG(ERROR) << "Failed to create proxy";

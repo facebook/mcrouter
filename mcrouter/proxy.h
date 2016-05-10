@@ -262,6 +262,10 @@ struct proxy_t {
     return router_;
   }
 
+  size_t getId() const {
+    return id_;
+  }
+
   /**
    * This method is equal to router().opts(), with the only difference,
    * that it doesn't require the caller to know about McrouterInstance.
@@ -294,11 +298,13 @@ struct proxy_t {
   };
 
   std::shared_ptr<proxy_t> self_;
+  size_t id_{0};
 
   using Pointer = std::unique_ptr<proxy_t, ProxyDelayedDestructor>;
   static Pointer createProxy(McrouterInstance& router,
-                             folly::EventBase& eventBase);
-  explicit proxy_t(McrouterInstance& router);
+                             folly::EventBase& eventBase,
+                             size_t id);
+  proxy_t(McrouterInstance& router, size_t id);
 
   void messageReady(ProxyMessage::Type t, void* data);
 

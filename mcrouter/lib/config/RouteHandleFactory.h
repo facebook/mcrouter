@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -33,9 +33,11 @@ class RouteHandleFactory {
   RouteHandleFactory& operator=(const RouteHandleFactory&) = delete;
 
   /**
-   * @param provider that can create single node of RouteHandle tree.
+   * @param provider  creates single node of RouteHandle tree
+   * @param threadId  thread where route handles will run
    */
-  explicit RouteHandleFactory(RouteHandleProviderIf<RouteHandleIf>& provider);
+  RouteHandleFactory(RouteHandleProviderIf<RouteHandleIf>& provider,
+                     size_t threadId);
 
   /**
    * Adds a named route handle that may be used later.
@@ -59,13 +61,20 @@ class RouteHandleFactory {
    *             RouteHandles.
    */
   std::vector<RouteHandlePtr> createList(const folly::dynamic& json);
+
+  size_t getThreadId() const noexcept {
+    return threadId_;
+  }
+
  private:
   RouteHandleProviderIf<RouteHandleIf>& provider_;
 
   /// Registered named routes that are not parsed yet
   folly::StringKeyedUnorderedMap<folly::dynamic> registered_;
-   /// Named routes we've already parsed
+  /// Named routes we've already parsed
   folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> seen_;
+  /// Thread where route handles created by this factory will be used
+  size_t threadId_;
 
   const std::vector<RouteHandlePtr>&
   createNamed(folly::StringPiece name, const folly::dynamic& json);
