@@ -21,7 +21,6 @@ void ConnectionTracker::add(
     std::shared_ptr<McServerOnRequest> cb,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
-    std::shared_ptr<Fifo> debugFifo,
     const CompressionCodecMap* compressionCodecMap) {
   if (maxConns_ != 0 && sessions_.size() >= maxConns_) {
     evict();
@@ -33,7 +32,6 @@ void ConnectionTracker::add(
       *this,
       std::move(options),
       userCtxt,
-      std::move(debugFifo),
       compressionCodecMap);
 
   sessions_.push_front(session);

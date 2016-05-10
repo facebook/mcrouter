@@ -17,14 +17,14 @@
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
+#include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 
 namespace facebook { namespace memcache {
 
-class Fifo;
 class McServerOnRequest;
 class MultiOpParent;
 class WriteBuffer;
@@ -100,7 +100,6 @@ class McServerSession :
       StateCallback& stateCb,
       AsyncMcServerWorkerOptions options,
       void* userCtxt,
-      std::shared_ptr<Fifo> debugFifo = nullptr,
       const CompressionCodecMap* codecMap = nullptr);
 
   /**
@@ -156,7 +155,7 @@ class McServerSession :
   std::shared_ptr<McServerOnRequest> onRequest_;
   StateCallback& stateCb_;
   AsyncMcServerWorkerOptions options_;
-  std::shared_ptr<Fifo> debugFifo_;
+  ConnectionFifo debugFifo_;
 
   enum State {
     STREAMING,  /* close() was not called */
@@ -360,7 +359,6 @@ class McServerSession :
     StateCallback& stateCb,
     AsyncMcServerWorkerOptions options,
     void* userCtxt,
-    std::shared_ptr<Fifo> debugFifo,
     const CompressionCodecMap* codecMap);
 
   McServerSession(const McServerSession&) = delete;

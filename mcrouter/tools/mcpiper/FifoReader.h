@@ -22,7 +22,7 @@
 #include <folly/Optional.h>
 #include <folly/SocketAddress.h>
 
-#include "mcrouter/lib/debug/Fifo.h"
+#include "mcrouter/lib/debug/ConnectionFifoProtocol.h"
 
 namespace folly {
 class EventBase;

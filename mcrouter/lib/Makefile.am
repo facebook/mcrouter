@@ -79,6 +79,10 @@ libmcrouter_a_SOURCES = \
   cycles/ExtractorThread.cpp \
   cycles/ExtractorThread.h \
   cycles/Interval.h \
+	debug/ConnectionFifo.cpp \
+	debug/ConnectionFifo.h \
+	debug/ConnectionFifoProtocol.cpp \
+	debug/ConnectionFifoProtocol.h \
   debug/Fifo.cpp \
   debug/Fifo.h \
   debug/FifoManager.cpp \

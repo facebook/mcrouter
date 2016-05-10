@@ -69,11 +69,9 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
 
 AsyncMcClientImpl::AsyncMcClientImpl(
     folly::EventBase& eventBase,
-    ConnectionOptions options,
-    std::shared_ptr<Fifo> debugFifo)
+    ConnectionOptions options)
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
-      debugFifo_(std::move(debugFifo)),
       outOfOrder_(connectionOptions_.accessPoint->getProtocol() !=
                   mc_ascii_protocol),
       queue_(outOfOrder_),
@@ -95,15 +93,8 @@ std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
     throw std::logic_error("No network mode is supported only for ascii");
   }
 
-  std::shared_ptr<Fifo> debugFifo;
-  if (!options.debugFifoPath.empty()) {
-    if (auto fifoManager = FifoManager::getInstance()) {
-      debugFifo = fifoManager->fetchThreadLocal(options.debugFifoPath);
-    }
-  }
   auto client = std::shared_ptr<AsyncMcClientImpl>(
-    new AsyncMcClientImpl(eventBase, std::move(options), std::move(debugFifo)),
-    Destructor());
+      new AsyncMcClientImpl(eventBase, std::move(options)), Destructor());
   client->selfPtr_ = client;
   return client;
 }
@@ -228,9 +219,9 @@ void AsyncMcClientImpl::pushMessages() {
 
     auto iov = req.reqContext.getIovs();
     auto iovcnt = req.reqContext.getIovsCount();
-    if (debugFifo_) {
-      debugFifo_->writeIfConnected(socket_.get(), MessageDirection::Sent,
-                                   iov, iovcnt);
+    if (debugFifo_.isConnected()) {
+      debugFifo_.startMessage(MessageDirection::Sent);
+      debugFifo_.writeData(iov, iovcnt);
     }
     socket_->writev(this, iov, iovcnt,
                     numToSend == 1 ? folly::WriteFlags::NONE
@@ -487,6 +478,14 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     statusCallbacks_.onUp();
   }
 
+  if (!connectionOptions_.debugFifoPath.empty()) {
+    if (auto fifoManager = FifoManager::getInstance()) {
+      auto fifo =
+          fifoManager->fetchThreadLocal(connectionOptions_.debugFifoPath);
+      debugFifo_ = ConnectionFifo(std::move(fifo), socket_.get());
+    }
+  }
+
   if (connectionOptions_.sslContextProvider &&
       connectionOptions_.sessionCachingEnabled) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
@@ -608,9 +607,9 @@ void AsyncMcClientImpl::getReadBuffer(void** bufReturn, size_t* lenReturn) {
 void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
   assert(curBuffer_.first != nullptr && curBuffer_.second >= len);
   DestructorGuard dg(this);
-  if (debugFifo_) {
-    debugFifo_->writeIfConnected(socket_.get(), MessageDirection::Received,
-                                 curBuffer_.first, len);
+  if (debugFifo_.isConnected()) {
+    debugFifo_.startMessage(MessageDirection::Received);
+    debugFifo_.writeData(curBuffer_.first, len);
   }
   parser_->readDataAvailable(len);
 }

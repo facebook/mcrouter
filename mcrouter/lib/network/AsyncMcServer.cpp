@@ -25,7 +25,6 @@
 #include <folly/Memory.h>
 #include <folly/String.h>
 
-#include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
@@ -109,14 +108,6 @@ class McServerThread {
 
     thread_ = std::thread{
       [fn, threadId, this] (){
-        // Set workers' debug fifo
-        if (!server_.opts_.debugFifoPath.empty()) {
-          if (auto fifoManager = FifoManager::getInstance()) {
-            worker_.setDebugFifo(fifoManager->fetchThreadLocal(
-                  server_.opts_.debugFifoPath));
-          }
-        }
-
         if (accepting_) {
           startAccepting();
 

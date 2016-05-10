@@ -73,6 +73,12 @@ struct AsyncMcServerWorkerOptions {
    * String that will be returned for 'VERSION' commands.
    */
   std::string versionString{"AsyncMcServer-1.0"};
+
+  /**
+   * Path of the debug fifo.
+   * If empty, debug fifo is disabled.
+   */
+  std::string debugFifoPath;
 };
 
 }}  // facebook::memcache

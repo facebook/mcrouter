@@ -29,7 +29,6 @@ class SSLContext;
 namespace facebook { namespace memcache {
 
 class CompressionCodecMap;
-class Fifo;
 class McServerOnRequest;
 
 /**
@@ -144,10 +143,6 @@ class AsyncMcServerWorker {
     compressionCodecMap_ = codecMap;
   }
 
-  void setDebugFifo(std::shared_ptr<Fifo> debugFifo) {
-    debugFifo_ = std::move(debugFifo);
-  }
-
   /**
    * Start closing all connections.
    * All incoming requests must still be replied by the application,
@@ -174,7 +169,6 @@ class AsyncMcServerWorker {
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
-  std::shared_ptr<Fifo> debugFifo_;
 
   std::shared_ptr<McServerOnRequest> onRequest_;
   std::function<void()> onAccepted_;

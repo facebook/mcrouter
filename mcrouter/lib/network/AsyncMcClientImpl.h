@@ -18,15 +18,14 @@
 #include <folly/io/IOBufQueue.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
+#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/fbi/cpp/ObjectPool.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
-#include "mcrouter/lib/Operation.h"
 
 namespace facebook { namespace memcache {
-
-class Fifo;
 
 namespace detail {
 class OnEventBaseDestructionCallback;
@@ -118,7 +117,7 @@ class AsyncMcClientImpl :
   RequestStatusCallbacks requestStatusCallbacks_;
 
   // Debug pipe.
-  std::shared_ptr<Fifo> debugFifo_;
+  ConnectionFifo debugFifo_;
 
   CodecIdRange supportedCompressionCodecs_{0, 0};
 
@@ -142,8 +141,7 @@ class AsyncMcClientImpl :
     eventBaseDestructionCallback_;
 
   AsyncMcClientImpl(folly::EventBase& eventBase,
-                    ConnectionOptions options,
-                    std::shared_ptr<Fifo> debugFifo);
+                    ConnectionOptions options);
 
   ~AsyncMcClientImpl();
 

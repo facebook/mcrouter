@@ -59,12 +59,7 @@ bool AsyncMcServerWorker::addClientSocket(
 
   try {
     tracker_.add(
-        std::move(socket),
-        onRequest_,
-        opts_,
-        userCtxt,
-        debugFifo_,
-        compressionCodecMap_);
+        std::move(socket), onRequest_, opts_, userCtxt, compressionCodecMap_);
     return true;
   } catch (const std::exception& ex) {
     // TODO: record stats about failure

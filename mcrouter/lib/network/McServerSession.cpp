@@ -14,7 +14,7 @@
 #include <folly/Memory.h>
 #include <folly/small_vector.h>
 
-#include "mcrouter/lib/debug/Fifo.h"
+#include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
@@ -24,23 +24,19 @@ namespace facebook { namespace memcache {
 constexpr size_t kIovecVectorSize = 64;
 
 McServerSession& McServerSession::create(
-  folly::AsyncTransportWrapper::UniquePtr transport,
-  std::shared_ptr<McServerOnRequest> cb,
-  StateCallback& stateCb,
-  AsyncMcServerWorkerOptions options,
-  void* userCtxt,
-  std::shared_ptr<Fifo> debugFifo,
-  const CompressionCodecMap* codecMap) {
-
+    folly::AsyncTransportWrapper::UniquePtr transport,
+    std::shared_ptr<McServerOnRequest> cb,
+    StateCallback& stateCb,
+    AsyncMcServerWorkerOptions options,
+    void* userCtxt,
+    const CompressionCodecMap* codecMap) {
   auto ptr = new McServerSession(
-    std::move(transport),
-    std::move(cb),
-    stateCb,
-    std::move(options),
-    userCtxt,
-    std::move(debugFifo),
-    codecMap
-  );
+      std::move(transport),
+      std::move(cb),
+      stateCb,
+      std::move(options),
+      userCtxt,
+      codecMap);
 
   assert(ptr->state_ == STREAMING);
 
@@ -60,14 +56,12 @@ McServerSession::McServerSession(
   StateCallback& stateCb,
   AsyncMcServerWorkerOptions options,
   void* userCtxt,
-  std::shared_ptr<Fifo> debugFifo,
   const CompressionCodecMap* codecMap)
     : transport_(std::move(transport)),
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
       options_(std::move(options)),
-      debugFifo_(std::move(debugFifo)),
       pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
@@ -87,6 +81,14 @@ McServerSession::McServerSession(
   if (socket != nullptr) {
     socket->sslAccept(this, /* timeout = */ 0);
   }
+
+  if (!options_.debugFifoPath.empty()) {
+    if (auto fifoManager = FifoManager::getInstance()) {
+      auto fifo = fifoManager->fetchThreadLocal(options_.debugFifoPath);
+      debugFifo_ = ConnectionFifo(std::move(fifo), transport_.get());
+    }
+  }
+
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -204,9 +206,9 @@ void McServerSession::getReadBuffer(void** bufReturn, size_t* lenReturn) {
 void McServerSession::readDataAvailable(size_t len) noexcept {
   DestructorGuard dg(this);
 
-  if (debugFifo_) {
-    debugFifo_->writeIfConnected(transport_.get(), MessageDirection::Received,
-                                 curBuffer_.first, len);
+  if (debugFifo_.isConnected()) {
+    debugFifo_.startMessage(MessageDirection::Received);
+    debugFifo_.writeData(curBuffer_.first, len);
   }
 
   if (!parser_.readDataAvailable(len)) {
@@ -352,9 +354,9 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     size_t iovCount = wb->getIovsCount();
     writeBufs_->push(std::move(wb));
     transport_->writev(this, iovs, iovCount);
-    if (debugFifo_) {
-      debugFifo_->writeIfConnected(transport_.get(), MessageDirection::Sent,
-                                   iovs, iovCount);
+    if (debugFifo_.isConnected()) {
+      debugFifo_.startMessage(MessageDirection::Sent);
+      debugFifo_.writeData(iovs, iovCount);
     }
     if (!writeBufs_->empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
@@ -390,9 +392,9 @@ void McServerSession::sendWrites() {
     writeBufs_->push(std::move(wb));
   }
 
-  if (debugFifo_) {
-    debugFifo_->writeIfConnected(transport_.get(), MessageDirection::Sent,
-                                 iovs.data(), iovs.size());
+  if (debugFifo_.isConnected()) {
+    debugFifo_.startMessage(MessageDirection::Sent);
+    debugFifo_.writeData(iovs.data(), iovs.size());
   }
   transport_->writev(this, iovs.data(), iovs.size());
 }

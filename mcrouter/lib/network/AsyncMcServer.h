@@ -84,12 +84,6 @@ class AsyncMcServer {
     size_t numThreads{1};
 
     /**
-     * Path of the debug fifo.
-     * If empty, debug fifo is disabled.
-     */
-    std::string debugFifoPath;
-
-    /**
      * Worker-specific options
      */
     AsyncMcServerWorkerOptions worker;
