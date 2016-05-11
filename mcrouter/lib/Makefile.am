@@ -170,8 +170,6 @@ libmcrouter_a_SOURCES = \
   network/McParser.h \
   network/McQueueAppender.cpp \
   network/McQueueAppender.h \
-  network/McReplyToTypedConverter.cpp \
-  network/McReplyToTypedConverter.h \
   network/McRequestToTypedConverter.cpp \
   network/McRequestToTypedConverter.h \
   network/McSerializedRequest.cpp \
@@ -191,9 +189,6 @@ libmcrouter_a_SOURCES = \
   network/ThreadLocalSSLContextProvider.h \
   network/ThriftMessageList.h \
   network/ThriftMsgDispatcher.h \
-  network/TypedToMcRequestConverter-inl.h \
-  network/TypedToMcRequestConverter.cpp \
-  network/TypedToMcRequestConverter.h \
   network/UmbrellaProtocol.cpp \
   network/UmbrellaProtocol.h \
   network/UniqueIntrusiveList.h \
