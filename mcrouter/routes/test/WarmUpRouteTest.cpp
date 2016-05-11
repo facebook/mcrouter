@@ -14,8 +14,8 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/WarmUpRoute.h"
@@ -50,31 +50,31 @@ TEST(warmUpRouteTest, warmUp) {
       route_handles[0], route_handles[1], 1);
 
     auto reply_get = rh.route(
-        McRequestWithMcOp<mc_op_get>("key_get"));
-    EXPECT_TRUE("b" == toString(reply_get.value()));
-    EXPECT_TRUE(vector<string>{"key_get"} != test_handles[0]->saw_keys);
-    EXPECT_TRUE(vector<string>{"key_get"} == test_handles[1]->saw_keys);
+        TypedThriftRequest<cpp2::McGetRequest>("key_get"));
+    EXPECT_EQ("b", reply_get.valueRangeSlow().str());
+    EXPECT_NE(vector<string>{"key_get"}, test_handles[0]->saw_keys);
+    EXPECT_EQ(vector<string>{"key_get"}, test_handles[1]->saw_keys);
     (test_handles[0]->saw_keys).clear();
     (test_handles[1]->saw_keys).clear();
 
     auto reply_del = rh.route(
-        McRequestWithMcOp<mc_op_delete>("key_del"));
-    EXPECT_TRUE(mc_res_notfound == reply_del.result());
-    EXPECT_TRUE(vector<string>{"key_del"} != test_handles[0]->saw_keys);
-    EXPECT_TRUE(vector<string>{"key_del"} == test_handles[1]->saw_keys);
+        TypedThriftRequest<cpp2::McDeleteRequest>("key_del"));
+    EXPECT_EQ(mc_res_notfound, reply_del.result());
+    EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
+    EXPECT_EQ(vector<string>{"key_del"}, test_handles[1]->saw_keys);
   });
   fm.run([&]() {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
       route_handles[0], route_handles[2], 1);
 
     auto reply_get = rh.route(
-        McRequestWithMcOp<mc_op_get>("key_get"));
-    EXPECT_TRUE("a" == toString(reply_get.value()));
-    EXPECT_TRUE(vector<string>{"key_get"} == test_handles[0]->saw_keys);
-    EXPECT_TRUE(vector<string>{"key_get"} == test_handles[2]->saw_keys);
+        TypedThriftRequest<cpp2::McGetRequest>("key_get"));
+    EXPECT_EQ("a", reply_get.valueRangeSlow().str());
+    EXPECT_EQ(vector<string>{"key_get"}, test_handles[0]->saw_keys);
+    EXPECT_EQ(vector<string>{"key_get"}, test_handles[2]->saw_keys);
   });
   fm.run([&]() {
-    EXPECT_TRUE((vector<uint32_t>{0, 1}) == test_handles[2]->sawExptimes);
+    EXPECT_EQ((vector<uint32_t>{0, 1}), test_handles[2]->sawExptimes);
     (test_handles[0]->saw_keys).clear();
     (test_handles[2]->saw_keys).clear();
     EXPECT_EQ((vector<std::string>{ "get", "add" }),
@@ -85,10 +85,10 @@ TEST(warmUpRouteTest, warmUp) {
       route_handles[0], route_handles[2], 1);
 
     auto reply_del = rh.route(
-        McRequestWithMcOp<mc_op_delete>("key_del"));
-    EXPECT_TRUE(mc_res_notfound == reply_del.result());
-    EXPECT_TRUE(vector<string>{"key_del"} != test_handles[0]->saw_keys);
-    EXPECT_TRUE(vector<string>{"key_del"} == test_handles[2]->saw_keys);
+        TypedThriftRequest<cpp2::McDeleteRequest>("key_del"));
+    EXPECT_EQ(mc_res_notfound, reply_del.result());
+    EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
+    EXPECT_EQ(vector<string>{"key_del"}, test_handles[2]->saw_keys);
   });
 
 

@@ -14,8 +14,8 @@
 
 #include <folly/dynamic.h>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
@@ -61,8 +61,8 @@ TEST(failoverRouteTest, success) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "a");
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("a", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, once) {
@@ -78,8 +78,8 @@ TEST(failoverRouteTest, once) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "b");
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, twice) {
@@ -95,8 +95,8 @@ TEST(failoverRouteTest, twice) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "c");
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, fail) {
@@ -112,10 +112,10 @@ TEST(failoverRouteTest, fail) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
 
   /* Will return the last reply when ran out of targets */
-  EXPECT_EQ("c", toString(reply.value()));
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, customErrorOnce) {
@@ -132,8 +132,8 @@ TEST(failoverRouteTest, customErrorOnce) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "b");
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, customErrorTwice) {
@@ -151,8 +151,8 @@ TEST(failoverRouteTest, customErrorTwice) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "c");
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, customErrorUpdate) {
@@ -169,8 +169,10 @@ TEST(failoverRouteTest, customErrorUpdate) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_set>("0"));
-  EXPECT_TRUE(reply.result() == mc_res_local_error);
+  TypedThriftRequest<cpp2::McSetRequest> req("0");
+  req.setValue("value");
+  auto reply = rh->route(std::move(req));
+  EXPECT_EQ(mc_res_local_error, reply.result());
 }
 
 TEST(failoverRouteTest, separateErrorsGet) {
@@ -190,8 +192,8 @@ TEST(failoverRouteTest, separateErrorsGet) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "b");
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, separateErrorsUpdate) {
@@ -211,12 +213,24 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply1 = rh->route(McRequestWithMcOp<mc_op_set>("0"));
-  EXPECT_TRUE(reply1.result() == mc_res_stored);
-  auto reply2 = rh->route(McRequestWithMcOp<mc_op_append>("0"));
-  EXPECT_TRUE(reply2.result() == mc_res_stored);
-  auto reply3 = rh->route(McRequestWithMcOp<mc_op_prepend>("0"));
-  EXPECT_TRUE(reply3.result() == mc_res_stored);
+  {
+    TypedThriftRequest<cpp2::McSetRequest> req("0");
+    req.setValue("value");
+    auto reply1 = rh->route(std::move(req));
+    EXPECT_EQ(mc_res_stored, reply1.result());
+  }
+  {
+    TypedThriftRequest<cpp2::McAppendRequest> req("0");
+    req.setValue("value");
+    auto reply2 = rh->route(std::move(req));
+    EXPECT_EQ(mc_res_stored, reply2.result());
+  }
+  {
+    TypedThriftRequest<cpp2::McPrependRequest> req("0");
+    req.setValue("value");
+    auto reply3 = rh->route(std::move(req));
+    EXPECT_EQ(mc_res_stored, reply3.result());
+  }
 }
 
 TEST(failoverRouteTest, separateErrorsDelete) {
@@ -236,8 +250,8 @@ TEST(failoverRouteTest, separateErrorsDelete) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_delete>("0"));
-  EXPECT_TRUE(reply.result() == mc_res_remote_error);
+  auto reply = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+  EXPECT_EQ(mc_res_remote_error, reply.result());
 }
 
 TEST(failoverRouteTest, rateLimit) {
@@ -254,16 +268,16 @@ TEST(failoverRouteTest, rateLimit) {
     /* failoverTagging */ false);
 
   // tokens: 1
-  auto reply1 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
+  auto reply1 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
   EXPECT_EQ(mc_res_found, reply1.result());
   // tokens: 0
-  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
+  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
   EXPECT_EQ(mc_res_timeout, reply2.result());
   // tokens: 0.5
-  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
+  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
   EXPECT_EQ(mc_res_found, reply3.result());
   // tokens: 0
-  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
+  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
   EXPECT_EQ(mc_res_timeout, reply4.result());
 }
 
@@ -285,8 +299,8 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("a", toString(reply.value()));
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("a", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailoverOnce) {
@@ -307,8 +321,8 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply.value()));
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailoverTwice) {
@@ -329,8 +343,8 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply.value()));
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresLastSucceeds) {
@@ -352,20 +366,20 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
                                            "route01",
                                            json);
 
-  auto reply1= rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply1.value()));
+  auto reply1= rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply1.valueRangeSlow().str());
 
-  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply2.value()));
+  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply2.valueRangeSlow().str());
 
-  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("d", toString(reply3.value()));
+  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("d", reply3.valueRangeSlow().str());
 
-  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("d", toString(reply4.value()));
+  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("d", reply4.valueRangeSlow().str());
 
-  auto reply5 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("d", toString(reply5.value()));
+  auto reply5 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("d", reply5.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresCycle) {
@@ -387,23 +401,23 @@ TEST(failoverRouteTest, leastFailuresCycle) {
                                            "route01",
                                            json);
 
-  auto reply1= rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply1.value()));
+  auto reply1= rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply1.valueRangeSlow().str());
 
-  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply2.value()));
+  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply2.valueRangeSlow().str());
 
-  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("d", toString(reply3.value()));
+  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("d", reply3.valueRangeSlow().str());
 
-  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply4.value()));
+  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply4.valueRangeSlow().str());
 
-  auto reply5 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply5.value()));
+  auto reply5 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply5.valueRangeSlow().str());
 
-  auto reply6 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("d", toString(reply6.value()));
+  auto reply6 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("d", reply6.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailAll) {
@@ -424,8 +438,8 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply.value()));
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailAllLimit) {
@@ -446,8 +460,8 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply.value()));
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply.valueRangeSlow().str());
 }
 
 TEST(failoverRouteTest, leastFailuresComplex) {
@@ -474,34 +488,36 @@ TEST(failoverRouteTest, leastFailuresComplex) {
                                            "route01",
                                            json);
 
-  auto reply1 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply1.value()));
+  auto reply1 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply1.valueRangeSlow().str());
 
-  auto reply2 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply2.value()));
+  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply2.valueRangeSlow().str());
 
-  auto reply3 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply3.value()));
+  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply3.valueRangeSlow().str());
 
   // At this point, b has failed 2 times, c has failed 1 time
   // Next request is routed to c
-  rh->route(McRequestWithMcOp<mc_op_set>("0"));
+  TypedThriftRequest<cpp2::McSetRequest> req("0");
+  req.setValue("value");
+  rh->route(req);
 
   // Now both b and c have error count 2.  Next request routed to b.
   // b's error count will be reset to 0 on success
   // c still has error count 2
-  rh->route(McRequestWithMcOp<mc_op_set>("0"));
+  rh->route(std::move(req));
 
   // Fail b twice
-  auto reply4 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply4.value()));
-  auto reply5 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply5.value()));
+  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply4.valueRangeSlow().str());
+  auto reply5 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply5.valueRangeSlow().str());
 
   // Now b and c have same error count (2)
-  auto reply6 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("b", toString(reply6.value()));
+  auto reply6 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply6.valueRangeSlow().str());
 
-  auto reply7 = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_EQ("c", toString(reply7.value()));
+  auto reply7 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply7.valueRangeSlow().str());
 }

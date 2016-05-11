@@ -15,8 +15,8 @@
 #include <folly/Conv.h>
 #include <folly/Format.h>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/BigValueRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -47,20 +47,16 @@ TEST(BigValueRouteTest, smallvalue) {
     [&]() {
       McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
-      std::string key = "key_get";
-      auto msg = createMcMsgRef(key, "value");
-      msg->op = mc_op_get;
-      McRequestWithMcOp<mc_op_get> req_get(std::move(msg));
+      TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
       auto f_get = rh.route(req_get);
 
-      EXPECT_EQ("a", toString(f_get.value()));
+      EXPECT_EQ("a", f_get.valueRangeSlow().str());
       EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_get"});
       test_handles[0]->saw_keys.clear();
 
-      std::string key_set = "key_set";
-      auto msg_set = createMcMsgRef(key_set, "value");
-      msg_set->op = mc_op_set;
-      McRequestWithMcOp<mc_op_set> req_set(std::move(msg_set));
+      TypedThriftRequest<cpp2::McSetRequest> req_set("key_set");
+      req_set.setValue("value");
+
       auto f_set = rh.route(req_set);
       EXPECT_EQ(mc_res_stored, f_set.result());
       EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_set"});
@@ -94,9 +90,7 @@ TEST(BigValueRouteTest, bigvalue) {
       { // Test Get Like path with init_reply in corect format
         McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
-        auto msg = createMcMsgRef("key_get");
-        msg->op = mc_op_get;
-        McRequestWithMcOp<mc_op_get> req_get(std::move(msg));
+        TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
 
         auto f_get = rh.route(req_get);
         auto keys_get = test_handles[0]->saw_keys;
@@ -116,15 +110,13 @@ TEST(BigValueRouteTest, bigvalue) {
 
         // each chunk_key saw value as init_reply.
         // In GetLike path, it gets appended num_chunks time
-        EXPECT_EQ(merged_str, toString(f_get.value()));
+        EXPECT_EQ(merged_str, f_get.valueRangeSlow().str());
       }
 
       { // Test Get Like path with init_reply_error
         McrouterRouteHandle<BigValueRoute> rh(route_handles[1], opts);
 
-        auto msg = createMcMsgRef("key_get");
-        msg->op = mc_op_get;
-        McRequestWithMcOp<mc_op_get> req_get(std::move(msg));
+        TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
 
         auto f_get = rh.route(req_get);
         auto keys_get = test_handles[1]->saw_keys;
@@ -132,7 +124,7 @@ TEST(BigValueRouteTest, bigvalue) {
         // first get the result for original key, then return mc_res_notfound
         EXPECT_EQ("key_get", keys_get.front());
         EXPECT_EQ(mc_res_notfound, f_get.result());
-        EXPECT_EQ("", toString(f_get.value()));
+        EXPECT_EQ("", f_get.valueRangeSlow().str());
       }
 
       { // Test Update Like path with mc_op_set op
@@ -143,9 +135,8 @@ TEST(BigValueRouteTest, bigvalue) {
           std::string(threshold*(num_chunks/2), 's'));
         std::string chunk_type_1(threshold, 't');
         std::string chunk_type_2(threshold, 's');
-        auto msg_set = createMcMsgRef("key_set", big_value);
-        msg_set->op = mc_op_set;
-        McRequestWithMcOp<mc_op_set> req_set(std::move(msg_set));
+        TypedThriftRequest<cpp2::McSetRequest> req_set("key_set");
+        req_set.setValue(big_value);
 
         auto f_set = rh.route(req_set);
         auto keys_set = test_handles[2]->saw_keys;
@@ -186,10 +177,9 @@ TEST(BigValueRouteTest, bigvalue) {
         std::string big_value  = folly::to<std::string>(
           std::string(threshold*(num_chunks/2), 't'),
           std::string(threshold*(num_chunks/2), 's'));
-        auto msg_set = createMcMsgRef("key_set", big_value);
-        msg_set->op = mc_op_lease_set;
-        McRequestWithMcOp<mc_op_lease_set> req_set(
-            std::move(msg_set));
+
+        TypedThriftRequest<cpp2::McLeaseSetRequest> req_set("key_set");
+        req_set.setValue(big_value);
 
         auto f_set = rh.route(req_set);
         auto keys_set = test_handles[3]->saw_keys;

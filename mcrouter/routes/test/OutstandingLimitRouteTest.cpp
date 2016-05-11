@@ -13,6 +13,8 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
@@ -36,7 +38,7 @@ void sendRequest(folly::fibers::FiberManager& fm,
   context->setSenderIdForTest(senderId);
 
   fm.addTask([&rh, id, context, &replyOrder]() {
-      McRequestWithMcOp<mc_op_get> request(makeKey(id));
+      TypedThriftRequest<cpp2::McGetRequest> request(makeKey(id));
       fiber_local::setSharedCtx(std::move(context));
       rh.route(request);
       replyOrder.push_back(makeKey(id));

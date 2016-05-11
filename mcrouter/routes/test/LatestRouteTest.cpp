@@ -17,8 +17,8 @@
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -60,7 +60,7 @@ TEST(latestRouteTest, one) {
   test_handles[first]->unsetTko();
   test_handles[second]->setTko();
   /* first is not TKO */
-  EXPECT_EQ(replyFor(*rh, "key"), std::string(1, 'a' + first));
+  EXPECT_EQ(std::string(1, 'a' + first), replyFor(*rh, "key"));
   test_handles[first]->setTko();
   /* first and second are now TKO */
   auto third = replyFor(*rh, "key")[0] - 'a';
@@ -68,8 +68,8 @@ TEST(latestRouteTest, one) {
   EXPECT_NE(second, third);
   test_handles[third]->setTko();
   /* three boxes are now TKO, we hit the failover limit */
-  auto reply = rh->route(McRequestWithMcOp<mc_op_get>("key"));
-  EXPECT_EQ(reply.result(), mc_res_tko);
+  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("key"));
+  EXPECT_EQ(mc_res_tko, reply.result());
 }
 
 TEST(latestRouteTest, thread_local_failover) {

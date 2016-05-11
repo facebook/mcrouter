@@ -13,8 +13,8 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
@@ -55,9 +55,9 @@ TEST(failoverWithExptimeRouteTest, success) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_TRUE(toString(reply.value()) == "a");
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+    EXPECT_EQ("a", reply.valueRangeSlow().str());
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
   });
 }
 
@@ -81,11 +81,11 @@ TEST(failoverWithExptimeRouteTest, once) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_TRUE(toString(reply.value()) == "b");
+    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+    EXPECT_EQ("b", reply.valueRangeSlow().str());
 
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-    EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[0]->sawExptimes);
   });
 }
 
@@ -109,12 +109,12 @@ TEST(failoverWithExptimeRouteTest, twice) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_TRUE(toString(reply.value()) == "c");
+    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+    EXPECT_EQ("c", reply.valueRangeSlow().str());
 
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-    EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
-    EXPECT_TRUE(failoverHandles[1]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[1]->sawExptimes);
   });
 }
 
@@ -138,14 +138,14 @@ TEST(failoverWithExptimeRouteTest, fail) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(McRequestWithMcOp<mc_op_get>("0"));
+    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
 
     /* Will return the last reply when ran out of targets */
-    EXPECT_TRUE(toString(reply.value()) == "c");
+    EXPECT_EQ("c", reply.valueRangeSlow().str());
 
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
-    EXPECT_TRUE(failoverHandles[0]->sawExptimes == vector<uint32_t>{2});
-    EXPECT_TRUE(failoverHandles[1]->sawExptimes == vector<uint32_t>{2});
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[1]->sawExptimes);
   });
 }
 
@@ -170,9 +170,9 @@ void testFailoverGet(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhNoFail->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_EQ("a", toString(reply.value()));
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    auto reply = rhNoFail->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+    EXPECT_EQ("a", reply.valueRangeSlow().str());
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
   });
 
   auto rhFail = makeFailoverWithExptimeRoute(
@@ -184,8 +184,8 @@ void testFailoverGet(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhFail->route(McRequestWithMcOp<mc_op_get>("0"));
-    EXPECT_EQ("b", toString(reply.value()));
+    auto reply = rhFail->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+    EXPECT_EQ("b", reply.valueRangeSlow().str());
   });
 }
 
@@ -209,13 +209,13 @@ void testFailoverUpdate(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto msg = createMcMsgRef("0", "a");
-    auto reply = rhNoFail->route(
-        McRequestWithMcOp<mc_op_set>(std::move(msg)));
+    TypedThriftRequest<cpp2::McSetRequest> req("0");
+    req.setValue("a");
+    auto reply = rhNoFail->route(std::move(req));
     EXPECT_EQ(res, reply.result());
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
     // only normal handle sees the key
-    EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
+    EXPECT_EQ(vector<std::string>{"0"}, normalHandle[0]->saw_keys);
     EXPECT_EQ(0, failoverHandles[0]->saw_keys.size());
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
@@ -229,9 +229,10 @@ void testFailoverUpdate(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    auto msg = createMcMsgRef("0", "a");
-    auto reply = rhFail->route(
-        McRequestWithMcOp<mc_op_set>(std::move(msg)));
+    TypedThriftRequest<cpp2::McSetRequest> req("0");
+    req.setValue("a");
+    auto reply = rhFail->route(std::move(req));
+
     EXPECT_EQ(mc_res_stored, reply.result());
     EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
@@ -258,12 +259,12 @@ void testFailoverDelete(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto msg = createMcMsgRef("0");
+    TypedThriftRequest<cpp2::McDeleteRequest> req("0");
     auto reply = rhNoFail->route(
-        McRequestWithMcOp<mc_op_delete>(std::move(msg)));
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+        TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
     // only normal handle sees the key
-    EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
+    EXPECT_EQ(vector<std::string>{"0"}, normalHandle[0]->saw_keys);
     EXPECT_EQ(0, failoverHandles[0]->saw_keys.size());
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
@@ -277,9 +278,7 @@ void testFailoverDelete(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    auto msg = createMcMsgRef("0");
-    auto reply = rhFail->route(
-        McRequestWithMcOp<mc_op_delete>(std::move(msg)));
+    auto reply = rhFail->route(TypedThriftRequest<cpp2::McDeleteRequest>("0"));
     EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
@@ -303,7 +302,7 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnTko) {
   testFailoverDelete(mc_res_tko);
 }
 
-TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
+TEST(failoverWithExptimeRouteTest, noFailoverOnArithmetic) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_connect_timeout)),
   };
@@ -323,13 +322,14 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmatic) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto msg = createMcMsgRef("0", "1");
-    auto reply = rh->route(
-        McRequestWithMcOp<mc_op_incr>(std::move(msg)));
-    EXPECT_TRUE(normalHandle[0]->sawExptimes == vector<uint32_t>{0});
+    TypedThriftRequest<cpp2::McIncrRequest> req("0");
+    req->set_delta(1);
+    auto reply = rh->route(std::move(req));
+
+    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
     // only normal handle sees the key
-    EXPECT_TRUE(normalHandle[0]->saw_keys == vector<std::string>{"0"});
-    EXPECT_TRUE(failoverHandles[0]->saw_keys.size() == 0);
-    EXPECT_TRUE(failoverHandles[1]->saw_keys.size() == 0);
+    EXPECT_EQ(vector<std::string>{"0"}, normalHandle[0]->saw_keys);
+    EXPECT_EQ(0, failoverHandles[0]->saw_keys.size());
+    EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 }
