@@ -244,14 +244,14 @@ Reply setVersion(Reply reply, std::string version) {
 
 template <class Request>
 ReplyT<Request> createMetagetHitReply(
-    uint32_t age, uint32_t exptime, uint64_t flags, std::string host);
+    int32_t age, uint32_t exptime, uint64_t flags, std::string host);
 
 template <>
 McReply createMetagetHitReply<McRequestWithMcOp<mc_op_metaget>>(
-    uint32_t age, uint32_t exptime, uint64_t flags, std::string host) {
+    int32_t age, uint32_t exptime, uint64_t flags, std::string host) {
 
   auto msg = createMcMsgRef();
-  msg->number = age;
+  msg->number = static_cast<uint32_t>(age);
   msg->exptime = exptime;
   msg->flags = flags;
 
@@ -277,7 +277,7 @@ McReply createMetagetHitReply<McRequestWithMcOp<mc_op_metaget>>(
 template <>
 TypedThriftReply<cpp2::McMetagetReply>
 createMetagetHitReply<TypedThriftRequest<cpp2::McMetagetRequest>>(
-    uint32_t age, uint32_t exptime, uint64_t flags, std::string host) {
+    int32_t age, uint32_t exptime, uint64_t flags, std::string host) {
 
   TypedThriftReply<cpp2::McMetagetReply> msg;
   msg->set_age(age);
@@ -649,6 +649,15 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv4) {
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown) {
   McAsciiParserHarness h("META test:key age:  unknown; exptime:  37; "
+                         "from: unknown; "
+                         "is_transient:  48\r\nEND\r\n");
+  h.expectNext<TypeParam>(
+    createMetagetHitReply<TypeParam>(-1, 37, 48, "unknown"));
+  h.runTest(1);
+}
+
+TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne) {
+  McAsciiParserHarness h("META test:key age:  -1; exptime:  37; "
                          "from: unknown; "
                          "is_transient:  48\r\nEND\r\n");
   h.expectNext<TypeParam>(

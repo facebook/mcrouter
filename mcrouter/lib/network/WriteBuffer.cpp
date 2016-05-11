@@ -294,7 +294,7 @@ void AsciiSerializedReply::prepareImpl(
   if (reply.result() == mc_res_found) {
     // age
     std::string ageStr("unknown");
-    if (reply->get_age()) {
+    if (reply->get_age() && *reply->get_age() != -1) {
       ageStr = folly::to<std::string>(*reply->get_age());
     }
     // exptime

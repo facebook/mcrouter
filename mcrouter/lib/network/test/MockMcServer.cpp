@@ -329,7 +329,11 @@ class MockMcOnRequest
 
     Reply reply(mc_res_found);
     reply->set_exptime(item->exptime);
-    reply->set_age(123);
+    if (key == "unknown_age") {
+      reply->set_age(-1);
+    } else {
+      reply->set_age(123);
+    }
     reply->set_ipAddress("127.0.0.1");
     reply->set_ipv(4);
 

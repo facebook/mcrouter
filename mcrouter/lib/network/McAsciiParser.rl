@@ -142,6 +142,7 @@ exptime = uint %{
 exptime_req = negative? uint %{
   auto value = static_cast<int32_t>(currentUInt_);
   message.setExptime(negative_ ? -value : value);
+  negative_ = false;
 };
 
 number = uint %{
@@ -479,11 +480,13 @@ void McClientAsciiParser::consumeMessage<
 machine mc_ascii_metaget_reply;
 include mc_ascii_common;
 
-age = uint %{
-  message->set_age(static_cast<uint32_t>(currentUInt_));
+age = negative? uint %{
+  auto value = static_cast<int32_t>(currentUInt_);
+  message->set_age(negative_ ? -value : value);
+  negative_ = false;
 };
 age_unknown = 'unknown' %{
-  message->set_age(static_cast<uint32_t>(-1));
+  message->set_age(-1);
 };
 
 ip_addr = (xdigit | '.' | ':')+ ${
@@ -1070,7 +1073,7 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeLeaseSet(folly::IOBuf& buffer) {
-  auto& message = 
+  auto& message =
     currentMessage_.get<TypedThriftRequest<cpp2::McLeaseSetRequest>>();
   %%{
     machine mc_ascii_lease_set_req_body;
@@ -1095,7 +1098,7 @@ write data;
 }%%
 
 void McServerAsciiParser::consumeDelete(folly::IOBuf& buffer) {
-  auto& message = 
+  auto& message =
     currentMessage_.get<TypedThriftRequest<cpp2::McDeleteRequest>>();
   %%{
     machine mc_ascii_delete_req_body;
@@ -1408,7 +1411,7 @@ version = 'version' ' '* new_line @{
 };
 
 quit = 'quit' ' '* new_line @{
-  callback_->onRequest(TypedThriftRequest<cpp2::McQuitRequest>(), 
+  callback_->onRequest(TypedThriftRequest<cpp2::McQuitRequest>(),
                        true /* noReply */);
   finishReq();
   fbreak;

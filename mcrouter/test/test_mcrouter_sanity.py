@@ -161,6 +161,14 @@ class TestMcrouterSanity(McrouterTestCase):
             self.assertEqual(mcr.decr(k, 4), i)
             self.assertEqual(mcr.get(k), str(i))
 
+    def test_metaget_age(self):
+        self.mcrouter.set("key", "value")
+        # mock_mc_server will send back hardcoded age = 123 if key is not
+        # 'unknown_age'
+        self.assertEqual(self.mcrouter.metaget("key")['age'], "123")
+        self.mcrouter.set("unknown_age", "value")
+        self.assertEqual(self.mcrouter.metaget("unknown_age")['age'], "unknown")
+
     def test_metaroute(self):
         """ get the route and verify if we actually use it """
         mcr = self.mcrouter
