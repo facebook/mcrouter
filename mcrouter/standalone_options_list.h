@@ -88,6 +88,11 @@ mcrouter_option_toggle(
   "implementation-specific postprocessing logic."
 )
 
+mcrouter_option_toggle(
+  enable_server_compression, false,
+  "enable-server-compression", no_short,
+  "Enable compression on the AsyncMcServer")
+
 mcrouter_option_integer(
   unsigned int, client_timeout_ms, 1000,
   "client-timeout", no_short,

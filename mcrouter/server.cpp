@@ -37,7 +37,7 @@ void serverLoop(
   size_t threadId,
   folly::EventBase& evb,
   AsyncMcServerWorker& worker,
-  bool retainSourceIp) {
+  const McrouterStandaloneOptions& standaloneOpts) {
 
   auto routerClient = router.createSameThreadClient(
     server_callbacks,
@@ -47,7 +47,8 @@ void serverLoop(
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
-  worker.setOnRequest(ServerOnRequest(*routerClient, retainSourceIp));
+  worker.setOnRequest(
+      ServerOnRequest(*routerClient, standaloneOpts.retain_source_ip));
   worker.setOnConnectionAccepted([proxy] () {
       stat_incr(proxy->stats, successful_client_connections_stat, 1);
       stat_incr(proxy->stats, num_clients_stat, 1);
@@ -56,6 +57,17 @@ void serverLoop(
       [proxy](facebook::memcache::McServerSession&) {
         stat_decr(proxy->stats, num_clients_stat, 1);
       });
+
+  // Setup compression on each worker.
+  if (standaloneOpts.enable_server_compression) {
+    auto codecManager = router.getCodecManager();
+    if (codecManager) {
+      worker.setCompressionCodecMap(codecManager->getCodecMap());
+    } else {
+      LOG(WARNING) << "Compression is enabled but couldn't find CodecManager. "
+                   << "Compression will be disabled.";
+    }
+  }
 
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
@@ -125,12 +137,16 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
       router->setPostprocessCallback(getLogPostprocessFunc<void>());
     }
 
+    if (standaloneOpts.enable_server_compression &&
+        !mcrouterOpts.enable_compression) {
+      initCompression(*router);
+    }
+
     server.spawn(
       [router, &standaloneOpts] (size_t threadId,
                                  folly::EventBase& evb,
                                  AsyncMcServerWorker& worker) {
-        serverLoop(*router, threadId, evb, worker,
-                   standaloneOpts.retain_source_ip);
+        serverLoop(*router, threadId, evb, worker, standaloneOpts);
       },
       [router]() {
         router->shutdown();
