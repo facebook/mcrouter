@@ -60,7 +60,7 @@ class ConnectionFifo {
    * (i.e. startMessage() should be called).
    */
   bool writeData(const struct iovec* iov, size_t iovcnt) noexcept;
-  bool writeData(void* buf, size_t len) noexcept;
+  bool writeData(const void* buf, size_t len) noexcept;
 
  private:
   std::shared_ptr<Fifo> debugFifo_;

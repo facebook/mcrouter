@@ -23,13 +23,16 @@ ClientMcParser<Callback>::ClientMcParser(
     size_t minBufferSize,
     size_t maxBufferSize,
     const bool useJemallocNodumpAllocator,
-    const CompressionCodecMap* compressionCodecMap)
+    const CompressionCodecMap* compressionCodecMap,
+    ConnectionFifo* debugFifo)
     : parser_(
           *this,
           minBufferSize,
           maxBufferSize,
-          useJemallocNodumpAllocator),
+          useJemallocNodumpAllocator,
+          debugFifo),
       callback_(cb),
+      debugFifo_(debugFifo),
       compressionCodecMap_(compressionCodecMap) {}
 
 template <class Callback>
@@ -44,6 +47,10 @@ std::pair<void*, size_t> ClientMcParser<Callback>::getReadBuffer() {
 template <class Callback>
 bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
   if (shouldReadToAsciiBuffer()) {
+    if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+      auto buf = asciiParser_.getReadBuffer();
+      debugFifo_->writeData(buf.first, len);
+    }
     asciiParser_.readDataAvailable(len);
     return true;
   } else {
@@ -57,6 +64,9 @@ void ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ = &ClientMcParser<Callback>::forwardAsciiReply<Request>;
+    if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+      debugFifo_->startMessage(MessageDirection::Received);
+    }
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaOrCaretForwarder_ =
       &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
@@ -240,23 +250,30 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
         return;
       }
     }
-    switch (asciiParser_.consume(readBuffer)) {
-    case McAsciiParserBase::State::COMPLETE:
-      (this->*replyForwarder_)();
-      break;
-    case McAsciiParserBase::State::ERROR:
-      callback_.parseError(mc_res_local_error,
-                           asciiParser_.getErrorDescription());
-      return;
-    case McAsciiParserBase::State::PARTIAL:
-      // Buffer was completely consumed.
-      break;
-    case McAsciiParserBase::State::UNINIT:
-      // We fed parser some data, it shouldn't remain in State::NONE.
-      callback_.parseError(mc_res_local_error,
-                           "Sent data to AsciiParser but it remained in "
-                           "UNINIT state!");
-      return;
+
+    auto bufferBeforeConsume = readBuffer.data();
+    auto result = asciiParser_.consume(readBuffer);
+    if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+      auto len = readBuffer.data() - bufferBeforeConsume;
+      debugFifo_->writeData(bufferBeforeConsume, len);
+    }
+    switch (result) {
+      case McAsciiParserBase::State::COMPLETE:
+        (this->*replyForwarder_)();
+        break;
+      case McAsciiParserBase::State::ERROR:
+        callback_.parseError(mc_res_local_error,
+                             asciiParser_.getErrorDescription());
+        return;
+      case McAsciiParserBase::State::PARTIAL:
+        // Buffer was completely consumed.
+        break;
+      case McAsciiParserBase::State::UNINIT:
+        // We fed parser some data, it shouldn't remain in State::NONE.
+        callback_.parseError(mc_res_local_error,
+                             "Sent data to AsciiParser but it remained in "
+                             "UNINIT state!");
+        return;
     }
   }
 }

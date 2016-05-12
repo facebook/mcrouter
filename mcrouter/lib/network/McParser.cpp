@@ -74,10 +74,12 @@ folly::IOBuf copyToNodumpBuffer(
 McParser::McParser(ParserCallback& callback,
                    size_t minBufferSize,
                    size_t maxBufferSize,
-                   const bool useJemallocNodumpAllocator)
+                   const bool useJemallocNodumpAllocator,
+                   ConnectionFifo* debugFifo)
     : callback_(callback),
       bufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
+      debugFifo_(debugFifo),
       readBuffer_(folly::IOBuf::CREATE, bufferSize_),
       useJemallocNodumpAllocator_(useJemallocNodumpAllocator) {
 #ifndef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
@@ -135,6 +137,11 @@ bool McParser::readUmbrellaOrCaretData() {
     // Parse message body
     // Case 1: Entire message (and possibly part of next) is in the buffer
     if (readBuffer_.length() >= messageSize) {
+      if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+        debugFifo_->startMessage(MessageDirection::Received);
+        debugFifo_->writeData(readBuffer_.writableData(), messageSize);
+      }
+
       bool cbStatus;
       if (protocol_ == mc_umbrella_protocol) {
         cbStatus = callback_.umMessageReady(umMsgInfo_, readBuffer_);

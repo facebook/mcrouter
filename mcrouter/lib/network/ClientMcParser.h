@@ -16,6 +16,7 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
+#include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/CaretReplyConverter.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
@@ -33,7 +34,8 @@ class ClientMcParser : private McParser::ParserCallback {
                  size_t minBufferSize,
                  size_t maxBufferSize,
                  const bool useJemallocNodumpAllocator = false,
-                 const CompressionCodecMap* compressionCodecMap = nullptr);
+                 const CompressionCodecMap* compressionCodecMap = nullptr,
+                 ConnectionFifo* debugFifo = nullptr);
 
   /**
    * TAsyncTransport-style getReadBuffer().
@@ -71,6 +73,8 @@ class ClientMcParser : private McParser::ParserCallback {
   CaretReplyConverter converter_;
 
   Callback& callback_;
+
+  ConnectionFifo* debugFifo_{nullptr};
 
   const CompressionCodecMap* compressionCodecMap_{nullptr};
 

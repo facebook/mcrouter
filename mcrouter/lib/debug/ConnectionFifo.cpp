@@ -149,12 +149,12 @@ bool ConnectionFifo::startMessage(MessageDirection direction) noexcept {
   return true;
 }
 
-bool ConnectionFifo::writeData(void* buf, size_t len) noexcept {
+bool ConnectionFifo::writeData(const void* buf, size_t len) noexcept {
   if (!isConnected()) {
     return false;
   }
   iovec iov[1];
-  iov[0].iov_base = buf;
+  iov[0].iov_base = const_cast<void*>(buf);
   iov[0].iov_len = len;
   return writeData(iov, 1);
 }

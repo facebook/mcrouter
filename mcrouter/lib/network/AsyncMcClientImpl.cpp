@@ -506,7 +506,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       kReadBufferSizeMin,
       kReadBufferSizeMax,
       connectionOptions_.useJemallocNodumpAllocator,
-      connectionOptions_.compressionCodecMap);
+      connectionOptions_.compressionCodecMap,
+      &debugFifo_);
   socket_->setReadCB(this);
 }
 
@@ -607,10 +608,6 @@ void AsyncMcClientImpl::getReadBuffer(void** bufReturn, size_t* lenReturn) {
 void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
   assert(curBuffer_.first != nullptr && curBuffer_.second >= len);
   DestructorGuard dg(this);
-  if (debugFifo_.isConnected()) {
-    debugFifo_.startMessage(MessageDirection::Received);
-    debugFifo_.writeData(curBuffer_.first, len);
-  }
   parser_->readDataAvailable(len);
 }
 

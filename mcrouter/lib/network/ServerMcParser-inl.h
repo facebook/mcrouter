@@ -9,6 +9,7 @@
  */
 #include <folly/Bits.h>
 
+#include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
@@ -16,10 +17,12 @@ namespace facebook { namespace memcache {
 template <class Callback>
 ServerMcParser<Callback>::ServerMcParser(Callback& cb,
                                          size_t minBufferSize,
-                                         size_t maxBufferSize)
-  : parser_(*this, minBufferSize, maxBufferSize),
+                                         size_t maxBufferSize,
+                                         ConnectionFifo* debugFifo)
+  : parser_(*this, minBufferSize, maxBufferSize, debugFifo),
     asciiParser_(*this),
-    callback_(cb) {
+    callback_(cb),
+    debugFifo_(debugFifo) {
 }
 
 template <class Callback>
@@ -139,12 +142,27 @@ bool ServerMcParser<Callback>::shouldReadToAsciiBuffer() const {
 template <class Callback>
 template <class Request>
 void ServerMcParser<Callback>::onRequest(Request&& req, bool noreply) {
+  if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+    writeToPipe(req);
+  }
   callback_.onRequest(std::move(req), noreply);
 }
 
 template <class Callback>
 void ServerMcParser<Callback>::multiOpEnd() {
   callback_.multiOpEnd();
+}
+
+template <class Callback>
+template <class Request>
+void ServerMcParser<Callback>::writeToPipe(const Request& req) {
+  assert(debugFifo_);
+  AsciiSerializedRequest debugSerializedRequest;
+  const struct iovec* iov;
+  size_t iovLen;
+  debugSerializedRequest.prepare(req, iov, iovLen);
+  debugFifo_->startMessage(MessageDirection::Received);
+  debugFifo_->writeData(iov, iovLen);
 }
 
 }}  // facebook::memcache

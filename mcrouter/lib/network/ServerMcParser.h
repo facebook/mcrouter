@@ -9,15 +9,22 @@
  */
 #pragma once
 
+#include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
 
 namespace facebook { namespace memcache {
 
+class ConnectionFifo;
+
 template <class Callback>
 class ServerMcParser : private McParser::ParserCallback {
  public:
-  ServerMcParser(Callback& cb, size_t minBufferSize, size_t maxBufferSize);
+  ServerMcParser(
+      Callback& cb,
+      size_t minBufferSize,
+      size_t maxBufferSize,
+      ConnectionFifo* debugFifo = nullptr);
 
   ~ServerMcParser();
 
@@ -58,6 +65,11 @@ class ServerMcParser : private McParser::ParserCallback {
   McServerAsciiParser asciiParser_;
 
   Callback& callback_;
+
+  // Debug fifo fields and methods
+  ConnectionFifo* debugFifo_{nullptr};
+  template <class Request>
+  FOLLY_NOINLINE void writeToPipe(const Request& req);
 
   template <class ThriftType>
   void requestReadyHelper(TypedThriftRequest<ThriftType>&& req,

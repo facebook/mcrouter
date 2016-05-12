@@ -11,11 +11,12 @@
 
 #include <folly/io/IOBufQueue.h>
 
-#include "mcrouter/lib/mc/parser.h"
-#include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/debug/ConnectionFifo.h"
+#include "mcrouter/lib/mc/parser.h"
+#include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
@@ -67,7 +68,8 @@ class McParser {
   McParser(ParserCallback& cb,
            size_t minBufferSize,
            size_t maxBufferSize,
-           const bool useJemallocNodumpAllocator = false);
+           const bool useJemallocNodumpAllocator = false,
+           ConnectionFifo* debugFifo = nullptr);
 
   ~McParser() = default;
 
@@ -106,6 +108,8 @@ class McParser {
   ParserCallback& callback_;
   size_t bufferSize_{256};
   size_t maxBufferSize_{4096};
+
+  ConnectionFifo* debugFifo_{nullptr};
 
   uint64_t lastShrinkCycles_{0};
 

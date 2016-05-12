@@ -21,6 +21,22 @@
 
 namespace facebook { namespace memcache {
 
+namespace {
+
+ConnectionFifo getDebugFifo(
+    const std::string& path,
+    const folly::AsyncTransportWrapper* transport) {
+  if (!path.empty()) {
+    if (auto fifoManager = FifoManager::getInstance()) {
+      auto fifo = fifoManager->fetchThreadLocal(path);
+      return ConnectionFifo(std::move(fifo), transport);
+    }
+  }
+  return ConnectionFifo();
+}
+
+} // anonymous namespace
+
 constexpr size_t kIovecVectorSize = 64;
 
 McServerSession& McServerSession::create(
@@ -62,12 +78,14 @@ McServerSession::McServerSession(
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
       options_(std::move(options)),
+      debugFifo_(getDebugFifo(options_.debugFifoPath, transport_.get())),
       pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
       parser_(*this,
               options_.minBufferSize,
-              options_.maxBufferSize),
+              options_.maxBufferSize,
+              &debugFifo_),
       userCtxt_(userCtxt) {
 
   try {
@@ -81,14 +99,6 @@ McServerSession::McServerSession(
   if (socket != nullptr) {
     socket->sslAccept(this, /* timeout = */ 0);
   }
-
-  if (!options_.debugFifoPath.empty()) {
-    if (auto fifoManager = FifoManager::getInstance()) {
-      auto fifo = fifoManager->fetchThreadLocal(options_.debugFifoPath);
-      debugFifo_ = ConnectionFifo(std::move(fifo), transport_.get());
-    }
-  }
-
 }
 
 void McServerSession::pause(PauseReason reason) {
@@ -205,12 +215,6 @@ void McServerSession::getReadBuffer(void** bufReturn, size_t* lenReturn) {
 
 void McServerSession::readDataAvailable(size_t len) noexcept {
   DestructorGuard dg(this);
-
-  if (debugFifo_.isConnected()) {
-    debugFifo_.startMessage(MessageDirection::Received);
-    debugFifo_.writeData(curBuffer_.first, len);
-  }
-
   if (!parser_.readDataAvailable(len)) {
     close();
   }
