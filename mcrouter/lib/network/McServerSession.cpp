@@ -357,11 +357,11 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     const struct iovec* iovs = wb->getIovsBegin();
     size_t iovCount = wb->getIovsCount();
     writeBufs_->push(std::move(wb));
-    transport_->writev(this, iovs, iovCount);
     if (debugFifo_.isConnected()) {
       debugFifo_.startMessage(MessageDirection::Sent);
       debugFifo_.writeData(iovs, iovCount);
     }
+    transport_->writev(this, iovs, iovCount);
     if (!writeBufs_->empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
          in one go */
