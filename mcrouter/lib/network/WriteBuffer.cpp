@@ -116,6 +116,11 @@ bool WriteBuffer::noReply() const {
   return ctx_.hasValue() && ctx_->hasParent() && ctx_->parent().error();
 }
 
+bool WriteBuffer::isSubRequest() const {
+  return ctx_.hasValue() &&
+      (ctx_->hasParent() || ctx_->operation_ == mc_op_end);
+}
+
 AsciiSerializedReply::AsciiSerializedReply() {
   mc_ascii_response_buf_init(&asciiResponse_);
 }

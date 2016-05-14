@@ -198,10 +198,10 @@ class WriteBuffer {
       Reply&& reply,
       Destructor destructor = Destructor(nullptr, nullptr));
 
-  const struct iovec* getIovsBegin() {
+  const struct iovec* getIovsBegin() const {
     return iovsBegin_;
   }
-  size_t getIovsCount() { return iovsCount_; }
+  size_t getIovsCount() const { return iovsCount_; }
 
   /**
    * Checks if we should send a reply for this request.
@@ -213,6 +213,8 @@ class WriteBuffer {
    *                over the network.
    */
   bool noReply() const;
+
+  bool isSubRequest() const;
 
   bool isEndOfBatch() const {
     return isEndOfBatch_;

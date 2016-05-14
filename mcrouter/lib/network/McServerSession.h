@@ -347,6 +347,8 @@ class McServerSession :
   void onTransactionStarted(bool isSubRequest);
   void onTransactionCompleted(bool isSubRequest);
 
+  void writeToDebugFifo(const WriteBuffer* wb) noexcept;
+
   /**
    * Return the compression codec to use for compressing reply.
    * Nullptr is returned if the reply shouldn't be compressed.
