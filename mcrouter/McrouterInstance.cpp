@@ -526,12 +526,13 @@ bool McrouterInstance::reconfigure() {
 
     configApi_->trackConfigSources();
     std::string config;
-    success = configApi_->getConfigFile(config);
+    std::string path;
+    success = configApi_->getConfigFile(config, path);
     if (success) {
       success = configure(config);
     } else {
       MC_LOG_FAILURE(opts(), failure::Category::kBadEnvironment,
-                     "Can not read config file");
+                     "Can not read config from {}", path);
     }
 
     if (!success) {

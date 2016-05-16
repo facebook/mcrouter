@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -159,22 +159,26 @@ bool ConfigApi::FileInfo::checkMd5Changed() {
   return md5 != previousHash;
 }
 
-bool ConfigApi::getConfigFile(std::string& contents) {
+bool ConfigApi::getConfigFile(std::string& contents, std::string& path) {
   folly::StringPiece configStr = opts_.config;
   if (configStr.startsWith(kFilePrefix)) {
+    path = configStr.str();
     configStr.removePrefix(kFilePrefix);
     return get(ConfigType::ConfigFile, configStr.str(), contents);
   }
   if (!configStr.empty()) {
+    path = shorten(configStr, 64);
     contents = configStr.str();
     return true;
   }
   if (!opts_.config_str.empty()) {
     // explicit config, no automatic reload
+    path = shorten(opts_.config_str, 64);
     contents = opts_.config_str;
     return true;
   }
   if (!opts_.config_file.empty()) {
+    path = "file:" + opts_.config_file;
     return get(ConfigType::ConfigFile, opts_.config_file, contents);
   }
   return false;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,7 @@ class ConfigApiIf {
   virtual bool get(ConfigType type, const std::string& path,
                    std::string& contents) = 0;
 
-  virtual bool getConfigFile(std::string& config) = 0;
+  virtual bool getConfigFile(std::string& config, std::string& path) = 0;
 
   virtual ~ConfigApiIf() = default;
 };

@@ -44,8 +44,9 @@ class MockConfigApi : public ConfigApiIf {
     return false;
   }
 
-  bool getConfigFile(std::string& config) override final {
+  bool getConfigFile(std::string& config, std::string& path) override final {
     config = "{}";
+    path = "{}";
     return true;
   }
 

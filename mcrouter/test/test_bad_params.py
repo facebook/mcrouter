@@ -66,7 +66,7 @@ class TestBadParams(OutputCheckerTestCase):
 
         self.spawn(args)
         self.check_for_message(
-                good='Can not read config file',
+                good='Can not read config',
                 bad='reconfigured with',
                 timeout=10)
 

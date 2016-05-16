@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -40,11 +40,13 @@ TEST(ConfigApi, file_change) {
 
   api.trackConfigSources();
   std::string buf;
+  std::string outPath;
   EXPECT_TRUE(api.get(ConfigType::ConfigFile, path, buf));
   EXPECT_EQ(contents, buf);
 
-  EXPECT_TRUE(api.getConfigFile(buf));
+  EXPECT_TRUE(api.getConfigFile(buf, outPath));
   EXPECT_EQ(contents, buf);
+  EXPECT_EQ("file:" + path, outPath);
   api.subscribeToTrackedSources();
 
   EXPECT_EQ(changes, 0);
@@ -58,8 +60,9 @@ TEST(ConfigApi, file_change) {
 
   EXPECT_EQ(changes, 1);
 
-  EXPECT_TRUE(api.getConfigFile(buf));
+  EXPECT_TRUE(api.getConfigFile(buf, outPath));
   EXPECT_EQ("ab", buf);
+  EXPECT_EQ("file:" + path, outPath);
 
   EXPECT_TRUE(api.get(ConfigType::ConfigFile, path, buf));
   EXPECT_EQ("ab", buf);
@@ -77,8 +80,9 @@ TEST(ConfigApi, file_change) {
 
   EXPECT_EQ(changes, 1);
 
-  EXPECT_TRUE(api.getConfigFile(buf));
+  EXPECT_TRUE(api.getConfigFile(buf, outPath));
   EXPECT_EQ("abc", buf);
+  EXPECT_EQ("file:" + path, outPath);
 
   EXPECT_TRUE(api.get(ConfigType::ConfigFile, path, buf));
   EXPECT_EQ("abc", buf);

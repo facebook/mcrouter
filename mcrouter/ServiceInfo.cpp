@@ -204,23 +204,6 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
     }
   );
 
-  commands_.emplace("config",
-    [this] (const std::vector<folly::StringPiece>& args) -> std::string {
-      if (proxy_->router().opts().config.empty() &&
-          proxy_->router().opts().config_str.empty()) {
-        return std::string(
-          R"({"error": "config is loaded from file and not available"})");
-      }
-
-      if (!proxy_->router().opts().config.empty()) {
-        std::string contents;
-        proxy_->router().configApi().getConfigFile(contents);
-        return contents;
-      }
-      return proxy_->router().opts().config_str;
-    }
-  );
-
   commands_.emplace("config_age",
     [proxy] (const std::vector<folly::StringPiece>& args) {
       /* capturing this and accessing proxy_ crashes gcc-4.7 */
@@ -315,8 +298,9 @@ ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
   commands_.emplace("preprocessed_config",
     [this] (const std::vector<folly::StringPiece>& args) {
       std::string confFile;
-      if (!proxy_->router().configApi().getConfigFile(confFile)) {
-        throw std::runtime_error("can not load config");
+      std::string path;
+      if (!proxy_->router().configApi().getConfigFile(confFile, path)) {
+        throw std::runtime_error("Can not load config from " + path);
       }
       ProxyConfigBuilder builder(proxy_->router().opts(),
                                  proxy_->router().configApi(),

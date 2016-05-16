@@ -82,9 +82,10 @@ class ConfigApi : public ConfigApiIf {
    * Reads configuration file according to mcrouter options.
    *
    * @param[out] config Will contain contents of configuration file on success
+   * @param[out] path Will contain path of configuration file we tried to read
    * @return true on success, false otherwise
    */
-  bool getConfigFile(std::string& config) override;
+  bool getConfigFile(std::string& config, std::string& path) override;
 
   /**
    * @return dynamic object with information about files used in configuration.
