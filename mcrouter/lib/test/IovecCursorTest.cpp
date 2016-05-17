@@ -9,24 +9,23 @@
  */
 #include <gtest/gtest.h>
 
+#include <folly/Range.h>
+
 #include "mcrouter/lib/IovecCursor.h"
 
 using namespace facebook::memcache;
 
 namespace {
 
-IovecCursor getIovecCursor(const std::vector<std::string>& buffers) {
-  constexpr size_t kMaxIovLen = 16;
-  EXPECT_LT(buffers.size(), 16);
-
-  static struct iovec iov[kMaxIovLen];
-
+std::pair<IovecCursor, std::vector<struct iovec>>
+getIovecCursor(const std::vector<folly::StringPiece>& buffers) {
+  std::vector<struct iovec> iovs(buffers.size());
   for (size_t i = 0; i < buffers.size(); ++i) {
-    iov[i].iov_base = const_cast<char*>(buffers[i].data());
-    iov[i].iov_len = buffers[i].size();
+    iovs[i].iov_base = const_cast<char*>(buffers[i].data());
+    iovs[i].iov_len = buffers[i].size();
   }
-
-  return IovecCursor(iov, buffers.size());
+  IovecCursor cursor(iovs.data(), iovs.size());
+  return std::make_pair(std::move(cursor), std::move(iovs));
 }
 
 } // anonymous namespace
@@ -34,7 +33,8 @@ IovecCursor getIovecCursor(const std::vector<std::string>& buffers) {
 TEST(IovecCursor, construct) {
   std::string buf1 = "12345";
   std::string buf2 = "67890";
-  auto cursor = getIovecCursor({ buf1, buf2 });
+  auto p = getIovecCursor({ buf1, buf2 });
+  auto& cursor = p.first;
 
   EXPECT_TRUE(cursor.hasDataAvailable());
   EXPECT_EQ(10, cursor.totalLength());
@@ -45,7 +45,8 @@ TEST(IovecCursor, basic) {
   std::string buf2 = "345";
   std::string buf3 = "6789";
   std::string buf1 = "012";
-  auto cursor = getIovecCursor({ buf1, buf2, buf3 });
+  auto p = getIovecCursor({ buf1, buf2, buf3 });
+  auto& cursor = p.first;
 
   char dest[10] = {'\0'};
 
@@ -79,11 +80,12 @@ TEST(IovecCursor, peek) {
   uint32_t int2 = 12379;
   uint64_t int1 = 1928374;
   uint16_t int3 = 187;
-  std::string buf2(reinterpret_cast<char*>(&int2), sizeof(uint32_t));
-  std::string buf3(reinterpret_cast<char*>(&int3), sizeof(uint16_t));
-  std::string buf1(reinterpret_cast<char*>(&int1), sizeof(uint64_t));
+  folly::StringPiece buf2(reinterpret_cast<char*>(&int2), sizeof(uint32_t));
+  folly::StringPiece buf3(reinterpret_cast<char*>(&int3), sizeof(uint16_t));
+  folly::StringPiece buf1(reinterpret_cast<char*>(&int1), sizeof(uint64_t));
 
-  auto cursor = getIovecCursor({ buf1, buf2, buf3 });
+  auto p = getIovecCursor({ buf1, buf2, buf3 });
+  auto& cursor = p.first;
 
   EXPECT_EQ(int1, cursor.peek<uint64_t>());
 
@@ -118,11 +120,12 @@ TEST(IovecCursor, read) {
   uint32_t int2 = 12379;
   uint64_t int1 = 1928374;
   uint16_t int3 = 187;
-  std::string buf2(reinterpret_cast<char*>(&int2), sizeof(uint32_t));
-  std::string buf3(reinterpret_cast<char*>(&int3), sizeof(uint16_t));
-  std::string buf1(reinterpret_cast<char*>(&int1), sizeof(uint64_t));
+  folly::StringPiece buf2(reinterpret_cast<char*>(&int2), sizeof(uint32_t));
+  folly::StringPiece buf3(reinterpret_cast<char*>(&int3), sizeof(uint16_t));
+  folly::StringPiece buf1(reinterpret_cast<char*>(&int1), sizeof(uint64_t));
 
-  auto cursor = getIovecCursor({ buf1, buf2, buf3 });
+  auto p = getIovecCursor({ buf1, buf2, buf3 });
+  auto& cursor = p.first;
   EXPECT_EQ(14, cursor.totalLength());
 
   EXPECT_EQ(int1, cursor.read<uint64_t>());
@@ -141,7 +144,8 @@ TEST(IovecCursor, read) {
 TEST(IovecCursor, advance_retreat) {
   std::string buf1 = "12345";
   std::string buf2 = "67890";
-  auto cursor = getIovecCursor({ buf1, buf2 });
+  auto p = getIovecCursor({ buf1, buf2 });
+  auto& cursor = p.first;
 
   char dest[3] = {'\0'};
 
@@ -192,7 +196,8 @@ TEST(IovecCursor, advance_retreat) {
 TEST(IovecCursor, advance_retreat_edge_cases) {
   std::string buf1 = "12345";
   std::string buf2 = "67890";
-  auto cursor = getIovecCursor({ buf1, buf2 });
+  auto p = getIovecCursor({ buf1, buf2 });
+  auto& cursor = p.first;
 
   cursor.seek(0);
   EXPECT_EQ(0, cursor.tell());
