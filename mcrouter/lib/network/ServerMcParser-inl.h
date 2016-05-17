@@ -15,15 +15,20 @@
 namespace facebook { namespace memcache {
 
 template <class Callback>
-ServerMcParser<Callback>::ServerMcParser(Callback& cb,
-                                         size_t minBufferSize,
-                                         size_t maxBufferSize,
-                                         ConnectionFifo* debugFifo)
-  : parser_(*this, minBufferSize, maxBufferSize, debugFifo),
-    asciiParser_(*this),
-    callback_(cb),
-    debugFifo_(debugFifo) {
-}
+ServerMcParser<Callback>::ServerMcParser(
+    Callback& cb,
+    size_t minBufferSize,
+    size_t maxBufferSize,
+    ConnectionFifo* debugFifo)
+    : parser_(
+          *this,
+          minBufferSize,
+          maxBufferSize,
+          /* useJemallocNodumpAllocator */ false,
+          debugFifo),
+      asciiParser_(*this),
+      callback_(cb),
+      debugFifo_(debugFifo) {}
 
 template <class Callback>
 ServerMcParser<Callback>::~ServerMcParser() {
