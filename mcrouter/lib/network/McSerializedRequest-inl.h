@@ -15,7 +15,8 @@ McSerializedRequest::McSerializedRequest(
     size_t reqId,
     mc_protocol_t protocol,
     const CodecIdRange& compressionCodecs)
-    : protocol_(protocol) {
+    : protocol_(protocol),
+      typeId_(IdFromType<typename Request::rawType, TRequestList>::value) {
 
   switch (protocol_) {
     case mc_ascii_protocol:

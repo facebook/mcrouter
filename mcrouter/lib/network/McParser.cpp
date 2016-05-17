@@ -138,7 +138,7 @@ bool McParser::readUmbrellaOrCaretData() {
     // Case 1: Entire message (and possibly part of next) is in the buffer
     if (readBuffer_.length() >= messageSize) {
       if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
-        debugFifo_->startMessage(MessageDirection::Received);
+        debugFifo_->startMessage(MessageDirection::Received, umMsgInfo_.typeId);
         debugFifo_->writeData(readBuffer_.writableData(), messageSize);
       }
 

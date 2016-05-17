@@ -47,8 +47,11 @@ folly::SocketAddress MessageHeader::getPeerAddress() {
 /* static */ size_t MessageHeader::size(uint8_t v) {
   switch (v) {
     case 1:
-      return sizeof(MessageHeader) - sizeof(localPort_) - sizeof(direction_);
+      return sizeof(MessageHeader) - sizeof(localPort_) - sizeof(direction_) -
+          sizeof(typeId_);
     case 2:
+      return sizeof(MessageHeader) - sizeof(typeId_);
+    case 3:
       return sizeof(MessageHeader);
     default:
       throw std::logic_error(folly::sformat("Invalid version {}", v));

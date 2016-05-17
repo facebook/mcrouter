@@ -58,6 +58,7 @@ class McSerializedRequest {
   Result serializationResult() const;
   size_t getIovsCount() const { return iovsCount_; }
   const struct iovec* getIovs() const { return iovsBegin_; }
+  uint32_t typeId() const { return typeId_; }
 
  private:
   static const size_t kMaxIovs = 20;
@@ -72,6 +73,7 @@ class McSerializedRequest {
   size_t iovsCount_{0};
   mc_protocol_t protocol_{mc_unknown_protocol};
   Result result_{Result::OK};
+  uint32_t typeId_{0};
 
   bool checkKeyLength(const folly::IOBuf& key);
 };

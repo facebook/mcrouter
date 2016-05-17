@@ -225,7 +225,7 @@ void AsyncMcClientImpl::pushMessages() {
     auto iov = req.reqContext.getIovs();
     auto iovcnt = req.reqContext.getIovsCount();
     if (debugFifo_.isConnected()) {
-      debugFifo_.startMessage(MessageDirection::Sent);
+      debugFifo_.startMessage(MessageDirection::Sent, req.reqContext.typeId());
       debugFifo_.writeData(iov, iovcnt);
     }
     socket_->writev(this, iov, iovcnt,

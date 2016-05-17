@@ -155,7 +155,10 @@ class McServerSession :
   std::shared_ptr<McServerOnRequest> onRequest_;
   StateCallback& stateCb_;
   AsyncMcServerWorkerOptions options_;
+
+  // Debug fifo fields
   ConnectionFifo debugFifo_;
+  bool hasPendingMultiOp_{false};
 
   enum State {
     STREAMING,  /* close() was not called */

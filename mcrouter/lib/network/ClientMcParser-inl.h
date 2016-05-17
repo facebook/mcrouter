@@ -65,7 +65,9 @@ void ClientMcParser<Callback>::expectNext() {
     asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ = &ClientMcParser<Callback>::forwardAsciiReply<Request>;
     if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
-      debugFifo_->startMessage(MessageDirection::Received);
+      debugFifo_->startMessage(
+          MessageDirection::Received,
+          IdFromType<typename Request::rawType, TRequestList>::value);
     }
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaOrCaretForwarder_ =

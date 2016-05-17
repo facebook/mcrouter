@@ -121,6 +121,10 @@ bool WriteBuffer::isSubRequest() const {
       (ctx_->hasParent() || ctx_->operation_ == mc_op_end);
 }
 
+mc_op_t WriteBuffer::operation() const {
+  return ctx_.hasValue() ? ctx_->operation_ : mc_op_unknown;
+}
+
 AsciiSerializedReply::AsciiSerializedReply() {
   mc_ascii_response_buf_init(&asciiResponse_);
 }

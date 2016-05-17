@@ -350,10 +350,6 @@ void McServerSession::ensureWriteBufs() {
 }
 
 void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
-  if (UNLIKELY(debugFifo_.isConnected())) {
-    writeToDebugFifo(wb.get());
-  }
-
   if (wb == nullptr) {
     return;
   }
@@ -361,6 +357,9 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     const struct iovec* iovs = wb->getIovsBegin();
     size_t iovCount = wb->getIovsCount();
     writeBufs_->push(std::move(wb));
+    if (UNLIKELY(debugFifo_.isConnected())) {
+      writeToDebugFifo(wb.get());
+    }
     transport_->writev(this, iovs, iovCount);
     if (!writeBufs_->empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
@@ -386,6 +385,9 @@ void McServerSession::sendWrites() {
   while (!pendingWrites_->empty()) {
     auto wb = pendingWrites_->popFront();
     if (!wb->noReply()) {
+      if (UNLIKELY(debugFifo_.isConnected())) {
+        writeToDebugFifo(wb.get());
+      }
       iovs.insert(iovs.end(),
                   wb->getIovsBegin(),
                   wb->getIovsBegin() + wb->getIovsCount());
@@ -400,14 +402,19 @@ void McServerSession::sendWrites() {
 }
 
 void McServerSession::writeToDebugFifo(const WriteBuffer* wb) noexcept {
-  // Null WriteBuffer is a sentinel for the beginning of a multi-op write.
-  if (wb == nullptr) {
-    debugFifo_.startMessage(MessageDirection::Sent);
-    return;
-  }
-
   if (!wb->isSubRequest()) {
-    debugFifo_.startMessage(MessageDirection::Sent);
+    debugFifo_.startMessage(MessageDirection::Sent, wb->typeId());
+    hasPendingMultiOp_ = false;
+  } else {
+    // Handle multi-op
+    if (!hasPendingMultiOp_) {
+      debugFifo_.startMessage(MessageDirection::Sent, wb->typeId());
+      hasPendingMultiOp_ = true;
+    }
+    if (wb->operation() == mc_op_end) {
+      // Multi-op replies always finished with a mc_op_end.
+      hasPendingMultiOp_ = false;
+    }
   }
   debugFifo_.writeData(wb->getIovsBegin(), wb->getIovsCount());
 }

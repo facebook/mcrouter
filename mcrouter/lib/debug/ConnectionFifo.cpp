@@ -140,11 +140,14 @@ bool ConnectionFifo::isConnected() const noexcept {
   return debugFifo_ && debugFifo_->isConnected();
 }
 
-bool ConnectionFifo::startMessage(MessageDirection direction) noexcept {
+bool ConnectionFifo::startMessage(
+    MessageDirection direction,
+    uint32_t typeId) noexcept {
   if (!isConnected()) {
     return false;
   }
   currentMessageHeader_.setDirection(direction);
+  currentMessageHeader_.setTypeId(typeId);
   nextPacketId_ = 0;
   return true;
 }

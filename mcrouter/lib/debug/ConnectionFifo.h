@@ -49,8 +49,9 @@ class ConnectionFifo {
    * Starts a new message.
    *
    * @param direction   Whether the data was received or sent by connection.
+   * @param typeId      Id of the type of the message.
    */
-  bool startMessage(MessageDirection direction) noexcept;
+  bool startMessage(MessageDirection direction, uint32_t typeId) noexcept;
 
   /**
    * Writes data to the FIFO, but only if there is reader (i.e. mcpiper)

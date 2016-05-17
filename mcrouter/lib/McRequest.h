@@ -16,9 +16,10 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Keys.h"
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 
 #ifndef LIBMC_FBTRACE_DISABLE
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
@@ -349,6 +350,10 @@ template <class Operation>
 class McRequestWithOp {
  public:
   using OpType = Operation;
+
+  // Dummy type for IdFromType - we don't care about typeId for McRequest.
+  using rawType = cpp2::McGetRequest;
+
   static const char* const name;
 
   McRequestWithOp() = default;

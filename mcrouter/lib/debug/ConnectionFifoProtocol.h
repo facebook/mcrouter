@@ -54,6 +54,9 @@ struct FOLLY_PACK_ATTR MessageHeader {
   MessageDirection direction() const {
     return direction_;
   }
+  uint32_t typeId() const {
+    return folly::Endian::little(typeId_);
+  }
 
   char* peerIpAddressModifiable() {
     return peerIpAddress_;
@@ -70,6 +73,9 @@ struct FOLLY_PACK_ATTR MessageHeader {
   void setDirection(MessageDirection val) {
     direction_ = val;
   }
+  void setTypeId(uint32_t val) {
+    typeId_ = folly::Endian::little(val);
+  }
 
   folly::SocketAddress getLocalAddress();
   folly::SocketAddress getPeerAddress();
@@ -79,7 +85,7 @@ struct FOLLY_PACK_ATTR MessageHeader {
  private:
   // Control fields
   uint32_t magic_ = folly::Endian::little<uint32_t>(0xfaceb00c);
-  uint8_t version_{2};
+  uint8_t version_{3};
 
   // Peer address fields
   char peerIpAddress_[kIpAddressMaxSize]{'\0'}; // 0-terminated string of ip
@@ -93,6 +99,9 @@ struct FOLLY_PACK_ATTR MessageHeader {
 
   // Direction of the message sent
   MessageDirection direction_{MessageDirection::Sent};
+
+  // Id of the type
+  uint32_t typeId_{0};
 };
 
 /**

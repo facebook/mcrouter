@@ -223,6 +223,12 @@ class WriteBuffer {
   void markEndOfBatch() {
     isEndOfBatch_ = true;
   }
+
+  uint32_t typeId() const {
+    return typeId_;
+  }
+
+  mc_op_t operation() const;
  private:
   const mc_protocol_t protocol_;
 
@@ -237,6 +243,7 @@ class WriteBuffer {
   const struct iovec* iovsBegin_;
   size_t iovsCount_{0};
   bool isEndOfBatch_{false};
+  uint32_t typeId_{0};
 
   WriteBuffer(const WriteBuffer&) = delete;
   WriteBuffer& operator=(const WriteBuffer&) = delete;
