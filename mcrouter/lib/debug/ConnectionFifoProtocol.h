@@ -57,6 +57,9 @@ struct FOLLY_PACK_ATTR MessageHeader {
   uint32_t typeId() const {
     return folly::Endian::little(typeId_);
   }
+  uint64_t timeUs() const {
+    return folly::Endian::little(timeUs_);
+  }
 
   char* peerIpAddressModifiable() {
     return peerIpAddress_;
@@ -75,6 +78,9 @@ struct FOLLY_PACK_ATTR MessageHeader {
   }
   void setTypeId(uint32_t val) {
     typeId_ = folly::Endian::little(val);
+  }
+  void setTimeUs(uint64_t val) {
+    timeUs_ = folly::Endian::little(val);
   }
 
   folly::SocketAddress getLocalAddress();
@@ -102,6 +108,9 @@ struct FOLLY_PACK_ATTR MessageHeader {
 
   // Id of the type
   uint32_t typeId_{0};
+
+  // Number of micro-seconds elapsed sience epoch.
+  uint64_t timeUs_{0};
 };
 
 /**

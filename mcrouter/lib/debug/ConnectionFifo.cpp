@@ -9,10 +9,18 @@
  */
 #include "ConnectionFifo.h"
 
+#include <chrono>
+
 namespace facebook {
 namespace memcache {
 
 namespace {
+
+uint64_t timeSinceEpoch() {
+  using namespace std::chrono;
+  return duration_cast<microseconds>(steady_clock::now().time_since_epoch())
+      .count();
+}
 
 class PipeIov {
  public:
@@ -148,6 +156,7 @@ bool ConnectionFifo::startMessage(
   }
   currentMessageHeader_.setDirection(direction);
   currentMessageHeader_.setTypeId(typeId);
+  currentMessageHeader_.setTimeUs(timeSinceEpoch());
   nextPacketId_ = 0;
   return true;
 }
