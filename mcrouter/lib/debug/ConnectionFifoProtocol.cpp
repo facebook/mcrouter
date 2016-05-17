@@ -48,7 +48,7 @@ folly::SocketAddress MessageHeader::getPeerAddress() {
   switch (v) {
     case 1:
       return sizeof(MessageHeader) - sizeof(localPort_) - sizeof(direction_) -
-          sizeof(typeId_);
+          sizeof(typeId_) - sizeof(timeUs_);
     case 2:
       return sizeof(MessageHeader) - sizeof(typeId_) - sizeof(timeUs_);
     case 3:
