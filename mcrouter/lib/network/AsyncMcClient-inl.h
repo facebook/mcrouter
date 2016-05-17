@@ -35,6 +35,11 @@ inline void AsyncMcClient::setRequestStatusCallbacks(
                                    std::move(onWrite));
 }
 
+inline void AsyncMcClient::setCompressionCallback(
+    std::function<void(bool, size_t, size_t)> compressionCallback) {
+  base_->setCompressionCallback(std::move(compressionCallback));
+}
+
 template <class Request>
 ReplyT<Request> AsyncMcClient::sendSync(const Request& request,
                                         std::chrono::milliseconds timeout) {

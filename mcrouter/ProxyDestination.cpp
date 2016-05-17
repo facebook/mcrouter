@@ -336,6 +336,27 @@ void ProxyDestination::initializeAsyncMcClient() {
       }
     });
 
+  if (opts.enable_compression) {
+    client_->setCompressionCallback([proxy = proxy](
+        bool compressed,
+        size_t numBytesBeforeCompression,
+        size_t numBytesAfterCompression) {
+      if (compressed) {
+        stat_incr(proxy->stats, replies_compressed_stat, 1);
+      } else {
+        stat_incr(proxy->stats, replies_not_compressed_stat, 1);
+      }
+      stat_incr(
+          proxy->stats,
+          reply_traffic_before_compression_stat,
+          numBytesBeforeCompression);
+      stat_incr(
+          proxy->stats,
+          reply_traffic_after_compression_stat,
+          numBytesAfterCompression);
+    });
+  }
+
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(opts.target_max_inflight_requests,
                          opts.target_max_pending_requests);

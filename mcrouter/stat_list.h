@@ -169,6 +169,10 @@
   STUIR(cmd_other, 0, 1)
   STUIR(cmd_replace, 0, 1)
   STUIR(cmd_stats, 0, 1)
+  STUIR(replies_compressed, 0, 1)
+  STUIR(replies_not_compressed, 0, 1)
+  STUIR(reply_traffic_before_compression, 0, 1)
+  STUIR(reply_traffic_after_compression, 0, 1)
 #undef GROUP
 #define GROUP cmd_all_stats | cmd_out_stats | count_stats
   STUI(cmd_cas_out_count, 0, 1)

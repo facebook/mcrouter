@@ -111,6 +111,7 @@ ClientMcParser<Callback>::forwardCaretReply(
   const folly::IOBuf* finalBuffer = &buffer;
 
   // Uncompress if compressed
+  fireCompressionCallback(headerInfo);
   std::unique_ptr<folly::IOBuf> uncompressedBuf;
   if (headerInfo.usedCodecId > 0) {
     uncompressedBuf = decompress(headerInfo, buffer);
@@ -142,6 +143,7 @@ ClientMcParser<Callback>::forwardCaretReply(
   size_t offset = headerInfo.headerSize;
 
   // Uncompress if compressed
+  fireCompressionCallback(headerInfo);
   std::unique_ptr<folly::IOBuf> uncompressedBuf;
   if (headerInfo.usedCodecId > 0) {
     uncompressedBuf = decompress(headerInfo, buffer);
@@ -288,6 +290,30 @@ template <class Callback>
 bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
   return parser_.protocol() == mc_ascii_protocol &&
          asciiParser_.hasReadBuffer();
+}
+
+template <class Callback>
+void ClientMcParser<Callback>::fireCompressionCallback(
+    const UmbrellaMessageInfo& headerInfo) const {
+  size_t uncompressedSize;
+  size_t compressedSize;
+
+  if (headerInfo.usedCodecId > 0) {
+    // We need to remove compression additional fields to calculate the
+    // real size of reply if it was not compressed at all.
+    size_t compressionOverhead =
+      2 + // varints of two compression additional field types
+      (headerInfo.usedCodecId / 128 + 1) + // varint
+      (headerInfo.uncompressedBodySize / 128 + 1); // varint
+    uncompressedSize = headerInfo.headerSize + headerInfo.uncompressedBodySize -
+        compressionOverhead;
+    compressedSize = headerInfo.headerSize + headerInfo.bodySize;
+  } else {
+    uncompressedSize = headerInfo.headerSize + headerInfo.bodySize;
+    compressedSize = uncompressedSize;
+  }
+  callback_.updateCompressionStats(
+      headerInfo.usedCodecId > 0, uncompressedSize, compressedSize);
 }
 
 }}  // facebook::memcache

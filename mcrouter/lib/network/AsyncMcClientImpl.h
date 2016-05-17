@@ -61,6 +61,9 @@ class AsyncMcClientImpl :
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
       std::function<void(int numToSend)> onWrite);
 
+  void setCompressionCallback(
+      std::function<void(bool, size_t, size_t)> compressionCallback);
+
   template <class Request>
   ReplyT<Request> sendSync(const Request& request,
                            std::chrono::milliseconds timeout);
@@ -115,6 +118,7 @@ class AsyncMcClientImpl :
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
+  std::function<void(bool, size_t, size_t)> compressionCallback_;
 
   // Debug pipe.
   ConnectionFifo debugFifo_;
@@ -186,6 +190,18 @@ class AsyncMcClientImpl :
   void replyReady(Reply&& reply, uint64_t reqId);
   void parseError(mc_res_t result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
+  /**
+   * Callback function called by McParser on each reply with compression status.
+   *
+   * @param replyCompressed             True if the reply was compressed. False
+   *                                    otherwise.
+   * @param numBytesBeforeCompression   Number of bytes before compression.
+   * @param numBytesAfterCompression    Number of bytes after compression.
+   */
+  void updateCompressionStats(
+      bool replyCompressed,
+      size_t numBytesBeforeCompression,
+      size_t numBytesAfterCompression);
 
   void sendFakeReply(McClientRequestContextBase& request);
 

@@ -111,6 +111,8 @@ class ClientMcParser : private McParser::ParserCallback {
   void parseError(mc_res_t result, folly::StringPiece reason) override final;
 
   bool shouldReadToAsciiBuffer() const;
+
+  void fireCompressionCallback(const UmbrellaMessageInfo& headerInfo) const;
 };
 
 }}  // facebook::memcache

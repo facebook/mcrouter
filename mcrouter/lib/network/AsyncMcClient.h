@@ -78,6 +78,18 @@ class AsyncMcClient {
       std::function<void(int numToSend)> onWrite);
 
   /**
+   * Set callback for compression status updates.
+   *
+   * @param compressionCallback   Will be called whenever a reply is received,
+   *                              with compression data.
+   */
+  void setCompressionCallback(
+      std::function<void(
+          bool replyCompressed,
+          size_t numBytesBeforeCompression,
+          size_t numBytesAfterCompression)> compressionCallback);
+
+  /**
    * Send request synchronously (i.e. blocking call).
    * Note: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.

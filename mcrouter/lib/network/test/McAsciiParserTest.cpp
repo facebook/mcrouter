@@ -139,6 +139,8 @@ class McAsciiParserHarness {
     return true;
   }
 
+  void updateCompressionStats(bool, size_t, size_t) {}
+
   void runTestImpl() {
     currentId_ = 0;
     errorState_ = false;
