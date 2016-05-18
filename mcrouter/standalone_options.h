@@ -9,8 +9,6 @@
  */
 #pragma once
 
-#include <sys/resource.h>
-
 #include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/options.h"
 
@@ -24,8 +22,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 #define OUTSTANDING_REQ_BYTES (3 * 1024)
 #define DEFAULT_MAX_CLIENT_OUTSTANDING_REQS \
   (uint32_t)((1024 * 1024 * 100) / OUTSTANDING_REQ_BYTES)
-
-#define DEFAULT_FDLIMIT 65535
 
 #define OPTIONS_FILE "mcrouter/standalone_options_list.h"
 #define OPTIONS_NAME McrouterStandaloneOptions

@@ -326,40 +326,6 @@ static int validate_options() {
   return 1;
 }
 
-/** Set the fdlimit before any libevent setup because libevent uses the fd
-    limit as a initial allocation buffer and if the limit is too low, then
-    libevent realloc's the buffer which may cause epoll to copy out to the
-    wrong address returning bogus data to user space, or it's just a bug in
-    libevent. It's simpler to increase the limit than to fix libevent.
-    libev does not suffer from this problem. */
-static void raise_fdlimit() {
-  struct rlimit rlim;
-  if (getrlimit(RLIMIT_NOFILE, &rlim) == -1) {
-    perror("Failed to getrlimit RLIMIT_NOFILE");
-    exit(kExitStatusTransientError);
-  }
-  if (rlim.rlim_cur < standaloneOpts.fdlimit) {
-    rlim.rlim_cur = standaloneOpts.fdlimit;
-  }
-  if (rlim.rlim_max < rlim.rlim_cur) {
-    if (getuid() == 0) { // only root can raise the hard limit
-      rlim.rlim_max = rlim.rlim_cur;
-    } else {
-      LOG(WARNING)  << "Warning: RLIMIT_NOFILE maxed out at " <<
-                       rlim.rlim_max << " (you asked for " <<
-                       standaloneOpts.fdlimit << ")";
-      rlim.rlim_cur = rlim.rlim_max;
-    }
-  }
-  if (setrlimit(RLIMIT_NOFILE, &rlim) == -1) {
-    perror("Warning: failed to setrlimit RLIMIT_NOFILE");
-    if (getuid() == 0) {
-      // if it fails for root, something is seriously wrong
-      exit(kExitStatusTransientError);
-    }
-  }
-}
-
 void notify_command_line(int argc, char ** argv) {
   size_t len = 0;
   int ii;
@@ -519,8 +485,6 @@ int main(int argc, char **argv) {
       _exit(0);
     }
   }
-
-  raise_fdlimit();
 
   standaloneInit(opts, standaloneOpts);
 

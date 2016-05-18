@@ -54,11 +54,6 @@ mcrouter_option_string(
   "Unix domain socket path")
 
 mcrouter_option_integer(
-  rlim_t, fdlimit, DEFAULT_FDLIMIT,
-  "connection-limit", 'n',
-  "Connection limit")
-
-mcrouter_option_integer(
   size_t, max_conns, 0,
   "max-conns", no_short,
   "Maximum number of connections maintained by server. Special values: "
