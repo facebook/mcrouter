@@ -138,6 +138,10 @@ class Lz4CompressionCodec : public CompressionCodec {
       size_t iovcnt,
       size_t uncompressedLength = 0) override final;
 
+  ~Lz4CompressionCodec() {
+    LZ4_freeStream(lz4Stream_);
+  }
+
  private:
   static constexpr size_t kMaxDictionarySize = 64 * 1024;
   static constexpr size_t kLargeDataThreshold = 2 * 1024;
