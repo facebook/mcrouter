@@ -128,6 +128,7 @@ public:
   template <class Request>
   void onReplyReceived(const std::string& poolName,
                        const AccessPoint& ap,
+                       folly::StringPiece strippedRoutingPrefix,
                        const Request& request,
                        const ReplyT<Request>& reply,
                        const int64_t startTimeUs,
@@ -137,7 +138,13 @@ public:
     }
 
     RequestLoggerContext loggerContext(
-        poolName, ap, request, reply, startTimeUs, endTimeUs);
+        poolName,
+        ap,
+        strippedRoutingPrefix,
+        request,
+        reply,
+        startTimeUs,
+        endTimeUs);
     assert(logger_.hasValue());
     logger_->log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());

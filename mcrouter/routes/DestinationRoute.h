@@ -178,6 +178,7 @@ class DestinationRoute {
     auto reply = ReplyT<Request>(std::forward<Args>(args)...);
     ctx.onReplyReceived(poolName_,
                         *destination_->accessPoint(),
+                        folly::StringPiece(),
                         req,
                         reply,
                         now,
@@ -190,9 +191,11 @@ class DestinationRoute {
                           ProxyRequestContext& ctx) const {
     DestinationRequestCtx dctx(nowUs());
     folly::Optional<Request> newReq;
+    folly::StringPiece strippedRoutingPrefix;
     if (!keepRoutingPrefix_ && !req.routingPrefix().empty()) {
       newReq.emplace(req.clone());
       newReq->stripRoutingPrefix();
+      strippedRoutingPrefix = req.routingPrefix();
     }
 
     if (fiber_local::getFailoverTag()) {
@@ -210,6 +213,7 @@ class DestinationRoute {
     auto reply = destination_->send(reqToSend, dctx, timeout_);
     ctx.onReplyReceived(poolName_,
                         *destination_->accessPoint(),
+                        strippedRoutingPrefix,
                         reqToSend,
                         reply,
                         dctx.startTime,

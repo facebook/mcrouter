@@ -31,6 +31,7 @@ struct RequestLoggerContext {
   template <class Request>
   RequestLoggerContext(const std::string& poolName_,
                        const AccessPoint& ap_,
+                       folly::StringPiece strippedRoutingPrefix_,
                        const Request& request,
                        const ReplyT<Request>& reply,
                        const int64_t startTimeUs_,
@@ -39,6 +40,7 @@ struct RequestLoggerContext {
       keyWithoutRoute(request.keyWithoutRoute()),
       routingKey(request.routingKey()),
       routingPrefix(request.routingPrefix()),
+      strippedRoutingPrefix(strippedRoutingPrefix_),
       requestName(Request::name),
       requestValue(request.valuePtrUnsafe()),
       requestClass(fiber_local::getRequestClass()),
@@ -59,6 +61,7 @@ struct RequestLoggerContext {
   const folly::StringPiece keyWithoutRoute;
   const folly::StringPiece routingKey;
   const folly::StringPiece routingPrefix;
+  const folly::StringPiece strippedRoutingPrefix;
   const char* const requestName;
   const folly::IOBuf* requestValue;
   const RequestClass requestClass;
