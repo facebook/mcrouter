@@ -19,6 +19,7 @@
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
@@ -71,27 +72,17 @@ void ProxyDestination::schedule_next_probe() {
   // Calculate random jitter
   double r = (double)rand() / (double)RAND_MAX;
   double tmo_jitter_pct = r * kProbeJitterDelta + kProbeJitterMin;
-  uint64_t delay_us = (double)delay_ms * 1000 * (1.0 + tmo_jitter_pct);
-  assert(delay_us > 0);
+  delay_ms = (double)delay_ms * (1.0 + tmo_jitter_pct);
+  assert(delay_ms > 0);
 
-  timeval_t delay;
-  delay.tv_sec = (delay_us / 1000000);
-  delay.tv_usec = (delay_us % 1000000);
-
-  assert(probe_timer == nullptr);
-  probe_timer = asox_add_timer(
-    proxy->eventBase().getLibeventBase(),
-    delay,
-    [](const asox_timer_t timer, void* arg) {
-      reinterpret_cast<ProxyDestination*>(arg)->on_timer(timer);
-    }, this);
+  if (!probeTimer_.scheduleTimeout(delay_ms)) {
+    MC_LOG_FAILURE(proxy->router().opts(),
+                   memcache::failure::Category::kSystemError,
+                   "failed to schedule probe timer for ProxyDestination");
+  }
 }
 
-void ProxyDestination::on_timer(const asox_timer_t timer) {
-  // This assert checks for use-after-free
-  assert(timer == probe_timer);
-  asox_remove_timer(timer);
-  probe_timer = nullptr;
+void ProxyDestination::timerCallback() {
   // Note that the previous probe might still be in flight
   if (!probe_req) {
     probe_req = folly::make_unique<McRequestWithMcOp<mc_op_version>>();
@@ -116,15 +107,19 @@ void ProxyDestination::on_timer(const asox_timer_t timer) {
 
 void ProxyDestination::start_sending_probes() {
   probe_delay_next_ms = proxy->router().opts().probe_delay_initial_ms;
+  probeTimer_.attachEventBase(std::addressof(proxy->eventBase()));
   schedule_next_probe();
 }
 
 void ProxyDestination::stop_sending_probes() {
   stats_.probesSent = 0;
-  if (probe_timer) {
-    asox_remove_timer(probe_timer);
-    probe_timer = nullptr;
-  }
+
+  // Cancel timeout before calling detachEventBase to prevent an assert failure.
+  probeTimer_.cancelTimeout();
+
+  // Need to detach event base here. Otherwise attachEventBase on next call to
+  // start_sending_probes will assert(false).
+  probeTimer_.detachEventBase();
 }
 
 void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
@@ -220,17 +215,17 @@ ProxyDestination::~ProxyDestination() {
 }
 
 ProxyDestination::ProxyDestination(
-  proxy_t& proxy_,
-  std::shared_ptr<AccessPoint> ap,
-  std::chrono::milliseconds timeout,
-  uint64_t qosClass,
-  uint64_t qosPath)
+    proxy_t& proxy_,
+    std::shared_ptr<AccessPoint> ap,
+    std::chrono::milliseconds timeout,
+    uint64_t qosClass,
+    uint64_t qosPath)
     : proxy(&proxy_),
       accessPoint_(std::move(ap)),
       shortestTimeout_(timeout),
       qosClass_(qosClass),
-      qosPath_(qosPath) {
-
+      qosPath_(qosPath),
+      probeTimer_(*this) {
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);
   stat_incr(proxy->stats, num_servers_new_stat, 1);

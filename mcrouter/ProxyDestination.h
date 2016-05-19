@@ -16,16 +16,15 @@
 #include <folly/IntrusiveList.h>
 #include <folly/SpinLock.h>
 
-#include "mcrouter/config.h"
+#include "mcrouter/AsyncTimer.h"
 #include "mcrouter/ExponentialSmoothData.h"
-#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/TkoLog.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
-#include "mcrouter/TkoLog.h"
-
-using asox_timer_t = void*;
 
 namespace facebook { namespace memcache {
 
@@ -115,10 +114,11 @@ class ProxyDestination {
 
   int probe_delay_next_ms{0};
   std::unique_ptr<McRequestWithMcOp<mc_op_version>> probe_req;
-  asox_timer_t probe_timer{nullptr};
   std::string poolName_;
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
+
+  AsyncTimer<ProxyDestination> probeTimer_;
 
   static std::shared_ptr<ProxyDestination> create(
     proxy_t& proxy,
@@ -136,9 +136,6 @@ class ProxyDestination {
 
   void handle_tko(const mc_res_t result, bool is_probe_req);
 
-  // on probe timer
-  void on_timer(const asox_timer_t timer);
-
   // Process tko, stats and duration timer.
   void onReply(const mc_res_t result, DestinationRequestCtx& destreqCtx);
 
@@ -153,14 +150,16 @@ class ProxyDestination {
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
+  void timerCallback();
+
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;
 
   std::weak_ptr<ProxyDestination> selfPtr_;
 
   friend class ProxyDestinationMap;
+  friend class AsyncTimer<ProxyDestination>;
 };
-
 }}}  // facebook::memcache::mcrouter
 
 #include "ProxyDestination-inl.h"

@@ -18,7 +18,7 @@
 
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
-using asox_timer_t = void*;
+#include "mcrouter/AsyncTimer.h"
 
 namespace facebook { namespace memcache {
 
@@ -120,7 +120,8 @@ class ProxyDestinationMap {
   std::unique_ptr<StateList> active_;
   std::unique_ptr<StateList> inactive_;
 
-  asox_timer_t resetTimer_;
+  uint32_t inactivityTimeout_;
+  std::unique_ptr<AsyncTimer<ProxyDestinationMap>> resetTimer_;
 
   /**
    * If ProxyDestination is already stored in this object - returns it;
@@ -128,6 +129,13 @@ class ProxyDestinationMap {
    * Note: caller must be holding destionationsLock_.
    */
   std::shared_ptr<ProxyDestination> find(const std::string& key) const;
+
+  /**
+   * Time callback which clears inactive connections and reschedules the timer.
+   */
+  void timerCallback();
+
+  friend class AsyncTimer<ProxyDestinationMap>;
 };
 
 }}} // facebook::memcache::mcrouter

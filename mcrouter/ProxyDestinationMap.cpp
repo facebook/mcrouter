@@ -10,13 +10,14 @@
 #include "ProxyDestinationMap.h"
 
 #include <folly/Format.h>
-#include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
+#include <folly/io/async/AsyncTimeout.h>
+#include <folly/io/async/EventBase.h>
 
-#include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/ProxyDestination.h"
 
@@ -24,10 +25,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-void onResetTimer(const asox_timer_t timer, void* arg) {
-  auto map = reinterpret_cast<ProxyDestinationMap*>(arg);
-  map->resetAllInactive();
-}
 
 std::string genProxyDestinationKey(const AccessPoint& ap,
                                    std::chrono::milliseconds timeout) {
@@ -49,11 +46,11 @@ struct ProxyDestinationMap::StateList {
 };
 
 ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
-  : proxy_(proxy),
-    active_(folly::make_unique<StateList>()),
-    inactive_(folly::make_unique<StateList>()),
-    resetTimer_(nullptr) {
-}
+    : proxy_(proxy),
+      active_(folly::make_unique<StateList>()),
+      inactive_(folly::make_unique<StateList>()),
+      inactivityTimeout_(0),
+      resetTimer_(nullptr) {}
 
 std::shared_ptr<ProxyDestination>
 ProxyDestinationMap::emplace(std::shared_ptr<AccessPoint> ap,
@@ -135,16 +132,32 @@ void ProxyDestinationMap::resetAllInactive() {
 }
 
 void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
+  using TimerType = AsyncTimer<ProxyDestinationMap>;
+
   assert(interval.count() > 0);
-  auto delay = to<timeval_t>(interval);
-  resetTimer_ = asox_add_timer(proxy_->eventBase().getLibeventBase(), delay,
-                               onResetTimer, this);
+  inactivityTimeout_ = static_cast<uint32_t>(interval.count());
+  resetTimer_ = folly::make_unique<TimerType>(*this);
+
+  resetTimer_->attachEventBase(std::addressof(proxy_->eventBase()));
+  if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
+    MC_LOG_FAILURE(proxy_->router().opts(),
+                   memcache::failure::Category::kSystemError,
+                   "failed to schedule inactivity timer");
+  }
+}
+
+void ProxyDestinationMap::timerCallback() {
+  resetAllInactive();
+
+  assert(inactivityTimeout_ > 0);
+  if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
+    MC_LOG_FAILURE(proxy_->router().opts(),
+                   memcache::failure::Category::kSystemError,
+                   "failed to re-schedule inactivity timer");
+  }
 }
 
 ProxyDestinationMap::~ProxyDestinationMap() {
-  if (resetTimer_ != nullptr) {
-    asox_remove_timer(resetTimer_);
-  }
 }
 
 }}} // facebook::memcache::mcrouter

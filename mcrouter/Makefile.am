@@ -23,6 +23,7 @@ libmcroutercore_a_SOURCES = \
   async.cpp \
   async.h \
   awriter.h \
+  AsyncTimer.h \
   CallbackPool-inl.h \
   CallbackPool.h \
   Clock.h \
