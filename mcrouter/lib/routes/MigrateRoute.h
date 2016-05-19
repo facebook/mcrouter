@@ -14,8 +14,8 @@
 #include <vector>
 
 #include <folly/dynamic.h>
-#include <folly/experimental/fibers/FiberManager.h>
-#include <folly/experimental/fibers/WhenN.h>
+#include <folly/fibers/FiberManager.h>
+#include <folly/fibers/WhenN.h>
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"

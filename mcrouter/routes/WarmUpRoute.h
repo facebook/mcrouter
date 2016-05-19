@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"

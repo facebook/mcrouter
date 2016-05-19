@@ -20,7 +20,7 @@
 #include <boost/regex.hpp>
 
 #include <folly/DynamicConverter.h>
-#include <folly/experimental/fibers/EventBaseLoopController.h>
+#include <folly/fibers/EventBaseLoopController.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
 #include <folly/Format.h>

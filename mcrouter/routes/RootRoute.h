@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/Likely.h>
 
 #include "mcrouter/config.h"

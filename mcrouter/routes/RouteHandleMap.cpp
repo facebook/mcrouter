@@ -14,7 +14,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/Hash.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"

@@ -12,7 +12,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/DynamicConverter.h>
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/json.h>
 #include <folly/MapUtil.h>
 #include <folly/Singleton.h>

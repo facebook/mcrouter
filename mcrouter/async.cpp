@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #include <folly/Conv.h>
-#include <folly/experimental/fibers/EventBaseLoopController.h>
+#include <folly/fibers/EventBaseLoopController.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
 #include <folly/json.h>

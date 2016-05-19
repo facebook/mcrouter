@@ -14,7 +14,7 @@
 #include <vector>
 
 #include <folly/dynamic.h>
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"

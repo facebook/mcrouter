@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include <folly/experimental/fibers/ForEach.h>
+#include <folly/fibers/ForEach.h>
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/fbi/cpp/FuncGenerator.h"

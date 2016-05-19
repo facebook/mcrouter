@@ -8,7 +8,7 @@
  *
  */
 #ifndef LIBMC_FBTRACE_DISABLE
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"

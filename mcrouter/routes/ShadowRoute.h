@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/Operation.h"

@@ -14,7 +14,7 @@
 
 #include <boost/intrusive/unordered_set.hpp>
 
-#include <folly/experimental/fibers/Baton.h>
+#include <folly/fibers/Baton.h>
 #include <folly/IntrusiveList.h>
 
 #include "mcrouter/lib/McOperation.h"

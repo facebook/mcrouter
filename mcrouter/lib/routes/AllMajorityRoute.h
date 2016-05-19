@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include <folly/experimental/fibers/AddTasks.h>
+#include <folly/fibers/AddTasks.h>
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/Operation.h"

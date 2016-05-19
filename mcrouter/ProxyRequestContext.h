@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"

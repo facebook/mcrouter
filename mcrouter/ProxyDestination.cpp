@@ -9,7 +9,7 @@
  */
 #include "ProxyDestination.h"
 
-#include <folly/experimental/fibers/Fiber.h>
+#include <folly/fibers/Fiber.h>
 #include <folly/Memory.h>
 
 #include "mcrouter/config-impl.h"

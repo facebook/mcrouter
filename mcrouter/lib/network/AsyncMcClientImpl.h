@@ -12,7 +12,7 @@
 #include <chrono>
 #include <string>
 
-#include <folly/experimental/fibers/Baton.h>
+#include <folly/fibers/Baton.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
 #include <folly/io/IOBufQueue.h>

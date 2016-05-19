@@ -13,7 +13,7 @@
 #include <functional>
 #include <string>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/Function.h>
 #include <folly/io/async/EventBase.h>
 

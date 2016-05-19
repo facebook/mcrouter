@@ -14,7 +14,7 @@
 #include <vector>
 
 #include <folly/Conv.h>
-#include <folly/experimental/fibers/Baton.h>
+#include <folly/fibers/Baton.h>
 #include <folly/ScopeGuard.h>
 
 #include "mcrouter/lib/McOperationTraits.h"

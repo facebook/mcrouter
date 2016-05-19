@@ -17,7 +17,7 @@
 #include <memory>
 #include <thread>
 
-#include <folly/experimental/fibers/FiberManager.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/Range.h>
 

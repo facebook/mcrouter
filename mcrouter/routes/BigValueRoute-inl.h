@@ -9,8 +9,8 @@
  */
 #pragma once
 
-#include <folly/experimental/fibers/FiberManager.h>
-#include <folly/experimental/fibers/WhenN.h>
+#include <folly/fibers/FiberManager.h>
+#include <folly/fibers/WhenN.h>
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 #include <folly/Range.h>
