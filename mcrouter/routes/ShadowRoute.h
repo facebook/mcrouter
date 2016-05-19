@@ -120,15 +120,6 @@ class ShadowRoute {
       const;
 
   void sendAndValidateRequest(
-      const McReply& normalReply,
-      std::shared_ptr<McrouterRouteHandleIf> shadow,
-      std::shared_ptr<McRequestWithMcOp<mc_op_get>> adjustedReq)
-      const {
-
-    sendAndValidateRequestGetImpl(normalReply, shadow, adjustedReq);
-  }
-
-  void sendAndValidateRequest(
       const TypedThriftReply<cpp2::McGetReply>& normalReply,
       std::shared_ptr<McrouterRouteHandleIf> shadow,
       std::shared_ptr<TypedThriftRequest<cpp2::McGetRequest>> adjustedReq)

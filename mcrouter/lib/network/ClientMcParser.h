@@ -17,15 +17,12 @@
 
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
-#include "mcrouter/lib/network/CaretReplyConverter.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
-
-class McReply;
 
 template <class Callback>
 class ClientMcParser : private McParser::ParserCallback {
@@ -64,13 +61,16 @@ class ClientMcParser : private McParser::ParserCallback {
   template <class Request>
   void expectNext();
 
+  void setProtocol(mc_protocol_t protocol) {
+    parser_.setProtocol(protocol);
+  }
+
  private:
   McParser parser_;
   McClientAsciiParser asciiParser_;
   void (ClientMcParser<Callback>::*replyForwarder_)(){nullptr};
   void (ClientMcParser<Callback>::*umbrellaOrCaretForwarder_)(
       const UmbrellaMessageInfo&, const folly::IOBuf&, uint64_t){nullptr};
-  CaretReplyConverter converter_;
 
   Callback& callback_;
 
@@ -87,16 +87,9 @@ class ClientMcParser : private McParser::ParserCallback {
                             uint64_t reqId);
 
   template <class Request>
-  typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-  forwardCaretReply(const UmbrellaMessageInfo& headerInfo,
-                    const folly::IOBuf& buffer,
-                    uint64_t reqId);
-
-  template <class Request>
-  typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-  forwardCaretReply(const UmbrellaMessageInfo& headerInfo,
-                    const folly::IOBuf& buffer,
-                    uint64_t reqId);
+  void forwardCaretReply(const UmbrellaMessageInfo& headerInfo,
+                         const folly::IOBuf& buffer,
+                         uint64_t reqId);
 
   std::unique_ptr<folly::IOBuf> decompress(
       const UmbrellaMessageInfo& headerInfo,

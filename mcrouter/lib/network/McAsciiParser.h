@@ -15,8 +15,6 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/MessageStorage.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
@@ -138,8 +136,6 @@ class McClientAsciiParser : public McAsciiParserBase {
   template <class Request>
   void consumeMessage(folly::IOBuf& buffer);
 
-  void stringValueHelper(const folly::IOBuf& buffer);
-
   template <class Reply>
   void consumeErrorMessage(const folly::IOBuf& buffer);
 
@@ -160,8 +156,7 @@ class McClientAsciiParser : public McAsciiParserBase {
   static void appendCurrentCharTo(const folly::IOBuf& from, folly::IOBuf& to,
                                   const char* pos);
 
-  MessageStorage<ConcatenateListsT<List<McReply>,
-                 MapT<ReplyT, ThriftRequestList>>> currentMessage_;
+  MessageStorage<MapT<ReplyT, ThriftRequestList>> currentMessage_;
 
   using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
@@ -185,6 +180,7 @@ class McServerAsciiParser : public McAsciiParserBase {
    * @return  new parser state.
    */
   State consume(folly::IOBuf& buffer);
+
  private:
   void opTypeConsumer(folly::IOBuf& buffer);
 

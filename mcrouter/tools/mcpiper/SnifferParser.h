@@ -77,9 +77,9 @@ class SnifferParser {
 
   // ClientServerMcParser callbacks
   template <class Request>
-  void requestReady(uint64_t msgId, Request request);
-  template <class Request>
-  void replyReady(uint64_t msgId, ReplyT<Request> reply);
+  void requestReady(uint64_t msgId, Request&& request);
+  template <class Reply>
+  void replyReady(uint64_t msgId, Reply&& reply);
 
   friend class ClientServerMcParser<SnifferParser>;
 };

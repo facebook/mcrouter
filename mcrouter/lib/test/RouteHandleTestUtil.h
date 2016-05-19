@@ -20,10 +20,11 @@
 
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
@@ -262,8 +263,8 @@ inline std::string toString(const folly::IOBuf& buf) {
 
 template <class Rh>
 std::string replyFor(Rh& rh, const std::string& key) {
-  auto reply = rh.route(McRequestWithMcOp<mc_op_get>(key));
-  return toString(reply.value());
+  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>(key));
+  return reply.valueRangeSlow().str();
 }
 
 }}  // facebook::memcache

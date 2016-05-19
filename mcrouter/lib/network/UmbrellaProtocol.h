@@ -12,14 +12,13 @@
 #include <string>
 
 #include <folly/io/IOBuf.h>
+#include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/Varint.h>
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McRequest.h"
-#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -29,8 +28,6 @@ class IOBuf;
 
 namespace facebook { namespace memcache {
 
-class McReply;
-class McRequest;
 
 constexpr char kCaretMagicByte = '^';
 constexpr size_t kMaxAdditionalFields = 3;
@@ -153,45 +150,21 @@ ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
  * @return                 Parsed request.
  * @throws                 std::runtime_error on any parse error.
  */
-McRequest umbrellaParseRequest(const folly::IOBuf& source,
-                               const uint8_t* header, size_t nheader,
-                               const uint8_t* body, size_t nbody,
-                               mc_op_t& opOut, uint64_t& reqidOut);
-
-/**
- * Similar to above, but allows the user to supply a Request structure that
- * should be filled in by parsing the supplied source IOBuf.
- * req is assumed to be default-constructed. Its existing fields will be
- * overwritten with the newly parsed data.
- */
 template <class Request>
-void umbrellaParseRequest(Request& req, const folly::IOBuf& source,
-                          const uint8_t* header, size_t nheader,
-                          const uint8_t* body, size_t nbody,
-                          mc_op_t& opOut, uint64_t& reqidOut);
+Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
+                             size_t nheader, const uint8_t* body, size_t nbody,
+                             uint64_t& reqidOut);
 
 class UmbrellaSerializedMessage {
  public:
   UmbrellaSerializedMessage() noexcept;
   void clear();
 
-  bool prepare(McReply&& reply, mc_op_t op, uint64_t reqid,
-               const struct iovec*& iovOut, size_t& niovOut) {
-    return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
-  }
-
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply, uint64_t reqid,
                const struct iovec*& iovOut, size_t& niovOut) {
     static constexpr mc_op_t op = OpFromType<ThriftType, ReplyOpMapping>::value;
     return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
-  }
-
-  template <int op>
-  bool prepare(const McRequestWithMcOp<op>& request, uint64_t reqid,
-               const struct iovec*& iovOut, size_t& niovOut) {
-    return prepareRequestImpl(
-        request, static_cast<mc_op_t>(op), reqid, iovOut, niovOut);
   }
 
   template <class ThriftType>
@@ -246,37 +219,6 @@ class UmbrellaSerializedMessage {
    */
   template <class RequestOrReply>
   void prepareHelper(const RequestOrReply&) {
-  }
-
-  template <int op>
-  void prepareHelper(const McRequestWithMcOp<op>& request) {
-    if (request.delta()) {
-      appendInt(U64, msg_delta, request.delta());
-    }
-    if (request.leaseToken()) {
-      appendInt(U64, msg_lease_id, request.leaseToken());
-    }
-    if (request.cas()) {
-      appendInt(U64, msg_cas, request.cas());
-    }
-  }
-
-  inline void prepareHelper(const McReply& reply) {
-    if (reply.delta()) {
-      appendInt(U64, msg_delta, reply.delta());
-    }
-    if (reply.exptime()) {
-      appendInt(U64, msg_exptime, reply.exptime());
-    }
-    if (reply.leaseToken()) {
-      appendInt(U64, msg_lease_id, reply.leaseToken());
-    }
-    if (reply.cas()) {
-      appendInt(U64, msg_cas, reply.cas());
-    }
-    if (reply.number()) {
-      appendInt(U64, msg_number, reply.number());
-    }
   }
 
   inline void prepareHelper(

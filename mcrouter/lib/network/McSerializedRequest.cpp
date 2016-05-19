@@ -9,9 +9,6 @@
  */
 #include "McSerializedRequest.h"
 
-#include "mcrouter/lib/McMsgRef.h"
-#include "mcrouter/lib/McRequest.h"
-
 namespace facebook { namespace memcache {
 
 McSerializedRequest::~McSerializedRequest() {

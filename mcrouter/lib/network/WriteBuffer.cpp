@@ -62,6 +62,7 @@ void WriteBuffer::clear() {
   ctx_.clear();
   destructor_.clear();
   isEndOfBatch_ = false;
+  typeId_ = 0;
 
   switch (protocol_) {
     case mc_ascii_protocol:
@@ -81,37 +82,6 @@ void WriteBuffer::clear() {
   }
 }
 
-bool WriteBuffer::prepare(
-    McServerRequestContext&& ctx,
-    McReply&& reply,
-    Destructor destructor) {
-  ctx_.emplace(std::move(ctx));
-  assert(!destructor_.hasValue());
-  if (destructor) {
-    destructor_ = std::move(destructor);
-  }
-
-  switch (protocol_) {
-    case mc_ascii_protocol:
-      return asciiReply_.prepare(std::move(reply),
-                                 ctx_->operation_,
-                                 ctx_->asciiKey(),
-                                 iovsBegin_,
-                                 iovsCount_);
-
-    case mc_umbrella_protocol:
-      return umbrellaReply_.prepare(std::move(reply),
-                                    ctx_->operation_,
-                                    ctx_->reqid_,
-                                    iovsBegin_,
-                                    iovsCount_);
-
-    default:
-      // mc_caret_protocol not supported with old McRequest/McReply
-      CHECK(false);
-  }
-}
-
 bool WriteBuffer::noReply() const {
   return ctx_.hasValue() && ctx_->hasParent() && ctx_->parent().error();
 }
@@ -125,51 +95,10 @@ mc_op_t WriteBuffer::operation() const {
   return ctx_.hasValue() ? ctx_->operation_ : mc_op_unknown;
 }
 
-AsciiSerializedReply::AsciiSerializedReply() {
-  mc_ascii_response_buf_init(&asciiResponse_);
-}
-
-AsciiSerializedReply::~AsciiSerializedReply() {
-  mc_ascii_response_buf_cleanup(&asciiResponse_);
-}
-
 void AsciiSerializedReply::clear() {
-  mc_ascii_response_buf_cleanup(&asciiResponse_);
-  mc_ascii_response_buf_init(&asciiResponse_);
   iovsCount_ = 0;
   iobuf_.clear();
   auxString_.clear();
-  reply_.clear();
-}
-
-bool AsciiSerializedReply::prepare(McReply&& reply,
-                                   mc_op_t operation,
-                                   const folly::Optional<folly::IOBuf>& key,
-                                   const struct iovec*& iovOut,
-                                   size_t& niovOut) {
-  reply_.emplace(std::move(reply));
-
-  mc_msg_t replyMsg;
-  mc_msg_init_not_refcounted(&replyMsg);
-  reply_->dependentMsg(operation, &replyMsg);
-
-  nstring_t k;
-  if (key.hasValue()) {
-    k.str = (char*)key->data();
-    k.len = key->length();
-  } else {
-    k.str = nullptr;
-    k.len = 0;
-  }
-  niovOut = mc_ascii_response_write_iovs(
-    &asciiResponse_,
-    k,
-    operation,
-    &replyMsg,
-    iovs_,
-    kMaxIovs);
-  iovOut = iovs_;
-  return niovOut != 0;
 }
 
 void AsciiSerializedReply::addString(folly::ByteRange range) {

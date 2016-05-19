@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -33,16 +32,6 @@ class OperationSelectorRoute {
         defaultPolicy_(std::move(defaultPolicy)) {
   }
 
-  template <int M>
-  void traverse(const McRequestWithMcOp<M>& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    if (operationPolicies_[M]) {
-      t(*operationPolicies_[M], req);
-    } else if (defaultPolicy_) {
-      t(*defaultPolicy_, req);
-    }
-  }
-
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
@@ -54,17 +43,6 @@ class OperationSelectorRoute {
     } else if (defaultPolicy_) {
       t(*defaultPolicy_, req);
     }
-  }
-
-  template <int M>
-  McReply route(const McRequestWithMcOp<M>& req) const {
-    if (operationPolicies_[M]) {
-      return operationPolicies_[M]->route(req);
-    } else if (defaultPolicy_) {
-      return defaultPolicy_->route(req);
-    }
-
-    return McReply(DefaultReply, req);
   }
 
   template <class Request>

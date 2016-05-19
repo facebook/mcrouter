@@ -10,7 +10,6 @@
 #pragma once
 
 #include "mcrouter/config.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
@@ -42,19 +41,6 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
   ServerOnRequest(McrouterClient& client, bool retainSourceIp)
     : client_(client),
       retainSourceIp_(retainSourceIp) {}
-
-  void onRequest(McServerRequestContext&& ctx,
-                 McRequestWithMcOp<mc_op_version>&& req) {
-    McServerRequestContext::reply(std::move(ctx),
-                                  McReply(mc_res_ok, MCROUTER_PACKAGE_STRING));
-  }
-
-  template <int op>
-  void onRequest(McServerRequestContext&& ctx, McRequestWithMcOp<op>&& req) {
-    send(std::move(ctx),
-         std::move(req),
-         &McServerRequestContext::reply);
-  }
 
   template <class ThriftType>
   void onRequest(McServerRequestContext&& ctx,

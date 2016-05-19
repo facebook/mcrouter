@@ -12,14 +12,26 @@
 #include <folly/io/IOBufQueue.h>
 
 #include "mcrouter/lib/McMsgRef.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
+
+/*
+ * Determine the protocol by looking at the first byte
+ */
+inline mc_protocol_t determineProtocol(uint8_t firstByte) {
+  switch (firstByte) {
+    case kCaretMagicByte:
+      return mc_caret_protocol;
+    case ENTRY_LIST_MAGIC_BYTE:
+      return mc_umbrella_protocol;
+    default:
+      return mc_ascii_protocol;
+  }
+}
 
 class McParser {
  public:
@@ -75,6 +87,10 @@ class McParser {
 
   mc_protocol_t protocol() const {
     return protocol_;
+  }
+
+  void setProtocol(mc_protocol_t protocol__) {
+    protocol_ = protocol__;
   }
 
   bool outOfOrder() const {

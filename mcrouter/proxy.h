@@ -30,7 +30,6 @@
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
@@ -60,8 +59,6 @@ class MessageQueue;
 
 namespace mcrouter {
 // forward declaration
-template <class Operation>
-class McRequestWithOperation;
 class McrouterClient;
 class McrouterInstance;
 class ProxyConfig;
@@ -315,12 +312,6 @@ struct proxy_t {
         TypedThriftRequest<cpp2::McStatsRequest>>> ctx);
 
   /** Process and reply to a version request */
-  // TODO(jmswen) Get rid of McRequestWithMcOp overloaded.
-  // Needed temporarily for HHVM extension.
-  void routeHandlesProcessRequest(
-      const McRequestWithMcOp<mc_op_version>& req,
-      std::unique_ptr<ProxyRequestContextTyped<
-        McRequestWithMcOp<mc_op_version>>> ctx);
   void routeHandlesProcessRequest(
       const TypedThriftRequest<cpp2::McVersionRequest>& req,
       std::unique_ptr<ProxyRequestContextTyped<
@@ -328,18 +319,14 @@ struct proxy_t {
 
   /** Route request through route handle tree */
   template <class Request>
-  typename std::enable_if<RequestListContains<Request>::value ||
-                          TRequestListContains<Request>::value,
-                          void>::type
+  typename std::enable_if<TRequestListContains<Request>::value, void>::type
   routeHandlesProcessRequest(
       const Request& req,
       std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
 
   /** Fail all unknown operations */
   template <class Request>
-  typename std::enable_if<!RequestListContains<Request>::value &&
-                          !TRequestListContains<Request>::value,
-                          void>::type
+  typename std::enable_if<!TRequestListContains<Request>::value, void>::type
   routeHandlesProcessRequest(
       const Request& req,
       std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);

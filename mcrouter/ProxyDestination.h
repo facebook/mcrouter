@@ -21,10 +21,11 @@
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 
 namespace facebook { namespace memcache {
 
@@ -113,7 +114,7 @@ class ProxyDestination {
   Stats stats_;
 
   int probe_delay_next_ms{0};
-  std::unique_ptr<McRequestWithMcOp<mc_op_version>> probe_req;
+  std::unique_ptr<TypedThriftRequest<cpp2::McVersionRequest>> probe_req;
   std::string poolName_;
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout

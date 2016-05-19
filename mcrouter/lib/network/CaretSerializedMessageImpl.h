@@ -12,9 +12,7 @@
 #include <folly/Range.h>
 #include <folly/Varint.h>
 
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/McQueueAppender.h"
-#include "mcrouter/lib/network/McRequestToTypedConverter.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -54,13 +52,6 @@ class CaretSerializedMessage {
    *
    * @return true iff message was successfully prepared.
    */
-  template <class Op>
-  bool prepare(const McRequestWithOp<Op>& req,
-               size_t reqId,
-               const CodecIdRange& supportedCodecs,
-               const struct iovec*& iovOut,
-               size_t& niovOut) noexcept;
-
   template <class ThriftType>
   bool prepare(const TypedThriftRequest<ThriftType>& req,
                size_t reqId,
@@ -122,24 +113,6 @@ class CaretSerializedMessage {
    * @return                  True if compression succeeds. Otherwise, false.
    */
   bool maybeCompress(CompressionCodec* codec, size_t uncompressedSize);
-
-  template <int Op>
-  typename std::enable_if<
-    !ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
-  prepareImpl(const McRequestWithMcOp<Op>& req,
-              size_t reqId,
-              const CodecIdRange& supportedCodecs,
-              const struct iovec*& iovOut,
-              size_t& niovOut);
-
-  template <int Op>
-  typename std::enable_if<
-    ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value, bool>::type
-  prepareImpl(const McRequestWithMcOp<Op>& req,
-              size_t reqId,
-              const CodecIdRange& supportedCodecs,
-              const struct iovec*& iovOut,
-              size_t& niovOut);
 };
 
 } // memcache

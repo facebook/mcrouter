@@ -22,12 +22,13 @@
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
-#include "mcrouter/test/cpp_unit_tests/mcrouter_cpp_tests.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
 namespace {
+
+const char* const kMemcacheConfig = "mcrouter/test/test_ascii.json";
 
 const char* const kAsynclogRoute =
  R"({

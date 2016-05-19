@@ -20,7 +20,6 @@
 
 namespace facebook { namespace memcache {
 
-class McReply;
 class McServerSession;
 
 /**
@@ -60,7 +59,6 @@ class MultiOpParent {
    * @return true if the parent assumed ownership of reporting an error.
    *         On true, errorMessage is moved out of.
    */
-  bool reply(McReply&& reply);
   bool reply(mc_res_t result, uint32_t errorCode, std::string&& errorMessage);
 
   /**

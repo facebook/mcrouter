@@ -12,8 +12,9 @@
 #include <string>
 #include <utility>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include <folly/io/IOBuf.h>
+#include <folly/Optional.h>
+
 #include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
@@ -37,29 +38,6 @@ class TypedThriftReply;
 class McServerRequestContext {
  public:
   using DestructorFunc = void (*)(void*);
-  /**
-   * Notify the server that the request-reply exchange is complete.
-   *
-   * @param ctx    The original context.
-   * @param reply  Reply to hand off.
-   */
-  static void reply(McServerRequestContext&& ctx, McReply&& reply);
-  /**
-   * Notify the server that the request-reply exchange is complete.
-   *
-   * @param ctx         The original context.
-   * @param reply       Reply to hand off.
-   * @param destructor  Callback to destruct toDestruct, called when all
-   *                    data is written to network and is not needed
-   *                    anymore, either on success or error. Must not
-   *                    be null if toDestruct is not null
-   * @param toDestruct  Target to destruct, destructed by destructor callback
-   */
-  static void reply(
-      McServerRequestContext&& ctx,
-      McReply&& reply,
-      DestructorFunc destructor,
-      void* toDestruct);
 
   template <class Reply>
   static void reply(McServerRequestContext&& ctx, Reply&& reply);
@@ -99,12 +77,6 @@ class McServerRequestContext {
   CompressionCodec* codec_{nullptr};
 
   bool noReply(mc_res_t result) const;
-
-  static void replyImpl(
-      McServerRequestContext&& ctx,
-      McReply&& reply,
-      DestructorFunc destructor = nullptr,
-      void* toDestruct = nullptr);
 
   template <class Reply>
   static void replyImpl(
@@ -230,8 +202,7 @@ class McServerOnRequestWrapper<OnRequest, List<Request>>
                                      const folly::IOBuf& reqBody,
                                      McServerRequestContext&& ctx,
                                      std::false_type) {
-    McServerRequestContext::reply(std::move(ctx),
-                                  McReply(mc_res_client_error));
+    throw std::runtime_error("dispatchTypedRequestIfDefined got bad request");
   }
 
  protected:

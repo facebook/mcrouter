@@ -11,8 +11,6 @@
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
@@ -67,7 +65,7 @@ void ClientMcParser<Callback>::expectNext() {
     if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
       debugFifo_->startMessage(
           MessageDirection::Received,
-          IdFromType<typename Request::rawType, TRequestList>::value);
+          IdFromType<typename ReplyT<Request>::rawType, TReplyList>::value);
     }
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaOrCaretForwarder_ =
@@ -104,39 +102,7 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
 
 template <class Callback>
 template <class Request>
-typename std::enable_if<!IsCustomRequest<Request>::value, void>::type
-ClientMcParser<Callback>::forwardCaretReply(
-    const UmbrellaMessageInfo& headerInfo,
-    const folly::IOBuf& buffer,
-    uint64_t reqId) {
-
-  const folly::IOBuf* finalBuffer = &buffer;
-
-  // Uncompress if compressed
-  fireCompressionCallback(headerInfo);
-  std::unique_ptr<folly::IOBuf> uncompressedBuf;
-  if (headerInfo.usedCodecId > 0) {
-    uncompressedBuf = decompress(headerInfo, buffer);
-
-    // Prepend a sentinel of the size of the header, as dispatchTypedRequest
-    // expected a buffer containing the header and body.
-    // TODO(aap): improve.
-    auto headerBuf = folly::IOBuf::create(headerInfo.headerSize);
-    headerBuf->append(headerInfo.headerSize);
-    uncompressedBuf->prependChain(std::move(headerBuf));
-
-    finalBuffer = uncompressedBuf->prev();
-  }
-
-  ReplyT<Request> reply;
-  converter_.dispatchTypedRequest(headerInfo, *finalBuffer, reply);
-  callback_.replyReady(std::move(reply), reqId);
-}
-
-template <class Callback>
-template <class Request>
-typename std::enable_if<IsCustomRequest<Request>::value, void>::type
-ClientMcParser<Callback>::forwardCaretReply(
+void ClientMcParser<Callback>::forwardCaretReply(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {

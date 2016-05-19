@@ -21,7 +21,6 @@
 #include <folly/IPAddress.h>
 #include <folly/SocketAddress.h>
 
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/tools/mcpiper/AnsiColorCodeStream.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
@@ -265,6 +264,7 @@ void run(Settings settings) {
                                   uint64_t packetId,
                                   folly::SocketAddress from,
                                   folly::SocketAddress to,
+                                  uint32_t typeId,
                                   folly::ByteRange data) {
       auto it = parserMap.find(connectionId);
       if (it == parserMap.end()) {
@@ -279,7 +279,8 @@ void run(Settings settings) {
       }
 
       snifferParser.setAddresses(std::move(from), std::move(to));
-      snifferParser.parser().parse(data);
+      snifferParser.parser().parse(
+          data, typeId, packetId == 0 /* isFirstPacket */);
     };
 
   folly::EventBase eventBase;

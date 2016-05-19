@@ -13,7 +13,6 @@
 #include "fbtrace/libfbtrace/c/fbtrace.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
-#include "mcrouter/lib/McRequest.h"
 #endif
 
 namespace facebook { namespace memcache {

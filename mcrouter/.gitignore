@@ -20,7 +20,6 @@ Makefile.in
 /configure
 /depcomp
 /install-sh
-/lib/network/CaretReplyConverter.h
 /lib/network/CaretSerializedMessage.h
 /lib/network/McAsciiParser-gen.cpp
 /lib/network/gen-cpp2/*

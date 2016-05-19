@@ -17,41 +17,38 @@
 #include "mcrouter/lib/mc/ascii_response.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/mc/umbrella.h"
-#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 
 namespace facebook { namespace memcache {
 
-// TODO(jmswen) When we kill McReply and McRequest, it will be easy to merge
-// AsciiSerializedReply and AsciiSerializedRequest into one class.
+// TODO(jmswen) Merge AsciiSerializedReply and AsciiSerializedRequest into one
+// class.
 class AsciiSerializedReply {
  public:
-  AsciiSerializedReply();
+  AsciiSerializedReply() = default;
 
   AsciiSerializedReply(const AsciiSerializedReply&) = delete;
   AsciiSerializedReply& operator=(const AsciiSerializedReply&) = delete;
   AsciiSerializedReply(AsciiSerializedReply&&) noexcept = delete;
   AsciiSerializedReply& operator=(AsciiSerializedReply&&) = delete;
 
-  ~AsciiSerializedReply();
+  ~AsciiSerializedReply() = default;
 
   void clear();
-
-  bool prepare(McReply&& reply, mc_op_t operation,
-               const folly::Optional<folly::IOBuf>& key,
-               const struct iovec*& iovOut, size_t& niovOut);
 
   template <class ThriftType>
   bool prepare(TypedThriftReply<ThriftType>&& reply,
                folly::Optional<folly::IOBuf>& key,
                const struct iovec*& iovOut, size_t& niovOut,
-               GetLikeT<McOperation<OpFromType<ThriftType,
-                                               ReplyOpMapping>::value>> = 0) {
+               GetLikeT<TypedThriftRequest<
+                            RequestFromReplyType<ThriftType,
+                                                 RequestReplyPairs>>> = 0) {
     if (key.hasValue()) {
       key->coalesce();
     }
@@ -70,9 +67,7 @@ class AsciiSerializedReply {
   bool prepare(TypedThriftReply<ThriftType>&& reply,
                const folly::Optional<folly::IOBuf>& /* key */,
                const struct iovec*& iovOut, size_t& niovOut,
-               OtherThanT<McOperation<OpFromType<ThriftType,
-                                      ReplyOpMapping>::value>,
-                          GetLike<>> = 0) {
+               OtherThanT<TypedThriftReply<ThriftType>, GetLike<>> = 0) {
     prepareImpl(std::move(reply));
     iovOut = iovs_;
     niovOut = iovsCount_;
@@ -100,10 +95,6 @@ class AsciiSerializedReply {
   // We also keep an auxiliary string for a similar purpose.
   folly::Optional<folly::IOBuf> iobuf_;
   folly::Optional<std::string> auxString_;
-
-  // Only for McReply
-  folly::Optional<McReply> reply_;
-  mc_ascii_response_buf_t asciiResponse_;
 
   void addString(folly::ByteRange range);
   void addString(folly::StringPiece str);
@@ -187,11 +178,6 @@ class WriteBuffer {
    *
    * @return true On success
    */
-  bool prepare(
-      McServerRequestContext&& ctx,
-      McReply&& reply,
-      Destructor destructor = Destructor(nullptr, nullptr));
-
   template <class Reply>
   bool prepareTyped(
       McServerRequestContext&& ctx,

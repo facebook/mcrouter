@@ -9,7 +9,6 @@
  */
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
@@ -20,28 +19,12 @@ namespace facebook { namespace memcache {
 class UmbrellaMessageInfo;
 }}
 
+struct DummyMultiOpEnd {};
+
 namespace {
 
-template <int op>
-bool compareRequests(const McRequestWithMcOp<op>& expected,
-                     const McRequestWithMcOp<op>& actual) {
-  EXPECT_EQ(expected.fullKey(), actual.fullKey());
-  EXPECT_EQ(expected.flags(), actual.flags());
-  EXPECT_EQ(expected.exptime(), actual.exptime());
-  EXPECT_EQ(expected.cas(), actual.cas());
-  EXPECT_EQ(expected.leaseToken(), actual.leaseToken());
-  EXPECT_EQ(expected.number(), actual.number());
-  EXPECT_EQ(expected.delta(), actual.delta());
-  EXPECT_EQ(expected.valueRangeSlow(), actual.valueRangeSlow());
-
-  return expected.fullKey() == actual.fullKey() &&
-         expected.flags() == actual.flags() &&
-         expected.exptime() == actual.exptime() &&
-         expected.cas() == actual.cas() &&
-         expected.leaseToken() == actual.leaseToken() &&
-         expected.number() == actual.number() &&
-         expected.delta() == actual.delta() &&
-         expected.valueRangeSlow() == actual.valueRangeSlow();
+bool compareRequests(const DummyMultiOpEnd&, const DummyMultiOpEnd&) {
+  return true;
 }
 
 template <class ThriftType>
@@ -162,10 +145,10 @@ class TestRunner {
   };
 
   class ExpectedMultiOpEndCallback
-      : public ExpectedRequestCallback<McRequestWithMcOp<mc_op_end>> {
+      : public ExpectedRequestCallback<DummyMultiOpEnd> {
    public:
     ExpectedMultiOpEndCallback()
-        : ExpectedRequestCallback(McRequestWithMcOp<mc_op_end>()) {}
+        : ExpectedRequestCallback(DummyMultiOpEnd()) {}
   };
 
   class ParserOnRequest {
@@ -193,10 +176,6 @@ class TestRunner {
     bool failed_{false};
 
     // ServerMcParser callbacks.
-    void requestReady(McRequest, mc_op_t, uint32_t, mc_res_t, bool) {
-      ASSERT_TRUE(false) << "requestReady should never be called for ASCII";
-    }
-
     void caretRequestReady(const UmbrellaMessageInfo&, const folly::IOBuf&) {
       ASSERT_TRUE(false)
           << "caretRequestReady should never be called for ASCII";
@@ -252,7 +231,7 @@ class TestRunner {
     }
 
     void multiOpEnd() {
-      checkNext(McRequestWithMcOp<mc_op_end>(), false);
+      checkNext(DummyMultiOpEnd(), false);
     }
 
     friend class ServerMcParser<ParserOnRequest>;

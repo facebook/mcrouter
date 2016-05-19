@@ -337,9 +337,12 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
     return;
   }
 
+  TypedThriftReply<cpp2::McVersionReply> errorReply(result);
+  errorReply->set_message(reason.str());
+  errorReply.setValue(reason.str());
   McServerRequestContext::reply(
-    McServerRequestContext(*this, mc_op_unknown, tailReqid_++),
-    McReply(result, reason));
+    McServerRequestContext(*this, mc_op_version, tailReqid_++),
+    std::move(errorReply));
   close();
 }
 

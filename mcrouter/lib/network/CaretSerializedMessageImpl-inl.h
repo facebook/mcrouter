@@ -9,33 +9,10 @@
  */
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
-#include "mcrouter/lib/McRequest.h"
-#include "mcrouter/lib/network/McRequestToTypedConverter.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
-
-template <class Op>
-bool CaretSerializedMessage::prepare(const McRequestWithOp<Op>& req,
-                                     size_t reqId,
-                                     const CodecIdRange& supportedCodecs,
-                                     const struct iovec*& iovOut,
-                                     size_t& niovOut) noexcept {
-  return prepareImpl(req, reqId, supportedCodecs, iovOut, niovOut);
-}
-
-template <int Op>
-typename std::enable_if<
-    !ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value,
-    bool>::type
-CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
-                                    size_t reqId,
-                                    const CodecIdRange& supportedCodecs,
-                                    const struct iovec*& iovOut,
-                                    size_t& niovOut) {
-  return false;
-}
 
 template <class ThriftType>
 bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
@@ -54,24 +31,6 @@ bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
               supportedCodecs,
               iovOut,
               niovOut);
-}
-
-template <int Op>
-typename std::enable_if<
-    ConvertToTypedIfSupported<McRequestWithMcOp<Op>>::value,
-    bool>::type
-CaretSerializedMessage::prepareImpl(const McRequestWithMcOp<Op>& req,
-                                    size_t reqId,
-                                    const CodecIdRange& supportedCodecs,
-                                    const struct iovec*& iovOut,
-                                    size_t& niovOut) {
-  auto treq = convertToTyped(req);
-
-  constexpr size_t typeId =
-      IdFromType<typename decltype(treq)::rawType, TRequestList>::value;
-
-  return fill(
-      treq, reqId, typeId, 0 /* traceId */, supportedCodecs, iovOut, niovOut);
 }
 
 template <class ThriftType>

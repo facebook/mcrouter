@@ -24,6 +24,10 @@ class TestMcpiper(McrouterTestCase):
     mcrouter_umbrella_extra_args = ['--debug-fifo-root',
                                     BaseDirectory('mcrouter_umbrella').path]
 
+    mcrouter_caret_config = './mcrouter/test/test_caret_server.json'
+    mcrouter_caret_extra_args = ['--debug-fifo-root',
+                                 BaseDirectory('mcrouter_caret').path]
+
     def setUp(self):
         self.memcached = self.add_server(Memcached())
         self.mcrouter_ascii = self.add_mcrouter(
@@ -33,6 +37,9 @@ class TestMcpiper(McrouterTestCase):
         self.mcrouter_umbrella = self.add_mcrouter(
             self.mcrouter_umbrella_config,
             extra_args=self.mcrouter_umbrella_extra_args)
+        self.mcrouter_caret = self.add_mcrouter(
+            self.mcrouter_caret_config,
+            extra_args=self.mcrouter_caret_extra_args)
 
     def get_mcpiper(self, mcrouter, args=None):
         mcpiper = Mcpiper(mcrouter.debug_fifo_root, args)
@@ -107,3 +114,12 @@ class TestMcpiper(McrouterTestCase):
 
     def test_delete_umbrella(self):
         self.do_delete_test(self.mcrouter_umbrella)
+
+    def test_get_caret(self):
+        self.do_get_test(self.mcrouter_caret)
+
+    def test_set_caret(self):
+        self.do_set_test(self.mcrouter_caret)
+
+    def test_delete_caret(self):
+        self.do_delete_test(self.mcrouter_caret)

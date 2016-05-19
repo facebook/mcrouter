@@ -15,7 +15,6 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/Reply.h"
@@ -50,11 +49,6 @@ class ProxyRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
     return root_->route(req);
-  }
-
-  McReply route(const McRequestWithMcOp<mc_op_flushall>& req) const {
-    // route to all destinations in the config.
-    return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations()).route(req);
   }
 
   TypedThriftReply<cpp2::McFlushAllReply> route(

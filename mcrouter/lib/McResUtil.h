@@ -61,7 +61,7 @@ inline int resultSeverity(mc_res_t result) {
 }
 
 /**
- * mc_res_t convenience functions, useful for McReply and Thrift replies
+ * mc_res_t convenience functions, useful for replies
  */
 /**
  * Is this reply an error?

@@ -12,7 +12,6 @@
 #include <folly/String.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/McReply.h"
 
 namespace facebook { namespace memcache {
 

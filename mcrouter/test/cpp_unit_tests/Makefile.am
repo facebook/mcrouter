@@ -1,4 +1,4 @@
-check_PROGRAMS = mcrouter_test mcrouter_libmc_test
+check_PROGRAMS = mcrouter_test
 
 mcrouter_test_SOURCES = \
   awriter_test.cpp \
@@ -8,8 +8,6 @@ mcrouter_test_SOURCES = \
   flavor_test.cpp \
   LeaseTokenMapTest.cpp \
   mc_route_handle_provider_test.cpp \
-  mcrouter_cpp_tests.cpp \
-  mcrouter_cpp_tests.h \
   observable_test.cpp \
   options_test.cpp \
   pool_factory_test.cpp \
@@ -23,17 +21,3 @@ mcrouter_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/network/libtest_util.a \
   $(top_builddir)/lib/libgtestmain.la
-
-mcrouter_libmc_test_SOURCES = \
-  libmcrouter_test.cpp \
-  mcrouter_test_client.cpp \
-  mcrouter_test_client.h \
-  MemcacheLocal.cpp \
-  MemcacheLocal.h
-
-mcrouter_libmc_test_CPPFLAGS = -I$(top_srcdir)/.. -I$(top_srcdir)/lib/gtest/include
-mcrouter_libmc_test_LDADD = \
-  $(top_builddir)/libmcroutercore.a \
-  $(top_builddir)/lib/libmcrouter.a \
-  $(top_builddir)/lib/network/libtest_util.a \
-  $(top_builddir)/lib/libgtest.la

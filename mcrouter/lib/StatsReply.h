@@ -16,7 +16,6 @@
 
 namespace facebook { namespace memcache {
 
-class McReply;
 namespace cpp2 {
 class McStatsReply;
 }
@@ -31,7 +30,6 @@ class StatsReply {
                         folly::to<std::string>(std::forward<V>(value)));
   }
 
-  McReply getMcReply();
   TypedThriftReply<cpp2::McStatsReply> getReply();
 
  private:

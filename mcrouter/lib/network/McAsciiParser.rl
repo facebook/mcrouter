@@ -11,8 +11,6 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -222,17 +220,6 @@ write data;
 }%%
 
 template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_get>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_get_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
-
-template <>
 void McClientAsciiParser::consumeMessage<
     TypedThriftRequest<cpp2::McGetRequest>>(folly::IOBuf& buffer) {
   using Request = TypedThriftRequest<cpp2::McGetRequest>;
@@ -254,17 +241,6 @@ gets = gets_hit? >{ message.setResult(mc_res_notfound); } 'END';
 gets_reply := (gets | error) msg_end;
 write data;
 }%%
-
-template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_gets>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_gets_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
 
 template <>
 void McClientAsciiParser::consumeMessage<
@@ -294,17 +270,6 @@ lease_get_reply := (lease_get | error) msg_end;
 
 write data;
 }%%
-
-template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_lease_get>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_lease_get_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
 
 template <>
 void McClientAsciiParser::consumeMessage<
@@ -382,17 +347,6 @@ write data;
 }%%
 
 template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_version>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_version_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
-
-template <>
 void McClientAsciiParser::consumeMessage<
     TypedThriftRequest<cpp2::McVersionRequest>>(folly::IOBuf& buffer) {
   using Request = TypedThriftRequest<cpp2::McVersionRequest>;
@@ -417,17 +371,6 @@ write data;
 }%%
 
 template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_delete>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_delete_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
-
-template <>
 void McClientAsciiParser::consumeMessage<
     TypedThriftRequest<cpp2::McDeleteRequest>>(folly::IOBuf& buffer) {
   using Request = TypedThriftRequest<cpp2::McDeleteRequest>;
@@ -450,17 +393,6 @@ touch_reply := (touch | error) msg_end;
 
 write data;
 }%%
-
-template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_touch>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_touch_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
 
 template <>
 void McClientAsciiParser::consumeMessage<
@@ -498,10 +430,7 @@ ip_addr = (xdigit | '.' | ':')+ ${
 };
 
 transient = uint %{
-  // McReply 'flags' field is used for is_transient result in metaget hit
-  // reply. setFlags is a no-op for typed McMetagetReply; we will not support
-  // is_transient in Caret.
-  message.setFlags(currentUInt_);
+  // We no longer support is_transient with typed requests.
 };
 
 meta = 'META' % { message.setResult(mc_res_found); };
@@ -513,16 +442,6 @@ metaget_reply := (metaget | error) msg_end;
 
 write data;
 }%%
-template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_metaget>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_metaget_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
 
 template <>
 void McClientAsciiParser::consumeMessage<
@@ -549,17 +468,6 @@ write data;
 }%%
 
 template <>
-void McClientAsciiParser::consumeMessage<McRequestWithMcOp<mc_op_flushall>>(
-    folly::IOBuf& buffer) {
-  McReply& message = currentMessage_.get<McReply>();
-  %%{
-    machine mc_ascii_flushall_reply;
-    write init nocs;
-    write exec;
-  }%%
-}
-
-template <>
 void McClientAsciiParser::consumeMessage<
     TypedThriftRequest<cpp2::McFlushAllRequest>>(folly::IOBuf& buffer) {
   using Request = TypedThriftRequest<cpp2::McFlushAllRequest>;
@@ -574,18 +482,6 @@ void McClientAsciiParser::consumeMessage<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_get>>() {
-
-  using Request = McRequestWithMcOp<mc_op_get>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_get_reply_en_get_reply;
-  errorCs_ = mc_ascii_get_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McGetRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McGetRequest>;
@@ -593,18 +489,6 @@ void McClientAsciiParser::initializeReplyParser<
   initializeCommon<ReplyT<Request>>();
   savedCs_ = mc_ascii_get_reply_en_get_reply;
   errorCs_ = mc_ascii_get_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_gets>>() {
-
-  using Request = McRequestWithMcOp<mc_op_gets>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_gets_reply_en_gets_reply;
-  errorCs_ = mc_ascii_gets_reply_error;
   consumer_ = &McClientAsciiParser::consumeMessage<Request>;
 }
 
@@ -622,18 +506,6 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_lease_get>>() {
-
-  using Request = McRequestWithMcOp<mc_op_lease_get>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_lease_get_reply_en_lease_get_reply;
-  errorCs_ = mc_ascii_lease_get_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McLeaseGetRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McLeaseGetRequest>;
@@ -646,27 +518,9 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_set>>() {
-
-  using Request = McRequestWithMcOp<mc_op_set>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McSetRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McSetRequest>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_add>>() {
-
-  using Request = McRequestWithMcOp<mc_op_add>;
 
   initializeStorageReplyCommon<ReplyT<Request>>();
 }
@@ -682,27 +536,9 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_replace>>() {
-
-  using Request = McRequestWithMcOp<mc_op_replace>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McReplaceRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McReplaceRequest>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_lease_set>>() {
-
-  using Request = McRequestWithMcOp<mc_op_lease_set>;
 
   initializeStorageReplyCommon<ReplyT<Request>>();
 }
@@ -718,27 +554,9 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_cas>>() {
-
-  using Request = McRequestWithMcOp<mc_op_cas>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McCasRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McCasRequest>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_append>>() {
-
-  using Request = McRequestWithMcOp<mc_op_append>;
 
   initializeStorageReplyCommon<ReplyT<Request>>();
 }
@@ -754,15 +572,6 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_prepend>>() {
-
-  using Request = McRequestWithMcOp<mc_op_prepend>;
-
-  initializeStorageReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McPrependRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McPrependRequest>;
@@ -772,27 +581,9 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_incr>>() {
-
-  using Request = McRequestWithMcOp<mc_op_incr>;
-
-  initializeArithmReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McIncrRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McIncrRequest>;
-
-  initializeArithmReplyCommon<ReplyT<Request>>();
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_decr>>() {
-
-  using Request = McRequestWithMcOp<mc_op_decr>;
 
   initializeArithmReplyCommon<ReplyT<Request>>();
 }
@@ -808,18 +599,6 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_version>>() {
-
-  using Request = McRequestWithMcOp<mc_op_version>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_version_reply_en_version_reply;
-  errorCs_ = mc_ascii_version_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McVersionRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McVersionRequest>;
@@ -827,18 +606,6 @@ void McClientAsciiParser::initializeReplyParser<
   initializeCommon<ReplyT<Request>>();
   savedCs_ = mc_ascii_version_reply_en_version_reply;
   errorCs_ = mc_ascii_version_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_delete>>() {
-
-  using Request = McRequestWithMcOp<mc_op_delete>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_delete_reply_en_delete_reply;
-  errorCs_ = mc_ascii_delete_reply_error;
   consumer_ = &McClientAsciiParser::consumeMessage<Request>;
 }
 
@@ -856,18 +623,6 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_touch>>() {
-
-  using Request = McRequestWithMcOp<mc_op_touch>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_touch_reply_en_touch_reply;
-  errorCs_ = mc_ascii_touch_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McTouchRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McTouchRequest>;
@@ -880,22 +635,6 @@ void McClientAsciiParser::initializeReplyParser<
 
 template <>
 void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_metaget>>() {
-
-  using Request = McRequestWithMcOp<mc_op_metaget>;
-
-  initializeCommon<ReplyT<Request>>();
-  // Since mc_op_metaget has A LOT of specific fields, just create McMsgRef for
-  // now.
-  auto& reply = currentMessage_.get<ReplyT<Request>>();
-  reply.msg_ = createMcMsgRef();
-  savedCs_ = mc_ascii_metaget_reply_en_metaget_reply;
-  errorCs_ = mc_ascii_metaget_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
     TypedThriftRequest<cpp2::McMetagetRequest>>() {
 
   using Request = TypedThriftRequest<cpp2::McMetagetRequest>;
@@ -903,18 +642,6 @@ void McClientAsciiParser::initializeReplyParser<
   initializeCommon<ReplyT<Request>>();
   savedCs_ = mc_ascii_metaget_reply_en_metaget_reply;
   errorCs_ = mc_ascii_metaget_reply_error;
-  consumer_ = &McClientAsciiParser::consumeMessage<Request>;
-}
-
-template <>
-void McClientAsciiParser::initializeReplyParser<
-    McRequestWithMcOp<mc_op_flushall>>() {
-
-  using Request = McRequestWithMcOp<mc_op_flushall>;
-
-  initializeCommon<ReplyT<Request>>();
-  savedCs_ = mc_ascii_flushall_reply_en_flushall_reply;
-  errorCs_ = mc_ascii_flushall_reply_error;
   consumer_ = &McClientAsciiParser::consumeMessage<Request>;
 }
 
@@ -1473,8 +1200,9 @@ void McServerAsciiParser::finishReq() {
 }
 
 McAsciiParserBase::State McServerAsciiParser::consume(folly::IOBuf& buffer) {
-  assert(state_ != State::ERROR && state_ != State::COMPLETE &&
-         !hasReadBuffer());
+  assert(state_ != State::ERROR);
+  assert(state_ != State::COMPLETE);
+  assert(!hasReadBuffer());
   p_ = reinterpret_cast<const char*>(buffer.data());
   pe_ = p_ + buffer.length();
 

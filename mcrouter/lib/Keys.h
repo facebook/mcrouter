@@ -44,7 +44,7 @@ class Keys {
   void update(folly::StringPiece key);
   uint32_t routingKeyHash() const;
 
-  // Hack to save some CPU in McRequest::stripRoutingPrefix. Avoid if possible.
+  // Hack to save some CPU in stripRoutingPrefix. Avoid if possible.
   void clearRoutingPrefix() {
     routingPrefix_.clear();
   }

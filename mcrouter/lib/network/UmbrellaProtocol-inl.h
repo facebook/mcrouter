@@ -11,8 +11,6 @@
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/ThriftMessageTraits.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -41,18 +39,10 @@ struct TagSet {
 
 /**
  * TagSet specializations for most memcache operations. Note that we include
- * FlagsTag and ValueTag in every TagSet. McReply uses the value field for error
- * messages, despite the fact that most operations don't logically have a
- * 'value' field. The flags field is used in certain TAO update operations.
- * Otherwise, FlagsTag is included (except for get) just to be safe.
+ * FlagsTag and ValueTag in every TagSet, sometimes just to be safe.
  */
 
 // Get-like ops
-template <>
-struct TagSet<McOperation<mc_op_get>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
 template <>
 struct TagSet<McOperation<mc_op_get>, TypedThriftReply<cpp2::McGetReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -64,11 +54,6 @@ struct TagSet<McOperation<mc_op_get>, TypedThriftRequest<cpp2::McGetRequest>> {
 };
 
 template <>
-struct TagSet<McOperation<mc_op_gets>, McReply> {
-  using Tags = List<CasTag, ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_gets>, TypedThriftReply<cpp2::McGetsReply>> {
   using Tags = List<CasTag, ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
@@ -77,12 +62,6 @@ template <>
 struct TagSet<McOperation<mc_op_gets>,
               TypedThriftRequest<cpp2::McGetsRequest>> {
   using Tags = List<KeyTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_metaget>, McReply> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, NumberTag, ResultTag,
-                    ValueTag>;
 };
 
 template <>
@@ -99,11 +78,6 @@ struct TagSet<McOperation<mc_op_metaget>,
 };
 
 template <>
-struct TagSet<McOperation<mc_op_lease_get>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_lease_get>,
               TypedThriftReply<cpp2::McLeaseGetReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
@@ -117,11 +91,6 @@ struct TagSet<McOperation<mc_op_lease_get>,
 
 // Update-like ops
 template <>
-struct TagSet<McOperation<mc_op_set>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_set>, TypedThriftReply<cpp2::McSetReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
@@ -132,11 +101,6 @@ struct TagSet<McOperation<mc_op_set>, TypedThriftRequest<cpp2::McSetRequest>> {
 };
 
 template <>
-struct TagSet<McOperation<mc_op_add>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_add>, TypedThriftReply<cpp2::McAddReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
@@ -144,11 +108,6 @@ struct TagSet<McOperation<mc_op_add>, TypedThriftReply<cpp2::McAddReply>> {
 template <>
 struct TagSet<McOperation<mc_op_add>, TypedThriftRequest<cpp2::McAddRequest>> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_replace>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
@@ -164,11 +123,6 @@ struct TagSet<McOperation<mc_op_replace>,
 };
 
 template <>
-struct TagSet<McOperation<mc_op_append>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_append>,
               TypedThriftReply<cpp2::McAppendReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -178,11 +132,6 @@ template <>
 struct TagSet<McOperation<mc_op_append>,
               TypedThriftRequest<cpp2::McAppendRequest>> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_prepend>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
@@ -198,11 +147,6 @@ struct TagSet<McOperation<mc_op_prepend>,
 };
 
 template <>
-struct TagSet<McOperation<mc_op_cas>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_cas>, TypedThriftReply<cpp2::McCasReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
@@ -210,11 +154,6 @@ struct TagSet<McOperation<mc_op_cas>, TypedThriftReply<cpp2::McCasReply>> {
 template <>
 struct TagSet<McOperation<mc_op_cas>, TypedThriftRequest<cpp2::McCasRequest>> {
   using Tags = List<CasTag, ExptimeTag, FlagsTag, KeyTag, ValueTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_lease_set>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
@@ -231,11 +170,6 @@ struct TagSet<McOperation<mc_op_lease_set>,
 
 // Arithmetic-like ops
 template <>
-struct TagSet<McOperation<mc_op_incr>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_incr>, TypedThriftReply<cpp2::McIncrReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
 };
@@ -244,11 +178,6 @@ template <>
 struct TagSet<McOperation<mc_op_incr>,
               TypedThriftRequest<cpp2::McIncrRequest>> {
   using Tags = List<DeltaTag, KeyTag>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_decr>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
 };
 
 template <>
@@ -264,11 +193,6 @@ struct TagSet<McOperation<mc_op_decr>,
 
 // Delete-like ops
 template <>
-struct TagSet<McOperation<mc_op_delete>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_delete>,
               TypedThriftReply<cpp2::McDeleteReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -281,11 +205,6 @@ struct TagSet<McOperation<mc_op_delete>,
 };
 
 // Touch op
-template <>
-struct TagSet<McOperation<mc_op_touch>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
 template <>
 struct TagSet<McOperation<mc_op_touch>,
               TypedThriftReply<cpp2::McTouchReply>> {
@@ -300,11 +219,6 @@ struct TagSet<McOperation<mc_op_touch>,
 
 // Version op
 template <>
-struct TagSet<McOperation<mc_op_version>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_version>,
               TypedThriftReply<cpp2::McVersionReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -318,11 +232,6 @@ struct TagSet<McOperation<mc_op_version>,
 
 // Flush
 template <>
-struct TagSet<McOperation<mc_op_flushall>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_flushall>,
               TypedThriftReply<cpp2::McFlushAllReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -332,11 +241,6 @@ template <>
 struct TagSet<McOperation<mc_op_flushall>,
               TypedThriftRequest<cpp2::McFlushAllRequest>> {
   using Tags = List<>;
-};
-
-template <>
-struct TagSet<McOperation<mc_op_flushre>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
@@ -353,11 +257,6 @@ struct TagSet<McOperation<mc_op_flushre>,
 
 // Shutdown op
 template <>
-struct TagSet<McOperation<mc_op_shutdown>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_shutdown>,
               TypedThriftReply<cpp2::McShutdownReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -371,11 +270,6 @@ struct TagSet<McOperation<mc_op_shutdown>,
 
 // Quit op
 template <>
-struct TagSet<McOperation<mc_op_quit>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_quit>, TypedThriftReply<cpp2::McQuitReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
@@ -387,11 +281,6 @@ struct TagSet<McOperation<mc_op_quit>,
 };
 
 // Stats op
-template <>
-struct TagSet<McOperation<mc_op_stats>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
 template <>
 struct TagSet<McOperation<mc_op_stats>, TypedThriftReply<cpp2::McStatsReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
@@ -405,11 +294,6 @@ struct TagSet<McOperation<mc_op_stats>,
 
 // Exec op
 template <>
-struct TagSet<McOperation<mc_op_exec>, McReply> {
-  using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
-};
-
-template <>
 struct TagSet<McOperation<mc_op_exec>, TypedThriftReply<cpp2::McExecReply>> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
@@ -420,10 +304,6 @@ struct TagSet<McOperation<mc_op_exec>,
   using Tags = List<>;
 };
 
-
-inline void mcReplySetMcMsgRef(McReply& reply, McMsgRef&& msg) {
-  reply.msg_ = std::move(msg);
-}
 
 uint32_t const kUmbrellaResToMc[mc_nres] = {
 #define UM_RES(mc, um) [um] = mc,
@@ -548,37 +428,6 @@ template <class Op, class Message>
 void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
   parseValueFieldImpl(Op(), message, source, body, entry);
-}
-
-inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
-                           McReply& message, const folly::IOBuf& source,
-                           const uint8_t* body, const um_elist_entry_t& entry) {
-  parseValueFieldImpl(McOperation<mc_op_metaget>(), message, source, body,
-                      entry);
-  // We need to ensure that it's a contiguous piece of memory.
-  auto dataRange = message.valueRangeSlow();
-
-  // Ignore bad addresses.
-  if (dataRange.size() >= INET6_ADDRSTRLEN) {
-    message.setValue(folly::IOBuf());
-    return;
-  }
-
-  auto msg = createMcMsgRef();
-  char buffer[INET6_ADDRSTRLEN] = {0};
-  // Copy the data to ensure it's NULL terminated.
-  memcpy(buffer, dataRange.data(), dataRange.size());
-  msg->ipv = 0;
-  if (inet_pton(AF_INET6, buffer, &msg->ip_addr) > 0) {
-    msg->ipv = 6;
-  } else if (inet_pton(AF_INET, buffer, &msg->ip_addr) > 0) {
-    msg->ipv = 4;
-  }
-  if (msg->ipv > 0) {
-    mcReplySetMcMsgRef(message, std::move(msg));
-  } else {
-    message.setValue(folly::IOBuf());
-  }
 }
 
 inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
@@ -809,12 +658,12 @@ bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
 }
 
 template <class Request>
-void umbrellaParseRequest(Request& req, const folly::IOBuf& source,
-                          const uint8_t* header, size_t nheader,
-                          const uint8_t* body, size_t nbody,
-                          uint64_t& reqidOut) {
+Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
+                             size_t nheader, const uint8_t* body, size_t nbody,
+                             uint64_t& reqidOut) {
   using Op = typename Request::OpType;
 
+  Request req;
   reqidOut = 0;
   mc_op_t op = mc_op_unknown;
 
@@ -877,6 +726,8 @@ void umbrellaParseRequest(Request& req, const folly::IOBuf& source,
 
   // Fill in request-specific fields in second pass
   detail::umbrellaParseMessage(req, Op(), source, header, nheader, body, nbody);
+
+  return req;
 }
 
 }} // facebook::memcache

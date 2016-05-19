@@ -37,13 +37,7 @@ class TestServerOnRequest
   TestServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder);
 
   void onRequest(McServerRequestContext&& ctx,
-                 McRequestWithMcOp<mc_op_get>&& req);
-
-  void onRequest(McServerRequestContext&& ctx,
                  TypedThriftRequest<cpp2::McGetRequest>&& req);
-
-  void onRequest(McServerRequestContext&& ctx,
-                 McRequestWithMcOp<mc_op_set>&& req);
 
   void onRequest(McServerRequestContext&& ctx,
                  TypedThriftRequest<cpp2::McSetRequest>&& req);

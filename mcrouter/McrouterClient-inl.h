@@ -79,12 +79,9 @@ const Request& unwrapRequest(std::reference_wrapper<const Request>& req) {
 } // detail
 
 template <class Request, class F>
-typename
-  std::enable_if<!std::is_convertible<Request, const mcrouter_msg_t*>::value,
-                 bool>::type
-McrouterClient::send(const Request& req,
-                     F&& callback,
-                     folly::StringPiece ipAddr) {
+bool McrouterClient::send(const Request& req,
+                          F&& callback,
+                          folly::StringPiece ipAddr) {
   auto makePreq = [this, ipAddr, &req, &callback] {
     auto preq = createProxyRequestContext(*proxy_, req, [
       this,

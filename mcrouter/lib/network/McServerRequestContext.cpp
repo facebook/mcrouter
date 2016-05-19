@@ -19,63 +19,6 @@ McServerSession& McServerRequestContext::session() {
   return *session_;
 }
 
-void McServerRequestContext::reply(McServerRequestContext&& ctx,
-                                   McReply&& reply) {
-  ctx.replied_ = true;
-
-  if (ctx.hasParent() && ctx.parent().reply(std::move(reply))) {
-    /* multi-op parent informed us not to reply */
-    replyImpl(std::move(ctx), McReply());
-  } else {
-    replyImpl(std::move(ctx), std::move(reply));
-  }
-}
-
-void McServerRequestContext::reply(
-    McServerRequestContext&& ctx,
-    McReply&& reply,
-    DestructorFunc destructor,
-    void* toDestruct) {
-  ctx.replied_ = true;
-
-  if (ctx.hasParent() && ctx.parent().reply(std::move(reply))) {
-    /* parent stole the reply */
-    replyImpl(std::move(ctx), McReply(), destructor, toDestruct);
-  } else {
-    replyImpl(std::move(ctx), std::move(reply), destructor, toDestruct);
-  }
-}
-
-void McServerRequestContext::replyImpl(
-    McServerRequestContext&& ctx,
-    McReply&& reply,
-    DestructorFunc destructor,
-    void* toDestruct) {
-  auto session = ctx.session_;
-  if (toDestruct != nullptr) {
-    assert(destructor != nullptr);
-  }
-  // Call destructor(toDestruct) on error, or pass ownership to write buffer
-  std::unique_ptr<void, void (*)(void*)> destructorContainer(
-      toDestruct, destructor);
-
-  if (ctx.noReply(reply.result())) {
-    session->reply(nullptr, ctx.reqid_);
-    return;
-  }
-
-  session->ensureWriteBufs();
-
-  uint64_t reqid = ctx.reqid_;
-  auto wb = session->writeBufs_->get();
-  if (!wb->prepare(
-          std::move(ctx), std::move(reply), std::move(destructorContainer))) {
-    session->transport_->close();
-    return;
-  }
-  session->reply(std::move(wb), reqid);
-}
-
 bool McServerRequestContext::noReply(mc_res_t result) const {
   if (noReply_) {
     return true;

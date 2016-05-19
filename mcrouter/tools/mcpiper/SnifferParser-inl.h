@@ -37,7 +37,7 @@ void SnifferParser<Callback>::evictOldItems(TimePoint now) {
 
 template <class Callback>
 template <class Request>
-void SnifferParser<Callback>::requestReady(uint64_t msgId, Request request) {
+void SnifferParser<Callback>::requestReady(uint64_t msgId, Request&& request) {
   TimePoint now = Clock::now();
   evictOldItems(now);
 
@@ -51,9 +51,8 @@ void SnifferParser<Callback>::requestReady(uint64_t msgId, Request request) {
 }
 
 template <class Callback>
-template <class Request>
-void SnifferParser<Callback>::replyReady(uint64_t msgId,
-                                         ReplyT<Request> reply) {
+template <class Reply>
+void SnifferParser<Callback>::replyReady(uint64_t msgId, Reply&& reply) {
   std::string key;
   if (msgId != 0) {
     auto pairMsgIt = msgs_.find(msgId);
@@ -62,9 +61,8 @@ void SnifferParser<Callback>::replyReady(uint64_t msgId,
       msgs_.erase(pairMsgIt->first);
     }
   }
-  callback_.template replyReady<Request>(msgId, std::move(reply),
-                                         std::move(key),
-                                         fromAddress_, toAddress_);
+  callback_.template replyReady<Reply>(
+      msgId, std::move(reply), std::move(key), fromAddress_, toAddress_);
 }
 
 }} // facebook::memcache

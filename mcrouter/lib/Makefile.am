@@ -43,11 +43,6 @@ libmcrouter_a_SOURCES = \
   McOpList.h \
   McOperation.h \
   McOperationTraits.h \
-  McReply-inl.h \
-  McReply.cpp \
-  McReply.h \
-  McRequest.cpp \
-  McRequest.h \
   McRequestList.h \
   McResUtil.h \
   Operation.h \
@@ -148,8 +143,6 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
-  network/CaretReplyConverterImpl.cpp \
-  network/CaretReplyConverterImpl.h \
   network/CaretSerializedMessageImpl-inl.h \
   network/CaretSerializedMessageImpl.h \
   network/ClientMcParser-inl.h \
@@ -170,8 +163,6 @@ libmcrouter_a_SOURCES = \
   network/McParser.h \
   network/McQueueAppender.cpp \
   network/McQueueAppender.h \
-  network/McRequestToTypedConverter.cpp \
-  network/McRequestToTypedConverter.h \
   network/McSerializedRequest.cpp \
   network/McSerializedRequest.h \
   network/McServerRequestContext-inl.h \

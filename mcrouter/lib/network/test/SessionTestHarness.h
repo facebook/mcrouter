@@ -212,19 +212,6 @@ class SessionTestHarness {
         std::move(req), std::move(replyFn));
   }
 
-  std::unique_ptr<Transaction<McRequestWithMcOp<mc_op_get>>>
-  makeTransaction(McServerRequestContext&& ctx,
-                  McRequestWithMcOp<mc_op_get>&& req) {
-    auto value = req.fullKey().str() + "_value";
-    auto replyFn = [ctx = std::move(ctx), value = std::move(value)](
-        const McRequestWithMcOp<mc_op_get>&) mutable {
-      McServerRequestContext::reply(
-          std::move(ctx), McReply(mc_res_found, value));
-    };
-    return folly::make_unique<Transaction<McRequestWithMcOp<mc_op_get>>>(
-        std::move(req), std::move(replyFn));
-  }
-
   std::unique_ptr<Transaction<TypedThriftRequest<cpp2::McGetRequest>>>
   makeTransaction(McServerRequestContext&& ctx,
                   TypedThriftRequest<cpp2::McGetRequest>&& req) {

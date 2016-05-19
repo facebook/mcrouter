@@ -14,6 +14,7 @@
 #include <folly/dynamic.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McResUtil.h"
 
 namespace facebook { namespace memcache {

@@ -32,6 +32,8 @@ struct IdFromTypeImpl;
 
 template <class T, class PairList>
 struct ReplyFromRequestTypeImpl;
+template <class T, class PairList>
+struct RequestFromReplyTypeImpl;
 
 }  // detail
 
@@ -68,6 +70,14 @@ struct IdFromType<T, List<TM, TMs...>> {
 template <class T, class PairList>
 using ReplyFromRequestType =
     typename detail::ReplyFromRequestTypeImpl<T, PairList>::type;
+
+/**
+ * Same as above, but in other direction: given a reply type T and a
+ * list of request-reply pairs, gets the request type paired with T.
+ */
+template <class T, class PairList>
+using RequestFromReplyType =
+    typename detail::RequestFromReplyTypeImpl<T, PairList>::type;
 
 /**
  * Traits to enable/disable methods based on,

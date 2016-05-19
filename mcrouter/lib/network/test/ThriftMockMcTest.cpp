@@ -43,7 +43,8 @@ struct TypedMockMcOnRequest
   template <class Request>
   void onRequest(McServerRequestContext&& ctx, Request&&) {
     /* non-typed requests not supported */
-    McServerRequestContext::reply(std::move(ctx), McReply(mc_res_client_error));
+    McServerRequestContext::reply(
+        std::move(ctx), ReplyT<Request>(mc_res_client_error));
   }
 
   void onTypedMessage(TypedThriftRequest<cpp2::McGetRequest>&& treq,

@@ -68,46 +68,6 @@ TestServerOnRequest::TestServerOnRequest(std::atomic<bool>& shutdown,
 
 void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
-    McRequestWithMcOp<mc_op_get>&& req) {
-
-  if (req.fullKey() == "sleep") {
-    /* sleep override */
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    processReply(std::move(ctx), McReply(mc_res_notfound));
-  } else if (req.fullKey() == "shutdown") {
-    shutdown_.store(true);
-    processReply(std::move(ctx), McReply(mc_res_notfound));
-    flushQueue();
-  } else if (req.fullKey() == "busy") {
-    processReply(std::move(ctx), McReply(mc_res_busy));
-  } else {
-    std::string value;
-    if (req.fullKey().startsWith("value_size:")) {
-      auto key = req.fullKey();
-      key.removePrefix("value_size:");
-      size_t valSize = folly::to<size_t>(key);
-      value = std::string(valSize, 'a');
-    } else if (req.fullKey() != "empty") {
-      value = req.fullKey().str();
-    }
-    McReply foundReply = McReply(mc_res_found, createMcMsgRef(req.fullKey(),
-                                                              value));
-    if (req.fullKey() == "hold") {
-      waitingReplies_.push_back(
-        [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
-         McServerRequestContext::reply(std::move(ctx), std::move(reply));
-        });
-    } else if (req.fullKey() == "flush") {
-      processReply(std::move(ctx), std::move(foundReply));
-      flushQueue();
-    } else {
-      processReply(std::move(ctx), std::move(foundReply));
-    }
-  }
-}
-
-void TestServerOnRequest::onRequest(
-    McServerRequestContext&& ctx,
     TypedThriftRequest<cpp2::McGetRequest>&& req) {
   using Reply = TypedThriftReply<cpp2::McGetReply>;
 
@@ -149,11 +109,6 @@ void TestServerOnRequest::onRequest(
       processReply(std::move(ctx), std::move(foundReply));
     }
   }
-}
-
-void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
-                                    McRequestWithMcOp<mc_op_set>&&) {
-  processReply(std::move(ctx), McReply(mc_res_stored));
 }
 
 void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,

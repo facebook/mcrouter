@@ -35,7 +35,6 @@
 #include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/fbi/queue.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstance.h"
@@ -70,14 +69,6 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
 } // anonymous
 
 namespace detail {
-
-bool processGetServiceInfoRequest(
-    const McRequestWithMcOp<mc_op_get>& req,
-    std::shared_ptr<ProxyRequestContextTyped<
-      McRequestWithMcOp<mc_op_get>>>& ctx) {
-
-  return processGetServiceInfoRequestImpl(req, ctx);
-}
 
 bool processGetServiceInfoRequest(
     const TypedThriftRequest<cpp2::McGetRequest>& req,
@@ -262,14 +253,6 @@ void proxy_t::routeHandlesProcessRequest(
       TypedThriftRequest<cpp2::McStatsRequest>>> ctx) {
 
   ctx->sendReply(stats_reply(this, req.fullKey()));
-}
-
-void proxy_t::routeHandlesProcessRequest(
-    const McRequestWithMcOp<mc_op_version>& req,
-    std::unique_ptr<ProxyRequestContextTyped<
-      McRequestWithMcOp<mc_op_version>>> ctx) {
-
-  ctx->sendReply(mc_res_ok, MCROUTER_PACKAGE_STRING);
 }
 
 void proxy_t::routeHandlesProcessRequest(

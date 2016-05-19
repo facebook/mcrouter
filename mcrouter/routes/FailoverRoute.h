@@ -76,26 +76,6 @@ class FailoverRoute {
     return doRoute(req);
   }
 
-  McReply route(const McRequestWithMcOp<mc_op_lease_set>& req) {
-    if (!enableLeasePairing_) {
-      return doRoute(req);
-    }
-
-    // Look into LeaseTokenMap
-    auto& proxy = fiber_local::getSharedCtx()->proxy();
-    auto& map = proxy.router().leaseTokenMap();
-    if (auto item = map.query(name_, req.leaseToken())) {
-      auto mutReq = req.clone();
-      mutReq.setLeaseToken(item->originalToken);
-      stat_incr(proxy.stats, redirected_lease_set_count_stat, 1);
-      assert(targets_.size() > item->routeHandleChildIndex);
-      return targets_[item->routeHandleChildIndex]->route(mutReq);
-    }
-
-    // If not found in the map, send to normal destiantion (don't failover)
-    return targets_[0]->route(req);
-  }
-
   TypedThriftReply<cpp2::McLeaseSetReply> route(
       const TypedThriftRequest<cpp2::McLeaseSetRequest>& req) {
     if (!enableLeasePairing_) {
@@ -115,28 +95,6 @@ class FailoverRoute {
 
     // If not found in the map, send to normal destiantion (don't failover)
     return targets_[0]->route(req);
-  }
-
-  McReply route(const McRequestWithMcOp<mc_op_lease_get>& req) {
-    size_t childIndex = 0;
-    auto reply = doRoute(req, childIndex);
-
-    if (!enableLeasePairing_ || reply.leaseToken() <= 1) {
-      return reply;
-    }
-
-    auto& map = fiber_local::getSharedCtx()->proxy().router().leaseTokenMap();
-
-    // If the lease token returned by the underlying route handle conflicts
-    // with special tokens space, we need to store it in the map even if we
-    // didn't failover.
-    if (childIndex > 0 || map.conflicts(reply.leaseToken())) {
-      auto specialToken = map.insert(name_,
-                                     { reply.leaseToken(), childIndex });
-      reply.setLeaseToken(specialToken);
-    }
-
-    return reply;
   }
 
   TypedThriftReply<cpp2::McLeaseGetReply> route(

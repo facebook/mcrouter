@@ -10,7 +10,6 @@ TESTS = \
   ../lib/mc/test/umbrella_test \
   ../lib/test/mcrouter_lib_test \
   ../routes/test/mcrouter_routes_test \
-  cpp_unit_tests/mcrouter_libmc_test \
   cpp_unit_tests/mcrouter_test
 
 # TODO: fix the test

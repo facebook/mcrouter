@@ -9,7 +9,6 @@
  */
 #include "mcrouter/ProxyRequestLogger.h"
 
-#include "mcrouter/lib/McReply.h"
 #include "mcrouter/McrouterFiberContext.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

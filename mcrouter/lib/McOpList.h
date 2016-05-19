@@ -12,7 +12,6 @@
 #define MC_OP(Operation)
 #endif
 
-MC_OP(McOperation<mc_op_echo>)
 MC_OP(McOperation<mc_op_quit>)
 MC_OP(McOperation<mc_op_version>)
 MC_OP(McOperation<mc_op_get>)

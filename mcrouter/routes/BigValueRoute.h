@@ -98,10 +98,6 @@ class BigValueRoute {
   struct ChunkGet<TypedThriftRequest<M>> {
     using type = TypedThriftRequest<cpp2::McGetRequest>;
   };
-  template <int op>
-  struct ChunkGet<McRequestWithMcOp<op>> {
-    using type = McRequestWithMcOp<mc_op_get>;
-  };
   template <class Request>
   using ChunkGetT = typename ChunkGet<Request>::type;
 
@@ -113,10 +109,6 @@ class BigValueRoute {
   template <class M>
   struct ChunkUpdate<TypedThriftRequest<M>> {
     using type = TypedThriftRequest<cpp2::McSetRequest>;
-  };
-  template <int op>
-  struct ChunkUpdate<McRequestWithMcOp<op>> {
-    using type = McRequestWithMcOp<mc_op_set>;
   };
   template <class Request>
   using ChunkUpdateT = typename ChunkUpdate<Request>::type;

@@ -11,36 +11,50 @@
 
 #include <folly/Format.h>
 
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 #include "mcrouter/tools/mcpiper/Util.h"
 
 namespace facebook { namespace memcache {
 
-template <class Request>
-void MessagePrinter::requestReady(uint64_t msgId,
-                                  Request request,
-                                  const folly::SocketAddress& from,
-                                  const folly::SocketAddress& to) {
-  auto keyCopy = request.fullKey().str();
-  printMessage(msgId, std::move(request), keyCopy, Request::OpType::mc_op,
-               mc_res_unknown, from, to);
+namespace detail {
+template <class M>
+int32_t getExptime(const TypedThriftRequest<M>& req) {
+  return req.exptime();
 }
+inline int32_t getExptime(const TypedThriftReply<cpp2::McMetagetReply>& reply) {
+  return reply->get_exptime() ? *reply->get_exptime() : 0;
+}
+template <class M>
+int32_t getExptime(const TypedThriftReply<M>& reply) {
+  return 0;
+}
+} // detail
 
 template <class Request>
+void MessagePrinter::requestReady(uint64_t msgId,
+                                  Request&& request,
+                                  const folly::SocketAddress& from,
+                                  const folly::SocketAddress& to) {
+  printMessage(msgId, std::move(request), request.fullKey().str(),
+               Request::OpType::mc_op, mc_res_unknown, from, to);
+}
+
+template <class Reply>
 void MessagePrinter::replyReady(uint64_t msgId,
-                                ReplyT<Request> reply,
+                                Reply&& reply,
                                 std::string key,
                                 const folly::SocketAddress& from,
                                 const folly::SocketAddress& to) {
-  auto res = reply.result();
-  printMessage(msgId, std::move(reply), key,
-               Request::OpType::mc_op, res, from, to);
+  printMessage(msgId, std::move(reply), key, Reply::OpType::mc_op,
+               reply.result(), from, to);
 }
 
 template <class Message>
 void MessagePrinter::printMessage(uint64_t msgId,
-                                  Message message,
+                                  Message&& message,
                                   const std::string& key,
                                   mc_op_t op,
                                   mc_res_t result,
@@ -103,9 +117,10 @@ void MessagePrinter::printMessage(uint64_t msgId,
       out.popAppendColor();
     }
   }
-  if (message.exptime()) {
+
+  if (detail::getExptime(message)) {
       out.append("\n  exptime: ", format_.msgAttrColor);
-      out.append(folly::sformat("{:d}", message.exptime()),
+      out.append(folly::sformat("{:d}", detail::getExptime(message)),
                  format_.dataValueColor);
   }
 

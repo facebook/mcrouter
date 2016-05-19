@@ -18,7 +18,6 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/Operation.h"
@@ -131,11 +130,6 @@ class L1L2CacheRoute {
   template <class Request>
   struct AddImpl {};
 
-  template <int op>
-  struct AddImpl<McRequestWithMcOp<op>> {
-    using type = McRequestWithMcOp<mc_op_add>;
-  };
-
   template <class M>
   struct AddImpl<TypedThriftRequest<M>> {
     using type = TypedThriftRequest<cpp2::McAddRequest>;
@@ -143,11 +137,6 @@ class L1L2CacheRoute {
 
   template <class Request>
   struct SetImpl {};
-
-  template <int op>
-  struct SetImpl<McRequestWithMcOp<op>> {
-    using type = McRequestWithMcOp<mc_op_set>;
-  };
 
   template <class M>
   struct SetImpl<TypedThriftRequest<M>> {

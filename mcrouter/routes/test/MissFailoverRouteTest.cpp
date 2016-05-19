@@ -12,8 +12,8 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
+#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/MissFailoverRoute.h"
@@ -36,8 +36,8 @@ TEST(missMissFailoverRouteTest, success) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "a");
+  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("a", reply.valueRangeSlow().str());
 }
 
 TEST(missMissFailoverRouteTest, once) {
@@ -50,8 +50,8 @@ TEST(missMissFailoverRouteTest, once) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "b");
+  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("b", reply.valueRangeSlow().str());
 }
 
 TEST(missMissFailoverRouteTest, twice) {
@@ -64,8 +64,8 @@ TEST(missMissFailoverRouteTest, twice) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
-  EXPECT_TRUE(toString(reply.value()) == "c");
+  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
 }
 
 TEST(missMissFailoverRouteTest, fail) {
@@ -78,11 +78,11 @@ TEST(missMissFailoverRouteTest, fail) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(McRequestWithMcOp<mc_op_get>("0"));
+  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
 
   // Should get the last reply
-  EXPECT_TRUE(toString(reply.value()) == "c");
-  EXPECT_TRUE(reply.result() == mc_res_timeout);
+  EXPECT_EQ("c", reply.valueRangeSlow().str());
+  EXPECT_EQ(mc_res_timeout, reply.result());
 }
 
 TEST(missMissFailoverRouteTest, nonGetLike) {
@@ -95,12 +95,13 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
   TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto msg = createMcMsgRef("0", "a");
-  auto reply = rh.route(
-      McRequestWithMcOp<mc_op_set>(std::move(msg)));
+  TypedThriftRequest<cpp2::McSetRequest> req("0");
+  req.setValue("a");
+  auto reply = rh.route(std::move(req));
+
   EXPECT_EQ(mc_res_notstored, reply.result());
   // only first handle sees the key
-  EXPECT_TRUE(test_handles[0]->saw_keys == vector<std::string>{"0"});
-  EXPECT_TRUE(test_handles[1]->saw_keys.size() == 0);
-  EXPECT_TRUE(test_handles[2]->saw_keys.size() == 0);
+  EXPECT_EQ(vector<std::string>{"0"}, test_handles[0]->saw_keys);
+  EXPECT_TRUE(test_handles[1]->saw_keys.empty());
+  EXPECT_TRUE(test_handles[2]->saw_keys.empty());
 }

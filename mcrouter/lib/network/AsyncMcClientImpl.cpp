@@ -16,8 +16,6 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/MockMcClientTransport.h"
 
 namespace facebook { namespace memcache {
@@ -729,42 +727,42 @@ const char* TOUCHED = "TOUCHED\r\n";
 
 template <>
 const char*
-McClientRequestContext<McRequestWithMcOp<mc_op_get>>::
+McClientRequestContext<TypedThriftRequest<cpp2::McGetRequest>>::
 fakeReply() const {
   return FOUND;
 }
 
 template <>
 const char*
-McClientRequestContext<McRequestWithMcOp<mc_op_lease_get>>::
+McClientRequestContext<TypedThriftRequest<cpp2::McLeaseGetRequest>>::
 fakeReply() const {
   return FOUND;
 }
 
 template <>
 const char*
-McClientRequestContext<McRequestWithMcOp<mc_op_set>>::
+McClientRequestContext<TypedThriftRequest<cpp2::McSetRequest>>::
 fakeReply() const {
   return STORED;
 }
 
 template <>
 const char*
-McClientRequestContext<McRequestWithMcOp<mc_op_lease_set>>::
+McClientRequestContext<TypedThriftRequest<cpp2::McLeaseSetRequest>>::
 fakeReply() const {
   return STORED;
 }
 
 template <>
 const char*
-McClientRequestContext<McRequestWithMcOp<mc_op_delete>>::
+McClientRequestContext<TypedThriftRequest<cpp2::McDeleteRequest>>::
 fakeReply() const {
   return DELETED;
 }
 
 template <>
 const char*
-McClientRequestContext<McRequestWithMcOp<mc_op_touch>>::
+McClientRequestContext<TypedThriftRequest<cpp2::McTouchRequest>>::
 fakeReply() const {
   return TOUCHED;
 }

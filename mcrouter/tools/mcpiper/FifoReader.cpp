@@ -156,17 +156,18 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
 void FifoReadCallback::handleMessageHeader(MessageHeader msgHeader) noexcept {
   from_ = msgHeader.getLocalAddress();
   to_ = msgHeader.getPeerAddress();
+  typeId_ = msgHeader.typeId();
   if (msgHeader.direction() == MessageDirection::Received) {
     std::swap(from_, to_);
   }
 }
 
 void FifoReadCallback::forwardMessage(const PacketHeader& header,
-                                      std::unique_ptr<folly::IOBuf>&& buf) {
+                                      std::unique_ptr<folly::IOBuf> buf) {
   auto data = buf->coalesce();
   CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
   messageReady_(header.connectionId(), header.packetId(),
-                std::move(from_), std::move(to_), data);
+                std::move(from_), std::move(to_), typeId_, data);
 }
 
 void FifoReadCallback::readEOF() noexcept {

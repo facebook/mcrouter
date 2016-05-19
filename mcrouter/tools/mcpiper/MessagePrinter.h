@@ -87,7 +87,7 @@ class MessagePrinter {
 
   template <class Message>
   void printMessage(uint64_t msgId,
-                    Message message,
+                    Message&& message,
                     const std::string& key,
                     mc_op_t op,
                     mc_res_t result,
@@ -108,12 +108,12 @@ class MessagePrinter {
   // SnifferParser Callbacks
   template <class Request>
   void requestReady(uint64_t msgId,
-                    Request request,
+                    Request&& request,
                     const folly::SocketAddress& from,
                     const folly::SocketAddress& to);
-  template <class Request>
+  template <class Reply>
   void replyReady(uint64_t msgId,
-                  ReplyT<Request> reply,
+                  Reply&& reply,
                   std::string key,
                   const folly::SocketAddress& from,
                   const folly::SocketAddress& to);

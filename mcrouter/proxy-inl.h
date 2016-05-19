@@ -28,11 +28,6 @@ bool processGetServiceInfoRequest(
     std::shared_ptr<ProxyRequestContextTyped<
         TypedThriftRequest<cpp2::McGetRequest>>>& ctx);
 
-bool processGetServiceInfoRequest(
-    const McRequestWithMcOp<mc_op_get>& req,
-    std::shared_ptr<ProxyRequestContextTyped<
-        McRequestWithMcOp<mc_op_get>>>& ctx);
-
 template <class Request>
 bool processGetServiceInfoRequest(
     const Request&,
@@ -74,9 +69,7 @@ void proxy_t::WaitingRequest<Request>::process(proxy_t* proxy) {
 }
 
 template <class Request>
-typename std::enable_if<RequestListContains<Request>::value ||
-                        TRequestListContains<Request>::value,
-                        void>::type
+typename std::enable_if<TRequestListContains<Request>::value, void>::type
 proxy_t::routeHandlesProcessRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
@@ -111,9 +104,7 @@ proxy_t::routeHandlesProcessRequest(
 }
 
 template <class Request>
-typename std::enable_if<!RequestListContains<Request>::value &&
-                        !TRequestListContains<Request>::value,
-                        void>::type
+typename std::enable_if<!TRequestListContains<Request>::value, void>::type
 proxy_t::routeHandlesProcessRequest(
     const Request&,
     std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
@@ -175,23 +166,9 @@ void proxy_t::dispatchRequest(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_stats>&) {
-  stat_incr(stats, cmd_stats_stat, 1);
-  stat_incr(stats, cmd_stats_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McStatsRequest>&) {
   stat_incr(stats, cmd_stats_stat, 1);
   stat_incr(stats, cmd_stats_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_cas>&) {
-  stat_incr(stats, cmd_cas_stat, 1);
-  stat_incr(stats, cmd_cas_count_stat, 1);
 }
 
 template <>
@@ -203,23 +180,9 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_get>&) {
-  stat_incr(stats, cmd_get_stat, 1);
-  stat_incr(stats, cmd_get_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McGetRequest>&) {
   stat_incr(stats, cmd_get_stat, 1);
   stat_incr(stats, cmd_get_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_gets>&) {
-  stat_incr(stats, cmd_gets_stat, 1);
-  stat_incr(stats, cmd_gets_count_stat, 1);
 }
 
 template <>
@@ -231,21 +194,8 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_metaget>&) {
-  stat_incr(stats, cmd_meta_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McMetagetRequest>&) {
   stat_incr(stats, cmd_meta_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_add>&) {
-  stat_incr(stats, cmd_add_stat, 1);
-  stat_incr(stats, cmd_add_count_stat, 1);
 }
 
 template <>
@@ -257,23 +207,9 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_replace>&) {
-  stat_incr(stats, cmd_replace_stat, 1);
-  stat_incr(stats, cmd_replace_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McReplaceRequest>&) {
   stat_incr(stats, cmd_replace_stat, 1);
   stat_incr(stats, cmd_replace_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_set>&) {
-  stat_incr(stats, cmd_set_stat, 1);
-  stat_incr(stats, cmd_set_count_stat, 1);
 }
 
 template <>
@@ -285,23 +221,9 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_incr>&) {
-  stat_incr(stats, cmd_incr_stat, 1);
-  stat_incr(stats, cmd_incr_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McIncrRequest>&) {
   stat_incr(stats, cmd_incr_stat, 1);
   stat_incr(stats, cmd_incr_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_decr>&) {
-  stat_incr(stats, cmd_decr_stat, 1);
-  stat_incr(stats, cmd_decr_count_stat, 1);
 }
 
 template <>
@@ -313,13 +235,6 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_delete>&) {
-  stat_incr(stats, cmd_delete_stat, 1);
-  stat_incr(stats, cmd_delete_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McDeleteRequest>&) {
   stat_incr(stats, cmd_delete_stat, 1);
   stat_incr(stats, cmd_delete_count_stat, 1);
@@ -327,23 +242,9 @@ inline void proxy_t::bumpStats(
 
 template <>
 inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_lease_set>&) {
-  stat_incr(stats, cmd_lease_set_stat, 1);
-  stat_incr(stats, cmd_lease_set_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
     const TypedThriftRequest<cpp2::McLeaseSetRequest>&) {
   stat_incr(stats, cmd_lease_set_stat, 1);
   stat_incr(stats, cmd_lease_set_count_stat, 1);
-}
-
-template <>
-inline void proxy_t::bumpStats(
-    const McRequestWithMcOp<mc_op_lease_get>&) {
-  stat_incr(stats, cmd_lease_get_stat, 1);
-  stat_incr(stats, cmd_lease_get_count_stat, 1);
 }
 
 template <>
@@ -362,13 +263,6 @@ inline void proxy_t::bumpStats(const Request&) {
 template <>
 inline bool proxy_t::rateLimited(
     ProxyRequestPriority priority,
-    const McRequestWithMcOp<mc_op_stats>&) const {
-  return false;
-}
-
-template <>
-inline bool proxy_t::rateLimited(
-    ProxyRequestPriority priority,
     const TypedThriftRequest<cpp2::McStatsRequest>&) const {
   return false;
 }
@@ -376,21 +270,7 @@ inline bool proxy_t::rateLimited(
 template <>
 inline bool proxy_t::rateLimited(
     ProxyRequestPriority priority,
-    const McRequestWithMcOp<mc_op_version>&) const {
-  return false;
-}
-
-template <>
-inline bool proxy_t::rateLimited(
-    ProxyRequestPriority priority,
     const TypedThriftRequest<cpp2::McVersionRequest>&) const {
-  return false;
-}
-
-template <>
-inline bool proxy_t::rateLimited(
-    ProxyRequestPriority priority,
-    const McRequestWithMcOp<mc_op_get_service_info>&) const {
   return false;
 }
 

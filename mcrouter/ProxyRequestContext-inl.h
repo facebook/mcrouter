@@ -7,7 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/proxy.h"
@@ -43,65 +42,6 @@ class ProxyRequestContextTypedWithCallback
   F f_;
 };
 
-/**
- * Temporary class to support old McrouterClient interface.
- */
-template <class Operation, class F>
-class LegacyProxyRequestContext
-    : public ProxyRequestContextTyped<McRequestWithOp<Operation>> {
- public:
-  LegacyProxyRequestContext(proxy_t& pr,
-                            McMsgRef req,
-                            F&& f,
-                            ProxyRequestPriority priority__)
-      : ProxyRequestContextTyped<McRequestWithOp<Operation>>(
-            pr, request_, priority__),
-        f_(std::forward<F>(f)),
-        request_(std::move(req)) {}
-
- protected:
-  void sendReplyImpl(ReplyT<McRequestWithOp<Operation>>&& reply)
-      override final {
-
-    fiber_local::runWithoutLocals(
-        [this, &reply]() { f_(*this, std::move(reply)); });
-  }
-
- private:
-  F f_;
-  McRequestWithOp<Operation> request_;
-};
-
-template <class F>
-std::unique_ptr<ProxyRequestContext> legacyCreator(
-    proxy_t& pr,
-    McMsgRef req,
-    mc_op_t op,
-    McOpList::Item<0>,
-    F&& f,
-    ProxyRequestPriority priority) {
-  throw std::runtime_error(std::string("send for requested op (") +
-                           mc_op_to_string(op) + ") not supported");
-}
-
-template <int op_id, class F>
-std::unique_ptr<ProxyRequestContext> legacyCreator(
-    proxy_t& pr,
-    McMsgRef req,
-    mc_op_t op,
-    McOpList::Item<op_id>,
-    F&& f,
-    ProxyRequestPriority priority) {
-  if (McOpList::Item<op_id>::op::mc_op == op) {
-    using Type =
-        LegacyProxyRequestContext<typename McOpList::Item<op_id>::op, F>;
-    return folly::make_unique<Type>(pr, std::move(req), std::forward<F>(f),
-                                    priority);
-  }
-  return legacyCreator(pr, std::move(req), op, McOpList::Item<op_id - 1>(),
-                       std::forward<F>(f), priority);
-}
-
 constexpr const char* kCommandNotSupportedStr = "Command not supported";
 
 template <class Request>
@@ -127,20 +67,8 @@ bool precheckRequest(ProxyRequestContextTyped<Request>& preq,
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_stats>>&,
-    const McRequestWithMcOp<mc_op_stats>&) {
-  return true;
-}
-
-inline bool precheckRequest(
     ProxyRequestContextTyped<TypedThriftRequest<cpp2::McStatsRequest>>&,
     const TypedThriftRequest<cpp2::McStatsRequest>&) {
-  return true;
-}
-
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_version>>&,
-    const McRequestWithMcOp<mc_op_version>&) {
   return true;
 }
 
@@ -148,14 +76,6 @@ inline bool precheckRequest(
     ProxyRequestContextTyped<TypedThriftRequest<cpp2::McVersionRequest>>&,
     const TypedThriftRequest<cpp2::McVersionRequest>&) {
   return true;
-}
-
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_shutdown>>& preq,
-    const McRequestWithMcOp<mc_op_shutdown>&) {
-  // Return error (pretend to not even understand the protocol)
-  preq.sendReply(mc_res_bad_command);
-  return false;
 }
 
 inline bool precheckRequest(
@@ -167,30 +87,11 @@ inline bool precheckRequest(
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_flushre>>& preq,
-    const McRequestWithMcOp<mc_op_flushre>&) {
-  // Return 'Not supported' message
-  preq.sendReply(mc_res_local_error, kCommandNotSupportedStr);
-  return false;
-}
-
-inline bool precheckRequest(
     ProxyRequestContextTyped<TypedThriftRequest<cpp2::McFlushReRequest>>& preq,
     const TypedThriftRequest<cpp2::McFlushReRequest>&) {
   // Return 'Not supported' message
   preq.sendReply(mc_res_local_error, kCommandNotSupportedStr);
   return false;
-}
-
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McRequestWithMcOp<mc_op_flushall>>& preq,
-    const McRequestWithMcOp<mc_op_flushall>&) {
-
-  if (!preq.proxy().getRouterOptions().enable_flush_cmd) {
-    preq.sendReply(mc_res_local_error, "Command disabled");
-    return false;
-  }
-  return true;
 }
 
 inline bool precheckRequest(
@@ -279,13 +180,6 @@ createProxyRequestContext(proxy_t& pr,
   return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 
-template <class F>
-std::unique_ptr<ProxyRequestContext> createLegacyProxyRequestContext(
-    proxy_t& pr, McMsgRef req, F&& f, ProxyRequestPriority priority) {
-  auto op = req->op;
-  return detail::legacyCreator(pr, std::move(req), op, McOpList::LastItem(),
-                               std::forward<F>(f), priority);
-}
 } // mcrouter
 } // memcache
 } // facebook

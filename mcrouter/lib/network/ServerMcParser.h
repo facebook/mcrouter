@@ -84,9 +84,9 @@ class ServerMcParser : private McParser::ParserCallback {
   void parseError(mc_res_t result, folly::StringPiece reason) override final;
   bool shouldReadToAsciiBuffer() const;
 
+  // McServerAsciiParser callbacks
   template <class Request>
   void onRequest(Request&&, bool noreply);
-
   void multiOpEnd();
 
   // McServerAsciiParser callback wrapper.

@@ -69,16 +69,20 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
         buffer.data(), info.headerSize);
     switch (op) {
 #define THRIFT_OP(MC_OPERATION)                                                \
-      case MC_OPERATION::mc_op:                                              \
-      {                                                                      \
-        TypedThriftRequest<typename TypeFromOp<MC_OPERATION::mc_op,          \
-                                               RequestOpMapping>::type> req; \
-        umbrellaParseRequest(                                                \
-            req, buffer, buffer.data(), info.headerSize,                     \
-            buffer.data() + info.headerSize, info.bodySize,                  \
-            reqid);                                                          \
-        requestReadyHelper(std::move(req), reqid);                           \
-        break;                                                               \
+      case MC_OPERATION::mc_op:                                                \
+      {                                                                        \
+        using Request = TypedThriftRequest<                                    \
+            typename TypeFromOp<MC_OPERATION::mc_op,                           \
+                                RequestOpMapping>::type>;                      \
+        auto req = umbrellaParseRequest<Request>(                              \
+            buffer,                                                            \
+            buffer.data(),                                                     \
+            info.headerSize,                                                   \
+            buffer.data() + info.headerSize,                                   \
+            info.bodySize,                                                     \
+            reqid);                                                            \
+        requestReadyHelper(std::move(req), reqid);                             \
+        break;                                                                 \
       }
 #include "mcrouter/lib/McOpList.h"
       default:
@@ -127,8 +131,7 @@ void ServerMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
   if (result == McAsciiParserBase::State::ERROR) {
     // Note: we could include actual parsing error instead of
     // "malformed request" (e.g. asciiParser_.getErrorDescription()).
-    callback_.parseError(mc_res_client_error,
-                         "malformed request");
+    callback_.parseError(mc_res_client_error, "malformed request");
   }
 }
 
@@ -168,7 +171,7 @@ void ServerMcParser<Callback>::writeToPipe(const Request& req) {
   debugSerializedRequest.prepare(req, iov, iovLen);
   debugFifo_->startMessage(
       MessageDirection::Received,
-      IdFromType<typename Request::rawType, ThriftMessageList>::value);
+      IdFromType<typename Request::rawType, TRequestList>::value);
   debugFifo_->writeData(iov, iovLen);
 }
 

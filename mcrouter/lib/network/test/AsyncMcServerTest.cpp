@@ -25,10 +25,11 @@ struct VeryifyCommonNameOnRequest {
     LOG(INFO) << "Client CN = " << clientCommonName.toString();
     EXPECT_EQ(session.getClientCommonName(), expectedCommonName);
     if (clientCommonName == expectedCommonName) {
-      McServerRequestContext::reply(std::move(ctx), McReply(mc_res_found));
+      McServerRequestContext::reply(
+          std::move(ctx), ReplyT<Request>(mc_res_found));
     } else {
-      McServerRequestContext::reply(std::move(ctx),
-                                    McReply(mc_res_client_error));
+      McServerRequestContext::reply(
+          std::move(ctx), ReplyT<Request>(mc_res_client_error));
     }
   }
 };

@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/McReply.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 
 namespace folly {

@@ -9,36 +9,11 @@
  */
 #include "MultiOpParent.h"
 
-#include "mcrouter/lib/McReply.h"
-
 namespace facebook { namespace memcache {
 
 MultiOpParent::MultiOpParent(McServerSession& session, uint64_t blockReqid)
     : session_(session),
       block_(session, mc_op_get, blockReqid, true, nullptr) {
-}
-
-bool MultiOpParent::reply(McReply&& r) {
-  bool stole = false;
-  /* If not a hit or a miss, and we didn't store a reply yet, steal it */
-  if (!(r.result() == mc_res_found ||
-        r.result() == mc_res_notfound) &&
-      (!reply_.hasValue() ||
-       r.worseThan(reply_->result()))) {
-    stole = true;
-    error_ = true;
-    reply_.emplace(r.result(), r.valueRangeSlow().str());
-    reply_->setAppSpecificErrorCode(r.appSpecificErrorCode());
-  }
-
-  assert(waiting_ > 0);
-  --waiting_;
-
-  if (!waiting_ && end_.hasValue()) {
-    release();
-  }
-
-  return stole;
 }
 
 bool MultiOpParent::reply(mc_res_t result,

@@ -11,11 +11,6 @@
 
 #include <memory>
 
-#include "mcrouter/lib/fbi/cpp/TypeList.h"
-#include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
-#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleIf.h"
@@ -24,26 +19,24 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterRouteHandleIf;
 
-using AllRequestList = ConcatenateListsT<RequestList, ThriftRequestList>;
-
 template <typename Route>
 class McrouterRouteHandle :
       public RouteHandle<Route,
                          McrouterRouteHandleIf,
-                         AllRequestList> {
+                         ThriftRequestList> {
  public:
   template<typename... Args>
   explicit McrouterRouteHandle(Args&&... args)
     : RouteHandle<Route,
                   McrouterRouteHandleIf,
-                  AllRequestList>(
+                  ThriftRequestList>(
                     std::forward<Args>(args)...) {
   }
 };
 
 class McrouterRouteHandleIf :
       public RouteHandleIf<McrouterRouteHandleIf,
-                           AllRequestList> {
+                           ThriftRequestList> {
  public:
   template <class Route>
   using Impl = McrouterRouteHandle<Route>;

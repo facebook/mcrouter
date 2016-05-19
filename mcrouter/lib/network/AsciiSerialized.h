@@ -12,14 +12,10 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
-
-template <class Operation>
-class McRequestWithOp;
 
 /**
  * Class for serializing requests in ascii protocol.
@@ -70,22 +66,11 @@ class AsciiSerializedRequest {
   void keyValueRequestCommon(folly::StringPiece prefix, const Request& request);
 
   // Get-like ops.
-  void prepareImpl(const McRequestWithMcOp<mc_op_get>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_gets>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_metaget>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_lease_get>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McGetRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McGetsRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McMetagetRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McLeaseGetRequest>& request);
   // Update-like ops.
-  void prepareImpl(const McRequestWithMcOp<mc_op_set>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_add>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_replace>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_append>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_prepend>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_cas>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_lease_set>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McSetRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McAddRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McReplaceRequest>& request);
@@ -94,21 +79,15 @@ class AsciiSerializedRequest {
   void prepareImpl(const TypedThriftRequest<cpp2::McCasRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McLeaseSetRequest>& request);
   // Arithmetic ops.
-  void prepareImpl(const McRequestWithMcOp<mc_op_incr>& request);
-  void prepareImpl(const McRequestWithMcOp<mc_op_decr>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McIncrRequest>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McDecrRequest>& request);
   // Delete op.
-  void prepareImpl(const McRequestWithMcOp<mc_op_delete>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McDeleteRequest>& request);
   // Touch op.
-  void prepareImpl(const McRequestWithMcOp<mc_op_touch>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McTouchRequest>& request);
   // Version op.
-  void prepareImpl(const McRequestWithMcOp<mc_op_version>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McVersionRequest>& request);
   // FlushAll op.
-  void prepareImpl(const McRequestWithMcOp<mc_op_flushall>& request);
   void prepareImpl(const TypedThriftRequest<cpp2::McFlushAllRequest>& request);
 
   // Everything else is false.

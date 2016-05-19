@@ -11,8 +11,6 @@
 
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/McRequest.h"
-
 namespace facebook { namespace memcache {
 
 void MockMc::CacheItem::updateLeaseToken() {

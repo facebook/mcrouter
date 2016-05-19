@@ -268,15 +268,15 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
   void sendReply(ReplyT<Request>&& reply);
 
   /**
-   * Convenience method, that constructs reply and calls non-template
-   * method.
+   * DEPRECATED. Convenience method, that constructs reply and calls
+   * non-template method.
    *
-   * WARNING: This function was convenient with old McRequests, but it can be
-   * dangerous with new TypedThriftRequests. For TypedThriftRequests,
-   * ctx->sendReply(mc_res_local_error, "Error message") does the right thing,
-   * while
-   * ctx->sendReply(mc_res_found, "value") does the wrong thing.
-   * For McRequests, both statements do the right thing.
+   * WARNING: This function can be dangerous with new TypedThriftRequests.
+   * For TypedThriftRequests,
+   *   ctx->sendReply(mc_res_local_error, "Error message")
+   * does the right thing, while
+   *   ctx->sendReply(mc_res_found, "value")
+   * does the wrong thing.
    */
   template <class... Args>
   void sendReply(Args&&... args) {
@@ -318,16 +318,6 @@ createProxyRequestContext(
     F&& f,
     ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
 
-/**
- * Creates proxy request context along with the request itself.
- * NOTE: this is a temporary method to support old McrouterClient interface.
- */
-template <class F>
-std::unique_ptr<ProxyRequestContext> createLegacyProxyRequestContext(
-    proxy_t& pr,
-    McMsgRef req,
-    F&& f,
-    ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
 }}}  // facebook::memcache::mcrouter
 
 #include "ProxyRequestContext-inl.h"

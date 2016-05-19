@@ -25,7 +25,6 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McReply.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -37,13 +36,7 @@
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache {
-
-class McRequest;
-template <class Operation>
-class McRequestWithOp;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Routes a request to a single ProxyClient.
@@ -52,13 +45,6 @@ namespace mcrouter {
 class DestinationRoute {
  public:
   std::string routeName() const;
-
-  /**
-   * Spool failed delete request to disk.
-   *
-   * @return  true on sucess, false otherwise
-   */
-  bool spool(const McRequest& req) const;
 
   std::string keyWithFailoverTag(folly::StringPiece fullKey) const;
 
@@ -93,14 +79,6 @@ class DestinationRoute {
     if (reply.isFailoverError() && spool(req)) {
       reply = ReplyT<Request>(DefaultReply, req);
       reply.setDestination(destination_->accessPoint());
-    }
-    return reply;
-  }
-
-  McReply route(const McRequestWithMcOp<mc_op_touch>& req) const {
-    auto reply = routeWithDestination(req);
-    if (reply.isFailoverError()) {
-      reply = McReply(DefaultReply, McOperation<mc_op_touch>());
     }
     return reply;
   }

@@ -82,4 +82,21 @@ struct ReplyFromRequestTypeImpl<T, List<P, Ps...>> {
       typename P::Second::Value,
       typename ReplyFromRequestTypeImpl<T, List<Ps...>>::type>::type;
 };
+
+template <class T, class PairList>
+struct RequestFromReplyTypeImpl;
+
+template <class T>
+struct RequestFromReplyTypeImpl<T, List<>> {
+  using type = void;
+};
+
+template <class T, class P, class... Ps>
+struct RequestFromReplyTypeImpl<T, List<P, Ps...>> {
+  using type = typename std::conditional<
+      std::is_same<T, typename P::Second::Value>::value,
+      typename P::First::Value,
+      typename RequestFromReplyTypeImpl<T, List<Ps...>>::type>::type;
+};
+
 }}}  // facebook::memcache::detail

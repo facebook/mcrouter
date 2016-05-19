@@ -15,7 +15,6 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/asox_timer.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
@@ -85,7 +84,8 @@ void ProxyDestination::schedule_next_probe() {
 void ProxyDestination::timerCallback() {
   // Note that the previous probe might still be in flight
   if (!probe_req) {
-    probe_req = folly::make_unique<McRequestWithMcOp<mc_op_version>>();
+    probe_req =
+        folly::make_unique<TypedThriftRequest<cpp2::McVersionRequest>>();
     ++stats_.probesSent;
     auto selfPtr = selfPtr_;
     proxy->fiberManager.addTask([selfPtr]() mutable {

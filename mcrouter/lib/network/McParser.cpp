@@ -27,17 +27,19 @@ namespace {
 // Adjust buffer size after this many CPU cycles (~2 billion)
 constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
 
-/*
- * Determine the protocol by looking at the first byte
- */
-mc_protocol_t determineProtocol(uint8_t firstByte) {
-  switch (firstByte) {
-    case kCaretMagicByte:
-      return mc_caret_protocol;
-    case ENTRY_LIST_MAGIC_BYTE:
-      return mc_umbrella_protocol;
+size_t mcOpToRequestTypeId(mc_op_t mc_op) {
+  switch(mc_op) {
+#define THRIFT_OP(MC_OPERATION)                                                \
+    case MC_OPERATION::mc_op:                                                  \
+    {                                                                          \
+      using ThriftType =                                                       \
+        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type;      \
+      return IdFromType<ThriftType, TRequestList>::value;                      \
+    }
+#include "mcrouter/lib/McOpList.h"
+
     default:
-      return mc_ascii_protocol;
+      return 0;
   }
 }
 
@@ -130,6 +132,20 @@ bool McParser::readUmbrellaOrCaretData() {
           folly::sformat("Error parsing {} header",
                          mc_protocol_to_string(protocol_)));
       return false;
+    }
+
+    if (protocol_ == mc_umbrella_protocol &&
+        UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+      const auto mc_op = umbrellaDetermineOperation(
+        readBuffer_.data(), umMsgInfo_.headerSize);
+
+      umMsgInfo_.typeId = mcOpToRequestTypeId(mc_op);
+      assert(umMsgInfo_.typeId != 0);
+      if (umbrellaIsReply(readBuffer_.data(), umMsgInfo_.headerSize)) {
+        // We assume reply typeId is always one plus corresponding request's
+        // typeId. We rely on this in ClientServerMcParser.h.
+        ++umMsgInfo_.typeId;
+      }
     }
 
     const auto messageSize = umMsgInfo_.headerSize + umMsgInfo_.bodySize;

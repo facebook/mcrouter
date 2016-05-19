@@ -23,8 +23,8 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/McRequestList.h"
+#include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
@@ -93,8 +93,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
           destinations->push_back(dest.toHostPortString());
         }
       );
-      McRequestWithOp<Operation> recordingReq(keyStr);
-
+      TypedThriftRequest<typename TypeFromOp<Operation::mc_op,
+                         RequestOpMapping>::type> recordingReq(keyStr);
       fiber_local::runWithLocals([ctx = std::move(rctx),
                                   &recordingReq,
                                   &proxyRoute = proxyRoute_]() mutable {
@@ -140,7 +140,9 @@ inline std::string routeHandlesCommandHelper(folly::StringPiece op,
       }
      );
      proxyRoute.traverse(
-         McRequestWithOp<typename McOpList::Item<op_id>::op>(key), t);
+        TypedThriftRequest<typename TypeFromOp<McOpList::Item<op_id>::op::mc_op,
+                                               RequestOpMapping>::type>(key),
+        t);
      return tree;
   }
 
@@ -386,13 +388,6 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
   auto key = args[1];
 
   routeCommandHelper(op, key, ctx, McOpList::LastItem());
-}
-
-void ServiceInfo::handleRequest(
-    folly::StringPiece key,
-    const std::shared_ptr<ProxyRequestContextTyped<
-        McRequestWithMcOp<mc_op_get>>>& ctx) const {
-  impl_->handleRequest(key, ctx);
 }
 
 void ServiceInfo::handleRequest(

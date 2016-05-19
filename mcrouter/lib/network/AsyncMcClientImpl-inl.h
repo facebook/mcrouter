@@ -10,8 +10,6 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/lib/cycles/Cycles.h"
-#include "mcrouter/lib/McReply.h"
-#include "mcrouter/lib/McRequest.h"
 #include "mcrouter/lib/network/FBTrace.h"
 
 namespace facebook { namespace memcache {
