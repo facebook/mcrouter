@@ -29,9 +29,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 namespace {
 
-mcrouter_client_callbacks_t const server_callbacks = {
-    nullptr, nullptr, nullptr};
-
 void serverLoop(
   McrouterInstance& router,
   size_t threadId,
@@ -40,9 +37,8 @@ void serverLoop(
   const McrouterStandaloneOptions& standaloneOpts) {
 
   auto routerClient = router.createSameThreadClient(
-    server_callbacks,
-    &worker,
-    0);
+      0 /* maximum_outstanding_requests */);
+
   auto proxy = router.getProxy(threadId);
   // Manually override proxy assignment
   routerClient->setProxy(proxy);

@@ -28,15 +28,11 @@ void McrouterClient::sendSameThread(std::unique_ptr<ProxyRequestContext> req) {
 
 McrouterClient::McrouterClient(
   std::weak_ptr<McrouterInstance> rtr,
-  mcrouter_client_callbacks_t callbacks,
-  void* arg,
   size_t maxOutstanding,
   bool maxOutstandingError,
   bool sameThread) :
     router_(std::move(rtr)),
     sameThread_(sameThread),
-    callbacks_(callbacks),
-    arg_(arg),
     maxOutstanding_(maxOutstanding),
     maxOutstandingError_(maxOutstandingError) {
 
@@ -58,15 +54,11 @@ McrouterClient::McrouterClient(
 
 McrouterClient::Pointer McrouterClient::create(
   std::weak_ptr<McrouterInstance> router,
-  mcrouter_client_callbacks_t callbacks,
-  void* arg,
   size_t maxOutstanding,
   bool maxOutstandingError,
   bool sameThread) {
 
   auto client = new McrouterClient(std::move(router),
-                                   callbacks,
-                                   arg,
                                    maxOutstanding,
                                    maxOutstandingError,
                                    sameThread);
@@ -76,9 +68,6 @@ McrouterClient::Pointer McrouterClient::create(
 
 McrouterClient::~McrouterClient() {
   assert(disconnected_);
-  if (callbacks_.on_disconnect) {
-    callbacks_.on_disconnect(arg_);
-  }
 }
 
 }}}  // facebook::memcache::mcrouter

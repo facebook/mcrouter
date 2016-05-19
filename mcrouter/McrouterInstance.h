@@ -86,7 +86,6 @@ class McrouterInstance :
 
   /**
    * Create a handle to talk to mcrouter.
-   * The context will be passed back to the callbacks.
    *
    * @param maximum_outstanding_requests  If nonzero, at most this many requests
    *   will be allowed to be in flight at any single point in time.
@@ -96,8 +95,13 @@ class McrouterInstance :
    *   (i.e. attempting to create multiple clients to transient mcrouter).
    */
   McrouterClient::Pointer
-  createClient(mcrouter_client_callbacks_t callbacks,
-               void* client_context,
+  createClient(size_t maximum_outstanding_requests,
+               bool maximum_outstanding_requests_error = false);
+
+  // DEPRECATED. Clients should prefer previous createClient() overload.
+  McrouterClient::Pointer
+  createClient(mcrouter_client_callbacks_t,
+               void*,
                size_t maximum_outstanding_requests,
                bool maximum_outstanding_requests_error = false);
 
@@ -107,8 +111,6 @@ class McrouterInstance :
    * callbacks directly, bypassing the queue.
    */
   McrouterClient::Pointer createSameThreadClient(
-    mcrouter_client_callbacks_t callbacks,
-    void* client_context,
     size_t maximum_outstanding_requests);
 
   const McrouterOptions& opts() const {

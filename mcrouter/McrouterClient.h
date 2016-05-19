@@ -30,12 +30,11 @@ struct proxy_t;
 struct ProxyMessage;
 class ProxyRequestContext;
 
-typedef void (mcrouter_on_disconnect_ts_t)(void* client_context);
-
+// DEPRECATED. Will be removed when hhvm extension is on new createClient API.
 struct mcrouter_client_callbacks_t {
   void* on_reply_deprecated;
   void* on_cancel_deprecated;
-  mcrouter_on_disconnect_ts_t* on_disconnect;
+  void* on_disconnect_deprecated;
 };
 
 /**
@@ -113,13 +112,6 @@ class McrouterClient {
       F&& callback,
       folly::StringPiece ipAddr = folly::StringPiece());
 
-  /**
-   * Change the context passed back to the callbacks.
-   */
-  void setClientContext(void* client_context) {
-    arg_ = client_context;
-  }
-
   CacheClientCounters getStatCounters() noexcept {
     return stats_.getCounters();
   }
@@ -148,9 +140,6 @@ class McrouterClient {
  private:
   std::weak_ptr<McrouterInstance> router_;
   bool sameThread_{false};
-
-  mcrouter_client_callbacks_t callbacks_;
-  void* arg_;
 
   proxy_t* proxy_{nullptr};
 
@@ -182,16 +171,12 @@ class McrouterClient {
 
   McrouterClient(
     std::weak_ptr<McrouterInstance> router,
-    mcrouter_client_callbacks_t callbacks,
-    void *arg,
     size_t maximum_outstanding,
     bool maximum_outstanding_error,
     bool sameThread);
 
   static Pointer create(
     std::weak_ptr<McrouterInstance> router,
-    mcrouter_client_callbacks_t callbacks,
-    void *arg,
     size_t maximum_outstanding,
     bool maximum_outstanding_error,
     bool sameThread);
