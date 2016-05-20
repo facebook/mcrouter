@@ -208,16 +208,6 @@ McrouterClient::Pointer McrouterInstance::createClient(
                                 /* sameThread= */ false);
 }
 
-// DEPRECATED. Clients should prefer the previous createClient() overload.
-McrouterClient::Pointer McrouterInstance::createClient(
-  mcrouter_client_callbacks_t,
-  void*,
-  size_t max_outstanding,
-  bool max_outstanding_error) {
-
-  return createClient(max_outstanding, max_outstanding_error);
-}
-
 McrouterClient::Pointer McrouterInstance::createSameThreadClient(
   size_t max_outstanding) {
 

@@ -98,13 +98,6 @@ class McrouterInstance :
   createClient(size_t maximum_outstanding_requests,
                bool maximum_outstanding_requests_error = false);
 
-  // DEPRECATED. Clients should prefer previous createClient() overload.
-  McrouterClient::Pointer
-  createClient(mcrouter_client_callbacks_t,
-               void*,
-               size_t maximum_outstanding_requests,
-               bool maximum_outstanding_requests_error = false);
-
   /**
    * Same as createClient(), but you must use it from the same thread that's
    * running the assigned proxy's event base.  The sends call into proxy

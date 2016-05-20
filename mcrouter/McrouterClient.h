@@ -30,13 +30,6 @@ struct proxy_t;
 struct ProxyMessage;
 class ProxyRequestContext;
 
-// DEPRECATED. Will be removed when hhvm extension is on new createClient API.
-struct mcrouter_client_callbacks_t {
-  void* on_reply_deprecated;
-  void* on_cancel_deprecated;
-  void* on_disconnect_deprecated;
-};
-
 /**
  * A mcrouter client is used to communicate with a mcrouter instance.
  * Typically a client is long lived. Request sent through a single client
