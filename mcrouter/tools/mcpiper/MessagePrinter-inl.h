@@ -20,6 +20,8 @@
 namespace facebook { namespace memcache {
 
 namespace detail {
+
+// Exptime
 template <class M>
 int32_t getExptime(const TypedThriftRequest<M>& req) {
   return req.exptime();
@@ -31,6 +33,21 @@ template <class M>
 int32_t getExptime(const TypedThriftReply<M>& reply) {
   return 0;
 }
+
+// Lease token
+template <class M>
+int64_t getLeaseToken(const TypedThriftMessage<M>& msg) {
+  return 0;
+}
+inline int64_t getLeaseToken(
+    const TypedThriftReply<cpp2::McLeaseGetReply>& msg) {
+  return msg->get_leaseToken() ? *msg->get_leaseToken() : 0;
+}
+inline int64_t getLeaseToken(
+    const TypedThriftRequest<cpp2::McLeaseSetRequest>& msg) {
+  return msg->get_leaseToken();
+}
+
 } // detail
 
 template <class Request>
@@ -119,9 +136,13 @@ void MessagePrinter::printMessage(uint64_t msgId,
   }
 
   if (detail::getExptime(message)) {
-      out.append("\n  exptime: ", format_.msgAttrColor);
-      out.append(folly::sformat("{:d}", detail::getExptime(message)),
-                 format_.dataValueColor);
+    out.append("\n  exptime: ", format_.msgAttrColor);
+    out.append(folly::sformat("{:d}", detail::getExptime(message)),
+               format_.dataValueColor);
+  }
+  if (auto leaseToken = detail::getLeaseToken(message)) {
+    out.append("\n  lease-token: ", format_.msgAttrColor);
+    out.append(folly::sformat("{:d}", leaseToken), format_.dataValueColor);
   }
 
   out.pushBack('\n');
