@@ -25,8 +25,8 @@ namespace facebook { namespace memcache {
  * useful for sniffer (e.g. socket addresses, keys for replies).
  *
  * @param Callback  Callback containing two functions:
- *                  void requestReady(msgId, request, fromAddress, toAddress);
- *                  void replyReady(msgId, reply, key, fromAddress, toAddress);
+ *                  void requestReady(msgId, request, from, to, protocol);
+ *                  void replyReady(msgId, reply, key, from, to, protocol);
  */
 template <class Callback>
 class SnifferParser {

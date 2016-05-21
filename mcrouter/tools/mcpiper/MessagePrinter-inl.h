@@ -54,9 +54,18 @@ template <class Request>
 void MessagePrinter::requestReady(uint64_t msgId,
                                   Request&& request,
                                   const folly::SocketAddress& from,
-                                  const folly::SocketAddress& to) {
-  printMessage(msgId, std::move(request), request.fullKey().str(),
-               Request::OpType::mc_op, mc_res_unknown, from, to);
+                                  const folly::SocketAddress& to,
+                                  mc_protocol_t protocol) {
+  auto key = request.fullKey().str();
+  printMessage(
+      msgId,
+      std::move(request),
+      key,
+      Request::OpType::mc_op,
+      mc_res_unknown,
+      from,
+      to,
+      protocol);
 }
 
 template <class Reply>
@@ -64,9 +73,10 @@ void MessagePrinter::replyReady(uint64_t msgId,
                                 Reply&& reply,
                                 std::string key,
                                 const folly::SocketAddress& from,
-                                const folly::SocketAddress& to) {
+                                const folly::SocketAddress& to,
+                                mc_protocol_t protocol) {
   printMessage(msgId, std::move(reply), key, Reply::OpType::mc_op,
-               reply.result(), from, to);
+               reply.result(), from, to, protocol);
 }
 
 template <class Message>
@@ -76,7 +86,8 @@ void MessagePrinter::printMessage(uint64_t msgId,
                                   mc_op_t op,
                                   mc_res_t result,
                                   const folly::SocketAddress& from,
-                                  const folly::SocketAddress& to) {
+                                  const folly::SocketAddress& to,
+                                  mc_protocol_t protocol) {
   if (op == mc_op_end) {
     return;
   }
@@ -101,7 +112,7 @@ void MessagePrinter::printMessage(uint64_t msgId,
     out.append(options_.printTimeFn(ts));
   }
 
-  out.append(serializeAddresses(from, to));
+  out.append(serializeConnectionDetails(from, to, protocol));
   out.append("\n");
 
   out.append("{\n", format_.dataOpColor);

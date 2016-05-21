@@ -47,7 +47,12 @@ void SnifferParser<Callback>::requestReady(uint64_t msgId, Request&& request) {
         Item(msgId, request.fullKey().str(), now));
     evictionQueue_.push_back(msgIt.first->second);
   }
-  callback_.requestReady(msgId, std::move(request), fromAddress_, toAddress_);
+  callback_.requestReady(
+      msgId,
+      std::move(request),
+      fromAddress_,
+      toAddress_,
+      parser_.getProtocol());
 }
 
 template <class Callback>
@@ -62,7 +67,12 @@ void SnifferParser<Callback>::replyReady(uint64_t msgId, Reply&& reply) {
     }
   }
   callback_.template replyReady<Reply>(
-      msgId, std::move(reply), std::move(key), fromAddress_, toAddress_);
+      msgId,
+      std::move(reply),
+      std::move(key),
+      fromAddress_,
+      toAddress_,
+      parser_.getProtocol());
 }
 
 }} // facebook::memcache

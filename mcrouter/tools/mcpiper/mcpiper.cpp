@@ -51,6 +51,7 @@ struct Settings {
   bool quiet{false};
   std::string timeFormat;
   uint32_t valueMinSize{0};
+  size_t verboseLevel{0};
 };
 
 // Globals
@@ -112,6 +113,9 @@ Settings parseOptions(int argc, char **argv) {
     ("value-min-size,m",
       po::value<uint32_t>(&settings.valueMinSize),
       "Minimum size of the value of messages to display")
+    ("verbose",
+      po::value<size_t>(&settings.verboseLevel),
+      "Set verbose level")
   ;
 
   // Positional arguments - hidden from the help message
@@ -153,6 +157,8 @@ Settings parseOptions(int argc, char **argv) {
   // Handles constraints
   CHECK(!settings.fifoRoot.empty())
     << "Fifo's directory (--fifo-root) cannot be empty";
+
+  FLAGS_v = settings.verboseLevel;
 
   return settings;
 }

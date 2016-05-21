@@ -71,7 +71,7 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
   // Addresses of the endpoints of the message currently being read.
   folly::SocketAddress from_;
   folly::SocketAddress to_;
-  uint32_t typeId_;
+  uint32_t typeId_{0};
 
   void forwardMessage(const PacketHeader& header,
                       std::unique_ptr<folly::IOBuf> buf);

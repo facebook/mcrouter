@@ -92,7 +92,8 @@ class MessagePrinter {
                     mc_op_t op,
                     mc_res_t result,
                     const folly::SocketAddress& from,
-                    const folly::SocketAddress& to);
+                    const folly::SocketAddress& to,
+                    mc_protocol_t protocol);
 
  private:
   const Options options_;
@@ -110,13 +111,15 @@ class MessagePrinter {
   void requestReady(uint64_t msgId,
                     Request&& request,
                     const folly::SocketAddress& from,
-                    const folly::SocketAddress& to);
+                    const folly::SocketAddress& to,
+                    mc_protocol_t protocol);
   template <class Reply>
   void replyReady(uint64_t msgId,
                   Reply&& reply,
                   std::string key,
                   const folly::SocketAddress& from,
-                  const folly::SocketAddress& to);
+                  const folly::SocketAddress& to,
+                  mc_protocol_t protocol);
   friend class SnifferParser<MessagePrinter>;
 
   /**
@@ -140,8 +143,9 @@ class MessagePrinter {
   std::vector<std::pair<size_t, size_t>> matchAll(
       folly::StringPiece text, const boost::regex& pattern) const;
 
-  std::string serializeAddresses(const folly::SocketAddress& from,
-                                 const folly::SocketAddress& to);
+  std::string serializeConnectionDetails(const folly::SocketAddress& from,
+                                         const folly::SocketAddress& to,
+                                         mc_protocol_t protocol);
 
   std::string serializeMessageHeader(mc_op_t op,
                                      mc_res_t result,

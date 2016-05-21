@@ -166,8 +166,13 @@ void FifoReadCallback::forwardMessage(const PacketHeader& header,
                                       std::unique_ptr<folly::IOBuf> buf) {
   auto data = buf->coalesce();
   CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
-  messageReady_(header.connectionId(), header.packetId(),
-                std::move(from_), std::move(to_), typeId_, data);
+  if (typeId_ != 0) {
+    messageReady_(header.connectionId(), header.packetId(),
+                  std::move(from_), std::move(to_), typeId_, data);
+    typeId_ = 0;
+  } else {
+    VLOG(2) << "Type id is 0. Skipping message.";
+  }
 }
 
 void FifoReadCallback::readEOF() noexcept {

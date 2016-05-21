@@ -31,6 +31,16 @@ void ClientServerMcParser<Callback>::parse(folly::ByteRange data,
                                            bool isFirstPacket) {
   const auto isRequest = detail::isRequestTypeId(typeId);
 
+  // Inform replyParser_ that a reply with type corresponding to typeId is
+  // about to be parsed
+  if (isFirstPacket) {
+    protocol_ = determineProtocol(*data.begin());
+    if (!isRequest) {
+      replyParser_->setProtocol(protocol_);
+      expectNextDispatcher_.dispatch(typeId - 1);
+    }
+  }
+
   auto source = data.begin();
   size_t size = data.size();
   while (size > 0) {
@@ -47,13 +57,6 @@ void ClientServerMcParser<Callback>::parse(folly::ByteRange data,
     if (isRequest) {
       requestParser_->readDataAvailable(numBytes);
     } else {
-      // Inform replyParser_ that a reply with type corresponding to typeId is
-      // about to be parsed
-      replyParser_->setProtocol(determineProtocol(*data.begin()));
-      if (isFirstPacket) {
-        expectNextDispatcher_.dispatch(typeId - 1);
-      }
-
       replyParser_->readDataAvailable(numBytes);
     }
 

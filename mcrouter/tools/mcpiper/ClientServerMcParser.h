@@ -151,9 +151,14 @@ class ClientServerMcParser {
         requestCallback_, kReadBufferSizeMin, kReadBufferSizeMax);
   }
 
+  mc_protocol_t getProtocol() const {
+    return protocol_;
+  }
+
  private:
   ReplyCallback replyCallback_;
   RequestCallback requestCallback_;
+  mc_protocol_t protocol_{mc_unknown_protocol};
 
   std::unique_ptr<ClientMcParser<ReplyCallback>> replyParser_;
   std::unique_ptr<ServerMcParser<RequestCallback>> requestParser_;

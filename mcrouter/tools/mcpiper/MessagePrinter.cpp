@@ -52,8 +52,10 @@ bool MessagePrinter::matchAddress(const folly::SocketAddress& from,
   return true;
 }
 
-std::string MessagePrinter::serializeAddresses(const folly::SocketAddress& from,
-                                               const folly::SocketAddress& to) {
+std::string MessagePrinter::serializeConnectionDetails(
+    const folly::SocketAddress& from,
+    const folly::SocketAddress& to,
+    mc_protocol_t protocol) {
   std::string out;
 
   if (!from.empty()) {
@@ -64,6 +66,9 @@ std::string MessagePrinter::serializeAddresses(const folly::SocketAddress& from,
   }
   if (!to.empty()) {
     out.append(to.describe());
+  }
+  if ((!from.empty() || !to.empty()) && protocol != mc_unknown_protocol) {
+    out.append(folly::sformat(" ({})", mc_protocol_to_string(protocol)));
   }
 
   return out;
