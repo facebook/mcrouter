@@ -86,9 +86,13 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
       }
 #include "mcrouter/lib/McOpList.h"
       default:
-        LOG(ERROR) << "Unexpected Umbrella message of type "
-          << mc_op_to_string(op) << " (" << int(op) << ")";
-        break;
+        auto reason = folly::sformat(
+            "Error parsing Umbrella message. "
+            "Unexpected Umbrella message of type: {} ({}).",
+            mc_op_to_string(op),
+            int(op));
+        callback_.parseError(mc_res_remote_error, reason);
+        return false;
     }
   } catch (const std::runtime_error& e) {
     std::string reason(

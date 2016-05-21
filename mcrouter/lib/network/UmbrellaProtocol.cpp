@@ -44,7 +44,6 @@ namespace {
  * @param tag             Desired tag.
  * @param val             Output parameter containing the value of the tag.
  * @return                True if the tag was found. False otherwise.
- * @throw                 std::runtime_error on any parse error.
  */
 bool umbrellaGetTagValue(const uint8_t* header, size_t nheader,
                          size_t tag, uint64_t& val) {
@@ -52,7 +51,7 @@ bool umbrellaGetTagValue(const uint8_t* header, size_t nheader,
   size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
   if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
       != header + nheader) {
-    throw std::runtime_error("Invalid number of entries");
+    return false;
   }
   for (size_t i = 0; i < nentries; ++i) {
     auto& entry = msg->entries[i];
@@ -286,13 +285,24 @@ uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader) {
   return id;
 }
 
-mc_op_t umbrellaDetermineOperation(const uint8_t* header, size_t nheader) {
+mc_op_t umbrellaDetermineOperation(
+    const uint8_t* header,
+    size_t nheader) noexcept {
   uint64_t op;
   if (!umbrellaGetTagValue(header, nheader, msg_op, op)) {
-    throw std::runtime_error("missing op");
+    LOG(ERROR) << "Operation is missing in umbrella header. "
+               << "Header size: " << nheader << ". Header: "
+               << folly::StringPiece(reinterpret_cast<const char*>(header),
+                                     nheader);
+    return mc_op_unknown;
   }
+
   if (op >= UM_NOPS) {
-    throw std::runtime_error("invalid operation");
+    LOG(ERROR) << "Invalid operation read from umbrella header. "
+               << "Op: " << op << ". Header size: " << nheader << ". Header: "
+               << folly::StringPiece(reinterpret_cast<const char*>(header),
+                                     nheader);
+    return mc_op_unknown;
   }
   return static_cast<mc_op_t>(detail::kUmbrellaOpToMc[op]);
 }

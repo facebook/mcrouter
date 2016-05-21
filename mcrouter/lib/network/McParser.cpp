@@ -134,26 +134,23 @@ bool McParser::readUmbrellaOrCaretData() {
       return false;
     }
 
-    if (protocol_ == mc_umbrella_protocol &&
-        UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
-      const auto mc_op = umbrellaDetermineOperation(
-        readBuffer_.data(), umMsgInfo_.headerSize);
-
-      umMsgInfo_.typeId = mcOpToRequestTypeId(mc_op);
-      assert(umMsgInfo_.typeId != 0);
-      if (umbrellaIsReply(readBuffer_.data(), umMsgInfo_.headerSize)) {
-        // We assume reply typeId is always one plus corresponding request's
-        // typeId. We rely on this in ClientServerMcParser.h.
-        ++umMsgInfo_.typeId;
-      }
-    }
-
     const auto messageSize = umMsgInfo_.headerSize + umMsgInfo_.bodySize;
 
     // Parse message body
     // Case 1: Entire message (and possibly part of next) is in the buffer
     if (readBuffer_.length() >= messageSize) {
       if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
+        if (protocol_ == mc_umbrella_protocol) {
+          const auto mc_op = umbrellaDetermineOperation(
+              readBuffer_.data(), umMsgInfo_.headerSize);
+          umMsgInfo_.typeId = mcOpToRequestTypeId(mc_op);
+          if (umMsgInfo_.typeId != 0 &&
+              umbrellaIsReply(readBuffer_.data(), umMsgInfo_.headerSize)) {
+            // We assume reply typeId is always one plus corresponding
+            // request's typeId. We rely on this in ClientServerMcParser.h.
+            ++umMsgInfo_.typeId;
+          }
+        }
         debugFifo_->startMessage(MessageDirection::Received, umMsgInfo_.typeId);
         debugFifo_->writeData(readBuffer_.writableData(), messageSize);
       }

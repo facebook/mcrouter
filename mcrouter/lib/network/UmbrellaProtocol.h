@@ -104,10 +104,12 @@ uint64_t umbrellaDetermineReqId(const uint8_t* header, size_t nheader);
 /**
  * Determines the operation type of an umbrella message.
  *
- * @return  The operation type of the given message.
- * @throw   std::runtime_error  On any parse error.
+ * @return  The operation type of the given message. If cannot determine the
+ *          operation, returns mc_op_unknown.
  */
-mc_op_t umbrellaDetermineOperation(const uint8_t* header, size_t nheader);
+mc_op_t umbrellaDetermineOperation(
+    const uint8_t* header,
+    size_t nheader) noexcept;
 
 /**
  * Tells whether the given umbrella message is a reply.
