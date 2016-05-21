@@ -476,7 +476,7 @@ void AsciiSerializedReply::prepareImpl(
 void AsciiSerializedReply::prepareImpl(
     TypedThriftReply<cpp2::McStatsReply>&& reply) {
   if (reply.result() == mc_res_ok) {
-    if (reply->get_stats()) {
+    if (reply->get_stats() && !reply->get_stats()->empty()) {
       auxString_ = folly::join("\r\n", *reply->get_stats());
       addStrings(*auxString_, "\r\n");
     }

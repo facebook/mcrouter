@@ -446,6 +446,8 @@ class MCProcess(ProcessBase):
             return None
         while l != 'END':
             l = self.fd.readline().strip()
+            if len(l) == 0:
+                return None
             a = l.split(None, 2)
             if len(a) == 3:
                 s[a[1]] = a[2]
