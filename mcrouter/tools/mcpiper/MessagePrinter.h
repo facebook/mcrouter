@@ -122,6 +122,9 @@ class MessagePrinter {
                   mc_protocol_t protocol);
   friend class SnifferParser<MessagePrinter>;
 
+  template <class Message>
+  StyledString getTypeSpecificAttributes(const Message& msg);
+
   /**
    * Tells whether a message matches the ip/port filter.
    *

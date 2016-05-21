@@ -48,6 +48,19 @@ inline int64_t getLeaseToken(
   return msg->get_leaseToken();
 }
 
+// Message
+template <class M>
+folly::StringPiece getMessage(const TypedThriftRequest<M>& msg) {
+  return "";
+}
+template <class M>
+folly::StringPiece getMessage(const TypedThriftReply<M>& msg) {
+  if (msg->get_message()) {
+    return *msg->get_message();
+  }
+  return "";
+}
+
 } // detail
 
 template <class Request>
@@ -155,6 +168,11 @@ void MessagePrinter::printMessage(uint64_t msgId,
     out.append("\n  lease-token: ", format_.msgAttrColor);
     out.append(folly::sformat("{:d}", leaseToken), format_.dataValueColor);
   }
+  if (!detail::getMessage(message).empty()) {
+    out.append("\n  message: ", format_.msgAttrColor);
+    out.append(detail::getMessage(message).str(), format_.dataValueColor);
+  }
+  out.append(getTypeSpecificAttributes(message));
 
   out.pushBack('\n');
 
@@ -219,6 +237,30 @@ void MessagePrinter::printMessage(uint64_t msgId,
   if (options_.numAfterMatch > 0) {
     --afterMatchCount_;
   }
+}
+
+template <class Message>
+StyledString MessagePrinter::getTypeSpecificAttributes(const Message& msg) {
+  StyledString out;
+  return out;
+}
+template <>
+inline StyledString MessagePrinter::getTypeSpecificAttributes(
+    const TypedThriftReply<cpp2::McMetagetReply>& msg) {
+  StyledString out;
+
+  out.append("\n  age: ", format_.msgAttrColor);
+  out.append(
+      msg->get_age() ? folly::sformat("{:d}", *msg->get_age()) : "unknown",
+      format_.dataValueColor);
+
+  if (msg->get_ipAddress()) {
+    out.append("\n  ip address: ", format_.msgAttrColor);
+    out.append(folly::sformat("{}", *msg->get_ipAddress()),
+               format_.dataValueColor);
+  }
+
+  return out;
 }
 
 }} // facebook::memcache
