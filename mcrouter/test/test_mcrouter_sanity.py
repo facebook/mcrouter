@@ -201,14 +201,14 @@ class TestMcrouterSanity(McrouterTestCase):
         # get => None (NOT_FOUND)
         self.assertIsNone(mcr.get(k))
 
-        # (set,append,prepend) => SERVER_ERRROR
+        # (set,touch,append,prepend) => SERVER_ERRROR
         self.assertIsNone(mcr.set(k, 'abc'))
+        self.assertEqual(mcr.touch(k, 100), "SERVER_ERROR")
         self.assertEqual(mcr.append(k, 'abc'), "SERVER_ERROR")
         self.assertEqual(mcr.prepend(k, 'abc'), "SERVER_ERROR")
 
         # (delete,incr,decr,touch) => NOT_FOUND
         self.assertIsNone(mcr.delete(k))
-        self.assertEqual(mcr.touch(k, 100), "NOT_FOUND")
         self.assertIsNone(mcr.incr(k))
         self.assertIsNone(mcr.decr(k))
 

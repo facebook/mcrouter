@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -119,7 +119,7 @@ class TestMcrouterForwardedErrors(McrouterTestCase):
             self.server.setError(error)
             mcrouter = self.add_mcrouter(self.config)
             res = mcrouter.issue_command(cmd)
-            self.assertEqual('NOT_FOUND\r\n', res)
+            self.assertEqual(error + '\r\n', res)
 
     def test_server_replied_server_error_for_delete_with_no_asynclog(self):
         # With --asynclog-disable, errors should be forwarded to client

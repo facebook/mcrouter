@@ -83,15 +83,6 @@ class DestinationRoute {
     return reply;
   }
 
-  TypedThriftReply<cpp2::McTouchReply> route(
-      const TypedThriftRequest<cpp2::McTouchRequest>& req) const {
-    auto reply = routeWithDestination(req);
-    if (reply.isFailoverError()) {
-      reply.setResult(mc_res_notfound);
-    }
-    return reply;
-  }
-
   template <class Request>
   ReplyT<Request> route(const Request& req,
                         OtherThanT<Request, DeleteLike<>> = 0) const {
