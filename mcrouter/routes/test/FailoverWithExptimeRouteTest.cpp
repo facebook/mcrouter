@@ -63,12 +63,18 @@ TEST(failoverWithExptimeRouteTest, success) {
 
 TEST(failoverWithExptimeRouteTest, once) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_notfound)),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_notfound))
   };
 
   auto rh = makeFailoverWithExptimeRoute(
@@ -84,19 +90,28 @@ TEST(failoverWithExptimeRouteTest, once) {
     auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
     EXPECT_EQ("b", reply.valueRangeSlow().str());
 
-    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[0]->sawExptimes);
+    auto reply2 = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("1"));
+    EXPECT_EQ(mc_res_notfound, reply2.result());
+    EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>{}, failoverHandles[1]->sawExptimes);
   });
 }
 
 TEST(failoverWithExptimeRouteTest, twice) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_timeout)),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_notfound))
   };
 
   auto rh = makeFailoverWithExptimeRoute(
@@ -112,20 +127,28 @@ TEST(failoverWithExptimeRouteTest, twice) {
     auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
     EXPECT_EQ("c", reply.valueRangeSlow().str());
 
-    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[1]->sawExptimes);
+    auto reply2 = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("1"));
+    EXPECT_EQ(mc_res_notfound, reply2.result());
+    EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[1]->sawExptimes);
   });
 }
 
 TEST(failoverWithExptimeRouteTest, fail) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_timeout)),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"),
+                            UpdateRouteTestData(),
+                            DeleteRouteTestData(mc_res_timeout))
   };
 
   auto rh = makeFailoverWithExptimeRoute(
@@ -143,9 +166,11 @@ TEST(failoverWithExptimeRouteTest, fail) {
     /* Will return the last reply when ran out of targets */
     EXPECT_EQ("c", reply.valueRangeSlow().str());
 
-    EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>{2}, failoverHandles[1]->sawExptimes);
+    auto reply2 = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("1"));
+    EXPECT_EQ(mc_res_timeout, reply2.result());
+    EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[1]->sawExptimes);
   });
 }
 

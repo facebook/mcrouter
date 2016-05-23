@@ -50,7 +50,7 @@ struct TagSet<McOperation<mc_op_get>, TypedThriftReply<cpp2::McGetReply>> {
 
 template <>
 struct TagSet<McOperation<mc_op_get>, TypedThriftRequest<cpp2::McGetRequest>> {
-  using Tags = List<ExptimeTag, FlagsTag, KeyTag>;
+  using Tags = List<FlagsTag, KeyTag>;
 };
 
 template <>

@@ -50,7 +50,7 @@ template <>
 struct RequestTraits<cpp2::McGetRequest> {
   static constexpr const char* name = "get";
   static constexpr bool hasKey = true;
-  static constexpr bool hasExptime = true;
+  static constexpr bool hasExptime = false;
   static constexpr bool hasValue = false;
   static constexpr bool hasFlags = true;
 };

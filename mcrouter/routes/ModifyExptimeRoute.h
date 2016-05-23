@@ -16,6 +16,8 @@
 
 #include <folly/Conv.h>
 
+#include "mcrouter/lib/network/RawThriftMessageTraits.h"
+#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -56,24 +58,31 @@ class ModifyExptimeRoute {
     t(*target_, req);
   }
 
-  template <class Request>
-  ReplyT<Request> route(const Request& req) const {
+  template <class TRequest>
+  typename std::enable_if<RequestTraits<TRequest>::hasExptime,
+                          ReplyT<TypedThriftRequest<TRequest>>>::type route(
+      const TypedThriftRequest<TRequest>& req) const {
     switch (action_) {
       case Action::Set: {
         auto mutReq = req.clone();
-        mutReq.setExptime(exptime_);
+        mutReq->set_exptime(exptime_);
         return target_->route(mutReq);
       }
       case Action::Min: {
         /* 0 means infinite exptime. Set minimum of request exptime, exptime. */
         if (req.exptime() == 0 || req.exptime() > exptime_) {
           auto mutReq = req.clone();
-          mutReq.setExptime(exptime_);
+          mutReq->set_exptime(exptime_);
           return target_->route(mutReq);
         }
         return target_->route(req);
       }
     }
+    return target_->route(req);
+  }
+
+  template <class Request>
+  ReplyT<Request> route(const Request& req) const {
     return target_->route(req);
   }
 
