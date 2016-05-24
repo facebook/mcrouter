@@ -110,6 +110,9 @@ void MessagePrinter::printMessage(uint64_t msgId,
   if (!matchAddress(from, to)) {
     return;
   }
+  if (filter_.protocol.hasValue() && filter_.protocol.value() != protocol) {
+    return;
+  }
 
   auto value = message.valueRangeSlow();
   if (value.size() < filter_.valueMinSize) {

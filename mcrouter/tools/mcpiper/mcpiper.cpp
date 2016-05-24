@@ -52,6 +52,7 @@ struct Settings {
   std::string timeFormat;
   uint32_t valueMinSize{0};
   size_t verboseLevel{0};
+  std::string protocol;
 };
 
 // Globals
@@ -113,6 +114,10 @@ Settings parseOptions(int argc, char **argv) {
     ("value-min-size,m",
       po::value<uint32_t>(&settings.valueMinSize),
       "Minimum size of the value of messages to display")
+    ("protocol",
+      po::value<std::string>(&settings.protocol),
+      "Show only data transmitted in the provided protocol; "
+      "ARG is \"ascii\", \"umbrella\" or \"caret\".")
     ("verbose",
       po::value<size_t>(&settings.verboseLevel),
       "Set verbose level")
@@ -235,6 +240,20 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   if (settings.port != 0) {
     filter.port = settings.port;
     std::cout << "Port: " << filter.port << std::endl;
+  }
+
+  // Protocol
+  if (!settings.protocol.empty()) {
+    auto protocol = mc_string_to_protocol(settings.protocol.c_str());
+    if (protocol == mc_ascii_protocol ||
+        protocol == mc_caret_protocol ||
+        protocol == mc_umbrella_protocol) {
+      filter.protocol.emplace(protocol);
+    } else {
+      LOG(ERROR) << "Invalid protocol. ascii|caret|umbrella expected, got "
+                 << settings.protocol
+                 << ". Protocol filter will not be applied.";
+    }
   }
 
   // Builds data pattern

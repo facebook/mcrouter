@@ -63,6 +63,7 @@ class MessagePrinter {
     uint32_t valueMinSize{0};
     std::unique_ptr<boost::regex> pattern;
     bool invertMatch{false};
+    folly::Optional<mc_protocol_t> protocol;
   };
 
   /**
