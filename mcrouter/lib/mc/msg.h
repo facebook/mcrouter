@@ -438,16 +438,4 @@ uint64_t mc_msg_num_outstanding();
  */
 mc_req_err_t mc_client_req_check(const mc_msg_t* req);
 
-/**
- * Returns whether the given memcache key is valid.
- * The key must satisfy:
- *   1) The length should be nonzero.
- *   2) The length should be at most MC_KEY_MAX_LEN.
- *   3) There should be no spaces or control characters.
- *
- * @param key  The key to verify
- * @return     validation result
- */
-mc_req_err_t mc_client_req_key_check(nstring_t key);
-
 __END_DECLS

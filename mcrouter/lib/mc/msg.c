@@ -487,15 +487,7 @@ mc_op_t mc_op_from_string(const char* str) {
   return mc_op_unknown;
 }
 
-mc_req_err_t mc_client_req_check(const mc_msg_t* req) {
-  if (!mc_req_has_key(req)) {
-    return mc_req_err_valid;
-  }
-
-  return mc_client_req_key_check(req->key);
-}
-
-mc_req_err_t mc_client_req_key_check(nstring_t key) {
+static mc_req_err_t mc_client_req_key_check(nstring_t key) {
   size_t i;
 
   if (key.len < 1) {
@@ -513,6 +505,14 @@ mc_req_err_t mc_client_req_key_check(nstring_t key) {
   }
 
   return mc_req_err_valid;
+}
+
+mc_req_err_t mc_client_req_check(const mc_msg_t* req) {
+  if (!mc_req_has_key(req)) {
+    return mc_req_err_valid;
+  }
+
+  return mc_client_req_key_check(req->key);
 }
 
 const char* mc_req_err_to_string(const mc_req_err_t err) {

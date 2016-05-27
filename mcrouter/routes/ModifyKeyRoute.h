@@ -19,6 +19,7 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -88,7 +89,7 @@ class ModifyKeyRoute {
   template <class Request>
   ReplyT<Request>
   routeReqWithKey(const Request& req, folly::StringPiece key) const {
-    auto err = mc_client_req_key_check(to<nstring_t>(key));
+    auto err = isKeyValid(key);
     if (err != mc_req_err_valid) {
       return ReplyT<Request>(ErrorReply, "ModifyKeyRoute: invalid key: " +
           std::string(mc_req_err_to_string(err)));

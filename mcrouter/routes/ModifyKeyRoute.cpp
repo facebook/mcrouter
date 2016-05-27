@@ -47,7 +47,7 @@ McrouterRouteHandlePtr makeModifyKeyRoute(
   std::string keyPrefix;
   if (auto jkeyPrefix = json.get_ptr("ensure_key_prefix")) {
     keyPrefix = jkeyPrefix->getString();
-    auto err = mc_client_req_key_check(to<nstring_t>(keyPrefix));
+    auto err = isKeyValid(keyPrefix);
     checkLogic(keyPrefix.empty() || err == mc_req_err_valid,
                "ModifyKeyRoute: invalid key prefix '{}', {}", keyPrefix,
                mc_req_err_to_string(err));

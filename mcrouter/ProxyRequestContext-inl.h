@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/proxy.h"
@@ -47,9 +48,8 @@ constexpr const char* kCommandNotSupportedStr = "Command not supported";
 template <class Request>
 bool precheckKey(ProxyRequestContextTyped<Request>& preq,
                  const Request& req) {
-  auto k = req.fullKey();
-  const nstring_t key{const_cast<char*>(k.begin()), k.size()};
-  auto err = mc_client_req_key_check(key);
+  auto key = req.fullKey();
+  auto err = isKeyValid(key);
   if (err != mc_req_err_valid) {
     preq.sendReply(mc_res_local_error, mc_req_err_to_string(err));
     return false;
