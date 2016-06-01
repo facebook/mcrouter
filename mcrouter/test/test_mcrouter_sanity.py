@@ -292,7 +292,8 @@ class TestMcrouterSanity(McrouterTestCase):
         num_stats = 0
         for stat_key, stat_value in stats.iteritems():
             key_parts = stat_key.split(':')
-            self.assertEqual(4, len(key_parts))  # IP:port:transport:protocol
+            # IP:port:protocol:transport:comp
+            self.assertEqual(5, len(key_parts))
             num_stats += 1
             value_parts = stat_value.split(' ')
             self.assertEqual(value_parts[0], 'avg_latency_us:0.000')

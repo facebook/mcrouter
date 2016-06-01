@@ -107,7 +107,9 @@ void logShadowValidationError(proxy_t& proxy,
 
 void initFailureLogger() { }
 
-void initCompression(McrouterInstance&) { }
+bool initCompression(McrouterInstance&) {
+  return false;
+}
 
 void scheduleSingletonCleanup() { }
 

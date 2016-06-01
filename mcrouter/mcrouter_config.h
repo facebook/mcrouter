@@ -141,7 +141,7 @@ void initFailureLogger();
 /**
  * Initializes compression dictionaries for the given mcrouter instance
  */
-void initCompression(McrouterInstance& router);
+bool initCompression(McrouterInstance& router);
 
 void scheduleSingletonCleanup();
 

@@ -267,8 +267,10 @@ void ProxyDestination::initializeAsyncMcClient() {
     options.qosPath = qosPath_;
   }
   options.useJemallocNodumpAllocator = opts.jemalloc_nodump_buffers;
-  if (auto codecManager = proxy->router().getCodecManager()) {
-    options.compressionCodecMap = codecManager->getCodecMap();
+  if (accessPoint_->compressed()) {
+    if (auto codecManager = proxy->router().getCodecManager()) {
+      options.compressionCodecMap = codecManager->getCodecMap();
+    }
   }
 
   if (accessPoint_->useSsl()) {
@@ -330,7 +332,7 @@ void ProxyDestination::initializeAsyncMcClient() {
       }
     });
 
-  if (opts.enable_compression) {
+  if (accessPoint_->compressed()) {
     client_->setCompressionCallback([proxy = proxy](
         bool compressed,
         size_t numBytesBeforeCompression,

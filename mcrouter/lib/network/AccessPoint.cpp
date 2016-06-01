@@ -52,6 +52,15 @@ bool parseSsl(folly::StringPiece s) {
   throw std::runtime_error("Invalid encryption");
 }
 
+bool parseCompressed(folly::StringPiece s) {
+  if (s == "compressed") {
+    return true;
+  } else if (s == "notcompressed") {
+    return false;
+  }
+  throw std::runtime_error("Invalid compression config");
+}
+
 mc_protocol_t parseProtocol(folly::StringPiece str) {
   if (str == "ascii") {
     return mc_ascii_protocol;
@@ -66,10 +75,11 @@ mc_protocol_t parseProtocol(folly::StringPiece str) {
 }  // anonymous
 
 AccessPoint::AccessPoint(folly::StringPiece host, uint16_t port,
-                         mc_protocol_t protocol, bool useSsl)
+                         mc_protocol_t protocol, bool useSsl, bool compressed)
     : port_(port),
       protocol_(protocol),
-      useSsl_(useSsl) {
+      useSsl_(useSsl),
+      compressed_(compressed) {
 
   try {
     folly::IPAddress ip(host);
@@ -86,7 +96,8 @@ std::shared_ptr<AccessPoint>
 AccessPoint::create(folly::StringPiece apString,
                     mc_protocol_t defaultProtocol,
                     bool defaultUseSsl,
-                    uint16_t portOverride) {
+                    uint16_t portOverride,
+                    bool defaultCompressed) {
   if (apString.empty()) {
     return nullptr;
   }
@@ -117,14 +128,15 @@ AccessPoint::create(folly::StringPiece apString,
   }
 
   try {
-    folly::StringPiece port, protocol, encr;
-    parseParts(apString, port, protocol, encr);
+    folly::StringPiece port, protocol, encr, comp;
+    parseParts(apString, port, protocol, encr, comp);
 
     return std::make_shared<AccessPoint>(
       host,
       portOverride != 0 ? portOverride : folly::to<uint16_t>(port),
       protocol.empty() ? defaultProtocol : parseProtocol(protocol),
-      encr.empty() ? defaultUseSsl : parseSsl(encr));
+      encr.empty() ? defaultUseSsl : parseSsl(encr),
+      comp.empty() ? defaultCompressed : parseCompressed(comp));
   } catch (const std::exception&) {
     return nullptr;
   }
@@ -142,11 +154,13 @@ std::string AccessPoint::toString() const {
   if (isV6_) {
     return folly::to<std::string>("[", host_, "]:", port_, ":",
                                   mc_protocol_to_string(protocol_),
-                                  ":", useSsl_ ? "ssl" : "plain");
+                                  ":", useSsl_ ? "ssl" : "plain", ":",
+                                  compressed_ ? "compressed" : "notcompressed");
   }
   return folly::to<std::string>(host_, ":", port_, ":",
                                 mc_protocol_to_string(protocol_),
-                                ":", useSsl_ ? "ssl" : "plain");
+                                ":", useSsl_ ? "ssl" : "plain", ":",
+                                compressed_ ? "compressed" : "notcompressed");
 }
 
 }}  // facebook::memcache

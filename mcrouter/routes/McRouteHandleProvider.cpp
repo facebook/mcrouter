@@ -287,6 +287,17 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
       }
     }
 
+    bool enableCompression = proxy_.router().opts().enable_compression;
+    if (auto jCompression = json.get_ptr("enable_compression")) {
+      enableCompression = parseBool(*jCompression, "enable_compression");
+    }
+    if (enableCompression && proxy_.router().getCodecManager() == nullptr) {
+      if (!initCompression(proxy_.router())) {
+        enableCompression = false;
+        throwLogic("Failed to initialize compression.");
+      }
+    }
+
     bool keepRoutingPrefix = false;
     if (auto jKeepRoutingPrefix = json.get_ptr("keep_routing_prefix")) {
       keepRoutingPrefix = parseBool(*jKeepRoutingPrefix, "keep_routing_prefix");
@@ -329,7 +340,7 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
         continue;
       }
       auto ap = AccessPoint::create(server.stringPiece(), protocol, useSsl,
-                                    port);
+                                    port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       accessPoints_[name].push_back(ap);

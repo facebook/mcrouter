@@ -187,7 +187,8 @@ class TestDuplicateServers(McrouterTestCase):
         # for all the duplicate servers
         self.assertEqual(1, len(stats))
         # Hardcoding default server timeout
-        key = 'localhost:' + str(self.port_map[12345]) + ':ascii:plain-1000'
+        key = ('localhost:' + str(self.port_map[12345]) +
+               ':ascii:plain:notcompressed-1000')
         self.assertTrue(key in stats)
 
 class TestDuplicateServersDiffTimeouts(McrouterTestCase):
@@ -209,10 +210,12 @@ class TestDuplicateServersDiffTimeouts(McrouterTestCase):
         # for all the duplicate servers in pools with diff timeout
         self.assertEqual(2, len(stats))
         # Hardcoding default server timeout
-        key = 'localhost:' + str(self.port_map[12345]) + ':ascii:plain-1000'
+        key = ('localhost:' + str(self.port_map[12345]) +
+               ':ascii:plain:notcompressed-1000')
         self.assertTrue(key in stats)
 
-        key = 'localhost:' + str(self.port_map[12345]) + ':ascii:plain-2000'
+        key = ('localhost:' + str(self.port_map[12345]) +
+               ':ascii:plain:notcompressed-2000')
         self.assertTrue(key in stats)
 
 class TestPoolServerErrors(McrouterTestCase):
