@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -119,11 +119,11 @@ class Trie {
 
   const Trie* findPrefixImpl(folly::StringPiece key) const;
 
-  static constexpr size_t getTopHalf(folly::StringPiece::value_type c) {
+  static constexpr size_t getTopHalf(unsigned char c) {
     return c >> 4;
   }
 
-  static constexpr size_t getBottomHalf(folly::StringPiece::value_type c) {
+  static constexpr size_t getBottomHalf(unsigned char c) {
     return c & 15;
   }
 };
