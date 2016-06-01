@@ -182,8 +182,6 @@ AC_CONFIG_FILES([Makefile
                  lib/fbi/test/Makefile
                  lib/fbi/cpp/Makefile
                  lib/fbi/cpp/test/Makefile
-                 lib/mc/Makefile
-                 lib/mc/test/Makefile
                  lib/network/Makefile
                  lib/network/test/Makefile
                  routes/Makefile

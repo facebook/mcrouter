@@ -49,7 +49,6 @@ using facebook::memcache::ReplyT;
 using facebook::memcache::TRequestList;
 using facebook::memcache::TypedThriftReply;
 using facebook::memcache::TypedThriftRequest;
-using facebook::memcache::createMcMsgRef;
 
 using namespace facebook::memcache::cpp2;
 

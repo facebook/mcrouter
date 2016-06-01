@@ -16,7 +16,6 @@
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/ProxyConfig.h"

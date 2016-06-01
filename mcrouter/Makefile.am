@@ -6,17 +6,12 @@ noinst_LIBRARIES = libmcroutercore.a
 bin_PROGRAMS = mcrouter
 
 BUILT_SOURCES = \
-  lib/mc/ascii_client.c \
   lib/network/McAsciiParser-gen.cpp
-
-lib/mc/ascii_client.c: lib/mc/ascii_client.rl
-	ragel -G1 -o lib/mc/ascii_client.c lib/mc/ascii_client.rl
 
 lib/network/McAsciiParser-gen.cpp: lib/network/McAsciiParser.rl
 	ragel -G1 -o lib/network/McAsciiParser-gen.cpp lib/network/McAsciiParser.rl
 
 CLEANFILES = \
-  lib/mc/ascii_client.c \
   lib/network/McAsciiParser-gen.cpp
 
 libmcroutercore_a_SOURCES = \

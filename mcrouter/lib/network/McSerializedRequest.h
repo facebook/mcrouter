@@ -11,9 +11,7 @@
 
 #include <memory>
 
-#include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"

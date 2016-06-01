@@ -19,12 +19,12 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Keys.h"
-#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/detail/RequestUtil.h"
 #include "mcrouter/lib/network/RawThriftMessageTraits.h"
 #include "mcrouter/lib/network/ThriftMessageTraits.h"
+#include "mcrouter/lib/Ref.h"
 #include "mcrouter/lib/Reply.h"
 
 #ifndef LIBMC_FBTRACE_DISABLE

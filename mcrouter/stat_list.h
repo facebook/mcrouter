@@ -288,9 +288,6 @@
   STUIR(result_local_error_all, 0, 1)
 #undef GROUP
 #define GROUP memory_stats | ods_stats | detailed_stats
-#ifndef FBCODE_OPT_BUILD
-  STUI(mc_msg_num_outstanding, 0, 0)
-#endif
   STUI(proxy_request_num_outstanding, 0, 1)
 #undef GROUP
 #define GROUP memory_stats

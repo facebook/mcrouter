@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <arpa/inet.h>
+
 #include <folly/Bits.h>
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"

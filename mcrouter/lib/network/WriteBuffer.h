@@ -14,7 +14,6 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
 
-#include "mcrouter/lib/mc/ascii_response.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"

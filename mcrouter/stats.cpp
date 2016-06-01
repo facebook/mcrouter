@@ -411,10 +411,6 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
     stats[client_queue_notify_period_stat].data.dbl /=
       router.opts().num_proxies;
   }
-#ifndef FBCODE_OPT_BUILD
-  stats[mc_msg_num_outstanding_stat].data.uint64 =
-    mc_msg_num_outstanding();
-#endif
 
   for (int i = 0; i < num_stats; i++) {
     if (stats[i].aggregate && !(stats[i].group & rate_stats)) {

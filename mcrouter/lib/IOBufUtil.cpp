@@ -12,8 +12,6 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Range.h>
 
-#include "mcrouter/lib/McMsgRef.h"
-
 namespace facebook { namespace memcache {
 
 folly::StringPiece getRange(const std::unique_ptr<folly::IOBuf>& buf) {
@@ -39,62 +37,6 @@ folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf) {
 folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf) {
   buf.coalesce();
   return getRange(buf);
-}
-
-template <nstring_t mc_msg_t::* F>
-std::unique_ptr<folly::IOBuf> makeMsgIOBufHelper(const McMsgRef& msgRef,
-                                                 bool returnEmpty) {
-  if (!msgRef.get()) {
-    return returnEmpty ? folly::IOBuf::create(0) : nullptr;
-  }
-  auto msg = const_cast<mc_msg_t*>(msgRef.get());
-  if (!(msg->*F).len) {
-    return returnEmpty ? folly::IOBuf::create(0) : nullptr;
-  }
-  return folly::IOBuf::takeOwnership(
-    (msg->*F).str, (msg->*F).len, (msg->*F).len,
-    [] (void* buf, void* ctx) {
-      auto m = reinterpret_cast<mc_msg_t*>(ctx);
-      mc_msg_decref(m);
-    },
-    mc_msg_incref(msg));
-}
-
-template <nstring_t mc_msg_t::* F>
-folly::IOBuf makeMsgIOBufStackHelper(const McMsgRef& msgRef) {
-  if (!msgRef.get()) {
-    return {};
-  }
-  auto msg = const_cast<mc_msg_t*>(msgRef.get());
-  if (!(msg->*F).len) {
-    return {};
-  }
-  return folly::IOBuf(
-    folly::IOBuf::TAKE_OWNERSHIP,
-    (msg->*F).str, (msg->*F).len, (msg->*F).len,
-    [] (void* buf, void* ctx) {
-      auto m = reinterpret_cast<mc_msg_t*>(ctx);
-      mc_msg_decref(m);
-    },
-    mc_msg_incref(msg));
-}
-
-std::unique_ptr<folly::IOBuf> makeMsgKeyIOBuf(const McMsgRef& msgRef,
-                                              bool returnEmpty) {
-  return makeMsgIOBufHelper<&mc_msg_t::key>(msgRef, returnEmpty);
-}
-
-std::unique_ptr<folly::IOBuf> makeMsgValueIOBuf(const McMsgRef& msgRef,
-                                                bool returnEmpty) {
-  return makeMsgIOBufHelper<&mc_msg_t::value>(msgRef, returnEmpty);
-}
-
-folly::IOBuf makeMsgKeyIOBufStack(const McMsgRef& msgRef) {
-  return makeMsgIOBufStackHelper<&mc_msg_t::key>(msgRef);
-}
-
-folly::IOBuf makeMsgValueIOBufStack(const McMsgRef& msgRef) {
-  return makeMsgIOBufStackHelper<&mc_msg_t::value>(msgRef);
 }
 
 bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range) {

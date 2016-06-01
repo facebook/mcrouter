@@ -14,7 +14,6 @@
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/fbi/asox_timer.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"

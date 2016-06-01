@@ -9,7 +9,6 @@
  */
 #pragma once
 
-#include "mcrouter/lib/fbi/debug.h"
 #include "mcrouter/options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

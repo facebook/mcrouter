@@ -10,16 +10,12 @@
 #pragma once
 
 #include <inttypes.h>
-#include <netinet/in.h>
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "mcrouter/lib/fbi/decls.h"
-#include "mcrouter/lib/fbi/nstring.h"
 
 __BEGIN_DECLS
 
-#define MSG_NOT_REFCOUNTED -12345
 #define SERVER_ERROR_BUSY 307
 
 /*
@@ -250,55 +246,6 @@ static inline const char* mc_flag_to_string(const enum mc_msg_flags_t flag) {
   return "UNKNOWN";
 }
 
-typedef enum mc_req_err_s {
-  mc_req_err_valid,
-  mc_req_err_no_key,
-  mc_req_err_key_too_long,
-  mc_req_err_space_or_ctrl
-} mc_req_err_t;
-
-const char* mc_req_err_to_string(const mc_req_err_t err);
-
-/*
- * memcache request/reply.
- *
- * NOTE: update src/py/__init__.py when you update this struct!
- *
- */
-typedef struct mc_msg_s {
-  int _refcount;
-
-  mc_op_t op;
-  mc_res_t result;
-
-  uint32_t err_code; ///< application specific error code
-
-  uint64_t flags; // is_transient for metaget
-  int32_t exptime;
-  uint32_t number; ///< flushall delay, verbosity, age in metaget
-
-  uint64_t delta; ///< arithmetic
-  uint64_t lease_id;
-  uint64_t cas;
-
-  nstring_t* stats; ///< array of 2*number nstrings for stats. freed for stats replies.
-  nstring_t key; ///< get/set key, stats arg, flushre regexp
-  nstring_t value; ///< storage value
-
-  struct in6_addr ip_addr; ///< metaget
-  uint8_t ipv; ///< metaget
-
-#ifndef LIBMC_FBTRACE_DISABLE
-  /** NULL if not fbtracing. */
-  struct mc_fbtrace_info_s* fbtrace_info;
-#endif
-
-  bool noreply;
-
-  void *context; ///< get/set key, stats arg, flushre regexp
-  size_t _extra_size;
-} mc_msg_t;
-
 /*
  * memcache request functions
  */
@@ -324,10 +271,6 @@ static inline int mc_op_has_key(mc_op_t op) {
   }
 }
 
-static inline int mc_req_has_key(const mc_msg_t* req) {
-  return mc_op_has_key(req->op);
-}
-
 /** Does given op accept value or not */
 static inline int mc_op_has_value(mc_op_t op) {
   switch (op) {
@@ -344,98 +287,24 @@ static inline int mc_op_has_value(mc_op_t op) {
   }
 }
 
-/** Does request have a value (excluding fixed width integer values) */
-static inline int mc_req_has_value(const mc_msg_t* req) {
-  return mc_op_has_value(req->op);
-}
-
-/*
- * memcache reply functions
- */
-
-void mc_msg_init_not_refcounted(mc_msg_t* msg);
-
-/**
- * Construct a new request object. The memory for the object is allocated
- * on the heap. Optionally extra memory is allocated at the end of the request
- * structure. The reference count on the new structure is set to 1.
- *
- * @param extra_size Number of extra bytes to allocate.
- * @return Pointer to the newely allocated request structure or NULL on malloc
- *         failure.
- * @note The object returned by this function must be freed by calling
- *       mc_msg_decref()
- */
-mc_msg_t* mc_msg_new(size_t extra_size);
-
-/**
- * Construct a new request object with a copy of key embedded in it using
- * mc_msg_new.
- */
-mc_msg_t *mc_msg_new_with_key(const char *key);
-
-mc_msg_t *mc_msg_new_with_key_full(const char *key, size_t nkey);
-
-/**
- * Construct a new request object with a copy of key and value
- * embedded in it using mc_msg_new.
- */
-mc_msg_t *mc_msg_new_with_key_and_value(const char *key,
-                                        const char *value,
-                                        size_t nvalue);
-
-mc_msg_t *mc_msg_new_with_key_and_value_full(const char *key,
-                                             size_t nkey,
-                                             const char *value,
-                                             size_t nvalue);
-
-void mc_msg_copy(mc_msg_t *dst, const mc_msg_t *src);
-void mc_msg_shallow_copy(mc_msg_t *dst, const mc_msg_t *src);
-
-mc_msg_t* mc_msg_realloc(mc_msg_t *msg, size_t new_exta_size);
-int mc_msg_grow(mc_msg_t **msg, size_t len, void **field_ptr);
-mc_msg_t* mc_msg_incref(mc_msg_t*);
-void mc_msg_decref(mc_msg_t*);
-void mc_msg_compress(mc_msg_t **msgP);
-int mc_msg_decompress(mc_msg_t **msgP);
-void mc_msg_nzlib_compress(mc_msg_t **msgP);
-int mc_msg_nzlib_decompress(mc_msg_t **msgP);
-
 static inline int mc_res_is_err(const mc_res_t result) {
-  return result >= mc_res_ooo &&
-    result < mc_res_waiting;
+  return result >= mc_res_ooo && result < mc_res_waiting;
 }
 
-/*
- * On by default
- *
- * Turn this off only if you're sure that *all* your mc_msg_t's are
- * referenced by a single thread throughout their lifetime
- * (i.e. you can have multiple threads, but don't pass mc_msg_t's around)
- *
- * In a dbg build, you won't see the performance benefits
- * of disabling these, because an atomic operation is used anyways
- * to help you make sure you know what you're doing.
- */
-void mc_msg_use_atomic_refcounts(int enable);
+typedef enum mc_req_err_s {
+  mc_req_err_valid,
+  mc_req_err_no_key,
+  mc_req_err_key_too_long,
+  mc_req_err_space_or_ctrl
+} mc_req_err_t;
 
-/*
- * On by default. Disable if you want to save some atomic operations
- * and you don't care about this field.
- */
-void mc_msg_track_num_outstanding(int enable);
-uint64_t mc_msg_num_outstanding();
+const char* mc_req_err_to_string(const mc_req_err_t err);
 
 /**
- * Returns whether the given request has a valid memcache key (if it should).
- * must satisfy:
- *   1) The length should be nonzero.
- *   2) The length should be at most MC_KEY_MAX_LEN.
- *   3) There should be no spaces or control characters.
+ * @param result Result code
  *
- * @param req  The request to verify
- * @return     validation result
+ * @return Human-readable ASCII string for result.
  */
-mc_req_err_t mc_client_req_check(const mc_msg_t* req);
+const char* mc_res_to_response_string(const mc_res_t result);
 
 __END_DECLS

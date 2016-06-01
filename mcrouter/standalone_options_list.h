@@ -26,13 +26,6 @@ mcrouter_option_string(
   "log-path", 'L',
   "Log file path")
 
-/* Note that debug level is handled specially in main.cpp
-   due to -v and -d options, so no long/short options here */
-mcrouter_option_integer(
-  int, debug_level, FBI_LOG_NOTIFY,
-  no_long, no_short,
-  "Debug level")
-
 mcrouter_option_other(
   std::vector<uint16_t>, ports, ,
   "port", 'p',

@@ -9,19 +9,21 @@
  */
 #include "mc_fbtrace_info.h"
 
-#include "mcrouter/lib/fbi/debug.h"
+#include <assert.h>
+#include <malloc.h>
+#include <string.h>
 
 static mc_fbtrace_t* mc_fbtrace_incref(mc_fbtrace_t* fbt) {
-  FBI_ASSERT(fbt);
+  assert(fbt);
   int newrefcount = __sync_add_and_fetch(&fbt->_refcount, 1);
-  FBI_ASSERT(newrefcount > 0);
+  assert(newrefcount > 0);
   return fbt;
 }
 
 static void mc_fbtrace_decref(mc_fbtrace_t* fbt) {
-  FBI_ASSERT(fbt);
+  assert(fbt);
   int newrefcount = __sync_add_and_fetch(&fbt->_refcount, -1);
-  FBI_ASSERT(newrefcount >= 0);
+  assert(newrefcount >= 0);
   if (newrefcount == 0) {
     free(fbt);
   }
@@ -30,7 +32,6 @@ static void mc_fbtrace_decref(mc_fbtrace_t* fbt) {
 static mc_fbtrace_t* new_mc_fbtrace() {
   mc_fbtrace_t* fbt = calloc(1, sizeof(*fbt));
   if (fbt == NULL) {
-    dbg_debug("Error while allocating memory for mc_fbtrace_t object");
     return fbt;
   }
   mc_fbtrace_incref(fbt);
@@ -40,7 +41,6 @@ static mc_fbtrace_t* new_mc_fbtrace() {
 mc_fbtrace_info_t* new_mc_fbtrace_info(int is_copy) {
   mc_fbtrace_info_t* fbt_i = calloc(1, sizeof(*fbt_i));
   if (fbt_i == NULL) {
-    dbg_debug("Error while allocating memory for mc_fbtrace_info_t object");
     return fbt_i;
   }
   fbt_i->_refcount = 1;
@@ -68,7 +68,7 @@ void mc_fbtrace_info_decref(mc_fbtrace_info_t* fbt_i) {
     return;
   }
   int newrefcount = __sync_add_and_fetch(&fbt_i->_refcount, -1);
-  FBI_ASSERT(newrefcount >= 0);
+  assert(newrefcount >= 0);
   if (newrefcount == 0) {
     if (fbt_i->fbtrace) {
       mc_fbtrace_decref(fbt_i->fbtrace);
@@ -82,6 +82,6 @@ mc_fbtrace_info_t* mc_fbtrace_info_incref(mc_fbtrace_info_t* fbt_i) {
     return NULL;
   }
   int newrefcount = __sync_add_and_fetch(&fbt_i->_refcount, 1);
-  FBI_ASSERT(newrefcount > 0);
+  assert(newrefcount > 0);
   return fbt_i;
 }

@@ -1,4 +1,4 @@
-SUBDIRS = . allocator config cycles fbi mc network test
+SUBDIRS = . allocator config cycles fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -29,9 +29,9 @@ libmcrouter_a_SOURCES = \
   FailoverErrorsSettings.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
-	IovecCursor-inl.h \
-	IovecCursor.cpp \
-	IovecCursor.h \
+  IovecCursor-inl.h \
+  IovecCursor.cpp \
+  IovecCursor.h \
   Keys.cpp \
   Keys.h \
   Lz4Immutable.cpp \
@@ -39,7 +39,6 @@ libmcrouter_a_SOURCES = \
   MessageStorage.h \
   MessageQueue.cpp \
   MessageQueue.h \
-  McMsgRef.h \
   McOpList.h \
   McOperation.h \
   McOperationTraits.h \
@@ -47,6 +46,7 @@ libmcrouter_a_SOURCES = \
   McResUtil.h \
   Operation.h \
   OperationTraits.h \
+  Ref.h \
   Reply.h \
   RouteHandleIf.h \
   RouteHandleTraverser.h \
@@ -74,16 +74,14 @@ libmcrouter_a_SOURCES = \
   cycles/ExtractorThread.cpp \
   cycles/ExtractorThread.h \
   cycles/Interval.h \
-	debug/ConnectionFifo.cpp \
-	debug/ConnectionFifo.h \
-	debug/ConnectionFifoProtocol.cpp \
-	debug/ConnectionFifoProtocol.h \
+  debug/ConnectionFifo.cpp \
+  debug/ConnectionFifo.h \
+  debug/ConnectionFifoProtocol.cpp \
+  debug/ConnectionFifoProtocol.h \
   debug/Fifo.cpp \
   debug/Fifo.h \
   debug/FifoManager.cpp \
   debug/FifoManager.h \
-  fbi/asox_timer.c \
-  fbi/asox_timer.h \
   fbi/counting_sem.c \
   fbi/counting_sem.h \
   fbi/cpp/FuncGenerator.h \
@@ -113,21 +111,12 @@ libmcrouter_a_SOURCES = \
   fbi/sfrlock.h \
   fbi/time.h \
   fbi/util.h \
-  mc/ascii_client.c \
-  mc/ascii_client.h \
-  mc/ascii_response.c \
-  mc/ascii_response.h \
   mc/msg.c \
   mc/msg.h \
-  mc/parser.c \
-  mc/parser.h \
   mc/protocol.h \
   mc/umbrella.c \
   mc/umbrella.h \
   mc/umbrella_conv.h \
-  mc/umbrella_protocol.c \
-  mc/umbrella_protocol.h \
-  mc/util.h \
   network/AccessPoint.cpp \
   network/AccessPoint.h \
   network/AsciiSerialized-inl.h \

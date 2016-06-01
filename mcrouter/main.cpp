@@ -107,8 +107,6 @@ static void print_usage_and_die(char* progname, int errorCode) {
 
   print_usage("    --proxy-threads", "Like --num-proxies, but also accepts"
               " 'auto' to start one thread per core");
-  print_usage("-D, --debug-level", "set debug level");
-  print_usage("-d, --debug", "increase debug level (may repeat)");
   print_usage("-h, --help", "help");
   print_usage("-V, --version", "version");
   print_usage("-v, --verbosity", "Set verbosity of VLOG");
@@ -146,8 +144,6 @@ static void parse_options(int argc,
                           string* flavor) {
 
   vector<option> long_options = {
-    { "debug",                       0, nullptr, 'd'},
-    { "debug-level",                 1, nullptr, 'D'},
     { "verbosity",                   1, nullptr, 'v'},
     { "help",                        0, nullptr, 'h'},
     { "version",                     0, nullptr, 'V'},
@@ -184,18 +180,11 @@ static void parse_options(int argc,
 
   long_options.push_back({0, 0, 0, 0});
 
-  int debug_level = FBI_LOG_NOTIFY;
-
   int long_index = -1;
   int c;
   while ((c = getopt_long(argc, argv, optstring.c_str(), long_options.data(),
                           &long_index)) != -1) {
     switch (c) {
-    case 'd':
-      debug_level = std::max(debug_level + 10, FBI_LOG_DEBUG);
-      break;
-    case 'D':
-      debug_level = strtol(optarg, nullptr, 10);
     case 'v':
       FLAGS_v = folly::to<int>(optarg);
       break;
@@ -291,8 +280,6 @@ static void parse_options(int argc,
     long_index = -1;
   }
 
-  standalone_option_dict["debug_level"] = std::to_string(debug_level);
-
   /* getopt permutes argv so that all non-options are at the end.
      For now we only expect one non-option argument, so look at the last one. */
   *flavor = string();
@@ -347,10 +334,6 @@ void notify_command_line(int argc, char ** argv) {
 
   LOG(INFO) << cmd_line;
   free(cmd_line);
-}
-
-void on_assert_fail(const char *msg) {
-  LOG_FAILURE("mcrouter", failure::Category::kBrokenLogic, msg);
 }
 
 int main(int argc, char **argv) {
@@ -426,17 +409,6 @@ int main(int argc, char **argv) {
 
   srand(time(nullptr) + getpid());
 
-  // act on options
-  if (standaloneOpts.log_file != "") {
-    nstring_t logfile
-      = NSTRING_INIT((char*)standaloneOpts.log_file.c_str());
-    fbi_set_debug_logfile(&logfile);
-  }
-
-  fbi_set_debug(standaloneOpts.debug_level);
-  fbi_set_debug_date_format(fbi_date_utc);
-  fbi_set_assert_hook(&on_assert_fail);
-
   // do this immediately after setting up log file
   notify_command_line(argc, argv);
 
@@ -456,13 +428,6 @@ int main(int argc, char **argv) {
   if (flavor.empty()) {
     opts.router_name = port_str.c_str();
   }
-
-  /*
-   * We know that mc_msg_t's are guaranteed to
-   * only ever be used by one thread, so disable
-   * atomic refcounts
-   */
-  mc_msg_use_atomic_refcounts(0);
 
   if (validate_configs != ValidateConfigMode::NONE) {
     failure::addHandler(failure::handlers::throwLogicError());

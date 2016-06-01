@@ -11,9 +11,7 @@
 
 #include <folly/io/IOBufQueue.h>
 
-#include "mcrouter/lib/McMsgRef.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
-#include "mcrouter/lib/mc/parser.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 

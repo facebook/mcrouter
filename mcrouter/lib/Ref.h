@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,18 +14,16 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/mc/msg.h"
 
 namespace facebook { namespace memcache {
 
 /**
- * McMsgRef is a reference counting wrapper around mc_msg_t*
- * with value semantics.  Think of it as a shared_ptr for mc_msg_t objects.
+ * Ref is a reference counting wrapper with value semantics.
  *
  * Copy ctor/assignment is disabled.
  * Instead, copies must be obtained explicitly:
- *   McMsgRef a;
- *   McMsgRef b = a.clone();
+ *   Ref a;
+ *   Ref b = a.clone();
  * This is done to emphasize creation of new references in code and force
  * move semantics as the default.
  */
@@ -127,110 +125,5 @@ class Ref {
 
   explicit Ref(T* ref) noexcept : ref_(ref) {}
 };
-
-
-struct McMsgRefPolicy {
-  class Deleter {
-   public:
-    void operator()(mc_msg_t* msg) const {
-      if (msg) {
-        mc_msg_decref(msg);
-      }
-    }
-  };
-
-  static const mc_msg_t* increfOrNull(const mc_msg_t* msg) {
-    if (msg != nullptr) {
-      mc_msg_incref(const_cast<mc_msg_t*>(msg));
-    }
-    return msg;
-  }
-
-  static void decref(const mc_msg_t* msg) {
-    if (msg != nullptr) {
-      mc_msg_decref(const_cast<mc_msg_t*>(msg));
-    }
-  }
-};
-
-typedef Ref<const mc_msg_t, McMsgRefPolicy> McMsgRef;
-typedef std::unique_ptr<mc_msg_t, McMsgRefPolicy::Deleter> MutableMcMsgRef;
-
-/**
- * Mutable message constuctor.
- *
- * @param extra_size
- *
- * @return new Message object with empty key and value and extra_size bytes
- *         allocated after it
- */
-inline MutableMcMsgRef createMcMsgRef(size_t extra_size = 0) {
-  auto msg = mc_msg_new(extra_size);
-  if (!msg) {
-    throw std::bad_alloc();
-  }
-  return MutableMcMsgRef(msg);
-}
-
-/**
- * Mutable message constuctor.
- *
- * @param key
- *
- * @return new Message object with a copy of key and empty value
- *         embedded in it
- */
-inline MutableMcMsgRef createMcMsgRef(const folly::StringPiece& key) {
-  auto msg = mc_msg_new_with_key_full(key.data(), key.size());
-  if (!msg) {
-    throw std::bad_alloc();
-  }
-  return MutableMcMsgRef(msg);
-}
-
-/**
- * Mutable message constuctor.
- *
- * @param key
- * @param value
- *
- * @return new Message object with a copy of key and value
- *         embedded in it
- */
-inline MutableMcMsgRef createMcMsgRef(const folly::StringPiece& key,
-                                      const folly::StringPiece& value) {
-  auto msg = mc_msg_new_with_key_and_value_full(key.data(), key.size(),
-                                                value.data(), value.size());
-  if (!msg) {
-    throw std::bad_alloc();
-  }
-  return MutableMcMsgRef(msg);
-}
-
-inline MutableMcMsgRef dependentMcMsgRef(const McMsgRef& ref) {
-  auto copy = createMcMsgRef();
-  mc_msg_shallow_copy(copy.get(), ref.get());
-  return copy;
-}
-
-/**
- * Mutable message constuctor.
- *
- * @param ref
- * @param key
- * @param value
- *
- * @return a copy of ref Message object with key and value
- *         overridden in it
- */
-inline MutableMcMsgRef createMcMsgRef(const McMsgRef& ref,
-                                      folly::StringPiece key,
-                                      folly::StringPiece value) {
-
-  auto msg = dependentMcMsgRef(ref);
-  msg->key = to<nstring_t>(key);
-  msg->value = to<nstring_t>(value);
-  return msg;
-}
 
 }}  // facebook::memcache

@@ -7,7 +7,6 @@ TESTS = \
   ../lib/fbi/cpp/test/mcrouter_fbi_cpp_test \
   ../lib/fbi/test/mcrouter_fbi_hash_test \
   ../lib/fbi/test/mcrouter_fbi_test \
-  ../lib/mc/test/umbrella_test \
   ../lib/test/mcrouter_lib_test \
   ../routes/test/mcrouter_routes_test \
   cpp_unit_tests/mcrouter_test
