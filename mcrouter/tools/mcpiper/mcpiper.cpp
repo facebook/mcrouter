@@ -77,6 +77,7 @@ Settings parseOptions(int argc, char **argv) {
   po::options_description namedOpts("Allowed options");
   namedOpts.add_options()
     ("help,h", "Print this help message.")
+    ("version", "Print mcpiper version and exit.")
     ("disable-color,K",
       po::bool_switch(&settings.disableColor)->default_value(false),
       "Turn off colorized output.")
@@ -156,6 +157,11 @@ Settings parseOptions(int argc, char **argv) {
 
     // Print only named options
     namedOpts.print(std::cout);
+    exit(0);
+  }
+
+  if (vm.count("version")) {
+    std::cout << getVersion() << std::endl;
     exit(0);
   }
 

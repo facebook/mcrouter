@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,6 +19,10 @@ std::string getDefaultFifoRoot() {
 
 std::unique_ptr<ValueFormatter> createValueFormatter() {
   return folly::make_unique<ValueFormatter>();
+}
+
+std::string getVersion() {
+  return "mcpiper 1.0";
 }
 
 }} // facebook::memcache
