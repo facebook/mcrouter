@@ -314,6 +314,8 @@ void run(Settings settings) {
           data, typeId, packetId == 0 /* isFirstPacket */);
     };
 
+  initCompression();
+
   folly::EventBase eventBase;
   FifoReaderManager fifoManager(eventBase, fifoReaderCallback,
                                 settings.fifoRoot, std::move(filenamePattern));

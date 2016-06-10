@@ -25,4 +25,12 @@ std::string getVersion() {
   return "mcpiper 1.0";
 }
 
+bool initCompression() {
+  return false;
+}
+
+const CompressionCodecMap* getCompressionCodecMap() {
+  return nullptr;
+}
+
 }} // facebook::memcache

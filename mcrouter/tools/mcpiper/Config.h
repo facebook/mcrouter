@@ -16,6 +16,8 @@
 
 namespace facebook { namespace memcache {
 
+class CompressionCodecMap;
+
 /**
  * Returns the default fifo root.
  */
@@ -30,5 +32,16 @@ std::unique_ptr<ValueFormatter> createValueFormatter();
  * Return current version.
  */
 std::string getVersion();
+
+/**
+ * Initializes compression support.
+ */
+bool initCompression();
+
+/**
+ * Gets compression codec map.
+ * If compression is not initialized, return nullptr.
+ */
+const CompressionCodecMap* getCompressionCodecMap();
 
 }} // facebook::memcache

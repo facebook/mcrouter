@@ -14,12 +14,13 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Range.h>
 
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/ThriftMsgDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
-#include "mcrouter/lib/Operation.h"
+#include "mcrouter/tools/mcpiper/Config.h"
 
 namespace folly {
 class IOBuf;
@@ -144,7 +145,11 @@ class ClientServerMcParser {
 
   void reset() {
     replyParser_ = folly::make_unique<ClientMcParser<ReplyCallback>>(
-        replyCallback_, kReadBufferSizeMin, kReadBufferSizeMax);
+        replyCallback_,
+        kReadBufferSizeMin,
+        kReadBufferSizeMax,
+        false /* useJemallocNodumpAllocator */,
+        getCompressionCodecMap());
     expectNextDispatcher_.setReplyParser(replyParser_.get());
 
     requestParser_ = folly::make_unique<ServerMcParser<RequestCallback>>(
