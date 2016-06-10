@@ -22,6 +22,18 @@ bool matchPort(uint16_t expectedPort, const folly::SocketAddress& address) {
   return !address.empty() && expectedPort == address.getPort();
 }
 
+std::string describeAddress(const folly::SocketAddress& address) {
+  auto res = address.describe();
+  if (address.getFamily() == AF_UNIX) {
+    // Check if the path was truncated.
+    if (res.size() >=
+        MessageHeader::kAddressMaxSize - kUnixSocketPrefix.size() - 1) {
+      return res + "...";
+    }
+  }
+  return res;
+}
+
 } // anonymous namespace
 
 MessagePrinter::MessagePrinter(Options options,
@@ -59,13 +71,13 @@ std::string MessagePrinter::serializeConnectionDetails(
   std::string out;
 
   if (!from.empty()) {
-    out.append(from.describe());
+    out.append(describeAddress(from));
   }
   if (!from.empty() || !to.empty()) {
     out.append(" -> ");
   }
   if (!to.empty()) {
-    out.append(to.describe());
+    out.append(describeAddress(to));
   }
   if ((!from.empty() || !to.empty()) && protocol != mc_unknown_protocol) {
     out.append(folly::sformat(" ({})", mc_protocol_to_string(protocol)));

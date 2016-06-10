@@ -13,6 +13,7 @@
 
 #include <folly/Bits.h>
 #include <folly/Portability.h>
+#include <folly/Range.h>
 #include <folly/SocketAddress.h>
 
 namespace facebook {
@@ -26,12 +27,14 @@ enum class MessageDirection : uint8_t {
   Received = 1
 };
 
+constexpr folly::StringPiece kUnixSocketPrefix{"US:"};
+
 /**
  * Header of the message of ConnectionFifo.
  */
 struct FOLLY_PACK_ATTR MessageHeader {
  public:
-  constexpr static size_t kIpAddressMaxSize = 40;
+  constexpr static size_t kAddressMaxSize = 40;
 
   uint32_t magic() const {
     return folly::Endian::little(magic_);
@@ -39,8 +42,8 @@ struct FOLLY_PACK_ATTR MessageHeader {
   uint8_t version() const {
     return version_;
   }
-  const char* peerIpAddress() const {
-    return peerIpAddress_;
+  const char* peerAddress() const {
+    return peerAddress_;
   }
   uint16_t peerPort() const {
     return folly::Endian::little(peerPort_);
@@ -61,8 +64,8 @@ struct FOLLY_PACK_ATTR MessageHeader {
     return folly::Endian::little(timeUs_);
   }
 
-  char* peerIpAddressModifiable() {
-    return peerIpAddress_;
+  char* peerAddressModifiable() {
+    return peerAddress_;
   }
   void setPeerPort(uint16_t val) {
     peerPort_ = folly::Endian::little(val);
@@ -86,6 +89,8 @@ struct FOLLY_PACK_ATTR MessageHeader {
   folly::SocketAddress getLocalAddress();
   folly::SocketAddress getPeerAddress();
 
+  bool isUnixDomainSocket() const;
+
   static size_t size(uint8_t v);
 
  private:
@@ -94,7 +99,7 @@ struct FOLLY_PACK_ATTR MessageHeader {
   uint8_t version_{3};
 
   // Peer address fields
-  char peerIpAddress_[kIpAddressMaxSize]{'\0'}; // 0-terminated string of ip
+  char peerAddress_[kAddressMaxSize]{'\0'}; // 0-terminated string of address
   uint16_t peerPort_{0};
 
   // Message fields

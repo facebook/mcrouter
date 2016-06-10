@@ -120,15 +120,25 @@ MessageHeader buildMsgHeader(const folly::AsyncTransportWrapper* transport) {
     folly::SocketAddress address;
 
     transport->getPeerAddress(&address);
-    address.getAddressStr(
-        header.peerIpAddressModifiable(), MessageHeader::kIpAddressMaxSize);
-    header.setPeerPort(address.getPort());
+    if (address.getFamily() == AF_INET || address.getFamily() == AF_INET6) {
+      address.getAddressStr(
+          header.peerAddressModifiable(), MessageHeader::kAddressMaxSize);
+      header.setPeerPort(address.getPort());
+    } else if (address.getFamily() == AF_UNIX) {
+      // For unix sockets, just localAddress has the path.
+      transport->getLocalAddress(&address);
+      std::snprintf(
+          header.peerAddressModifiable(),
+          MessageHeader::kAddressMaxSize,
+          "%s%s",
+          kUnixSocketPrefix.data(),
+          address.getPath().c_str());
+    }
 
     transport->getLocalAddress(&address);
     header.setLocalPort(address.getPort());
   } catch (const std::exception& e) {
-    LOG(WARNING) << "Error getting host/port to write to debug fifo: "
-                 << e.what();
+    VLOG(2) << "Error getting host/port to write to debug fifo: " << e.what();
   }
 
   return header;

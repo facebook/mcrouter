@@ -12,6 +12,11 @@
 namespace facebook {
 namespace memcache {
 
+bool MessageHeader::isUnixDomainSocket() const {
+  return folly::StringPiece(peerAddress(), kAddressMaxSize)
+      .startsWith(kUnixSocketPrefix);
+}
+
 folly::SocketAddress MessageHeader::getLocalAddress() {
   folly::SocketAddress address;
 
@@ -20,9 +25,13 @@ folly::SocketAddress MessageHeader::getLocalAddress() {
   }
 
   try {
-    address.setFromLocalPort(localPort());
+    if (isUnixDomainSocket()) {
+      address = getPeerAddress();
+    } else {
+      address.setFromLocalPort(localPort());
+    }
   } catch (const std::exception& ex) {
-    LOG(ERROR) << "Error parsing address: " << ex.what();
+    VLOG(2) << "Error parsing address: " << ex.what();
   }
 
   return address;
@@ -31,14 +40,22 @@ folly::SocketAddress MessageHeader::getLocalAddress() {
 folly::SocketAddress MessageHeader::getPeerAddress() {
   folly::SocketAddress address;
 
-  if (peerIpAddress()[0] == '\0') {
+  if (peerAddress()[0] == '\0') {
     return address;
   }
 
   try {
-    address.setFromIpPort(peerIpAddress(), peerPort());
+    if (isUnixDomainSocket()) {
+      auto sp = folly::StringPiece(peerAddress(), kAddressMaxSize);
+      sp.removePrefix(kUnixSocketPrefix);
+      if (!sp.empty()) {
+        address.setFromPath(sp);
+      }
+    } else {
+      address.setFromIpPort(peerAddress(), peerPort());
+    }
   } catch (const std::exception& ex) {
-    LOG(ERROR) << "Error parsing address: " << ex.what();
+    VLOG(2) << "Error parsing address: " << ex.what();
   }
 
   return address;
