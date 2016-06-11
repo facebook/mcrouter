@@ -39,7 +39,6 @@ struct Settings {
   std::string matchExpression;
 
   // Named args
-  bool disableColor{false};
   std::string fifoRoot{getDefaultFifoRoot()};
   std::string filenamePattern;
   std::string host;
@@ -78,9 +77,6 @@ Settings parseOptions(int argc, char **argv) {
   namedOpts.add_options()
     ("help,h", "Print this help message.")
     ("version", "Print mcpiper version and exit.")
-    ("disable-color,K",
-      po::bool_switch(&settings.disableColor)->default_value(false),
-      "Turn off colorized output.")
     ("fifo-root,f",
       po::value<std::string>(&settings.fifoRoot),
       "Path of mcrouter fifo's directory.")
@@ -194,7 +190,7 @@ MessagePrinter::Options getOptions(const Settings& settings) {
   options.numAfterMatch = settings.numAfterMatch;
   options.quiet = settings.quiet;
   options.maxMessages = settings.maxMessages;
-  options.disableColor = settings.disableColor;
+  options.disableColor = !isatty(fileno(stdout));
 
   // Time Function
   static struct timeval prevTs = {0, 0};
