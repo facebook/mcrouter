@@ -144,7 +144,7 @@ class Lz4CompressionCodec : public CompressionCodec {
 
  private:
   static constexpr size_t kMaxDictionarySize = 64 * 1024;
-  static constexpr size_t kLargeDataThreshold = 2 * 1024;
+  static constexpr size_t kLargeDataThreshold = 1 * 1024;
 
   const std::unique_ptr<folly::IOBuf> dictionary_;
   const Lz4Immutable lz4Immutable_;
