@@ -54,6 +54,11 @@ mcrouter_option_integer(
   "connections based on rlimits. Eviction logic is disabled by default.")
 
 mcrouter_option_integer(
+  int, tcp_listen_backlog, SOMAXCONN,
+  "tcp-listen-backlog", no_short,
+  "TCP listen backlog size")
+
+mcrouter_option_integer(
   uint32_t, max_client_outstanding_reqs, DEFAULT_MAX_CLIENT_OUTSTANDING_REQS,
   "max-client-outstanding-reqs", no_short,
   "Maximum requests outstanding per client (0 to disable)")
