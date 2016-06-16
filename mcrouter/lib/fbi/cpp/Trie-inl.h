@@ -25,7 +25,7 @@ Trie<Value>::Trie(const Trie& other)
     value_ = folly::make_unique<value_type>(*other.value_);
   }
 
-  for (auto edge = 0; edge < kNumChars; ++edge) {
+  for (size_t edge = 0; edge < kNumChars; ++edge) {
     if (other.next_[edge]) {
       next_[edge] = folly::make_unique<Trie>(*other.next_[edge]);
       next_[edge]->parent_ = this;
@@ -39,7 +39,7 @@ Trie<Value>::Trie(Trie&& other) noexcept
       value_(std::move(other.value_)),
       parent_(other.parent_),
       c_(other.c_) {
-  for (auto edge = 0; edge < kNumChars; ++edge) {
+  for (size_t edge = 0; edge < kNumChars; ++edge) {
     if (next_[edge]) {
       next_[edge]->parent_ = this;
     }
@@ -59,7 +59,7 @@ Trie<Value>& Trie<Value>::operator=(Trie&& other) {
   parent_ = other.parent_;
   c_ = other.c_;
 
-  for (auto edge = 0; edge < kNumChars; ++edge) {
+  for (size_t edge = 0; edge < kNumChars; ++edge) {
     if (next_[edge]) {
       next_[edge]->parent_ = this;
     }
