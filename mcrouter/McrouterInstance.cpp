@@ -178,6 +178,13 @@ McrouterInstance* McrouterInstance::createRaw(
   } catch (...) {
   }
 
+  // Ensure that proxy_t's will be destroyed on the EventBase threads.
+  // TODO: fix (already existing) races between proxy_t and McrouterInstance
+  // when McrouterInstance fails to configure and user has provided us with
+  // their own EventBases.
+  for (size_t i = 0; i < router->proxies_.size(); ++i) {
+    evbs[i]->runInEventBaseThread([proxy = router->releaseProxy(i)](){});
+  }
   delete router;
   return nullptr;
 }
