@@ -26,6 +26,10 @@ uint64_t getCpuCycles() noexcept {
   uint64_t val;
   val = __builtin_ppc_get_timebase();
   return val;
+#elif defined(__aarch64__)
+	uint64_t cval;
+	asm volatile("mrs %0, cntvct_el0" : "=r" (cval));
+	return cval;
 #else
 #error Unsupported CPU. Consider implementing your own Clock.
 #endif
