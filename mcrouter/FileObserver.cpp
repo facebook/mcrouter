@@ -50,6 +50,7 @@ struct FileObserverData {
 };
 
 void scheduleObserveFile(folly::EventBase& evb, FileObserverData data) {
+  uint32_t pollPeriodMs = data.pollPeriodMs;
   evb.runAfterDelay([&evb, data = std::move(data)]() {
     bool hasUpdate;
     try {
@@ -62,20 +63,22 @@ void scheduleObserveFile(folly::EventBase& evb, FileObserverData data) {
     }
 
     if (hasUpdate) {
+      uint32_t sleepBeforeUpdateMs = data.sleepBeforeUpdateMs;
       evb.runAfterDelay([&evb, data = std::move(data)]() {
+        auto fallbackOnError = data.fallbackOnError;
         try {
           data.onUpdate(data.provider->load());
           scheduleObserveFile(evb, std::move(data));
         } catch (...) {
-          checkAndExecuteFallbackOnError(std::move(data.fallbackOnError));
+          checkAndExecuteFallbackOnError(std::move(fallbackOnError));
           LOG_FAILURE("mcrouter", failure::Category::kOther,
                       "Error while observing file for update");
         }
-      }, data.sleepBeforeUpdateMs);
+      }, sleepBeforeUpdateMs);
     } else {
       scheduleObserveFile(evb, std::move(data));
     }
-  }, data.pollPeriodMs);
+  }, pollPeriodMs);
 }
 
 } // anonymous namespace
