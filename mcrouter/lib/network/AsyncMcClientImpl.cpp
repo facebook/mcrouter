@@ -184,9 +184,22 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
   }
 }
 
+size_t AsyncMcClientImpl::getNumToSend() const {
+  size_t numToSend = queue_.getPendingRequestCount();
+  if (maxInflight_ != 0) {
+    if (maxInflight_ <= getInflightRequestCount()) {
+      numToSend = 0;
+    } else {
+      numToSend = std::min(numToSend,
+                           maxInflight_ - getInflightRequestCount());
+    }
+  }
+  return numToSend;
+}
+
 void AsyncMcClientImpl::scheduleNextWriterLoop() {
   if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
-      getPendingRequestCount() != 0) {
+      getNumToSend() > 0) {
     writeScheduled_ = true;
     eventBase_.runInLoop(writer_.get());
   }
@@ -201,15 +214,7 @@ void AsyncMcClientImpl::pushMessages() {
   DestructorGuard dg(this);
 
   assert(connectionState_ == ConnectionState::UP);
-  size_t numToSend = queue_.getPendingRequestCount();
-  if (maxInflight_ != 0) {
-    if (maxInflight_ <= getInflightRequestCount()) {
-      numToSend = 0;
-    } else {
-      numToSend = std::min(numToSend,
-                           maxInflight_ - getInflightRequestCount());
-    }
-  }
+  auto numToSend = getNumToSend();
   // Call batch statis callback
   if (requestStatusCallbacks_.onWrite) {
     requestStatusCallbacks_.onWrite(numToSend);

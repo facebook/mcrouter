@@ -43,7 +43,13 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
   sendCommon(ctx);
 
   // Wait for the reply.
-  return ctx.waitForReply(timeout);
+  auto reply = ctx.waitForReply(timeout);
+
+  // Schedule next writer loop, in case we didn't before
+  // due to max inflight requests limit.
+  scheduleNextWriterLoop();
+
+  return reply;
 }
 
 template <class Reply>

@@ -158,6 +158,7 @@ class AsyncMcClientImpl :
   // Schedule next writer loop if it's not scheduled.
   void scheduleNextWriterLoop();
   void cancelWriterCallback();
+  size_t getNumToSend() const;
 
   void attemptConnection();
 
