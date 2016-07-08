@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <sys/socket.h>
+
 #include "mcrouter/options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
