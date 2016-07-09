@@ -9,6 +9,7 @@
  */
 #include <signal.h>
 
+#include <iostream>
 #include <thread>
 
 #include <glog/logging.h>

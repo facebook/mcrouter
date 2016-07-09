@@ -9,6 +9,8 @@
  */
 #include "ConnectionFifoProtocol.h"
 
+#include <folly/Format.h>
+
 namespace facebook {
 namespace memcache {
 
