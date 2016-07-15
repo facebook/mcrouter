@@ -1,6 +1,6 @@
 # Mcrouter [![Build Status](https://travis-ci.org/facebook/mcrouter.svg?branch=master)](https://travis-ci.org/facebook/mcrouter)
 
-This section shows canned mcrouter configurations that can be used to ramp up quickly.
+This section shows canned mcrouter configurations that can help users ramp up quickly.
 
 ## Quick start guide
 
@@ -36,9 +36,24 @@ This section shows canned mcrouter configurations that can be used to ramp up qu
     }
     }
 
-Explanation: The above configuration allows users to set up 2 memcache pools where keys will be sharded based on the default hashing algorithm.
+Overview
+The above configuration allows users to set up 2x2 memcache pools where keys will be sharded based on the default hashing algorithm.
 
+Explanation
     1) The OperationSelectorRoute with the default AllAsyncRoute configuration will send all mutations to both pools asynchronously
     2) If any of memcached node(s) in Pool A go down, all set ops will bypass the node(s) and continue on in Pool B
     3) If any of memcached node(s) in Pool A go down, some get ops will result in a cache miss and get re-directed seamlessly to Pool B
     4) When the memcached node comes back up, it will be empty. Mcrouter will continue to fulfill get requests from Pool B
+
+## Links
+
+Documentation: https://github.com/facebook/mcrouter/wiki
+Engineering discussions and support: https://www.facebook.com/groups/mcrouter
+
+## License
+
+Copyright (c) 2016, Facebook, Inc.
+All rights reserved.
+
+Licensed under a BSD license:
+https://github.com/facebook/mcrouter/blob/master/LICENSE
