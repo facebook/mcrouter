@@ -6,7 +6,7 @@ This section shows canned mcrouter configurations that can be used to ramp up qu
 
 ## sharded_repl_async_missfailover.json
 
-<pre
+
 "pools": {
    "A": {
       "servers": [
@@ -37,7 +37,8 @@ This section shows canned mcrouter configurations that can be used to ramp up qu
 }
 
 Explanation: The above configuration allows users to set up 2 memcache pools where keys will be sharded based on the default hashing algorithm.
-1) The OperationSelectorRoute with the default AllAsyncRoute configuration will send all mutations to both pools asynchronously.
-2) If any of memcached node(s) in Pool A go down, all set ops will bypass the node(s) and continue on in Pool B.
-3) If any of memcached node(s) in Pool A go down, some get ops will result in a cache miss and get re-directed seamlessly to Pool B.
-4) When the memcached node comes back up, it will be empty. Mcrouter will continue to fulfill get requests from Pool B.
+
+    1) The OperationSelectorRoute with the default AllAsyncRoute configuration will send all mutations to both pools asynchronously
+    2) If any of memcached node(s) in Pool A go down, all set ops will bypass the node(s) and continue on in Pool B
+    3) If any of memcached node(s) in Pool A go down, some get ops will result in a cache miss and get re-directed seamlessly to Pool B
+    4) When the memcached node comes back up, it will be empty. Mcrouter will continue to fulfill get requests from Pool B
