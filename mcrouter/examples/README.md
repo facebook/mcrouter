@@ -37,10 +37,10 @@ This section shows canned mcrouter configurations that can help users ramp up qu
 The above configuration allows users to set up 2x2 memcache pools where keys will be sharded based on the default hashing algorithm.
 
 ## Explanation
-    1) The OperationSelectorRoute with the default AllAsyncRoute configuration will send all mutations to both pools asynchronously
-    2) If any of memcached node(s) in Pool A go down, all set ops will bypass the node(s) and continue on in Pool B
-    3) If any of memcached node(s) in Pool A go down, some get ops will result in a cache miss and get re-directed seamlessly to Pool B
-    4) When the memcached node comes back up, it will be empty. Mcrouter will continue to fulfill get requests from Pool B
+* The OperationSelectorRoute with the default AllAsyncRoute configuration will send all mutations to both pools asynchronously
+* If any of memcached node(s) in Pool A go down, all set ops will bypass the node(s) and continue on in Pool B
+* If any of memcached node(s) in Pool A go down, some get ops will result in a cache miss and get re-directed seamlessly to Pool B
+* When the memcached node comes back up, it will be empty. Mcrouter will continue to fulfill get requests from Pool B
 
 ## Links
 
