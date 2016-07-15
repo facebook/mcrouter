@@ -215,8 +215,8 @@ void AsyncMcClientImpl::pushMessages() {
 
   assert(connectionState_ == ConnectionState::UP);
   auto numToSend = getNumToSend();
-  // Call batch statis callback
-  if (requestStatusCallbacks_.onWrite) {
+  // Call batch status callback
+  if (requestStatusCallbacks_.onWrite && numToSend > 0) {
     requestStatusCallbacks_.onWrite(numToSend);
   }
 
