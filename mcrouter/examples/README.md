@@ -7,34 +7,34 @@ This section shows canned mcrouter configurations that can be used to ramp up qu
 ## sharded_repl_async_missfailover.json
 
 
-"pools": {
-   "A": {
-      "servers": [
-          "192.168.45.101:11211",
-          "192.168.45.102:11211"
-      ]
-  },
-  "B": {
-     "servers": [
-         "192.168.45.103:11211",
-         "192.168.45.104:11211"
-     ]
-  }
-},
-"route": {
-  "type": "OperationSelectorRoute",
-  "default_policy": {
-      "type": "AllAsyncRoute",
-      "children": [ "PoolRoute|A", "PoolRoute|B" ]
-  },
-  "operation_policies": {
-     "get": {
-         "type": "MissFailoverRoute",
-         "children": [ "PoolRoute|A", "PoolRoute|B" ]
-     }
-  }
-}
-}
+    "pools": {
+       "A": {
+          "servers": [
+              "192.168.45.101:11211",
+              "192.168.45.102:11211"
+          ]
+      },
+      "B": {
+         "servers": [
+             "192.168.45.103:11211",
+             "192.168.45.104:11211"
+         ]
+      }
+    },
+    "route": {
+      "type": "OperationSelectorRoute",
+      "default_policy": {
+          "type": "AllAsyncRoute",
+          "children": [ "PoolRoute|A", "PoolRoute|B" ]
+      },
+      "operation_policies": {
+         "get": {
+             "type": "MissFailoverRoute",
+             "children": [ "PoolRoute|A", "PoolRoute|B" ]
+         }
+      }
+    }
+    }
 
 Explanation: The above configuration allows users to set up 2 memcache pools where keys will be sharded based on the default hashing algorithm.
 
