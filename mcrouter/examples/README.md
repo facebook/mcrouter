@@ -40,7 +40,7 @@ The above configuration allows users to set up 2x2 memcache pools where keys wil
 * The OperationSelectorRoute with the default AllAsyncRoute configuration will send all mutations to both pools asynchronously
 * If any of memcached node(s) in Pool A go down, all set ops will bypass the node(s) and continue on in Pool B
 * If any of memcached node(s) in Pool A go down, some get ops will result in a cache miss and get re-directed seamlessly to Pool B
-* When the memcached node comes back up, it will be empty. Mcrouter will continue to fulfill get requests from Pool B
+* When the memcached node(s) come back up, they'll be empty. Mcrouter will continue to fulfill get requests from Pool B
 
 ## Links
 
