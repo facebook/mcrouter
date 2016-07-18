@@ -230,7 +230,8 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   // Host
   if (!settings.host.empty()) {
     try {
-      filter.host = folly::IPAddress(settings.host);
+      filter.host = folly::SocketAddress(settings.host,
+                      1 /* port */, true /* allowNameLookup */).getIPAddress();
       std::cout << "Host: " << filter.host.toFullyQualified() << std::endl;
     } catch (...) {
       LOG(ERROR) << "Invalid IP address provided: " << filter.host;
