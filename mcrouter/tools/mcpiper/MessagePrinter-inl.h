@@ -78,7 +78,8 @@ void MessagePrinter::requestReady(uint64_t msgId,
       mc_res_unknown,
       from,
       to,
-      protocol);
+      protocol,
+      0 /* latency is undefined when request is sent */);
 }
 
 template <class Reply>
@@ -87,9 +88,10 @@ void MessagePrinter::replyReady(uint64_t msgId,
                                 std::string key,
                                 const folly::SocketAddress& from,
                                 const folly::SocketAddress& to,
-                                mc_protocol_t protocol) {
+                                mc_protocol_t protocol,
+                                int64_t latencyUs) {
   printMessage(msgId, std::move(reply), key, Reply::OpType::mc_op,
-               reply.result(), from, to, protocol);
+               reply.result(), from, to, protocol, latencyUs);
 }
 
 template <class Message>
@@ -100,7 +102,8 @@ void MessagePrinter::printMessage(uint64_t msgId,
                                   mc_res_t result,
                                   const folly::SocketAddress& from,
                                   const folly::SocketAddress& to,
-                                  mc_protocol_t protocol) {
+                                  mc_protocol_t protocol,
+                                  int64_t latencyUs) {
   if (op == mc_op_end) {
     return;
   }
@@ -116,6 +119,11 @@ void MessagePrinter::printMessage(uint64_t msgId,
 
   auto value = message.valueRangeSlow();
   if (value.size() < filter_.valueMinSize) {
+    return;
+  }
+
+  // if latency is 0 and the filter is not set, we let it pass through
+  if (latencyUs < filter_.minLatencyUs) {
     return;
   }
 
@@ -142,6 +150,13 @@ void MessagePrinter::printMessage(uint64_t msgId,
   // Msg attributes
   out.append("\n  reqid: ", format_.msgAttrColor);
   out.append(folly::sformat("0x{:x}", msgId), format_.dataValueColor);
+
+  if (latencyUs > 0) { // it is 0 only for requests
+    out.append("\n  request/response latency (us): ",
+      format_.msgAttrColor);
+    out.append(folly::to<std::string>(latencyUs), format_.dataValueColor);
+  }
+
   out.append("\n  flags: ", format_.msgAttrColor);
   out.append(folly::sformat("0x{:x}", message.flags()), format_.dataValueColor);
   if (message.flags()) {

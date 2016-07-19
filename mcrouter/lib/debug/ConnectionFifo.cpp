@@ -195,6 +195,11 @@ bool ConnectionFifo::writeData(
   //      - peer port       - Peer port used for communication.
   //      - connection id   - Id of the connection that this message belongs to.
   //      - local port      - Local port used for communication.
+  //      - direction       - Direction of the message (sent or received).
+  //      - type id         - Id of the type of the request. For requests,
+  //                          it's always odd, for responses it's reqTypeId + 1.
+  //      - time            - Time in micros since epoch of when the message
+  //                          originated.
   //  - After the message header, the data of the message is divided in
   //    packets of at most PIPE_BUF bytes.
   //  - Each packet is composed of two parts: header and body.

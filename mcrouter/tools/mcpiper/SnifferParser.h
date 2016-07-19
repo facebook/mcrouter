@@ -43,19 +43,29 @@ class SnifferParser {
     toAddress_ = std::move(toAddress);
   }
 
+  // See the comments on currentMsgStartTimeUs_ for information about when
+  // this gets set.
+  void setCurrentMsgStartTime(uint64_t msgStartTimeUs) {
+    currentMsgStartTimeUs_ = msgStartTimeUs;
+  }
+
  private:
   using Clock = std::chrono::steady_clock;
   using TimePoint = std::chrono::time_point<Clock>;
 
   // Holds the id of the request and the key of the matching message.
   struct Item {
-    Item(uint64_t id, std::string k, TimePoint now)
+    Item(uint64_t id, std::string k, uint64_t msgStartTimeUs, TimePoint now)
         : reqId(id),
           key(std::move(k)),
+          msgStartTimeUs(msgStartTimeUs),
           created(now) { }
 
     uint64_t reqId;
     std::string key;
+    // time when the item was sent through mcrouter
+    uint64_t msgStartTimeUs;
+    // time when the item was created in mcpiper
     TimePoint created;
 
     folly::IntrusiveListHook listHook;
@@ -72,6 +82,12 @@ class SnifferParser {
   std::unordered_map<uint64_t, Item> msgs_;
   // Keeps an in-order list of what should be invalidated.
   folly::IntrusiveList<Item, &Item::listHook> evictionQueue_;
+  // Start time of the currently parsed message.
+  // Between parsing the header and the message body, it temporarily holds the
+  // sender-side start time of the message that we deserialized from the header.
+  // It is necessary to store here because we want to save it with the item,
+  // despite the Item being parsed separately from the header.
+  uint64_t currentMsgStartTimeUs_;
 
   void evictOldItems(TimePoint now);
 

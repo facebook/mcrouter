@@ -46,6 +46,7 @@ using MessageReadyFn = std::function<void(uint64_t connectionId,
                                           folly::SocketAddress from,
                                           folly::SocketAddress to,
                                           uint32_t typeId,
+                                          uint64_t msgStartTime,
                                           folly::ByteRange data)>;
 
 class FifoReadCallback : public folly::AsyncReader::ReadCallback {
@@ -72,6 +73,7 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
   folly::SocketAddress from_;
   folly::SocketAddress to_;
   uint32_t typeId_{0};
+  uint64_t msgStartTime_{0};
 
   void forwardMessage(const PacketHeader& header,
                       std::unique_ptr<folly::IOBuf> buf);

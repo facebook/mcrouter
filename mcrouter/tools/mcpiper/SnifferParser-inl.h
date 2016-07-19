@@ -44,7 +44,7 @@ void SnifferParser<Callback>::requestReady(uint64_t msgId, Request&& request) {
   if (msgId != 0) {
     auto msgIt = msgs_.emplace(
         msgId,
-        Item(msgId, request.fullKey().str(), now));
+        Item(msgId, request.fullKey().str(), currentMsgStartTimeUs_, now));
     evictionQueue_.push_back(msgIt.first->second);
   }
   callback_.requestReady(
@@ -59,20 +59,23 @@ template <class Callback>
 template <class Reply>
 void SnifferParser<Callback>::replyReady(uint64_t msgId, Reply&& reply) {
   std::string key;
+  int64_t latency = 0;
   if (msgId != 0) {
     auto pairMsgIt = msgs_.find(msgId);
     if (pairMsgIt != msgs_.end()) {
       key = std::move(pairMsgIt->second.key);
+      latency = currentMsgStartTimeUs_ - pairMsgIt->second.msgStartTimeUs;
       msgs_.erase(pairMsgIt->first);
     }
   }
-  callback_.template replyReady<Reply>(
+  callback_.replyReady(
       msgId,
       std::move(reply),
       std::move(key),
       fromAddress_,
       toAddress_,
-      parser_.getProtocol());
+      parser_.getProtocol(),
+      latency);
 }
 
 }} // facebook::memcache

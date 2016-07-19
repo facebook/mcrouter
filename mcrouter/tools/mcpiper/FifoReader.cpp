@@ -157,6 +157,7 @@ void FifoReadCallback::handleMessageHeader(MessageHeader msgHeader) noexcept {
   from_ = msgHeader.getLocalAddress();
   to_ = msgHeader.getPeerAddress();
   typeId_ = msgHeader.typeId();
+  msgStartTime_ = msgHeader.timeUs();
   if (msgHeader.direction() == MessageDirection::Received) {
     std::swap(from_, to_);
   }
@@ -168,7 +169,8 @@ void FifoReadCallback::forwardMessage(const PacketHeader& header,
   CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
   if (typeId_ != 0) {
     messageReady_(header.connectionId(), header.packetId(),
-                  std::move(from_), std::move(to_), typeId_, data);
+                  std::move(from_), std::move(to_), typeId_, msgStartTime_,
+                  data);
     typeId_ = 0;
   } else {
     VLOG(2) << "Type id is 0. Skipping message.";

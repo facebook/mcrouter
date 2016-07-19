@@ -61,6 +61,7 @@ class MessagePrinter {
     folly::IPAddress host;
     uint16_t port{0};
     uint32_t valueMinSize{0};
+    int64_t minLatencyUs{0}; // 0 means include all messages
     std::unique_ptr<boost::regex> pattern;
     bool invertMatch{false};
     folly::Optional<mc_protocol_t> protocol;
@@ -94,7 +95,8 @@ class MessagePrinter {
                     mc_res_t result,
                     const folly::SocketAddress& from,
                     const folly::SocketAddress& to,
-                    mc_protocol_t protocol);
+                    mc_protocol_t protocol,
+                    int64_t latencyUs);
 
  private:
   const Options options_;
@@ -120,7 +122,8 @@ class MessagePrinter {
                   std::string key,
                   const folly::SocketAddress& from,
                   const folly::SocketAddress& to,
-                  mc_protocol_t protocol);
+                  mc_protocol_t protocol,
+                  int64_t latencyUs);
   friend class SnifferParser<MessagePrinter>;
 
   template <class Message>

@@ -50,6 +50,7 @@ struct Settings {
   bool quiet{false};
   std::string timeFormat;
   uint32_t valueMinSize{0};
+  int64_t minLatencyUs{0};
   size_t verboseLevel{0};
   std::string protocol;
 };
@@ -111,6 +112,9 @@ Settings parseOptions(int argc, char **argv) {
     ("value-min-size,m",
       po::value<uint32_t>(&settings.valueMinSize),
       "Minimum size of the value of messages to display")
+    ("min-latency-us,l",
+      po::value<int64_t>(&settings.minLatencyUs),
+      "Minimum latency in micros of messages to display")
     ("protocol",
       po::value<std::string>(&settings.protocol),
       "Show only data transmitted in the provided protocol; "
@@ -225,6 +229,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   MessagePrinter::Filter filter;
 
   filter.valueMinSize = settings.valueMinSize;
+  filter.minLatencyUs = settings.minLatencyUs;
   filter.invertMatch = settings.invertMatch;
 
   // Host
@@ -293,6 +298,7 @@ void run(Settings settings) {
                                   folly::SocketAddress from,
                                   folly::SocketAddress to,
                                   uint32_t typeId,
+                                  uint64_t msgStartTime,
                                   folly::ByteRange data) {
       auto it = parserMap.find(connectionId);
       if (it == parserMap.end()) {
@@ -307,6 +313,7 @@ void run(Settings settings) {
       }
 
       snifferParser.setAddresses(std::move(from), std::move(to));
+      snifferParser.setCurrentMsgStartTime(msgStartTime);
       snifferParser.parser().parse(
           data, typeId, packetId == 0 /* isFirstPacket */);
     };
