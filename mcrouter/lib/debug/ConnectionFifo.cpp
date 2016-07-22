@@ -229,7 +229,7 @@ bool ConnectionFifo::writeData(
   // | PACKET HEADER | PACKET BODY |
   // -------------------------------
 
-  if (!isConnected()) {
+  if (!isConnected() || iovcnt == 0) {
     return false;
   }
 
