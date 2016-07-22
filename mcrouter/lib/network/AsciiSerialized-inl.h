@@ -56,4 +56,16 @@ bool AsciiSerializedRequest::prepare(const Request& request,
   return r;
 }
 
+template <class Arg1, class Arg2>
+void AsciiSerializedReply::addStrings(Arg1&& arg1, Arg2&& arg2) {
+  addString(std::forward<Arg1>(arg1));
+  addString(std::forward<Arg2>(arg2));
+}
+
+template <class Arg, class... Args>
+void AsciiSerializedReply::addStrings(Arg&& arg, Args&&... args) {
+  addString(std::forward<Arg>(arg));
+  addStrings(std::forward<Args>(args)...);
+}
+
 }} // facebook::memcache
