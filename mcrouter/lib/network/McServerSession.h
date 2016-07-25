@@ -149,6 +149,13 @@ class McServerSession :
     return clientCommonName_;
   }
 
+  /**
+   * @return the EventBase for this thread
+   */
+  folly::EventBase& getEventBase() const noexcept {
+    return eventBase_;
+  }
+
  private:
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::EventBase& eventBase_;
