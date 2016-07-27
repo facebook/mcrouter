@@ -9,6 +9,8 @@
  */
 #include "MessagePrinter.h"
 
+#include <folly/Bits.h>
+
 namespace facebook { namespace memcache {
 
 namespace {
@@ -87,7 +89,11 @@ void MessagePrinter::printRawMessage(const struct iovec* iovsBegin,
       rawMessage.append(
         static_cast<char*>(iovsBegin[i].iov_base), iovsBegin[i].iov_len);
     }
-    targetOut_ << rawMessage;
+
+    uint64_t rawMessageSize = folly::Endian::little(rawMessage.size());
+    targetOut_ << std::string(
+      reinterpret_cast<char*>(&rawMessageSize), sizeof(uint64_t))
+      << rawMessage;
     targetOut_.flush();
     countStats();
 }
