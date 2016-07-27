@@ -12,6 +12,8 @@
 #include <folly/Format.h>
 
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/AsciiSerialized.h"
+#include "mcrouter/lib/network/McSerializedRequest.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
@@ -69,17 +71,24 @@ void MessagePrinter::requestReady(uint64_t msgId,
                                   const folly::SocketAddress& from,
                                   const folly::SocketAddress& to,
                                   mc_protocol_t protocol) {
-  auto key = request.fullKey().str();
-  printMessage(
-      msgId,
-      std::move(request),
-      key,
-      Request::OpType::mc_op,
-      mc_res_unknown,
-      from,
-      to,
-      protocol,
-      0 /* latency is undefined when request is sent */);
+  if (auto out = filterAndBuildOutput(
+          msgId,
+          request,
+          request.fullKey().str(),
+          Request::OpType::mc_op,
+          mc_res_unknown,
+          from,
+          to,
+          protocol,
+          0 /* latency is undefined when request is sent */)) {
+    if (options_.raw) {
+      printRawRequest(msgId, request, protocol);
+    } else {
+      targetOut_ << out.value();
+      targetOut_.flush();
+      countStats();
+    }
+  }
 }
 
 template <class Reply>
@@ -90,41 +99,58 @@ void MessagePrinter::replyReady(uint64_t msgId,
                                 const folly::SocketAddress& to,
                                 mc_protocol_t protocol,
                                 int64_t latencyUs) {
-  printMessage(msgId, std::move(reply), key, Reply::OpType::mc_op,
-               reply.result(), from, to, protocol, latencyUs);
+  if (auto out = filterAndBuildOutput(
+          msgId,
+          reply,
+          key,
+          Reply::OpType::mc_op,
+          reply.result(),
+          from,
+          to,
+          protocol,
+          latencyUs)) {
+    if (options_.raw) {
+      printRawReply(msgId, std::forward<Reply>(reply), protocol);
+    } else {
+      targetOut_ << out.value();
+      targetOut_.flush();
+      countStats();
+    }
+  }
 }
 
 template <class Message>
-void MessagePrinter::printMessage(uint64_t msgId,
-                                  Message&& message,
-                                  const std::string& key,
-                                  mc_op_t op,
-                                  mc_res_t result,
-                                  const folly::SocketAddress& from,
-                                  const folly::SocketAddress& to,
-                                  mc_protocol_t protocol,
-                                  int64_t latencyUs) {
+folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
+    uint64_t msgId,
+    const Message& message,
+    const std::string& key,
+    mc_op_t op,
+    mc_res_t result,
+    const folly::SocketAddress& from,
+    const folly::SocketAddress& to,
+    mc_protocol_t protocol,
+    int64_t latencyUs) {
   if (op == mc_op_end) {
-    return;
+    return folly::none;
   }
 
   ++totalMessages_;
 
   if (!matchAddress(from, to)) {
-    return;
+    return folly::none;
   }
   if (filter_.protocol.hasValue() && filter_.protocol.value() != protocol) {
-    return;
+    return folly::none;
   }
 
   auto value = message.valueRangeSlow();
   if (value.size() < filter_.valueMinSize) {
-    return;
+    return folly::none;
   }
 
   // if latency is 0 and the filter is not set, we let it pass through
   if (latencyUs < filter_.minLatencyUs) {
-    return;
+    return folly::none;
   }
 
   StyledString out;
@@ -228,7 +254,7 @@ void MessagePrinter::printMessage(uint64_t msgId,
     auto success = matches.empty() == filter_.invertMatch;
 
     if (!success && afterMatchCount_ == 0) {
-      return;
+      return folly::none;
     }
     if (!filter_.invertMatch) {
       for (auto& m : matches) {
@@ -242,19 +268,51 @@ void MessagePrinter::printMessage(uint64_t msgId,
     }
   }
 
-  targetOut_ << out;
-  targetOut_.flush();
+  return out;
+}
 
-  ++printedMessages_;
-
-  if (options_.maxMessages > 0 && printedMessages_ >= options_.maxMessages) {
-    assert(options_.stopRunningFn);
-    options_.stopRunningFn(*this);
+template <class Reply>
+void MessagePrinter::printRawReply(uint64_t msgId,
+                                   Reply&& reply,
+                                   mc_protocol_t protocol) {
+  const struct iovec* iovsBegin = nullptr;
+  size_t iovsCount = 0;
+  UmbrellaSerializedMessage umbrellaSerializedMessage;
+  CaretSerializedMessage caretSerializedMessage;
+  switch (protocol) {
+    case mc_ascii_protocol:
+      LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
+      break;
+    case mc_umbrella_protocol:
+      umbrellaSerializedMessage.prepare(
+          std::move(reply), msgId, iovsBegin, iovsCount);
+      break;
+    case mc_caret_protocol:
+      caretSerializedMessage.prepare(
+        std::move(reply),
+        msgId,
+        nullptr, /* codec */
+        iovsBegin,
+        iovsCount);
+      break;
+    default:
+      CHECK(false);
   }
 
-  if (options_.numAfterMatch > 0) {
-    --afterMatchCount_;
+  printRawMessage(iovsBegin, iovsCount);
+}
+
+template <class Request>
+void MessagePrinter::printRawRequest(uint64_t msgId,
+                                     const Request& request,
+                                     mc_protocol_t protocol) {
+  if (protocol == mc_ascii_protocol) {
+    LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
+    return;
   }
+  McSerializedRequest req(request, msgId, protocol, CodecIdRange());
+
+  printRawMessage(req.getIovs(), req.getIovsCount());
 }
 
 template <class Message>

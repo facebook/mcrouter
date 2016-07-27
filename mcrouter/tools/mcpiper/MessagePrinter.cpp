@@ -64,6 +64,34 @@ bool MessagePrinter::matchAddress(const folly::SocketAddress& from,
   return true;
 }
 
+void MessagePrinter::countStats() {
+  ++printedMessages_;
+
+  if (options_.maxMessages > 0 && printedMessages_ >= options_.maxMessages) {
+    assert(options_.stopRunningFn);
+    options_.stopRunningFn(*this);
+  }
+
+  if (options_.numAfterMatch > 0) {
+    --afterMatchCount_;
+  }
+}
+
+void MessagePrinter::printRawMessage(const struct iovec* iovsBegin,
+                                     size_t iovsCount) {
+    if (iovsBegin == nullptr) {
+      return;
+    }
+    std::string rawMessage;
+    for (size_t i = 0; i < iovsCount; ++i) {
+      rawMessage.append(
+        static_cast<char*>(iovsBegin[i].iov_base), iovsBegin[i].iov_len);
+    }
+    targetOut_ << rawMessage;
+    targetOut_.flush();
+    countStats();
+}
+
 std::string MessagePrinter::serializeConnectionDetails(
     const folly::SocketAddress& from,
     const folly::SocketAddress& to,

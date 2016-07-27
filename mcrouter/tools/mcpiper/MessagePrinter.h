@@ -52,6 +52,9 @@ class MessagePrinter {
     // sending messages to MessagePrinter.
     std::function<void(const MessagePrinter&)> stopRunningFn =
       [](const MessagePrinter&) { exit(0); };
+
+    // Getting raw data in binary format
+    bool raw{false};
   };
 
   /**
@@ -88,15 +91,16 @@ class MessagePrinter {
   }
 
   template <class Message>
-  void printMessage(uint64_t msgId,
-                    Message&& message,
-                    const std::string& key,
-                    mc_op_t op,
-                    mc_res_t result,
-                    const folly::SocketAddress& from,
-                    const folly::SocketAddress& to,
-                    mc_protocol_t protocol,
-                    int64_t latencyUs);
+  folly::Optional<StyledString> filterAndBuildOutput(
+      uint64_t msgId,
+      const Message& message,
+      const std::string& key,
+      mc_op_t op,
+      mc_res_t result,
+      const folly::SocketAddress& from,
+      const folly::SocketAddress& to,
+      mc_protocol_t protocol,
+      int64_t latencyUs);
 
  private:
   const Options options_;
@@ -116,6 +120,7 @@ class MessagePrinter {
                     const folly::SocketAddress& from,
                     const folly::SocketAddress& to,
                     mc_protocol_t protocol);
+
   template <class Reply>
   void replyReady(uint64_t msgId,
                   Reply&& reply,
@@ -124,6 +129,21 @@ class MessagePrinter {
                   const folly::SocketAddress& to,
                   mc_protocol_t protocol,
                   int64_t latencyUs);
+
+  template <class Request>
+  void printRawRequest(uint64_t msgId,
+                       const Request& request,
+                       mc_protocol_t protocol);
+
+  template <class Reply>
+  void printRawReply(uint64_t msgId,
+                     Reply&& reply,
+                     mc_protocol_t protocol);
+
+  void printRawMessage(const struct iovec* iovsBegin, size_t iovsCount);
+
+  void countStats();
+
   friend class SnifferParser<MessagePrinter>;
 
   template <class Message>

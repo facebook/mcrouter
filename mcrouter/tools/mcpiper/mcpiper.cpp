@@ -53,6 +53,7 @@ struct Settings {
   int64_t minLatencyUs{0};
   size_t verboseLevel{0};
   std::string protocol;
+  bool raw{false};
 };
 
 // Globals
@@ -122,6 +123,9 @@ Settings parseOptions(int argc, char **argv) {
     ("verbose",
       po::value<size_t>(&settings.verboseLevel),
       "Set verbose level")
+    ("raw",
+      po::bool_switch(&settings.raw)->default_value(false),
+      "Prints raw data.")
   ;
 
   // Positional arguments - hidden from the help message
@@ -152,16 +156,16 @@ Settings parseOptions(int argc, char **argv) {
 
   // Handles help
   if (vm.count("help")) {
-    std::cout << getUsage(argv[0]);
-    std::cout << std::endl;
+    std::cerr << getUsage(argv[0]);
+    std::cerr << std::endl;
 
     // Print only named options
-    namedOpts.print(std::cout);
+    namedOpts.print(std::cerr);
     exit(0);
   }
 
   if (vm.count("version")) {
-    std::cout << getVersion() << std::endl;
+    std::cerr << getVersion() << std::endl;
     exit(0);
   }
 
@@ -180,7 +184,7 @@ void cleanExit(int32_t status) {
   }
 
   if (status >= 0) {
-    std::cout << "exit" << std::endl
+    std::cerr << "exit" << std::endl
               << gStats.first << " messages received, "
               << gStats.second << " printed" << std::endl;
   }
@@ -193,6 +197,7 @@ MessagePrinter::Options getOptions(const Settings& settings) {
 
   options.numAfterMatch = settings.numAfterMatch;
   options.quiet = settings.quiet;
+  options.raw = settings.raw;
   options.maxMessages = settings.maxMessages;
   options.disableColor = !isatty(fileno(stdout));
 
@@ -237,7 +242,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
     try {
       filter.host = folly::SocketAddress(settings.host,
                       1 /* port */, true /* allowNameLookup */).getIPAddress();
-      std::cout << "Host: " << filter.host.toFullyQualified() << std::endl;
+      std::cerr << "Host: " << filter.host.toFullyQualified() << std::endl;
     } catch (...) {
       LOG(ERROR) << "Invalid IP address provided: " << filter.host;
       exit(1);
@@ -247,7 +252,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   // Port
   if (settings.port != 0) {
     filter.port = settings.port;
-    std::cout << "Port: " << filter.port << std::endl;
+    std::cerr << "Port: " << filter.port << std::endl;
   }
 
   // Protocol
@@ -268,11 +273,11 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   filter.pattern = buildRegex(settings.matchExpression, settings.ignoreCase);
   if (filter.pattern) {
     if (settings.invertMatch) {
-      std::cout << "Don't match: ";
+      std::cerr << "Don't match: ";
     } else {
-      std::cout << "Match: ";
+      std::cerr << "Match: ";
     }
-    std::cout << *filter.pattern << std::endl;
+    std::cerr << *filter.pattern << std::endl;
   }
 
   return filter;
@@ -283,7 +288,7 @@ void run(Settings settings) {
   auto filenamePattern = buildRegex(settings.filenamePattern,
                                     settings.ignoreCase);
   if (filenamePattern) {
-    std::cout << "Filename pattern: " << *filenamePattern << std::endl;
+    std::cerr << "Filename pattern: " << *filenamePattern << std::endl;
   }
 
   MessagePrinter messagePrinter(getOptions(settings),
