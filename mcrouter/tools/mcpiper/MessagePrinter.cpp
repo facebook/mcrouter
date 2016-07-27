@@ -84,18 +84,25 @@ void MessagePrinter::printRawMessage(const struct iovec* iovsBegin,
     if (iovsBegin == nullptr) {
       return;
     }
-    std::string rawMessage;
+    uint64_t rawMessageSize = 0;
     for (size_t i = 0; i < iovsCount; ++i) {
-      rawMessage.append(
-        static_cast<char*>(iovsBegin[i].iov_base), iovsBegin[i].iov_len);
+      rawMessageSize += iovsBegin[i].iov_len;
     }
+    StyledString rawMessage;
+    rawMessageSize = folly::Endian::little(rawMessageSize);
+    rawMessage.append(std::string(
+        reinterpret_cast<char*>(&rawMessageSize), sizeof(uint64_t)));
+    for (size_t i = 0; i < iovsCount; ++i) {
+      rawMessage.append(std::string(
+        static_cast<char*>(iovsBegin[i].iov_base), iovsBegin[i].iov_len));
+    }
+    printMessage(rawMessage);
+}
 
-    uint64_t rawMessageSize = folly::Endian::little(rawMessage.size());
-    targetOut_ << std::string(
-      reinterpret_cast<char*>(&rawMessageSize), sizeof(uint64_t))
-      << rawMessage;
-    targetOut_.flush();
-    countStats();
+void MessagePrinter::printMessage(const StyledString& message) {
+  targetOut_ << message;
+  targetOut_.flush();
+  countStats();
 }
 
 std::string MessagePrinter::serializeConnectionDetails(

@@ -142,6 +142,8 @@ class MessagePrinter {
 
   void printRawMessage(const struct iovec* iovsBegin, size_t iovsCount);
 
+  void printMessage(const StyledString& message);
+
   void countStats();
 
   friend class SnifferParser<MessagePrinter>;

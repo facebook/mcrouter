@@ -84,9 +84,7 @@ void MessagePrinter::requestReady(uint64_t msgId,
     if (options_.raw) {
       printRawRequest(msgId, request, protocol);
     } else {
-      targetOut_ << out.value();
-      targetOut_.flush();
-      countStats();
+      printMessage(out.value());
     }
   }
 }
@@ -112,9 +110,7 @@ void MessagePrinter::replyReady(uint64_t msgId,
     if (options_.raw) {
       printRawReply(msgId, std::forward<Reply>(reply), protocol);
     } else {
-      targetOut_ << out.value();
-      targetOut_.flush();
-      countStats();
+      printMessage(out.value());
     }
   }
 }

@@ -125,7 +125,8 @@ Settings parseOptions(int argc, char **argv) {
       "Set verbose level")
     ("raw",
       po::bool_switch(&settings.raw)->default_value(false),
-      "Prints raw data.")
+      "Prints raw data. Format: firstly size(8 bytes) then message. "
+      "ASCII protocol is not supported")
   ;
 
   // Positional arguments - hidden from the help message
