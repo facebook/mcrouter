@@ -39,9 +39,17 @@ enum class CompressionCodecType {
  */
 struct CompressionCodecOptions {
   /**
-   * Minimum value that the codec will start compressing data.
+   * Minimum data size that the codec will try compressing.
    */
   uint32_t compressionThreshold{0};
+  /**
+   * LZ4-specific: Size of data considered to be large.
+   */
+  uint32_t largeDataThreshold{1024};
+  /**
+   * ZSTD-specific: compression level
+   */
+  uint32_t compressionLevel{1};
 };
 
 /**

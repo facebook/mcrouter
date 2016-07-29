@@ -144,7 +144,6 @@ class Lz4CompressionCodec : public CompressionCodec {
 
  private:
   static constexpr size_t kMaxDictionarySize = 64 * 1024;
-  static constexpr size_t kLargeDataThreshold = 1 * 1024;
 
   const std::unique_ptr<folly::IOBuf> dictionary_;
   const Lz4Immutable lz4Immutable_;
@@ -183,7 +182,7 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::compress(
   assert(iov);
 
   auto size = IovecCursor::computeTotalLength(iov, iovcnt);
-  if (size < kLargeDataThreshold) {
+  if (size < options().largeDataThreshold) {
     return lz4Immutable_.compress(iov, iovcnt);
   }
   return compressLargeData(coalesce(iov, iovcnt, size));
