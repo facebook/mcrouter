@@ -232,23 +232,32 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
     initCompression(*this);
   }
 
-  for (size_t i = 0; i < opts_.num_proxies; i++) {
-    try {
-      if (evbs.empty()) {
-        proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
-      } else {
-        CHECK(evbs[i] != nullptr);
-        proxies_.emplace_back(proxy_t::createProxy(*this, *evbs[i], i));
-      }
-    } catch (...) {
-      LOG(ERROR) << "Failed to create proxy";
+  {
+    std::lock_guard<std::mutex> lg(configReconfigLock_);
+
+    auto builder = createConfigBuilder();
+    if (!builder) {
       return false;
     }
-  }
 
-  if (!reconfigure()) {
-    LOG(ERROR) << "Failed to configure proxies";
-    return false;
+    for (size_t i = 0; i < opts_.num_proxies; i++) {
+      try {
+        if (evbs.empty()) {
+          proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
+        } else {
+          CHECK(evbs[i] != nullptr);
+          proxies_.emplace_back(proxy_t::createProxy(*this, *evbs[i], i));
+        }
+      } catch (...) {
+        LOG(ERROR) << "Failed to create proxy";
+        return false;
+      }
+    }
+
+    if (!reconfigure(builder.value())) {
+      LOG(ERROR) << "Failed to configure proxies";
+      return false;
+    }
   }
 
   startTime_ = time(nullptr);
@@ -346,12 +355,21 @@ McrouterInstance::~McrouterInstance() {
 
 void McrouterInstance::subscribeToConfigUpdate() {
   configUpdateHandle_ = configApi_->subscribe([this]() {
-      if (reconfigure()) {
-        onReconfigureSuccess_.notify();
-      } else {
-        LOG(ERROR) << "Error while reconfiguring mcrouter after config change";
+    bool success = false;
+    {
+      std::lock_guard<std::mutex> lg(configReconfigLock_);
+
+      auto builder = createConfigBuilder();
+      if (builder) {
+        success = reconfigure(builder.value());
       }
-    });
+    }
+    if (success) {
+      onReconfigureSuccess_.notify();
+    } else {
+      LOG(ERROR) << "Error while reconfiguring mcrouter after config change";
+    }
+  });
 }
 
 void McrouterInstance::spawnAuxiliaryThreads() {
@@ -514,48 +532,23 @@ void McrouterInstance::stopAwriterThreads() noexcept {
   statsLogWriter_->stop();
 }
 
-bool McrouterInstance::reconfigure() {
-  bool success = false;
+bool McrouterInstance::reconfigure(const ProxyConfigBuilder& builder) {
+  bool success = configure(builder);
 
-  {
-    std::lock_guard<std::mutex> lg(configReconfigLock_);
-    /* mark config attempt before, so that
-       successful config is always >= last config attempt. */
-    lastConfigAttempt_ = time(nullptr);
-
-    configApi_->trackConfigSources();
-    std::string config;
-    std::string path;
-    success = configApi_->getConfigFile(config, path);
-    if (success) {
-      success = configure(config);
-    } else {
-      MC_LOG_FAILURE(opts(), failure::Category::kBadEnvironment,
-                     "Can not read config from {}", path);
-    }
-
-    if (!success) {
-      configFailures_++;
-      configApi_->abandonTrackedSources();
-    } else {
-      configApi_->subscribeToTrackedSources();
-    }
+  if (!success) {
+    configFailures_++;
+    configApi_->abandonTrackedSources();
+  } else {
+    configApi_->subscribeToTrackedSources();
   }
 
   return success;
 }
 
-bool McrouterInstance::configure(folly::StringPiece input) {
+bool McrouterInstance::configure(const ProxyConfigBuilder& builder) {
   VLOG_IF(0, !opts_.constantly_reload_configs) << "started reconfiguring";
   std::vector<std::shared_ptr<ProxyConfig>> newConfigs;
   try {
-    // assume default_route, default_region and default_cluster are same for
-    // each proxy
-    ProxyConfigBuilder builder(
-      opts_,
-      configApi(),
-      input);
-
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       newConfigs.push_back(builder.buildConfig(*getProxy(i)));
     }
@@ -576,6 +569,30 @@ bool McrouterInstance::configure(folly::StringPiece input) {
       newConfigs[0]->getConfigMd5Digest() << ")";
 
   return true;
+}
+
+folly::Optional<ProxyConfigBuilder> McrouterInstance::createConfigBuilder() {
+  /* mark config attempt before, so that
+     successful config is always >= last config attempt. */
+  lastConfigAttempt_ = time(nullptr);
+  configApi_->trackConfigSources();
+  std::string config;
+  std::string path;
+  if (configApi_->getConfigFile(config, path)) {
+    try {
+      // assume default_route, default_region and default_cluster are same for
+      // each proxy
+      return ProxyConfigBuilder(opts_, configApi(), config);
+    } catch (const std::exception& e) {
+      MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,
+                     "Failed to reconfigure: {}", e.what());
+    }
+  }
+  MC_LOG_FAILURE(opts(), failure::Category::kBadEnvironment,
+                 "Can not read config from {}", path);
+  configFailures_++;
+  configApi_->abandonTrackedSources();
+  return folly::none;
 }
 
 }}} // facebook::memcache::mcrouter

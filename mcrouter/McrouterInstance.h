@@ -27,6 +27,7 @@
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
 #include "mcrouter/proxy.h"
+#include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/TkoTracker.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -142,7 +143,7 @@ class McrouterInstance :
     return pid_;
   }
 
-  bool configure(folly::StringPiece input);
+  bool configure(const ProxyConfigBuilder& builder);
 
   ConfigApi& configApi() {
     assert(configApi_.get() != nullptr);
@@ -317,7 +318,10 @@ class McrouterInstance :
   /** (re)configure the router. true on success, false on error.
       NB file-based configuration is synchronous
       but server-based configuration is asynchronous */
-  bool reconfigure();
+  bool reconfigure(const ProxyConfigBuilder& builder);
+  /** Create the ProxyConfigBuilder used to reconfigure.
+  Returns folly::none if constructor fails. **/
+  folly::Optional<ProxyConfigBuilder> createConfigBuilder();
 
  public:
   /* Do not use for new code */
