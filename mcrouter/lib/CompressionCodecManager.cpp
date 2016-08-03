@@ -113,9 +113,8 @@ CompressionCodec* CompressionCodecMap::get(uint32_t id) const noexcept {
 
 CompressionCodec* CompressionCodecMap::getBest(
     const CodecIdRange& codecRange) const noexcept {
-  uint32_t lastId = codecRange.firstId + codecRange.size - 1;
-  for (int64_t i = lastId; i >= codecRange.firstId; --i) {
-    if (auto codec = get(i)) {
+  for (int64_t i = static_cast<int64_t>(codecRange.size) - 1; i >= 0; --i) {
+    if (auto codec = get(static_cast<uint32_t>(codecRange.firstId + i))) {
       return codec;
     }
   }

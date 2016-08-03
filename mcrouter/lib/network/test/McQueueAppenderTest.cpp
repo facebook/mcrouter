@@ -63,9 +63,9 @@ TEST(McQueueAppenderTest, longString) {
   // Read the serialized data back in and check that it's what we wrote.
   UmbrellaMessageInfo inputHeader;
   caretParseHeader((uint8_t*)input.data(), input.length(), inputHeader);
-  EXPECT_EQ(123, inputHeader.typeId);
-  EXPECT_EQ(456, inputHeader.reqId);
-  EXPECT_EQ(17, inputHeader.traceId);
+  EXPECT_EQ(123u, inputHeader.typeId);
+  EXPECT_EQ(456u, inputHeader.reqId);
+  EXPECT_EQ(17u, inputHeader.traceId);
 
   TypedThriftReply<cpp2::McGetReply> inputReply;
   apache::thrift::CompactProtocolReader reader;
@@ -165,9 +165,9 @@ TEST(McQueueAppender, manyFields) {
   // Read the serialized data back in and check that it's what we wrote.
   UmbrellaMessageInfo inputHeader;
   caretParseHeader((uint8_t*)input.data(), input.length(), inputHeader);
-  EXPECT_EQ(123, inputHeader.typeId);
-  EXPECT_EQ(456, inputHeader.reqId);
-  EXPECT_EQ(17, inputHeader.traceId);
+  EXPECT_EQ(123u, inputHeader.typeId);
+  EXPECT_EQ(456u, inputHeader.reqId);
+  EXPECT_EQ(17u, inputHeader.traceId);
 
   cpp2::ManyFields tstruct2;
   apache::thrift::CompactProtocolReader reader;

@@ -77,26 +77,6 @@ std::unique_ptr<folly::IOBuf> wrapIovec(
   return head;
 }
 
-folly::IOBuf
-coalesceSlow(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
-  folly::IOBuf buffer(folly::IOBuf::CREATE, destCapacity);
-  for (size_t i = 0; i < iovcnt; ++i) {
-    std::memcpy(buffer.writableTail(), iov[i].iov_base, iov[i].iov_len);
-    buffer.append(iov[i].iov_len);
-  }
-  assert(buffer.length() <= destCapacity);
-  return buffer;
-}
-
-folly::IOBuf
-coalesce(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
-  if (iovcnt == 1) {
-    return folly::IOBuf(
-        folly::IOBuf::WRAP_BUFFER, iov[0].iov_base, iov[0].iov_len);
-  }
-  return coalesceSlow(iov, iovcnt, destCapacity);
-}
-
 /************************
  * No Compression Codec *
  ************************/
@@ -124,6 +104,27 @@ class NoCompressionCodec : public CompressionCodec {
  * LZ4 Compression Codec *
  *************************/
 #if FOLLY_HAVE_LIBLZ4
+
+folly::IOBuf
+coalesceSlow(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
+  folly::IOBuf buffer(folly::IOBuf::CREATE, destCapacity);
+  for (size_t i = 0; i < iovcnt; ++i) {
+    std::memcpy(buffer.writableTail(), iov[i].iov_base, iov[i].iov_len);
+    buffer.append(iov[i].iov_len);
+  }
+  assert(buffer.length() <= destCapacity);
+  return buffer;
+}
+
+folly::IOBuf
+coalesce(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
+  if (iovcnt == 1) {
+    return folly::IOBuf(
+        folly::IOBuf::WRAP_BUFFER, iov[0].iov_base, iov[0].iov_len);
+  }
+  return coalesceSlow(iov, iovcnt, destCapacity);
+}
+
 class Lz4CompressionCodec : public CompressionCodec {
  public:
   Lz4CompressionCodec(
