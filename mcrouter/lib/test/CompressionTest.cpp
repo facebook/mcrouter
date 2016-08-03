@@ -187,6 +187,7 @@ TEST(Lz4CompressionCodec, compressAndUncompress) {
                                            getAsciiDictionary(), 1);
   testCompressAndUncompress(compressor.get(), *getAsciiReply());
 }
+
 TEST(Lz4CompressionCodec, compressAndUncompress_largeValues) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
                                            getAsciiDictionary(), 1);
@@ -214,5 +215,100 @@ TEST(Lz4CompressionCodec, uncompressChained) {
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
 #endif // FOLLY_HAVE_LIBLZ4
+
+#if FOLLY_HAVE_LIBZSTD
+TEST(ZstdCompressionCodec, compressAndUncompress) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD, getAsciiDictionary(), 1);
+  testCompressAndUncompress(compressor.get(), *getAsciiReply());
+}
+
+TEST(ZstdCompressionCodec, compressAndUncompressWithCompressionLevel) {
+  CompressionCodecOptions codecOptions;
+  codecOptions.compressionLevel = 5;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD,
+      getAsciiDictionary(),
+      1,
+      codecOptions);
+  testCompressAndUncompress(compressor.get(), *getAsciiReply());
+}
+
+TEST(ZstdCompressionCodec, compressAndUncompress_largeValues) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD, getAsciiDictionary(), 1);
+  testCompressAndUncompress(compressor.get(), *getRandomLargeReply());
+}
+
+TEST(
+    ZstdCompressionCodec,
+    compressAndUncompressWithCompressionLevel_largeValues) {
+  CompressionCodecOptions codecOptions;
+  codecOptions.compressionLevel = 5;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD,
+      getAsciiDictionary(),
+      1,
+      codecOptions);
+  testCompressAndUncompress(compressor.get(), *getRandomLargeReply());
+}
+
+TEST(ZstdCompressionCodec, compressTwiceWith) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD, getAsciiDictionary(), 1);
+  testCompressTwice(compressor.get(), *getAsciiReply());
+}
+
+TEST(ZstdCompressionCodec, compressTwiceWithCompressionLevel) {
+  CompressionCodecOptions codecOptions;
+  codecOptions.compressionLevel = 5;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD,
+      getAsciiDictionary(),
+      1,
+      codecOptions);
+  testCompressTwice(compressor.get(), *getAsciiReply());
+}
+
+TEST(ZstdCompressionCodec, compressChained) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD, getAsciiDictionary(), 1);
+  auto data = getAsciiReply();
+  for (size_t i = 2; i < data->length(); ++i) {
+    testCompressChained(compressor.get(), *data, i);
+  }
+}
+
+TEST(ZstdCompressionCodec, compressChainedWithCompressionLevel) {
+  CompressionCodecOptions codecOptions;
+  codecOptions.compressionLevel = 5;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD,
+      getAsciiDictionary(),
+      1,
+      codecOptions);
+  auto data = getAsciiReply();
+  for (size_t i = 2; i < data->length(); ++i) {
+    testCompressChained(compressor.get(), *data, i);
+  }
+}
+
+TEST(ZstdCompressionCodec, uncompressChained) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD, getAsciiDictionary(), 1);
+  testUncompressChained(compressor.get(), *getAsciiReply(), 3);
+}
+
+TEST(ZstdCompressionCodec, uncompressChainedWithCompressionLevel) {
+  CompressionCodecOptions codecOptions;
+  codecOptions.compressionLevel = 5;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD,
+      getAsciiDictionary(),
+      1,
+      codecOptions);
+  testUncompressChained(compressor.get(), *getAsciiReply(), 3);
+}
+#endif // FOLLY_HAVE_LIBZSTD
 
 }}} // facebook::memcache::test

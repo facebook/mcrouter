@@ -14,12 +14,9 @@
 #include <folly/Portability.h>
 #include <folly/io/IOBuf.h>
 
-#if FOLLY_HAVE_LIBLZ4
-#include <lz4.h>
-#endif // FOLLY_HAVE_LIBLZ4
-
+#include "mcrouter/lib/Lz4CompressionCodec.h"
+#include "mcrouter/lib/ZstdCompressionCodec.h"
 #include "mcrouter/lib/IovecCursor.h"
-#include "mcrouter/lib/Lz4Immutable.h"
 
 namespace facebook {
 namespace memcache {
@@ -77,26 +74,6 @@ std::unique_ptr<folly::IOBuf> wrapIovec(
   return head;
 }
 
-folly::IOBuf
-coalesceSlow(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
-  folly::IOBuf buffer(folly::IOBuf::CREATE, destCapacity);
-  for (size_t i = 0; i < iovcnt; ++i) {
-    std::memcpy(buffer.writableTail(), iov[i].iov_base, iov[i].iov_len);
-    buffer.append(iov[i].iov_len);
-  }
-  assert(buffer.length() <= destCapacity);
-  return buffer;
-}
-
-folly::IOBuf
-coalesce(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
-  if (iovcnt == 1) {
-    return folly::IOBuf(
-        folly::IOBuf::WRAP_BUFFER, iov[0].iov_base, iov[0].iov_len);
-  }
-  return coalesceSlow(iov, iovcnt, destCapacity);
-}
-
 /************************
  * No Compression Codec *
  ************************/
@@ -120,126 +97,6 @@ class NoCompressionCodec : public CompressionCodec {
   }
 };
 
-/*************************
- * LZ4 Compression Codec *
- *************************/
-#if FOLLY_HAVE_LIBLZ4
-class Lz4CompressionCodec : public CompressionCodec {
- public:
-  Lz4CompressionCodec(
-      std::unique_ptr<folly::IOBuf> dictionary,
-      uint32_t id,
-      CompressionCodecOptions options);
-
-  std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
-      override final;
-  std::unique_ptr<folly::IOBuf> uncompress(
-      const struct iovec* iov,
-      size_t iovcnt,
-      size_t uncompressedLength = 0) override final;
-
-  ~Lz4CompressionCodec() {
-    LZ4_freeStream(lz4Stream_);
-  }
-
- private:
-  static constexpr size_t kMaxDictionarySize = 64 * 1024;
-
-  const std::unique_ptr<folly::IOBuf> dictionary_;
-  const Lz4Immutable lz4Immutable_;
-  LZ4_stream_t* lz4Stream_{nullptr};
-
-  FOLLY_NOINLINE std::unique_ptr<folly::IOBuf> compressLargeData(
-      folly::IOBuf data);
-};
-
-Lz4CompressionCodec::Lz4CompressionCodec(
-    std::unique_ptr<folly::IOBuf> dictionary,
-    uint32_t id,
-    CompressionCodecOptions options)
-    : CompressionCodec(CompressionCodecType::LZ4, id, options),
-      dictionary_(std::move(dictionary)),
-      lz4Immutable_(dictionary_->clone()),
-      lz4Stream_(LZ4_createStream()) {
-  if (!lz4Stream_) {
-    throw std::runtime_error("Failed to allocate LZ4_stream_t");
-  }
-
-  int res = LZ4_loadDict(
-      lz4Stream_,
-      reinterpret_cast<const char*>(dictionary_->data()),
-      dictionary_->length());
-  if (res != dictionary_->length()) {
-    throw std::runtime_error(
-        folly::sformat(
-            "LZ4 codec: Failed to load dictionary. Return code: {}", res));
-  }
-}
-
-std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::compress(
-    const struct iovec* iov,
-    size_t iovcnt) {
-  assert(iov);
-
-  auto size = IovecCursor::computeTotalLength(iov, iovcnt);
-  if (size < options().largeDataThreshold) {
-    return lz4Immutable_.compress(iov, iovcnt);
-  }
-  return compressLargeData(coalesce(iov, iovcnt, size));
-}
-
-std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::compressLargeData(
-    folly::IOBuf data) {
-  LZ4_stream_t lz4StreamCopy = *lz4Stream_;
-
-  size_t compressBound = LZ4_compressBound(data.length());
-  auto buffer = folly::IOBuf::create(compressBound);
-
-  int compressedSize = LZ4_compress_fast_continue(
-      &lz4StreamCopy,
-      reinterpret_cast<const char*>(data.data()),
-      reinterpret_cast<char*>(buffer->writableTail()),
-      data.length(),
-      compressBound,
-      1);
-
-  // compression is guaranteed to work as we use
-  // LZ4_compressBound as destBuffer size.
-  assert(compressedSize > 0);
-
-  buffer->append(compressedSize);
-  return buffer;
-}
-
-std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
-    const struct iovec* iov,
-    size_t iovcnt,
-    size_t uncompressedLength) {
-  if (uncompressedLength == 0) {
-    throw std::invalid_argument("LZ4 codec: uncompressed length required");
-  }
-
-  auto data =
-      coalesce(iov, iovcnt, IovecCursor::computeTotalLength(iov, iovcnt));
-  auto buffer = folly::IOBuf::create(uncompressedLength);
-  int bytesWritten = LZ4_decompress_safe_usingDict(
-      reinterpret_cast<const char*>(data.data()),
-      reinterpret_cast<char*>(buffer->writableTail()),
-      data.length(), buffer->tailroom(),
-      reinterpret_cast<const char*>(dictionary_->data()),
-      dictionary_->length());
-
-  // Should either fail completely or decompress everything.
-  assert(bytesWritten <= 0 || bytesWritten == uncompressedLength);
-  if (bytesWritten <= 0) {
-    throw std::runtime_error("LZ4 codec: decompression returned invalid value");
-  }
-
-  buffer->append(bytesWritten);
-  return buffer;
-}
-#endif // FOLLY_HAVE_LIBLZ4
-
 } // anonymous namespace
 
 /*****************************
@@ -262,6 +119,14 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
       LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
       return nullptr;
 #endif // FOLLY_HAVE_LIBLZ4
+    case CompressionCodecType::ZSTD:
+#if FOLLY_HAVE_LIBZSTD
+      return folly::make_unique<ZstdCompressionCodec>(
+          std::move(dictionary), id, options);
+#else
+      LOG(ERROR) << "ZSTD is not available. Returning nullptr.";
+      return nullptr;
+#endif // FOLLY_HAVE_LIBZSTD
   }
   return nullptr;
 }

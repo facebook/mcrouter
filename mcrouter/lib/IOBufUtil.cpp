@@ -63,4 +63,29 @@ void copyInto(char* raw, const folly::IOBuf& buf) {
   } while (cur != &buf);
 }
 
+namespace {
+/**
+ * Creating IOBuf from an iovec array.
+ */
+folly::IOBuf
+coalesceSlow(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
+  folly::IOBuf buffer(folly::IOBuf::CREATE, destCapacity);
+  for (size_t i = 0; i < iovcnt; ++i) {
+    std::memcpy(buffer.writableTail(), iov[i].iov_base, iov[i].iov_len);
+    buffer.append(iov[i].iov_len);
+  }
+  assert(buffer.length() <= destCapacity);
+  return buffer;
+}
+} // anonymous namespace
+
+folly::IOBuf
+coalesceIovecs(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
+  if (iovcnt == 1) {
+    return folly::IOBuf(
+        folly::IOBuf::WRAP_BUFFER, iov[0].iov_base, iov[0].iov_len);
+  }
+  return coalesceSlow(iov, iovcnt, destCapacity);
+}
+
 }} // facebook::memcache

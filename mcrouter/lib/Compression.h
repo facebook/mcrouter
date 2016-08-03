@@ -31,7 +31,12 @@ enum class CompressionCodecType {
   // Use LZ4 compression.
   // Not thread-safe.
   // Requires uncompressed size.
-  LZ4 = 1
+  LZ4 = 1,
+
+  // Use ZSTD compression.
+  // Not thread-safe.
+  // Requires compressiom level and uncompressed size.
+  ZSTD = 2
 };
 
 /**

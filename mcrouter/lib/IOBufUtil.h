@@ -99,4 +99,11 @@ inline std::string copyAsString(const folly::IOBuf& source,
   return ret;
 }
 
+/**
+ * If there is only one iovec then just creating it using IOBuf constructor.
+ * Otherwise using coalesceSlow.
+ */
+folly::IOBuf
+coalesceIovecs(const struct iovec* iov, size_t iovcnt, size_t destCapacity);
+
 }} // facebook::memcache
