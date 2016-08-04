@@ -32,16 +32,19 @@ struct CodecConfig {
   const CompressionCodecType codecType;
   const std::string dictionary;
   const CompressionCodecOptions options;
+  const bool isEnabled;
 
   CodecConfig(
       uint32_t codecId,
       CompressionCodecType type,
       std::string dic,
-      CompressionCodecOptions opts = {})
+      CompressionCodecOptions opts = {},
+      bool isCodecEnabled = true)
       : id(codecId),
         codecType(type),
         dictionary(std::move(dic)),
-        options(opts) {}
+        options(opts),
+        isEnabled(isCodecEnabled) {}
 };
 using CodecConfigPtr = std::unique_ptr<CodecConfig>;
 

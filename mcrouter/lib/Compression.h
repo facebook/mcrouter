@@ -117,24 +117,32 @@ class CompressionCodec {
    */
   CompressionCodecOptions options() const { return options_; }
 
+  /**
+   * Return is the codec is enabled;
+   */
+   bool isEnabled() const { return isEnabled_; }
+
  protected:
   /**
    * Builds the compression codec
    *
-   * @param type        Compression algorithm to use.
-   * @param id          Id of the codec. This is merely informative - it has no
-   *                    impact in the behavior of the codec.
-   * @param options     Options used by this codec.
+   * @param type             Compression algorithm to use.
+   * @param id               Id of the codec. This is merely informative -
+   *                         it has no impact in the behavior of the codec.
+   * @param options          Options used by this codec.
+   * @param isCodecEnabled   Indicates whether this codec enabled or not.
    */
   CompressionCodec(
       CompressionCodecType type,
       uint32_t id,
-      CompressionCodecOptions options);
+      CompressionCodecOptions options,
+      bool isCodecEnabled);
 
  private:
   const CompressionCodecType type_;
   const uint32_t id_;
   const CompressionCodecOptions options_;
+  const bool isEnabled_;
 };
 
 /**
@@ -152,7 +160,8 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
     CompressionCodecType type,
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    CompressionCodecOptions options = {});
+    CompressionCodecOptions options = {},
+    bool isCodecEnabled = true);
 
 } // memcache
 } // facebook

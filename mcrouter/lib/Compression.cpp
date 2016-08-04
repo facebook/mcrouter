@@ -24,8 +24,9 @@ namespace memcache {
 CompressionCodec::CompressionCodec(
     CompressionCodecType type,
     uint32_t id,
-    CompressionCodecOptions options)
-    : type_(type), id_(id), options_(options) {}
+    CompressionCodecOptions options,
+    bool isCodecEnabled)
+    : type_(type), id_(id), options_(options), isEnabled_(isCodecEnabled) {}
 
 std::unique_ptr<folly::IOBuf> CompressionCodec::compress(
     const folly::IOBuf& data) {
@@ -82,8 +83,13 @@ class NoCompressionCodec : public CompressionCodec {
   NoCompressionCodec(
       std::unique_ptr<folly::IOBuf> dictionary,
       uint32_t id,
-      CompressionCodecOptions options)
-      : CompressionCodec(CompressionCodecType::NO_COMPRESSION, id, options) {}
+      CompressionCodecOptions options,
+      bool isCodecEnabled)
+      : CompressionCodec(
+            CompressionCodecType::NO_COMPRESSION,
+            id,
+            options,
+            isCodecEnabled) {}
 
   std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
       override final {
@@ -106,15 +112,16 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
     CompressionCodecType type,
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    CompressionCodecOptions options) {
+    CompressionCodecOptions options,
+    bool isCodecEnabled) {
   switch (type) {
     case CompressionCodecType::NO_COMPRESSION:
       return folly::make_unique<NoCompressionCodec>(
-          std::move(dictionary), id, options);
+          std::move(dictionary), id, options, isCodecEnabled);
     case CompressionCodecType::LZ4:
 #if FOLLY_HAVE_LIBLZ4
       return folly::make_unique<Lz4CompressionCodec>(
-          std::move(dictionary), id, options);
+          std::move(dictionary), id, options, isCodecEnabled);
 #else
       LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
       return nullptr;
@@ -122,7 +129,7 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
     case CompressionCodecType::ZSTD:
 #if FOLLY_HAVE_LIBZSTD
       return folly::make_unique<ZstdCompressionCodec>(
-          std::move(dictionary), id, options);
+          std::move(dictionary), id, options, isCodecEnabled);
 #else
       LOG(ERROR) << "ZSTD is not available. Returning nullptr.";
       return nullptr;

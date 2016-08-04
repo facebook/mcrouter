@@ -67,6 +67,66 @@ TEST(CompressionCodecManager, basic) {
   }
 }
 
+TEST(CompressionCodecManager, basicNotEnabled) {
+  std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
+  for (uint32_t i = 1; i <= 64; ++ i) {
+    codecConfigs.emplace(
+        i,
+        folly::make_unique<CodecConfig>(
+            i,
+            CompressionCodecType::LZ4,
+            createBinaryData(i * 1024),
+            CompressionCodecOptions{},
+            false));
+  }
+
+  CompressionCodecManager codecManager(std::move(codecConfigs));
+  auto codecMap = codecManager.getCodecMap();
+
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(1, codecMap->getIdRange().firstId);
+  EXPECT_EQ(64, codecMap->getIdRange().size);
+  size_t enabledCodecs = 0;
+  for (uint32_t i = 1; i <= 64; ++ i) {
+    auto codec = codecMap->get(i);
+    if (codec->isEnabled()) {
+      validateCodec(codec);
+      enabledCodecs++;
+    }
+  }
+  EXPECT_EQ(0, enabledCodecs);
+}
+
+TEST(CompressionCodecManager, basicEnabled) {
+  std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
+  for (uint32_t i = 1; i <= 64; ++ i) {
+    codecConfigs.emplace(
+        i,
+        folly::make_unique<CodecConfig>(
+            i,
+            CompressionCodecType::LZ4,
+            createBinaryData(i * 1024),
+            CompressionCodecOptions{},
+            true));
+  }
+
+  CompressionCodecManager codecManager(std::move(codecConfigs));
+  auto codecMap = codecManager.getCodecMap();
+
+  EXPECT_TRUE(codecMap);
+  EXPECT_EQ(1, codecMap->getIdRange().firstId);
+  EXPECT_EQ(64, codecMap->getIdRange().size);
+  size_t enabledCodecs = 0;
+  for (uint32_t i = 1; i <= 64; ++ i) {
+    auto codec = codecMap->get(i);
+    if (codec->isEnabled()) {
+      validateCodec(codec);
+      enabledCodecs++;
+    }
+  }
+  EXPECT_EQ(64, enabledCodecs);
+}
+
 TEST(CompressionCodecManager, missingStart) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
   for (uint32_t i = 10; i <= 64; ++ i) {

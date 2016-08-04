@@ -20,8 +20,9 @@ Lz4CompressionCodec::~Lz4CompressionCodec() {
 Lz4CompressionCodec::Lz4CompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    CompressionCodecOptions options)
-    : CompressionCodec(CompressionCodecType::LZ4, id, options),
+    CompressionCodecOptions options,
+    bool isCodecEnabled)
+    : CompressionCodec(CompressionCodecType::LZ4, id, options, isCodecEnabled),
       dictionary_(std::move(dictionary)),
       lz4Immutable_(dictionary_->clone()),
       lz4Stream_(LZ4_createStream()) {

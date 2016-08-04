@@ -23,8 +23,9 @@ ZstdCompressionCodec::~ZstdCompressionCodec() {
 ZstdCompressionCodec::ZstdCompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    CompressionCodecOptions options)
-    : CompressionCodec(CompressionCodecType::ZSTD, id, options),
+    CompressionCodecOptions options,
+    bool isCodecEnabled)
+    : CompressionCodec(CompressionCodecType::ZSTD, id, options, isCodecEnabled),
       dictionary_(std::move(dictionary)),
       compressionLevel_(options.compressionLevel),
       zstdCContext_(ZSTD_createCCtx()),

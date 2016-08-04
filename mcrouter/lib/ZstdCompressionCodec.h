@@ -26,7 +26,8 @@ class ZstdCompressionCodec : public CompressionCodec {
   ZstdCompressionCodec(
       std::unique_ptr<folly::IOBuf> dictionary,
       uint32_t id,
-      CompressionCodecOptions options);
+      CompressionCodecOptions options,
+      bool isCodecEnabled);
 
   std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
       override final;
