@@ -56,6 +56,23 @@ libmcrouter_a_SOURCES = \
   WeightedCh3HashFunc.h \
   allocator/JemallocNodumpAllocator.h \
   allocator/JemallocNodumpAllocator.cpp \
+  carbon/Fields.h \
+  carbon/CarbonQueueAppender.cpp \
+  carbon/CarbonQueueAppender.h \
+  carbon/CarbonProtocolCommon.h \
+  carbon/CarbonProtocolReader-inl.h \
+  carbon/CarbonProtocolReader.cpp \
+  carbon/CarbonProtocolReader.h \
+  carbon/CarbonProtocolWriter-inl.h \
+  carbon/CarbonProtocolWriter.h \
+  carbon/Keys-inl.h \
+  carbon/Keys.h \
+  carbon/ReplyCommon.h \
+  carbon/RequestCommon.h \
+  carbon/RequestReplyUtil.h \
+  carbon/Result.h \
+  carbon/SerializationTraits.h \
+  carbon/Util.h \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
   config/ImportResolverIf.h \
@@ -132,6 +149,7 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
+  network/CaretHeader.h \
   network/CaretSerializedMessageImpl-inl.h \
   network/CaretSerializedMessageImpl.h \
   network/ClientMcParser-inl.h \
@@ -150,8 +168,6 @@ libmcrouter_a_SOURCES = \
   network/McClientRequestContext.h \
   network/McParser.cpp \
   network/McParser.h \
-  network/McQueueAppender.cpp \
-  network/McQueueAppender.h \
   network/McSerializedRequest.cpp \
   network/McSerializedRequest.h \
   network/McServerRequestContext-inl.h \

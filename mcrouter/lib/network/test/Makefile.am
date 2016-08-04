@@ -21,8 +21,8 @@ mcrouter_network_test_SOURCES = \
   ../gen-cpp2/mc_caret_protocol_types.cpp \
   ../gen-cpp2/mc_caret_protocol_types.h \
   ../gen-cpp2/mc_caret_protocol_types_custom_protocol.h \
+  CarbonQueueAppenderTest \
   McAsciiParserTest.cpp \
-  McQueueAppenderTest.cpp \
   McServerAsciiParserTest.cpp \
   MockMc.cpp \
   MockMcServer.cpp \

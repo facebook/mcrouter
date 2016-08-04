@@ -7,15 +7,13 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/network/McQueueAppender.h"
+#include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 
 #include <cstring>
 
-#include <folly/io/IOBuf.h>
+namespace carbon {
 
-namespace facebook { namespace memcache {
-
-void McQueueAppenderStorage::append(const folly::IOBuf& buf) {
+void CarbonQueueAppenderStorage::append(const folly::IOBuf& buf) {
   if (nIovsUsed_ == kMaxIovecs) {
     coalesce();
   }
@@ -45,7 +43,7 @@ void McQueueAppenderStorage::append(const folly::IOBuf& buf) {
   canUsePreviousIov_ = false;
 }
 
-void McQueueAppenderStorage::push(const uint8_t* buf, size_t len) {
+void CarbonQueueAppenderStorage::push(const uint8_t* buf, size_t len) {
   struct iovec* iov;
 
   if (nIovsUsed_ == kMaxIovecs) {
@@ -80,7 +78,7 @@ void McQueueAppenderStorage::push(const uint8_t* buf, size_t len) {
   }
 }
 
-void McQueueAppenderStorage::coalesce() {
+void CarbonQueueAppenderStorage::coalesce() {
   VLOG(4) << "Out of iovecs, coalescing in Caret message serialization";
   assert(nIovsUsed_ == kMaxIovecs);
 
@@ -107,4 +105,4 @@ void McQueueAppenderStorage::coalesce() {
   iovs_[1] = {const_cast<uint8_t*>(head_.data()), head_.length()};
 }
 
-}} // facebook::memcache
+} // carbon

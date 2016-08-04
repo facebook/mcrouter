@@ -19,6 +19,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
 
@@ -27,20 +28,6 @@ class IOBuf;
 } // folly
 
 namespace facebook { namespace memcache {
-
-
-constexpr char kCaretMagicByte = '^';
-constexpr size_t kMaxAdditionalFields = 3;
-constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
-    1 /* GroupVarint header (lengths of 4 ints) */ +
-    4 * sizeof(uint32_t) /* body size, typeId, reqId, num additional fields */ +
-    2 * kMaxAdditionalFields * folly::kMaxVarintLength64; /* key and value for
-                                                          additional fields */
-
-enum class UmbrellaVersion : uint8_t {
-  BASIC = 0,
-  TYPED_MESSAGE = 1,
-};
 
 struct UmbrellaMessageInfo {
   uint32_t headerSize;
@@ -61,20 +48,6 @@ enum class UmbrellaParseStatus {
   OK,
   MESSAGE_PARSE_ERROR,
   NOT_ENOUGH_DATA,
-};
-
-enum class CaretAdditionalFieldType {
-  TRACE_ID = 0,
-
-  // Range of supportted codecs
-  SUPPORTED_CODECS_FIRST_ID = 1,
-  SUPPORTED_CODECS_SIZE = 2,
-
-  // Id of codec used to compress the data.
-  USED_CODEC_ID = 3,
-
-  // Size of body after decompression.
-  UNCOMPRESSED_BODY_SIZE = 4,
 };
 
 UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,

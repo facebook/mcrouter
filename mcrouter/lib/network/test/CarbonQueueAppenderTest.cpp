@@ -17,26 +17,27 @@
 #include <folly/io/IOBuf.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
-#include "mcrouter/lib/network/McQueueAppender.h"
+#include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types_custom_protocol.h"
 #include "mcrouter/lib/network/gen-cpp2/caret_test_types.h"
 #include "mcrouter/lib/network/gen-cpp2/caret_test_types_custom_protocol.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 using namespace facebook::memcache;
 
-TEST(McQueueAppenderTest, longString) {
-  McQueueAppenderStorage storage;
+TEST(CarbonQueueAppenderTest, longString) {
+  carbon::CarbonQueueAppenderStorage storage;
   TypedThriftReply<cpp2::McGetReply> reply(mc_res_remote_error);
 
-  // Require more space than McQueueAppenderStorage's internal 512B buffer.
+  // Require more space than CarbonQueueAppenderStorage's internal 512B buffer.
   // This will append() a copy of the string allocated on the heap.
   const std::string message(1024, 'a');
   reply->set_message(message);
 
   apache::thrift::CompactProtocolWriterImpl<
-      McQueueAppender, McQueueAppenderStorage> writer(
+      carbon::CarbonQueueAppender, carbon::CarbonQueueAppenderStorage> writer(
           apache::thrift::SHARE_EXTERNAL_BUFFER);
 
   writer.setOutput(&storage);
@@ -87,8 +88,8 @@ void writeToBuf(folly::IOBuf& dest, const char* src, size_t len) {
 }
 } // anonymous
 
-TEST(McQueueAppender, manyFields) {
-  McQueueAppenderStorage storage;
+TEST(CarbonQueueAppender, manyFields) {
+  carbon::CarbonQueueAppenderStorage storage;
   cpp2::ManyFields tstruct;
 
   // Each IOBuf must have length() > 0 in order to be serialized
@@ -137,11 +138,11 @@ TEST(McQueueAppender, manyFields) {
   writeToBuf(tstruct.buf40, str2, std::strlen(str2) + 1);
 
   apache::thrift::CompactProtocolWriterImpl<
-      McQueueAppender, McQueueAppenderStorage> writer(
+      carbon::CarbonQueueAppender, carbon::CarbonQueueAppenderStorage> writer(
           apache::thrift::SHARE_EXTERNAL_BUFFER);
 
   writer.setOutput(&storage);
-  // This will trigger McQueueAppenderStorage::coalesce() logic
+  // This will trigger CarbonQueueAppenderStorage::coalesce() logic
   tstruct.write(&writer);
 
   UmbrellaMessageInfo info;

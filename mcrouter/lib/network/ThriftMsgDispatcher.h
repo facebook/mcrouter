@@ -13,9 +13,9 @@
 #include <folly/io/IOBuf.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
+#include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
 #include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types_custom_protocol.h"
-#include "mcrouter/lib/network/McQueueAppender.h"
 #include "mcrouter/lib/network/ThriftMessageList.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/TypedThriftMessage.h"
@@ -39,10 +39,10 @@ class TypedThriftRequest;
 template <class ThriftType>
 void serializeThriftStruct(
     const TypedThriftMessage<ThriftType>& msg,
-    McQueueAppenderStorage& storage) {
+    carbon::CarbonQueueAppenderStorage& storage) {
 
   apache::thrift::CompactProtocolWriterImpl<
-      McQueueAppender, McQueueAppenderStorage> writer(
+      carbon::CarbonQueueAppender, carbon::CarbonQueueAppenderStorage> writer(
           apache::thrift::SHARE_EXTERNAL_BUFFER);
 
   writer.setOutput(&storage);

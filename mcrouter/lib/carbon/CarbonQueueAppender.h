@@ -15,23 +15,24 @@
 #include <utility>
 
 #include <folly/Bits.h>
-
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
+#include <folly/io/IOBuf.h>
+#include <folly/Varint.h>
 
 namespace folly {
 class IOBuf;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace carbon {
 
-class McQueueAppenderStorage {
+class CarbonQueueAppenderStorage {
  public:
-  McQueueAppenderStorage() {
+  CarbonQueueAppenderStorage() {
     reset();
   }
 
-  McQueueAppenderStorage(const McQueueAppenderStorage&) = delete;
-  McQueueAppenderStorage& operator=(const McQueueAppenderStorage&) = delete;
+  CarbonQueueAppenderStorage(const CarbonQueueAppenderStorage&) = delete;
+  CarbonQueueAppenderStorage& operator=(const CarbonQueueAppenderStorage&) =
+      delete;
 
   void append(const folly::IOBuf& buf);
 
@@ -77,14 +78,22 @@ class McQueueAppenderStorage {
  private:
   static constexpr size_t kMaxIovecs{32};
 
+  // Copied from UmbrellaProtocol.h, which will eventually die
+  static constexpr size_t kMaxAdditionalFields = 3;
+  static constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
+      1 /* GroupVarint header (lengths of 4 ints) */ +
+      4 * sizeof(uint32_t) /* body size, typeId, reqId, num addl fields */ +
+      2 * kMaxAdditionalFields *
+          folly::kMaxVarintLength64; /* key and value for additional fields */
+
   size_t storageIdx_{0};
   size_t nIovsUsed_{0};
   bool canUsePreviousIov_{false};
 
   // For safety reasons, we use another buffer for the header data
-  // TODO Current value of kMaxHeaderLength is larger than necessary. Shrink it.
   uint8_t headerBuf_[kMaxHeaderLength];
-  // Buffer used for non-IOBuf data, e.g., ints, strings, and Thrift delimiters
+  // Buffer used for non-IOBuf data, e.g., ints, strings, and protocol
+  // data
   uint8_t storage_[512];
 
   // The first iovec in iovs_ points to Caret message header data, and nothing
@@ -100,15 +109,15 @@ class McQueueAppenderStorage {
 
 
 /**
- * Mcrouter's own implementation of folly's QueueAppender.  McQueueAppender
+ * Mcrouter's own implementation of folly's QueueAppender.  CarbonQueueAppender
  * implements the portion of the folly::io::QueueAppender interface needed by
  * apache::thrift::CompactProtocolWriter.
  * We have our own version of QueueAppender in order to support more efficient
  * memory management for mcrouter's use case.
  */
-class McQueueAppender {
+class CarbonQueueAppender {
  public:
-  McQueueAppender(McQueueAppenderStorage* storage, uint64_t unused) {
+  CarbonQueueAppender(CarbonQueueAppenderStorage* storage, uint64_t unused) {
     reset(storage, unused);
   }
 
@@ -129,7 +138,7 @@ class McQueueAppender {
     write(folly::Endian::little(value));
   }
 
-  void reset(McQueueAppenderStorage* storage, uint64_t /* unused */) {
+  void reset(CarbonQueueAppenderStorage* storage, uint64_t /* unused */) {
     storage_ = storage;
   }
 
@@ -152,7 +161,7 @@ class McQueueAppender {
   }
 
  private:
-  McQueueAppenderStorage* storage_{nullptr};
+  CarbonQueueAppenderStorage* storage_{nullptr};
 };
 
-}} // facebook::memcache
+} // carbon

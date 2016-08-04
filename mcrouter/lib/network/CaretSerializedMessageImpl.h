@@ -12,7 +12,7 @@
 #include <folly/Range.h>
 #include <folly/Varint.h>
 
-#include "mcrouter/lib/network/McQueueAppender.h"
+#include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -77,7 +77,7 @@ class CaretSerializedMessage {
                size_t& niovOut) noexcept;
 
  private:
-  McQueueAppenderStorage storage_;
+  carbon::CarbonQueueAppenderStorage storage_;
 
   template <class ThriftType>
   bool fill(const TypedThriftRequest<ThriftType>& tmsg,
