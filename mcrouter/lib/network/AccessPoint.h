@@ -74,6 +74,8 @@ struct AccessPoint {
    */
   std::string toString() const;
 
+  void disableCompression();
+
  private:
   std::string host_;
   uint16_t port_;

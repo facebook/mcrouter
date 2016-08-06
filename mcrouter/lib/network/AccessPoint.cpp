@@ -142,6 +142,10 @@ AccessPoint::create(folly::StringPiece apString,
   }
 }
 
+void AccessPoint::disableCompression() {
+  compressed_ = false;
+}
+
 std::string AccessPoint::toHostPortString() const {
   if (isV6_) {
     return folly::to<std::string>("[", host_, "]:", port_);

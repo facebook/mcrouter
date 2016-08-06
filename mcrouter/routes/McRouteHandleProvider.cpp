@@ -339,7 +339,15 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {
         if (!initCompression(proxy_.router())) {
-          throwLogic("Failed to initialize compression.");
+          MC_LOG_FAILURE(
+              opts,
+              failure::Category::kBadEnvironment,
+              "Pool {}: Failed to initialize compression. "
+              "Disabling compression for host: {}",
+              name,
+              server.stringPiece());
+
+          ap->disableCompression();
         }
       }
 
