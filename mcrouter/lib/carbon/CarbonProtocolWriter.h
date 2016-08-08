@@ -191,7 +191,8 @@ class CarbonProtocolWriter {
   }
 
   void writeFloatRaw(const float f) {
-    const auto bits = *reinterpret_cast<const uint32_t*>(std::addressof(f));
+    uint32_t bits;
+    std::memcpy(std::addressof(bits), std::addressof(f), sizeof(bits));
     appender_.writeBE(bits);
   }
 
@@ -212,7 +213,8 @@ class CarbonProtocolWriter {
   }
 
   void writeDoubleRaw(const double d) {
-    const auto bits = *reinterpret_cast<const uint64_t*>(std::addressof(d));
+    uint64_t bits;
+    std::memcpy(std::addressof(bits), std::addressof(d), sizeof(bits));
     appender_.writeBE(bits);
   }
 

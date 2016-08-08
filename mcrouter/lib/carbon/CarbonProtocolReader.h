@@ -102,7 +102,9 @@ class CarbonProtocolReader {
         "Carbon floats may only be used on platforms using IEC 559 floats");
 
     const auto bits = cursor_.template readBE<uint32_t>();
-    return *reinterpret_cast<const float*>(std::addressof(bits));
+    float rv;
+    std::memcpy(std::addressof(rv), std::addressof(bits), sizeof(rv));
+    return rv;
   }
 
   double readDoubleField() {
@@ -115,7 +117,9 @@ class CarbonProtocolReader {
         "Carbon doubles may only be used on platforms using IEC 559 doubles");
 
     const auto bits = cursor_.template readBE<uint64_t>();
-    return *reinterpret_cast<const double*>(std::addressof(bits));
+    double rv;
+    std::memcpy(std::addressof(rv), std::addressof(bits), sizeof(rv));
+    return rv;
   }
 
   Result readResultField() {
