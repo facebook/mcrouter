@@ -1,0 +1,44 @@
+namespace facebook::memcache::test;
+
+enum SimpleEnum : int64_t {
+  Twenty = 20,
+  Zero = 0,
+  One = 1,
+  Negative = -92233
+};
+
+struct SimpleStruct {
+  1: int32_t int32Member;
+  2: string stringMember;
+  3: SimpleEnum enumMember;
+};
+
+request TestRequest with 1: SimpleStruct {
+  id: 1;
+  name: "test";
+  reply: TestReply;
+
+  1: Keys<IOBuf> key;
+  2: SimpleEnum testEnum;
+  3: bool testBool;
+  4: char testChar;
+  5: int8_t testInt8;
+  6: int16_t testInt16;
+  7: int32_t testInt32;
+  8: int64_t testInt64;
+  9: uint8_t testUInt8;
+  10: uint16_t testUInt16;
+  11: uint32_t testUInt32;
+  12: uint64_t testUInt64;
+  13: float testFloat;
+  14: double testDouble;
+  15: string testShortString;
+  16: string testLongString;
+  17: IOBuf testIobuf;
+  18: SimpleStruct testStruct;
+  19: list<string> testList;
+};
+
+reply TestReply {
+  1: Result result;
+};
