@@ -9,25 +9,18 @@
  */
 #pragma once
 
-#include <folly/detail/CacheLocality.h>
 #include <folly/IntrusiveList.h>
-#include <folly/Optional.h>
 #include <folly/Range.h>
 
 #include "mcrouter/lib/CacheClientStats.h"
 #include "mcrouter/lib/fbi/counting_sem.h"
 #include "mcrouter/lib/mc/msg.h"
 
-namespace folly {
-class EventBase;
-} // folly
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterClient;
 class McrouterInstance;
 struct proxy_t;
-struct ProxyMessage;
 class ProxyRequestContext;
 
 /**

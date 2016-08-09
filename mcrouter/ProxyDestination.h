@@ -31,7 +31,6 @@ namespace facebook { namespace memcache {
 
 namespace mcrouter {
 
-class ProxyClientCommon;
 class ProxyDestinationMap;
 class TkoTracker;
 struct proxy_t;

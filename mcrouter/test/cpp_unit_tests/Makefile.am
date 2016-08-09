@@ -8,6 +8,7 @@ mcrouter_test_SOURCES = \
   flavor_test.cpp \
   LeaseTokenMapTest.cpp \
   mc_route_handle_provider_test.cpp \
+  McrouterClientUsage.cpp \
   observable_test.cpp \
   options_test.cpp \
   pool_factory_test.cpp \
