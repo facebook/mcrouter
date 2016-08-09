@@ -199,8 +199,7 @@ class McrouterInstance :
 
   void setUpCompressionDictionaries(
       std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs) noexcept {
-    assert(!compressionCodecManager_);
-    if (codecConfigs.empty()) {
+    if (codecConfigs.empty() || compressionCodecManager_ != nullptr) {
       return;
     }
     compressionCodecManager_ =
