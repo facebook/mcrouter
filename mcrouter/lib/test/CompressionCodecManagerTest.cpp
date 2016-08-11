@@ -67,17 +67,20 @@ TEST(CompressionCodecManager, basic) {
   }
 }
 
-TEST(CompressionCodecManager, basicNotEnabled) {
+TEST(CompressionCodecManager, basicNotEnabledWithFilters) {
+  constexpr int64_t kTypeId = -1;
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  FilteringOptions filters;
+  filters.isEnabled = false;
+  filters.typeId = kTypeId;
+  for (uint32_t i = 1; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
             i,
             CompressionCodecType::LZ4,
             createBinaryData(i * 1024),
-            CompressionCodecOptions{},
-            false));
+            filters));
   }
 
   CompressionCodecManager codecManager(std::move(codecConfigs));
@@ -87,13 +90,18 @@ TEST(CompressionCodecManager, basicNotEnabled) {
   EXPECT_EQ(1, codecMap->getIdRange().firstId);
   EXPECT_EQ(64, codecMap->getIdRange().size);
   size_t enabledCodecs = 0;
+  size_t sameTypeId = 0;
   for (uint32_t i = 1; i <= 64; ++ i) {
     auto codec = codecMap->get(i);
-    if (codec->isEnabled()) {
+    if (codec->filteringOptions().isEnabled) {
       validateCodec(codec);
       enabledCodecs++;
     }
+    if (codec->filteringOptions().typeId == kTypeId) {
+      sameTypeId++;
+    }
   }
+  EXPECT_EQ(64, sameTypeId);
   EXPECT_EQ(0, enabledCodecs);
 }
 
@@ -106,8 +114,8 @@ TEST(CompressionCodecManager, basicEnabled) {
             i,
             CompressionCodecType::LZ4,
             createBinaryData(i * 1024),
-            CompressionCodecOptions{},
-            true));
+            FilteringOptions{},
+            5 /* compression level */));
   }
 
   CompressionCodecManager codecManager(std::move(codecConfigs));
@@ -119,7 +127,7 @@ TEST(CompressionCodecManager, basicEnabled) {
   size_t enabledCodecs = 0;
   for (uint32_t i = 1; i <= 64; ++ i) {
     auto codec = codecMap->get(i);
-    if (codec->isEnabled()) {
+    if (codec->filteringOptions().isEnabled) {
       validateCodec(codec);
       enabledCodecs++;
     }

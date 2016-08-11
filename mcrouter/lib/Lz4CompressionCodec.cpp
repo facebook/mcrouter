@@ -20,9 +20,13 @@ Lz4CompressionCodec::~Lz4CompressionCodec() {
 Lz4CompressionCodec::Lz4CompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    CompressionCodecOptions options,
-    bool isCodecEnabled)
-    : CompressionCodec(CompressionCodecType::LZ4, id, options, isCodecEnabled),
+    FilteringOptions codecFilteringOptions,
+    uint32_t codecCompressionLevel)
+    : CompressionCodec(
+          CompressionCodecType::LZ4,
+          id,
+          codecFilteringOptions,
+          codecCompressionLevel),
       dictionary_(std::move(dictionary)),
       lz4Immutable_(dictionary_->clone()),
       lz4Stream_(LZ4_createStream()) {
@@ -44,10 +48,12 @@ Lz4CompressionCodec::Lz4CompressionCodec(
 std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::compress(
     const struct iovec* iov,
     size_t iovcnt) {
+  constexpr int32_t kLargeDataThreshold = 1024;
   assert(iov);
 
   auto size = IovecCursor::computeTotalLength(iov, iovcnt);
-  if (size < options().largeDataThreshold) {
+  //TODO{ilonap}:kill constant
+  if (size < kLargeDataThreshold) {
     return lz4Immutable_.compress(iov, iovcnt);
   }
   return compressLargeData(coalesceIovecs(iov, iovcnt, size));

@@ -188,6 +188,21 @@ TEST(Lz4CompressionCodec, compressAndUncompress) {
   testCompressAndUncompress(compressor.get(), *getAsciiReply());
 }
 
+TEST(Lz4CompressionCodec, compressAndUncompressWithFilters) {
+  constexpr int64_t kTypeId = -1;
+  FilteringOptions filters;
+  filters.typeId = kTypeId;
+  auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
+                                           getAsciiDictionary(), 1, filters);
+  EXPECT_EQ(compressor->filteringOptions().isEnabled, true);
+  EXPECT_EQ(compressor->filteringOptions().typeId, kTypeId);
+  EXPECT_EQ(compressor->filteringOptions().minCompressionThreshold, 0);
+  EXPECT_EQ(
+      compressor->filteringOptions().maxCompressionThreshold,
+      std::numeric_limits<uint32_t>::max());
+  testCompressAndUncompress(compressor.get(), *getAsciiReply());
+}
+
 TEST(Lz4CompressionCodec, compressAndUncompress_largeValues) {
   auto compressor = createCompressionCodec(CompressionCodecType::LZ4,
                                            getAsciiDictionary(), 1);
@@ -224,13 +239,12 @@ TEST(ZstdCompressionCodec, compressAndUncompress) {
 }
 
 TEST(ZstdCompressionCodec, compressAndUncompressWithCompressionLevel) {
-  CompressionCodecOptions codecOptions;
-  codecOptions.compressionLevel = 5;
   auto compressor = createCompressionCodec(
       CompressionCodecType::ZSTD,
       getAsciiDictionary(),
-      1,
-      codecOptions);
+      1 /* id */,
+      {} /* filtering options */,
+      5 /* compression level */);
   testCompressAndUncompress(compressor.get(), *getAsciiReply());
 }
 
@@ -243,13 +257,12 @@ TEST(ZstdCompressionCodec, compressAndUncompress_largeValues) {
 TEST(
     ZstdCompressionCodec,
     compressAndUncompressWithCompressionLevel_largeValues) {
-  CompressionCodecOptions codecOptions;
-  codecOptions.compressionLevel = 5;
   auto compressor = createCompressionCodec(
       CompressionCodecType::ZSTD,
       getAsciiDictionary(),
-      1,
-      codecOptions);
+      1 /* id */,
+      {} /* filtering options */,
+      5 /* compression level */);
   testCompressAndUncompress(compressor.get(), *getRandomLargeReply());
 }
 
@@ -260,13 +273,31 @@ TEST(ZstdCompressionCodec, compressTwiceWith) {
 }
 
 TEST(ZstdCompressionCodec, compressTwiceWithCompressionLevel) {
-  CompressionCodecOptions codecOptions;
-  codecOptions.compressionLevel = 5;
   auto compressor = createCompressionCodec(
       CompressionCodecType::ZSTD,
       getAsciiDictionary(),
-      1,
-      codecOptions);
+      1 /* id */,
+      {} /* filtering options */,
+      5 /* compression level */);
+
+  testCompressTwice(compressor.get(), *getAsciiReply());
+}
+
+TEST(ZstdCompressionCodec, compressTwiceWithCompressionLevelAndFilters) {
+  FilteringOptions filters;
+  filters.isEnabled = false;
+  filters.minCompressionThreshold = 64;
+  filters.maxCompressionThreshold = 1024;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::ZSTD,
+      getAsciiDictionary(),
+      1 /* id */,
+      filters /* filtering options */,
+      5 /* compression level */);
+  EXPECT_EQ(compressor->filteringOptions().isEnabled, false);
+  EXPECT_EQ(compressor->filteringOptions().typeId, 0);
+  EXPECT_EQ(compressor->filteringOptions().minCompressionThreshold, 64);
+  EXPECT_EQ(compressor->filteringOptions().maxCompressionThreshold, 1024);
   testCompressTwice(compressor.get(), *getAsciiReply());
 }
 
@@ -280,13 +311,13 @@ TEST(ZstdCompressionCodec, compressChained) {
 }
 
 TEST(ZstdCompressionCodec, compressChainedWithCompressionLevel) {
-  CompressionCodecOptions codecOptions;
-  codecOptions.compressionLevel = 5;
   auto compressor = createCompressionCodec(
       CompressionCodecType::ZSTD,
       getAsciiDictionary(),
-      1,
-      codecOptions);
+      1 /* id */,
+      {} /* filtering options */,
+      5 /* compression level */);
+
   auto data = getAsciiReply();
   for (size_t i = 2; i < data->length(); ++i) {
     testCompressChained(compressor.get(), *data, i);
@@ -300,13 +331,13 @@ TEST(ZstdCompressionCodec, uncompressChained) {
 }
 
 TEST(ZstdCompressionCodec, uncompressChainedWithCompressionLevel) {
-  CompressionCodecOptions codecOptions;
-  codecOptions.compressionLevel = 5;
   auto compressor = createCompressionCodec(
       CompressionCodecType::ZSTD,
       getAsciiDictionary(),
-      1,
-      codecOptions);
+      1 /* id */,
+      {} /* filtering options */,
+      5 /* compression level */);
+
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
 #endif // FOLLY_HAVE_LIBZSTD

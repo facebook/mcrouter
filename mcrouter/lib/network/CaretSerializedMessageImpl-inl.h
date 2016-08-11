@@ -93,7 +93,7 @@ inline bool CaretSerializedMessage::maybeCompress(CompressionCodec* codec,
   }
 
   if (UNLIKELY(uncompressedSize > std::numeric_limits<uint32_t>::max()) ||
-      uncompressedSize < codec->options().compressionThreshold) {
+      uncompressedSize < codec->filteringOptions().minCompressionThreshold) {
     return false;
   }
 

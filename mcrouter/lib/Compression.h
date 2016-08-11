@@ -10,6 +10,7 @@
 #pragma once
 
 #include <sys/uio.h>
+#include <limits>
 #include <memory>
 
 namespace folly {
@@ -40,21 +41,26 @@ enum class CompressionCodecType {
 };
 
 /**
- * Options that can be provided to the compression codecs.
+ * Options that are used to find the best compression codec
+ * for the particular reply.
  */
-struct CompressionCodecOptions {
+struct FilteringOptions {
   /**
    * Minimum data size that the codec will try compressing.
    */
-  uint32_t compressionThreshold{0};
+  uint32_t minCompressionThreshold{0};
   /**
-   * LZ4-specific: Size of data considered to be large.
+   * Maximum data size that the codec will try compressing.
    */
-  uint32_t largeDataThreshold{1024};
+  uint32_t maxCompressionThreshold{std::numeric_limits<uint32_t>::max()};
   /**
-   * ZSTD-specific: compression level
+   * If we have dictionary built on data with only specific operation type
    */
-  uint32_t compressionLevel{1};
+  int32_t typeId{0};
+  /**
+   * Variable to check if the codec is enabled.
+   */
+  bool isEnabled{true};
 };
 
 /**
@@ -113,55 +119,59 @@ class CompressionCodec {
   uint32_t id() const { return id_; }
 
   /**
-   * Return the options used by this codec.
+   * Return the compression level used by this codec.
    */
-  CompressionCodecOptions options() const { return options_; }
+  uint32_t compressionLevel() const { return compressionLevel_; }
 
   /**
-   * Return is the codec is enabled;
+   * Return the filtering options used by this codec.
    */
-   bool isEnabled() const { return isEnabled_; }
+  FilteringOptions filteringOptions() const { return filteringOptions_; }
 
  protected:
   /**
    * Builds the compression codec
    *
-   * @param type             Compression algorithm to use.
-   * @param id               Id of the codec. This is merely informative -
-   *                         it has no impact in the behavior of the codec.
-   * @param options          Options used by this codec.
-   * @param isCodecEnabled   Indicates whether this codec enabled or not.
+   * @param type                   Compression algorithm to use.
+   * @param id                     Id of the codec. This is merely
+   *                               informative - it has no impact in the
+   *                               behavior of the codec.
+   * @param codecFilteringOptions  Filtering options are needed to be able
+   *                               to find the best codec for reply compression.
+   * @param codecCompressionLevel  Compression level used by the codec.
    */
   CompressionCodec(
       CompressionCodecType type,
       uint32_t id,
-      CompressionCodecOptions options,
-      bool isCodecEnabled);
+      FilteringOptions codecFilteringOptions,
+      uint32_t codecCompressionLevel);
 
  private:
   const CompressionCodecType type_;
   const uint32_t id_;
-  const CompressionCodecOptions options_;
-  const bool isEnabled_;
+  const FilteringOptions filteringOptions_;
+  const uint32_t compressionLevel_;
 };
 
 /**
  * Creates a compression codec with a given pre-defined dictionary.
  *
- * @param type        Type of the codec.
- * @param dictionary  Dictionary to compress/uncompress data.
- * @param id          Id of the codec. This is merely informative - it has no
- *                    impact in the behavior of the codec.
- * @param options     Codec options.
+ * @param type                   Type of the codec.
+ * @param dictionary             Dictionary to compress/uncompress data.
+ * @param id                     Id of the codec. This is merely informative -
+ *                               it has no impact in the behavior of the codec.
+ * @param codecFilteringOptions  Filtering options are needed to be able
+ *                               to find the best codec for reply compression.
+ * @param codecCompressionLevel  Compression level used by the codec.
  *
- * @throw std::runtime_error    On any error to create the codec.
+ * @throw std::runtime_error     On any error to create the codec.
  */
 std::unique_ptr<CompressionCodec> createCompressionCodec(
     CompressionCodecType type,
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    CompressionCodecOptions options = {},
-    bool isCodecEnabled = true);
+    FilteringOptions codecFilteringOptions = {},
+    uint32_t codecCompressionLevel = 1);
 
 } // memcache
 } // facebook

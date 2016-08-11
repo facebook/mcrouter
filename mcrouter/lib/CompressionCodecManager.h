@@ -31,20 +31,20 @@ struct CodecConfig {
   const uint32_t id;
   const CompressionCodecType codecType;
   const std::string dictionary;
-  const CompressionCodecOptions options;
-  const bool isEnabled;
+  const FilteringOptions filteringOptions;
+  const uint32_t compressionLevel;
 
   CodecConfig(
       uint32_t codecId,
       CompressionCodecType type,
       std::string dic,
-      CompressionCodecOptions opts = {},
-      bool isCodecEnabled = true)
+      FilteringOptions codecFilteringOptions = {},
+      uint32_t codecCompressionLevel = 1)
       : id(codecId),
         codecType(type),
         dictionary(std::move(dic)),
-        options(opts),
-        isEnabled(isCodecEnabled) {}
+        filteringOptions(codecFilteringOptions),
+        compressionLevel(codecCompressionLevel) {}
 };
 using CodecConfigPtr = std::unique_ptr<CodecConfig>;
 
