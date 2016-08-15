@@ -11,6 +11,7 @@
 
 #include <algorithm>
 
+#include <folly/fibers/FiberManager.h>
 #include <folly/Format.h>
 #include <folly/io/IOBuf.h>
 
@@ -21,9 +22,12 @@ namespace memcache {
  * CompressionCodecManager *
  ***************************/
 CompressionCodecManager::CompressionCodecManager(
-    std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs) noexcept
+    std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs)
     : codecConfigs_(std::move(codecConfigs)),
-      compressionCodecMap_([this]() { return buildCodecMap(); }) {
+      compressionCodecMap_([this]() {
+        return folly::fibers::runInMainContext(
+            [this]() { return buildCodecMap(); });
+      }) {
   // Validate all dictionaries
   std::vector<uint32_t> badCodecConfigs;
   int64_t largestId = 0;

@@ -55,7 +55,7 @@ using CodecConfigPtr = std::unique_ptr<CodecConfig>;
 class CompressionCodecManager {
  public:
   explicit CompressionCodecManager(
-      std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs) noexcept;
+      std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs);
 
   /**
    * Return the compression codec map.
