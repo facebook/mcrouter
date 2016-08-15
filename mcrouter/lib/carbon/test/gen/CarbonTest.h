@@ -28,8 +28,7 @@
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
 
-namespace facebook {
-namespace memcache {
+namespace carbon {
 namespace test {
 
 enum class SimpleEnum : int64_t {
@@ -314,7 +313,6 @@ class TestReply : public carbon::ReplyCommon {
 };
 
 } // test
-} // memcache
-} // facebook
+} // carbon
 
 #include "CarbonTest-inl.h"

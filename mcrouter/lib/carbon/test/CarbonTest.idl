@@ -1,4 +1,4 @@
-namespace facebook::memcache::test;
+namespace carbon::test;
 
 enum SimpleEnum : int64_t {
   Twenty = 20,

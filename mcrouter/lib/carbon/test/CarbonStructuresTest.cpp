@@ -16,122 +16,16 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 #include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/carbon/test/Util.h"
+#include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 
+using namespace carbon::test::util;
+
+using carbon::test::SimpleEnum;
+using carbon::test::SimpleStruct;
+using carbon::test::TestRequest;
 using facebook::memcache::coalesceAndGetRange;
-using facebook::memcache::getRange;
-using facebook::memcache::test::SimpleEnum;
-using facebook::memcache::test::SimpleStruct;
-using facebook::memcache::test::TestRequest;
-
-constexpr auto kMinInt8 = std::numeric_limits<int8_t>::min();
-constexpr auto kMinInt16 = std::numeric_limits<int16_t>::min();
-constexpr auto kMinInt32 = std::numeric_limits<int32_t>::min();
-constexpr auto kMinInt64 = std::numeric_limits<int64_t>::min();
-
-constexpr auto kMaxUInt8 = std::numeric_limits<uint8_t>::max();
-constexpr auto kMaxUInt16 = std::numeric_limits<uint16_t>::max();
-constexpr auto kMaxUInt32 = std::numeric_limits<uint32_t>::max();
-constexpr auto kMaxUInt64 = std::numeric_limits<uint64_t>::max();
-
-constexpr folly::StringPiece kShortString = "aaaaaaaaaa";
-
-namespace {
-folly::StringPiece longString() {
-  static std::string s(1024, 'a');
-  return s;
-}
-
-void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b) {
-  EXPECT_EQ(a.int32Member(), b.int32Member());
-  EXPECT_EQ(a.stringMember(), b.stringMember());
-  EXPECT_EQ(a.enumMember(), b.enumMember());
-}
-
-void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
-  EXPECT_EQ(a.key().fullKey(), b.key().fullKey());
-
-  EXPECT_EQ(a.testBool(), b.testBool());
-  EXPECT_EQ(a.testChar(), b.testChar());
-  EXPECT_EQ(a.testEnum(), b.testEnum());
-
-  EXPECT_EQ(a.testInt8(), b.testInt8());
-  EXPECT_EQ(a.testInt16(), b.testInt16());
-  EXPECT_EQ(a.testInt32(), b.testInt32());
-  EXPECT_EQ(a.testInt64(), b.testInt64());
-
-  EXPECT_EQ(a.testUInt8(), b.testUInt8());
-  EXPECT_EQ(a.testUInt16(), b.testUInt16());
-  EXPECT_EQ(a.testUInt32(), b.testUInt32());
-  EXPECT_EQ(a.testUInt64(), b.testUInt64());
-
-  EXPECT_FLOAT_EQ(a.testFloat(), b.testFloat());
-  EXPECT_DOUBLE_EQ(a.testDouble(), b.testDouble());
-
-  EXPECT_EQ(a.testShortString(), b.testShortString());
-  EXPECT_EQ(a.testLongString(), b.testLongString());
-
-  EXPECT_EQ(
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(a.testIobuf())),
-      coalesceAndGetRange(const_cast<folly::IOBuf&>(b.testIobuf())));
-
-  // Mixed-in structure
-  EXPECT_EQ(a.int32Member(), b.int32Member());
-  EXPECT_EQ(a.stringMember(), b.stringMember());
-  EXPECT_EQ(a.enumMember(), b.enumMember());
-  expectEqSimpleStruct(a.asSimpleStruct(), b.asSimpleStruct());
-
-  // Member structure
-  expectEqSimpleStruct(a.testStruct(), b.testStruct());
-
-  EXPECT_EQ(a.testList(), b.testList());
-}
-} // anonymous
-
-template <class T>
-T serializeAndDeserialize(const T& toSerialize) {
-  // Serialize the request
-  carbon::CarbonQueueAppenderStorage storage;
-  carbon::CarbonProtocolWriter writer(storage);
-  toSerialize.serialize(writer);
-
-  // Fill the serialized data into an IOBuf
-  folly::IOBuf buf(folly::IOBuf::CREATE, 2048);
-  auto* curBuf = &buf;
-  const auto iovs = storage.getIovecs();
-  // Skip Caret header iovec (with index 0)
-  for (size_t i = 1; i < iovs.second; ++i) {
-    const struct iovec* iov = iovs.first + i;
-    size_t written = 0;
-    while (written < iov->iov_len) {
-      const auto bytesToWrite =
-          std::min(iov->iov_len - written, curBuf->tailroom());
-      std::memcpy(
-          curBuf->writableTail(),
-          reinterpret_cast<const uint8_t*>(iov->iov_base) + written,
-          bytesToWrite);
-      curBuf->append(bytesToWrite);
-      written += bytesToWrite;
-
-      if (written < iov->iov_len) {
-        // Append new buffer with enough room for remaining data in this iovec,
-        // plus a bit more space for the next iovec's data
-        curBuf->appendChain(
-            folly::IOBuf::create(iov->iov_len - written + 2048));
-        curBuf = curBuf->next();
-      }
-    }
-  }
-
-  // Deserialize the serialized data
-  T deserialized;
-  carbon::CarbonCursor cur(&buf);
-  carbon::CarbonProtocolReader reader(cur);
-  deserialized.deserialize(reader);
-
-  return deserialized;
-}
 
 TEST(CarbonBasic, defaultConstructed) {
   TestRequest req;
@@ -198,8 +92,8 @@ TEST(CarbonBasic, defaultConstructed) {
 }
 
 TEST(CarbonBasic, setAndGet) {
-  const folly::StringPiece keyPiece =
-      "/region/cluster/abcdefghijklmnopqrstuvwxyz|#|afterhashstop";
+  const folly::StringPiece keyPiece(
+      "/region/cluster/abcdefghijklmnopqrstuvwxyz|#|afterhashstop");
   TestRequest req(keyPiece);
 
   // key
@@ -258,7 +152,7 @@ TEST(CarbonBasic, setAndGet) {
   // string
   req.testShortString() = kShortString.str();
   EXPECT_EQ(kShortString, req.testShortString());
-  req.testLongString() = longString().str();
+  req.testLongString() = longString();
   EXPECT_EQ(longString(), req.testLongString());
   // IOBuf
   folly::IOBuf iobuf(folly::IOBuf::COPY_BUFFER, longString());
@@ -268,7 +162,7 @@ TEST(CarbonBasic, setAndGet) {
       coalesceAndGetRange(req.testIobuf()).str());
 
   std::vector<std::string> strings = {
-      "abcdefg", "xyz", kShortString.str(), longString().str()};
+      "abcdefg", "xyz", kShortString.str(), longString()};
   req.testList() = strings;
   EXPECT_EQ(strings, req.testList());
 }
@@ -290,7 +184,7 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testFloat() = 12345.678f;
   outRequest.testDouble() = 12345.678;
   outRequest.testShortString() = kShortString.str();
-  outRequest.testLongString() = longString().str();
+  outRequest.testLongString() = longString();
   outRequest.testIobuf() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, kShortString);
   // Member struct
@@ -302,8 +196,7 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.asSimpleStruct().stringMember() = kShortString.str();
   outRequest.asSimpleStruct().enumMember() = SimpleEnum::One;
   // List of strings
-  outRequest.testList() = {
-      "abcdefg", "xyz", kShortString.str(), longString().str()};
+  outRequest.testList() = {"abcdefg", "xyz", kShortString.str(), longString()};
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);

@@ -14,8 +14,7 @@
  *
  */
 
-namespace facebook {
-namespace memcache {
+namespace carbon {
 namespace test {
 
 inline void SimpleStruct::serialize(
@@ -223,5 +222,4 @@ inline void TestReply::deserialize(carbon::CarbonProtocolReader& reader) {
 }
 
 } // test
-} // memcache
-} // facebook
+} // carbon
