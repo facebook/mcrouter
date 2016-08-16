@@ -26,9 +26,11 @@ namespace folly {
 struct dynamic;
 } // folly
 
-inline void parseTo(folly::StringPiece sp, nstring_t& ns) {
+inline folly::Expected<folly::StringPiece, folly::ConversionCode>
+parseTo(folly::StringPiece sp, nstring_t& ns) noexcept {
   ns.str = (sp.empty() ? nullptr : (char*)sp.begin());
   ns.len = sp.size();
+  return folly::StringPiece(sp.end(), sp.end());
 }
 
 
@@ -81,14 +83,14 @@ template <typename T, typename F> T to(const F& x);
 template <>
 inline nstring_t to<nstring_t>(const folly::StringPiece& sp) {
   nstring_t ns;
-  parseTo(sp, ns);
+  ::parseTo(sp, ns);
   return ns;
 }
 
 template <>
 inline nstring_t to<nstring_t>(const std::string& s) {
   nstring_t ns;
-  parseTo(s, ns);
+  ::parseTo(s, ns);
   return ns;
 }
 
