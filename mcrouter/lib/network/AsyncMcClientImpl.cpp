@@ -9,6 +9,8 @@
  */
 #include "AsyncMcClientImpl.h"
 
+#include <netinet/tcp.h>
+
 #include <folly/EvictingCacheMap.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/EventBase.h>
@@ -805,6 +807,29 @@ void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
         }
       }
     });
+}
+
+double AsyncMcClientImpl::getRetransmissionInfo() {
+  if (socket_ != nullptr) {
+    struct tcp_info tcpinfo;
+    socklen_t len = sizeof(struct tcp_info);
+
+    auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
+    const auto totalBytes = socket.getRawBytesWritten();
+
+    if (socket.getSockOpt(IPPROTO_TCP, TCP_INFO, &tcpinfo, &len) == 0) {
+      if (tcpinfo.tcpi_snd_mss > 0 && totalBytes > 0) {
+        const auto currPackets = (double)totalBytes / tcpinfo.tcpi_snd_mss;
+        const auto retransPerPacket =
+            (tcpinfo.tcpi_total_retrans - lastRetrans_) /
+            (currPackets - approxPackets_);
+        approxPackets_ = currPackets;
+        lastRetrans_ = tcpinfo.tcpi_total_retrans;
+        return retransPerPacket;
+      }
+    }
+  }
+  return -1.0;
 }
 
 }} // facebook::memcache

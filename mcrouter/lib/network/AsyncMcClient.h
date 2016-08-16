@@ -145,6 +145,11 @@ class AsyncMcClient {
    */
   const folly::AsyncTransportWrapper* getTransport();
 
+  /**
+  * @return Retransmits per packet used to detect lossy connections
+  */
+  double getRetransmissionInfo();
+
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;
 };

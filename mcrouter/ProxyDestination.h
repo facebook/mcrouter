@@ -59,6 +59,7 @@ class ProxyDestination {
     ExponentialSmoothData<16> avgLatency;
     std::unique_ptr<std::array<uint64_t, mc_nres>> results;
     size_t probesSent{0};
+    double retransPerPacket{0.0};
   };
 
   proxy_t* proxy{nullptr}; ///< for convenience
@@ -111,6 +112,8 @@ class ProxyDestination {
   uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
 
   Stats stats_;
+
+  uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
 
   int probe_delay_next_ms{0};
   std::unique_ptr<TypedThriftRequest<cpp2::McVersionRequest>> probe_req;

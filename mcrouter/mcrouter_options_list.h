@@ -462,6 +462,15 @@ mcrouter_option_toggle(
   "Log every request via LoggingRoute.")
 
 mcrouter_option_integer(
+  uint64_t,
+  collect_rxmit_stats_every_hz,
+  0,
+  "collect-rxmit-stats-every-hz",
+  no_short,
+  "Will calculate retransmits per packet after every set cycles."
+  " If value is 0, calculation won't be done.")
+
+mcrouter_option_integer(
   int, asynclog_port_override, 0, no_long, no_short,
   "If non-zero use this port while logging to async log")
 

@@ -15,6 +15,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <limits>
+
 #include <folly/Conv.h>
 #include <folly/json.h>
 #include <folly/Range.h>
@@ -71,6 +73,10 @@ struct ServerStat {
   size_t cntLatencies{0};
   size_t pendingRequestsCount{0};
   size_t inflightRequestsCount{0};
+  double sumRetransPerPacket{0.0};
+  size_t cntRetransPerPacket{0};
+  double maxRetransPerPacket{0.0};
+  double minRetransPerPacket{std::numeric_limits<double>::infinity()};
 
   std::string toString() const {
     double avgLatency = cntLatencies == 0 ? 0 : sumLatencies / cntLatencies;
@@ -81,6 +87,15 @@ struct ServerStat {
       folly::format(" hard_tko; ").appendTo(res);
     } else if (isSoftTko) {
       folly::format(" soft_tko; ").appendTo(res);
+    }
+    if (cntRetransPerPacket > 0) {
+      double avgRetransPerPacket = sumRetransPerPacket / cntRetransPerPacket;
+      folly::format(
+          " avg_retrans_ratio:{} max_retrans_ratio:{} min_retrans_ratio:{}",
+          avgRetransPerPacket,
+          maxRetransPerPacket,
+          minRetransPerPacket)
+          .appendTo(res);
     }
     for (size_t i = 0; i < (size_t)ProxyDestination::State::kNumStates; ++i) {
       if (states[i] > 0) {
@@ -541,6 +556,14 @@ TypedThriftReply<cpp2::McStatsReply> stats_reply(proxy_t* proxy,
           if (pdstn.stats().avgLatency.hasValue()) {
             stat.sumLatencies += pdstn.stats().avgLatency.value();
             ++stat.cntLatencies;
+          }
+
+          if (pdstn.stats().retransPerPacket >= 0.0) {
+            const auto val = pdstn.stats().retransPerPacket;
+            stat.sumRetransPerPacket += val;
+            stat.maxRetransPerPacket = std::max(stat.maxRetransPerPacket, val);
+            stat.minRetransPerPacket = std::min(stat.minRetransPerPacket, val);
+            ++stat.cntRetransPerPacket;
           }
           stat.pendingRequestsCount += pdstn.getPendingRequestCount();
           stat.inflightRequestsCount += pdstn.getInflightRequestCount();

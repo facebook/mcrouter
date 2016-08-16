@@ -82,6 +82,8 @@ class AsyncMcClientImpl :
     return socket_.get();
   }
 
+  double getRetransmissionInfo();
+
  private:
   using ParserT = ClientMcParser<AsyncMcClientImpl>;
   friend ParserT;
@@ -134,6 +136,10 @@ class AsyncMcClientImpl :
   // Throttle options (disabled by default).
   size_t maxPending_{0};
   size_t maxInflight_{0};
+
+  // Retransmission values
+  uint32_t lastRetrans_{0}; // last known value of the no. of retransmissions
+  double approxPackets_{0.0}; // overestimation of the number of packets sent
 
   // Writer loop related variables.
   class WriterLoop;

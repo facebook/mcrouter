@@ -164,6 +164,16 @@ void ProxyDestination::onReply(const mc_res_t result,
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats_.avgLatency.insertSample(latency);
+
+  const auto retransCycles =
+      proxy->router().opts().collect_rxmit_stats_every_hz;
+  if (retransCycles > 0) {
+    const auto curCycles = cycles::getCpuCycles();
+    if (curCycles > lastRetransCycles_ + retransCycles) {
+      lastRetransCycles_ = curCycles;
+      stats_.retransPerPacket = client_->getRetransmissionInfo();
+    }
+  }
 }
 
 size_t ProxyDestination::getPendingRequestCount() const {
