@@ -65,6 +65,7 @@ libmcrouter_a_SOURCES = \
   carbon/CarbonProtocolReader.h \
   carbon/CarbonProtocolWriter-inl.h \
   carbon/CarbonProtocolWriter.h \
+  carbon/CommonSerializationTraits.h \
   carbon/Keys-inl.h \
   carbon/Keys.h \
   carbon/ReplyCommon.h \

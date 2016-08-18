@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
+#include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 
 namespace carbon {
 namespace test {

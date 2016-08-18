@@ -58,7 +58,7 @@ inline void McGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 inline void McGetReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
-  writer.writeBinaryField(2 /* field id */, value());
+  writer.writeUserTypeField(2 /* field id */, value());
   writer.writeUInt64Field(3 /* field id */, flags());
   writer.writeBinaryField(4 /* field id */, message());
   writer.writeInt16Field(5 /* field id */, appSpecificErrorCode());
@@ -83,7 +83,7 @@ inline void McGetReply::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 2: {
-        value() = reader.readBinaryField<folly::IOBuf>();
+        value() = reader.readUserTypeField<folly::Optional<folly::IOBuf>>();
         break;
       }
       case 3: {
@@ -347,7 +347,7 @@ inline void McLeaseGetReply::serialize(
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
   writer.writeInt64Field(2 /* field id */, leaseToken());
-  writer.writeBinaryField(3 /* field id */, value());
+  writer.writeUserTypeField(3 /* field id */, value());
   writer.writeInt64Field(4 /* field id */, flags());
   writer.writeBinaryField(5 /* field id */, message());
   writer.writeInt16Field(6 /* field id */, appSpecificErrorCode());
@@ -376,7 +376,7 @@ inline void McLeaseGetReply::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 3: {
-        value() = reader.readBinaryField<folly::IOBuf>();
+        value() = reader.readUserTypeField<folly::Optional<folly::IOBuf>>();
         break;
       }
       case 4: {
@@ -716,7 +716,7 @@ inline void McGetsReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
   writer.writeUInt64Field(2 /* field id */, casToken());
-  writer.writeBinaryField(3 /* field id */, value());
+  writer.writeUserTypeField(3 /* field id */, value());
   writer.writeUInt64Field(4 /* field id */, flags());
   writer.writeBinaryField(5 /* field id */, message());
   writer.writeInt16Field(6 /* field id */, appSpecificErrorCode());
@@ -745,7 +745,7 @@ inline void McGetsReply::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 3: {
-        value() = reader.readBinaryField<folly::IOBuf>();
+        value() = reader.readUserTypeField<folly::Optional<folly::IOBuf>>();
         break;
       }
       case 4: {

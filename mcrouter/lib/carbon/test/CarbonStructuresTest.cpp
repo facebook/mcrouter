@@ -86,6 +86,10 @@ TEST(CarbonBasic, defaultConstructed) {
   // List of strings
   EXPECT_TRUE(req.testList().empty());
 
+  // folly::Optional fields
+  EXPECT_FALSE(req.testOptionalString());
+  EXPECT_FALSE(req.testOptionalIobuf());
+
   // fields generated for every request (will likely be removed in the future)
   EXPECT_EQ(0, req.exptime());
   EXPECT_EQ(0, req.flags());
@@ -165,6 +169,13 @@ TEST(CarbonBasic, setAndGet) {
       "abcdefg", "xyz", kShortString.str(), longString()};
   req.testList() = strings;
   EXPECT_EQ(strings, req.testList());
+
+  // folly::Optional fields
+  const auto s = longString();
+  req.testOptionalString() = s;
+  EXPECT_EQ(s, *req.testOptionalString());
+  req.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, s);
+  EXPECT_EQ(s, coalesceAndGetRange(*req.testOptionalIobuf()));
 }
 
 TEST(CarbonTest, serializeDeserialize) {
@@ -197,6 +208,10 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.asSimpleStruct().enumMember() = SimpleEnum::One;
   // List of strings
   outRequest.testList() = {"abcdefg", "xyz", kShortString.str(), longString()};
+  // Force one optional field to not be serialized on the wire
+  EXPECT_FALSE(outRequest.testOptionalString().hasValue());
+  // Other optional field gets a value of zero length
+  outRequest.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);

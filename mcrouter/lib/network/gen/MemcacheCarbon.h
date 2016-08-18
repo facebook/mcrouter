@@ -19,9 +19,11 @@
 #include <string>
 #include <utility>
 
+#include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <mcrouter/lib/carbon/CarbonProtocolReader.h>
 #include <mcrouter/lib/carbon/CarbonProtocolWriter.h>
+#include <mcrouter/lib/carbon/CommonSerializationTraits.h>
 #include <mcrouter/lib/carbon/Keys.h>
 #include <mcrouter/lib/carbon/ReplyCommon.h>
 #include <mcrouter/lib/carbon/RequestCommon.h>
@@ -96,10 +98,10 @@ class McGetReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return result_;
   }
-  const folly::IOBuf& value() const {
+  const folly::Optional<folly::IOBuf>& value() const {
     return value_;
   }
-  folly::IOBuf& value() {
+  folly::Optional<folly::IOBuf>& value() {
     return value_;
   }
   uint64_t flags() const {
@@ -130,7 +132,7 @@ class McGetReply : public carbon::ReplyCommon {
 
  private:
   carbon::Result result_{mc_res_unknown};
-  folly::IOBuf value_;
+  folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
   int16_t appSpecificErrorCode_{0};
@@ -434,10 +436,10 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   int64_t& leaseToken() {
     return leaseToken_;
   }
-  const folly::IOBuf& value() const {
+  const folly::Optional<folly::IOBuf>& value() const {
     return value_;
   }
-  folly::IOBuf& value() {
+  folly::Optional<folly::IOBuf>& value() {
     return value_;
   }
   int64_t flags() const {
@@ -469,7 +471,7 @@ class McLeaseGetReply : public carbon::ReplyCommon {
  private:
   carbon::Result result_{mc_res_unknown};
   int64_t leaseToken_{0};
-  folly::IOBuf value_;
+  folly::Optional<folly::IOBuf> value_;
   int64_t flags_{0};
   std::string message_;
   int16_t appSpecificErrorCode_{0};
@@ -863,10 +865,10 @@ class McGetsReply : public carbon::ReplyCommon {
   uint64_t& casToken() {
     return casToken_;
   }
-  const folly::IOBuf& value() const {
+  const folly::Optional<folly::IOBuf>& value() const {
     return value_;
   }
-  folly::IOBuf& value() {
+  folly::Optional<folly::IOBuf>& value() {
     return value_;
   }
   uint64_t flags() const {
@@ -898,7 +900,7 @@ class McGetsReply : public carbon::ReplyCommon {
  private:
   carbon::Result result_{mc_res_unknown};
   uint64_t casToken_{0};
-  folly::IOBuf value_;
+  folly::Optional<folly::IOBuf> value_;
   uint64_t flags_{0};
   std::string message_;
   int16_t appSpecificErrorCode_{0};

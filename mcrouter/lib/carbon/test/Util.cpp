@@ -24,6 +24,19 @@ std::string longString() {
   return std::string(1024, 'a');
 }
 
+namespace {
+void compareOptionalIobuf(
+    const folly::Optional<folly::IOBuf>& a,
+    const folly::Optional<folly::IOBuf>& b) {
+  EXPECT_EQ(a.hasValue(), b.hasValue());
+  if (a.hasValue()) {
+    folly::IOBuf aCopy = *a;
+    folly::IOBuf bCopy = *b;
+    EXPECT_EQ(coalesceAndGetRange(aCopy), coalesceAndGetRange(bCopy));
+  }
+}
+}
+
 void expectEqSimpleStruct(const SimpleStruct& a, const SimpleStruct& b) {
   EXPECT_EQ(a.int32Member(), b.int32Member());
   EXPECT_EQ(a.stringMember(), b.stringMember());
@@ -67,6 +80,9 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
   expectEqSimpleStruct(a.testStruct(), b.testStruct());
 
   EXPECT_EQ(a.testList(), b.testList());
+
+  EXPECT_EQ(a.testOptionalString(), b.testOptionalString());
+  compareOptionalIobuf(a.testOptionalIobuf(), b.testOptionalIobuf());
 }
 
 } // util

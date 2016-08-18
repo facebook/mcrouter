@@ -11,7 +11,7 @@ request McGetRequest {
 
 reply McGetReply {
   1: Result result;
-  2: IOBuf value;
+  2: Optional<IOBuf> value;
   3: uint64_t flags;
   4: string message;
   5: int16_t appSpecificErrorCode;
@@ -66,7 +66,7 @@ request McLeaseGetRequest {
 reply McLeaseGetReply {
   1: Result result;
   2: int64_t leaseToken;
-  3: IOBuf value;
+  3: Optional<IOBuf> value;
   4: int64_t flags;
   5: string message;
   6: int16_t appSpecificErrorCode;
@@ -135,7 +135,7 @@ request McGetsRequest {
 reply McGetsReply {
   1: Result result;
   2: uint64_t casToken;
-  3: IOBuf value;
+  3: Optional<IOBuf> value;
   4: uint64_t flags;
   5: string message;
   6: int16_t appSpecificErrorCode;

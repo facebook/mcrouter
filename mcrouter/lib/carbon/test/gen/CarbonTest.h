@@ -19,9 +19,11 @@
 #include <string>
 #include <utility>
 
+#include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <mcrouter/lib/carbon/CarbonProtocolReader.h>
 #include <mcrouter/lib/carbon/CarbonProtocolWriter.h>
+#include <mcrouter/lib/carbon/CommonSerializationTraits.h>
 #include <mcrouter/lib/carbon/Keys.h>
 #include <mcrouter/lib/carbon/ReplyCommon.h>
 #include <mcrouter/lib/carbon/RequestCommon.h>
@@ -243,6 +245,18 @@ class TestRequest : public carbon::RequestCommon {
   std::vector<std::string>& testList() {
     return testList_;
   }
+  const folly::Optional<std::string>& testOptionalString() const {
+    return testOptionalString_;
+  }
+  folly::Optional<std::string>& testOptionalString() {
+    return testOptionalString_;
+  }
+  const folly::Optional<folly::IOBuf>& testOptionalIobuf() const {
+    return testOptionalIobuf_;
+  }
+  folly::Optional<folly::IOBuf>& testOptionalIobuf() {
+    return testOptionalIobuf_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -275,6 +289,8 @@ class TestRequest : public carbon::RequestCommon {
   folly::IOBuf testIobuf_;
   SimpleStruct testStruct_;
   std::vector<std::string> testList_;
+  folly::Optional<std::string> testOptionalString_;
+  folly::Optional<folly::IOBuf> testOptionalIobuf_;
 };
 
 class TestReply : public carbon::ReplyCommon {

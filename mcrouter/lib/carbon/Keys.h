@@ -16,10 +16,6 @@
 #include <folly/Range.h>
 #include <folly/SpookyHashV2.h>
 
-#include "mcrouter/lib/carbon/CarbonProtocolReader.h"
-#include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
-#include "mcrouter/lib/carbon/SerializationTraits.h"
-
 namespace carbon {
 
 template <class Storage>
@@ -102,7 +98,7 @@ class Keys {
   }
 
   // TODO(jmswen) Remove this hack? Currently only needed in asciiKey()
-  // in McServerSession-inl.h and for SerializationTraits specialization below.
+  // in McServerSession-inl.h and for SerializationTraits specialization.
   const Storage& raw() const {
     return key_;
   }
@@ -133,22 +129,6 @@ class Keys {
   folly::StringPiece routingPrefix_;
   folly::StringPiece routingKey_;
   mutable uint32_t routingKeyHash_{0};
-};
-
-template <class Storage>
-struct SerializationTraits<Keys<Storage>> {
-  static Keys<Storage> read(carbon::CarbonProtocolReader& reader) {
-    return Keys<Storage>(reader.readBinaryField<Storage>());
-  }
-
-  static void write(
-      const Keys<Storage>& key, carbon::CarbonProtocolWriter& writer) {
-    writer.writeBinary(key.raw());
-  }
-
-  static bool isEmpty(const Keys<Storage>& key) {
-    return key.empty();
-  }
 };
 
 } //carbon

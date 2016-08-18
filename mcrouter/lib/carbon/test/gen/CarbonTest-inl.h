@@ -82,6 +82,8 @@ inline void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeFieldHeader(carbon::FieldType::Struct, 18);
   testStruct().serialize(writer);
   writer.writeListField<std::string>(19 /* field id */, testList());
+  writer.writeUserTypeField(20 /* field id */, testOptionalString());
+  writer.writeUserTypeField(21 /* field id */, testOptionalIobuf());
   writer.writeFieldHeader(carbon::FieldType::Struct, -1);
   _carbon_simplestruct_.serialize(writer);
   writer.writeStructEnd();
@@ -178,6 +180,16 @@ inline void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 19: {
         testList() = reader.readListField<std::string>();
+        break;
+      }
+      case 20: {
+        testOptionalString() =
+            reader.readUserTypeField<folly::Optional<std::string>>();
+        break;
+      }
+      case 21: {
+        testOptionalIobuf() =
+            reader.readUserTypeField<folly::Optional<folly::IOBuf>>();
         break;
       }
       default: {
