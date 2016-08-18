@@ -11,6 +11,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <unordered_set>
 
 #include <boost/program_options.hpp>
 
@@ -20,6 +21,8 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/IPAddress.h>
 #include <folly/SocketAddress.h>
+
+#include "mcrouter/lib/network/ThriftMessageList.h"
 
 #include "mcrouter/tools/mcpiper/AnsiColorCodeStream.h"
 #include "mcrouter/tools/mcpiper/Color.h"
@@ -33,6 +36,9 @@
 using namespace facebook::memcache;
 
 namespace {
+
+const std::unordered_set<size_t> kNotSupporttedTypes = {
+    IdFromType<cpp2::McStatsReply, ThriftMessageList>::value };
 
 struct Settings {
   // Positional args
@@ -306,6 +312,10 @@ void run(Settings settings) {
                                   uint32_t typeId,
                                   uint64_t msgStartTime,
                                   folly::ByteRange data) {
+      if (kNotSupporttedTypes.find(typeId) != kNotSupporttedTypes.end()) {
+        return;
+      }
+
       auto it = parserMap.find(connectionId);
       if (it == parserMap.end()) {
         it = parserMap.emplace(std::piecewise_construct,
