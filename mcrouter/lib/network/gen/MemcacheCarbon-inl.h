@@ -21,7 +21,7 @@ inline void McGetRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeUserTypeField(1 /* field id */, key());
-  writer.writeInt64Field(2 /* field id */, flags());
+  writer.writeUInt64Field(2 /* field id */, flags());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -43,7 +43,7 @@ inline void McGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 2: {
-        flags() = reader.readInt64Field();
+        flags() = reader.readUInt64Field();
         break;
       }
       default: {
@@ -348,7 +348,7 @@ inline void McLeaseGetReply::serialize(
   writer.writeResultField(1 /* field id */, result());
   writer.writeInt64Field(2 /* field id */, leaseToken());
   writer.writeUserTypeField(3 /* field id */, value());
-  writer.writeInt64Field(4 /* field id */, flags());
+  writer.writeUInt64Field(4 /* field id */, flags());
   writer.writeBinaryField(5 /* field id */, message());
   writer.writeInt16Field(6 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
@@ -380,7 +380,7 @@ inline void McLeaseGetReply::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 4: {
-        flags() = reader.readInt64Field();
+        flags() = reader.readUInt64Field();
         break;
       }
       case 5: {

@@ -6,7 +6,7 @@ request McGetRequest {
   reply: McGetReply;
 
   1: Keys<IOBuf> key;
-  2: int64_t flags;
+  2: uint64_t flags;
 };
 
 reply McGetReply {
@@ -67,7 +67,7 @@ reply McLeaseGetReply {
   1: Result result;
   2: int64_t leaseToken;
   3: Optional<IOBuf> value;
-  4: int64_t flags;
+  4: uint64_t flags;
   5: string message;
   6: int16_t appSpecificErrorCode;
 };

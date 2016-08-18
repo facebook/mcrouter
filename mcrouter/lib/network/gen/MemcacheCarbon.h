@@ -59,10 +59,10 @@ class McGetRequest : public carbon::RequestCommon {
   carbon::Keys<folly::IOBuf>& key() {
     return key_;
   }
-  int64_t flags() const {
+  uint64_t flags() const {
     return flags_;
   }
-  int64_t& flags() {
+  uint64_t& flags() {
     return flags_;
   }
   int32_t exptime() const {
@@ -75,7 +75,7 @@ class McGetRequest : public carbon::RequestCommon {
 
  private:
   carbon::Keys<folly::IOBuf> key_;
-  int64_t flags_{0};
+  uint64_t flags_{0};
 };
 
 class McGetReply : public carbon::ReplyCommon {
@@ -442,10 +442,10 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   folly::Optional<folly::IOBuf>& value() {
     return value_;
   }
-  int64_t flags() const {
+  uint64_t flags() const {
     return flags_;
   }
-  int64_t& flags() {
+  uint64_t& flags() {
     return flags_;
   }
   const std::string& message() const {
@@ -472,7 +472,7 @@ class McLeaseGetReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
   int64_t leaseToken_{0};
   folly::Optional<folly::IOBuf> value_;
-  int64_t flags_{0};
+  uint64_t flags_{0};
   std::string message_;
   int16_t appSpecificErrorCode_{0};
 };
