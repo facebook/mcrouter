@@ -140,7 +140,8 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
   }
 
   auto value = message.valueRangeSlow();
-  if (value.size() < filter_.valueMinSize) {
+  if (value.size() < filter_.valueMinSize ||
+      value.size() > filter_.valueMaxSize) {
     return folly::none;
   }
 

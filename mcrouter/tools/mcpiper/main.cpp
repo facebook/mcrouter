@@ -89,6 +89,9 @@ Settings parseOptions(int argc, char **argv) {
     ("value-min-size,m",
       po::value<uint32_t>(&settings.valueMinSize),
       "Minimum size of the value of messages to display")
+    ("value-max-size,M",
+      po::value<uint32_t>(&settings.valueMaxSize),
+      "Maximum size of the value of messages to display")
     ("min-latency-us,l",
       po::value<int64_t>(&settings.minLatencyUs),
       "Minimum latency in micros of messages to display")

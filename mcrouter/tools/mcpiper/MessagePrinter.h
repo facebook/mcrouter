@@ -63,6 +63,7 @@ class MessagePrinter {
     folly::IPAddress host;
     uint16_t port{0};
     uint32_t valueMinSize{0};
+    uint32_t valueMaxSize{std::numeric_limits<uint32_t>::max()};
     int64_t minLatencyUs{0}; // 0 means include all messages
     std::unique_ptr<boost::regex> pattern;
     bool invertMatch{false};

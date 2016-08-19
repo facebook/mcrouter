@@ -33,6 +33,7 @@ struct Settings {
   bool quiet{false};
   std::string timeFormat;
   uint32_t valueMinSize{0};
+  uint32_t valueMaxSize{std::numeric_limits<uint32_t>::max()};
   int64_t minLatencyUs{0};
   size_t verboseLevel{0};
   std::string protocol;

@@ -68,6 +68,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   MessagePrinter::Filter filter;
 
   filter.valueMinSize = settings.valueMinSize;
+  filter.valueMaxSize = settings.valueMaxSize;
   filter.minLatencyUs = settings.minLatencyUs;
   filter.invertMatch = settings.invertMatch;
 
