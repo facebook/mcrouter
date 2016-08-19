@@ -11,7 +11,9 @@ mcpiper_SOURCES = \
 	Config.h \
 	FifoReader.cpp \
 	FifoReader.h \
-	mcpiper.cpp \
+	main.cpp \
+	McPiper.cpp \
+	McPiper.h \
 	MessagePrinter-inl.h \
 	MessagePrinter.cpp \
 	MessagePrinter.h \
@@ -25,7 +27,7 @@ mcpiper_SOURCES = \
 	StyledString.h \
 	Util.cpp \
 	Util.h \
-	ValueFormatter.h 
+	ValueFormatter.h
 
 mcpiper_LDADD = $(top_srcdir)/lib/libmcrouter.a
 mcpiper_CPPFLAGS = -I$(top_srcdir)/..

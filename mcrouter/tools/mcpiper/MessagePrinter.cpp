@@ -40,10 +40,12 @@ std::string describeAddress(const folly::SocketAddress& address) {
 
 MessagePrinter::MessagePrinter(Options options,
                                Filter filter,
-                               std::unique_ptr<ValueFormatter> valueFormatter)
+                               std::unique_ptr<ValueFormatter> valueFormatter,
+                               std::ostream& targetOut)
     : options_(std::move(options)),
       filter_(std::move(filter)),
-      valueFormatter_(std::move(valueFormatter)) {
+      valueFormatter_(std::move(valueFormatter)),
+      targetOut_(targetOut) {
   if (options_.disableColor) {
     targetOut_.setColorOutput(false);
   }
@@ -71,7 +73,7 @@ void MessagePrinter::countStats() {
 
   if (options_.maxMessages > 0 && printedMessages_ >= options_.maxMessages) {
     assert(options_.stopRunningFn);
-    options_.stopRunningFn(*this);
+    options_.stopRunningFn();
   }
 
   if (options_.numAfterMatch > 0) {

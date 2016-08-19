@@ -50,8 +50,7 @@ class MessagePrinter {
 
     // Callback that will be called when application should stop
     // sending messages to MessagePrinter.
-    std::function<void(const MessagePrinter&)> stopRunningFn =
-      [](const MessagePrinter&) { exit(0); };
+    std::function<void()> stopRunningFn = []() { exit(0); };
 
     // Getting raw data in binary format
     bool raw{false};
@@ -79,7 +78,8 @@ class MessagePrinter {
    */
   MessagePrinter(Options options,
                  Filter filter,
-                 std::unique_ptr<ValueFormatter> valueFormatter);
+                 std::unique_ptr<ValueFormatter> valueFormatter,
+                 std::ostream& targetOut = std::cout);
 
   /**
    * Return status of message printer.
@@ -107,8 +107,8 @@ class MessagePrinter {
   const Filter filter_;
   const PrettyFormat format_{}; // Default constructor = default coloring.
 
-  AnsiColorCodeStream targetOut_{std::cout};
   std::unique_ptr<ValueFormatter> valueFormatter_;
+  AnsiColorCodeStream targetOut_;
   uint64_t totalMessages_{0};
   uint64_t printedMessages_{0};
   uint32_t afterMatchCount_{0};
