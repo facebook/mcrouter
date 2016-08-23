@@ -25,8 +25,8 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
@@ -76,8 +76,8 @@ class DestinationRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
     auto reply = routeWithDestination(req);
-    if (reply.isFailoverError() && spool(req)) {
-      reply = ReplyT<Request>(DefaultReply, req);
+    if (isFailoverErrorResult(reply.result()) && spool(req)) {
+      reply = createReply(DefaultReply, req);
       reply.setDestination(destination_->accessPoint());
     }
     return reply;
@@ -144,7 +144,7 @@ class DestinationRoute {
                                   ProxyRequestContext& ctx,
                                   Args&&... args) const {
     auto now = nowUs();
-    auto reply = ReplyT<Request>(std::forward<Args>(args)...);
+    auto reply = createReply<Request>(std::forward<Args>(args)...);
     ctx.onReplyReceived(poolName_,
                         *destination_->accessPoint(),
                         folly::StringPiece(),
@@ -161,20 +161,20 @@ class DestinationRoute {
     DestinationRequestCtx dctx(nowUs());
     folly::Optional<Request> newReq;
     folly::StringPiece strippedRoutingPrefix;
-    if (!keepRoutingPrefix_ && !req.routingPrefix().empty()) {
-      newReq.emplace(req.clone());
-      newReq->stripRoutingPrefix();
-      strippedRoutingPrefix = req.routingPrefix();
+    if (!keepRoutingPrefix_ && !req.key().routingPrefix().empty()) {
+      newReq.emplace(req);
+      newReq->key().stripRoutingPrefix();
+      strippedRoutingPrefix = req.key().routingPrefix();
     }
 
     if (fiber_local::getFailoverTag()) {
       if (!newReq) {
-        newReq.emplace(req.clone());
+        newReq.emplace(req);
       }
-      auto newKey = keyWithFailoverTag(newReq->fullKey());
+      auto newKey = keyWithFailoverTag(newReq->key().fullKey());
       /* It's always safe to not append a failover tag */
       if (newKey.size() <= MC_KEY_MAX_LEN) {
-        newReq->setKey(std::move(newKey));
+        newReq->key() = std::move(newKey);
       }
     }
 
@@ -198,8 +198,8 @@ class DestinationRoute {
     }
 
     folly::StringPiece key = keepRoutingPrefix_ ?
-      req.fullKey() :
-      req.keyWithoutRoute();
+      req.key().fullKey() :
+      req.key().keyWithoutRoute();
 
     auto proxy = &fiber_local::getSharedCtx()->proxy();
     auto& ap = *destination_->accessPoint();

@@ -105,7 +105,7 @@ class FailoverLeastFailuresPolicy {
     ReplyT<Request> route(const Request& req) {
       auto& child = failoverPolicy_.children_[index_];
       auto reply = child->route(req);
-      if (reply.isError()) {
+      if (isErrorResult(reply.result())) {
         failoverPolicy_.recentErrorCount_[index_]++;
       } else {
         failoverPolicy_.recentErrorCount_[index_] = 0;

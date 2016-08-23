@@ -13,8 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/network/ThriftMessageList.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -35,8 +34,7 @@ class OperationSelectorRoute {
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    static constexpr int op =
-      OpFromType<typename Request::rawType, RequestOpMapping>::value;
+    static constexpr int op = OpFromType<Request, RequestOpMapping>::value;
 
     if (operationPolicies_[op]) {
       t(*operationPolicies_[op], req);
@@ -47,8 +45,7 @@ class OperationSelectorRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    static constexpr int op =
-      OpFromType<typename Request::rawType, RequestOpMapping>::value;
+    static constexpr int op = OpFromType<Request, RequestOpMapping>::value;
 
     if (operationPolicies_[op]) {
       return operationPolicies_[op]->route(req);

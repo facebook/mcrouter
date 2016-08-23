@@ -16,7 +16,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/McRequestList.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
@@ -26,8 +26,6 @@ template <class OnRequest, class RequestList>
 class McServerOnRequestWrapper;
 class McServerSession;
 class MultiOpParent;
-template <class ThriftType>
-class TypedThriftReply;
 
 /**
  * API for users of McServer to send back a reply for a request.
@@ -126,7 +124,7 @@ class McServerRequestContext {
 /**
  * McServerOnRequest is a polymorphic base class used as a callback
  * by AsyncMcServerWorker and McAsciiParser to hand off a request
- * (TypedThriftRequest<...>) to McrouterClient.
+ * to McrouterClient.
  *
  * The complexity in the implementation below is due to the fact that we
  * effectively need templated virtual member functions (which do not really
@@ -162,14 +160,14 @@ class McServerOnRequestIf<List<Request, Requests...>> :
   virtual ~McServerOnRequestIf() = default;
 };
 
-class McServerOnRequest : public McServerOnRequestIf<ThriftRequestList> {
+class McServerOnRequest : public McServerOnRequestIf<CarbonRequestList> {
 };
 
 /**
  * Helper class to wrap user-defined callbacks in a correct virtual interface.
  * This is needed since we're mixing templates and virtual functions.
  */
-template <class OnRequest, class RequestList = ThriftRequestList>
+template <class OnRequest, class RequestList = CarbonRequestList>
 class McServerOnRequestWrapper;
 
 template <class OnRequest, class Request>

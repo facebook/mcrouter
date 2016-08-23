@@ -12,8 +12,8 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/routes/RandomRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
@@ -35,8 +35,8 @@ TEST(randomRouteTest, success) {
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_TRUE(reply.isHit());
+  auto reply = rh.route(McGetRequest("0"));
+  EXPECT_TRUE(isHitResult(reply.result()));
 }
 
 TEST(randomRouteTest, cover) {
@@ -51,9 +51,9 @@ TEST(randomRouteTest, cover) {
   int hit = 0, miss = 0;
   const int rounds = 32;
   for (int i = 0; i < rounds; i++) {
-    auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    hit += reply.isHit();
-    miss += reply.isMiss();
+    auto reply = rh.route(McGetRequest("0"));
+    hit += isHitResult(reply.result());
+    miss += isMissResult(reply.result());
   }
 
   EXPECT_GT(hit, 0);
@@ -71,7 +71,7 @@ TEST(randomRouteTest, fail) {
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
     get_route_handles(test_handles));
 
-  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  auto reply = rh.route(McGetRequest("0"));
 
-  EXPECT_TRUE(!reply.isHit());
+  EXPECT_TRUE(!isHitResult(reply.result()));
 }

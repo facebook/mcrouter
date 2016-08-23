@@ -17,6 +17,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
@@ -52,12 +53,12 @@ class AllSyncRoute {
     }, children_.size());
 
     folly::Optional<Reply> reply;
-    folly::fibers::forEach(fs.begin(), fs.end(),
-                           [&reply] (size_t id, Reply newReply) {
-      if (!reply || newReply.worseThan(reply.value())) {
-        reply = std::move(newReply);
-      }
-    });
+    folly::fibers::forEach(
+        fs.begin(), fs.end(), [&reply](size_t id, Reply newReply) {
+          if (!reply || worseThan(newReply.result(), reply.value().result())) {
+            reply = std::move(newReply);
+          }
+        });
     return std::move(reply.value());
   }
 

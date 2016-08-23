@@ -27,7 +27,6 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook { namespace memcache { namespace test {
@@ -68,41 +67,41 @@ TestServerOnRequest::TestServerOnRequest(std::atomic<bool>& shutdown,
 
 void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
-    TypedThriftRequest<cpp2::McGetRequest>&& req) {
-  using Reply = TypedThriftReply<cpp2::McGetReply>;
+    McGetRequest&& req) {
+  using Reply = McGetReply;
 
-  if (req.fullKey() == "sleep") {
+  if (req.key().fullKey() == "sleep") {
     /* sleep override */
     std::this_thread::sleep_for(std::chrono::seconds(1));
     processReply(std::move(ctx), Reply(mc_res_notfound));
-  } else if (req.fullKey() == "shutdown") {
+  } else if (req.key().fullKey() == "shutdown") {
     shutdown_.store(true);
     processReply(std::move(ctx), Reply(mc_res_notfound));
     flushQueue();
-  } else if (req.fullKey() == "busy") {
+  } else if (req.key().fullKey() == "busy") {
     processReply(std::move(ctx), Reply(mc_res_busy));
   } else {
     std::string value;
-    if (req.fullKey().startsWith("value_size:")) {
-      auto key = req.fullKey();
+    if (req.key().fullKey().startsWith("value_size:")) {
+      auto key = req.key().fullKey();
       key.removePrefix("value_size:");
       size_t valSize = folly::to<size_t>(key);
       value = std::string(valSize, 'a');
-    } else if (req.fullKey() == "trace_id") {
+    } else if (req.key().fullKey() == "trace_id") {
       value = folly::to<std::string>(req.traceId());
-    } else if (req.fullKey() != "empty") {
-      value = req.fullKey().str();
+    } else if (req.key().fullKey() != "empty") {
+      value = req.key().fullKey().str();
     }
 
     Reply foundReply(mc_res_found);
-    foundReply.setValue(value);
+    foundReply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
 
-    if (req.fullKey() == "hold") {
+    if (req.key().fullKey() == "hold") {
       waitingReplies_.push_back(
-        [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
-         McServerRequestContext::reply(std::move(ctx), std::move(reply));
-        });
-    } else if (req.fullKey() == "flush") {
+          [ctx = std::move(ctx), reply = std::move(foundReply)]() mutable {
+            McServerRequestContext::reply(std::move(ctx), std::move(reply));
+          });
+    } else if (req.key().fullKey() == "flush") {
       processReply(std::move(ctx), std::move(foundReply));
       flushQueue();
     } else {
@@ -112,16 +111,15 @@ void TestServerOnRequest::onRequest(
 }
 
 void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
-                                    TypedThriftRequest<cpp2::McSetRequest>&&) {
-  processReply(
-      std::move(ctx), TypedThriftReply<cpp2::McSetReply>(mc_res_stored));
+                                    McSetRequest&&) {
+  processReply(std::move(ctx), McSetReply(mc_res_stored));
 }
 
 void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
-    TypedThriftRequest<cpp2::McVersionRequest>&&) {
-  TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-  reply.setValue(kServerVersion);
+    McVersionRequest&&) {
+  McVersionReply reply(mc_res_ok);
+  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, kServerVersion);
   processReply(std::move(ctx), std::move(reply));
 }
 
@@ -239,9 +237,9 @@ void TestClient::setStatusCallbacks(std::function<void()> onUp,
 void TestClient::sendGet(std::string key, mc_res_t expectedResult,
                          uint32_t timeoutMs) {
   inflight_++;
-  fm_.addTask([key, expectedResult, this, timeoutMs]() {
-      TypedThriftRequest<cpp2::McGetRequest> req(key);
-      if (req.fullKey() == "trace_id") {
+  fm_.addTask([key = std::move(key), expectedResult, this, timeoutMs]() {
+      McGetRequest req(key);
+      if (req.key().fullKey() == "trace_id") {
         req.setTraceId(12345);
       }
 
@@ -249,24 +247,23 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
         auto reply = client_->sendSync(req,
                                        std::chrono::milliseconds(timeoutMs));
         if (reply.result() == mc_res_found) {
-          auto value = reply.valueRangeSlow();
-          if (req.fullKey() == "empty") {
-            checkLogic(reply.hasValue(), "Reply has no value");
+          auto value = carbon::valueRangeSlow(reply);
+          if (req.key().fullKey() == "empty") {
             checkLogic(value.empty(), "Expected empty value, got {}", value);
-          } else if (req.fullKey().startsWith("value_size:")) {
-            auto key = req.fullKey();
+          } else if (req.key().fullKey().startsWith("value_size:")) {
+            auto key = req.key().fullKey();
             key.removePrefix("value_size:");
             size_t valSize = folly::to<size_t>(key);
             checkLogic(value.size() == valSize,
                        "Expected value of size {}, got {}",
                        valSize, value.size());
-          } else if (req.fullKey() == "trace_id") {
+          } else if (req.key().fullKey() == "trace_id") {
             checkLogic(value == "12345",
                        "Expected value to equal trace ID {}, got {}",
                        12345, value);
           } else {
-            checkLogic(value == req.fullKey(),
-                       "Expected {}, got {}", req.fullKey(), value);
+            checkLogic(value == req.key().fullKey(),
+                       "Expected {}, got {}", req.key().fullKey(), value);
           }
         }
         checkLogic(expectedResult == reply.result(), "Expected {}, got {}",
@@ -282,24 +279,29 @@ void TestClient::sendGet(std::string key, mc_res_t expectedResult,
 void TestClient::sendSet(std::string key, std::string value,
                          mc_res_t expectedResult) {
   inflight_++;
-  fm_.addTask([key, value, expectedResult, this]() {
-      TypedThriftRequest<cpp2::McSetRequest> req(key);
-      req.setValue(value);
+  fm_.addTask([
+    key = std::move(key),
+    value = std::move(value),
+    expectedResult,
+    this
+  ]() {
+    McSetRequest req(key);
+    req.value() = folly::IOBuf::wrapBufferAsValue(folly::StringPiece(value));
 
-      auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
+    auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
 
-      CHECK(expectedResult == reply.result())
-        << "Expected: " << mc_res_to_string(expectedResult)
-        << " got " << mc_res_to_string(reply.result());
+    CHECK(expectedResult == reply.result())
+        << "Expected: " << mc_res_to_string(expectedResult) << " got "
+        << mc_res_to_string(reply.result());
 
-      inflight_--;
-    });
+    inflight_--;
+  });
 }
 
 void TestClient::sendVersion(std::string expectedVersion) {
   ++inflight_;
   fm_.addTask([this, expectedVersion = std::move(expectedVersion)]() {
-      TypedThriftRequest<cpp2::McVersionRequest> req;
+      McVersionRequest req;
 
       auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
 
@@ -307,9 +309,9 @@ void TestClient::sendVersion(std::string expectedVersion) {
         << "Expected result " << mc_res_to_string(mc_res_ok)
         << ", got " << mc_res_to_string(reply.result());
 
-      CHECK_EQ(expectedVersion, reply.valueRangeSlow())
+      CHECK_EQ(expectedVersion, carbon::valueRangeSlow(reply))
         << "Expected version " << expectedVersion
-        << ", got " << reply.valueRangeSlow();
+        << ", got " << carbon::valueRangeSlow(reply);
 
       --inflight_;
     });

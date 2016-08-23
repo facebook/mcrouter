@@ -196,4 +196,8 @@ inline bool isStoredResult(const mc_res_t result) {
   return result == mc_res_stored || result == mc_res_stalestored;
 }
 
+inline bool worseThan(mc_res_t first, mc_res_t second) {
+  return resultSeverity(first) > resultSeverity(second);
+}
+
 }} // facebook::memcache

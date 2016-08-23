@@ -54,9 +54,9 @@ bool ServerMcParser<Callback>::readDataAvailable(size_t len) {
 }
 
 template <class Callback>
-template <class ThriftType>
+template <class Request>
 void ServerMcParser<Callback>::requestReadyHelper(
-    TypedThriftRequest<ThriftType>&& req, uint64_t reqid) {
+    Request&& req, uint64_t reqid) {
   callback_.umbrellaRequestReady(std::move(req), reqid);
 }
 
@@ -68,22 +68,20 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
     const mc_op_t op = umbrellaDetermineOperation(
         buffer.data(), info.headerSize);
     switch (op) {
-#define THRIFT_OP(MC_OPERATION)                                                \
-      case MC_OPERATION::mc_op:                                                \
-      {                                                                        \
-        using Request = TypedThriftRequest<                                    \
-            typename TypeFromOp<MC_OPERATION::mc_op,                           \
-                                RequestOpMapping>::type>;                      \
-        auto req = umbrellaParseRequest<Request>(                              \
-            buffer,                                                            \
-            buffer.data(),                                                     \
-            info.headerSize,                                                   \
-            buffer.data() + info.headerSize,                                   \
-            info.bodySize,                                                     \
-            reqid);                                                            \
-        requestReadyHelper(std::move(req), reqid);                             \
-        break;                                                                 \
-      }
+#define THRIFT_OP(MC_OPERATION)                                           \
+  case MC_OPERATION::mc_op: {                                             \
+    using Request =                                                       \
+        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type; \
+    auto req = umbrellaParseRequest<Request>(                             \
+        buffer,                                                           \
+        buffer.data(),                                                    \
+        info.headerSize,                                                  \
+        buffer.data() + info.headerSize,                                  \
+        info.bodySize,                                                    \
+        reqid);                                                           \
+    requestReadyHelper(std::move(req), reqid);                            \
+    break;                                                                \
+  }
 #include "mcrouter/lib/McOpList.h"
       default:
         auto reason = folly::sformat(
@@ -110,7 +108,7 @@ bool ServerMcParser<Callback>::caretMessageReady(
   try {
     // Caret header and body are assumed to be in one coalesced IOBuf
     callback_.caretRequestReady(headerInfo, buffer);
-  } catch (const std::runtime_error& e) {
+  } catch (const std::exception& e) {
     std::string reason(
       std::string("Error parsing Caret message: ") + e.what());
     callback_.parseError(mc_res_remote_error, reason);
@@ -175,7 +173,7 @@ void ServerMcParser<Callback>::writeToPipe(const Request& req) {
   debugSerializedRequest.prepare(req, iov, iovLen);
   debugFifo_->startMessage(
       MessageDirection::Received,
-      IdFromType<typename Request::rawType, TRequestList>::value);
+      IdFromType<Request, TRequestList>::value);
   debugFifo_->writeData(iov, iovLen);
 }
 

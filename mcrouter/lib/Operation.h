@@ -12,9 +12,6 @@
 namespace facebook { namespace memcache {
 
 template <typename Request>
-struct ReplyType;
-
-template <typename Request>
-using ReplyT = typename ReplyType<Request>::type;
+using ReplyT = typename Request::reply_type;
 
 }} // facebook::memcache

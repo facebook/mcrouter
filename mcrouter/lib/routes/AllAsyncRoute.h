@@ -42,7 +42,7 @@ class AllAsyncRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    auto reqCopy = std::make_shared<Request>(req.clone());
+    auto reqCopy = std::make_shared<Request>(req);
     for (auto& rh : children_) {
       folly::fibers::addTask(
         [rh, reqCopy]() {

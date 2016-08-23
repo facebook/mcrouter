@@ -71,9 +71,9 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
 namespace detail {
 
 bool processGetServiceInfoRequest(
-    const TypedThriftRequest<cpp2::McGetRequest>& req,
+    const McGetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<
-      TypedThriftRequest<cpp2::McGetRequest>>>& ctx) {
+      McGetRequest>>& ctx) {
 
   return processGetServiceInfoRequestImpl(req, ctx);
 }
@@ -86,11 +86,11 @@ bool processGetServiceInfoRequestImpl(
 
   static const char* const kInternalGetPrefix = "__mcrouter__.";
 
-  if (!req.fullKey().startsWith(kInternalGetPrefix)) {
+  if (!req.key().fullKey().startsWith(kInternalGetPrefix)) {
     return false;
   }
   auto& config = ctx->proxyConfig();
-  auto key = req.fullKey();
+  auto key = req.key().fullKey();
   key.advance(strlen(kInternalGetPrefix));
   config.serviceInfo()->handleRequest(key, ctx);
   return true;
@@ -248,20 +248,21 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
 }
 
 void proxy_t::routeHandlesProcessRequest(
-    const TypedThriftRequest<cpp2::McStatsRequest>& req,
+    const McStatsRequest& req,
     std::unique_ptr<ProxyRequestContextTyped<
-      TypedThriftRequest<cpp2::McStatsRequest>>> ctx) {
+      McStatsRequest>> ctx) {
 
-  ctx->sendReply(stats_reply(this, req.fullKey()));
+  ctx->sendReply(stats_reply(this, req.key().fullKey()));
 }
 
 void proxy_t::routeHandlesProcessRequest(
-    const TypedThriftRequest<cpp2::McVersionRequest>&,
+    const McVersionRequest&,
     std::unique_ptr<ProxyRequestContextTyped<
-      TypedThriftRequest<cpp2::McVersionRequest>>> ctx) {
+      McVersionRequest>> ctx) {
 
-  TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-  reply.setValue(MCROUTER_PACKAGE_STRING);
+  McVersionReply reply(mc_res_ok);
+  reply.value() =
+      folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
   ctx->sendReply(std::move(reply));
 }
 

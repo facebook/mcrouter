@@ -33,7 +33,7 @@ class DevNullRoute {
   static ReplyT<Request> route(const Request& req) {
     auto& ctx = fiber_local::getSharedCtx();
     stat_incr(ctx->proxy().stats, dev_null_requests_stat, 1);
-    return ReplyT<Request>(DefaultReply, req);
+    return createReply(DefaultReply, req);
   }
 };
 

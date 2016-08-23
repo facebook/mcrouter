@@ -13,8 +13,8 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 
 namespace facebook { namespace memcache {
 
@@ -67,29 +67,29 @@ class AsciiSerializedRequest {
   void keyValueRequestCommon(folly::StringPiece prefix, const Request& request);
 
   // Get-like ops.
-  void prepareImpl(const TypedThriftRequest<cpp2::McGetRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McGetsRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McMetagetRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McLeaseGetRequest>& request);
+  void prepareImpl(const McGetRequest& request);
+  void prepareImpl(const McGetsRequest& request);
+  void prepareImpl(const McMetagetRequest& request);
+  void prepareImpl(const McLeaseGetRequest& request);
   // Update-like ops.
-  void prepareImpl(const TypedThriftRequest<cpp2::McSetRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McAddRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McReplaceRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McAppendRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McPrependRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McCasRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McLeaseSetRequest>& request);
+  void prepareImpl(const McSetRequest& request);
+  void prepareImpl(const McAddRequest& request);
+  void prepareImpl(const McReplaceRequest& request);
+  void prepareImpl(const McAppendRequest& request);
+  void prepareImpl(const McPrependRequest& request);
+  void prepareImpl(const McCasRequest& request);
+  void prepareImpl(const McLeaseSetRequest& request);
   // Arithmetic ops.
-  void prepareImpl(const TypedThriftRequest<cpp2::McIncrRequest>& request);
-  void prepareImpl(const TypedThriftRequest<cpp2::McDecrRequest>& request);
+  void prepareImpl(const McIncrRequest& request);
+  void prepareImpl(const McDecrRequest& request);
   // Delete op.
-  void prepareImpl(const TypedThriftRequest<cpp2::McDeleteRequest>& request);
+  void prepareImpl(const McDeleteRequest& request);
   // Touch op.
-  void prepareImpl(const TypedThriftRequest<cpp2::McTouchRequest>& request);
+  void prepareImpl(const McTouchRequest& request);
   // Version op.
-  void prepareImpl(const TypedThriftRequest<cpp2::McVersionRequest>& request);
+  void prepareImpl(const McVersionRequest& request);
   // FlushAll op.
-  void prepareImpl(const TypedThriftRequest<cpp2::McFlushAllRequest>& request);
+  void prepareImpl(const McFlushAllRequest& request);
 
   // Everything else is false.
   template <class Request>
@@ -113,13 +113,13 @@ class AsciiSerializedReply {
 
   void clear();
 
-  template <class ThriftType>
-  bool prepare(TypedThriftReply<ThriftType>&& reply,
-               folly::Optional<folly::IOBuf>& key,
-               const struct iovec*& iovOut, size_t& niovOut,
-               GetLikeT<TypedThriftRequest<
-                            RequestFromReplyType<ThriftType,
-                                                 RequestReplyPairs>>> = 0) {
+  template <class Reply>
+  bool prepare(
+      Reply&& reply,
+      folly::Optional<folly::IOBuf>& key,
+      const struct iovec*& iovOut,
+      size_t& niovOut,
+      GetLikeT<RequestFromReplyType<Reply, RequestReplyPairs>> = 0) {
     if (key.hasValue()) {
       key->coalesce();
     }
@@ -134,21 +134,17 @@ class AsciiSerializedReply {
     return true;
   }
 
-  template <class ThriftType>
-  bool prepare(TypedThriftReply<ThriftType>&& reply,
-               const folly::Optional<folly::IOBuf>& /* key */,
-               const struct iovec*& iovOut, size_t& niovOut,
-               OtherThanT<TypedThriftReply<ThriftType>, GetLike<>> = 0) {
+  template <class Reply>
+  bool prepare(
+      Reply&& reply,
+      const folly::Optional<folly::IOBuf>& /* key */,
+      const struct iovec*& iovOut,
+      size_t& niovOut,
+      OtherThanT<Reply, GetLike<>> = 0) {
     prepareImpl(std::move(reply));
     iovOut = iovs_;
     niovOut = iovsCount_;
     return true;
-  }
-
-  template <class Unsupported>
-  bool prepare(Unsupported&&, const folly::Optional<folly::IOBuf>&,
-               const struct iovec*&, size_t&) {
-    return false;
   }
 
  private:
@@ -176,44 +172,40 @@ class AsciiSerializedReply {
   void addStrings(Arg&& arg, Args&&... args);
 
   // Get-like ops
-  void prepareImpl(TypedThriftReply<cpp2::McGetReply>&& reply,
-                   folly::StringPiece key);
-  void prepareImpl(TypedThriftReply<cpp2::McGetsReply>&& reply,
-                   folly::StringPiece key);
-  void prepareImpl(TypedThriftReply<cpp2::McMetagetReply>&& reply,
-                   folly::StringPiece key);
-  void prepareImpl(TypedThriftReply<cpp2::McLeaseGetReply>&& reply,
-                   folly::StringPiece key);
+  void prepareImpl(McGetReply&& reply, folly::StringPiece key);
+  void prepareImpl(McGetsReply&& reply, folly::StringPiece key);
+  void prepareImpl(McMetagetReply&& reply, folly::StringPiece key);
+  void prepareImpl(McLeaseGetReply&& reply, folly::StringPiece key);
   // Update-like ops
   void prepareUpdateLike(mc_res_t result, uint16_t errorCode,
                          std::string&& message, const char* requestName);
-  void prepareImpl(TypedThriftReply<cpp2::McSetReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McAddReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McReplaceReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McAppendReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McPrependReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McCasReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McLeaseSetReply>&& reply);
+  void prepareImpl(McSetReply&& reply);
+  void prepareImpl(McAddReply&& reply);
+  void prepareImpl(McReplaceReply&& reply);
+  void prepareImpl(McAppendReply&& reply);
+  void prepareImpl(McPrependReply&& reply);
+  void prepareImpl(McCasReply&& reply);
+  void prepareImpl(McLeaseSetReply&& reply);
   // Arithmetic-like ops
   void prepareArithmeticLike(mc_res_t result, const uint64_t delta,
                              uint16_t errorCode, std::string&& message,
                              const char* requestName);
-  void prepareImpl(TypedThriftReply<cpp2::McIncrReply>&& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McDecrReply>&& reply);
+  void prepareImpl(McIncrReply&& reply);
+  void prepareImpl(McDecrReply&& reply);
   // Delete
-  void prepareImpl(TypedThriftReply<cpp2::McDeleteReply>&& reply);
+  void prepareImpl(McDeleteReply&& reply);
   // Touch
-  void prepareImpl(TypedThriftReply<cpp2::McTouchReply>&& reply);
+  void prepareImpl(McTouchReply&& reply);
   // Version
-  void prepareImpl(const TypedThriftReply<cpp2::McVersionReply>& reply);
-  void prepareImpl(TypedThriftReply<cpp2::McVersionReply>&& reply);
+  void prepareImpl(const McVersionReply& reply);
+  void prepareImpl(McVersionReply&& reply);
   // Miscellaneous
-  void prepareImpl(TypedThriftReply<cpp2::McStatsReply>&&);
-  void prepareImpl(TypedThriftReply<cpp2::McShutdownReply>&&);
-  void prepareImpl(TypedThriftReply<cpp2::McQuitReply>&&) {} // always noreply
-  void prepareImpl(TypedThriftReply<cpp2::McExecReply>&&);
-  void prepareImpl(TypedThriftReply<cpp2::McFlushReReply>&&);
-  void prepareImpl(TypedThriftReply<cpp2::McFlushAllReply>&&);
+  void prepareImpl(McStatsReply&&);
+  void prepareImpl(McShutdownReply&&);
+  void prepareImpl(McQuitReply&&) {} // always noreply
+  void prepareImpl(McExecReply&&);
+  void prepareImpl(McFlushReReply&&);
+  void prepareImpl(McFlushAllReply&&);
   // Server and client error helper
   void handleError(mc_res_t result, uint16_t errorCode, std::string&& message);
   void handleUnexpected(mc_res_t result, const char* requestName);

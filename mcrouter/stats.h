@@ -14,14 +14,9 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
-namespace facebook { namespace memcache {
-
-template <class ThriftType>
-class TypedThriftReply;
-
-namespace mcrouter {
+namespace facebook { namespace memcache { namespace mcrouter {
 
 // define stat_name_t
 #define STAT(name,...) name##_stat,
@@ -119,7 +114,7 @@ uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx);
 void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
 uint64_t stat_get_uint64(stat_t*, stat_name_t);
 uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
-TypedThriftReply<cpp2::McStatsReply> stats_reply(proxy_t*, folly::StringPiece);
+McStatsReply stats_reply(proxy_t*, folly::StringPiece);
 void prepare_stats(McrouterInstance& router, stat_t* stats);
 
 void set_standalone_args(folly::StringPiece args);

@@ -16,11 +16,7 @@
 
 namespace facebook { namespace memcache {
 
-namespace cpp2 {
 class McStatsReply;
-}
-template <class ThriftType>
-class TypedThriftReply;
 
 class StatsReply {
  public:
@@ -30,7 +26,7 @@ class StatsReply {
                         folly::to<std::string>(std::forward<V>(value)));
   }
 
-  TypedThriftReply<cpp2::McStatsReply> getReply();
+  McStatsReply getReply();
 
  private:
   std::vector<std::pair<std::string, std::string>> stats_;

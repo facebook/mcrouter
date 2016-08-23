@@ -15,6 +15,7 @@
 
 #include <folly/fibers/AddTasks.h>
 
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
@@ -47,7 +48,7 @@ class AllFastestRoute {
 
     std::vector<std::function<Reply()>> funcs;
     funcs.reserve(children_.size());
-    auto reqCopy = std::make_shared<Request>(req.clone());
+    auto reqCopy = std::make_shared<Request>(req);
     for (auto& rh : children_) {
       funcs.push_back(
         [reqCopy, rh]() {
@@ -59,7 +60,7 @@ class AllFastestRoute {
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
     while (true) {
       auto reply = taskIt.awaitNext();
-      if (!reply.isFailoverError() || !taskIt.hasNext()) {
+      if (!isFailoverErrorResult(reply.result()) || !taskIt.hasNext()) {
         return reply;
       }
     }

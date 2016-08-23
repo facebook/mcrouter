@@ -12,8 +12,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/McrouterInstance.h"
@@ -40,8 +39,8 @@ std::shared_ptr<ProxyRequestContext> getContext() {
 void sendWorkload(TestRouteHandle<SlowWarmUpRoute<TestRouteHandleIf>>& rh,
                   size_t numReqs, size_t& numNormal, size_t& numFailover) {
   for (size_t i = 0; i < numReqs; ++i) {
-    auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    auto val = reply.valueRangeSlow().str();
+    auto reply = rh.route(McGetRequest("0"));
+    auto val = carbon::valueRangeSlow(reply).str();
     if (val == "a") { // normal
       ++numNormal;
     } else if (val == "b") { // failover
@@ -83,13 +82,13 @@ TEST(SlowWarmUpRoute, basic) {
 
     // send 10 gets -> moves hit rate to 1.
     for (int i = 0; i < 10; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-      EXPECT_EQ("a", reply.valueRangeSlow().str());
+      auto reply = rh.route(McGetRequest("0"));
+      EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
     }
 
     // send 90 deletes (which return miss) -> moves hit rate to 0.1
     for (int i = 0; i < 90; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+      auto reply = rh.route(McDeleteRequest("0"));
       EXPECT_EQ(mc_res_notfound, reply.result());
     }
 
@@ -103,7 +102,7 @@ TEST(SlowWarmUpRoute, basic) {
 
     // send a large amount of gets -> move hit rate up, but not above 0.9
     for (int i = 0; i < 1000; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+      auto reply = rh.route(McGetRequest("0"));
     }
 
     // send 1000 gets (round 2) -> must have more normal results than 1st round
@@ -117,13 +116,13 @@ TEST(SlowWarmUpRoute, basic) {
 
     // send a large amount of gets -> move hit rate above 0.9
     for (int i = 0; i < 50000; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+      auto reply = rh.route(McGetRequest("0"));
     }
 
     // send 10 gets -> we should have moved out of the "warming up" state.
     for (int i = 0; i < 10; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-      EXPECT_EQ("a", reply.valueRangeSlow().str());
+      auto reply = rh.route(McGetRequest("0"));
+      EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
     }
   });
 }
@@ -159,14 +158,14 @@ TEST(SlowWarmUpRoute, minRequests) {
 
     // send 90 deletes (which return miss) -> hit rate is 0.
     for (int i = 0; i < 90; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+      auto reply = rh.route(McDeleteRequest("0"));
       EXPECT_EQ(mc_res_notfound, reply.result());
     }
 
     // as we have not reached minReqs yet (100), use always normal target.
     for (int i = 0; i < 10; ++i) {
-      auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-      EXPECT_EQ("a", reply.valueRangeSlow().str());
+      auto reply = rh.route(McGetRequest("0"));
+      EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
     }
 
     // now that we have achieved minReqs, receive some failovers.

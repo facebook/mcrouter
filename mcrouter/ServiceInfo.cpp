@@ -24,7 +24,7 @@
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McRequestList.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
@@ -93,8 +93,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
           destinations->push_back(dest.toHostPortString());
         }
       );
-      TypedThriftRequest<typename TypeFromOp<Operation::mc_op,
-                         RequestOpMapping>::type> recordingReq(keyStr);
+      typename TypeFromOp<Operation::mc_op,
+                          RequestOpMapping>::type recordingReq(keyStr);
       fiber_local::runWithLocals([ctx = std::move(rctx),
                                   &recordingReq,
                                   &proxyRoute = proxyRoute_]() mutable {
@@ -116,7 +116,7 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
         str.append(d);
       }
       ReplyT<Request> reply(mc_res_found);
-      reply.setValue(str);
+      reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
       ctx->sendReply(std::move(reply));
     }
   );
@@ -140,8 +140,8 @@ inline std::string routeHandlesCommandHelper(folly::StringPiece op,
       }
      );
      proxyRoute.traverse(
-        TypedThriftRequest<typename TypeFromOp<McOpList::Item<op_id>::op::mc_op,
-                                               RequestOpMapping>::type>(key),
+        typename TypeFromOp<McOpList::Item<op_id>::op::mc_op,
+                                           RequestOpMapping>::type(key),
         t);
      return tree;
   }
@@ -372,7 +372,7 @@ void ServiceInfo::ServiceInfoImpl::handleRequest(
     replyStr = std::string("ERROR: ") + e.what();
   }
   ReplyT<Request> reply(mc_res_found);
-  reply.setValue(std::move(replyStr));
+  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, replyStr);
   ctx->sendReply(std::move(reply));
 }
 
@@ -392,8 +392,8 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommand(
 
 void ServiceInfo::handleRequest(
     folly::StringPiece key,
-    const std::shared_ptr<ProxyRequestContextTyped<
-        TypedThriftRequest<cpp2::McGetRequest>>>& ctx) const {
+    const std::shared_ptr<ProxyRequestContextTyped<McGetRequest>>& ctx)
+    const {
   impl_->handleRequest(key, ctx);
 }
 

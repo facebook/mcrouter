@@ -14,8 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/WarmUpRoute.h"
@@ -50,15 +49,15 @@ TEST(warmUpRouteTest, warmUp) {
       route_handles[0], route_handles[1], 1);
 
     auto reply_get = rh.route(
-        TypedThriftRequest<cpp2::McGetRequest>("key_get"));
-    EXPECT_EQ("b", reply_get.valueRangeSlow().str());
+        McGetRequest("key_get"));
+    EXPECT_EQ("b", carbon::valueRangeSlow(reply_get).str());
     EXPECT_NE(vector<string>{"key_get"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_get"}, test_handles[1]->saw_keys);
     (test_handles[0]->saw_keys).clear();
     (test_handles[1]->saw_keys).clear();
 
     auto reply_del = rh.route(
-        TypedThriftRequest<cpp2::McDeleteRequest>("key_del"));
+        McDeleteRequest("key_del"));
     EXPECT_EQ(mc_res_notfound, reply_del.result());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[1]->saw_keys);
@@ -68,8 +67,8 @@ TEST(warmUpRouteTest, warmUp) {
       route_handles[0], route_handles[2], 1);
 
     auto reply_get = rh.route(
-        TypedThriftRequest<cpp2::McGetRequest>("key_get"));
-    EXPECT_EQ("a", reply_get.valueRangeSlow().str());
+        McGetRequest("key_get"));
+    EXPECT_EQ("a", carbon::valueRangeSlow(reply_get).str());
     EXPECT_EQ(vector<string>{"key_get"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_get"}, test_handles[2]->saw_keys);
   });
@@ -85,7 +84,7 @@ TEST(warmUpRouteTest, warmUp) {
       route_handles[0], route_handles[2], 1);
 
     auto reply_del = rh.route(
-        TypedThriftRequest<cpp2::McDeleteRequest>("key_del"));
+        McDeleteRequest("key_del"));
     EXPECT_EQ(mc_res_notfound, reply_del.result());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[2]->saw_keys);

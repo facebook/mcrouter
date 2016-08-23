@@ -17,11 +17,10 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -437,7 +436,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
     });
 
   fiberManager->addTask([&client, &replied] {
-    TypedThriftRequest<cpp2::McGetRequest> req("hold");
+    McGetRequest req("hold");
     auto reply = client->sendSync(req, std::chrono::milliseconds(100));
     EXPECT_STREQ(mc_res_to_string(reply.result()),
                  mc_res_to_string(mc_res_connect_timeout));

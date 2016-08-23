@@ -9,20 +9,18 @@
  */
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
-#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 
-template <class ThriftType>
-bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
+template <class Request>
+bool CaretSerializedMessage::prepare(const Request& req,
                                      size_t reqId,
                                      const CodecIdRange& supportedCodecs,
                                      const struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
-  constexpr size_t typeId =
-      IdFromType<typename TypedThriftRequest<ThriftType>::rawType,
-                 TRequestList>::value;
+  constexpr size_t typeId = IdFromType<Request, TRequestList>::value;
 
   return fill(req,
               reqId,
@@ -33,18 +31,18 @@ bool CaretSerializedMessage::prepare(const TypedThriftRequest<ThriftType>& req,
               niovOut);
 }
 
-template <class ThriftType>
-bool CaretSerializedMessage::prepare(TypedThriftReply<ThriftType>&& reply,
+template <class Reply>
+bool CaretSerializedMessage::prepare(Reply&& reply,
                                      size_t reqId,
                                      CompressionCodec* codec,
                                      const struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
-  constexpr size_t typeId = IdFromType<ThriftType, TReplyList>::value;
+  constexpr size_t typeId = IdFromType<Reply, TReplyList>::value;
   return fill(reply, reqId, typeId, 0 /* traceId */, codec, iovOut, niovOut);
 }
 
-template <class ThriftType>
-bool CaretSerializedMessage::fill(const TypedThriftRequest<ThriftType>& tmsg,
+template <class Message>
+bool CaretSerializedMessage::fill(const Message& message,
                                   uint32_t reqId,
                                   size_t typeId,
                                   uint64_t traceId,
@@ -52,7 +50,12 @@ bool CaretSerializedMessage::fill(const TypedThriftRequest<ThriftType>& tmsg,
                                   const struct iovec*& iovOut,
                                   size_t& niovOut) {
   // Serialize body into storage_. Note we must defer serialization of header.
-  serializeThriftStruct(tmsg, storage_);
+  try {
+    serializeCarbonStruct(message, storage_);
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Failed to serialize: " << e.what();
+    return false;
+  }
 
   UmbrellaMessageInfo info;
   info.supportedCodecsFirstId = supportedCodecs.firstId;
@@ -61,8 +64,8 @@ bool CaretSerializedMessage::fill(const TypedThriftRequest<ThriftType>& tmsg,
   return true;
 }
 
-template <class ThriftType>
-bool CaretSerializedMessage::fill(const TypedThriftReply<ThriftType>& tmsg,
+template <class Message>
+bool CaretSerializedMessage::fill(const Message& message,
                                   uint32_t reqId,
                                   size_t typeId,
                                   uint64_t traceId,
@@ -71,7 +74,12 @@ bool CaretSerializedMessage::fill(const TypedThriftReply<ThriftType>& tmsg,
                                   size_t& niovOut) {
 
   // Serialize and (maybe) compress body of message.
-  serializeThriftStruct(tmsg, storage_);
+  try {
+    serializeCarbonStruct(message, storage_);
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Failed to serialize: " << e.what();
+    return false;
+  }
 
   UmbrellaMessageInfo info;
 

@@ -15,8 +15,7 @@
 
 #include <folly/dynamic.h>
 
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
@@ -59,10 +58,10 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   fm.run([&] () {
     mockFiberContext();
-    auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("key"));
+    auto reply = rh.route(McGetRequest("key"));
 
     EXPECT_EQ(mc_res_found, reply.result());
-    EXPECT_EQ("a", reply.valueRangeSlow().str());
+    EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 
   EXPECT_TRUE(shadowHandles[0]->saw_keys.empty());
@@ -72,10 +71,10 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   fm.run([&] () {
     mockFiberContext();
-    auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>("key"));
+    auto reply = rh.route(McGetRequest("key"));
 
     EXPECT_EQ(mc_res_found, reply.result());
-    EXPECT_EQ("a", reply.valueRangeSlow().str());
+    EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
   });
 
   EXPECT_EQ(shadowHandles[0]->saw_keys, vector<string>{"key"});

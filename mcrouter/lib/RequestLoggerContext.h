@@ -13,6 +13,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/McrouterFiberContext.h"
@@ -36,16 +37,16 @@ struct RequestLoggerContext {
                        const ReplyT<Request>& reply,
                        const int64_t startTimeUs_,
                        const int64_t endTimeUs_)
-    : fullKey(request.fullKey()),
-      keyWithoutRoute(request.keyWithoutRoute()),
-      routingKey(request.routingKey()),
-      routingPrefix(request.routingPrefix()),
+    : fullKey(request.key().fullKey()),
+      keyWithoutRoute(request.key().keyWithoutRoute()),
+      routingKey(request.key().routingKey()),
+      routingPrefix(request.key().routingPrefix()),
       strippedRoutingPrefix(strippedRoutingPrefix_),
       requestName(Request::name),
-      requestValue(request.valuePtrUnsafe()),
+      requestValue(carbon::valuePtrUnsafe(request)),
       requestClass(fiber_local::getRequestClass()),
-      routingKeyHash(request.routingKeyHash()),
-      replyValue(reply.valuePtrUnsafe()),
+      routingKeyHash(request.key().routingKeyHash()),
+      replyValue(carbon::valuePtrUnsafe(reply)),
       replyResult(reply.result()),
       replyFlags(reply.flags()),
       poolName(poolName_),

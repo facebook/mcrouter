@@ -39,6 +39,10 @@ folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf) {
   return getRange(buf);
 }
 
+folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf) {
+  return buf.hasValue() ? coalesceAndGetRange(*buf) : folly::StringPiece();
+}
+
 bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range) {
   return !buf.isChained() &&
     (buf.length() == 0 ||

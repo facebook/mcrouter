@@ -9,7 +9,10 @@
  */
 #include "MockMc.h"
 
+#include <folly/Conv.h>
 #include <folly/io/IOBuf.h>
+
+#include "mcrouter/lib/IOBufUtil.h"
 
 namespace facebook { namespace memcache {
 

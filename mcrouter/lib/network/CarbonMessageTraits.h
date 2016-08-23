@@ -9,96 +9,93 @@
  */
 #pragma once
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/OperationTraits.h"
 
 namespace facebook { namespace memcache {
 
-template <class M>
-class TypedThriftRequest;
-
 // GetLike
 template <>
-struct GetLike<TypedThriftRequest<cpp2::McGetRequest>> {
+struct GetLike<McGetRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<TypedThriftRequest<cpp2::McGetsRequest>> {
+struct GetLike<McGetsRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<TypedThriftRequest<cpp2::McMetagetRequest>> {
+struct GetLike<McMetagetRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<TypedThriftRequest<cpp2::McLeaseGetRequest>> {
+struct GetLike<McLeaseGetRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 // UpdateLike
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McSetRequest>> {
+struct UpdateLike<McSetRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McAddRequest>> {
+struct UpdateLike<McAddRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McReplaceRequest>> {
+struct UpdateLike<McReplaceRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McLeaseSetRequest>> {
+struct UpdateLike<McLeaseSetRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McAppendRequest>> {
+struct UpdateLike<McAppendRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McPrependRequest>> {
+struct UpdateLike<McPrependRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<TypedThriftRequest<cpp2::McCasRequest>> {
+struct UpdateLike<McCasRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct DeleteLike<TypedThriftRequest<cpp2::McDeleteRequest>> {
+struct DeleteLike<McDeleteRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct ArithmeticLike<TypedThriftRequest<cpp2::McIncrRequest>> {
+struct ArithmeticLike<McIncrRequest> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct ArithmeticLike<TypedThriftRequest<cpp2::McDecrRequest>> {
+struct ArithmeticLike<McDecrRequest> {
   static const bool value = true;
   typedef void* Type;
 };

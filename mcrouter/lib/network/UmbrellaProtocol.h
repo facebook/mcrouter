@@ -20,8 +20,7 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/CaretHeader.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 
 namespace folly {
 class IOBuf;
@@ -135,18 +134,18 @@ class UmbrellaSerializedMessage {
   UmbrellaSerializedMessage() noexcept;
   void clear();
 
-  template <class ThriftType>
-  bool prepare(TypedThriftReply<ThriftType>&& reply, uint64_t reqid,
+  template <class Reply>
+  bool prepare(Reply&& reply, uint64_t reqid,
                const struct iovec*& iovOut, size_t& niovOut) {
-    static constexpr mc_op_t op = OpFromType<ThriftType, ReplyOpMapping>::value;
+    static constexpr mc_op_t op = OpFromType<Reply, ReplyOpMapping>::value;
     return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
   }
 
-  template <class ThriftType>
-  bool prepare(const TypedThriftRequest<ThriftType>& request, uint64_t reqid,
+  template <class Request>
+  bool prepare(const Request& request, uint64_t reqid,
                const struct iovec*& iovOut, size_t& niovOut) {
     static constexpr mc_op_t op =
-      OpFromType<ThriftType, RequestOpMapping>::value;
+      OpFromType<Request, RequestOpMapping>::value;
     return prepareRequestImpl(request, op, reqid, iovOut, niovOut);
   }
 
@@ -193,67 +192,51 @@ class UmbrellaSerializedMessage {
    * to be serialized, so we have a catch-all helper that does nothing.
    */
   template <class RequestOrReply>
-  void prepareHelper(const RequestOrReply&) {
+  void prepareHelper(const RequestOrReply&) {}
+
+  inline void prepareHelper(const McCasRequest& request) {
+    appendInt(U64, msg_cas, request.casToken());
+  }
+
+  inline void prepareHelper(const McGetsReply& reply) {
+    appendInt(U64, msg_cas, reply.casToken());
+  }
+
+  inline void prepareHelper(const McLeaseSetRequest& request) {
+    appendInt(U64, msg_lease_id, request.leaseToken());
+  }
+
+  inline void prepareHelper(const McLeaseGetReply& reply) {
+    appendInt(U64, msg_lease_id, reply.leaseToken());
+  }
+
+  inline void prepareHelper(const McIncrRequest& request) {
+    appendInt(U64, msg_delta, request.delta());
+  }
+
+  inline void prepareHelper(const McIncrReply& reply) {
+    appendInt(U64, msg_delta, reply.delta());
   }
 
   inline void prepareHelper(
-      const TypedThriftRequest<cpp2::McCasRequest>& request) {
-    appendInt(U64, msg_cas, request->get_casToken());
+      const McDecrRequest& request) {
+    appendInt(U64, msg_delta, request.delta());
   }
 
-  inline void prepareHelper(
-      const TypedThriftReply<cpp2::McGetsReply>& reply) {
-    if (reply->get_casToken()) {
-      appendInt(U64, msg_cas, *reply->get_casToken());
+  inline void prepareHelper(const McDecrReply& reply) {
+    appendInt(U64, msg_delta, reply.delta());
+  }
+
+  inline void prepareHelper(const McMetagetReply& reply) {
+    if (reply.exptime()) {
+      appendInt(U64, msg_exptime, reply.exptime());
     }
-  }
-
-  inline void prepareHelper(
-      const TypedThriftRequest<cpp2::McLeaseSetRequest>& request) {
-    appendInt(U64, msg_lease_id, request->get_leaseToken());
-  }
-
-  inline void prepareHelper(
-      const TypedThriftReply<cpp2::McLeaseGetReply>& reply) {
-    if (reply->get_leaseToken()) {
-      appendInt(U64, msg_lease_id, *reply->get_leaseToken());
+    if (reply.age()) {
+      appendInt(U64, msg_number, reply.age());
     }
-  }
-
-  inline void prepareHelper(
-      const TypedThriftRequest<cpp2::McIncrRequest>& request) {
-    appendInt(U64, msg_delta, request->get_delta());
-  }
-
-  inline void prepareHelper(const TypedThriftReply<cpp2::McIncrReply>& reply) {
-    if (reply->get_delta()) {
-      appendInt(U64, msg_delta, *reply->get_delta());
-    }
-  }
-
-  inline void prepareHelper(
-      const TypedThriftRequest<cpp2::McDecrRequest>& request) {
-    appendInt(U64, msg_delta, request->get_delta());
-  }
-
-  inline void prepareHelper(const TypedThriftReply<cpp2::McDecrReply>& reply) {
-    if (reply->get_delta()) {
-      appendInt(U64, msg_delta, *reply->get_delta());
-    }
-  }
-
-  inline void prepareHelper(
-      const TypedThriftReply<cpp2::McMetagetReply>& reply) {
-    if (reply->get_exptime()) {
-      appendInt(U64, msg_exptime, *reply->get_exptime());
-    }
-    if (reply->get_age()) {
-      appendInt(U64, msg_number, *reply->get_age());
-    }
-    if (reply->get_ipAddress()) {
+    if (!reply.ipAddress().empty()) {
       assert(!auxString_.hasValue());
-      // TODO(jmswen) Move, not copy. Can't move here since reply is const ref.
-      auxString_.emplace(*reply->get_ipAddress());
+      auxString_.emplace(reply.ipAddress());
       appendString(msg_value,
                    reinterpret_cast<const uint8_t*>(auxString_->data()),
                    auxString_->size());

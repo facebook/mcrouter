@@ -12,11 +12,10 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
-#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/McrouterClient.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -30,9 +29,10 @@ struct ServerRequestContext {
       : ctx(std::move(ctx_)), req(std::move(req_)) {}
 };
 
-class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
-                                                   ServerOnRequest,
-                                                   McServerRequestContext&&> {
+class ServerOnRequest : public CarbonMessageDispatcher<
+                            TRequestList,
+                            ServerOnRequest,
+                            McServerRequestContext&&> {
  public:
   template <class Request>
   using ReplyFunction = void (*)(McServerRequestContext&& ctx,
@@ -42,33 +42,28 @@ class ServerOnRequest : public ThriftMsgDispatcher<TRequestList,
     : client_(client),
       retainSourceIp_(retainSourceIp) {}
 
-  template <class ThriftType>
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<ThriftType>&& req) {
-    using Reply = ReplyT<TypedThriftRequest<ThriftType>>;
+  template <class Request>
+  void onRequest(McServerRequestContext&& ctx, Request&& req) {
+    using Reply = ReplyT<Request>;
     send(std::move(ctx),
          std::move(req),
          &McServerRequestContext::reply<Reply>);
   }
 
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<cpp2::McVersionRequest>&&) {
-    TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-    reply.setValue(MCROUTER_PACKAGE_STRING);
+  void onRequest(McServerRequestContext&& ctx, McVersionRequest&&) {
+    McVersionReply reply(mc_res_ok);
+    reply.value() =
+        folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
 
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<cpp2::McQuitRequest>&&) {
-    using Reply = TypedThriftReply<cpp2::McQuitReply>;
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
+  void onRequest(McServerRequestContext&& ctx, McQuitRequest&&) {
+    McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
   }
 
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<cpp2::McShutdownRequest>&&) {
-    using Reply = TypedThriftReply<cpp2::McShutdownReply>;
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
+  void onRequest(McServerRequestContext&& ctx, McShutdownRequest&&) {
+    McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
   }
 
   template <class Request>

@@ -25,7 +25,8 @@ bool WriteBuffer::prepareTyped(
   if (destructor) {
     destructor_ = std::move(destructor);
   }
-  typeId_ = IdFromType<typename Reply::rawType, ThriftMessageList>::value;
+
+  typeId_ = IdFromType<Reply, CarbonMessageList>::value;
 
   switch (protocol_) {
     case mc_ascii_protocol:

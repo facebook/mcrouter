@@ -80,7 +80,7 @@ class ShardSplitRoute {
     }
 
     folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
+    auto cnt = shardSplitter_.getShardSplitCnt(req.key().routingKey(), shard);
     if (cnt == 1) {
       t(*rh_, req);
       return;
@@ -106,7 +106,7 @@ class ShardSplitRoute {
   ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
     // Gets are routed to one of the splits.
     folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
+    auto cnt = shardSplitter_.getShardSplitCnt(req.key().routingKey(), shard);
     size_t i = globals::hostid() % cnt;
     if (i == 0) {
       return rh_->route(req);
@@ -125,7 +125,7 @@ class ShardSplitRoute {
 
     // Deletes are broadcast to all splits.
     folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.routingKey(), shard);
+    auto cnt = shardSplitter_.getShardSplitCnt(req.key().routingKey(), shard);
     for (size_t i = 0; i < cnt - 1; ++i) {
       folly::fibers::addTask(
         [r = rh_, req_ = splitReq(req, i, shard)]() {
@@ -144,8 +144,8 @@ class ShardSplitRoute {
   template <class Request>
   Request splitReq(const Request& req, size_t offset,
                    folly::StringPiece shard) const {
-    auto reqCopy = req.clone();
-    reqCopy.setKey(createSplitKey(req.fullKey(), offset, shard));
+    auto reqCopy = req;
+    reqCopy.key() = createSplitKey(req.key().fullKey(), offset, shard);
     return reqCopy;
   }
 };

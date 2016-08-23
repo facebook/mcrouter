@@ -20,8 +20,7 @@
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
 namespace facebook { namespace memcache {
 
@@ -291,36 +290,33 @@ class McServerSession :
   void readEOF() noexcept override final;
   void readErr(const folly::AsyncSocketException& ex) noexcept override final;
 
-  /* McParser's callback if ASCII request is read into a TypedThriftRequest */
-  template <class ThriftType>
-  void asciiRequestReady(TypedThriftRequest<ThriftType>&& req,
-                         mc_res_t result,
-                         bool noreply);
-  template <class ThriftType>
-  void umbrellaRequestReady(TypedThriftRequest<ThriftType>&& req,
-                            uint64_t reqid);
+  /* McParser's callback if ASCII request is read into a typed request */
+  template <class Request>
+  void asciiRequestReady(Request&& req, mc_res_t result, bool noreply);
+  template <class Request>
+  void umbrellaRequestReady(Request&& req, uint64_t reqid);
   void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
                          const folly::IOBuf& reqBody);
   void parseError(mc_res_t result, folly::StringPiece reason);
 
   /* Ascii parser callbacks */
-  template <class ThriftType>
-  void onRequest(TypedThriftRequest<ThriftType>&& req, bool noreply) {
+  template <class Request>
+  void onRequest(Request&& req, bool noreply) {
     mc_res_t result = mc_res_unknown;
-    if (req.fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
+    if (req.key().fullKey().size() > MC_KEY_MAX_LEN_ASCII) {
       result = mc_res_bad_key;
     }
     asciiRequestReady(std::move(req), result, noreply);
   }
 
   /* ASCII parser callbacks for special commands */
-  void onRequest(TypedThriftRequest<cpp2::McVersionRequest>&& req,
+  void onRequest(McVersionRequest&& req,
                  bool noreply);
 
-  void onRequest(TypedThriftRequest<cpp2::McShutdownRequest>&& req,
+  void onRequest(McShutdownRequest&& req,
                  bool noreply);
 
-  void onRequest(TypedThriftRequest<cpp2::McQuitRequest>&& req,
+  void onRequest(McQuitRequest&& req,
                  bool noreply);
 
   void multiOpEnd();

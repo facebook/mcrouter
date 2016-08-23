@@ -64,11 +64,11 @@ class HashRoute {
   size_t pick(const Request& req) const {
     size_t n = 0;
     if (salt_.empty()) {
-      n = hashFunc_(req.routingKey());
+      n = hashFunc_(req.key().routingKey());
     } else {
       // fast string concatenation
       char c[kMaxKeySaltSize];
-      auto key = req.routingKey();
+      auto key = req.key().routingKey();
       auto keySaltSize = key.size() + salt_.size();
       if (UNLIKELY(keySaltSize >= kMaxKeySaltSize)) {
         throw std::runtime_error("Salted key too long: " + key.str() + salt_);

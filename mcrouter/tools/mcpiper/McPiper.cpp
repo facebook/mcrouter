@@ -11,7 +11,7 @@
 
 #include <unordered_set>
 
-#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 
 #include "mcrouter/tools/mcpiper/FifoReader.h"
 #include "mcrouter/tools/mcpiper/MessagePrinter.h"
@@ -25,7 +25,7 @@ namespace mcpiper {
 namespace {
 
 const std::unordered_set<size_t> kNotSupporttedTypes = {
-    IdFromType<cpp2::McStatsReply, ThriftMessageList>::value};
+    IdFromType<McStatsReply, CarbonMessageList>::value};
 
 MessagePrinter::Options getOptions(const Settings& settings, McPiper* mcpiper) {
   MessagePrinter::Options options;

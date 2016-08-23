@@ -239,7 +239,7 @@ void McServerSession::multiOpEnd() {
 }
 
 void McServerSession::onRequest(
-    TypedThriftRequest<cpp2::McVersionRequest>&& req,
+    McVersionRequest&& req,
     bool /* noreply = false */) {
 
   uint64_t reqid = 0;
@@ -250,8 +250,9 @@ void McServerSession::onRequest(
   McServerRequestContext ctx(*this, mc_op_version, reqid, false, nullptr);
 
   if (options_.defaultVersionHandler) {
-    TypedThriftReply<cpp2::McVersionReply> reply(mc_res_ok);
-    reply.setValue(options_.versionString);
+    McVersionReply reply(mc_res_ok);
+    reply.value() =
+        folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
     return;
   }
@@ -259,27 +260,25 @@ void McServerSession::onRequest(
   onRequest_->requestReady(std::move(ctx), std::move(req));
 }
 
-void McServerSession::onRequest(TypedThriftRequest<cpp2::McShutdownRequest>&&,
+void McServerSession::onRequest(McShutdownRequest&&,
                                 bool) {
   uint64_t reqid = 0;
   if (!parser_.outOfOrder()) {
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, mc_op_shutdown, reqid, true, nullptr);
-  McServerRequestContext::reply(
-      std::move(ctx), TypedThriftReply<cpp2::McShutdownReply>(mc_res_ok));
+  McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
   stateCb_.onShutdown();
 }
 
-void McServerSession::onRequest(TypedThriftRequest<cpp2::McQuitRequest>&&,
+void McServerSession::onRequest(McQuitRequest&&,
                                 bool) {
   uint64_t reqid = 0;
   if (!parser_.outOfOrder()) {
     reqid = tailReqid_++;
   }
   McServerRequestContext ctx(*this, mc_op_quit, reqid, true, nullptr);
-  McServerRequestContext::reply(std::move(ctx),
-                                TypedThriftReply<cpp2::McQuitReply>(mc_res_ok));
+  McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
   close();
 }
 
@@ -302,14 +301,22 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
       nullptr,
       getCodec(headerInfo));
 
-  if (IdFromType<cpp2::McVersionRequest, TRequestList>::value ==
+  if (IdFromType<McVersionRequest, TRequestList>::value ==
           headerInfo.typeId &&
       options_.defaultVersionHandler) {
-    TypedThriftReply<cpp2::McVersionReply> versionReply(mc_res_ok);
-    versionReply.setValue(options_.versionString);
+    McVersionReply versionReply(mc_res_ok);
+    versionReply.value() =
+        folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
   } else {
-    onRequest_->caretRequestReady(headerInfo, reqBody, std::move(ctx));
+    try {
+      onRequest_->caretRequestReady(headerInfo, reqBody, std::move(ctx));
+    } catch (const std::exception& e) {
+      // Ideally, ctx would be created after successful parsing of Caret data.
+      // For now, if ctx hasn't been moved out of, mark as replied.
+      ctx.replied_ = true;
+      throw;
+    }
   }
 }
 
@@ -337,9 +344,9 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
     return;
   }
 
-  TypedThriftReply<cpp2::McVersionReply> errorReply(result);
-  errorReply->set_message(reason.str());
-  errorReply.setValue(reason.str());
+  McVersionReply errorReply(result);
+  errorReply.message() = reason.str();
+  errorReply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, reason.str());
   McServerRequestContext::reply(
     McServerRequestContext(*this, mc_op_version, tailReqid_++),
     std::move(errorReply));

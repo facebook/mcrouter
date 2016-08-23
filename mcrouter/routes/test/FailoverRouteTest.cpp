@@ -14,8 +14,7 @@
 
 #include <folly/dynamic.h>
 
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
@@ -61,8 +60,8 @@ TEST(failoverRouteTest, success) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("a", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, once) {
@@ -78,8 +77,8 @@ TEST(failoverRouteTest, once) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, twice) {
@@ -95,8 +94,8 @@ TEST(failoverRouteTest, twice) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, fail) {
@@ -112,10 +111,10 @@ TEST(failoverRouteTest, fail) {
                                      nullptr,
                                      /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  auto reply = rh->route(McGetRequest("0"));
 
   /* Will return the last reply when ran out of targets */
-  EXPECT_EQ("c", reply.valueRangeSlow().str());
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, customErrorOnce) {
@@ -132,8 +131,8 @@ TEST(failoverRouteTest, customErrorOnce) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, customErrorTwice) {
@@ -151,8 +150,8 @@ TEST(failoverRouteTest, customErrorTwice) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, customErrorUpdate) {
@@ -169,8 +168,8 @@ TEST(failoverRouteTest, customErrorUpdate) {
     nullptr,
     /* failoverTagging */ false);
 
-  TypedThriftRequest<cpp2::McSetRequest> req("0");
-  req.setValue("value");
+  McSetRequest req("0");
+  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh->route(std::move(req));
   EXPECT_EQ(mc_res_local_error, reply.result());
 }
@@ -192,8 +191,8 @@ TEST(failoverRouteTest, separateErrorsGet) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, separateErrorsUpdate) {
@@ -214,20 +213,20 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
     /* failoverTagging */ false);
 
   {
-    TypedThriftRequest<cpp2::McSetRequest> req("0");
-    req.setValue("value");
+    McSetRequest req("0");
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     auto reply1 = rh->route(std::move(req));
     EXPECT_EQ(mc_res_stored, reply1.result());
   }
   {
-    TypedThriftRequest<cpp2::McAppendRequest> req("0");
-    req.setValue("value");
+    McAppendRequest req("0");
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     auto reply2 = rh->route(std::move(req));
     EXPECT_EQ(mc_res_stored, reply2.result());
   }
   {
-    TypedThriftRequest<cpp2::McPrependRequest> req("0");
-    req.setValue("value");
+    McPrependRequest req("0");
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
     auto reply3 = rh->route(std::move(req));
     EXPECT_EQ(mc_res_stored, reply3.result());
   }
@@ -250,7 +249,7 @@ TEST(failoverRouteTest, separateErrorsDelete) {
     nullptr,
     /* failoverTagging */ false);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+  auto reply = rh->route(McDeleteRequest("0"));
   EXPECT_EQ(mc_res_remote_error, reply.result());
 }
 
@@ -268,16 +267,16 @@ TEST(failoverRouteTest, rateLimit) {
     /* failoverTagging */ false);
 
   // tokens: 1
-  auto reply1 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  auto reply1 = rh->route(McGetRequest("0"));
   EXPECT_EQ(mc_res_found, reply1.result());
   // tokens: 0
-  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  auto reply2 = rh->route(McGetRequest("0"));
   EXPECT_EQ(mc_res_timeout, reply2.result());
   // tokens: 0.5
-  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  auto reply3 = rh->route(McGetRequest("0"));
   EXPECT_EQ(mc_res_found, reply3.result());
   // tokens: 0
-  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+  auto reply4 = rh->route(McGetRequest("0"));
   EXPECT_EQ(mc_res_timeout, reply4.result());
 }
 
@@ -299,8 +298,8 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("a", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailoverOnce) {
@@ -321,8 +320,8 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailoverTwice) {
@@ -343,8 +342,8 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, leastFailuresLastSucceeds) {
@@ -366,20 +365,20 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
                                            "route01",
                                            json);
 
-  auto reply1= rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply1.valueRangeSlow().str());
+  auto reply1= rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
 
-  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply2.valueRangeSlow().str());
+  auto reply2 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply2).str());
 
-  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("d", reply3.valueRangeSlow().str());
+  auto reply3 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("d", carbon::valueRangeSlow(reply3).str());
 
-  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("d", reply4.valueRangeSlow().str());
+  auto reply4 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("d", carbon::valueRangeSlow(reply4).str());
 
-  auto reply5 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("d", reply5.valueRangeSlow().str());
+  auto reply5 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("d", carbon::valueRangeSlow(reply5).str());
 }
 
 TEST(failoverRouteTest, leastFailuresCycle) {
@@ -401,23 +400,23 @@ TEST(failoverRouteTest, leastFailuresCycle) {
                                            "route01",
                                            json);
 
-  auto reply1= rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply1.valueRangeSlow().str());
+  auto reply1= rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
 
-  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply2.valueRangeSlow().str());
+  auto reply2 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply2).str());
 
-  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("d", reply3.valueRangeSlow().str());
+  auto reply3 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("d", carbon::valueRangeSlow(reply3).str());
 
-  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply4.valueRangeSlow().str());
+  auto reply4 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply4).str());
 
-  auto reply5 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply5.valueRangeSlow().str());
+  auto reply5 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply5).str());
 
-  auto reply6 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("d", reply6.valueRangeSlow().str());
+  auto reply6 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("d", carbon::valueRangeSlow(reply6).str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailAll) {
@@ -438,8 +437,8 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, leastFailuresFailAllLimit) {
@@ -460,8 +459,8 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
                                            "route01",
                                            json);
 
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply.valueRangeSlow().str());
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 }
 
 TEST(failoverRouteTest, leastFailuresComplex) {
@@ -488,19 +487,19 @@ TEST(failoverRouteTest, leastFailuresComplex) {
                                            "route01",
                                            json);
 
-  auto reply1 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply1.valueRangeSlow().str());
+  auto reply1 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
 
-  auto reply2 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply2.valueRangeSlow().str());
+  auto reply2 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply2).str());
 
-  auto reply3 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply3.valueRangeSlow().str());
+  auto reply3 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply3).str());
 
   // At this point, b has failed 2 times, c has failed 1 time
   // Next request is routed to c
-  TypedThriftRequest<cpp2::McSetRequest> req("0");
-  req.setValue("value");
+  McSetRequest req("0");
+  req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   rh->route(req);
 
   // Now both b and c have error count 2.  Next request routed to b.
@@ -509,15 +508,15 @@ TEST(failoverRouteTest, leastFailuresComplex) {
   rh->route(std::move(req));
 
   // Fail b twice
-  auto reply4 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply4.valueRangeSlow().str());
-  auto reply5 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply5.valueRangeSlow().str());
+  auto reply4 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply4).str());
+  auto reply5 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply5).str());
 
   // Now b and c have same error count (2)
-  auto reply6 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("b", reply6.valueRangeSlow().str());
+  auto reply6 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply6).str());
 
-  auto reply7 = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-  EXPECT_EQ("c", reply7.valueRangeSlow().str());
+  auto reply7 = rh->route(McGetRequest("0"));
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply7).str());
 }

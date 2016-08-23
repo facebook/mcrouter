@@ -20,10 +20,6 @@ namespace memcache {
 
 struct CodecIdRange;
 class CompressionCodec;
-template <class T>
-class TypedThriftMessage;
-template <class T>
-class TypedThriftRequest;
 
 /**
  * Class for serializing requests in the form of thrift structs.
@@ -52,8 +48,8 @@ class CaretSerializedMessage {
    *
    * @return true iff message was successfully prepared.
    */
-  template <class ThriftType>
-  bool prepare(const TypedThriftRequest<ThriftType>& req,
+  template <class Request>
+  bool prepare(const Request& req,
                size_t reqId,
                const CodecIdRange& supportedCodecs,
                const struct iovec*& iovOut,
@@ -62,15 +58,15 @@ class CaretSerializedMessage {
   /**
    * Prepare replies for serialization
    *
-   * @param  reply    TypedReply
+   * @param  reply    typed reply
    * @param  codec    Codec to use to compress the reply. If nullptr, reply
    *                  won't be compressed.
    * @param  iovOut   will be set to the beginning of array of ivecs
    * @param  niovOut  number of valid iovecs referenced by iovOut.
    * @return true iff message was successfully prepared.
    */
-  template <class ThriftType>
-  bool prepare(TypedThriftReply<ThriftType>&& reply,
+  template <class Reply>
+  bool prepare(Reply&& reply,
                size_t reqId,
                CompressionCodec* codec,
                const struct iovec*& iovOut,
@@ -79,8 +75,8 @@ class CaretSerializedMessage {
  private:
   carbon::CarbonQueueAppenderStorage storage_;
 
-  template <class ThriftType>
-  bool fill(const TypedThriftRequest<ThriftType>& tmsg,
+  template <class Message>
+  bool fill(const Message& message,
             uint32_t reqId,
             size_t typeId,
             uint64_t traceId,
@@ -88,8 +84,8 @@ class CaretSerializedMessage {
             const struct iovec*& iovOut,
             size_t& niovOut);
 
-  template <class ThriftType>
-  bool fill(const TypedThriftReply<ThriftType>& tmsg,
+  template <class Message>
+  bool fill(const Message& message,
             uint32_t reqId,
             size_t typeId,
             uint64_t traceId,

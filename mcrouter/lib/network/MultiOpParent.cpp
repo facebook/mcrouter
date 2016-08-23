@@ -26,8 +26,9 @@ bool MultiOpParent::reply(mc_res_t result,
       !reply_.hasValue()) {
     stolen = true;
     error_ = true;
-    reply_.emplace(result, std::move(errorMessage));
-    reply_->setAppSpecificErrorCode(errorCode);
+    reply_.emplace(result);
+    reply_->message() = std::move(errorMessage);
+    reply_->appSpecificErrorCode() = errorCode;
   }
 
   assert(waiting_ > 0);
@@ -36,7 +37,6 @@ bool MultiOpParent::reply(mc_res_t result,
   if (!waiting_ && end_.hasValue()) {
     release();
   }
-
 
   return stolen;
 }
@@ -55,8 +55,7 @@ void MultiOpParent::release() {
   McServerRequestContext::reply(std::move(*end_), std::move(*reply_));
   // It doesn't really matter what reply type we use for the multi-op
   // blocking context
-  McServerRequestContext::reply(
-      std::move(block_), TypedThriftReply<cpp2::McGetReply>());
+  McServerRequestContext::reply(std::move(block_), McGetReply());
 }
 
 }}  // facebook::memcache

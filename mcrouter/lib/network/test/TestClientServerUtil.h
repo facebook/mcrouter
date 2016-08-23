@@ -21,29 +21,25 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
-#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 
 namespace facebook { namespace memcache { namespace test {
 
-class TestServerOnRequest
-    : public ThriftMsgDispatcher<TRequestList,
-                                 TestServerOnRequest,
-                                 McServerRequestContext&&> {
+class TestServerOnRequest : public CarbonMessageDispatcher<
+                                TRequestList,
+                                TestServerOnRequest,
+                                McServerRequestContext&&> {
  public:
   TestServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder);
 
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<cpp2::McGetRequest>&& req);
+  void onRequest(McServerRequestContext&& ctx, McGetRequest&& req);
 
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<cpp2::McSetRequest>&& req);
+  void onRequest(McServerRequestContext&& ctx, McSetRequest&& req);
 
-  void onRequest(McServerRequestContext&& ctx,
-                 TypedThriftRequest<cpp2::McVersionRequest>&& req);
+  void onRequest(McServerRequestContext&& ctx, McVersionRequest&& req);
 
   template <class Request>
   void onRequest(McServerRequestContext&&, Request&&) {

@@ -1,6 +1,4 @@
-namespace cpp2 facebook.memcache.cpp2
-
-typedef binary (cpp2.type = "folly::IOBuf") IOBuf
+namespace facebook::memcache::test;
 
 struct ManyFields {
   1: IOBuf buf1;
@@ -43,4 +41,4 @@ struct ManyFields {
   38: IOBuf buf38;
   39: IOBuf buf39;
   40: IOBuf buf40;
-}
+};

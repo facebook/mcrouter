@@ -17,8 +17,7 @@
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/lib/FailoverContext.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
@@ -76,8 +75,7 @@ class FailoverRoute {
     return doRoute(req);
   }
 
-  TypedThriftReply<cpp2::McLeaseSetReply> route(
-      const TypedThriftRequest<cpp2::McLeaseSetRequest>& req) {
+  McLeaseSetReply route(const McLeaseSetRequest& req) {
     if (!enableLeasePairing_) {
       return doRoute(req);
     }
@@ -85,9 +83,9 @@ class FailoverRoute {
     // Look into LeaseTokenMap
     auto& proxy = fiber_local::getSharedCtx()->proxy();
     auto& map = proxy.router().leaseTokenMap();
-    if (auto item = map.query(name_, req->get_leaseToken())) {
-      auto mutReq = req.clone();
-      mutReq->set_leaseToken(item->originalToken);
+    if (auto item = map.query(name_, req.leaseToken())) {
+      auto mutReq = req;
+      mutReq.leaseToken() = item->originalToken;
       stat_incr(proxy.stats, redirected_lease_set_count_stat, 1);
       assert(targets_.size() > item->routeHandleChildIndex);
       return targets_[item->routeHandleChildIndex]->route(mutReq);
@@ -97,14 +95,10 @@ class FailoverRoute {
     return targets_[0]->route(req);
   }
 
-  TypedThriftReply<cpp2::McLeaseGetReply> route(
-      const TypedThriftRequest<cpp2::McLeaseGetRequest>& req) {
-
+  McLeaseGetReply route(const McLeaseGetRequest& req) {
     size_t childIndex = 0;
     auto reply = doRoute(req, childIndex);
-
-    const uint64_t leaseToken =
-      reply->get_leaseToken() ? *reply->get_leaseToken() : 0;
+    const auto leaseToken = reply.leaseToken();
 
     if (!enableLeasePairing_ || leaseToken <= 1) {
       return reply;
@@ -116,9 +110,9 @@ class FailoverRoute {
     // with special tokens space, we need to store it in the map even if we
     // didn't failover.
     if (childIndex > 0 || map.conflicts(leaseToken)) {
-      auto specialToken = map.insert(name_,
-                                     { leaseToken, childIndex });
-      reply->set_leaseToken(specialToken);
+      auto specialToken =
+          map.insert(name_, {static_cast<uint64_t>(leaseToken), childIndex});
+      reply.leaseToken() = specialToken;
     }
 
     return reply;
@@ -162,7 +156,7 @@ class FailoverRoute {
     // Failover
     return fiber_local::runWithLocals([this, &req, &proxy,
                                        &normalReply, &childIndex]() {
-      fiber_local::setFailoverTag(failoverTagging_ && req.hasHashStop());
+      fiber_local::setFailoverTag(failoverTagging_ && req.key().hasHashStop());
       fiber_local::addRequestClass(RequestClass::kFailover);
       auto doFailover = [this, &req, &proxy, &normalReply](
           typename FailoverPolicyT::Iterator& child) {
@@ -191,7 +185,7 @@ class FailoverRoute {
       }
 
       auto failoverReply = doFailover(cur);
-      if (failoverReply.isError()) {
+      if (isErrorResult(failoverReply.result())) {
         stat_incr(proxy.stats, failover_all_failed_stat, 1);
       }
 

@@ -2,21 +2,6 @@ SUBDIRS = . allocator config cycles fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
-BUILT_SOURCES = \
-  network/gen-cpp2/mc_caret_protocol_types.cpp \
-  network/gen-cpp2/mc_caret_protocol_types.h \
-  network/gen-cpp2/mc_caret_protocol_types_custom_protocol.h
-
-# The `sed` hack below is necessary until the Thrift compiler is modified
-# to not generate service-related includes when linking only against
-# libthriftprotocol.
-network/gen-cpp2/mc_caret_protocol_types.cpp: network/gen-cpp2/mc_caret_protocol_types.h
-network/gen-cpp2/mc_caret_protocol_types_custom_protocol.h: network/gen-cpp2/mc_caret_protocol_types.h
-network/gen-cpp2/mc_caret_protocol_types.h: network/mc_caret_protocol.thrift
-	PYTHONPATH=$(THRIFT2_COMP_DIR)/..:$$PYTHONPATH $(THRIFT) --gen cpp2 -o network/ $<
-	find network/gen-cpp2/ -name 'mc_caret_protocol*' -type f | xargs sed -i 's/^.*GeneratedCodeHelper\.h.*$$//g'
-	find network/gen-cpp2/ -name 'mc_caret_protocol*' -type f | xargs sed -i 's/^.*Cpp2ConnContext\.h.*$$//g'
-
 libmcrouter_a_SOURCES = \
   CacheClientStats.h \
   Ch3HashFunc.h \
@@ -32,8 +17,6 @@ libmcrouter_a_SOURCES = \
   IovecCursor-inl.h \
   IovecCursor.cpp \
   IovecCursor.h \
-  Keys.cpp \
-  Keys.h \
   Lz4Immutable.cpp \
   Lz4Immutable.h \
   MessageStorage.h \
@@ -150,6 +133,9 @@ libmcrouter_a_SOURCES = \
   network/AsyncMcServerWorker.cpp \
   network/AsyncMcServerWorker.h \
   network/AsyncMcServerWorkerOptions.h \
+  network/CarbonMessageDispatcher.h \
+  network/CarbonMessageList.h \
+  network/CarbonMessageTraits.h \
   network/CaretHeader.h \
   network/CaretSerializedMessageImpl-inl.h \
   network/CaretSerializedMessageImpl.h \
@@ -158,8 +144,6 @@ libmcrouter_a_SOURCES = \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \
-  network/gen-cpp2/mc_caret_protocol_types.cpp \
-  network/gen-cpp2/mc_caret_protocol_types.h \
   network/McAsciiParser-gen.cpp \
   network/McAsciiParser-inl.h \
   network/McAsciiParser.cpp \
@@ -176,6 +160,7 @@ libmcrouter_a_SOURCES = \
   network/McServerRequestContext.h \
   network/McServerSession.cpp \
   network/McServerSession.h \
+  network/MemcacheMessageHelpers.h \
   network/MockMcClientTransport.cpp \
   network/MockMcClientTransport.h \
   network/MultiOpParent.cpp \
@@ -184,8 +169,6 @@ libmcrouter_a_SOURCES = \
   network/ServerMcParser.h \
   network/ThreadLocalSSLContextProvider.cpp \
   network/ThreadLocalSSLContextProvider.h \
-  network/ThriftMessageList.h \
-  network/ThriftMsgDispatcher.h \
   network/UmbrellaProtocol.cpp \
   network/UmbrellaProtocol.h \
   network/UniqueIntrusiveList.h \

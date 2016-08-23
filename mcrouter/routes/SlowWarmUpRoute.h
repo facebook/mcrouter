@@ -102,9 +102,9 @@ class SlowWarmUpRoute {
   template <class Request>
   ReplyT<Request> routeImpl(const Request& req) const {
     auto reply = target_->route(req);
-    if (reply.isHit()) {
+    if (isHitResult(reply.result())) {
       ++stats_.hits;
-    } else if (reply.isMiss()) {
+    } else if (isMissResult(reply.result())) {
       ++stats_.misses;
     }
     return std::move(reply);

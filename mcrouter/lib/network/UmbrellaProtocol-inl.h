@@ -13,8 +13,9 @@
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/network/ThriftMessageTraits.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 
 namespace facebook { namespace memcache {
 
@@ -46,266 +47,235 @@ struct TagSet {
 
 // Get-like ops
 template <>
-struct TagSet<McOperation<mc_op_get>, TypedThriftReply<cpp2::McGetReply>> {
+struct TagSet<McOperation<mc_op_get>, McGetReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_get>, TypedThriftRequest<cpp2::McGetRequest>> {
+struct TagSet<McOperation<mc_op_get>, McGetRequest> {
   using Tags = List<FlagsTag, KeyTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_gets>, TypedThriftReply<cpp2::McGetsReply>> {
+struct TagSet<McOperation<mc_op_gets>, McGetsReply> {
   using Tags = List<CasTag, ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_gets>,
-              TypedThriftRequest<cpp2::McGetsRequest>> {
+struct TagSet<McOperation<mc_op_gets>, McGetsRequest> {
   using Tags = List<KeyTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_metaget>,
-              TypedThriftReply<cpp2::McMetagetReply>> {
-  using Tags = List<ErrCodeTag, ExptimeTag, FlagsTag, NumberTag, ResultTag,
-                    ValueTag>;
+struct TagSet<McOperation<mc_op_metaget>, McMetagetReply> {
+  using Tags =
+      List<ErrCodeTag, ExptimeTag, FlagsTag, NumberTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_metaget>,
-              TypedThriftRequest<cpp2::McMetagetRequest>> {
+struct TagSet<McOperation<mc_op_metaget>, McMetagetRequest> {
   using Tags = List<KeyTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_lease_get>,
-              TypedThriftReply<cpp2::McLeaseGetReply>> {
+struct TagSet<McOperation<mc_op_lease_get>, McLeaseGetReply> {
   using Tags = List<ErrCodeTag, FlagsTag, LeaseTokenTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_lease_get>,
-              TypedThriftRequest<cpp2::McLeaseGetRequest>> {
+struct TagSet<McOperation<mc_op_lease_get>, McLeaseGetRequest> {
   using Tags = List<KeyTag>;
 };
 
 // Update-like ops
 template <>
-struct TagSet<McOperation<mc_op_set>, TypedThriftReply<cpp2::McSetReply>> {
+struct TagSet<McOperation<mc_op_set>, McSetReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_set>, TypedThriftRequest<cpp2::McSetRequest>> {
+struct TagSet<McOperation<mc_op_set>, McSetRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_add>, TypedThriftReply<cpp2::McAddReply>> {
+struct TagSet<McOperation<mc_op_add>, McAddReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_add>, TypedThriftRequest<cpp2::McAddRequest>> {
+struct TagSet<McOperation<mc_op_add>, McAddRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_replace>,
-              TypedThriftReply<cpp2::McReplaceReply>> {
+struct TagSet<McOperation<mc_op_replace>, McReplaceReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_replace>,
-              TypedThriftRequest<cpp2::McReplaceRequest>> {
+struct TagSet<McOperation<mc_op_replace>, McReplaceRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_append>,
-              TypedThriftReply<cpp2::McAppendReply>> {
+struct TagSet<McOperation<mc_op_append>, McAppendReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_append>,
-              TypedThriftRequest<cpp2::McAppendRequest>> {
+struct TagSet<McOperation<mc_op_append>, McAppendRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_prepend>,
-              TypedThriftReply<cpp2::McPrependReply>> {
+struct TagSet<McOperation<mc_op_prepend>, McPrependReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_prepend>,
-              TypedThriftRequest<cpp2::McPrependRequest>> {
+struct TagSet<McOperation<mc_op_prepend>, McPrependRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_cas>, TypedThriftReply<cpp2::McCasReply>> {
+struct TagSet<McOperation<mc_op_cas>, McCasReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_cas>, TypedThriftRequest<cpp2::McCasRequest>> {
+struct TagSet<McOperation<mc_op_cas>, McCasRequest> {
   using Tags = List<CasTag, ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_lease_set>,
-              TypedThriftReply<cpp2::McLeaseSetReply>> {
+struct TagSet<McOperation<mc_op_lease_set>, McLeaseSetReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_lease_set>,
-              TypedThriftRequest<cpp2::McLeaseSetRequest>> {
+struct TagSet<McOperation<mc_op_lease_set>, McLeaseSetRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, LeaseTokenTag, ValueTag>;
 };
 
 // Arithmetic-like ops
 template <>
-struct TagSet<McOperation<mc_op_incr>, TypedThriftReply<cpp2::McIncrReply>> {
+struct TagSet<McOperation<mc_op_incr>, McIncrReply> {
   using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_incr>,
-              TypedThriftRequest<cpp2::McIncrRequest>> {
+struct TagSet<McOperation<mc_op_incr>, McIncrRequest> {
   using Tags = List<DeltaTag, KeyTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_decr>, TypedThriftReply<cpp2::McDecrReply>> {
+struct TagSet<McOperation<mc_op_decr>, McDecrReply> {
   using Tags = List<ErrCodeTag, FlagsTag, DeltaTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_decr>,
-              TypedThriftRequest<cpp2::McDecrRequest>> {
+struct TagSet<McOperation<mc_op_decr>, McDecrRequest> {
   using Tags = List<DeltaTag, KeyTag>;
 };
 
 // Delete-like ops
 template <>
-struct TagSet<McOperation<mc_op_delete>,
-              TypedThriftReply<cpp2::McDeleteReply>> {
+struct TagSet<McOperation<mc_op_delete>, McDeleteReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_delete>,
-              TypedThriftRequest<cpp2::McDeleteRequest>> {
+struct TagSet<McOperation<mc_op_delete>, McDeleteRequest> {
   using Tags = List<ExptimeTag, FlagsTag, KeyTag, ValueTag>;
 };
 
 // Touch op
 template <>
-struct TagSet<McOperation<mc_op_touch>,
-              TypedThriftReply<cpp2::McTouchReply>> {
+struct TagSet<McOperation<mc_op_touch>, McTouchReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_touch>,
-              TypedThriftRequest<cpp2::McTouchRequest>> {
+struct TagSet<McOperation<mc_op_touch>, McTouchRequest> {
   using Tags = List<ExptimeTag, KeyTag>;
 };
 
 // Version op
 template <>
-struct TagSet<McOperation<mc_op_version>,
-              TypedThriftReply<cpp2::McVersionReply>> {
+struct TagSet<McOperation<mc_op_version>, McVersionReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_version>,
-              TypedThriftRequest<cpp2::McVersionRequest>> {
+struct TagSet<McOperation<mc_op_version>, McVersionRequest> {
   using Tags = List<>;
 };
 
 // Flush
 template <>
-struct TagSet<McOperation<mc_op_flushall>,
-              TypedThriftReply<cpp2::McFlushAllReply>> {
+struct TagSet<McOperation<mc_op_flushall>, McFlushAllReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_flushall>,
-              TypedThriftRequest<cpp2::McFlushAllRequest>> {
+struct TagSet<McOperation<mc_op_flushall>, McFlushAllRequest> {
   using Tags = List<>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_flushre>,
-              TypedThriftReply<cpp2::McFlushReReply>> {
+struct TagSet<McOperation<mc_op_flushre>, McFlushReReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_flushre>,
-              TypedThriftRequest<cpp2::McFlushReRequest>> {
+struct TagSet<McOperation<mc_op_flushre>, McFlushReRequest> {
   using Tags = List<>;
 };
 
 // Shutdown op
 template <>
-struct TagSet<McOperation<mc_op_shutdown>,
-              TypedThriftReply<cpp2::McShutdownReply>> {
+struct TagSet<McOperation<mc_op_shutdown>, McShutdownReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_shutdown>,
-              TypedThriftRequest<cpp2::McShutdownRequest>> {
+struct TagSet<McOperation<mc_op_shutdown>, McShutdownRequest> {
   using Tags = List<>;
 };
 
 // Quit op
 template <>
-struct TagSet<McOperation<mc_op_quit>, TypedThriftReply<cpp2::McQuitReply>> {
+struct TagSet<McOperation<mc_op_quit>, McQuitReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_quit>,
-              TypedThriftRequest<cpp2::McQuitRequest>> {
+struct TagSet<McOperation<mc_op_quit>, McQuitRequest> {
   using Tags = List<>;
 };
 
 // Stats op
 template <>
-struct TagSet<McOperation<mc_op_stats>, TypedThriftReply<cpp2::McStatsReply>> {
+struct TagSet<McOperation<mc_op_stats>, McStatsReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_stats>,
-              TypedThriftRequest<cpp2::McStatsRequest>> {
+struct TagSet<McOperation<mc_op_stats>, McStatsRequest> {
   using Tags = List<KeyTag>;
 };
 
 // Exec op
 template <>
-struct TagSet<McOperation<mc_op_exec>, TypedThriftReply<cpp2::McExecReply>> {
+struct TagSet<McOperation<mc_op_exec>, McExecReply> {
   using Tags = List<ErrCodeTag, FlagsTag, ResultTag, ValueTag>;
 };
 
 template <>
-struct TagSet<McOperation<mc_op_exec>,
-              TypedThriftRequest<cpp2::McExecRequest>> {
+struct TagSet<McOperation<mc_op_exec>, McExecRequest> {
   using Tags = List<>;
 };
-
 
 uint32_t const kUmbrellaResToMc[mc_nres] = {
 #define UM_RES(mc, um) [um] = mc,
@@ -344,46 +314,46 @@ struct FieldPolicyHandler<List<Tags...>> {
 template <class Op, class Message>
 void parseFieldImpl(Op, CasTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message->set_casToken(folly::Endian::big((uint64_t)entry.data.val));
+  message.casToken() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, DeltaTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message->set_delta(folly::Endian::big((uint64_t)entry.data.val));
+  message.delta() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, ErrCodeTag, Message& message,
                     const folly::IOBuf& source, const uint8_t* body,
                     const um_elist_entry_t& entry) {
-  message.setAppSpecificErrorCode(folly::Endian::big((uint64_t)entry.data.val));
+  message.appSpecificErrorCode() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, ExptimeTag, Message& message,
                     const folly::IOBuf& source, const uint8_t* body,
                     const um_elist_entry_t& entry) {
-  message->set_exptime(folly::Endian::big((uint64_t)entry.data.val));
+  setExptime(message, folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, FlagsTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message.setFlags(folly::Endian::big((uint64_t)entry.data.val));
+  setFlags(message, folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, LeaseTokenTag, Message& message,
                     const folly::IOBuf& source, const uint8_t* body,
                     const um_elist_entry_t& entry) {
-  message->set_leaseToken(folly::Endian::big((uint64_t)entry.data.val));
+  message.leaseToken() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
 void parseFieldImpl(Op, NumberTag, Message& message, const folly::IOBuf& source,
                     const uint8_t* body, const um_elist_entry_t& entry) {
-  message->set_age(folly::Endian::big((uint64_t)entry.data.val));
+  message.age() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
@@ -396,11 +366,11 @@ void parseFieldImpl(Op, ResultTag, Message& message, const folly::IOBuf& source,
                      "which exceeds the number of known results: {}.", umResult,
                      static_cast<uint64_t>(mc_nres)));
   }
-  message.setResult((mc_res_t)kUmbrellaResToMc[umResult]);
+  message.result() = (mc_res_t)kUmbrellaResToMc[umResult];
 }
 
-template <class Op, class ThriftType>
-void parseFieldImpl(Op, KeyTag, TypedThriftRequest<ThriftType>& message,
+template <class Op, class Message>
+void parseFieldImpl(Op, KeyTag, Message& message,
                     const folly::IOBuf& source, const uint8_t* body,
                     const um_elist_entry_t& entry) {
   folly::IOBuf tmp;
@@ -409,21 +379,21 @@ void parseFieldImpl(Op, KeyTag, TypedThriftRequest<ThriftType>& message,
                  folly::Endian::big((uint32_t)entry.data.str.len) - 1)) {
     throw std::runtime_error("Value: invalid offset/length");
   }
-  message.setKey(std::move(tmp));
+  message.key() = std::move(tmp);
 }
 
 template <class Op, class Message>
 void parseValueFieldImpl(Op, Message& message, const folly::IOBuf& source,
                          const uint8_t* body, const um_elist_entry_t& entry) {
   // TODO(jmswen) Consider migrating error messages from 'value' field to
-  // 'message' field for TypedThriftReply
+  // 'message' field for Carbon replies
   folly::IOBuf tmp;
   if (!cloneInto(tmp, source,
                  body + folly::Endian::big((uint32_t)entry.data.str.offset),
                  folly::Endian::big((uint32_t)entry.data.str.len) - 1)) {
     throw std::runtime_error("Value: invalid offset/length");
   }
-  message.setValue(std::move(tmp));
+  setValue(message, std::move(tmp));
 }
 
 template <class Op, class Message>
@@ -433,7 +403,7 @@ void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
 }
 
 inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
-                           TypedThriftReply<cpp2::McMetagetReply>& message,
+                           McMetagetReply& message,
                            const folly::IOBuf& source, const uint8_t* body,
                            const um_elist_entry_t& entry) {
   const auto valueLen = folly::Endian::big((uint32_t)entry.data.str.len);
@@ -448,8 +418,8 @@ inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
   }
 
   // In case of error, 'value' field contains error message
-  if (message.isError()) {
-    message->set_message(std::move(valueStr));
+  if (isErrorResult(message.result())) {
+    message.message() = std::move(valueStr);
     return;
   }
 
@@ -458,18 +428,17 @@ inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
     return;
   }
 
-  message->set_ipAddress(std::move(valueStr));
+  message.ipAddress() = std::move(valueStr);
 
   char buffer[INET6_ADDRSTRLEN] = {0};
   char scratchBuffer[INET6_ADDRSTRLEN];
-  memcpy(buffer, message->ipAddress.data(), message->ipAddress.size());
+  memcpy(buffer, message.ipAddress().data(), message.ipAddress().size());
   if (inet_pton(AF_INET6, buffer, scratchBuffer) > 0) {
-    message->set_ipv(6);
+    message.ipv() = 6;
   } else if (inet_pton(AF_INET, buffer, scratchBuffer) > 0) {
-    message->set_ipv(4);
+    message.ipv() = 4;
   } else { // Bad IP address, unset IP-related fields
-    message->ipAddress.clear();
-    message->__isset.ipAddress = false;
+    message.ipAddress().clear();
   }
 }
 
@@ -549,7 +518,7 @@ ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
                                    const uint8_t* header, size_t nheader,
                                    const uint8_t* body, size_t nbody) {
   using namespace detail;
-  using Op = typename Request::OpType;
+  using Op = McOperation<OpFromType<Request, RequestOpMapping>::value>;
 
   ReplyT<Request> reply;
   umbrellaParseMessage(reply, Op(), source, header, nheader, body, nbody);
@@ -576,14 +545,15 @@ bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
   // Serialize type-specific fields, e.g., cas token for cas requests
   prepareHelper(request);
 
-  auto key = request.fullKey();
+  auto key = request.key().fullKey();
   if (key.begin() != nullptr) {
     appendString(msg_key, reinterpret_cast<const uint8_t*>(key.begin()),
                  key.size());
   }
 
-  auto valueRange = request.valueRangeSlow();
-  if (valueRange.begin() != nullptr) {
+  auto valuePtr = carbon::valuePtrUnsafe(request);
+  if (valuePtr != nullptr) {
+    auto valueRange = coalesceAndGetRange(const_cast<folly::IOBuf&>(*valuePtr));
     appendString(msg_value,
                  reinterpret_cast<const uint8_t*>(valueRange.begin()),
                  valueRange.size());
@@ -635,10 +605,10 @@ bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
   prepareHelper(reply);
   /* TODO: if we intend to pass chained IOBufs as values,
      we can optimize this to write multiple iovs directly */
-  if (reply.hasValue()) {
+  if (auto valuePtr = carbon::valuePtrUnsafe(reply)) {
     // TODO(jmswen) Use 'message' field for error messages instead of 'value'?
     assert(!iobuf_.hasValue());
-    iobuf_.emplace(std::move(*reply.valuePtrUnsafe()));
+    iobuf_.emplace(std::move(*valuePtr));
     auto valueRange = coalesceAndGetRange(*iobuf_);
     appendString(msg_value,
                  reinterpret_cast<const uint8_t*>(valueRange.begin()),
@@ -663,7 +633,7 @@ template <class Request>
 Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
                              size_t nheader, const uint8_t* body, size_t nbody,
                              uint64_t& reqidOut) {
-  using Op = typename Request::OpType;
+  using Op = McOperation<OpFromType<Request, RequestOpMapping>::value>;
 
   Request req;
   reqidOut = 0;

@@ -19,7 +19,7 @@ class DefaultShadowPolicy {
  public:
   template <class Request>
   static Request updateRequestForShadowing(const Request& req) {
-    return req.clone();
+    return req;
   }
 
   template <class Request>

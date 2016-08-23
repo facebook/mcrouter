@@ -16,6 +16,7 @@
 #include <folly/fibers/AddTasks.h>
 
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -51,7 +52,7 @@ class AllMajorityRoute {
 
     std::vector<std::function<Reply()>> funcs;
     funcs.reserve(children_.size());
-    auto reqCopy = std::make_shared<Request>(req.clone());
+    auto reqCopy = std::make_shared<Request>(req);
     for (auto& rh : children_) {
       funcs.push_back(
         [reqCopy, rh]() {
@@ -63,18 +64,17 @@ class AllMajorityRoute {
     size_t counts[mc_nres];
     std::fill(counts, counts + mc_nres, 0);
     size_t majorityCount = 0;
-    Reply majorityReply = Reply(DefaultReply, req);
+    Reply majorityReply = createReply(DefaultReply, req);
 
     auto taskIt = folly::fibers::addTasks(funcs.begin(), funcs.end());
     taskIt.reserve(children_.size() / 2 + 1);
-    while (taskIt.hasNext() &&
-           majorityCount < children_.size() / 2 + 1) {
-
+    while (taskIt.hasNext() && majorityCount < children_.size() / 2 + 1) {
       auto reply = taskIt.awaitNext();
       auto result = reply.result();
 
       ++counts[result];
-      if ((counts[result] == majorityCount && reply.worseThan(majorityReply)) ||
+      if ((counts[result] == majorityCount &&
+           worseThan(reply.result(), majorityReply.result())) ||
           (counts[result] > majorityCount)) {
         majorityReply = std::move(reply);
         majorityCount = counts[result];

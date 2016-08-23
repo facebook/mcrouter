@@ -63,14 +63,18 @@ class LoggingRoute {
 
     auto& callback = ctx->proxy().router().postprocessCallback();
     if (callback) {
-      if (reply.isHit()) {
-        callback(req.fullKey(), reply.flags(), reply.valueRangeSlow(),
-                 Request::name, userIp);
+      if (isHitResult(reply.result())) {
+        callback(
+            req.key().fullKey(),
+            reply.flags(),
+            carbon::valueRangeSlow(reply),
+            Request::name,
+            userIp);
       }
     } else {
-      const auto replyLength = reply.valuePtrUnsafe() ?
-        reply.valuePtrUnsafe()->computeChainDataLength() : 0;
-      LOG(INFO) << "request key: " << req.fullKey()
+      const auto replyLength = carbon::valuePtrUnsafe(reply) ?
+        carbon::valuePtrUnsafe(reply)->computeChainDataLength() : 0;
+      LOG(INFO) << "request key: " << req.key().fullKey()
                 << " response: " << mc_res_to_string(reply.result())
                 << " responseLength: " << replyLength
                 << " user ip: " << userIp;

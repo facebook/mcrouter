@@ -13,6 +13,7 @@
 #include <string>
 
 #include <folly/io/IOBuf.h>
+#include <folly/Optional.h>
 
 namespace folly {
 class IOBuf;
@@ -27,6 +28,7 @@ folly::StringPiece getRange(const folly::IOBuf& buf);
 
 folly::StringPiece coalesceAndGetRange(std::unique_ptr<folly::IOBuf>& buf);
 folly::StringPiece coalesceAndGetRange(folly::IOBuf& buf);
+folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf);
 
 bool hasSameMemoryRegion(const folly::IOBuf& buf,
                          folly::StringPiece range);

@@ -44,7 +44,8 @@ void SnifferParser<Callback>::requestReady(uint64_t msgId, Request&& request) {
   if (msgId != 0) {
     auto msgIt = msgs_.emplace(
         msgId,
-        Item(msgId, request.fullKey().str(), currentMsgStartTimeUs_, now));
+        Item(
+            msgId, request.key().fullKey().str(), currentMsgStartTimeUs_, now));
     evictionQueue_.push_back(msgIt.first->second);
   }
   callback_.requestReady(

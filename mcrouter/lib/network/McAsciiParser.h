@@ -13,12 +13,13 @@
 #include <typeindex>
 
 #include <folly/io/IOBuf.h>
+#include <folly/Optional.h>
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/MessageStorage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/Operation.h"
 
 namespace facebook { namespace memcache {
 
@@ -67,6 +68,7 @@ class McAsciiParserBase {
    * @return true iff the value was completely read.
    */
   bool readValue(folly::IOBuf& buffer, folly::IOBuf& to);
+  bool readValue(folly::IOBuf& buffer, folly::Optional<folly::IOBuf>& to);
 
   static void appendKeyPiece(const folly::IOBuf& from,
                              folly::IOBuf& to,
@@ -156,7 +158,7 @@ class McClientAsciiParser : public McAsciiParserBase {
   static void appendCurrentCharTo(const folly::IOBuf& from, folly::IOBuf& to,
                                   const char* pos);
 
-  MessageStorage<MapT<ReplyT, ThriftRequestList>> currentMessage_;
+  MessageStorage<MapT<ReplyT, CarbonRequestList>> currentMessage_;
 
   using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
@@ -218,12 +220,12 @@ class McServerAsciiParser : public McAsciiParserBase {
 
   void finishReq();
 
-  std::unique_ptr<detail::CallbackBase<ThriftRequestList>> callback_;
+  std::unique_ptr<detail::CallbackBase<CarbonRequestList>> callback_;
 
   const char* keyPieceStart_{nullptr};
   folly::IOBuf currentKey_;
   bool noreply_{false};
-  MessageStorage<ThriftRequestList> currentMessage_;
+  MessageStorage<CarbonRequestList> currentMessage_;
 
   using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};

@@ -46,12 +46,35 @@ inline void fbtraceAddItem(fbtrace_item_t* info, size_t& idx,
   item->val_len = value.size();
 }
 
+template <class Request>
+typename std::enable_if<Request::hasKey, void>::type
+addTraceKey(const Request& request, fbtrace_item_t* info, size_t idx) {
+  fbtraceAddItem(info, idx, "key", request.key().routingKey());
+}
+
+template <class Request>
+typename std::enable_if<!Request::hasKey, void>::type
+addTraceKey(const Request&, fbtrace_item_t*, size_t) {}
+
+template <class Request>
+typename std::enable_if<Request::hasValue, void>::type
+addTraceValue(const Request& request, fbtrace_item_t* info, size_t idx) {
+  const auto* value = carbon::valuePtrUnsafe(request);
+  fbtraceAddItem(
+      info,
+      idx,
+      "value_len",
+      folly::to<std::string>(value ? value->computeChainDataLength() : 0));
+}
+
+template <class Request>
+typename std::enable_if<!Request::hasValue, void>::type
+addTraceValue(const Request&, fbtrace_item_t*, size_t) {}
+
 } // anonymous
 
 template <class Request>
 bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
-  constexpr mc_op_t McOp = Request::OpType::mc_op;
-
   mc_fbtrace_info_s* fbtraceInfo = request.fbtraceInfo();
 
   if (fbtraceInfo == nullptr) {
@@ -62,41 +85,34 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
 
   fbtrace_item_t info[4];
   size_t idx = 0;
-  if (mc_op_has_key((mc_op_t)McOp)) {
 
-    fbtraceAddItem(info, idx, "key", request.routingKey());
-  }
-
-  std::string valueLen;
-  if (mc_op_has_value((mc_op_t)McOp)) {
-    valueLen = folly::to<std::string>(
-        request.valuePtrUnsafe()
-          ? request.valuePtrUnsafe()->computeChainDataLength() : 0);
-    fbtraceAddItem(info, idx, "value_len", valueLen);
-  }
-
+  addTraceKey(request, info, idx);
+  addTraceValue(request, info, idx);
   // host:port:transport:protocol or [ipv6]:port:transport:protocol
   std::string dest = ap.toString();
   fbtraceAddItem(info, idx, "remote:host", dest);
   fbtraceAddItem(info, idx, folly::StringPiece(), folly::StringPiece());
 
-  const char *op = mc_op_to_string((mc_op_t)McOp);
   const char *remote_service =
-    request.routingKey().startsWith("tao") ? FBTRACE_TAO : FBTRACE_MC;
+    request.key().routingKey().startsWith("tao") ? FBTRACE_TAO : FBTRACE_MC;
 
   /* fbtrace talks to scribe via thrift,
      which can use up too much stack space */
   return folly::fibers::runInMainContext(
-    [fbtraceInfo, op, remote_service, &info] {
-      if (fbtrace_request_send(&fbtraceInfo->fbtrace->node,
-                               &fbtraceInfo->child_node, fbtraceInfo->metadata,
-                               FBTRACE_METADATA_SZ, op, remote_service,
-                               info) != 0) {
-        VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
-        return false;
-      }
-      return true;
-    });
+      [fbtraceInfo, remote_service, &info] {
+        if (fbtrace_request_send(
+                &fbtraceInfo->fbtrace->node,
+                &fbtraceInfo->child_node,
+                fbtraceInfo->metadata,
+                FBTRACE_METADATA_SZ,
+                Request::name,
+                remote_service,
+                info) != 0) {
+          VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
+          return false;
+        }
+        return true;
+      });
 }
 
 inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,

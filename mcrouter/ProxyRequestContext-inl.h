@@ -8,8 +8,7 @@
  *
  */
 #include "mcrouter/lib/McKey.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/proxy.h"
 
 namespace facebook {
@@ -48,10 +47,12 @@ constexpr const char* kCommandNotSupportedStr = "Command not supported";
 template <class Request>
 bool precheckKey(ProxyRequestContextTyped<Request>& preq,
                  const Request& req) {
-  auto key = req.fullKey();
+  auto key = req.key().fullKey();
   auto err = isKeyValid(key);
   if (err != mc_req_err_valid) {
-    preq.sendReply(mc_res_local_error, mc_req_err_to_string(err));
+    ReplyT<Request> reply(mc_res_local_error);
+    reply.message() = mc_req_err_to_string(err);
+    preq.sendReply(std::move(reply));
     return false;
   }
   return true;
@@ -67,39 +68,42 @@ bool precheckRequest(ProxyRequestContextTyped<Request>& preq,
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<TypedThriftRequest<cpp2::McStatsRequest>>&,
-    const TypedThriftRequest<cpp2::McStatsRequest>&) {
+    ProxyRequestContextTyped<McStatsRequest>&,
+    const McStatsRequest&) {
   return true;
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<TypedThriftRequest<cpp2::McVersionRequest>>&,
-    const TypedThriftRequest<cpp2::McVersionRequest>&) {
+    ProxyRequestContextTyped<McVersionRequest>&,
+    const McVersionRequest&) {
   return true;
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<TypedThriftRequest<cpp2::McShutdownRequest>>& preq,
-    const TypedThriftRequest<cpp2::McShutdownRequest>&) {
+    ProxyRequestContextTyped<McShutdownRequest>& preq,
+    const McShutdownRequest&) {
   // Return error (pretend to not even understand the protocol)
   preq.sendReply(mc_res_bad_command);
   return false;
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<TypedThriftRequest<cpp2::McFlushReRequest>>& preq,
-    const TypedThriftRequest<cpp2::McFlushReRequest>&) {
+    ProxyRequestContextTyped<McFlushReRequest>& preq,
+    const McFlushReRequest&) {
   // Return 'Not supported' message
-  preq.sendReply(mc_res_local_error, kCommandNotSupportedStr);
+  McFlushReReply reply(mc_res_local_error);
+  reply.message() = kCommandNotSupportedStr;
+  preq.sendReply(std::move(reply));
   return false;
 }
 
 inline bool precheckRequest(
-    ProxyRequestContextTyped<TypedThriftRequest<cpp2::McFlushAllRequest>>& preq,
-    const TypedThriftRequest<cpp2::McFlushAllRequest>&) {
-
+    ProxyRequestContextTyped<McFlushAllRequest>& preq,
+    const McFlushAllRequest&) {
   if (!preq.proxy().getRouterOptions().enable_flush_cmd) {
-    preq.sendReply(mc_res_local_error, "Command disabled");
+    McFlushAllReply reply(mc_res_local_error);
+    reply.message() = "Command disabled";
+    preq.sendReply(std::move(reply));
     return false;
   }
   return true;

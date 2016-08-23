@@ -17,8 +17,6 @@
 #include <folly/Memory.h>
 #include <folly/Range.h>
 
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-
 namespace facebook { namespace memcache {
 
 /**
@@ -33,11 +31,9 @@ class MockMc {
     uint64_t flags{0};
 
     explicit Item(std::unique_ptr<folly::IOBuf> v);
-    template <class ThriftType>
-    explicit Item(const TypedThriftRequest<ThriftType>& req)
-      : value(req.valuePtrUnsafe()
-               ? req.valuePtrUnsafe()->clone()
-               : folly::make_unique<folly::IOBuf>()),
+    template <class Request>
+    explicit Item(const Request& req)
+      : value(req.value().clone()),
         exptime(req.exptime() != 0 && req.exptime() <= 60*60*24*30
             ? req.exptime() + time(nullptr)
             : req.exptime()),

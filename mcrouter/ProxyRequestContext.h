@@ -270,8 +270,8 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
    * DEPRECATED. Convenience method, that constructs reply and calls
    * non-template method.
    *
-   * WARNING: This function can be dangerous with new TypedThriftRequests.
-   * For TypedThriftRequests,
+   * WARNING: This function can be dangerous with new typed requests.
+   * For typed requests,
    *   ctx->sendReply(mc_res_local_error, "Error message")
    * does the right thing, while
    *   ctx->sendReply(mc_res_found, "value")

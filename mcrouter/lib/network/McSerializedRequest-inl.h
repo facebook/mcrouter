@@ -16,12 +16,12 @@ McSerializedRequest::McSerializedRequest(
     mc_protocol_t protocol,
     const CodecIdRange& compressionCodecs)
     : protocol_(protocol),
-      typeId_(IdFromType<typename Request::rawType, TRequestList>::value) {
+      typeId_(IdFromType<Request, TRequestList>::value) {
 
   switch (protocol_) {
     case mc_ascii_protocol:
       new (&asciiRequest_) AsciiSerializedRequest;
-      if (req.key().length() > MC_KEY_MAX_LEN_ASCII) {
+      if (req.key().size() > MC_KEY_MAX_LEN_ASCII) {
         result_ = Result::BAD_KEY;
         return;
       }
@@ -31,7 +31,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_caret_protocol:
       new (&caretRequest_) CaretSerializedMessage;
-      if (!checkKeyLength(req.key())) {
+      if (!checkKeyLength(req.key().raw())) {
         return;
       }
       if (!caretRequest_.prepare(
@@ -41,7 +41,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_umbrella_protocol:
       new (&umbrellaMessage_) UmbrellaSerializedMessage;
-      if (!checkKeyLength(req.key())) {
+      if (!checkKeyLength(req.key().raw())) {
         return;
       }
       if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {

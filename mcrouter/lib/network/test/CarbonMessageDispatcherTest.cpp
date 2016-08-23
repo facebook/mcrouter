@@ -14,27 +14,22 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
 using namespace facebook::memcache;
 
-using ThriftMsgList =
-  List<
-    TypedMsg<1, cpp2::McGetRequest>,
-    TypedMsg<3, cpp2::McSetRequest>
-  >;
+using CarbonTestMessageList =
+    List<TypedMsg<1, McGetRequest>, TypedMsg<3, McSetRequest>>;
 
-// using facebook::memcache::ThriftMsgDispatcher; will break the GCC build
+// using facebook::memcache::CarbonMessageDispatcher; will break the GCC build
 // until https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59815 is fixed
 struct TestCallback
-    : public facebook::memcache::ThriftMsgDispatcher<ThriftMsgList,
-                                                     TestCallback> {
-
-  std::function<void(TypedThriftRequest<cpp2::McGetRequest>&&)> onGet_;
-  std::function<void(TypedThriftRequest<cpp2::McSetRequest>&&)> onSet_;
+    : public CarbonMessageDispatcher<CarbonTestMessageList, TestCallback> {
+  std::function<void(McGetRequest&&)> onGet_;
+  std::function<void(McSetRequest&&)> onSet_;
 
   template <class F, class B>
   TestCallback(F&& onGet, B&& onSet)
@@ -42,33 +37,39 @@ struct TestCallback
         onSet_(std::move(onSet)) {
   }
 
-  void onTypedMessage(TypedThriftRequest<cpp2::McGetRequest>&& treq) {
-    onGet_(std::move(treq));
+  void onTypedMessage(McGetRequest&& req) {
+    onGet_(std::move(req));
   }
 
-  void onTypedMessage(TypedThriftRequest<cpp2::McSetRequest>&& treq) {
-    onSet_(std::move(treq));
+  void onTypedMessage(McSetRequest&& req) {
+    onSet_(std::move(req));
   }
 };
 
-TEST(ThriftMsg, basic) {
+TEST(CarbonMessage, basic) {
   /* construct a request */
-  cpp2::McGetRequest get;
-  get.key = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "12345");
-  get.__isset.key = true;
+  McGetRequest get;
+  get.key() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "12345");
 
   /* serialize into an iobuf */
-  apache::thrift::CompactProtocolWriter writer;
-  folly::IOBufQueue queue;
-  writer.setOutput(&queue);
-  get.write(&writer);
-  auto body = queue.move();
+  carbon::CarbonQueueAppenderStorage storage;
+  carbon::CarbonProtocolWriter writer(storage);
+  get.serialize(writer);
+
+  folly::IOBuf body(folly::IOBuf::CREATE, storage.computeBodySize());
+  const auto iovs = storage.getIovecs();
+  for (size_t i = 1 /* 0th iov is reserved for header */; i < iovs.second;
+       ++i) {
+    const struct iovec* iov = iovs.first + i;
+    std::memcpy(body.writableTail(), iov->iov_base, iov->iov_len);
+    body.append(iov->iov_len);
+  }
 
   UmbrellaMessageInfo headerInfo1;
   UmbrellaMessageInfo headerInfo2;
   headerInfo1.typeId = 1;
   headerInfo2.typeId = 2;
-  headerInfo1.bodySize = body->computeChainDataLength();
+  headerInfo1.bodySize = storage.computeBodySize();
   headerInfo2.bodySize = headerInfo1.bodySize;
 
   folly::IOBuf requestBuf1(folly::IOBuf::CREATE, 1024);
@@ -81,21 +82,18 @@ TEST(ThriftMsg, basic) {
       headerInfo2, reinterpret_cast<char*>(requestBuf2.writableTail()));
   requestBuf2.append(headerInfo2.headerSize);
 
-  requestBuf1.appendChain(body->clone());
-  requestBuf2.appendChain(std::move(body));
+  requestBuf1.appendChain(body.clone());
+  requestBuf2.appendChain(body.clone());
 
   bool getCalled = false;
   bool setCalled = false;
   TestCallback cb(
-      [&getCalled](TypedThriftRequest<cpp2::McGetRequest>&& treq) {
+      [&getCalled](McGetRequest&& req) {
         /* check unserialized request is the same as sent */
         getCalled = true;
-        EXPECT_EQ(0,
-                  std::strcmp(reinterpret_cast<const char*>(treq->key.data()),
-                              "12345"));
-        EXPECT_TRUE(treq->__isset.key);
+        EXPECT_EQ(req.key().fullKey(), folly::StringPiece("12345"));
       },
-      [&setCalled](TypedThriftRequest<cpp2::McSetRequest>&&) {
+      [&setCalled](McSetRequest&&) {
         setCalled = true;
       });
 

@@ -11,8 +11,8 @@
 
 #include <memory>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/RouteHandleIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -20,23 +20,17 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class McrouterRouteHandleIf;
 
 template <typename Route>
-class McrouterRouteHandle :
-      public RouteHandle<Route,
-                         McrouterRouteHandleIf,
-                         ThriftRequestList> {
+class McrouterRouteHandle
+    : public RouteHandle<Route, McrouterRouteHandleIf, CarbonRequestList> {
  public:
-  template<typename... Args>
+  template <typename... Args>
   explicit McrouterRouteHandle(Args&&... args)
-    : RouteHandle<Route,
-                  McrouterRouteHandleIf,
-                  ThriftRequestList>(
-                    std::forward<Args>(args)...) {
-  }
+      : RouteHandle<Route, McrouterRouteHandleIf, CarbonRequestList>(
+            std::forward<Args>(args)...) {}
 };
 
-class McrouterRouteHandleIf :
-      public RouteHandleIf<McrouterRouteHandleIf,
-                           ThriftRequestList> {
+class McrouterRouteHandleIf
+    : public RouteHandleIf<McrouterRouteHandleIf, CarbonRequestList> {
  public:
   template <class Route>
   using Impl = McrouterRouteHandle<Route>;

@@ -20,16 +20,13 @@
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
-using facebook::memcache::cpp2::McGetReply;
-using facebook::memcache::cpp2::McGetRequest;
+using facebook::memcache::McGetReply;
+using facebook::memcache::McGetRequest;
 using facebook::memcache::mcrouter::defaultTestOptions;
 using facebook::memcache::mcrouter::McrouterClient;
 using facebook::memcache::mcrouter::McrouterInstance;
-using facebook::memcache::TypedThriftReply;
-using facebook::memcache::TypedThriftRequest;
 
 /**
  * This test provides an example of how to use the McrouterClient API.
@@ -93,13 +90,12 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
     // We must ensure that req will remain alive all the way through the reply
     // callback given to client->send(). This demonstrates one way of ensuring
     // this.
-    auto req = folly::make_unique<TypedThriftRequest<McGetRequest>>("key");
+    auto req = folly::make_unique<McGetRequest>("key");
     auto reqRawPtr = req.get();
     client->send(
         *reqRawPtr,
-        [req = std::move(req), &replyReceived](
-            const TypedThriftRequest<McGetRequest>&,
-            TypedThriftReply<McGetReply>&& reply) {
+        [ req = std::move(req), &replyReceived ](
+            const McGetRequest&, McGetReply&& reply) {
           EXPECT_EQ(mc_res_notfound, reply.result());
           replyReceived = true;
         });
@@ -135,15 +131,12 @@ TEST(McrouterClient, basicUsageRemoteThreadClient) {
   // the callback provided to client->send() below.
   // Also note that we are careful not to modify req while the proxy (in this
   // case, on another thread) may be processing it.
-  const TypedThriftRequest<McGetRequest> req("key");
+  const McGetRequest req("key");
   bool replyReceived = false;
   folly::fibers::Baton baton;
 
   client->send(
-      req,
-      [&baton, &replyReceived](
-          const TypedThriftRequest<McGetRequest>&,
-          TypedThriftReply<McGetReply>&& reply) {
+      req, [&baton, &replyReceived](const McGetRequest&, McGetReply&& reply) {
         EXPECT_EQ(mc_res_notfound, reply.result());
         replyReceived = true;
         baton.post();

@@ -13,9 +13,8 @@
 
 #include <folly/Optional.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 
 namespace facebook { namespace memcache {
@@ -83,7 +82,7 @@ class MultiOpParent {
 
  private:
   size_t waiting_{0};
-  folly::Optional<TypedThriftReply<cpp2::McGetReply>> reply_;
+  folly::Optional<McGetReply> reply_;
   bool error_{false};
 
   McServerSession& session_;

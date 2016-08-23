@@ -14,8 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/MigrateRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
@@ -55,7 +54,7 @@ TEST(migrateRouteTest, migrate) {
       TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
         route_handles[0], route_handles[1], curr_time + 25, interval, tp_func);
 
-      TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+      McGetRequest req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
@@ -64,13 +63,13 @@ TEST(migrateRouteTest, migrate) {
       EXPECT_EQ(1, cnt);
 
       auto reply_get = rh.route(req_get);
-      EXPECT_EQ("a", reply_get.valueRangeSlow().str());
+      EXPECT_EQ("a", carbon::valueRangeSlow(reply_get).str());
       EXPECT_EQ(vector<string>{"key_get"}, test_handles[0]->saw_keys);
       EXPECT_NE(vector<string>{"key_get"}, test_handles[1]->saw_keys);
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      TypedThriftRequest<cpp2::McDeleteRequest> req_del("key_del");
+      McDeleteRequest req_del("key_del");
       cnt = 0;
       rh.traverse(req_del, t);
       EXPECT_EQ(1, cnt);
@@ -95,7 +94,7 @@ TEST(migrateRouteTest, migrate) {
         route_handles_c2[0], route_handles_c2[1],
         curr_time -  25, interval, tp_func);
 
-      TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+      McGetRequest req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
@@ -104,13 +103,13 @@ TEST(migrateRouteTest, migrate) {
       EXPECT_EQ(cnt, 1);
 
       auto reply_get = rh.route(req_get);
-      EXPECT_EQ("a", reply_get.valueRangeSlow().str());
+      EXPECT_EQ("a", carbon::valueRangeSlow(reply_get).str());
       EXPECT_EQ(vector<string>{"key_get"}, test_handles[0]->saw_keys);
       EXPECT_NE(vector<string>{"key_get"}, test_handles[1]->saw_keys);
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      TypedThriftRequest<cpp2::McDeleteRequest> req_del("key_del");
+      McDeleteRequest req_del("key_del");
       cnt = 0;
       rh.traverse(req_del, t);
       EXPECT_EQ(cnt, 2);
@@ -135,7 +134,7 @@ TEST(migrateRouteTest, migrate) {
         route_handles_c3[0], route_handles_c3[1],
         curr_time - 75, interval, tp_func);
 
-      TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+      McGetRequest req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
@@ -144,13 +143,13 @@ TEST(migrateRouteTest, migrate) {
       EXPECT_EQ(1, cnt);
 
       auto reply_get = rh.route(req_get);
-      EXPECT_EQ("b", reply_get.valueRangeSlow().str());
+      EXPECT_EQ("b", carbon::valueRangeSlow(reply_get).str());
       EXPECT_NE(vector<string>{"key_get"}, test_handles[0]->saw_keys);
       EXPECT_EQ(vector<string>{"key_get"}, test_handles[1]->saw_keys);
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      TypedThriftRequest<cpp2::McDeleteRequest> req_del("key_del");
+      McDeleteRequest req_del("key_del");
       cnt = 0;
       rh.traverse(req_del, t);
       EXPECT_EQ(2, cnt);
@@ -165,7 +164,7 @@ TEST(migrateRouteTest, migrate) {
       TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
         route_handles[0], route_handles[1], curr_time - 125, interval, tp_func);
 
-      TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+      McGetRequest req_get("key_get");
       int cnt = 0;
       RouteHandleTraverser<TestRouteHandleIf> t{
         [&cnt](const TestRouteHandleIf&) { ++cnt; }
@@ -174,13 +173,13 @@ TEST(migrateRouteTest, migrate) {
       EXPECT_EQ(cnt, 1);
 
       auto reply_get = rh.route(req_get);
-      EXPECT_EQ("b", reply_get.valueRangeSlow().str());
+      EXPECT_EQ("b", carbon::valueRangeSlow(reply_get).str());
       EXPECT_NE(vector<string>{"key_get"}, test_handles[0]->saw_keys);
       EXPECT_EQ(vector<string>{"key_get"}, test_handles[1]->saw_keys);
       (test_handles[0]->saw_keys).clear();
       (test_handles[1]->saw_keys).clear();
 
-      TypedThriftRequest<cpp2::McDeleteRequest> req_del("key_del");
+      McDeleteRequest req_del("key_del");
       cnt = 0;
       rh.traverse(req_del, t);
       EXPECT_EQ(1, cnt);

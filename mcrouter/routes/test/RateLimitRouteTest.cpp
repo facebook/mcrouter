@@ -15,8 +15,7 @@
 
 #include <folly/json.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RateLimitRoute.h"
@@ -35,8 +34,8 @@ using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 
 namespace {
 
-template <class Data, class ThriftType>
-void test(Data data, ThriftType, mc_res_t ok, mc_res_t reject,
+template <class Data, class Request>
+void test(Data data, Request, mc_res_t ok, mc_res_t reject,
           const std::string& type, bool burst = false) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
     make_shared<TestHandle>(std::move(data)),
@@ -52,9 +51,11 @@ void test(Data data, ThriftType, mc_res_t ok, mc_res_t reject,
     normalRh,
     RateLimiter(json));
 
-  TypedThriftRequest<ThriftType> req("key");
+  Request req("key");
   // McSetRequest requires value be set; this is a no-op for Get and Delete
-  req.setValue("value");
+  if (auto* value = const_cast<folly::IOBuf*>(carbon::valuePtrUnsafe(req))) {
+    *value = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
+  }
 
   if (burst) {
     usleep(1001000);
@@ -77,19 +78,19 @@ void test(Data data, ThriftType, mc_res_t ok, mc_res_t reject,
 }
 
 void testSets(bool burst = false) {
-  test(UpdateRouteTestData(mc_res_stored), cpp2::McSetRequest(),
+  test(UpdateRouteTestData(mc_res_stored), McSetRequest(),
        mc_res_stored, mc_res_notstored,
        "sets", burst);
 }
 
 void testGets(bool burst = false) {
-  test(GetRouteTestData(mc_res_found, "a"), cpp2::McGetRequest(),
+  test(GetRouteTestData(mc_res_found, "a"), McGetRequest(),
        mc_res_found, mc_res_notfound,
        "gets", burst);
 }
 
 void testDeletes(bool burst = false) {
-  test(DeleteRouteTestData(mc_res_deleted), cpp2::McDeleteRequest(),
+  test(DeleteRouteTestData(mc_res_deleted), McDeleteRequest(),
        mc_res_deleted, mc_res_notfound,
        "deletes", burst);
 }

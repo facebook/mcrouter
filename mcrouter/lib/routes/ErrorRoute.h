@@ -37,7 +37,7 @@ struct ErrorRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
-    return ReplyT<Request>(ErrorReply, valueToSet_);
+    return createReply<Request>(ErrorReply, valueToSet_);
   }
 
  private:

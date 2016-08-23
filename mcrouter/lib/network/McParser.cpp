@@ -29,13 +29,12 @@ constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
 
 size_t mcOpToRequestTypeId(mc_op_t mc_op) {
   switch(mc_op) {
-#define THRIFT_OP(MC_OPERATION)                                                \
-    case MC_OPERATION::mc_op:                                                  \
-    {                                                                          \
-      using ThriftType =                                                       \
-        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type;      \
-      return IdFromType<ThriftType, TRequestList>::value;                      \
-    }
+#define THRIFT_OP(MC_OPERATION)                                           \
+  case MC_OPERATION::mc_op: {                                             \
+    using Request =                                                       \
+        typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type; \
+    return IdFromType<Request, TRequestList>::value;                      \
+  }
 #include "mcrouter/lib/McOpList.h"
 
     default:

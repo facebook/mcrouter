@@ -10,7 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/network/ThriftMessageTraits.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"

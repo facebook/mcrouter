@@ -11,10 +11,9 @@
 
 #include <folly/Format.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 #include "mcrouter/tools/mcpiper/Util.h"
@@ -25,42 +24,41 @@ namespace detail {
 
 // Exptime
 template <class M>
-int32_t getExptime(const TypedThriftRequest<M>& req) {
+typename std::enable_if<M::hasExptime, int32_t>::type
+getExptime(const M& req) {
   return req.exptime();
 }
-inline int32_t getExptime(const TypedThriftReply<cpp2::McMetagetReply>& reply) {
-  return reply->get_exptime() ? *reply->get_exptime() : 0;
-}
 template <class M>
-int32_t getExptime(const TypedThriftReply<M>& reply) {
+typename std::enable_if<!M::hasExptime, int32_t>::type
+getExptime(const M& reply) {
   return 0;
 }
 
 // Lease token
 template <class M>
-int64_t getLeaseToken(const TypedThriftMessage<M>& msg) {
+int64_t getLeaseToken(const M& msg) {
   return 0;
 }
-inline int64_t getLeaseToken(
-    const TypedThriftReply<cpp2::McLeaseGetReply>& msg) {
-  return msg->get_leaseToken() ? *msg->get_leaseToken() : 0;
+inline int64_t getLeaseToken(const McLeaseGetReply& msg) {
+  return msg.leaseToken();
 }
-inline int64_t getLeaseToken(
-    const TypedThriftRequest<cpp2::McLeaseSetRequest>& msg) {
-  return msg->get_leaseToken();
+inline int64_t getLeaseToken(const McLeaseSetRequest& msg) {
+  return msg.leaseToken();
 }
 
 // Message
 template <class M>
-folly::StringPiece getMessage(const TypedThriftRequest<M>& msg) {
-  return "";
+typename std::enable_if<carbon::IsRequestTrait<M>::value, folly::StringPiece>::
+    type
+getMessage(const M& msg) {
+  return folly::StringPiece();
 }
+
 template <class M>
-folly::StringPiece getMessage(const TypedThriftReply<M>& msg) {
-  if (msg->get_message()) {
-    return *msg->get_message();
-  }
-  return "";
+typename std::enable_if<!carbon::IsRequestTrait<M>::value, folly::StringPiece>::
+    type
+getMessage(const M& msg) {
+  return msg.message();
 }
 
 } // detail
@@ -74,8 +72,8 @@ void MessagePrinter::requestReady(uint64_t msgId,
   if (auto out = filterAndBuildOutput(
           msgId,
           request,
-          request.fullKey().str(),
-          Request::OpType::mc_op,
+          request.key().fullKey().str(),
+          McOperation<OpFromType<Request, RequestOpMapping>::value>::mc_op,
           mc_res_unknown,
           from,
           to,
@@ -101,7 +99,7 @@ void MessagePrinter::replyReady(uint64_t msgId,
           msgId,
           reply,
           key,
-          Reply::OpType::mc_op,
+          McOperation<OpFromType<Reply, ReplyOpMapping>::value>::mc_op,
           reply.result(),
           from,
           to,
@@ -139,7 +137,7 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
     return folly::none;
   }
 
-  auto value = message.valueRangeSlow();
+  auto value = carbon::valueRangeSlow(const_cast<Message&>(message));
   if (value.size() < filter_.valueMinSize ||
       value.size() > filter_.valueMaxSize) {
     return folly::none;
@@ -319,18 +317,17 @@ StyledString MessagePrinter::getTypeSpecificAttributes(const Message& msg) {
 }
 template <>
 inline StyledString MessagePrinter::getTypeSpecificAttributes(
-    const TypedThriftReply<cpp2::McMetagetReply>& msg) {
+    const McMetagetReply& msg) {
   StyledString out;
 
   out.append("\n  age: ", format_.msgAttrColor);
   out.append(
-      msg->get_age() ? folly::sformat("{:d}", *msg->get_age()) : "unknown",
+      msg.age() ? folly::sformat("{:d}", msg.age()) : "unknown",
       format_.dataValueColor);
 
-  if (msg->get_ipAddress()) {
+  if (!msg.ipAddress().empty()) {
     out.append("\n  ip address: ", format_.msgAttrColor);
-    out.append(folly::sformat("{}", *msg->get_ipAddress()),
-               format_.dataValueColor);
+    out.append(folly::sformat("{}", msg.ipAddress()), format_.dataValueColor);
   }
 
   return out;

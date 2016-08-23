@@ -8,10 +8,8 @@
  *
  */
 #include <folly/io/Cursor.h>
-#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 namespace facebook { namespace memcache {
 
@@ -65,7 +63,7 @@ void ClientMcParser<Callback>::expectNext() {
     if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
       debugFifo_->startMessage(
           MessageDirection::Received,
-          IdFromType<typename ReplyT<Request>::rawType, TReplyList>::value);
+          IdFromType<ReplyT<Request>, TReplyList>::value);
     }
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaOrCaretForwarder_ =
@@ -122,9 +120,8 @@ void ClientMcParser<Callback>::forwardCaretReply(
   ReplyT<Request> reply;
   folly::io::Cursor cur(finalBuffer);
   cur += offset;
-  apache::thrift::CompactProtocolReader reader;
-  reader.setInput(cur);
-  reply.read(&reader);
+  carbon::CarbonProtocolReader reader(cur);
+  reply.deserialize(reader);
 
   callback_.replyReady(std::move(reply), reqId);
 }

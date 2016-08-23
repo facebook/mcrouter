@@ -17,6 +17,7 @@
 #include <folly/Likely.h>
 
 #include "mcrouter/config.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/proxy.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -37,15 +38,16 @@ class RootRoute {
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    const auto* rhPtr =
-      rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
+    const auto* rhPtr = rhMap_.getTargetsForKeyFast(
+        req.key().routingPrefix(), req.key().routingKey());
     if (LIKELY(rhPtr != nullptr)) {
       for (const auto& rh : *rhPtr) {
         t(*rh, req);
       }
       return;
     }
-    auto v = rhMap_.getTargetsForKeySlow(req.routingPrefix(), req.routingKey());
+    auto v = rhMap_.getTargetsForKeySlow(
+        req.key().routingPrefix(), req.key().routingKey());
     for (const auto& rh : v) {
       t(*rh, req);
     }
@@ -58,16 +60,17 @@ class RootRoute {
        run in the background.
 
        This is a good default for /star/star/ requests. */
-    const auto* rhPtr =
-      rhMap_.getTargetsForKeyFast(req.routingPrefix(), req.routingKey());
+    const auto* rhPtr = rhMap_.getTargetsForKeyFast(
+        req.key().routingPrefix(), req.key().routingKey());
 
     auto reply = UNLIKELY(rhPtr == nullptr)
-                     ? routeImpl(rhMap_.getTargetsForKeySlow(
-                                     req.routingPrefix(), req.routingKey()),
-                                 req)
-                     : routeImpl(*rhPtr, req);
+        ? routeImpl(
+              rhMap_.getTargetsForKeySlow(
+                  req.key().routingPrefix(), req.key().routingKey()),
+              req)
+        : routeImpl(*rhPtr, req);
 
-    if (reply.isError() && opts_.group_remote_errors) {
+    if (isErrorResult(reply.result()) && opts_.group_remote_errors) {
       reply = ReplyT<Request>(mc_res_remote_error);
     }
 
@@ -84,10 +87,11 @@ class RootRoute {
                             GetLikeT<Request> = 0) const {
 
     auto reply = doRoute(rh, req);
-    if (reply.isError() && opts_.miss_on_get_errors && !rh.empty()) {
+    if (isErrorResult(reply.result()) && opts_.miss_on_get_errors &&
+        !rh.empty()) {
       /* rh.empty() case: for backwards compatibility,
          always surface invalid routing errors */
-      reply = ReplyT<Request>(DefaultReply, req);
+      reply = createReply(DefaultReply, req);
     }
     return reply;
   }
@@ -98,10 +102,10 @@ class RootRoute {
                             ArithmeticLikeT<Request> = 0) const {
 
     auto reply = opts_.allow_only_gets
-                     ? ReplyT<Request>(DefaultReply, req)
+                     ? createReply(DefaultReply, req)
                      : doRoute(rh, req);
-    if (reply.isError()) {
-      reply = ReplyT<Request>(DefaultReply, req);
+    if (isErrorResult(reply.result())) {
+      reply = createReply(DefaultReply, req);
     }
     return reply;
   }
@@ -116,7 +120,7 @@ class RootRoute {
       return doRoute(rh, req);
     }
 
-    return ReplyT<Request>(DefaultReply, req);
+    return createReply(DefaultReply, req);
   }
 
   template <class Request>
@@ -125,7 +129,7 @@ class RootRoute {
 
     if (!rh.empty()) {
       if (rh.size() > 1) {
-        auto reqCopy = std::make_shared<Request>(req.clone());
+        auto reqCopy = std::make_shared<Request>(req);
         for (size_t i = 1; i < rh.size(); ++i) {
           auto r = rh[i];
           folly::fibers::addTask(
@@ -136,7 +140,7 @@ class RootRoute {
       }
       return rh[0]->route(req);
     }
-    return ReplyT<Request>(ErrorReply);
+    return createReply<Request>(ErrorReply);
   }
 };
 

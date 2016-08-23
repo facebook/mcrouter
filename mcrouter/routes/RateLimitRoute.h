@@ -51,7 +51,7 @@ class RateLimitRoute {
     if (LIKELY(rl_.canPassThrough<Request>())) {
       return target_->route(req);
     }
-    return ReplyT<Request>(DefaultReply, req);
+    return createReply(DefaultReply, req);
   }
 
  private:

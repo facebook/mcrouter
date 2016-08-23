@@ -359,7 +359,7 @@ class TestMcrouterSanityOverUmbrella(TestMcrouterSanity):
 
     def test_server_error_message(self):
         # This test does not work with Umbrella since ASCII stores error
-        # message in 'message' field of TypedThriftReply while Umbrella
+        # message in 'message' field of Carbon replies while Umbrella
         # stores error message in 'value' field.
         pass
 

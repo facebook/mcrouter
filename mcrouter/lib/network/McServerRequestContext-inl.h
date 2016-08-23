@@ -9,7 +9,6 @@
  */
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/McServerSession.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
 namespace facebook { namespace memcache {
@@ -23,7 +22,7 @@ void McServerRequestContext::reply(
   // On error, multi-op parent may assume responsiblity of replying
   if (ctx.moveReplyToParent(
         reply.result(), reply.appSpecificErrorCode(),
-        std::move(reply->message))) {
+        std::move(reply.message()))) {
     replyImpl(std::move(ctx), Reply());
   } else {
     replyImpl(std::move(ctx), std::move(reply));
@@ -41,7 +40,7 @@ void McServerRequestContext::reply(
   // On error, multi-op parent may assume responsiblity of replying
   if (ctx.moveReplyToParent(
         reply.result(), reply.appSpecificErrorCode(),
-        std::move(reply->message))) {
+        std::move(reply.message()))) {
     replyImpl(std::move(ctx), Reply(), destructor, toDestruct);
   } else {
     replyImpl(std::move(ctx), std::move(reply), destructor, toDestruct);

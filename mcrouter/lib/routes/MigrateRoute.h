@@ -20,8 +20,9 @@
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
@@ -94,12 +95,11 @@ class MigrateRoute {
         };
 
         folly::Optional<Reply> reply;
-        folly::fibers::forEach(fs, fs + 2,
-          [&reply] (size_t id, Reply newReply) {
-            if (!reply || newReply.worseThan(reply.value())) {
-              reply = std::move(newReply);
-            }
-          });
+        folly::fibers::forEach(fs, fs + 2, [&reply](size_t id, Reply newReply) {
+          if (!reply || worseThan(newReply.result(), reply.value().result())) {
+            reply = std::move(newReply);
+          }
+        });
         return std::move(reply.value());
       }
     }

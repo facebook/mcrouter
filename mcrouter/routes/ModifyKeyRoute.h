@@ -21,6 +21,7 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -54,13 +55,14 @@ class ModifyKeyRoute {
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
     folly::StringPiece rp = routingPrefix_.hasValue()
       ? routingPrefix_.value()
-      : req.routingPrefix();
-    auto cloneReq = req.clone();
-    if (!req.keyWithoutRoute().startsWith(keyPrefix_)) {
-      auto key = folly::to<std::string>(rp, keyPrefix_, req.keyWithoutRoute());
-      cloneReq.setKey(key);
-    } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
-      cloneReq.setKey(folly::to<std::string>(rp, req.keyWithoutRoute()));
+      : req.key().routingPrefix();
+    auto cloneReq = req;
+    if (!req.key().keyWithoutRoute().startsWith(keyPrefix_)) {
+      auto key =
+          folly::to<std::string>(rp, keyPrefix_, req.key().keyWithoutRoute());
+      cloneReq.key() = key;
+    } else if (routingPrefix_.hasValue() && rp != req.key().routingPrefix()) {
+      cloneReq.key() = folly::to<std::string>(rp, req.key().keyWithoutRoute());
     }
     t(*target_, cloneReq);
   }
@@ -69,13 +71,14 @@ class ModifyKeyRoute {
   ReplyT<Request> route(const Request& req) const {
     folly::StringPiece rp = routingPrefix_.hasValue()
       ? routingPrefix_.value()
-      : req.routingPrefix();
+      : req.key().routingPrefix();
 
-    if (!req.keyWithoutRoute().startsWith(keyPrefix_)) {
-      auto key = folly::to<std::string>(rp, keyPrefix_, req.keyWithoutRoute());
+    if (!req.key().keyWithoutRoute().startsWith(keyPrefix_)) {
+      auto key =
+          folly::to<std::string>(rp, keyPrefix_, req.key().keyWithoutRoute());
       return routeReqWithKey(req, key);
-    } else if (routingPrefix_.hasValue() && rp != req.routingPrefix()) {
-      auto key = folly::to<std::string>(rp, req.keyWithoutRoute());
+    } else if (routingPrefix_.hasValue() && rp != req.key().routingPrefix()) {
+      auto key = folly::to<std::string>(rp, req.key().keyWithoutRoute());
       return routeReqWithKey(req, key);
     }
     return target_->route(req);
@@ -91,11 +94,13 @@ class ModifyKeyRoute {
   routeReqWithKey(const Request& req, folly::StringPiece key) const {
     auto err = isKeyValid(key);
     if (err != mc_req_err_valid) {
-      return ReplyT<Request>(ErrorReply, "ModifyKeyRoute: invalid key: " +
-          std::string(mc_req_err_to_string(err)));
+      return createReply<Request>(
+          ErrorReply,
+          "ModifyKeyRoute: invalid key: " +
+              std::string(mc_req_err_to_string(err)));
     }
-    auto cloneReq = req.clone();
-    cloneReq.setKey(key);
+    auto cloneReq = req;
+    cloneReq.key() = key;
     return target_->route(cloneReq);
   }
 };

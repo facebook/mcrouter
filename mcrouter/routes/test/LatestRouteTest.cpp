@@ -17,8 +17,7 @@
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -68,7 +67,7 @@ TEST(latestRouteTest, one) {
   EXPECT_NE(second, third);
   test_handles[third]->setTko();
   /* three boxes are now TKO, we hit the failover limit */
-  auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("key"));
+  auto reply = rh->route(McGetRequest("key"));
   EXPECT_EQ(mc_res_tko, reply.result());
 }
 

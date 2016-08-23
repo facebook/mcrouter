@@ -13,8 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
@@ -55,8 +54,8 @@ TEST(failoverWithExptimeRouteTest, success) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    EXPECT_EQ("a", reply.valueRangeSlow().str());
+    auto reply = rh->route(McGetRequest("0"));
+    EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
   });
 }
@@ -87,10 +86,10 @@ TEST(failoverWithExptimeRouteTest, once) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    EXPECT_EQ("b", reply.valueRangeSlow().str());
+    auto reply = rh->route(McGetRequest("0"));
+    EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
 
-    auto reply2 = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("1"));
+    auto reply2 = rh->route(McDeleteRequest("1"));
     EXPECT_EQ(mc_res_notfound, reply2.result());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
@@ -124,10 +123,10 @@ TEST(failoverWithExptimeRouteTest, twice) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    EXPECT_EQ("c", reply.valueRangeSlow().str());
+    auto reply = rh->route(McGetRequest("0"));
+    EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
-    auto reply2 = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("1"));
+    auto reply2 = rh->route(McDeleteRequest("1"));
     EXPECT_EQ(mc_res_notfound, reply2.result());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
@@ -161,12 +160,12 @@ TEST(failoverWithExptimeRouteTest, fail) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rh->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
+    auto reply = rh->route(McGetRequest("0"));
 
     /* Will return the last reply when ran out of targets */
-    EXPECT_EQ("c", reply.valueRangeSlow().str());
+    EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
 
-    auto reply2 = rh->route(TypedThriftRequest<cpp2::McDeleteRequest>("1"));
+    auto reply2 = rh->route(McDeleteRequest("1"));
     EXPECT_EQ(mc_res_timeout, reply2.result());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
@@ -195,8 +194,8 @@ void testFailoverGet(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhNoFail->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    EXPECT_EQ("a", reply.valueRangeSlow().str());
+    auto reply = rhNoFail->route(McGetRequest("0"));
+    EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
   });
 
@@ -209,8 +208,8 @@ void testFailoverGet(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhFail->route(TypedThriftRequest<cpp2::McGetRequest>("0"));
-    EXPECT_EQ("b", reply.valueRangeSlow().str());
+    auto reply = rhFail->route(McGetRequest("0"));
+    EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
   });
 }
 
@@ -234,8 +233,8 @@ void testFailoverUpdate(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    TypedThriftRequest<cpp2::McSetRequest> req("0");
-    req.setValue("a");
+    McSetRequest req("0");
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
     auto reply = rhNoFail->route(std::move(req));
     EXPECT_EQ(res, reply.result());
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
@@ -254,8 +253,8 @@ void testFailoverUpdate(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    TypedThriftRequest<cpp2::McSetRequest> req("0");
-    req.setValue("a");
+    McSetRequest req("0");
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
     auto reply = rhFail->route(std::move(req));
 
     EXPECT_EQ(mc_res_stored, reply.result());
@@ -284,9 +283,9 @@ void testFailoverDelete(mc_res_t res) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    TypedThriftRequest<cpp2::McDeleteRequest> req("0");
+    McDeleteRequest req("0");
     auto reply = rhNoFail->route(
-        TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+        McDeleteRequest("0"));
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
     // only normal handle sees the key
     EXPECT_EQ(vector<std::string>{"0"}, normalHandle[0]->saw_keys);
@@ -303,7 +302,7 @@ void testFailoverDelete(mc_res_t res) {
 
   fm.run([&]{
     mockFiberContext();
-    auto reply = rhFail->route(TypedThriftRequest<cpp2::McDeleteRequest>("0"));
+    auto reply = rhFail->route(McDeleteRequest("0"));
     EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
@@ -347,8 +346,8 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmetic) {
   TestFiberManager fm{fiber_local::ContextTypeTag()};
   fm.run([&]{
     mockFiberContext();
-    TypedThriftRequest<cpp2::McIncrRequest> req("0");
-    req->set_delta(1);
+    McIncrRequest req("0");
+    req.delta() = 1;
     auto reply = rh->route(std::move(req));
 
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);

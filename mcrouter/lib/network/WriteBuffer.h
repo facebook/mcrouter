@@ -17,10 +17,9 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/ThriftMessageTraits.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 
@@ -33,8 +32,7 @@ class WriteBuffer {
   folly::Optional<Destructor> destructor_;
 
  public:
-  using Queue = UniqueIntrusiveList<WriteBuffer,
-                                    &WriteBuffer::hook_>;
+  using Queue = UniqueIntrusiveList<WriteBuffer, &WriteBuffer::hook_>;
 
   explicit WriteBuffer(mc_protocol_t protocol);
   ~WriteBuffer();

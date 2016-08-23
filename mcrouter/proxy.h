@@ -30,7 +30,7 @@
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
@@ -307,15 +307,15 @@ struct proxy_t {
 
   /** Process and reply stats request */
   void routeHandlesProcessRequest(
-      const TypedThriftRequest<cpp2::McStatsRequest>& req,
+      const McStatsRequest& req,
       std::unique_ptr<ProxyRequestContextTyped<
-        TypedThriftRequest<cpp2::McStatsRequest>>> ctx);
+        McStatsRequest>> ctx);
 
   /** Process and reply to a version request */
   void routeHandlesProcessRequest(
-      const TypedThriftRequest<cpp2::McVersionRequest>& req,
+      const McVersionRequest& req,
       std::unique_ptr<ProxyRequestContextTyped<
-        TypedThriftRequest<cpp2::McVersionRequest>>> ctx);
+        McVersionRequest>> ctx);
 
   /** Route request through route handle tree */
   template <class Request>

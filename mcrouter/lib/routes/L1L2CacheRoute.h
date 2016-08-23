@@ -18,8 +18,8 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
@@ -73,10 +73,8 @@ class L1L2CacheRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) {
-    using AddRequest = AddT<Request>;
-
     auto l1Reply = l1_->route(req);
-    if (l1Reply.isHit()) {
+    if (isHitResult(l1Reply.result())) {
       if (l1Reply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
         if (ncacheUpdatePeriod_) {
           if (ncacheUpdateCounter_ == 1) {
@@ -88,26 +86,23 @@ class L1L2CacheRoute {
         }
 
         /* return a miss */
-        l1Reply = ReplyT<Request>(DefaultReply, req);
+        l1Reply = createReply(DefaultReply, req);
       }
       return l1Reply;
     }
 
     /* else */
     auto l2Reply = l2_->route(req);
-    if (l2Reply.isHit()) {
+    if (isHitResult(l2Reply.result())) {
+      folly::fibers::addTask([
+        l1 = l1_,
+        addReq = l1UpdateFromL2<McAddRequest>(req, l2Reply, upgradingL1Exptime_)
+      ]() { l1->route(addReq); });
+    } else if (isMissResult(l2Reply.result()) && ncacheUpdatePeriod_) {
       folly::fibers::addTask(
-        [l1 = l1_,
-         addReq = l1UpdateFromL2<AddRequest>(
-           req, l2Reply, upgradingL1Exptime_)]() {
-
-          l1->route(addReq);
-        });
-    } else if (l2Reply.isMiss() && ncacheUpdatePeriod_) {
-      folly::fibers::addTask(
-        [l1 = l1_, addReq = l1Ncache<AddRequest>(req, ncacheExptime_)]() {
-          l1->route(addReq);
-        });
+          [l1 = l1_, addReq = l1Ncache<McAddRequest>(req, ncacheExptime_)]() {
+            l1->route(addReq);
+          });
     }
     return l2Reply;
   }
@@ -127,69 +122,43 @@ class L1L2CacheRoute {
   size_t ncacheUpdatePeriod_{0};
   size_t ncacheUpdateCounter_{0};
 
-  template <class Request>
-  struct AddImpl {};
-
-  template <class M>
-  struct AddImpl<TypedThriftRequest<M>> {
-    using type = TypedThriftRequest<cpp2::McAddRequest>;
-  };
-
-  template <class Request>
-  struct SetImpl {};
-
-  template <class M>
-  struct SetImpl<TypedThriftRequest<M>> {
-    using type = TypedThriftRequest<cpp2::McSetRequest>;
-  };
-
-  template <class Request>
-  using AddT = typename AddImpl<Request>::type;
-
-  template <class Request>
-  using SetT = typename SetImpl<Request>::type;
-
   template <class ToRequest, class Request, class Reply>
   static ToRequest l1UpdateFromL2(const Request& origReq,
                                   const Reply& reply,
                                   size_t upgradingL1Exptime) {
     ToRequest req;
-    req.setKey(origReq.key());
-    folly::IOBuf cloned;
-    if (reply.valuePtrUnsafe() != nullptr) {
-      reply.valuePtrUnsafe()->cloneInto(cloned);
+    req.key() = origReq.key();
+    if (auto replyValue = carbon::valuePtrUnsafe(reply)) {
+      req.value() = replyValue->cloneAsValue();
     }
-    req.setValue(std::move(cloned));
-    req.setFlags(reply.flags());
-    req.setExptime(upgradingL1Exptime);
+    req.flags() = reply.flags();
+    req.exptime() = upgradingL1Exptime;
     return req;
   }
 
   template <class ToRequest, class Request>
   static ToRequest l1Ncache(const Request& origReq, size_t ncacheExptime) {
     ToRequest req;
-    req.setKey(origReq.key());
-    req.setValue(folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ncache"));
-    req.setFlags(MC_MSG_FLAG_NEGATIVE_CACHE);
-    req.setExptime(ncacheExptime);
+    req.key() = origReq.key();
+    req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "ncache");
+    req.flags() = MC_MSG_FLAG_NEGATIVE_CACHE;
+    req.exptime() = ncacheExptime;
     return std::move(req);
   }
 
   template <class Request>
   void updateL1Ncache(const Request& req) {
-    using SetRequest = SetT<Request>;
-
     folly::fibers::addTask(
-      [l1 = l1_, l2 = l2_, creq = req.clone(),
+      [l1 = l1_, l2 = l2_, creq = req,
        upgradingL1Exptime = upgradingL1Exptime_,
        ncacheExptime = ncacheExptime_]() {
         auto l2Reply = l2->route(creq);
-        if (l2Reply.isHit()) {
-          l1->route(l1UpdateFromL2<SetRequest>(
-                creq, l2Reply, upgradingL1Exptime));
+        if (isHitResult(l2Reply.result())) {
+          l1->route(
+              l1UpdateFromL2<McSetRequest>(creq, l2Reply, upgradingL1Exptime));
         } else {
           /* bump TTL on the ncache entry */
-          l1->route(l1Ncache<SetRequest>(creq, ncacheExptime));
+          l1->route(l1Ncache<McSetRequest>(creq, ncacheExptime));
         }
       }
     );

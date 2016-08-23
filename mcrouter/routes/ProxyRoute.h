@@ -15,8 +15,7 @@
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
@@ -51,8 +50,7 @@ class ProxyRoute {
     return root_->route(req);
   }
 
-  TypedThriftReply<cpp2::McFlushAllReply> route(
-      const TypedThriftRequest<cpp2::McFlushAllRequest>& req) const {
+  McFlushAllReply route(const McFlushAllRequest& req) const {
     // route to all destinations in the config.
     return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations()).route(req);
   }

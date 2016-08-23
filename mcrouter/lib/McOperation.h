@@ -13,16 +13,10 @@
 #include <type_traits>
 
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/ThriftMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/Operation.h"
 
 namespace facebook { namespace memcache {
-
-template <class M>
-class TypedThriftReply;
-
-template <class M>
-class TypedThriftRequest;
 
 /**
  * For existing memcache operations, we use a template trick:
@@ -38,8 +32,8 @@ template <int op>
 const char* const McOperation<op>::name = mc_op_to_string((mc_op_t)op);
 
 template <class M>
-struct ReplyType<TypedThriftRequest<M>> {
-  using type = TypedThriftReply<ReplyFromRequestType<M, RequestReplyPairs>>;
+struct ReplyType {
+  using type = typename M::reply_type;
 };
 
 }} // facebook::memcache

@@ -20,10 +20,10 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                              const ReplyT<Request>& reply,
                              GetLikeT<Request> = 0) {
 
-  auto replyBytes = reply.valuePtrUnsafe()
-    ? reply.valuePtrUnsafe()->computeChainDataLength()
+  auto replyBytes = carbon::valuePtrUnsafe(reply)
+    ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
     : 0;
-  stats.recordFetchRequest(req.fullKey().size(), replyBytes);
+  stats.recordFetchRequest(req.key().fullKey().size(), replyBytes);
 }
 
 template <class Request>
@@ -32,8 +32,8 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                              const ReplyT<Request>& reply,
                              UpdateLikeT<Request> = 0) {
 
-  auto valueBytes = req->get_value().computeChainDataLength();
-  stats.recordUpdateRequest(req.fullKey().size(), valueBytes);
+  auto valueBytes = req.value().computeChainDataLength();
+  stats.recordUpdateRequest(req.key().fullKey().size(), valueBytes);
 }
 
 template <class Request>
@@ -42,7 +42,7 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                              const ReplyT<Request>& reply,
                              ArithmeticLikeT<Request> = 0) {
 
-  stats.recordUpdateRequest(req.fullKey().size(), 0);
+  stats.recordUpdateRequest(req.key().fullKey().size(), 0);
 }
 
 template <class Request>
@@ -51,7 +51,7 @@ void bumpMcrouterClientStats(CacheClientStats& stats,
                              const ReplyT<Request>& reply,
                              DeleteLikeT<Request> = 0) {
 
-  stats.recordInvalidateRequest(req.fullKey().size());
+  stats.recordInvalidateRequest(req.key().fullKey().size());
 }
 
 template <class Request>

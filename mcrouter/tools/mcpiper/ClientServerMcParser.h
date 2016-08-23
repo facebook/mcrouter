@@ -18,7 +18,7 @@
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
-#include "mcrouter/lib/network/ThriftMsgDispatcher.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 
@@ -46,7 +46,7 @@ class ExpectNextDispatcher {
   template <class M>
   static void processMsg(ExpectNextDispatcher& me) {
     assert(me.replyParser_);
-    me.replyParser_->template expectNext<TypedThriftRequest<M>>();
+    me.replyParser_->template expectNext<M>();
   }
 
   void setReplyParser(ReplyParser* parser) {
@@ -84,14 +84,13 @@ class ClientServerMcParser {
     Callback& callback_;
   };
 
-
-  struct RequestCallback
-      : public ThriftMsgDispatcher<TRequestList,
-                                   RequestCallback,
-                                   const UmbrellaMessageInfo&> {
+  struct RequestCallback : public CarbonMessageDispatcher<
+                               TRequestList,
+                               RequestCallback,
+                               const UmbrellaMessageInfo&> {
    public:
     template <class M>
-    void onTypedMessage(TypedThriftRequest<M>&& req,
+    void onTypedMessage(M&& req,
                         const UmbrellaMessageInfo& headerInfo) {
       callback_.requestReady(headerInfo.reqId, std::move(req));
     }

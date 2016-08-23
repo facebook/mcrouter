@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 
@@ -57,7 +58,7 @@ class FailoverErrorsSettings {
                                  DeleteLike<>,
                                  GetLike<>,
                                  UpdateLike<>> = 0) const {
-    return reply.isFailoverError();
+    return isFailoverErrorResult(reply.result());
   }
 
   class List {

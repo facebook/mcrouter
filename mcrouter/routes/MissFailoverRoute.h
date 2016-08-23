@@ -13,8 +13,9 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 
@@ -46,7 +47,7 @@ class MissFailoverRoute {
   template <class Request>
   ReplyT<Request> routeImpl(const Request& req) const {
     auto reply = targets_[0]->route(req);
-    if (reply.isHit()) {
+    if (isHitResult(reply.result())) {
       return reply;
     }
 
@@ -55,7 +56,7 @@ class MissFailoverRoute {
       fiber_local::addRequestClass(RequestClass::kFailover);
       for (size_t i = 1; i < targets_.size() - 1; ++i) {
         auto failoverReply = targets_[i]->route(req);
-        if (failoverReply.isHit()) {
+        if (isHitResult(failoverReply.result())) {
           return failoverReply;
         }
       }

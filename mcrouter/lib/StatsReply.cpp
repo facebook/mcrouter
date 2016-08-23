@@ -11,19 +11,18 @@
 
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.tcc"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
 namespace facebook { namespace memcache {
 
-TypedThriftReply<cpp2::McStatsReply> StatsReply::getReply() {
+McStatsReply StatsReply::getReply() {
   /**
    * In the 'stats' IOBuf, we store the string representation returned to
    * clients, e.g.,
    * "STAT stat1 value1\r\nSTAT stat2 value2\r\n..."
    */
 
-  TypedThriftReply<cpp2::McStatsReply> reply(mc_res_ok);
+  McStatsReply reply(mc_res_ok);
   std::vector<std::string> statsList;
 
   for (const auto& s : stats_) {
@@ -31,7 +30,7 @@ TypedThriftReply<cpp2::McStatsReply> StatsReply::getReply() {
         folly::to<std::string>("STAT ", s.first, ' ', s.second));
   }
 
-  reply->set_stats(std::move(statsList));
+  reply.stats() = std::move(statsList);
 
   return reply;
 }

@@ -91,6 +91,10 @@ class Keys {
     return routingKeyHash_;
   }
 
+  bool hasHashStop() const {
+    return routingKey_.size() != keyWithoutRoute_.size();
+  }
+
   // Hack to save some CPU in DestinationRoute. Avoid if possible.
   void stripRoutingPrefix() {
     trimStart(routingPrefix().size());

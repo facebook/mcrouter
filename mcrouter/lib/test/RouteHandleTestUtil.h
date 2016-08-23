@@ -20,14 +20,34 @@
 
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace facebook { namespace memcache {
+
+namespace detail {
+
+template <class M>
+typename std::enable_if<M::hasFlags>::type
+testSetFlags(M& message, uint64_t flags) {
+  message.flags() = flags;
+}
+template <class M>
+typename std::enable_if<!M::hasFlags>::type
+testSetFlags(M&, uint64_t) {}
+
+template <class Reply>
+typename std::enable_if<Reply::hasValue, void>::type
+setReplyValue(Reply& reply, const std::string& val) {
+  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
+}
+template <class Reply>
+typename std::enable_if<!Reply::hasValue, void>::type
+setReplyValue(Reply& reply, const std::string& val) {}
+} // detail
 
 struct GetRouteTestData {
   mc_res_t result_;
@@ -173,40 +193,39 @@ struct RecordingRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
-    using Reply = ReplyT<Request>;
     ReplyT<Request> reply;
 
     if (h_->isTko) {
-      return Reply(TkoReply);
+      return createReply<Request>(TkoReply);
     }
 
     if (h_->isPaused) {
       h_->wait();
     }
 
-    h_->saw_keys.push_back(req.fullKey().str());
+    h_->saw_keys.push_back(req.key().fullKey().str());
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(req.exptime());
     if (GetLike<Request>::value) {
-      reply.setResult(dataGet_.result_);
-      reply.setValue(dataGet_.value_);
-      reply.setFlags(dataGet_.flags_);
+      reply.result() = dataGet_.result_;
+      detail::setReplyValue(reply, dataGet_.value_);
+      detail::testSetFlags(reply, dataGet_.flags_);
       return reply;
     }
     if (UpdateLike<Request>::value) {
-      assert(req.valuePtrUnsafe() != nullptr);
-      auto val = req.valuePtrUnsafe()->clone();
+      assert(carbon::valuePtrUnsafe(req) != nullptr);
+      auto val = carbon::valuePtrUnsafe(req)->clone();
       folly::StringPiece sp_value = coalesceAndGetRange(val);
       h_->sawValues.push_back(sp_value.str());
-      reply.setResult(dataUpdate_.result_);
-      reply.setFlags(dataUpdate_.flags_);
+      reply.result() = dataUpdate_.result_;
+      detail::testSetFlags(reply, dataUpdate_.flags_);
       return reply;
     }
     if (DeleteLike<Request>::value) {
-      reply.setResult(dataDelete_.result_);
+      reply.result() = dataDelete_.result_;
       return reply;
     }
-    return Reply(DefaultReply, req);
+    return createReply(DefaultReply, req);
   }
 };
 
@@ -263,8 +282,8 @@ inline std::string toString(const folly::IOBuf& buf) {
 
 template <class Rh>
 std::string replyFor(Rh& rh, const std::string& key) {
-  auto reply = rh.route(TypedThriftRequest<cpp2::McGetRequest>(key));
-  return reply.valueRangeSlow().str();
+  auto reply = rh.route(McGetRequest(key));
+  return carbon::valueRangeSlow(reply).str();
 }
 
 }}  // facebook::memcache

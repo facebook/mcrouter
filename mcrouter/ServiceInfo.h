@@ -13,8 +13,7 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -33,8 +32,8 @@ class ServiceInfo {
 
   void handleRequest(
       folly::StringPiece req,
-      const std::shared_ptr<ProxyRequestContextTyped<
-          TypedThriftRequest<cpp2::McGetRequest>>>& ctx) const;
+      const std::shared_ptr<ProxyRequestContextTyped<McGetRequest>>& ctx)
+      const;
 
   ~ServiceInfo();
 

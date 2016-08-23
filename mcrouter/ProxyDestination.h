@@ -24,8 +24,7 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 
 namespace facebook { namespace memcache {
 
@@ -116,7 +115,7 @@ class ProxyDestination {
   uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
 
   int probe_delay_next_ms{0};
-  std::unique_ptr<TypedThriftRequest<cpp2::McVersionRequest>> probe_req;
+  std::unique_ptr<McVersionRequest> probe_req;
   std::string poolName_;
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout

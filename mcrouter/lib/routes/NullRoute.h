@@ -34,7 +34,7 @@ struct NullRoute {
 
   template <class Request>
   static ReplyT<Request> route(const Request& req) {
-    return ReplyT<Request>(DefaultReply, req);
+    return createReply(DefaultReply, req);
   }
 };
 

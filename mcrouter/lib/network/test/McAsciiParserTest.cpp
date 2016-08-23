@@ -16,10 +16,9 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/network/ClientMcParser.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
-#include "mcrouter/lib/network/TypedThriftMessage.h"
 
 using namespace facebook::memcache;
 
@@ -27,16 +26,16 @@ using folly::IOBuf;
 
 namespace {
 
-template <class ThriftType>
-void compare(const TypedThriftReply<ThriftType>& expected,
-             const TypedThriftReply<ThriftType>& actual) {
+template <class Message>
+void compare(const Message& expected, const Message& actual) {
   /**
    * Ensure values are coalesced before apache::thrift::StringTraits<IOBuf>
    * is called to compare them.
    */
-  expected.valueRangeSlow();
-  actual.valueRangeSlow();
-  EXPECT_EQ(*expected, *actual);
+  const auto expectedSp =
+      carbon::valueRangeSlow(const_cast<Message&>(expected));
+  const auto actualSp = carbon::valueRangeSlow(const_cast<Message&>(actual));
+  EXPECT_EQ(expectedSp, actualSp);
 }
 
 class McAsciiParserHarness {
@@ -170,63 +169,70 @@ void McAsciiParserHarness::runTest(int maxPieceSize) {
 
 template <class Reply>
 Reply setValue(Reply reply, folly::StringPiece str) {
-  reply.setValue(str);
+  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
   return reply;
 }
 
 template <class Reply>
 Reply setFlags(Reply reply, uint64_t flags) {
-  reply->set_flags(flags);
+  reply.flags() = flags;
   return reply;
 }
 
 template <class Reply>
 Reply setLeaseToken(Reply reply, uint64_t token) {
-  reply->set_leaseToken(token);
+  reply.leaseToken() = token;
   return reply;
 }
 
 template <class Reply>
 Reply setDelta(Reply reply, uint64_t delta) {
-  reply->set_delta(delta);
+  reply.delta() = delta;
   return reply;
 }
 
 template <class Reply>
 Reply setCas(Reply reply, uint64_t cas) {
-  reply->set_casToken(cas);
+  reply.casToken() = cas;
   return reply;
 }
 
 template <class Reply>
 Reply setVersion(Reply reply, std::string version) {
-  reply.setValue(version);
+  reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, version);
   return reply;
 }
 
-TypedThriftReply<cpp2::McMetagetReply> createMetagetHitReply(
+McMetagetReply createMetagetHitReply(
     int32_t age, uint32_t exptime, uint64_t flags, std::string host) {
 
-  TypedThriftReply<cpp2::McMetagetReply> msg;
-  msg->set_age(age);
-  msg->set_exptime(exptime);
+  McMetagetReply msg;
+  msg.age() = age;
+  msg.exptime() = exptime;
 
   if (host != "unknown") {
     struct in6_addr addr;
     memset(&addr, 0, sizeof(addr));
     if (strchr(host.data(), ':') != nullptr) {
       EXPECT_TRUE(inet_pton(AF_INET6, host.data(), &addr) > 0);
-      msg->set_ipv(6);
+      msg.ipv() = 6;
     } else {
       EXPECT_TRUE(inet_pton(AF_INET, host.data(), &addr) > 0);
-      msg->set_ipv(4);
+      msg.ipv() = 4;
     }
   }
-  msg->set_result(mc_res_found);
+  msg.result() = mc_res_found;
   if (host != "unknown") {
-    msg->set_ipAddress(host);
+    msg.ipAddress() = host;
   }
   return msg;
+}
+
+template <class Reply>
+Reply replyWithMessage(mc_res_t res, std::string msg) {
+  Reply reply(res);
+  reply.message() = std::move(msg);
+  return reply;
 }
 
 }  // anonymous
@@ -236,7 +242,7 @@ TypedThriftReply<cpp2::McMetagetReply> createMetagetHitReply(
  */
 template <class Request>
 class McAsciiParserTestGet : public ::testing::Test {};
-using GetTypes = ::testing::Types<TypedThriftRequest<cpp2::McGetRequest>>;
+using GetTypes = ::testing::Types<McGetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestGet, GetTypes);
 
 TYPED_TEST(McAsciiParserTestGet, GetHit) {
@@ -280,13 +286,15 @@ TYPED_TEST(McAsciiParserTestGet, GetMiss_Error) {
 
 TYPED_TEST(McAsciiParserTestGet, GetClientError) {
   McAsciiParserHarness h("CLIENT_ERROR what\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_client_error, "what"));
+  h.expectNext<TypeParam>(
+      replyWithMessage<ReplyT<TypeParam>>(mc_res_client_error, "what"));
   h.runTest(3);
 }
 
 TYPED_TEST(McAsciiParserTestGet, GetServerError) {
   McAsciiParserHarness h("SERVER_ERROR what\r\n");
-  h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_remote_error, "what"));
+  h.expectNext<TypeParam>(
+      replyWithMessage<ReplyT<TypeParam>>(mc_res_remote_error, "what"));
   h.runTest(3);
 }
 
@@ -303,7 +311,7 @@ TYPED_TEST(McAsciiParserTestGet, GetHitMiss) {
  */
 template <class Request>
 class McAsciiParserTestGets : public ::testing::Test {};
-using GetsTypes = ::testing::Types<TypedThriftRequest<cpp2::McGetsRequest>>;
+using GetsTypes = ::testing::Types<McGetsRequest>;
 TYPED_TEST_CASE(McAsciiParserTestGets, GetsTypes);
 
 TYPED_TEST(McAsciiParserTestGets, GetsHit) {
@@ -321,7 +329,7 @@ TYPED_TEST(McAsciiParserTestGets, GetsHit) {
 template <class Request>
 class McAsciiParserTestLeaseGet : public ::testing::Test {};
 using LeaseGetTypes =
-  ::testing::Types<TypedThriftRequest<cpp2::McLeaseGetRequest>>;
+  ::testing::Types<McLeaseGetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestLeaseGet, LeaseGetTypes);
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetHit) {
@@ -365,7 +373,7 @@ TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetMiss) {
  */
 template <class Request>
 class McAsciiParserTestSet: public ::testing::Test {};
-using SetTypes = ::testing::Types<TypedThriftRequest<cpp2::McSetRequest>>;
+using SetTypes = ::testing::Types<McSetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestSet, SetTypes);
 
 TYPED_TEST(McAsciiParserTestSet, SetStored) {
@@ -385,7 +393,7 @@ TYPED_TEST(McAsciiParserTestSet, SetNotStored) {
  */
 template <class Request>
 class McAsciiParserTestAdd: public ::testing::Test {};
-using AddTypes = ::testing::Types<TypedThriftRequest<cpp2::McAddRequest>>;
+using AddTypes = ::testing::Types<McAddRequest>;
 TYPED_TEST_CASE(McAsciiParserTestAdd, AddTypes);
 
 TYPED_TEST(McAsciiParserTestAdd, AddStored) {
@@ -412,7 +420,7 @@ TYPED_TEST(McAsciiParserTestAdd, AddExists) {
 template <class Request>
 class McAsciiParserTestLeaseSet : public ::testing::Test {};
 using LeaseSetTypes =
-  ::testing::Types<TypedThriftRequest<cpp2::McLeaseSetRequest>>;
+  ::testing::Types<McLeaseSetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestLeaseSet, LeaseSetTypes);
 
 TYPED_TEST(McAsciiParserTestLeaseSet, LeaseSetStored) {
@@ -438,7 +446,7 @@ TYPED_TEST(McAsciiParserTestLeaseSet, LeaseSetStaleStored) {
  */
 template <class Request>
 class McAsciiParserTestIncr : public ::testing::Test {};
-using IncrTypes = ::testing::Types<TypedThriftRequest<cpp2::McIncrRequest>>;
+using IncrTypes = ::testing::Types<McIncrRequest>;
 TYPED_TEST_CASE(McAsciiParserTestIncr, IncrTypes);
 
 TYPED_TEST(McAsciiParserTestIncr, IncrSuccess) {
@@ -458,7 +466,7 @@ TYPED_TEST(McAsciiParserTestIncr, IncrNotFound) {
  */
 template <class Request>
 class McAsciiParserTestDecr : public ::testing::Test {};
-using DecrTypes = ::testing::Types<TypedThriftRequest<cpp2::McDecrRequest>>;
+using DecrTypes = ::testing::Types<McDecrRequest>;
 TYPED_TEST_CASE(McAsciiParserTestDecr, DecrTypes);
 
 TYPED_TEST(McAsciiParserTestDecr, DecrSuccess) {
@@ -479,7 +487,7 @@ TYPED_TEST(McAsciiParserTestDecr, DecrNotFound) {
 template <class Request>
 class McAsciiParserTestVersion : public ::testing::Test {};
 using VersionTypes =
-  ::testing::Types<TypedThriftRequest<cpp2::McVersionRequest>>;
+  ::testing::Types<McVersionRequest>;
 TYPED_TEST_CASE(McAsciiParserTestVersion, VersionTypes);
 
 TYPED_TEST(McAsciiParserTestVersion, Version) {
@@ -494,7 +502,7 @@ TYPED_TEST(McAsciiParserTestVersion, Version) {
  */
 template <class Request>
 class McAsciiParserTestDelete : public ::testing::Test {};
-using DeleteTypes = ::testing::Types<TypedThriftRequest<cpp2::McDeleteRequest>>;
+using DeleteTypes = ::testing::Types<McDeleteRequest>;
 TYPED_TEST_CASE(McAsciiParserTestDelete, DeleteTypes);
 
 TYPED_TEST(McAsciiParserTestDelete, DeleteDeleted) {
@@ -514,7 +522,7 @@ TYPED_TEST(McAsciiParserTestDelete, DeleteNotFound) {
  */
 template <class Request>
 class McAsciiParserTestTouch : public ::testing::Test {};
-using TouchTypes = ::testing::Types<TypedThriftRequest<cpp2::McTouchRequest>>;
+using TouchTypes = ::testing::Types<McTouchRequest>;
 TYPED_TEST_CASE(McAsciiParserTestTouch, TouchTypes);
 
 TYPED_TEST(McAsciiParserTestTouch, TouchTouched) {
@@ -535,7 +543,7 @@ TYPED_TEST(McAsciiParserTestTouch, TouchNotFound) {
 template <class Request>
 class McAsciiParserTestMetaget : public ::testing::Test {};
 using MetagetTypes =
-  ::testing::Types<TypedThriftRequest<cpp2::McMetagetRequest>>;
+  ::testing::Types<McMetagetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestMetaget, MetagetTypes);
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetMiss) {
@@ -583,8 +591,8 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne) {
  */
 TEST(McAsciiParserTestFlushAll, FlushAll) {
   McAsciiParserHarness h("OK\r\n");
-  h.expectNext<TypedThriftRequest<cpp2::McFlushAllRequest>>(
-      TypedThriftReply<cpp2::McFlushAllReply>(mc_res_ok));
+  h.expectNext<McFlushAllRequest>(
+      McFlushAllReply(mc_res_ok));
   h.runTest(0);
 }
 
@@ -630,102 +638,102 @@ TEST(McAsciiParserHarness, AllAtOnce) {
                          "from: unknown; "
                          "is_transient:  48\r\nEND\r\n"
                          "TOUCHED\r\n");
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
-      setFlags(setValue(TypedThriftReply<cpp2::McGetReply>(mc_res_found), "te"),
+  h.expectNext<McGetRequest>(
+      setFlags(setValue(McGetReply(mc_res_found), "te"),
                10));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
-      setFlags(setValue(TypedThriftReply<cpp2::McGetReply>(mc_res_found), ""),
+  h.expectNext<McGetRequest>(
+      setFlags(setValue(McGetReply(mc_res_found), ""),
                5));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
+  h.expectNext<McGetRequest>(
       setFlags(
-        setValue(TypedThriftReply<cpp2::McGetReply>(mc_res_found), "test "),
+        setValue(McGetReply(mc_res_found), "test "),
         15889));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
-      TypedThriftReply<cpp2::McGetReply>(mc_res_notfound));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
-      TypedThriftReply<cpp2::McGetReply>(mc_res_client_error, "what"));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
-      TypedThriftReply<cpp2::McGetReply>(mc_res_remote_error, "what"));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
+  h.expectNext<McGetRequest>(
+      McGetReply(mc_res_notfound));
+  h.expectNext<McGetRequest>(
+      replyWithMessage<McGetReply>(mc_res_client_error, "what"));
+  h.expectNext<McGetRequest>(
+      replyWithMessage<McGetReply>(mc_res_remote_error, "what"));
+  h.expectNext<McGetRequest>(
       setFlags(
-        setValue(TypedThriftReply<cpp2::McGetReply>(mc_res_found), "test "),
+        setValue(McGetReply(mc_res_found), "test "),
         17));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
-      TypedThriftReply<cpp2::McGetReply>(mc_res_notfound));
-  h.expectNext<TypedThriftRequest<cpp2::McGetsRequest>>(
+  h.expectNext<McGetRequest>(
+      McGetReply(mc_res_notfound));
+  h.expectNext<McGetsRequest>(
       setCas(
         setFlags(
-          setValue(TypedThriftReply<cpp2::McGetsReply>(mc_res_found),
+          setValue(McGetsReply(mc_res_found),
             "test test "),
           1120),
         573));
-  h.expectNext<TypedThriftRequest<cpp2::McGetRequest>>(
+  h.expectNext<McGetRequest>(
       setFlags(
         setValue(
-          TypedThriftReply<cpp2::McGetReply>(mc_res_found), "test test "),
+          McGetReply(mc_res_found), "test test "),
         1120));
-  h.expectNext<TypedThriftRequest<cpp2::McLeaseGetRequest>>(
+  h.expectNext<McLeaseGetRequest>(
       setLeaseToken(
         setFlags(
           setValue(
-            TypedThriftReply<cpp2::McLeaseGetReply>(mc_res_notfound),
+            McLeaseGetReply(mc_res_notfound),
             "test test "),
           1120),
         1));
-  h.expectNext<TypedThriftRequest<cpp2::McLeaseGetRequest>>(
+  h.expectNext<McLeaseGetRequest>(
       setLeaseToken(
         setFlags(
           setValue(
-            TypedThriftReply<cpp2::McLeaseGetReply>(mc_res_notfound), ""),
+            McLeaseGetReply(mc_res_notfound), ""),
           1120),
         1));
-  h.expectNext<TypedThriftRequest<cpp2::McLeaseGetRequest>>(
+  h.expectNext<McLeaseGetRequest>(
       setLeaseToken(
         setFlags(
           setValue(
-            TypedThriftReply<cpp2::McLeaseGetReply>(mc_res_notfound), ""),
+            McLeaseGetReply(mc_res_notfound), ""),
           112),
         162481237786486239ull));
-  h.expectNext<TypedThriftRequest<cpp2::McSetRequest>>(
-      TypedThriftReply<cpp2::McSetReply>(mc_res_stored));
-  h.expectNext<TypedThriftRequest<cpp2::McSetRequest>>(
-      TypedThriftReply<cpp2::McSetReply>(mc_res_notstored));
-  h.expectNext<TypedThriftRequest<cpp2::McAddRequest>>(
-      TypedThriftReply<cpp2::McAddReply>(mc_res_stored));
-  h.expectNext<TypedThriftRequest<cpp2::McAddRequest>>(
-      TypedThriftReply<cpp2::McAddReply>(mc_res_notstored));
-  h.expectNext<TypedThriftRequest<cpp2::McAddRequest>>(
-      TypedThriftReply<cpp2::McAddReply>(mc_res_exists));
-  h.expectNext<TypedThriftRequest<cpp2::McLeaseSetRequest>>(
-      TypedThriftReply<cpp2::McLeaseSetReply>(mc_res_stored));
-  h.expectNext<TypedThriftRequest<cpp2::McLeaseSetRequest>>(
-      TypedThriftReply<cpp2::McLeaseSetReply>(mc_res_notstored));
-  h.expectNext<TypedThriftRequest<cpp2::McLeaseSetRequest>>(
-      TypedThriftReply<cpp2::McLeaseSetReply>(mc_res_stalestored));
-  h.expectNext<TypedThriftRequest<cpp2::McIncrRequest>>(
-      setDelta(TypedThriftReply<cpp2::McIncrReply>(mc_res_stored), 3636));
-  h.expectNext<TypedThriftRequest<cpp2::McIncrRequest>>(
-      TypedThriftReply<cpp2::McIncrReply>(mc_res_notfound));
-  h.expectNext<TypedThriftRequest<cpp2::McDecrRequest>>(
-      setDelta(TypedThriftReply<cpp2::McDecrReply>(mc_res_stored), 1534));
-  h.expectNext<TypedThriftRequest<cpp2::McDecrRequest>>(
-      TypedThriftReply<cpp2::McDecrReply>(mc_res_notfound));
-  h.expectNext<TypedThriftRequest<cpp2::McVersionRequest>>(
+  h.expectNext<McSetRequest>(
+      McSetReply(mc_res_stored));
+  h.expectNext<McSetRequest>(
+      McSetReply(mc_res_notstored));
+  h.expectNext<McAddRequest>(
+      McAddReply(mc_res_stored));
+  h.expectNext<McAddRequest>(
+      McAddReply(mc_res_notstored));
+  h.expectNext<McAddRequest>(
+      McAddReply(mc_res_exists));
+  h.expectNext<McLeaseSetRequest>(
+      McLeaseSetReply(mc_res_stored));
+  h.expectNext<McLeaseSetRequest>(
+      McLeaseSetReply(mc_res_notstored));
+  h.expectNext<McLeaseSetRequest>(
+      McLeaseSetReply(mc_res_stalestored));
+  h.expectNext<McIncrRequest>(
+      setDelta(McIncrReply(mc_res_stored), 3636));
+  h.expectNext<McIncrRequest>(
+      McIncrReply(mc_res_notfound));
+  h.expectNext<McDecrRequest>(
+      setDelta(McDecrReply(mc_res_stored), 1534));
+  h.expectNext<McDecrRequest>(
+      McDecrReply(mc_res_notfound));
+  h.expectNext<McVersionRequest>(
       setVersion(
-        TypedThriftReply<cpp2::McVersionReply>(mc_res_ok), "HarnessTest"));
-  h.expectNext<TypedThriftRequest<cpp2::McDeleteRequest>>(
-      TypedThriftReply<cpp2::McDeleteReply>(mc_res_deleted));
-  h.expectNext<TypedThriftRequest<cpp2::McDeleteRequest>>(
-      TypedThriftReply<cpp2::McDeleteReply>(mc_res_notfound));
-  h.expectNext<TypedThriftRequest<cpp2::McMetagetRequest>>(
-      TypedThriftReply<cpp2::McMetagetReply>(mc_res_notfound));
-  h.expectNext<TypedThriftRequest<cpp2::McMetagetRequest>>(
+        McVersionReply(mc_res_ok), "HarnessTest"));
+  h.expectNext<McDeleteRequest>(
+      McDeleteReply(mc_res_deleted));
+  h.expectNext<McDeleteRequest>(
+      McDeleteReply(mc_res_notfound));
+  h.expectNext<McMetagetRequest>(
+      McMetagetReply(mc_res_notfound));
+  h.expectNext<McMetagetRequest>(
       createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
-  h.expectNext<TypedThriftRequest<cpp2::McMetagetRequest>>(
+  h.expectNext<McMetagetRequest>(
       createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
-  h.expectNext<TypedThriftRequest<cpp2::McMetagetRequest>>(
+  h.expectNext<McMetagetRequest>(
       createMetagetHitReply(-1, 37, 48, "unknown"));
-  h.expectNext<TypedThriftRequest<cpp2::McTouchRequest>>(
-      TypedThriftReply<cpp2::McTouchReply>(mc_res_touched));
+  h.expectNext<McTouchRequest>(
+      McTouchReply(mc_res_touched));
   h.runTest(1);
 }

@@ -83,8 +83,7 @@ void ProxyDestination::schedule_next_probe() {
 void ProxyDestination::timerCallback() {
   // Note that the previous probe might still be in flight
   if (!probe_req) {
-    probe_req =
-        folly::make_unique<TypedThriftRequest<cpp2::McVersionRequest>>();
+    probe_req = folly::make_unique<McVersionRequest>();
     ++stats_.probesSent;
     auto selfPtr = selfPtr_;
     proxy->fiberManager.addTask([selfPtr]() mutable {

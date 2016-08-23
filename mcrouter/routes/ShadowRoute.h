@@ -99,8 +99,8 @@ class ShadowRoute {
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
     auto range = settings->keyRange();
-    return range.first <= req.routingKeyHash() &&
-                          req.routingKeyHash() <= range.second;
+    return range.first <= req.key().routingKeyHash() &&
+                          req.key().routingKeyHash() <= range.second;
   }
 
   template <class Request>
@@ -120,9 +120,9 @@ class ShadowRoute {
       const;
 
   void sendAndValidateRequest(
-      const TypedThriftReply<cpp2::McGetReply>& normalReply,
+      const McGetReply& normalReply,
       std::shared_ptr<McrouterRouteHandleIf> shadow,
-      std::shared_ptr<TypedThriftRequest<cpp2::McGetRequest>> adjustedReq)
+      std::shared_ptr<McGetRequest> adjustedReq)
       const {
 
     sendAndValidateRequestGetImpl(normalReply, shadow, adjustedReq);

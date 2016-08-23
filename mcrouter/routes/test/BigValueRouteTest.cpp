@@ -15,8 +15,7 @@
 #include <folly/Conv.h>
 #include <folly/Format.h>
 
-#include "mcrouter/lib/network/TypedThriftMessage.h"
-#include "mcrouter/lib/network/gen-cpp2/mc_caret_protocol_types.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/BigValueRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -47,15 +46,15 @@ TEST(BigValueRouteTest, smallvalue) {
     [&]() {
       McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
-      TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+      McGetRequest req_get("key_get");
       auto f_get = rh.route(req_get);
 
-      EXPECT_EQ("a", f_get.valueRangeSlow().str());
+      EXPECT_EQ("a", carbon::valueRangeSlow(f_get).str());
       EXPECT_EQ(test_handles[0]->saw_keys, vector<std::string>{"key_get"});
       test_handles[0]->saw_keys.clear();
 
-      TypedThriftRequest<cpp2::McSetRequest> req_set("key_set");
-      req_set.setValue("value");
+      McSetRequest req_set("key_set");
+      req_set.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
 
       auto f_set = rh.route(req_set);
       EXPECT_EQ(mc_res_stored, f_set.result());
@@ -90,7 +89,7 @@ TEST(BigValueRouteTest, bigvalue) {
       { // Test Get Like path with init_reply in corect format
         McrouterRouteHandle<BigValueRoute> rh(route_handles[0], opts);
 
-        TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+        McGetRequest req_get("key_get");
 
         auto f_get = rh.route(req_get);
         auto keys_get = test_handles[0]->saw_keys;
@@ -110,13 +109,13 @@ TEST(BigValueRouteTest, bigvalue) {
 
         // each chunk_key saw value as init_reply.
         // In GetLike path, it gets appended num_chunks time
-        EXPECT_EQ(merged_str, f_get.valueRangeSlow().str());
+        EXPECT_EQ(merged_str, carbon::valueRangeSlow(f_get).str());
       }
 
       { // Test Get Like path with init_reply_error
         McrouterRouteHandle<BigValueRoute> rh(route_handles[1], opts);
 
-        TypedThriftRequest<cpp2::McGetRequest> req_get("key_get");
+        McGetRequest req_get("key_get");
 
         auto f_get = rh.route(req_get);
         auto keys_get = test_handles[1]->saw_keys;
@@ -124,19 +123,19 @@ TEST(BigValueRouteTest, bigvalue) {
         // first get the result for original key, then return mc_res_notfound
         EXPECT_EQ("key_get", keys_get.front());
         EXPECT_EQ(mc_res_notfound, f_get.result());
-        EXPECT_EQ("", f_get.valueRangeSlow().str());
+        EXPECT_EQ("", carbon::valueRangeSlow(f_get).str());
       }
 
       { // Test Update Like path with mc_op_set op
         McrouterRouteHandle<BigValueRoute> rh(route_handles[2], opts);
 
-        std::string big_value  = folly::to<std::string>(
-          std::string(threshold*(num_chunks/2), 't'),
-          std::string(threshold*(num_chunks/2), 's'));
+        std::string big_value = folly::to<std::string>(
+            std::string(threshold * (num_chunks / 2), 't'),
+            std::string(threshold * (num_chunks / 2), 's'));
         std::string chunk_type_1(threshold, 't');
         std::string chunk_type_2(threshold, 's');
-        TypedThriftRequest<cpp2::McSetRequest> req_set("key_set");
-        req_set.setValue(big_value);
+        McSetRequest req_set("key_set");
+        req_set.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, big_value);
 
         auto f_set = rh.route(req_set);
         auto keys_set = test_handles[2]->saw_keys;
@@ -178,8 +177,8 @@ TEST(BigValueRouteTest, bigvalue) {
           std::string(threshold*(num_chunks/2), 't'),
           std::string(threshold*(num_chunks/2), 's'));
 
-        TypedThriftRequest<cpp2::McLeaseSetRequest> req_set("key_set");
-        req_set.setValue(big_value);
+        McLeaseSetRequest req_set("key_set");
+        req_set.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, big_value);
 
         auto f_set = rh.route(req_set);
         auto keys_set = test_handles[3]->saw_keys;

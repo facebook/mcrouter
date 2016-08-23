@@ -734,44 +734,32 @@ const char* TOUCHED = "TOUCHED\r\n";
 } // anonymous
 
 template <>
-const char*
-McClientRequestContext<TypedThriftRequest<cpp2::McGetRequest>>::
-fakeReply() const {
+const char* McClientRequestContext<McGetRequest>::fakeReply() const {
   return FOUND;
 }
 
 template <>
-const char*
-McClientRequestContext<TypedThriftRequest<cpp2::McLeaseGetRequest>>::
-fakeReply() const {
+const char* McClientRequestContext<McLeaseGetRequest>::fakeReply() const {
   return FOUND;
 }
 
 template <>
-const char*
-McClientRequestContext<TypedThriftRequest<cpp2::McSetRequest>>::
-fakeReply() const {
+const char* McClientRequestContext<McSetRequest>::fakeReply() const {
   return STORED;
 }
 
 template <>
-const char*
-McClientRequestContext<TypedThriftRequest<cpp2::McLeaseSetRequest>>::
-fakeReply() const {
+const char* McClientRequestContext<McLeaseSetRequest>::fakeReply() const {
   return STORED;
 }
 
 template <>
-const char*
-McClientRequestContext<TypedThriftRequest<cpp2::McDeleteRequest>>::
-fakeReply() const {
+const char* McClientRequestContext<McDeleteRequest>::fakeReply() const {
   return DELETED;
 }
 
 template <>
-const char*
-McClientRequestContext<TypedThriftRequest<cpp2::McTouchRequest>>::
-fakeReply() const {
+const char* McClientRequestContext<McTouchRequest>::fakeReply() const {
   return TOUCHED;
 }
 

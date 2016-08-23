@@ -45,9 +45,9 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequestGetImpl(
   uint64_t flags = normalReply.flags();
 
   mc_res_t result = normalReply.result();
-  size_t hashVal = folly::IOBufHash()(
-      normalReply.valuePtrUnsafe()
-        ? *normalReply.valuePtrUnsafe() : folly::IOBuf());
+  size_t hashVal = normalReply.value().hasValue()
+      ? folly::IOBufHash()(*normalReply.value())
+      : 0;
 
   auto normalDest = normalReply.destination();
 
@@ -65,9 +65,9 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequestGetImpl(
       auto shadowReply = shadow->route(*adjustedReq);
       uint64_t shadowFlags = shadowReply.flags();
       mc_res_t shadowResult = shadowReply.result();
-      size_t shadowHash = folly::IOBufHash()(
-          shadowReply.valuePtrUnsafe()
-            ? *shadowReply.valuePtrUnsafe() : folly::IOBuf());
+      size_t shadowHash = shadowReply.value().hasValue()
+          ? folly::IOBufHash()(*shadowReply.value())
+          : 0;
 
       if (shadowFlags != flags || shadowResult != result ||
           hashVal != shadowHash) {
@@ -81,7 +81,7 @@ void ShadowRoute<ShadowPolicy>::sendAndValidateRequestGetImpl(
                                             shadowFlags,
                                             result,
                                             shadowResult,
-                                            adjustedReq->fullKey()};
+                                            adjustedReq->key().fullKey()};
 
         logShadowValidationError(proxy, validationData);
       }

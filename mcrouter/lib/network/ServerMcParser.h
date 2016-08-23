@@ -71,9 +71,8 @@ class ServerMcParser : private McParser::ParserCallback {
   template <class Request>
   FOLLY_NOINLINE void writeToPipe(const Request& req);
 
-  template <class ThriftType>
-  void requestReadyHelper(TypedThriftRequest<ThriftType>&& req,
-                          uint64_t reqid);
+  template <class Request>
+  void requestReadyHelper(Request&& req, uint64_t reqid);
 
   /* McParser callbacks */
   bool umMessageReady(const UmbrellaMessageInfo& info,

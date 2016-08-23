@@ -21,6 +21,7 @@
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/McServerSession.h"
+#include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache {
 
@@ -150,7 +151,7 @@ class SessionTestHarness {
       : req_(std::move(req)),
         replyFn_(std::move(replyFn)) {}
     std::string key() const override final {
-      return req_.fullKey().str();
+      return req_.key().fullKey().str();
     }
     void reply() override final {
       replyFn_(req_);
@@ -206,24 +207,24 @@ class SessionTestHarness {
       Request&& req) {
     auto replyFn = [ctx = std::move(ctx)](const Request& req) mutable {
       McServerRequestContext::reply(
-          std::move(ctx), ReplyT<Request>(DefaultReply, req));
+          std::move(ctx), createReply(DefaultReply, req));
     };
     return folly::make_unique<Transaction<Request>>(
         std::move(req), std::move(replyFn));
   }
 
-  std::unique_ptr<Transaction<TypedThriftRequest<cpp2::McGetRequest>>>
+  std::unique_ptr<Transaction<McGetRequest>>
   makeTransaction(McServerRequestContext&& ctx,
-                  TypedThriftRequest<cpp2::McGetRequest>&& req) {
-    auto value = req.fullKey().str() + "_value";
+                  McGetRequest&& req) {
+    auto value = req.key().fullKey().str() + "_value";
     auto replyFn = [ctx = std::move(ctx), value = std::move(value)](
-        const TypedThriftRequest<cpp2::McGetRequest>&) mutable {
-      TypedThriftReply<cpp2::McGetReply> reply(mc_res_found);
-      reply.setValue(std::move(value));
+        const McGetRequest&) mutable {
+      McGetReply reply(mc_res_found);
+      reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     };
     return
-      folly::make_unique<Transaction<TypedThriftRequest<cpp2::McGetRequest>>>(
+      folly::make_unique<Transaction<McGetRequest>>(
         std::move(req), std::move(replyFn));
   }
 

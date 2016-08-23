@@ -9,23 +9,32 @@
  */
 #pragma once
 
-#include <folly/Range.h>
+#include <type_traits>
 
-namespace folly {
-class IOBuf;
-}
+#include <folly/Optional.h>
+#include <folly/Range.h>
+#include <folly/io/IOBuf.h>
 
 namespace carbon {
+
+namespace detail {
+inline folly::IOBuf* bufPtr(folly::Optional<folly::IOBuf>& buf) {
+  return buf.get_pointer();
+}
+inline folly::IOBuf* bufPtr(folly::IOBuf& buf) {
+  return &buf;
+}
+} // detail
 
 template <class R>
 typename std::enable_if<R::hasValue, const folly::IOBuf*>::type
 valuePtrUnsafe(const R& requestOrReply) {
-  return &requestOrReply.value();
+  return detail::bufPtr(const_cast<R&>(requestOrReply).value());
 }
 template <class R>
 typename std::enable_if<R::hasValue, folly::IOBuf*>::type
 valuePtrUnsafe(R& requestOrReply) {
-  return &requestOrReply.value();
+  return detail::bufPtr(requestOrReply.value());
 }
 template <class R>
 typename std::enable_if<!R::hasValue, folly::IOBuf*>::type
@@ -36,15 +45,25 @@ valuePtrUnsafe(const R& requestOrReply) {
 template <class R>
 typename std::enable_if<R::hasValue, folly::StringPiece>::type
 valueRangeSlow(R& requestOrReply) {
-  requestOrReply.value().coalesce();
-  return folly::StringPiece(
-      reinterpret_cast<const char*>(requestOrReply.value().data()),
-      requestOrReply.value().length());
+  auto* buf = detail::bufPtr(requestOrReply.value());
+  return buf ? folly::StringPiece(buf->coalesce()) : folly::StringPiece();
 }
 template <class R>
 typename std::enable_if<!R::hasValue, folly::StringPiece>::type
 valueRangeSlow(R& requestOrReply) {
   return folly::StringPiece();
 }
+
+// Helper class to determine whether a type is a Carbon request.
+template <class Msg>
+class IsRequestTrait {
+  template <class T>
+  static std::true_type check(typename T::reply_type*);
+  template <class T>
+  static std::false_type check(...);
+
+ public:
+  static constexpr bool value = decltype(check<Msg>(0))::value;
+};
 
 } // carbon

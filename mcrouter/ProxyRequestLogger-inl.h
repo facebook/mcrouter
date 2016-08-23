@@ -8,7 +8,7 @@
  *
  */
 #include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/network/ThriftMessageTraits.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/McrouterFiberContext.h"
@@ -55,7 +55,8 @@ inline void logOutlier(proxy_t& proxy, OtherThanT<Request,
 template <class Request>
 inline void logRequestClass(proxy_t& proxy) {
   auto reqClass = fiber_local::getRequestClass();
-  auto operation = Request::OpType::mc_op;
+  auto operation =
+      McOperation<OpFromType<Request, RequestOpMapping>::value>::mc_op;
 
   switch (operation) {
     case mc_op_get:

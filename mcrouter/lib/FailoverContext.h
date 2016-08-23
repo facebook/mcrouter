@@ -13,6 +13,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/Operation.h"
 
@@ -34,14 +35,14 @@ struct FailoverContext {
                   const ReplyT<Request>& normal,
                   const ReplyT<Request>& failover)
     : requestName(Request::name),
-      fullKey(request.fullKey()),
-      routingKey(request.routingKey()),
-      keyWithoutRoute(request.keyWithoutRoute()),
-      requestValue(request.valuePtrUnsafe()),
-      normalValue(normal.valuePtrUnsafe()),
+      fullKey(request.key().fullKey()),
+      routingKey(request.key().routingKey()),
+      keyWithoutRoute(request.key().keyWithoutRoute()),
+      requestValue(carbon::valuePtrUnsafe(request)),
+      normalValue(carbon::valuePtrUnsafe(normal)),
       normalDestination(normal.destination().get()),
       normalResult(normal.result()),
-      failoverValue(failover.valuePtrUnsafe()),
+      failoverValue(carbon::valuePtrUnsafe(failover)),
       failoverDestination(failover.destination().get()),
       failoverResult(failover.result()),
       numRetries(numRetries_),
