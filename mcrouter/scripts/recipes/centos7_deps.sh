@@ -6,7 +6,6 @@ pushd "$PKG_DIR"
 
 # Required for Centos 7 build
 #
-# - epel repo has automake-1.13, automake-1.15 is needed for fbthrift build
 # - base repo has cmake-2.8.11, cmake-2.8.12 is needed for wangle build
 # - ragel centos7 rpm not found, need to build from source
 

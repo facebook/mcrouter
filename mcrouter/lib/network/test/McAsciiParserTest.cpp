@@ -28,10 +28,6 @@ namespace {
 
 template <class Message>
 void compare(const Message& expected, const Message& actual) {
-  /**
-   * Ensure values are coalesced before apache::thrift::StringTraits<IOBuf>
-   * is called to compare them.
-   */
   const auto expectedSp =
       carbon::valueRangeSlow(const_cast<Message&>(expected));
   const auto actualSp = carbon::valueRangeSlow(const_cast<Message&>(actual));

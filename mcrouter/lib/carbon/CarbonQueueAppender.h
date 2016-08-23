@@ -111,7 +111,7 @@ class CarbonQueueAppenderStorage {
 /**
  * Mcrouter's own implementation of folly's QueueAppender.  CarbonQueueAppender
  * implements the portion of the folly::io::QueueAppender interface needed by
- * apache::thrift::CompactProtocolWriter.
+ * carbon::CarbonProtocolWriter.
  * We have our own version of QueueAppender in order to support more efficient
  * memory management for mcrouter's use case.
  */

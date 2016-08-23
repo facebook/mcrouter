@@ -22,7 +22,7 @@ struct CodecIdRange;
 class CompressionCodec;
 
 /**
- * Class for serializing requests in the form of thrift structs.
+ * Class for serializing requests in the form of Carbon structs.
  */
 class CaretSerializedMessage {
  public:
