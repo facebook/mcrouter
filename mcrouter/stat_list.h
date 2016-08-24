@@ -238,6 +238,7 @@
   STUI(config_failures, 0, 0)
   STUI(start_time, 0, 0)
   STUI(dev_null_requests, 0, 1)
+  STUI(proxy_request_num_outstanding, 0, 1)
 #undef GROUP
 #define GROUP count_stats
   STUI(request_sent_count, 0, 1)
@@ -286,10 +287,4 @@
   STUIR(result_tko_all, 0, 1)
   STUIR(result_local_error, 0, 1)
   STUIR(result_local_error_all, 0, 1)
-#undef GROUP
-#define GROUP memory_stats | ods_stats | detailed_stats
-  STUI(proxy_request_num_outstanding, 0, 1)
-#undef GROUP
-#define GROUP memory_stats
-  STUI(mcrouter_queue_entry_num_outstanding, 0, 1)
 #undef GROUP

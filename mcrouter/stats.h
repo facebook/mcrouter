@@ -66,7 +66,6 @@ enum stat_group_t {
   max_stats            =      0x800,
   all_stats            =     0xffff,
   server_stats         =    0x10000,
-  memory_stats         =    0x20000,
   suspect_server_stats =    0x40000,
   unknown_stats        = 0x10000000,
 };

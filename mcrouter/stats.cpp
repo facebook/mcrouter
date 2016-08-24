@@ -485,8 +485,6 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
     return server_stats;
   } else if (str == "suspect_servers") {
     return suspect_server_stats;
-  } else if (str == "memory") {
-    return memory_stats;
   } else if (str == "count") {
     return count_stats;
   } else if (str == "outlier") {

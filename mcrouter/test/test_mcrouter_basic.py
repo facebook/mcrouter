@@ -74,7 +74,7 @@ class TestMcrouterBasic(McrouterTestCase):
 
         # Stats with args
         args = ['detailed', 'cmd', 'cmd-in', 'cmd-out', 'cmd-error',
-                'servers', 'suspect_servers', 'memory', 'count', 'outlier']
+                'servers', 'suspect_servers', 'count', 'outlier']
         for arg in args:
             res = mcr.issue_command_and_read_all('stats{0}\r\n'.format(arg))
             self.assertTrue('CLIENT_ERROR' in res)
