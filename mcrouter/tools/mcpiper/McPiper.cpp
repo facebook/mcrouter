@@ -133,15 +133,16 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
     std::cerr << "Filename pattern: " << *filenamePattern << std::endl;
   }
 
-  MessagePrinter messagePrinter(getOptions(settings, this),
-                                getFilter(settings),
-                                createValueFormatter(),
-                                targetOut);
+  messagePrinter_ = folly::make_unique<MessagePrinter>(
+      getOptions(settings, this),
+      getFilter(settings),
+      createValueFormatter(),
+      targetOut);
 
   std::unordered_map<uint64_t, SnifferParser<MessagePrinter>> parserMap;
 
   // Callback from fifoManager. Read the data and feed the correct parser.
-  auto fifoReaderCallback = [&parserMap, &messagePrinter, this](
+  auto fifoReaderCallback = [&parserMap, this](
       uint64_t connectionId,
       uint64_t packetId,
       folly::SocketAddress from,
@@ -153,13 +154,16 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
       return;
     }
     if (kNotSupporttedTypes.find(typeId) != kNotSupporttedTypes.end()) {
-       return;
-     }
+      return;
+    }
     auto it = parserMap.find(connectionId);
     if (it == parserMap.end()) {
-        it = parserMap.emplace(std::piecewise_construct,
-                               std::forward_as_tuple(connectionId),
-                               std::forward_as_tuple(messagePrinter)).first;
+      it = parserMap
+               .emplace(
+                   std::piecewise_construct,
+                   std::forward_as_tuple(connectionId),
+                   std::forward_as_tuple(*messagePrinter_))
+               .first;
     }
     auto& snifferParser = it->second;
 
@@ -180,8 +184,8 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
                                 settings.fifoRoot, std::move(filenamePattern));
 
   eventBase.setMaxReadAtOnce(1);
-  while (running_ && eventBase.loopOnce()) {
-    stats_ = messagePrinter.getStats();
+  while (running_) {
+    eventBase.loopOnce();
   }
 }
 

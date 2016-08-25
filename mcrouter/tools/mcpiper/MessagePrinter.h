@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <iostream>
 
 #include <boost/regex.hpp>
@@ -88,7 +89,7 @@ class MessagePrinter {
    * @return  A pair: (numMessagesReceives, numMessagesPrinted).
    */
   inline std::pair<uint64_t, uint64_t> getStats() const noexcept {
-    return std::make_pair(totalMessages_, printedMessages_);
+    return std::make_pair(totalMessages_.load(), printedMessages_.load());
   }
 
   template <class Message>
@@ -110,8 +111,8 @@ class MessagePrinter {
 
   std::unique_ptr<ValueFormatter> valueFormatter_;
   AnsiColorCodeStream targetOut_;
-  uint64_t totalMessages_{0};
-  uint64_t printedMessages_{0};
+  std::atomic<uint64_t> totalMessages_{0};
+  std::atomic<uint64_t> printedMessages_{0};
   uint32_t afterMatchCount_{0};
 
   // SnifferParser Callbacks

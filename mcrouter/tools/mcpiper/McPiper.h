@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "mcrouter/tools/mcpiper/Config.h"
+#include "mcrouter/tools/mcpiper/MessagePrinter.h"
 
 namespace facebook {
 namespace memcache {
@@ -52,11 +53,11 @@ class McPiper {
    * @return A pair: (numMessagesReceived, numMessagesPrinted).
    */
   std::pair<uint64_t, uint64_t> getStats() const noexcept {
-    return stats_;
+    return messagePrinter_->getStats();
   };
 
  private:
-  std::pair<uint64_t, uint64_t> stats_;
+  std::unique_ptr<MessagePrinter> messagePrinter_;
   bool running_{false};
 };
 
