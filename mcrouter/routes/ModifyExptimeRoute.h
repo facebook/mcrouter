@@ -18,17 +18,19 @@
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Modifies exptime of a request.
+ * Note that exptime is not modified for delete requests
  * If action == "set", applies a new expiration time.
  * If action == "min", applies a minimum of
  * (old expiration time, new expiration time).
  *
- * Note: 0 means infinite exptime
+ * Note: 0 means infinite exptime.
  */
 class ModifyExptimeRoute {
  public:
@@ -57,8 +59,10 @@ class ModifyExptimeRoute {
   }
 
   template <class Request>
-  typename std::enable_if<Request::hasExptime, ReplyT<Request>>::type route(
-      const Request& req) const {
+  typename std::enable_if<
+      Request::hasExptime && OtherThan<Request, DeleteLike<>>::value,
+      ReplyT<Request>>::type
+  route(const Request& req) const {
     switch (action_) {
       case Action::Set: {
         auto mutReq = req;
@@ -79,8 +83,10 @@ class ModifyExptimeRoute {
   }
 
   template <class Request>
-  typename std::enable_if<!Request::hasExptime, ReplyT<Request>>::type route(
-      const Request& req) const {
+  typename std::enable_if<
+      !Request::hasExptime || DeleteLike<Request>::value,
+      ReplyT<Request>>::type
+  route(const Request& req) const {
     return target_->route(req);
   }
 

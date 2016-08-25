@@ -92,7 +92,7 @@ TEST(failoverWithExptimeRouteTest, once) {
     auto reply2 = rh->route(McDeleteRequest("1"));
     EXPECT_EQ(mc_res_notfound, reply2.result());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[0]->sawExptimes);
     EXPECT_EQ(vector<uint32_t>{}, failoverHandles[1]->sawExptimes);
   });
 }
@@ -129,8 +129,8 @@ TEST(failoverWithExptimeRouteTest, twice) {
     auto reply2 = rh->route(McDeleteRequest("1"));
     EXPECT_EQ(mc_res_notfound, reply2.result());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[1]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[1]->sawExptimes);
   });
 }
 
@@ -168,8 +168,8 @@ TEST(failoverWithExptimeRouteTest, fail) {
     auto reply2 = rh->route(McDeleteRequest("1"));
     EXPECT_EQ(mc_res_timeout, reply2.result());
     EXPECT_EQ(vector<uint32_t>({0, 0}), normalHandle[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[0]->sawExptimes);
-    EXPECT_EQ(vector<uint32_t>({0, 2}), failoverHandles[1]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[0]->sawExptimes);
+    EXPECT_EQ(vector<uint32_t>({0, 0}), failoverHandles[1]->sawExptimes);
   });
 }
 
