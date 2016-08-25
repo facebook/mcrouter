@@ -15,6 +15,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/Lz4CompressionCodec.h"
+#include "mcrouter/lib/Lz4ImmutableCompressionCodec.h"
 #include "mcrouter/lib/ZstdCompressionCodec.h"
 #include "mcrouter/lib/IovecCursor.h"
 
@@ -132,9 +133,15 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
           codecFilteringOptions,
           codecCompressionLevel);
 #else
-      LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
-      return nullptr;
+    LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
+    return nullptr;
 #endif // FOLLY_HAVE_LIBLZ4
+    case CompressionCodecType::LZ4Immutable:
+      return folly::make_unique<Lz4ImmutableCompressionCodec>(
+          std::move(dictionary),
+          id,
+          codecFilteringOptions,
+          codecCompressionLevel);
     case CompressionCodecType::ZSTD:
 #if FOLLY_HAVE_LIBZSTD
       return folly::make_unique<ZstdCompressionCodec>(

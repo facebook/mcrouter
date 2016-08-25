@@ -342,4 +342,58 @@ TEST(ZstdCompressionCodec, uncompressChainedWithCompressionLevel) {
 }
 #endif // FOLLY_HAVE_LIBZSTD
 
+
+TEST(Lz4ImmutableCompressionCodec, compressAndUncompress) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::LZ4Immutable, getAsciiDictionary(), 1);
+  testCompressAndUncompress(compressor.get(), *getAsciiReply());
+}
+
+TEST(Lz4ImmutableCompressionCodec, compressAndUncompress_largeValues) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::LZ4Immutable, getAsciiDictionary(), 1);
+  testCompressAndUncompress(compressor.get(), *getRandomLargeReply());
+}
+
+TEST(Lz4ImmutableCompressionCodec, compressTwiceWith) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::LZ4Immutable, getAsciiDictionary(), 1);
+  testCompressTwice(compressor.get(), *getAsciiReply());
+}
+
+TEST(
+    Lz4ImmutableCompressionCodec,
+    compressTwiceWithCompressionLevelAndFilters) {
+  FilteringOptions filters;
+  filters.isEnabled = false;
+  filters.minCompressionThreshold = 64;
+  filters.maxCompressionThreshold = 1024;
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::LZ4Immutable,
+      getAsciiDictionary(),
+      1 /* id */,
+      filters /* filtering options */,
+      5 /* compression level */);
+  EXPECT_EQ(compressor->filteringOptions().isEnabled, false);
+  EXPECT_EQ(compressor->filteringOptions().typeId, 0);
+  EXPECT_EQ(compressor->filteringOptions().minCompressionThreshold, 64);
+  EXPECT_EQ(compressor->filteringOptions().maxCompressionThreshold, 1024);
+  testCompressTwice(compressor.get(), *getAsciiReply());
+}
+
+TEST(Lz4ImmutableCompressionCodec, compressChained) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::LZ4Immutable, getAsciiDictionary(), 1);
+  auto data = getAsciiReply();
+  for (size_t i = 2; i < data->length(); ++i) {
+    testCompressChained(compressor.get(), *data, i);
+  }
+}
+
+TEST(Lz4ImmutableCompressionCodec, uncompressChained) {
+  auto compressor = createCompressionCodec(
+      CompressionCodecType::LZ4Immutable, getAsciiDictionary(), 1);
+  testUncompressChained(compressor.get(), *getAsciiReply(), 3);
+}
+
 }}} // facebook::memcache::test

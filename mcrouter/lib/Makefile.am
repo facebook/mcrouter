@@ -17,8 +17,12 @@ libmcrouter_a_SOURCES = \
   IovecCursor-inl.h \
   IovecCursor.cpp \
   IovecCursor.h \
+  Lz4CompressionCodec.cpp \
+  Lz4CompressionCodec.h \
   Lz4Immutable.cpp \
   Lz4Immutable.h \
+  Lz4ImmutableCompressionCodec.cpp \
+  Lz4ImmutableCompressionCodec.h \
   MessageStorage.h \
   MessageQueue.cpp \
   MessageQueue.h \
@@ -37,6 +41,8 @@ libmcrouter_a_SOURCES = \
   StatsReply.h \
   WeightedCh3HashFunc.cpp \
   WeightedCh3HashFunc.h \
+  ZstdCompressionCodec.cpp \
+  ZstdCompressionCodec.h \
   allocator/JemallocNodumpAllocator.h \
   allocator/JemallocNodumpAllocator.cpp \
   carbon/Fields.h \

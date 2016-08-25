@@ -13,9 +13,7 @@
 namespace facebook {
 namespace memcache {
 
-Lz4CompressionCodec::~Lz4CompressionCodec() {
-  LZ4_freeStream(lz4Stream_);
-}
+Lz4CompressionCodec::~Lz4CompressionCodec() {}
 
 Lz4CompressionCodec::Lz4CompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
@@ -28,14 +26,13 @@ Lz4CompressionCodec::Lz4CompressionCodec(
           codecFilteringOptions,
           codecCompressionLevel),
       dictionary_(std::move(dictionary)),
-      lz4Immutable_(dictionary_->clone()),
       lz4Stream_(LZ4_createStream()) {
   if (!lz4Stream_) {
     throw std::runtime_error("Failed to allocate LZ4_stream_t");
   }
 
   int res = LZ4_loadDict(
-      lz4Stream_,
+      lz4Stream_.get(),
       reinterpret_cast<const char*>(dictionary_->data()),
       dictionary_->length());
   if (res != dictionary_->length()) {
@@ -48,19 +45,10 @@ Lz4CompressionCodec::Lz4CompressionCodec(
 std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::compress(
     const struct iovec* iov,
     size_t iovcnt) {
-  constexpr int32_t kLargeDataThreshold = 1024;
   assert(iov);
 
   auto size = IovecCursor::computeTotalLength(iov, iovcnt);
-  //TODO{ilonap}:kill constant
-  if (size < kLargeDataThreshold) {
-    return lz4Immutable_.compress(iov, iovcnt);
-  }
-  return compressLargeData(coalesceIovecs(iov, iovcnt, size));
-}
-
-std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::compressLargeData(
-    folly::IOBuf data) {
+  folly::IOBuf data = coalesceIovecs(iov, iovcnt, size);
   LZ4_stream_t lz4StreamCopy = *lz4Stream_;
 
   size_t compressBound = LZ4_compressBound(data.length());
