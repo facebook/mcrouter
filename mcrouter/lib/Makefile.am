@@ -137,8 +137,8 @@ libmcrouter_a_SOURCES = \
   network/CarbonMessageList.h \
   network/CarbonMessageTraits.h \
   network/CaretHeader.h \
-  network/CaretSerializedMessageImpl-inl.h \
-  network/CaretSerializedMessageImpl.h \
+  network/CaretSerializedMessage-inl.h \
+  network/CaretSerializedMessage.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
   network/ConnectionOptions.h \

@@ -114,4 +114,4 @@ class CaretSerializedMessage {
 } // memcache
 } // facebook
 
-#include "mcrouter/lib/network/CaretSerializedMessageImpl-inl.h"
+#include "mcrouter/lib/network/CaretSerializedMessage-inl.h"

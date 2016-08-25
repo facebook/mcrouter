@@ -14,7 +14,6 @@ AC_DEFINE_UNQUOTED([MCROUTER_PACKAGE_STRING], ["AC_PACKAGE_VERSION AC_PACKAGE_NA
 AC_CONFIG_SRCDIR([McrouterInstance.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])
-AC_CONFIG_LINKS([lib/network/CaretSerializedMessage.h:lib/network/CaretSerializedMessageImpl.h])
 AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])
 AC_CONFIG_AUX_DIR([build-aux])
 
