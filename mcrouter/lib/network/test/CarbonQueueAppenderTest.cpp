@@ -18,7 +18,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/gen/CarbonTest.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 

@@ -16,7 +16,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/network/ClientMcParser.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
 

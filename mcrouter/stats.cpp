@@ -23,7 +23,7 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/StatsReply.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/proxy.h"

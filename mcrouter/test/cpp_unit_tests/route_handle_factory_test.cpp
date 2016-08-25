@@ -11,7 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/proxy.h"

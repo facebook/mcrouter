@@ -13,7 +13,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"

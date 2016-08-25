@@ -13,7 +13,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 
 namespace facebook { namespace memcache {

@@ -17,7 +17,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"

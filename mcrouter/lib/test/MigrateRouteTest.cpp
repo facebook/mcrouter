@@ -14,7 +14,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/MigrateRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"

@@ -11,7 +11,7 @@
 
 #include <folly/Format.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
 #include "mcrouter/tools/mcpiper/Color.h"

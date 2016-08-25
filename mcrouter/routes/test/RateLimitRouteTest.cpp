@@ -15,7 +15,7 @@
 
 #include <folly/json.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RateLimitRoute.h"

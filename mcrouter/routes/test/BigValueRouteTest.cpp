@@ -15,7 +15,7 @@
 #include <folly/Conv.h>
 #include <folly/Format.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/BigValueRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"

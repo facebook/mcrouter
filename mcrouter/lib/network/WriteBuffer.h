@@ -17,7 +17,7 @@
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"

@@ -11,7 +11,7 @@
 
 #include <memory>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/RouteHandleIf.h"
 

@@ -8,7 +8,7 @@
  *
  */
 #include "mcrouter/lib/McKey.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/proxy.h"
 
 namespace facebook {

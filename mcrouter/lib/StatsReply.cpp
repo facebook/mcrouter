@@ -11,7 +11,7 @@
 
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
 namespace facebook { namespace memcache {
 

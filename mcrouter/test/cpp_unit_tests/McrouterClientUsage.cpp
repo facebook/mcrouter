@@ -20,7 +20,7 @@
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
 using facebook::memcache::McGetReply;
 using facebook::memcache::McGetRequest;

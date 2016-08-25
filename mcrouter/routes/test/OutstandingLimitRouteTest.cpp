@@ -13,7 +13,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
