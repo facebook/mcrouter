@@ -38,7 +38,7 @@ struct CodecConfig {
       uint32_t codecId,
       CompressionCodecType type,
       std::string dic,
-      FilteringOptions codecFilteringOptions = {},
+      FilteringOptions codecFilteringOptions = FilteringOptions(),
       uint32_t codecCompressionLevel = 1)
       : id(codecId),
         codecType(type),
@@ -69,7 +69,7 @@ class CompressionCodecManager {
   // ThreadLocal of compression codec map, as codecs are not thread-safe.
   folly::ThreadLocal<CompressionCodecMap> compressionCodecMap_;
   // Codec id range
-  uint32_t smallestId_{0};
+  uint32_t smallestCodecId_{0};
   uint32_t size_{0};
 
   CompressionCodecMap* buildCodecMap();
@@ -82,9 +82,9 @@ class CompressionCodecManager {
 struct CodecIdRange {
   uint64_t firstId;
   size_t size;
+
+  static const CodecIdRange Empty;
 };
-
-
 /**
  * Map of codec compressors.
  * The ids of the codecs held by this map must be contiguous.
@@ -100,13 +100,18 @@ class CompressionCodecMap {
   CompressionCodec* get(uint32_t id) const noexcept;
 
   /**
-   * Get the compression codec that best matches the given range.
+   * Get the compression codec that best matches the filters.
    *
-   * @param codecRange  Range of codecs ids.
-   * @return            The codec that best matches the range
-   *                    (or nullptr if none found).
+   * @param codecRange     Range of codecs ids.
+   * @param bodySize       Size of the reply body.
+   * @param typeId         TypeId of the reply.
+   * @return               The codec that best matches the filters
+   *                       (or nullptr if none found).
    */
-  CompressionCodec* getBest(const CodecIdRange& codecRange) const noexcept;
+   CompressionCodec* getBest(
+       const CodecIdRange& codecRange,
+       const size_t bodySize,
+       const size_t typeId) const noexcept;
 
   /**
    * Returns the size of this map.
@@ -124,6 +129,7 @@ class CompressionCodecMap {
 
  private:
   std::vector<std::unique_ptr<CompressionCodec>> codecs_;
+  std::vector<std::vector<uint32_t>> codecsIdByTypeId_;
   const uint32_t firstId_{0};
 
   /**
@@ -133,21 +139,37 @@ class CompressionCodecMap {
 
   /**
    * Builds a map containing codecs which the ids are within the given range.
-   * Note: All codecs in the [smallestId, smallestId + size]
+   * Note: All codecs in the [smallestCodecId, smallestCodecIdtId + size]
    *       range must be present and valid.
+   * Note: createCompressionCodec may throw exceptions when failing to load
+   *       compression codecs of specific type.
    *
-   * @param codecConfigs  Map of (codecId -> codecConfig). Must contain all
-   *                      codecs in the given range.
-   * @param smallestId    First id of the range of codecs.
-   * @param size          Size of the range.
+   * @param codecConfigs       Map of (codecId -> codecConfig). Must contain all
+   *                           codecs in the given range.
+   * @param smallestCodecId    First id of the range of codecs.
+   * @param size               Size of the range.
    */
   CompressionCodecMap(
       const std::unordered_map<uint32_t, CodecConfigPtr>& codecConfigs,
-      uint32_t smallestId, uint32_t size) noexcept;
+      uint32_t smallestCodecId, uint32_t size);
 
+  /**
+   * Get the compression codec that best matches the filters considering
+   * codecs only with typeId equal to passed typeId of the reply
+   *
+   * @param codecRange     Range of codecs ids.
+   * @param bodySize       Size of the reply.
+   * @param typeId         TypeId of the reply.
+   * @return               The codec that best matches the filters
+   *                       (or nullptr if none found).
+   */
+   CompressionCodec* getBestByTypeId(
+       const CodecIdRange& codecRange,
+       const size_t bodySize,
+       const size_t typeId) const noexcept;
 
-  // Return the codecs_ vector index given the codec id.
-  uint32_t index(uint32_t id) const noexcept;
+   // Return the codecs_ vector index given the codec id.
+   uint32_t index(uint32_t id) const noexcept;
 
   friend class CompressionCodecManager;
 };

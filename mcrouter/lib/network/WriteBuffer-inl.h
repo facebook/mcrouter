@@ -41,7 +41,12 @@ bool WriteBuffer::prepareTyped(
 
     case mc_caret_protocol:
       return caretReply_.prepare(
-          std::move(reply), ctx_->reqid_, ctx_->codec_, iovsBegin_, iovsCount_);
+          std::move(reply),
+          ctx_->reqid_,
+          ctx_->compressionContext_->codecIdRange,
+          ctx_->compressionContext_->compressionCodecMap,
+          iovsBegin_,
+          iovsCount_);
       break;
 
     default:

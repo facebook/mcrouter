@@ -60,11 +60,23 @@ struct FilteringOptions {
   /**
    * If we have dictionary built on data with only specific operation type
    */
-  int32_t typeId{0};
+  size_t typeId{0};
   /**
    * Variable to check if the codec is enabled.
    */
   bool isEnabled{true};
+
+  FilteringOptions() {}
+
+  FilteringOptions(
+      uint32_t minThreshold,
+      uint32_t maxThreshold,
+      size_t codecTypeId,
+      bool isCodecEnabled)
+      : minCompressionThreshold(minThreshold),
+        maxCompressionThreshold(maxThreshold),
+        typeId(codecTypeId),
+        isEnabled(isCodecEnabled) {}
 };
 
 /**
@@ -174,7 +186,7 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
     CompressionCodecType type,
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,
-    FilteringOptions codecFilteringOptions = {},
+    FilteringOptions codecFilteringOptions = FilteringOptions(),
     uint32_t codecCompressionLevel = 1);
 
 } // memcache

@@ -286,7 +286,8 @@ void MessagePrinter::printRawReply(uint64_t msgId,
       caretSerializedMessage.prepare(
         std::move(reply),
         msgId,
-        nullptr, /* codec */
+        CodecIdRange::Empty,
+        nullptr, /* codec map */
         iovsBegin,
         iovsCount);
       break;
@@ -305,7 +306,7 @@ void MessagePrinter::printRawRequest(uint64_t msgId,
     LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
     return;
   }
-  McSerializedRequest req(request, msgId, protocol, CodecIdRange());
+  McSerializedRequest req(request, msgId, protocol, CodecIdRange::Empty);
 
   printRawMessage(req.getIovs(), req.getIovsCount());
 }

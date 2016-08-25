@@ -228,8 +228,6 @@ class McServerSession :
 
   // Compression
   const CompressionCodecMap* compressionCodecMap_{nullptr};
-  CodecIdRange lastSupportedCodecsRange_{0, 0};
-  CompressionCodec* lastCodec_{nullptr};
 
   ServerMcParser<McServerSession> parser_;
 
@@ -356,10 +354,10 @@ class McServerSession :
   void writeToDebugFifo(const WriteBuffer* wb) noexcept;
 
   /**
-   * Return the compression codec to use for compressing reply.
-   * Nullptr is returned if the reply shouldn't be compressed.
+   * Return the range of codec ids may be used to compress the reply.
    */
-  CompressionCodec* getCodec(const UmbrellaMessageInfo& headerInfo) noexcept;
+  CodecIdRange getCompressionCodecIdRange(
+      const UmbrellaMessageInfo& headerInfo) noexcept;
 
   McServerSession(
     folly::AsyncTransportWrapper::UniquePtr transport,

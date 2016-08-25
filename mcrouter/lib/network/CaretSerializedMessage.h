@@ -12,6 +12,8 @@
 #include <folly/Range.h>
 #include <folly/Varint.h>
 
+#include "mcrouter/lib/Compression.h"
+#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
@@ -58,17 +60,21 @@ class CaretSerializedMessage {
   /**
    * Prepare replies for serialization
    *
-   * @param  reply    typed reply
-   * @param  codec    Codec to use to compress the reply. If nullptr, reply
-   *                  won't be compressed.
-   * @param  iovOut   will be set to the beginning of array of ivecs
-   * @param  niovOut  number of valid iovecs referenced by iovOut.
-   * @return true iff message was successfully prepared.
+   * @param  reply                TypedReply.
+   * @param  reqId                Request id.
+   * @param  supportedCodecs      Range of supported codecs.
+   * @param  compressionCodecMap  Map of available codecs.
+   * @param  iovOut               Will be set to the beginning of
+   *                              array of iovecs.
+   * @param  niovOut              Number of valid iovecs referenced by iovOut.
+   *
+   * @return true if message was successfully prepared.
    */
   template <class Reply>
   bool prepare(Reply&& reply,
                size_t reqId,
-               CompressionCodec* codec,
+               const CodecIdRange& supportedCodecs,
+               const CompressionCodecMap* compressionCodecMap,
                const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
@@ -89,7 +95,8 @@ class CaretSerializedMessage {
             uint32_t reqId,
             size_t typeId,
             uint64_t traceId,
-            CompressionCodec* codec,
+            const CodecIdRange& supportedCodecs,
+            const CompressionCodecMap* compressionCodecMap,
             const struct iovec*& iovOut,
             size_t& niovOut);
 

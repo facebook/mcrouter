@@ -18,6 +18,8 @@
 #include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
+#include "mcrouter/lib/Compression.h"
+#include "mcrouter/lib/CompressionCodecManager.h"
 
 namespace facebook { namespace memcache {
 
@@ -26,6 +28,18 @@ template <class OnRequest, class RequestList>
 class McServerOnRequestWrapper;
 class McServerSession;
 class MultiOpParent;
+
+struct CompressionContext {
+  const CompressionCodecMap* compressionCodecMap{nullptr};
+
+  CodecIdRange codecIdRange = CodecIdRange::Empty;
+
+  CompressionContext(
+      const CompressionCodecMap* codecMap,
+      CodecIdRange codecRange)
+      : compressionCodecMap(codecMap),
+        codecIdRange(codecRange) {}
+};
 
 /**
  * API for users of McServer to send back a reply for a request.
@@ -72,7 +86,7 @@ class McServerRequestContext {
   };
   std::unique_ptr<AsciiState> asciiState_;
 
-  CompressionCodec* codec_{nullptr};
+  std::unique_ptr<CompressionContext> compressionContext_;
 
   bool noReply(mc_res_t result) const;
 
@@ -115,10 +129,14 @@ class McServerRequestContext {
   friend class McServerSession;
   friend class MultiOpParent;
   friend class WriteBuffer;
-  McServerRequestContext(McServerSession& s, mc_op_t op, uint64_t r,
-                         bool nr = false,
-                         std::shared_ptr<MultiOpParent> parent = nullptr,
-                         CompressionCodec* codec = nullptr);
+  McServerRequestContext(
+      McServerSession& s,
+      mc_op_t op,
+      uint64_t r,
+      bool nr = false,
+      std::shared_ptr<MultiOpParent> parent = nullptr,
+      const CompressionCodecMap* compressionCodecMap = nullptr,
+      CodecIdRange range = CodecIdRange::Empty);
 };
 
 /**

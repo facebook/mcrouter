@@ -7,8 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/Compression.h"
-#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
@@ -32,13 +30,23 @@ bool CaretSerializedMessage::prepare(const Request& req,
 }
 
 template <class Reply>
-bool CaretSerializedMessage::prepare(Reply&& reply,
-                                     size_t reqId,
-                                     CompressionCodec* codec,
-                                     const struct iovec*& iovOut,
-                                     size_t& niovOut) noexcept {
+bool CaretSerializedMessage::prepare(
+    Reply&& reply,
+    size_t reqId,
+    const CodecIdRange& supportedCodecs,
+    const CompressionCodecMap* compressionCodecMap,
+    const struct iovec*& iovOut,
+    size_t& niovOut) noexcept {
   constexpr size_t typeId = IdFromType<Reply, TReplyList>::value;
-  return fill(reply, reqId, typeId, 0 /* traceId */, codec, iovOut, niovOut);
+  return fill(
+      reply,
+      reqId,
+      typeId,
+      0 /* traceId */,
+      supportedCodecs,
+      compressionCodecMap,
+      iovOut,
+      niovOut);
 }
 
 template <class Message>
@@ -65,14 +73,15 @@ bool CaretSerializedMessage::fill(const Message& message,
 }
 
 template <class Message>
-bool CaretSerializedMessage::fill(const Message& message,
-                                  uint32_t reqId,
-                                  size_t typeId,
-                                  uint64_t traceId,
-                                  CompressionCodec* codec,
-                                  const struct iovec*& iovOut,
-                                  size_t& niovOut) {
-
+bool CaretSerializedMessage::fill(
+    const Message& message,
+    uint32_t reqId,
+    size_t typeId,
+    uint64_t traceId,
+    const CodecIdRange& supportedCodecs,
+    const CompressionCodecMap* compressionCodecMap,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
   // Serialize and (maybe) compress body of message.
   try {
     serializeCarbonStruct(message, storage_);
@@ -85,6 +94,11 @@ bool CaretSerializedMessage::fill(const Message& message,
 
   // Maybe compress.
   auto uncompressedSize = storage_.computeBodySize();
+  auto codec = (compressionCodecMap == nullptr)
+      ? nullptr
+      : compressionCodecMap->getBest(
+            supportedCodecs, uncompressedSize, typeId);
+
   if (maybeCompress(codec, uncompressedSize)) {
     info.usedCodecId = codec->id();
     info.uncompressedBodySize = uncompressedSize;
@@ -123,12 +137,13 @@ inline bool CaretSerializedMessage::maybeCompress(CompressionCodec* codec,
   return false;
 }
 
-inline void CaretSerializedMessage::fillImpl(UmbrellaMessageInfo& info,
-                                             uint32_t reqId,
-                                             size_t typeId,
-                                             uint64_t traceId,
-                                             const struct iovec*& iovOut,
-                                             size_t& niovOut) {
+inline void CaretSerializedMessage::fillImpl(
+    UmbrellaMessageInfo& info,
+    uint32_t reqId,
+    size_t typeId,
+    uint64_t traceId,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
   info.bodySize = storage_.computeBodySize();
   info.typeId = typeId;
   info.reqId = reqId;
@@ -136,7 +151,7 @@ inline void CaretSerializedMessage::fillImpl(UmbrellaMessageInfo& info,
   info.traceId = traceId;
 
   size_t headerSize = caretPrepareHeader(
-    info, reinterpret_cast<char*>(storage_.getHeaderBuf()));
+      info, reinterpret_cast<char*>(storage_.getHeaderBuf()));
   storage_.reportHeaderSize(headerSize);
 
   const auto iovs = storage_.getIovecs();

@@ -125,7 +125,7 @@ class AsyncMcClientImpl :
   // Debug pipe.
   ConnectionFifo debugFifo_;
 
-  CodecIdRange supportedCompressionCodecs_{0, 0};
+  CodecIdRange supportedCompressionCodecs_ = CodecIdRange::Empty;
 
   bool outOfOrder_{false};
   McClientRequestContextQueue queue_;

@@ -299,7 +299,8 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
       headerInfo.reqId,
       false,
       nullptr,
-      getCodec(headerInfo));
+      compressionCodecMap_,
+      getCompressionCodecIdRange(headerInfo));
 
   if (IdFromType<McVersionRequest, TRequestList>::value ==
           headerInfo.typeId &&
@@ -320,21 +321,14 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
   }
 }
 
-CompressionCodec* McServerSession::getCodec(
+CodecIdRange McServerSession::getCompressionCodecIdRange(
     const UmbrellaMessageInfo& headerInfo) noexcept {
 
   if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
-    return nullptr;
+    return CodecIdRange::Empty;
   }
 
-  if (lastSupportedCodecsRange_.firstId != headerInfo.supportedCodecsFirstId &&
-      lastSupportedCodecsRange_.size != headerInfo.supportedCodecsSize) {
-    lastSupportedCodecsRange_ = {headerInfo.supportedCodecsFirstId,
-                                 headerInfo.supportedCodecsSize};
-    lastCodec_ = compressionCodecMap_->getBest(lastSupportedCodecsRange_);
-  }
-
-  return lastCodec_;
+  return {headerInfo.supportedCodecsFirstId, headerInfo.supportedCodecsSize};
 }
 
 void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
