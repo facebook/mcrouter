@@ -36,15 +36,17 @@ class ZstdCompressionCodec : public CompressionCodec {
       size_t iovcnt,
       size_t uncompressedLength = 0) override final;
 
-  ~ZstdCompressionCodec();
-
  private:
+  template <class T>
+  using UPtr = std::unique_ptr<T, size_t(*)(T*)>;
+
   const std::unique_ptr<folly::IOBuf> dictionary_;
   int compressionLevel_{1};
-  ZSTD_CCtx* zstdCContext_{nullptr};
-  ZSTD_DCtx* zstdDContext_{nullptr};
-  ZSTD_CDict* zstdCDict_{nullptr};
-  ZSTD_DDict* zstdDDict_{nullptr};
+
+  UPtr<ZSTD_CCtx> zstdCContext_;
+  UPtr<ZSTD_DCtx> zstdDContext_;
+  UPtr<ZSTD_CDict> zstdCDict_;
+  UPtr<ZSTD_DDict> zstdDDict_;
 };
 
 } // memcache

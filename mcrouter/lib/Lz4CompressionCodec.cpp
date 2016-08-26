@@ -13,8 +13,6 @@
 namespace facebook {
 namespace memcache {
 
-Lz4CompressionCodec::~Lz4CompressionCodec() {}
-
 Lz4CompressionCodec::Lz4CompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
     uint32_t id,

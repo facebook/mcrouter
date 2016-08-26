@@ -36,8 +36,6 @@ class Lz4CompressionCodec : public CompressionCodec {
       size_t iovcnt,
       size_t uncompressedLength = 0) override final;
 
-  ~Lz4CompressionCodec();
-
  private:
   struct Deleter {
      void operator()(LZ4_stream_t* stream) const {

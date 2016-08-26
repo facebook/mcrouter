@@ -8,17 +8,11 @@
  *
  */
 #include "ZstdCompressionCodec.h"
+
 #if FOLLY_HAVE_LIBZSTD
 
 namespace facebook {
 namespace memcache {
-
-ZstdCompressionCodec::~ZstdCompressionCodec() {
-  ZSTD_freeCCtx(zstdCContext_);
-  ZSTD_freeDCtx(zstdDContext_);
-  ZSTD_freeCDict(zstdCDict_);
-  ZSTD_freeDDict(zstdDDict_);
-}
 
 ZstdCompressionCodec::ZstdCompressionCodec(
     std::unique_ptr<folly::IOBuf> dictionary,
@@ -32,15 +26,19 @@ ZstdCompressionCodec::ZstdCompressionCodec(
           codecCompressionLevel),
       dictionary_(std::move(dictionary)),
       compressionLevel_(codecCompressionLevel),
-      zstdCContext_(ZSTD_createCCtx()),
-      zstdDContext_(ZSTD_createDCtx()),
-      zstdCDict_(ZSTD_createCDict(
-          reinterpret_cast<const char*>(dictionary_->data()),
-          dictionary_->length(),
-          compressionLevel_)),
-      zstdDDict_(ZSTD_createDDict(
-          reinterpret_cast<const char*>(dictionary_->data()),
-          dictionary_->length())) {
+      zstdCContext_(ZSTD_createCCtx(), ZSTD_freeCCtx),
+      zstdDContext_(ZSTD_createDCtx(), ZSTD_freeDCtx),
+      zstdCDict_(
+          ZSTD_createCDict(
+              reinterpret_cast<const char*>(dictionary_->data()),
+              dictionary_->length(),
+              compressionLevel_),
+          ZSTD_freeCDict),
+      zstdDDict_(
+          ZSTD_createDDict(
+              reinterpret_cast<const char*>(dictionary_->data()),
+              dictionary_->length()),
+          ZSTD_freeDDict) {
   if (zstdCDict_ == nullptr || zstdDDict_ == nullptr) {
     throw std::runtime_error("ZSTD codec: Failed to load dictionary.");
   }
@@ -61,12 +59,12 @@ std::unique_ptr<folly::IOBuf> ZstdCompressionCodec::compress(
   auto buffer = folly::IOBuf::create(compressBound);
 
   int compressedSize = ZSTD_compress_usingCDict(
-      zstdCContext_,
+      zstdCContext_.get(),
       reinterpret_cast<char*>(buffer->writableTail()),
       compressBound,
       reinterpret_cast<const char*>(bytes.data()),
       bytes.size(),
-      zstdCDict_);
+      zstdCDict_.get());
 
   if (ZSTD_isError(compressedSize)) {
     throw std::runtime_error(folly::sformat(
@@ -88,12 +86,12 @@ std::unique_ptr<folly::IOBuf> ZstdCompressionCodec::uncompress(
   auto buffer = folly::IOBuf::create(uncompressedLength);
 
   int bytesWritten = ZSTD_decompress_usingDDict(
-      zstdDContext_,
+      zstdDContext_.get(),
       reinterpret_cast<char*>(buffer->writableTail()),
       buffer->capacity(),
       reinterpret_cast<const char*>(bytes.data()),
       bytes.size(),
-      zstdDDict_);
+      zstdDDict_.get());
 
   assert(ZSTD_isError(bytesWritten) || bytesWritten == uncompressedLength);
   if (ZSTD_isError(bytesWritten)) {
