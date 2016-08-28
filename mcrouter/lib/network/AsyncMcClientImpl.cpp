@@ -138,9 +138,9 @@ void AsyncMcClientImpl::setRequestStatusCallbacks(
   };
 }
 
-void AsyncMcClientImpl::setCompressionCallback(
-    std::function<void(bool, size_t, size_t)> compressionCallback) {
-  compressionCallback_ = std::move(compressionCallback);
+void AsyncMcClientImpl::setReplyStatsCallback(
+    std::function<void(ReplyStatsContext)> replyStatsCallback) {
+  replyStatsCallback_ = std::move(replyStatsCallback);
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
@@ -715,13 +715,10 @@ bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
   return false;
 }
 
-void AsyncMcClientImpl::updateCompressionStats(
-    bool replyCompressed,
-    size_t numBytesBeforeCompression,
-    size_t numBytesAfterCompression) {
-  if (compressionCallback_) {
-    compressionCallback_(
-        replyCompressed, numBytesBeforeCompression, numBytesAfterCompression);
+void AsyncMcClientImpl::updateReplyStats(
+    ReplyStatsContext replyStatsContext) {
+  if (replyStatsCallback_) {
+    replyStatsCallback_(replyStatsContext);
   }
 }
 

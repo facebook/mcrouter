@@ -21,6 +21,7 @@
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 
 namespace facebook { namespace memcache {
 
@@ -72,6 +73,14 @@ class McClientRequestContextBase
    * indefinitely for a reply.
    */
   void scheduleTimeout();
+
+  void setReplyStatsContext(ReplyStatsContext value) {
+    replyStatsContext_ = value;
+  }
+
+  ReplyStatsContext getReplyStatsContext() const {
+    return replyStatsContext_;
+  }
 
  protected:
   enum class ReqState {
@@ -128,6 +137,8 @@ class McClientRequestContextBase
   InitializerFuncPtr initializer_;
 
   ReqState state_{ReqState::NONE};
+
+  ReplyStatsContext replyStatsContext_;
 
   const std::function<void(int pendingDiff, int inflightDiff)>& onStateChange_;
 
@@ -262,13 +273,17 @@ class McClientRequestContextQueue {
   McClientRequestContextBase& markNextAsSent();
 
   /**
-   * Reply request with given id with the provided reply.
+   * Reply request with given id with the provided reply and
+   * compression stats.
    * In case of in order protocol the id is ignored.
    *
    * Does nothing if the request was already removed from the queue.
    */
   template <class Reply>
-  void reply(uint64_t id, Reply&& reply);
+  void reply(
+      uint64_t id,
+      Reply&& reply,
+      ReplyStatsContext replyStatsContext);
 
   /**
    * Obtain a function that should be used to initialize parser for given

@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "mcrouter/lib/network/ConnectionOptions.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/Operation.h"
 
 namespace folly {
@@ -78,16 +79,13 @@ class AsyncMcClient {
       std::function<void(int numToSend)> onWrite);
 
   /**
-   * Set callback for compression status updates.
+   * Set callback for reply stats updates.
    *
-   * @param compressionCallback   Will be called whenever a reply is received,
-   *                              with compression data.
+   * @param replyStatsCallback    Will be called whenever a reply is received.
+   *                              Called within the fiber.
    */
-  void setCompressionCallback(
-      std::function<void(
-          bool replyCompressed,
-          size_t numBytesBeforeCompression,
-          size_t numBytesAfterCompression)> compressionCallback);
+  void setReplyStatsCallback(
+      std::function<void(ReplyStatsContext)> replyStatsCallback);
 
   /**
    * Send request synchronously (i.e. blocking call).

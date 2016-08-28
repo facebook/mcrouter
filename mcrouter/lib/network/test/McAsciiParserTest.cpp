@@ -93,7 +93,10 @@ class McAsciiParserHarness {
   bool errorState_{false};
 
   template <class Reply>
-  void replyReady(Reply&& reply, uint64_t reqId) {
+  void replyReady(
+      Reply&& reply,
+      uint64_t reqId,
+      ReplyStatsContext /* replyStatsContext */) {
     EXPECT_TRUE(currentId_ < replies_.size());
     EXPECT_FALSE(replies_[currentId_]->shouldFail);
 
@@ -117,8 +120,6 @@ class McAsciiParserHarness {
     replies_[currentId_]->initializeParser(*parser_);
     return true;
   }
-
-  void updateCompressionStats(bool, size_t, size_t) {}
 
   void runTestImpl() {
     currentId_ = 0;

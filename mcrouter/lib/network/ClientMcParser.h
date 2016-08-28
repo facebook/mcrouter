@@ -17,9 +17,10 @@
 
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/debug/ConnectionFifo.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
 #include "mcrouter/lib/network/McParser.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
@@ -105,9 +106,9 @@ class ClientMcParser : private McParser::ParserCallback {
 
   bool shouldReadToAsciiBuffer() const;
 
-  void fireCompressionCallback(const UmbrellaMessageInfo& headerInfo) const;
+  ReplyStatsContext getCompressionStats(
+      const UmbrellaMessageInfo& headerInfo) const;
 };
-
 }}  // facebook::memcache
 
 #include "ClientMcParser-inl.h"

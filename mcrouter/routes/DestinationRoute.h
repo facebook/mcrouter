@@ -151,7 +151,8 @@ class DestinationRoute {
                         req,
                         reply,
                         now,
-                        now);
+                        now,
+                        fiber_local::getReplyStatsContext());
     return reply;
   }
 
@@ -186,7 +187,8 @@ class DestinationRoute {
                         reqToSend,
                         reply,
                         dctx.startTime,
-                        dctx.endTime);
+                        dctx.endTime,
+                        fiber_local::getReplyStatsContext());
     return reply;
   }
 

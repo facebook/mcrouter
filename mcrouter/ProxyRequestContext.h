@@ -131,7 +131,8 @@ public:
                        const Request& request,
                        const ReplyT<Request>& reply,
                        const int64_t startTimeUs,
-                       const int64_t endTimeUs) {
+                       const int64_t endTimeUs,
+                       const ReplyStatsContext replyStatsContext) {
     if (recording_) {
       return;
     }
@@ -143,7 +144,8 @@ public:
         request,
         reply,
         startTimeUs,
-        endTimeUs);
+        endTimeUs,
+        replyStatsContext);
     assert(logger_.hasValue());
     logger_->log<Request>(loggerContext);
     assert(additionalLogger_.hasValue());

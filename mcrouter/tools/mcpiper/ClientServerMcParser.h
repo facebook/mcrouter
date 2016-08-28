@@ -69,8 +69,14 @@ class ClientServerMcParser {
       : callback_(callback) {}
 
     template <class Reply>
-    void replyReady(Reply&& reply, uint64_t msgId) {
-      callback_.template replyReady<Reply>(msgId, std::move(reply));
+    void replyReady(
+        Reply&& reply,
+        uint64_t msgId,
+        ReplyStatsContext replyStatsContext) {
+      callback_.template replyReady<Reply>(
+          msgId,
+          std::move(reply),
+          replyStatsContext);
     }
 
     bool nextReplyAvailable(uint64_t) {
@@ -78,7 +84,6 @@ class ClientServerMcParser {
     }
 
     void parseError(mc_res_t, folly::StringPiece) {}
-    void updateCompressionStats(bool, size_t, size_t) {}
 
    private:
     Callback& callback_;

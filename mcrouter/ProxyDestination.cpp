@@ -341,12 +341,10 @@ void ProxyDestination::initializeAsyncMcClient() {
       }
     });
 
-  if (accessPoint_->compressed()) {
-    client_->setCompressionCallback([proxy = proxy](
-        bool compressed,
-        size_t numBytesBeforeCompression,
-        size_t numBytesAfterCompression) {
-      if (compressed) {
+  client_->setReplyStatsCallback([proxy = proxy, accessPoint = accessPoint_](
+      ReplyStatsContext replyStatsContext) {
+    if (accessPoint->compressed()) {
+      if (replyStatsContext.usedCodecId > 0) {
         stat_incr(proxy->stats, replies_compressed_stat, 1);
       } else {
         stat_incr(proxy->stats, replies_not_compressed_stat, 1);
@@ -354,13 +352,15 @@ void ProxyDestination::initializeAsyncMcClient() {
       stat_incr(
           proxy->stats,
           reply_traffic_before_compression_stat,
-          numBytesBeforeCompression);
+          replyStatsContext.replySizeBeforeCompression);
       stat_incr(
           proxy->stats,
           reply_traffic_after_compression_stat,
-          numBytesAfterCompression);
-    });
-  }
+          replyStatsContext.replySizeAfterCompression);
+    }
+    // For Scuba logging
+    fiber_local::setReplyStatsContext(replyStatsContext);
+  });
 
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(opts.target_max_inflight_requests,

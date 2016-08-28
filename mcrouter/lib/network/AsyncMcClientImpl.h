@@ -24,6 +24,7 @@
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 #include "mcrouter/lib/network/McClientRequestContext.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 
 namespace facebook { namespace memcache {
 
@@ -61,8 +62,8 @@ class AsyncMcClientImpl :
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
       std::function<void(int numToSend)> onWrite);
 
-  void setCompressionCallback(
-      std::function<void(bool, size_t, size_t)> compressionCallback);
+  void setReplyStatsCallback(
+      std::function<void(ReplyStatsContext)> replyStatsCallback);
 
   template <class Request>
   ReplyT<Request> sendSync(const Request& request,
@@ -120,7 +121,7 @@ class AsyncMcClientImpl :
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
-  std::function<void(bool, size_t, size_t)> compressionCallback_;
+  std::function<void(ReplyStatsContext)> replyStatsCallback_;
 
   // Debug pipe.
   ConnectionFifo debugFifo_;
@@ -194,21 +195,18 @@ class AsyncMcClientImpl :
 
   // Callbacks for McParser.
   template <class Reply>
-  void replyReady(Reply&& reply, uint64_t reqId);
+  void replyReady(Reply&& reply, uint64_t reqId, ReplyStatsContext replyStats);
+
   void parseError(mc_res_t result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
   /**
-   * Callback function called by McParser on each reply with compression status.
+   * Function called on each reply.
    *
-   * @param replyCompressed             True if the reply was compressed. False
-   *                                    otherwise.
-   * @param numBytesBeforeCompression   Number of bytes before compression.
-   * @param numBytesAfterCompression    Number of bytes after compression.
+   * @param replyStatsContext      Stores id of codec used for compression,
+   *                               Number of bytes before and after compression.
+   * NOTICE: id of the codec equals zero if reply was not compressed.
    */
-  void updateCompressionStats(
-      bool replyCompressed,
-      size_t numBytesBeforeCompression,
-      size_t numBytesAfterCompression);
+  void updateReplyStats(ReplyStatsContext replyStatsContext);
 
   void sendFakeReply(McClientRequestContextBase& request);
 

@@ -58,7 +58,10 @@ void SnifferParser<Callback>::requestReady(uint64_t msgId, Request&& request) {
 
 template <class Callback>
 template <class Reply>
-void SnifferParser<Callback>::replyReady(uint64_t msgId, Reply&& reply) {
+void SnifferParser<Callback>::replyReady(
+    uint64_t msgId,
+    Reply&& reply,
+    ReplyStatsContext /* replyStatsContext */) {
   std::string key;
   int64_t latency = 0;
   if (msgId != 0) {

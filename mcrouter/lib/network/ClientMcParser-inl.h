@@ -67,17 +67,24 @@ void ClientMcParser<Callback>::expectNext() {
     }
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaOrCaretForwarder_ =
-      &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
+        &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   } else if (parser_.protocol() == mc_caret_protocol) {
     umbrellaOrCaretForwarder_ =
-      &ClientMcParser<Callback>::forwardCaretReply<Request>;
+        &ClientMcParser<Callback>::forwardCaretReply<Request>;
   }
 }
 
 template <class Callback>
 template <class Request>
 void ClientMcParser<Callback>::forwardAsciiReply() {
-  callback_.replyReady(asciiParser_.getReply<ReplyT<Request>>(), 0 /* reqId */);
+  auto reply = asciiParser_.getReply<ReplyT<Request>>();
+  uint32_t replySize = carbon::valueRangeSlow(reply).size();
+  callback_.replyReady(
+      std::move(reply),
+      0, /* reqId */
+      ReplyStatsContext(0 /* usedCodecId  */,
+                        replySize /* reply size before compression */,
+                        replySize /* reply size after compression */));
   replyForwarder_ = nullptr;
 }
 
@@ -95,7 +102,10 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
       buffer.data() + info.headerSize,
       info.bodySize);
 
-  callback_.replyReady(std::move(reply), reqId);
+  callback_.replyReady(
+      std::move(reply),
+      reqId,
+      ReplyStatsContext(0 /* usedCodecId */, info.bodySize, info.bodySize));
 }
 
 template <class Callback>
@@ -109,7 +119,6 @@ void ClientMcParser<Callback>::forwardCaretReply(
   size_t offset = headerInfo.headerSize;
 
   // Uncompress if compressed
-  fireCompressionCallback(headerInfo);
   std::unique_ptr<folly::IOBuf> uncompressedBuf;
   if (headerInfo.usedCodecId > 0) {
     uncompressedBuf = decompress(headerInfo, buffer);
@@ -123,7 +132,10 @@ void ClientMcParser<Callback>::forwardCaretReply(
   carbon::CarbonProtocolReader reader(cur);
   reply.deserialize(reader);
 
-  callback_.replyReady(std::move(reply), reqId);
+  callback_.replyReady(
+      std::move(reply),
+      reqId,
+      getCompressionStats(headerInfo));
 }
 
 template <class Callback>
@@ -146,7 +158,7 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
   if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
     std::string reason =
         folly::sformat("Expected {} protocol, but received umbrella!",
-                       mc_protocol_to_string(parser_.protocol()));
+                        mc_protocol_to_string(parser_.protocol()));
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }
@@ -160,7 +172,7 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
     return true;
   } catch (const std::runtime_error& e) {
     std::string reason(
-      std::string("Error parsing Umbrella message: ") + e.what());
+        std::string("Error parsing Umbrella message: ") + e.what());
     LOG(ERROR) << reason;
     callback_.parseError(mc_res_local_error, reason);
     return false;
@@ -174,7 +186,7 @@ bool ClientMcParser<Callback>::caretMessageReady(
   if (UNLIKELY(parser_.protocol() != mc_caret_protocol)) {
     const auto reason =
       folly::sformat("Expected {} protocol, but received Caret!",
-                     mc_protocol_to_string(parser_.protocol()));
+                      mc_protocol_to_string(parser_.protocol()));
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }
@@ -187,7 +199,7 @@ bool ClientMcParser<Callback>::caretMessageReady(
     return true;
   } catch (const std::runtime_error& e) {
     const auto reason =
-      folly::sformat("Error parsing Caret message: {}", e.what());
+        folly::sformat("Error parsing Caret message: {}", e.what());
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }
@@ -198,7 +210,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
   if (UNLIKELY(parser_.protocol() != mc_ascii_protocol)) {
     std::string reason(
       folly::sformat("Expected {} protocol, but received ASCII!",
-                     mc_protocol_to_string(parser_.protocol())));
+                      mc_protocol_to_string(parser_.protocol())));
     callback_.parseError(mc_res_local_error, reason);
     return;
   }
@@ -207,7 +219,7 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
     if (asciiParser_.getCurrentState() == McAsciiParserBase::State::UNINIT) {
       // Ask the client to initialize parser.
       if (!callback_.nextReplyAvailable(0 /* reqId */)) {
-        auto data = reinterpret_cast<const char *>(readBuffer.data());
+        auto data = reinterpret_cast<const char*>(readBuffer.data());
         std::string reason(folly::sformat(
             "Received unexpected data from remote endpoint: '{}'!",
             folly::cEscape<std::string>(folly::StringPiece(
@@ -254,31 +266,32 @@ void ClientMcParser<Callback>::parseError(mc_res_t result,
 template <class Callback>
 bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
   return parser_.protocol() == mc_ascii_protocol &&
-         asciiParser_.hasReadBuffer();
+      asciiParser_.hasReadBuffer();
 }
 
 template <class Callback>
-void ClientMcParser<Callback>::fireCompressionCallback(
+ReplyStatsContext ClientMcParser<Callback>::getCompressionStats(
     const UmbrellaMessageInfo& headerInfo) const {
-  size_t uncompressedSize;
-  size_t compressedSize;
-
+  ReplyStatsContext replyStatsContext;
   if (headerInfo.usedCodecId > 0) {
     // We need to remove compression additional fields to calculate the
     // real size of reply if it was not compressed at all.
     size_t compressionOverhead =
-      2 + // varints of two compression additional field types
-      (headerInfo.usedCodecId / 128 + 1) + // varint
-      (headerInfo.uncompressedBodySize / 128 + 1); // varint
-    uncompressedSize = headerInfo.headerSize + headerInfo.uncompressedBodySize -
-        compressionOverhead;
-    compressedSize = headerInfo.headerSize + headerInfo.bodySize;
+        2 + // varints of two compression additional field types
+        (headerInfo.usedCodecId / 128 + 1) + // varint
+        (headerInfo.uncompressedBodySize / 128 + 1); // varint
+    replyStatsContext.replySizeBeforeCompression = headerInfo.headerSize +
+        headerInfo.uncompressedBodySize - compressionOverhead;
+    replyStatsContext.replySizeAfterCompression =
+        headerInfo.headerSize + headerInfo.bodySize;
   } else {
-    uncompressedSize = headerInfo.headerSize + headerInfo.bodySize;
-    compressedSize = uncompressedSize;
+    replyStatsContext.replySizeBeforeCompression =
+        headerInfo.headerSize + headerInfo.bodySize;
+    replyStatsContext.replySizeAfterCompression =
+        replyStatsContext.replySizeBeforeCompression;
   }
-  callback_.updateCompressionStats(
-      headerInfo.usedCodecId > 0, uncompressedSize, compressedSize);
+  replyStatsContext.usedCodecId = headerInfo.usedCodecId;
+  return replyStatsContext;
 }
 
-}}  // facebook::memcache
+}} // facebook::memcache

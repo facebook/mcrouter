@@ -36,7 +36,8 @@ struct RequestLoggerContext {
                        const Request& request,
                        const ReplyT<Request>& reply,
                        const int64_t startTimeUs_,
-                       const int64_t endTimeUs_)
+                       const int64_t endTimeUs_,
+                       const ReplyStatsContext replyStatsContext_)
     : fullKey(request.key().fullKey()),
       keyWithoutRoute(request.key().keyWithoutRoute()),
       routingKey(request.key().routingKey()),
@@ -52,7 +53,8 @@ struct RequestLoggerContext {
       poolName(poolName_),
       ap(ap_),
       startTimeUs(startTimeUs_),
-      endTimeUs(endTimeUs_) {}
+      endTimeUs(endTimeUs_),
+      replyStatsContext(replyStatsContext_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;
@@ -77,6 +79,8 @@ struct RequestLoggerContext {
   const AccessPoint& ap;
   const int64_t startTimeUs;
   const int64_t endTimeUs;
-};
+
+  const ReplyStatsContext replyStatsContext;
+ };
 
 }}} // facebook::memcache::mcrouter

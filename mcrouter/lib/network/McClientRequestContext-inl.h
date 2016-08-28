@@ -171,7 +171,10 @@ void McClientRequestContext<Request>::sendTraceOnReply() {
 }
 
 template <class Reply>
-void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
+void McClientRequestContextQueue::reply(
+    uint64_t id,
+    Reply&& r,
+    ReplyStatsContext replyStatsContext) {
   // Get the context and erase it from the queue and map.
   McClientRequestContextBase* ctx{nullptr};
   if (outOfOrder_) {
@@ -202,6 +205,7 @@ void McClientRequestContextQueue::reply(uint64_t id, Reply&& r) {
 
   if (ctx) {
     ctx->reply(std::move(r));
+    ctx->setReplyStatsContext(replyStatsContext);
     if (ctx->state() == State::PENDING_REPLY_QUEUE) {
       ctx->setState(State::COMPLETE);
       ctx->baton_.post();

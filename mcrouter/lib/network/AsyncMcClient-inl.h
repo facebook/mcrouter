@@ -35,9 +35,9 @@ inline void AsyncMcClient::setRequestStatusCallbacks(
                                    std::move(onWrite));
 }
 
-inline void AsyncMcClient::setCompressionCallback(
-    std::function<void(bool, size_t, size_t)> compressionCallback) {
-  base_->setCompressionCallback(std::move(compressionCallback));
+inline void AsyncMcClient::setReplyStatsCallback(
+    std::function<void(ReplyStatsContext)> replyStatsCallback) {
+  base_->setReplyStatsCallback(std::move(replyStatsCallback));
 }
 
 template <class Request>

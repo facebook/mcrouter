@@ -11,6 +11,7 @@
 
 #include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/network/FBTrace.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 
 namespace facebook { namespace memcache {
 
@@ -45,6 +46,7 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
   // Wait for the reply.
   auto reply = ctx.waitForReply(timeout);
 
+  updateReplyStats(ctx.getReplyStatsContext());
   // Schedule next writer loop, in case we didn't before
   // due to max inflight requests limit.
   scheduleNextWriterLoop();
@@ -53,11 +55,14 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
 }
 
 template <class Reply>
-void AsyncMcClientImpl::replyReady(Reply&& r, uint64_t reqId) {
+void AsyncMcClientImpl::replyReady(
+    Reply&& r,
+    uint64_t reqId,
+    ReplyStatsContext replyStatsContext) {
   assert(connectionState_ == ConnectionState::UP);
   DestructorGuard dg(this);
 
-  queue_.reply(reqId, std::move(r));
+  queue_.reply(reqId, std::move(r), replyStatsContext);
 }
 
 }} // facebook::memcache
