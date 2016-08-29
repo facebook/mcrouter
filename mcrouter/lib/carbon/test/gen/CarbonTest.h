@@ -107,10 +107,10 @@ class TestRequest : public carbon::RequestCommon {
   explicit TestRequest(folly::StringPiece sp) : key_(sp) {}
   explicit TestRequest(folly::IOBuf&& carbonKey) : key_(std::move(carbonKey)) {}
 
-  SimpleStruct& asSimpleStruct() {
+  SimpleStruct& asBase() {
     return _carbon_simplestruct_;
   }
-  const SimpleStruct& asSimpleStruct() const {
+  const SimpleStruct& asBase() const {
     return _carbon_simplestruct_;
   }
   int32_t int32Member() const {

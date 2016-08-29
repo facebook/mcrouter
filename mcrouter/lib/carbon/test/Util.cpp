@@ -74,7 +74,7 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
   EXPECT_EQ(a.int32Member(), b.int32Member());
   EXPECT_EQ(a.stringMember(), b.stringMember());
   EXPECT_EQ(a.enumMember(), b.enumMember());
-  expectEqSimpleStruct(a.asSimpleStruct(), b.asSimpleStruct());
+  expectEqSimpleStruct(a.asBase(), b.asBase());
 
   // Member structure
   expectEqSimpleStruct(a.testStruct(), b.testStruct());

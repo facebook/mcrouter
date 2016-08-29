@@ -203,9 +203,9 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testStruct().stringMember() = kShortString.str();
   outRequest.testStruct().enumMember() = SimpleEnum::One;
   // Mixed-in struct
-  outRequest.asSimpleStruct().int32Member() = 12345;
-  outRequest.asSimpleStruct().stringMember() = kShortString.str();
-  outRequest.asSimpleStruct().enumMember() = SimpleEnum::One;
+  outRequest.asBase().int32Member() = 12345;
+  outRequest.asBase().stringMember() = kShortString.str();
+  outRequest.asBase().enumMember() = SimpleEnum::One;
   // List of strings
   outRequest.testList() = {"abcdefg", "xyz", kShortString.str(), longString()};
   // Force one optional field to not be serialized on the wire

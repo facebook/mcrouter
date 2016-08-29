@@ -13,7 +13,7 @@ struct SimpleStruct {
   3: SimpleEnum enumMember;
 };
 
-request TestRequest with 1: SimpleStruct {
+request TestRequest with 1: SimpleStruct as Base {
   id: 1;
   name: "test";
   reply: TestReply;
