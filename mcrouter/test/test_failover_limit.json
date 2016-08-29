@@ -15,7 +15,7 @@
     ],
     "failover_limit": {
       "rate": 0.2,
-      "burst": 10
+      "burst": 9.8
     }
   }
 }

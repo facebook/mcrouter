@@ -9,7 +9,7 @@
  */
 #pragma once
 
-#include "mcrouter/TokenBucket.h"
+#include <folly/TokenBucket.h>
 
 namespace folly {
 struct dynamic;
@@ -57,7 +57,7 @@ class FailoverRateLimiter {
     return tb_.consume(1, totalReqs_);
   }
  private:
-  TokenBucket tb_;
+  folly::TokenBucket tb_;
   size_t totalReqs_{0};
 };
 

@@ -13,8 +13,7 @@ mcrouter_test_SOURCES = \
   options_test.cpp \
   pool_factory_test.cpp \
   route_test.cpp \
-  runtime_vars_data_test.cpp \
-  TokenBucketTest.cpp
+  runtime_vars_data_test.cpp
 
 mcrouter_test_CPPFLAGS = -I$(top_srcdir)/.. -I$(top_srcdir)/lib/gtest/include
 mcrouter_test_LDADD = \

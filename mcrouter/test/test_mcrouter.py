@@ -400,7 +400,7 @@ class TestFailoverWithLimit(McrouterTestCase):
         self.assertEqual(mcr.get('key'), 'value.wildcard')
         self.wildcard.terminate()
 
-        # first 12 requests should succeed (10 burst + 2 rate)
+        # first 12 requests should succeed (9.8 - 1 + 0.2 * 11 - 11 = 0)
         self.assertTrue(mcr.set('key', 'value.gut'))
         for i in range(11):
             self.assertEqual(mcr.get('key'), 'value.gut')

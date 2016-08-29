@@ -19,7 +19,7 @@ namespace {
 
 const double kDefaultBurst = 1000;
 
-TokenBucket tbFromJson(const folly::dynamic& json) {
+folly::TokenBucket tbFromJson(const folly::dynamic& json) {
   checkLogic(json.isObject(),
              "FailoverRateLimiter: failover limit is not an object");
   auto jRate = json.get_ptr("rate");

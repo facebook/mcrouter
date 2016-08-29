@@ -10,10 +10,10 @@
 #pragma once
 
 #include <folly/Optional.h>
+#include <folly/TokenBucket.h>
 
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
-#include "mcrouter/TokenBucket.h"
 
 namespace folly {
 struct dynamic;
@@ -46,19 +46,22 @@ class RateLimiter {
   template <class Request>
   bool canPassThrough(GetLikeT<Request> = 0) {
     return LIKELY(
-      !getsTb_ || getsTb_->consume(1.0, TokenBucket::defaultClockNow()));
+      !getsTb_ ||
+      getsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
   bool canPassThrough(UpdateLikeT<Request> = 0) {
     return LIKELY(
-      !setsTb_ || setsTb_->consume(1.0, TokenBucket::defaultClockNow()));
+      !setsTb_ ||
+      setsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
   bool canPassThrough(DeleteLikeT<Request> = 0) {
     return LIKELY(
-      !deletesTb_ || deletesTb_->consume(1.0, TokenBucket::defaultClockNow()));
+      !deletesTb_ ||
+      deletesTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
@@ -75,9 +78,9 @@ class RateLimiter {
   std::string toDebugStr() const;
 
  private:
-  folly::Optional<TokenBucket> getsTb_;
-  folly::Optional<TokenBucket> setsTb_;
-  folly::Optional<TokenBucket> deletesTb_;
+  folly::Optional<folly::TokenBucket> getsTb_;
+  folly::Optional<folly::TokenBucket> setsTb_;
+  folly::Optional<folly::TokenBucket> deletesTb_;
 };
 
 }}}  // facebook::memcache::mcrouter

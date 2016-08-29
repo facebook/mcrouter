@@ -47,24 +47,24 @@ double asPositiveDoubleDefault(const dynamic& obj, const string& keyName,
 RateLimiter::RateLimiter(const folly::dynamic& json) {
   checkLogic(json.isObject(), "RateLimiter settings json is not an object");
 
-  auto now = TokenBucket::defaultClockNow();
+  auto now = folly::TokenBucket::defaultClockNow();
 
   if (json.count("gets_rate")) {
     double rate = asPositiveDouble(json, "gets_rate");
     double burst = asPositiveDoubleDefault(json, "gets_burst", rate);
-    getsTb_ = TokenBucket(rate, burst, now);
+    getsTb_ = folly::TokenBucket(rate, burst, now);
   }
 
   if (json.count("sets_rate")) {
     double rate = asPositiveDouble(json, "sets_rate");
     double burst = asPositiveDoubleDefault(json, "sets_burst", rate);
-    setsTb_ = TokenBucket(rate, burst, now);
+    setsTb_ = folly::TokenBucket(rate, burst, now);
   }
 
   if (json.count("deletes_rate")) {
     double rate = asPositiveDouble(json, "deletes_rate");
     double burst = asPositiveDoubleDefault(json, "deletes_burst", rate);
-    deletesTb_ = TokenBucket(rate, burst, now);
+    deletesTb_ = folly::TokenBucket(rate, burst, now);
   }
 }
 
