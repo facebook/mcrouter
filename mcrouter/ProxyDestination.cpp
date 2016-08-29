@@ -175,7 +175,21 @@ void ProxyDestination::onReply(const mc_res_t result,
     const auto curCycles = cycles::getCpuCycles();
     if (curCycles > lastRetransCycles_ + retransCycles) {
       lastRetransCycles_ = curCycles;
-      stats_.retransPerPacket = client_->getRetransmissionInfo();
+      const auto currRetransPerKByte = client_->getRetransmissionInfo();
+      if (currRetransPerKByte >= 0.0) {
+        stats_.retransPerKByte = currRetransPerKByte;
+        stat_set_uint64(
+            proxy->stats,
+            retrans_per_kbyte_max_stat,
+            std::max(
+                stat_get_uint64(proxy->stats, retrans_per_kbyte_max_stat),
+                static_cast<uint64_t>(currRetransPerKByte)));
+        stat_incr(
+            proxy->stats,
+            retrans_per_kbyte_sum_stat,
+            static_cast<int64_t>(currRetransPerKByte));
+        stat_incr(proxy->stats, retrans_num_total_stat, 1);
+      }
     }
   }
 }

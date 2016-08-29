@@ -52,6 +52,9 @@
   STUI(outstanding_route_update_reqs_queued_helper, 0, 0)
   STUI(outstanding_route_get_wait_time_sum_us, 0, 0)
   STUI(outstanding_route_update_wait_time_sum_us, 0, 0)
+  /* Retransmission per byte helper stats */
+  STUI(retrans_per_kbyte_sum, 0, 0)
+  STUI(retrans_num_total, 0, 0)
 #undef GROUP
 #define GROUP ods_stats | mcproxy_stats
   /* Total reqs in mc client yet to be sent to memcache. */
@@ -239,6 +242,10 @@
   STUI(start_time, 0, 0)
   STUI(dev_null_requests, 0, 1)
   STUI(proxy_request_num_outstanding, 0, 1)
+  STAT(retrans_per_kbyte_avg, stat_double, 0, .dbl = 0.0)
+#undef GROUP
+#define GROUP ods_stats | mcproxy_stats | max_max_stats
+  STUI(retrans_per_kbyte_max, 0, 1)
 #undef GROUP
 #define GROUP count_stats
   STUI(request_sent_count, 0, 1)

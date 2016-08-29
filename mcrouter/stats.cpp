@@ -72,10 +72,10 @@ struct ServerStat {
   size_t cntLatencies{0};
   size_t pendingRequestsCount{0};
   size_t inflightRequestsCount{0};
-  double sumRetransPerPacket{0.0};
-  size_t cntRetransPerPacket{0};
-  double maxRetransPerPacket{0.0};
-  double minRetransPerPacket{std::numeric_limits<double>::infinity()};
+  double sumRetransPerKByte{0.0};
+  size_t cntRetransPerKByte{0};
+  double maxRetransPerKByte{0.0};
+  double minRetransPerKByte{std::numeric_limits<double>::infinity()};
 
   std::string toString() const {
     double avgLatency = cntLatencies == 0 ? 0 : sumLatencies / cntLatencies;
@@ -87,13 +87,13 @@ struct ServerStat {
     } else if (isSoftTko) {
       folly::format(" soft_tko; ").appendTo(res);
     }
-    if (cntRetransPerPacket > 0) {
-      double avgRetransPerPacket = sumRetransPerPacket / cntRetransPerPacket;
+    if (cntRetransPerKByte > 0) {
+      double avgRetransPerKByte = sumRetransPerKByte / cntRetransPerKByte;
       folly::format(
           " avg_retrans_ratio:{} max_retrans_ratio:{} min_retrans_ratio:{}",
-          avgRetransPerPacket,
-          maxRetransPerPacket,
-          minRetransPerPacket)
+          avgRetransPerKByte,
+          maxRetransPerKByte,
+          minRetransPerKByte)
           .appendTo(res);
     }
     for (size_t i = 0; i < (size_t)ProxyDestination::State::kNumStates; ++i) {
@@ -188,12 +188,31 @@ uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx) {
   return max;
 }
 
+uint64_t stats_aggregate_max_max_value(
+    const McrouterInstance& router,
+    int idx) {
+  uint64_t max = 0;
+  int num_bins_used = get_num_bins_used(router);
+
+  for (int j = 0; j < num_bins_used; ++j) {
+    for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+      max = std::max(max, router.getProxy(i)->stats_bin[idx][j]);
+    }
+  }
+  return max;
+}
+
 static std::string rate_stat_to_str(proxy_t * proxy, int idx) {
   return folly::stringPrintf("%g", stats_rate_value(proxy, idx));
 }
 
 static std::string max_stat_to_str(proxy_t* proxy, int idx) {
   return folly::to<std::string>(stats_max_value(proxy, idx));
+}
+
+static std::string max_max_stat_to_str(proxy_t* proxy, int idx) {
+  return folly::to<std::string>(
+      stats_aggregate_max_max_value(proxy->router(), idx));
 }
 
 /**
@@ -320,6 +339,8 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
   uint64_t outstandingUpdateReqsTotal = 0;
   uint64_t outstandingUpdateReqsHelper = 0;
   uint64_t outstandingUpdateWaitTimeSumUs = 0;
+  uint64_t retransPerKByteSum = 0;
+  uint64_t retransNumTotal = 0;
 
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto proxy = router.getProxy(i);
@@ -342,6 +363,10 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
       outstanding_route_update_reqs_queued_helper_stat];
     outstandingUpdateWaitTimeSumUs += proxy->stats_num_within_window[
       outstanding_route_update_wait_time_sum_us_stat];
+
+    retransPerKByteSum +=
+        proxy->stats_num_within_window[retrans_per_kbyte_sum_stat];
+    retransNumTotal += proxy->stats_num_within_window[retrans_num_total_stat];
   }
 
   stat_set_uint64(stats, num_suspect_servers_stat,
@@ -352,6 +377,12 @@ void prepare_stats(McrouterInstance& router, stat_t* stats) {
     avgBatchSize = destinationRequestsSum / (double)destinationBatchesSum;
   }
   stats[destination_batch_size_stat].data.dbl = avgBatchSize;
+
+  double avgRetransPerKByte = 0.0;
+  if (retransNumTotal != 0) {
+    avgRetransPerKByte = retransPerKByteSum / (double)retransNumTotal;
+  }
+  stats[retrans_per_kbyte_avg_stat].data.dbl = avgRetransPerKByte;
 
   stats[outstanding_route_get_avg_queue_size_stat].data.dbl = 0.0;
   stats[outstanding_route_get_avg_wait_time_sec_stat].data.dbl = 0.0;
@@ -528,6 +559,8 @@ McStatsReply stats_reply(proxy_t* proxy,
         reply.addStat(stat->name, rate_stat_to_str(proxy, ii));
       } else if (stat->group & max_stats) {
         reply.addStat(stat->name, max_stat_to_str(proxy, ii));
+      } else if (stat->group & max_max_stats) {
+        reply.addStat(stat->name, max_max_stat_to_str(proxy, ii));
       } else {
         reply.addStat(stat->name, stat_to_str(stat, nullptr));
       }
@@ -555,12 +588,12 @@ McStatsReply stats_reply(proxy_t* proxy,
             ++stat.cntLatencies;
           }
 
-          if (pdstn.stats().retransPerPacket >= 0.0) {
-            const auto val = pdstn.stats().retransPerPacket;
-            stat.sumRetransPerPacket += val;
-            stat.maxRetransPerPacket = std::max(stat.maxRetransPerPacket, val);
-            stat.minRetransPerPacket = std::min(stat.minRetransPerPacket, val);
-            ++stat.cntRetransPerPacket;
+          if (pdstn.stats().retransPerKByte >= 0.0) {
+            const auto val = pdstn.stats().retransPerKByte;
+            stat.sumRetransPerKByte += val;
+            stat.maxRetransPerKByte = std::max(stat.maxRetransPerKByte, val);
+            stat.minRetransPerKByte = std::min(stat.minRetransPerKByte, val);
+            ++stat.cntRetransPerKByte;
           }
           stat.pendingRequestsCount += pdstn.getPendingRequestCount();
           stat.inflightRequestsCount += pdstn.getInflightRequestCount();

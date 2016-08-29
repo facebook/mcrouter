@@ -800,18 +800,18 @@ double AsyncMcClientImpl::getRetransmissionInfo() {
     socklen_t len = sizeof(struct tcp_info);
 
     auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
-    const auto totalBytes = socket.getRawBytesWritten();
 
     if (socket.getSockOpt(IPPROTO_TCP, TCP_INFO, &tcpinfo, &len) == 0) {
-      if (tcpinfo.tcpi_snd_mss > 0 && totalBytes > 0) {
-        const auto currPackets = (double)totalBytes / tcpinfo.tcpi_snd_mss;
-        const auto retransPerPacket =
-            (tcpinfo.tcpi_total_retrans - lastRetrans_) /
-            (currPackets - approxPackets_);
-        approxPackets_ = currPackets;
-        lastRetrans_ = tcpinfo.tcpi_total_retrans;
-        return retransPerPacket;
+      const uint64_t totalKBytes = socket.getRawBytesWritten() / 1000;
+      if (totalKBytes == lastKBytes_) {
+          return 0.0;
       }
+      const auto retransPerKByte =
+          (tcpinfo.tcpi_total_retrans - lastRetrans_) /
+          (double)(totalKBytes - lastKBytes_);
+      lastKBytes_ = totalKBytes;
+      lastRetrans_ = tcpinfo.tcpi_total_retrans;
+      return retransPerKByte;
     }
   }
   return -1.0;

@@ -143,7 +143,7 @@ class AsyncMcClientImpl :
 
   // Retransmission values
   uint32_t lastRetrans_{0}; // last known value of the no. of retransmissions
-  double approxPackets_{0.0}; // overestimation of the number of packets sent
+  uint64_t lastKBytes_{0}; // last known number of kBs sent
 
   // Writer loop related variables.
   class WriterLoop;

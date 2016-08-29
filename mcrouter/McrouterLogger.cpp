@@ -230,6 +230,9 @@ void McrouterLogger::log() {
     } else if (stats[i].group & max_stats) {
       stats[i].type = stat_uint64;
       stats[i].data.uint64 = stats_aggregate_max_value(router_, i);
+    } else if (stats[i].group & max_max_stats) {
+      stats[i].type = stat_uint64;
+      stats[i].data.uint64 = stats_aggregate_max_max_value(router_, i);
     }
   }
 

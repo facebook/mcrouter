@@ -58,7 +58,7 @@ class ProxyDestination {
     ExponentialSmoothData<16> avgLatency;
     std::unique_ptr<std::array<uint64_t, mc_nres>> results;
     size_t probesSent{0};
-    double retransPerPacket{0.0};
+    double retransPerKByte{0.0};
   };
 
   proxy_t* proxy{nullptr}; ///< for convenience
