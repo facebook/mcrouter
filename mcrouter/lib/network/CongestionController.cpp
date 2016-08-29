@@ -31,5 +31,12 @@ void CongestionController::setTarget(uint64_t target) {
   logic_.setTarget(target);
 }
 
+CongestionControllerStats CongestionController::getStats() const {
+  CongestionControllerStats curStats;
+  curStats.dropProbability = getDropProbability();
+
+  return curStats;
+}
+
 } // memcache
 } // facebook

@@ -22,6 +22,11 @@ struct CongestionControllerOptions {
   std::chrono::milliseconds cpuControlDelay{0};
 };
 
+// Stats of the controller
+struct CongestionControllerStats {
+  double dropProbability{0.0};
+};
+
 /**
  * This class provides simple APIs to control a variable with the user-provided
  * target value. The use case of this controller is to throttle clients if
@@ -56,6 +61,8 @@ class CongestionController {
 
   // Set the target.
   void setTarget(uint64_t target);
+
+  CongestionControllerStats getStats() const;
 
  private:
   CongestionControllerLogic logic_;
