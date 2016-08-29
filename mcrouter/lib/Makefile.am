@@ -147,6 +147,10 @@ libmcrouter_a_SOURCES = \
   network/CaretSerializedMessage.h \
   network/ClientMcParser-inl.h \
   network/ClientMcParser.h \
+  network/CongestionController.cpp \
+  network/CongestionController.h \
+  network/CongestionControllerLogic.cpp \
+  network/CongestionControllerLogic.h \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \
