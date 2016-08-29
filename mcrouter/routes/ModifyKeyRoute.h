@@ -17,12 +17,13 @@
 #include <folly/Conv.h>
 #include <folly/Optional.h>
 
-#include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/mc/protocol.h"
+#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -46,40 +47,28 @@ class ModifyKeyRoute {
  public:
   static std::string routeName() { return "modify-key"; }
 
-  ModifyKeyRoute(McrouterRouteHandlePtr target,
-                 folly::Optional<std::string> routingPrefix,
-                 std::string keyPrefix);
+  ModifyKeyRoute(
+      McrouterRouteHandlePtr target,
+      folly::Optional<std::string> routingPrefix,
+      std::string keyPrefix,
+      bool modifyInplace);
 
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
-    folly::StringPiece rp = routingPrefix_.hasValue()
-      ? routingPrefix_.value()
-      : req.key().routingPrefix();
     auto cloneReq = req;
-    if (!req.key().keyWithoutRoute().startsWith(keyPrefix_)) {
-      auto key =
-          folly::to<std::string>(rp, keyPrefix_, req.key().keyWithoutRoute());
-      cloneReq.key() = key;
-    } else if (routingPrefix_.hasValue() && rp != req.key().routingPrefix()) {
-      cloneReq.key() = folly::to<std::string>(rp, req.key().keyWithoutRoute());
+    auto key = getModifiedKey(req.key());
+    if (key) {
+      cloneReq.key() = key.value();
     }
     t(*target_, cloneReq);
   }
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    folly::StringPiece rp = routingPrefix_.hasValue()
-      ? routingPrefix_.value()
-      : req.key().routingPrefix();
-
-    if (!req.key().keyWithoutRoute().startsWith(keyPrefix_)) {
-      auto key =
-          folly::to<std::string>(rp, keyPrefix_, req.key().keyWithoutRoute());
-      return routeReqWithKey(req, key);
-    } else if (routingPrefix_.hasValue() && rp != req.key().routingPrefix()) {
-      auto key = folly::to<std::string>(rp, req.key().keyWithoutRoute());
-      return routeReqWithKey(req, key);
+    const auto key = getModifiedKey(req.key());
+    if (key) {
+      return routeReqWithKey(req, key.value());
     }
     return target_->route(req);
   }
@@ -88,6 +77,10 @@ class ModifyKeyRoute {
   const McrouterRouteHandlePtr target_;
   const folly::Optional<std::string> routingPrefix_;
   const std::string keyPrefix_;
+  const bool modifyInplace_;
+
+  folly::Optional<std::string> getModifiedKey(
+      const carbon::Keys<folly::IOBuf>& reqKey) const;
 
   template <class Request>
   ReplyT<Request>

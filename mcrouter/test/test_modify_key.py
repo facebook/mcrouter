@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -14,6 +14,7 @@ import time
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+
 
 class TestModifyKey(McrouterTestCase):
     config = './mcrouter/test/test_modify_key.json'
@@ -55,3 +56,41 @@ class TestModifyKey(McrouterTestCase):
 
         self.assertTrue(self.mcr.set("/d/e/123", "value8"))
         self.assertEqual(self.mc.get("123"), "value8")
+
+        self.assertTrue(self.mcr.set("/e/f/akey", "value9"))
+        self.assertEqual(self.mc.get("/e/f/bar:"), "value9")
+
+        self.assertTrue(self.mcr.set("/e/f/mykeys", "value10"))
+        self.assertEqual(self.mc.get("/e/f/bar:ys"), "value10")
+
+        self.assertTrue(self.mcr.set("/e/f/key", "value11"))
+        self.assertEqual(self.mc.get("/e/f/bar:key"), "value11")
+
+        self.assertTrue(self.mcr.set("/e/f/bar:key", "value12"))
+        self.assertEqual(self.mc.get("/e/f/bar:key"), "value12")
+
+        self.assertTrue(self.mcr.set("/f/g/akey", "value13"))
+        self.assertEqual(self.mc.get("/f/g/bar:akey"), "value13")
+
+        self.assertTrue(self.mcr.set("/g/h/akey", "value14"))
+        self.assertEqual(self.mc.get("/a/b/bar:"), "value14")
+
+        self.assertTrue(self.mcr.set("/g/h/mykeys", "value15"))
+        self.assertEqual(self.mc.get("/a/b/bar:ys"), "value15")
+
+        self.assertTrue(self.mcr.set("/g/h/key", "value16"))
+        self.assertEqual(self.mc.get("/a/b/bar:key"), "value16")
+
+        self.assertTrue(self.mcr.set("/h/i/mykeys", "value17"))
+        self.assertEqual(self.mc.get("bar:ys"), "value17")
+
+        self.assertTrue(self.mcr.set("/h/i/hi", "value18"))
+        self.assertEqual(self.mc.get("bar:hi"), "value18")
+
+        self.assertTrue(self.mcr.set("/h/i/keys", "value19"))
+        self.assertEqual(self.mc.get("bar:"), "value19")
+
+        self.assertFalse(self.mcr.set("/i/j/", "value"))
+
+        self.assertTrue(self.mcr.set("/i/j/keys", "value20"))
+        self.assertEqual(self.mc.get("keys"), "value20")

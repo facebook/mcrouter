@@ -39,6 +39,54 @@
         "set_routing_prefix": "",
         "ensure_key_prefix": ""
       }
+    },
+    {
+      "aliases": [ "/e/f/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "ensure_key_prefix": "bar:",
+        "modify_inplace": true
+      }
+    },
+    {
+      "aliases": [ "/f/g/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "ensure_key_prefix": "bar:",
+        "modify_inplace": false
+      }
+    },
+    {
+      "aliases": [ "/g/h/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_routing_prefix": "/a/b/",
+        "ensure_key_prefix": "bar:",
+        "modify_inplace": true
+      }
+    },
+    {
+      "aliases": [ "/h/i/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_routing_prefix": "",
+        "ensure_key_prefix": "bar:",
+        "modify_inplace": true
+      }
+    },
+    {
+      "aliases": [ "/i/j/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "set_routing_prefix": "",
+        "ensure_key_prefix": "",
+        "modify_inplace": true
+      }
     }
   ]
 }

@@ -11,18 +11,38 @@
 
 #include <folly/dynamic.h>
 
+#include "mcrouter/RoutingPrefix.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/RoutingPrefix.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ModifyKeyRoute::ModifyKeyRoute(McrouterRouteHandlePtr target,
-                               folly::Optional<std::string> routingPrefix,
-                               std::string keyPrefix)
-  : target_(std::move(target)),
-    routingPrefix_(std::move(routingPrefix)),
-    keyPrefix_(std::move(keyPrefix)) {}
+ModifyKeyRoute::ModifyKeyRoute(
+    McrouterRouteHandlePtr target,
+    folly::Optional<std::string> routingPrefix,
+    std::string keyPrefix,
+    bool modifyInplace)
+    : target_(std::move(target)),
+      routingPrefix_(std::move(routingPrefix)),
+      keyPrefix_(std::move(keyPrefix)),
+      modifyInplace_(modifyInplace) {}
+
+folly::Optional<std::string> ModifyKeyRoute::getModifiedKey(
+    const carbon::Keys<folly::IOBuf>& reqKey) const {
+  folly::StringPiece rp = routingPrefix_.hasValue() ? routingPrefix_.value()
+                                                    : reqKey.routingPrefix();
+
+  if (!reqKey.keyWithoutRoute().startsWith(keyPrefix_)) {
+    auto keyWithoutRoute = reqKey.keyWithoutRoute();
+    if (modifyInplace_ && keyWithoutRoute.size() >= keyPrefix_.size()) {
+      keyWithoutRoute.advance(keyPrefix_.size());
+    }
+    return folly::to<std::string>(rp, keyPrefix_, keyWithoutRoute);
+  } else if (routingPrefix_.hasValue() && rp != reqKey.routingPrefix()) {
+    return folly::to<std::string>(rp, reqKey.keyWithoutRoute());
+  }
+  return folly::none;
+}
 
 McrouterRouteHandlePtr makeModifyKeyRoute(
   RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -52,10 +72,18 @@ McrouterRouteHandlePtr makeModifyKeyRoute(
                "ModifyKeyRoute: invalid key prefix '{}', {}", keyPrefix,
                mc_req_err_to_string(err));
   }
+
+  bool modifyInplace = false;
+  if (auto joverwrite = json.get_ptr("modify_inplace")) {
+    checkLogic(
+        joverwrite->isBool(), "ModifyKeyRoute: modify_inplace is not a bool");
+    modifyInplace = joverwrite->asBool();
+  }
   return std::make_shared<McrouterRouteHandle<ModifyKeyRoute>>(
-    factory.create(*jtarget),
-    std::move(routingPrefix),
-    std::move(keyPrefix));
+      factory.create(*jtarget),
+      std::move(routingPrefix),
+      std::move(keyPrefix),
+      modifyInplace);
 }
 
 }}}  // facebook::memcache::mcrouter
