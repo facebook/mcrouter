@@ -19,8 +19,14 @@ ReplyT<Request> ProxyDestination::send(const Request& request,
                                        DestinationRequestCtx& req_ctx,
                                        std::chrono::milliseconds timeout) {
   proxy->destinationMap->markAsActive(*this);
-  auto reply = getAsyncMcClient().sendSync(request, timeout);
+
+  auto& curClient = getAsyncMcClient();
+
+  auto reply = curClient.sendSync(request, timeout);
+  // We only drop GET and SET requests given the probability.
+  dropProbability_ = curClient.getDropProbability<Request>();
   onReply(reply.result(), req_ctx);
+
   return reply;
 }
 

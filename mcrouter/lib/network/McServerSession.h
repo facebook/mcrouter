@@ -155,6 +155,10 @@ class McServerSession :
     return eventBase_;
   }
 
+  std::shared_ptr<CongestionController> getCpuController() const noexcept {
+    return options_.cpuController;
+  }
+
  private:
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::EventBase& eventBase_;

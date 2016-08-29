@@ -10,6 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
+#include "mcrouter/lib/network/CongestionController.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
@@ -28,6 +29,8 @@ bool WriteBuffer::prepareTyped(
 
   typeId_ = IdFromType<Reply, CarbonMessageList>::value;
 
+  // The current congestion control only supports mc_caret_protocol.
+  // May extend to other protocals in the future.
   switch (protocol_) {
     case mc_ascii_protocol:
       return asciiReply_.prepare(
@@ -39,15 +42,22 @@ bool WriteBuffer::prepareTyped(
           std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
       break;
 
-    case mc_caret_protocol:
+    case mc_caret_protocol: {
+      auto dropProbability = ctx_->session().getCpuController()
+          ? ctx_->session().getCpuController()->getDropProbability()
+          : 0.0;
+
       return caretReply_.prepare(
           std::move(reply),
           ctx_->reqid_,
           ctx_->compressionContext_->codecIdRange,
           ctx_->compressionContext_->compressionCodecMap,
+          dropProbability,
           iovsBegin_,
           iovsCount_);
-      break;
+    }
+
+    break;
 
     default:
       CHECK(false);

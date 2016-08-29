@@ -35,6 +35,7 @@ bool CaretSerializedMessage::prepare(
     size_t reqId,
     const CodecIdRange& supportedCodecs,
     const CompressionCodecMap* compressionCodecMap,
+    double dropProbability,
     const struct iovec*& iovOut,
     size_t& niovOut) noexcept {
   constexpr size_t typeId = IdFromType<Reply, TReplyList>::value;
@@ -45,6 +46,7 @@ bool CaretSerializedMessage::prepare(
       0 /* traceId */,
       supportedCodecs,
       compressionCodecMap,
+      dropProbability,
       iovOut,
       niovOut);
 }
@@ -68,7 +70,7 @@ bool CaretSerializedMessage::fill(const Message& message,
   UmbrellaMessageInfo info;
   info.supportedCodecsFirstId = supportedCodecs.firstId;
   info.supportedCodecsSize = supportedCodecs.size;
-  fillImpl(info, reqId, typeId, traceId, iovOut, niovOut);
+  fillImpl(info, reqId, typeId, traceId, 0.0, iovOut, niovOut);
   return true;
 }
 
@@ -80,6 +82,7 @@ bool CaretSerializedMessage::fill(
     uint64_t traceId,
     const CodecIdRange& supportedCodecs,
     const CompressionCodecMap* compressionCodecMap,
+    double dropProbability,
     const struct iovec*& iovOut,
     size_t& niovOut) {
   // Serialize and (maybe) compress body of message.
@@ -104,7 +107,7 @@ bool CaretSerializedMessage::fill(
     info.uncompressedBodySize = uncompressedSize;
   }
 
-  fillImpl(info, reqId, typeId, traceId, iovOut, niovOut);
+  fillImpl(info, reqId, typeId, traceId, dropProbability, iovOut, niovOut);
   return true;
 }
 
@@ -142,6 +145,7 @@ inline void CaretSerializedMessage::fillImpl(
     uint32_t reqId,
     size_t typeId,
     uint64_t traceId,
+    double dropProbability,
     const struct iovec*& iovOut,
     size_t& niovOut) {
   info.bodySize = storage_.computeBodySize();
@@ -149,6 +153,8 @@ inline void CaretSerializedMessage::fillImpl(
   info.reqId = reqId;
   info.version = UmbrellaVersion::TYPED_MESSAGE;
   info.traceId = traceId;
+  info.dropProbability =
+      static_cast<uint64_t>(dropProbability * kDropProbabilityNormalizer);
 
   size_t headerSize = caretPrepareHeader(
       info, reinterpret_cast<char*>(storage_.getHeaderBuf()));

@@ -70,6 +70,7 @@ void resetAdditionalFields(UmbrellaMessageInfo& info) {
   info.supportedCodecsSize = 0;
   info.usedCodecId = 0;
   info.uncompressedBodySize = 0;
+  info.dropProbability = 0;
 }
 
 size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
@@ -87,6 +88,9 @@ size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
     ++nAdditionalFields;
   }
   if (info.uncompressedBodySize != 0) {
+    ++nAdditionalFields;
+  }
+  if (info.dropProbability != 0) {
     ++nAdditionalFields;
   }
   return nAdditionalFields;
@@ -133,6 +137,10 @@ size_t serializeAdditionalFields(
       buf,
       CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE,
       info.uncompressedBodySize);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf,
+      CaretAdditionalFieldType::DROP_PROBABILITY,
+      info.dropProbability);
 
   return buf - destination;
 }
@@ -217,7 +225,7 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
       uint64_t fieldValue = folly::decodeVarint(range);
 
       if (fieldType > static_cast<uint64_t>(
-                          CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE)) {
+                          CaretAdditionalFieldType::DROP_PROBABILITY)) {
         // Additional Field Type not recognized, ignore.
         continue;
       }
@@ -237,6 +245,9 @@ UmbrellaParseStatus caretParseHeader(const uint8_t* buff,
           break;
         case CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE:
           headerInfo.uncompressedBodySize = fieldValue;
+          break;
+        case CaretAdditionalFieldType::DROP_PROBABILITY:
+          headerInfo.dropProbability = fieldValue;
           break;
       }
     } catch (const std::invalid_argument& e) {

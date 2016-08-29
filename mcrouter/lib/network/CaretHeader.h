@@ -12,12 +12,15 @@
 namespace facebook { namespace memcache {
 
 constexpr char kCaretMagicByte = '^';
-constexpr size_t kMaxAdditionalFields = 3;
+constexpr size_t kMaxAdditionalFields = 4;
 constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
     1 /* GroupVarint header (lengths of 4 ints) */ +
     4 * sizeof(uint32_t) /* body size, typeId, reqId, num additional fields */ +
     2 * kMaxAdditionalFields * folly::kMaxVarintLength64; /* key and value for
                                                           additional fields */
+
+// Normalize the dropProbability to the accuracy of 10^-6.
+constexpr uint32_t kDropProbabilityNormalizer = 1000000;
 
 enum class UmbrellaVersion : uint8_t {
   BASIC = 0,
@@ -36,6 +39,9 @@ enum class CaretAdditionalFieldType {
 
   // Size of body after decompression.
   UNCOMPRESSED_BODY_SIZE = 4,
+
+  // Drop Probability of each request.
+  DROP_PROBABILITY = 5,
 };
 
 }} // facebook::memcache

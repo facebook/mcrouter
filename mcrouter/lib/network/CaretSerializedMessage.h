@@ -75,6 +75,7 @@ class CaretSerializedMessage {
                size_t reqId,
                const CodecIdRange& supportedCodecs,
                const CompressionCodecMap* compressionCodecMap,
+               double dropProbability,
                const struct iovec*& iovOut,
                size_t& niovOut) noexcept;
 
@@ -97,6 +98,7 @@ class CaretSerializedMessage {
             uint64_t traceId,
             const CodecIdRange& supportedCodecs,
             const CompressionCodecMap* compressionCodecMap,
+            double dropProbability,
             const struct iovec*& iovOut,
             size_t& niovOut);
 
@@ -104,6 +106,7 @@ class CaretSerializedMessage {
                 uint32_t reqId,
                 size_t typeId,
                 uint64_t traceId,
+                double dropProbability,
                 const struct iovec*& iovOut,
                 size_t& niovOut);
 

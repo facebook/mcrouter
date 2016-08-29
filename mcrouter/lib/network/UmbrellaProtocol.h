@@ -41,6 +41,7 @@ struct UmbrellaMessageInfo {
   uint64_t supportedCodecsSize{0};
   uint64_t usedCodecId{0};
   uint64_t uncompressedBodySize{0};
+  uint64_t dropProbability{0}; // Use uint64_t to store a double.
 };
 
 enum class UmbrellaParseStatus {

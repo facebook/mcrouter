@@ -85,6 +85,9 @@ class AsyncMcClientImpl :
 
   double getRetransmissionInfo();
 
+  template <class Request>
+  double getDropProbability() const;
+
  private:
   using ParserT = ClientMcParser<AsyncMcClientImpl>;
   friend ParserT;

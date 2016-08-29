@@ -288,6 +288,7 @@ void MessagePrinter::printRawReply(uint64_t msgId,
         msgId,
         CodecIdRange::Empty,
         nullptr, /* codec map */
+        0.0, /* drop probability */
         iovsBegin,
         iovsCount);
       break;

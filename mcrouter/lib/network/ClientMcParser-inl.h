@@ -294,4 +294,13 @@ ReplyStatsContext ClientMcParser<Callback>::getCompressionStats(
   return replyStatsContext;
 }
 
-}} // facebook::memcache
+template <class Callback>
+double ClientMcParser<Callback>::getDropProbability() const {
+  if (parser_.protocol() == mc_caret_protocol) {
+    return parser_.getDropProbability();
+  }
+
+  return 0.0;
+}
+
+}}  // facebook::memcache

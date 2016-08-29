@@ -110,6 +110,8 @@ class ProxyDestination {
   const uint64_t qosPath_{0};
   uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
 
+  double dropProbability_{0.0};
+
   Stats stats_;
 
   uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
@@ -153,6 +155,8 @@ class ProxyDestination {
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
   void timerCallback();
+
+  bool shouldDrop() const;
 
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;

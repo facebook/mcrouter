@@ -144,9 +144,15 @@ class AsyncMcClient {
   const folly::AsyncTransportWrapper* getTransport();
 
   /**
-  * @return Retransmits per packet used to detect lossy connections
-  */
+   * @return Retransmits per packet used to detect lossy connections
+   */
   double getRetransmissionInfo();
+
+  /**
+   * Get the drop probability
+   */
+  template <class Request>
+  double getDropProbability() const;
 
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;

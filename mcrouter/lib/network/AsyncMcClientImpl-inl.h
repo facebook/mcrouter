@@ -65,4 +65,27 @@ void AsyncMcClientImpl::replyReady(
   queue_.reply(reqId, std::move(r), replyStatsContext);
 }
 
+template <class Request>
+double AsyncMcClientImpl::getDropProbability() const {
+  return 0.0;
+}
+
+template <>
+inline double AsyncMcClientImpl::getDropProbability<McSetRequest>() const {
+  if (parser_ == nullptr) {
+    return 0.0;
+  }
+
+  return parser_->getDropProbability();
+}
+
+template <>
+inline double AsyncMcClientImpl::getDropProbability<McGetRequest>() const {
+  if (parser_ == nullptr) {
+    return 0.0;
+  }
+
+  return parser_->getDropProbability();
+}
+
 }} // facebook::memcache
