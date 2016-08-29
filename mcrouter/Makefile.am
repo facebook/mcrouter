@@ -179,8 +179,7 @@ libmcroutercore_a_SOURCES = \
   TkoLog.cpp \
   TkoLog.h \
   TkoTracker.cpp \
-  TkoTracker.h \
-  TokenBucket.h
+  TkoTracker.h
 
 mcrouter_SOURCES = \
   main.cpp \
