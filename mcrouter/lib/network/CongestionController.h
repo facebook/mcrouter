@@ -14,6 +14,14 @@
 namespace facebook {
 namespace memcache {
 
+struct CongestionControllerOptions {
+  // The target value to the controller of CPU utilization
+  uint64_t cpuControlTarget{0};
+
+  // Worker-specific options
+  std::chrono::milliseconds cpuControlDelay{0};
+};
+
 /**
  * This class provides simple APIs to control a variable with the user-provided
  * target value. The use case of this controller is to throttle clients if

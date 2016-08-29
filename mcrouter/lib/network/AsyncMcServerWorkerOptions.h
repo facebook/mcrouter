@@ -11,8 +11,11 @@
 
 #include <chrono>
 #include <string>
+#include <memory>
 
 namespace facebook { namespace memcache {
+
+class CongestionController;
 
 struct AsyncMcServerWorkerOptions {
   /**
@@ -79,6 +82,11 @@ struct AsyncMcServerWorkerOptions {
    * If empty, debug fifo is disabled.
    */
   std::string debugFifoPath;
+
+  /**
+   * The congestion controller at the server.
+   */
+  std::shared_ptr<CongestionController> cpuController;
 };
 
 }}  // facebook::memcache

@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
+#include "mcrouter/lib/network/CongestionController.h"
 
 namespace folly {
 class EventBase;
@@ -87,6 +88,11 @@ class AsyncMcServer {
      * Worker-specific options
      */
     AsyncMcServerWorkerOptions worker;
+
+    /**
+     * CongestionController-specific options
+     */
+    CongestionControllerOptions congestionController;
 
     /**
      * @param globalMaxConns

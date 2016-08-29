@@ -320,6 +320,12 @@ void AsyncMcServer::Options::setPerThreadMaxConns(size_t globalMaxConns,
 
 AsyncMcServer::AsyncMcServer(Options opts)
     : opts_(std::move(opts)) {
+  if (opts_.congestionController.cpuControlTarget > 0) {
+    opts_.worker.cpuController = std::make_shared<CongestionController>(
+        opts_.congestionController.cpuControlTarget,
+        opts_.congestionController.cpuControlDelay,
+        true /* enableCPUControl */);
+  }
 
   CHECK(opts_.numThreads > 0);
   threads_.emplace_back(folly::make_unique<McServerThread>(

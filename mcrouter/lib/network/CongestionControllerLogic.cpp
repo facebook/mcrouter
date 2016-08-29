@@ -132,7 +132,6 @@ CongestionControllerLogic::CongestionControllerLogic(
        */
       smoothingFactor_ =
           pow(10, kLogResidue / static_cast<double>(curUpdateCounter));
-
     }
   });
 
