@@ -150,8 +150,8 @@ class CarbonProtocolReader {
   }
 
   template <class T, typename Enable<decltype(&T::deserialize)>::type = 0>
-  std::vector<T> readListField() {
-    const auto pr = readListFieldSizeAndInnerType();
+  std::vector<T> readVectorField() {
+    const auto pr = readVectorFieldSizeAndInnerType();
     const auto len = pr.second;
     // TODO Validate type?
     std::vector<T> v(len);
@@ -163,8 +163,8 @@ class CarbonProtocolReader {
 
   // Hack to enable only for basic types
   template <class T, FieldType F = detail::TypeToField<T>::fieldType>
-  std::vector<T> readListField() {
-    const auto pr = readListFieldSizeAndInnerType();
+  std::vector<T> readVectorField() {
+    const auto pr = readVectorFieldSizeAndInnerType();
     const auto len = pr.second;
     // TODO Validate type?
     std::vector<T> v(len);
@@ -174,7 +174,7 @@ class CarbonProtocolReader {
     return v;
   }
 
-  std::pair<FieldType, uint32_t> readListFieldSizeAndInnerType() {
+  std::pair<FieldType, uint32_t> readVectorFieldSizeAndInnerType() {
     std::pair<FieldType, uint32_t> pr;
     const uint8_t byte = readByte();
     pr.first = static_cast<FieldType>(byte & 0x0f);

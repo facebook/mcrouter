@@ -1515,7 +1515,7 @@ inline void McStatsReply::serialize(
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
   writer.writeBinaryField(2 /* field id */, message());
-  writer.writeListField<std::string>(3 /* field id */, stats());
+  writer.writeVectorField<std::string>(3 /* field id */, stats());
   writer.writeInt16Field(4 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
   writer.writeStop();
@@ -1542,7 +1542,7 @@ inline void McStatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 3: {
-        stats() = reader.readListField<std::string>();
+        stats() = reader.readVectorField<std::string>();
         break;
       }
       case 4: {

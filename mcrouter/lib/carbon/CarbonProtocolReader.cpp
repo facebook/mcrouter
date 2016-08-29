@@ -46,7 +46,7 @@ void CarbonProtocolReader::skip(const FieldType fieldType) {
       break;
     }
     case FieldType::List: {
-      const auto pr = readListFieldSizeAndInnerType();
+      const auto pr = readVectorFieldSizeAndInnerType();
       const auto fieldType = pr.first;
       const auto len = pr.second;
       for (size_t i = 0; i < len; ++i) {

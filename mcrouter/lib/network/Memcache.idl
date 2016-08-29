@@ -285,7 +285,7 @@ request McStatsRequest {
 reply McStatsReply {
   1: Result result;
   2: string message;
-  3: list<string> stats;
+  3: vector<string> stats;
   4: int16_t appSpecificErrorCode;
 };
 

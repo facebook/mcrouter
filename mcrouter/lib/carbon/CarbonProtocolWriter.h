@@ -320,10 +320,10 @@ class CarbonProtocolWriter {
   }
 
   template <class T, typename Enable<decltype(&T::serialize)>::type = 0>
-  void writeListField(const int16_t id, const std::vector<T>& v) {
+  void writeVectorField(const int16_t id, const std::vector<T>& v) {
     facebook::memcache::checkRuntime(
         v.size() <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeListField() too long (len = {})", v.size());
+        "Input to writeVectorField() too long (len = {})", v.size());
     writeFieldHeader(FieldType::List, id);
     writeListSizeAndInnerType(
         static_cast<uint32_t>(v.size()), FieldType::Struct);
@@ -334,10 +334,10 @@ class CarbonProtocolWriter {
 
   // Hack to enable only for basic types
   template <class T, FieldType F = detail::TypeToField<T>::fieldType>
-  void writeListField(const int16_t id, const std::vector<T>& v) {
+  void writeVectorField(const int16_t id, const std::vector<T>& v) {
     facebook::memcache::checkRuntime(
         v.size() <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeListField() too long (len = {})", v.size());
+        "Input to writeVectorField() too long (len = {})", v.size());
     writeFieldHeader(FieldType::List, id);
     writeListSizeAndInnerType(
         static_cast<uint32_t>(v.size()), detail::TypeToField<T>::fieldType);

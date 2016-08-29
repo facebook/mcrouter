@@ -36,7 +36,7 @@ request TestRequest with 1: SimpleStruct {
   16: string testLongString;
   17: IOBuf testIobuf;
   18: SimpleStruct testStruct;
-  19: list<string> testList;
+  19: vector<string> testList;
   20: Optional<string> testOptionalString;
   21: Optional<IOBuf> testOptionalIobuf;
 };
