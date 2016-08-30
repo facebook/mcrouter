@@ -70,8 +70,12 @@ CongestionControllerLogic::CongestionControllerLogic(
       // sleep override
       std::this_thread::sleep_for(delay_);
 
+      // Get a copy of the current sendProbability_.
+      double curSendProbability = sendProbability_;
       // Get a copy the counter value.
       uint32_t curUpdateCounter = updateCounter_;
+      // Get a copy of the current weightedValue_.
+      double curWeightedValue = weightedValue_;
 
       /**
        * Corner case: If nothing is received this window, reset the
@@ -81,14 +85,6 @@ CongestionControllerLogic::CongestionControllerLogic(
         sendProbability_ = 1.0;
         continue;
       }
-
-      // Reset the counter.
-      updateCounter_ -= curUpdateCounter;
-
-      // Get a copy of the current weightedValue_.
-      double curWeightedValue = weightedValue_;
-      // Get a copy of the current sendProbability_.
-      double curSendProbability = sendProbability_;
 
       if (firstWindow_) {
         curWeightedValue /= curUpdateCounter;
@@ -114,6 +110,9 @@ CongestionControllerLogic::CongestionControllerLogic(
 
       // Update the atomic probability here.
       sendProbability_ = curSendProbability;
+
+      // Reset the counter.
+      updateCounter_ -= curUpdateCounter;
 
       /* Update the smoothingFactor_.
        *
