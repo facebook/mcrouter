@@ -23,7 +23,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/network/gen/MemcacheCarbon.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
