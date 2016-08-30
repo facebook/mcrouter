@@ -61,7 +61,7 @@ template <class Reply>
 void SnifferParser<Callback>::replyReady(
     uint64_t msgId,
     Reply&& reply,
-    ReplyStatsContext /* replyStatsContext */) {
+    ReplyStatsContext replyStatsContext) {
   std::string key;
   int64_t latency = 0;
   if (msgId != 0) {
@@ -79,7 +79,8 @@ void SnifferParser<Callback>::replyReady(
       fromAddress_,
       toAddress_,
       parser_.getProtocol(),
-      latency);
+      latency,
+      replyStatsContext);
 }
 
 }} // facebook::memcache

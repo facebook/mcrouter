@@ -28,8 +28,16 @@ void cleanExit(int32_t status) {
 
   if (status >= 0) {
     std::cerr << "exit" << std::endl
-              << gMcpiper.getStats().first << " messages received, "
-              << gMcpiper.getStats().second << " printed" << std::endl;
+              << gMcpiper.stats().totalMessages.load() << " messages received, "
+              << gMcpiper.stats().printedMessages.load() << " printed."
+              << std::endl;
+    auto beforeCompress = gMcpiper.stats().numBytesBeforeCompression.load();
+    auto afterCompress = gMcpiper.stats().numBytesAfterCompression.load();
+    if (beforeCompress > 0 && afterCompress > 0) {
+      std::cerr << "Compression ratio = "
+                << static_cast<double>(afterCompress) / beforeCompress
+                << std::endl;
+    }
   }
 
   exit(status);

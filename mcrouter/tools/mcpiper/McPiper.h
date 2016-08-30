@@ -49,11 +49,8 @@ class McPiper {
 
   void stop();
 
-  /**
-   * @return A pair: (numMessagesReceived, numMessagesPrinted).
-   */
-  std::pair<uint64_t, uint64_t> getStats() const noexcept {
-    return messagePrinter_->getStats();
+  const MessagePrinter::Stats& stats() const noexcept {
+    return messagePrinter_->stats();
   };
 
  private:

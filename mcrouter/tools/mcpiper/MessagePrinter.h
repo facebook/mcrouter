@@ -57,6 +57,13 @@ class MessagePrinter {
     bool raw{false};
   };
 
+  struct Stats {
+    std::atomic<uint64_t> totalMessages{0};
+    std::atomic<uint64_t> printedMessages{0};
+    std::atomic<uint64_t> numBytesBeforeCompression{0};
+    std::atomic<uint64_t> numBytesAfterCompression{0};
+  };
+
   /**
    * Filter to be applied to requests/replies
    */
@@ -84,12 +91,10 @@ class MessagePrinter {
                  std::ostream& targetOut = std::cout);
 
   /**
-   * Return status of message printer.
-   *
-   * @return  A pair: (numMessagesReceives, numMessagesPrinted).
+   * Return stats of message printer.
    */
-  inline std::pair<uint64_t, uint64_t> getStats() const noexcept {
-    return std::make_pair(totalMessages_.load(), printedMessages_.load());
+  inline const Stats& stats() const noexcept {
+    return stats_;
   }
 
   template <class Message>
@@ -111,8 +116,7 @@ class MessagePrinter {
 
   std::unique_ptr<ValueFormatter> valueFormatter_;
   AnsiColorCodeStream targetOut_;
-  std::atomic<uint64_t> totalMessages_{0};
-  std::atomic<uint64_t> printedMessages_{0};
+  Stats stats_;
   uint32_t afterMatchCount_{0};
 
   // SnifferParser Callbacks
@@ -130,7 +134,8 @@ class MessagePrinter {
                   const folly::SocketAddress& from,
                   const folly::SocketAddress& to,
                   mc_protocol_t protocol,
-                  int64_t latencyUs);
+                  int64_t latencyUs,
+                  ReplyStatsContext replyStatsContext);
 
   template <class Request>
   void printRawRequest(uint64_t msgId,

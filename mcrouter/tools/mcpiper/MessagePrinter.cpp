@@ -69,9 +69,10 @@ bool MessagePrinter::matchAddress(const folly::SocketAddress& from,
 }
 
 void MessagePrinter::countStats() {
-  ++printedMessages_;
+  ++stats_.printedMessages;
 
-  if (options_.maxMessages > 0 && printedMessages_ >= options_.maxMessages) {
+  if (options_.maxMessages > 0 &&
+      stats_.printedMessages >= options_.maxMessages) {
     assert(options_.stopRunningFn);
     options_.stopRunningFn();
   }

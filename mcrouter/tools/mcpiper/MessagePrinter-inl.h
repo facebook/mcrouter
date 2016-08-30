@@ -94,7 +94,8 @@ void MessagePrinter::replyReady(uint64_t msgId,
                                 const folly::SocketAddress& from,
                                 const folly::SocketAddress& to,
                                 mc_protocol_t protocol,
-                                int64_t latencyUs) {
+                                int64_t latencyUs,
+                                ReplyStatsContext replyStatsContext) {
   if (auto out = filterAndBuildOutput(
           msgId,
           reply,
@@ -105,6 +106,10 @@ void MessagePrinter::replyReady(uint64_t msgId,
           to,
           protocol,
           latencyUs)) {
+    stats_.numBytesBeforeCompression +=
+        replyStatsContext.replySizeBeforeCompression;
+    stats_.numBytesAfterCompression +=
+        replyStatsContext.replySizeAfterCompression;
     if (options_.raw) {
       printRawReply(msgId, std::forward<Reply>(reply), protocol);
     } else {
@@ -128,7 +133,7 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
     return folly::none;
   }
 
-  ++totalMessages_;
+  ++stats_.totalMessages;
 
   if (!matchAddress(from, to)) {
     return folly::none;

@@ -98,7 +98,7 @@ class SnifferParser {
   void replyReady(
       uint64_t msgId,
       Reply&& reply,
-      ReplyStatsContext /* replyStatsContext */);
+      ReplyStatsContext replyStatsContext);
 
   friend class ClientServerMcParser<SnifferParser>;
 };
