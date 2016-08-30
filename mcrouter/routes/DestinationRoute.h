@@ -111,6 +111,10 @@ class DestinationRoute {
       return constructAndLog(req, *ctx, TkoReply);
     }
 
+    if (destination_->shouldDrop<Request>()) {
+      return constructAndLog(req, *ctx, BusyReply);
+    }
+
     if (ctx->recording()) {
       ctx->recordDestination(poolName_, indexInPool_,
                              *destination_->accessPoint());

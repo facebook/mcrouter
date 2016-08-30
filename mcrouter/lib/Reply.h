@@ -25,6 +25,7 @@ namespace facebook { namespace memcache {
 enum DefaultReplyT { DefaultReply };
 enum ErrorReplyT { ErrorReply };
 enum TkoReplyT { TkoReply };
+enum BusyReplyT { BusyReply };
 
 template <class Request>
 ReplyT<Request>
@@ -55,6 +56,11 @@ ReplyT<Request> createReply(ErrorReplyT, std::string errorMessage) {
 template <class Request>
 ReplyT<Request> createReply(TkoReplyT) {
   return ReplyT<Request>(mc_res_tko);
+}
+
+template <class Request>
+ReplyT<Request> createReply(BusyReplyT) {
+  return ReplyT<Request>(mc_res_busy);
 }
 
 }}  // facebook::memcache

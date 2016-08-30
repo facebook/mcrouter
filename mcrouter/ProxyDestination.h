@@ -75,6 +75,10 @@ class ProxyDestination {
   // returns true if okay to send req using this client
   bool may_send() const;
 
+  // Returns true if the current request should be dropped
+  template <class Request>
+  bool shouldDrop() const;
+
   /**
    * @return stats for ProxyDestination
    */
@@ -109,8 +113,6 @@ class ProxyDestination {
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
   uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
-
-  double dropProbability_{0.0};
 
   Stats stats_;
 
@@ -155,8 +157,6 @@ class ProxyDestination {
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
   void timerCallback();
-
-  bool shouldDrop() const;
 
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;

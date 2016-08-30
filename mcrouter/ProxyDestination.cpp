@@ -103,11 +103,6 @@ void ProxyDestination::timerCallback() {
   schedule_next_probe();
 }
 
-bool ProxyDestination::shouldDrop() const {
-  return std::generate_canonical<double, std::numeric_limits<double>::digits>(
-             proxy->randomGenerator) < dropProbability_;
-}
-
 void ProxyDestination::start_sending_probes() {
   probe_delay_next_ms = proxy->router().opts().probe_delay_initial_ms;
   probeTimer_.attachEventBase(std::addressof(proxy->eventBase()));
@@ -260,7 +255,7 @@ ProxyDestination::ProxyDestination(
 }
 
 bool ProxyDestination::may_send() const {
-  return !tracker->isTko() && !shouldDrop();
+  return !tracker->isTko();
 }
 
 void ProxyDestination::resetInactive() {
