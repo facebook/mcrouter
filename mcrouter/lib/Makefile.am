@@ -151,6 +151,8 @@ libmcrouter_a_SOURCES = \
   network/CongestionController.h \
   network/CongestionControllerLogic.cpp \
   network/CongestionControllerLogic.h \
+  network/CongestionControllerSingleThreaded.h \
+  network/CongestionControllerSingleThreaded.cpp \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \
