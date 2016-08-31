@@ -97,6 +97,7 @@ class TestRequest : public carbon::RequestCommon {
   static constexpr bool hasFlags = false;
   static constexpr bool hasKey = true;
   static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 65;
   static constexpr const char* name = "test";
 
   TestRequest() = default;
@@ -299,6 +300,7 @@ class TestReply : public carbon::ReplyCommon {
   static constexpr bool hasFlags = false;
   static constexpr bool hasKey = false;
   static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 66;
 
   TestReply() = default;
   TestReply(const TestReply&) = default;

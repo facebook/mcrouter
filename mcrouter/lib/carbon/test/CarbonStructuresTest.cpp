@@ -25,7 +25,22 @@ using namespace carbon::test::util;
 using carbon::test::SimpleEnum;
 using carbon::test::SimpleStruct;
 using carbon::test::TestRequest;
+using carbon::test::TestReply;
 using facebook::memcache::coalesceAndGetRange;
+
+TEST(CarbonBasic, staticAsserts) {
+  static_assert(!TestRequest::hasExptime, "");
+  static_assert(!TestRequest::hasFlags, "");
+  static_assert(TestRequest::hasKey, "");
+  static_assert(!TestRequest::hasValue, "");
+  static_assert(TestRequest::typeId == 65, "");
+
+  static_assert(!TestReply::hasExptime, "");
+  static_assert(!TestReply::hasFlags, "");
+  static_assert(!TestReply::hasKey, "");
+  static_assert(!TestReply::hasValue, "");
+  static_assert(TestReply::typeId == 66, "");
+}
 
 TEST(CarbonBasic, defaultConstructed) {
   TestRequest req;
