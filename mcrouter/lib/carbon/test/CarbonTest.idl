@@ -44,3 +44,8 @@ request TestRequest with 1: SimpleStruct as Base {
 reply TestReply {
   1: Result result;
 };
+
+service {
+  additional_requests: [];
+  enable_shutdown: true;
+};
