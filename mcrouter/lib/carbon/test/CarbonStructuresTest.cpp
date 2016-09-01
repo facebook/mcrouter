@@ -92,6 +92,7 @@ TEST(CarbonBasic, defaultConstructed) {
   EXPECT_EQ(0, req.int32Member());
   EXPECT_TRUE(req.stringMember().empty());
   EXPECT_EQ(SimpleEnum::Twenty, req.enumMember());
+  EXPECT_EQ(0, req.baseInt64Member());
 
   // Member struct
   EXPECT_EQ(0, req.testStruct().int32Member());
@@ -221,6 +222,7 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.asBase().int32Member() = 12345;
   outRequest.asBase().stringMember() = kShortString.str();
   outRequest.asBase().enumMember() = SimpleEnum::One;
+  outRequest.asBase().asBaseStruct().baseInt64Member() = 12345;
   // List of strings
   outRequest.testList() = {"abcdefg", "xyz", kShortString.str(), longString()};
   // Force one optional field to not be serialized on the wire

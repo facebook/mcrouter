@@ -40,6 +40,40 @@ enum class SimpleEnum : int64_t {
   Negative = -92233
 };
 
+class BaseStruct {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+
+  BaseStruct() = default;
+  BaseStruct(const BaseStruct&) = default;
+  BaseStruct& operator=(const BaseStruct&) = default;
+  BaseStruct(BaseStruct&&) = default;
+  BaseStruct& operator=(BaseStruct&&) = default;
+
+  int64_t baseInt64Member() const {
+    return baseInt64Member_;
+  }
+  int64_t& baseInt64Member() {
+    return baseInt64Member_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+ private:
+  int64_t baseInt64Member_{0};
+};
+
 class SimpleStruct {
  public:
   static constexpr bool hasExptime = false;
@@ -53,6 +87,18 @@ class SimpleStruct {
   SimpleStruct(SimpleStruct&&) = default;
   SimpleStruct& operator=(SimpleStruct&&) = default;
 
+  BaseStruct& asBaseStruct() {
+    return _carbon_basestruct_;
+  }
+  const BaseStruct& asBaseStruct() const {
+    return _carbon_basestruct_;
+  }
+  int64_t baseInt64Member() const {
+    return _carbon_basestruct_.baseInt64Member();
+  }
+  int64_t& baseInt64Member() {
+    return _carbon_basestruct_.baseInt64Member();
+  }
   int32_t int32Member() const {
     return int32Member_;
   }
@@ -83,6 +129,7 @@ class SimpleStruct {
   void deserialize(carbon::CarbonProtocolReader& reader);
 
  private:
+  BaseStruct _carbon_basestruct_;
   int32_t int32Member_{0};
   std::string stringMember_;
   SimpleEnum enumMember_{SimpleEnum::Twenty};
@@ -131,6 +178,12 @@ class TestRequest : public carbon::RequestCommon {
   }
   SimpleEnum& enumMember() {
     return _carbon_simplestruct_.enumMember();
+  }
+  int64_t baseInt64Member() const {
+    return _carbon_simplestruct_.baseInt64Member();
+  }
+  int64_t& baseInt64Member() {
+    return _carbon_simplestruct_.baseInt64Member();
   }
   const carbon::Keys<folly::IOBuf>& key() const {
     return key_;
