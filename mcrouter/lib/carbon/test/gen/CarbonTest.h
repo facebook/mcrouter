@@ -30,110 +30,10 @@
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
 
+#include "mcrouter/lib/carbon/test/a/gen/A.h"
+
 namespace carbon {
 namespace test {
-
-enum class SimpleEnum : int64_t {
-  Twenty = 20,
-  Zero = 0,
-  One = 1,
-  Negative = -92233
-};
-
-class BaseStruct {
- public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
-
-  BaseStruct() = default;
-  BaseStruct(const BaseStruct&) = default;
-  BaseStruct& operator=(const BaseStruct&) = default;
-  BaseStruct(BaseStruct&&) = default;
-  BaseStruct& operator=(BaseStruct&&) = default;
-
-  int64_t baseInt64Member() const {
-    return baseInt64Member_;
-  }
-  int64_t& baseInt64Member() {
-    return baseInt64Member_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
-
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
- private:
-  int64_t baseInt64Member_{0};
-};
-
-class SimpleStruct {
- public:
-  static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
-  static constexpr bool hasKey = false;
-  static constexpr bool hasValue = false;
-
-  SimpleStruct() = default;
-  SimpleStruct(const SimpleStruct&) = default;
-  SimpleStruct& operator=(const SimpleStruct&) = default;
-  SimpleStruct(SimpleStruct&&) = default;
-  SimpleStruct& operator=(SimpleStruct&&) = default;
-
-  BaseStruct& asBaseStruct() {
-    return _carbon_basestruct_;
-  }
-  const BaseStruct& asBaseStruct() const {
-    return _carbon_basestruct_;
-  }
-  int64_t baseInt64Member() const {
-    return _carbon_basestruct_.baseInt64Member();
-  }
-  int64_t& baseInt64Member() {
-    return _carbon_basestruct_.baseInt64Member();
-  }
-  int32_t int32Member() const {
-    return int32Member_;
-  }
-  int32_t& int32Member() {
-    return int32Member_;
-  }
-  const std::string& stringMember() const {
-    return stringMember_;
-  }
-  std::string& stringMember() {
-    return stringMember_;
-  }
-  const SimpleEnum& enumMember() const {
-    return enumMember_;
-  }
-  SimpleEnum& enumMember() {
-    return enumMember_;
-  }
-  uint64_t flags() const {
-    return 0;
-  }
-  int32_t exptime() const {
-    return 0;
-  }
-
-  void serialize(carbon::CarbonProtocolWriter& writer) const;
-
-  void deserialize(carbon::CarbonProtocolReader& reader);
-
- private:
-  BaseStruct _carbon_basestruct_;
-  int32_t int32Member_{0};
-  std::string stringMember_;
-  SimpleEnum enumMember_{SimpleEnum::Twenty};
-};
 
 class TestReply;
 
@@ -173,11 +73,17 @@ class TestRequest : public carbon::RequestCommon {
   std::string& stringMember() {
     return _carbon_simplestruct_.stringMember();
   }
-  const SimpleEnum& enumMember() const {
+  const test2::util::SimpleEnum& enumMember() const {
     return _carbon_simplestruct_.enumMember();
   }
-  SimpleEnum& enumMember() {
+  test2::util::SimpleEnum& enumMember() {
     return _carbon_simplestruct_.enumMember();
+  }
+  const std::vector<test2::util::SimpleStruct>& vectorMember() const {
+    return _carbon_simplestruct_.vectorMember();
+  }
+  std::vector<test2::util::SimpleStruct>& vectorMember() {
+    return _carbon_simplestruct_.vectorMember();
   }
   int64_t baseInt64Member() const {
     return _carbon_simplestruct_.baseInt64Member();
@@ -191,10 +97,10 @@ class TestRequest : public carbon::RequestCommon {
   carbon::Keys<folly::IOBuf>& key() {
     return key_;
   }
-  const SimpleEnum& testEnum() const {
+  const test2::util::SimpleEnum& testEnum() const {
     return testEnum_;
   }
-  SimpleEnum& testEnum() {
+  test2::util::SimpleEnum& testEnum() {
     return testEnum_;
   }
   bool testBool() const {
@@ -325,7 +231,7 @@ class TestRequest : public carbon::RequestCommon {
  private:
   SimpleStruct _carbon_simplestruct_;
   carbon::Keys<folly::IOBuf> key_;
-  SimpleEnum testEnum_{SimpleEnum::Twenty};
+  test2::util::SimpleEnum testEnum_{test2::util::SimpleEnum::Twenty};
   bool testBool_{false};
   char testChar_{'\0'};
   int8_t testInt8_{0};

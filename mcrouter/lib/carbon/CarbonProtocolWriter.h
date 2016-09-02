@@ -328,7 +328,7 @@ class CarbonProtocolWriter {
     writeListSizeAndInnerType(
         static_cast<uint32_t>(v.size()), FieldType::Struct);
     for (const auto& e : v) {
-      e.serialize();
+      e.serialize(*this);
     }
   }
 

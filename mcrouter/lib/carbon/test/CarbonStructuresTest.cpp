@@ -22,10 +22,10 @@
 
 using namespace carbon::test::util;
 
-using carbon::test::SimpleEnum;
 using carbon::test::SimpleStruct;
-using carbon::test::TestRequest;
 using carbon::test::TestReply;
+using carbon::test::TestRequest;
+using carbon::test2::util::SimpleEnum;
 using facebook::memcache::coalesceAndGetRange;
 
 TEST(CarbonBasic, staticAsserts) {

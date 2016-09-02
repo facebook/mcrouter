@@ -1,0 +1,75 @@
+# TODO: Move to carbon namespace and remove 'Mc' prefixes.
+namespace facebook::memcache;
+
+request McVersionRequest {
+  id: 13;
+  name: "version";
+  reply: McVersionReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply McVersionReply {
+  1: Result result;
+  2: IOBuf value;
+  3: string message;
+  4: int16_t appSpecificErrorCode;
+};
+
+request McStatsRequest {
+  id: 17;
+  name: "stats";
+  reply: McStatsReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply McStatsReply {
+  1: Result result;
+  2: string message;
+  3: vector<string> stats;
+  4: int16_t appSpecificErrorCode;
+};
+
+request McShutdownRequest {
+  id: 18;
+  name: "shutdown";
+  reply: McShutdownReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply McShutdownReply {
+  1: Result result;
+  2: string message;
+  3: int16_t appSpecificErrorCode;
+};
+
+request McQuitRequest {
+  id: 19;
+  name: "quit";
+  reply: McQuitReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply McQuitReply {
+  1: Result result;
+  2: string message;
+  3: int16_t appSpecificErrorCode;
+};
+
+request McExecRequest {
+  id: 20;
+  name: "exec";
+  reply: McExecReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply McExecReply {
+  1: Result result;
+  2: string response;
+  3: string message;
+  4: int16_t appSpecificErrorCode;
+};

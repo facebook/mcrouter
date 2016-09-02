@@ -17,87 +17,6 @@
 namespace carbon {
 namespace test {
 
-inline void BaseStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeInt64Field(1 /* field id */, baseInt64Member());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void BaseStruct::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        baseInt64Member() = reader.readInt64Field();
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
-inline void SimpleStruct::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeInt32Field(1 /* field id */, int32Member());
-  writer.writeBinaryField(2 /* field id */, stringMember());
-  writer.writeInt64Field(3 /* field id */, static_cast<int64_t>(enumMember()));
-  writer.writeFieldHeader(carbon::FieldType::Struct, -1);
-  _carbon_basestruct_.serialize(writer);
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case -1: {
-        _carbon_basestruct_.deserialize(reader);
-        break;
-      }
-      case 1: {
-        int32Member() = reader.readInt32Field();
-        break;
-      }
-      case 2: {
-        stringMember() = reader.readBinaryField<std::string>();
-        break;
-      }
-      case 3: {
-        enumMember() = static_cast<SimpleEnum>(reader.readInt64Field());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 inline void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeUserTypeField(1 /* field id */, key());
@@ -149,7 +68,8 @@ inline void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 2: {
-        testEnum() = static_cast<SimpleEnum>(reader.readInt64Field());
+        testEnum() =
+            static_cast<test2::util::SimpleEnum>(reader.readInt64Field());
         break;
       }
       case 3: {

@@ -1,0 +1,12 @@
+namespace carbon::test2::util;
+
+enum SimpleEnum : int64_t {
+  Twenty = 20,
+  Zero = 0,
+  One = 1,
+  Negative = -92233
+};
+
+struct SimpleStruct {
+  1: int64_t member1;
+};
