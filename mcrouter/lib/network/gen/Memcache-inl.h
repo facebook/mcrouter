@@ -55,6 +55,26 @@ inline void McGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McGetRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGetRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+}
+
 inline void McGetReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
@@ -107,6 +127,44 @@ inline void McGetReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McGetReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGetReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McSetRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -153,6 +211,38 @@ inline void McSetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McSetRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
+template <class V>
+void McSetRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
 }
 
 inline void McSetReply::serialize(carbon::CarbonProtocolWriter& writer) const {
@@ -207,6 +297,44 @@ inline void McSetReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McSetReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McSetReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McDeleteRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -253,6 +381,38 @@ inline void McDeleteRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McDeleteRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(3, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
+template <class V>
+void McDeleteRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(3, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
 }
 
 inline void McDeleteReply::serialize(
@@ -308,6 +468,44 @@ inline void McDeleteReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McDeleteReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McDeleteReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(5, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McLeaseGetRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -340,6 +538,20 @@ inline void McLeaseGetRequest::deserialize(
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McLeaseGetRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McLeaseGetRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
 }
 
 inline void McLeaseGetReply::serialize(
@@ -400,6 +612,50 @@ inline void McLeaseGetReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McLeaseGetReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "leaseToken", leaseToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McLeaseGetReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "leaseToken", leaseToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McLeaseSetRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -454,6 +710,44 @@ inline void McLeaseSetRequest::deserialize(
   reader.readStructEnd();
 }
 
+template <class V>
+void McLeaseSetRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(5, "leaseToken", leaseToken_)) {
+    return;
+  }
+}
+
+template <class V>
+void McLeaseSetRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(5, "leaseToken", leaseToken_)) {
+    return;
+  }
+}
+
 inline void McLeaseSetReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -495,6 +789,32 @@ inline void McLeaseSetReply::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McLeaseSetReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McLeaseSetReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
 }
 
 inline void McAddRequest::serialize(
@@ -545,6 +865,38 @@ inline void McAddRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McAddRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
+template <class V>
+void McAddRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
 inline void McAddReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
@@ -585,6 +937,32 @@ inline void McAddReply::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McAddReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McAddReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
 }
 
 inline void McReplaceRequest::serialize(
@@ -636,6 +1014,38 @@ inline void McReplaceRequest::deserialize(
   reader.readStructEnd();
 }
 
+template <class V>
+void McReplaceRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
+template <class V>
+void McReplaceRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
 inline void McReplaceReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -679,6 +1089,32 @@ inline void McReplaceReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McReplaceReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McReplaceReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McGetsRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -710,6 +1146,20 @@ inline void McGetsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McGetsRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGetsRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
 }
 
 inline void McGetsReply::serialize(carbon::CarbonProtocolWriter& writer) const {
@@ -769,6 +1219,50 @@ inline void McGetsReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McGetsReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", casToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McGetsReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "casToken", casToken_)) {
+    return;
+  }
+  if (!v.visitField(3, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(4, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(5, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(6, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McCasRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -822,6 +1316,44 @@ inline void McCasRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McCasRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(5, "casToken", casToken_)) {
+    return;
+  }
+}
+
+template <class V>
+void McCasRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+  if (!v.visitField(5, "casToken", casToken_)) {
+    return;
+  }
+}
+
 inline void McCasReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeResultField(1 /* field id */, result());
@@ -864,6 +1396,32 @@ inline void McCasReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McCasReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McCasReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McIncrRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -900,6 +1458,26 @@ inline void McIncrRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McIncrRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
+}
+
+template <class V>
+void McIncrRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
 }
 
 inline void McIncrReply::serialize(carbon::CarbonProtocolWriter& writer) const {
@@ -949,6 +1527,38 @@ inline void McIncrReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McIncrReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
+  if (!v.visitField(3, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McIncrReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
+  if (!v.visitField(3, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McDecrRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -985,6 +1595,26 @@ inline void McDecrRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McDecrRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
+}
+
+template <class V>
+void McDecrRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
 }
 
 inline void McDecrReply::serialize(carbon::CarbonProtocolWriter& writer) const {
@@ -1034,6 +1664,38 @@ inline void McDecrReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McDecrReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
+  if (!v.visitField(3, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McDecrReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "delta", delta_)) {
+    return;
+  }
+  if (!v.visitField(3, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(4, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McMetagetRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1066,6 +1728,20 @@ inline void McMetagetRequest::deserialize(
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McMetagetRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McMetagetRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
 }
 
 inline void McMetagetReply::serialize(
@@ -1131,6 +1807,56 @@ inline void McMetagetReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McMetagetReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "age", age_)) {
+    return;
+  }
+  if (!v.visitField(3, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(4, "ipv", ipv_)) {
+    return;
+  }
+  if (!v.visitField(5, "ipAddress", ipAddress_)) {
+    return;
+  }
+  if (!v.visitField(6, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(7, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McMetagetReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "age", age_)) {
+    return;
+  }
+  if (!v.visitField(3, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(4, "ipv", ipv_)) {
+    return;
+  }
+  if (!v.visitField(5, "ipAddress", ipAddress_)) {
+    return;
+  }
+  if (!v.visitField(6, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(7, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McAppendRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1179,6 +1905,38 @@ inline void McAppendRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McAppendRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
+template <class V>
+void McAppendRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
 inline void McAppendReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1220,6 +1978,32 @@ inline void McAppendReply::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McAppendReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McAppendReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
 }
 
 inline void McPrependRequest::serialize(
@@ -1271,6 +2055,38 @@ inline void McPrependRequest::deserialize(
   reader.readStructEnd();
 }
 
+template <class V>
+void McPrependRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
+template <class V>
+void McPrependRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+  if (!v.visitField(3, "flags", flags_)) {
+    return;
+  }
+  if (!v.visitField(4, "value", value_)) {
+    return;
+  }
+}
+
 inline void McPrependReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1314,6 +2130,32 @@ inline void McPrependReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McPrependReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McPrependReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McTouchRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1350,6 +2192,26 @@ inline void McTouchRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McTouchRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
+}
+
+template <class V>
+void McTouchRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "exptime", exptime_)) {
+    return;
+  }
 }
 
 inline void McTouchReply::serialize(
@@ -1395,6 +2257,32 @@ inline void McTouchReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McTouchReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McTouchReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McFlushReRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1427,6 +2315,20 @@ inline void McFlushReRequest::deserialize(
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McFlushReRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void McFlushReRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
 }
 
 inline void McFlushReReply::serialize(
@@ -1472,6 +2374,32 @@ inline void McFlushReReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void McFlushReReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McFlushReReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
 inline void McFlushAllRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -1509,6 +2437,26 @@ inline void McFlushAllRequest::deserialize(
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McFlushAllRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "delay", delay_)) {
+    return;
+  }
+}
+
+template <class V>
+void McFlushAllRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "delay", delay_)) {
+    return;
+  }
 }
 
 inline void McFlushAllReply::serialize(
@@ -1552,6 +2500,32 @@ inline void McFlushAllReply::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void McFlushAllReply::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
+}
+
+template <class V>
+void McFlushAllReply::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
+  if (!v.visitField(3, "appSpecificErrorCode", appSpecificErrorCode_)) {
+    return;
+  }
 }
 
 } // memcache

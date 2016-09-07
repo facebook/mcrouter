@@ -298,6 +298,11 @@ class ManyFields {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   folly::IOBuf buf1_;
   folly::IOBuf buf2_;

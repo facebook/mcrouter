@@ -51,6 +51,20 @@ inline void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void SimpleStruct::visitFields(V&& v) {
+  if (!v.visitField(1, "member1", member1_)) {
+    return;
+  }
+}
+
+template <class V>
+void SimpleStruct::visitFields(V&& v) const {
+  if (!v.visitField(1, "member1", member1_)) {
+    return;
+  }
+}
+
 } // util
 } // test2
 } // carbon

@@ -228,6 +228,11 @@ class TestRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   SimpleStruct _carbon_simplestruct_;
   carbon::Keys<folly::IOBuf> key_;
@@ -284,6 +289,11 @@ class TestReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};

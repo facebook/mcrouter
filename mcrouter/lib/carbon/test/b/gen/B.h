@@ -65,6 +65,11 @@ class BaseStruct {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   int64_t baseInt64Member_{0};
 };
@@ -128,6 +133,11 @@ class SimpleStruct {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   BaseStruct _carbon_basestruct_;

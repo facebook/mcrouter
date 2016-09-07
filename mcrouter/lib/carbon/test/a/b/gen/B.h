@@ -71,6 +71,11 @@ class SimpleStruct {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   int64_t member1_{0};
 };

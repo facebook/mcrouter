@@ -76,6 +76,11 @@ class McGetRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   uint64_t flags_{0};
@@ -134,6 +139,11 @@ class McGetReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   folly::Optional<folly::IOBuf> value_;
@@ -190,6 +200,11 @@ class McSetRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -251,6 +266,11 @@ class McSetReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   uint64_t flags_{0};
@@ -307,6 +327,11 @@ class McDeleteRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -368,6 +393,11 @@ class McDeleteReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   uint64_t flags_{0};
@@ -413,6 +443,11 @@ class McLeaseGetRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -478,6 +513,11 @@ class McLeaseGetReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   int64_t leaseToken_{0};
@@ -542,6 +582,11 @@ class McLeaseSetRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t exptime_{0};
@@ -594,6 +639,11 @@ class McLeaseSetReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};
@@ -650,6 +700,11 @@ class McAddRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t exptime_{0};
@@ -700,6 +755,11 @@ class McAddReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};
@@ -756,6 +816,11 @@ class McReplaceRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t exptime_{0};
@@ -808,6 +873,11 @@ class McReplaceReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   std::string message_;
@@ -851,6 +921,11 @@ class McGetsRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -914,6 +989,11 @@ class McGetsReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};
@@ -979,6 +1059,11 @@ class McCasRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t exptime_{0};
@@ -1031,6 +1116,11 @@ class McCasReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   std::string message_;
@@ -1080,6 +1170,11 @@ class McIncrRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -1136,6 +1231,11 @@ class McIncrReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   int64_t delta_{0};
@@ -1186,6 +1286,11 @@ class McDecrRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -1242,6 +1347,11 @@ class McDecrReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   int64_t delta_{0};
@@ -1286,6 +1396,11 @@ class McMetagetRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -1357,6 +1472,11 @@ class McMetagetReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   int32_t age_{0};
@@ -1416,6 +1536,11 @@ class McAppendRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t exptime_{0};
@@ -1466,6 +1591,11 @@ class McAppendReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};
@@ -1522,6 +1652,11 @@ class McPrependRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t exptime_{0};
@@ -1574,6 +1709,11 @@ class McPrependReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   std::string message_;
@@ -1620,6 +1760,11 @@ class McTouchRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -1670,6 +1815,11 @@ class McTouchReply : public carbon::ReplyCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Result result_{mc_res_unknown};
   std::string message_;
@@ -1713,6 +1863,11 @@ class McFlushReRequest : public carbon::RequestCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Keys<folly::IOBuf> key_;
@@ -1762,6 +1917,11 @@ class McFlushReReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};
@@ -1813,6 +1973,11 @@ class McFlushAllRequest : public carbon::RequestCommon {
 
   void deserialize(carbon::CarbonProtocolReader& reader);
 
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
  private:
   carbon::Keys<folly::IOBuf> key_;
   int32_t delay_{0};
@@ -1862,6 +2027,11 @@ class McFlushAllReply : public carbon::ReplyCommon {
   void serialize(carbon::CarbonProtocolWriter& writer) const;
 
   void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
 
  private:
   carbon::Result result_{mc_res_unknown};

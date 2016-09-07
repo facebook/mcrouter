@@ -49,6 +49,20 @@ inline void BaseStruct::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+template <class V>
+void BaseStruct::visitFields(V&& v) {
+  if (!v.visitField(1, "baseInt64Member", baseInt64Member_)) {
+    return;
+  }
+}
+
+template <class V>
+void BaseStruct::visitFields(V&& v) const {
+  if (!v.visitField(1, "baseInt64Member", baseInt64Member_)) {
+    return;
+  }
+}
+
 inline void SimpleStruct::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
@@ -103,6 +117,50 @@ inline void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
     }
   }
   reader.readStructEnd();
+}
+
+template <class V>
+void SimpleStruct::visitFields(V&& v) {
+  if (v.enterMixin(1, "BaseStruct", _carbon_basestruct_)) {
+    _carbon_basestruct_.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "int32Member", int32Member_)) {
+    return;
+  }
+  if (!v.visitField(2, "stringMember", stringMember_)) {
+    return;
+  }
+  if (!v.visitField(3, "enumMember", enumMember_)) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMember", vectorMember_)) {
+    return;
+  }
+}
+
+template <class V>
+void SimpleStruct::visitFields(V&& v) const {
+  if (v.enterMixin(1, "BaseStruct", _carbon_basestruct_)) {
+    _carbon_basestruct_.visitFields(std::forward<V>(v));
+  }
+  if (!v.leaveMixin()) {
+    return;
+  }
+  if (!v.visitField(1, "int32Member", int32Member_)) {
+    return;
+  }
+  if (!v.visitField(2, "stringMember", stringMember_)) {
+    return;
+  }
+  if (!v.visitField(3, "enumMember", enumMember_)) {
+    return;
+  }
+  if (!v.visitField(4, "vectorMember", vectorMember_)) {
+    return;
+  }
 }
 
 } // test
