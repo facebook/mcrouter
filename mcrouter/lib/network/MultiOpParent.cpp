@@ -13,7 +13,7 @@ namespace facebook { namespace memcache {
 
 MultiOpParent::MultiOpParent(McServerSession& session, uint64_t blockReqid)
     : session_(session),
-      block_(session, mc_op_get, blockReqid, true, nullptr) {
+      block_(session, blockReqid, true /* noReply */) {
 }
 
 bool MultiOpParent::reply(mc_res_t result,
@@ -42,7 +42,12 @@ bool MultiOpParent::reply(mc_res_t result,
 }
 
 void MultiOpParent::recordEnd(uint64_t reqid) {
-  end_ = McServerRequestContext(session_, mc_op_end, reqid);
+  end_ = McServerRequestContext(
+      session_,
+      reqid,
+      false /* noReply */,
+      nullptr /* multiOpParent */,
+      true /* isEndContext */);
   if (!waiting_) {
     release();
   }

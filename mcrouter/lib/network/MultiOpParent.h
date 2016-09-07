@@ -68,7 +68,7 @@ class MultiOpParent {
   }
 
   /**
-   * Notify that we saw an mc_op_end, and create the 'end' context
+   * Notify that we saw a multi-op end sentinel, and create the 'end' context
    * with this id.
    */
   void recordEnd(uint64_t reqid);

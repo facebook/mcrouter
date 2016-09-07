@@ -61,6 +61,21 @@ getMessage(const M& msg) {
   return msg.message();
 }
 
+template <class M>
+constexpr
+typename std::enable_if<carbon::IsRequestTrait<M>::value, const char*>::type
+getName() {
+  return M::name;
+}
+
+template <class M>
+constexpr
+typename std::enable_if<!carbon::IsRequestTrait<M>::value, const char*>::type
+getName() {
+  using MatchingRequest = RequestFromReplyType<M, RequestReplyPairs>;
+  return MatchingRequest::name;
+}
+
 } // detail
 
 template <class Request>
@@ -73,7 +88,6 @@ void MessagePrinter::requestReady(uint64_t msgId,
           msgId,
           request,
           request.key().fullKey().str(),
-          McOperation<OpFromType<Request, RequestOpMapping>::value>::mc_op,
           mc_res_unknown,
           from,
           to,
@@ -100,7 +114,6 @@ void MessagePrinter::replyReady(uint64_t msgId,
           msgId,
           reply,
           key,
-          McOperation<OpFromType<Reply, ReplyOpMapping>::value>::mc_op,
           reply.result(),
           from,
           to,
@@ -123,16 +136,11 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
     uint64_t msgId,
     const Message& message,
     const std::string& key,
-    mc_op_t op,
     mc_res_t result,
     const folly::SocketAddress& from,
     const folly::SocketAddress& to,
     mc_protocol_t protocol,
     int64_t latencyUs) {
-  if (op == mc_op_end) {
-    return folly::none;
-  }
-
   ++stats_.totalMessages;
 
   if (!matchAddress(from, to)) {
@@ -167,7 +175,8 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
 
   out.append("{\n", format_.dataOpColor);
 
-  auto msgHeader = serializeMessageHeader(op, result, key);
+  auto msgHeader =
+      serializeMessageHeader(detail::getName<Message>(), result, key);
   if (!msgHeader.empty()) {
     out.append("  ");
     out.append(std::move(msgHeader), format_.headerColor);

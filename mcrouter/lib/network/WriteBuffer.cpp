@@ -87,12 +87,11 @@ bool WriteBuffer::noReply() const {
 }
 
 bool WriteBuffer::isSubRequest() const {
-  return ctx_.hasValue() &&
-      (ctx_->hasParent() || ctx_->operation_ == mc_op_end);
+  return ctx_.hasValue() && (ctx_->hasParent() || ctx_->isEndContext());
 }
 
-mc_op_t WriteBuffer::operation() const {
-  return ctx_.hasValue() ? ctx_->operation_ : mc_op_unknown;
+bool WriteBuffer::isEndContext() const {
+  return ctx_.hasValue() ? ctx_->isEndContext() : false;
 }
 
 }}  // facebook::memcache

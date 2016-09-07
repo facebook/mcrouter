@@ -19,34 +19,16 @@ McServerSession& McServerRequestContext::session() {
   return *session_;
 }
 
-bool McServerRequestContext::noReply(mc_res_t result) const {
-  if (noReply_) {
-    return true;
-  }
-
-  if (!hasParent()) {
-    return false;
-  }
-
-  /* No reply if either:
-     1) We saw an error (the error will be printed out by the end context)
-     2) This is a miss, except for lease_get (lease get misses still have
-     'LVALUE' replies with the token) */
-  return (parent().error() ||
-          !(result == mc_res_found ||
-            operation_ == mc_op_lease_get));
-}
-
 McServerRequestContext::McServerRequestContext(
     McServerSession& s,
-    mc_op_t op,
     uint64_t r,
     bool nr,
     std::shared_ptr<MultiOpParent> parent,
+    bool isEndContext,
     const CompressionCodecMap* compressionCodecMap,
     CodecIdRange codecRange)
     : session_(&s),
-      operation_(op),
+      isEndContext_(isEndContext),
       noReply_(nr),
       reqid_(r),
       compressionContext_(folly::make_unique<CompressionContext>(
@@ -57,13 +39,13 @@ McServerRequestContext::McServerRequestContext(
     asciiState_->parent_->recordRequest();
   }
 
-  session_->onTransactionStarted(hasParent() || operation_ == mc_op_end);
+  session_->onTransactionStarted(hasParent() || isEndContext_);
 }
 
 McServerRequestContext::McServerRequestContext(
     McServerRequestContext&& other) noexcept
     : session_(other.session_),
-      operation_(other.operation_),
+      isEndContext_(other.isEndContext_),
       noReply_(other.noReply_),
       replied_(other.replied_),
       reqid_(other.reqid_),
@@ -76,7 +58,7 @@ McServerRequestContext& McServerRequestContext::operator=(
   McServerRequestContext&& other) {
 
   session_ = other.session_;
-  operation_ = other.operation_;
+  isEndContext_ = other.isEndContext_;
   reqid_ = other.reqid_;
   noReply_ = other.noReply_;
   replied_ = other.replied_;
@@ -92,7 +74,7 @@ McServerRequestContext::~McServerRequestContext() {
   if (session_) {
     /* Check that a reply was returned */
     assert(replied_);
-    session_->onTransactionCompleted(hasParent() || operation_ == mc_op_end);
+    session_->onTransactionCompleted(hasParent() || isEndContext_);
   }
 }
 
@@ -102,6 +84,11 @@ bool McServerRequestContext::moveReplyToParent(
     mc_res_t result, uint32_t errorCode, std::string&& errorMessage) const {
   return hasParent() &&
          parent().reply(result, errorCode, std::move(errorMessage));
+}
+
+// Also defined in .cpp to avoid the same circular dependency
+bool McServerRequestContext::isParentError() const {
+  return parent().error();
 }
 
 }}  // facebook::memcache

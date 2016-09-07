@@ -130,14 +130,13 @@ std::string MessagePrinter::serializeConnectionDetails(
   return out;
 }
 
-std::string MessagePrinter::serializeMessageHeader(mc_op_t op,
-                                                   mc_res_t result,
-                                                   const std::string& key) {
+std::string MessagePrinter::serializeMessageHeader(
+    folly::StringPiece messageName,
+    mc_res_t result,
+    const std::string& key) {
   std::string out;
 
-  if (op != mc_op_unknown) {
-    out.append(mc_op_to_string(op));
-  }
+  out.append(messageName.data());
   if (result != mc_res_unknown) {
     if (out.size() > 0) {
       out.push_back(' ');

@@ -195,7 +195,7 @@ void McServerSession::close() {
 
   if (currentMultiop_) {
     /* If we got closed in the middle of a multiop request,
-       process it as if we saw mc_op_end */
+       process it as if we saw the multi-op end sentinel */
     processMultiOpEnd();
   }
 
@@ -241,13 +241,12 @@ void McServerSession::multiOpEnd() {
 void McServerSession::onRequest(
     McVersionRequest&& req,
     bool /* noreply = false */) {
-
   uint64_t reqid = 0;
   if (!parser_.outOfOrder()) {
     reqid = tailReqid_++;
   }
 
-  McServerRequestContext ctx(*this, mc_op_version, reqid, false, nullptr);
+  McServerRequestContext ctx(*this, reqid);
 
   if (options_.defaultVersionHandler) {
     McVersionReply reply(mc_res_ok);
@@ -260,24 +259,22 @@ void McServerSession::onRequest(
   onRequest_->requestReady(std::move(ctx), std::move(req));
 }
 
-void McServerSession::onRequest(McShutdownRequest&&,
-                                bool) {
+void McServerSession::onRequest(McShutdownRequest&&, bool) {
   uint64_t reqid = 0;
   if (!parser_.outOfOrder()) {
     reqid = tailReqid_++;
   }
-  McServerRequestContext ctx(*this, mc_op_shutdown, reqid, true, nullptr);
+  McServerRequestContext ctx(*this, reqid, true /* noReply */);
   McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
   stateCb_.onShutdown();
 }
 
-void McServerSession::onRequest(McQuitRequest&&,
-                                bool) {
+void McServerSession::onRequest(McQuitRequest&&, bool) {
   uint64_t reqid = 0;
   if (!parser_.outOfOrder()) {
     reqid = tailReqid_++;
   }
-  McServerRequestContext ctx(*this, mc_op_quit, reqid, true, nullptr);
+  McServerRequestContext ctx(*this, reqid, true /* noReply */);
   McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
   close();
 }
@@ -295,10 +292,10 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
 
   McServerRequestContext ctx(
       *this,
-      mc_op_unknown,
       headerInfo.reqId,
-      false,
-      nullptr,
+      false /* noReply */,
+      nullptr /* multiOpParent */,
+      false /* isEndContext */,
       compressionCodecMap_,
       getCompressionCodecIdRange(headerInfo));
 
@@ -342,7 +339,7 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   errorReply.message() = reason.str();
   errorReply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, reason.str());
   McServerRequestContext::reply(
-    McServerRequestContext(*this, mc_op_version, tailReqid_++),
+    McServerRequestContext(*this, tailReqid_++),
     std::move(errorReply));
   close();
 }
@@ -415,8 +412,8 @@ void McServerSession::writeToDebugFifo(const WriteBuffer* wb) noexcept {
       debugFifo_.startMessage(MessageDirection::Sent, wb->typeId());
       hasPendingMultiOp_ = true;
     }
-    if (wb->operation() == mc_op_end) {
-      // Multi-op replies always finished with a mc_op_end.
+    if (wb->isEndContext()) {
+      // Multi-op replies always finish with an end context
       hasPendingMultiOp_ = false;
     }
   }

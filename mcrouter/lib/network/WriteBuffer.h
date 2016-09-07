@@ -77,6 +77,7 @@ class WriteBuffer {
   bool noReply() const;
 
   bool isSubRequest() const;
+  bool isEndContext() const;
 
   bool isEndOfBatch() const {
     return isEndOfBatch_;
@@ -90,7 +91,6 @@ class WriteBuffer {
     return typeId_;
   }
 
-  mc_op_t operation() const;
  private:
   const mc_protocol_t protocol_;
 

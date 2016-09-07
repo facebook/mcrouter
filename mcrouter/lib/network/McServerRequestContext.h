@@ -75,7 +75,7 @@ class McServerRequestContext {
   McServerSession* session_;
 
   /* Pack these together, operation + flags takes one word */
-  mc_op_t operation_;
+  bool isEndContext_{false};  // Used to mark end of ASCII multi-get request
   bool noReply_;
   bool replied_{false};
 
@@ -88,7 +88,9 @@ class McServerRequestContext {
 
   std::unique_ptr<CompressionContext> compressionContext_;
 
-  bool noReply(mc_res_t result) const;
+  template <class Reply>
+  bool noReply(const Reply& reply) const;
+  bool noReply(const McLeaseGetReply& reply) const;
 
   template <class Reply>
   static void replyImpl(
@@ -110,6 +112,13 @@ class McServerRequestContext {
     assert(hasParent());
     return *asciiState_->parent_;
   }
+  bool isParentError() const;
+
+  // Whether or not *this is used to mark the end of a multi-get request
+  bool isEndContext() const {
+    return isEndContext_;
+  }
+
   /**
    * If reply is error, multi-op parent may inform this context that it will
    * assume responsibility for reporting the error. If so, this context should
@@ -131,10 +140,10 @@ class McServerRequestContext {
   friend class WriteBuffer;
   McServerRequestContext(
       McServerSession& s,
-      mc_op_t op,
       uint64_t r,
       bool nr = false,
       std::shared_ptr<MultiOpParent> parent = nullptr,
+      bool isEndContext = false,
       const CompressionCodecMap* compressionCodecMap = nullptr,
       CodecIdRange range = CodecIdRange::Empty);
 };

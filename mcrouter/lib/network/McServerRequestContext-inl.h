@@ -61,7 +61,7 @@ void McServerRequestContext::replyImpl(
   std::unique_ptr<void, void (*)(void*)> destructorContainer(
       toDestruct, destructor);
 
-  if (ctx.noReply(reply.result())) {
+  if (ctx.noReply(reply)) {
     session->reply(nullptr, ctx.reqid_);
     return;
   }
@@ -78,6 +78,34 @@ void McServerRequestContext::replyImpl(
     return;
   }
   session->reply(std::move(wb), reqid);
+}
+
+/**
+ * No reply if either:
+ *  1) We saw an error (the error will be printed out by the end context),
+ *  2) This is a miss, except for lease-get (lease-get misses still have
+ *     'LVALUE' replies with the token).
+ * Lease-gets are handled in a separate overload below.
+ */
+template <class Reply>
+bool McServerRequestContext::noReply(const Reply& reply) const {
+  if (noReply_) {
+    return true;
+  }
+  if (!hasParent()) {
+    return false;
+  }
+  return isParentError() || reply.result() != mc_res_found;
+}
+
+inline bool McServerRequestContext::noReply(const McLeaseGetReply&) const {
+  if (noReply_) {
+    return true;
+  }
+  if (!hasParent()) {
+    return false;
+  }
+  return isParentError();
 }
 
 template <class T, class Enable = void>

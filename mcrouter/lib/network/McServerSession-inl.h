@@ -18,9 +18,10 @@
 namespace facebook { namespace memcache {
 
 template <class Request>
-void McServerSession::asciiRequestReady(Request&& req,
-                                        mc_res_t result,
-                                        bool noreply) {
+void McServerSession::asciiRequestReady(
+    Request&& req,
+    mc_res_t result,
+    bool noreply) {
   DestructorGuard dg(this);
 
   using Reply = ReplyT<Request>;
@@ -38,9 +39,7 @@ void McServerSession::asciiRequestReady(Request&& req,
   uint64_t reqid;
   reqid = tailReqid_++;
 
-  /* We need op in order for the reply to be handled correctly */
-  static constexpr mc_op_t op = OpFromType<Request, RequestOpMapping>::value;
-  McServerRequestContext ctx(*this, op, reqid, noreply, currentMultiop_);
+  McServerRequestContext ctx(*this, reqid, noreply, currentMultiop_);
 
   ctx.asciiKey().emplace(req.key().raw().cloneOneAsValue());
 
@@ -55,8 +54,6 @@ template <class Request>
 void McServerSession::umbrellaRequestReady(Request&& req, uint64_t reqid) {
   DestructorGuard dg(this);
 
-  using Reply = ReplyT<Request>;
-
   assert(parser_.protocol() == mc_umbrella_protocol);
   assert(parser_.outOfOrder());
 
@@ -64,27 +61,46 @@ void McServerSession::umbrellaRequestReady(Request&& req, uint64_t reqid) {
     return;
   }
 
-  /* We need op in order for the reply to be handled correctly */
-  static constexpr mc_op_t op = OpFromType<Request, RequestOpMapping>::value;
-  McServerRequestContext ctx(*this, op, reqid, false /* noreply */,
-                             nullptr /* MultiOpParent */);
+  McServerRequestContext ctx(*this, reqid);
 
-  if (ctx.operation_ == mc_op_version && options_.defaultVersionHandler) {
-    // Handle version command only if the user doesn't want to handle it
-    // themselves.
+  umbrellaRequestReadyImpl(std::move(ctx), std::move(req));
+}
+
+template <class Request>
+void McServerSession::umbrellaRequestReadyImpl(
+    McServerRequestContext&& ctx,
+    Request&& req) {
+  onRequest_->requestReady(std::move(ctx), std::move(req));
+}
+
+template <>
+inline void McServerSession::umbrellaRequestReadyImpl(
+    McServerRequestContext&& ctx,
+    McVersionRequest&& req) {
+  if (options_.defaultVersionHandler) {
     McVersionReply versionReply(mc_res_ok);
     versionReply.value() =
         folly::IOBuf(folly::IOBuf::COPY_BUFFER, options_.versionString);
     McServerRequestContext::reply(std::move(ctx), std::move(versionReply));
-  } else if (ctx.operation_ == mc_op_quit) {
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-    close();
-  } else if (ctx.operation_ == mc_op_shutdown) {
-    McServerRequestContext::reply(std::move(ctx), Reply(mc_res_ok));
-    stateCb_.onShutdown();
   } else {
     onRequest_->requestReady(std::move(ctx), std::move(req));
   }
+}
+
+template <>
+inline void McServerSession::umbrellaRequestReadyImpl(
+    McServerRequestContext&& ctx,
+    McQuitRequest&& /* req */) {
+  McServerRequestContext::reply(std::move(ctx), McQuitReply(mc_res_ok));
+  close();
+}
+
+template <>
+inline void McServerSession::umbrellaRequestReadyImpl(
+    McServerRequestContext&& ctx,
+    McShutdownRequest&& /* req */) {
+  McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
+  stateCb_.onShutdown();
 }
 
 }} // facebook::memcache

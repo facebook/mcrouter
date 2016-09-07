@@ -25,6 +25,7 @@
 namespace facebook { namespace memcache {
 
 class McServerOnRequest;
+class McServerRequestContext;
 class MultiOpParent;
 class WriteBuffer;
 class WriteBufferIntrusiveList;
@@ -281,8 +282,8 @@ class McServerSession :
   void reply(std::unique_ptr<WriteBuffer> wb, uint64_t reqid);
 
   /**
-   * Called on mc_op_end or connection close to close out an in flight
-   * multop request.
+   * Called when end context is seen (for multi-op requests) or connection
+   * close to close out an in flight multi-op request.
    */
   void processMultiOpEnd();
 
@@ -295,10 +296,16 @@ class McServerSession :
   /* McParser's callback if ASCII request is read into a typed request */
   template <class Request>
   void asciiRequestReady(Request&& req, mc_res_t result, bool noreply);
+
   template <class Request>
   void umbrellaRequestReady(Request&& req, uint64_t reqid);
-  void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
-                         const folly::IOBuf& reqBody);
+  template <class Request>
+  void umbrellaRequestReadyImpl(McServerRequestContext&& ctx, Request&& req);
+
+  void caretRequestReady(
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& reqBody);
+
   void parseError(mc_res_t result, folly::StringPiece reason);
 
   /* Ascii parser callbacks */

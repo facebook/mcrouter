@@ -102,7 +102,6 @@ class MessagePrinter {
       uint64_t msgId,
       const Message& message,
       const std::string& key,
-      mc_op_t op,
       mc_res_t result,
       const folly::SocketAddress& from,
       const folly::SocketAddress& to,
@@ -183,7 +182,7 @@ class MessagePrinter {
                                          const folly::SocketAddress& to,
                                          mc_protocol_t protocol);
 
-  std::string serializeMessageHeader(mc_op_t op,
+  std::string serializeMessageHeader(folly::StringPiece messageName,
                                      mc_res_t result,
                                      const std::string& key);
 };
