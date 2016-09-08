@@ -89,8 +89,8 @@ class McServerRequestContext {
   std::unique_ptr<CompressionContext> compressionContext_;
 
   template <class Reply>
-  bool noReply(const Reply& reply) const;
-  bool noReply(const McLeaseGetReply& reply) const;
+  bool noReply(const Reply& r) const;
+  bool noReply(const McLeaseGetReply& r) const;
 
   template <class Reply>
   static void replyImpl(

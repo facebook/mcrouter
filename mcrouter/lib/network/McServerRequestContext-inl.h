@@ -88,14 +88,14 @@ void McServerRequestContext::replyImpl(
  * Lease-gets are handled in a separate overload below.
  */
 template <class Reply>
-bool McServerRequestContext::noReply(const Reply& reply) const {
+bool McServerRequestContext::noReply(const Reply& r) const {
   if (noReply_) {
     return true;
   }
   if (!hasParent()) {
     return false;
   }
-  return isParentError() || reply.result() != mc_res_found;
+  return isParentError() || r.result() != mc_res_found;
 }
 
 inline bool McServerRequestContext::noReply(const McLeaseGetReply&) const {
