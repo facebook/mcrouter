@@ -24,6 +24,7 @@ template <int Id, class M>
 using TypedMsg = KV<Id, M>;
 
 namespace detail {
+
 template <class TMList, class Proc, class... Args>
 struct CallDispatcherImpl;
 

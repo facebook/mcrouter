@@ -29,6 +29,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
 namespace facebook {
 namespace memcache {

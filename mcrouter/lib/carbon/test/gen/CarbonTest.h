@@ -29,6 +29,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
 #include "mcrouter/lib/carbon/test/a/gen/A.h"
 
@@ -44,7 +46,7 @@ class TestRequest : public carbon::RequestCommon {
   static constexpr bool hasFlags = false;
   static constexpr bool hasKey = true;
   static constexpr bool hasValue = false;
-  static constexpr size_t typeId = 65;
+  static constexpr size_t typeId = 69;
   static constexpr const char* name = "test";
 
   TestRequest() = default;
@@ -264,7 +266,7 @@ class TestReply : public carbon::ReplyCommon {
   static constexpr bool hasFlags = false;
   static constexpr bool hasKey = false;
   static constexpr bool hasValue = false;
-  static constexpr size_t typeId = 66;
+  static constexpr size_t typeId = 70;
 
   TestReply() = default;
   TestReply(const TestReply&) = default;
@@ -297,6 +299,35 @@ class TestReply : public carbon::ReplyCommon {
 
  private:
   carbon::Result result_{mc_res_unknown};
+};
+
+namespace detail {
+
+using CarbonTestRequestList = carbon::
+    List<AnotherRequest, TestRequest, carbon::test2::util::YetAnotherRequest>;
+
+} // detail
+
+template <class OnRequest>
+class CarbonTestRequestHandler
+    : public facebook::memcache::CarbonMessageDispatcher<
+          detail::CarbonTestRequestList,
+          CarbonTestRequestHandler<OnRequest>,
+          facebook::memcache::McServerRequestContext&&> {
+ public:
+  template <class... Args>
+  explicit CarbonTestRequestHandler(Args&&... args)
+      : onRequest_(std::forward<Args>(args)...) {}
+
+  template <class Request>
+  void onRequest(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req) {
+    onRequest_.onRequest(std::move(ctx), std::move(req));
+  }
+
+ private:
+  OnRequest onRequest_;
 };
 
 } // test

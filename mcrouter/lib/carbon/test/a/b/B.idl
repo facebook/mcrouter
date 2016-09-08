@@ -10,3 +10,15 @@ enum SimpleEnum : int64_t {
 struct SimpleStruct {
   1: int64_t member1;
 };
+
+request YetAnotherRequest {
+  id: 1;
+  name: "yet_another";
+  reply: YetAnotherReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply YetAnotherReply {
+  1: Result result;
+};

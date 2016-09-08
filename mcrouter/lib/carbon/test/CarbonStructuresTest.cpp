@@ -33,13 +33,13 @@ TEST(CarbonBasic, staticAsserts) {
   static_assert(!TestRequest::hasFlags, "");
   static_assert(TestRequest::hasKey, "");
   static_assert(!TestRequest::hasValue, "");
-  static_assert(TestRequest::typeId == 65, "");
+  static_assert(TestRequest::typeId == 69, "");
 
   static_assert(!TestReply::hasExptime, "");
   static_assert(!TestReply::hasFlags, "");
   static_assert(!TestReply::hasKey, "");
   static_assert(!TestReply::hasValue, "");
-  static_assert(TestReply::typeId == 66, "");
+  static_assert(TestReply::typeId == 70, "");
 }
 
 TEST(CarbonBasic, defaultConstructed) {

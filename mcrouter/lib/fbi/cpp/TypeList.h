@@ -11,6 +11,8 @@
 
 #include <type_traits>
 
+#include "mcrouter/lib/carbon/TypeList.h"
+
 namespace facebook { namespace memcache {
 
 /**
@@ -30,7 +32,7 @@ struct Pair {
  * List holding arbitrary types
  */
 template <class... Xs>
-struct List {};
+using List = carbon::List<Xs...>;
 
 /**
  * Concatenates several lists into one.

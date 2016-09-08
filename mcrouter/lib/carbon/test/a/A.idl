@@ -2,3 +2,15 @@ namespace carbon::test;
 
 import "mcrouter/lib/carbon/test/a/b/B.idl"
 import "mcrouter/lib/carbon/test/b/B.idl"
+
+request AnotherRequest {
+  id: 1;
+  name: "another";
+  reply: AnotherReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply AnotherReply {
+  1: Result result;
+};

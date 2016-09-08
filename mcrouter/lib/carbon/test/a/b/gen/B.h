@@ -29,6 +29,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
 namespace carbon {
 namespace test2 {
@@ -78,6 +80,95 @@ class SimpleStruct {
 
  private:
   int64_t member1_{0};
+};
+
+class YetAnotherReply;
+
+class YetAnotherRequest : public carbon::RequestCommon {
+ public:
+  using reply_type = YetAnotherReply;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = true;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 65;
+  static constexpr const char* name = "yet_another";
+
+  YetAnotherRequest() = default;
+  YetAnotherRequest(const YetAnotherRequest&) = default;
+  YetAnotherRequest& operator=(const YetAnotherRequest&) = default;
+  YetAnotherRequest(YetAnotherRequest&&) = default;
+  YetAnotherRequest& operator=(YetAnotherRequest&&) = default;
+  explicit YetAnotherRequest(folly::StringPiece sp) : key_(sp) {}
+  explicit YetAnotherRequest(folly::IOBuf&& carbonKey)
+      : key_(std::move(carbonKey)) {}
+
+  const carbon::Keys<folly::IOBuf>& key() const {
+    return key_;
+  }
+  carbon::Keys<folly::IOBuf>& key() {
+    return key_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Keys<folly::IOBuf> key_;
+};
+
+class YetAnotherReply : public carbon::ReplyCommon {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 66;
+
+  YetAnotherReply() = default;
+  YetAnotherReply(const YetAnotherReply&) = default;
+  YetAnotherReply& operator=(const YetAnotherReply&) = default;
+  YetAnotherReply(YetAnotherReply&&) = default;
+  YetAnotherReply& operator=(YetAnotherReply&&) = default;
+  explicit YetAnotherReply(carbon::Result carbonResult)
+      : result_(carbonResult) {}
+
+  carbon::Result result() const {
+    return result_;
+  }
+  carbon::Result& result() {
+    return result_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Result result_{mc_res_unknown};
 };
 
 } // util

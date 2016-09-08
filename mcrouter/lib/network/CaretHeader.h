@@ -27,6 +27,22 @@ enum class UmbrellaVersion : uint8_t {
   TYPED_MESSAGE = 1,
 };
 
+struct UmbrellaMessageInfo {
+  uint32_t headerSize;
+  uint32_t bodySize;
+  UmbrellaVersion version;
+  uint32_t typeId;
+  uint32_t reqId;
+
+  // Additional fields
+  uint64_t traceId;
+  uint64_t supportedCodecsFirstId{0};
+  uint64_t supportedCodecsSize{0};
+  uint64_t usedCodecId{0};
+  uint64_t uncompressedBodySize{0};
+  uint64_t dropProbability{0}; // Use uint64_t to store a double.
+};
+
 enum class CaretAdditionalFieldType {
   TRACE_ID = 0,
 

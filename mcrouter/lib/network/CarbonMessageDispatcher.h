@@ -12,11 +12,12 @@
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/carbon/CarbonProtocolReader.h"
+#include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/TypedMsg.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {
 

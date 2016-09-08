@@ -29,6 +29,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
 #include "mcrouter/lib/network/gen/Common.h"
 
@@ -2037,6 +2039,51 @@ class McFlushAllReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
   std::string message_;
   int16_t appSpecificErrorCode_{0};
+};
+
+namespace detail {
+
+using MemcacheRequestList = carbon::List<
+    McAddRequest,
+    McAppendRequest,
+    McCasRequest,
+    McDecrRequest,
+    McDeleteRequest,
+    McFlushAllRequest,
+    McFlushReRequest,
+    McGetRequest,
+    McGetsRequest,
+    McIncrRequest,
+    McLeaseGetRequest,
+    McLeaseSetRequest,
+    McMetagetRequest,
+    McPrependRequest,
+    McReplaceRequest,
+    McSetRequest,
+    McTouchRequest>;
+
+} // detail
+
+template <class OnRequest>
+class MemcacheRequestHandler
+    : public facebook::memcache::CarbonMessageDispatcher<
+          detail::MemcacheRequestList,
+          MemcacheRequestHandler<OnRequest>,
+          facebook::memcache::McServerRequestContext&&> {
+ public:
+  template <class... Args>
+  explicit MemcacheRequestHandler(Args&&... args)
+      : onRequest_(std::forward<Args>(args)...) {}
+
+  template <class Request>
+  void onRequest(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req) {
+    onRequest_.onRequest(std::move(ctx), std::move(req));
+  }
+
+ private:
+  OnRequest onRequest_;
 };
 
 } // memcache

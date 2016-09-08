@@ -288,3 +288,8 @@ reply McFlushAllReply {
   2: string message;
   3: int16_t appSpecificErrorCode;
 };
+
+service {
+  additional_requests: [];
+  enable_shutdown: false;
+};

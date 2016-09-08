@@ -62,6 +62,7 @@ libmcrouter_a_SOURCES = \
   carbon/RequestReplyUtil.h \
   carbon/Result.h \
   carbon/SerializationTraits.h \
+  carbon/TypeList.h \
   carbon/Util.h \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
