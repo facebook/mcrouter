@@ -15,7 +15,9 @@
  */
 #pragma once
 
+#include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/fbi/cpp/util.h>
 #include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
 #include "MemcacheMessages.h"
@@ -42,7 +44,12 @@ using MemcacheRequestList = carbon::List<
     McPrependRequest,
     McReplaceRequest,
     McSetRequest,
-    McTouchRequest>;
+    McTouchRequest,
+    facebook::memcache::McExecRequest,
+    facebook::memcache::McQuitRequest,
+    facebook::memcache::McShutdownRequest,
+    facebook::memcache::McStatsRequest,
+    facebook::memcache::McVersionRequest>;
 
 } // detail
 
@@ -61,11 +68,31 @@ class MemcacheRequestHandler
   void onRequest(
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req) {
-    onRequest_.onRequest(std::move(ctx), std::move(req));
+    onRequestImpl(
+        std::move(ctx),
+        std::move(req),
+        carbon::detail::CanHandleRequest::value<Request, OnRequest>());
   }
 
  private:
   OnRequest onRequest_;
+
+  template <class Request>
+  void onRequestImpl(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req,
+      std::true_type) {
+    onRequest_.onRequest(std::move(ctx), std::move(req));
+  }
+
+  template <class Request>
+  void onRequestImpl(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req,
+      std::false_type) {
+    facebook::memcache::throwRuntime(
+        "onRequest for {} not defined", typeid(Request).name());
+  }
 };
 
 } // memcache

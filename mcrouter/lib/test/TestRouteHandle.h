@@ -21,7 +21,7 @@
 namespace facebook { namespace memcache {
 
 class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
-                                               CarbonRequestList> {
+                                               McRequestList> {
 };
 
 typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
@@ -29,6 +29,6 @@ typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
 template <typename Route>
 using TestRouteHandle = RouteHandle<Route,
                                     TestRouteHandleIf,
-                                    CarbonRequestList>;
+                                    McRequestList>;
 
 }}  // facebook::memcache

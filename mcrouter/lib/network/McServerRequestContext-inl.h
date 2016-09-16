@@ -17,16 +17,7 @@ template <class Reply>
 void McServerRequestContext::reply(
     McServerRequestContext&& ctx,
     Reply&& reply) {
-  ctx.replied_ = true;
-
-  // On error, multi-op parent may assume responsiblity of replying
-  if (ctx.moveReplyToParent(
-        reply.result(), reply.appSpecificErrorCode(),
-        std::move(reply.message()))) {
-    replyImpl(std::move(ctx), Reply());
-  } else {
-    replyImpl(std::move(ctx), std::move(reply));
-  }
+  replyImpl(std::move(ctx), std::move(reply));
 }
 
 template <class Reply>
@@ -35,24 +26,45 @@ void McServerRequestContext::reply(
     Reply&& reply,
     DestructorFunc destructor,
     void* toDestruct) {
-  ctx.replied_ = true;
+  replyImpl(std::move(ctx), std::move(reply), destructor, toDestruct);
+}
 
-  // On error, multi-op parent may assume responsiblity of replying
+template <class Reply, class... Args>
+typename std::enable_if<
+    GetLike<RequestFromReplyType<Reply, RequestReplyPairs>>::value>::type
+McServerRequestContext::replyImpl(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    Args&&... args) {
+  // On error, multi-get parent may assume responsiblity of replying
   if (ctx.moveReplyToParent(
-        reply.result(), reply.appSpecificErrorCode(),
-        std::move(reply.message()))) {
-    replyImpl(std::move(ctx), Reply(), destructor, toDestruct);
+          reply.result(),
+          reply.appSpecificErrorCode(),
+          std::move(reply.message()))) {
+    replyImpl2(std::move(ctx), Reply(), std::forward<Args>(args)...);
   } else {
-    replyImpl(std::move(ctx), std::move(reply), destructor, toDestruct);
+    replyImpl2(std::move(ctx), std::move(reply), std::forward<Args>(args)...);
   }
 }
 
+template <class Reply, class... Args>
+typename std::enable_if<OtherThan<
+    RequestFromReplyType<Reply, RequestReplyPairs>,
+    GetLike<>>::value>::type
+McServerRequestContext::replyImpl(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    Args&&... args) {
+  replyImpl2(std::move(ctx), std::move(reply), std::forward<Args>(args)...);
+}
+
 template <class Reply>
-void McServerRequestContext::replyImpl(
+void McServerRequestContext::replyImpl2(
     McServerRequestContext&& ctx,
     Reply&& reply,
     DestructorFunc destructor,
     void* toDestruct) {
+  ctx.replied_ = true;
   auto session = ctx.session_;
   if (toDestruct != nullptr) {
     assert(destructor != nullptr);
@@ -71,9 +83,7 @@ void McServerRequestContext::replyImpl(
   uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
   if (!wb->prepareTyped(
-          std::move(ctx),
-          std::move(reply),
-          std::move(destructorContainer))) {
+          std::move(ctx), std::move(reply), std::move(destructorContainer))) {
     session->transport_->close();
     return;
   }
@@ -126,12 +136,11 @@ struct HasDispatchTypedRequest<
   static constexpr std::true_type value{};
 };
 
-template <class OnRequest, class Request>
-void McServerOnRequestWrapper<OnRequest, List<Request>>::caretRequestReady(
+template <class OnRequest>
+void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& reqBuf,
     McServerRequestContext&& ctx) {
-
   dispatchTypedRequestIfDefined(
     headerInfo, reqBuf, std::move(ctx),
     HasDispatchTypedRequest<OnRequest>::value);

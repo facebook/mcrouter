@@ -21,16 +21,16 @@ class McrouterRouteHandleIf;
 
 template <typename Route>
 class McrouterRouteHandle
-    : public RouteHandle<Route, McrouterRouteHandleIf, CarbonRequestList> {
+    : public RouteHandle<Route, McrouterRouteHandleIf, McRequestList> {
  public:
   template <typename... Args>
   explicit McrouterRouteHandle(Args&&... args)
-      : RouteHandle<Route, McrouterRouteHandleIf, CarbonRequestList>(
+      : RouteHandle<Route, McrouterRouteHandleIf, McRequestList>(
             std::forward<Args>(args)...) {}
 };
 
 class McrouterRouteHandleIf
-    : public RouteHandleIf<McrouterRouteHandleIf, CarbonRequestList> {
+    : public RouteHandleIf<McrouterRouteHandleIf, McRequestList> {
  public:
   template <class Route>
   using Impl = McrouterRouteHandle<Route>;

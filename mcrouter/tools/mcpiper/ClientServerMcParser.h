@@ -55,7 +55,7 @@ class ExpectNextDispatcher {
 
  private:
   ReplyParser* replyParser_;
-  CallDispatcher<TRequestList, ExpectNextDispatcher> dispatcher_;
+  CallDispatcher<McRequestList, ExpectNextDispatcher> dispatcher_;
 };
 
 } // detail
@@ -90,7 +90,7 @@ class ClientServerMcParser {
   };
 
   struct RequestCallback : public CarbonMessageDispatcher<
-                               TRequestList,
+                               McRequestList,
                                RequestCallback,
                                const UmbrellaMessageInfo&> {
    public:

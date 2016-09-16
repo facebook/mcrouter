@@ -15,7 +15,9 @@
  */
 #pragma once
 
+#include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/fbi/cpp/util.h>
 #include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
 #include "BMessages.h"

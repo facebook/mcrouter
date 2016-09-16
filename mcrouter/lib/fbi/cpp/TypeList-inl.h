@@ -36,74 +36,87 @@ static_assert(
 /* Sort implementation */
 
 /* Single bubble sort iteration: for each i, order (i, i+1) */
-template <class KVList, class Enable = void> struct SortIter;
-template <class KVList> using SortIterT = typename SortIter<KVList>::type;
+template <class MessageList, class Enable = void>
+struct SortIter;
+template <class MessageList>
+using SortIterT = typename SortIter<MessageList>::type;
 
 /* Case element i > element i + 1 */
-template <int Idx, class Tx, int Idy, class Ty, int... Ids, class... Ts>
-struct SortIter<List<KV<Idx, Tx>, KV<Idy, Ty>, KV<Ids, Ts>...>,
-                typename std::enable_if<(Idx > Idy)>::type> {
-  using type = PrependT<KV<Idy, Ty>,
-                        SortIterT<PrependT<KV<Idx, Tx>, List<KV<Ids, Ts>...>>>>;
+template <class Tx, class Ty, class... Ts>
+struct SortIter<
+    List<Tx, Ty, Ts...>,
+    typename std::enable_if<(Tx::typeId > Ty::typeId)>::type> {
+  using type = PrependT<Ty, SortIterT<PrependT<Tx, List<Ts...>>>>;
 };
 
 /* Case element i <= element i + 1 */
-template <int Idx, class Tx, int Idy, class Ty, int... Ids, class... Ts>
-struct SortIter<List<KV<Idx, Tx>, KV<Idy, Ty>, KV<Ids, Ts>...>,
-                typename std::enable_if<(Idx <= Idy)>::type> {
-  using type = PrependT<KV<Idx, Tx>,
-                        SortIterT<PrependT<KV<Idy, Ty>, List<KV<Ids, Ts>...>>>>;
+template <class Tx, class Ty, class... Ts>
+struct SortIter<
+    List<Tx, Ty, Ts...>,
+    typename std::enable_if<(Tx::typeId <= Ty::typeId)>::type> {
+  using type = PrependT<Tx, SortIterT<PrependT<Ty, List<Ts...>>>>;
 };
 
-template <int Id, class T>
-struct SortIter<List<KV<Id, T>>> {
-  using type = List<KV<Id, T>>;
+template <class T>
+struct SortIter<List<T>> {
+  using type = List<T>;
 };
 
 /* Sort: run the iteration above N times (N = size of list) */
-template <class KVList, int N>
-using SortImplT = typename SortImpl<KVList, N>::type;
+template <class MessageList, size_t N>
+using SortImplT = typename SortImpl<MessageList, N>::type;
 
-template <int... Ids, class... Ts, int N>
-struct SortImpl<List<KV<Ids, Ts>...>, N,
-                typename std::enable_if<N == sizeof...(Ids)>::type> {
-  using type = List<KV<Ids, Ts>...>;
+template <class... Ts, size_t N>
+struct SortImpl<List<Ts...>, N,
+                typename std::enable_if<N == sizeof...(Ts)>::type> {
+  using type = List<Ts...>;
 };
-template <int... Ids, class... Ts, int N>
-struct SortImpl<List<KV<Ids, Ts>...>, N,
-                typename std::enable_if<(N < sizeof...(Ids))>::type> {
-  using type = SortImplT<SortIterT<List<KV<Ids, Ts>...>>, N + 1>;
+template <class... Ts, size_t N>
+struct SortImpl<List<Ts...>, N,
+                typename std::enable_if<(N < sizeof...(Ts))>::type> {
+  using type = SortImplT<SortIterT<List<Ts...>>, N + 1>;
 };
 
 /* Sort unit test */
+namespace detail {
+namespace type_list_sort_test {
+struct A { static constexpr size_t typeId = 0; };
+struct B { static constexpr size_t typeId = 1; };
+struct C { static constexpr size_t typeId = 2; };
+struct D { static constexpr size_t typeId = 3; };
+struct E { static constexpr size_t typeId = 4; };
+struct F { static constexpr size_t typeId = 5; };
+struct G { static constexpr size_t typeId = 6; };
+struct H { static constexpr size_t typeId = 7; };
 static_assert(
-  std::is_same<
-  List<KV<0, int>, KV<1, char>, KV<2, int>, KV<3, double>,
-       KV<4, int>, KV<5, char>, KV<6, int>, KV<7, double>>,
-  SortT<List<KV<4, int>, KV<1, char>, KV<6, int>, KV<2, int>,
-             KV<3, double>, KV<7, double>, KV<5, char>, KV<0, int>>>
-  >::value, "sort is broken");
-
+    std::is_same<
+        List<A, B, C, D, E, F, G, H>,
+        SortT<List<E, B, G, C, D, H, F, A>>>::value,
+    "SortT is broken");
+} // type_list_sort_test
+} // detail
 
 /* Expand implementation */
-template <int Start, class KVList>
-using ExpandImplT = typename ExpandImpl<Start, KVList>::type;
+template <int Start, class MessageList>
+using ExpandImplT = typename ExpandImpl<Start, MessageList>::type;
 
 /* Case start == first element in the list */
-template <int Start, int... Ids, class T, class... Ts>
-struct ExpandImpl<Start, List<KV<Start, T>, KV<Ids, Ts>...>> {
-  using type =
-    PrependT<KV<Start, T>, ExpandImplT<Start + 1, List<KV<Ids, Ts>...>>>;
+template <int Start, class T, class... Ts>
+struct ExpandImpl<
+    Start,
+    List<T, Ts...>,
+    typename std::enable_if<(Start == T::typeId)>::type> {
+  using type = PrependT<T, ExpandImplT<Start + 1, List<Ts...>>>;
 };
 
 /* Case start < first element in the list, insert
-   a fake element KV<start, void> */
-template <int Start, int Id, int... Ids, class T, class... Ts>
-struct ExpandImpl<Start, List<KV<Id, T>, KV<Ids, Ts>...>,
-              typename std::enable_if<(Start < Id)>::type> {
-  using type =
-    PrependT<KV<Start, void>,
-             ExpandImplT<Start + 1, List<KV<Id, T>, KV<Ids, Ts>...>>>;
+   a fake element of type void */
+template <int Start, class T, class... Ts>
+struct ExpandImpl<
+    Start,
+    List<T, Ts...>,
+    typename std::enable_if<(Start < T::typeId)>::type> {
+  using type = PrependT<void, ExpandImplT<Start + 1, List<T, Ts...>>>;
 };
 template <int Start>
 struct ExpandImpl<Start, List<>> {

@@ -33,7 +33,7 @@ size_t mcOpToRequestTypeId(mc_op_t mc_op) {
   case MC_OPERATION::mc_op: {                                             \
     using Request =                                                       \
         typename TypeFromOp<MC_OPERATION::mc_op, RequestOpMapping>::type; \
-    return IdFromType<Request, TRequestList>::value;                      \
+    return Request::typeId;                                               \
   }
 #include "mcrouter/lib/McOpList.h"
 

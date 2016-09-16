@@ -171,9 +171,7 @@ void ServerMcParser<Callback>::writeToPipe(const Request& req) {
   const struct iovec* iov;
   size_t iovLen;
   debugSerializedRequest.prepare(req, iov, iovLen);
-  debugFifo_->startMessage(
-      MessageDirection::Received,
-      IdFromType<Request, TRequestList>::value);
+  debugFifo_->startMessage(MessageDirection::Received, Request::typeId);
   debugFifo_->writeData(iov, iovLen);
 }
 

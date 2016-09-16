@@ -31,6 +31,7 @@
 #include <mcrouter/lib/carbon/Result.h>
 
 #include "mcrouter/lib/carbon/test/a/gen/AMessages.h"
+#include "mcrouter/lib/network/gen/CommonMessages.h"
 
 namespace carbon {
 namespace test {

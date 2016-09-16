@@ -1,0 +1,29 @@
+namespace hellogoodbye;
+
+import "mcrouter/lib/network/Common.idl"
+
+request HelloRequest {
+  id: 1;
+  name: "hello";
+  reply: HelloReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply HelloReply {
+  1: Result result;
+};
+
+request GoodbyeRequest {
+  id: 2;
+  name: "goodbye";
+  reply: GoodbyeReply;
+
+  1: Keys<IOBuf> key;
+};
+
+reply GoodbyeReply {
+  1: Result result;
+};
+
+service {};

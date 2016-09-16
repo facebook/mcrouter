@@ -10,6 +10,7 @@
 #include <folly/io/Cursor.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 
 namespace facebook { namespace memcache {
 
@@ -56,14 +57,14 @@ bool ClientMcParser<Callback>::readDataAvailable(size_t len) {
 
 template <class Callback>
 template <class Request>
-void ClientMcParser<Callback>::expectNext() {
+typename std::enable_if<ListContains<McRequestList, Request>::value>::type
+ClientMcParser<Callback>::expectNext() {
   if (parser_.protocol() == mc_ascii_protocol) {
     asciiParser_.initializeReplyParser<Request>();
     replyForwarder_ = &ClientMcParser<Callback>::forwardAsciiReply<Request>;
     if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
       debugFifo_->startMessage(
-          MessageDirection::Received,
-          IdFromType<ReplyT<Request>, TReplyList>::value);
+          MessageDirection::Received, ReplyT<Request>::typeId);
     }
   } else if (parser_.protocol() == mc_umbrella_protocol) {
     umbrellaOrCaretForwarder_ =
@@ -72,6 +73,15 @@ void ClientMcParser<Callback>::expectNext() {
     umbrellaOrCaretForwarder_ =
         &ClientMcParser<Callback>::forwardCaretReply<Request>;
   }
+}
+
+template <class Callback>
+template <class Request>
+typename std::enable_if<!ListContains<McRequestList, Request>::value>::type
+ClientMcParser<Callback>::expectNext() {
+  assert(parser_.protocol() == mc_caret_protocol);
+  umbrellaOrCaretForwarder_ =
+      &ClientMcParser<Callback>::forwardCaretReply<Request>;
 }
 
 template <class Callback>

@@ -28,22 +28,17 @@
 
 namespace facebook { namespace memcache { namespace test {
 
-class TestServerOnRequest : public CarbonMessageDispatcher<
-                                TRequestList,
-                                TestServerOnRequest,
-                                McServerRequestContext&&> {
+class TestServerOnRequest {
  public:
   TestServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder);
 
   void onRequest(McServerRequestContext&& ctx, McGetRequest&& req);
-
   void onRequest(McServerRequestContext&& ctx, McSetRequest&& req);
-
   void onRequest(McServerRequestContext&& ctx, McVersionRequest&& req);
 
   template <class Request>
   void onRequest(McServerRequestContext&&, Request&&) {
-    LOG(ERROR) << "Unhandled operation " << typeid(Request).name();
+    LOG(ERROR) << "Unhandled operation: " << Request::name;
   }
 
  protected:
@@ -89,7 +84,8 @@ class TestServer {
         useDefaultVersion,
         numThreads));
     server->run([&s = *server](AsyncMcServerWorker& worker) {
-      worker.setOnRequest(OnRequest(s.shutdown_, s.outOfOrder_));
+      worker.setOnRequest(
+          MemcacheRequestHandler<OnRequest>(s.shutdown_, s.outOfOrder_));
     });
     return server;
   }

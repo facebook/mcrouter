@@ -42,24 +42,24 @@ void serializeCarbonStruct(
  * Given a type id and an IOBuf, unserializes the corresponding Carbon struct
  * and calls Proc::onTypedMessage(M&&, args...)
  *
- * @param TMList  List of supported typed messages: List<TypedMsg<Id, M>, ...>
- *                All Ms in the list must be Carbon struct types.
- * @param Proc    Derived processor class, may provide
- *                  void onTypedMessage(M&&, args...).
- *                If not provided, default implementation that forwards to
- *                  void onRequest(McServerRequestContext&&, M&& req)
- *                will be used.
- *                Overloaded for every Carbon struct in TMList.
- * @param Args    Additional arguments to pass through to onTypedMessage.
+ * @param MessageList  List of supported Carbon messages: List<M, ...>
+ *                     All Ms in the list must be Carbon struct types.
+ * @param Proc         Derived processor class, may provide
+ *                       void onTypedMessage(M&&, args...).
+ *                     If not provided, default implementation that forwards to
+ *                       void onRequest(McServerRequestContext&&, M&& req)
+ *                     will be used.
+ *                     Overloaded for every Carbon struct in MessageList.
+ * @param Args         Additional arguments to pass through to onTypedMessage.
  *
  * WARNING: Using CarbonMsgDispatcher with multiple inheritance is not
  *          recommended.
  */
-template <class TMList, class Proc, class... Args>
+template <class MessageList, class Proc, class... Args>
 class CarbonMessageDispatcher {
  public:
   /**
-   * @return true iff typeId is present in TMList
+   * @return true iff headerInfo.typeId corresponds to a message in MessageList
    */
   bool dispatchTypedRequest(const UmbrellaMessageInfo& headerInfo,
                             const folly::IOBuf& buffer,
@@ -74,11 +74,12 @@ class CarbonMessageDispatcher {
     static_cast<Proc&>(*this).onRequest(std::move(ctx), std::move(req));
   }
 
-  // CallDispatcher callback for requests
   template <class M>
-  static typename std::enable_if<carbon::IsRequestTrait<M>::value, void>::type
-  processMsg(CarbonMessageDispatcher& me, const UmbrellaMessageInfo& headerInfo,
-             const folly::IOBuf& reqBuf, Args&&... args) {
+  static void processMsg(
+      CarbonMessageDispatcher& me,
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& reqBuf,
+      Args&&... args) {
     folly::io::Cursor cur(&reqBuf);
     cur += headerInfo.headerSize;
     carbon::CarbonProtocolReader reader(cur);
@@ -89,23 +90,14 @@ class CarbonMessageDispatcher {
         .onTypedMessage(std::move(req), std::forward<Args>(args)...);
   }
 
-  // CallDispatcher callback for replies
-  template <class M>
-  static typename std::enable_if<!carbon::IsRequestTrait<M>::value, void>::type
-  processMsg(CarbonMessageDispatcher& me, const UmbrellaMessageInfo& headerInfo,
-             const folly::IOBuf& repBuf, Args&&... args) {
-    folly::io::Cursor cur(&repBuf);
-    cur += headerInfo.headerSize;
-    carbon::CarbonProtocolReader reader(cur);
-    M reply;
-    reply.deserialize(reader);
-    static_cast<Proc&>(me)
-        .onTypedMessage(std::move(reply), std::forward<Args>(args)...);
-  }
-
  private:
-  CallDispatcher<TMList, CarbonMessageDispatcher, const UmbrellaMessageInfo&,
-                 const folly::IOBuf&, Args...> dispatcher_;
+  CallDispatcher<
+      MessageList,
+      CarbonMessageDispatcher,
+      const UmbrellaMessageInfo&,
+      const folly::IOBuf&,
+      Args...>
+      dispatcher_;
 };
 
 }}  // facebook::memcache

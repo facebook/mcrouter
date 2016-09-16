@@ -21,8 +21,7 @@
 
 using namespace facebook::memcache;
 
-using CarbonTestMessageList =
-    List<TypedMsg<1, McGetRequest>, TypedMsg<3, McSetRequest>>;
+using CarbonTestMessageList = List<McGetRequest, McSetRequest>;
 
 // using facebook::memcache::CarbonMessageDispatcher; will break the GCC build
 // until https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59815 is fixed

@@ -158,7 +158,7 @@ class McClientAsciiParser : public McAsciiParserBase {
   static void appendCurrentCharTo(const folly::IOBuf& from, folly::IOBuf& to,
                                   const char* pos);
 
-  MessageStorage<MapT<ReplyT, CarbonRequestList>> currentMessage_;
+  MessageStorage<MapT<ReplyT, McRequestList>> currentMessage_;
 
   using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
@@ -220,12 +220,12 @@ class McServerAsciiParser : public McAsciiParserBase {
 
   void finishReq();
 
-  std::unique_ptr<detail::CallbackBase<CarbonRequestList>> callback_;
+  std::unique_ptr<detail::CallbackBase<McRequestList>> callback_;
 
   const char* keyPieceStart_{nullptr};
   folly::IOBuf currentKey_;
   bool noreply_{false};
-  MessageStorage<CarbonRequestList> currentMessage_;
+  MessageStorage<McRequestList> currentMessage_;
 
   using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};

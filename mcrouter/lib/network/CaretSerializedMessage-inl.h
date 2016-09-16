@@ -18,15 +18,14 @@ bool CaretSerializedMessage::prepare(const Request& req,
                                      const CodecIdRange& supportedCodecs,
                                      const struct iovec*& iovOut,
                                      size_t& niovOut) noexcept {
-  constexpr size_t typeId = IdFromType<Request, TRequestList>::value;
-
-  return fill(req,
-              reqId,
-              typeId,
-              req.traceId(),
-              supportedCodecs,
-              iovOut,
-              niovOut);
+  return fill(
+      req,
+      reqId,
+      Request::typeId,
+      req.traceId(),
+      supportedCodecs,
+      iovOut,
+      niovOut);
 }
 
 template <class Reply>
@@ -38,11 +37,10 @@ bool CaretSerializedMessage::prepare(
     double dropProbability,
     const struct iovec*& iovOut,
     size_t& niovOut) noexcept {
-  constexpr size_t typeId = IdFromType<Reply, TReplyList>::value;
   return fill(
       reply,
       reqId,
-      typeId,
+      Reply::typeId,
       0 /* traceId */,
       supportedCodecs,
       compressionCodecMap,

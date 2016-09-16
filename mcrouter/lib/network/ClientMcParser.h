@@ -60,7 +60,12 @@ class ClientMcParser : private McParser::ParserCallback {
    * callback. It explicitly tells parser what type of message is expected.
    */
   template <class Request>
-  void expectNext();
+  typename std::enable_if<ListContains<McRequestList, Request>::value>::type
+  expectNext();
+  template <class Request>
+  typename std::enable_if<
+      !ListContains<McRequestList, Request>::value>::type
+  expectNext();
 
   void setProtocol(mc_protocol_t protocol) {
     parser_.setProtocol(protocol);

@@ -58,24 +58,13 @@ struct KV {
   using Value = T;
 };
 
-template <int Id, class KVList>
-struct HasKey;
-
-template <int Id>
-struct HasKey<Id, List<>> {
-  static constexpr bool value = false;
-};
-
-template <int Id, int K, class V, class... KVs>
-struct HasKey<Id, List<KV<K, V>, KVs...>> {
-  static constexpr bool value = (Id == K) || HasKey<Id, List<KVs...>>::value;
-};
-
 /**
  * (T, List<Ts...>) -> List<T, Ts...>
  */
-template <class T, class L> struct Prepend;
-template <class T, class L> using PrependT = typename Prepend<T, L>::type;
+template <class T, class L>
+struct Prepend;
+template <class T, class L>
+using PrependT = typename Prepend<T, L>::type;
 
 template <class T, class... Ts>
 struct Prepend<T, List<Ts...>> {
@@ -83,50 +72,33 @@ struct Prepend<T, List<Ts...>> {
 };
 
 /**
- * Values<List<KV<Id, T>...> -> List<T,...>
+ * Sorts a list of Carbon messages by typeId.
+ * List<T...> -> List<T...>
  */
 namespace detail {
-template <class KVList>
-struct ValuesImpl;
-
-template <>
-struct ValuesImpl<List<>> {
-  using type = List<>;
-};
-
-template <int Id, class T, class... KVs>
-struct ValuesImpl<List<KV<Id, T>, KVs...>> {
-  using type = PrependT<T, typename ValuesImpl<List<KVs...>>::type>;
-};
-} // detail
-
-template <class KVList>
-using Values = typename detail::ValuesImpl<KVList>::type;
-
-/**
- * Sorts a list of KVs by Id.
- * List<KV<Id, T>...> -> List<KV<Id, T>...>
- */
-namespace detail {
-template <class KVList, int N, class Enable = void> struct SortImpl;
+template <class MessageList, size_t N, class Enable = void>
+struct SortImpl;
 }  // detail
 
-template <class KVList> using Sort = detail::SortImpl<KVList, 0>;
-template <class KVList> using SortT = typename Sort<KVList>::type;
+template <class MessageList>
+using Sort = detail::SortImpl<MessageList, 0>;
+template <class MessageList>
+using SortT = typename Sort<MessageList>::type;
 
 /**
- * Given a sorted list of KVs (Ids >= 0), fills up holes in ID space
+ * Given a sorted list of Carbon messages (typeIds >= 0), fills up holes in ID
+ * space
  *
- * List<KV<2, T2>, KV<4, T4>> ->
- *   List<KV<0, void>, KV<1, void>, KV<2, T2>, KV<3, void>, KV<4, T4>>
+ * List<M2 (typeId=2), M4 (typeId=4)> ->
+ *   List<void, void, M2, void, M4>
  */
 namespace detail {
-template <int Start, class KVList, class Enable = void>
+template <int Start, class MessageList, class Enable = void>
 struct ExpandImpl;
 }  // detail
 
-template <class KVList> using Expand = detail::ExpandImpl<0, KVList>;
-template <class KVList> using ExpandT = typename Expand<KVList>::type;
+template <class MessageList> using Expand = detail::ExpandImpl<0, MessageList>;
+template <class MessageList> using ExpandT = typename Expand<MessageList>::type;
 
 /**
  * (F, Xs) -> F::op(X1, F::op(X2, ...))
@@ -193,16 +165,6 @@ template <int X, int... Xs>
 struct DistinctInt<X, Xs...> {
   static constexpr bool value =
     (HasInt<X, Xs...>::value ? false : DistinctInt<Xs...>::value);
-};
-
-template <class... Xs>
-struct Distinct;
-template <class X>
-struct Distinct<X> { static constexpr bool value = true; };
-template <class X, class... Xs>
-struct Distinct<X, Xs...> {
-  static constexpr bool value =
-    (Has<X, Xs...>::value ? false : Distinct<Xs...>::value);
 };
 
 /**

@@ -17,7 +17,12 @@
 namespace facebook { namespace memcache {
 
 template <class Reply>
-bool WriteBuffer::prepareTyped(
+typename std::enable_if<
+    ListContains<
+        McRequestList,
+        RequestFromReplyType<Reply, RequestReplyPairs>>::value,
+    bool>::type
+WriteBuffer::prepareTyped(
     McServerRequestContext&& ctx,
     Reply&& reply,
     Destructor destructor) {
@@ -27,7 +32,7 @@ bool WriteBuffer::prepareTyped(
     destructor_ = std::move(destructor);
   }
 
-  typeId_ = IdFromType<Reply, CarbonMessageList>::value;
+  typeId_ = static_cast<uint32_t>(Reply::typeId);
 
   // The current congestion control only supports mc_caret_protocol.
   // May extend to other protocals in the future.
@@ -63,6 +68,41 @@ bool WriteBuffer::prepareTyped(
       CHECK(false);
   }
   return false;
+}
+
+template <class Reply>
+typename std::enable_if<
+    !ListContains<
+        McRequestList,
+        RequestFromReplyType<Reply, RequestReplyPairs>>::value,
+    bool>::type
+WriteBuffer::prepareTyped(
+    McServerRequestContext&& ctx,
+    Reply&& reply,
+    Destructor destructor) {
+  assert(protocol_ == mc_caret_protocol);
+  ctx_.emplace(std::move(ctx));
+  assert(!destructor_.hasValue());
+  if (destructor) {
+    destructor_ = std::move(destructor);
+  }
+
+  typeId_ = static_cast<uint32_t>(Reply::typeId);
+
+  // The current congestion control only supports mc_caret_protocol.
+  // May extend to other protocals in the future.
+  const auto dropProbability = ctx_->session().getCpuController()
+      ? ctx_->session().getCpuController()->getDropProbability()
+      : 0.0;
+
+  return caretReply_.prepare(
+      std::move(reply),
+      ctx_->reqid_,
+      ctx_->compressionContext_->codecIdRange,
+      ctx_->compressionContext_->compressionCodecMap,
+      dropProbability,
+      iovsBegin_,
+      iovsCount_);
 }
 
 }} // facebook::memcache

@@ -20,17 +20,15 @@
 #include <mcrouter/lib/fbi/cpp/util.h>
 #include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
-#include "CarbonTestMessages.h"
+#include "HelloGoodbyeMessages.h"
 
-namespace carbon {
-namespace test {
+namespace hellogoodbye {
 
 namespace detail {
 
-using CarbonTestRequestList = carbon::List<
-    AnotherRequest,
-    TestRequest,
-    carbon::test2::util::YetAnotherRequest,
+using HelloGoodbyeRequestList = carbon::List<
+    GoodbyeRequest,
+    HelloRequest,
     facebook::memcache::McExecRequest,
     facebook::memcache::McQuitRequest,
     facebook::memcache::McShutdownRequest,
@@ -40,14 +38,14 @@ using CarbonTestRequestList = carbon::List<
 } // detail
 
 template <class OnRequest>
-class CarbonTestRequestHandler
+class HelloGoodbyeRequestHandler
     : public facebook::memcache::CarbonMessageDispatcher<
-          detail::CarbonTestRequestList,
-          CarbonTestRequestHandler<OnRequest>,
+          detail::HelloGoodbyeRequestList,
+          HelloGoodbyeRequestHandler<OnRequest>,
           facebook::memcache::McServerRequestContext&&> {
  public:
   template <class... Args>
-  explicit CarbonTestRequestHandler(Args&&... args)
+  explicit HelloGoodbyeRequestHandler(Args&&... args)
       : onRequest_(std::forward<Args>(args)...) {}
 
   template <class Request>
@@ -81,5 +79,4 @@ class CarbonTestRequestHandler
   }
 };
 
-} // test
-} // carbon
+} // hellogoodbye

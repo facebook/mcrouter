@@ -43,10 +43,7 @@
 
 using namespace facebook::memcache;
 
-class MockMcOnRequest : public CarbonMessageDispatcher<
-                            TRequestList,
-                            MockMcOnRequest,
-                            McServerRequestContext&&> {
+class MockMcOnRequest {
  public:
   void onRequest(McServerRequestContext&& ctx, McMetagetRequest&& req) {
     using Reply = McMetagetReply;
@@ -320,7 +317,7 @@ class MockMcOnRequest : public CarbonMessageDispatcher<
 
 void serverLoop(size_t threadId, folly::EventBase& evb,
                 AsyncMcServerWorker& worker) {
-  worker.setOnRequest(MockMcOnRequest());
+  worker.setOnRequest(MemcacheRequestHandler<MockMcOnRequest>());
   evb.loop();
 }
 

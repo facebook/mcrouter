@@ -1,6 +1,7 @@
 namespace carbon::test;
 
 import "mcrouter/lib/carbon/test/a/A.idl"
+import "mcrouter/lib/network/Common.idl"
 
 request TestRequest with 1: SimpleStruct as Base {
   id: 3;

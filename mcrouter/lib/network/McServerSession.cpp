@@ -299,8 +299,7 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
       compressionCodecMap_,
       getCompressionCodecIdRange(headerInfo));
 
-  if (IdFromType<McVersionRequest, TRequestList>::value ==
-          headerInfo.typeId &&
+  if (McVersionRequest::typeId == headerInfo.typeId &&
       options_.defaultVersionHandler) {
     McVersionReply versionReply(mc_res_ok);
     versionReply.value() =

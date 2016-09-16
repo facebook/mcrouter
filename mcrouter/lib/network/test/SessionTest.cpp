@@ -189,7 +189,7 @@ TEST(Session, invalidSocketAdd) {
   folly::EventBase base;
   AsyncMcServerWorker worker(opts, base);
 
-  worker.setOnRequest(NoOpOnRequest());
+  worker.setOnRequest(MemcacheRequestHandler<NoOpOnRequest>());
   worker.setOnWriteQuiescence([](McServerSession&){});
   worker.setOnConnectionCloseStart([](McServerSession&){});
   worker.setOnConnectionCloseFinish([](McServerSession&){});

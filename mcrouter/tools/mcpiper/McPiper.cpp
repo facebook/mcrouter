@@ -24,8 +24,7 @@ namespace mcpiper {
 
 namespace {
 
-const std::unordered_set<size_t> kNotSupporttedTypes = {
-    IdFromType<McStatsReply, CarbonMessageList>::value};
+const std::unordered_set<size_t> kNotSupporttedTypes = {McStatsReply::typeId};
 
 MessagePrinter::Options getOptions(const Settings& settings, McPiper* mcpiper) {
   MessagePrinter::Options options;

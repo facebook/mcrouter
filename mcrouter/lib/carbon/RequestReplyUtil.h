@@ -15,6 +15,12 @@
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
 
+namespace facebook {
+namespace memcache {
+class McServerRequestContext;
+} // memcache
+} // facebook
+
 namespace carbon {
 
 namespace detail {
@@ -65,5 +71,30 @@ class IsRequestTrait {
  public:
   static constexpr bool value = decltype(check<Msg>(0))::value;
 };
+
+namespace detail {
+// Utility class useful for checking whether a particular OnRequest handler
+// class defines an onRequest() handler for Request.
+class CanHandleRequest {
+  template <class R, class O>
+  static constexpr auto check(int) -> decltype(
+      std::declval<O>().onRequest(
+          std::declval<facebook::memcache::McServerRequestContext>(),
+          std::declval<R>()),
+      std::true_type()) {
+    return {};
+  }
+
+  template <class R, class O>
+  static constexpr std::false_type check(...) {
+    return {};
+  }
+ public:
+  template <class Request, class OnRequest>
+  static constexpr auto value() -> decltype(check<Request, OnRequest>(0)) {
+    return {};
+  }
+};
+} // detail
 
 } // carbon

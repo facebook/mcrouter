@@ -24,30 +24,15 @@
 #include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-using facebook::memcache::AsyncMcServer;
-using facebook::memcache::AsyncMcServerWorker;
-
-namespace facebook {
-namespace memcache {
+using namespace facebook::memcache;
 
 namespace {
-
-struct TypedMockMcOnRequest : public CarbonMessageDispatcher<
-                                  TRequestList,
-                                  TypedMockMcOnRequest,
-                                  McServerRequestContext&&> {
+struct TypedMockMcOnRequest {
   MockMc& mc_;
 
   explicit TypedMockMcOnRequest(MockMc& mc) : mc_(mc) {}
 
-  template <class Request>
-  void onRequest(McServerRequestContext&& ctx, Request&&) {
-    /* non-typed requests not supported */
-    McServerRequestContext::reply(
-        std::move(ctx), ReplyT<Request>(mc_res_client_error));
-  }
-
-  void onTypedMessage(McGetRequest&& req, McServerRequestContext&& ctx) {
+  void onRequest(McServerRequestContext&& ctx, McGetRequest&& req) {
     auto item = mc_.get(req.key().fullKey());
     McGetReply reply;
     if (!item) {
@@ -60,7 +45,7 @@ struct TypedMockMcOnRequest : public CarbonMessageDispatcher<
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
-  void onTypedMessage(McSetRequest&& req, McServerRequestContext&& ctx) {
+  void onRequest(McServerRequestContext&& ctx, McSetRequest&& req) {
     mc_.set(
         req.key().fullKey(),
         MockMc::Item(req.value(), req.exptime(), req.flags()));
@@ -68,8 +53,7 @@ struct TypedMockMcOnRequest : public CarbonMessageDispatcher<
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
-  void onTypedMessage(McDeleteRequest&& req,
-                      McServerRequestContext&& ctx) {
+  void onRequest(McServerRequestContext&& ctx, McDeleteRequest&& req) {
     McDeleteReply reply;
     if (mc_.del(req.key().fullKey())) {
       reply.result() = mc_res_deleted;
@@ -80,18 +64,16 @@ struct TypedMockMcOnRequest : public CarbonMessageDispatcher<
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
-  template <class M>
-  void onTypedMessage(M&&, McServerRequestContext&&) {
-    LOG(INFO) << "Type Ignored for this test";
+  template <class Request>
+  void onRequest(McServerRequestContext&& ctx, Request&&) {
+    /* non-typed requests not supported */
+    McServerRequestContext::reply(
+        std::move(ctx), ReplyT<Request>(mc_res_client_error));
   }
 };
 } // anonymous
-} // memcache
-} // facebook
 
 TEST(CarbonMockMc, basic) {
-  using namespace facebook::memcache;
-
   ListenSocket listenSock;
 
   AsyncMcServer::Options opts;
@@ -105,13 +87,13 @@ TEST(CarbonMockMc, basic) {
   AsyncMcServer server(opts);
   server.spawn(
       [&mc](size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
-        worker.setOnRequest(TypedMockMcOnRequest(mc));
+        worker.setOnRequest(MemcacheRequestHandler<TypedMockMcOnRequest>(mc));
         evb.loop();
       });
 
   ClientSocket clientSock(listenSock.getPort());
 
-  facebook::memcache::McGetRequest getReq("key");
+  McGetRequest getReq("key");
 
   carbon::CarbonQueueAppenderStorage storage;
   carbon::CarbonProtocolWriter writer(storage);
@@ -147,7 +129,7 @@ TEST(CarbonMockMc, basic) {
                                           replyInfo.bodySize);
   folly::io::Cursor cur(readBuf.get());
   carbon::CarbonProtocolReader reader(cur);
-  facebook::memcache::McGetReply getReply;
+  McGetReply getReply;
   getReply.deserialize(reader);
 
   EXPECT_EQ(mc_res_found, getReply.result());

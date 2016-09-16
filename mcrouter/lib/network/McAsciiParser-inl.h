@@ -35,13 +35,13 @@ class CallbackWrapper;
 
 template <class Callback, class Request>
 class CallbackWrapper<Callback, List<Request>>
-    : public CallbackBase<CarbonRequestList> {
+    : public CallbackBase<McRequestList> {
  public:
   explicit CallbackWrapper(Callback& callback) : callback_(callback) {}
 
   void multiOpEnd() noexcept override final { callback_.multiOpEnd(); }
 
-  using CallbackBase<CarbonRequestList>::onRequest;
+  using CallbackBase<McRequestList>::onRequest;
 
   void onRequest(Request&& req, bool noreply = false) noexcept override final {
     callback_.onRequest(std::move(req), noreply);
@@ -169,7 +169,7 @@ inline void McAsciiParserBase::trimIOBufToRange(folly::IOBuf& buffer,
 template <class Callback>
 McServerAsciiParser::McServerAsciiParser(Callback& callback)
     : callback_(folly::make_unique<
-          detail::CallbackWrapper<Callback, CarbonRequestList>>(callback)) {
+          detail::CallbackWrapper<Callback, McRequestList>>(callback)) {
 }
 
 template <class Reply>

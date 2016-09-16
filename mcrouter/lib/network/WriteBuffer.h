@@ -55,7 +55,23 @@ class WriteBuffer {
    * @return true On success
    */
   template <class Reply>
-  bool prepareTyped(
+  typename std::enable_if<
+      ListContains<
+          McRequestList,
+          RequestFromReplyType<Reply, RequestReplyPairs>>::value,
+      bool>::type
+  prepareTyped(
+      McServerRequestContext&& ctx,
+      Reply&& reply,
+      Destructor destructor = Destructor(nullptr, nullptr));
+
+  template <class Reply>
+  typename std::enable_if<
+      !ListContains<
+          McRequestList,
+          RequestFromReplyType<Reply, RequestReplyPairs>>::value,
+      bool>::type
+  prepareTyped(
       McServerRequestContext&& ctx,
       Reply&& reply,
       Destructor destructor = Destructor(nullptr, nullptr));

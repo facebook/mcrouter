@@ -18,7 +18,7 @@ using DispatchFunc = void (*)(Proc&, Args...);
 template <class M, class Proc, class... Args>
 struct DispatchImpl {
   static constexpr DispatchFunc<Proc, Args...> func =
-    &Proc::template processMsg<M>;
+      &Proc::template processMsg<M>;
 };
 
 /* If M is void, use nullptr function pointer */
@@ -27,61 +27,30 @@ struct DispatchImpl<void, Proc, Args...> {
   static constexpr DispatchFunc<Proc, Args...> func = nullptr;
 };
 
-template <class TMList, class Proc, class... Args>
+template <class Message, size_t MaxId, class Proc, class... Args>
 struct CallDispatcherImplExpanded;
 
 /* Contains a single array that maps Ids to processMsg calls */
-template <int... Ids, class... Ms, class Proc, class... Args>
-struct CallDispatcherImplExpanded<List<TypedMsg<Ids, Ms>...>, Proc, Args...> {
-  static constexpr
-  DispatchFunc<Proc, Args...> array_[Max<Ids...>::value + 1] = {
-    DispatchImpl<Ms, Proc, Args...>::func...
-  };
+template <class... Ms, size_t MaxId, class Proc, class... Args>
+struct CallDispatcherImplExpanded<List<Ms...>, MaxId, Proc, Args...> {
+  static constexpr DispatchFunc<Proc, Args...> array_[MaxId + 1] = {
+      DispatchImpl<Ms, Proc, Args...>::func...};
 };
 
 /* Array needs definition outside of the class */
-template <int... Ids, class... Ms, class Proc, class... Args>
+template <class... Ms, size_t MaxId, class Proc, class... Args>
 constexpr DispatchFunc<Proc, Args...>
-CallDispatcherImplExpanded<List<TypedMsg<Ids, Ms>...>, Proc, Args...>
-::array_[Max<Ids...>::value + 1];
+    CallDispatcherImplExpanded<List<Ms...>, MaxId, Proc, Args...>::array_
+        [MaxId + 1];
 
-/* Input: unique Ids >= 0.
-   Sort KVList, expand to fill 0s, call ImplExpanded */
-template <class KVList, class Proc, class... Args>
-struct CallDispatcherImpl
-    : public CallDispatcherImplExpanded<ExpandT<SortT<KVList>>, Proc, Args...> {
-};
-
-template <class T, class TMList>
-struct IdFromTypeImpl;
-
-template <class T>
-struct IdFromTypeImpl<T, List<>> {
-  static constexpr int value = -1;
-};
-
-template <class T, class TM, class... TMs>
-struct IdFromTypeImpl<T, List<TM, TMs...>> {
-  static constexpr int value = std::is_same<T, typename TM::Value>::value
-                                   ? TM::Key
-                                   : IdFromTypeImpl<T, List<TMs...>>::value;
-};
-
-template <class T, class PairList>
-struct ReplyFromRequestTypeImpl;
-
-template <class T>
-struct ReplyFromRequestTypeImpl<T, List<>> {
-  using type = void;
-};
-
-template <class T, class P, class... Ps>
-struct ReplyFromRequestTypeImpl<T, List<P, Ps...>> {
-  using type = typename std::conditional<
-      std::is_same<T, typename P::First::Value>::value,
-      typename P::Second::Value,
-      typename ReplyFromRequestTypeImpl<T, List<Ps...>>::type>::type;
-};
+// Sort List<Ms...> by M::typeId, expand to fill 0s, call ImplExpanded
+template <class... Ms, class Proc, class... Args>
+struct CallDispatcherImpl<List<Ms...>, Proc, Args...>
+    : public CallDispatcherImplExpanded<
+          ExpandT<SortT<List<Ms...>>>,
+          Max<Ms::typeId...>::value,
+          Proc,
+          Args...> {};
 
 template <class T, class PairList>
 struct RequestFromReplyTypeImpl;
@@ -94,8 +63,8 @@ struct RequestFromReplyTypeImpl<T, List<>> {
 template <class T, class P, class... Ps>
 struct RequestFromReplyTypeImpl<T, List<P, Ps...>> {
   using type = typename std::conditional<
-      std::is_same<T, typename P::Second::Value>::value,
-      typename P::First::Value,
+      std::is_same<T, typename P::Second>::value,
+      typename P::First,
       typename RequestFromReplyTypeImpl<T, List<Ps...>>::type>::type;
 };
 

@@ -17,45 +17,33 @@ namespace facebook { namespace memcache {
 
 /* List of operations */
 using RequestReplyPairs = List<
-    Pair<TypedMsg<1, McGetRequest>, TypedMsg<2, McGetReply>>,
-    Pair<TypedMsg<3, McSetRequest>, TypedMsg<4, McSetReply>>,
-    Pair<TypedMsg<5, McDeleteRequest>, TypedMsg<6, McDeleteReply>>,
-    Pair<TypedMsg<7, McLeaseGetRequest>,
-         TypedMsg<8, McLeaseGetReply>>,
-    Pair<TypedMsg<9, McLeaseSetRequest>,
-         TypedMsg<10, McLeaseSetReply>>,
-    Pair<TypedMsg<11, McAddRequest>, TypedMsg<12, McAddReply>>,
-    Pair<TypedMsg<13, McReplaceRequest>,
-         TypedMsg<14, McReplaceReply>>,
-    Pair<TypedMsg<15, McGetsRequest>, TypedMsg<16, McGetsReply>>,
-    Pair<TypedMsg<17, McCasRequest>, TypedMsg<18, McCasReply>>,
-    Pair<TypedMsg<19, McIncrRequest>, TypedMsg<20, McIncrReply>>,
-    Pair<TypedMsg<21, McDecrRequest>, TypedMsg<22, McDecrReply>>,
-    Pair<TypedMsg<23, McMetagetRequest>,
-         TypedMsg<24, McMetagetReply>>,
-    Pair<TypedMsg<25, McVersionRequest>,
-         TypedMsg<26, McVersionReply>>,
-    Pair<TypedMsg<27, McAppendRequest>,
-         TypedMsg<28, McAppendReply>>,
-    Pair<TypedMsg<29, McPrependRequest>,
-         TypedMsg<30, McPrependReply>>,
-    Pair<TypedMsg<31, McTouchRequest>, TypedMsg<32, McTouchReply>>,
-    Pair<TypedMsg<33, McShutdownRequest>,
-         TypedMsg<34, McShutdownReply>>,
-    Pair<TypedMsg<35, McQuitRequest>, TypedMsg<36, McQuitReply>>,
-    Pair<TypedMsg<37, McStatsRequest>, TypedMsg<38, McStatsReply>>,
-    Pair<TypedMsg<39, McExecRequest>, TypedMsg<40, McExecReply>>,
-    Pair<TypedMsg<41, McFlushReRequest>,
-         TypedMsg<42, McFlushReReply>>,
-    Pair<TypedMsg<43, McFlushAllRequest>,
-         TypedMsg<44, McFlushAllReply>>>;
+    Pair<McGetRequest, McGetReply>,
+    Pair<McSetRequest, McSetReply>,
+    Pair<McDeleteRequest, McDeleteReply>,
+    Pair<McLeaseGetRequest, McLeaseGetReply>,
+    Pair<McLeaseSetRequest, McLeaseSetReply>,
+    Pair<McAddRequest, McAddReply>,
+    Pair<McReplaceRequest, McReplaceReply>,
+    Pair<McGetsRequest, McGetsReply>,
+    Pair<McCasRequest, McCasReply>,
+    Pair<McIncrRequest, McIncrReply>,
+    Pair<McDecrRequest, McDecrReply>,
+    Pair<McMetagetRequest, McMetagetReply>,
+    Pair<McVersionRequest, McVersionReply>,
+    Pair<McAppendRequest, McAppendReply>,
+    Pair<McPrependRequest, McPrependReply>,
+    Pair<McTouchRequest, McTouchReply>,
+    Pair<McShutdownRequest, McShutdownReply>,
+    Pair<McQuitRequest, McQuitReply>,
+    Pair<McStatsRequest, McStatsReply>,
+    Pair<McExecRequest, McExecReply>,
+    Pair<McFlushReRequest, McFlushReReply>,
+    Pair<McFlushAllRequest, McFlushAllReply>>;
 
-using TRequestList = PairListFirstT<RequestReplyPairs>;
-using TReplyList = PairListSecondT<RequestReplyPairs>;
-using CarbonMessageList = ConcatenateListsT<TRequestList, TReplyList>;
+using McRequestList = PairListFirstT<RequestReplyPairs>;
 
 struct ListChecker {
-  StaticChecker<CarbonMessageList> checker;
+  StaticChecker<McRequestList> checker;
 };
 
 using RequestOpMapping = List<KV<mc_op_get, McGetRequest>,
@@ -139,9 +127,7 @@ struct TypeFromOp<op, List<KV1, KVs...>> {
                             typename TypeFromOp<op, List<KVs...>>::type>::type;
 };
 
-using CarbonRequestList = Values<TRequestList>;
-
 template <class T>
-using TRequestListContains = ListContains<CarbonRequestList, T>;
+using TRequestListContains = ListContains<McRequestList, T>;
 
 }} // facebook::memcache

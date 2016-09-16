@@ -16,6 +16,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -43,8 +44,8 @@ void serverLoop(
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
-  worker.setOnRequest(
-      ServerOnRequest(*routerClient, standaloneOpts.retain_source_ip));
+  worker.setOnRequest(MemcacheRequestHandler<ServerOnRequest>(
+      *routerClient, standaloneOpts.retain_source_ip));
   worker.setOnConnectionAccepted([proxy] () {
       stat_incr(proxy->stats, successful_client_connections_stat, 1);
       stat_incr(proxy->stats, num_clients_stat, 1);

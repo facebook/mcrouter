@@ -125,9 +125,9 @@ SessionTestHarness::SessionTestHarness(
     AsyncMcServerWorkerOptions opts,
     McServerSession::StateCallback& cb)
     : session_(McServerSession::create(
-          folly::AsyncTransportWrapper::UniquePtr(
-              new MockAsyncSocket(*this)),
-          std::make_shared<McServerOnRequestWrapper<OnRequest>>(
+          folly::AsyncTransportWrapper::UniquePtr(new MockAsyncSocket(*this)),
+          std::make_shared<
+              McServerOnRequestWrapper<MemcacheRequestHandler<OnRequest>>>(
               OnRequest(*this)),
           cb,
           std::move(opts),

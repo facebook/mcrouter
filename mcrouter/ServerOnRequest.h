@@ -29,10 +29,7 @@ struct ServerRequestContext {
       : ctx(std::move(ctx_)), req(std::move(req_)) {}
 };
 
-class ServerOnRequest : public CarbonMessageDispatcher<
-                            TRequestList,
-                            ServerOnRequest,
-                            McServerRequestContext&&> {
+class ServerOnRequest {
  public:
   template <class Request>
   using ReplyFunction = void (*)(McServerRequestContext&& ctx,

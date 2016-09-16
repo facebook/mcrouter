@@ -15,8 +15,10 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
 
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
@@ -92,8 +94,19 @@ class McServerRequestContext {
   bool noReply(const Reply& r) const;
   bool noReply(const McLeaseGetReply& r) const;
 
+  template <class Reply, class... Args>
+  static typename std::enable_if<
+      GetLike<RequestFromReplyType<Reply, RequestReplyPairs>>::value>::type
+  replyImpl(McServerRequestContext&& ctx, Reply&& reply, Args&&... args);
+
+  template <class Reply, class... Args>
+  static typename std::enable_if<OtherThan<
+      RequestFromReplyType<Reply, RequestReplyPairs>,
+      GetLike<>>::value>::type
+  replyImpl(McServerRequestContext&& ctx, Reply&& reply, Args&&... args);
+
   template <class Reply>
-  static void replyImpl(
+  static void replyImpl2(
       McServerRequestContext&& ctx,
       Reply&& reply,
       DestructorFunc destructor = nullptr,
@@ -126,13 +139,14 @@ class McServerRequestContext {
    * responsibility for reporting error. If true is returned, errorMessage is
    * moved to parent.
    */
-  bool moveReplyToParent(mc_res_t result,
-                         uint32_t errorCode,
-                         std::string&& errorMessage) const;
+  bool moveReplyToParent(
+      mc_res_t result,
+      uint32_t errorCode,
+      std::string&& errorMessage) const;
 
   McServerRequestContext(const McServerRequestContext&) = delete;
-  const McServerRequestContext& operator=(const McServerRequestContext&)
-    = delete;
+  const McServerRequestContext& operator=(const McServerRequestContext&) =
+      delete;
 
   /* Only McServerSession can create these */
   friend class McServerSession;
@@ -166,68 +180,87 @@ class McServerOnRequestIf;
 template <class Request>
 class McServerOnRequestIf<List<Request>> {
  public:
-  virtual void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
-                                 const folly::IOBuf& reqBody,
-                                 McServerRequestContext&& ctx) = 0;
+  virtual void caretRequestReady(
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& reqBody,
+      McServerRequestContext&& ctx) = 0;
 
-  virtual void requestReady(McServerRequestContext&& ctx, Request&& req) = 0;
+  virtual void requestReady(McServerRequestContext&&, Request&&) {
+    LOG(ERROR) << "requestReady() not implemented for request type "
+               << Request::name;
+  }
 
   virtual ~McServerOnRequestIf() = default;
 };
 
 template <class Request, class... Requests>
-class McServerOnRequestIf<List<Request, Requests...>> :
-      public McServerOnRequestIf<List<Requests...>> {
-
+class McServerOnRequestIf<List<Request, Requests...>>
+    : public McServerOnRequestIf<List<Requests...>> {
  public:
   using McServerOnRequestIf<List<Requests...>>::requestReady;
 
-  virtual void requestReady(McServerRequestContext&& ctx, Request&& req) = 0;
+  virtual void requestReady(McServerRequestContext&&, Request&&) {
+    LOG(ERROR) << "requestReady() not implemented for request type "
+               << Request::name;
+  }
 
   virtual ~McServerOnRequestIf() = default;
 };
 
-class McServerOnRequest : public McServerOnRequestIf<CarbonRequestList> {
-};
+class McServerOnRequest : public McServerOnRequestIf<McRequestList> {};
 
 /**
  * Helper class to wrap user-defined callbacks in a correct virtual interface.
  * This is needed since we're mixing templates and virtual functions.
  */
-template <class OnRequest, class RequestList = CarbonRequestList>
+template <class OnRequest, class RequestList = McRequestList>
 class McServerOnRequestWrapper;
 
-template <class OnRequest, class Request>
-class McServerOnRequestWrapper<OnRequest, List<Request>>
-    : public McServerOnRequest {
+template <class OnRequest>
+class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
  public:
   using McServerOnRequest::requestReady;
 
   template <class... Args>
   explicit McServerOnRequestWrapper(Args&&... args)
-      : onRequest_(std::forward<Args>(args)...) {
-  }
+    : onRequest_(std::forward<Args>(args)...) {}
 
-  void requestReady(McServerRequestContext&& ctx, Request&& req) override final {
-    this->onRequest_.onRequest(std::move(ctx), std::move(req));
-  }
+  void caretRequestReady(
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& reqBody,
+      McServerRequestContext&& ctx) override final;
 
-  void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
-                         const folly::IOBuf& reqBody,
-                         McServerRequestContext&& ctx) override final;
-
-  void dispatchTypedRequestIfDefined(const UmbrellaMessageInfo& headerInfo,
-                                     const folly::IOBuf& reqBody,
-                                     McServerRequestContext&& ctx,
-                                     std::true_type) {
+  void dispatchTypedRequestIfDefined(
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& reqBody,
+      McServerRequestContext&& ctx,
+      std::true_type) {
     onRequest_.dispatchTypedRequest(headerInfo, reqBody, std::move(ctx));
   }
 
-  void dispatchTypedRequestIfDefined(const UmbrellaMessageInfo&,
-                                     const folly::IOBuf& reqBody,
-                                     McServerRequestContext&& ctx,
-                                     std::false_type) {
+  void dispatchTypedRequestIfDefined(
+      const UmbrellaMessageInfo&,
+      const folly::IOBuf& reqBody,
+      McServerRequestContext&& ctx,
+      std::false_type) {
     throw std::runtime_error("dispatchTypedRequestIfDefined got bad request");
+  }
+
+  template <class Request>
+  void requestReadyImpl(
+      McServerRequestContext&& ctx,
+      Request&& req,
+      std::true_type) {
+    onRequest_.onRequest(std::move(ctx), std::move(req));
+  }
+
+  template <class Request>
+  void requestReadyImpl(
+      McServerRequestContext&& ctx,
+      Request&& req,
+      std::false_type) {
+    McServerRequestContext::reply(
+        std::move(ctx), ReplyT<Request>(mc_res_local_error));
   }
 
  protected:
@@ -235,9 +268,8 @@ class McServerOnRequestWrapper<OnRequest, List<Request>>
 };
 
 template <class OnRequest, class Request, class... Requests>
-class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>> :
-      public McServerOnRequestWrapper<OnRequest, List<Requests...>> {
-
+class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
+    : public McServerOnRequestWrapper<OnRequest, List<Requests...>> {
  public:
   using McServerOnRequestWrapper<OnRequest, List<Requests...>>::requestReady;
 
@@ -249,7 +281,10 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>> :
 
   void requestReady(McServerRequestContext&& ctx, Request&& req)
       override final {
-    this->onRequest_.onRequest(std::move(ctx), std::move(req));
+    this->requestReadyImpl(
+        std::move(ctx),
+        std::move(req),
+        carbon::detail::CanHandleRequest::value<Request, OnRequest>());
   }
 };
 

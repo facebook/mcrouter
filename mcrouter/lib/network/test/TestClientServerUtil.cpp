@@ -110,8 +110,9 @@ void TestServerOnRequest::onRequest(
   }
 }
 
-void TestServerOnRequest::onRequest(McServerRequestContext&& ctx,
-                                    McSetRequest&&) {
+void TestServerOnRequest::onRequest(
+    McServerRequestContext&& ctx,
+    McSetRequest&&) {
   processReply(std::move(ctx), McSetReply(mc_res_stored));
 }
 
