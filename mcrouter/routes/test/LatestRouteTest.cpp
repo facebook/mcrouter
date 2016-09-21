@@ -46,8 +46,7 @@ TEST(latestRouteTest, one) {
   folly::dynamic settings = folly::dynamic::object("failover_count", 3);
   auto rh = makeLatestRoute(settings, get_route_handles(test_handles), 0);
 
-  char first =
-    folly::hash::hash_combine(0, globals::hostid()) % test_handles.size();
+  auto first = replyFor(*rh, "key")[0] - 'a';
 
   /* While first is good, will keep sending to it */
   EXPECT_EQ(std::string(1, 'a' + first), replyFor(*rh, "key"));
@@ -71,6 +70,33 @@ TEST(latestRouteTest, one) {
   EXPECT_EQ(mc_res_tko, reply.result());
 }
 
+TEST(latestRouteTest, weights) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+  };
+
+  mockFiberContext();
+  folly::dynamic settings = folly::dynamic::object;
+  settings["failover_count"] = 3;
+  settings["thread_local_failover"] = true;
+  settings["weights"] = folly::dynamic::array(.25, .5, .75, 1);
+  std::vector<size_t> hits_per_index;
+  hits_per_index.resize(4);
+  for (int i = 0; i < 10000; i++) {
+    auto rh = makeLatestRoute(settings, get_route_handles(test_handles),
+                              /* threadId */ i);
+    auto index = replyFor(*rh, "key")[0] - 'a';
+    hits_per_index[index]++;
+  }
+  EXPECT_NEAR(hits_per_index[0], 1000, 50);
+  EXPECT_NEAR(hits_per_index[1], 2000, 100);
+  EXPECT_NEAR(hits_per_index[2], 3000, 150);
+  EXPECT_NEAR(hits_per_index[3], 4000, 200);
+}
+
 TEST(latestRouteTest, thread_local_failover) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
@@ -83,21 +109,36 @@ TEST(latestRouteTest, thread_local_failover) {
   folly::dynamic settings = folly::dynamic::object;
   settings["failover_count"] = 3;
   settings["thread_local_failover"] = true;
+  // verify we don't always get the same index
+
   auto rh = makeLatestRoute(settings, get_route_handles(test_handles),
-                            /* threadId */ 1);
-
-  size_t curHash = folly::hash::hash_combine(0, globals::hostid());
-  char first = folly::hash::hash_combine(curHash, 1) % test_handles.size();
-
-  // Verify it respects threadId correctly
-  EXPECT_EQ(std::string(1, 'a' + first), replyFor(*rh, "key"));
+                            /* threadId */ 0);
+  auto last_thread_reply = replyFor(*rh, "key");
+  auto replies_differ = false;
+  for (int i = 1; i < 10; i++) {
+    rh = makeLatestRoute(settings, get_route_handles(test_handles),
+                              /* threadId */ i);
+    auto thread_reply = replyFor(*rh, "key");
+    if (thread_reply != last_thread_reply) {
+      replies_differ = true;
+      break;
+    }
+    last_thread_reply = thread_reply;
+  }
+  EXPECT_TRUE(replies_differ);
 
   // Disable thread_local_failover
   settings["thread_local_failover"] = false;
-  auto rh2 = makeLatestRoute(settings, get_route_handles(test_handles),
-                             /* threadId */ 1);
-  char second = curHash % test_handles.size();
-  EXPECT_EQ(std::string(1, 'a' + second), replyFor(*rh2, "key"));
+  rh = makeLatestRoute(settings, get_route_handles(test_handles),
+                            /* threadId */ 0);
+  last_thread_reply = replyFor(*rh, "key");
+  for (int i = 1; i < 10; i++) {
+    auto rh = makeLatestRoute(settings, get_route_handles(test_handles),
+                              /* threadId */ i);
+    auto thread_reply = replyFor(*rh, "key");
+    EXPECT_EQ(thread_reply, last_thread_reply);
+    last_thread_reply = thread_reply;
+  }
 }
 
 TEST(latestRouteTest, leasePairingNoName) {

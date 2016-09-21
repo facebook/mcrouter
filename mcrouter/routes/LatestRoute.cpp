@@ -12,6 +12,7 @@
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -24,22 +25,25 @@ std::vector<McrouterRouteHandlePtr>
 getTargets(std::vector<McrouterRouteHandlePtr> targets,
            size_t failoverCount,
            size_t threadId,
+           std::vector<double> weights,
            folly::StringPiece salt) {
   std::vector<McrouterRouteHandlePtr> failovers;
   failoverCount = std::min(failoverCount, targets.size());
-  size_t curHash = folly::hash::hash_combine(0, globals::hostid());
+  size_t hashKey = folly::hash::hash_combine(0, globals::hostid());
   if (threadId != 0) {
-    curHash = folly::hash::hash_combine(curHash, threadId);
+    hashKey = folly::hash::hash_combine(hashKey, threadId);
   }
   if (!salt.empty()) {
-    curHash = folly::Hash()(curHash, salt);
+    hashKey = folly::Hash()(hashKey, salt);
   }
   for (size_t i = 0; i < failoverCount; ++i) {
-    auto id = curHash % targets.size();
+    auto id = weightedCh3Hash(folly::to<std::string>(hashKey), weights);
     failovers.push_back(std::move(targets[id]));
-    std::swap(targets[id], targets[targets.size() - 1]);
+    std::swap(targets[id], targets.back());
     targets.pop_back();
-    curHash = folly::hash::hash_combine(curHash, i);
+    std::swap(weights[id], weights.back());
+    weights.pop_back();
+    hashKey = folly::hash::hash_combine(hashKey, i);
   }
   return failovers;
 }
@@ -78,8 +82,15 @@ McrouterRouteHandlePtr makeLatestRoute(
     }
   }
 
+  std::vector<double> weights;
+  if (!json.isObject() || !json.count("weights")) {
+    weights.resize(targets.size(), 1.0);
+  } else {
+    weights = ch3wParseWeights(json, targets.size());
+  }
   return makeFailoverRoute(json, getTargets(std::move(targets), failoverCount,
-      failoverThreadId, salt));
+                                            failoverThreadId,
+                                            std::move(weights), salt));
 }
 
 McrouterRouteHandlePtr makeLatestRoute(

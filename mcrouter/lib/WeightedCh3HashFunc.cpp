@@ -22,6 +22,26 @@ const size_t kNumTries = 32;
 const uint32_t kHashSeed = 0xface2014;
 }  // anonymous namespace
 
+std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n) {
+  std::vector<double> weights;
+  checkLogic(json.isObject() && json.count("weights"),
+             "WeightedCh3HashFunc: not an object or no weights");
+  checkLogic(json["weights"].isArray(),
+             "WeightedCh3HashFunc: weights is not array");
+  const auto& jWeights = json["weights"];
+  LOG_IF(ERROR, jWeights.size() < n)
+    << "WeightedCh3HashFunc: CONFIG IS BROKEN!!! number of weights ("
+    << jWeights.size() << ") is smaller than number of servers (" << n
+    << "). Missing weights are set to 0.5";
+  for (size_t i = 0; i < std::min(n, jWeights.size()); ++i) {
+    const auto& weight = jWeights[i];
+    checkLogic(weight.isNumber(), "WeightedCh3HashFunc: weight is not number");
+    weights.push_back(weight.asDouble());
+  }
+  weights.resize(n, 0.5);
+  return weights;
+}
+
 size_t weightedCh3Hash(
   folly::StringPiece key, const std::vector<double>& weights) {
 
@@ -65,21 +85,7 @@ WeightedCh3HashFunc::WeightedCh3HashFunc(std::vector<double> weights)
 }
 
 WeightedCh3HashFunc::WeightedCh3HashFunc(const folly::dynamic& json, size_t n) {
-  checkLogic(json.isObject() && json.count("weights"),
-             "WeightedCh3HashFunc: not an object or no weights");
-  checkLogic(json["weights"].isArray(),
-             "WeightedCh3HashFunc: weights is not array");
-  const auto& jWeights = json["weights"];
-  LOG_IF(ERROR, jWeights.size() < n)
-    << "WeightedCh3HashFunc: CONFIG IS BROKEN!!! number of weights ("
-    << jWeights.size() << ") is smaller than number of servers (" << n
-    << "). Missing weights are set to 0.5";
-  for (size_t i = 0; i < std::min(n, jWeights.size()); ++i) {
-    const auto& weight = jWeights[i];
-    checkLogic(weight.isNumber(), "WeightedCh3HashFunc: weight is not number");
-    weights_.push_back(weight.asDouble());
-  }
-  weights_.resize(n, 0.5);
+  weights_ = ch3wParseWeights(json, n);
 }
 
 size_t WeightedCh3HashFunc::operator()(folly::StringPiece key) const {

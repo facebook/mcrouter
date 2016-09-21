@@ -48,6 +48,8 @@ namespace facebook { namespace memcache {
  * at 1 being perfectly consistent
  */
 
+std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n);
+
 size_t weightedCh3Hash(
   folly::StringPiece key, const std::vector<double>& weights);
 
