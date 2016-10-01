@@ -45,7 +45,7 @@ class Keys {
  public:
   constexpr Keys() = default;
 
-  explicit Keys(Storage&& key)
+  explicit Keys(Storage&& key) noexcept
     : key_(std::move(key)) { update(); }
 
   explicit Keys(folly::StringPiece sp)
@@ -53,6 +53,8 @@ class Keys {
 
   Keys(const Keys& other) = default;
   Keys& operator=(const Keys& other) = default;
+  Keys(Keys&& other) = default;
+  Keys& operator=(Keys&& other) = default;
 
   Keys& operator=(const Storage& key) {
     key_ = key;
@@ -60,7 +62,7 @@ class Keys {
     return *this;
   }
 
-  Keys& operator=(Storage&& key) {
+  Keys& operator=(Storage&& key) noexcept {
     key_ = std::move(key);
     update();
     return *this;
