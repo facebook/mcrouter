@@ -11,8 +11,8 @@
 
 namespace carbon {
 
-void CarbonProtocolReader::skip(const FieldType fieldType) {
-  switch (fieldType) {
+void CarbonProtocolReader::skip(const FieldType ft) {
+  switch (ft) {
     case FieldType::True:
     case FieldType::False: {
       break;
