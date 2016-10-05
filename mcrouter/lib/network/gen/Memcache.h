@@ -33,6 +33,7 @@ using MemcacheRequestList = carbon::List<
     McCasRequest,
     McDecrRequest,
     McDeleteRequest,
+    McExecRequest,
     McFlushAllRequest,
     McFlushReRequest,
     McGetRequest,
@@ -42,14 +43,13 @@ using MemcacheRequestList = carbon::List<
     McLeaseSetRequest,
     McMetagetRequest,
     McPrependRequest,
+    McQuitRequest,
     McReplaceRequest,
     McSetRequest,
+    McShutdownRequest,
+    McStatsRequest,
     McTouchRequest,
-    facebook::memcache::McExecRequest,
-    facebook::memcache::McQuitRequest,
-    facebook::memcache::McShutdownRequest,
-    facebook::memcache::McStatsRequest,
-    facebook::memcache::McVersionRequest>;
+    McVersionRequest>;
 
 } // detail
 

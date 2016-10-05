@@ -20,7 +20,7 @@
 #include <mcrouter/lib/fbi/cpp/util.h>
 #include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
-#include "HelloGoodbyeMessages.h"
+#include "mcrouter/lib/carbon/example/gen/HelloGoodbyeMessages.h"
 
 namespace hellogoodbye {
 
