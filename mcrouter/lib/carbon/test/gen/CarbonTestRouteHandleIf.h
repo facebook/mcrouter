@@ -43,7 +43,7 @@ class CarbonTestRouteHandleIf {
   virtual AnotherReply route(const AnotherRequest&) = 0;
   virtual TestReply route(const TestRequest&) = 0;
   virtual test2::util::YetAnotherReply route(
-      const carbon::test2::util::YetAnotherRequest&) = 0;
+      const test2::util::YetAnotherRequest&) = 0;
 
   virtual void traverse(
       const AnotherRequest&,
@@ -52,7 +52,7 @@ class CarbonTestRouteHandleIf {
       const TestRequest&,
       const RouteHandleTraverser<CarbonTestRouteHandleIf>&) const = 0;
   virtual void traverse(
-      const carbon::test2::util::YetAnotherRequest&,
+      const test2::util::YetAnotherRequest&,
       const RouteHandleTraverser<CarbonTestRouteHandleIf>&) const = 0;
 };
 
@@ -73,7 +73,7 @@ class CarbonTestRouteHandle : public CarbonTestRouteHandleIf {
     return route_.route(request);
   }
   test2::util::YetAnotherReply route(
-      const carbon::test2::util::YetAnotherRequest& request) override final {
+      const test2::util::YetAnotherRequest& request) override final {
     return route_.route(request);
   }
 
@@ -90,7 +90,7 @@ class CarbonTestRouteHandle : public CarbonTestRouteHandleIf {
     route_.traverse(request, traverser);
   }
   void traverse(
-      const carbon::test2::util::YetAnotherRequest& request,
+      const test2::util::YetAnotherRequest& request,
       const RouteHandleTraverser<CarbonTestRouteHandleIf>& traverser)
       const override final {
     route_.traverse(request, traverser);

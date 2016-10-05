@@ -30,12 +30,12 @@ namespace detail {
 using CarbonTestRequestList = carbon::List<
     AnotherRequest,
     TestRequest,
-    carbon::test2::util::YetAnotherRequest,
     facebook::memcache::McExecRequest,
     facebook::memcache::McQuitRequest,
     facebook::memcache::McShutdownRequest,
     facebook::memcache::McStatsRequest,
-    facebook::memcache::McVersionRequest>;
+    facebook::memcache::McVersionRequest,
+    test2::util::YetAnotherRequest>;
 
 } // detail
 

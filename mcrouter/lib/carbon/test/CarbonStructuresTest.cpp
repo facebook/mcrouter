@@ -218,11 +218,11 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testStruct().int32Member() = 12345;
   outRequest.testStruct().stringMember() = kShortString.str();
   outRequest.testStruct().enumMember() = SimpleEnum::One;
-  // Mixed-in struct
-  outRequest.asBase().int32Member() = 12345;
-  outRequest.asBase().stringMember() = kShortString.str();
-  outRequest.asBase().enumMember() = SimpleEnum::One;
-  outRequest.asBase().asBaseStruct().baseInt64Member() = 12345;
+  // Mixed-in structure accessors
+  outRequest.int32Member() = 12345;
+  outRequest.stringMember() = kShortString.str();
+  outRequest.enumMember() = SimpleEnum::One;
+  outRequest.baseInt64Member() = 12345;
   // List of strings
   outRequest.testList() = {"abcdefg", "xyz", kShortString.str(), longString()};
   // Force one optional field to not be serialized on the wire
@@ -232,6 +232,18 @@ TEST(CarbonTest, serializeDeserialize) {
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
+}
+
+TEST(CarbonTest, mixins) {
+  TestRequest request;
+  EXPECT_EQ(0, request.asBase().asBaseStruct().baseInt64Member());
+
+  request.asBase().asBaseStruct().baseInt64Member() = 12345;
+  // Exercise the different ways we can access the mixed-in baseInt64Member
+  EXPECT_EQ(12345, request.asBase().asBaseStruct().baseInt64Member());
+  EXPECT_EQ(12345, request.asBase().baseInt64Member());
+  EXPECT_EQ(12345, request.asBaseStruct().baseInt64Member());
+  EXPECT_EQ(12345, request.baseInt64Member());
 }
 
 TEST(CarbonTest, veryLongString) {

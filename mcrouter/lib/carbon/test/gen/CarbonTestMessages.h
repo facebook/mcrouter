@@ -62,6 +62,12 @@ class TestRequest : public carbon::RequestCommon {
   const SimpleStruct& asBase() const {
     return _carbon_simplestruct_;
   }
+  BaseStruct& asBaseStruct() {
+    return asBase().asBaseStruct();
+  }
+  const BaseStruct& asBaseStruct() const {
+    return asBase().asBaseStruct();
+  }
   int32_t int32Member() const {
     return _carbon_simplestruct_.int32Member();
   }
