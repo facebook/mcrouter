@@ -81,7 +81,7 @@ class McRouteHandleProvider :
   > accessPoints_;
 
   const std::unordered_map<folly::StringPiece, RouteFunc,
-                           folly::StringPieceHash> routeMap_;
+                           folly::Hash> routeMap_;
 
   const std::vector<McrouterRouteHandlePtr>&
   makePool(RouteHandleFactory<McrouterRouteHandleIf>& factory,
