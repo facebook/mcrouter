@@ -20,4 +20,4 @@
 #include <mcrouter/lib/fbi/cpp/util.h>
 #include <mcrouter/lib/network/CarbonMessageDispatcher.h>
 
-#include "BMessages.h"
+#include "mcrouter/lib/carbon/test/b/gen/BMessages.h"
