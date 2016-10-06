@@ -20,7 +20,7 @@ namespace memcache {
 inline void McVersionRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -39,7 +39,7 @@ inline void McVersionRequest::deserialize(
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -68,10 +68,10 @@ void McVersionRequest::visitFields(V&& v) const {
 inline void McVersionReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
-  writer.writeBinaryField(2 /* field id */, value());
-  writer.writeBinaryField(3 /* field id */, message());
-  writer.writeInt16Field(4 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, value());
+  writer.writeField(3 /* field id */, message());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -89,19 +89,19 @@ inline void McVersionReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       case 2: {
-        value() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(value());
         break;
       }
       case 3: {
-        message() = reader.readBinaryField<std::string>();
+        reader.readRawInto(message());
         break;
       }
       case 4: {
-        appSpecificErrorCode() = reader.readInt16Field();
+        reader.readRawInto(appSpecificErrorCode());
         break;
       }
       default: {
@@ -148,7 +148,7 @@ void McVersionReply::visitFields(V&& v) const {
 inline void McStatsRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -166,7 +166,7 @@ inline void McStatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -195,10 +195,10 @@ void McStatsRequest::visitFields(V&& v) const {
 inline void McStatsReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
-  writer.writeBinaryField(2 /* field id */, message());
-  writer.writeVectorField<std::string>(3 /* field id */, stats());
-  writer.writeInt16Field(4 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, stats());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -216,19 +216,19 @@ inline void McStatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       case 2: {
-        message() = reader.readBinaryField<std::string>();
+        reader.readRawInto(message());
         break;
       }
       case 3: {
-        stats() = reader.readVectorField<std::string>();
+        reader.readRawInto(stats());
         break;
       }
       case 4: {
-        appSpecificErrorCode() = reader.readInt16Field();
+        reader.readRawInto(appSpecificErrorCode());
         break;
       }
       default: {
@@ -275,7 +275,7 @@ void McStatsReply::visitFields(V&& v) const {
 inline void McShutdownRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -294,7 +294,7 @@ inline void McShutdownRequest::deserialize(
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -323,9 +323,9 @@ void McShutdownRequest::visitFields(V&& v) const {
 inline void McShutdownReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
-  writer.writeBinaryField(2 /* field id */, message());
-  writer.writeInt16Field(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -343,15 +343,15 @@ inline void McShutdownReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       case 2: {
-        message() = reader.readBinaryField<std::string>();
+        reader.readRawInto(message());
         break;
       }
       case 3: {
-        appSpecificErrorCode() = reader.readInt16Field();
+        reader.readRawInto(appSpecificErrorCode());
         break;
       }
       default: {
@@ -392,7 +392,7 @@ void McShutdownReply::visitFields(V&& v) const {
 inline void McQuitRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -410,7 +410,7 @@ inline void McQuitRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -438,9 +438,9 @@ void McQuitRequest::visitFields(V&& v) const {
 
 inline void McQuitReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
-  writer.writeBinaryField(2 /* field id */, message());
-  writer.writeInt16Field(3 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
+  writer.writeField(3 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -458,15 +458,15 @@ inline void McQuitReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       case 2: {
-        message() = reader.readBinaryField<std::string>();
+        reader.readRawInto(message());
         break;
       }
       case 3: {
-        appSpecificErrorCode() = reader.readInt16Field();
+        reader.readRawInto(appSpecificErrorCode());
         break;
       }
       default: {
@@ -507,7 +507,7 @@ void McQuitReply::visitFields(V&& v) const {
 inline void McExecRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -525,7 +525,7 @@ inline void McExecRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -553,10 +553,10 @@ void McExecRequest::visitFields(V&& v) const {
 
 inline void McExecReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
-  writer.writeBinaryField(2 /* field id */, response());
-  writer.writeBinaryField(3 /* field id */, message());
-  writer.writeInt16Field(4 /* field id */, appSpecificErrorCode());
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, response());
+  writer.writeField(3 /* field id */, message());
+  writer.writeField(4 /* field id */, appSpecificErrorCode());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -574,19 +574,19 @@ inline void McExecReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       case 2: {
-        response() = reader.readBinaryField<std::string>();
+        reader.readRawInto(response());
         break;
       }
       case 3: {
-        message() = reader.readBinaryField<std::string>();
+        reader.readRawInto(message());
         break;
       }
       case 4: {
-        appSpecificErrorCode() = reader.readInt16Field();
+        reader.readRawInto(appSpecificErrorCode());
         break;
       }
       default: {

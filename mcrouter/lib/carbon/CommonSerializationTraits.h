@@ -22,12 +22,12 @@ namespace carbon {
 template <class Storage>
 struct SerializationTraits<Keys<Storage>> {
   static Keys<Storage> read(carbon::CarbonProtocolReader& reader) {
-    return Keys<Storage>(reader.readBinaryField<Storage>());
+    return Keys<Storage>(reader.readRaw<Storage>());
   }
 
   static void write(
       const Keys<Storage>& key, carbon::CarbonProtocolWriter& writer) {
-    writer.writeBinary(key.raw());
+    writer.writeRaw(key.raw());
   }
 
   static bool isEmpty(const Keys<Storage>& key) {
@@ -39,12 +39,12 @@ struct SerializationTraits<Keys<Storage>> {
 template <class T>
 struct SerializationTraits<folly::Optional<T>> {
   static folly::Optional<T> read(carbon::CarbonProtocolReader& reader) {
-    return folly::Optional<T>(reader.readBinaryField<T>());
+    return folly::Optional<T>(reader.readRaw<T>());
   }
 
   static void write(
       const folly::Optional<T>& opt, carbon::CarbonProtocolWriter& writer) {
-    writer.writeBinary(*opt);
+    writer.writeRaw(*opt);
   }
 
   static bool isEmpty(const folly::Optional<T>& opt) {

@@ -18,31 +18,31 @@ void CarbonProtocolReader::skip(const FieldType ft) {
       break;
     }
     case FieldType::Int8: {
-      readInt8Field();
+      readRaw<int8_t>();
       break;
     }
     case FieldType::Int16: {
-      readInt16Field();
+      readRaw<int16_t>();
       break;
     }
     case FieldType::Int32: {
-      readInt32Field();
+      readRaw<int32_t>();
       break;
     }
     case FieldType::Int64: {
-      readInt64Field();
+      readRaw<int64_t>();
       break;
     }
     case FieldType::Double: {
-      readDoubleField();
+      readRaw<double>();
       break;
     }
     case FieldType::Float: {
-      readFloatField();
+      readRaw<float>();
       break;
     }
     case FieldType::Binary: {
-      readBinaryField<std::string>();
+      readRaw<std::string>();
       break;
     }
     case FieldType::List: {

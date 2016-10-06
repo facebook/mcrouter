@@ -20,46 +20,46 @@ namespace test {
 
 inline void ManyFields::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeBinaryField(1 /* field id */, buf1());
-  writer.writeBinaryField(2 /* field id */, buf2());
-  writer.writeBinaryField(3 /* field id */, buf3());
-  writer.writeBinaryField(4 /* field id */, buf4());
-  writer.writeBinaryField(5 /* field id */, buf5());
-  writer.writeBinaryField(6 /* field id */, buf6());
-  writer.writeBinaryField(7 /* field id */, buf7());
-  writer.writeBinaryField(8 /* field id */, buf8());
-  writer.writeBinaryField(9 /* field id */, buf9());
-  writer.writeBinaryField(10 /* field id */, buf10());
-  writer.writeBinaryField(11 /* field id */, buf11());
-  writer.writeBinaryField(12 /* field id */, buf12());
-  writer.writeBinaryField(13 /* field id */, buf13());
-  writer.writeBinaryField(14 /* field id */, buf14());
-  writer.writeBinaryField(15 /* field id */, buf15());
-  writer.writeBinaryField(16 /* field id */, buf16());
-  writer.writeBinaryField(17 /* field id */, buf17());
-  writer.writeBinaryField(18 /* field id */, buf18());
-  writer.writeBinaryField(19 /* field id */, buf19());
-  writer.writeBinaryField(20 /* field id */, buf20());
-  writer.writeBinaryField(21 /* field id */, buf21());
-  writer.writeBinaryField(22 /* field id */, buf22());
-  writer.writeBinaryField(23 /* field id */, buf23());
-  writer.writeBinaryField(24 /* field id */, buf24());
-  writer.writeBinaryField(25 /* field id */, buf25());
-  writer.writeBinaryField(26 /* field id */, buf26());
-  writer.writeBinaryField(27 /* field id */, buf27());
-  writer.writeBinaryField(28 /* field id */, buf28());
-  writer.writeBinaryField(29 /* field id */, buf29());
-  writer.writeBinaryField(30 /* field id */, buf30());
-  writer.writeBinaryField(31 /* field id */, buf31());
-  writer.writeBinaryField(32 /* field id */, buf32());
-  writer.writeBinaryField(33 /* field id */, buf33());
-  writer.writeBinaryField(34 /* field id */, buf34());
-  writer.writeBinaryField(35 /* field id */, buf35());
-  writer.writeBinaryField(36 /* field id */, buf36());
-  writer.writeBinaryField(37 /* field id */, buf37());
-  writer.writeBinaryField(38 /* field id */, buf38());
-  writer.writeBinaryField(39 /* field id */, buf39());
-  writer.writeBinaryField(40 /* field id */, buf40());
+  writer.writeField(1 /* field id */, buf1());
+  writer.writeField(2 /* field id */, buf2());
+  writer.writeField(3 /* field id */, buf3());
+  writer.writeField(4 /* field id */, buf4());
+  writer.writeField(5 /* field id */, buf5());
+  writer.writeField(6 /* field id */, buf6());
+  writer.writeField(7 /* field id */, buf7());
+  writer.writeField(8 /* field id */, buf8());
+  writer.writeField(9 /* field id */, buf9());
+  writer.writeField(10 /* field id */, buf10());
+  writer.writeField(11 /* field id */, buf11());
+  writer.writeField(12 /* field id */, buf12());
+  writer.writeField(13 /* field id */, buf13());
+  writer.writeField(14 /* field id */, buf14());
+  writer.writeField(15 /* field id */, buf15());
+  writer.writeField(16 /* field id */, buf16());
+  writer.writeField(17 /* field id */, buf17());
+  writer.writeField(18 /* field id */, buf18());
+  writer.writeField(19 /* field id */, buf19());
+  writer.writeField(20 /* field id */, buf20());
+  writer.writeField(21 /* field id */, buf21());
+  writer.writeField(22 /* field id */, buf22());
+  writer.writeField(23 /* field id */, buf23());
+  writer.writeField(24 /* field id */, buf24());
+  writer.writeField(25 /* field id */, buf25());
+  writer.writeField(26 /* field id */, buf26());
+  writer.writeField(27 /* field id */, buf27());
+  writer.writeField(28 /* field id */, buf28());
+  writer.writeField(29 /* field id */, buf29());
+  writer.writeField(30 /* field id */, buf30());
+  writer.writeField(31 /* field id */, buf31());
+  writer.writeField(32 /* field id */, buf32());
+  writer.writeField(33 /* field id */, buf33());
+  writer.writeField(34 /* field id */, buf34());
+  writer.writeField(35 /* field id */, buf35());
+  writer.writeField(36 /* field id */, buf36());
+  writer.writeField(37 /* field id */, buf37());
+  writer.writeField(38 /* field id */, buf38());
+  writer.writeField(39 /* field id */, buf39());
+  writer.writeField(40 /* field id */, buf40());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -77,163 +77,163 @@ inline void ManyFields::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        buf1() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf1());
         break;
       }
       case 2: {
-        buf2() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf2());
         break;
       }
       case 3: {
-        buf3() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf3());
         break;
       }
       case 4: {
-        buf4() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf4());
         break;
       }
       case 5: {
-        buf5() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf5());
         break;
       }
       case 6: {
-        buf6() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf6());
         break;
       }
       case 7: {
-        buf7() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf7());
         break;
       }
       case 8: {
-        buf8() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf8());
         break;
       }
       case 9: {
-        buf9() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf9());
         break;
       }
       case 10: {
-        buf10() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf10());
         break;
       }
       case 11: {
-        buf11() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf11());
         break;
       }
       case 12: {
-        buf12() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf12());
         break;
       }
       case 13: {
-        buf13() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf13());
         break;
       }
       case 14: {
-        buf14() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf14());
         break;
       }
       case 15: {
-        buf15() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf15());
         break;
       }
       case 16: {
-        buf16() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf16());
         break;
       }
       case 17: {
-        buf17() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf17());
         break;
       }
       case 18: {
-        buf18() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf18());
         break;
       }
       case 19: {
-        buf19() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf19());
         break;
       }
       case 20: {
-        buf20() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf20());
         break;
       }
       case 21: {
-        buf21() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf21());
         break;
       }
       case 22: {
-        buf22() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf22());
         break;
       }
       case 23: {
-        buf23() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf23());
         break;
       }
       case 24: {
-        buf24() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf24());
         break;
       }
       case 25: {
-        buf25() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf25());
         break;
       }
       case 26: {
-        buf26() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf26());
         break;
       }
       case 27: {
-        buf27() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf27());
         break;
       }
       case 28: {
-        buf28() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf28());
         break;
       }
       case 29: {
-        buf29() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf29());
         break;
       }
       case 30: {
-        buf30() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf30());
         break;
       }
       case 31: {
-        buf31() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf31());
         break;
       }
       case 32: {
-        buf32() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf32());
         break;
       }
       case 33: {
-        buf33() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf33());
         break;
       }
       case 34: {
-        buf34() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf34());
         break;
       }
       case 35: {
-        buf35() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf35());
         break;
       }
       case 36: {
-        buf36() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf36());
         break;
       }
       case 37: {
-        buf37() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf37());
         break;
       }
       case 38: {
-        buf38() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf38());
         break;
       }
       case 39: {
-        buf39() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf39());
         break;
       }
       case 40: {
-        buf40() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(buf40());
         break;
       }
       default: {

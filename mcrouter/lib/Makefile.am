@@ -49,10 +49,8 @@ libmcrouter_a_SOURCES = \
   carbon/CarbonQueueAppender.cpp \
   carbon/CarbonQueueAppender.h \
   carbon/CarbonProtocolCommon.h \
-  carbon/CarbonProtocolReader-inl.h \
   carbon/CarbonProtocolReader.cpp \
   carbon/CarbonProtocolReader.h \
-  carbon/CarbonProtocolWriter-inl.h \
   carbon/CarbonProtocolWriter.h \
   carbon/CommonSerializationTraits.h \
   carbon/Keys-inl.h \

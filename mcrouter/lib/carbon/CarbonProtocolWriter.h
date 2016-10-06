@@ -29,152 +29,104 @@
 namespace carbon {
 
 class CarbonProtocolWriter {
- private:
-  template <class T>
-  void writeRaw(const T t);
-
-  void writeRaw(const std::string& s) {
-    writeBinary(s);
-  }
-
-  void writeRaw(const folly::IOBuf& buf) {
-    writeBinary(buf);
-  }
-
-  template <class>
-  struct Enable {
-    using type = int;
-  };
-
  public:
   explicit CarbonProtocolWriter(CarbonQueueAppenderStorage& storage)
       : appender_(&storage, 0 /* unused */) {}
 
-  // The write*Field() member functions serialize the field header (field type
+  // The writeField() member functions serialize the field header (field type
   // and field ID information) followed by the serialized value.
   // For scalar types, no serialization is done when the field value is zero.
   // For binary types, no serialization is done when the binary data has zero
   // length.
-  void writeBoolField(const int16_t id, const bool b) {
+
+  void writeField(const int16_t id, const bool b) {
     if (!b) {
       return;
     }
     writeFieldHeader(b ? FieldType::True : FieldType::False, id);
   }
 
-  void writeBoolRaw(const bool b) {
-    writeByte(b ? FieldType::True : FieldType::False);
-  }
-
-  void writeCharField(const int16_t id, const char c) {
+  void writeField(const int16_t id, const char c) {
     if (!c) {
       return;
     }
     writeFieldHeader(FieldType::Int8, id);
-    writeCharRaw(c);
+    writeRaw(c);
   }
 
-  void writeCharRaw(const char c) {
-    writeByte(c);
-  }
-
-  void writeInt8Field(const int16_t id, const int8_t i) {
+  void writeField(const int16_t id, const int8_t i) {
     if (!i) {
       return;
     }
     writeFieldHeader(FieldType::Int8, id);
-    writeInt8Raw(i);
+    writeRaw(i);
   }
 
-  void writeInt8Raw(const int8_t i) {
-    writeByte(i);
-  }
-
-  void writeInt16Field(const int16_t id, const int16_t i) {
+  void writeField(const int16_t id, const int16_t i) {
     if (!i) {
       return;
     }
     writeFieldHeader(FieldType::Int16, id);
-    writeInt16Raw(i);
+    writeRaw(i);
   }
 
-  void writeInt16Raw(const int16_t i) {
-    writeZigzagVarint(i);
-  }
-
-  void writeInt32Field(const int16_t id, const int32_t i) {
+  void writeField(const int16_t id, const int32_t i) {
     if (!i) {
       return;
     }
     writeFieldHeader(FieldType::Int32, id);
-    writeInt32Raw(i);
+    writeRaw(i);
   }
 
-  void writeInt32Raw(const int32_t i) {
-    writeZigzagVarint(i);
-  }
-
-  void writeInt64Field(const int16_t id, const int64_t i) {
+  void writeField(const int16_t id, const int64_t i) {
     if (!i) {
       return;
     }
     writeFieldHeader(FieldType::Int64, id);
-    writeInt64Raw(i);
+    writeRaw(i);
   }
 
-  void writeInt64Raw(const int64_t i) {
-    writeZigzagVarint(i);
-  }
-
-  void writeUInt8Field(const int16_t id, const uint8_t ui) {
+  void writeField(const int16_t id, const uint8_t ui) {
     if (!ui) {
       return;
     }
     writeFieldHeader(FieldType::Int8, id);
-    writeUInt8Raw(ui);
+    writeRaw(ui);
   }
 
-  void writeUInt8Raw(const uint8_t ui) {
-    writeByte(ui);
-  }
-
-  void writeUInt16Field(const int16_t id, const uint16_t ui) {
+  void writeField(const int16_t id, const uint16_t ui) {
     if (!ui) {
       return;
     }
     writeFieldHeader(FieldType::Int16, id);
-    writeUInt16Raw(ui);
+    writeRaw(ui);
   }
 
-  void writeUInt16Raw(const uint16_t ui) {
-    writeZigzagVarint(ui);
-  }
-
-  void writeUInt32Field(const int16_t id, const uint32_t ui) {
+  void writeField(const int16_t id, const uint32_t ui) {
     if (!ui) {
       return;
     }
     writeFieldHeader(FieldType::Int32, id);
-    writeUInt32Raw(ui);
+    writeRaw(ui);
   }
 
-  void writeUInt32Raw(const uint32_t ui) {
-    writeZigzagVarint(ui);
-  }
-
-  void writeUInt64Field(const int16_t id, const uint64_t ui) {
+  void writeField(const int16_t id, const uint64_t ui) {
     if (!ui) {
       return;
     }
     writeFieldHeader(FieldType::Int64, id);
-    writeUInt64Raw(ui);
+    writeRaw(ui);
   }
 
-  void writeUInt64Raw(const uint64_t ui) {
-    writeZigzagVarint(ui);
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, void>::type writeField(
+      const int16_t id,
+      const T e) {
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    writeField(id, static_cast<UnderlyingType>(e));
   }
 
-  void writeFloatField(const int16_t id, const float f) {
+  void writeField(const int16_t id, const float f) {
     static_assert(
         sizeof(float) == sizeof(uint32_t),
         "Carbon doubles can only be used on platforms where sizeof(float)"
@@ -187,16 +139,10 @@ class CarbonProtocolWriter {
       return;
     }
     writeFieldHeader(FieldType::Float, id);
-    writeFloatRaw(f);
+    writeRaw(f);
   }
 
-  void writeFloatRaw(const float f) {
-    uint32_t bits;
-    std::memcpy(std::addressof(bits), std::addressof(f), sizeof(bits));
-    appender_.writeBE(bits);
-  }
-
-  void writeDoubleField(const int16_t id, const double d) {
+  void writeField(const int16_t id, const double d) {
     static_assert(
         sizeof(double) == sizeof(uint64_t),
         "Carbon doubles can only be used on platforms where sizeof(double)"
@@ -209,84 +155,44 @@ class CarbonProtocolWriter {
       return;
     }
     writeFieldHeader(FieldType::Double, id);
-    writeDoubleRaw(d);
+    writeRaw(d);
   }
 
-  void writeDoubleRaw(const double d) {
-    uint64_t bits;
-    std::memcpy(std::addressof(bits), std::addressof(d), sizeof(bits));
-    appender_.writeBE(bits);
-  }
-
-  void writeResultField(const int16_t id, const Result res) {
+  void writeField(const int16_t id, const Result res) {
     static_assert(
         sizeof(Result) == sizeof(mc_res_t),
         "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
     // Note that this actually narrows mc_res_t from int to int16_t
-    writeInt16Field(id, static_cast<int16_t>(res));
+    writeField(id, static_cast<int16_t>(res));
   }
 
-  // Binary types
-  void writeBinary(const uint8_t* buf, const size_t len) {
-    facebook::memcache::checkRuntime(
-        len <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeBinary() too long (len = {})", len);
-    writeVarint(static_cast<uint32_t>(len));
-    appender_.push(buf, len);
-  }
-
-  void
-  writeBinaryField(const int16_t id, const uint8_t* buf, const size_t len) {
-    if (len == 0) {
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, std::string, folly::IOBuf>::value, void>::type
+      writeField(const int16_t id, const T& t) {
+    if (t.empty()) {
       return;
     }
     writeFieldHeader(FieldType::Binary, id);
-    writeBinary(buf, len);
+    writeRaw(t);
   }
 
-  void writeBinary(const folly::StringPiece sp) {
-    writeBinary(reinterpret_cast<const uint8_t*>(sp.data()), sp.size());
-  }
-
-  void writeBinaryField(const int16_t id, const folly::StringPiece sp) {
-    writeBinaryField(
-        id, reinterpret_cast<const uint8_t*>(sp.data()), sp.size());
-  }
-
-  void writeBinary(const std::string& s) {
-    writeBinary(reinterpret_cast<const uint8_t*>(s.data()), s.size());
-  }
-
-  void writeBinaryField(const int16_t id, const std::string& s) {
-    writeBinaryField(id, reinterpret_cast<const uint8_t*>(s.data()), s.size());
-  }
-
-  void writeBinary(const folly::IOBuf& buf) {
-    const auto len = buf.computeChainDataLength();
+  template <class T>
+  void writeField(const int16_t id, const std::vector<T>& v) {
     facebook::memcache::checkRuntime(
-        len <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeBinary() too long (len = {})", len);
-    writeVarint(static_cast<uint32_t>(len));
-    appender_.insert(buf);
-  }
-
-  void writeBinaryField(const int16_t id, const folly::IOBuf& buf) {
-    const auto len = buf.computeChainDataLength();
-    if (len == 0) {
-      return;
-    }
-    facebook::memcache::checkRuntime(
-        len <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeBinary() too long (len = {})", len);
-    writeFieldHeader(FieldType::Binary, id);
-    writeVarint(static_cast<uint32_t>(len));
-    appender_.insert(buf);
+        v.size() <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeField() for vector too long (len = {})",
+        v.size());
+    writeFieldHeader(FieldType::List, id);
+    writeRaw(v);
   }
 
   // Serialize user-provided types that have suitable specializations of
   // carbon::SerializationTraits<>.
   template <class T>
-  void writeUserTypeField(const int16_t id, const T& data) {
+  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
+      type
+      writeField(const int16_t id, const T& data) {
     if (!SerializationTraits<T>::isEmpty(data)) {
       writeFieldHeader(FieldType::Binary, id);
       SerializationTraits<T>::write(data, *this);
@@ -319,34 +225,6 @@ class CarbonProtocolWriter {
     }
   }
 
-  template <class T, typename Enable<decltype(&T::serialize)>::type = 0>
-  void writeVectorField(const int16_t id, const std::vector<T>& v) {
-    facebook::memcache::checkRuntime(
-        v.size() <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeVectorField() too long (len = {})", v.size());
-    writeFieldHeader(FieldType::List, id);
-    writeListSizeAndInnerType(
-        static_cast<uint32_t>(v.size()), FieldType::Struct);
-    for (const auto& e : v) {
-      e.serialize(*this);
-    }
-  }
-
-  // Hack to enable only for basic types
-  template <class T, FieldType F = detail::TypeToField<T>::fieldType>
-  void writeVectorField(const int16_t id, const std::vector<T>& v) {
-    facebook::memcache::checkRuntime(
-        v.size() <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeVectorField() too long (len = {})", v.size());
-    writeFieldHeader(FieldType::List, id);
-    writeListSizeAndInnerType(
-        static_cast<uint32_t>(v.size()), detail::TypeToField<T>::fieldType);
-    // TODO Copy small types?
-    for (const auto& e : v) {
-      writeRaw(e);
-    }
-  }
-
   void writeFieldHeader(const FieldType type, const int16_t id) {
     auto typeByte = static_cast<uint8_t>(type);
     if (id > lastFieldId_ && (id - lastFieldId_) <= 0xf) {
@@ -356,6 +234,84 @@ class CarbonProtocolWriter {
       writeTwoBytes(static_cast<uint16_t>(id));
     }
     lastFieldId_ = id;
+  }
+
+  void writeRaw(const std::string& s) {
+    const size_t len = s.size();
+    facebook::memcache::checkRuntime(
+        len <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeRaw() too long (len = {})",
+        len);
+    writeVarint(static_cast<uint32_t>(len));
+    appender_.push(reinterpret_cast<const uint8_t*>(s.data()), len);
+  }
+
+  void writeRaw(const folly::IOBuf& buf) {
+    const auto len = buf.computeChainDataLength();
+    facebook::memcache::checkRuntime(
+        len <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeRaw() too long (len = {})",
+        len);
+    writeVarint(static_cast<uint32_t>(len));
+    appender_.insert(buf);
+  }
+
+  void writeRaw(const bool b) {
+    writeByte(b ? FieldType::True : FieldType::False);
+  }
+
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, char, int8_t, uint8_t>::value, void>::type
+      writeRaw(const T value) {
+    writeByte(value);
+  }
+
+  template <class T>
+  typename std::enable_if<
+      folly::
+          IsOneOf<T, int16_t, int32_t, int64_t, uint16_t, uint32_t, uint64_t>::
+              value,
+      void>::type
+  writeRaw(const T value) {
+    writeZigzagVarint(value);
+  }
+
+  void writeRaw(const float f) {
+    uint32_t bits;
+    std::memcpy(std::addressof(bits), std::addressof(f), sizeof(bits));
+    appender_.writeBE(bits);
+  }
+
+  void writeRaw(const double d) {
+    uint64_t bits;
+    std::memcpy(std::addressof(bits), std::addressof(d), sizeof(bits));
+    appender_.writeBE(bits);
+  }
+
+  template <class T>
+  void writeRaw(const std::vector<T>& v) {
+    facebook::memcache::checkRuntime(
+        v.size() <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeRaw() for vector too long (len = {})",
+        v.size());
+    writeListSizeAndInnerType(static_cast<uint32_t>(v.size()), FieldType::List);
+    for (const auto& e : v) {
+      writeRaw(e);
+    }
+  }
+
+  template <class T>
+  typename std::enable_if<detail::HasSerialize<T>::value, void>::type writeRaw(
+      const T& data) {
+    data.serialize(*this);
+  }
+
+  template <class T>
+  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
+      type
+      writeRaw(const T& data) {
+    SerializationTraits<T>::write(data, *this);
   }
 
  private:
@@ -425,6 +381,3 @@ class CarbonProtocolWriter {
 };
 
 } // carbon
-
-// TODO Move more to inl?
-#include "CarbonProtocolWriter-inl.h"

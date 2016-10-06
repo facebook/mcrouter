@@ -19,7 +19,7 @@ namespace test {
 
 inline void BaseStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeInt64Field(1 /* field id */, baseInt64Member());
+  writer.writeField(1 /* field id */, baseInt64Member());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -37,7 +37,7 @@ inline void BaseStruct::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        baseInt64Member() = reader.readInt64Field();
+        reader.readRawInto(baseInt64Member());
         break;
       }
       default: {
@@ -66,11 +66,10 @@ void BaseStruct::visitFields(V&& v) const {
 inline void SimpleStruct::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeInt32Field(1 /* field id */, int32Member());
-  writer.writeBinaryField(2 /* field id */, stringMember());
-  writer.writeInt64Field(3 /* field id */, static_cast<int64_t>(enumMember()));
-  writer.writeVectorField<test2::util::SimpleStruct>(
-      4 /* field id */, vectorMember());
+  writer.writeField(1 /* field id */, int32Member());
+  writer.writeField(2 /* field id */, stringMember());
+  writer.writeField(3 /* field id */, enumMember());
+  writer.writeField(4 /* field id */, vectorMember());
   writer.writeFieldHeader(carbon::FieldType::Struct, -1);
   _carbon_basestruct_.serialize(writer);
   writer.writeStructEnd();
@@ -94,20 +93,19 @@ inline void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 1: {
-        int32Member() = reader.readInt32Field();
+        reader.readRawInto(int32Member());
         break;
       }
       case 2: {
-        stringMember() = reader.readBinaryField<std::string>();
+        reader.readRawInto(stringMember());
         break;
       }
       case 3: {
-        enumMember() =
-            static_cast<test2::util::SimpleEnum>(reader.readInt64Field());
+        reader.readRawInto(enumMember());
         break;
       }
       case 4: {
-        vectorMember() = reader.readVectorField<test2::util::SimpleStruct>();
+        reader.readRawInto(vectorMember());
         break;
       }
       default: {

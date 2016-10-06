@@ -9,16 +9,20 @@
  */
 #pragma once
 
-#include <limits>
 #include <stdint.h>
+#include <algorithm>
+#include <cstring>
+#include <limits>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 #include <folly/io/Cursor.h>
+#include <folly/io/IOBuf.h>
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolCommon.h"
+#include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Result.h"
 #include "mcrouter/lib/carbon/SerializationTraits.h"
@@ -30,69 +34,82 @@ namespace carbon {
 using CarbonCursor = folly::io::Cursor;
 
 class CarbonProtocolReader {
- private:
-  template <class T>
-  T readRaw();
-
-  template <class>
-  struct Enable {
-    using type = int;
-  };
-
  public:
   explicit CarbonProtocolReader(CarbonCursor& cursor) : cursor_(cursor) {}
 
-  // The API of readBoolField() is different than other read*Field() member
+  template <class T>
+  void readRawInto(std::vector<T>& v) {
+    v.clear();
+    const auto pr = readVectorFieldSizeAndInnerType();
+    const auto len = pr.second;
+    v.reserve(len);
+    for (size_t i = 0; i < len; ++i) {
+      v.emplace_back(readRaw<T>());
+    }
+  }
+
+  template <
+      class T,
+      decltype(std::declval<CarbonProtocolWriter>().writeRaw(
+          std::declval<T>()))* = nullptr>
+  T readRaw() {
+    T t = T();
+    readRawInto(t);
+    return t;
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, void>::type readRawInto(
+      T& t) {
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    t = static_cast<T>(readRaw<UnderlyingType>());
+  }
+
+  template <class T>
+  typename std::enable_if<detail::HasSerialize<T>::value, void>::type
+  readRawInto(T& data) {
+    data.deserialize(*this);
+  }
+
+  template <class T>
+  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
+      type
+      readRawInto(T& data) {
+    data = SerializationTraits<T>::read(*this);
+  }
+
+  // The API of readRawInto() is different than other readRawInto() member
   // functions in order to avoid keeping state in the Reader, which would entail
   // maintaining some extra rarely executed branches.
-  bool readBoolField(const FieldType fieldType) {
+  void readRawInto(bool& b, const FieldType fieldType) {
     DCHECK(fieldType == FieldType::True || fieldType == FieldType::False);
-    return fieldType == FieldType::True ? true : false;
+    b = fieldType == FieldType::True;
   }
 
-  bool readBoolField() {
+  void readRawInto(bool& b) {
     const auto fieldType = static_cast<FieldType>(readByte());
     DCHECK(fieldType == FieldType::True || fieldType == FieldType::False);
-    return fieldType == FieldType::True ? true : false;
+    b = fieldType == FieldType::True;
   }
 
-  char readCharField() {
-    return readByte();
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, char, int8_t, uint8_t>::value, void>::type
+      readRawInto(T& t) {
+    t = readByte();
   }
 
-  int8_t readInt8Field() {
-    return readByte();
+  template <class T>
+  typename std::enable_if<
+      folly::
+          IsOneOf<T, int16_t, int32_t, int64_t, uint16_t, uint32_t, uint64_t>::
+              value,
+      void>::type
+  readRawInto(T& t) {
+    t = readZigzagVarint<T>();
   }
 
-  int16_t readInt16Field() {
-    return readZigzagVarint<int16_t>();
-  }
-
-  int32_t readInt32Field() {
-    return readZigzagVarint<int32_t>();
-  }
-
-  int64_t readInt64Field() {
-    return readZigzagVarint<int64_t>();
-  }
-
-  uint8_t readUInt8Field() {
-    return readByte();
-  }
-
-  uint16_t readUInt16Field() {
-    return readZigzagVarint<uint16_t>();
-  }
-
-  uint32_t readUInt32Field() {
-    return readZigzagVarint<uint32_t>();
-  }
-
-  uint64_t readUInt64Field() {
-    return readZigzagVarint<uint64_t>();
-  }
-
-  float readFloatField() {
+  void readRawInto(float& f) {
     static_assert(
         sizeof(float) == sizeof(uint32_t),
         "Carbon doubles can only be used on platforms where sizeof(float)"
@@ -102,12 +119,10 @@ class CarbonProtocolReader {
         "Carbon floats may only be used on platforms using IEC 559 floats");
 
     const auto bits = cursor_.template readBE<uint32_t>();
-    float rv;
-    std::memcpy(std::addressof(rv), std::addressof(bits), sizeof(rv));
-    return rv;
+    std::memcpy(std::addressof(f), std::addressof(bits), sizeof(f));
   }
 
-  double readDoubleField() {
+  void readRawInto(double& d) {
     static_assert(
         sizeof(double) == sizeof(uint64_t),
         "Carbon doubles can only be used on platforms where sizeof(double)"
@@ -117,26 +132,22 @@ class CarbonProtocolReader {
         "Carbon doubles may only be used on platforms using IEC 559 doubles");
 
     const auto bits = cursor_.template readBE<uint64_t>();
-    double rv;
-    std::memcpy(std::addressof(rv), std::addressof(bits), sizeof(rv));
-    return rv;
+    std::memcpy(std::addressof(d), std::addressof(bits), sizeof(d));
   }
 
-  Result readResultField() {
+  void readRawInto(Result& r) {
     static_assert(
         sizeof(Result) == sizeof(mc_res_t),
         "Carbon currently assumes sizeof(Result) == sizeof(int16_t)");
-    return static_cast<Result>(readInt16Field());
+    r = static_cast<Result>(readRaw<int16_t>());
   }
 
-  template <class T>
-  T readBinaryField();
+  void readRawInto(std::string& s) {
+    s = cursor_.readFixedString(readVarint<uint32_t>());
+  }
 
-  // Deserialize user-provided types that have suitable specializations of
-  // carbon::SerializationTraits<>.
-  template <class T>
-  T readUserTypeField() {
-    return SerializationTraits<T>::read(*this);
+  void readRawInto(folly::IOBuf& buf) {
+    cursor_.clone(buf, readVarint<uint32_t>());
   }
 
   void readStructBegin() {
@@ -147,31 +158,6 @@ class CarbonProtocolReader {
   void readStructEnd() {
     lastFieldId_ = nestedStructFieldIds_.back();
     nestedStructFieldIds_.pop_back();
-  }
-
-  template <class T, typename Enable<decltype(&T::deserialize)>::type = 0>
-  std::vector<T> readVectorField() {
-    const auto pr = readVectorFieldSizeAndInnerType();
-    const auto len = pr.second;
-    // TODO Validate type?
-    std::vector<T> v(len);
-    for (auto& e : v) {
-      e.deserialize(*this);
-    }
-    return v;
-  }
-
-  // Hack to enable only for basic types
-  template <class T, FieldType F = detail::TypeToField<T>::fieldType>
-  std::vector<T> readVectorField() {
-    const auto pr = readVectorFieldSizeAndInnerType();
-    const auto len = pr.second;
-    // TODO Validate type?
-    std::vector<T> v(len);
-    for (auto& e : v) {
-      e = readRaw<T>();
-    }
-    return v;
   }
 
   std::pair<FieldType, uint32_t> readVectorFieldSizeAndInnerType() {
@@ -252,6 +238,3 @@ class CarbonProtocolReader {
 };
 
 } // carbon
-
-// TODO Move more to inl
-#include "CarbonProtocolReader-inl.h"

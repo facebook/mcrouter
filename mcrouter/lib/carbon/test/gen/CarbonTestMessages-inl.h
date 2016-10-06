@@ -19,28 +19,28 @@ namespace test {
 
 inline void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
-  writer.writeInt64Field(2 /* field id */, static_cast<int64_t>(testEnum()));
-  writer.writeBoolField(3 /* field id */, testBool());
-  writer.writeCharField(4 /* field id */, testChar());
-  writer.writeInt8Field(5 /* field id */, testInt8());
-  writer.writeInt16Field(6 /* field id */, testInt16());
-  writer.writeInt32Field(7 /* field id */, testInt32());
-  writer.writeInt64Field(8 /* field id */, testInt64());
-  writer.writeUInt8Field(9 /* field id */, testUInt8());
-  writer.writeUInt16Field(10 /* field id */, testUInt16());
-  writer.writeUInt32Field(11 /* field id */, testUInt32());
-  writer.writeUInt64Field(12 /* field id */, testUInt64());
-  writer.writeFloatField(13 /* field id */, testFloat());
-  writer.writeDoubleField(14 /* field id */, testDouble());
-  writer.writeBinaryField(15 /* field id */, testShortString());
-  writer.writeBinaryField(16 /* field id */, testLongString());
-  writer.writeBinaryField(17 /* field id */, testIobuf());
+  writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, testEnum());
+  writer.writeField(3 /* field id */, testBool());
+  writer.writeField(4 /* field id */, testChar());
+  writer.writeField(5 /* field id */, testInt8());
+  writer.writeField(6 /* field id */, testInt16());
+  writer.writeField(7 /* field id */, testInt32());
+  writer.writeField(8 /* field id */, testInt64());
+  writer.writeField(9 /* field id */, testUInt8());
+  writer.writeField(10 /* field id */, testUInt16());
+  writer.writeField(11 /* field id */, testUInt32());
+  writer.writeField(12 /* field id */, testUInt64());
+  writer.writeField(13 /* field id */, testFloat());
+  writer.writeField(14 /* field id */, testDouble());
+  writer.writeField(15 /* field id */, testShortString());
+  writer.writeField(16 /* field id */, testLongString());
+  writer.writeField(17 /* field id */, testIobuf());
   writer.writeFieldHeader(carbon::FieldType::Struct, 18);
   testStruct().serialize(writer);
-  writer.writeVectorField<std::string>(19 /* field id */, testList());
-  writer.writeUserTypeField(20 /* field id */, testOptionalString());
-  writer.writeUserTypeField(21 /* field id */, testOptionalIobuf());
+  writer.writeField(19 /* field id */, testList());
+  writer.writeField(20 /* field id */, testOptionalString());
+  writer.writeField(21 /* field id */, testOptionalIobuf());
   writer.writeFieldHeader(carbon::FieldType::Struct, -1);
   _carbon_simplestruct_.serialize(writer);
   writer.writeStructEnd();
@@ -64,72 +64,71 @@ inline void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       case 2: {
-        testEnum() =
-            static_cast<test2::util::SimpleEnum>(reader.readInt64Field());
+        reader.readRawInto(testEnum());
         break;
       }
       case 3: {
-        testBool() = reader.readBoolField(fieldType);
+        reader.readRawInto(testBool(), fieldType);
         break;
       }
       case 4: {
-        testChar() = reader.readCharField();
+        reader.readRawInto(testChar());
         break;
       }
       case 5: {
-        testInt8() = reader.readInt8Field();
+        reader.readRawInto(testInt8());
         break;
       }
       case 6: {
-        testInt16() = reader.readInt16Field();
+        reader.readRawInto(testInt16());
         break;
       }
       case 7: {
-        testInt32() = reader.readInt32Field();
+        reader.readRawInto(testInt32());
         break;
       }
       case 8: {
-        testInt64() = reader.readInt64Field();
+        reader.readRawInto(testInt64());
         break;
       }
       case 9: {
-        testUInt8() = reader.readUInt8Field();
+        reader.readRawInto(testUInt8());
         break;
       }
       case 10: {
-        testUInt16() = reader.readUInt16Field();
+        reader.readRawInto(testUInt16());
         break;
       }
       case 11: {
-        testUInt32() = reader.readUInt32Field();
+        reader.readRawInto(testUInt32());
         break;
       }
       case 12: {
-        testUInt64() = reader.readUInt64Field();
+        reader.readRawInto(testUInt64());
         break;
       }
       case 13: {
-        testFloat() = reader.readFloatField();
+        reader.readRawInto(testFloat());
         break;
       }
       case 14: {
-        testDouble() = reader.readDoubleField();
+        reader.readRawInto(testDouble());
         break;
       }
       case 15: {
-        testShortString() = reader.readBinaryField<std::string>();
+        reader.readRawInto(testShortString());
         break;
       }
       case 16: {
-        testLongString() = reader.readBinaryField<std::string>();
+        reader.readRawInto(testLongString());
         break;
       }
       case 17: {
-        testIobuf() = reader.readBinaryField<folly::IOBuf>();
+        reader.readRawInto(testIobuf());
         break;
       }
       case 18: {
@@ -137,17 +136,15 @@ inline void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 19: {
-        testList() = reader.readVectorField<std::string>();
+        reader.readRawInto(testList());
         break;
       }
       case 20: {
-        testOptionalString() =
-            reader.readUserTypeField<folly::Optional<std::string>>();
+        reader.readRawInto(testOptionalString());
         break;
       }
       case 21: {
-        testOptionalIobuf() =
-            reader.readUserTypeField<folly::Optional<folly::IOBuf>>();
+        reader.readRawInto(testOptionalIobuf());
         break;
       }
       default: {
@@ -307,7 +304,7 @@ void TestRequest::visitFields(V&& v) const {
 
 inline void TestReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
+  writer.writeField(1 /* field id */, result());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -325,7 +322,7 @@ inline void TestReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       default: {

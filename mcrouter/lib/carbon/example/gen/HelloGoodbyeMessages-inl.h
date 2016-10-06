@@ -19,7 +19,7 @@ namespace hellogoodbye {
 inline void HelloRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -37,7 +37,7 @@ inline void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -65,7 +65,7 @@ void HelloRequest::visitFields(V&& v) const {
 
 inline void HelloReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
+  writer.writeField(1 /* field id */, result());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -83,7 +83,7 @@ inline void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       default: {
@@ -112,7 +112,7 @@ void HelloReply::visitFields(V&& v) const {
 inline void GoodbyeRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -130,7 +130,7 @@ inline void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -159,7 +159,7 @@ void GoodbyeRequest::visitFields(V&& v) const {
 inline void GoodbyeReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
+  writer.writeField(1 /* field id */, result());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -177,7 +177,7 @@ inline void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       default: {

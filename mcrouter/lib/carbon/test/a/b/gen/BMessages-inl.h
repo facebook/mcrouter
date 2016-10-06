@@ -21,7 +21,7 @@ namespace util {
 inline void SimpleStruct::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeInt64Field(1 /* field id */, member1());
+  writer.writeField(1 /* field id */, member1());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -39,7 +39,7 @@ inline void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        member1() = reader.readInt64Field();
+        reader.readRawInto(member1());
         break;
       }
       default: {
@@ -68,7 +68,7 @@ void SimpleStruct::visitFields(V&& v) const {
 inline void YetAnotherRequest::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeUserTypeField(1 /* field id */, key());
+  writer.writeField(1 /* field id */, key());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -87,7 +87,7 @@ inline void YetAnotherRequest::deserialize(
 
     switch (fieldId) {
       case 1: {
-        key() = reader.readUserTypeField<carbon::Keys<folly::IOBuf>>();
+        reader.readRawInto(key());
         break;
       }
       default: {
@@ -116,7 +116,7 @@ void YetAnotherRequest::visitFields(V&& v) const {
 inline void YetAnotherReply::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
-  writer.writeResultField(1 /* field id */, result());
+  writer.writeField(1 /* field id */, result());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -134,7 +134,7 @@ inline void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        result() = reader.readResultField();
+        reader.readRawInto(result());
         break;
       }
       default: {

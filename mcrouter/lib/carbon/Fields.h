@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/lib/carbon/SerializationTraits.h"
+
 namespace folly {
 class IOBuf;
 } // folly
@@ -116,6 +118,45 @@ struct TypeToField<std::vector<T>> {
   static constexpr FieldType fieldType{FieldType::List};
 };
 
-} // detail
+template <class T>
+class HasSerialize {
+  template <class C>
+  static constexpr decltype(&C::serialize, std::true_type()) check(int);
 
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value};
+};
+
+template <class T>
+class SerializationTraitsDefined {
+  template <class C>
+  static constexpr decltype(
+      SerializationTraits<C>::read,
+      SerializationTraits<C>::write,
+      std::true_type())
+  check(int);
+
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value};
+};
+
+template <class T>
+class HasFieldType {
+  template <class C>
+  static constexpr decltype(TypeToField<C>::fieldType, std::true_type()) check(
+      int);
+
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value};
+};
+} // detail
 } // carbon
