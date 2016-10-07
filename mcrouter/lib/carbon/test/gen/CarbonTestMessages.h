@@ -224,6 +224,12 @@ class TestRequest : public carbon::RequestCommon {
   folly::Optional<folly::IOBuf>& testOptionalIobuf() {
     return testOptionalIobuf_;
   }
+  const std::vector<test2::util::SimpleEnum>& testEnumVec() const {
+    return testEnumVec_;
+  }
+  std::vector<test2::util::SimpleEnum>& testEnumVec() {
+    return testEnumVec_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -263,6 +269,7 @@ class TestRequest : public carbon::RequestCommon {
   std::vector<std::string> testList_;
   folly::Optional<std::string> testOptionalString_;
   folly::Optional<folly::IOBuf> testOptionalIobuf_;
+  std::vector<test2::util::SimpleEnum> testEnumVec_;
 };
 
 class TestReply : public carbon::ReplyCommon {

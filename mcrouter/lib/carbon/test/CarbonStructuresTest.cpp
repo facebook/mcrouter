@@ -102,6 +102,9 @@ TEST(CarbonBasic, defaultConstructed) {
   // List of strings
   EXPECT_TRUE(req.testList().empty());
 
+  // Vector of enums
+  EXPECT_TRUE(req.testEnumVec().empty());
+
   // folly::Optional fields
   EXPECT_FALSE(req.testOptionalString());
   EXPECT_FALSE(req.testOptionalIobuf());
@@ -186,6 +189,14 @@ TEST(CarbonBasic, setAndGet) {
   req.testList() = strings;
   EXPECT_EQ(strings, req.testList());
 
+  // Vector of enums
+  std::vector<SimpleEnum> enums = {SimpleEnum::One,
+                                   SimpleEnum::Zero,
+                                   SimpleEnum::Twenty,
+                                   SimpleEnum::Negative};
+  req.testEnumVec() = enums;
+  EXPECT_EQ(enums, req.testEnumVec());
+
   // folly::Optional fields
   const auto s = longString();
   req.testOptionalString() = s;
@@ -229,6 +240,8 @@ TEST(CarbonTest, serializeDeserialize) {
   EXPECT_FALSE(outRequest.testOptionalString().hasValue());
   // Other optional field gets a value of zero length
   outRequest.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");
+
+  outRequest.testEnumVec().push_back(carbon::test2::util::SimpleEnum::Twenty);
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);

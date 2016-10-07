@@ -314,6 +314,13 @@ class CarbonProtocolWriter {
     SerializationTraits<T>::write(data, *this);
   }
 
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, void>::type writeRaw(
+      const T e) {
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    writeRaw(static_cast<UnderlyingType>(e));
+  }
+
  private:
   template <class T>
   void doWriteVarint(T val) {

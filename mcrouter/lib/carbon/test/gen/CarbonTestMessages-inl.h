@@ -41,6 +41,7 @@ inline void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(19 /* field id */, testList());
   writer.writeField(20 /* field id */, testOptionalString());
   writer.writeField(21 /* field id */, testOptionalIobuf());
+  writer.writeField(22 /* field id */, testEnumVec());
   writer.writeFieldHeader(carbon::FieldType::Struct, -1);
   _carbon_simplestruct_.serialize(writer);
   writer.writeStructEnd();
@@ -147,6 +148,10 @@ inline void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readRawInto(testOptionalIobuf());
         break;
       }
+      case 22: {
+        reader.readRawInto(testEnumVec());
+        break;
+      }
       default: {
         reader.skip(fieldType);
         break;
@@ -227,6 +232,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(21, "testOptionalIobuf", testOptionalIobuf_)) {
     return;
   }
+  if (!v.visitField(22, "testEnumVec", testEnumVec_)) {
+    return;
+  }
 }
 
 template <class V>
@@ -298,6 +306,9 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(21, "testOptionalIobuf", testOptionalIobuf_)) {
+    return;
+  }
+  if (!v.visitField(22, "testEnumVec", testEnumVec_)) {
     return;
   }
 }

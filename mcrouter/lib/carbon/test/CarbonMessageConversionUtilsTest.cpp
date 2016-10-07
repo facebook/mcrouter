@@ -45,32 +45,36 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testStruct().stringMember() = "nestedSimpleStruct";
   r.testOptionalString() = "tstOptStr";
   r.testList() = std::vector<std::string>({"abc", "bce", "xyz"});
+  r.testEnumVec() = std::vector<carbon::test2::util::SimpleEnum>(
+      {carbon::test2::util::SimpleEnum::One,
+       carbon::test2::util::SimpleEnum::Twenty});
 
   folly::dynamic expected = folly::dynamic::object(
       "__Base",
-      folly::dynamic::object("__BaseStruct",
-                             folly::dynamic::object("baseInt64Member", 1))(
+      folly::dynamic::object(
+          "__BaseStruct", folly::dynamic::object("baseInt64Member", 1))(
           "int32Member", -1)("stringMember", "testStrMbr")("enumMember", 1)(
           "vectorMember",
-          folly::dynamic::array(folly::dynamic::object("member1", 342),
-                                folly::dynamic::object("member1", 123))))(
-      "key", "/test/key/")("testEnum", -92233)("testBool", true)(
-      "testChar", "a")("testInt8", -123)("testInt16", -7890)("testInt32",
-                                                             -123456789)(
+          folly::dynamic::array(
+              folly::dynamic::object("member1", 342),
+              folly::dynamic::object("member1", 123))))("key", "/test/key/")(
+      "testEnum", -92233)("testBool", true)("testChar", "a")("testInt8", -123)(
+      "testInt16", -7890)("testInt32", -123456789)(
       "testInt64", -9876543210123ll)("testUInt8", 123)("testUInt16", 7890)(
       "testUInt32", 123456789)("testUInt64", 9876543210123ll)("testFloat", 1.5)(
       "testDouble", 5.6)("testShortString", "abcdef")(
       "testLongString",
-      "asdfghjkl;'eqtirgwuifhiivlzkhbvjkhc3978y42h97*&687gba")("testIobuf",
-                                                               "TestTheBuf")(
+      "asdfghjkl;'eqtirgwuifhiivlzkhbvjkhc3978y42h97*&687gba")(
+      "testIobuf", "TestTheBuf")(
       "testStruct",
-      folly::dynamic::object("__BaseStruct",
-                             folly::dynamic::object("baseInt64Member", 345))(
-          "enumMember", 20)("int32Member", 0)("stringMember",
-                                              "nestedSimpleStruct")(
-          "vectorMember", folly::dynamic::array()))("testOptionalString",
-                                                    "tstOptStr")(
-      "testList", folly::dynamic::array("abc", "bce", "xyz"));
+      folly::dynamic::object(
+          "__BaseStruct", folly::dynamic::object("baseInt64Member", 345))(
+          "enumMember", 20)("int32Member", 0)(
+          "stringMember", "nestedSimpleStruct")(
+          "vectorMember", folly::dynamic::array()))(
+      "testOptionalString", "tstOptStr")(
+      "testList", folly::dynamic::array("abc", "bce", "xyz"))(
+      "testEnumVec", folly::dynamic::array(1, 20));
 
   EXPECT_EQ(expected, carbon::convertToFollyDynamic(r));
 }

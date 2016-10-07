@@ -29,6 +29,7 @@ request TestRequest with 1: SimpleStruct as Base {
   19: vector<string> testList;
   20: Optional<string> testOptionalString;
   21: Optional<IOBuf> testOptionalIobuf;
+  22: vector<test2::util::SimpleEnum> testEnumVec;
 };
 
 reply TestReply {
