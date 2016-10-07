@@ -141,6 +141,7 @@ libmcrouter_a_SOURCES = \
   network/CarbonMessageDispatcher.h \
   network/CarbonMessageList.h \
   network/CarbonMessageTraits.h \
+  network/CarbonRequestHandler.h \
   network/CaretHeader.h \
   network/CaretSerializedMessage-inl.h \
   network/CaretSerializedMessage.h \
