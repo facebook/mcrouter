@@ -190,8 +190,8 @@ McClientRequestContextQueue::getContextById(uint64_t id) {
     set_.find(
       id,
       std::hash<uint64_t>(),
-      [] (uint64_t id, const McClientRequestContextBase& ctx) {
-        return id == ctx.id;
+      [] (uint64_t i, const McClientRequestContextBase& ctx) {
+        return i == ctx.id;
       });
 }
 
