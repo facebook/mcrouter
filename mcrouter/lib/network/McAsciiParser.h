@@ -15,8 +15,8 @@
 #include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
 
+#include "mcrouter/lib/carbon/Variant.h"
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
-#include "mcrouter/lib/MessageStorage.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/Operation.h"
@@ -158,7 +158,7 @@ class McClientAsciiParser : public McAsciiParserBase {
   static void appendCurrentCharTo(const folly::IOBuf& from, folly::IOBuf& to,
                                   const char* pos);
 
-  MessageStorage<MapT<ReplyT, McRequestList>> currentMessage_;
+  carbon::Variant<MapT<ReplyT, McRequestList>> currentMessage_;
 
   using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
@@ -225,7 +225,7 @@ class McServerAsciiParser : public McAsciiParserBase {
   const char* keyPieceStart_{nullptr};
   folly::IOBuf currentKey_;
   bool noreply_{false};
-  MessageStorage<McRequestList> currentMessage_;
+  carbon::Variant<McRequestList> currentMessage_;
 
   using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};

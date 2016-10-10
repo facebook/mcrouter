@@ -155,6 +155,18 @@ struct Has<Y, X, Xs...> {
 };
 
 /**
+ * Xs -> true iff all Xs are pairwise distinct types
+ */
+template <class... Xs>
+struct Distinct;
+template <>
+struct Distinct<> { static constexpr bool value = true; };
+template <class X, class... Xs>
+struct Distinct<X, Xs...> {
+  static constexpr bool value = !Has<X, Xs...>::value && Distinct<Xs...>::value;
+};
+
+/**
  * Xs -> true iff all Xs are distinct
  */
 template <int... Xs>

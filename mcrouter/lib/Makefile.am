@@ -23,7 +23,6 @@ libmcrouter_a_SOURCES = \
   Lz4Immutable.h \
   Lz4ImmutableCompressionCodec.cpp \
   Lz4ImmutableCompressionCodec.h \
-  MessageStorage.h \
   MessageQueue.cpp \
   MessageQueue.h \
   McOpList.h \
@@ -62,6 +61,7 @@ libmcrouter_a_SOURCES = \
   carbon/SerializationTraits.h \
   carbon/TypeList.h \
   carbon/Util.h \
+  carbon/Variant.h \
   config/ConfigPreprocessor.cpp \
   config/ConfigPreprocessor.h \
   config/ImportResolverIf.h \
