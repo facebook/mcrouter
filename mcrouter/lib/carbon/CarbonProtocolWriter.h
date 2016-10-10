@@ -199,6 +199,14 @@ class CarbonProtocolWriter {
     }
   }
 
+  // Serialize Carbon-generated structure members and mixins
+  template <class T>
+  typename std::enable_if<detail::HasSerialize<T>::value, void>::type
+  writeField(const int16_t id, const T& data) {
+    writeFieldHeader(FieldType::Struct, id);
+    writeRaw(data);
+  }
+
   // Bookkeeping member functions
   void writeStructBegin() {
     nestedStructFieldIds_.push_back(lastFieldId_);
@@ -226,9 +234,10 @@ class CarbonProtocolWriter {
   }
 
   void writeFieldHeader(const FieldType type, const int16_t id) {
-    auto typeByte = static_cast<uint8_t>(type);
+    const auto typeByte = static_cast<uint8_t>(type);
     if (id > lastFieldId_ && (id - lastFieldId_) <= 0xf) {
-      writeByte(((id - lastFieldId_) << 4) | typeByte);
+      const auto delta = static_cast<uint8_t>(id - lastFieldId_);
+      writeByte((delta << 4) | typeByte);
     } else {
       writeByte(typeByte);
       writeTwoBytes(static_cast<uint16_t>(id));

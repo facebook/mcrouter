@@ -19,6 +19,7 @@ namespace test {
 
 inline void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, asBase());
   writer.writeField(1 /* field id */, key());
   writer.writeField(2 /* field id */, testEnum());
   writer.writeField(3 /* field id */, testBool());
@@ -36,14 +37,11 @@ inline void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(15 /* field id */, testShortString());
   writer.writeField(16 /* field id */, testLongString());
   writer.writeField(17 /* field id */, testIobuf());
-  writer.writeFieldHeader(carbon::FieldType::Struct, 18);
-  testStruct().serialize(writer);
+  writer.writeField(18 /* field id */, testStruct());
   writer.writeField(19 /* field id */, testList());
   writer.writeField(20 /* field id */, testOptionalString());
   writer.writeField(21 /* field id */, testOptionalIobuf());
   writer.writeField(22 /* field id */, testEnumVec());
-  writer.writeFieldHeader(carbon::FieldType::Struct, -1);
-  _carbon_simplestruct_.serialize(writer);
   writer.writeStructEnd();
   writer.writeStop();
 }

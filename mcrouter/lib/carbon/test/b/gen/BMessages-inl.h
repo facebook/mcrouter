@@ -66,12 +66,11 @@ void BaseStruct::visitFields(V&& v) const {
 inline void SimpleStruct::serialize(
     carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
+  writer.writeField(-1 /* field id */, asBaseStruct());
   writer.writeField(1 /* field id */, int32Member());
   writer.writeField(2 /* field id */, stringMember());
   writer.writeField(3 /* field id */, enumMember());
   writer.writeField(4 /* field id */, vectorMember());
-  writer.writeFieldHeader(carbon::FieldType::Struct, -1);
-  _carbon_basestruct_.serialize(writer);
   writer.writeStructEnd();
   writer.writeStop();
 }

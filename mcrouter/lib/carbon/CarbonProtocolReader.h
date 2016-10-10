@@ -177,14 +177,14 @@ class CarbonProtocolReader {
     const uint8_t byte = readByte();
     if (byte & 0xf0) {
       rv.first = static_cast<FieldType>(byte & 0x0f);
-      rv.second = (byte >> 4) + lastFieldId_;
-      lastFieldId_ = rv.second;
+      rv.second = static_cast<int16_t>(byte >> 4) + lastFieldId_;
     } else {
       rv.first = static_cast<FieldType>(byte);
       if (rv.first != FieldType::Stop) {
-        rv.second = cursor_.read<uint16_t>();
+        rv.second = cursor_.read<int16_t>();
       }
     }
+    lastFieldId_ = rv.second;
     return rv;
   }
 
