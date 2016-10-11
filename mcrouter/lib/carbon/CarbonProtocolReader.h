@@ -35,7 +35,7 @@ using CarbonCursor = folly::io::Cursor;
 
 class CarbonProtocolReader {
  public:
-  explicit CarbonProtocolReader(CarbonCursor& cursor) : cursor_(cursor) {}
+  explicit CarbonProtocolReader(const CarbonCursor& cursor) : cursor_(cursor) {}
 
   template <class T>
   void readRawInto(std::vector<T>& v) {
@@ -225,13 +225,10 @@ class CarbonProtocolReader {
       urv |= static_cast<UnsignedT>(byte & 0x7f) << (kShift * iter++);
     } while (byte & 0x80 && iter <= kMaxIters);
 
-    facebook::memcache::checkRuntime(
-        !(byte & 0x80), "readVarint got invalid varint");
-
     return static_cast<T>(urv);
   }
 
-  CarbonCursor& cursor_;
+  CarbonCursor cursor_;
   folly::small_vector<int16_t, detail::kDefaultStackSize> nestedStructFieldIds_;
   int16_t lastFieldId_{0};
   FieldType boolFieldType_;

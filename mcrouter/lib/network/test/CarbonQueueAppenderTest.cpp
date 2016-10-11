@@ -64,8 +64,7 @@ TEST(CarbonQueueAppenderTest, longString) {
   McGetReply inputReply;
   auto inputBody = folly::IOBuf::wrapBuffer(
       input.data() + inputHeader.headerSize, inputHeader.bodySize);
-  folly::io::Cursor cursor(inputBody.get());
-  carbon::CarbonProtocolReader reader(cursor);
+  carbon::CarbonProtocolReader reader(folly::io::Cursor(inputBody.get()));
   inputReply.deserialize(reader);
 
   EXPECT_EQ(mc_res_remote_error, inputReply.result());
@@ -162,8 +161,7 @@ TEST(CarbonQueueAppender, manyFields) {
   test::ManyFields manyFields2;
   auto inputBody = folly::IOBuf::wrapBuffer(
       input.data() + inputHeader.headerSize, inputHeader.bodySize);
-  folly::io::Cursor cursor(inputBody.get());
-  carbon::CarbonProtocolReader reader(cursor);
+  carbon::CarbonProtocolReader reader(folly::io::Cursor(inputBody.get()));
   manyFields2.deserialize(reader);
 
   EXPECT_STREQ(str1, reinterpret_cast<const char*>(manyFields2.buf1().data()));

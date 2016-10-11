@@ -59,8 +59,7 @@ T serializeAndDeserialize(const T& toSerialize) {
 
   // Deserialize the serialized data
   T deserialized;
-  CarbonCursor cur(&buf);
-  CarbonProtocolReader reader(cur);
+  CarbonProtocolReader reader{carbon::CarbonCursor(&buf)};
   deserialized.deserialize(reader);
 
   return deserialized;

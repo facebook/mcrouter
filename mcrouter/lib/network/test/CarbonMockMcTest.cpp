@@ -127,8 +127,7 @@ TEST(CarbonMockMc, basic) {
   EXPECT_EQ(2, replyInfo.typeId);
   auto readBuf = folly::IOBuf::wrapBuffer(reply.data() + replyInfo.headerSize,
                                           replyInfo.bodySize);
-  folly::io::Cursor cur(readBuf.get());
-  carbon::CarbonProtocolReader reader(cur);
+  carbon::CarbonProtocolReader reader(carbon::CarbonCursor(readBuf.get()));
   McGetReply getReply;
   getReply.deserialize(reader);
 
