@@ -10,10 +10,10 @@
 #include <limits>
 #include <random>
 
+#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/proxy.h"
-#include "mcrouter/ProxyDestinationMap.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

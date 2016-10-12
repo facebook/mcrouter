@@ -11,18 +11,17 @@
 
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/ThreadUtil.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/MessageQueue.h"
-#include "mcrouter/McrouterInstance.h"
-#include "mcrouter/proxy.h"
-#include "mcrouter/ThreadUtil.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyThread::ProxyThread(McrouterInstance& router, size_t id)
     : evb_(/* enableTimeMeasurement */ false),
-      proxy_(proxy_t::createProxy(router, evb_, id)) {
-}
+      proxy_(Proxy::createProxy(router, evb_, id)) {}
 
 void ProxyThread::spawn() {
   CHECK(state_.exchange(State::RUNNING) == State::STOPPED);

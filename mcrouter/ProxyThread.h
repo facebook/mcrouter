@@ -15,12 +15,12 @@
 
 #include <folly/io/async/EventBase.h>
 
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterInstance;
-struct proxy_t;
+class Proxy;
 
 class ProxyThread {
  public:
@@ -41,12 +41,14 @@ class ProxyThread {
    */
   void spawn();
 
-  proxy_t& proxy() { return *proxy_; }
+  Proxy& proxy() {
+    return *proxy_;
+  }
   folly::EventBase& eventBase() { return evb_; }
 
  private:
   folly::EventBase evb_;
-  proxy_t::Pointer proxy_;
+  Proxy::Pointer proxy_;
   std::thread thread_;
 
   enum class State {

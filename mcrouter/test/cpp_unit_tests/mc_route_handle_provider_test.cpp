@@ -16,11 +16,11 @@
 #include <folly/json.h>
 #include <folly/Memory.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/McrouterInstance.h"
-#include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/options.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 
 using namespace facebook::memcache;

@@ -13,18 +13,18 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-struct proxy_t;
+class Proxy;
 
 /**
  * Creates additional route handles for McRouteHandleProvider.
  */
 class McExtraRouteHandleProvider : public ExtraRouteHandleProviderIf {
  public:
-  virtual McrouterRouteHandlePtr
-  makeShadow(proxy_t& proxy,
-             McrouterRouteHandlePtr destination,
-             McrouterShadowData data,
-             folly::StringPiece shadowPolicy) override;
+  virtual McrouterRouteHandlePtr makeShadow(
+      Proxy& proxy,
+      McrouterRouteHandlePtr destination,
+      McrouterShadowData data,
+      folly::StringPiece shadowPolicy) override;
 
   virtual std::vector<McrouterRouteHandlePtr>
   tryCreate(RouteHandleFactory<McrouterRouteHandleIf>& factory,

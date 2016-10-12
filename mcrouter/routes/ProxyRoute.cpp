@@ -12,7 +12,7 @@
 #include <folly/Optional.h>
 
 #include "mcrouter/McrouterInstance.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/routes/RootRoute.h"
 
 namespace facebook {
@@ -24,10 +24,11 @@ McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr ch,
 
 McrouterRouteHandlePtr makeLoggingRoute(McrouterRouteHandlePtr rh);
 
-ProxyRoute::ProxyRoute(proxy_t *proxy, const RouteSelectorMap &routeSelectors)
+ProxyRoute::ProxyRoute(Proxy* proxy, const RouteSelectorMap& routeSelectors)
     : proxy_(proxy),
       root_(std::make_shared<McrouterRouteHandle<RootRoute>>(
-          proxy_, routeSelectors)) {
+          proxy_,
+          routeSelectors)) {
   if (proxy_->getRouterOptions().big_value_split_threshold != 0) {
     BigValueRouteOptions options(
         proxy_->getRouterOptions().big_value_split_threshold,

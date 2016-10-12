@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,7 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -22,11 +22,10 @@ McrouterRouteHandlePtr makeShadowRouteDefault(
   DefaultShadowPolicy shadowPolicy);
 
 McrouterRouteHandlePtr McExtraRouteHandleProvider::makeShadow(
-  proxy_t&,
-  McrouterRouteHandlePtr destination,
-  McrouterShadowData data,
-  folly::StringPiece shadowPolicy) {
-
+    Proxy&,
+    McrouterRouteHandlePtr destination,
+    McrouterShadowData data,
+    folly::StringPiece shadowPolicy) {
   if (shadowPolicy == "default") {
     return makeShadowRouteDefault(std::move(destination), std::move(data),
                                   DefaultShadowPolicy());

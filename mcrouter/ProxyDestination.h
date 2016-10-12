@@ -32,7 +32,7 @@ namespace mcrouter {
 
 class ProxyDestinationMap;
 class TkoTracker;
-struct proxy_t;
+class Proxy;
 
 struct DestinationRequestCtx {
   int64_t startTime{0};
@@ -61,7 +61,7 @@ class ProxyDestination {
     double retransPerKByte{0.0};
   };
 
-  proxy_t* proxy{nullptr}; ///< for convenience
+  Proxy* proxy{nullptr}; ///< for convenience
 
   std::shared_ptr<TkoTracker> tracker;
 
@@ -127,11 +127,11 @@ class ProxyDestination {
   AsyncTimer<ProxyDestination> probeTimer_;
 
   static std::shared_ptr<ProxyDestination> create(
-    proxy_t& proxy,
-    std::shared_ptr<AccessPoint> ap,
-    std::chrono::milliseconds timeout,
-    uint64_t qosClass,
-    uint64_t qosPath);
+      Proxy& proxy,
+      std::shared_ptr<AccessPoint> ap,
+      std::chrono::milliseconds timeout,
+      uint64_t qosClass,
+      uint64_t qosPath);
 
   void setState(State st);
 
@@ -148,11 +148,12 @@ class ProxyDestination {
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
 
-  ProxyDestination(proxy_t& proxy,
-                   std::shared_ptr<AccessPoint> ap,
-                   std::chrono::milliseconds timeout,
-                   uint64_t qosClass,
-                   uint64_t qosPath);
+  ProxyDestination(
+      Proxy& proxy,
+      std::shared_ptr<AccessPoint> ap,
+      std::chrono::milliseconds timeout,
+      uint64_t qosClass,
+      uint64_t qosPath);
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 

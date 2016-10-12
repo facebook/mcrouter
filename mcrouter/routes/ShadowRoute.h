@@ -16,10 +16,10 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/Optional.h>
 
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRouteIf.h"

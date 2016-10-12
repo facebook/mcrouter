@@ -44,13 +44,13 @@ bool processGetServiceInfoRequestImpl(
 } // detail
 
 template <class Request>
-proxy_t::WaitingRequest<Request>::WaitingRequest(
+Proxy::WaitingRequest<Request>::WaitingRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<Request>> ctx)
     : req_(req), ctx_(std::move(ctx)) {}
 
 template <class Request>
-void proxy_t::WaitingRequest<Request>::process(proxy_t* proxy) {
+void Proxy::WaitingRequest<Request>::process(Proxy* proxy) {
   // timePushedOnQueue_ is nonnegative only if waiting-requests-timeout is
   // enabled
   if (timePushedOnQueue_ >= 0) {
@@ -69,10 +69,9 @@ void proxy_t::WaitingRequest<Request>::process(proxy_t* proxy) {
 
 template <class Request>
 typename std::enable_if<TRequestListContains<Request>::value, void>::type
-proxy_t::routeHandlesProcessRequest(
+Proxy::routeHandlesProcessRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
-
   auto sharedCtx = ProxyRequestContextTyped<Request>::process(
       std::move(uctx), getConfig());
 
@@ -106,10 +105,9 @@ proxy_t::routeHandlesProcessRequest(
 
 template <class Request>
 typename std::enable_if<!TRequestListContains<Request>::value, void>::type
-proxy_t::routeHandlesProcessRequest(
+Proxy::routeHandlesProcessRequest(
     const Request&,
     std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
-
   auto err = folly::sformat(
       "Couldn't route request of type {} "
       "because the operation is not supported by RouteHandles "
@@ -119,10 +117,9 @@ proxy_t::routeHandlesProcessRequest(
 }
 
 template <class Request>
-void proxy_t::processRequest(
+void Proxy::processRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<Request>> ctx) {
-
   assert(!ctx->processing_);
   ctx->processing_ = true;
   ++numRequestsProcessing_;
@@ -136,10 +133,9 @@ void proxy_t::processRequest(
 }
 
 template <class Request>
-void proxy_t::dispatchRequest(
+void Proxy::dispatchRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<Request>> ctx) {
-
   if (rateLimited(ctx->priority(), req)) {
     if (getRouterOptions().proxy_max_throttled_requests > 0 &&
         numRequestsWaiting_ >=
@@ -166,105 +162,105 @@ void proxy_t::dispatchRequest(
 }
 
 template <>
-inline void proxy_t::bumpStats(const McStatsRequest&) {
+inline void Proxy::bumpStats(const McStatsRequest&) {
   stat_incr(stats, cmd_stats_stat, 1);
   stat_incr(stats, cmd_stats_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McCasRequest&) {
+inline void Proxy::bumpStats(const McCasRequest&) {
   stat_incr(stats, cmd_cas_stat, 1);
   stat_incr(stats, cmd_cas_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McGetRequest&) {
+inline void Proxy::bumpStats(const McGetRequest&) {
   stat_incr(stats, cmd_get_stat, 1);
   stat_incr(stats, cmd_get_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McGetsRequest&) {
+inline void Proxy::bumpStats(const McGetsRequest&) {
   stat_incr(stats, cmd_gets_stat, 1);
   stat_incr(stats, cmd_gets_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McMetagetRequest&) {
+inline void Proxy::bumpStats(const McMetagetRequest&) {
   stat_incr(stats, cmd_meta_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McAddRequest&) {
+inline void Proxy::bumpStats(const McAddRequest&) {
   stat_incr(stats, cmd_add_stat, 1);
   stat_incr(stats, cmd_add_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McReplaceRequest&) {
+inline void Proxy::bumpStats(const McReplaceRequest&) {
   stat_incr(stats, cmd_replace_stat, 1);
   stat_incr(stats, cmd_replace_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McSetRequest&) {
+inline void Proxy::bumpStats(const McSetRequest&) {
   stat_incr(stats, cmd_set_stat, 1);
   stat_incr(stats, cmd_set_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McIncrRequest&) {
+inline void Proxy::bumpStats(const McIncrRequest&) {
   stat_incr(stats, cmd_incr_stat, 1);
   stat_incr(stats, cmd_incr_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McDecrRequest&) {
+inline void Proxy::bumpStats(const McDecrRequest&) {
   stat_incr(stats, cmd_decr_stat, 1);
   stat_incr(stats, cmd_decr_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McDeleteRequest&) {
+inline void Proxy::bumpStats(const McDeleteRequest&) {
   stat_incr(stats, cmd_delete_stat, 1);
   stat_incr(stats, cmd_delete_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McLeaseSetRequest&) {
+inline void Proxy::bumpStats(const McLeaseSetRequest&) {
   stat_incr(stats, cmd_lease_set_stat, 1);
   stat_incr(stats, cmd_lease_set_count_stat, 1);
 }
 
 template <>
-inline void proxy_t::bumpStats(const McLeaseGetRequest&) {
+inline void Proxy::bumpStats(const McLeaseGetRequest&) {
   stat_incr(stats, cmd_lease_get_stat, 1);
   stat_incr(stats, cmd_lease_get_count_stat, 1);
 }
 
 template <class Request>
-inline void proxy_t::bumpStats(const Request&) {
+inline void Proxy::bumpStats(const Request&) {
   stat_incr(stats, cmd_other_stat, 1);
   stat_incr(stats, cmd_other_count_stat, 1);
 }
 
 template <>
-inline bool proxy_t::rateLimited(
+inline bool Proxy::rateLimited(
     ProxyRequestPriority priority,
     const McStatsRequest&) const {
   return false;
 }
 
 template <>
-inline bool proxy_t::rateLimited(
+inline bool Proxy::rateLimited(
     ProxyRequestPriority priority,
     const McVersionRequest&) const {
   return false;
 }
 
 template <class Request>
-inline bool proxy_t::rateLimited(ProxyRequestPriority priority,
-                                 const Request&) const {
+inline bool Proxy::rateLimited(ProxyRequestPriority priority, const Request&)
+    const {
   if (!getRouterOptions().proxy_max_inflight_requests) {
     return false;
   }

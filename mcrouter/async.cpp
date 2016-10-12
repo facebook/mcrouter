@@ -28,11 +28,11 @@
 #include <folly/json.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/awriter.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/awriter.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/stats.h"
 
 #define ASYNCLOG_MAGIC  "AS1.0"
@@ -151,7 +151,7 @@ static std::shared_ptr<folly::File> countedfd_new(int fd) {
 }
 
 /** Opens the asynchronous request store.  */
-static std::shared_ptr<folly::File> asynclog_open(proxy_t *proxy) {
+static std::shared_ptr<folly::File> asynclog_open(Proxy* proxy) {
   char path[PATH_MAX + 1];
   time_t now = time(nullptr);
   pid_t tid = syscall(SYS_gettid);
@@ -277,10 +277,11 @@ epilogue:
 }
 
 /** Adds an asynchronous request to the event log. */
-void asynclog_delete(proxy_t* proxy,
-                     const AccessPoint& ap,
-                     folly::StringPiece key,
-                     folly::StringPiece poolName) {
+void asynclog_delete(
+    Proxy* proxy,
+    const AccessPoint& ap,
+    folly::StringPiece key,
+    folly::StringPiece poolName) {
   dynamic json = dynamic::array;
   const auto& host = ap.getHost();
   const auto& port = proxy->router().opts().asynclog_port_override == 0

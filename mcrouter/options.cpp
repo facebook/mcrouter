@@ -17,9 +17,9 @@
 #include <folly/Conv.h>
 #include <folly/String.h>
 
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/proxy.h"
 
 using std::string;
 using std::unordered_map;

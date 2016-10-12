@@ -27,7 +27,7 @@ struct AccessPoint;
 namespace mcrouter {
 
 class ProxyDestination;
-struct proxy_t;
+class Proxy;
 
 /**
  * Manages lifetime of ProxyDestinations. Main goal is to reuse same
@@ -45,7 +45,7 @@ struct proxy_t;
  */
 class ProxyDestinationMap {
  public:
-  explicit ProxyDestinationMap(proxy_t* proxy);
+  explicit ProxyDestinationMap(Proxy* proxy);
 
   /**
    * If ProxyDestination is already stored in this object - returns it;
@@ -113,7 +113,7 @@ class ProxyDestinationMap {
  private:
   struct StateList;
 
-  proxy_t* proxy_;
+  Proxy* proxy_;
   folly::StringKeyedUnorderedMap<std::weak_ptr<ProxyDestination>> destinations_;
   mutable std::mutex destinationsLock_;
 

@@ -22,7 +22,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class ConfigApi;
 class ProxyConfig;
-struct proxy_t;
+class Proxy;
 
 class ProxyConfigBuilder {
  public:
@@ -30,7 +30,7 @@ class ProxyConfigBuilder {
                      ConfigApi& configApi,
                      folly::StringPiece jsonC);
 
-  std::shared_ptr<ProxyConfig> buildConfig(proxy_t& proxy) const;
+  std::shared_ptr<ProxyConfig> buildConfig(Proxy& proxy) const;
 
   const folly::dynamic& preprocessedConfig() const {
     return json_;

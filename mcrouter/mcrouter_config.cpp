@@ -10,14 +10,14 @@
 #include <folly/Memory.h>
 #include <folly/Range.h>
 
-#include "mcrouter/config.h"
-#include "mcrouter/flavor.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogger.h"
-#include "mcrouter/options.h"
-#include "mcrouter/proxy.h"
-#include "mcrouter/routes/McExtraRouteHandleProvider.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ShadowValidationData.h"
+#include "mcrouter/config.h"
+#include "mcrouter/flavor.h"
+#include "mcrouter/options.h"
+#include "mcrouter/routes/McExtraRouteHandleProvider.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -90,12 +90,13 @@ std::vector<std::string> defaultTestCommandLineArgs() {
   return { "--disable-failure-logging", "--stats-logging-interval=0" };
 }
 
-void logTkoEvent(proxy_t& proxy, const TkoLog& tkoLog) { }
+void logTkoEvent(Proxy& proxy, const TkoLog& tkoLog) {}
 
-void logFailover(proxy_t& proxy, const FailoverContext& failoverContext) { }
+void logFailover(Proxy& proxy, const FailoverContext& failoverContext) {}
 
-void logShadowValidationError(proxy_t& proxy,
-                              const ShadowValidationData& valData) {
+void logShadowValidationError(
+    Proxy& proxy,
+    const ShadowValidationData& valData) {
   VLOG_EVERY_N(1,100)
       << "Mismatch between shadow and normal reply" << std::endl
       << "Key:" << valData.fullKey << std::endl

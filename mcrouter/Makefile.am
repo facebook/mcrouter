@@ -60,9 +60,9 @@ libmcroutercore_a_SOURCES = \
   OptionsUtil.h \
   PoolFactory.cpp \
   PoolFactory.h \
-  proxy-inl.h \
-  proxy.cpp \
-  proxy.h \
+  Proxy-inl.h \
+  Proxy.cpp \
+  Proxy.h \
   ProxyConfig.cpp \
   ProxyConfig.h \
   ProxyConfigBuilder.cpp \

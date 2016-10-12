@@ -28,7 +28,7 @@ struct dynamic;
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ExtraRouteHandleProviderIf;
-struct proxy_t;
+class Proxy;
 
 /**
  * RouteHandleProviderIf implementation that can create mcrouter-specific
@@ -37,7 +37,7 @@ struct proxy_t;
 class McRouteHandleProvider :
   public RouteHandleProviderIf<McrouterRouteHandleIf> {
  public:
-  McRouteHandleProvider(proxy_t& proxy, PoolFactory& poolFactory);
+  McRouteHandleProvider(Proxy& proxy, PoolFactory& poolFactory);
 
   std::vector<McrouterRouteHandlePtr>
   create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -65,7 +65,7 @@ class McRouteHandleProvider :
   using RouteFunc = std::function<
       McrouterRouteHandlePtr(RouteHandleFactory<McrouterRouteHandleIf>&,
                              const folly::dynamic&)>;
-  proxy_t& proxy_;
+  Proxy& proxy_;
   PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
 

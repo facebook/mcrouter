@@ -19,16 +19,16 @@ struct AccessPoint;
 
 namespace mcrouter {
 
-struct proxy_t;
+class Proxy;
 
 /**
  * Appends a 'delete' request entry to the asynclog.
  * This call blocks until the entry is written to the file
  * or an error occurs.
  */
-void asynclog_delete(proxy_t* proxy,
-                     const AccessPoint& ap,
-                     folly::StringPiece key,
-                     folly::StringPiece poolName);
-
+void asynclog_delete(
+    Proxy* proxy,
+    const AccessPoint& ap,
+    folly::StringPiece key,
+    folly::StringPiece poolName);
 }}} // facebook::memcache::mcrouter

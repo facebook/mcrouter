@@ -7,9 +7,9 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/proxy.h"
 
 namespace facebook {
 namespace memcache {
@@ -24,10 +24,11 @@ template <class Request, class F>
 class ProxyRequestContextTypedWithCallback
     : public ProxyRequestContextTyped<Request> {
  public:
-  ProxyRequestContextTypedWithCallback(proxy_t& pr,
-                                       const Request& req,
-                                       F&& f,
-                                       ProxyRequestPriority priority__)
+  ProxyRequestContextTypedWithCallback(
+      Proxy& pr,
+      const Request& req,
+      F&& f,
+      ProxyRequestPriority priority__)
       : ProxyRequestContextTyped<Request>(pr, req, priority__),
         f_(std::forward<F>(f)) {}
 
@@ -175,11 +176,11 @@ ProxyRequestContextTyped<Request>::process(
 }
 
 template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<Request>>
-createProxyRequestContext(proxy_t& pr,
-                          const Request& req,
-                          F&& f,
-                          ProxyRequestPriority priority) {
+std::unique_ptr<ProxyRequestContextTyped<Request>> createProxyRequestContext(
+    Proxy& pr,
+    const Request& req,
+    F&& f,
+    ProxyRequestPriority priority) {
   using Type = detail::ProxyRequestContextTypedWithCallback<Request, F>;
   return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }

@@ -11,14 +11,15 @@
 
 #include <folly/Memory.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/McrouterClient.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/config.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyRequestContext::ProxyRequestContext(proxy_t& pr,
-                                         ProxyRequestPriority priority__)
+ProxyRequestContext::ProxyRequestContext(
+    Proxy& pr,
+    ProxyRequestPriority priority__)
     : requestId_(pr.nextRequestId()), proxy_(pr), priority_(priority__) {
   logger_.emplace(&proxy_);
   additionalLogger_.emplace(&proxy_);
@@ -73,10 +74,9 @@ void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
 }
 
 std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
-  proxy_t& proxy,
-  ClientCallback clientCallback,
-  ShardSplitCallback shardSplitCallback) {
-
+    Proxy& proxy,
+    ClientCallback clientCallback,
+    ShardSplitCallback shardSplitCallback) {
   return std::shared_ptr<ProxyRequestContext>(
     new ProxyRequestContext(Recording,
                             proxy,
@@ -86,11 +86,10 @@ std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
 }
 
 std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
-  proxy_t& proxy,
-  folly::fibers::Baton& baton,
-  ClientCallback clientCallback,
-  ShardSplitCallback shardSplitCallback) {
-
+    Proxy& proxy,
+    folly::fibers::Baton& baton,
+    ClientCallback clientCallback,
+    ShardSplitCallback shardSplitCallback) {
   return std::shared_ptr<ProxyRequestContext>(
     new ProxyRequestContext(Recording,
                             proxy,
@@ -103,13 +102,11 @@ std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
 }
 
 ProxyRequestContext::ProxyRequestContext(
-  RecordingT,
-  proxy_t& pr,
-  ClientCallback clientCallback,
-  ShardSplitCallback shardSplitCallback)
-    : requestId_(pr.nextRequestId()),
-      proxy_(pr),
-      recording_(true) {
+    RecordingT,
+    Proxy& pr,
+    ClientCallback clientCallback,
+    ShardSplitCallback shardSplitCallback)
+    : requestId_(pr.nextRequestId()), proxy_(pr), recording_(true) {
   new (&recordingState_) std::unique_ptr<RecordingState>(
     folly::make_unique<RecordingState>());
   recordingState_->clientCallback = std::move(clientCallback);

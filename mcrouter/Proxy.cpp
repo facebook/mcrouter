@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "proxy.h"
+#include "Proxy.h"
 
 #include <string.h>
 #include <sys/stat.h>
@@ -98,15 +98,14 @@ bool processGetServiceInfoRequestImpl(
 
 } // detail
 
-proxy_t::proxy_t(McrouterInstance& rtr, size_t id)
+Proxy::Proxy(McrouterInstance& rtr, size_t id)
     : router_(rtr),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       fiberManager(
-        fiber_local::ContextTypeTag(),
-        folly::make_unique<folly::fibers::EventBaseLoopController>(),
-        getFiberManagerOptions(router_.opts())),
+          fiber_local::ContextTypeTag(),
+          folly::make_unique<folly::fibers::EventBaseLoopController>(),
+          getFiberManagerOptions(router_.opts())),
       id_(id) {
-
   memset(stats, 0, sizeof(stats));
   memset(stats_bin, 0, sizeof(stats_bin));
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
@@ -135,12 +134,13 @@ proxy_t::proxy_t(McrouterInstance& rtr, size_t id)
   statsContainer = folly::make_unique<ProxyStatsContainer>(*this);
 }
 
-proxy_t::Pointer proxy_t::createProxy(McrouterInstance& router,
-                                      folly::EventBase& eventBase,
-                                      size_t id) {
-  /* This hack is needed to make sure proxy_t stays alive
+Proxy::Pointer Proxy::createProxy(
+    McrouterInstance& router,
+    folly::EventBase& eventBase,
+    size_t id) {
+  /* This hack is needed to make sure Proxy stays alive
      until at least event base managed to run the callback below */
-  auto proxy = std::shared_ptr<proxy_t>(new proxy_t(router, id));
+  auto proxy = std::shared_ptr<Proxy>(new Proxy(router, id));
   proxy->self_ = proxy;
 
   eventBase.runInEventBaseThread(
@@ -168,14 +168,14 @@ proxy_t::Pointer proxy_t::createProxy(McrouterInstance& router,
   return Pointer(proxy.get());
 }
 
-std::shared_ptr<ProxyConfig> proxy_t::getConfig() const {
+std::shared_ptr<ProxyConfig> Proxy::getConfig() const {
   std::lock_guard<SFRReadLock> lg(
     const_cast<SFRLock&>(configLock_).readLock());
   return config_;
 }
 
-std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&>
-proxy_t::getConfigLocked() const {
+std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&> Proxy::getConfigLocked()
+    const {
   std::unique_lock<SFRReadLock> lock(
     const_cast<SFRLock&>(configLock_).readLock());
   /* make_pair strips the reference, so construct directly */
@@ -183,9 +183,8 @@ proxy_t::getConfigLocked() const {
     std::move(lock), *config_);
 }
 
-std::shared_ptr<ProxyConfig> proxy_t::swapConfig(
-  std::shared_ptr<ProxyConfig> newConfig) {
-
+std::shared_ptr<ProxyConfig> Proxy::swapConfig(
+    std::shared_ptr<ProxyConfig> newConfig) {
   std::lock_guard<SFRWriteLock> lg(configLock_.writeLock());
   auto old = std::move(config_);
   config_ = std::move(newConfig);
@@ -193,7 +192,7 @@ std::shared_ptr<ProxyConfig> proxy_t::swapConfig(
 }
 
 /** drain and delete proxy object */
-proxy_t::~proxy_t() {
+Proxy::~Proxy() {
   destinationMap.reset();
 
   being_destroyed = true;
@@ -205,24 +204,24 @@ proxy_t::~proxy_t() {
   magic = 0xdeadbeefdeadbeefLL;
 }
 
-void proxy_t::sendMessage(ProxyMessage::Type t, void* data) noexcept {
+void Proxy::sendMessage(ProxyMessage::Type t, void* data) noexcept {
   CHECK(messageQueue_.get());
   messageQueue_->blockingWrite(t, data);
 }
 
-void proxy_t::drainMessageQueue() {
+void Proxy::drainMessageQueue() {
   CHECK(messageQueue_.get());
   messageQueue_->drain();
 }
 
-size_t proxy_t::queueNotifyPeriod() const {
+size_t Proxy::queueNotifyPeriod() const {
   if (messageQueue_) {
     return messageQueue_->currentNotifyPeriod();
   }
   return 0;
 }
 
-void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
+void Proxy::messageReady(ProxyMessage::Type t, void* data) {
   switch (t) {
     case ProxyMessage::Type::REQUEST:
     {
@@ -247,26 +246,22 @@ void proxy_t::messageReady(ProxyMessage::Type t, void* data) {
   }
 }
 
-void proxy_t::routeHandlesProcessRequest(
+void Proxy::routeHandlesProcessRequest(
     const McStatsRequest& req,
-    std::unique_ptr<ProxyRequestContextTyped<
-      McStatsRequest>> ctx) {
-
+    std::unique_ptr<ProxyRequestContextTyped<McStatsRequest>> ctx) {
   ctx->sendReply(stats_reply(this, req.key().fullKey()));
 }
 
-void proxy_t::routeHandlesProcessRequest(
+void Proxy::routeHandlesProcessRequest(
     const McVersionRequest&,
-    std::unique_ptr<ProxyRequestContextTyped<
-      McVersionRequest>> ctx) {
-
+    std::unique_ptr<ProxyRequestContextTyped<McVersionRequest>> ctx) {
   McVersionReply reply(mc_res_ok);
   reply.value() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
   ctx->sendReply(std::move(reply));
 }
 
-void proxy_t::pump() {
+void Proxy::pump() {
   auto numPriorities = static_cast<int>(ProxyRequestPriority::kNumPriorities);
   for (int i = 0; i < numPriorities; ++i) {
     auto& queue = waitingRequests_[i];
@@ -281,16 +276,17 @@ void proxy_t::pump() {
   }
 }
 
-uint64_t proxy_t::nextRequestId() {
+uint64_t Proxy::nextRequestId() {
   return ++nextReqId_;
 }
 
-const McrouterOptions& proxy_t::getRouterOptions() const {
+const McrouterOptions& Proxy::getRouterOptions() const {
   return router_.opts();
 }
 
-std::shared_ptr<ShadowSettings>
-ShadowSettings::create(const folly::dynamic& json, McrouterInstance& router) {
+std::shared_ptr<ShadowSettings> ShadowSettings::create(
+    const folly::dynamic& json,
+    McrouterInstance& router) {
   auto result = std::shared_ptr<ShadowSettings>(new ShadowSettings());
   try {
     checkLogic(json.isObject(), "json is not an object");
@@ -370,7 +366,7 @@ void ShadowSettings::registerOnUpdateCallback(McrouterInstance& router) {
     });
 }
 
-void proxy_config_swap(proxy_t* proxy, std::shared_ptr<ProxyConfig> config) {
+void proxy_config_swap(Proxy* proxy, std::shared_ptr<ProxyConfig> config) {
   auto oldConfig = proxy->swapConfig(std::move(config));
   stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
 

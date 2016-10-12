@@ -28,7 +28,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-struct proxy_t;
+class Proxy;
 
 /**
  * This is the top-most level of Mcrouter's RouteHandle tree.
@@ -37,7 +37,7 @@ class ProxyRoute {
  public:
   static std::string routeName() { return "proxy"; }
 
-  ProxyRoute(proxy_t* proxy, const RouteSelectorMap& routeSelectors);
+  ProxyRoute(Proxy* proxy, const RouteSelectorMap& routeSelectors);
 
   template <class Request>
   void traverse(const Request& req,
@@ -56,7 +56,7 @@ class ProxyRoute {
   }
 
  private:
-  proxy_t* proxy_;
+  Proxy* proxy_;
   McrouterRouteHandlePtr root_;
 
   std::vector<McrouterRouteHandlePtr> getAllDestinations() const;

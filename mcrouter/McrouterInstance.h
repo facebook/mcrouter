@@ -22,13 +22,13 @@
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
-#include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/Observable.h"
-#include "mcrouter/options.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/TkoTracker.h"
+#include "mcrouter/lib/CompressionCodecManager.h"
+#include "mcrouter/options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -132,12 +132,12 @@ class McrouterInstance :
    * @return  nullptr if index is >= opts.num_proxies,
    *   pointer to the proxy otherwise.
    */
-  proxy_t* getProxy(size_t index) const;
+  Proxy* getProxy(size_t index) const;
 
   /**
    * Release ownership of a proxy
    */
-  proxy_t::Pointer releaseProxy(size_t index);
+  Proxy::Pointer releaseProxy(size_t index);
 
   pid_t pid() const {
     return pid_;
@@ -284,7 +284,7 @@ class McrouterInstance :
    * Embedded mode: Mcrouter owns ProxyThreads, which managed the lifetime
    * of proxies on their own threads.
    */
-  std::vector<proxy_t::Pointer> proxies_;
+  std::vector<Proxy::Pointer> proxies_;
   std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
 
   /**

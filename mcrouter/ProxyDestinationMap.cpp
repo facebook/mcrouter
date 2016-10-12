@@ -14,12 +14,12 @@
 #include <folly/io/async/AsyncTimeout.h>
 #include <folly/io/async/EventBase.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyDestination.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/AccessPoint.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -45,7 +45,7 @@ struct ProxyDestinationMap::StateList {
   List list;
 };
 
-ProxyDestinationMap::ProxyDestinationMap(proxy_t* proxy)
+ProxyDestinationMap::ProxyDestinationMap(Proxy* proxy)
     : proxy_(proxy),
       active_(folly::make_unique<StateList>()),
       inactive_(folly::make_unique<StateList>()),

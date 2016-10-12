@@ -17,16 +17,16 @@
 #include <folly/fibers/Baton.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/options.h"
-#include "mcrouter/proxy.h"
-#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

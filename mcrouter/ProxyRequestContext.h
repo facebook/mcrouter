@@ -60,9 +60,9 @@ public:
    *   in traverse() with itself as the argument.
    */
   static std::shared_ptr<ProxyRequestContext> createRecording(
-    proxy_t& proxy,
-    ClientCallback clientCallback,
-    ShardSplitCallback shardSplitCallback = nullptr);
+      Proxy& proxy,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr);
 
   /**
    * Same as createRecording(), but also notifies the baton
@@ -70,14 +70,14 @@ public:
    * finish executing).
    */
   static std::shared_ptr<ProxyRequestContext> createRecordingNotify(
-    proxy_t& proxy,
-    folly::fibers::Baton& baton,
-    ClientCallback clientCallback,
-    ShardSplitCallback shardSplitCallback = nullptr);
+      Proxy& proxy,
+      folly::fibers::Baton& baton,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr);
 
   virtual ~ProxyRequestContext();
 
-  proxy_t& proxy() const {
+  Proxy& proxy() const {
     return proxy_;
   }
 
@@ -179,11 +179,11 @@ public:
   bool replied_{false};
   std::shared_ptr<const ProxyConfig> config_;
 
-  ProxyRequestContext(proxy_t& pr, ProxyRequestPriority priority__);
+  ProxyRequestContext(Proxy& pr, ProxyRequestPriority priority__);
 
  private:
   const uint64_t requestId_;
-  proxy_t& proxy_;
+  Proxy& proxy_;
   bool failoverDisabled_{false};
 
   /** If true, this is currently being processed by a proxy and
@@ -222,10 +222,10 @@ public:
 
   enum RecordingT { Recording };
   ProxyRequestContext(
-    RecordingT,
-    proxy_t& pr,
-    ClientCallback clientCallback,
-    ShardSplitCallback shardSplitCallback);
+      RecordingT,
+      Proxy& pr,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback);
 
   ProxyRequestContext(const ProxyRequestContext&) = delete;
   ProxyRequestContext(ProxyRequestContext&&) noexcept = delete;
@@ -254,7 +254,7 @@ public:
 
 private:
   friend class McrouterClient;
-  friend struct proxy_t;
+  friend class Proxy;
 };
 
 template <class Request>
@@ -296,9 +296,10 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
       std::unique_ptr<Type> preq, std::shared_ptr<const ProxyConfig> config);
 
  protected:
-  ProxyRequestContextTyped(proxy_t& pr,
-                           const Request& req,
-                           ProxyRequestPriority priority__)
+  ProxyRequestContextTyped(
+      Proxy& pr,
+      const Request& req,
+      ProxyRequestPriority priority__)
       : ProxyRequestContext(pr, priority__), req_(&req) {}
 
   virtual void sendReplyImpl(ReplyT<Request>&& reply) = 0;
@@ -312,13 +313,11 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
  * Creates a new proxy request context
  */
 template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<Request>>
-createProxyRequestContext(
-    proxy_t& pr,
+std::unique_ptr<ProxyRequestContextTyped<Request>> createProxyRequestContext(
+    Proxy& pr,
     const Request& req,
     F&& f,
     ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
-
 }}}  // facebook::memcache::mcrouter
 
 #include "ProxyRequestContext-inl.h"

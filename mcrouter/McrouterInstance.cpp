@@ -17,19 +17,19 @@
 #include <folly/MapUtil.h>
 #include <folly/Singleton.h>
 
-#include "mcrouter/awriter.h"
 #include "mcrouter/FileObserver.h"
-#include "mcrouter/lib/cycles/Cycles.h"
-#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/McrouterLogger.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
-#include "mcrouter/stats.h"
 #include "mcrouter/ThreadUtil.h"
+#include "mcrouter/awriter.h"
+#include "mcrouter/lib/cycles/Cycles.h"
+#include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -178,8 +178,8 @@ McrouterInstance* McrouterInstance::createRaw(
   } catch (...) {
   }
 
-  // Ensure that proxy_t's will be destroyed on the EventBase threads.
-  // TODO: fix (already existing) races between proxy_t and McrouterInstance
+  // Ensure that Proxy's will be destroyed on the EventBase threads.
+  // TODO: fix (already existing) races between Proxy and McrouterInstance
   // when McrouterInstance fails to configure and user has provided us with
   // their own EventBases.
   for (size_t i = 0; i < router->proxies_.size(); ++i) {
@@ -246,7 +246,7 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
           proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
         } else {
           CHECK(evbs[i] != nullptr);
-          proxies_.emplace_back(proxy_t::createProxy(*this, *evbs[i], i));
+          proxies_.emplace_back(Proxy::createProxy(*this, *evbs[i], i));
         }
       } catch (...) {
         LOG(ERROR) << "Failed to create proxy";
@@ -308,7 +308,7 @@ McrouterInstance::getStartupOpts() const {
   return result;
 }
 
-proxy_t* McrouterInstance::getProxy(size_t index) const {
+Proxy* McrouterInstance::getProxy(size_t index) const {
   if (!proxies_.empty()) {
     assert(proxyThreads_.empty());
     return index < proxies_.size() ? proxies_[index].get() : nullptr;
@@ -319,7 +319,7 @@ proxy_t* McrouterInstance::getProxy(size_t index) const {
   }
 }
 
-proxy_t::Pointer McrouterInstance::releaseProxy(size_t index) {
+Proxy::Pointer McrouterInstance::releaseProxy(size_t index) {
   assert(index < proxies_.size());
   return std::move(proxies_[index]);
 }

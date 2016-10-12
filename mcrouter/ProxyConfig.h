@@ -26,7 +26,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class PoolFactory;
 class ProxyRoute;
 class ServiceInfo;
-struct proxy_t;
+class Proxy;
 
 /**
  * Topmost struct for mcrouter configs.
@@ -76,10 +76,11 @@ class ProxyConfig {
    *
    * @param jsonC config in format of JSON with comments and templates
    */
-  ProxyConfig(proxy_t& proxy,
-              const folly::dynamic& json,
-              std::string configMd5Digest,
-              PoolFactory& poolFactory);
+  ProxyConfig(
+      Proxy& proxy,
+      const folly::dynamic& json,
+      std::string configMd5Digest,
+      PoolFactory& poolFactory);
 
   friend class ProxyConfigBuilder;
 };

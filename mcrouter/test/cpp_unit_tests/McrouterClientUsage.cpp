@@ -65,8 +65,8 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
   auto router = McrouterInstance::init("sameThreadClientTest", opts, evbs);
 
   // When using createSameThreadClient(), users must ensure that client->send()
-  // is only ever called on the same thread as the associated proxy_t.
-  // Note that client->send() hands the request off to the proxy_t, which
+  // is only ever called on the same thread as the associated Proxy.
+  // Note that client->send() hands the request off to the Proxy, which
   // processes/sends the request asynchronously, i.e., after client->send()
   // returns.
   // Alternatively, users may opt to obtain a client via router->createClient(),
@@ -116,14 +116,14 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
 
 TEST(McrouterClient, basicUsageRemoteThreadClient) {
   // This test is a lot like the previous one, except this test demonstrates
-  // the use of a client that can safely send a request through a proxy_t
+  // the use of a client that can safely send a request through a Proxy
   // on another thread.  Much of the code is the exact same as before.
   auto opts = defaultTestOptions();
   opts.config_str = R"({ "route": "NullRoute" })";
 
   auto router = McrouterInstance::init("remoteThreadClientTest", opts);
 
-  // Create client that can safely send requests through a proxy_t on another
+  // Create client that can safely send requests through a Proxy on another
   // thread
   auto client = router->createClient(0 /* max_outstanding_requests */);
 

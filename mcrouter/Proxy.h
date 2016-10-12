@@ -142,7 +142,7 @@ struct ProxyMessage {
       : type(t), data(d) {}
 };
 
-struct proxy_t {
+class Proxy {
   uint64_t magic;
  private:
   McrouterInstance& router_;
@@ -211,7 +211,7 @@ struct proxy_t {
     return *eventBase_;
   }
 
-  ~proxy_t();
+  ~Proxy();
 
   /**
    * Thread-safe access to config
@@ -283,7 +283,7 @@ struct proxy_t {
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
 
   struct ProxyDelayedDestructor {
-    void operator() (proxy_t* proxy) {
+    void operator()(Proxy* proxy) {
       /* We only access self_ during construction, so this code should
          never run concurrently.
 
@@ -294,14 +294,14 @@ struct proxy_t {
     }
   };
 
-  std::shared_ptr<proxy_t> self_;
+  std::shared_ptr<Proxy> self_;
   size_t id_{0};
 
-  using Pointer = std::unique_ptr<proxy_t, ProxyDelayedDestructor>;
+  using Pointer = std::unique_ptr<Proxy, ProxyDelayedDestructor>;
   static Pointer createProxy(McrouterInstance& router,
                              folly::EventBase& eventBase,
                              size_t id);
-  proxy_t(McrouterInstance& router, size_t id);
+  Proxy(McrouterInstance& router, size_t id);
 
   void messageReady(ProxyMessage::Type t, void* data);
 
@@ -379,7 +379,7 @@ struct proxy_t {
      * processing requests retaining all the type information
      * (e.g. Operation and Request).
      */
-    virtual void process(proxy_t* proxy) = 0;
+    virtual void process(Proxy* proxy) = 0;
   };
 
   template <class Request>
@@ -388,7 +388,7 @@ struct proxy_t {
     WaitingRequest(
         const Request& req,
         std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
-    void process(proxy_t* proxy) override final;
+    void process(Proxy* proxy) override final;
     void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:
@@ -411,7 +411,7 @@ struct proxy_t {
 
   /**
    * Returns the next request id.
-   * Request ids are unique per proxy_t.
+   * Request ids are unique per Proxy.
    */
   uint64_t nextRequestId();
 
@@ -429,9 +429,7 @@ struct old_config_req_t {
   std::shared_ptr<ProxyConfig> config_;
 };
 
-void proxy_config_swap(proxy_t* proxy,
-                       std::shared_ptr<ProxyConfig> config);
-
+void proxy_config_swap(Proxy* proxy, std::shared_ptr<ProxyConfig> config);
 }}} // facebook::memcache::mcrouter
 
-#include "proxy-inl.h"
+#include "Proxy-inl.h"

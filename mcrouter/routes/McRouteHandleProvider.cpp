@@ -13,15 +13,15 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/config.h"
-#include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/PoolFactory.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyDestinationMap.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
@@ -37,13 +37,13 @@ std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json,
     std::vector<McrouterRouteHandlePtr> destinations,
-    proxy_t& proxy,
+    Proxy& proxy,
     ExtraRouteHandleProviderIf& extraProvider);
 
 std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json,
-    proxy_t& proxy,
+    Proxy& proxy,
     ExtraRouteHandleProviderIf& extraProvider);
 
 McrouterRouteHandlePtr makeAllAsyncRoute(McRouteHandleFactory& factory,
@@ -150,61 +150,53 @@ std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
     const folly::dynamic& json);
 
 McRouteHandleProvider::McRouteHandleProvider(
-  proxy_t& proxy,
-  PoolFactory& poolFactory)
+    Proxy& proxy,
+    PoolFactory& poolFactory)
     : proxy_(proxy),
       poolFactory_(poolFactory),
       extraProvider_(createExtraRouteHandleProvider()),
       routeMap_{
-        { "AllAsyncRoute", &makeAllAsyncRoute },
-        { "AllFastestRoute", &makeAllFastestRoute },
-        { "AllInitialRoute", &makeAllInitialRoute },
-        { "AllMajorityRoute", &makeAllMajorityRoute },
-        { "AllSyncRoute", &makeAllSyncRoute },
-        {
-          "AsynclogRoute",
-          [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
-            auto p = parseAsynclogRoute(factory, json);
-            return createAsynclogRoute(std::move(p.first), std::move(p.second));
-          }
-        },
-        { "DevNullRoute", &makeDevNullRoute },
-        { "ErrorRoute", &makeErrorRoute },
-        { "FailoverRoute", &makeFailoverRoute },
-        { "FailoverWithExptimeRoute", &makeFailoverWithExptimeRoute },
-        {
-          "HashRoute",
-          [](McRouteHandleFactory& factory, const folly::dynamic& json) {
-            return makeHashRoute(factory, json);
-          }
-        },
-        { "HostIdRoute", &makeHostIdRoute },
-        { "L1L2CacheRoute", &makeL1L2CacheRoute },
-        { "LatestRoute", &makeLatestRoute },
-        { "LoggingRoute", &makeLoggingRoute },
-        { "MigrateRoute", &makeMigrateRoute },
-        { "MissFailoverRoute", &makeMissFailoverRoute },
-        { "ModifyExptimeRoute", &makeModifyExptimeRoute },
-        { "ModifyKeyRoute", &makeModifyKeyRoute },
-        { "NullRoute", &makeNullRoute },
-        { "OperationSelectorRoute", &makeOperationSelectorRoute },
-        {
-          "PoolRoute",
-          [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
-            return makePoolRoute(factory, json);
-          }
-        },
-        { "PrefixPolicyRoute", &makeOperationSelectorRoute },
-        { "RandomRoute", &makeRandomRoute },
-        {
-          "RateLimitRoute",
-          [](McRouteHandleFactory& factory, const folly::dynamic& json) {
-            return makeRateLimitRoute(factory, json);
-          }
-        },
-        { "WarmUpRoute", &makeWarmUpRoute },
-      } {
-}
+          {"AllAsyncRoute", &makeAllAsyncRoute},
+          {"AllFastestRoute", &makeAllFastestRoute},
+          {"AllInitialRoute", &makeAllInitialRoute},
+          {"AllMajorityRoute", &makeAllMajorityRoute},
+          {"AllSyncRoute", &makeAllSyncRoute},
+          {"AsynclogRoute",
+           [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
+             auto p = parseAsynclogRoute(factory, json);
+             return createAsynclogRoute(
+                 std::move(p.first), std::move(p.second));
+           }},
+          {"DevNullRoute", &makeDevNullRoute},
+          {"ErrorRoute", &makeErrorRoute},
+          {"FailoverRoute", &makeFailoverRoute},
+          {"FailoverWithExptimeRoute", &makeFailoverWithExptimeRoute},
+          {"HashRoute",
+           [](McRouteHandleFactory& factory, const folly::dynamic& json) {
+             return makeHashRoute(factory, json);
+           }},
+          {"HostIdRoute", &makeHostIdRoute},
+          {"L1L2CacheRoute", &makeL1L2CacheRoute},
+          {"LatestRoute", &makeLatestRoute},
+          {"LoggingRoute", &makeLoggingRoute},
+          {"MigrateRoute", &makeMigrateRoute},
+          {"MissFailoverRoute", &makeMissFailoverRoute},
+          {"ModifyExptimeRoute", &makeModifyExptimeRoute},
+          {"ModifyKeyRoute", &makeModifyKeyRoute},
+          {"NullRoute", &makeNullRoute},
+          {"OperationSelectorRoute", &makeOperationSelectorRoute},
+          {"PoolRoute",
+           [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
+             return makePoolRoute(factory, json);
+           }},
+          {"PrefixPolicyRoute", &makeOperationSelectorRoute},
+          {"RandomRoute", &makeRandomRoute},
+          {"RateLimitRoute",
+           [](McRouteHandleFactory& factory, const folly::dynamic& json) {
+             return makeRateLimitRoute(factory, json);
+           }},
+          {"WarmUpRoute", &makeWarmUpRoute},
+      } {}
 
 McRouteHandleProvider::~McRouteHandleProvider() {
   /* Needed for forward declaration of ExtraRouteHandleProviderIf in .h */

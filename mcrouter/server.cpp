@@ -13,17 +13,17 @@
 
 #include <cstdio>
 
-#include "mcrouter/config.h"
-#include "mcrouter/lib/network/AsyncMcServer.h"
-#include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/McrouterClient.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/ServerOnRequest.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/network/AsyncMcServer.h"
+#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

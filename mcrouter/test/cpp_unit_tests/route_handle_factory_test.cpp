@@ -10,11 +10,11 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include "mcrouter/PoolFactory.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/options.h"
-#include "mcrouter/PoolFactory.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 

@@ -9,10 +9,10 @@
  */
 #include "McrouterClient.h"
 
-#include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/McrouterInstance.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/MessageQueue.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

@@ -20,7 +20,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class ProxyConfig;
 template <class Request>
 class ProxyRequestContextTyped;
-struct proxy_t;
+class Proxy;
 
 /**
  * Answers mc_op_get_service_info requests of the form
@@ -28,7 +28,7 @@ struct proxy_t;
  */
 class ServiceInfo {
  public:
-  ServiceInfo(proxy_t* proxy, const ProxyConfig& config);
+  ServiceInfo(Proxy* proxy, const ProxyConfig& config);
 
   void handleRequest(
       folly::StringPiece req,

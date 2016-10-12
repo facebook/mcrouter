@@ -17,13 +17,13 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/Hash.h>
 
+#include "mcrouter/Proxy.h"
+#include "mcrouter/RoutingPrefix.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/PrefixSelectorRoute.h"
 #include "mcrouter/routes/RoutePolicyMap.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
-#include "mcrouter/RoutingPrefix.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

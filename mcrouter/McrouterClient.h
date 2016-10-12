@@ -20,7 +20,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterClient;
 class McrouterInstance;
-struct proxy_t;
+class Proxy;
 class ProxyRequestContext;
 
 /**
@@ -112,7 +112,7 @@ class McrouterClient {
   /**
    * Override default proxy assignment.
    */
-  void setProxy(proxy_t* proxy) {
+  void setProxy(Proxy* proxy) {
     proxy_ = proxy;
   }
 
@@ -127,7 +127,7 @@ class McrouterClient {
   std::weak_ptr<McrouterInstance> router_;
   bool sameThread_{false};
 
-  proxy_t* proxy_{nullptr};
+  Proxy* proxy_{nullptr};
 
   CacheClientStats stats_;
 

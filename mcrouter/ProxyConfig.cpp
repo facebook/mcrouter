@@ -13,24 +13,24 @@
 #include <folly/dynamic.h>
 #include <folly/json.h>
 
+#include "mcrouter/PoolFactory.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/PoolFactory.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/PrefixSelectorRoute.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
-#include "mcrouter/ServiceInfo.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyConfig::ProxyConfig(proxy_t& proxy,
-                         const folly::dynamic& json,
-                         std::string configMd5Digest,
-                         PoolFactory& poolFactory)
-  : configMd5Digest_(std::move(configMd5Digest)) {
-
+ProxyConfig::ProxyConfig(
+    Proxy& proxy,
+    const folly::dynamic& json,
+    std::string configMd5Digest,
+    PoolFactory& poolFactory)
+    : configMd5Digest_(std::move(configMd5Digest)) {
   McRouteHandleProvider provider(proxy, poolFactory);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider, proxy.getId());
 

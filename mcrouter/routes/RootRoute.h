@@ -16,10 +16,10 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/Likely.h>
 
+#include "mcrouter/Proxy.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteHandleMap.h"
 
@@ -29,11 +29,12 @@ class RootRoute {
  public:
   static std::string routeName() { return "root"; }
 
-  RootRoute(proxy_t* proxy, const RouteSelectorMap& routeSelectors)
+  RootRoute(Proxy* proxy, const RouteSelectorMap& routeSelectors)
       : opts_(proxy->getRouterOptions()),
-        rhMap_(routeSelectors,
-               opts_.default_route,
-               opts_.send_invalid_route_to_default) {}
+        rhMap_(
+            routeSelectors,
+            opts_.default_route,
+            opts_.send_invalid_route_to_default) {}
 
   template <class Request>
   void traverse(const Request& req,

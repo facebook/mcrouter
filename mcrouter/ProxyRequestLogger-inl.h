@@ -7,12 +7,12 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -30,30 +30,29 @@ namespace facebook { namespace memcache { namespace mcrouter {
 namespace detail {
 
 template <class Request>
-inline void logOutlier(proxy_t& proxy, GetLikeT<Request> = 0) {
+inline void logOutlier(Proxy& proxy, GetLikeT<Request> = 0) {
   REQUEST_CLASS_STATS(proxy, get, outlier, fiber_local::getRequestClass());
 }
 
 template <class Request>
-inline void logOutlier(proxy_t& proxy, UpdateLikeT<Request> = 0) {
+inline void logOutlier(Proxy& proxy, UpdateLikeT<Request> = 0) {
   REQUEST_CLASS_STATS(proxy, set, outlier, fiber_local::getRequestClass());
 }
 
 template <class Request>
-inline void logOutlier(proxy_t& proxy, DeleteLikeT<Request> = 0) {
+inline void logOutlier(Proxy& proxy, DeleteLikeT<Request> = 0) {
   REQUEST_CLASS_STATS(proxy, delete, outlier, fiber_local::getRequestClass());
 }
 
 template <class Request>
-inline void logOutlier(proxy_t& proxy, OtherThanT<Request,
-                                                  GetLike<>,
-                                                  UpdateLike<>,
-                                                  DeleteLike<>> = 0) {
+inline void logOutlier(
+    Proxy& proxy,
+    OtherThanT<Request, GetLike<>, UpdateLike<>, DeleteLike<>> = 0) {
   REQUEST_CLASS_STATS(proxy, other, outlier, fiber_local::getRequestClass());
 }
 
 template <class Request>
-inline void logRequestClass(proxy_t& proxy) {
+inline void logRequestClass(Proxy& proxy) {
   auto reqClass = fiber_local::getRequestClass();
   auto operation =
       McOperation<OpFromType<Request, RequestOpMapping>::value>::mc_op;

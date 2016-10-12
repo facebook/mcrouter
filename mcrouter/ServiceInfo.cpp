@@ -19,32 +19,32 @@
 #include <folly/Memory.h>
 #include <folly/Range.h>
 
-#include "mcrouter/config-impl.h"
-#include "mcrouter/config.h"
-#include "mcrouter/lib/fbi/cpp/globals.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/McRequestList.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
-#include "mcrouter/options.h"
-#include "mcrouter/proxy.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
+#include "mcrouter/config-impl.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/McRequestList.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/options.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 struct ServiceInfo::ServiceInfoImpl {
-  proxy_t* proxy_;
+  Proxy* proxy_;
   ProxyRoute& proxyRoute_;
   std::unordered_map<
     std::string,
     std::function<std::string(const std::vector<folly::StringPiece>& args)>>
   commands_;
 
-  ServiceInfoImpl(proxy_t* proxy, const ProxyConfig& config);
+  ServiceInfoImpl(Proxy* proxy, const ProxyConfig& config);
 
   template <class Request>
   void handleRequest(
@@ -191,15 +191,13 @@ void ServiceInfo::ServiceInfoImpl::routeCommandHelper(
 ServiceInfo::~ServiceInfo() {
 }
 
-ServiceInfo::ServiceInfo(proxy_t* proxy, const ProxyConfig& config)
-    : impl_(folly::make_unique<ServiceInfoImpl>(proxy, config)) {
-}
+ServiceInfo::ServiceInfo(Proxy* proxy, const ProxyConfig& config)
+    : impl_(folly::make_unique<ServiceInfoImpl>(proxy, config)) {}
 
-ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(proxy_t* proxy,
-                                              const ProxyConfig& config)
-    : proxy_(proxy),
-      proxyRoute_(config.proxyRoute()) {
-
+ServiceInfo::ServiceInfoImpl::ServiceInfoImpl(
+    Proxy* proxy,
+    const ProxyConfig& config)
+    : proxy_(proxy), proxyRoute_(config.proxyRoute()) {
   commands_.emplace("version",
     [] (const std::vector<folly::StringPiece>& args) {
       return MCROUTER_PACKAGE_STRING;

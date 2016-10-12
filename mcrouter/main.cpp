@@ -37,13 +37,13 @@
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/async.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
-#include "mcrouter/McrouterInstance.h"
-#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
-#include "mcrouter/proxy.h"
 #include "mcrouter/server.h"
 #include "mcrouter/standalone_options.h"
 #include "mcrouter/stats.h"
