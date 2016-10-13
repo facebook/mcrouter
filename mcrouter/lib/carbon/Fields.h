@@ -38,6 +38,18 @@ enum class FieldType : uint8_t {
   Float  = 0xd
 };
 
+template <class T>
+class IsCarbonStruct {
+  template <class C>
+  static constexpr decltype(&C::serialize, std::true_type()) check(int);
+
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value};
+};
+
 namespace detail {
 
 template <class T>
@@ -116,18 +128,6 @@ struct TypeToField<folly::IOBuf> {
 template <class T>
 struct TypeToField<std::vector<T>> {
   static constexpr FieldType fieldType{FieldType::List};
-};
-
-template <class T>
-class HasSerialize {
-  template <class C>
-  static constexpr decltype(&C::serialize, std::true_type()) check(int);
-
-  template <class C>
-  static constexpr std::false_type check(...);
-
- public:
-  static constexpr bool value{decltype(check<T>(0))::value};
 };
 
 template <class T>

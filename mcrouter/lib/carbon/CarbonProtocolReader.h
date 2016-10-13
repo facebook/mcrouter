@@ -66,7 +66,7 @@ class CarbonProtocolReader {
   }
 
   template <class T>
-  typename std::enable_if<detail::HasSerialize<T>::value, void>::type
+  typename std::enable_if<IsCarbonStruct<T>::value, void>::type
   readRawInto(T& data) {
     data.deserialize(*this);
   }

@@ -201,7 +201,7 @@ class CarbonProtocolWriter {
 
   // Serialize Carbon-generated structure members and mixins
   template <class T>
-  typename std::enable_if<detail::HasSerialize<T>::value, void>::type
+  typename std::enable_if<IsCarbonStruct<T>::value, void>::type
   writeField(const int16_t id, const T& data) {
     writeFieldHeader(FieldType::Struct, id);
     writeRaw(data);
@@ -311,7 +311,7 @@ class CarbonProtocolWriter {
   }
 
   template <class T>
-  typename std::enable_if<detail::HasSerialize<T>::value, void>::type writeRaw(
+  typename std::enable_if<IsCarbonStruct<T>::value, void>::type writeRaw(
       const T& data) {
     data.serialize(*this);
   }

@@ -40,6 +40,9 @@ TEST(CarbonBasic, staticAsserts) {
   static_assert(!TestReply::hasKey, "");
   static_assert(!TestReply::hasValue, "");
   static_assert(TestReply::typeId == 70, "");
+
+  static_assert(carbon::IsCarbonStruct<TestRequest>::value, "");
+  static_assert(!carbon::IsCarbonStruct<int>::value, "");
 }
 
 TEST(CarbonBasic, defaultConstructed) {
