@@ -53,7 +53,10 @@ class McSerializedRequest {
   McSerializedRequest(const McSerializedRequest&) = delete;
   McSerializedRequest& operator=(const McSerializedRequest&) = delete;
 
-  Result serializationResult() const;
+  Result serializationResult() const {
+    return result_;
+  }
+
   size_t getIovsCount() const { return iovsCount_; }
   const struct iovec* getIovs() const { return iovsBegin_; }
   uint32_t typeId() const { return typeId_; }
@@ -72,8 +75,6 @@ class McSerializedRequest {
   mc_protocol_t protocol_{mc_unknown_protocol};
   Result result_{Result::OK};
   uint32_t typeId_{0};
-
-  bool checkKeyLength(const folly::IOBuf& key);
 };
 
 }} // facebook::memcache

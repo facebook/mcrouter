@@ -8,13 +8,44 @@
  *
  */
 #include <iostream>
+#include <utility>
 
 namespace carbon {
+
+template <class Storage>
+Keys<Storage>::Keys(const Keys<Storage>& other) : key_(other.key_) {
+  initStringPieces(other);
+}
+
+template <class Storage>
+Keys<Storage>& Keys<Storage>::operator=(const Keys<Storage>& other) {
+  if (this != &other) {
+    key_ = other.key_;
+    initStringPieces(other);
+  }
+  return *this;
+}
+
+template <class Storage>
+Keys<Storage>::Keys(Keys<Storage>&& other) noexcept
+    : key_(std::move(other.key_)) {
+  initStringPieces(other);
+}
+
+template <class Storage>
+Keys<Storage>& Keys<Storage>::operator=(Keys<Storage>&& other) noexcept {
+  if (this != &other) {
+    key_ = std::move(other.key_);
+    initStringPieces(other);
+  }
+  return *this;
+}
 
 template <class Storage>
 void Keys<Storage>::update() {
   const folly::StringPiece key = fullKey();
   keyWithoutRoute_ = key;
+  routingPrefix_.reset(key.begin(), 0);
   if (!key.empty() && *key.begin() == '/') {
     size_t pos = 1;
     for (int i = 0; i < 2; ++i) {

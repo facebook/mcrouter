@@ -29,16 +29,4 @@ McSerializedRequest::~McSerializedRequest() {
   }
 }
 
-bool McSerializedRequest::checkKeyLength(const folly::IOBuf& key) {
-  if (key.computeChainDataLength() > MC_KEY_MAX_LEN_UMBRELLA) {
-    result_ = Result::BAD_KEY;
-    return false;
-  }
-  return true;
-}
-
-McSerializedRequest::Result McSerializedRequest::serializationResult() const {
-  return result_;
-}
-
 }} // facebook::memcache

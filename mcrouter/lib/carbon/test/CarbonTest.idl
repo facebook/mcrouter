@@ -36,6 +36,18 @@ reply TestReply {
   1: Result result;
 };
 
+request TestRequestStringKey {
+  id: 4;
+  name: "testStringKey";
+  reply: TestReplyStringKey;
+
+  1: Keys<string> key;
+};
+
+reply TestReplyStringKey {
+  1: Result result;
+};
+
 service {
   additional_requests: [AnotherRequest, carbon::test2::util::YetAnotherRequest];
   enable_shutdown: true;

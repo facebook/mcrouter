@@ -313,6 +313,96 @@ class TestReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
 };
 
+class TestReplyStringKey;
+
+class TestRequestStringKey : public carbon::RequestCommon {
+ public:
+  using reply_type = TestReplyStringKey;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = true;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 71;
+  static constexpr const char* name = "testStringKey";
+
+  TestRequestStringKey() = default;
+  TestRequestStringKey(const TestRequestStringKey&) = default;
+  TestRequestStringKey& operator=(const TestRequestStringKey&) = default;
+  TestRequestStringKey(TestRequestStringKey&&) = default;
+  TestRequestStringKey& operator=(TestRequestStringKey&&) = default;
+  explicit TestRequestStringKey(folly::StringPiece sp) : key_(sp) {}
+  explicit TestRequestStringKey(std::string&& carbonKey)
+      : key_(std::move(carbonKey)) {}
+  explicit TestRequestStringKey(const char* key) : key_(key) {}
+
+  const carbon::Keys<std::string>& key() const {
+    return key_;
+  }
+  carbon::Keys<std::string>& key() {
+    return key_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Keys<std::string> key_;
+};
+
+class TestReplyStringKey : public carbon::ReplyCommon {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 72;
+
+  TestReplyStringKey() = default;
+  TestReplyStringKey(const TestReplyStringKey&) = default;
+  TestReplyStringKey& operator=(const TestReplyStringKey&) = default;
+  TestReplyStringKey(TestReplyStringKey&&) = default;
+  TestReplyStringKey& operator=(TestReplyStringKey&&) = default;
+  explicit TestReplyStringKey(carbon::Result carbonResult)
+      : result_(carbonResult) {}
+
+  carbon::Result result() const {
+    return result_;
+  }
+  carbon::Result& result() {
+    return result_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Result result_{mc_res_unknown};
+};
+
 } // test
 } // carbon
 

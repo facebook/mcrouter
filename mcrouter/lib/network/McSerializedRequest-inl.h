@@ -29,7 +29,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_caret_protocol:
       new (&caretRequest_) CaretSerializedMessage;
-      if (!checkKeyLength(req.key().raw())) {
+      if (req.key().size() > MC_KEY_MAX_LEN_UMBRELLA) {
         return;
       }
       if (!caretRequest_.prepare(
@@ -39,7 +39,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_umbrella_protocol:
       new (&umbrellaMessage_) UmbrellaSerializedMessage;
-      if (!checkKeyLength(req.key().raw())) {
+      if (req.key().size() > MC_KEY_MAX_LEN_UMBRELLA) {
         return;
       }
       if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {

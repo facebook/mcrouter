@@ -25,8 +25,43 @@ using namespace carbon::test::util;
 using carbon::test::SimpleStruct;
 using carbon::test::TestReply;
 using carbon::test::TestRequest;
+using carbon::test::TestRequestStringKey;
 using carbon::test2::util::SimpleEnum;
 using facebook::memcache::coalesceAndGetRange;
+
+namespace {
+
+constexpr auto kKeyLiteral =
+    "/region/cluster/abcdefghijklmnopqrstuvwxyz|#|afterhashstop";
+
+template <class Key>
+void checkKeyEmpty(const Key& key) {
+  const auto emptyRoutingKeyHash = TestRequest().key().routingKeyHash();
+
+  EXPECT_TRUE(key.empty());
+  EXPECT_EQ(0, key.size());
+  EXPECT_EQ("", key.fullKey());
+  EXPECT_EQ("", key.routingKey());
+  EXPECT_EQ("", key.routingPrefix());
+  EXPECT_EQ("", key.keyWithoutRoute());
+  EXPECT_FALSE(key.hasHashStop());
+  EXPECT_EQ(emptyRoutingKeyHash, key.routingKeyHash());
+}
+
+template <class Key>
+void checkKeyFilledProperly(const Key& key) {
+  EXPECT_FALSE(key.empty());
+  EXPECT_EQ(std::strlen(kKeyLiteral), key.size());
+  EXPECT_EQ(kKeyLiteral, key.fullKey());
+  EXPECT_EQ(
+      "abcdefghijklmnopqrstuvwxyz|#|afterhashstop", key.keyWithoutRoute());
+  EXPECT_EQ("/region/cluster/", key.routingPrefix());
+  EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", key.routingKey());
+  EXPECT_NE(0, key.routingKeyHash());
+  EXPECT_TRUE(key.hasHashStop());
+}
+
+} // anonymous
 
 TEST(CarbonBasic, staticAsserts) {
   static_assert(!TestRequest::hasExptime, "");
@@ -47,14 +82,11 @@ TEST(CarbonBasic, staticAsserts) {
 
 TEST(CarbonBasic, defaultConstructed) {
   TestRequest req;
+  TestRequestStringKey req2;
 
   // key
-  EXPECT_TRUE(req.key().empty());
-  EXPECT_EQ(0, req.key().size());
-  EXPECT_EQ("", req.key().fullKey());
-  EXPECT_EQ("", req.key().routingKey());
-  EXPECT_EQ("", req.key().routingPrefix());
-  EXPECT_EQ("", req.key().keyWithoutRoute());
+  checkKeyEmpty(req.key());
+  checkKeyEmpty(req2.key());
 
   // bool
   EXPECT_FALSE(req.testBool());
@@ -118,19 +150,27 @@ TEST(CarbonBasic, defaultConstructed) {
 }
 
 TEST(CarbonBasic, setAndGet) {
-  const folly::StringPiece keyPiece(
-      "/region/cluster/abcdefghijklmnopqrstuvwxyz|#|afterhashstop");
-  TestRequest req(keyPiece);
+  TestRequest req(kKeyLiteral);
+  TestRequestStringKey req2(kKeyLiteral);
 
   // key
   const auto reqKeyPiece = req.key().fullKey();
-  EXPECT_EQ(keyPiece, reqKeyPiece);
-  EXPECT_EQ(keyPiece, req.key().fullKey());
+  EXPECT_EQ(kKeyLiteral, reqKeyPiece);
+  EXPECT_EQ(kKeyLiteral, req.key().fullKey());
   EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", req.key().routingKey().str());
   EXPECT_EQ("/region/cluster/", req.key().routingPrefix().str());
   EXPECT_EQ(
       "abcdefghijklmnopqrstuvwxyz|#|afterhashstop",
       req.key().keyWithoutRoute().str());
+
+  const auto reqKeyPiece2 = req2.key().fullKey();
+  EXPECT_EQ(kKeyLiteral, reqKeyPiece2);
+  EXPECT_EQ(kKeyLiteral, req2.key().fullKey());
+  EXPECT_EQ("abcdefghijklmnopqrstuvwxyz", req2.key().routingKey().str());
+  EXPECT_EQ("/region/cluster/", req2.key().routingPrefix().str());
+  EXPECT_EQ(
+      "abcdefghijklmnopqrstuvwxyz|#|afterhashstop",
+      req2.key().keyWithoutRoute().str());
 
   // bool
   req.testBool() = true;
@@ -284,4 +324,76 @@ TEST(CarbonTest, veryLongIobuf) {
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
   EXPECT_EQ(kVeryLongIobufSize, inRequest.testIobuf().length());
+}
+
+TEST(CarbonTest, keysIobuf) {
+  {
+    TestRequest req;
+    checkKeyEmpty(req.key());
+  }
+  {
+    TestRequest req;
+
+    const folly::IOBuf keyCopy(folly::IOBuf::CopyBufferOp(), kKeyLiteral);
+    req.key() = keyCopy;
+    checkKeyFilledProperly(req.key());
+
+    req.key() = "";
+    checkKeyEmpty(req.key());
+  }
+  {
+    TestRequest req;
+    checkKeyEmpty(req.key());
+
+    req.key() = folly::IOBuf(folly::IOBuf::CopyBufferOp(), kKeyLiteral);
+    checkKeyFilledProperly(req.key());
+  }
+  {
+    TestRequest req(kKeyLiteral);
+    checkKeyFilledProperly(req.key());
+  }
+  {
+    TestRequest req{folly::StringPiece(kKeyLiteral)};
+    checkKeyFilledProperly(req.key());
+  }
+  {
+    TestRequest req(folly::IOBuf(folly::IOBuf::CopyBufferOp(), kKeyLiteral));
+    checkKeyFilledProperly(req.key());
+  }
+}
+
+TEST(CarbonTest, keysString) {
+  {
+    TestRequestStringKey req;
+    checkKeyEmpty(req.key());
+  }
+  {
+    TestRequestStringKey req;
+
+    const std::string keyCopy(kKeyLiteral);
+    req.key() = keyCopy;
+    checkKeyFilledProperly(req.key());
+
+    req.key() = "";
+    checkKeyEmpty(req.key());
+  }
+  {
+    TestRequestStringKey req;
+    checkKeyEmpty(req.key());
+
+    req.key() = kKeyLiteral;
+    checkKeyFilledProperly(req.key());
+  }
+  {
+    TestRequestStringKey req(kKeyLiteral);
+    checkKeyFilledProperly(req.key());
+  }
+  {
+    TestRequest req{folly::StringPiece(kKeyLiteral)};
+    checkKeyFilledProperly(req.key());
+  }
+  {
+    TestRequest req{std::string(kKeyLiteral)};
+    checkKeyFilledProperly(req.key());
+  }
 }

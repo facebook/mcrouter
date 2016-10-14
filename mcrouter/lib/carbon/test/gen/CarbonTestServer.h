@@ -28,6 +28,7 @@ namespace detail {
 using CarbonTestRequestList = carbon::List<
     AnotherRequest,
     TestRequest,
+    TestRequestStringKey,
     facebook::memcache::McExecRequest,
     facebook::memcache::McQuitRequest,
     facebook::memcache::McShutdownRequest,

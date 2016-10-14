@@ -357,5 +357,101 @@ void TestReply::visitFields(V&& v) const {
   }
 }
 
+inline void TestRequestStringKey::serialize(
+    carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, key());
+  writer.writeStructEnd();
+  writer.writeStop();
+}
+
+inline void TestRequestStringKey::deserialize(
+    carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readRawInto(key());
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+template <class V>
+void TestRequestStringKey::visitFields(V&& v) {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestRequestStringKey::visitFields(V&& v) const {
+  if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+}
+
+inline void TestReplyStringKey::serialize(
+    carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeStructEnd();
+  writer.writeStop();
+}
+
+inline void TestReplyStringKey::deserialize(
+    carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readRawInto(result());
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+template <class V>
+void TestReplyStringKey::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestReplyStringKey::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+}
+
 } // test
 } // carbon
