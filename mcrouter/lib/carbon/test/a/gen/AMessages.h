@@ -46,7 +46,7 @@ class AnotherRequest : public carbon::RequestCommon {
   static constexpr bool hasKey = true;
   static constexpr bool hasValue = false;
   static constexpr size_t typeId = 65;
-  static constexpr const char* name = "another";
+  static constexpr const char* name = "AnotherRequest";
 
   AnotherRequest() = default;
   AnotherRequest(const AnotherRequest&) = default;

@@ -5,7 +5,6 @@ import "mcrouter/lib/carbon/test/b/B.idl"
 
 request AnotherRequest {
   id: 1;
-  name: "another";
   reply: AnotherReply;
 
   1: Keys<IOBuf> key;
