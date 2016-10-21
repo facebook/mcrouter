@@ -164,6 +164,9 @@ void ProxyDestination::onReply(const mc_res_t result,
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats_.avgLatency.insertSample(latency);
 
+  if (!client_) {
+    return;
+  }
   const auto retransCycles =
       proxy->router().opts().collect_rxmit_stats_every_hz;
   if (retransCycles > 0) {
