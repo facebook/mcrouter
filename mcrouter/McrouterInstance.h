@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <functional>
 #include <memory>
@@ -184,6 +185,10 @@ class McrouterInstance :
     return *statsLogWriter_;
   }
 
+  bool isRxmitReconnectionDisabled() const {
+    return disableRxmitReconnection_;
+  }
+
   McrouterInstance(const McrouterInstance&) = delete;
   McrouterInstance& operator=(const McrouterInstance&) = delete;
   McrouterInstance(McrouterInstance&&) noexcept = delete;
@@ -249,6 +254,10 @@ class McrouterInstance :
   // Stores data for runtime variables.
   ObservableRuntimeVars rtVarsData_;
 
+  // Stores whether we should reconnect after hitting rxmit threshold
+  std::atomic<bool> disableRxmitReconnection_{true};
+  // Corresponding handle
+  ObservableRuntimeVars::CallbackHandle rxmitHandle_;
   /**
    * Logs mcrouter stats to disk every opts->stats_logging_interval
    * milliseconds
@@ -321,6 +330,8 @@ class McrouterInstance :
   /** Create the ProxyConfigBuilder used to reconfigure.
   Returns folly::none if constructor fails. **/
   folly::Optional<ProxyConfigBuilder> createConfigBuilder();
+
+  void registerOnUpdateCallbackForRxmits();
 
  public:
   /* Do not use for new code */

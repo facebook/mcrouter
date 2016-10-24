@@ -183,6 +183,10 @@ void ProxyDestination::handleRxmittingConnection() {
         stat_incr(proxy->stats, retrans_num_total_stat, 1);
       }
 
+      if (proxy->router().isRxmitReconnectionDisabled()) {
+        return;
+      }
+
       if (rxmitsToCloseConnection_ > 0 &&
           currRetransPerKByte >= rxmitsToCloseConnection_) {
         std::uniform_int_distribution<uint64_t> dist(

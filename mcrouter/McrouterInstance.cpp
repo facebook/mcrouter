@@ -336,7 +336,6 @@ McrouterInstance::McrouterInstance(McrouterOptions input_options) :
 
 void McrouterInstance::shutdownImpl() noexcept {
   joinAuxiliaryThreads();
-
   for (auto& pt : proxyThreads_) {
     pt->stopAndJoin();
   }
@@ -378,6 +377,7 @@ void McrouterInstance::spawnAuxiliaryThreads() {
 
   startAwriterThreads();
   startObservingRuntimeVarsFile();
+  registerOnUpdateCallbackForRxmits();
   statUpdaterThread_ = std::thread(
     [this] () {
       statUpdaterThreadRun();
@@ -595,4 +595,20 @@ folly::Optional<ProxyConfigBuilder> McrouterInstance::createConfigBuilder() {
   return folly::none;
 }
 
+void McrouterInstance::registerOnUpdateCallbackForRxmits() {
+  rxmitHandle_ = rtVarsData_.subscribeAndCall([this](
+      std::shared_ptr<const RuntimeVarsData> /* oldVars */,
+      std::shared_ptr<const RuntimeVarsData> newVars) {
+    if (!newVars) {
+      return;
+    }
+    const auto val = newVars->getVariableByName("disable_rxmit_reconnection");
+    if (val != nullptr) {
+      checkLogic(
+          val.isBool(),
+          "runtime vars 'disable_rxmit_reconnection' is not a boolean");
+      disableRxmitReconnection_ = val.asBool();
+    }
+  });
+}
 }}} // facebook::memcache::mcrouter
