@@ -467,8 +467,32 @@ mcrouter_option_integer(
   0,
   "collect-rxmit-stats-every-hz",
   no_short,
-  "Will calculate retransmits per packet after every set cycles."
+  "Will calculate retransmits per kB after every set cycles."
   " If value is 0, calculation won't be done.")
+
+mcrouter_option_integer(
+  uint64_t,
+  min_rxmit_reconnect_threshold,
+  0,
+  "min-rxmit-reconnect-threshold",
+  no_short,
+  "If value is non-zero, mcrouter will reconnect to a target after hitting"
+  " min-rxmit-reconnect-threshold retransmits per kb for the first time."
+  " Subsequently, the reconnection threshold for the same target server is"
+  " dynamically adjusted, always remaining at least"
+  " min-rxmit-reconnect-threshold rxmits/kb. If value is 0,"
+  " this feature is disabled.")
+
+mcrouter_option_integer(
+  uint64_t,
+  max_rxmit_reconnect_threshold,
+  0,
+  "max-rxmit-reconnect-threshold",
+  no_short,
+  "Has no effect if min-rxmit-reconnect-threshold is 0."
+  " If max-rxmit-reconnect-threshold is also non-zero, the dynamic reconnection"
+  " threshold is always at most max-rxmit-reconnect-threshold rxmits/kb."
+  " If max-rxmit-reconnect-threshold is 0, the dynamic threshold is unbounded.")
 
 mcrouter_option_integer(
   int, asynclog_port_override, 0, no_long, no_short,

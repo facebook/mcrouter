@@ -117,6 +117,8 @@ class ProxyDestination {
   Stats stats_;
 
   uint64_t lastRetransCycles_{0}; // Cycles when restransmits were last fetched
+  uint64_t rxmitsToCloseConnection_{0};
+  uint64_t lastConnCloseCycles_{0}; // Cycles when connection was last closed
 
   int probe_delay_next_ms{0};
   std::unique_ptr<McVersionRequest> probe_req;
@@ -158,6 +160,8 @@ class ProxyDestination {
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
   void timerCallback();
+
+  void handleRxmittingConnection();
 
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;

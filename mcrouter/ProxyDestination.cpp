@@ -9,6 +9,9 @@
  */
 #include "ProxyDestination.h"
 
+#include <limits>
+#include <random>
+
 #include <folly/fibers/Fiber.h>
 #include <folly/Memory.h>
 
@@ -31,6 +34,9 @@ constexpr double kProbeExponentialFactor = 1.5;
 constexpr double kProbeJitterMin = 0.05;
 constexpr double kProbeJitterMax = 0.5;
 constexpr double kProbeJitterDelta = kProbeJitterMax - kProbeJitterMin;
+// Jitters for closing rxmiting connections will be between 1 and
+// kReconnectionHoldoffFactor.
+constexpr uint32_t kReconnectionHoldoffFactor = 25;
 
 static_assert(kProbeJitterMax >= kProbeJitterMin,
               "ProbeJitterMax should be greater or equal tham ProbeJitterMin");
@@ -151,19 +157,7 @@ void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
   tracker->recordSuccess(this);
 }
 
-void ProxyDestination::onReply(const mc_res_t result,
-                               DestinationRequestCtx& destreqCtx) {
-  handle_tko(result, false);
-
-  if (!stats_.results) {
-    stats_.results = folly::make_unique<std::array<uint64_t, mc_nres>>();
-  }
-  ++(*stats_.results)[result];
-  destreqCtx.endTime = nowUs();
-
-  int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
-  stats_.avgLatency.insertSample(latency);
-
+void ProxyDestination::handleRxmittingConnection() {
   if (!client_) {
     return;
   }
@@ -188,8 +182,52 @@ void ProxyDestination::onReply(const mc_res_t result,
             static_cast<int64_t>(currRetransPerKByte));
         stat_incr(proxy->stats, retrans_num_total_stat, 1);
       }
+
+      if (rxmitsToCloseConnection_ > 0 &&
+          currRetransPerKByte >= rxmitsToCloseConnection_) {
+        std::uniform_int_distribution<uint64_t> dist(
+            1, kReconnectionHoldoffFactor);
+        const uint64_t reconnectionJitters =
+            retransCycles * dist(proxy->randomGenerator);
+        if (lastConnCloseCycles_ + reconnectionJitters > curCycles) {
+          return;
+        }
+        client_->closeNow();
+        stat_incr(proxy->stats, retrans_closed_connections_stat, 1);
+        lastConnCloseCycles_ = curCycles;
+
+        const auto maxThreshold =
+            proxy->router().opts().max_rxmit_reconnect_threshold;
+        const uint64_t maxRxmitReconnThreshold = maxThreshold == 0
+            ? std::numeric_limits<uint64_t>::max()
+            : maxThreshold;
+        rxmitsToCloseConnection_ =
+            std::min(maxRxmitReconnThreshold, 2 * rxmitsToCloseConnection_);
+      } else if (3 * currRetransPerKByte < rxmitsToCloseConnection_) {
+        const auto minThreshold =
+            proxy->router().opts().min_rxmit_reconnect_threshold;
+        rxmitsToCloseConnection_ =
+            std::max(minThreshold, rxmitsToCloseConnection_ / 2);
+      }
     }
   }
+}
+
+void ProxyDestination::onReply(
+    const mc_res_t result,
+    DestinationRequestCtx& destreqCtx) {
+  handle_tko(result, false);
+
+  if (!stats_.results) {
+    stats_.results = folly::make_unique<std::array<uint64_t, mc_nres>>();
+  }
+  ++(*stats_.results)[result];
+  destreqCtx.endTime = nowUs();
+
+  int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
+  stats_.avgLatency.insertSample(latency);
+
+  handleRxmittingConnection();
 }
 
 size_t ProxyDestination::getPendingRequestCount() const {
@@ -249,6 +287,8 @@ ProxyDestination::ProxyDestination(
       shortestTimeout_(timeout),
       qosClass_(qosClass),
       qosPath_(qosPath),
+      rxmitsToCloseConnection_(
+          proxy->router().opts().min_rxmit_reconnect_threshold),
       probeTimer_(*this) {
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);

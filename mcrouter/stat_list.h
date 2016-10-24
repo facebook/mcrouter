@@ -45,6 +45,8 @@
   /* Average time a request had to wait in OLR */
   STAT(outstanding_route_get_avg_wait_time_sec, stat_double, 0, .dbl = 0.0)
   STAT(outstanding_route_update_avg_wait_time_sec, stat_double, 0, .dbl = 0.0)
+  /* Connections closed due to retransmits */
+  STUI(retrans_closed_connections, 0, 1)
 #undef GROUP
 #define GROUP rate_stats
   /* OutstandingLimitRoute queue-related helper stats */
