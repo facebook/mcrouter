@@ -21,7 +21,7 @@
 #include <folly/json.h>
 #include <folly/Range.h>
 
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterInstanceBase.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -116,7 +116,7 @@ struct ServerStat {
   }
 };
 
-int get_num_bins_used(const McrouterInstance& router) {
+int get_num_bins_used(const McrouterInstanceBase& router) {
   if (router.opts().num_proxies > 0) {
     const Proxy* anyProxy = router.getProxy(0);
     if (anyProxy) {
@@ -158,7 +158,7 @@ struct proc_stat_data_t {
   unsigned long rss;
 };
 
-double stats_aggregate_rate_value(const McrouterInstance& router, int idx) {
+double stats_aggregate_rate_value(const McrouterInstanceBase& router, int idx) {
   double rate = 0;
   int num_bins_used = get_num_bins_used(router);
 
@@ -173,7 +173,9 @@ double stats_aggregate_rate_value(const McrouterInstance& router, int idx) {
   return rate;
 }
 
-uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx) {
+uint64_t stats_aggregate_max_value(
+    const McrouterInstanceBase& router,
+    int idx) {
   uint64_t max = 0;
   int num_bins_used = get_num_bins_used(router);
 
@@ -189,7 +191,7 @@ uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx) {
 }
 
 uint64_t stats_aggregate_max_max_value(
-    const McrouterInstance& router,
+    const McrouterInstanceBase& router,
     int idx) {
   uint64_t max = 0;
   int num_bins_used = get_num_bins_used(router);
@@ -327,7 +329,7 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
   return 0;
 }
 
-void prepare_stats(McrouterInstance& router, stat_t* stats) {
+void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
   init_stats(stats);
 
   uint64_t config_last_success = 0;

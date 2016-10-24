@@ -58,6 +58,7 @@ namespace mcrouter {
 class ConfigApi;
 class ExtraRouteHandleProviderIf;
 class McrouterInstance;
+class McrouterInstanceBase;
 class McrouterLogger;
 class McrouterStandaloneOptions;
 struct FailoverContext;
@@ -142,7 +143,7 @@ void initFailureLogger();
 /**
  * Initializes compression dictionaries for the given mcrouter instance
  */
-bool initCompression(McrouterInstance& router);
+bool initCompression(McrouterInstanceBase& router);
 
 void scheduleSingletonCleanup();
 

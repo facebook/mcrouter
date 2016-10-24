@@ -35,7 +35,7 @@ enum stat_name_t {
 #undef STSS
 
 // Forward declarations
-class McrouterInstance;
+class McrouterInstanceBase;
 class Proxy;
 
 /** statistics ftw */
@@ -103,24 +103,26 @@ void stat_decr_safe(stat_t*, stat_name_t);
  * Current aggregation of rate of stats[idx] (which must be an aggregated
  * rate stat), units will be per second.
  */
-double stats_aggregate_rate_value(const McrouterInstance& router, int idx);
+double stats_aggregate_rate_value(const McrouterInstanceBase& router, int idx);
 
 /**
  * Current max between all buckets of stats[idx] (which must be an aggregated
  * max stat)
  */
-uint64_t stats_aggregate_max_value(const McrouterInstance& router, int idx);
+uint64_t stats_aggregate_max_value(const McrouterInstanceBase& router, int idx);
 
 /**
  * Current max between all proxies amongst all buckets of stats[idx]
  */
-uint64_t stats_aggregate_max_max_value(const McrouterInstance& router, int idx);
+uint64_t stats_aggregate_max_max_value(
+    const McrouterInstanceBase& router,
+    int idx);
 
 void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
 uint64_t stat_get_uint64(stat_t*, stat_name_t);
 uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
 McStatsReply stats_reply(Proxy*, folly::StringPiece);
-void prepare_stats(McrouterInstance& router, stat_t* stats);
+void prepare_stats(McrouterInstanceBase& router, stat_t* stats);
 
 void set_standalone_args(folly::StringPiece args);
 

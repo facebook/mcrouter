@@ -15,37 +15,27 @@
 #include <memory>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
 
-#include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/Range.h>
 
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/ConfigApi.h"
-#include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/McrouterClient.h"
-#include "mcrouter/Observable.h"
+#include "mcrouter/McrouterInstanceBase.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
-#include "mcrouter/TkoTracker.h"
-#include "mcrouter/lib/CompressionCodecManager.h"
-#include "mcrouter/options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class AsyncWriter;
 class McrouterManager;
 class ProxyThread;
-class RuntimeVarsData;
-using ObservableRuntimeVars =
-  Observable<std::shared_ptr<const RuntimeVarsData>>;
 
 /**
  * A single mcrouter instance.  A mcrouter instance has a single config,
  * but might run across multiple threads.
  */
-class McrouterInstance :
-      public std::enable_shared_from_this<McrouterInstance> {
+class McrouterInstance : public McrouterInstanceBase,
+                         public std::enable_shared_from_this<McrouterInstance> {
  public:
   /* Creation methods. All mcrouter instances are managed automatically,
      so the users don't need to worry about destruction. */
@@ -108,19 +98,10 @@ class McrouterInstance :
   McrouterClient::Pointer createSameThreadClient(
     size_t maximum_outstanding_requests);
 
-  const McrouterOptions& opts() const {
-    return opts_;
-  }
-
   /**
    * Destroy all active instances.
    */
   static void freeAllMcrouters();
-
-  std::unordered_map<std::string, std::string> getStartupOpts() const;
-
-  void addStartupOpts(
-    std::unordered_map<std::string, std::string> additionalOpts);
 
   /**
    * Shutdown all threads started by this instance. It's a blocking call and
@@ -133,115 +114,28 @@ class McrouterInstance :
    * @return  nullptr if index is >= opts.num_proxies,
    *   pointer to the proxy otherwise.
    */
-  Proxy* getProxy(size_t index) const;
+  Proxy* getProxy(size_t index) const override;
 
   /**
    * Release ownership of a proxy
    */
   Proxy::Pointer releaseProxy(size_t index);
 
-  pid_t pid() const {
-    return pid_;
-  }
-
   bool configure(const ProxyConfigBuilder& builder);
-
-  ConfigApi& configApi() {
-    assert(configApi_.get() != nullptr);
-    return *configApi_;
-  }
-
-  uint64_t startTime() const {
-    return startTime_;
-  }
-
-  time_t lastConfigAttempt() const {
-    return lastConfigAttempt_;
-  }
-
-  size_t configFailures() const {
-    return configFailures_;
-  }
-
-  TkoTrackerMap& tkoTrackerMap() {
-    return tkoTrackerMap_;
-  }
-
-  LeaseTokenMap& leaseTokenMap() {
-    return *leaseTokenMap_;
-  }
-
-  ObservableRuntimeVars& rtVarsData() {
-    return rtVarsData_;
-  }
-
-  AsyncWriter& asyncWriter() {
-    assert(asyncWriter_.get() != nullptr);
-    return *asyncWriter_;
-  }
-
-  AsyncWriter& statsLogWriter() {
-    assert(statsLogWriter_.get() != nullptr);
-    return *statsLogWriter_;
-  }
-
-  bool isRxmitReconnectionDisabled() const {
-    return disableRxmitReconnection_;
-  }
 
   McrouterInstance(const McrouterInstance&) = delete;
   McrouterInstance& operator=(const McrouterInstance&) = delete;
   McrouterInstance(McrouterInstance&&) noexcept = delete;
   McrouterInstance& operator=(McrouterInstance&&) = delete;
 
-  const LogPostprocessCallbackFunc& postprocessCallback() const {
-    return postprocessCallback_;
-  }
-
-  void setPostprocessCallback(LogPostprocessCallbackFunc&& newCallback) {
-    postprocessCallback_ = std::move(newCallback);
-  }
-
-  void setUpCompressionDictionaries(
-      std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs) noexcept {
-    if (codecConfigs.empty() || compressionCodecManager_ != nullptr) {
-      return;
-    }
-    compressionCodecManager_ =
-        folly::make_unique<const CompressionCodecManager>(
-            std::move(codecConfigs));
-  }
-
-  /**
-   * Returns compression codec manager.
-   * If compression is disabled, this method will return nullptr.
-   */
-  const CompressionCodecManager* getCodecManager() const {
-    return compressionCodecManager_.get();
-  }
-
  private:
-  const McrouterOptions opts_;
-
-  pid_t pid_;
-
   std::mutex nextProxyMutex_;
   unsigned int nextProxy_{0};
 
-  std::unique_ptr<ConfigApi> configApi_;
   CallbackPool<> onReconfigureSuccess_;
-
-  // These next three fields are used for stats
-  uint64_t startTime_{0};
-  time_t lastConfigAttempt_{0};
-  size_t configFailures_{0};
 
   // Lock to get before regenerating config structure
   std::mutex configReconfigLock_;
-
-  LogPostprocessCallbackFunc postprocessCallback_;
-
-  std::unique_ptr<const CompressionCodecManager> compressionCodecManager_;
 
   // Stat updater thread updates rate stat windows for each proxy
   std::thread statUpdaterThread_;
@@ -249,39 +143,18 @@ class McrouterInstance :
   std::mutex statUpdaterCvMutex_;
   std::condition_variable statUpdaterCv_;
 
-  TkoTrackerMap tkoTrackerMap_;
-
-  // Stores data for runtime variables.
-  ObservableRuntimeVars rtVarsData_;
-
-  // Stores whether we should reconnect after hitting rxmit threshold
-  std::atomic<bool> disableRxmitReconnection_{true};
   // Corresponding handle
   ObservableRuntimeVars::CallbackHandle rxmitHandle_;
+
   /**
    * Logs mcrouter stats to disk every opts->stats_logging_interval
    * milliseconds
    */
   std::unique_ptr<McrouterLogger> mcrouterLogger_;
 
-  /*
-   * Asynchronous writer.
-   */
-  std::unique_ptr<AsyncWriter> asyncWriter_;
-
-  std::unique_ptr<AsyncWriter> statsLogWriter_;
-
   std::atomic<bool> shutdownStarted_{false};
 
-  // Auxiliary EventBase thread.
-  folly::ScopedEventBaseThread evbAuxiliaryThread_;
-
-  // Keep track of lease tokens of failed over requests.
-  std::unique_ptr<LeaseTokenMap> leaseTokenMap_;
-
   ConfigApi::CallbackHandle configUpdateHandle_;
-
-  std::unordered_map<std::string, std::string> additionalStartupOpts_;
 
   /**
    * Exactly one of these vectors will contain opts.num_proxies elements,
@@ -306,7 +179,7 @@ class McrouterInstance :
 
   explicit McrouterInstance(McrouterOptions input_options);
 
-  ~McrouterInstance();
+  ~McrouterInstance() override;
 
   bool spinUp(const std::vector<folly::EventBase*>& evbs);
 

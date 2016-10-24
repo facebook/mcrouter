@@ -47,6 +47,8 @@ libmcroutercore_a_SOURCES = \
   McrouterFiberContext.h \
   McrouterInstance.cpp \
   McrouterInstance.h \
+  McrouterInstanceBase.cpp \
+  McrouterInstanceBase.h \
   McrouterLogFailure.h \
   McrouterLogFailure.cpp \
   McrouterLogger.cpp \

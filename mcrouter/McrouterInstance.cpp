@@ -290,24 +290,6 @@ void McrouterInstance::freeAllMcrouters() {
   }
 }
 
-void McrouterInstance::addStartupOpts(
-  std::unordered_map<std::string, std::string> additionalOpts) {
-  additionalStartupOpts_.insert(additionalOpts.begin(), additionalOpts.end());
-}
-
-std::unordered_map<std::string, std::string>
-McrouterInstance::getStartupOpts() const {
-  const size_t kMaxOptionValueLength = 256;
-
-  auto result = opts_.toDict();
-  result.insert(additionalStartupOpts_.begin(), additionalStartupOpts_.end());
-  result.emplace("version", MCROUTER_PACKAGE_STRING);
-  for (auto& it : result) {
-    it.second = shorten(it.second, kMaxOptionValueLength);
-  }
-  return result;
-}
-
 Proxy* McrouterInstance::getProxy(size_t index) const {
   if (!proxies_.empty()) {
     assert(proxyThreads_.empty());
@@ -324,15 +306,8 @@ Proxy::Pointer McrouterInstance::releaseProxy(size_t index) {
   return std::move(proxies_[index]);
 }
 
-McrouterInstance::McrouterInstance(McrouterOptions input_options) :
-    opts_(std::move(input_options)),
-    pid_(getpid()),
-    configApi_(createConfigApi(opts_)),
-    asyncWriter_(folly::make_unique<AsyncWriter>()),
-    statsLogWriter_(folly::make_unique<AsyncWriter>(
-                      opts_.stats_async_queue_length)),
-    leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
-}
+McrouterInstance::McrouterInstance(McrouterOptions inputOptions)
+    : McrouterInstanceBase(std::move(inputOptions)) {}
 
 void McrouterInstance::shutdownImpl() noexcept {
   joinAuxiliaryThreads();
@@ -420,7 +395,7 @@ void McrouterInstance::startObservingRuntimeVarsFile() {
     return;
   }
 
-  auto& rtVarsDataRef = rtVarsData_;
+  auto& rtVarsDataRef = rtVarsData();
   auto onUpdate = [&rtVarsDataRef](std::string data) {
     rtVarsDataRef.set(std::make_shared<const RuntimeVarsData>(std::move(data)));
   };
@@ -596,7 +571,7 @@ folly::Optional<ProxyConfigBuilder> McrouterInstance::createConfigBuilder() {
 }
 
 void McrouterInstance::registerOnUpdateCallbackForRxmits() {
-  rxmitHandle_ = rtVarsData_.subscribeAndCall([this](
+  rxmitHandle_ = rtVarsData().subscribeAndCall([this](
       std::shared_ptr<const RuntimeVarsData> /* oldVars */,
       std::shared_ptr<const RuntimeVarsData> newVars) {
     if (!newVars) {

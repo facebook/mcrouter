@@ -61,6 +61,7 @@ namespace mcrouter {
 // forward declaration
 class McrouterClient;
 class McrouterInstance;
+class McrouterInstanceBase;
 class ProxyConfig;
 class ProxyDestination;
 class ProxyDestinationMap;
@@ -78,7 +79,7 @@ struct ShadowSettings {
    * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
    */
   static std::shared_ptr<ShadowSettings>
-  create(const folly::dynamic& json, McrouterInstance& router);
+  create(const folly::dynamic& json, McrouterInstanceBase& router);
 
   ~ShadowSettings();
 
@@ -113,7 +114,7 @@ struct ShadowSettings {
 
  private:
   ObservableRuntimeVars::CallbackHandle handle_;
-  void registerOnUpdateCallback(McrouterInstance& router);
+  void registerOnUpdateCallback(McrouterInstanceBase& router);
 
   std::string keyFractionRangeRv_;
   size_t startIndex_{0};
@@ -145,7 +146,7 @@ struct ProxyMessage {
 class Proxy {
   uint64_t magic;
  private:
-  McrouterInstance& router_;
+  McrouterInstanceBase& router_;
  public:
 
   std::atomic<int64_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING loopStart_{0};
@@ -255,7 +256,7 @@ class Proxy {
    */
   size_t queueNotifyPeriod() const;
 
-  McrouterInstance& router() const {
+  McrouterInstanceBase& router() const {
     return router_;
   }
 
@@ -265,7 +266,7 @@ class Proxy {
 
   /**
    * This method is equal to router().opts(), with the only difference,
-   * that it doesn't require the caller to know about McrouterInstance.
+   * that it doesn't require the caller to know about McrouterInstanceBase.
    * This allows to break include cycles.
    */
   const McrouterOptions& getRouterOptions() const;
@@ -298,10 +299,10 @@ class Proxy {
   size_t id_{0};
 
   using Pointer = std::unique_ptr<Proxy, ProxyDelayedDestructor>;
-  static Pointer createProxy(McrouterInstance& router,
+  static Pointer createProxy(McrouterInstanceBase& router,
                              folly::EventBase& eventBase,
                              size_t id);
-  Proxy(McrouterInstance& router, size_t id);
+  Proxy(McrouterInstanceBase& router, size_t id);
 
   void messageReady(ProxyMessage::Type t, void* data);
 

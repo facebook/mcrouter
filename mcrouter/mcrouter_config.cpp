@@ -108,7 +108,7 @@ void logShadowValidationError(
 
 void initFailureLogger() { }
 
-bool initCompression(McrouterInstance&) {
+bool initCompression(McrouterInstanceBase&) {
   return false;
 }
 

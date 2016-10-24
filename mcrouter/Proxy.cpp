@@ -37,7 +37,7 @@
 #include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/McrouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ProxyConfig.h"
@@ -98,7 +98,7 @@ bool processGetServiceInfoRequestImpl(
 
 } // detail
 
-Proxy::Proxy(McrouterInstance& rtr, size_t id)
+Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
     : router_(rtr),
       destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
       fiberManager(
@@ -135,7 +135,7 @@ Proxy::Proxy(McrouterInstance& rtr, size_t id)
 }
 
 Proxy::Pointer Proxy::createProxy(
-    McrouterInstance& router,
+    McrouterInstanceBase& router,
     folly::EventBase& eventBase,
     size_t id) {
   /* This hack is needed to make sure Proxy stays alive
@@ -286,7 +286,7 @@ const McrouterOptions& Proxy::getRouterOptions() const {
 
 std::shared_ptr<ShadowSettings> ShadowSettings::create(
     const folly::dynamic& json,
-    McrouterInstance& router) {
+    McrouterInstanceBase& router) {
   auto result = std::shared_ptr<ShadowSettings>(new ShadowSettings());
   try {
     checkLogic(json.isObject(), "json is not an object");
@@ -344,7 +344,7 @@ ShadowSettings::~ShadowSettings() {
   handle_.reset();
 }
 
-void ShadowSettings::registerOnUpdateCallback(McrouterInstance& router) {
+void ShadowSettings::registerOnUpdateCallback(McrouterInstanceBase& router) {
   handle_ = router.rtVarsData().subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {
