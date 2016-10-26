@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -50,11 +50,6 @@ class BoostCalculator {
   accumulator_t acc_{boost::accumulators::quantile_probability = 0.5};
 };
 
-uint64_t normalRnd() {
-  static std::mt19937 gen(folly::randomNumberSeed());
-  static std::normal_distribution<> d(10000,50);
-
-  return d(gen);
-}
+uint64_t normalRnd();
 
 }}}} // facebook::memcache::cycles::test

@@ -176,14 +176,7 @@ class WriteBufferQueue {
   WriteBuffer::Queue& tlFreeQueue_;
   WriteBuffer::Queue queue_;
 
-  static WriteBuffer::Queue& initFreeQueue(mc_protocol_t protocol) noexcept {
-    assert(protocol == mc_ascii_protocol ||
-           protocol == mc_umbrella_protocol ||
-           protocol == mc_caret_protocol);
-
-    static thread_local WriteBuffer::Queue freeQ[mc_nprotocols];
-    return freeQ[static_cast<size_t>(protocol)];
-  }
+  static WriteBuffer::Queue& initFreeQueue(mc_protocol_t protocol) noexcept;
 
   WriteBufferQueue(const WriteBufferQueue&) = delete;
   WriteBufferQueue& operator=(const WriteBufferQueue&) = delete;
