@@ -16,6 +16,7 @@
 
 #include <folly/Bits.h>
 #include <folly/io/IOBuf.h>
+#include <folly/Optional.h>
 #include <folly/Varint.h>
 
 namespace folly {
@@ -27,22 +28,77 @@ namespace carbon {
 class CarbonQueueAppenderStorage {
  public:
   CarbonQueueAppenderStorage() {
-    reset();
+    iovs_[0] = {headerBuf_, 0};
   }
 
   CarbonQueueAppenderStorage(const CarbonQueueAppenderStorage&) = delete;
   CarbonQueueAppenderStorage& operator=(const CarbonQueueAppenderStorage&) =
       delete;
 
-  void append(const folly::IOBuf& buf);
+  void append(const folly::IOBuf& buf) {
+    finalizeLastIovec();
 
-  void push(const uint8_t* buf, size_t len);
+    if (nIovsUsed_ == kMaxIovecs) {
+      coalesce();
+    }
+
+    assert(nIovsUsed_ < kMaxIovecs);
+
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
+    const auto nFilled = buf.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+
+    if (nFilled > 0) {
+      nIovsUsed_ += nFilled;
+      if (!head_) {
+        head_ = buf;
+      } else {
+        head_->prependChain(buf.clone());
+      }
+    } else {
+      if (buf.empty()) {
+        return;
+      }
+      appendSlow(buf);
+    }
+
+    // If a push() comes after, it should not use the iovec we just filled in
+    canUsePreviousIov_ = false;
+  }
+
+  void push(const uint8_t* buf, size_t len) {
+    if (nIovsUsed_ == kMaxIovecs) {
+      // In this case, it would be possible to use the last iovec if
+      // canUsePreviousIov_ is true, but we simplify logic by foregoing this
+      // optimization.
+      coalesce();
+    }
+
+    assert(nIovsUsed_ < kMaxIovecs);
+
+    if (storageIdx_ + len <= sizeof(storage_)) {
+      if (!canUsePreviousIov_) {
+        // Note, we will be updating iov_len once we're done with this iovec,
+        // i.e. in finalizeLastIovec()
+        iovs_[nIovsUsed_++].iov_base = &storage_[storageIdx_];
+
+        // If the next push() comes before the next append(), and if we still
+        // have room left in storage_,  then we can just extend the last iovec
+        // used since we will write to storage_ where we left off.
+        canUsePreviousIov_ = true;
+      }
+
+      std::memcpy(&storage_[storageIdx_], buf, len);
+      storageIdx_ += len;
+    } else {
+      appendNoInline(folly::IOBuf(folly::IOBuf::COPY_BUFFER, buf, len));
+    }
+  }
 
   void coalesce();
 
   void reset() {
     storageIdx_ = 0;
-    head_ = folly::IOBuf();
+    head_.clear();
     // Reserve first element of iovs_ for header, which won't be filled in
     // until after body data is serialized.
     iovs_[0] = {headerBuf_, 0};
@@ -50,11 +106,13 @@ class CarbonQueueAppenderStorage {
     canUsePreviousIov_ = false;
   }
 
-  std::pair<const struct iovec*, size_t> getIovecs() const {
+  std::pair<const struct iovec*, size_t> getIovecs() {
+    finalizeLastIovec();
     return std::make_pair(iovs_, nIovsUsed_);
   }
 
-  size_t computeBodySize() const {
+  size_t computeBodySize() {
+    finalizeLastIovec();
     size_t bodySize = 0;
     // Skip iovs_[0], which refers to message header
     for (size_t i = 1; i < nIovsUsed_; ++i) {
@@ -87,7 +145,7 @@ class CarbonQueueAppenderStorage {
           folly::kMaxVarintLength64; /* key and value for additional fields */
 
   size_t storageIdx_{0};
-  size_t nIovsUsed_{0};
+  size_t nIovsUsed_{1};
   bool canUsePreviousIov_{false};
 
   // For safety reasons, we use another buffer for the header data
@@ -104,7 +162,35 @@ class CarbonQueueAppenderStorage {
 
   // Chain of IOBufs used for IOBuf fields, like key and value. Note that we
   // also maintain views into this data via iovs_.
-  folly::IOBuf head_;
+  folly::Optional<folly::IOBuf> head_;
+
+  FOLLY_NOINLINE void appendNoInline(const folly::IOBuf& buf) {
+    append(buf);
+  }
+
+  FOLLY_NOINLINE void appendSlow(const folly::IOBuf& buf) {
+    struct iovec* nextIov = iovs_ + nIovsUsed_;
+    auto bufCopy = buf;
+    bufCopy.coalesce();
+    const auto nFilledRetry =
+        bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    assert(nFilledRetry == 1);
+    (void)nFilledRetry;
+    ++nIovsUsed_;
+    if (!head_) {
+      head_ = std::move(bufCopy);
+    } else {
+      head_->prependChain(bufCopy.clone());
+    }
+  }
+
+  void finalizeLastIovec() {
+    if (canUsePreviousIov_) {
+      auto& iov = iovs_[nIovsUsed_ - 1];
+      iov.iov_len =
+          &storage_[storageIdx_] - static_cast<const uint8_t*>(iov.iov_base);
+    }
+  }
 };
 
 
