@@ -180,7 +180,7 @@ bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
     }
     // Consume the message, but don't fail.
     return true;
-  } catch (const std::runtime_error& e) {
+  } catch (const std::exception& e) {
     std::string reason(
         std::string("Error parsing Umbrella message: ") + e.what());
     LOG(ERROR) << reason;
@@ -207,7 +207,7 @@ bool ClientMcParser<Callback>::caretMessageReady(
       (this->*umbrellaOrCaretForwarder_)(headerInfo, buffer, reqId);
     }
     return true;
-  } catch (const std::runtime_error& e) {
+  } catch (const std::exception& e) {
     const auto reason =
         folly::sformat("Error parsing Caret message: {}", e.what());
     callback_.parseError(mc_res_local_error, reason);

@@ -92,7 +92,7 @@ bool ServerMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
         callback_.parseError(mc_res_remote_error, reason);
         return false;
     }
-  } catch (const std::runtime_error& e) {
+  } catch (const std::exception& e) {
     std::string reason(
       std::string("Error parsing Umbrella message: ") + e.what());
     callback_.parseError(mc_res_remote_error, reason);

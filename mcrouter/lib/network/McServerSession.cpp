@@ -90,7 +90,7 @@ McServerSession::McServerSession(
 
   try {
     transport_->getPeerAddress(&socketAddress_);
-  } catch (const std::runtime_error& e) {
+  } catch (const std::exception& e) {
     // std::system_error or other exception, leave IP address empty
     LOG(WARNING) << "Failed to get socket address: " << e.what();
   }
