@@ -9,8 +9,12 @@
  */
 #pragma once
 
+#include <functional>
 #include <limits>
 #include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include <folly/Range.h>
 
@@ -40,6 +44,48 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b);
 
 template <class T>
 T serializeAndDeserialize(const T&);
+
+/**
+ * Takes a boolean predicate and returns the list of subranges over
+ * [numeric_limits<T>::min(), numeric_limits<T>::max()] satisfying the
+ * predicate.
+ */
+template <class T>
+std::vector<std::pair<T, T>> satisfiedSubranges(std::function<bool(T)> pred) {
+  static_assert(
+      std::is_integral<T>::value,
+      "satisfiedSubranges may only be used over ranges of integers");
+
+  bool inSatisfiedRange = false;
+  T startRange;
+  T endRange;
+  std::vector<std::pair<T, T>> satisfiedRanges;
+
+  auto i = std::numeric_limits<T>::min();
+  while (true) {
+    const bool satisfied = pred(i);
+    if (satisfied && !inSatisfiedRange) {
+      inSatisfiedRange = true;
+      startRange = i;
+    } else if (!satisfied && inSatisfiedRange) {
+      inSatisfiedRange = false;
+      endRange = i - 1;
+      satisfiedRanges.emplace_back(startRange, endRange);
+    }
+
+    if (i == std::numeric_limits<T>::max()) {
+      break;
+    }
+    ++i;
+  }
+
+  if (inSatisfiedRange) {
+    endRange = i;
+    satisfiedRanges.emplace_back(startRange, endRange);
+  }
+
+  return satisfiedRanges;
+}
 
 } // util
 } // test
