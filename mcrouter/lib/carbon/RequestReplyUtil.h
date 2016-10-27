@@ -72,6 +72,18 @@ class IsRequestTrait {
   static constexpr bool value = decltype(check<Msg>(0))::value;
 };
 
+template <class R>
+typename std::enable_if<R::hasFlags, uint64_t>::type getFlags(
+    const R& requestOrReply) {
+  return requestOrReply.flags();
+}
+
+template <class R>
+typename std::enable_if<!R::hasFlags, uint64_t>::type getFlags(
+    const R&) {
+  return 0;
+}
+
 namespace detail {
 // Utility class useful for checking whether a particular OnRequest handler
 // class defines an onRequest() handler for Request.

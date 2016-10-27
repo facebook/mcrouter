@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,12 +12,12 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeLoggingRoute(McrouterRouteHandlePtr rh) {
-  return std::make_shared<McrouterRouteHandle<LoggingRoute>>(std::move(rh));
+McrouterRouteHandlePtr createLoggingRoute(McrouterRouteHandlePtr rh) {
+  return makeMcrouterRouteHandle<LoggingRoute>(std::move(rh));
 }
 
 McrouterRouteHandlePtr makeLoggingRoute(
@@ -31,7 +31,7 @@ McrouterRouteHandlePtr makeLoggingRoute(
   } else if (json.isString()) {
     target = factory.create(json);
   }
-  return makeLoggingRoute(std::move(target));
+  return createLoggingRoute(std::move(target));
 }
 
 }}}  // facebook::memcache::mcrouter

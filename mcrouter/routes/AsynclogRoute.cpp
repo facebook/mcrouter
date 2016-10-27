@@ -14,15 +14,15 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
                                          std::string asynclogName) {
-  return std::make_shared<McrouterRouteHandle<AsynclogRoute>>(
-    std::move(rh),
-    std::move(asynclogName));
+  return makeMcrouterRouteHandle<AsynclogRoute>(
+      std::move(rh), std::move(asynclogName));
 }
 
 /**

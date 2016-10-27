@@ -34,7 +34,6 @@ libmcrouter_a_SOURCES = \
   OperationTraits.h \
   Ref.h \
   Reply.h \
-  RouteHandleIf.h \
   RouteHandleTraverser.h \
   StatsReply.cpp \
   StatsReply.h \

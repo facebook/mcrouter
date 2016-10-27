@@ -31,6 +31,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/options.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/standalone_options.h"
 
@@ -38,7 +39,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 struct ServiceInfo::ServiceInfoImpl {
   Proxy* proxy_;
-  ProxyRoute& proxyRoute_;
+  ProxyRoute<McrouterRouteHandleIf>& proxyRoute_;
   std::unordered_map<
     std::string,
     std::function<std::string(const std::vector<folly::StringPiece>& args)>>
@@ -123,10 +124,11 @@ void ServiceInfo::ServiceInfoImpl::handleRouteCommandForOp(
 }
 
 template <int op_id>
-inline std::string routeHandlesCommandHelper(folly::StringPiece op,
-                                             folly::StringPiece key,
-                                             const ProxyRoute& proxyRoute,
-                                             McOpList::Item<op_id>) {
+inline std::string routeHandlesCommandHelper(
+    folly::StringPiece op,
+    folly::StringPiece key,
+    const ProxyRoute<McrouterRouteHandleIf>& proxyRoute,
+    McOpList::Item<op_id>) {
   if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
      std::string tree;
      int level = 0;
@@ -151,11 +153,18 @@ inline std::string routeHandlesCommandHelper(folly::StringPiece op,
 }
 
 inline std::string routeHandlesCommandHelper(
-  folly::StringPiece op,
-  folly::StringPiece key,
-  const ProxyRoute& proxyRoute,
-  McOpList::Item<0>) {
+    folly::StringPiece op,
+    folly::StringPiece,
+    const ProxyRoute<McrouterRouteHandleIf>&,
+    McOpList::Item<0>) {
+  throw std::runtime_error("route_handles: unknown op " + op.str());
+}
 
+inline std::string routeHandlesCommandHelper(
+    folly::StringPiece op,
+    folly::StringPiece,
+    const ProxyRoute<McrouterRouteHandleIf>&,
+    McOpList::Item<mc_op_stats>) {
   throw std::runtime_error("route_handles: unknown op " + op.str());
 }
 

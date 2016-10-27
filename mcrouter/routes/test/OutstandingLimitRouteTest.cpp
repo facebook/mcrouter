@@ -48,9 +48,8 @@ TEST(oustandingLimitRouteTest, basic) {
   auto normalHandle = std::make_shared<TestHandle>(
     GetRouteTestData(mc_res_found, "a"));
 
-  McrouterRouteHandle<OutstandingLimitRoute> rh(
-    normalHandle->rh,
-    3);
+  McrouterRouteHandle<OutstandingLimitRoute<McrouterRouteHandleIf>> rh(
+      normalHandle->rh, 3);
 
   normalHandle->pause();
 

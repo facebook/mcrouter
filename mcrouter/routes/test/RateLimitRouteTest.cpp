@@ -47,9 +47,8 @@ void test(Data data, Request, mc_res_t ok, mc_res_t reject,
      string("{\"") + type + "_rate\": 4.0, \"" + type + "_burst\": 3.0}" :
      string("{\"") + type + "_rate\": 2.0}"));
 
-  McrouterRouteHandle<RateLimitRoute> rh(
-    normalRh,
-    RateLimiter(json));
+  McrouterRouteHandle<RateLimitRoute<McrouterRouteHandleIf>> rh(
+      normalRh, RateLimiter(json));
 
   Request req("key");
   // McSetRequest requires value be set; this is a no-op for Get and Delete

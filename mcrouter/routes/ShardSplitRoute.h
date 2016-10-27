@@ -25,7 +25,6 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -57,18 +56,19 @@ std::string createSplitKey(folly::StringPiece fullKey,
 /**
  * Splits given request according to shard splits provided by ShardSplitter
  */
+template <class RouteHandleIf>
 class ShardSplitRoute {
  public:
   static std::string routeName() { return "shard-split"; }
 
-  ShardSplitRoute(McrouterRouteHandlePtr rh, ShardSplitter shardSplitter)
-    : rh_(std::move(rh)),
-      shardSplitter_(std::move(shardSplitter)) {
-  }
+  ShardSplitRoute(
+      std::shared_ptr<RouteHandleIf> rh,
+      ShardSplitter shardSplitter)
+      : rh_(std::move(rh)), shardSplitter_(std::move(shardSplitter)) {}
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
       ctx->recordShardSplitter(shardSplitter_);
@@ -136,7 +136,7 @@ class ShardSplitRoute {
   }
 
  private:
-  McrouterRouteHandlePtr rh_;
+  std::shared_ptr<RouteHandleIf> rh_;
   const ShardSplitter shardSplitter_;
 
   // from request with key 'prefix:shard:suffix' creates a copy of

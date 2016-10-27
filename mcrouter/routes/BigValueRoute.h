@@ -13,12 +13,12 @@
 
 #include <folly/Format.h>
 
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
 class IOBuf;
@@ -52,10 +52,11 @@ class BigValueRoute {
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const;
+                const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const;
 
-  BigValueRoute(McrouterRouteHandlePtr ch,
-                BigValueRouteOptions options);
+  BigValueRoute(
+      std::shared_ptr<MemcacheRouteHandleIf> ch,
+      BigValueRouteOptions options);
 
   template <class Request>
   ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const;
@@ -69,7 +70,7 @@ class BigValueRoute {
     OtherThanT<Request, GetLike<>, UpdateLike<>> = 0) const;
 
  private:
-  const McrouterRouteHandlePtr ch_;
+  const std::shared_ptr<MemcacheRouteHandleIf> ch_;
   const BigValueRouteOptions options_;
 
   class ChunksInfo {

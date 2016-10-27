@@ -14,7 +14,6 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -22,18 +21,17 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Async logs a failed request. It assumes the required data is available in
  * the reply.
  */
+template <class RouteHandleIf>
 class AsynclogRoute {
  public:
   std::string routeName() const { return "asynclog:" + asynclogName_; }
 
-  AsynclogRoute(McrouterRouteHandlePtr rh, std::string asynclogName)
-      : rh_(std::move(rh)),
-        asynclogName_(std::move(asynclogName)) {
-  }
+  AsynclogRoute(std::shared_ptr<RouteHandleIf> rh, std::string asynclogName)
+      : rh_(std::move(rh)), asynclogName_(std::move(asynclogName)) {}
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*rh_, req);
   }
 
@@ -52,7 +50,7 @@ class AsynclogRoute {
     return rh_->route(req);
   }
  private:
-  const McrouterRouteHandlePtr rh_;
+  const std::shared_ptr<RouteHandleIf> rh_;
   const std::string asynclogName_;
 };
 

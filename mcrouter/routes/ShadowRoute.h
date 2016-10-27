@@ -21,7 +21,6 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/route.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -35,13 +34,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Key range might be updated at runtime.
  * We can shadow to multiple shadow destinations for a given normal route.
  */
-template <class ShadowPolicy>
+template <class RouteHandleIf, class ShadowPolicy>
 class ShadowRoute {
  public:
   static std::string routeName() { return "shadow"; }
 
-  ShadowRoute(McrouterRouteHandlePtr normalRoute,
-              McrouterShadowData shadowData,
+  ShadowRoute(std::shared_ptr<RouteHandleIf> normalRoute,
+              ShadowData<RouteHandleIf> shadowData,
               ShadowPolicy shadowPolicy)
       : normal_(std::move(normalRoute)),
         shadowData_(std::move(shadowData)),
@@ -50,7 +49,7 @@ class ShadowRoute {
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*normal_, req);
     for (auto& shadowData : shadowData_) {
       t(*shadowData.first, req);
@@ -92,8 +91,8 @@ class ShadowRoute {
   }
 
  private:
-  const McrouterRouteHandlePtr normal_;
-  const McrouterShadowData shadowData_;
+  const std::shared_ptr<RouteHandleIf> normal_;
+  const ShadowData<RouteHandleIf> shadowData_;
   ShadowPolicy shadowPolicy_;
 
   template <class Request>
@@ -104,24 +103,24 @@ class ShadowRoute {
   }
 
   template <class Request>
-  void dispatchShadowRequest(std::shared_ptr<McrouterRouteHandleIf> shadow,
+  void dispatchShadowRequest(std::shared_ptr<RouteHandleIf> shadow,
                              std::shared_ptr<Request> adjustedReq) const;
 
   template <class Request>
   void sendAndValidateRequest(const ReplyT<Request>& normalReply,
-                              std::shared_ptr<McrouterRouteHandleIf> shadow,
+                              std::shared_ptr<RouteHandleIf> shadow,
                               std::shared_ptr<Request> adjustedReq) const;
 
   template <class GetRequest>
   void sendAndValidateRequestGetImpl(
       const ReplyT<GetRequest>& normalReply,
-      std::shared_ptr<McrouterRouteHandleIf> shadow,
+      std::shared_ptr<RouteHandleIf> shadow,
       std::shared_ptr<GetRequest> adjustedReq)
       const;
 
   void sendAndValidateRequest(
       const McGetReply& normalReply,
-      std::shared_ptr<McrouterRouteHandleIf> shadow,
+      std::shared_ptr<RouteHandleIf> shadow,
       std::shared_ptr<McGetRequest> adjustedReq)
       const {
 

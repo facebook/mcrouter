@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "RoutePolicyMap.h"
+#pragma once
 
 #include <algorithm>
 #include <unordered_set>
@@ -15,15 +15,15 @@
 
 #include "mcrouter/routes/PrefixSelectorRoute.h"
 
-using std::pair;
-using std::vector;
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
-static vector<McrouterRouteHandlePtr>
-orderedUnique(const vector<McrouterRouteHandlePtr>& v) {
-  std::unordered_set<McrouterRouteHandlePtr> seen;
-  vector<McrouterRouteHandlePtr> result;
+namespace detail {
+
+template <class RouteHandleIf>
+std::vector<std::shared_ptr<RouteHandleIf>> orderedUnique(
+    const std::vector<std::shared_ptr<RouteHandleIf>>& v) {
+  std::unordered_set<std::shared_ptr<RouteHandleIf>> seen;
+  std::vector<std::shared_ptr<RouteHandleIf>> result;
   for (auto& el : v) {
     if (el && seen.find(el) == seen.end()) {
       seen.insert(el);
@@ -34,21 +34,27 @@ orderedUnique(const vector<McrouterRouteHandlePtr>& v) {
   return result;
 }
 
-static vector<McrouterRouteHandlePtr>
-overrideItems(vector<McrouterRouteHandlePtr> original,
-              const vector<pair<size_t, McrouterRouteHandlePtr>>& overrides) {
+template <class RouteHandleIf>
+std::vector<std::shared_ptr<RouteHandleIf>> overrideItems(
+    std::vector<std::shared_ptr<RouteHandleIf>> original,
+    const std::vector<std::pair<size_t, std::shared_ptr<RouteHandleIf>>>&
+        overrides) {
   for (auto& it : overrides) {
     original[it.first] = it.second;
   }
   return original;
 }
 
-RoutePolicyMap::RoutePolicyMap(
-  const vector<std::shared_ptr<PrefixSelectorRoute>>& clusters) {
+} // detail
+
+template <class RouteHandleIf>
+RoutePolicyMap<RouteHandleIf>::RoutePolicyMap(
+    const std::vector<std::shared_ptr<PrefixSelectorRoute<RouteHandleIf>>>&
+        clusters) {
   // wildcards of all clusters
-  vector<McrouterRouteHandlePtr> wildcards;
+  std::vector<std::shared_ptr<RouteHandleIf>> wildcards;
   // Trie with aggregated policies from all clusters
-  Trie<vector<pair<size_t, McrouterRouteHandlePtr>>> t;
+  Trie<std::vector<std::pair<size_t, std::shared_ptr<RouteHandleIf>>>> t;
 
   for (size_t clusterId = 0; clusterId < clusters.size(); ++clusterId) {
     auto& policy = clusters[clusterId];
@@ -72,17 +78,17 @@ RoutePolicyMap::RoutePolicyMap(
     auto existing = ut_.findPrefix(it.first);
     // at least empty string should be there
     assert(existing != ut_.end());
-    ut_.emplace(it.first, overrideItems(existing->second, it.second));
+    ut_.emplace(it.first, detail::overrideItems(existing->second, it.second));
   }
   for (auto& it : ut_) {
-    it.second = orderedUnique(it.second);
+    it.second = detail::orderedUnique(it.second);
   }
 }
 
-const vector<McrouterRouteHandlePtr>&
-RoutePolicyMap::getTargetsForKey(folly::StringPiece key) const {
+template <class RouteHandleIf>
+const std::vector<std::shared_ptr<RouteHandleIf>>&
+RoutePolicyMap<RouteHandleIf>::getTargetsForKey(folly::StringPiece key) const {
   auto result = ut_.findPrefix(key);
   return result == ut_.end() ? emptyV_ : result->second;
 }
-
 }}}  // facebook::memcache::mcrouter

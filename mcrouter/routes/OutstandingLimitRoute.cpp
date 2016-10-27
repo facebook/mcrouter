@@ -9,6 +9,7 @@
  */
 #include "OutstandingLimitRoute.h"
 
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -17,7 +18,7 @@ McrouterRouteHandlePtr makeOutstandingLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   size_t maxOutstanding) {
 
-  return std::make_shared<McrouterRouteHandle<OutstandingLimitRoute>>(
+  return makeMcrouterRouteHandle<OutstandingLimitRoute>(
     std::move(normalRoute),
     maxOutstanding);
 }

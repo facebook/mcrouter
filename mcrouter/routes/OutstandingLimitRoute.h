@@ -36,6 +36,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * route. All blocked requests will be sent one request per sender id in
  * round-robin fashion to guarantee fairness.
  */
+template <class RouteHandleIf>
 class OutstandingLimitRoute {
  public:
   std::string routeName() const {
@@ -44,13 +45,14 @@ class OutstandingLimitRoute {
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*target_, req);
   }
 
-  OutstandingLimitRoute(McrouterRouteHandlePtr target, size_t maxOutstanding)
-    : target_(std::move(target)), maxOutstanding_(maxOutstanding) {
-  }
+  OutstandingLimitRoute(
+      std::shared_ptr<RouteHandleIf> target,
+      size_t maxOutstanding)
+      : target_(std::move(target)), maxOutstanding_(maxOutstanding) {}
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
@@ -127,7 +129,7 @@ class OutstandingLimitRoute {
   }
 
  private:
-  const McrouterRouteHandlePtr target_;
+  const std::shared_ptr<RouteHandleIf> target_;
   const size_t maxOutstanding_;
   size_t outstanding_{0};
   size_t currentGetReqsWaiting_{0};

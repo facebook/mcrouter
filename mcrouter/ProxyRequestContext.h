@@ -29,8 +29,10 @@ struct AccessPoint;
 
 namespace mcrouter {
 
-class McrouterClient;
+template <class RouteHandleIf>
 class ProxyRoute;
+
+class McrouterClient;
 class ShardSplitter;
 
 /**
@@ -103,7 +105,7 @@ public:
 
   void setSenderIdForTest(uint64_t id);
 
-  ProxyRoute& proxyRoute() const {
+  ProxyRoute<McrouterRouteHandleIf>& proxyRoute() const {
     assert(!recording_);
     return config_->proxyRoute();
   }

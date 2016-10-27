@@ -23,17 +23,19 @@ struct dynamic;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class PoolFactory;
+template <class RouteHandleIf>
 class ProxyRoute;
-class ServiceInfo;
+
+class PoolFactory;
 class Proxy;
+class ServiceInfo;
 
 /**
  * Topmost struct for mcrouter configs.
  */
 class ProxyConfig {
  public:
-  ProxyRoute& proxyRoute() const {
+  ProxyRoute<McrouterRouteHandleIf>& proxyRoute() const {
     return *proxyRoute_;
   }
 
@@ -62,7 +64,7 @@ class ProxyConfig {
   size_t calcNumClients() const;
 
  private:
-  std::shared_ptr<ProxyRoute> proxyRoute_;
+  std::shared_ptr<ProxyRoute<McrouterRouteHandleIf>> proxyRoute_;
   std::shared_ptr<ServiceInfo> serviceInfo_;
   std::string configMd5Digest_;
   folly::StringKeyedUnorderedMap<McrouterRouteHandlePtr> asyncLogRoutes_;

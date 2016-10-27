@@ -51,10 +51,8 @@ TEST(shadowRouteTest, defaultPolicy) {
     {std::move(shadowRhs[1]), settings},
   };
 
-  McrouterRouteHandle<ShadowRoute<DefaultShadowPolicy>> rh(
-    normalRh,
-    std::move(shadowData),
-    DefaultShadowPolicy());
+  McrouterRouteHandle<ShadowRoute<McrouterRouteHandleIf, DefaultShadowPolicy>>
+      rh(normalRh, std::move(shadowData), DefaultShadowPolicy());
 
   fm.run([&] () {
     mockFiberContext();

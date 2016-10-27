@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,14 +9,15 @@
  */
 #include "ShardSplitRoute.h"
 
+#include "mcrouter/routes/McRouteHandleBuilder.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeShardSplitRoute(
-  McrouterRouteHandlePtr rh,
-  ShardSplitter shardSplitter) {
-
-  return std::make_shared<McrouterRouteHandle<ShardSplitRoute>>(
-    std::move(rh), std::move(shardSplitter));
+    McrouterRouteHandlePtr rh,
+    ShardSplitter shardSplitter) {
+  return makeMcrouterRouteHandle<ShardSplitRoute>(
+      std::move(rh), std::move(shardSplitter));
 }
 
 std::string shardSplitSuffix(size_t offset) {

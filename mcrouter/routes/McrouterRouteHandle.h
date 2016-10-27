@@ -11,30 +11,17 @@
 
 #include <memory>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/RouteHandleIf.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class McrouterRouteHandleIf;
+template <class Route>
+using McrouterRouteHandle = MemcacheRouteHandle<Route>;
 
-template <typename Route>
-class McrouterRouteHandle
-    : public RouteHandle<Route, McrouterRouteHandleIf, McRequestList> {
- public:
-  template <typename... Args>
-  explicit McrouterRouteHandle(Args&&... args)
-      : RouteHandle<Route, McrouterRouteHandleIf, McRequestList>(
-            std::forward<Args>(args)...) {}
-};
-
-class McrouterRouteHandleIf
-    : public RouteHandleIf<McrouterRouteHandleIf, McRequestList> {
- public:
-  template <class Route>
-  using Impl = McrouterRouteHandle<Route>;
-};
+using McrouterRouteHandleIf = MemcacheRouteHandleIf;
 
 typedef std::shared_ptr<McrouterRouteHandleIf> McrouterRouteHandlePtr;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,13 +13,17 @@
 #include <utility>
 #include <vector>
 
+#include "mcrouter/routes/McrouterRouteHandle.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class McrouterRouteHandleIf;
 class ShadowSettings;
 
-using McrouterShadowData = std::vector<std::pair<
-          std::shared_ptr<McrouterRouteHandleIf>,
-          std::shared_ptr<ShadowSettings>>>;
+template <class RouteHandleIf>
+using ShadowData = std::vector<std::pair<
+    std::shared_ptr<RouteHandleIf>,
+    std::shared_ptr<ShadowSettings>>>;
+
+using McrouterShadowData = ShadowData<McrouterRouteHandleIf>;
 
 }}}  // facebook::memcache::mcrouter

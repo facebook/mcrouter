@@ -19,19 +19,19 @@
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/RoutePolicyMap.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class RoutePolicyMap;
 class RoutingPrefix;
 
 /* A bridge between proxy_* config structures and corresponding route handles.
    It is initialized by RouteHandleMapBuilder. */
+template <class RouteHandleIf>
 class RouteHandleMap {
  public:
-  RouteHandleMap(const RouteSelectorMap& routeSelectors,
+  RouteHandleMap(const RouteSelectorMap<RouteHandleIf>& routeSelectors,
                  const RoutingPrefix& defaultRoute,
                  bool sendInvalidRouteToDefault);
 
@@ -40,7 +40,7 @@ class RouteHandleMap {
    * with the given prefix and key should be forwarded to. nullptr if vector for
    * this prefix wasn't precalculated.
    */
-  const std::vector<McrouterRouteHandlePtr>*
+  const std::vector<std::shared_ptr<RouteHandleIf>>*
   getTargetsForKeyFast(folly::StringPiece prefix,
                        folly::StringPiece key) const;
 
@@ -49,26 +49,31 @@ class RouteHandleMap {
    * the given prefix and key should be forwarded to. Works for
    * prefixes with arbitrary amount of '*'
    */
-  FOLLY_NOINLINE std::vector<McrouterRouteHandlePtr> getTargetsForKeySlow(
-    folly::StringPiece prefix,
-    folly::StringPiece key) const;
+  FOLLY_NOINLINE std::vector<std::shared_ptr<RouteHandleIf>>
+  getTargetsForKeySlow(folly::StringPiece prefix, folly::StringPiece key) const;
 
  private:
-  const std::vector<McrouterRouteHandlePtr> emptyV_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> emptyV_;
   const RoutingPrefix& defaultRoute_;
   bool sendInvalidRouteToDefault_;
-  std::shared_ptr<RoutePolicyMap> defaultRouteMap_;
+  std::shared_ptr<RoutePolicyMap<RouteHandleIf>> defaultRouteMap_;
 
-  std::shared_ptr<RoutePolicyMap> allRoutes_;
-  folly::StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRegion_;
-  folly::StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap>> byRoute_;
+  std::shared_ptr<RoutePolicyMap<RouteHandleIf>> allRoutes_;
+  folly::StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap<RouteHandleIf>>>
+      byRegion_;
+  folly::StringKeyedUnorderedMap<std::shared_ptr<RoutePolicyMap<RouteHandleIf>>>
+      byRoute_;
 
-  void foreachRoutePolicy(folly::StringPiece prefix,
-    std::function<void(const std::shared_ptr<RoutePolicyMap>&)> f) const;
+  void foreachRoutePolicy(
+      folly::StringPiece prefix,
+      std::function<void(const std::shared_ptr<RoutePolicyMap<RouteHandleIf>>&)>
+          f) const;
 
-  FOLLY_NOINLINE const std::vector<McrouterRouteHandlePtr>*
+  FOLLY_NOINLINE const std::vector<std::shared_ptr<RouteHandleIf>>*
   getTargetsForKeyFallback(folly::StringPiece prefix,
                            folly::StringPiece key) const;
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "RouteHandleMap-inl.h"

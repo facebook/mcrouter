@@ -33,15 +33,18 @@ class Proxy;
 /**
  * This is the top-most level of Mcrouter's RouteHandle tree.
  */
+template <class RouteHandleIf>
 class ProxyRoute {
  public:
   static std::string routeName() { return "proxy"; }
 
-  ProxyRoute(Proxy* proxy, const RouteSelectorMap& routeSelectors);
+  ProxyRoute(
+      Proxy* proxy,
+      const RouteSelectorMap<RouteHandleIf>& routeSelectors);
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*root_, req);
   }
 
@@ -52,14 +55,34 @@ class ProxyRoute {
 
   McFlushAllReply route(const McFlushAllRequest& req) const {
     // route to all destinations in the config.
-    return AllSyncRoute<McrouterRouteHandleIf>(getAllDestinations()).route(req);
+    return AllSyncRoute<RouteHandleIf>(getAllDestinations()).route(req);
+  }
+
+  // Routing disabled for the commands bellow.
+  // TODO(@aap): Remove after refactoring Proxy.
+  McVersionReply route(const McVersionRequest&) const {
+    throw std::runtime_error("Routing version command is not supported.");
+  }
+  McStatsReply route(const McStatsRequest&) const {
+    throw std::runtime_error("Routing stats command is not supported.");
+  }
+  McShutdownReply route(const McShutdownRequest&) const {
+    throw std::runtime_error("Routing shutdown command is not supported.");
+  }
+  McQuitReply route(const McQuitRequest& req) const {
+    throw std::runtime_error("Routing quit command is not supported.");
+  }
+  McExecReply route(const McExecRequest& req) const {
+    throw std::runtime_error("Routing exec command is not supported.");
   }
 
  private:
   Proxy* proxy_;
-  McrouterRouteHandlePtr root_;
+  std::shared_ptr<RouteHandleIf> root_;
 
-  std::vector<McrouterRouteHandlePtr> getAllDestinations() const;
+  std::vector<std::shared_ptr<RouteHandleIf>> getAllDestinations() const;
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "ProxyRoute-inl.h"

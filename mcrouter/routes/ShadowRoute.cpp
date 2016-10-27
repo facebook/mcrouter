@@ -9,24 +9,22 @@
  */
 #include "ShadowRoute.h"
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeShadowRouteDefault(
-  McrouterRouteHandlePtr normalRoute,
-  McrouterShadowData shadowData,
-  DefaultShadowPolicy shadowPolicy) {
-
-  return
-    std::make_shared<McrouterRouteHandle<ShadowRoute<DefaultShadowPolicy>>>(
-      std::move(normalRoute),
-      std::move(shadowData),
-      std::move(shadowPolicy));
+    McrouterRouteHandlePtr normalRoute,
+    McrouterShadowData shadowData,
+    DefaultShadowPolicy shadowPolicy) {
+  return std::make_shared<McrouterRouteHandle<
+      ShadowRoute<McrouterRouteHandleIf, DefaultShadowPolicy>>>(
+      std::move(normalRoute), std::move(shadowData), std::move(shadowPolicy));
 }
 
 std::vector<McrouterRouteHandlePtr> makeShadowRoutes(

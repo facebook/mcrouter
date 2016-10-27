@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <folly/fibers/FiberManager.h>
+#include <folly/Format.h>
 #include <folly/Memory.h>
 #include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
@@ -42,11 +43,22 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Routes a request to a single ProxyClient.
  * This is the lowest level in Mcrouter's RouteHandle tree.
  */
+template <class RouteHandleIf>
 class DestinationRoute {
  public:
-  std::string routeName() const;
+  std::string routeName() const {
+    return folly::sformat(
+        "host|pool={}|id={}|ap={}|timeout={}ms",
+        poolName_,
+        indexInPool_,
+        destination_->accessPoint()->toString(),
+        timeout_.count());
+  }
 
-  std::string keyWithFailoverTag(folly::StringPiece fullKey) const;
+  std::string keyWithFailoverTag(folly::StringPiece fullKey) const {
+    const char* const kFailoverTag = ":failover=1";
+    return folly::to<std::string>(fullKey, kFailoverTag);
+  }
 
   /**
    * @param destination The destination where the request is to be sent
@@ -65,7 +77,7 @@ class DestinationRoute {
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto& ctx = fiber_local::getSharedCtx();
     if (ctx) {
       ctx->recordDestination(poolName_, indexInPool_,

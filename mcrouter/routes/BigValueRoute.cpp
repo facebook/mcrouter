@@ -50,7 +50,7 @@ bool BigValueRoute::ChunksInfo::valid() const {
   return valid_;
 }
 
-BigValueRoute::BigValueRoute(McrouterRouteHandlePtr ch,
+BigValueRoute::BigValueRoute(std::shared_ptr<MemcacheRouteHandleIf> ch,
                              BigValueRouteOptions options)
     : ch_(std::move(ch)), options_(options) {
 
@@ -71,8 +71,8 @@ folly::IOBuf BigValueRoute::createChunkKey(
 McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr rh,
                                          BigValueRouteOptions options) {
   return std::make_shared<McrouterRouteHandle<BigValueRoute>>(
-    std::move(rh),
-    std::move(options));
+      std::move(rh),
+      std::move(options));
 }
 
 }}} // facebook::memcache::mcrouter

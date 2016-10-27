@@ -21,13 +21,14 @@ namespace facebook { namespace memcache { namespace mcrouter {
 /**
  * Same as NullRoute, but with Mcrouter stats reporting.
  */
+template <class RouteHandleIf>
 class DevNullRoute {
  public:
   static std::string routeName() { return "devnull"; }
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const { }
+                const RouteHandleTraverser<RouteHandleIf>& t) const { }
 
   template <class Request>
   static ReplyT<Request> route(const Request& req) {

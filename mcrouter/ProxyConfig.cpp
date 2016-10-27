@@ -25,12 +25,14 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-ProxyConfig::ProxyConfig(
-    Proxy& proxy,
-    const folly::dynamic& json,
-    std::string configMd5Digest,
-    PoolFactory& poolFactory)
-    : configMd5Digest_(std::move(configMd5Digest)) {
+using McrouterPrefixSelectorRoute = PrefixSelectorRoute<McrouterRouteHandleIf>;
+
+ProxyConfig::ProxyConfig(Proxy& proxy,
+                         const folly::dynamic& json,
+                         std::string configMd5Digest,
+                         PoolFactory& poolFactory)
+  : configMd5Digest_(std::move(configMd5Digest)) {
+
   McRouteHandleProvider provider(proxy, poolFactory);
   RouteHandleFactory<McrouterRouteHandleIf> factory(provider, proxy.getId());
 
@@ -51,7 +53,7 @@ ProxyConfig::ProxyConfig(
     }
   }
 
-  RouteSelectorMap routeSelectors;
+  RouteSelectorMap<McrouterRouteHandleIf> routeSelectors;
 
   auto jRoute = json.get_ptr("route");
   auto jRoutes = json.get_ptr("routes");
@@ -59,7 +61,7 @@ ProxyConfig::ProxyConfig(
              "Invalid config: both 'route' and 'routes' are specified");
   if (jRoute) {
     routeSelectors[proxy.getRouterOptions().default_route] =
-        std::make_shared<PrefixSelectorRoute>(factory, *jRoute);
+        std::make_shared<McrouterPrefixSelectorRoute>(factory, *jRoute);
   } else if (jRoutes) { // jRoutes
     checkLogic(jRoutes->isArray() || jRoutes->isObject(),
                "Config: routes is not array/object");
@@ -72,7 +74,7 @@ ProxyConfig::ProxyConfig(
         checkLogic(jAliases, "RoutePolicy: no aliases");
         checkLogic(jAliases->isArray(), "RoutePolicy: aliases is not an array");
         auto routeSelector =
-            std::make_shared<PrefixSelectorRoute>(factory, *jCurRoute);
+            std::make_shared<McrouterPrefixSelectorRoute>(factory, *jCurRoute);
         for (const auto& alias : *jAliases) {
           checkLogic(alias.isString(), "RoutePolicy: alias is not a string");
           routeSelectors[alias.stringPiece()] = routeSelector;
@@ -82,7 +84,7 @@ ProxyConfig::ProxyConfig(
       for (const auto& it : jRoutes->items()) {
         checkLogic(it.first.isString(), "RoutePolicy: alias is not a string");
         routeSelectors[it.first.stringPiece()] =
-            std::make_shared<PrefixSelectorRoute>(factory, it.second);
+            std::make_shared<McrouterPrefixSelectorRoute>(factory, it.second);
       }
     }
   } else {
@@ -92,7 +94,8 @@ ProxyConfig::ProxyConfig(
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
   pools_ = provider.releasePools();
   accessPoints_ = provider.releaseAccessPoints();
-  proxyRoute_ = std::make_shared<ProxyRoute>(&proxy, routeSelectors);
+  proxyRoute_ = std::make_shared<ProxyRoute<McrouterRouteHandleIf>>(
+      &proxy, routeSelectors);
   serviceInfo_ = std::make_shared<ServiceInfo>(&proxy, *this);
 }
 

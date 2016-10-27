@@ -9,38 +9,22 @@
  */
 #include "DestinationRoute.h"
 
-#include <folly/Format.h>
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-const char* const kFailoverTag = ":failover=1";
-
-std::string DestinationRoute::routeName() const {
-  return folly::sformat("host|pool={}|id={}|ap={}|timeout={}ms",
-    poolName_,
-    indexInPool_,
-    destination_->accessPoint()->toString(),
-    timeout_.count());
-}
-
-std::string DestinationRoute::keyWithFailoverTag(
-    folly::StringPiece fullKey) const {
-  return folly::to<std::string>(fullKey, kFailoverTag);
-}
-
 McrouterRouteHandlePtr makeDestinationRoute(
-  std::shared_ptr<ProxyDestination> destination,
-  std::string poolName,
-  size_t indexInPool,
-  std::chrono::milliseconds timeout,
-  bool keepRoutingPrefix) {
-
-  return std::make_shared<McrouterRouteHandle<DestinationRoute>>(
-    std::move(destination),
-    std::move(poolName),
-    indexInPool,
-    timeout,
-    keepRoutingPrefix);
+    std::shared_ptr<ProxyDestination> destination,
+    std::string poolName,
+    size_t indexInPool,
+    std::chrono::milliseconds timeout,
+    bool keepRoutingPrefix) {
+  return makeMcrouterRouteHandle<DestinationRoute>(
+      std::move(destination),
+      std::move(poolName),
+      indexInPool,
+      timeout,
+      keepRoutingPrefix);
 }
 
 }}}  // facebook::memcache::mcrouter

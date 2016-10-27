@@ -7,9 +7,10 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ModifyExptimeRoute.h"
 
@@ -25,8 +26,8 @@ std::vector<McrouterRouteHandlePtr> getFailoverChildren(
   std::vector<McrouterRouteHandlePtr> children;
   children.push_back(std::move(normal));
   for (auto& frh : failover) {
-    auto rh = std::make_shared<McrouterRouteHandle<ModifyExptimeRoute>>(
-        std::move(frh), failoverExptime, ModifyExptimeRoute::Action::Min);
+    auto rh = makeMcrouterRouteHandle<ModifyExptimeRoute>(
+        std::move(frh), failoverExptime, ModifyExptimeAction::Min);
     children.push_back(std::move(rh));
   }
   return children;

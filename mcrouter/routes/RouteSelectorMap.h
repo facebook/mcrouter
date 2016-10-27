@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,9 +15,10 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouteHandleIf>
 class PrefixSelectorRoute;
 
-using RouteSelectorMap =
-  folly::StringKeyedUnorderedMap<std::shared_ptr<PrefixSelectorRoute>>;
-
+template <class RouteHandleIf>
+using RouteSelectorMap = folly::StringKeyedUnorderedMap<
+    std::shared_ptr<PrefixSelectorRoute<RouteHandleIf>>>;
 }}}  // facebook::memcache::mcrouter

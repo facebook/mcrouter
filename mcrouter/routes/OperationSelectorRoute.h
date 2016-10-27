@@ -15,25 +15,26 @@
 
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/lib/Operation.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 /* RouteHandle that can send to a different target based on McOperation id */
+template <class RouteHandleIf>
 class OperationSelectorRoute {
  public:
   static std::string routeName() { return "operation-selector"; }
 
   OperationSelectorRoute(
-    std::vector<McrouterRouteHandlePtr> operationPolicies,
-    McrouterRouteHandlePtr&& defaultPolicy)
+    std::vector<std::shared_ptr<RouteHandleIf>> operationPolicies,
+    std::shared_ptr<RouteHandleIf>&& defaultPolicy)
       : operationPolicies_(std::move(operationPolicies)),
         defaultPolicy_(std::move(defaultPolicy)) {
   }
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     static constexpr int op = OpFromType<Request, RequestOpMapping>::value;
 
     if (operationPolicies_[op]) {
@@ -57,8 +58,8 @@ class OperationSelectorRoute {
   }
 
 private:
-  const std::vector<McrouterRouteHandlePtr> operationPolicies_;
-  const McrouterRouteHandlePtr defaultPolicy_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> operationPolicies_;
+  const std::shared_ptr<RouteHandleIf> defaultPolicy_;
 };
 
 }}}  // facebook::memcache::mcrouter

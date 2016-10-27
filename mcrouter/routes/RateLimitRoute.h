@@ -14,7 +14,6 @@
 
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RateLimiter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -25,6 +24,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
  *
  * See comments in TokenBucket.h for algorithm details.
  */
+template <class RouteHandleIf>
 class RateLimitRoute {
  public:
   std::string routeName() const {
@@ -37,11 +37,11 @@ class RateLimitRoute {
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*target_, req);
   }
 
-  RateLimitRoute(McrouterRouteHandlePtr target, RateLimiter rl)
+  RateLimitRoute(std::shared_ptr<RouteHandleIf> target, RateLimiter rl)
       : target_(std::move(target)),
         rl_(std::move(rl)) {
   }
@@ -55,7 +55,7 @@ class RateLimitRoute {
   }
 
  private:
-  McrouterRouteHandlePtr target_;
+  const std::shared_ptr<RouteHandleIf> target_;
   RateLimiter rl_;
 };
 

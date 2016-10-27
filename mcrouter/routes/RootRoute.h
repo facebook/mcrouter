@@ -25,11 +25,12 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouteHandleIf>
 class RootRoute {
  public:
   static std::string routeName() { return "root"; }
 
-  RootRoute(Proxy* proxy, const RouteSelectorMap& routeSelectors)
+  RootRoute(Proxy* proxy, const RouteSelectorMap<RouteHandleIf>& routeSelectors)
       : opts_(proxy->getRouterOptions()),
         rhMap_(
             routeSelectors,
@@ -38,7 +39,7 @@ class RootRoute {
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     const auto* rhPtr = rhMap_.getTargetsForKeyFast(
         req.key().routingPrefix(), req.key().routingKey());
     if (LIKELY(rhPtr != nullptr)) {
@@ -80,13 +81,13 @@ class RootRoute {
 
  private:
   const McrouterOptions& opts_;
-  RouteHandleMap rhMap_;
+  RouteHandleMap<RouteHandleIf> rhMap_;
 
   template <class Request>
-  ReplyT<Request> routeImpl(const std::vector<McrouterRouteHandlePtr>& rh,
-                            const Request& req,
-                            GetLikeT<Request> = 0) const {
-
+  ReplyT<Request> routeImpl(
+      const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
+      const Request& req,
+      GetLikeT<Request> = 0) const {
     auto reply = doRoute(rh, req);
     if (isErrorResult(reply.result()) && opts_.miss_on_get_errors &&
         !rh.empty()) {
@@ -98,13 +99,12 @@ class RootRoute {
   }
 
   template <class Request>
-  ReplyT<Request> routeImpl(const std::vector<McrouterRouteHandlePtr>& rh,
-                            const Request& req,
-                            ArithmeticLikeT<Request> = 0) const {
-
-    auto reply = opts_.allow_only_gets
-                     ? createReply(DefaultReply, req)
-                     : doRoute(rh, req);
+  ReplyT<Request> routeImpl(
+      const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
+      const Request& req,
+      ArithmeticLikeT<Request> = 0) const {
+    auto reply = opts_.allow_only_gets ? createReply(DefaultReply, req)
+                                       : doRoute(rh, req);
     if (isErrorResult(reply.result())) {
       reply = createReply(DefaultReply, req);
     }
@@ -113,7 +113,7 @@ class RootRoute {
 
   template <class Request>
   ReplyT<Request> routeImpl(
-    const std::vector<McrouterRouteHandlePtr>& rh,
+    const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
     const Request& req,
     OtherThanT<Request, GetLike<>, ArithmeticLike<>> = 0) const {
 
@@ -125,7 +125,7 @@ class RootRoute {
   }
 
   template <class Request>
-  ReplyT<Request> doRoute(const std::vector<McrouterRouteHandlePtr>& rh,
+  ReplyT<Request> doRoute(const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
                           const Request& req) const {
 
     if (!rh.empty()) {

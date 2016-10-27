@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,6 +19,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouteHandleIf>
 class PrefixSelectorRoute;
 
 /**
@@ -44,27 +45,31 @@ class PrefixSelectorRoute;
  * 2) use getTargetsForKey to get precalculated vector of targets.
  *    Complexity is O(min(longest key prefix in config, key length))
  */
+template <class RouteHandleIf>
 class RoutePolicyMap {
  public:
   explicit RoutePolicyMap(
-    const std::vector<std::shared_ptr<PrefixSelectorRoute>>& clusters);
+      const std::vector<std::shared_ptr<PrefixSelectorRoute<RouteHandleIf>>>&
+          clusters);
 
   /**
    * @return vector of route handles that a request with given key should be
    *         forwarded to.
    */
-  const std::vector<McrouterRouteHandlePtr>&
-  getTargetsForKey(folly::StringPiece key) const;
+  const std::vector<std::shared_ptr<RouteHandleIf>>& getTargetsForKey(
+      folly::StringPiece key) const;
 
  private:
-  const std::vector<McrouterRouteHandlePtr> emptyV_;
+  const std::vector<std::shared_ptr<RouteHandleIf>> emptyV_;
   /**
    * This Trie contains targets for each key prefix. It is built like this:
    * 1) targets for empty string are wildcards.
    * 2) targets for string of length n+1 S[0..n] are targets for S[0..n-1] with
    *    OperationSelectorRoutes for key prefix == S[0..n] overridden.
    */
-  Trie<std::vector<McrouterRouteHandlePtr>> ut_;
+  Trie<std::vector<std::shared_ptr<RouteHandleIf>>> ut_;
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "RoutePolicyMap-inl.h"

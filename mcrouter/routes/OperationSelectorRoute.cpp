@@ -15,17 +15,16 @@
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeOperationSelectorRoute(
-  std::vector<McrouterRouteHandlePtr> operationPolicies,
-  McrouterRouteHandlePtr defaultPolicy) {
-
-  return std::make_shared<McrouterRouteHandle<OperationSelectorRoute>>(
-    std::move(operationPolicies),
-    std::move(defaultPolicy));
+    std::vector<McrouterRouteHandlePtr> operationPolicies,
+    McrouterRouteHandlePtr defaultPolicy) {
+  return makeMcrouterRouteHandle<OperationSelectorRoute>(
+      std::move(operationPolicies), std::move(defaultPolicy));
 }
 
 McrouterRouteHandlePtr makeOperationSelectorRoute(

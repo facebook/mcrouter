@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,14 +12,15 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeRateLimitRoute(McrouterRouteHandlePtr normalRoute,
-                                          RateLimiter rateLimiter) {
-  return std::make_shared<McrouterRouteHandle<RateLimitRoute>>(
-    std::move(normalRoute),
-    std::move(rateLimiter));
+McrouterRouteHandlePtr makeRateLimitRoute(
+    McrouterRouteHandlePtr normalRoute,
+    RateLimiter rateLimiter) {
+  return makeMcrouterRouteHandle<RateLimitRoute>(
+      std::move(normalRoute), std::move(rateLimiter));
 }
 
 McrouterRouteHandlePtr makeRateLimitRoute(

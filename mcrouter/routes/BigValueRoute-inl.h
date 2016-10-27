@@ -66,7 +66,7 @@ std::vector<Reply> BigValueRoute::collectAllByBatches(
 template <class Request>
 void BigValueRoute::traverse(
     const Request& req,
-    const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+    const RouteHandleTraverser<MemcacheRouteHandleIf>& t) const {
   t(*ch_, req);
 }
 
@@ -172,7 +172,7 @@ BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
   return std::make_pair(std::move(big_set_reqs), info);
 }
 
-template<class ToRequest, class FromRequest>
+template <class ToRequest, class FromRequest>
 std::vector<ToRequest>
 BigValueRoute::chunkGetRequests(const FromRequest& req,
                                 const ChunksInfo& info) const {

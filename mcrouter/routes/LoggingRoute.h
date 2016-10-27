@@ -25,18 +25,19 @@ namespace facebook { namespace memcache { namespace mcrouter {
 /**
  * Forwards requests to the child route, then logs the request and response.
  */
+template <class RouteHandleIf>
 class LoggingRoute {
  public:
   static std::string routeName() {
     return "logging";
   }
 
-  explicit LoggingRoute(McrouterRouteHandlePtr rh)
+  explicit LoggingRoute(std::shared_ptr<RouteHandleIf> rh)
     : child_(std::move(rh)) {}
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (child_) {
       t(*child_, req);
     }
@@ -46,7 +47,7 @@ class LoggingRoute {
   ReplyT<Request> route(const Request& req) {
     ReplyT<Request> reply;
     if (child_ == nullptr) {
-      reply = NullRoute<McrouterRouteHandleIf>::route(req);
+      reply = NullRoute<RouteHandleIf>::route(req);
     } else {
       reply = child_->route(req);
     }
@@ -66,7 +67,7 @@ class LoggingRoute {
       if (isHitResult(reply.result())) {
         callback(
             req.key().fullKey(),
-            reply.flags(),
+            carbon::getFlags(reply),
             carbon::valueRangeSlow(reply),
             Request::name,
             userIp);
@@ -83,7 +84,7 @@ class LoggingRoute {
   }
 
  private:
-  const McrouterRouteHandlePtr child_;
+  const std::shared_ptr<RouteHandleIf> child_;
 };
 
 }}} // facebook::memcache::mcrouter

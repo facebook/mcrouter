@@ -24,7 +24,6 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -43,19 +42,24 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * "foo" => "/a/b/foo"
  * "/b/c/o" => "/a/b/fooo"
  */
+template <class RouteHandleIf>
 class ModifyKeyRoute {
  public:
   static std::string routeName() { return "modify-key"; }
 
   ModifyKeyRoute(
-      McrouterRouteHandlePtr target,
+      std::shared_ptr<RouteHandleIf> target,
       folly::Optional<std::string> routingPrefix,
       std::string keyPrefix,
-      bool modifyInplace);
+      bool modifyInplace)
+      : target_(std::move(target)),
+        routingPrefix_(std::move(routingPrefix)),
+        keyPrefix_(std::move(keyPrefix)),
+        modifyInplace_(modifyInplace) {}
 
   template <class Request>
   void traverse(const Request& req,
-                const RouteHandleTraverser<McrouterRouteHandleIf>& t) const {
+                const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto cloneReq = req;
     auto key = getModifiedKey(req.key());
     if (key) {
@@ -74,13 +78,27 @@ class ModifyKeyRoute {
   }
 
  private:
-  const McrouterRouteHandlePtr target_;
+  const std::shared_ptr<RouteHandleIf> target_;
   const folly::Optional<std::string> routingPrefix_;
   const std::string keyPrefix_;
   const bool modifyInplace_;
 
   folly::Optional<std::string> getModifiedKey(
-      const carbon::Keys<folly::IOBuf>& reqKey) const;
+      const carbon::Keys<folly::IOBuf>& reqKey) const {
+    folly::StringPiece rp = routingPrefix_.hasValue() ? routingPrefix_.value()
+                                                      : reqKey.routingPrefix();
+
+    if (!reqKey.keyWithoutRoute().startsWith(keyPrefix_)) {
+      auto keyWithoutRoute = reqKey.keyWithoutRoute();
+      if (modifyInplace_ && keyWithoutRoute.size() >= keyPrefix_.size()) {
+        keyWithoutRoute.advance(keyPrefix_.size());
+      }
+      return folly::to<std::string>(rp, keyPrefix_, keyWithoutRoute);
+    } else if (routingPrefix_.hasValue() && rp != reqKey.routingPrefix()) {
+      return folly::to<std::string>(rp, reqKey.keyWithoutRoute());
+    }
+    return folly::none;
+  }
 
   template <class Request>
   ReplyT<Request>

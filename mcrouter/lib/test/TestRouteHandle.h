@@ -11,24 +11,15 @@
 
 #include <memory>
 
-#include "mcrouter/lib/fbi/cpp/TypeList.h"
-#include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/McRequestList.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/RouteHandleIf.h"
+#include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 
 namespace facebook { namespace memcache {
 
-class TestRouteHandleIf : public RouteHandleIf<TestRouteHandleIf,
-                                               McRequestList> {
-};
+using TestRouteHandleIf = MemcacheRouteHandleIf;
+
+template <class Route>
+using TestRouteHandle = MemcacheRouteHandle<Route>;
 
 typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
-
-template <typename Route>
-using TestRouteHandle = RouteHandle<Route,
-                                    TestRouteHandleIf,
-                                    McRequestList>;
 
 }}  // facebook::memcache
