@@ -8,8 +8,8 @@
  *
  */
 // @nolint
-#ifndef mcrouter_option_group
-#define mcrouter_option_group(_sep)
+#ifndef MCROUTER_OPTION_GROUP
+#define MCROUTER_OPTION_GROUP(_sep)
 #endif
 
 #define no_long ""
@@ -19,74 +19,74 @@
  * Format same as in mcrouter_options_list.h
  */
 
-mcrouter_option_group("Standalone mcrouter options")
+MCROUTER_OPTION_GROUP("Standalone mcrouter options")
 
-mcrouter_option_string(
+MCROUTER_OPTION_STRING(
   log_file, "",
   "log-path", 'L',
   "Log file path")
 
-mcrouter_option_other(
+MCROUTER_OPTION_OTHER(
   std::vector<uint16_t>, ports, ,
   "port", 'p',
   "Port(s) to listen on (comma separated)")
 
-mcrouter_option_other(
+MCROUTER_OPTION_OTHER(
   std::vector<uint16_t>, ssl_ports, ,
   "ssl-port", no_short,
   "SSL Port(s) to listen on (comma separated)")
 
-mcrouter_option_integer(
+MCROUTER_OPTION_INTEGER(
   int, listen_sock_fd, -1,
   "listen-sock-fd", no_short,
   "Listen socket to take over")
 
-mcrouter_option_string(
+MCROUTER_OPTION_STRING(
   unix_domain_sock, "",
   "unix-domain-sock", no_short,
   "Unix domain socket path")
 
-mcrouter_option_integer(
+MCROUTER_OPTION_INTEGER(
   size_t, max_conns, 0,
   "max-conns", no_short,
   "Maximum number of connections maintained by server. Special values: "
   "0 - disable connection eviction logic; 1 - calculate number of maximum "
   "connections based on rlimits. Eviction logic is disabled by default.")
 
-mcrouter_option_integer(
+MCROUTER_OPTION_INTEGER(
   int, tcp_listen_backlog, SOMAXCONN,
   "tcp-listen-backlog", no_short,
   "TCP listen backlog size")
 
-mcrouter_option_integer(
+MCROUTER_OPTION_INTEGER(
   uint32_t, max_client_outstanding_reqs, DEFAULT_MAX_CLIENT_OUTSTANDING_REQS,
   "max-client-outstanding-reqs", no_short,
   "Maximum requests outstanding per client (0 to disable)")
 
-mcrouter_option_integer(
+MCROUTER_OPTION_INTEGER(
   size_t, requests_per_read, 0,
   "reqs-per-read", no_short,
   "DEPRECATED. Does nothing.")
 
-mcrouter_option_toggle(
+MCROUTER_OPTION_TOGGLE(
   retain_source_ip, false,
   "retain-source-ip", no_short,
   "Look up the source IP address for inbound requests and expose it to"
   " routing logic.")
 
-mcrouter_option_toggle(
+MCROUTER_OPTION_TOGGLE(
   postprocess_logging_route, false,
   "postprocess-logging-route", no_short,
   "For all hits logged by LoggingRoute, pass the request & reply pair to "
   "implementation-specific postprocessing logic."
 )
 
-mcrouter_option_toggle(
+MCROUTER_OPTION_TOGGLE(
   enable_server_compression, false,
   "enable-server-compression", no_short,
   "Enable compression on the AsyncMcServer")
 
-mcrouter_option_integer(
+MCROUTER_OPTION_INTEGER(
   unsigned int, client_timeout_ms, 1000,
   "client-timeout", no_short,
   "Timeout for sending replies back to clients, in milliseconds. "
@@ -98,5 +98,5 @@ mcrouter_option_integer(
 
 #undef no_short
 #undef no_long
-#undef mcrouter_option_group
-#undef mcrouter_option
+#undef MCROUTER_OPTION_GROUP
+#undef MCROUTER_OPTION
