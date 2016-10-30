@@ -73,8 +73,8 @@ class ProxyRequestContextTyped;
 class RuntimeVarsData;
 class ShardSplitter;
 
-typedef Observable<std::shared_ptr<const RuntimeVarsData>>
-  ObservableRuntimeVars;
+using ObservableRuntimeVars =
+    Observable<std::shared_ptr<const RuntimeVarsData>>;
 
 using McrouterProxyConfig = ProxyConfig<McrouterRouteHandleIf>;
 
@@ -148,15 +148,7 @@ struct ProxyMessage {
 };
 
 class Proxy {
-  uint64_t magic;
- private:
-  McrouterInstanceBase& router_;
  public:
-
-  std::atomic<int64_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING loopStart_{0};
-
-  std::unique_ptr<ProxyDestinationMap> destinationMap;
-
   // async spool related
   std::shared_ptr<folly::File> async_fd{nullptr};
   time_t async_spool_time{0};
@@ -198,16 +190,6 @@ class Proxy {
    * MOVING_AVERAGE_BIN_SIZE_IN_SECOND
    */
   int num_bins_used{0};
-
-  std::mt19937 randomGenerator;
-
-  /**
-   * If true, processing new requests is not safe.
-   */
-  bool being_destroyed{false};
-
-  folly::fibers::FiberManager fiberManager;
-  CyclesObserver cyclesObserver;
 
   std::unique_ptr<ProxyStatsContainer> statsContainer;
 
@@ -275,8 +257,37 @@ class Proxy {
    */
   const McrouterOptions& getRouterOptions() const;
 
+  ProxyDestinationMap* destinationMap() const {
+    return destinationMap_.get();
+  }
+
+  std::mt19937& randomGenerator() {
+    return randomGenerator_;
+  }
+
+  bool beingDestroyed() const {
+    return beingDestroyed_;
+  }
+
+  folly::fibers::FiberManager& fiberManager() {
+    return fiberManager_;
+  }
+
  private:
+  McrouterInstanceBase& router_;
+
+  std::unique_ptr<ProxyDestinationMap> destinationMap_;
+
+  std::mt19937 randomGenerator_;
+
+  // If true, processing new requests is not safe.
+  bool beingDestroyed_{false};
+
+  folly::fibers::FiberManager fiberManager_;
+
   folly::EventBase* eventBase_{nullptr};
+
+  CyclesObserver cyclesObserver_;
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;

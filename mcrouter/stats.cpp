@@ -444,12 +444,12 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto pr = router.getProxy(i);
     stats[fibers_allocated_stat].data.uint64 +=
-      pr->fiberManager.fibersAllocated();
+      pr->fiberManager().fibersAllocated();
     stats[fibers_pool_size_stat].data.uint64 +=
-      pr->fiberManager.fibersPoolSize();
+      pr->fiberManager().fibersPoolSize();
     stats[fibers_stack_high_watermark_stat].data.uint64 =
       std::max(stats[fibers_stack_high_watermark_stat].data.uint64,
-               pr->fiberManager.stackHighWatermark());
+               pr->fiberManager().stackHighWatermark());
     stats[duration_us_stat].data.dbl += pr->durationUs.value();
     stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
   }
@@ -572,7 +572,7 @@ McStatsReply stats_reply(Proxy* proxy, folly::StringPiece group_str) {
     folly::StringKeyedUnorderedMap<ServerStat> serverStats;
     auto& router = proxy->router();
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      router.getProxy(i)->destinationMap->foreachDestinationSynced(
+      router.getProxy(i)->destinationMap()->foreachDestinationSynced(
         [&serverStats](folly::StringPiece key, const ProxyDestination& pdstn) {
           auto& stat = serverStats[key];
           stat.isHardTko = pdstn.tracker->isHardTko();

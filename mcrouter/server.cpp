@@ -71,7 +71,7 @@ void serverLoop(
      We can clean this up once we convert everything to EventBase */
   while (worker.isAlive() ||
          worker.writesPending() ||
-         proxy->fiberManager.hasTasks()) {
+         proxy->fiberManager().hasTasks()) {
     evb.loopOnce();
   }
 

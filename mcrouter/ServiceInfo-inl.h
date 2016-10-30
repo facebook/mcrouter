@@ -91,7 +91,7 @@ void ServiceInfo<RouteHandleIf>::ServiceInfoImpl::handleRouteCommandForOp(
         ctx,
     std::string keyStr,
     Operation) const {
-  proxy_->fiberManager.addTaskFinally(
+  proxy_->fiberManager().addTaskFinally(
     [this, keyStr, proxy = proxy_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
       folly::fibers::Baton baton;

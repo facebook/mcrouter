@@ -84,7 +84,7 @@ Proxy::routeHandlesProcessRequest(
 
   auto funcCtx = sharedCtx;
 
-  fiberManager.addTaskFinally(
+  fiberManager_.addTaskFinally(
       [&req, ctx = std::move(funcCtx)]() mutable {
         try {
           auto& proute = ctx->proxyRoute();

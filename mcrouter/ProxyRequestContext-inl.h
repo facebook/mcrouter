@@ -152,7 +152,7 @@ void ProxyRequestContextTyped<RouteHandleIf, Request>::startProcessing() {
     return;
   }
 
-  if (proxy().being_destroyed) {
+  if (proxy().beingDestroyed()) {
     /* We can't process this, since 1) we destroyed the config already,
        and 2) the clients are winding down, so we wouldn't get any
        meaningful response back anyway. */

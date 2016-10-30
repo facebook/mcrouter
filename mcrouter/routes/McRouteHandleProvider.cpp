@@ -345,9 +345,9 @@ McRouteHandleProvider::makePool(McRouteHandleFactory& factory,
 
       accessPoints_[name].push_back(ap);
 
-      auto pdstn = proxy_.destinationMap->find(*ap, timeout);
+      auto pdstn = proxy_.destinationMap()->find(*ap, timeout);
       if (!pdstn) {
-        pdstn = proxy_.destinationMap->emplace(
+        pdstn = proxy_.destinationMap()->emplace(
           std::move(ap), timeout, qosClass, qosPath
         );
       }

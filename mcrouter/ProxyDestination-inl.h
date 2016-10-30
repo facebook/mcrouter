@@ -21,7 +21,7 @@ template <class Request>
 ReplyT<Request> ProxyDestination::send(const Request& request,
                                        DestinationRequestCtx& req_ctx,
                                        std::chrono::milliseconds timeout) {
-  proxy->destinationMap->markAsActive(*this);
+  proxy->destinationMap()->markAsActive(*this);
   auto reply = getAsyncMcClient().sendSync(request, timeout);
   onReply(reply.result(), req_ctx);
   return reply;
@@ -40,7 +40,7 @@ bool ProxyDestination::shouldDrop() const {
   }
 
   return std::generate_canonical<double, std::numeric_limits<double>::digits>(
-             proxy->randomGenerator) < dropProbability;
+             proxy->randomGenerator()) < dropProbability;
 }
 
 }}}  // facebook::memcache::mcrouter

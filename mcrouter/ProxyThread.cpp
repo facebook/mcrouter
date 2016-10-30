@@ -41,7 +41,7 @@ void ProxyThread::stopAndJoin() noexcept {
 void ProxyThread::proxyThreadRun() {
   mcrouterSetThisThreadName(proxy_->router().opts(), "mcrpxy");
 
-  while (state_ == State::RUNNING || proxy_->fiberManager.hasTasks()) {
+  while (state_ == State::RUNNING || proxy_->fiberManager().hasTasks()) {
     evb_.loopOnce();
     proxy_->drainMessageQueue();
   }

@@ -83,7 +83,7 @@ class SlowWarmUpRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
     auto& proxy = fiber_local::getSharedCtx()->proxy();
-    if (warmingUp() && !shouldSendRequest(proxy.randomGenerator)) {
+    if (warmingUp() && !shouldSendRequest(proxy.randomGenerator())) {
       return fiber_local::runWithLocals([this, &req]() {
         fiber_local::addRequestClass(RequestClass::kFailover);
         return failoverTarget_->route(req);

@@ -92,12 +92,12 @@ void ProxyDestination::timerCallback() {
     probe_req = folly::make_unique<McVersionRequest>();
     ++stats_.probesSent;
     auto selfPtr = selfPtr_;
-    proxy->fiberManager.addTask([selfPtr]() mutable {
+    proxy->fiberManager().addTask([selfPtr]() mutable {
       auto pdstn = selfPtr.lock();
       if (pdstn == nullptr) {
         return;
       }
-      pdstn->proxy->destinationMap->markAsActive(*pdstn);
+      pdstn->proxy->destinationMap()->markAsActive(*pdstn);
       // will reconnect if connection was closed
       auto reply = pdstn->getAsyncMcClient().sendSync(
         *pdstn->probe_req,
@@ -192,7 +192,7 @@ void ProxyDestination::handleRxmittingConnection() {
         std::uniform_int_distribution<uint64_t> dist(
             1, kReconnectionHoldoffFactor);
         const uint64_t reconnectionJitters =
-            retransCycles * dist(proxy->randomGenerator);
+            retransCycles * dist(proxy->randomGenerator());
         if (lastConnCloseCycles_ + reconnectionJitters > curCycles) {
           return;
         }
@@ -266,8 +266,9 @@ ProxyDestination::~ProxyDestination() {
     stop_sending_probes();
   }
 
-  if (proxy->destinationMap) {
-    proxy->destinationMap->removeDestination(*this);
+  if (proxy->destinationMap()) {
+    // Only remove if we are not shutting down Proxy.
+    proxy->destinationMap()->removeDestination(*this);
   }
 
   if (client_) {

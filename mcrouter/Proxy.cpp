@@ -101,8 +101,8 @@ bool processGetServiceInfoRequestImpl(
 
 Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
     : router_(rtr),
-      destinationMap(folly::make_unique<ProxyDestinationMap>(this)),
-      fiberManager(
+      destinationMap_(folly::make_unique<ProxyDestinationMap>(this)),
+      fiberManager_(
           fiber_local::ContextTypeTag(),
           folly::make_unique<folly::fibers::EventBaseLoopController>(),
           getFiberManagerOptions(router_.opts())),
@@ -112,10 +112,7 @@ Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
   memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
 
   // Setup a full random seed sequence
-  folly::Random::seed(randomGenerator);
-  static uint64_t next_magic = 0x12345678900000LL;
-
-  magic = __sync_fetch_and_add(&next_magic, 1);
+  folly::Random::seed(randomGenerator_);
 
   init_stats(stats);
 
@@ -150,19 +147,19 @@ Proxy::Pointer Proxy::createProxy(
       proxy->messageQueue_->attachEventBase(eventBase);
 
       dynamic_cast<folly::fibers::EventBaseLoopController&>(
-        proxy->fiberManager.loopController()).attachEventBase(eventBase);
+        proxy->fiberManager_.loopController()).attachEventBase(eventBase);
 
       std::chrono::milliseconds connectionResetInterval{
         proxy->router_.opts().reset_inactive_connection_interval
       };
 
       if (connectionResetInterval.count() > 0) {
-        proxy->destinationMap->setResetTimer(connectionResetInterval);
+        proxy->destinationMap_->setResetTimer(connectionResetInterval);
       }
 
       if (proxy->router_.opts().cpu_cycles) {
         cycles::attachEventBase(eventBase);
-        proxy->fiberManager.setObserver(&proxy->cyclesObserver);
+        proxy->fiberManager_.setObserver(&proxy->cyclesObserver_);
       }
     });
 
@@ -194,15 +191,13 @@ std::shared_ptr<McrouterProxyConfig> Proxy::swapConfig(
 
 /** drain and delete proxy object */
 Proxy::~Proxy() {
-  destinationMap.reset();
+  destinationMap_.reset();
 
-  being_destroyed = true;
+  beingDestroyed_ = true;
 
   if (messageQueue_) {
     messageQueue_->drain();
   }
-
-  magic = 0xdeadbeefdeadbeefLL;
 }
 
 void Proxy::sendMessage(ProxyMessage::Type t, void* data) noexcept {
