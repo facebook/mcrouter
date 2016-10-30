@@ -13,7 +13,6 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/ProxyRoute.h"
-#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/stats.h"
 
 namespace facebook {
@@ -25,20 +24,21 @@ namespace detail {
 bool processGetServiceInfoRequest(
     const McGetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<
-        McGetRequest>>& ctx);
+        McrouterRouteHandleIf, McGetRequest>>& ctx);
 
 template <class Request>
 bool processGetServiceInfoRequest(
     const Request&,
-    std::shared_ptr<ProxyRequestContextTyped<Request>>&) {
-
+    std::shared_ptr<
+        ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>&) {
   return false;
 }
 
 template <class GetRequest>
 bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<GetRequest>>& ctx,
+    std::shared_ptr<
+        ProxyRequestContextTyped<McrouterRouteHandleIf, GetRequest>>& ctx,
     GetLikeT<GetRequest> = 0);
 
 } // detail
@@ -46,7 +46,8 @@ bool processGetServiceInfoRequestImpl(
 template <class Request>
 Proxy::WaitingRequest<Request>::WaitingRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx)
+    std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+        ctx)
     : req_(req), ctx_(std::move(ctx)) {}
 
 template <class Request>
@@ -71,9 +72,11 @@ template <class Request>
 typename std::enable_if<TRequestListContains<Request>::value, void>::type
 Proxy::routeHandlesProcessRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
-  auto sharedCtx = ProxyRequestContextTyped<Request>::process(
-      std::move(uctx), getConfig());
+    std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+        uctx) {
+  auto sharedCtx =
+      ProxyRequestContextTyped<McrouterRouteHandleIf, Request>::process(
+          std::move(uctx), getConfig());
 
   if (detail::processGetServiceInfoRequest(req, sharedCtx)) {
     return;
@@ -107,7 +110,8 @@ template <class Request>
 typename std::enable_if<!TRequestListContains<Request>::value, void>::type
 Proxy::routeHandlesProcessRequest(
     const Request&,
-    std::unique_ptr<ProxyRequestContextTyped<Request>> uctx) {
+    std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+        uctx) {
   auto err = folly::sformat(
       "Couldn't route request of type {} "
       "because the operation is not supported by RouteHandles "
@@ -119,7 +123,8 @@ Proxy::routeHandlesProcessRequest(
 template <class Request>
 void Proxy::processRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx) {
+    std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+        ctx) {
   assert(!ctx->processing_);
   ctx->processing_ = true;
   ++numRequestsProcessing_;
@@ -132,10 +137,10 @@ void Proxy::processRequest(
   stat_incr(stats, request_sent_count_stat, 1);
 }
 
-template <class Request>
+template <class RouteHandleIf, class Request>
 void Proxy::dispatchRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx) {
+    std::unique_ptr<ProxyRequestContextTyped<RouteHandleIf, Request>> ctx) {
   if (rateLimited(ctx->priority(), req)) {
     if (getRouterOptions().proxy_max_throttled_requests > 0 &&
         numRequestsWaiting_ >=

@@ -49,6 +49,7 @@
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/RuntimeVarsData.h"
+#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -73,7 +74,7 @@ namespace detail {
 bool processGetServiceInfoRequest(
     const McGetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<
-      McGetRequest>>& ctx) {
+      McrouterRouteHandleIf, McGetRequest>>& ctx) {
 
   return processGetServiceInfoRequestImpl(req, ctx);
 }
@@ -81,9 +82,9 @@ bool processGetServiceInfoRequest(
 template <class GetRequest>
 bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<GetRequest>>& ctx,
+    std::shared_ptr<
+        ProxyRequestContextTyped<McrouterRouteHandleIf, GetRequest>>& ctx,
     GetLikeT<GetRequest>) {
-
   static const char* const kInternalGetPrefix = "__mcrouter__.";
 
   if (!req.key().fullKey().startsWith(kInternalGetPrefix)) {
@@ -168,23 +169,23 @@ Proxy::Pointer Proxy::createProxy(
   return Pointer(proxy.get());
 }
 
-std::shared_ptr<ProxyConfig> Proxy::getConfig() const {
+std::shared_ptr<McrouterProxyConfig> Proxy::getConfig() const {
   std::lock_guard<SFRReadLock> lg(
     const_cast<SFRLock&>(configLock_).readLock());
   return config_;
 }
 
-std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&> Proxy::getConfigLocked()
-    const {
+std::pair<std::unique_lock<SFRReadLock>, McrouterProxyConfig&>
+Proxy::getConfigLocked() const {
   std::unique_lock<SFRReadLock> lock(
     const_cast<SFRLock&>(configLock_).readLock());
   /* make_pair strips the reference, so construct directly */
-  return std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&>(
+  return std::pair<std::unique_lock<SFRReadLock>, McrouterProxyConfig&>(
     std::move(lock), *config_);
 }
 
-std::shared_ptr<ProxyConfig> Proxy::swapConfig(
-    std::shared_ptr<ProxyConfig> newConfig) {
+std::shared_ptr<McrouterProxyConfig> Proxy::swapConfig(
+    std::shared_ptr<McrouterProxyConfig> newConfig) {
   std::lock_guard<SFRWriteLock> lg(configLock_.writeLock());
   auto old = std::move(config_);
   config_ = std::move(newConfig);
@@ -248,13 +249,16 @@ void Proxy::messageReady(ProxyMessage::Type t, void* data) {
 
 void Proxy::routeHandlesProcessRequest(
     const McStatsRequest& req,
-    std::unique_ptr<ProxyRequestContextTyped<McStatsRequest>> ctx) {
+    std::unique_ptr<
+        ProxyRequestContextTyped<McrouterRouteHandleIf, McStatsRequest>> ctx) {
   ctx->sendReply(stats_reply(this, req.key().fullKey()));
 }
 
 void Proxy::routeHandlesProcessRequest(
     const McVersionRequest&,
-    std::unique_ptr<ProxyRequestContextTyped<McVersionRequest>> ctx) {
+    std::unique_ptr<
+        ProxyRequestContextTyped<McrouterRouteHandleIf, McVersionRequest>>
+        ctx) {
   McVersionReply reply(mc_res_ok);
   reply.value() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
@@ -366,7 +370,9 @@ void ShadowSettings::registerOnUpdateCallback(McrouterInstanceBase& router) {
     });
 }
 
-void proxy_config_swap(Proxy* proxy, std::shared_ptr<ProxyConfig> config) {
+void proxy_config_swap(
+    Proxy* proxy,
+    std::shared_ptr<McrouterProxyConfig> config) {
   auto oldConfig = proxy->swapConfig(std::move(config));
   stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
 

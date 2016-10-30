@@ -25,16 +25,17 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/Range.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
+#include "mcrouter/Observable.h"
+#include "mcrouter/ProxyRequestPriority.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
-#include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
-#include "mcrouter/ProxyRequestPriority.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/stats.h"
 
 // make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
@@ -62,17 +63,20 @@ namespace mcrouter {
 class McrouterClient;
 class McrouterInstance;
 class McrouterInstanceBase;
+template <class RouteHandleIf>
 class ProxyConfig;
 class ProxyDestination;
 class ProxyDestinationMap;
 class ProxyRequestContext;
-template <class Request>
+template <class RouteHandleIf, class Request>
 class ProxyRequestContextTyped;
 class RuntimeVarsData;
 class ShardSplitter;
 
 typedef Observable<std::shared_ptr<const RuntimeVarsData>>
   ObservableRuntimeVars;
+
+using McrouterProxyConfig = ProxyConfig<McrouterRouteHandleIf>;
 
 struct ShadowSettings {
   /**
@@ -217,28 +221,28 @@ class Proxy {
   /**
    * Thread-safe access to config
    */
-  std::shared_ptr<ProxyConfig> getConfig() const;
+  std::shared_ptr<McrouterProxyConfig> getConfig() const;
 
   /**
    * Returns a lock and a reference to the config.
    * The caller may only access the config through the reference
    * while the lock is held.
    */
-  std::pair<std::unique_lock<SFRReadLock>, ProxyConfig&>
+  std::pair<std::unique_lock<SFRReadLock>, McrouterProxyConfig&>
   getConfigLocked() const;
 
   /**
    * Thread-safe config swap; returns the previous contents of
    * the config pointer
    */
-  std::shared_ptr<ProxyConfig> swapConfig(
-      std::shared_ptr<ProxyConfig> newConfig);
+  std::shared_ptr<McrouterProxyConfig> swapConfig(
+      std::shared_ptr<McrouterProxyConfig> newConfig);
 
   /** Queue up and route the new incoming request */
-  template <class Request>
+  template <class RouteHandleIf, class Request>
   void dispatchRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouteHandleIf, Request>> ctx);
 
   /**
    * Put a new proxy message into the queue.
@@ -276,7 +280,7 @@ class Proxy {
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;
-  std::shared_ptr<ProxyConfig> config_;
+  std::shared_ptr<McrouterProxyConfig> config_;
 
   // Stores the id of the next request.
   uint64_t nextReqId_ = 0;
@@ -310,33 +314,36 @@ class Proxy {
   void routeHandlesProcessRequest(
       const McStatsRequest& req,
       std::unique_ptr<ProxyRequestContextTyped<
-        McStatsRequest>> ctx);
+        McrouterRouteHandleIf, McStatsRequest>> ctx);
 
   /** Process and reply to a version request */
   void routeHandlesProcessRequest(
       const McVersionRequest& req,
       std::unique_ptr<ProxyRequestContextTyped<
-        McVersionRequest>> ctx);
+        McrouterRouteHandleIf, McVersionRequest>> ctx);
 
   /** Route request through route handle tree */
   template <class Request>
   typename std::enable_if<TRequestListContains<Request>::value, void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+          ctx);
 
   /** Fail all unknown operations */
   template <class Request>
   typename std::enable_if<!TRequestListContains<Request>::value, void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+          ctx);
 
   /** Process request (update stats and route the request) */
   template <class Request>
   void processRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+          ctx);
 
   /** Increase requests sent stats counters for given operation type */
   template <class Request>
@@ -388,13 +395,15 @@ class Proxy {
    public:
     WaitingRequest(
         const Request& req,
-        std::unique_ptr<ProxyRequestContextTyped<Request>> ctx);
+        std::unique_ptr<
+            ProxyRequestContextTyped<McrouterRouteHandleIf, Request>> ctx);
     void process(Proxy* proxy) override final;
     void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:
     const Request& req_;
-    std::unique_ptr<ProxyRequestContextTyped<Request>> ctx_;
+    std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+        ctx_;
 
     int64_t timePushedOnQueue_{-1};
   };
@@ -423,14 +432,16 @@ class Proxy {
 };
 
 struct old_config_req_t {
-  explicit old_config_req_t(std::shared_ptr<ProxyConfig> config)
+  explicit old_config_req_t(std::shared_ptr<McrouterProxyConfig> config)
     : config_(std::move(config)) {
   }
  private:
-  std::shared_ptr<ProxyConfig> config_;
+  std::shared_ptr<McrouterProxyConfig> config_;
 };
 
-void proxy_config_swap(Proxy* proxy, std::shared_ptr<ProxyConfig> config);
+void proxy_config_swap(
+    Proxy* proxy,
+    std::shared_ptr<McrouterProxyConfig> config);
 }}} // facebook::memcache::mcrouter
 
 #include "Proxy-inl.h"

@@ -15,8 +15,6 @@
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
 
-#include "mcrouter/routes/McrouterRouteHandle.h"
-
 namespace folly {
 struct dynamic;
 } // folly
@@ -25,21 +23,23 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class RouteHandleIf>
 class ProxyRoute;
+template <class RouteHandleIf>
+class ServiceInfo;
 
 class PoolFactory;
 class Proxy;
-class ServiceInfo;
 
 /**
  * Topmost struct for mcrouter configs.
  */
+template <class RouteHandleIf>
 class ProxyConfig {
  public:
-  ProxyRoute<McrouterRouteHandleIf>& proxyRoute() const {
+  ProxyRoute<RouteHandleIf>& proxyRoute() const {
     return *proxyRoute_;
   }
 
-  std::shared_ptr<ServiceInfo> serviceInfo() const {
+  std::shared_ptr<ServiceInfo<RouteHandleIf>> serviceInfo() const {
     return serviceInfo_;
   }
 
@@ -47,10 +47,11 @@ class ProxyConfig {
     return configMd5Digest_;
   }
 
-  McrouterRouteHandlePtr
-  getRouteHandleForAsyncLog(folly::StringPiece asyncLogName) const;
+  std::shared_ptr<RouteHandleIf> getRouteHandleForAsyncLog(
+      folly::StringPiece asyncLogName) const;
 
-  const folly::StringKeyedUnorderedMap<std::vector<McrouterRouteHandlePtr>>&
+  const folly::StringKeyedUnorderedMap<
+      std::vector<std::shared_ptr<RouteHandleIf>>>&
   getPools() const {
     return pools_;
   }
@@ -64,11 +65,13 @@ class ProxyConfig {
   size_t calcNumClients() const;
 
  private:
-  std::shared_ptr<ProxyRoute<McrouterRouteHandleIf>> proxyRoute_;
-  std::shared_ptr<ServiceInfo> serviceInfo_;
+  std::shared_ptr<ProxyRoute<RouteHandleIf>> proxyRoute_;
+  std::shared_ptr<ServiceInfo<RouteHandleIf>> serviceInfo_;
   std::string configMd5Digest_;
-  folly::StringKeyedUnorderedMap<McrouterRouteHandlePtr> asyncLogRoutes_;
-  folly::StringKeyedUnorderedMap<std::vector<McrouterRouteHandlePtr>> pools_;
+  folly::StringKeyedUnorderedMap<std::shared_ptr<RouteHandleIf>>
+      asyncLogRoutes_;
+  folly::StringKeyedUnorderedMap<std::vector<std::shared_ptr<RouteHandleIf>>>
+      pools_;
   folly::StringKeyedUnorderedMap<
     std::vector<std::shared_ptr<const AccessPoint>>
   > accessPoints_;
@@ -88,3 +91,5 @@ class ProxyConfig {
 };
 
 }}} // facebook::memcache::mcrouter
+
+#include "ProxyConfig-inl.h"

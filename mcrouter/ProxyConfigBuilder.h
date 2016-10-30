@@ -15,12 +15,13 @@
 #include <folly/dynamic.h>
 #include <folly/Range.h>
 
-#include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
+#include "mcrouter/options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ConfigApi;
+template <class RouteHandleIf>
 class ProxyConfig;
 class Proxy;
 
@@ -30,7 +31,13 @@ class ProxyConfigBuilder {
                      ConfigApi& configApi,
                      folly::StringPiece jsonC);
 
-  std::shared_ptr<ProxyConfig> buildConfig(Proxy& proxy) const;
+  template <class RouteHandleIf>
+  std::shared_ptr<ProxyConfig<RouteHandleIf>> buildConfig(
+      Proxy& proxy) const {
+    return std::shared_ptr<ProxyConfig<RouteHandleIf>>(
+        new ProxyConfig<RouteHandleIf>(
+            proxy, json_, configMd5Digest_, *poolFactory_));
+  }
 
   const folly::dynamic& preprocessedConfig() const {
     return json_;

@@ -65,7 +65,7 @@ libmcroutercore_a_SOURCES = \
   Proxy-inl.h \
   Proxy.cpp \
   Proxy.h \
-  ProxyConfig.cpp \
+  ProxyConfig-inl.h \
   ProxyConfig.h \
   ProxyConfigBuilder.cpp \
   ProxyConfigBuilder.h \
@@ -168,7 +168,7 @@ libmcroutercore_a_SOURCES = \
   RoutingPrefix.h \
   RuntimeVarsData.cpp \
   RuntimeVarsData.h \
-  ServiceInfo.cpp \
+  ServiceInfo-inl.h \
   ServiceInfo.h \
   ShadowValidationData.h \
   stat_list.h \

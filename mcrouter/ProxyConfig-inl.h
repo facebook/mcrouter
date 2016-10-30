@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "ProxyConfig.h"
+#pragma once
 
 #include <folly/Conv.h>
 #include <folly/dynamic.h>
@@ -15,7 +15,6 @@
 
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
@@ -25,16 +24,15 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-using McrouterPrefixSelectorRoute = PrefixSelectorRoute<McrouterRouteHandleIf>;
-
-ProxyConfig::ProxyConfig(Proxy& proxy,
-                         const folly::dynamic& json,
-                         std::string configMd5Digest,
-                         PoolFactory& poolFactory)
-  : configMd5Digest_(std::move(configMd5Digest)) {
-
+template <class RouteHandleIf>
+ProxyConfig<RouteHandleIf>::ProxyConfig(
+    Proxy& proxy,
+    const folly::dynamic& json,
+    std::string configMd5Digest,
+    PoolFactory& poolFactory)
+    : configMd5Digest_(std::move(configMd5Digest)) {
   McRouteHandleProvider provider(proxy, poolFactory);
-  RouteHandleFactory<McrouterRouteHandleIf> factory(provider, proxy.getId());
+  RouteHandleFactory<RouteHandleIf> factory(provider, proxy.getId());
 
   checkLogic(json.isObject(), "Config is not an object");
 
@@ -53,7 +51,7 @@ ProxyConfig::ProxyConfig(Proxy& proxy,
     }
   }
 
-  RouteSelectorMap<McrouterRouteHandleIf> routeSelectors;
+  RouteSelectorMap<RouteHandleIf> routeSelectors;
 
   auto jRoute = json.get_ptr("route");
   auto jRoutes = json.get_ptr("routes");
@@ -61,7 +59,7 @@ ProxyConfig::ProxyConfig(Proxy& proxy,
              "Invalid config: both 'route' and 'routes' are specified");
   if (jRoute) {
     routeSelectors[proxy.getRouterOptions().default_route] =
-        std::make_shared<McrouterPrefixSelectorRoute>(factory, *jRoute);
+        std::make_shared<PrefixSelectorRoute<RouteHandleIf>>(factory, *jRoute);
   } else if (jRoutes) { // jRoutes
     checkLogic(jRoutes->isArray() || jRoutes->isObject(),
                "Config: routes is not array/object");
@@ -74,7 +72,8 @@ ProxyConfig::ProxyConfig(Proxy& proxy,
         checkLogic(jAliases, "RoutePolicy: no aliases");
         checkLogic(jAliases->isArray(), "RoutePolicy: aliases is not an array");
         auto routeSelector =
-            std::make_shared<McrouterPrefixSelectorRoute>(factory, *jCurRoute);
+            std::make_shared<PrefixSelectorRoute<RouteHandleIf>>(
+                factory, *jCurRoute);
         for (const auto& alias : *jAliases) {
           checkLogic(alias.isString(), "RoutePolicy: alias is not a string");
           routeSelectors[alias.stringPiece()] = routeSelector;
@@ -84,7 +83,8 @@ ProxyConfig::ProxyConfig(Proxy& proxy,
       for (const auto& it : jRoutes->items()) {
         checkLogic(it.first.isString(), "RoutePolicy: alias is not a string");
         routeSelectors[it.first.stringPiece()] =
-            std::make_shared<McrouterPrefixSelectorRoute>(factory, it.second);
+            std::make_shared<PrefixSelectorRoute<RouteHandleIf>>(
+                factory, it.second);
       }
     }
   } else {
@@ -94,17 +94,20 @@ ProxyConfig::ProxyConfig(Proxy& proxy,
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
   pools_ = provider.releasePools();
   accessPoints_ = provider.releaseAccessPoints();
-  proxyRoute_ = std::make_shared<ProxyRoute<McrouterRouteHandleIf>>(
+  proxyRoute_ = std::make_shared<ProxyRoute<RouteHandleIf>>(
       &proxy, routeSelectors);
-  serviceInfo_ = std::make_shared<ServiceInfo>(&proxy, *this);
+  serviceInfo_ = std::make_shared<ServiceInfo<RouteHandleIf>>(&proxy, *this);
 }
 
-McrouterRouteHandlePtr
-ProxyConfig::getRouteHandleForAsyncLog(folly::StringPiece asyncLogName) const {
+template <class RouteHandleIf>
+std::shared_ptr<RouteHandleIf>
+ProxyConfig<RouteHandleIf>::getRouteHandleForAsyncLog(
+    folly::StringPiece asyncLogName) const {
   return tryGet(asyncLogRoutes_, asyncLogName);
 }
 
-size_t ProxyConfig::calcNumClients() const {
+template <class RouteHandleIf>
+size_t ProxyConfig<RouteHandleIf>::calcNumClients() const {
   size_t result = 0;
   for (const auto& it : pools_) {
     result += it.second.size();

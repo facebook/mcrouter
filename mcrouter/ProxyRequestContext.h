@@ -105,16 +105,6 @@ public:
 
   void setSenderIdForTest(uint64_t id);
 
-  ProxyRoute<McrouterRouteHandleIf>& proxyRoute() const {
-    assert(!recording_);
-    return config_->proxyRoute();
-  }
-
-  const ProxyConfig& proxyConfig() const {
-    assert(!recording_);
-    return *config_;
-  }
-
   bool failoverDisabled() const {
     return failoverDisabled_;
   }
@@ -179,7 +169,6 @@ public:
 
  protected:
   bool replied_{false};
-  std::shared_ptr<const ProxyConfig> config_;
 
   ProxyRequestContext(Proxy& pr, ProxyRequestPriority priority__);
 
@@ -259,10 +248,10 @@ private:
   friend class Proxy;
 };
 
-template <class Request>
+template <class RouteHandleIf, class Request>
 class ProxyRequestContextTyped : public ProxyRequestContext {
  public:
-  using Type = ProxyRequestContextTyped<Request>;
+  using Type = ProxyRequestContextTyped<RouteHandleIf, Request>;
   /**
    * Sends the reply for this proxy request.
    * @param newReply the message that we are sending out as the reply
@@ -288,6 +277,16 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
 
   void startProcessing() override final;
 
+  const ProxyConfig<RouteHandleIf>& proxyConfig() const {
+    assert(!recording());
+    return *config_;
+  }
+
+  ProxyRoute<RouteHandleIf>& proxyRoute() const {
+    assert(!recording());
+    return config_->proxyRoute();
+  }
+
   /**
    * Internally converts the context into one ready to route.
    * Config pointer is saved to keep the config alive, and
@@ -295,7 +294,8 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
    * keep track of this context.
    */
   static std::shared_ptr<Type> process(
-      std::unique_ptr<Type> preq, std::shared_ptr<const ProxyConfig> config);
+      std::unique_ptr<Type> preq,
+      std::shared_ptr<const ProxyConfig<RouteHandleIf>> config);
 
  protected:
   ProxyRequestContextTyped(
@@ -306,6 +306,8 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
 
   virtual void sendReplyImpl(ReplyT<Request>&& reply) = 0;
 
+  std::shared_ptr<const ProxyConfig<RouteHandleIf>> config_;
+
   // It's guaranteed to point to an existing request until we call user callback
   // (i.e. replied_ changes to true), after that it's nullptr.
   const Request* req_;
@@ -315,7 +317,8 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
  * Creates a new proxy request context
  */
 template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<Request>> createProxyRequestContext(
+std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+createProxyRequestContext(
     Proxy& pr,
     const Request& req,
     F&& f,

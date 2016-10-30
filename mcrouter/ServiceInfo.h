@@ -13,12 +13,11 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouteHandleIf>
 class ProxyConfig;
-template <class Request>
+template <class RouteHandleIf, class Request>
 class ProxyRequestContextTyped;
 class Proxy;
 
@@ -26,14 +25,15 @@ class Proxy;
  * Answers mc_op_get_service_info requests of the form
  * __mcrouter__.commands(args,...)
  */
+template <class RouteHandleIf>
 class ServiceInfo {
  public:
-  ServiceInfo(Proxy* proxy, const ProxyConfig& config);
+  ServiceInfo(Proxy* proxy, const ProxyConfig<RouteHandleIf>& config);
 
   void handleRequest(
       folly::StringPiece req,
-      const std::shared_ptr<ProxyRequestContextTyped<McGetRequest>>& ctx)
-      const;
+      const std::shared_ptr<
+          ProxyRequestContextTyped<RouteHandleIf, McGetRequest>>& ctx) const;
 
   ~ServiceInfo();
 
@@ -43,3 +43,5 @@ class ServiceInfo {
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "ServiceInfo-inl.h"

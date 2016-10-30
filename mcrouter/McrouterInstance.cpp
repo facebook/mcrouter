@@ -25,6 +25,7 @@
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
+#include "mcrouter/ServiceInfo.h"
 #include "mcrouter/ThreadUtil.h"
 #include "mcrouter/awriter.h"
 #include "mcrouter/lib/cycles/Cycles.h"
@@ -32,6 +33,8 @@
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
+
+using McrouterProxyConfig = ProxyConfig<McrouterRouteHandleIf>;
 
 class McrouterManager {
  public:
@@ -522,10 +525,11 @@ bool McrouterInstance::reconfigure(const ProxyConfigBuilder& builder) {
 
 bool McrouterInstance::configure(const ProxyConfigBuilder& builder) {
   VLOG_IF(0, !opts_.constantly_reload_configs) << "started reconfiguring";
-  std::vector<std::shared_ptr<ProxyConfig>> newConfigs;
+  std::vector<std::shared_ptr<McrouterProxyConfig>> newConfigs;
   try {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
-      newConfigs.push_back(builder.buildConfig(*getProxy(i)));
+      newConfigs.push_back(
+          builder.buildConfig<McrouterRouteHandleIf>(*getProxy(i)));
     }
   } catch (const std::exception& e) {
     MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,

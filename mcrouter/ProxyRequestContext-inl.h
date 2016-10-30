@@ -20,16 +20,16 @@ namespace detail {
 /**
  * Implementation class for storing the callback along with the context.
  */
-template <class Request, class F>
+template <class RouteHandleIf, class Request, class F>
 class ProxyRequestContextTypedWithCallback
-    : public ProxyRequestContextTyped<Request> {
+    : public ProxyRequestContextTyped<RouteHandleIf, Request> {
  public:
   ProxyRequestContextTypedWithCallback(
       Proxy& pr,
       const Request& req,
       F&& f,
       ProxyRequestPriority priority__)
-      : ProxyRequestContextTyped<Request>(pr, req, priority__),
+      : ProxyRequestContextTyped<RouteHandleIf, Request>(pr, req, priority__),
         f_(std::forward<F>(f)) {}
 
  protected:
@@ -45,8 +45,8 @@ class ProxyRequestContextTypedWithCallback
 
 constexpr const char* kCommandNotSupportedStr = "Command not supported";
 
-template <class Request>
-bool precheckKey(ProxyRequestContextTyped<Request>& preq,
+template <class RouteHandleIf, class Request>
+bool precheckKey(ProxyRequestContextTyped<RouteHandleIf, Request>& preq,
                  const Request& req) {
   auto key = req.key().fullKey();
   auto err = isKeyValid(key);
@@ -62,34 +62,38 @@ bool precheckKey(ProxyRequestContextTyped<Request>& preq,
 // Following methods validate the request and return true if it's correct,
 // otherwise they reply it with error and return false;
 
-template <class Request>
-bool precheckRequest(ProxyRequestContextTyped<Request>& preq,
+template <class RouteHandleIf, class Request>
+bool precheckRequest(ProxyRequestContextTyped<RouteHandleIf, Request>& preq,
                      const Request& req) {
   return precheckKey(preq, req);
 }
 
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McStatsRequest>&,
+template <class RouteHandleIf>
+bool precheckRequest(
+    ProxyRequestContextTyped<RouteHandleIf, McStatsRequest>&,
     const McStatsRequest&) {
   return true;
 }
 
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McVersionRequest>&,
+template <class RouteHandleIf>
+bool precheckRequest(
+    ProxyRequestContextTyped<RouteHandleIf, McVersionRequest>&,
     const McVersionRequest&) {
   return true;
 }
 
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McShutdownRequest>& preq,
+template <class RouteHandleIf>
+bool precheckRequest(
+    ProxyRequestContextTyped<RouteHandleIf, McShutdownRequest>& preq,
     const McShutdownRequest&) {
   // Return error (pretend to not even understand the protocol)
   preq.sendReply(mc_res_bad_command);
   return false;
 }
 
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McFlushReRequest>& preq,
+template <class RouteHandleIf>
+bool precheckRequest(
+    ProxyRequestContextTyped<RouteHandleIf, McFlushReRequest>& preq,
     const McFlushReRequest&) {
   // Return 'Not supported' message
   McFlushReReply reply(mc_res_local_error);
@@ -98,8 +102,9 @@ inline bool precheckRequest(
   return false;
 }
 
-inline bool precheckRequest(
-    ProxyRequestContextTyped<McFlushAllRequest>& preq,
+template <class RouteHandleIf>
+bool precheckRequest(
+    ProxyRequestContextTyped<RouteHandleIf, McFlushAllRequest>& preq,
     const McFlushAllRequest&) {
   if (!preq.proxy().getRouterOptions().enable_flush_cmd) {
     McFlushAllReply reply(mc_res_local_error);
@@ -112,8 +117,9 @@ inline bool precheckRequest(
 
 } // detail
 
-template <class Request>
-void ProxyRequestContextTyped<Request>::sendReply(ReplyT<Request>&& reply) {
+template <class RouteHandleIf, class Request>
+void ProxyRequestContextTyped<RouteHandleIf, Request>::sendReply(
+    ReplyT<Request>&& reply) {
   if (this->recording()) {
     return;
   }
@@ -138,9 +144,9 @@ void ProxyRequestContextTyped<Request>::sendReply(ReplyT<Request>&& reply) {
   }
 }
 
-template <class Request>
-void ProxyRequestContextTyped<Request>::startProcessing() {
-  std::unique_ptr<ProxyRequestContextTyped<Request>> self(this);
+template <class RouteHandleIf, class Request>
+void ProxyRequestContextTyped<RouteHandleIf, Request>::startProcessing() {
+  std::unique_ptr<ProxyRequestContextTyped<RouteHandleIf, Request>> self(this);
 
   if (!detail::precheckRequest(*this, *req_)) {
     return;
@@ -158,11 +164,11 @@ void ProxyRequestContextTyped<Request>::startProcessing() {
   proxy().dispatchRequest(*req_, std::move(self));
 }
 
-template <class Request>
-std::shared_ptr<ProxyRequestContextTyped<Request>>
-ProxyRequestContextTyped<Request>::process(
-    std::unique_ptr<Type> preq, std::shared_ptr<const ProxyConfig> config) {
-
+template <class RouteHandleIf, class Request>
+std::shared_ptr<ProxyRequestContextTyped<RouteHandleIf, Request>>
+ProxyRequestContextTyped<RouteHandleIf, Request>::process(
+    std::unique_ptr<Type> preq,
+    std::shared_ptr<const ProxyConfig<RouteHandleIf>> config) {
   preq->config_ = std::move(config);
   return std::shared_ptr<Type>(
       preq.release(),
@@ -176,12 +182,13 @@ ProxyRequestContextTyped<Request>::process(
 }
 
 template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<Request>> createProxyRequestContext(
-    Proxy& pr,
-    const Request& req,
-    F&& f,
-    ProxyRequestPriority priority) {
-  using Type = detail::ProxyRequestContextTypedWithCallback<Request, F>;
+std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+createProxyRequestContext(Proxy& pr,
+                          const Request& req,
+                          F&& f,
+                          ProxyRequestPriority priority) {
+  using Type = detail::
+      ProxyRequestContextTypedWithCallback<McrouterRouteHandleIf, Request, F>;
   return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 

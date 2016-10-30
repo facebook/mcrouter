@@ -55,10 +55,4 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
   configMd5Digest_ = Md5Hash(jsonC);
 }
 
-std::shared_ptr<ProxyConfig> ProxyConfigBuilder::buildConfig(
-    Proxy& proxy) const {
-  return std::shared_ptr<ProxyConfig>(
-    new ProxyConfig(proxy, json_, configMd5Digest_, *poolFactory_));
-}
-
 }}} // facebook::memcache::mcrouter
