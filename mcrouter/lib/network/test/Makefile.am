@@ -5,7 +5,8 @@ mcrouter_network_test_SOURCES = \
   AsyncMcClientTestSync.cpp \
   CarbonMessageDispatcherTest.cpp \
   CarbonMockMcTest.cpp \
-  CarbonQueueAppenderTest \
+  CarbonQueueAppenderTest.cpp \
+  gen/CarbonTestMessages.cpp \
   McAsciiParserTest.cpp \
   McServerAsciiParserTest.cpp \
   MockMc.cpp \

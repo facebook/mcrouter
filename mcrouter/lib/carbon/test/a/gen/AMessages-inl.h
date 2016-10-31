@@ -17,39 +17,6 @@
 namespace carbon {
 namespace test {
 
-inline void AnotherRequest::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void AnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(key());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void AnotherRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -62,39 +29,6 @@ void AnotherRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
-}
-
-inline void AnotherReply::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void AnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(result());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>

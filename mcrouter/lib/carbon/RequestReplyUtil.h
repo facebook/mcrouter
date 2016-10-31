@@ -14,6 +14,7 @@
 #include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
+#include "mcrouter/lib/carbon/TypeList.h"
 
 namespace facebook {
 namespace memcache {
@@ -54,6 +55,7 @@ valueRangeSlow(R& requestOrReply) {
   auto* buf = detail::bufPtr(requestOrReply.value());
   return buf ? folly::StringPiece(buf->coalesce()) : folly::StringPiece();
 }
+
 template <class R>
 typename std::enable_if<!R::hasValue, folly::StringPiece>::type
 valueRangeSlow(R& requestOrReply) {
@@ -82,6 +84,26 @@ template <class R>
 typename std::enable_if<!R::hasFlags, uint64_t>::type getFlags(
     const R&) {
   return 0;
+}
+
+/**
+ * Helper function to determine typeId by its name.
+ *
+ * @param name  Name of the struct as specified by Type::name
+ *
+ * @return  Type::typeId for matched Type if any. 0 if no match found.
+ */
+template <class TypeList>
+inline size_t getTypeIdByName(folly::StringPiece name, TypeList);
+
+template <>
+inline size_t getTypeIdByName(folly::StringPiece name, List<>) {
+  return 0;
+}
+
+template <class T, class... Ts>
+inline size_t getTypeIdByName(folly::StringPiece name, List<T, Ts...>) {
+  return name == T::name ? T::typeId : getTypeIdByName(name, List<Ts...>());
 }
 
 namespace detail {

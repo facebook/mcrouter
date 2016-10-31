@@ -17,40 +17,6 @@
 namespace facebook {
 namespace memcache {
 
-inline void McVersionRequest::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McVersionRequest::deserialize(
-    carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(key());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void McVersionRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -63,54 +29,6 @@ void McVersionRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
-}
-
-inline void McVersionReply::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, value());
-  writer.writeField(3 /* field id */, message());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McVersionReply::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(result());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(value());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(message());
-        break;
-      }
-      case 4: {
-        reader.readRawInto(appSpecificErrorCode());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>
@@ -145,39 +63,6 @@ void McVersionReply::visitFields(V&& v) const {
   }
 }
 
-inline void McStatsRequest::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McStatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(key());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void McStatsRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -190,54 +75,6 @@ void McStatsRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
-}
-
-inline void McStatsReply::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, stats());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McStatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(result());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(message());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(stats());
-        break;
-      }
-      case 4: {
-        reader.readRawInto(appSpecificErrorCode());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>
@@ -272,40 +109,6 @@ void McStatsReply::visitFields(V&& v) const {
   }
 }
 
-inline void McShutdownRequest::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McShutdownRequest::deserialize(
-    carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(key());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void McShutdownRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -318,49 +121,6 @@ void McShutdownRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
-}
-
-inline void McShutdownReply::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McShutdownReply::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(result());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(message());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(appSpecificErrorCode());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>
@@ -389,39 +149,6 @@ void McShutdownReply::visitFields(V&& v) const {
   }
 }
 
-inline void McQuitRequest::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McQuitRequest::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(key());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void McQuitRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -434,48 +161,6 @@ void McQuitRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
-}
-
-inline void McQuitReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, message());
-  writer.writeField(3 /* field id */, appSpecificErrorCode());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McQuitReply::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(result());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(message());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(appSpecificErrorCode());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>
@@ -504,39 +189,6 @@ void McQuitReply::visitFields(V&& v) const {
   }
 }
 
-inline void McExecRequest::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, key());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McExecRequest::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(key());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void McExecRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
@@ -549,53 +201,6 @@ void McExecRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
-}
-
-inline void McExecReply::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, result());
-  writer.writeField(2 /* field id */, response());
-  writer.writeField(3 /* field id */, message());
-  writer.writeField(4 /* field id */, appSpecificErrorCode());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void McExecReply::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(result());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(response());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(message());
-        break;
-      }
-      case 4: {
-        reader.readRawInto(appSpecificErrorCode());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>

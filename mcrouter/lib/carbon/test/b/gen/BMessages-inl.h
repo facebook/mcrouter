@@ -17,38 +17,6 @@
 namespace carbon {
 namespace test {
 
-inline void BaseStruct::serialize(carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(1 /* field id */, baseInt64Member());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void BaseStruct::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case 1: {
-        reader.readRawInto(baseInt64Member());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
-}
-
 template <class V>
 void BaseStruct::visitFields(V&& v) {
   if (!v.visitField(1, "baseInt64Member", baseInt64Member_)) {
@@ -61,59 +29,6 @@ void BaseStruct::visitFields(V&& v) const {
   if (!v.visitField(1, "baseInt64Member", baseInt64Member_)) {
     return;
   }
-}
-
-inline void SimpleStruct::serialize(
-    carbon::CarbonProtocolWriter& writer) const {
-  writer.writeStructBegin();
-  writer.writeField(-1 /* field id */, asBaseStruct());
-  writer.writeField(1 /* field id */, int32Member());
-  writer.writeField(2 /* field id */, stringMember());
-  writer.writeField(3 /* field id */, enumMember());
-  writer.writeField(4 /* field id */, vectorMember());
-  writer.writeStructEnd();
-  writer.writeStop();
-}
-
-inline void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
-  reader.readStructBegin();
-  while (true) {
-    const auto pr = reader.readFieldHeader();
-    const auto fieldType = pr.first;
-    const auto fieldId = pr.second;
-
-    if (fieldType == carbon::FieldType::Stop) {
-      break;
-    }
-
-    switch (fieldId) {
-      case -1: {
-        _carbon_basestruct_.deserialize(reader);
-        break;
-      }
-      case 1: {
-        reader.readRawInto(int32Member());
-        break;
-      }
-      case 2: {
-        reader.readRawInto(stringMember());
-        break;
-      }
-      case 3: {
-        reader.readRawInto(enumMember());
-        break;
-      }
-      case 4: {
-        reader.readRawInto(vectorMember());
-        break;
-      }
-      default: {
-        reader.skip(fieldType);
-        break;
-      }
-    }
-  }
-  reader.readStructEnd();
 }
 
 template <class V>

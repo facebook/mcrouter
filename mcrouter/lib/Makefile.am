@@ -155,6 +155,12 @@ libmcrouter_a_SOURCES = \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \
+  network/gen/CommonMessages-inl.h \
+  network/gen/CommonMessages.cpp \
+  network/gen/CommonMessages.h \
+  network/gen/MemcacheMessages-inl.h \
+  network/gen/MemcacheMessages.cpp \
+  network/gen/MemcacheMessages.h \
   network/McAsciiParser-gen.cpp \
   network/McAsciiParser-inl.h \
   network/McAsciiParser.cpp \

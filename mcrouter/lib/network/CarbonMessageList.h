@@ -10,7 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 
 namespace facebook { namespace memcache {

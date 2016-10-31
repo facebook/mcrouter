@@ -44,10 +44,12 @@ class HelloGoodbyeRouteHandleIf {
 
   virtual void traverse(
       const GoodbyeRequest&,
-      const RouteHandleTraverser<HelloGoodbyeRouteHandleIf>&) const = 0;
+      const facebook::memcache::RouteHandleTraverser<
+          HelloGoodbyeRouteHandleIf>&) const = 0;
   virtual void traverse(
       const HelloRequest&,
-      const RouteHandleTraverser<HelloGoodbyeRouteHandleIf>&) const = 0;
+      const facebook::memcache::RouteHandleTraverser<
+          HelloGoodbyeRouteHandleIf>&) const = 0;
 };
 
 template <class Route>
@@ -69,14 +71,14 @@ class HelloGoodbyeRouteHandle : public HelloGoodbyeRouteHandleIf {
 
   void traverse(
       const GoodbyeRequest& request,
-      const RouteHandleTraverser<HelloGoodbyeRouteHandleIf>& traverser)
-      const override final {
+      const facebook::memcache::RouteHandleTraverser<HelloGoodbyeRouteHandleIf>&
+          traverser) const override final {
     route_.traverse(request, traverser);
   }
   void traverse(
       const HelloRequest& request,
-      const RouteHandleTraverser<HelloGoodbyeRouteHandleIf>& traverser)
-      const override final {
+      const facebook::memcache::RouteHandleTraverser<HelloGoodbyeRouteHandleIf>&
+          traverser) const override final {
     route_.traverse(request, traverser);
   }
 
