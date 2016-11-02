@@ -327,6 +327,14 @@ AsyncMcServer::AsyncMcServer(Options opts)
         true /* enableCPUControl */);
   }
 
+  if (opts_.congestionController.memControlTarget > 0) {
+    opts_.worker.memController = std::make_shared<CongestionController>(
+        opts_.congestionController.memControlTarget,
+        opts_.congestionController.memControlDelay,
+        false /* disableCPUControl */,
+        true /* enableMemControl */);
+  }
+
   CHECK(opts_.numThreads > 0);
   threads_.emplace_back(folly::make_unique<McServerThread>(
                           McServerThread::Acceptor, *this));

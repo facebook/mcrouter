@@ -18,8 +18,14 @@ struct CongestionControllerOptions {
   // The target value to the controller of CPU utilization
   uint64_t cpuControlTarget{0};
 
-  // Worker-specific options
+  // The update delay of drop probability for CPU util controller
   std::chrono::milliseconds cpuControlDelay{0};
+
+  // The target value to the controller of memory utilization, in KB
+  uint64_t memControlTarget{0};
+
+  // The update delay of drop probability for memory util controller
+  std::chrono::milliseconds memControlDelay{0};
 };
 
 // Stats of the controller
@@ -48,6 +54,7 @@ class CongestionController {
       uint64_t target,
       std::chrono::milliseconds delay = std::chrono::milliseconds(100),
       bool enableCPUControl = false,
+      bool enableMemControl = false,
       size_t queueCapacity = 1000);
 
   CongestionController(const CongestionController&) = delete;

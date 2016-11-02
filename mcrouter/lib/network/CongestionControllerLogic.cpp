@@ -53,16 +53,41 @@ bool readProcStat(
   return true;
 }
 
+bool readMemInfo(
+    std::array<char, 320>& buf,
+    std::array<uint64_t, 3>& curArray) {
+  auto memStatFile = folly::File("/proc/meminfo");
+
+  if (folly::readNoInt(memStatFile.fd(), buf.data(), buf.size()) !=
+      buf.size()) {
+    return false;
+  }
+
+  if (sscanf(
+          buf.data(),
+          "MemTotal:%*[ \t]%lu%*s\nMemFree:%*[ \t]%lu%*s\n \
+          MemAvailable:%*[ \t]%lu%*s\n",
+          &curArray[0],
+          &curArray[1],
+          &curArray[2]) != curArray.size()) {
+    return false;
+  }
+
+  return true;
+}
+
 } // anonymous
 
 CongestionControllerLogic::CongestionControllerLogic(
     uint64_t target,
     std::chrono::milliseconds delay,
     bool enableCPUControl,
+    bool enableMemControl,
     size_t queueCapacity)
     : target_(target),
       delay_(delay),
       enableCPUControl_(enableCPUControl),
+      enableMemControl_(enableMemControl),
       valueQueue_(queueCapacity) {
   // This thread updates the probability every delay_.
   probabilityUpdateThread_ = std::thread([this]() {
@@ -161,61 +186,100 @@ CongestionControllerLogic::CongestionControllerLogic(
     }
   });
 
-  if (!enableCPUControl_) {
-    return;
-  }
+  if (enableCPUControl_) {
+    // Compute the cpu utilization
+    cpuLoggingThread_ = std::thread([this]() {
+      std::array<uint64_t, 4> prev;
+      std::array<uint64_t, 4> cur;
+      double cpuUtil = 0.0;
+      bool isFirst = true;
 
-  // Compute the cpu utilization
-  cpuLoggingThread_ = std::thread([this]() {
-    std::array<uint64_t, 4> prev;
-    std::array<uint64_t, 4> cur;
-    double cpuUtil = 0.0;
-    bool isFirst = true;
+      // Enough storage for the /proc/stat CPU data needed below
+      std::array<char, 320> buf;
 
-    // Enough storage for the /proc/stat CPU data needed below
-    std::array<char, 320> buf;
+      while (keepRunning_) {
+        // sleep override
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    while (keepRunning_) {
-      // sleep override
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-      // Corner case: When parsing /proc/stat fails, set the cpuUtil to 0.
-      if (!readProcStat(buf, cur)) {
-        updateValue(0.0);
-        continue;
-      }
-
-      if (isFirst) {
-        isFirst = false;
-      } else {
-        /**
-         * The values in the /proc/stat is the CPU time since boot.
-         * 1st column is user, 2nd column is nice, 3rd column is system, and
-         * the 4th column is idle. The total CPU time in the last window is
-         * delta busy time over delta total time.
-         */
-        auto curUtil = cur[0] + cur[1] + cur[2];
-        auto prevUtil = prev[0] + prev[1] + prev[2];
-        auto utilDiff = static_cast<double>(curUtil - prevUtil);
-        auto totalDiff = utilDiff + cur[3] - prev[3];
-
-        /**
-         * Corner case: If CPU didn't change or the proc/stat didn't get
-         * updated or ticks didn't increase, set the cpuUtil to 0.
-         */
-        if (totalDiff < 0.001 || curUtil < prevUtil) {
-          cpuUtil = 0.0;
-        } else {
-          // Corner case: The max of CPU utilization can be at most 100%.
-          cpuUtil = std::min((utilDiff / totalDiff) * 100, 100.0);
+        // Corner case: When parsing /proc/stat fails, set the cpuUtil to 0.
+        if (!readProcStat(buf, cur)) {
+          updateValue(0.0);
+          continue;
         }
 
-        updateValue(cpuUtil);
-      }
+        if (isFirst) {
+          isFirst = false;
+        } else {
+          /**
+          * The values in the /proc/stat is the CPU time since boot.
+          * 1st column is user, 2nd column is nice, 3rd column is system, and
+          * the 4th column is idle. The total CPU time in the last window is
+          * delta busy time over delta total time.
+          */
+          auto curUtil = cur[0] + cur[1] + cur[2];
+          auto prevUtil = prev[0] + prev[1] + prev[2];
+          auto utilDiff = static_cast<double>(curUtil - prevUtil);
+          auto totalDiff = utilDiff + cur[3] - prev[3];
 
-      prev = cur;
-    }
-  });
+          /**
+          * Corner case: If CPU didn't change or the proc/stat didn't get
+          * updated or ticks didn't increase, set the cpuUtil to 0.
+          */
+          if (totalDiff < 0.001 || curUtil < prevUtil) {
+            cpuUtil = 0.0;
+          } else {
+            // Corner case: The max of CPU utilization can be at most 100%.
+            cpuUtil = std::min((utilDiff / totalDiff) * 100, 100.0);
+          }
+
+          updateValue(cpuUtil);
+        }
+
+        prev = cur;
+      }
+    });
+  }
+
+  if (enableMemControl_) {
+    memLoggingThread_ = std::thread([this]() {
+      // Enough storage for the /proc/meminfo memory info needed below
+      std::array<char, 320> buf;
+      std::array<uint64_t, 3> cur;
+      double memUtil = 0.0;
+      double totalMem = 0.0;
+
+      while (keepRunning_) {
+        // sleep override
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        if (!readMemInfo(buf, cur)) {
+          updateValue(0.0);
+          continue;
+        }
+
+        // Here we convert the target_ in KB to the percentage.
+        if (totalMem == 0.0) {
+          totalMem = static_cast<double>(cur[0]);
+          if (totalMem == 0.0) {
+            continue;
+          }
+
+          // The precision of the memory usage is 10^-6.
+          setTarget(((totalMem - target_) / totalMem) * 1000000.0);
+        }
+
+        auto availMem = static_cast<double>(cur[2]);
+
+        if (totalMem == 0.0 || availMem > totalMem) {
+          memUtil = 0.0;
+        } else {
+          memUtil = ((totalMem - availMem) / totalMem) * 1000000.0;
+        }
+
+        updateValue(memUtil);
+      }
+    });
+  }
 }
 
 CongestionControllerLogic::~CongestionControllerLogic() {
@@ -226,6 +290,10 @@ CongestionControllerLogic::~CongestionControllerLogic() {
 
   if (enableCPUControl_) {
     cpuLoggingThread_.join();
+  }
+
+  if (enableMemControl_) {
+    memLoggingThread_.join();
   }
 }
 

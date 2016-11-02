@@ -84,9 +84,14 @@ struct AsyncMcServerWorkerOptions {
   std::string debugFifoPath;
 
   /**
-   * The congestion controller at the server.
+   * The congestion controller for CPU utilization at the server.
    */
   std::shared_ptr<CongestionController> cpuController;
+
+  /**
+   * The congestion controller for memory utilization at the server.
+   */
+  std::shared_ptr<CongestionController> memController;
 };
 
 }}  // facebook::memcache

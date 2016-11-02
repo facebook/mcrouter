@@ -16,8 +16,10 @@ CongestionController::CongestionController(
     uint64_t target,
     std::chrono::milliseconds delay,
     bool enableCPUControl,
+    bool enableMemControl,
     size_t queueCapacity)
-    : logic_(target, delay, enableCPUControl, queueCapacity) {}
+    : logic_(target, delay, enableCPUControl, enableMemControl, queueCapacity) {
+}
 
 void CongestionController::updateValue(double value) {
   logic_.updateValue(value);

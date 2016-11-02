@@ -73,6 +73,8 @@ class McServerRequestContext {
    */
   McServerSession& session();
 
+  double getDropProbability() const;
+
  private:
   McServerSession* session_;
 

@@ -48,16 +48,12 @@ WriteBuffer::prepareTyped(
       break;
 
     case mc_caret_protocol: {
-      auto dropProbability = ctx_->session().getCpuController()
-          ? ctx_->session().getCpuController()->getDropProbability()
-          : 0.0;
-
       return caretReply_.prepare(
           std::move(reply),
           ctx_->reqid_,
           ctx_->compressionContext_->codecIdRange,
           ctx_->compressionContext_->compressionCodecMap,
-          dropProbability,
+          ctx_->getDropProbability(),
           iovsBegin_,
           iovsCount_);
     }
