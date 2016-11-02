@@ -72,20 +72,17 @@ double AsyncMcClientImpl::getDropProbability() const {
 
 template <>
 inline double AsyncMcClientImpl::getDropProbability<McSetRequest>() const {
-  if (parser_ == nullptr) {
-    return 0.0;
-  }
-
-  return parser_->getDropProbability();
+  return parser_ ? parser_->getDropProbability() : 0.0;
 }
 
 template <>
 inline double AsyncMcClientImpl::getDropProbability<McGetRequest>() const {
-  if (parser_ == nullptr) {
-    return 0.0;
-  }
+  return parser_ ? parser_->getDropProbability() : 0.0;
+}
 
-  return parser_->getDropProbability();
+template <>
+inline double AsyncMcClientImpl::getDropProbability<McDeleteRequest>() const {
+  return parser_ ? parser_->getDropProbability() : 0.0;
 }
 
 }} // facebook::memcache
