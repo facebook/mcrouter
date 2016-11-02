@@ -22,6 +22,7 @@
 
 namespace folly {
 class EventBase;
+class ScopedEventBaseThread;
 } // folly
 
 namespace facebook { namespace memcache {
@@ -168,17 +169,14 @@ class AsyncMcServer {
   void join();
 
  private:
+  std::unique_ptr<folly::ScopedEventBaseThread> auxiliaryEvbThread_;
   Options opts_;
   std::vector<std::unique_ptr<McServerThread>> threads_;
 
   std::atomic<bool> alive_{true};
   std::function<void()> onShutdown_;
 
-  enum class SignalShutdownState : uint64_t {
-    STARTUP,
-    SHUTDOWN,
-    SPAWNED
-  };
+  enum class SignalShutdownState : uint64_t { STARTUP, SHUTDOWN, SPAWNED };
   std::atomic<SignalShutdownState> signalShutdownState_{
     SignalShutdownState::STARTUP};
 

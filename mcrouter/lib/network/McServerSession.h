@@ -156,11 +156,11 @@ class McServerSession :
     return eventBase_;
   }
 
-  std::shared_ptr<CongestionController> getCpuController() const noexcept {
+  std::shared_ptr<CpuController> getCpuController() const noexcept {
     return options_.cpuController;
   }
 
-  std::shared_ptr<CongestionController> getMemController() const noexcept {
+  std::shared_ptr<MemoryController> getMemController() const noexcept {
     return options_.memController;
   }
 

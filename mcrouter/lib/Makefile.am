@@ -148,13 +148,11 @@ libmcrouter_a_SOURCES = \
   network/ClientMcParser.h \
   network/CongestionController.cpp \
   network/CongestionController.h \
-  network/CongestionControllerLogic.cpp \
-  network/CongestionControllerLogic.h \
-  network/CongestionControllerSingleThreaded.h \
-  network/CongestionControllerSingleThreaded.cpp \
   network/ConnectionOptions.h \
   network/ConnectionTracker.cpp \
   network/ConnectionTracker.h \
+  network/CpuController.cpp \
+  network/CpuController.h \
   network/gen/CommonMessages-inl.h \
   network/gen/CommonMessages.cpp \
   network/gen/CommonMessages.h \
@@ -178,6 +176,8 @@ libmcrouter_a_SOURCES = \
   network/McServerSession.cpp \
   network/McServerSession.h \
   network/MemcacheMessageHelpers.h \
+  network/MemoryController.cpp \
+  network/MemoryController.h \
   network/MockMcClientTransport.cpp \
   network/MockMcClientTransport.h \
   network/MultiOpParent.cpp \

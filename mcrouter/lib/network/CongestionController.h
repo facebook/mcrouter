@@ -9,7 +9,17 @@
  */
 #pragma once
 
-#include "CongestionControllerLogic.h"
+#include <array>
+#include <atomic>
+#include <chrono>
+#include <memory>
+
+#include <folly/MPMCQueue.h>
+#include <folly/io/async/EventBase.h>
+
+namespace folly {
+class EventBase;
+}
 
 namespace facebook {
 namespace memcache {
@@ -28,34 +38,22 @@ struct CongestionControllerOptions {
   std::chrono::milliseconds memControlDelay{0};
 };
 
-// Stats of the controller
-struct CongestionControllerStats {
-  double dropProbability{0.0};
-};
-
 /**
  * This class provides simple APIs to control a variable with the user-provided
  * target value. The use case of this controller is to throttle clients if
  * server if overloaded. That is, if the variable is more than the target, the
  * server will calculate a drop probability so that the clients will drop
  * requests given this probability.
- *
- * There is CPU utilization controller implemented internally and can be enabled
- * in the constructor.
  */
-class CongestionController {
+
+class CongestionController
+    : public std::enable_shared_from_this<CongestionController> {
  public:
-  /**
-   * Initialize the CongestionController with a user-provided target. By
-   * default, we set the delay to 100 milliseconds, disable the CPU controller,
-   * and the queue to store update values to 1000.
-   */
-  explicit CongestionController(
+  CongestionController(
       uint64_t target,
-      std::chrono::milliseconds delay = std::chrono::milliseconds(100),
-      bool enableCPUControl = false,
-      bool enableMemControl = false,
-      size_t queueCapacity = 1000);
+      std::chrono::milliseconds delay,
+      folly::EventBase& evb,
+      size_t queueCapacity);
 
   CongestionController(const CongestionController&) = delete;
   CongestionController& operator=(const CongestionController&) = delete;
@@ -66,13 +64,50 @@ class CongestionController {
   // Get the drop probability.
   double getDropProbability() const;
 
-  // Set the target.
+  // Reset the target.
   void setTarget(uint64_t target);
 
-  CongestionControllerStats getStats() const;
+  void start();
+  void stop();
 
  private:
-  CongestionControllerLogic logic_;
+  // The function responsible for updating the probability.
+  void probabilityUpdateFn();
+
+  // The function responsible for computing the weightedValue_.
+  void weightedValueUpdateFn();
+
+  /**
+   * Flag indicating if in the first delay_ window. If in the first delay_
+   * window, we apply the Simple Moving Average. For the following windows,
+   * we leverage Exponential Moving Average.
+   */
+  bool firstWindow_{true};
+  std::atomic<bool> stopController_{false};
+
+  // The target value to control. This value can be wait time, queue size, etc.
+  std::atomic<uint64_t> target_{0};
+
+  // The user provided update delay in milliseconds.
+  std::chrono::milliseconds delay_{0};
+
+  folly::EventBase& evb_;
+
+  // Smoothing factor of the weighted moving average. The value is between 0
+  // and 1. The closer to 1, the higher weight of the history data.
+  double smoothingFactor_{0.0};
+
+  // Number of updates received in a RTT window.
+  uint64_t updateCounter_{0};
+
+  // Send probability.
+  std::atomic<double> sendProbability_{1.0};
+
+  // Weighted value for the control.
+  double weightedValue_{0.0};
+
+  // A queue for storing the values.
+  folly::MPMCQueue<double> valueQueue_;
 };
 
 } // memcache

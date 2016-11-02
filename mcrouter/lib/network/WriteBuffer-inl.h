@@ -10,8 +10,9 @@
 #pragma once
 
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
-#include "mcrouter/lib/network/CongestionController.h"
+#include "mcrouter/lib/network/CpuController.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/MemoryController.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook { namespace memcache {

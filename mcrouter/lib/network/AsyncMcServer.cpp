@@ -21,6 +21,7 @@
 
 #include <folly/io/async/AsyncServerSocket.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/io/async/SSLContext.h>
 #include <folly/Memory.h>
 #include <folly/String.h>
@@ -320,19 +321,26 @@ void AsyncMcServer::Options::setPerThreadMaxConns(size_t globalMaxConns,
 
 AsyncMcServer::AsyncMcServer(Options opts)
     : opts_(std::move(opts)) {
-  if (opts_.congestionController.cpuControlTarget > 0) {
-    opts_.worker.cpuController = std::make_shared<CongestionController>(
-        opts_.congestionController.cpuControlTarget,
-        opts_.congestionController.cpuControlDelay,
-        true /* enableCPUControl */);
-  }
+  if (opts_.congestionController.cpuControlTarget > 0 ||
+      opts_.congestionController.memControlTarget > 0) {
+    auxiliaryEvbThread_ =
+        folly::make_unique<folly::ScopedEventBaseThread>(true /* auto start */);
 
-  if (opts_.congestionController.memControlTarget > 0) {
-    opts_.worker.memController = std::make_shared<CongestionController>(
-        opts_.congestionController.memControlTarget,
-        opts_.congestionController.memControlDelay,
-        false /* disableCPUControl */,
-        true /* enableMemControl */);
+    if (opts_.congestionController.cpuControlTarget > 0) {
+      opts_.worker.cpuController = std::make_shared<CpuController>(
+          opts_.congestionController.cpuControlTarget,
+          *auxiliaryEvbThread_->getEventBase(),
+          opts_.congestionController.cpuControlDelay);
+      opts_.worker.cpuController->start();
+    }
+
+    if (opts_.congestionController.memControlTarget > 0) {
+      opts_.worker.memController = std::make_shared<MemoryController>(
+          opts_.congestionController.memControlTarget,
+          *auxiliaryEvbThread_->getEventBase(),
+          opts_.congestionController.memControlDelay);
+      opts_.worker.memController->start();
+    }
   }
 
   CHECK(opts_.numThreads > 0);
@@ -354,6 +362,12 @@ std::vector<folly::EventBase*> AsyncMcServer::eventBases() const {
 AsyncMcServer::~AsyncMcServer() {
   /* Need to place the destructor here, since this is the only
      translation unit that knows about McServerThread */
+  if (opts_.worker.cpuController) {
+    opts_.worker.cpuController->stop();
+  }
+  if (opts_.worker.memController) {
+    opts_.worker.memController->stop();
+  }
 
   /* In case some signal handlers are still registered */
   gServer = nullptr;

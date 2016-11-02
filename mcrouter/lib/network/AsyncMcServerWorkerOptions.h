@@ -15,7 +15,8 @@
 
 namespace facebook { namespace memcache {
 
-class CongestionController;
+class CpuController;
+class MemoryController;
 
 struct AsyncMcServerWorkerOptions {
   /**
@@ -86,12 +87,12 @@ struct AsyncMcServerWorkerOptions {
   /**
    * The congestion controller for CPU utilization at the server.
    */
-  std::shared_ptr<CongestionController> cpuController;
+  std::shared_ptr<CpuController> cpuController;
 
   /**
    * The congestion controller for memory utilization at the server.
    */
-  std::shared_ptr<CongestionController> memController;
+  std::shared_ptr<MemoryController> memController;
 };
 
 }}  // facebook::memcache
