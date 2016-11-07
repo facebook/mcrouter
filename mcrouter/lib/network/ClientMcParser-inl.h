@@ -8,6 +8,7 @@
  *
  */
 #include <folly/io/Cursor.h>
+#include <folly/Format.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
@@ -155,7 +156,11 @@ std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
   assert(compressionCodecMap_);
   assert(!buffer.isChained());
   auto codec = compressionCodecMap_->get(headerInfo.usedCodecId);
-  assert(codec);
+  if (!codec) {
+    throw std::runtime_error(folly::sformat(
+        "Failed to get compression codec id {}. Reply is likely corrupted!",
+        headerInfo.usedCodecId));
+  }
 
   auto buf = buffer.data() + headerInfo.headerSize;
   return codec->uncompress(
