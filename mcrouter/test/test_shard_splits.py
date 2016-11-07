@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -55,7 +55,7 @@ class TestShardSplits(McrouterTestCase):
         self.assertEqual(mcrouter.get('a:1aa:foo'), 'value')
         self.assertEqual(mcrouter.get('a:1ba:foo'), 'value')
 
-        self.assertTrue(mcrouter.delete('a:1:foo'))
+        mcrouter.delete('a:1:foo')
         time.sleep(0.1)
         self.assertIsNone(mcrouter.get('a:1:foo'))
         self.assertIsNone(mcrouter.get('a:1aa:foo'))
@@ -64,33 +64,20 @@ class TestShardSplits(McrouterTestCase):
         # No splits
         self.assertTrue(mcrouter.set('a:5:bar', 'value2'))
         self.assertEqual(mcrouter.get('a:5:bar'), 'value2')
-        self.assertIsNone(mcrouter.get('a:5aa:bar'))
 
         self.assertTrue(mcrouter.delete('a:5:bar'))
         self.assertIsNone(mcrouter.get('a:5:bar'))
 
         # Arithmetic operations with splits
         self.assertTrue(mcrouter.set('a:1:counter', '5'))
-        self.assertTrue(mcrouter.set('a:1aa:counter', '5'))
-        self.assertTrue(mcrouter.set('a:1ba:counter', '5'))
         time.sleep(0.1)
         self.assertEqual(mcrouter.incr('a:1:counter'), 6)
-        self.assertEqual(mcrouter.incr('a:1aa:counter'), 6)
-        self.assertEqual(mcrouter.incr('a:1ba:counter'), 6)
         time.sleep(0.1)
         self.assertEqual(mcrouter.get('a:1:counter'), '6')
-        self.assertEqual(mcrouter.get('a:1aa:counter'), '6')
-        self.assertEqual(mcrouter.get('a:1ba:counter'), '6')
-        self.assertIsNone(mcrouter.get('a:1ca:counter'))
 
         self.assertEqual(mcrouter.decr('a:1:counter', 3), 3)
-        self.assertEqual(mcrouter.decr('a:1aa:counter', 3), 3)
-        self.assertEqual(mcrouter.decr('a:1ba:counter', 3), 3)
         time.sleep(0.1)
         self.assertEqual(mcrouter.get('a:1:counter'), '3')
-        self.assertEqual(mcrouter.get('a:1aa:counter'), '3')
-        self.assertEqual(mcrouter.get('a:1ba:counter'), '3')
-        self.assertIsNone(mcrouter.get('a:1ca:counter'))
 
         # Arithmetic operations without splits
         self.assertTrue(mcrouter.set('a:125:counter', '125'))
