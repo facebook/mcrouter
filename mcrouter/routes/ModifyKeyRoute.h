@@ -33,6 +33,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
  *                     value
  *  ensure_key_prefix if key doesn't start with this value, it will be appended
  *                    to the key
+ *  replace_key_prefix Replace this prefix if it exists, and append
+ *                     ensure_key_prefix
  *
  * Example:
  *  ModifyKeyRoute
@@ -51,11 +53,13 @@ class ModifyKeyRoute {
       std::shared_ptr<RouteHandleIf> target,
       folly::Optional<std::string> routingPrefix,
       std::string keyPrefix,
-      bool modifyInplace)
+      bool modifyInplace,
+      folly::Optional<std::string> keyReplace)
       : target_(std::move(target)),
         routingPrefix_(std::move(routingPrefix)),
         keyPrefix_(std::move(keyPrefix)),
-        modifyInplace_(modifyInplace) {}
+        modifyInplace_(modifyInplace),
+        keyReplace_(std::move(keyReplace)) {}
 
   template <class Request>
   void traverse(const Request& req,
@@ -82,13 +86,19 @@ class ModifyKeyRoute {
   const folly::Optional<std::string> routingPrefix_;
   const std::string keyPrefix_;
   const bool modifyInplace_;
+  const folly::Optional<std::string> keyReplace_;
 
   folly::Optional<std::string> getModifiedKey(
       const carbon::Keys<folly::IOBuf>& reqKey) const {
     folly::StringPiece rp = routingPrefix_.hasValue() ? routingPrefix_.value()
                                                       : reqKey.routingPrefix();
 
-    if (!reqKey.keyWithoutRoute().startsWith(keyPrefix_)) {
+    if (keyReplace_.hasValue() &&
+        reqKey.keyWithoutRoute().startsWith(keyReplace_.value())) {
+      auto keyWithoutRoute = reqKey.keyWithoutRoute();
+      keyWithoutRoute.advance(keyReplace_.value().size());
+      return folly::to<std::string>(rp, keyPrefix_, keyWithoutRoute);
+    } else if (!reqKey.keyWithoutRoute().startsWith(keyPrefix_)) {
       auto keyWithoutRoute = reqKey.keyWithoutRoute();
       if (modifyInplace_ && keyWithoutRoute.size() >= keyPrefix_.size()) {
         keyWithoutRoute.advance(keyPrefix_.size());

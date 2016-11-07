@@ -94,3 +94,10 @@ class TestModifyKey(McrouterTestCase):
 
         self.assertTrue(self.mcr.set("/i/j/keys", "value20"))
         self.assertEqual(self.mc.get("keys"), "value20")
+
+        self.assertTrue(self.mcr.set("/j/k/foo.sup", "value21"))
+        self.assertEqual(self.mc.get("/j/k/bar.sup"), "value21")
+
+        # reverts to prefix append if replace not present
+        self.assertTrue(self.mcr.set("/j/k/baz.sup", "value22"))
+        self.assertEqual(self.mc.get("/j/k/bar.baz.sup"), "value22")

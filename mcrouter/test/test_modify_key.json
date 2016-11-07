@@ -87,6 +87,15 @@
         "ensure_key_prefix": "",
         "modify_inplace": true
       }
+    },
+    {
+      "aliases": [ "/j/k/" ],
+      "route": {
+        "type": "ModifyKeyRoute",
+        "target": "PoolRoute|A",
+        "ensure_key_prefix": "bar.",
+        "replace_key_prefix": "foo."
+      }
     }
   ]
 }

@@ -49,8 +49,22 @@ McrouterRouteHandlePtr makeModifyKeyRoute(
         mc_req_err_to_string(err));
   }
 
+  folly::Optional<std::string> keyReplace;
+  if (auto jkeyReplace = json.get_ptr("replace_key_prefix")) {
+    keyReplace = jkeyReplace->getString();
+    auto err = isKeyValid(keyReplace.value());
+    checkLogic(
+        keyReplace.value().empty() || err == mc_req_err_valid,
+        "ModifyKeyRoute: invalid key prefix '{}', {}",
+        keyReplace.value(),
+        mc_req_err_to_string(err));
+  }
+
   bool modifyInplace = false;
   if (auto joverwrite = json.get_ptr("modify_inplace")) {
+    checkLogic(
+        !keyReplace.hasValue(),
+        "replace_key_prefix and modify_inplace cannot be used together");
     checkLogic(
         joverwrite->isBool(), "ModifyKeyRoute: modify_inplace is not a bool");
     modifyInplace = joverwrite->asBool();
@@ -59,6 +73,7 @@ McrouterRouteHandlePtr makeModifyKeyRoute(
       factory.create(*jtarget),
       std::move(routingPrefix),
       std::move(keyPrefix),
-      modifyInplace);
+      modifyInplace,
+      std::move(keyReplace));
 }
 }}}  // facebook::memcache::mcrouter
