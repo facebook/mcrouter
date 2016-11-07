@@ -55,11 +55,23 @@ uint32_t getHash() {
   return result[1];
 }
 
+uint32_t* getHostIdStorage() {
+  static uint32_t h = getHash();
+  return &h;
+}
+
 }  // anonymous namespace
 
 uint32_t hostid() {
-  static uint32_t h = getHash();
-  return h;
+  return *getHostIdStorage();
+}
+
+HostidMock::HostidMock(uint32_t value) {
+  *getHostIdStorage() = value;
+}
+
+void HostidMock::reset() {
+  *getHostIdStorage() = getHash();
 }
 
 }}} // facebook::memcache::globals

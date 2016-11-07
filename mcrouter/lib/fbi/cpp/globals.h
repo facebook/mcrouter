@@ -18,4 +18,15 @@ namespace facebook { namespace memcache { namespace globals {
  */
 uint32_t hostid();
 
+/**
+ * FOR TEST PURPOSES ONLY
+ *
+ * Allows to override hostid for testing purposes, resets it on destruction.
+ */
+struct HostidMock {
+  explicit HostidMock(uint32_t value);
+  void reset();
+  ~HostidMock() { reset(); }
+};
+
 }}} // facebook::memcache::globals

@@ -74,65 +74,57 @@ class ShardSplitRoute {
       ctx->recordShardSplitter(shardSplitter_);
     }
 
-    if (!GetLike<Request>::value && !DeleteLike<Request>::value) {
+    folly::StringPiece shard;
+    auto split = shardSplitter_.getShardSplit(req.key().routingKey(), shard);
+
+    if (split == nullptr) {
       t(*rh_, req);
       return;
     }
 
-    folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.key().routingKey(), shard);
-    if (cnt == 1) {
+    auto splitSize = split->getSplitSizeForCurrentHost();
+    if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       t(*rh_, req);
-      return;
-    }
-    if (GetLike<Request>::value) {
-      size_t i = globals::hostid() % cnt;
+      for (size_t i = 0; i < splitSize - 1; ++i) {
+        t(*rh_, splitReq(req, i, shard));
+      }
+    } else {
+      size_t i = globals::hostid() % splitSize;
       if (i == 0) {
         t(*rh_, req);
         return;
       }
       t(*rh_, splitReq(req, i - 1, shard));
-      return;
-    }
-
-    assert(DeleteLike<Request>::value);
-    t(*rh_, req);
-    for (size_t i = 0; i < cnt - 1; ++i) {
-      t(*rh_, splitReq(req, i, shard));
     }
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
-    // Gets are routed to one of the splits.
+  ReplyT<Request> route(const Request& req) const {
     folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.key().routingKey(), shard);
-    size_t i = globals::hostid() % cnt;
-    if (i == 0) {
-      return rh_->route(req);
-    }
-    return rh_->route(splitReq(req, i - 1, shard));
-  }
-
-  template <class Request>
-  ReplyT<Request> route(const Request& req,
-                        OtherThanT<Request, GetLike<>> = 0) const {
-    // Anything that is not a Get or Delete goes to the primary split.
-    static_assert(!GetLike<Request>::value, "");
-    if (!DeleteLike<Request>::value) {
+    auto split = shardSplitter_.getShardSplit(req.key().routingKey(), shard);
+    if (split == nullptr) {
       return rh_->route(req);
     }
 
-    // Deletes are broadcast to all splits.
-    folly::StringPiece shard;
-    auto cnt = shardSplitter_.getShardSplitCnt(req.key().routingKey(), shard);
-    for (size_t i = 0; i < cnt - 1; ++i) {
-      folly::fibers::addTask(
-        [r = rh_, req_ = splitReq(req, i, shard)]() {
+    size_t splitSize = split->getSplitSizeForCurrentHost();
+    if (splitSize == 1) {
+      return rh_->route(req);
+    }
+
+    if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
+      for (size_t i = 0; i < splitSize - 1; ++i) {
+        folly::fibers::addTask([ r = rh_, req_ = splitReq(req, i, shard) ]() {
           r->route(req_);
         });
+      }
+      return rh_->route(req);
+    } else {
+      size_t i = globals::hostid() % splitSize;
+      if (i == 0) {
+        return rh_->route(req);
+      }
+      return rh_->route(splitReq(req, i - 1, shard));
     }
-    return rh_->route(req);
   }
 
  private:
