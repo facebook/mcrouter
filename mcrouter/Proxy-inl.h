@@ -11,6 +11,7 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/stats.h"
