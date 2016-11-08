@@ -31,27 +31,34 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 /**
  * Create a suffix for the shard ID which will make the key route to
- * the n'th shard split as specified in 'offset'.
+ * the shard split as specified in 'offset'.
  *
- * @param offset Which split the new key should route to.
+ * @param offset Which split the new key should route to,
+ *   must be in the range [0, nsplits).
+ *   The primary split is at offset 0 and does not have a suffix.
  * @return A suffix suitable to be appended to a shard ID in a key.
+ *   Empty string if offset is 0.
  */
 std::string shardSplitSuffix(size_t offset);
 
+namespace detail {
 /**
  * Create a key which matches 'fullKey' except has a suffix on the shard
- * portion which will make the key route to the n'th shard split as specified in
- * 'index'.
+ * portion which will make the key route to the shard split as specified in
+ * 'offset'.
  *
  * @param fullKey The key to re-route to a split shard.
- * @param offset Which split the new key should route to.
+ * @param offset Which split the new key should route to,
+ *   must be in the range [0, nsplits).
+ *   The primary split is at offset 0 and does not have a suffix.
  * @param shard The shard portion of fullKey. Must be a substring of 'fullKey'
  *              and can be obtained via getShardId().
- * @return A new key which routes to the n'th shard split for 'shard'.
+ * @return A new key which routes to the proper shard split for 'shard'.
  */
 std::string createSplitKey(folly::StringPiece fullKey,
                            size_t offset,
                            folly::StringPiece shard);
+} // detail
 
 /**
  * Splits given request according to shard splits provided by ShardSplitter
@@ -85,7 +92,7 @@ class ShardSplitRoute {
     auto splitSize = split->getSplitSizeForCurrentHost();
     if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       t(*rh_, req);
-      for (size_t i = 0; i < splitSize - 1; ++i) {
+      for (size_t i = 1; i < splitSize; ++i) {
         t(*rh_, splitReq(req, i, shard));
       }
     } else {
@@ -94,7 +101,7 @@ class ShardSplitRoute {
         t(*rh_, req);
         return;
       }
-      t(*rh_, splitReq(req, i - 1, shard));
+      t(*rh_, splitReq(req, i, shard));
     }
   }
 
@@ -112,7 +119,7 @@ class ShardSplitRoute {
     }
 
     if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
-      for (size_t i = 0; i < splitSize - 1; ++i) {
+      for (size_t i = 1; i < splitSize; ++i) {
         folly::fibers::addTask([ r = rh_, req_ = splitReq(req, i, shard) ]() {
           r->route(req_);
         });
@@ -123,7 +130,7 @@ class ShardSplitRoute {
       if (i == 0) {
         return rh_->route(req);
       }
-      return rh_->route(splitReq(req, i - 1, shard));
+      return rh_->route(splitReq(req, i, shard));
     }
   }
 
@@ -137,7 +144,7 @@ class ShardSplitRoute {
   Request splitReq(const Request& req, size_t offset,
                    folly::StringPiece shard) const {
     auto reqCopy = req;
-    reqCopy.key() = createSplitKey(req.key().fullKey(), offset, shard);
+    reqCopy.key() = detail::createSplitKey(req.key().fullKey(), offset, shard);
     return reqCopy;
   }
 };
