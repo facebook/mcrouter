@@ -44,14 +44,23 @@ public:
       : folly::EventHandler(&evb),
         server_(server) {
     fd_ = eventfd(0, 0);
-    CHECK(fd_ != -1);
+    if (UNLIKELY(fd_ == -1)) {
+      throw std::runtime_error(
+          "Unexpected file descriptor (-1) in ShutdownPipe");
+    }
     changeHandlerFD(fd_);
     registerHandler(EV_READ);
   }
 
   void shutdownFromSignalHandler() {
     uint64_t val = 1;
-    PCHECK(write(fd_, &val, 8) == 8);
+    auto res = write(fd_, &val, 8);
+    if (UNLIKELY(res != 8)) {
+      throw std::system_error(
+          errno,
+          std::system_category(),
+          folly::sformat("Unexpected return of write: {}", res));
+    }
   }
 
  private:
@@ -143,7 +152,10 @@ class McServerThread {
         }
         worker_.shutdown();
       });
-    CHECK(result) << "error calling runInEventBaseThread";
+
+    if (!result) {
+      throw std::runtime_error("error calling runInEventBaseThread");
+    }
   }
 
   void shutdownFromSignalHandler() {
@@ -343,7 +355,10 @@ AsyncMcServer::AsyncMcServer(Options opts)
     }
   }
 
-  CHECK(opts_.numThreads > 0);
+  if (opts_.numThreads == 0) {
+    throw std::invalid_argument(folly::sformat(
+        "Unexpected option: opts_.numThreads={}", opts_.numThreads));
+  }
   threads_.emplace_back(folly::make_unique<McServerThread>(
                           McServerThread::Acceptor, *this));
   for (size_t i = 1; i < opts_.numThreads; ++i) {
@@ -375,6 +390,7 @@ AsyncMcServer::~AsyncMcServer() {
 
 void AsyncMcServer::spawn(LoopFn fn, std::function<void()> onShutdown) {
   CHECK(threads_.size() == opts_.numThreads);
+
   onShutdown_ = std::move(onShutdown);
 
   /* We need to make sure we register all acceptor callbacks before
@@ -431,7 +447,12 @@ void AsyncMcServer::installShutdownHandler(const std::vector<int>& signals) {
   act.sa_flags = SA_RESETHAND;
 
   for (auto sig : signals) {
-    CHECK(!sigaction(sig, &act, nullptr));
+    if (sigaction(sig, &act, nullptr) == -1) {
+      throw std::system_error(
+          errno,
+          std::system_category(),
+          "Unexpected error returned by sigaction");
+    }
   }
 }
 
