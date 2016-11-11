@@ -78,7 +78,7 @@ class DestinationRoute {
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    auto& ctx = fiber_local::getSharedCtx();
+    auto* ctx = fiber_local::getTraverseCtx();
     if (ctx) {
       ctx->recordDestination(poolName_, indexInPool_,
                              *destination_->accessPoint());

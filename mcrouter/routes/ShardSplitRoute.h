@@ -76,7 +76,7 @@ class ShardSplitRoute {
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    auto& ctx = fiber_local::getSharedCtx();
+    auto* ctx = fiber_local::getTraverseCtx();
     if (ctx) {
       ctx->recordShardSplitter(shardSplitter_);
     }

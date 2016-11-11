@@ -106,7 +106,8 @@ ProxyRequestContext::ProxyRequestContext(
     Proxy& pr,
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback)
-    : requestId_(pr.nextRequestId()), proxy_(pr), recording_(true) {
+    /* pr.nextRequestId() is not threadsafe */
+    : requestId_(0), proxy_(pr), recording_(true) {
   new (&recordingState_) std::unique_ptr<RecordingState>(
     folly::make_unique<RecordingState>());
   recordingState_->clientCallback = std::move(clientCallback);

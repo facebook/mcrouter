@@ -79,7 +79,7 @@ public:
 
   virtual ~ProxyRequestContext();
 
-  Proxy& proxy() const {
+  Proxy& proxy() {
     return proxy_;
   }
 

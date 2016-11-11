@@ -115,6 +115,17 @@ inline const std::shared_ptr<ProxyRequestContext>& getSharedCtx() {
 }
 
 /**
+ * Get ProxyRequestContext of current fiber (thread, if we're not on fiber).
+ * Can only be called from the RouteHandle's traverse() function.  Since
+ * traverse() is not guaranteed to be called from the proxy thread, only
+ * methods that access proxy/mcrouter in threadsafe way are allowed
+ * to be called on the context.
+ */
+inline const ProxyRequestContext* getTraverseCtx() {
+  return folly::fibers::local<detail::McrouterFiberContext>().sharedCtx.get();
+}
+
+/**
  * Add a RequestClass for current fiber (thread, if we're not on fiber)
  */
 inline void addRequestClass(RequestClass value) {
