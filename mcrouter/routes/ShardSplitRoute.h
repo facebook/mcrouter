@@ -91,6 +91,8 @@ class ShardSplitRoute {
 
     auto splitSize = split->getSplitSizeForCurrentHost();
     if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
+      // Note: the order here is part of the API and must not be changed.
+      // We traverse the primary split and then other splits in order.
       t(*rh_, req);
       for (size_t i = 1; i < splitSize; ++i) {
         t(*rh_, splitReq(req, i, shard));
