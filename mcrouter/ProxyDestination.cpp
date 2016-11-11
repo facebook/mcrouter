@@ -170,17 +170,15 @@ void ProxyDestination::handleRxmittingConnection() {
       const auto currRetransPerKByte = client_->getRetransmissionInfo();
       if (currRetransPerKByte >= 0.0) {
         stats_.retransPerKByte = currRetransPerKByte;
-        stat_set_uint64(
-            proxy->stats,
+        proxy->stats().setValue(
             retrans_per_kbyte_max_stat,
             std::max(
-                stat_get_uint64(proxy->stats, retrans_per_kbyte_max_stat),
+                proxy->stats().getValue(retrans_per_kbyte_max_stat),
                 static_cast<uint64_t>(currRetransPerKByte)));
-        stat_incr(
-            proxy->stats,
+        proxy->stats().increment(
             retrans_per_kbyte_sum_stat,
             static_cast<int64_t>(currRetransPerKByte));
-        stat_incr(proxy->stats, retrans_num_total_stat, 1);
+        proxy->stats().increment(retrans_num_total_stat);
       }
 
       if (proxy->router().isRxmitReconnectionDisabled()) {
@@ -197,7 +195,7 @@ void ProxyDestination::handleRxmittingConnection() {
           return;
         }
         client_->closeNow();
-        stat_incr(proxy->stats, retrans_closed_connections_stat, 1);
+        proxy->stats().increment(retrans_closed_connections_stat);
         lastConnCloseCycles_ = curCycles;
 
         const auto maxThreshold =
@@ -276,8 +274,8 @@ ProxyDestination::~ProxyDestination() {
     client_->closeNow();
   }
 
-  stat_decr(proxy->stats, getStatName(stats_.state), 1);
-  stat_decr(proxy->stats, num_servers_stat, 1);
+  proxy->stats().decrement(getStatName(stats_.state));
+  proxy->stats().decrement(num_servers_stat);
   magic_ = kDeadBeef;
 }
 
@@ -297,8 +295,8 @@ ProxyDestination::ProxyDestination(
       probeTimer_(*this) {
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);
-  stat_incr(proxy->stats, num_servers_new_stat, 1);
-  stat_incr(proxy->stats, num_servers_stat, 1);
+  proxy->stats().increment(num_servers_new_stat);
+  proxy->stats().increment(num_servers_stat);
 }
 
 bool ProxyDestination::may_send() const {
@@ -364,29 +362,25 @@ void ProxyDestination::initializeAsyncMcClient() {
   client_->setRequestStatusCallbacks(
     [this](int pending, int inflight) {
       if (pending != 0) {
-        stat_incr(proxy->stats, destination_pending_reqs_stat, pending);
-        stat_set_uint64(
-            proxy->stats,
+        proxy->stats().increment(destination_pending_reqs_stat, pending);
+        proxy->stats().setValue(
             destination_max_pending_reqs_stat,
-            std::max(stat_get_uint64(proxy->stats,
-                                     destination_max_pending_reqs_stat),
-                     stat_get_uint64(proxy->stats,
-                                     destination_pending_reqs_stat)));
+            std::max(
+                proxy->stats().getValue(destination_max_pending_reqs_stat),
+                proxy->stats().getValue(destination_pending_reqs_stat)));
       }
       if (inflight != 0) {
-        stat_incr(proxy->stats, destination_inflight_reqs_stat, inflight);
-        stat_set_uint64(
-            proxy->stats,
+        proxy->stats().increment(destination_inflight_reqs_stat, inflight);
+        proxy->stats().setValue(
             destination_max_inflight_reqs_stat,
-            std::max(stat_get_uint64(proxy->stats,
-                                     destination_max_inflight_reqs_stat),
-                     stat_get_uint64(proxy->stats,
-                                     destination_inflight_reqs_stat)));
+            std::max(
+                proxy->stats().getValue(destination_max_inflight_reqs_stat),
+                proxy->stats().getValue(destination_inflight_reqs_stat)));
       }
     },
     [this](size_t numToSend) {
-      stat_incr(proxy->stats, destination_batches_sum_stat, 1);
-      stat_incr(proxy->stats, destination_requests_sum_stat, numToSend);
+      proxy->stats().increment(destination_batches_sum_stat);
+      proxy->stats().increment(destination_requests_sum_stat, numToSend);
     });
 
   client_->setStatusCallbacks(
@@ -406,16 +400,14 @@ void ProxyDestination::initializeAsyncMcClient() {
       ReplyStatsContext replyStatsContext) {
     if (accessPoint->compressed()) {
       if (replyStatsContext.usedCodecId > 0) {
-        stat_incr(proxy->stats, replies_compressed_stat, 1);
+        proxy->stats().increment(replies_compressed_stat);
       } else {
-        stat_incr(proxy->stats, replies_not_compressed_stat, 1);
+        proxy->stats().increment(replies_not_compressed_stat);
       }
-      stat_incr(
-          proxy->stats,
+      proxy->stats().increment(
           reply_traffic_before_compression_stat,
           replyStatsContext.replySizeBeforeCompression);
-      stat_incr(
-          proxy->stats,
+      proxy->stats().increment(
           reply_traffic_after_compression_stat,
           replyStatsContext.replySizeAfterCompression);
     }
@@ -478,15 +470,15 @@ void ProxyDestination::setState(State new_st) {
   }
 
   auto logUtil = [this](const char* s) {
-    VLOG(1) << "server " << pdstnKey_ << " " << s << " (" <<
-        stat_get_uint64(proxy->stats, num_servers_up_stat) << " of " <<
-        stat_get_uint64(proxy->stats, num_servers_stat) << ")";
+    VLOG(1) << "server " << pdstnKey_ << " " << s << " ("
+            << proxy->stats().getValue(num_servers_up_stat) << " of "
+            << proxy->stats().getValue(num_servers_stat) << ")";
   };
 
   auto old_name = getStatName(stats_.state);
   auto new_name = getStatName(new_st);
-  stat_decr(proxy->stats, old_name, 1);
-  stat_incr(proxy->stats, new_name, 1);
+  proxy->stats().decrement(old_name);
+  proxy->stats().increment(new_name);
   stats_.state = new_st;
 
   switch (stats_.state) {

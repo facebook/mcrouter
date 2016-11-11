@@ -86,7 +86,7 @@ class FailoverRoute {
     if (auto item = map.query(name_, req.leaseToken())) {
       auto mutReq = req;
       mutReq.leaseToken() = item->originalToken;
-      stat_incr(proxy.stats, redirected_lease_set_count_stat, 1);
+      proxy.stats().increment(redirected_lease_set_count_stat);
       assert(targets_.size() > item->routeHandleChildIndex);
       return targets_[item->routeHandleChildIndex]->route(mutReq);
     }
@@ -146,10 +146,10 @@ class FailoverRoute {
     }
 
     auto& proxy = fiber_local::getSharedCtx()->proxy();
-    stat_incr(proxy.stats, failover_all_stat, 1);
+    proxy.stats().increment(failover_all_stat);
 
     if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
-      stat_incr(proxy.stats, failover_rate_limited_stat, 1);
+      proxy.stats().increment(failover_rate_limited_stat);
       return normalReply;
     }
 
@@ -186,7 +186,7 @@ class FailoverRoute {
 
       auto failoverReply = doFailover(cur);
       if (isErrorResult(failoverReply.result())) {
-        stat_incr(proxy.stats, failover_all_failed_stat, 1);
+        proxy.stats().increment(failover_all_failed_stat);
       }
 
       return failoverReply;

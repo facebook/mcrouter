@@ -129,13 +129,13 @@ void Proxy::processRequest(
   assert(!ctx->processing_);
   ctx->processing_ = true;
   ++numRequestsProcessing_;
-  stat_incr(stats, proxy_reqs_processing_stat, 1);
+  stats().increment(proxy_reqs_processing_stat);
   bumpStats(req);
 
   routeHandlesProcessRequest(req, std::move(ctx));
 
-  stat_incr(stats, request_sent_stat, 1);
-  stat_incr(stats, request_sent_count_stat, 1);
+  stats().increment(request_sent_stat);
+  stats().increment(request_sent_count_stat);
 }
 
 template <class RouteHandleIf, class Request>
@@ -161,7 +161,7 @@ void Proxy::dispatchRequest(
     }
     queue.pushBack(std::move(w));
     ++numRequestsWaiting_;
-    stat_incr(stats, proxy_reqs_waiting_stat, 1);
+    stats().increment(proxy_reqs_waiting_stat);
   } else {
     processRequest(req, std::move(ctx));
   }
@@ -169,85 +169,85 @@ void Proxy::dispatchRequest(
 
 template <>
 inline void Proxy::bumpStats(const McStatsRequest&) {
-  stat_incr(stats, cmd_stats_stat, 1);
-  stat_incr(stats, cmd_stats_count_stat, 1);
+  stats().increment(cmd_stats_stat);
+  stats().increment(cmd_stats_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McCasRequest&) {
-  stat_incr(stats, cmd_cas_stat, 1);
-  stat_incr(stats, cmd_cas_count_stat, 1);
+  stats().increment(cmd_cas_stat);
+  stats().increment(cmd_cas_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McGetRequest&) {
-  stat_incr(stats, cmd_get_stat, 1);
-  stat_incr(stats, cmd_get_count_stat, 1);
+  stats().increment(cmd_get_stat);
+  stats().increment(cmd_get_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McGetsRequest&) {
-  stat_incr(stats, cmd_gets_stat, 1);
-  stat_incr(stats, cmd_gets_count_stat, 1);
+  stats().increment(cmd_gets_stat);
+  stats().increment(cmd_gets_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McMetagetRequest&) {
-  stat_incr(stats, cmd_meta_stat, 1);
+  stats().increment(cmd_meta_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McAddRequest&) {
-  stat_incr(stats, cmd_add_stat, 1);
-  stat_incr(stats, cmd_add_count_stat, 1);
+  stats().increment(cmd_add_stat);
+  stats().increment(cmd_add_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McReplaceRequest&) {
-  stat_incr(stats, cmd_replace_stat, 1);
-  stat_incr(stats, cmd_replace_count_stat, 1);
+  stats().increment(cmd_replace_stat);
+  stats().increment(cmd_replace_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McSetRequest&) {
-  stat_incr(stats, cmd_set_stat, 1);
-  stat_incr(stats, cmd_set_count_stat, 1);
+  stats().increment(cmd_set_stat);
+  stats().increment(cmd_set_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McIncrRequest&) {
-  stat_incr(stats, cmd_incr_stat, 1);
-  stat_incr(stats, cmd_incr_count_stat, 1);
+  stats().increment(cmd_incr_stat);
+  stats().increment(cmd_incr_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McDecrRequest&) {
-  stat_incr(stats, cmd_decr_stat, 1);
-  stat_incr(stats, cmd_decr_count_stat, 1);
+  stats().increment(cmd_decr_stat);
+  stats().increment(cmd_decr_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McDeleteRequest&) {
-  stat_incr(stats, cmd_delete_stat, 1);
-  stat_incr(stats, cmd_delete_count_stat, 1);
+  stats().increment(cmd_delete_stat);
+  stats().increment(cmd_delete_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McLeaseSetRequest&) {
-  stat_incr(stats, cmd_lease_set_stat, 1);
-  stat_incr(stats, cmd_lease_set_count_stat, 1);
+  stats().increment(cmd_lease_set_stat);
+  stats().increment(cmd_lease_set_count_stat);
 }
 
 template <>
 inline void Proxy::bumpStats(const McLeaseGetRequest&) {
-  stat_incr(stats, cmd_lease_get_stat, 1);
-  stat_incr(stats, cmd_lease_get_count_stat, 1);
+  stats().increment(cmd_lease_get_stat);
+  stats().increment(cmd_lease_get_count_stat);
 }
 
 template <class Request>
 inline void Proxy::bumpStats(const Request&) {
-  stat_incr(stats, cmd_other_stat, 1);
-  stat_incr(stats, cmd_other_count_stat, 1);
+  stats().increment(cmd_other_stat);
+  stats().increment(cmd_other_count_stat);
 }
 
 template <>

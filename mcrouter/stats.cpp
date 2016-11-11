@@ -120,22 +120,22 @@ int get_num_bins_used(const McrouterInstanceBase& router) {
   if (router.opts().num_proxies > 0) {
     const Proxy* anyProxy = router.getProxy(0);
     if (anyProxy) {
-      return anyProxy->num_bins_used;
+      return anyProxy->stats().numBinsUsed();
     }
   }
   return 0;
 }
 
 double stats_rate_value(Proxy* proxy, int idx) {
-  const stat_t* stat = &proxy->stats[idx];
+  const stat_t& stat = proxy->stats().getStat(idx);
   double rate = 0;
 
-  if (proxy->num_bins_used != 0) {
-    if (stat->aggregate) {
+  if (proxy->stats().numBinsUsed() != 0) {
+    if (stat.aggregate) {
       rate = stats_aggregate_rate_value(proxy->router(), idx);
     } else {
-      rate = (double)proxy->stats_num_within_window[idx] /
-        (proxy->num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
+      rate = (double)proxy->stats().getStatValueWithinWindow(idx) /
+        (proxy->stats().numBinsUsed() * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
     }
   }
 
@@ -165,7 +165,7 @@ double stats_aggregate_rate_value(const McrouterInstanceBase& router, int idx) {
   if (num_bins_used != 0) {
     uint64_t num = 0;
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      num += router.getProxy(i)->stats_num_within_window[idx];
+      num += router.getProxy(i)->stats().getStatValueWithinWindow(idx);
     }
     rate = (double)num / (num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
   }
@@ -182,7 +182,7 @@ uint64_t stats_aggregate_max_value(
   for (int j = 0; j < num_bins_used; ++j) {
     uint64_t binSum = 0;
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      binSum += router.getProxy(i)->stats_bin[idx][j];
+      binSum += router.getProxy(i)->stats().getStatBinValue(idx, j);
     }
     max = std::max(max, binSum);
   }
@@ -198,7 +198,7 @@ uint64_t stats_aggregate_max_max_value(
 
   for (int j = 0; j < num_bins_used; ++j) {
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      max = std::max(max, router.getProxy(i)->stats_bin[idx][j]);
+      max = std::max(max, router.getProxy(i)->stats().getStatBinValue(idx, j));
     }
   }
   return max;
@@ -346,29 +346,30 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
 
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
     auto proxy = router.getProxy(i);
-    config_last_success = std::max(config_last_success,
-      proxy->stats[config_last_success_stat].data.uint64);
+    config_last_success = std::max(
+        config_last_success, proxy->stats().getValue(config_last_success_stat));
     destinationBatchesSum +=
-      proxy->stats_num_within_window[destination_batches_sum_stat];
+      proxy->stats().getStatValueWithinWindow(destination_batches_sum_stat);
     destinationRequestsSum +=
-      proxy->stats_num_within_window[destination_requests_sum_stat];
+      proxy->stats().getStatValueWithinWindow(destination_requests_sum_stat);
 
-    outstandingGetReqsTotal +=
-      proxy->stats_num_within_window[outstanding_route_get_reqs_queued_stat];
-    outstandingGetReqsHelper += proxy->stats_num_within_window[
-      outstanding_route_get_reqs_queued_helper_stat];
-    outstandingGetWaitTimeSumUs += proxy->stats_num_within_window[
-      outstanding_route_get_wait_time_sum_us_stat];
-    outstandingUpdateReqsTotal +=
-      proxy->stats_num_within_window[outstanding_route_update_reqs_queued_stat];
-    outstandingUpdateReqsHelper += proxy->stats_num_within_window[
-      outstanding_route_update_reqs_queued_helper_stat];
-    outstandingUpdateWaitTimeSumUs += proxy->stats_num_within_window[
-      outstanding_route_update_wait_time_sum_us_stat];
+    outstandingGetReqsTotal += proxy->stats().getStatValueWithinWindow(
+        outstanding_route_get_reqs_queued_stat);
+    outstandingGetReqsHelper +=proxy->stats().getStatValueWithinWindow(
+      outstanding_route_get_reqs_queued_helper_stat);
+    outstandingGetWaitTimeSumUs += proxy->stats().getStatValueWithinWindow(
+      outstanding_route_get_wait_time_sum_us_stat);
+    outstandingUpdateReqsTotal += proxy->stats().getStatValueWithinWindow(
+        outstanding_route_update_reqs_queued_stat);
+    outstandingUpdateReqsHelper += proxy->stats().getStatValueWithinWindow(
+      outstanding_route_update_reqs_queued_helper_stat);
+    outstandingUpdateWaitTimeSumUs += proxy->stats().getStatValueWithinWindow(
+      outstanding_route_update_wait_time_sum_us_stat);
 
     retransPerKByteSum +=
-        proxy->stats_num_within_window[retrans_per_kbyte_sum_stat];
-    retransNumTotal += proxy->stats_num_within_window[retrans_num_total_stat];
+        proxy->stats().getStatValueWithinWindow(retrans_per_kbyte_sum_stat);
+    retransNumTotal +=
+        proxy->stats().getStatValueWithinWindow(retrans_num_total_stat);
   }
 
   stat_set_uint64(stats, num_suspect_servers_stat,
@@ -450,7 +451,7 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
     stats[fibers_stack_high_watermark_stat].data.uint64 =
       std::max(stats[fibers_stack_high_watermark_stat].data.uint64,
                pr->fiberManager().stackHighWatermark());
-    stats[duration_us_stat].data.dbl += pr->durationUs.value();
+    stats[duration_us_stat].data.dbl += pr->stats().durationUs().value();
     stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
   }
   if (router.opts().num_proxies > 0) {
@@ -464,11 +465,11 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
       for (size_t j = 0; j < router.opts().num_proxies; ++j) {
         auto pr = router.getProxy(j);
         if (stats[i].type == stat_uint64) {
-          stats[i].data.uint64 += pr->stats[i].data.uint64;
+          stats[i].data.uint64 += pr->stats().getStat(i).data.uint64;
         } else if (stats[i].type == stat_int64) {
-          stats[i].data.int64 += pr->stats[i].data.int64;
+          stats[i].data.int64 += pr->stats().getStat(i).data.int64;
         } else if (stats[i].type == stat_double) {
-          stats[i].data.dbl += pr->stats[i].data.dbl;
+          stats[i].data.dbl += pr->stats().getStat(i).data.dbl;
         } else {
           LOG(FATAL) << "you can't aggregate non-numerical stats!";
         }
@@ -478,8 +479,8 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
 }
 
 // Thread-safe increment of the given counter
-void stat_incr_safe(stat_t* stats, stat_name_t stat_name) {
-  __sync_fetch_and_add(&stats[stat_name].data.uint64, 1);
+void stat_incr_safe(stat_t* stats, stat_name_t stat_name, int64_t amount) {
+  __sync_fetch_and_add(&stats[stat_name].data.uint64, amount);
 }
 
 void stat_decr_safe(stat_t* stats, stat_name_t stat_name) {
@@ -494,9 +495,8 @@ void stat_set_uint64(stat_t* stats,
   stat->data.uint64 = value;
 }
 
-uint64_t stat_get_uint64(stat_t* stats, stat_name_t stat_num) {
-  stat_t* stat = &stats[stat_num];
-  return stat->data.uint64;
+uint64_t stat_get_uint64(const stat_t* stats, stat_name_t stat_num) {
+  return stats[stat_num].data.uint64;
 }
 
 static stat_group_t stat_parse_group_str(folly::StringPiece str) {
@@ -533,7 +533,7 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
  * @param Proxy proxy
  */
 McStatsReply stats_reply(Proxy* proxy, folly::StringPiece group_str) {
-  std::lock_guard<std::mutex> guard(proxy->stats_lock);
+  auto lockGuard = proxy->stats().lock();
 
   StatsReply reply;
 

@@ -20,11 +20,11 @@ namespace facebook { namespace memcache { namespace mcrouter {
 #define REQUEST_CLASS_STATS(proxy, OP, SUFFIX, reqClass)                       \
     do {                                                                       \
       if (reqClass.isNormal()) {                                               \
-        stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _stat, 1);         \
-        stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _count_stat, 1);   \
+        proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _stat);           \
+        proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _count_stat);     \
       }                                                                        \
-      stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_stat, 1);       \
-      stat_incr(proxy.stats, cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat, 1); \
+      proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _all_stat);         \
+      proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat);   \
     } while(0)
 
 namespace detail {
@@ -111,7 +111,7 @@ void ProxyRequestLogger::log(const RequestLoggerContext& loggerContext) {
 
   logError(loggerContext.replyResult);
   detail::logRequestClass<Request>(*proxy_);
-  proxy_->durationUs.insertSample(durationUs);
+  proxy_->stats().durationUs().insertSample(durationUs);
 
   if (isOutlier) {
     detail::logOutlier<Request>(*proxy_);

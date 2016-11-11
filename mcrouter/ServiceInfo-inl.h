@@ -228,7 +228,7 @@ ServiceInfo<RouteHandleIf>::ServiceInfoImpl::ServiceInfoImpl(
   commands_.emplace("config_age",
     [proxy] (const std::vector<folly::StringPiece>& args) {
       /* capturing this and accessing proxy_ crashes gcc-4.7 */
-      return std::to_string(stat_get_config_age(proxy->stats, time(nullptr)));
+      return std::to_string(proxy->stats().getConfigAge(time(nullptr)));
     }
   );
 

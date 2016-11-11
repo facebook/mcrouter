@@ -236,7 +236,7 @@ class DestinationRoute {
     } else {
       /* Don't reply to the user until we safely logged the request to disk */
       b.wait();
-      stat_incr(proxy->stats, asynclog_requests_stat, 1);
+      proxy->stats().increment(asynclog_requests_stat);
     }
     return true;
   }

@@ -23,7 +23,7 @@ ProxyRequestContext::ProxyRequestContext(
     : requestId_(pr.nextRequestId()), proxy_(pr), priority_(priority__) {
   logger_.emplace(&proxy_);
   additionalLogger_.emplace(&proxy_);
-  stat_incr_safe(proxy_.stats, proxy_request_num_outstanding_stat);
+  proxy_.stats().incrementSafe(proxy_request_num_outstanding_stat);
 }
 
 ProxyRequestContext::~ProxyRequestContext() {
@@ -41,7 +41,7 @@ ProxyRequestContext::~ProxyRequestContext() {
 
   if (processing_) {
     --proxy_.numRequestsProcessing_;
-    stat_decr(proxy_.stats, proxy_reqs_processing_stat, 1);
+    proxy_.stats().decrement(proxy_reqs_processing_stat);
     proxy_.pump();
   }
 
@@ -51,7 +51,7 @@ ProxyRequestContext::~ProxyRequestContext() {
     }
   }
 
-  stat_decr_safe(proxy_.stats, proxy_request_num_outstanding_stat);
+  proxy_.stats().decrementSafe(proxy_request_num_outstanding_stat);
 }
 
 uint64_t ProxyRequestContext::senderId() const {

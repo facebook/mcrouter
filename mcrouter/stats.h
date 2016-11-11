@@ -18,6 +18,14 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+// make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
+// MOVING_AVERAGE_BIN_SIZE_IN_SECOND
+// the window size within which average stat rate is calculated
+#define MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND (60 * 4)
+
+// the bin size for average stat rate
+#define MOVING_AVERAGE_BIN_SIZE_IN_SECOND (1)
+
 // define stat_name_t
 #define STAT(name,...) name##_stat,
 #define STUI STAT
@@ -96,7 +104,7 @@ inline void stat_decr(stat_t* stats, stat_name_t stat_num, int64_t amount) {
   stat_incr(stats, stat_num, -amount);
 }
 
-void stat_incr_safe(stat_t*, stat_name_t);
+void stat_incr_safe(stat_t*, stat_name_t, int64_t amount = 1);
 void stat_decr_safe(stat_t*, stat_name_t);
 
 /**
@@ -119,7 +127,7 @@ uint64_t stats_aggregate_max_max_value(
     int idx);
 
 void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
-uint64_t stat_get_uint64(stat_t*, stat_name_t);
+uint64_t stat_get_uint64(const stat_t*, stat_name_t);
 uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
 McStatsReply stats_reply(Proxy*, folly::StringPiece);
 void prepare_stats(McrouterInstanceBase& router, stat_t* stats);

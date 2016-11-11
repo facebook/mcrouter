@@ -133,14 +133,14 @@ void ProxyRequestContextTyped<RouteHandleIf, Request>::sendReply(
   sendReplyImpl(std::move(reply));
   req_ = nullptr;
 
-  stat_incr(this->proxy().stats, request_replied_stat, 1);
-  stat_incr(this->proxy().stats, request_replied_count_stat, 1);
+  proxy().stats().increment(request_replied_stat);
+  proxy().stats().increment(request_replied_count_stat);
   if (mc_res_is_err(result)) {
-    stat_incr(this->proxy().stats, request_error_stat, 1);
-    stat_incr(this->proxy().stats, request_error_count_stat, 1);
+    proxy().stats().increment(request_error_stat);
+    proxy().stats().increment(request_error_count_stat);
   } else {
-    stat_incr(this->proxy().stats, request_success_stat, 1);
-    stat_incr(this->proxy().stats, request_success_count_stat, 1);
+    proxy().stats().increment(request_success_stat);
+    proxy().stats().increment(request_success_count_stat);
   }
 }
 

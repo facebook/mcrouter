@@ -365,15 +365,15 @@ void McrouterInstance::spawnAuxiliaryThreads() {
     cycles::startExtracting([this](cycles::CycleStats stats) {
       auto anyProxy = getProxy(0);
       if (anyProxy) {
-        stat_set_uint64(anyProxy->stats, cycles_avg_stat, stats.avg);
-        stat_set_uint64(anyProxy->stats, cycles_min_stat, stats.min);
-        stat_set_uint64(anyProxy->stats, cycles_max_stat, stats.max);
-        stat_set_uint64(anyProxy->stats, cycles_p01_stat, stats.p01);
-        stat_set_uint64(anyProxy->stats, cycles_p05_stat, stats.p05);
-        stat_set_uint64(anyProxy->stats, cycles_p50_stat, stats.p50);
-        stat_set_uint64(anyProxy->stats, cycles_p95_stat, stats.p95);
-        stat_set_uint64(anyProxy->stats, cycles_p99_stat, stats.p99);
-        stat_set_uint64(anyProxy->stats, cycles_num_stat, stats.numSamples);
+        anyProxy->stats().setValue(cycles_avg_stat, stats.avg);
+        anyProxy->stats().setValue(cycles_min_stat, stats.min);
+        anyProxy->stats().setValue(cycles_max_stat, stats.max);
+        anyProxy->stats().setValue(cycles_p01_stat, stats.p01);
+        anyProxy->stats().setValue(cycles_p05_stat, stats.p05);
+        anyProxy->stats().setValue(cycles_p50_stat, stats.p50);
+        anyProxy->stats().setValue(cycles_p95_stat, stats.p95);
+        anyProxy->stats().setValue(cycles_p99_stat, stats.p99);
+        anyProxy->stats().setValue(cycles_num_stat, stats.numSamples);
       }
     });
   }
@@ -438,31 +438,14 @@ void McrouterInstance::statUpdaterThreadRun() {
     }
 
     // to avoid inconsistence among proxies, we lock all mutexes together
+    std::vector<std::unique_lock<std::mutex>> statsLocks;
+    statsLocks.reserve(opts_.num_proxies);
     for (size_t i = 0; i < opts_.num_proxies; ++i) {
-      getProxy(i)->stats_lock.lock();
+      statsLocks.push_back(getProxy(i)->stats().lock());
     }
 
     for (size_t i = 0; i < opts_.num_proxies; ++i) {
-      auto proxy = getProxy(i);
-      if (proxy->num_bins_used < BIN_NUM) {
-        ++proxy->num_bins_used;
-      }
-
-      for (int j = 0; j < num_stats; ++j) {
-        if (proxy->stats[j].group & rate_stats) {
-          proxy->stats_num_within_window[j] -= proxy->stats_bin[j][idx];
-          proxy->stats_bin[j][idx] = proxy->stats[j].data.uint64;
-          proxy->stats_num_within_window[j] += proxy->stats_bin[j][idx];
-          proxy->stats[j].data.uint64 = 0;
-        } else if (proxy->stats[j].group & (max_stats | max_max_stats)) {
-          proxy->stats_bin[j][idx] = proxy->stats[j].data.uint64;
-          proxy->stats[j].data.uint64 = 0;
-        }
-      }
-    }
-
-    for (size_t i = 0; i < opts_.num_proxies; ++i) {
-      getProxy(i)->stats_lock.unlock();
+      getProxy(i)->stats().aggregate(idx);
     }
 
     idx = (idx + 1) % BIN_NUM;

@@ -71,7 +71,7 @@ class OutstandingLimitRoute {
         return *blockedRequests_.back();
       }();
 
-      auto& stats = ctx->proxy().stats;
+      auto& stats = ctx->proxy().stats();
       folly::fibers::Baton baton;
       int64_t waitingSince = 0;
       if (GetLike<Request>::value) {
@@ -85,19 +85,19 @@ class OutstandingLimitRoute {
       baton.wait();
       if (waitingSince > 0) {
         if (GetLike<Request>::value) {
-          stat_incr(stats, outstanding_route_get_wait_time_sum_us_stat,
+          stats.increment(outstanding_route_get_wait_time_sum_us_stat,
                     static_cast<uint64_t>(nowUs() - waitingSince));
-          stat_incr(stats, outstanding_route_get_reqs_queued_helper_stat,
+          stats.increment(outstanding_route_get_reqs_queued_helper_stat,
                     currentGetReqsWaiting_);
           --currentGetReqsWaiting_;
-          stat_incr(stats, outstanding_route_get_reqs_queued_stat, 1);
+          stats.increment(outstanding_route_get_reqs_queued_stat, 1);
         } else if (UpdateLike<Request>::value) {
-          stat_incr(stats, outstanding_route_update_wait_time_sum_us_stat,
+          stats.increment(outstanding_route_update_wait_time_sum_us_stat,
                     static_cast<uint64_t>(nowUs() - waitingSince));
-          stat_incr(stats, outstanding_route_update_reqs_queued_helper_stat,
+          stats.increment(outstanding_route_update_reqs_queued_helper_stat,
                     currentUpdateReqsWaiting_);
           --currentUpdateReqsWaiting_;
-          stat_incr(stats, outstanding_route_update_reqs_queued_stat, 1);
+          stats.increment(outstanding_route_update_reqs_queued_stat, 1);
         }
       }
     } else {

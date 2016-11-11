@@ -47,12 +47,12 @@ void serverLoop(
   worker.setOnRequest(MemcacheRequestHandler<ServerOnRequest>(
       *routerClient, standaloneOpts.retain_source_ip));
   worker.setOnConnectionAccepted([proxy] () {
-      stat_incr(proxy->stats, successful_client_connections_stat, 1);
-      stat_incr(proxy->stats, num_clients_stat, 1);
+      proxy->stats().increment(successful_client_connections_stat);
+      proxy->stats().increment(num_clients_stat);
     });
   worker.setOnConnectionCloseFinish(
       [proxy](facebook::memcache::McServerSession&) {
-        stat_decr(proxy->stats, num_clients_stat, 1);
+        proxy->stats().decrement(num_clients_stat);
       });
 
   // Setup compression on each worker.

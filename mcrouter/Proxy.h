@@ -25,26 +25,18 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/Range.h>
 
+#include "mcrouter/config.h"
 #include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
-#include "mcrouter/Observable.h"
-#include "mcrouter/ProxyRequestPriority.h"
-#include "mcrouter/config.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
+#include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
+#include "mcrouter/ProxyRequestPriority.h"
+#include "mcrouter/ProxyStats.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
-#include "mcrouter/stats.h"
-
-// make sure MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND can be exactly divided by
-// MOVING_AVERAGE_BIN_SIZE_IN_SECOND
-// the window size within which average stat rate is calculated
-#define MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND (60 * 4)
-
-// the bin size for average stat rate
-#define MOVING_AVERAGE_BIN_SIZE_IN_SECOND (1)
 
 namespace folly {
   struct dynamic;
@@ -153,46 +145,6 @@ class Proxy {
   std::shared_ptr<folly::File> async_fd{nullptr};
   time_t async_spool_time{0};
 
-  std::mutex stats_lock;
-  stat_t stats[num_stats];
-
-  ExponentialSmoothData<64> durationUs;
-
-  // we are wasting some memory here to get faster mapping from stat name to
-  // stats_bin[] and stats_num_within_window[] entry. i.e., the stats_bin[]
-  // and stats_num_within_window[] entry for non-rate stat are not in use.
-
-  // we maintain some information for calculating average rate in the past
-  // MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND seconds for every rate stat.
-
-  /*
-   * stats_bin[stat_name] is a circular array associated with stat "stat_name",
-   * where each element (stats_bin[stat_name][idx]) is either the count (if it
-   * is a rate_stat) or the max (if it is a max_stat) of "stat_name" in the
-   * "idx"th time bin. The updater thread updates these circular arrays once
-   * every MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND second by setting the oldest
-   * time bin to stats[stat_name], and then reset stats[stat_name] to 0.
-   */
-  uint64_t stats_bin[num_stats][MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
-                                MOVING_AVERAGE_BIN_SIZE_IN_SECOND];
-  /*
-   * stats_num_within_window[stat_name] contains the count of stat "stat_name"
-   * in the past MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND seconds. this array is
-   * also updated by the updater thread once every
-   * MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND seconds
-   */
-  uint64_t stats_num_within_window[num_stats];
-
-  /*
-   * the number of bins currently used, which is initially set to 0, and is
-   * increased by 1 every MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND seconds.
-   * num_bins_used is at most MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
-   * MOVING_AVERAGE_BIN_SIZE_IN_SECOND
-   */
-  int num_bins_used{0};
-
-  std::unique_ptr<ProxyStatsContainer> statsContainer;
-
   folly::EventBase& eventBase() const {
     assert(eventBase_ != nullptr);
     return *eventBase_;
@@ -273,12 +225,27 @@ class Proxy {
     return fiberManager_;
   }
 
+  ProxyStats& stats() {
+    return stats_;
+  }
+  const ProxyStats& stats() const {
+    return stats_;
+  }
+
+  ProxyStatsContainer* statsContainer() const {
+    return statsContainer_.get();
+  }
+
  private:
   McrouterInstanceBase& router_;
 
   std::unique_ptr<ProxyDestinationMap> destinationMap_;
 
   std::mt19937 randomGenerator_;
+
+  ProxyStats stats_;
+
+  std::unique_ptr<ProxyStatsContainer> statsContainer_;
 
   // If true, processing new requests is not safe.
   bool beingDestroyed_{false};

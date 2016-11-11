@@ -16,11 +16,11 @@ namespace facebook { namespace memcache { namespace mcrouter {
 #define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)                      \
     do {                                                                       \
       if (reqClass.isNormal()) {                                               \
-        stat_incr(proxy->stats, result_ ## ERROR ## _stat, 1);                 \
-        stat_incr(proxy->stats, result_ ## ERROR ## _count_stat, 1);           \
+        proxy->stats().increment(result_ ## ERROR ## _stat);                   \
+        proxy->stats().increment(result_ ## ERROR ## _count_stat);             \
       }                                                                        \
-      stat_incr(proxy->stats, result_ ## ERROR ## _all_stat, 1);               \
-      stat_incr(proxy->stats, result_ ## ERROR ## _all_count_stat, 1);         \
+      proxy->stats().increment(result_ ## ERROR ## _all_stat);                 \
+      proxy->stats().increment(result_ ## ERROR ## _all_count_stat);           \
     } while(0)
 
 void ProxyRequestLogger::logError(const mc_res_t result) {

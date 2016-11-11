@@ -107,14 +107,8 @@ Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
           folly::make_unique<folly::fibers::EventBaseLoopController>(),
           getFiberManagerOptions(router_.opts())),
       id_(id) {
-  memset(stats, 0, sizeof(stats));
-  memset(stats_bin, 0, sizeof(stats_bin));
-  memset(stats_num_within_window, 0, sizeof(stats_num_within_window));
-
   // Setup a full random seed sequence
   folly::Random::seed(randomGenerator_);
-
-  init_stats(stats);
 
   messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
     router_.opts().client_queue_size,
@@ -125,11 +119,11 @@ Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
     router_.opts().client_queue_wait_threshold_us,
     &nowUs,
     [this] () {
-      stat_incr_safe(stats, client_queue_notifications_stat);
+      stats_.incrementSafe(client_queue_notifications_stat);
     }
   );
 
-  statsContainer = folly::make_unique<ProxyStatsContainer>(*this);
+  statsContainer_ = folly::make_unique<ProxyStatsContainer>(*this);
 }
 
 Proxy::Pointer Proxy::createProxy(
@@ -268,7 +262,7 @@ void Proxy::pump() {
            && !queue.empty()) {
       --numRequestsWaiting_;
       auto w = queue.popFront();
-      stat_decr(stats, proxy_reqs_waiting_stat, 1);
+      stats_.decrement(proxy_reqs_waiting_stat);
 
       w->process(this);
     }
@@ -369,7 +363,7 @@ void proxy_config_swap(
     Proxy* proxy,
     std::shared_ptr<McrouterProxyConfig> config) {
   auto oldConfig = proxy->swapConfig(std::move(config));
-  stat_set_uint64(proxy->stats, config_last_success_stat, time(nullptr));
+  proxy->stats().setValue(config_last_success_stat, time(nullptr));
 
   if (oldConfig) {
     auto configReq = new old_config_req_t(std::move(oldConfig));
