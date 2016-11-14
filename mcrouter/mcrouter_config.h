@@ -64,7 +64,6 @@ class McrouterStandaloneOptions;
 struct FailoverContext;
 class Proxy;
 struct RequestLoggerContext;
-struct ShadowValidationData;
 struct TkoLog;
 
 struct ProxyStatsContainer {
@@ -133,10 +132,6 @@ std::vector<std::string> defaultTestCommandLineArgs();
 void logTkoEvent(Proxy& proxy, const TkoLog& tkoLog);
 
 void logFailover(Proxy& proxy, const FailoverContext& failoverContext);
-
-void logShadowValidationError(
-    Proxy& proxy,
-    const ShadowValidationData& valData);
 
 void initFailureLogger();
 

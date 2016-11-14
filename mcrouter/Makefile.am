@@ -173,7 +173,6 @@ libmcroutercore_a_SOURCES = \
   RuntimeVarsData.h \
   ServiceInfo-inl.h \
   ServiceInfo.h \
-  ShadowValidationData.h \
   stat_list.h \
   stats.cpp \
   stats.h \

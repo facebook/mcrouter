@@ -106,8 +106,6 @@ struct ShadowSettings {
    */
   void setKeyRange(double start, double end);
 
-  void setValidateReplies(bool validateReplies);
-
  private:
   ObservableRuntimeVars::CallbackHandle handle_;
   void registerOnUpdateCallback(McrouterInstanceBase& router);

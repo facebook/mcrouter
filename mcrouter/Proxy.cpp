@@ -303,11 +303,6 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
                  "key_fraction_range_rv is not a string");
       result->keyFractionRangeRv_ = jKeyFractionRangeRv->getString();
     }
-    if (auto jValidateReplies = json.get_ptr("validate_replies")) {
-      checkLogic(jValidateReplies->isBool(),
-                 "validate_replies is not a bool");
-      result->validateReplies_ = jValidateReplies->getBool();
-    }
   } catch (const std::logic_error& e) {
     MC_LOG_FAILURE(router.opts(), failure::Category::kInvalidConfig,
                    "ShadowSettings: {}", e.what());
@@ -325,10 +320,6 @@ void ShadowSettings::setKeyRange(double start, double end) {
   uint64_t keyStart = start * std::numeric_limits<uint32_t>::max();
   uint64_t keyEnd = end * std::numeric_limits<uint32_t>::max();
   keyRange_ = (keyStart << 32UL) | keyEnd;
-}
-
-void ShadowSettings::setValidateReplies(bool validateReplies) {
-  validateReplies_ = validateReplies;
 }
 
 ShadowSettings::~ShadowSettings() {

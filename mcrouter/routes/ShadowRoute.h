@@ -13,10 +13,8 @@
 #include <utility>
 #include <vector>
 
-#include <folly/fibers/FiberManager.h>
 #include <folly/Optional.h>
 
-#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -70,16 +68,7 @@ class ShadowRoute {
           normalReply = normal_->route(*adjustedReq);
         }
         auto shadow = iter.first;
-        if (iter.second->validateRepliesFlag()) {
-          normalReply = normal_->route(*adjustedReq);
-          // this will spawn the fiber after copying required data
-          // to validate from the normal Reply
-          sendAndValidateRequest(
-              *normalReply , std::move(shadow), adjustedReq);
-
-        } else {
-          dispatchShadowRequest(std::move(shadow), adjustedReq);
-        }
+        dispatchShadowRequest(std::move(shadow), adjustedReq);
       }
     }
 
@@ -99,33 +88,13 @@ class ShadowRoute {
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
     auto range = settings->keyRange();
     return range.first <= req.key().routingKeyHash() &&
-                          req.key().routingKeyHash() <= range.second;
+        req.key().routingKeyHash() <= range.second;
   }
 
   template <class Request>
-  void dispatchShadowRequest(std::shared_ptr<RouteHandleIf> shadow,
-                             std::shared_ptr<Request> adjustedReq) const;
-
-  template <class Request>
-  void sendAndValidateRequest(const ReplyT<Request>& normalReply,
-                              std::shared_ptr<RouteHandleIf> shadow,
-                              std::shared_ptr<Request> adjustedReq) const;
-
-  template <class GetRequest>
-  void sendAndValidateRequestGetImpl(
-      const ReplyT<GetRequest>& normalReply,
+  void dispatchShadowRequest(
       std::shared_ptr<RouteHandleIf> shadow,
-      std::shared_ptr<GetRequest> adjustedReq)
-      const;
-
-  void sendAndValidateRequest(
-      const McGetReply& normalReply,
-      std::shared_ptr<RouteHandleIf> shadow,
-      std::shared_ptr<McGetRequest> adjustedReq)
-      const {
-
-    sendAndValidateRequestGetImpl(normalReply, shadow, adjustedReq);
-  }
+      std::shared_ptr<Request> adjustedReq) const;
 };
 
 }}}  // facebook::memcache::mcrouter

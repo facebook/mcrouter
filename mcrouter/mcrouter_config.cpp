@@ -13,7 +13,6 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogger.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/ShadowValidationData.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
@@ -93,18 +92,6 @@ std::vector<std::string> defaultTestCommandLineArgs() {
 void logTkoEvent(Proxy& proxy, const TkoLog& tkoLog) {}
 
 void logFailover(Proxy& proxy, const FailoverContext& failoverContext) {}
-
-void logShadowValidationError(
-    Proxy& proxy,
-    const ShadowValidationData& valData) {
-  VLOG_EVERY_N(1,100)
-      << "Mismatch between shadow and normal reply" << std::endl
-      << "Key:" << valData.fullKey << std::endl
-      << "Expected Result:"
-      << mc_res_to_string(valData.normalResult) << std::endl
-      << "Shadow Result:"
-      << mc_res_to_string(valData.shadowResult) << std::endl;
-}
 
 void initFailureLogger() { }
 
