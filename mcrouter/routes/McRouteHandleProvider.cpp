@@ -80,8 +80,10 @@ McrouterRouteHandlePtr makeDestinationRoute(
 McrouterRouteHandlePtr makeErrorRoute(McRouteHandleFactory& factory,
                                       const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeFailoverRoute(McRouteHandleFactory& factory,
-                                         const folly::dynamic& json);
+McrouterRouteHandlePtr makeFailoverRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json,
+    ExtraRouteHandleProviderIf& extraProvider);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   McRouteHandleFactory& factory,
@@ -169,7 +171,6 @@ McRouteHandleProvider::McRouteHandleProvider(
            }},
           {"DevNullRoute", &makeDevNullRoute},
           {"ErrorRoute", &makeErrorRoute},
-          {"FailoverRoute", &makeFailoverRoute},
           {"FailoverWithExptimeRoute", &makeFailoverWithExptimeRoute},
           {"HashRoute",
            [](McRouteHandleFactory& factory, const folly::dynamic& json) {
@@ -480,6 +481,8 @@ std::vector<McrouterRouteHandlePtr> McRouteHandleProvider::create(
     return makePool(factory, poolFactory_.parsePool(json));
   } else if (type == "ShadowRoute") {
     return makeShadowRoutes(factory, json, proxy_, *extraProvider_);
+  } else if (type == "FailoverRoute") {
+    return {makeFailoverRoute(factory, json, *extraProvider_)};
   }
 
   auto it = routeMap_.find(type);

@@ -14,6 +14,7 @@
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
+#include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -50,10 +51,6 @@ getTargets(std::vector<McrouterRouteHandlePtr> targets,
 
 }  // anonymous
 
-McrouterRouteHandlePtr makeFailoverRoute(
-    const folly::dynamic& json,
-    std::vector<McrouterRouteHandlePtr> children);
-
 McrouterRouteHandlePtr makeLatestRoute(
   const folly::dynamic& json,
   std::vector<McrouterRouteHandlePtr> targets,
@@ -88,9 +85,14 @@ McrouterRouteHandlePtr makeLatestRoute(
   } else {
     weights = ch3wParseWeights(json, targets.size());
   }
-  return makeFailoverRoute(json, getTargets(std::move(targets), failoverCount,
-                                            failoverThreadId,
-                                            std::move(weights), salt));
+  return makeFailoverRouteDefault<FailoverRoute>(
+      json,
+      getTargets(
+          std::move(targets),
+          failoverCount,
+          failoverThreadId,
+          std::move(weights),
+          salt));
 }
 
 McrouterRouteHandlePtr makeLatestRoute(

@@ -32,6 +32,10 @@ class ExtraRouteHandleProviderIf {
       McrouterShadowData data,
       folly::StringPiece shadowPolicy) = 0;
 
+  virtual McrouterRouteHandlePtr makeFailoverRoute(
+      const folly::dynamic& json,
+      std::vector<McrouterRouteHandlePtr> children) = 0;
+
   virtual std::vector<McrouterRouteHandlePtr>
   tryCreate(RouteHandleFactory<McrouterRouteHandleIf>& factory,
             folly::StringPiece type,

@@ -34,16 +34,15 @@ makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
                          std::unique_ptr<FailoverRateLimiter> rateLimiter,
                          bool failoverTagging,
                          bool enableLeasePairing = false,
-                         std::string name = "");
-
-McrouterRouteHandlePtr
-makeFailoverRouteLeastFailures(std::vector<McrouterRouteHandlePtr> rh,
-                               FailoverErrorsSettings failoverErrors,
-                               std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                               bool failoverTagging,
-                               bool enableLeasePairing,
-                               std::string name,
-                               const folly::dynamic& json);
+                         std::string name = "") {
+  return makeFailoverRouteInOrder<FailoverRoute>(std::move(rh),
+                                                 std::move(failoverErrors),
+                                                 std::move(rateLimiter),
+                                                 failoverTagging,
+                                                 enableLeasePairing,
+                                                 std::move(name),
+                                                 nullptr);
+}
 
 }}}  // facebook::memcache::mcrouter
 
@@ -290,13 +289,14 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
@@ -312,13 +312,14 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 3);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -334,13 +335,14 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 3);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -357,13 +359,14 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply1= rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
@@ -392,13 +395,14 @@ TEST(failoverRouteTest, leastFailuresCycle) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply1= rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
@@ -429,13 +433,14 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 3);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -451,13 +456,14 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -479,13 +485,14 @@ TEST(failoverRouteTest, leastFailuresComplex) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures(get_route_handles(test_handles),
-                                           FailoverErrorsSettings(),
-                                           nullptr,
-                                           /* failoverTagging */ false,
-                                           /* enableLeasePairing */ false,
-                                           "route01",
-                                           json);
+  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+    get_route_handles(test_handles),
+    FailoverErrorsSettings(),
+    nullptr,
+    /* failoverTagging */ false,
+    /* enableLeasePairing */ false,
+    "route01",
+    json);
 
   auto reply1 = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());

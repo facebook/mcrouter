@@ -23,6 +23,7 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/FailoverPolicy.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -58,17 +59,19 @@ class FailoverRoute {
                 bool failoverTagging,
                 bool enableLeasePairing,
                 std::string name,
-                const folly::dynamic& policyConfig = nullptr)
-      : targets_(std::move(targets)),
+                const folly::dynamic& policyConfig)
+      : name_(std::move(name)),
+        targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)),
         rateLimiter_(std::move(rateLimiter)),
         failoverTagging_(failoverTagging),
         failoverPolicy_(targets_, policyConfig),
-        enableLeasePairing_(enableLeasePairing),
-        name_(std::move(name)) {
+        enableLeasePairing_(enableLeasePairing) {
     assert(targets_.size() > 1);
     assert(!enableLeasePairing_ || !name_.empty());
   }
+
+  virtual ~FailoverRoute() {}
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
@@ -118,6 +121,16 @@ class FailoverRoute {
     return reply;
   }
 
+ protected:
+  const std::string name_;
+
+  virtual bool additionalFailoverCheck(
+      mc_res_t /* unused */,
+      folly::StringPiece /* unused */,
+      const folly::IOBuf& /* unused */) const {
+    return false;
+  }
+
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const FailoverErrorsSettings failoverErrors_;
@@ -125,7 +138,6 @@ class FailoverRoute {
   const bool failoverTagging_{false};
   FailoverPolicyT failoverPolicy_;
   const bool enableLeasePairing_{false};
-  const std::string name_;
 
   template <class Request>
   inline ReplyT<Request> doRoute(const Request& req) {
@@ -141,7 +153,7 @@ class FailoverRoute {
       rateLimiter_->bumpTotalReqs();
     }
     if (fiber_local::getSharedCtx()->failoverDisabled() ||
-        !failoverErrors_.shouldFailover(normalReply, req)) {
+        !shouldFailover(normalReply, req)) {
       return normalReply;
     }
 
@@ -179,7 +191,7 @@ class FailoverRoute {
       auto nx = cur;
       for (++nx; nx != failoverPolicy_.end(); ++cur, ++nx) {
         auto failoverReply = doFailover(cur);
-        if (!failoverErrors_.shouldFailover(failoverReply, req)) {
+        if (!shouldFailover(failoverReply, req)) {
           return failoverReply;
         }
       }
@@ -192,6 +204,20 @@ class FailoverRoute {
       return failoverReply;
     });
   }
+
+  bool shouldFailover(const McSetReply& reply, const McSetRequest& req) const {
+    return failoverErrors_.shouldFailover(reply, req) ||
+        additionalFailoverCheck(
+          reply.result(), req.key().fullKey(), req.value());
+  }
+
+  template <class Request>
+  bool shouldFailover(const ReplyT<Request>& reply, const Request& req) const {
+    return failoverErrors_.shouldFailover(reply, req);
+  }
+
 };
 
 }}} // facebook::memcache::mcrouter
+
+#include "mcrouter/routes/FailoverRoute-inl.h"

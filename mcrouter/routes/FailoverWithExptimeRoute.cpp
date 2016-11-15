@@ -10,6 +10,7 @@
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
+#include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ModifyExptimeRoute.h"
@@ -35,18 +36,6 @@ std::vector<McrouterRouteHandlePtr> getFailoverChildren(
 
 }  // anonymous
 
-McrouterRouteHandlePtr makeFailoverRoute(
-    const folly::dynamic& json,
-    std::vector<McrouterRouteHandlePtr> children);
-
-McrouterRouteHandlePtr
-makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
-                         FailoverErrorsSettings failoverErrors,
-                         std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                         bool failoverTagging,
-                         bool enableLeasePairing = false,
-                         std::string name = "");
-
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     McrouterRouteHandlePtr normal,
     std::vector<McrouterRouteHandlePtr> failover,
@@ -56,10 +45,13 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   auto children = getFailoverChildren(std::move(normal),
                                       std::move(failover),
                                       failoverExptime);
-  return makeFailoverRouteInOrder(std::move(children),
-                                  std::move(failoverErrors),
-                                  std::move(rateLimiter),
-                                  /* failoverTagging */ false);
+  return makeFailoverRouteInOrder<FailoverRoute>(std::move(children),
+                                                 std::move(failoverErrors),
+                                                 std::move(rateLimiter),
+                                                 /* failoverTagging */ false,
+                                                 /* enableLeasePairing */ false,
+                                                 "",
+                                                 nullptr);
 }
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
@@ -85,7 +77,7 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   auto children = getFailoverChildren(std::move(normal),
                                       std::move(failover),
                                       failoverExptime);
-  return makeFailoverRoute(json, std::move(children));
+  return makeFailoverRouteDefault<FailoverRoute>(json, std::move(children));
 }
 
 }}}  // facebook::memcache::mcrouter

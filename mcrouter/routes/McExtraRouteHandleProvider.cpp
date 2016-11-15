@@ -13,6 +13,7 @@
 
 #include "mcrouter/Proxy.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
+#include "mcrouter/routes/FailoverRoute.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -32,6 +33,12 @@ McrouterRouteHandlePtr McExtraRouteHandleProvider::makeShadow(
   } else {
     throw std::logic_error("Invalid shadow policy: " + shadowPolicy.str());
   }
+}
+
+McrouterRouteHandlePtr McExtraRouteHandleProvider::makeFailoverRoute(
+    const folly::dynamic& json,
+    std::vector<McrouterRouteHandlePtr> children) {
+  return makeFailoverRouteDefault<FailoverRoute>(json, std::move(children));
 }
 
 std::vector<McrouterRouteHandlePtr> McExtraRouteHandleProvider::tryCreate(
