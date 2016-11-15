@@ -76,6 +76,32 @@ class ProxyRoute {
     throw std::runtime_error("Routing exec command is not supported.");
   }
 
+  void traverse(
+      const McVersionRequest&,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
+    throw std::runtime_error("Routing version command is not supported.");
+  }
+  void traverse(
+      const McStatsRequest&,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
+    throw std::runtime_error("Routing stats command is not supported.");
+  }
+  void traverse(
+      const McShutdownRequest&,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
+    throw std::runtime_error("Routing shutdown command is not supported.");
+  }
+  void traverse(
+      const McQuitRequest& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
+    throw std::runtime_error("Routing quit command is not supported.");
+  }
+  void traverse(
+      const McExecRequest& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
+    throw std::runtime_error("Routing exec command is not supported.");
+  }
+
  private:
   Proxy* proxy_;
   std::shared_ptr<RouteHandleIf> root_;

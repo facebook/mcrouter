@@ -165,14 +165,6 @@ std::string routeHandlesCommandHelper(
     McOpList::Item<0>) {
   throw std::runtime_error("route_handles: unknown op " + op.str());
 }
-template <class RouteHandleIf>
-std::string routeHandlesCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece,
-    const ProxyRoute<RouteHandleIf>&,
-    McOpList::Item<mc_op_stats>) {
-  throw std::runtime_error("route_handles: unknown op " + op.str());
-}
 
 template <class RouteHandleIf>
 template <class Request>
