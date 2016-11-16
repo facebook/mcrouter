@@ -160,7 +160,7 @@ Proxy::Pointer Proxy::createProxy(
   return Pointer(proxy.get());
 }
 
-std::shared_ptr<McrouterProxyConfig> Proxy::getConfig() const {
+std::shared_ptr<McrouterProxyConfig> Proxy::getConfigUnsafe() const {
   std::lock_guard<SFRReadLock> lg(
     const_cast<SFRLock&>(configLock_).readLock());
   return config_;

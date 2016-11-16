@@ -70,7 +70,14 @@ template <class RouteHandleIf>
 std::vector<std::shared_ptr<RouteHandleIf>>
 ProxyRoute<RouteHandleIf>::getAllDestinations() const {
   std::vector<std::shared_ptr<RouteHandleIf>> rh;
-  for (auto& it : proxy_->getConfig()->getPools()) {
+
+  // We're on the proxy thread, but this should ideally be grabbed
+  // from fiber_local::getSharedCtx().  Hard to do due to circular
+  // include dependecies.
+  //
+  // Important: keep the shared_ptr alive for the duration of the loop.
+  auto config = proxy_->getConfigUnsafe();
+  for (auto& it : config->getPools()) {
     rh.insert(rh.end(), it.second.begin(), it.second.end());
   }
   return rh;

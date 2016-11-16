@@ -151,11 +151,14 @@ class Proxy {
   ~Proxy();
 
   /**
-   * Thread-safe access to config
+   * Access to config - can only be called on the proxy thread
+   * and the resulting shared_ptr can only be detroyed on the proxy thread.
    */
-  std::shared_ptr<McrouterProxyConfig> getConfig() const;
+  std::shared_ptr<McrouterProxyConfig> getConfigUnsafe() const;
 
   /**
+   * Can be called from any thread.
+   *
    * Returns a lock and a reference to the config.
    * The caller may only access the config through the reference
    * while the lock is held.

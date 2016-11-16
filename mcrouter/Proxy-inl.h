@@ -77,7 +77,7 @@ Proxy::routeHandlesProcessRequest(
         uctx) {
   auto sharedCtx =
       ProxyRequestContextTyped<McrouterRouteHandleIf, Request>::process(
-          std::move(uctx), getConfig());
+          std::move(uctx), getConfigUnsafe());
 
   if (detail::processGetServiceInfoRequest(req, sharedCtx)) {
     return;
