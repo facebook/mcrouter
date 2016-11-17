@@ -35,7 +35,8 @@ inline mc_req_err_t isKeyValid(folly::StringPiece key) {
   }
 
   for (auto c : key) {
-    if (iscntrl(c) || isspace(c)) {
+    // iscntrl(c) || isspace(c)
+    if ((unsigned)c <= 0x20 || (unsigned)c == 0x7F) {
       return mc_req_err_space_or_ctrl;
     }
   }
