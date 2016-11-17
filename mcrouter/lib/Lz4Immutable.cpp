@@ -230,17 +230,22 @@ size_t Lz4Immutable::compressBound(size_t size) const noexcept {
 }
 
 std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
-    const folly::IOBuf& source) const noexcept {
+    const folly::IOBuf& source) const {
   auto iov = source.getIov();
   return compress(iov.data(), iov.size());
 }
 
 std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     const struct iovec* iov,
-    size_t iovcnt) const noexcept {
+    size_t iovcnt) const {
   IovecCursor source(iov, iovcnt);
-  CHECK_LE(source.totalLength(), kMaxInputSize)
-      << "Data too large to compress!";
+
+  if (source.totalLength() > kMaxInputSize) {
+    throw std::invalid_argument(folly::sformat(
+        "Data too large to compress. Size: {}. Max size allowed: {}",
+        source.totalLength(),
+        kMaxInputSize));
+  }
 
   // Creates a match cursor - a cursor that will keep track of matches
   // found in the dictionary.

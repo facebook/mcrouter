@@ -59,11 +59,12 @@ class Lz4Immutable {
    *
    * @param source  Data to compress.
    * @return        A newly allocated IOBuf with the compressed data.
+   *
+   * @throw std::invalid_argument   If the input is too large to be compressed.
    */
-  std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& source) const
-      noexcept;
+  std::unique_ptr<folly::IOBuf> compress(const folly::IOBuf& source) const;
   std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
-      const noexcept;
+      const;
 
   /**
    * Decompress the data.
