@@ -153,9 +153,10 @@ template <class Callback>
 std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
-  assert(compressionCodecMap_);
   assert(!buffer.isChained());
-  auto codec = compressionCodecMap_->get(headerInfo.usedCodecId);
+  auto* codec = compressionCodecMap_
+      ? compressionCodecMap_->get(headerInfo.usedCodecId)
+      : nullptr;
   if (!codec) {
     throw std::runtime_error(folly::sformat(
         "Failed to get compression codec id {}. Reply is likely corrupted!",
