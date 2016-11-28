@@ -14,7 +14,7 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Operation.h"

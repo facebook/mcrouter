@@ -25,7 +25,7 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/config-impl.h"

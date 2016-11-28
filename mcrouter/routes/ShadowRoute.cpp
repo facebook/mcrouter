@@ -9,9 +9,10 @@
  */
 #include "ShadowRoute.h"
 
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
@@ -31,7 +32,7 @@ std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json,
     std::vector<McrouterRouteHandlePtr> children,
-    Proxy& proxy,
+    ProxyBase& proxy,
     ExtraRouteHandleProviderIf& extraProvider) {
   folly::StringPiece shadowPolicy = "default";
   if (auto jshadow_policy = json.get_ptr("shadow_policy")) {
@@ -99,7 +100,7 @@ std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
 std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json,
-    Proxy& proxy,
+    ProxyBase& proxy,
     ExtraRouteHandleProviderIf& extraProvider) {
   checkLogic(json.isObject(), "ShadowRoute should be an object");
   const auto jchildren = json.get_ptr("children");

@@ -21,8 +21,6 @@ class McrouterOptions;
 
 namespace mcrouter {
 
-class Proxy;
-
 class AsyncLog {
  public:
   explicit AsyncLog(const McrouterOptions& options);

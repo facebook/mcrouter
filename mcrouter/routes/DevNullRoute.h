@@ -10,7 +10,7 @@
 #pragma once
 
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"

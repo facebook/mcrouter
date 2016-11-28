@@ -15,18 +15,18 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-class Proxy;
+class ProxyBase;
 struct RequestLoggerContext;
 
 class ProxyRequestLogger {
  public:
-  explicit ProxyRequestLogger(Proxy* proxy) : proxy_(proxy) {}
+  explicit ProxyRequestLogger(ProxyBase* proxy) : proxy_(proxy) {}
 
   template <class Request>
   void log(const RequestLoggerContext& loggerContext);
 
  protected:
-  Proxy* proxy_;
+  ProxyBase* proxy_;
 
   void logError(const mc_res_t result);
 };

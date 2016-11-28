@@ -21,15 +21,15 @@
 #include <folly/json.h>
 #include <folly/Range.h>
 
+#include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/StatsReply.h"
 #include "mcrouter/McrouterInstanceBase.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/config.h"
-#include "mcrouter/lib/StatsReply.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 
 /**                             .__
  * __  _  _______ _______  ____ |__| ____    ____
@@ -118,7 +118,7 @@ struct ServerStat {
 
 int get_num_bins_used(const McrouterInstanceBase& router) {
   if (router.opts().num_proxies > 0) {
-    const Proxy* anyProxy = router.getProxy(0);
+    const ProxyBase* anyProxy = router.getProxy(0);
     if (anyProxy) {
       return anyProxy->stats().numBinsUsed();
     }
@@ -126,7 +126,7 @@ int get_num_bins_used(const McrouterInstanceBase& router) {
   return 0;
 }
 
-double stats_rate_value(Proxy* proxy, int idx) {
+double stats_rate_value(ProxyBase* proxy, int idx) {
   const stat_t& stat = proxy->stats().getStat(idx);
   double rate = 0;
 
@@ -142,7 +142,7 @@ double stats_rate_value(Proxy* proxy, int idx) {
   return rate;
 }
 
-uint64_t stats_max_value(Proxy* proxy, int idx) {
+uint64_t stats_max_value(ProxyBase* proxy, int idx) {
   return stats_aggregate_max_value(proxy->router(), idx);
 }
 
@@ -204,15 +204,15 @@ uint64_t stats_aggregate_max_max_value(
   return max;
 }
 
-static std::string rate_stat_to_str(Proxy* proxy, int idx) {
+static std::string rate_stat_to_str(ProxyBase* proxy, int idx) {
   return folly::stringPrintf("%g", stats_rate_value(proxy, idx));
 }
 
-static std::string max_stat_to_str(Proxy* proxy, int idx) {
+static std::string max_stat_to_str(ProxyBase* proxy, int idx) {
   return folly::to<std::string>(stats_max_value(proxy, idx));
 }
 
-static std::string max_max_stat_to_str(Proxy* proxy, int idx) {
+static std::string max_max_stat_to_str(ProxyBase* proxy, int idx) {
   return folly::to<std::string>(
       stats_aggregate_max_max_value(proxy->router(), idx));
 }
@@ -532,7 +532,7 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
 /**
  * @param Proxy proxy
  */
-McStatsReply stats_reply(Proxy* proxy, folly::StringPiece group_str) {
+McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
   auto lockGuard = proxy->stats().lock();
 
   StatsReply reply;

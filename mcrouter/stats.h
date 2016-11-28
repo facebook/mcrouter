@@ -44,7 +44,7 @@ enum stat_name_t {
 
 // Forward declarations
 class McrouterInstanceBase;
-class Proxy;
+class ProxyBase;
 
 /** statistics ftw */
 
@@ -129,7 +129,7 @@ uint64_t stats_aggregate_max_max_value(
 void stat_set_uint64(stat_t*, stat_name_t, uint64_t);
 uint64_t stat_get_uint64(const stat_t*, stat_name_t);
 uint64_t stat_get_config_age(const stat_t* stats, uint64_t now);
-McStatsReply stats_reply(Proxy*, folly::StringPiece);
+McStatsReply stats_reply(ProxyBase*, folly::StringPiece);
 void prepare_stats(McrouterInstanceBase& router, stat_t* stats);
 
 void set_standalone_args(folly::StringPiece args);

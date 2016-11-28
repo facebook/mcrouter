@@ -11,7 +11,7 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
 #include "mcrouter/routes/FailoverRoute.h"
 
@@ -23,7 +23,7 @@ McrouterRouteHandlePtr makeShadowRouteDefault(
   DefaultShadowPolicy shadowPolicy);
 
 McrouterRouteHandlePtr McExtraRouteHandleProvider::makeShadow(
-    Proxy&,
+    ProxyBase&,
     McrouterRouteHandlePtr destination,
     McrouterShadowData data,
     folly::StringPiece shadowPolicy) {

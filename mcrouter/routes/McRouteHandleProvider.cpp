@@ -16,7 +16,7 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/PoolFactory.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
@@ -37,13 +37,13 @@ std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json,
     std::vector<McrouterRouteHandlePtr> destinations,
-    Proxy& proxy,
+    ProxyBase& proxy,
     ExtraRouteHandleProviderIf& extraProvider);
 
 std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json,
-    Proxy& proxy,
+    ProxyBase& proxy,
     ExtraRouteHandleProviderIf& extraProvider);
 
 McrouterRouteHandlePtr makeAllAsyncRoute(McRouteHandleFactory& factory,
@@ -152,7 +152,7 @@ std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
     const folly::dynamic& json);
 
 McRouteHandleProvider::McRouteHandleProvider(
-    Proxy& proxy,
+    ProxyBase& proxy,
     PoolFactory& poolFactory)
     : proxy_(proxy),
       poolFactory_(poolFactory),
