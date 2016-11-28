@@ -19,39 +19,59 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+namespace {
+class MessageQueueDrainCallback : public folly::EventBase::LoopCallback {
+ public:
+   MessageQueueDrainCallback(folly::EventBase& evb, Proxy& proxy) :
+    evb_(evb), proxy_(proxy) {
+      evb_.runBeforeLoop(this);
+    }
+
+  void runLoopCallback() noexcept override {
+    proxy_.drainMessageQueue();
+    evb_.runBeforeLoop(this);
+  }
+
+ private:
+  folly::EventBase& evb_;
+  Proxy& proxy_;
+};
+}
+
 ProxyThread::ProxyThread(McrouterInstance& router, size_t id)
-    : evb_(/* enableTimeMeasurement */ false),
-      proxy_(Proxy::createProxy(router, evb_, id)) {}
+    : evb_(folly::make_unique<folly::EventBase>(
+          /* enableTimeMeasurement */ false)),
+      proxy_(Proxy::createProxy(router, *evb_, id)),
+      evbRef_(*evb_),
+      proxyRef_(*proxy_) {}
 
 void ProxyThread::spawn() {
-  CHECK(state_.exchange(State::RUNNING) == State::STOPPED);
-  thread_ = std::thread([this] () { proxyThreadRun(); });
+  CHECK(!thread_.joinable());
+  thread_ = std::thread([
+      evb = std::move(evb_), proxy = std::move(proxy_) ]() mutable {
+    proxyThreadRun(std::move(evb), std::move(proxy));
+  });
 }
 
 void ProxyThread::stopAndJoin() noexcept {
-  if (thread_.joinable() && proxy_->router().pid() == getpid()) {
-    CHECK(state_.exchange(State::STOPPING) == State::RUNNING);
-    proxy_->sendMessage(ProxyMessage::Type::SHUTDOWN, nullptr);
-    CHECK(state_.exchange(State::STOPPED) == State::STOPPING);
-    evb_.terminateLoopSoon();
+  if (thread_.joinable() && proxyRef_.router().pid() == getpid()) {
+    evbRef_.terminateLoopSoon();
     thread_.join();
   }
 }
 
-void ProxyThread::proxyThreadRun() {
-  mcrouterSetThisThreadName(proxy_->router().opts(), "mcrpxy");
+void ProxyThread::proxyThreadRun(
+    std::unique_ptr<folly::EventBase> evb,
+    Proxy::Pointer proxy) {
+  mcrouterSetThisThreadName(proxy->router().opts(), "mcrpxy");
 
-  while (state_ == State::RUNNING || proxy_->fiberManager().hasTasks()) {
-    evb_.loopOnce();
-    proxy_->drainMessageQueue();
-  }
+  new MessageQueueDrainCallback(*evb, *proxy);
 
-  while (state_ != State::STOPPED) {
-    evb_.loopOnce();
-  }
+  evb->loopForever();
+  evb.reset();
 
   /* make sure proxy is deleted on the proxy thread */
-  proxy_.reset();
+  proxy.reset();
 }
 
 }}}  // facebook::memcache::mcrouter
