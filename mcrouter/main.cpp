@@ -7,19 +7,13 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <event.h>
 #include <getopt.h>
-#include <poll.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/fcntl.h>
-#include <sys/file.h>
-#include <sys/resource.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/types.h>
-#include <syslog.h>
 #include <time.h>
 
 #include <algorithm>
@@ -40,9 +34,7 @@
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/async.h"
 #include "mcrouter/config.h"
-#include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
 #include "mcrouter/server.h"
 #include "mcrouter/standalone_options.h"

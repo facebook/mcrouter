@@ -27,7 +27,7 @@
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/ThreadUtil.h"
-#include "mcrouter/awriter.h"
+#include "mcrouter/AsyncWriter.h"
 #include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/stats.h"

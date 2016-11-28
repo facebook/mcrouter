@@ -19,8 +19,8 @@
 #include <folly/FileUtil.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/AsyncWriter.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/awriter.h"
 
 using namespace facebook::memcache::mcrouter;
 

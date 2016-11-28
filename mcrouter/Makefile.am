@@ -15,10 +15,11 @@ CLEANFILES = \
   lib/network/McAsciiParser-gen.cpp
 
 libmcroutercore_a_SOURCES = \
-  async.cpp \
-  async.h \
-  awriter.h \
+  AsyncLog.cpp \
+  AsyncLog.h \
   AsyncTimer.h \
+  AsyncWriter.cpp \
+  AsyncWriter.h \
   CallbackPool-inl.h \
   CallbackPool.h \
   Clock.h \

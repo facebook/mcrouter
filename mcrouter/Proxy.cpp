@@ -10,7 +10,6 @@
 #include "Proxy.h"
 
 #include <string.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
@@ -29,12 +28,10 @@
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/async.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/queue.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterInstanceBase.h"
@@ -45,7 +42,6 @@
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/route.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/RuntimeVarsData.h"
@@ -106,6 +102,7 @@ Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
           fiber_local::ContextTypeTag(),
           folly::make_unique<folly::fibers::EventBaseLoopController>(),
           getFiberManagerOptions(router_.opts())),
+      asyncLog_(router_.opts()),
       id_(id) {
   // Setup a full random seed sequence
   folly::Random::seed(randomGenerator_);

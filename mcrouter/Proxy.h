@@ -25,6 +25,7 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/Range.h>
 
+#include "mcrouter/AsyncLog.h"
 #include "mcrouter/config.h"
 #include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
@@ -139,10 +140,6 @@ struct ProxyMessage {
 
 class Proxy {
  public:
-  // async spool related
-  std::shared_ptr<folly::File> async_fd{nullptr};
-  time_t async_spool_time{0};
-
   folly::EventBase& eventBase() const {
     assert(eventBase_ != nullptr);
     return *eventBase_;
@@ -203,6 +200,10 @@ class Proxy {
     return id_;
   }
 
+  AsyncLog& asyncLog() {
+    return asyncLog_;
+  }
+
   /**
    * This method is equal to router().opts(), with the only difference,
    * that it doesn't require the caller to know about McrouterInstanceBase.
@@ -256,6 +257,8 @@ class Proxy {
   folly::EventBase* eventBase_{nullptr};
 
   CyclesObserver cyclesObserver_;
+
+  AsyncLog asyncLog_;
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;

@@ -88,8 +88,6 @@ class AsyncWriter {
   std::atomic<size_t> queueSize_{0};
   std::atomic<bool> stopped_{false};
   SFRLock runLock_;
-  // process id of the parent thread (before fork)
-  const pid_t pid_;
 
   folly::fibers::FiberManager fiberManager_;
   folly::EventBase eventBase_;

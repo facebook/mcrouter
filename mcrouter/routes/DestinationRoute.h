@@ -20,14 +20,14 @@
 #include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/AsyncLog.h"
+#include "mcrouter/AsyncWriter.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/async.h"
-#include "mcrouter/awriter.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McOperation.h"
@@ -224,7 +224,7 @@ class DestinationRoute {
     folly::fibers::Baton b;
     auto res = proxy->router().asyncWriter().run(
       [&b, &ap, proxy, key, asynclogName] () {
-        asynclog_delete(proxy, ap, key, asynclogName);
+        proxy->asyncLog().writeDelete(ap, key, asynclogName);
         b.post();
       }
     );

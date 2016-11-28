@@ -13,7 +13,7 @@
 
 #include <folly/Memory.h>
 
-#include "mcrouter/awriter.h"
+#include "mcrouter/AsyncWriter.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
