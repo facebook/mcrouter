@@ -16,7 +16,7 @@
 
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
@@ -45,7 +45,7 @@ struct ProxyDestinationMap::StateList {
   List list;
 };
 
-ProxyDestinationMap::ProxyDestinationMap(Proxy* proxy)
+ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
     : proxy_(proxy),
       active_(folly::make_unique<StateList>()),
       inactive_(folly::make_unique<StateList>()),

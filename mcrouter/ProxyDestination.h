@@ -30,9 +30,9 @@ namespace facebook { namespace memcache {
 
 namespace mcrouter {
 
+class ProxyBase;
 class ProxyDestinationMap;
 class TkoTracker;
-class Proxy;
 
 struct DestinationRequestCtx {
   int64_t startTime{0};
@@ -61,7 +61,7 @@ class ProxyDestination {
     double retransPerKByte{0.0};
   };
 
-  Proxy* proxy{nullptr}; ///< for convenience
+  ProxyBase* proxy{nullptr}; ///< for convenience
 
   std::shared_ptr<TkoTracker> tracker;
 
@@ -129,7 +129,7 @@ class ProxyDestination {
   AsyncTimer<ProxyDestination> probeTimer_;
 
   static std::shared_ptr<ProxyDestination> create(
-      Proxy& proxy,
+      ProxyBase& proxy,
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
@@ -151,7 +151,7 @@ class ProxyDestination {
   void initializeAsyncMcClient();
 
   ProxyDestination(
-      Proxy& proxy,
+      ProxyBase& proxy,
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,

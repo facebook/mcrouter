@@ -10,7 +10,7 @@
 #include <limits>
 #include <random>
 
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/Operation.h"

@@ -24,7 +24,6 @@
 #include <folly/FileUtil.h>
 #include <folly/Format.h>
 #include <folly/Memory.h>
-#include <folly/Random.h>
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 
@@ -49,21 +48,6 @@
 #include "mcrouter/stats.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
-
-namespace {
-
-folly::fibers::FiberManager::Options getFiberManagerOptions(
-    const McrouterOptions& opts) {
-  folly::fibers::FiberManager::Options fmOpts;
-  fmOpts.stackSize = opts.fibers_stack_size;
-  fmOpts.recordStackEvery = opts.fibers_record_stack_size_every;
-  fmOpts.maxFibersPoolSize = opts.fibers_max_pool_size;
-  fmOpts.useGuardPages = opts.fibers_use_guard_pages;
-  fmOpts.fibersPoolResizePeriodMs = opts.fibers_pool_resize_period_ms;
-  return fmOpts;
-}
-
-} // anonymous
 
 namespace detail {
 
@@ -95,32 +79,20 @@ bool processGetServiceInfoRequestImpl(
 
 } // detail
 
-Proxy::Proxy(McrouterInstanceBase& rtr, size_t id)
-    : router_(rtr),
-      destinationMap_(folly::make_unique<ProxyDestinationMap>(this)),
-      fiberManager_(
-          fiber_local::ContextTypeTag(),
-          folly::make_unique<folly::fibers::EventBaseLoopController>(),
-          getFiberManagerOptions(router_.opts())),
-      asyncLog_(router_.opts()),
-      id_(id) {
-  // Setup a full random seed sequence
-  folly::Random::seed(randomGenerator_);
-
+Proxy::Proxy(McrouterInstanceBase& rtr, size_t id, folly::EventBase& evb)
+    : ProxyBase(rtr, id, evb) {
   messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
-    router_.opts().client_queue_size,
+    router().opts().client_queue_size,
     [this] (ProxyMessage&& message) {
       this->messageReady(message.type, message.data);
     },
-    router_.opts().client_queue_no_notify_rate,
-    router_.opts().client_queue_wait_threshold_us,
+    router().opts().client_queue_no_notify_rate,
+    router().opts().client_queue_wait_threshold_us,
     &nowUs,
     [this] () {
-      stats_.incrementSafe(client_queue_notifications_stat);
+      stats().incrementSafe(client_queue_notifications_stat);
     }
   );
-
-  statsContainer_ = folly::make_unique<ProxyStatsContainer>(*this);
 }
 
 Proxy::Pointer Proxy::createProxy(
@@ -129,28 +101,27 @@ Proxy::Pointer Proxy::createProxy(
     size_t id) {
   /* This hack is needed to make sure Proxy stays alive
      until at least event base managed to run the callback below */
-  auto proxy = std::shared_ptr<Proxy>(new Proxy(router, id));
+  auto proxy = std::shared_ptr<Proxy>(new Proxy(router, id, eventBase));
   proxy->self_ = proxy;
 
   eventBase.runInEventBaseThread(
     [proxy, &eventBase] () {
-      proxy->eventBase_ = &eventBase;
       proxy->messageQueue_->attachEventBase(eventBase);
 
       dynamic_cast<folly::fibers::EventBaseLoopController&>(
-        proxy->fiberManager_.loopController()).attachEventBase(eventBase);
+        proxy->fiberManager().loopController()).attachEventBase(eventBase);
 
       std::chrono::milliseconds connectionResetInterval{
-        proxy->router_.opts().reset_inactive_connection_interval
+        proxy->router().opts().reset_inactive_connection_interval
       };
 
       if (connectionResetInterval.count() > 0) {
-        proxy->destinationMap_->setResetTimer(connectionResetInterval);
+        proxy->destinationMap()->setResetTimer(connectionResetInterval);
       }
 
-      if (proxy->router_.opts().cpu_cycles) {
+      if (proxy->router().opts().cpu_cycles) {
         cycles::attachEventBase(eventBase);
-        proxy->fiberManager_.setObserver(&proxy->cyclesObserver_);
+        proxy->fiberManager().setObserver(&proxy->cyclesObserver_);
       }
     });
 
@@ -255,11 +226,11 @@ void Proxy::pump() {
   auto numPriorities = static_cast<int>(ProxyRequestPriority::kNumPriorities);
   for (int i = 0; i < numPriorities; ++i) {
     auto& queue = waitingRequests_[i];
-    while (numRequestsProcessing_ < router_.opts().proxy_max_inflight_requests
+    while (numRequestsProcessing_ < router().opts().proxy_max_inflight_requests
            && !queue.empty()) {
       --numRequestsWaiting_;
       auto w = queue.popFront();
-      stats_.decrement(proxy_reqs_waiting_stat);
+      stats().decrement(proxy_reqs_waiting_stat);
 
       w->process(this);
     }
@@ -268,10 +239,6 @@ void Proxy::pump() {
 
 uint64_t Proxy::nextRequestId() {
   return ++nextReqId_;
-}
-
-const McrouterOptions& Proxy::getRouterOptions() const {
-  return router_.opts();
 }
 
 std::shared_ptr<ShadowSettings> ShadowSettings::create(

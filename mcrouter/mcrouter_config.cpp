@@ -12,7 +12,7 @@
 
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogger.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
@@ -89,9 +89,9 @@ std::vector<std::string> defaultTestCommandLineArgs() {
   return { "--disable-failure-logging", "--stats-logging-interval=0" };
 }
 
-void logTkoEvent(Proxy& proxy, const TkoLog& tkoLog) {}
+void logTkoEvent(ProxyBase& proxy, const TkoLog& tkoLog) {}
 
-void logFailover(Proxy& proxy, const FailoverContext& failoverContext) {}
+void logFailover(ProxyBase& proxy, const FailoverContext& failoverContext) {}
 
 void initFailureLogger() { }
 

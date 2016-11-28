@@ -243,7 +243,7 @@ size_t ProxyDestination::getInflightRequestCount() const {
 }
 
 std::shared_ptr<ProxyDestination> ProxyDestination::create(
-    Proxy& proxy,
+    ProxyBase& proxy,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
@@ -280,7 +280,7 @@ ProxyDestination::~ProxyDestination() {
 }
 
 ProxyDestination::ProxyDestination(
-    Proxy& proxy_,
+    ProxyBase& proxy_,
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint64_t qosClass,

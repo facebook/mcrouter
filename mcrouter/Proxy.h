@@ -18,14 +18,11 @@
 
 #include <atomic>
 #include <memory>
-#include <random>
 #include <string>
 
 #include <folly/detail/CacheLocality.h>
-#include <folly/fibers/FiberManager.h>
 #include <folly/Range.h>
 
-#include "mcrouter/AsyncLog.h"
 #include "mcrouter/config.h"
 #include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
@@ -35,8 +32,8 @@
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyRequestPriority.h"
-#include "mcrouter/ProxyStats.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
@@ -59,7 +56,6 @@ class McrouterInstanceBase;
 template <class RouteHandleIf>
 class ProxyConfig;
 class ProxyDestination;
-class ProxyDestinationMap;
 class ProxyRequestContext;
 template <class RouteHandleIf, class Request>
 class ProxyRequestContextTyped;
@@ -138,13 +134,8 @@ struct ProxyMessage {
       : type(t), data(d) {}
 };
 
-class Proxy {
+class Proxy : public ProxyBase {
  public:
-  folly::EventBase& eventBase() const {
-    assert(eventBase_ != nullptr);
-    return *eventBase_;
-  }
-
   ~Proxy();
 
   /**
@@ -192,73 +183,15 @@ class Proxy {
    */
   size_t queueNotifyPeriod() const;
 
-  McrouterInstanceBase& router() const {
-    return router_;
-  }
-
-  size_t getId() const {
-    return id_;
-  }
-
-  AsyncLog& asyncLog() {
-    return asyncLog_;
-  }
-
-  /**
-   * This method is equal to router().opts(), with the only difference,
-   * that it doesn't require the caller to know about McrouterInstanceBase.
-   * This allows to break include cycles.
-   */
-  const McrouterOptions& getRouterOptions() const;
-
-  ProxyDestinationMap* destinationMap() const {
-    return destinationMap_.get();
-  }
-
-  std::mt19937& randomGenerator() {
-    return randomGenerator_;
-  }
-
   bool beingDestroyed() const {
     return beingDestroyed_;
   }
 
-  folly::fibers::FiberManager& fiberManager() {
-    return fiberManager_;
-  }
-
-  ProxyStats& stats() {
-    return stats_;
-  }
-  const ProxyStats& stats() const {
-    return stats_;
-  }
-
-  ProxyStatsContainer* statsContainer() const {
-    return statsContainer_.get();
-  }
-
  private:
-  McrouterInstanceBase& router_;
-
-  std::unique_ptr<ProxyDestinationMap> destinationMap_;
-
-  std::mt19937 randomGenerator_;
-
-  ProxyStats stats_;
-
-  std::unique_ptr<ProxyStatsContainer> statsContainer_;
-
   // If true, processing new requests is not safe.
   bool beingDestroyed_{false};
 
-  folly::fibers::FiberManager fiberManager_;
-
-  folly::EventBase* eventBase_{nullptr};
-
   CyclesObserver cyclesObserver_;
-
-  AsyncLog asyncLog_;
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;
@@ -282,13 +215,12 @@ class Proxy {
   };
 
   std::shared_ptr<Proxy> self_;
-  size_t id_{0};
 
   using Pointer = std::unique_ptr<Proxy, ProxyDelayedDestructor>;
   static Pointer createProxy(McrouterInstanceBase& router,
                              folly::EventBase& eventBase,
                              size_t id);
-  Proxy(McrouterInstanceBase& router, size_t id);
+  Proxy(McrouterInstanceBase& router, size_t id, folly::EventBase& evb);
 
   void messageReady(ProxyMessage::Type t, void* data);
 

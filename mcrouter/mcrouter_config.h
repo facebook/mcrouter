@@ -62,16 +62,16 @@ class McrouterInstanceBase;
 class McrouterLogger;
 class McrouterStandaloneOptions;
 struct FailoverContext;
-class Proxy;
+class ProxyBase;
 struct RequestLoggerContext;
 struct TkoLog;
 
 struct ProxyStatsContainer {
-  explicit ProxyStatsContainer(Proxy&) {}
+  explicit ProxyStatsContainer(ProxyBase&) {}
 };
 
 struct AdditionalProxyRequestLogger {
-  explicit AdditionalProxyRequestLogger(Proxy*) {}
+  explicit AdditionalProxyRequestLogger(ProxyBase*) {}
   /**
    * Called once a reply is received to record a stats sample if required.
    */
@@ -129,9 +129,9 @@ McrouterOptions defaultTestOptions();
 
 std::vector<std::string> defaultTestCommandLineArgs();
 
-void logTkoEvent(Proxy& proxy, const TkoLog& tkoLog);
+void logTkoEvent(ProxyBase& proxy, const TkoLog& tkoLog);
 
-void logFailover(Proxy& proxy, const FailoverContext& failoverContext);
+void logFailover(ProxyBase& proxy, const FailoverContext& failoverContext);
 
 void initFailureLogger();
 
