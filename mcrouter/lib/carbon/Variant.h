@@ -17,11 +17,8 @@
 
 namespace carbon {
 
-template <class TList>
-class Variant;
-
 template <class... Ts>
-class Variant<List<Ts...>> {
+class Variant {
  public:
   static_assert(
       facebook::memcache::Distinct<Ts...>::value,
@@ -117,5 +114,18 @@ class Variant<List<Ts...>> {
     cleanupFun_ = nullptr;
   }
 };
+
+namespace detail {
+template <class... Ts>
+struct VariantFromList;
+
+template <class... Ts>
+struct VariantFromList<List<Ts...>> {
+  using type = Variant<Ts...>;
+};
+} // detail
+
+template <class TList>
+using makeVariantFromList = typename detail::VariantFromList<TList>::type;
 
 } // carbon

@@ -158,7 +158,8 @@ class McClientAsciiParser : public McAsciiParserBase {
   static void appendCurrentCharTo(const folly::IOBuf& from, folly::IOBuf& to,
                                   const char* pos);
 
-  carbon::Variant<MapT<ReplyT, McRequestList>> currentMessage_;
+  using ReplyVariant = carbon::makeVariantFromList<MapT<ReplyT, McRequestList>>;
+  ReplyVariant currentMessage_;
 
   using ConsumerFunPtr = void (McClientAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
@@ -225,7 +226,9 @@ class McServerAsciiParser : public McAsciiParserBase {
   const char* keyPieceStart_{nullptr};
   folly::IOBuf currentKey_;
   bool noreply_{false};
-  carbon::Variant<McRequestList> currentMessage_;
+
+  using RequestVariant = carbon::makeVariantFromList<McRequestList>;
+  RequestVariant currentMessage_;
 
   using ConsumerFunPtr = void (McServerAsciiParser::*)(folly::IOBuf&);
   ConsumerFunPtr consumer_{nullptr};
