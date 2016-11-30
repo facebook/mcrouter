@@ -53,7 +53,7 @@ wrapWithBigValueRoute(
 
 template <class RouterInfo>
 ProxyRoute<RouterInfo>::ProxyRoute(
-    Proxy* proxy,
+    Proxy<RouterInfo>* proxy,
     const RouteSelectorMap<typename RouterInfo::RouteHandleIf>& routeSelectors)
     : proxy_(proxy),
       root_(makeMcrouterRouteHandle<RootRoute>(proxy_, routeSelectors)) {

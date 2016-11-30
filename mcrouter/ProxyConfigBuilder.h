@@ -20,10 +20,12 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class ConfigApi;
 template <class RouterInfo>
 class ProxyConfig;
+template <class RouterInfo>
 class Proxy;
+
+class ConfigApi;
 
 class ProxyConfigBuilder {
  public:
@@ -33,7 +35,7 @@ class ProxyConfigBuilder {
 
   template <class RouterInfo>
   std::shared_ptr<ProxyConfig<RouterInfo>> buildConfig(
-      Proxy& proxy) const {
+      Proxy<RouterInfo>& proxy) const {
     return std::shared_ptr<ProxyConfig<RouterInfo>>(
         new ProxyConfig<RouterInfo>(
             proxy, json_, configMd5Digest_, *poolFactory_));

@@ -26,7 +26,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class RouterInfo>
 ProxyConfig<RouterInfo>::ProxyConfig(
-    Proxy& proxy,
+    Proxy<RouterInfo>& proxy,
     const folly::dynamic& json,
     std::string configMd5Digest,
     PoolFactory& poolFactory)

@@ -16,11 +16,16 @@
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/Proxy.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class McrouterInstance;
+
+template <class RouterInfo>
 class Proxy;
+
+using McrouterProxy = Proxy<McrouterRouterInfo>;
 
 class ProxyThread {
  public:
@@ -41,14 +46,14 @@ class ProxyThread {
    */
   void spawn();
 
-  Proxy& proxy() {
+  McrouterProxy& proxy() {
     return *proxy_;
   }
   folly::EventBase& eventBase() { return evb_; }
 
  private:
   folly::EventBase evb_;
-  Proxy::Pointer proxy_;
+  McrouterProxy::Pointer proxy_;
   std::thread thread_;
 
   enum class State {

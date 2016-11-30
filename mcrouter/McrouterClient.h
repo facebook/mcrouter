@@ -15,13 +15,18 @@
 #include "mcrouter/lib/CacheClientStats.h"
 #include "mcrouter/lib/fbi/counting_sem.h"
 #include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouterInfo>
+class Proxy;
+
 class McrouterClient;
 class McrouterInstance;
-class Proxy;
 class ProxyRequestContext;
+
+using McrouterProxy = Proxy<McrouterRouterInfo>;
 
 /**
  * A mcrouter client is used to communicate with a mcrouter instance.
@@ -112,7 +117,7 @@ class McrouterClient {
   /**
    * Override default proxy assignment.
    */
-  void setProxy(Proxy* proxy) {
+  void setProxy(McrouterProxy* proxy) {
     proxy_ = proxy;
   }
 
@@ -127,7 +132,7 @@ class McrouterClient {
   std::weak_ptr<McrouterInstance> router_;
   bool sameThread_{false};
 
-  Proxy* proxy_{nullptr};
+  McrouterProxy* proxy_{nullptr};
 
   CacheClientStats stats_;
 

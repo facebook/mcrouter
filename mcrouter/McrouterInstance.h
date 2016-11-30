@@ -30,6 +30,8 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class McrouterManager;
 class ProxyThread;
 
+using McrouterProxy = Proxy<McrouterRouterInfo>;
+
 /**
  * A single mcrouter instance.  A mcrouter instance has a single config,
  * but might run across multiple threads.
@@ -114,12 +116,12 @@ class McrouterInstance : public McrouterInstanceBase,
    * @return  nullptr if index is >= opts.num_proxies,
    *   pointer to the proxy otherwise.
    */
-  Proxy* getProxy(size_t index) const override;
+  McrouterProxy* getProxy(size_t index) const override;
 
   /**
    * Release ownership of a proxy
    */
-  Proxy::Pointer releaseProxy(size_t index);
+  McrouterProxy::Pointer releaseProxy(size_t index);
 
   bool configure(const ProxyConfigBuilder& builder);
 
@@ -166,7 +168,7 @@ class McrouterInstance : public McrouterInstanceBase,
    * Embedded mode: Mcrouter owns ProxyThreads, which managed the lifetime
    * of proxies on their own threads.
    */
-  std::vector<Proxy::Pointer> proxies_;
+  std::vector<McrouterProxy::Pointer> proxies_;
   std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
 
   /**

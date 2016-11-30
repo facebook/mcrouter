@@ -28,6 +28,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouterInfo>
 class Proxy;
 
 /**
@@ -39,7 +40,7 @@ class ProxyRoute {
   static std::string routeName() { return "proxy"; }
 
   ProxyRoute(
-      Proxy* proxy,
+      Proxy<RouterInfo>* proxy,
       const RouteSelectorMap<typename RouterInfo::RouteHandleIf>&
           routeSelectors);
 
@@ -107,7 +108,7 @@ class ProxyRoute {
   }
 
  private:
-  Proxy* proxy_;
+  Proxy<RouterInfo>* proxy_;
   std::shared_ptr<typename RouterInfo::RouteHandleIf> root_;
 
   std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>

@@ -16,6 +16,9 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
+template <class RouterInfo>
+class Proxy;
+
 template <class RouterInfo, class Request>
 class ProxyRequestContextTyped : public ProxyRequestContext {
  public:
@@ -67,12 +70,12 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
 
  protected:
   ProxyRequestContextTyped(
-      Proxy& pr,
+      Proxy<RouterInfo>& pr,
       const Request& req,
       ProxyRequestPriority priority__)
       : ProxyRequestContext(pr, priority__), proxy_(pr), req_(&req) {}
 
-  Proxy& proxy_;
+  Proxy<RouterInfo>& proxy_;
 
   std::shared_ptr<const ProxyConfig<RouterInfo>> config_;
 
@@ -81,6 +84,9 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
   const Request* req_;
 
   virtual void sendReplyImpl(ReplyT<Request>&& reply) = 0;
+
+ private:
+  friend class Proxy<RouterInfo>;
 };
 
 // TODO(@aap): Template by RouterInfo and kill McrouterRouterInfo
@@ -90,7 +96,7 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
 template <class Request, class F>
 std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
 createProxyRequestContext(
-    Proxy& pr,
+    Proxy<McrouterRouterInfo>& pr,
     const Request& req,
     F&& f,
     ProxyRequestPriority priority = ProxyRequestPriority::kCritical);

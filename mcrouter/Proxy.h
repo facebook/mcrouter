@@ -65,8 +65,6 @@ class ShardSplitter;
 using ObservableRuntimeVars =
     Observable<std::shared_ptr<const RuntimeVarsData>>;
 
-using McrouterProxyConfig = ProxyConfig<McrouterRouterInfo>;
-
 struct ShadowSettings {
   /**
    * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
@@ -134,6 +132,7 @@ struct ProxyMessage {
       : type(t), data(d) {}
 };
 
+template <class RouterInfo>
 class Proxy : public ProxyBase {
  public:
   ~Proxy();
@@ -142,7 +141,7 @@ class Proxy : public ProxyBase {
    * Access to config - can only be called on the proxy thread
    * and the resulting shared_ptr can only be detroyed on the proxy thread.
    */
-  std::shared_ptr<McrouterProxyConfig> getConfigUnsafe() const;
+  std::shared_ptr<ProxyConfig<RouterInfo>> getConfigUnsafe() const;
 
   /**
    * Can be called from any thread.
@@ -151,18 +150,18 @@ class Proxy : public ProxyBase {
    * The caller may only access the config through the reference
    * while the lock is held.
    */
-  std::pair<std::unique_lock<SFRReadLock>, McrouterProxyConfig&>
+  std::pair<std::unique_lock<SFRReadLock>, ProxyConfig<RouterInfo>&>
   getConfigLocked() const;
 
   /**
    * Thread-safe config swap; returns the previous contents of
    * the config pointer
    */
-  std::shared_ptr<McrouterProxyConfig> swapConfig(
-      std::shared_ptr<McrouterProxyConfig> newConfig);
+  std::shared_ptr<ProxyConfig<RouterInfo>> swapConfig(
+      std::shared_ptr<ProxyConfig<RouterInfo>> newConfig);
 
   /** Queue up and route the new incoming request */
-  template <class RouterInfo, class Request>
+  template <class Request>
   void dispatchRequest(
       const Request& req,
       std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
@@ -195,7 +194,7 @@ class Proxy : public ProxyBase {
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;
-  std::shared_ptr<McrouterProxyConfig> config_;
+  std::shared_ptr<ProxyConfig<RouterInfo>> config_;
 
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
 
@@ -211,9 +210,9 @@ class Proxy : public ProxyBase {
     }
   };
 
-  std::shared_ptr<Proxy> self_;
+  std::shared_ptr<Proxy<RouterInfo>> self_;
 
-  using Pointer = std::unique_ptr<Proxy, ProxyDelayedDestructor>;
+  using Pointer = std::unique_ptr<Proxy<RouterInfo>, ProxyDelayedDestructor>;
   static Pointer createProxy(McrouterInstanceBase& router,
                              folly::EventBase& eventBase,
                              size_t id);
@@ -225,40 +224,38 @@ class Proxy : public ProxyBase {
   void routeHandlesProcessRequest(
       const McStatsRequest& req,
       std::unique_ptr<
-          ProxyRequestContextTyped<McrouterRouterInfo, McStatsRequest>> ctx);
+          ProxyRequestContextTyped<RouterInfo, McStatsRequest>> ctx);
 
   /** Process and reply to a version request */
   void routeHandlesProcessRequest(
       const McVersionRequest& req,
       std::unique_ptr<
-          ProxyRequestContextTyped<McrouterRouterInfo, McVersionRequest>> ctx);
+          ProxyRequestContextTyped<RouterInfo, McVersionRequest>> ctx);
 
   /** Route request through route handle tree */
   template <class Request>
-  typename std::enable_if<TRequestListContains<Request>::value, void>::type
+  typename std::enable_if<
+      ListContains<typename RouterInfo::RoutableRequests, Request>::value,
+      void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
-          ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
 
   /** Fail all unknown operations */
   template <class Request>
-  typename std::enable_if<!TRequestListContains<Request>::value, void>::type
+  typename std::enable_if<
+      !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
+      void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
-          ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
 
   /** Process request (update stats and route the request) */
   template <class Request>
   void processRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
           ctx);
-
-  /** Increase requests sent stats counters for given operation type */
-  template <class Request>
-  void bumpStats(const Request&);
 
   /**
    * We use this wrapper instead of putting 'hook' inside ProxyRequestContext
@@ -291,26 +288,31 @@ class Proxy : public ProxyBase {
    public:
     WaitingRequest(
         const Request& req,
-        std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
+        std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
             ctx);
     void process(Proxy* proxy) override final;
     void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:
     const Request& req_;
-    std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
+    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
         ctx_;
 
     int64_t timePushedOnQueue_{-1};
   };
 
   /** Queue of requests we didn't start processing yet */
-  WaitingRequestBase::Queue
+  typename WaitingRequestBase::Queue
       waitingRequests_[static_cast<int>(ProxyRequestPriority::kNumPriorities)];
 
   /** If true, we can't start processing this request right now */
   template <class Request>
-  bool rateLimited(ProxyRequestPriority priority, const Request&) const;
+  typename std::enable_if<TNotRateLimited<Request>::value, bool>::type
+  rateLimited(ProxyRequestPriority priority, const Request&) const;
+
+  template <class Request>
+  typename std::enable_if<!TNotRateLimited<Request>::value, bool>::type
+  rateLimited(ProxyRequestPriority priority, const Request&) const;
 
   /** Will let through requests from the above queue if we have capacity */
   void pump() override final;
@@ -321,17 +323,19 @@ class Proxy : public ProxyBase {
   friend class ProxyThread;
 };
 
+template <class RouterInfo>
 struct old_config_req_t {
-  explicit old_config_req_t(std::shared_ptr<McrouterProxyConfig> config)
+  explicit old_config_req_t(std::shared_ptr<ProxyConfig<RouterInfo>> config)
     : config_(std::move(config)) {
   }
  private:
-  std::shared_ptr<McrouterProxyConfig> config_;
+  std::shared_ptr<ProxyConfig<RouterInfo>> config_;
 };
 
+template <class RouterInfo>
 void proxy_config_swap(
-    Proxy* proxy,
-    std::shared_ptr<McrouterProxyConfig> config);
+    Proxy<RouterInfo>* proxy,
+    std::shared_ptr<ProxyConfig<RouterInfo>> config);
 }}} // facebook::memcache::mcrouter
 
 #include "Proxy-inl.h"

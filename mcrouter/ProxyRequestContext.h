@@ -166,6 +166,13 @@ public:
    */
   uint64_t requestId() const;
 
+  bool isProcessing() const {
+    return processing_;
+  }
+  void markAsProcessing() {
+    processing_ = true;
+  }
+
  protected:
   bool replied_{false};
 
@@ -244,7 +251,7 @@ public:
 
 private:
   friend class McrouterClient;
-  friend class Proxy;
+  friend class ProxyBase;
 };
 
 }}}  // facebook::memcache::mcrouter

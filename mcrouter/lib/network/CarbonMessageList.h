@@ -42,6 +42,8 @@ using RequestReplyPairs = List<
 
 using McRequestList = PairListFirstT<RequestReplyPairs>;
 
+using RequestsNotRateLimited = List<McStatsRequest, McVersionRequest>;
+
 struct ListChecker {
   StaticChecker<McRequestList> checker;
 };
@@ -128,6 +130,6 @@ struct TypeFromOp<op, List<KV1, KVs...>> {
 };
 
 template <class T>
-using TRequestListContains = ListContains<McRequestList, T>;
+using TNotRateLimited = ListContains<RequestsNotRateLimited, T>;
 
 }} // facebook::memcache

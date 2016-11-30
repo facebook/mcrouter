@@ -25,7 +25,7 @@ class ProxyRequestContextTypedWithCallback
     : public ProxyRequestContextTyped<RouterInfo, Request> {
  public:
   ProxyRequestContextTypedWithCallback(
-      Proxy& pr,
+      Proxy<RouterInfo>& pr,
       const Request& req,
       F&& f,
       ProxyRequestPriority priority__)
@@ -183,7 +183,7 @@ ProxyRequestContextTyped<RouterInfo, Request>::process(
 
 template <class Request, class F>
 std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
-createProxyRequestContext(Proxy& pr,
+createProxyRequestContext(Proxy<McrouterRouterInfo>& pr,
                           const Request& req,
                           F&& f,
                           ProxyRequestPriority priority) {

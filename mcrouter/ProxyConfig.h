@@ -25,13 +25,14 @@ struct AccessPoint;
 
 namespace mcrouter {
 
-template <class RouteHandleIf>
+template <class RouterInfo>
+class Proxy;
+template <class RouterInfo>
 class ProxyRoute;
 template <class RouterInfo>
 class ServiceInfo;
 
 class PoolFactory;
-class Proxy;
 
 /**
  * Topmost struct for mcrouter configs.
@@ -88,7 +89,7 @@ class ProxyConfig {
    * @param jsonC config in format of JSON with comments and templates
    */
   ProxyConfig(
-      Proxy& proxy,
+      Proxy<RouterInfo>& proxy,
       const folly::dynamic& json,
       std::string configMd5Digest,
       PoolFactory& poolFactory);

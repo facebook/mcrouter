@@ -21,7 +21,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyThread::ProxyThread(McrouterInstance& router, size_t id)
     : evb_(/* enableTimeMeasurement */ false),
-      proxy_(Proxy::createProxy(router, evb_, id)) {}
+      proxy_(McrouterProxy::createProxy(router, evb_, id)) {}
 
 void ProxyThread::spawn() {
   CHECK(state_.exchange(State::RUNNING) == State::STOPPED);

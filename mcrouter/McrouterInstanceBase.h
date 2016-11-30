@@ -17,8 +17,9 @@
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/Observable.h"
-#include "mcrouter/TkoTracker.h"
 #include "mcrouter/options.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/TkoTracker.h"
 
 namespace facebook { namespace memcache {
 
@@ -31,10 +32,13 @@ namespace mcrouter {
 
 // Forward declarations
 class AsyncWriter;
+template <class RouterInfo>
 class Proxy;
 class RuntimeVarsData;
 using ObservableRuntimeVars =
     Observable<std::shared_ptr<const RuntimeVarsData>>;
+
+using McrouterProxy = Proxy<McrouterRouterInfo>;
 
 class McrouterInstanceBase {
  public:
@@ -119,7 +123,7 @@ class McrouterInstanceBase {
    * @return  nullptr if index is >= opts.num_proxies,
    *          pointer to the proxy otherwise.
    */
-  virtual Proxy* getProxy(size_t index) const = 0;
+  virtual McrouterProxy* getProxy(size_t index) const = 0;
 
  protected:
   const McrouterOptions opts_;
