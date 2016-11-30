@@ -39,7 +39,7 @@
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShardSplitter.h"
@@ -54,7 +54,7 @@ namespace detail {
 bool processGetServiceInfoRequest(
     const McGetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<
-      McrouterRouteHandleIf, McGetRequest>>& ctx) {
+      McrouterRouterInfo, McGetRequest>>& ctx) {
 
   return processGetServiceInfoRequestImpl(req, ctx);
 }
@@ -63,7 +63,7 @@ template <class GetRequest>
 bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
     std::shared_ptr<
-        ProxyRequestContextTyped<McrouterRouteHandleIf, GetRequest>>& ctx,
+        ProxyRequestContextTyped<McrouterRouterInfo, GetRequest>>& ctx,
     GetLikeT<GetRequest>) {
   static const char* const kInternalGetPrefix = "__mcrouter__.";
 
@@ -207,14 +207,14 @@ void Proxy::messageReady(ProxyMessage::Type t, void* data) {
 void Proxy::routeHandlesProcessRequest(
     const McStatsRequest& req,
     std::unique_ptr<
-        ProxyRequestContextTyped<McrouterRouteHandleIf, McStatsRequest>> ctx) {
+        ProxyRequestContextTyped<McrouterRouterInfo, McStatsRequest>> ctx) {
   ctx->sendReply(stats_reply(this, req.key().fullKey()));
 }
 
 void Proxy::routeHandlesProcessRequest(
     const McVersionRequest&,
     std::unique_ptr<
-        ProxyRequestContextTyped<McrouterRouteHandleIf, McVersionRequest>>
+        ProxyRequestContextTyped<McrouterRouterInfo, McVersionRequest>>
         ctx) {
   McVersionReply reply(mc_res_ok);
   reply.value() =
@@ -235,10 +235,6 @@ void Proxy::pump() {
       w->process(this);
     }
   }
-}
-
-uint64_t Proxy::nextRequestId() {
-  return ++nextReqId_;
 }
 
 std::shared_ptr<ShadowSettings> ShadowSettings::create(

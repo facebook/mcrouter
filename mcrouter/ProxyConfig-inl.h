@@ -24,15 +24,16 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-template <class RouteHandleIf>
-ProxyConfig<RouteHandleIf>::ProxyConfig(
+template <class RouterInfo>
+ProxyConfig<RouterInfo>::ProxyConfig(
     Proxy& proxy,
     const folly::dynamic& json,
     std::string configMd5Digest,
     PoolFactory& poolFactory)
     : configMd5Digest_(std::move(configMd5Digest)) {
   McRouteHandleProvider provider(proxy, poolFactory);
-  RouteHandleFactory<RouteHandleIf> factory(provider, proxy.getId());
+  RouteHandleFactory<typename RouterInfo::RouteHandleIf> factory(
+      provider, proxy.getId());
 
   checkLogic(json.isObject(), "Config is not an object");
 
@@ -51,15 +52,16 @@ ProxyConfig<RouteHandleIf>::ProxyConfig(
     }
   }
 
-  RouteSelectorMap<RouteHandleIf> routeSelectors;
+  RouteSelectorMap<typename RouterInfo::RouteHandleIf> routeSelectors;
 
   auto jRoute = json.get_ptr("route");
   auto jRoutes = json.get_ptr("routes");
   checkLogic(!jRoute || !jRoutes,
              "Invalid config: both 'route' and 'routes' are specified");
   if (jRoute) {
-    routeSelectors[proxy.getRouterOptions().default_route] =
-        std::make_shared<PrefixSelectorRoute<RouteHandleIf>>(factory, *jRoute);
+    routeSelectors[proxy.getRouterOptions().default_route] = std::make_shared<
+        PrefixSelectorRoute<typename RouterInfo::RouteHandleIf>>(
+        factory, *jRoute);
   } else if (jRoutes) { // jRoutes
     checkLogic(jRoutes->isArray() || jRoutes->isObject(),
                "Config: routes is not array/object");
@@ -71,9 +73,9 @@ ProxyConfig<RouteHandleIf>::ProxyConfig(
         checkLogic(jCurRoute, "RoutePolicy: no route");
         checkLogic(jAliases, "RoutePolicy: no aliases");
         checkLogic(jAliases->isArray(), "RoutePolicy: aliases is not an array");
-        auto routeSelector =
-            std::make_shared<PrefixSelectorRoute<RouteHandleIf>>(
-                factory, *jCurRoute);
+        auto routeSelector = std::make_shared<
+            PrefixSelectorRoute<typename RouterInfo::RouteHandleIf>>(
+            factory, *jCurRoute);
         for (const auto& alias : *jAliases) {
           checkLogic(alias.isString(), "RoutePolicy: alias is not a string");
           routeSelectors[alias.stringPiece()] = routeSelector;
@@ -82,9 +84,9 @@ ProxyConfig<RouteHandleIf>::ProxyConfig(
     } else { // object
       for (const auto& it : jRoutes->items()) {
         checkLogic(it.first.isString(), "RoutePolicy: alias is not a string");
-        routeSelectors[it.first.stringPiece()] =
-            std::make_shared<PrefixSelectorRoute<RouteHandleIf>>(
-                factory, it.second);
+        routeSelectors[it.first.stringPiece()] = std::make_shared<
+            PrefixSelectorRoute<typename RouterInfo::RouteHandleIf>>(
+            factory, it.second);
       }
     }
   } else {
@@ -94,20 +96,21 @@ ProxyConfig<RouteHandleIf>::ProxyConfig(
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
   pools_ = provider.releasePools();
   accessPoints_ = provider.releaseAccessPoints();
-  proxyRoute_ = std::make_shared<ProxyRoute<RouteHandleIf>>(
-      &proxy, routeSelectors);
-  serviceInfo_ = std::make_shared<ServiceInfo<RouteHandleIf>>(&proxy, *this);
+  proxyRoute_ =
+      std::make_shared<ProxyRoute<RouterInfo>>(
+          &proxy, routeSelectors);
+  serviceInfo_ = std::make_shared<ServiceInfo<RouterInfo>>(&proxy, *this);
 }
 
-template <class RouteHandleIf>
-std::shared_ptr<RouteHandleIf>
-ProxyConfig<RouteHandleIf>::getRouteHandleForAsyncLog(
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+ProxyConfig<RouterInfo>::getRouteHandleForAsyncLog(
     folly::StringPiece asyncLogName) const {
   return tryGet(asyncLogRoutes_, asyncLogName);
 }
 
-template <class RouteHandleIf>
-size_t ProxyConfig<RouteHandleIf>::calcNumClients() const {
+template <class RouterInfo>
+size_t ProxyConfig<RouterInfo>::calcNumClients() const {
   size_t result = 0;
   for (const auto& it : pools_) {
     result += it.second.size();

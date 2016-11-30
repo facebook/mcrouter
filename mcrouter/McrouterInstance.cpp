@@ -34,7 +34,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-using McrouterProxyConfig = ProxyConfig<McrouterRouteHandleIf>;
+using McrouterProxyConfig = ProxyConfig<McrouterRouterInfo>;
 
 class McrouterManager {
  public:
@@ -512,7 +512,7 @@ bool McrouterInstance::configure(const ProxyConfigBuilder& builder) {
   try {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       newConfigs.push_back(
-          builder.buildConfig<McrouterRouteHandleIf>(*getProxy(i)));
+          builder.buildConfig<McrouterRouterInfo>(*getProxy(i)));
     }
   } catch (const std::exception& e) {
     MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,

@@ -53,11 +53,11 @@ namespace mcrouter {
 class McrouterClient;
 class McrouterInstance;
 class McrouterInstanceBase;
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ProxyConfig;
 class ProxyDestination;
 class ProxyRequestContext;
-template <class RouteHandleIf, class Request>
+template <class RouterInfo, class Request>
 class ProxyRequestContextTyped;
 class RuntimeVarsData;
 class ShardSplitter;
@@ -65,7 +65,7 @@ class ShardSplitter;
 using ObservableRuntimeVars =
     Observable<std::shared_ptr<const RuntimeVarsData>>;
 
-using McrouterProxyConfig = ProxyConfig<McrouterRouteHandleIf>;
+using McrouterProxyConfig = ProxyConfig<McrouterRouterInfo>;
 
 struct ShadowSettings {
   /**
@@ -162,10 +162,10 @@ class Proxy : public ProxyBase {
       std::shared_ptr<McrouterProxyConfig> newConfig);
 
   /** Queue up and route the new incoming request */
-  template <class RouteHandleIf, class Request>
+  template <class RouterInfo, class Request>
   void dispatchRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<RouteHandleIf, Request>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
 
   /**
    * Put a new proxy message into the queue.
@@ -197,9 +197,6 @@ class Proxy : public ProxyBase {
   SFRLock configLock_;
   std::shared_ptr<McrouterProxyConfig> config_;
 
-  // Stores the id of the next request.
-  uint64_t nextReqId_ = 0;
-
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
 
   struct ProxyDelayedDestructor {
@@ -227,21 +224,21 @@ class Proxy : public ProxyBase {
   /** Process and reply stats request */
   void routeHandlesProcessRequest(
       const McStatsRequest& req,
-      std::unique_ptr<ProxyRequestContextTyped<
-        McrouterRouteHandleIf, McStatsRequest>> ctx);
+      std::unique_ptr<
+          ProxyRequestContextTyped<McrouterRouterInfo, McStatsRequest>> ctx);
 
   /** Process and reply to a version request */
   void routeHandlesProcessRequest(
       const McVersionRequest& req,
-      std::unique_ptr<ProxyRequestContextTyped<
-        McrouterRouteHandleIf, McVersionRequest>> ctx);
+      std::unique_ptr<
+          ProxyRequestContextTyped<McrouterRouterInfo, McVersionRequest>> ctx);
 
   /** Route request through route handle tree */
   template <class Request>
   typename std::enable_if<TRequestListContains<Request>::value, void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+      std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
           ctx);
 
   /** Fail all unknown operations */
@@ -249,34 +246,19 @@ class Proxy : public ProxyBase {
   typename std::enable_if<!TRequestListContains<Request>::value, void>::type
   routeHandlesProcessRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+      std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
           ctx);
 
   /** Process request (update stats and route the request) */
   template <class Request>
   void processRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+      std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
           ctx);
 
   /** Increase requests sent stats counters for given operation type */
   template <class Request>
   void bumpStats(const Request&);
-
-  /**
-   * Incoming request rate limiting.
-   *
-   * We need this to protect memory and CPU intensive routing code from
-   * processing too many requests at a time. The limit here ensures that
-   * in an event we get a spike of incoming requests, we'll queue up
-   * proxy_request_t objects, which don't consume nearly as much memory as
-   * fiber stacks.
-   */
-
-  /** Number of requests processing */
-  size_t numRequestsProcessing_{0};
-  /** Number of waiting requests */
-  size_t numRequestsWaiting_{0};
 
   /**
    * We use this wrapper instead of putting 'hook' inside ProxyRequestContext
@@ -309,14 +291,14 @@ class Proxy : public ProxyBase {
    public:
     WaitingRequest(
         const Request& req,
-        std::unique_ptr<
-            ProxyRequestContextTyped<McrouterRouteHandleIf, Request>> ctx);
+        std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
+            ctx);
     void process(Proxy* proxy) override final;
     void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
 
    private:
     const Request& req_;
-    std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
+    std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
         ctx_;
 
     int64_t timePushedOnQueue_{-1};
@@ -331,13 +313,7 @@ class Proxy : public ProxyBase {
   bool rateLimited(ProxyRequestPriority priority, const Request&) const;
 
   /** Will let through requests from the above queue if we have capacity */
-  void pump();
-
-  /**
-   * Returns the next request id.
-   * Request ids are unique per Proxy.
-   */
-  uint64_t nextRequestId();
+  void pump() override final;
 
   friend class McrouterClient;
   friend class McrouterInstance;

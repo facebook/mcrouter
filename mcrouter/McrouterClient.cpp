@@ -11,7 +11,7 @@
 
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/lib/MessageQueue.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {

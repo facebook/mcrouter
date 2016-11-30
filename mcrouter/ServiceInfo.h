@@ -15,25 +15,25 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ProxyConfig;
-template <class RouteHandleIf, class Request>
+template <class RouterInfo, class Request>
 class ProxyRequestContextTyped;
-class Proxy;
+class ProxyBase;
 
 /**
  * Answers mc_op_get_service_info requests of the form
  * __mcrouter__.commands(args,...)
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ServiceInfo {
  public:
-  ServiceInfo(Proxy* proxy, const ProxyConfig<RouteHandleIf>& config);
+  ServiceInfo(ProxyBase* proxy, const ProxyConfig<RouterInfo>& config);
 
   void handleRequest(
       folly::StringPiece req,
       const std::shared_ptr<
-          ProxyRequestContextTyped<RouteHandleIf, McGetRequest>>& ctx) const;
+          ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) const;
 
   ~ServiceInfo();
 

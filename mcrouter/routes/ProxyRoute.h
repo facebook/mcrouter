@@ -33,18 +33,20 @@ class Proxy;
 /**
  * This is the top-most level of Mcrouter's RouteHandle tree.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ProxyRoute {
  public:
   static std::string routeName() { return "proxy"; }
 
   ProxyRoute(
       Proxy* proxy,
-      const RouteSelectorMap<RouteHandleIf>& routeSelectors);
+      const RouteSelectorMap<typename RouterInfo::RouteHandleIf>&
+          routeSelectors);
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
     t(*root_, req);
   }
 
@@ -55,7 +57,9 @@ class ProxyRoute {
 
   McFlushAllReply route(const McFlushAllRequest& req) const {
     // route to all destinations in the config.
-    return AllSyncRoute<RouteHandleIf>(getAllDestinations()).route(req);
+    return AllSyncRoute<typename RouterInfo::RouteHandleIf>(
+               getAllDestinations())
+        .route(req);
   }
 
   // Routing disabled for the commands bellow.
@@ -78,35 +82,36 @@ class ProxyRoute {
 
   void traverse(
       const McVersionRequest&,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
     throw std::runtime_error("Routing version command is not supported.");
   }
   void traverse(
       const McStatsRequest&,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
     throw std::runtime_error("Routing stats command is not supported.");
   }
   void traverse(
       const McShutdownRequest&,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
     throw std::runtime_error("Routing shutdown command is not supported.");
   }
   void traverse(
       const McQuitRequest& req,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
     throw std::runtime_error("Routing quit command is not supported.");
   }
   void traverse(
       const McExecRequest& req,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
     throw std::runtime_error("Routing exec command is not supported.");
   }
 
  private:
   Proxy* proxy_;
-  std::shared_ptr<RouteHandleIf> root_;
+  std::shared_ptr<typename RouterInfo::RouteHandleIf> root_;
 
-  std::vector<std::shared_ptr<RouteHandleIf>> getAllDestinations() const;
+  std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
+  getAllDestinations() const;
 };
 
 }}}  // facebook::memcache::mcrouter

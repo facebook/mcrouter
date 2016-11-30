@@ -19,11 +19,15 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook { namespace memcache {
+
+struct AccessPoint;
+
+namespace mcrouter {
 
 template <class RouteHandleIf>
 class ProxyRoute;
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ServiceInfo;
 
 class PoolFactory;
@@ -32,14 +36,14 @@ class Proxy;
 /**
  * Topmost struct for mcrouter configs.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ProxyConfig {
  public:
-  ProxyRoute<RouteHandleIf>& proxyRoute() const {
+  ProxyRoute<RouterInfo>& proxyRoute() const {
     return *proxyRoute_;
   }
 
-  std::shared_ptr<ServiceInfo<RouteHandleIf>> serviceInfo() const {
+  std::shared_ptr<ServiceInfo<RouterInfo>> serviceInfo() const {
     return serviceInfo_;
   }
 
@@ -47,11 +51,11 @@ class ProxyConfig {
     return configMd5Digest_;
   }
 
-  std::shared_ptr<RouteHandleIf> getRouteHandleForAsyncLog(
+  std::shared_ptr<typename RouterInfo::RouteHandleIf> getRouteHandleForAsyncLog(
       folly::StringPiece asyncLogName) const;
 
   const folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<RouteHandleIf>>>&
+      std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>>&
   getPools() const {
     return pools_;
   }
@@ -65,12 +69,14 @@ class ProxyConfig {
   size_t calcNumClients() const;
 
  private:
-  std::shared_ptr<ProxyRoute<RouteHandleIf>> proxyRoute_;
-  std::shared_ptr<ServiceInfo<RouteHandleIf>> serviceInfo_;
+  std::shared_ptr<ProxyRoute<RouterInfo>> proxyRoute_;
+  std::shared_ptr<ServiceInfo<RouterInfo>> serviceInfo_;
   std::string configMd5Digest_;
-  folly::StringKeyedUnorderedMap<std::shared_ptr<RouteHandleIf>>
+  folly::StringKeyedUnorderedMap<
+      std::shared_ptr<typename RouterInfo::RouteHandleIf>>
       asyncLogRoutes_;
-  folly::StringKeyedUnorderedMap<std::vector<std::shared_ptr<RouteHandleIf>>>
+  folly::StringKeyedUnorderedMap<
+      std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>>
       pools_;
   folly::StringKeyedUnorderedMap<
     std::vector<std::shared_ptr<const AccessPoint>>

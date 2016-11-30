@@ -9,6 +9,8 @@
  */
 #include "BigValueRoute.h"
 
+#include "mcrouter/routes/McrouterRouteHandle.h"
+
 namespace facebook { namespace memcache { namespace mcrouter {
 
 BigValueRoute::ChunksInfo::ChunksInfo(

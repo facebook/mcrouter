@@ -87,6 +87,15 @@ class ProxyBase {
     return statsContainer_.get();
   }
 
+  /**
+   * Returns the next request id.
+   * Request ids are unique per Proxy.
+   */
+  uint64_t nextRequestId();
+
+  /** Will let through requests from the above queue if we have capacity */
+  virtual void pump() = 0;
+
  private:
   McrouterInstanceBase& router_;
   const size_t id_{0};
@@ -101,8 +110,28 @@ class ProxyBase {
   ProxyStats stats_;
   std::unique_ptr<ProxyStatsContainer> statsContainer_;
 
+  // Stores the id of the next request.
+  uint64_t nextReqId_ = 0;
+
  protected:
   std::unique_ptr<ProxyDestinationMap> destinationMap_;
+
+  /**
+   * Incoming request rate limiting.
+   *
+   * We need this to protect memory and CPU intensive routing code from
+   * processing too many requests at a time. The limit here ensures that
+   * in an event we get a spike of incoming requests, we'll queue up
+   * proxy_request_t objects, which don't consume nearly as much memory as
+   * fiber stacks.
+   */
+
+  /** Number of requests processing */
+  size_t numRequestsProcessing_{0};
+  /** Number of waiting requests */
+  size_t numRequestsWaiting_{0};
+
+  friend class ProxyRequestContext;
 };
 } // mcrouter
 } // memcache

@@ -17,6 +17,7 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/Reply.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

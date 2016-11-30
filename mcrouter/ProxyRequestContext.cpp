@@ -12,18 +12,18 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/McrouterClient.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 ProxyRequestContext::ProxyRequestContext(
-    Proxy& pr,
+    ProxyBase& pr,
     ProxyRequestPriority priority__)
-    : requestId_(pr.nextRequestId()), proxy_(pr), priority_(priority__) {
-  logger_.emplace(&proxy_);
-  additionalLogger_.emplace(&proxy_);
-  proxy_.stats().incrementSafe(proxy_request_num_outstanding_stat);
+    : requestId_(pr.nextRequestId()), proxyBase_(pr), priority_(priority__) {
+  logger_.emplace(&proxyBase_);
+  additionalLogger_.emplace(&proxyBase_);
+  proxyBase_.stats().incrementSafe(proxy_request_num_outstanding_stat);
 }
 
 ProxyRequestContext::~ProxyRequestContext() {
@@ -40,9 +40,9 @@ ProxyRequestContext::~ProxyRequestContext() {
   }
 
   if (processing_) {
-    --proxy_.numRequestsProcessing_;
-    proxy_.stats().decrement(proxy_reqs_processing_stat);
-    proxy_.pump();
+    --proxyBase_.numRequestsProcessing_;
+    proxyBase_.stats().decrement(proxy_reqs_processing_stat);
+    proxyBase_.pump();
   }
 
   if (requester_) {
@@ -51,7 +51,7 @@ ProxyRequestContext::~ProxyRequestContext() {
     }
   }
 
-  proxy_.stats().decrementSafe(proxy_request_num_outstanding_stat);
+  proxyBase_.stats().decrementSafe(proxy_request_num_outstanding_stat);
 }
 
 uint64_t ProxyRequestContext::senderId() const {
@@ -74,7 +74,7 @@ void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
 }
 
 std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
-    Proxy& proxy,
+    ProxyBase& proxy,
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback) {
   return std::shared_ptr<ProxyRequestContext>(
@@ -86,7 +86,7 @@ std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
 }
 
 std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
-    Proxy& proxy,
+    ProxyBase& proxy,
     folly::fibers::Baton& baton,
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback) {
@@ -103,11 +103,11 @@ std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
 
 ProxyRequestContext::ProxyRequestContext(
     RecordingT,
-    Proxy& pr,
+    ProxyBase& pr,
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback)
     /* pr.nextRequestId() is not threadsafe */
-    : requestId_(0), proxy_(pr), recording_(true) {
+    : requestId_(0), proxyBase_(pr), recording_(true) {
   new (&recordingState_) std::unique_ptr<RecordingState>(
     folly::make_unique<RecordingState>());
   recordingState_->clientCallback = std::move(clientCallback);

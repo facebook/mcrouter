@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 
 namespace facebook {
 namespace memcache {

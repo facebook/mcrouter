@@ -51,10 +51,10 @@ wrapWithBigValueRoute(
 
 } // detail
 
-template <class RouteHandleIf>
-ProxyRoute<RouteHandleIf>::ProxyRoute(
+template <class RouterInfo>
+ProxyRoute<RouterInfo>::ProxyRoute(
     Proxy* proxy,
-    const RouteSelectorMap<RouteHandleIf>& routeSelectors)
+    const RouteSelectorMap<typename RouterInfo::RouteHandleIf>& routeSelectors)
     : proxy_(proxy),
       root_(makeMcrouterRouteHandle<RootRoute>(proxy_, routeSelectors)) {
   if (proxy_->getRouterOptions().big_value_split_threshold != 0) {
@@ -66,10 +66,10 @@ ProxyRoute<RouteHandleIf>::ProxyRoute(
   }
 }
 
-template <class RouteHandleIf>
-std::vector<std::shared_ptr<RouteHandleIf>>
-ProxyRoute<RouteHandleIf>::getAllDestinations() const {
-  std::vector<std::shared_ptr<RouteHandleIf>> rh;
+template <class RouterInfo>
+std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
+ProxyRoute<RouterInfo>::getAllDestinations() const {
+  std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh;
 
   // We're on the proxy thread, but this should ideally be grabbed
   // from fiber_local::getSharedCtx().  Hard to do due to circular

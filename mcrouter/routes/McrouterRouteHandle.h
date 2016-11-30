@@ -14,7 +14,7 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -24,5 +24,7 @@ using McrouterRouteHandle = MemcacheRouteHandle<Route>;
 using McrouterRouteHandleIf = MemcacheRouteHandleIf;
 
 typedef std::shared_ptr<McrouterRouteHandleIf> McrouterRouteHandlePtr;
+
+using McrouterRouterInfo = MemcacheRouterInfo;
 
 }}}  // facebook::memcache::mcrouter

@@ -16,9 +16,7 @@
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
-#include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestLogger.h"
 #include "mcrouter/ProxyRequestPriority.h"
 
@@ -29,9 +27,10 @@ struct AccessPoint;
 
 namespace mcrouter {
 
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ProxyRoute;
 
+class ProxyBase;
 class McrouterClient;
 class ShardSplitter;
 
@@ -62,7 +61,7 @@ public:
    *   in traverse() with itself as the argument.
    */
   static std::shared_ptr<ProxyRequestContext> createRecording(
-      Proxy& proxy,
+      ProxyBase& proxy,
       ClientCallback clientCallback,
       ShardSplitCallback shardSplitCallback = nullptr);
 
@@ -72,15 +71,15 @@ public:
    * finish executing).
    */
   static std::shared_ptr<ProxyRequestContext> createRecordingNotify(
-      Proxy& proxy,
+      ProxyBase& proxy,
       folly::fibers::Baton& baton,
       ClientCallback clientCallback,
       ShardSplitCallback shardSplitCallback = nullptr);
 
   virtual ~ProxyRequestContext();
 
-  Proxy& proxy() {
-    return proxy_;
+  ProxyBase& proxy() {
+    return proxyBase_;
   }
 
   bool recording() const noexcept {
@@ -170,11 +169,11 @@ public:
  protected:
   bool replied_{false};
 
-  ProxyRequestContext(Proxy& pr, ProxyRequestPriority priority__);
+  ProxyRequestContext(ProxyBase& pr, ProxyRequestPriority priority__);
 
  private:
   const uint64_t requestId_;
-  Proxy& proxy_;
+  ProxyBase& proxyBase_;
   bool failoverDisabled_{false};
 
   /** If true, this is currently being processed by a proxy and
@@ -214,7 +213,7 @@ public:
   enum RecordingT { Recording };
   ProxyRequestContext(
       RecordingT,
-      Proxy& pr,
+      ProxyBase& pr,
       ClientCallback clientCallback,
       ShardSplitCallback shardSplitCallback);
 
@@ -248,81 +247,4 @@ private:
   friend class Proxy;
 };
 
-template <class RouteHandleIf, class Request>
-class ProxyRequestContextTyped : public ProxyRequestContext {
- public:
-  using Type = ProxyRequestContextTyped<RouteHandleIf, Request>;
-  /**
-   * Sends the reply for this proxy request.
-   * @param newReply the message that we are sending out as the reply
-   *   for the request we are currently handling
-   */
-  void sendReply(ReplyT<Request>&& reply);
-
-  /**
-   * DEPRECATED. Convenience method, that constructs reply and calls
-   * non-template method.
-   *
-   * WARNING: This function can be dangerous with new typed requests.
-   * For typed requests,
-   *   ctx->sendReply(mc_res_local_error, "Error message")
-   * does the right thing, while
-   *   ctx->sendReply(mc_res_found, "value")
-   * does the wrong thing.
-   */
-  template <class... Args>
-  void sendReply(Args&&... args) {
-    sendReply(ReplyT<Request>(std::forward<Args>(args)...));
-  }
-
-  void startProcessing() override final;
-
-  const ProxyConfig<RouteHandleIf>& proxyConfig() const {
-    assert(!recording());
-    return *config_;
-  }
-
-  ProxyRoute<RouteHandleIf>& proxyRoute() const {
-    assert(!recording());
-    return config_->proxyRoute();
-  }
-
-  /**
-   * Internally converts the context into one ready to route.
-   * Config pointer is saved to keep the config alive, and
-   * ownership is changed to shared so that all subrequests
-   * keep track of this context.
-   */
-  static std::shared_ptr<Type> process(
-      std::unique_ptr<Type> preq,
-      std::shared_ptr<const ProxyConfig<RouteHandleIf>> config);
-
- protected:
-  ProxyRequestContextTyped(
-      Proxy& pr,
-      const Request& req,
-      ProxyRequestPriority priority__)
-      : ProxyRequestContext(pr, priority__), req_(&req) {}
-
-  virtual void sendReplyImpl(ReplyT<Request>&& reply) = 0;
-
-  std::shared_ptr<const ProxyConfig<RouteHandleIf>> config_;
-
-  // It's guaranteed to point to an existing request until we call user callback
-  // (i.e. replied_ changes to true), after that it's nullptr.
-  const Request* req_;
-};
-
-/**
- * Creates a new proxy request context
- */
-template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<McrouterRouteHandleIf, Request>>
-createProxyRequestContext(
-    Proxy& pr,
-    const Request& req,
-    F&& f,
-    ProxyRequestPriority priority = ProxyRequestPriority::kCritical);
 }}}  // facebook::memcache::mcrouter
-
-#include "ProxyRequestContext-inl.h"
