@@ -148,7 +148,7 @@ class McrouterInstanceBase {
   size_t configFailures_{0};
 
   // Stores whether we should reconnect after hitting rxmit threshold
-  std::atomic<bool> disableRxmitReconnection_{true};
+  std::atomic<bool> disableRxmitReconnection_{false};
 
  private:
   TkoTrackerMap tkoTrackerMap_;
