@@ -9,7 +9,6 @@
  */
 #include <folly/Memory.h>
 
-#include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 

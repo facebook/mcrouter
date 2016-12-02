@@ -447,11 +447,6 @@ MCROUTER_OPTION_TOGGLE(
   "Disable failure logging.")
 
 MCROUTER_OPTION_TOGGLE(
-  cpu_cycles, false,
-  "cpu-cycles", no_short,
-  "Enables CPU cycles counting for performance measurement.")
-
-MCROUTER_OPTION_TOGGLE(
   test_mode, false,
   "test-mode", no_short,
   "Starts mcrouter in test mode - with logging disabled.")

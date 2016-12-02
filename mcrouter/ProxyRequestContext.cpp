@@ -20,7 +20,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 ProxyRequestContext::ProxyRequestContext(
     ProxyBase& pr,
     ProxyRequestPriority priority__)
-    : requestId_(pr.nextRequestId()), proxyBase_(pr), priority_(priority__) {
+    : proxyBase_(pr), priority_(priority__) {
   logger_.emplace(&proxyBase_);
   additionalLogger_.emplace(&proxyBase_);
   proxyBase_.stats().incrementSafe(proxy_request_num_outstanding_stat);
@@ -65,10 +65,6 @@ uint64_t ProxyRequestContext::senderId() const {
   return id;
 }
 
-uint64_t ProxyRequestContext::requestId() const {
-  return requestId_;
-}
-
 void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
   senderIdForTest_ = id;
 }
@@ -107,7 +103,7 @@ ProxyRequestContext::ProxyRequestContext(
     ClientCallback clientCallback,
     ShardSplitCallback shardSplitCallback)
     /* pr.nextRequestId() is not threadsafe */
-    : requestId_(0), proxyBase_(pr), recording_(true) {
+    : proxyBase_(pr), recording_(true) {
   new (&recordingState_) std::unique_ptr<RecordingState>(
     folly::make_unique<RecordingState>());
   recordingState_->clientCallback = std::move(clientCallback);

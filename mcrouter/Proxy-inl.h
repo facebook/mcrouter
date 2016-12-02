@@ -305,11 +305,6 @@ typename Proxy<RouterInfo>::Pointer Proxy<RouterInfo>::createProxy(
       if (connectionResetInterval.count() > 0) {
         proxy->destinationMap()->setResetTimer(connectionResetInterval);
       }
-
-      if (proxy->router().opts().cpu_cycles) {
-        cycles::attachEventBase(eventBase);
-        proxy->fiberManager().setObserver(&proxy->cyclesObserver_);
-      }
     });
 
   return Pointer(proxy.get());

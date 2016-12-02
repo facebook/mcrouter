@@ -18,6 +18,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"

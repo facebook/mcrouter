@@ -28,7 +28,6 @@
 #include "mcrouter/ServiceInfo.h"
 #include "mcrouter/ThreadUtil.h"
 #include "mcrouter/AsyncWriter.h"
-#include "mcrouter/lib/cycles/Cycles.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/stats.h"
 
@@ -361,22 +360,6 @@ void McrouterInstance::spawnAuxiliaryThreads() {
       statUpdaterThreadRun();
     });
   spawnStatLoggerThread();
-  if (opts_.cpu_cycles) {
-    cycles::startExtracting([this](cycles::CycleStats stats) {
-      auto anyProxy = getProxy(0);
-      if (anyProxy) {
-        anyProxy->stats().setValue(cycles_avg_stat, stats.avg);
-        anyProxy->stats().setValue(cycles_min_stat, stats.min);
-        anyProxy->stats().setValue(cycles_max_stat, stats.max);
-        anyProxy->stats().setValue(cycles_p01_stat, stats.p01);
-        anyProxy->stats().setValue(cycles_p05_stat, stats.p05);
-        anyProxy->stats().setValue(cycles_p50_stat, stats.p50);
-        anyProxy->stats().setValue(cycles_p95_stat, stats.p95);
-        anyProxy->stats().setValue(cycles_p99_stat, stats.p99);
-        anyProxy->stats().setValue(cycles_num_stat, stats.numSamples);
-      }
-    });
-  }
 }
 
 void McrouterInstance::startAwriterThreads() {
@@ -473,10 +456,6 @@ void McrouterInstance::joinAuxiliaryThreads() noexcept {
     if (statUpdaterThread_.joinable()) {
       statUpdaterThread_.join();
     }
-  }
-
-  if (opts_.cpu_cycles) {
-    cycles::stopExtracting();
   }
 
   if (mcrouterLogger_) {

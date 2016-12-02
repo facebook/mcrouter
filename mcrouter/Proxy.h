@@ -24,7 +24,6 @@
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
-#include "mcrouter/CyclesObserver.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
@@ -189,8 +188,6 @@ class Proxy : public ProxyBase {
  private:
   // If true, processing new requests is not safe.
   bool beingDestroyed_{false};
-
-  CyclesObserver cyclesObserver_;
 
   /** Read/write lock for config pointer */
   SFRLock configLock_;

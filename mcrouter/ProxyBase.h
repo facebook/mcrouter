@@ -87,12 +87,6 @@ class ProxyBase {
     return statsContainer_.get();
   }
 
-  /**
-   * Returns the next request id.
-   * Request ids are unique per Proxy.
-   */
-  uint64_t nextRequestId();
-
   /** Will let through requests from the above queue if we have capacity */
   virtual void pump() = 0;
 
@@ -109,9 +103,6 @@ class ProxyBase {
 
   ProxyStats stats_;
   std::unique_ptr<ProxyStatsContainer> statsContainer_;
-
-  // Stores the id of the next request.
-  uint64_t nextReqId_ = 0;
 
  protected:
   std::unique_ptr<ProxyDestinationMap> destinationMap_;

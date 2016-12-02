@@ -161,11 +161,6 @@ public:
     userIpAddr_ = newAddr.str();
   }
 
-  /**
-   * Returns the id of this requests.
-   */
-  uint64_t requestId() const;
-
   bool isProcessing() const {
     return processing_;
   }
@@ -179,7 +174,6 @@ public:
   ProxyRequestContext(ProxyBase& pr, ProxyRequestPriority priority__);
 
  private:
-  const uint64_t requestId_;
   ProxyBase& proxyBase_;
   bool failoverDisabled_{false};
 

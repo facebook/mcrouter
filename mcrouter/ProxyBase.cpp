@@ -62,10 +62,6 @@ const McrouterOptions& ProxyBase::getRouterOptions() const {
   return router_.opts();
 }
 
-uint64_t ProxyBase::nextRequestId() {
-  return ++nextReqId_;
-}
-
 } // mcrouter
 } // memcache
 } // facebook
