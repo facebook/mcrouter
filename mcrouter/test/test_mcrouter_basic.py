@@ -43,10 +43,10 @@ class TestMcrouterBasic(McrouterTestCase):
         self.assertEqual(result2["token"], None)
         self.assertEqual(result2["value"], "newvalue")
 
-        # Test stale stored: lease-get followed by a delete
+        # lease-get followed by a delete means the next lease-set will fail
         result = mcr.leaseGet("newtestkey")
         self.assertFalse(mcr.delete("newtestkey"))
-        self.assertTrue(mcr.leaseSet("newtestkey", result, is_stalestored=True))
+        self.assertFalse(mcr.leaseSet("newtestkey", result))
 
     def test_invalid_key(self):
         """

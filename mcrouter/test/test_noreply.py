@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -26,47 +26,47 @@ class TestNoreply(McrouterTestCase):
     def test_set_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("key", "value", noreply=True))
-        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(self.eventually_get(key="key", expVal="value"))
 
     def test_add_replace_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.add("key", "value", noreply=True))
-        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(self.eventually_get(key="key", expVal="value"))
         self.assertTrue(mcrouter.replace("key", "value1", noreply=True))
-        self.assertEqual(self.mc.get("key"), "value1")
+        self.assertTrue(self.eventually_get(key="key", expVal="value1"))
 
     def test_delete_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("key", "value"))
-        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(self.eventually_get(key="key", expVal="value"))
         self.assertTrue(mcrouter.delete("key", noreply=True))
         self.assertFalse(self.mc.get("key"))
 
     def test_touch_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("key", "value"))
-        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(self.eventually_get(key="key", expVal="value"))
         self.assertTrue(mcrouter.touch("key", 100, noreply=True))
-        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(self.eventually_get(key="key", expVal="value"))
 
     def test_arith_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("arith", "1"))
-        self.assertEqual(self.mc.get("arith"), "1")
+        self.assertTrue(self.eventually_get(key="arith", expVal="1"))
 
         self.assertTrue(mcrouter.incr("arith", noreply=True))
-        self.assertEqual(self.mc.get("arith"), "2")
+        self.assertTrue(self.eventually_get(key="arith", expVal="2"))
 
         self.assertTrue(mcrouter.decr("arith", noreply=True))
-        self.assertEqual(self.mc.get("arith"), "1")
+        self.assertTrue(self.eventually_get(key="arith", expVal="1"))
 
     def test_affix_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("key", "value"))
-        self.assertEqual(self.mc.get("key"), "value")
+        self.assertTrue(self.eventually_get(key="key", expVal="value"))
 
         self.assertTrue(mcrouter.append("key", "123", noreply=True))
-        self.assertEqual(self.mc.get("key"), "value123")
+        self.assertTrue(self.eventually_get(key="key", expVal="value123"))
 
         self.assertTrue(mcrouter.prepend("key", "456", noreply=True))
-        self.assertEqual(self.mc.get("key"), "456value123")
+        self.assertTrue(self.eventually_get(key="key", expVal="456value123"))

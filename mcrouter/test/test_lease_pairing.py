@@ -51,29 +51,6 @@ class TestLeasePairing(McrouterTestCase):
         self.assertTrue(self.memcacheds[0].get("key") is None)
         self.assertTrue(self.memcacheds[1].get("key") is not None)
 
-    def test_lease_pairing_disabled(self):
-        # With lease pairing disabled, lease-set should not be failed over
-        # nor redirected.
-
-        self.create_mcrouter(self.config_pairing_disabled)
-
-        # kill memcacheds[0]
-        self.memcacheds[0].pause()
-
-        # lease get - should go to memcacheds[1]
-        get_reply = self.clients[0].leaseGet("key")
-        self.assertTrue(get_reply is not None)
-
-        # bring memcacheds[0] up
-        self.memcacheds[0].resume()
-
-        # lease set should go to memcacheds[0]
-        set_reply = self.clients[1].leaseSet("key",
-                {"value": "abc", "token": get_reply['token']})
-        self.assertTrue(set_reply is not None)
-        self.assertTrue(self.memcacheds[0].get("key") is not None)
-        self.assertTrue(self.memcacheds[1].get("key") is None)
-
     def test_lease_pairing_nested_basic(self):
         # The lease-get and it's corresponding lease-set
         # should go to the same server.

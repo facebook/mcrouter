@@ -18,6 +18,7 @@ if HAVE_PYTHON
 TESTS += \
   test_allow_only_gets.py \
   test_ascii_error.py \
+  test_ascii_multiget_mock.py \
   test_async_files.py \
   test_bad_params.py \
   test_config_params.py \
@@ -32,7 +33,7 @@ TESTS += \
   test_mcrouter.py \
   test_mcrouter_basic.py \
   test_mcrouter_errors.py \
-  test_mcrouter_sanity.py \
+  test_mcrouter_sanity_mock.py \
   test_mcrouter_to_mcrouter_tko.py \
   test_migrated_failover.py \
   test_miss_on_error_arith_ops.py \

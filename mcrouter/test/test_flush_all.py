@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 
 import time
 
-from mcrouter.test.MCProcess import Memcached
+from mcrouter.test.MCProcess import MockMemcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
 class TestMcrouterRoutingPrefixAscii(McrouterTestCase):
@@ -20,8 +20,8 @@ class TestMcrouterRoutingPrefixAscii(McrouterTestCase):
 
     def setUp(self):
         # The order here corresponds to the order of hosts in the .json
-        self.mc1 = self.add_server(Memcached())
-        self.mc2 = self.add_server(Memcached())
+        self.mc1 = self.add_server(MockMemcached())
+        self.mc2 = self.add_server(MockMemcached())
 
     def get_mcrouter(self, enableFlush):
         args = ['--server-timeout', '2000']

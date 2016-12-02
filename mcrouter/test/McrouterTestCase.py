@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2016, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -10,6 +10,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 import unittest
+import time
 
 from mcrouter.test.MCProcess import Mcrouter
 
@@ -72,3 +73,14 @@ class McrouterTestCase(unittest.TestCase):
         if 'open_servers' in self.__dict__:
             for server in self.open_servers:
                 server.terminate()
+
+    def eventually_get(self, key, expVal, timeout=5):
+        start_time = time.time()
+        interval = 0.5
+        while (True):
+            if (self.mc.get(key) == expVal):
+                return True
+            time.sleep(interval)
+            now = time.time()
+            if (now - start_time > timeout):
+                return False

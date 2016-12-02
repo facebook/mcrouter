@@ -20,6 +20,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 
 from mcrouter.test.config import McrouterGlobals
 
@@ -713,7 +714,7 @@ class McrouterClients:
     def __getitem__(self, idx):
         return self.clients[idx]
 
-class Memcached(MCProcess):
+class MockMemcached(MCProcess):
     def __init__(self, port=None):
         args = [McrouterGlobals.binPath('mockmc')]
         listen_sock = None
@@ -728,6 +729,47 @@ class Memcached(MCProcess):
 
         if listen_sock is not None:
             listen_sock.close()
+
+class Memcached(MCProcess):
+    def __init__(self, port=None):
+        args = [McrouterGlobals.binPath('prodmc')]
+        listen_sock = None
+
+        # if mockmc is used here, we initialize the same way as MockMemcached
+        if McrouterGlobals.binPath('mockmc') == args[0]:
+            if port is None:
+                listen_sock = create_listen_socket()
+                port = listen_sock.getsockname()[1]
+                args.extend(['-t', str(listen_sock.fileno())])
+            else:
+                args.extend(['-P', str(port)])
+
+            MCProcess.__init__(self, args, port)
+
+            if listen_sock is not None:
+                listen_sock.close()
+        else:
+            if port is None:
+                listen_sock = create_listen_socket()
+                port = listen_sock.getsockname()[1]
+                args.extend(['--listen_sock', str(listen_sock.fileno())])
+            else:
+                args.extend(['--port', str(port)])
+
+            MCProcess.__init__(self, args, port)
+
+            if listen_sock is not None:
+                listen_sock.close()
+
+            # delay here until the server goes up
+            self.ensure_connected()
+            l = 20
+            s = self.stats()
+            while (len(s) == 0 and l > 0):
+                s = self.stats()
+                time.sleep(0.5)
+                l = l - 1
+            self.disconnect()
 
 class Mcpiper(ProcessBase):
     def __init__(self, fifos_dir, extra_args=None):
