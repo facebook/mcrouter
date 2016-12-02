@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "mcrouter/lib/network/ConnectionOptions.h"
-#include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/Operation.h"
 
 namespace folly {
@@ -24,6 +23,7 @@ class EventBase;
 namespace facebook { namespace memcache {
 
 class AsyncMcClientImpl;
+struct ReplyStatsContext;
 
 /**
  * A class for network communication with memcache protocol.
@@ -79,22 +79,15 @@ class AsyncMcClient {
       std::function<void(int numToSend)> onWrite);
 
   /**
-   * Set callback for reply stats updates.
-   *
-   * @param replyStatsCallback    Will be called whenever a reply is received.
-   *                              Called within the fiber.
-   */
-  void setReplyStatsCallback(
-      std::function<void(ReplyStatsContext)> replyStatsCallback);
-
-  /**
    * Send request synchronously (i.e. blocking call).
    * Note: it must be called only from fiber context. It will block the current
    *       stack and will send request only when we loop EventBase.
    */
   template <class Request>
-  ReplyT<Request> sendSync(const Request& request,
-                           std::chrono::milliseconds timeout);
+  ReplyT<Request> sendSync(
+      const Request& request,
+      std::chrono::milliseconds timeout,
+      ReplyStatsContext* replyContext = nullptr);
 
   /**
    * Set throttling options.

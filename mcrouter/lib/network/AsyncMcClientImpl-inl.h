@@ -18,7 +18,8 @@ namespace facebook { namespace memcache {
 template <class Request>
 ReplyT<Request> AsyncMcClientImpl::sendSync(
     const Request& request,
-    std::chrono::milliseconds timeout) {
+    std::chrono::milliseconds timeout,
+    ReplyStatsContext* replyContext) {
   auto selfPtr = selfPtr_.lock();
   // shouldn't happen.
   assert(selfPtr);
@@ -46,7 +47,10 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
   // Wait for the reply.
   auto reply = ctx.waitForReply(timeout);
 
-  updateReplyStats(ctx.getReplyStatsContext());
+  if (replyContext) {
+    *replyContext = ctx.getReplyStatsContext();
+  }
+
   // Schedule next writer loop, in case we didn't before
   // due to max inflight requests limit.
   scheduleNextWriterLoop();

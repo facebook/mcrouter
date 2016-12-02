@@ -18,12 +18,15 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class Request>
-ReplyT<Request> ProxyDestination::send(const Request& request,
-                                       DestinationRequestCtx& req_ctx,
-                                       std::chrono::milliseconds timeout) {
+ReplyT<Request> ProxyDestination::send(
+    const Request& request,
+    DestinationRequestCtx& requestContext,
+    std::chrono::milliseconds timeout,
+    ReplyStatsContext& replyStatsContext) {
   proxy->destinationMap()->markAsActive(*this);
-  auto reply = getAsyncMcClient().sendSync(request, timeout);
-  onReply(reply.result(), req_ctx);
+  auto reply =
+      getAsyncMcClient().sendSync(request, timeout, &replyStatsContext);
+  onReply(reply.result(), requestContext, replyStatsContext);
   return reply;
 }
 

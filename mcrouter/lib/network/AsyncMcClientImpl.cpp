@@ -138,11 +138,6 @@ void AsyncMcClientImpl::setRequestStatusCallbacks(
   };
 }
 
-void AsyncMcClientImpl::setReplyStatsCallback(
-    std::function<void(ReplyStatsContext)> replyStatsCallback) {
-  replyStatsCallback_ = std::move(replyStatsCallback);
-}
-
 AsyncMcClientImpl::~AsyncMcClientImpl() {
   assert(getPendingRequestCount() == 0);
   assert(getInflightRequestCount() == 0);
@@ -713,13 +708,6 @@ bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
   }
 
   return false;
-}
-
-void AsyncMcClientImpl::updateReplyStats(
-    ReplyStatsContext replyStatsContext) {
-  if (replyStatsCallback_) {
-    replyStatsCallback_(replyStatsContext);
-  }
 }
 
 namespace {

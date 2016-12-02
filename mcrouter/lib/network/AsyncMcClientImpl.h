@@ -62,12 +62,11 @@ class AsyncMcClientImpl :
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
       std::function<void(int numToSend)> onWrite);
 
-  void setReplyStatsCallback(
-      std::function<void(ReplyStatsContext)> replyStatsCallback);
-
   template <class Request>
-  ReplyT<Request> sendSync(const Request& request,
-                           std::chrono::milliseconds timeout);
+  ReplyT<Request> sendSync(
+      const Request& request,
+      std::chrono::milliseconds timeout,
+      ReplyStatsContext* replyContext);
 
   void setThrottle(size_t maxInflight, size_t maxPending);
 
@@ -124,7 +123,6 @@ class AsyncMcClientImpl :
   folly::AsyncTransportWrapper::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
-  std::function<void(ReplyStatsContext)> replyStatsCallback_;
 
   // Debug pipe.
   ConnectionFifo debugFifo_;
@@ -202,14 +200,6 @@ class AsyncMcClientImpl :
 
   void parseError(mc_res_t result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
-  /**
-   * Function called on each reply.
-   *
-   * @param replyStatsContext      Stores id of codec used for compression,
-   *                               Number of bytes before and after compression.
-   * NOTICE: id of the codec equals zero if reply was not compressed.
-   */
-  void updateReplyStats(ReplyStatsContext replyStatsContext);
 
   void sendFakeReply(McClientRequestContextBase& request);
 

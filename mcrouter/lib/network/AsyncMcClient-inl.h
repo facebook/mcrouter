@@ -35,15 +35,12 @@ inline void AsyncMcClient::setRequestStatusCallbacks(
                                    std::move(onWrite));
 }
 
-inline void AsyncMcClient::setReplyStatsCallback(
-    std::function<void(ReplyStatsContext)> replyStatsCallback) {
-  base_->setReplyStatsCallback(std::move(replyStatsCallback));
-}
-
 template <class Request>
-ReplyT<Request> AsyncMcClient::sendSync(const Request& request,
-                                        std::chrono::milliseconds timeout) {
-  return base_->sendSync(request, timeout);
+ReplyT<Request> AsyncMcClient::sendSync(
+    const Request& request,
+    std::chrono::milliseconds timeout,
+    ReplyStatsContext* replyContext) {
+  return base_->sendSync(request, timeout, replyContext);
 }
 
 inline void AsyncMcClient::setThrottle(size_t maxInflight, size_t maxPending) {

@@ -9,21 +9,17 @@
  */
 #pragma once
 
-#include <stddef.h>
-
 namespace facebook {
 namespace memcache {
 
 /*
- * Contains id of codec used for compressing reply,
- * reply size before and after compression.
+ * Used to pass useful stats and information from AsyncMcClient back up to the
+ * routing layer (DestinationRoute).
  *
- * NOTICE: if no compression is used then usedCodecId equals to zero.
+ * Contains id of codec used for compressing reply, reply size before and after
+ * compression. If no compression is used, then usedCodecId is zero.
  */
 struct ReplyStatsContext {
-  uint32_t usedCodecId{0};
-  uint32_t replySizeBeforeCompression{0};
-  uint32_t replySizeAfterCompression{0};
   ReplyStatsContext() = default;
   ReplyStatsContext(
       uint32_t usedCodecId_,
@@ -32,6 +28,10 @@ struct ReplyStatsContext {
       : usedCodecId(usedCodecId_),
         replySizeBeforeCompression(replySizeBeforeCompression_),
         replySizeAfterCompression(replySizeAfterCompression_) {}
+
+  uint32_t usedCodecId{0};
+  uint32_t replySizeBeforeCompression{0};
+  uint32_t replySizeAfterCompression{0};
 };
 
 } // memcache

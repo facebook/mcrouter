@@ -161,14 +161,16 @@ class DestinationRoute {
                                   Args&&... args) const {
     auto now = nowUs();
     auto reply = createReply<Request>(std::forward<Args>(args)...);
-    ctx.onReplyReceived(poolName_,
-                        *destination_->accessPoint(),
-                        folly::StringPiece(),
-                        req,
-                        reply,
-                        now,
-                        now,
-                        fiber_local::getReplyStatsContext());
+    ReplyStatsContext replyContext;
+    ctx.onReplyReceived(
+        poolName_,
+        *destination_->accessPoint(),
+        folly::StringPiece(),
+        req,
+        reply,
+        now,
+        now,
+        replyContext);
     return reply;
   }
 
@@ -196,15 +198,17 @@ class DestinationRoute {
     }
 
     const auto& reqToSend = newReq ? *newReq : req;
-    auto reply = destination_->send(reqToSend, dctx, timeout_);
-    ctx.onReplyReceived(poolName_,
-                        *destination_->accessPoint(),
-                        strippedRoutingPrefix,
-                        reqToSend,
-                        reply,
-                        dctx.startTime,
-                        dctx.endTime,
-                        fiber_local::getReplyStatsContext());
+    ReplyStatsContext replyContext;
+    auto reply = destination_->send(reqToSend, dctx, timeout_, replyContext);
+    ctx.onReplyReceived(
+        poolName_,
+        *destination_->accessPoint(),
+        strippedRoutingPrefix,
+        reqToSend,
+        reply,
+        dctx.startTime,
+        dctx.endTime,
+        replyContext);
     return reply;
   }
 

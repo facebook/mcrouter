@@ -16,8 +16,6 @@
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/lib/network/ReplyStatsContext.h"
-
 namespace facebook { namespace memcache { namespace mcrouter {
 
 class ProxyRequestContext;
@@ -62,9 +60,6 @@ struct McrouterFiberContext {
   bool failoverTag{false};
 
   bool failoverDisabled{false};
-
-  // For logging stats to Scuba
-  ReplyStatsContext replyStatsContext;
 };
 
 }  // detail
@@ -186,21 +181,6 @@ inline void setFailoverDisabled(bool value) {
  */
 inline bool getFailoverDisabled() {
   return folly::fibers::local<detail::McrouterFiberContext>().failoverDisabled;
-}
-
-/**
- * Update reply stats context for current fiber (thread, if we're not on fiber)
- */
-inline void setReplyStatsContext(ReplyStatsContext value) {
-  folly::fibers::local<detail::McrouterFiberContext>().replyStatsContext =
-      value;
-}
-
-/**
- * Get reply stats context of current fiber (thread, if we're not on fiber)
- */
-inline ReplyStatsContext getReplyStatsContext() {
-  return folly::fibers::local<detail::McrouterFiberContext>().replyStatsContext;
 }
 
 }}}}  // facebook::memcache::mcrouter::fiber_local

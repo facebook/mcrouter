@@ -19,6 +19,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
@@ -217,7 +218,8 @@ void ProxyDestination::handleRxmittingConnection() {
 
 void ProxyDestination::onReply(
     const mc_res_t result,
-    DestinationRequestCtx& destreqCtx) {
+    DestinationRequestCtx& destreqCtx,
+    const ReplyStatsContext& replyStatsContext) {
   handle_tko(result, false);
 
   if (!stats_.results) {
@@ -228,6 +230,20 @@ void ProxyDestination::onReply(
 
   int64_t latency = destreqCtx.endTime - destreqCtx.startTime;
   stats_.avgLatency.insertSample(latency);
+
+  if (accessPoint_->compressed()) {
+    if (replyStatsContext.usedCodecId > 0) {
+      proxy->stats().increment(replies_compressed_stat);
+    } else {
+      proxy->stats().increment(replies_not_compressed_stat);
+    }
+    proxy->stats().increment(
+        reply_traffic_before_compression_stat,
+        replyStatsContext.replySizeBeforeCompression);
+    proxy->stats().increment(
+        reply_traffic_after_compression_stat,
+        replyStatsContext.replySizeAfterCompression);
+  }
 
   handleRxmittingConnection();
 }
@@ -395,25 +411,6 @@ void ProxyDestination::initializeAsyncMcClient() {
         handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
       }
     });
-
-  client_->setReplyStatsCallback([proxy = proxy, accessPoint = accessPoint_](
-      ReplyStatsContext replyStatsContext) {
-    if (accessPoint->compressed()) {
-      if (replyStatsContext.usedCodecId > 0) {
-        proxy->stats().increment(replies_compressed_stat);
-      } else {
-        proxy->stats().increment(replies_not_compressed_stat);
-      }
-      proxy->stats().increment(
-          reply_traffic_before_compression_stat,
-          replyStatsContext.replySizeBeforeCompression);
-      proxy->stats().increment(
-          reply_traffic_after_compression_stat,
-          replyStatsContext.replySizeAfterCompression);
-    }
-    // For Scuba logging
-    fiber_local::setReplyStatsContext(replyStatsContext);
-  });
 
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(opts.target_max_inflight_requests,

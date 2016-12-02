@@ -28,6 +28,8 @@
 
 namespace facebook { namespace memcache {
 
+struct ReplyStatsContext;
+
 namespace mcrouter {
 
 class ProxyBase;
@@ -69,8 +71,11 @@ class ProxyDestination {
 
   // This is a blocking call that will return reply, once it's ready.
   template <class Request>
-  ReplyT<Request> send(const Request& request, DestinationRequestCtx& req_ctx,
-                       std::chrono::milliseconds timeout);
+  ReplyT<Request> send(
+      const Request& request,
+      DestinationRequestCtx& requestContext,
+      std::chrono::milliseconds timeout,
+      ReplyStatsContext& replyStatsContext);
 
   // returns true if okay to send req using this client
   bool may_send() const;
@@ -145,7 +150,10 @@ class ProxyDestination {
   void handle_tko(const mc_res_t result, bool is_probe_req);
 
   // Process tko, stats and duration timer.
-  void onReply(const mc_res_t result, DestinationRequestCtx& destreqCtx);
+  void onReply(
+      const mc_res_t result,
+      DestinationRequestCtx& destreqCtx,
+      const ReplyStatsContext& replyStatsContext);
 
   AsyncMcClient& getAsyncMcClient();
   void initializeAsyncMcClient();
