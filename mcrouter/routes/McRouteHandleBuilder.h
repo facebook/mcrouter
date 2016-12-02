@@ -12,15 +12,28 @@
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-template <template <typename... Ignored> class R,
-          typename... RArgs,
-          typename... Args>
+template <
+    template <typename... Ignored> class R,
+    typename... RArgs,
+    typename... Args>
 McrouterRouteHandlePtr makeMcrouterRouteHandle(Args&&... args) {
   return makeRouteHandle<McrouterRouteHandleIf, R, RArgs...>(
-      std::forward<Args>(args)...
-    );
+      std::forward<Args>(args)...);
 }
 
-}}} // facebook::memcache::mcrouter
+template <
+    template <typename... Ignored> class R,
+    typename... RArgs,
+    typename... Args>
+McrouterRouteHandlePtr makeMcrouterRouteHandleWithInfo(Args&&... args) {
+  return makeRouteHandleWithInfo<McrouterRouterInfo, R, RArgs...>(
+      std::forward<Args>(args)...);
+}
+
+} // mcrouter
+} // memcache
+} // facebook

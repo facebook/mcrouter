@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,8 +20,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 McrouterRouteHandlePtr makeNullRoute();
 
 McrouterRouteHandlePtr makeMissFailoverRoute(
-  std::vector<McrouterRouteHandlePtr> targets) {
-
+    std::vector<McrouterRouteHandlePtr> targets) {
   if (targets.empty()) {
     return makeNullRoute();
   }
@@ -30,7 +29,7 @@ McrouterRouteHandlePtr makeMissFailoverRoute(
     return std::move(targets[0]);
   }
 
-  return makeMcrouterRouteHandle<MissFailoverRoute>(std::move(targets));
+  return makeMcrouterRouteHandleWithInfo<MissFailoverRoute>(std::move(targets));
 }
 
 McrouterRouteHandlePtr makeMissFailoverRoute(

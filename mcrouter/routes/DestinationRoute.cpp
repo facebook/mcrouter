@@ -19,7 +19,7 @@ McrouterRouteHandlePtr makeDestinationRoute(
     size_t indexInPool,
     std::chrono::milliseconds timeout,
     bool keepRoutingPrefix) {
-  return makeMcrouterRouteHandle<DestinationRoute>(
+  return makeMcrouterRouteHandleWithInfo<DestinationRoute>(
       std::move(destination),
       std::move(poolName),
       indexInPool,

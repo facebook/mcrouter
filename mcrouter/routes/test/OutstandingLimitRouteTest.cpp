@@ -28,17 +28,18 @@ std::string makeKey(uint64_t id) {
 
 }  // anonymous namespace
 
-void sendRequest(folly::fibers::FiberManager& fm,
-                 McrouterRouteHandleIf& rh,
-                 size_t id,
-                 uint64_t senderId,
-                 std::vector<std::string>& replyOrder) {
+void sendRequest(
+    folly::fibers::FiberManager& fm,
+    McrouterRouteHandleIf& rh,
+    size_t id,
+    uint64_t senderId,
+    std::vector<std::string>& replyOrder) {
   auto context = getTestContext();
   context->setSenderIdForTest(senderId);
 
   fm.addTask([&rh, id, context, &replyOrder]() {
       McGetRequest request(makeKey(id));
-      fiber_local::setSharedCtx(std::move(context));
+      fiber_local<MemcacheRouterInfo>::setSharedCtx(std::move(context));
       rh.route(request);
       replyOrder.push_back(makeKey(id));
     });
@@ -48,14 +49,15 @@ TEST(oustandingLimitRouteTest, basic) {
   auto normalHandle = std::make_shared<TestHandle>(
     GetRouteTestData(mc_res_found, "a"));
 
-  McrouterRouteHandle<OutstandingLimitRoute<McrouterRouteHandleIf>> rh(
+  McrouterRouteHandle<OutstandingLimitRoute<McrouterRouterInfo>> rh(
       normalHandle->rh, 3);
 
   normalHandle->pause();
 
   std::vector<std::string> replyOrder;
 
-  TestFiberManager testfm{fiber_local::ContextTypeTag()};
+  TestFiberManager testfm{
+      typename fiber_local<MemcacheRouterInfo>::ContextTypeTag()};
   auto& fm = testfm.getFiberManager();
 
   sendRequest(fm, rh, 1, 1, replyOrder);

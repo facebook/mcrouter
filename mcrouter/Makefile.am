@@ -64,6 +64,7 @@ libmcroutercore_a_SOURCES = \
   Proxy-inl.h \
   Proxy.cpp \
   Proxy.h \
+  ProxyBase-inl.h \
   ProxyBase.cpp \
   ProxyBase.h \
   ProxyConfig-inl.h \

@@ -19,9 +19,10 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
-                                         std::string asynclogName) {
-  return makeMcrouterRouteHandle<AsynclogRoute>(
+McrouterRouteHandlePtr makeAsynclogRoute(
+    McrouterRouteHandlePtr rh,
+    std::string asynclogName) {
+  return makeMcrouterRouteHandleWithInfo<AsynclogRoute>(
       std::move(rh), std::move(asynclogName));
 }
 

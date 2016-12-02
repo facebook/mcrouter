@@ -26,7 +26,12 @@ using std::make_shared;
 using std::string;
 using std::vector;
 
+namespace {
+using FiberManagerContextTag =
+    typename fiber_local<MemcacheRouterInfo>::ContextTypeTag;
+
 constexpr size_t kNumSplits = 26 * 26 + 1;
+} // anonymous
 
 template <class Request>
 void testShardingForOp(ShardSplitter splitter) {
@@ -38,10 +43,10 @@ void testShardingForOp(ShardSplitter splitter) {
                                 UpdateRouteTestData(mc_res_found),
                                 DeleteRouteTestData(mc_res_found))};
     auto rh = get_route_handles(handles)[0];
-    McrouterRouteHandle<ShardSplitRoute<McrouterRouteHandleIf>> splitRoute(
+    McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
         rh, splitter);
 
-    TestFiberManager fm{fiber_local::ContextTypeTag()};
+    TestFiberManager fm{FiberManagerContextTag()};
     fm.run([&] {
       mockFiberContext();
       auto reply = splitRoute.route(Request("test:123:"));
@@ -67,10 +72,10 @@ void testDirectOp(ShardSplitter splitter) {
                               UpdateRouteTestData(mc_res_found),
                               DeleteRouteTestData(mc_res_found))};
   auto rh = get_route_handles(handles)[0];
-  McrouterRouteHandle<ShardSplitRoute<McrouterRouteHandleIf>> splitRoute(
+  McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
       rh, splitter);
 
-  TestFiberManager fm{fiber_local::ContextTypeTag()};
+  TestFiberManager fm{FiberManagerContextTag()};
   fm.run([&] {
     mockFiberContext();
     auto reply = splitRoute.route(Request("test:123zz:"));
@@ -119,10 +124,10 @@ TEST(shardSplitRoute, simpleSplit_deleteFanout) {
       make_shared<TestHandle>(DeleteRouteTestData(mc_res_found))};
   auto rh = get_route_handles(handles)[0];
   ShardSplitter splitter(folly::dynamic::object("123", kNumSplits));
-  McrouterRouteHandle<ShardSplitRoute<McrouterRouteHandleIf>> splitRoute(
+  McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
       rh, splitter);
 
-  TestFiberManager fm{fiber_local::ContextTypeTag()};
+  TestFiberManager fm{FiberManagerContextTag()};
   fm.run([&] {
     mockFiberContext();
     auto reply = splitRoute.route(McDeleteRequest("test:123:"));

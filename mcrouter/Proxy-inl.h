@@ -9,13 +9,14 @@
  */
 #include <folly/fibers/EventBaseLoopController.h>
 
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyConfig.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyConfig.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/options.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/stats.h"
 
@@ -181,7 +182,7 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
       [&req, ctx = std::move(funcCtx)]() mutable {
         try {
           auto& proute = ctx->proxyRoute();
-          fiber_local::setSharedCtx(std::move(ctx));
+          fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
           return proute.route(req);
         } catch (const std::exception& e) {
           auto err = folly::sformat(
@@ -263,13 +264,12 @@ void Proxy<RouterInfo>::dispatchRequest(
   }
 }
 
-
 template <class RouterInfo>
 Proxy<RouterInfo>::Proxy(
     McrouterInstanceBase& rtr,
     size_t id,
     folly::EventBase& evb)
-    : ProxyBase(rtr, id, evb) {
+    : ProxyBase(rtr, id, evb, RouterInfo()) {
   messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
       router().opts().client_queue_size,
       [this](ProxyMessage&& message) {

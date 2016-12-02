@@ -17,7 +17,7 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr createLoggingRoute(McrouterRouteHandlePtr rh) {
-  return makeMcrouterRouteHandle<LoggingRoute>(std::move(rh));
+  return makeMcrouterRouteHandleWithInfo<LoggingRoute>(std::move(rh));
 }
 
 McrouterRouteHandlePtr makeLoggingRoute(

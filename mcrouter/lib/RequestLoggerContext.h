@@ -31,31 +31,33 @@ namespace mcrouter {
 
 struct RequestLoggerContext {
   template <class Request>
-  RequestLoggerContext(const std::string& poolName_,
-                       const AccessPoint& ap_,
-                       folly::StringPiece strippedRoutingPrefix_,
-                       const Request& request,
-                       const ReplyT<Request>& reply,
-                       const int64_t startTimeUs_,
-                       const int64_t endTimeUs_,
-                       const ReplyStatsContext replyStatsContext_)
-    : fullKey(request.key().fullKey()),
-      keyWithoutRoute(request.key().keyWithoutRoute()),
-      routingKey(request.key().routingKey()),
-      routingPrefix(request.key().routingPrefix()),
-      strippedRoutingPrefix(strippedRoutingPrefix_),
-      requestName(Request::name),
-      requestValue(carbon::valuePtrUnsafe(request)),
-      requestClass(fiber_local::getRequestClass()),
-      routingKeyHash(request.key().routingKeyHash()),
-      replyValue(carbon::valuePtrUnsafe(reply)),
-      replyResult(reply.result()),
-      replyFlags(reply.flags()),
-      poolName(poolName_),
-      ap(ap_),
-      startTimeUs(startTimeUs_),
-      endTimeUs(endTimeUs_),
-      replyStatsContext(replyStatsContext_) {}
+  RequestLoggerContext(
+      const std::string& poolName_,
+      const AccessPoint& ap_,
+      folly::StringPiece strippedRoutingPrefix_,
+      const Request& request,
+      const ReplyT<Request>& reply,
+      RequestClass requestClass_,
+      const int64_t startTimeUs_,
+      const int64_t endTimeUs_,
+      const ReplyStatsContext replyStatsContext_)
+      : fullKey(request.key().fullKey()),
+        keyWithoutRoute(request.key().keyWithoutRoute()),
+        routingKey(request.key().routingKey()),
+        routingPrefix(request.key().routingPrefix()),
+        strippedRoutingPrefix(strippedRoutingPrefix_),
+        requestName(Request::name),
+        requestValue(carbon::valuePtrUnsafe(request)),
+        requestClass(requestClass_),
+        routingKeyHash(request.key().routingKeyHash()),
+        replyValue(carbon::valuePtrUnsafe(reply)),
+        replyResult(reply.result()),
+        replyFlags(reply.flags()),
+        poolName(poolName_),
+        ap(ap_),
+        startTimeUs(startTimeUs_),
+        endTimeUs(endTimeUs_),
+        replyStatsContext(replyStatsContext_) {}
 
   RequestLoggerContext(const RequestLoggerContext&) = delete;
   RequestLoggerContext& operator=(const RequestLoggerContext&) = delete;

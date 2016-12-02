@@ -21,8 +21,11 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Async logs a failed request. It assumes the required data is available in
  * the reply.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class AsynclogRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
   std::string routeName() const { return "asynclog:" + asynclogName_; }
 
@@ -37,8 +40,8 @@ class AsynclogRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
-    return fiber_local::runWithLocals([this, &req]() {
-      fiber_local::setAsynclogName(asynclogName_);
+    return fiber_local<RouterInfo>::runWithLocals([this, &req]() {
+      fiber_local<RouterInfo>::setAsynclogName(asynclogName_);
       return rh_->route(req);
     });
   }

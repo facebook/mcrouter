@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
@@ -28,7 +29,7 @@ class ProxyRequestLogger {
  protected:
   ProxyBase* proxy_;
 
-  void logError(const mc_res_t result);
+  void logError(mc_res_t result, RequestClass reqClass);
 };
 
 }}}  // facebook::memcache::mcrouter

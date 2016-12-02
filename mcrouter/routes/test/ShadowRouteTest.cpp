@@ -39,7 +39,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
   };
 
-  TestFiberManager fm{fiber_local::ContextTypeTag()};
+  TestFiberManager fm{fiber_local<McrouterRouterInfo>::ContextTypeTag()};
 
   auto settings = ShadowSettings::create(
       folly::dynamic::object("index_range", folly::dynamic::array(0, 1)),
@@ -51,7 +51,7 @@ TEST(shadowRouteTest, defaultPolicy) {
     {std::move(shadowRhs[1]), settings},
   };
 
-  McrouterRouteHandle<ShadowRoute<McrouterRouteHandleIf, DefaultShadowPolicy>>
+  McrouterRouteHandle<ShadowRoute<McrouterRouterInfo, DefaultShadowPolicy>>
       rh(normalRh, std::move(shadowData), DefaultShadowPolicy());
 
   fm.run([&] () {

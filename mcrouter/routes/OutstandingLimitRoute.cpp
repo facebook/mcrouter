@@ -18,7 +18,7 @@ McrouterRouteHandlePtr makeOutstandingLimitRoute(
   McrouterRouteHandlePtr normalRoute,
   size_t maxOutstanding) {
 
-  return makeMcrouterRouteHandle<OutstandingLimitRoute>(
+  return makeMcrouterRouteHandleWithInfo<OutstandingLimitRoute>(
     std::move(normalRoute),
     maxOutstanding);
 }

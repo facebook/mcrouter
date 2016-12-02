@@ -9,24 +9,20 @@
  */
 #include "ProxyBase.h"
 
-#include <folly/fibers/EventBaseLoopController.h>
-#include <folly/fibers/FiberManager.h>
-#include <folly/Random.h>
-
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstanceBase.h"
 #include "mcrouter/options.h"
-#include "mcrouter/ProxyDestinationMap.h"
+#include "mcrouter/McrouterInstanceBase.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace {
+const McrouterOptions& ProxyBase::getRouterOptions() const {
+  return router_.opts();
+}
 
-folly::fibers::FiberManager::Options getFiberManagerOptions(
+folly::fibers::FiberManager::Options ProxyBase::getFiberManagerOptions(
     const McrouterOptions& opts) {
   folly::fibers::FiberManager::Options fmOpts;
   fmOpts.stackSize = opts.fibers_stack_size;
@@ -35,31 +31,6 @@ folly::fibers::FiberManager::Options getFiberManagerOptions(
   fmOpts.useGuardPages = opts.fibers_use_guard_pages;
   fmOpts.fibersPoolResizePeriodMs = opts.fibers_pool_resize_period_ms;
   return fmOpts;
-}
-
-} // anonymous
-
-ProxyBase::ProxyBase(
-    McrouterInstanceBase& rtr,
-    size_t id,
-    folly::EventBase& evb)
-    : router_(rtr),
-      id_(id),
-      eventBase_(evb),
-      fiberManager_(
-          fiber_local::ContextTypeTag(),
-          folly::make_unique<folly::fibers::EventBaseLoopController>(),
-          getFiberManagerOptions(router_.opts())),
-      asyncLog_(router_.opts()),
-      destinationMap_(folly::make_unique<ProxyDestinationMap>(this)) {
-  // Setup a full random seed sequence
-  folly::Random::seed(randomGenerator_);
-
-  statsContainer_ = folly::make_unique<ProxyStatsContainer>(*this);
-}
-
-const McrouterOptions& ProxyBase::getRouterOptions() const {
-  return router_.opts();
 }
 
 } // mcrouter

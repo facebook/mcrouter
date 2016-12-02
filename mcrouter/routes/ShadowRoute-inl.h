@@ -17,16 +17,16 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-template <class RouteHandleIf, class ShadowPolicy>
+template <class RouterInfo, class ShadowPolicy>
 template <class Request>
-void ShadowRoute<RouteHandleIf, ShadowPolicy>::dispatchShadowRequest(
-    std::shared_ptr<RouteHandleIf> shadow,
+void ShadowRoute<RouterInfo, ShadowPolicy>::dispatchShadowRequest(
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> shadow,
     std::shared_ptr<Request> adjustedReq) const {
   folly::fibers::addTask(
       [shadow = std::move(shadow), adjustedReq = std::move(adjustedReq)]() {
         // we don't want to spool shadow requests
-        fiber_local::clearAsynclogName();
-        fiber_local::addRequestClass(RequestClass::kShadow);
+        fiber_local<RouterInfo>::clearAsynclogName();
+        fiber_local<RouterInfo>::addRequestClass(RequestClass::kShadow);
         shadow->route(*adjustedReq);
       });
 }

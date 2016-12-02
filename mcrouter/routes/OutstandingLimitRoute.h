@@ -36,8 +36,11 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * route. All blocked requests will be sent one request per sender id in
  * round-robin fashion to guarantee fairness.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class OutstandingLimitRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
   std::string routeName() const {
     return folly::to<std::string>("outstanding-limit|limit=", maxOutstanding_);
@@ -57,7 +60,7 @@ class OutstandingLimitRoute {
   template <class Request>
   ReplyT<Request> route(const Request& req) {
     if (outstanding_ == maxOutstanding_) {
-      auto& ctx = fiber_local::getSharedCtx();
+      auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
       auto senderId = ctx->senderId();
       auto& entry = [&]() -> QueueEntry& {
         auto entry_it = senderIdToEntry_.find(senderId);

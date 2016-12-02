@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,16 +11,30 @@
 
 #include <memory>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
-template <class RouteHandleIf,
-          template <typename... Ignored> class R,
-          typename... RArgs,
-          typename... Args>
+template <
+    class RouteHandleIf,
+    template <typename... Ignored> class R,
+    typename... RArgs,
+    typename... Args>
 std::shared_ptr<RouteHandleIf> makeRouteHandle(Args&&... args) {
   return std::make_shared<
-           typename RouteHandleIf::template Impl<R<RouteHandleIf, RArgs...>>
-         >(std::forward<Args>(args)...);
+      typename RouteHandleIf::template Impl<R<RouteHandleIf, RArgs...>>>(
+      std::forward<Args>(args)...);
 }
 
-}} // facebook::memcache
+template <
+    class RouterInfo,
+    template <typename... Ignored> class R,
+    typename... RArgs,
+    typename... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeRouteHandleWithInfo(
+    Args&&... args) {
+  return std::make_shared<typename RouterInfo::RouteHandleIf::template Impl<
+      R<RouterInfo, RArgs...>>>(std::forward<Args>(args)...);
+}
+
+} // memcache
+} // facebook

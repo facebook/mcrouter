@@ -23,8 +23,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
       proxy->stats().increment(result_ ## ERROR ## _all_count_stat);           \
     } while(0)
 
-void ProxyRequestLogger::logError(const mc_res_t result) {
-  const auto reqClass = fiber_local::getRequestClass();
+void ProxyRequestLogger::logError(mc_res_t result, RequestClass reqClass) {
   if (isErrorResult(result)) {
     REQUEST_CLASS_ERROR_STATS(proxy_, error, reqClass);
   }

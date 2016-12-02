@@ -35,7 +35,7 @@ class ProxyRequestContextTypedWithCallback
  protected:
   void sendReplyImpl(ReplyT<Request>&& reply) override final {
     auto req = this->req_;
-    fiber_local::runWithoutLocals(
+    fiber_local<RouterInfo>::runWithoutLocals(
         [this, req, &reply]() { f_(*req, std::move(reply)); });
   }
 
@@ -133,14 +133,15 @@ void ProxyRequestContextTyped<RouterInfo, Request>::sendReply(
   sendReplyImpl(std::move(reply));
   req_ = nullptr;
 
-  proxy().stats().increment(request_replied_stat);
-  proxy().stats().increment(request_replied_count_stat);
+  auto& stats = this->proxy().stats();
+  stats.increment(request_replied_stat);
+  stats.increment(request_replied_count_stat);
   if (mc_res_is_err(result)) {
-    proxy().stats().increment(request_error_stat);
-    proxy().stats().increment(request_error_count_stat);
+    stats.increment(request_error_stat);
+    stats.increment(request_error_count_stat);
   } else {
-    proxy().stats().increment(request_success_stat);
-    proxy().stats().increment(request_success_count_stat);
+    stats.increment(request_success_stat);
+    stats.increment(request_success_count_stat);
   }
 }
 

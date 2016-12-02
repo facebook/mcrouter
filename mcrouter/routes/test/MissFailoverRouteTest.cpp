@@ -32,7 +32,7 @@ TEST(missMissFailoverRouteTest, success) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
     get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
@@ -46,7 +46,7 @@ TEST(missMissFailoverRouteTest, once) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
     get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
@@ -60,7 +60,7 @@ TEST(missMissFailoverRouteTest, twice) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
   };
 
-  TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
     get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
@@ -74,7 +74,7 @@ TEST(missMissFailoverRouteTest, fail) {
     make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
   };
 
-  TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
     get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
@@ -91,7 +91,7 @@ TEST(missMissFailoverRouteTest, nonGetLike) {
     make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
   };
 
-  TestRouteHandle<MissFailoverRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
     get_route_handles(test_handles));
 
   McSetRequest req("0");

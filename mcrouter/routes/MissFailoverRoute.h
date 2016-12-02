@@ -27,10 +27,15 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * If all replies result in errors/misses, returns the reply from the
  * last destination in the list.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class MissFailoverRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
-  static std::string routeName() { return "miss-failover"; }
+  static std::string routeName() {
+    return "miss-failover";
+  }
 
   template <class Request>
   void traverse(const Request& req,
@@ -52,8 +57,8 @@ class MissFailoverRoute {
     }
 
     // Failover
-    return fiber_local::runWithLocals([this, &req]() {
-      fiber_local::addRequestClass(RequestClass::kFailover);
+    return fiber_local<RouterInfo>::runWithLocals([this, &req]() {
+      fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
       for (size_t i = 1; i < targets_.size() - 1; ++i) {
         auto failoverReply = targets_[i]->route(req);
         if (isHitResult(failoverReply.result())) {

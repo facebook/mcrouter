@@ -35,7 +35,12 @@ class ProxyDestinationMap;
 
 class ProxyBase {
  public:
-  ProxyBase(McrouterInstanceBase& rtr, size_t id, folly::EventBase& evb);
+  template <class RouterInfo>
+  ProxyBase(
+      McrouterInstanceBase& rtr,
+      size_t id,
+      folly::EventBase& evb,
+      RouterInfo tag);
   virtual ~ProxyBase() = default;
 
   const McrouterInstanceBase& router() const {
@@ -104,6 +109,9 @@ class ProxyBase {
   ProxyStats stats_;
   std::unique_ptr<ProxyStatsContainer> statsContainer_;
 
+  static folly::fibers::FiberManager::Options getFiberManagerOptions(
+      const McrouterOptions& opts);
+
  protected:
   std::unique_ptr<ProxyDestinationMap> destinationMap_;
 
@@ -127,3 +135,5 @@ class ProxyBase {
 } // mcrouter
 } // memcache
 } // facebook
+
+#include "ProxyBase-inl.h"

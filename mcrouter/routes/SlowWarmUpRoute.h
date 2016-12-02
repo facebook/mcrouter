@@ -25,7 +25,9 @@
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/SlowWarmUpRouteSettings.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * This route handle allows slow warm up of cold memcached boxes. All it does is
@@ -60,32 +62,38 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * send to server is calculated by the formula:
  *    start + (step * hitRate)
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class SlowWarmUpRoute {
- public:
-  static std::string routeName() { return "slow-warmup"; }
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
 
-  SlowWarmUpRoute(std::shared_ptr<RouteHandleIf> target,
-                  std::shared_ptr<RouteHandleIf> failoverTarget,
-                  std::shared_ptr<SlowWarmUpRouteSettings> settings)
-      : target_(std::move(target)),
-        failoverTarget_(std::move(failoverTarget)),
-        settings_(std::move(settings)) {
+ public:
+  static std::string routeName() {
+    return "slow-warmup";
   }
 
+  SlowWarmUpRoute(
+      std::shared_ptr<RouteHandleIf> target,
+      std::shared_ptr<RouteHandleIf> failoverTarget,
+      std::shared_ptr<SlowWarmUpRouteSettings> settings)
+      : target_(std::move(target)),
+        failoverTarget_(std::move(failoverTarget)),
+        settings_(std::move(settings)) {}
+
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*target_, req);
     t(*failoverTarget_, req);
   }
 
   template <class Request>
   ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
-    auto& proxy = fiber_local::getSharedCtx()->proxy();
+    auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
     if (warmingUp() && !shouldSendRequest(proxy.randomGenerator())) {
-      return fiber_local::runWithLocals([this, &req]() {
-        fiber_local::addRequestClass(RequestClass::kFailover);
+      return fiber_local<RouterInfo>::runWithLocals([this, &req]() {
+        fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
         return failoverTarget_->route(req);
       });
     }
@@ -94,8 +102,8 @@ class SlowWarmUpRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req,
-                        OtherThanT<Request, GetLike<>> = 0) const {
+  ReplyT<Request> route(const Request& req, OtherThanT<Request, GetLike<>> = 0)
+      const {
     return routeImpl(req);
   }
 
@@ -142,9 +150,11 @@ class SlowWarmUpRoute {
   template <class RNG>
   bool shouldSendRequest(RNG& rng) const {
     double target = settings_->start() + (hitRate() * settings_->step());
-    return std::generate_canonical<double,
-           std::numeric_limits<double>::digits>(rng) <= target;
+    return std::generate_canonical<double, std::numeric_limits<double>::digits>(
+               rng) <= target;
   }
 };
 
-}}} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

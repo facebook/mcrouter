@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,21 +9,21 @@
  */
 #include "SlowWarmUpRoute.h"
 
-#include <memory>
-
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeSlowWarmUpRoute(
-      McrouterRouteHandlePtr target,
-      McrouterRouteHandlePtr failoverTarget,
-      std::shared_ptr<SlowWarmUpRouteSettings> settings) {
-  return makeMcrouterRouteHandle<SlowWarmUpRoute>(std::move(target),
-                                                  std::move(failoverTarget),
-                                                  std::move(settings));
-
+    McrouterRouteHandlePtr target,
+    McrouterRouteHandlePtr failoverTarget,
+    std::shared_ptr<SlowWarmUpRouteSettings> settings) {
+  return makeMcrouterRouteHandleWithInfo<SlowWarmUpRoute>(
+      std::move(target), std::move(failoverTarget), std::move(settings));
 }
 
-}}} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

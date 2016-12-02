@@ -24,7 +24,7 @@ McrouterRouteHandlePtr makeShadowRouteDefault(
     McrouterShadowData shadowData,
     DefaultShadowPolicy shadowPolicy) {
   return std::make_shared<McrouterRouteHandle<
-      ShadowRoute<McrouterRouteHandleIf, DefaultShadowPolicy>>>(
+      ShadowRoute<McrouterRouterInfo, DefaultShadowPolicy>>>(
       std::move(normalRoute), std::move(shadowData), std::move(shadowPolicy));
 }
 

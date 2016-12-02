@@ -63,10 +63,15 @@ std::string createSplitKey(folly::StringPiece fullKey,
 /**
  * Splits given request according to shard splits provided by ShardSplitter
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class ShardSplitRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
-  static std::string routeName() { return "shard-split"; }
+  static std::string routeName() {
+    return "shard-split";
+  }
 
   ShardSplitRoute(
       std::shared_ptr<RouteHandleIf> rh,
@@ -76,7 +81,7 @@ class ShardSplitRoute {
   template <class Request>
   void traverse(const Request& req,
                 const RouteHandleTraverser<RouteHandleIf>& t) const {
-    auto* ctx = fiber_local::getTraverseCtx();
+    auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
     if (ctx) {
       ctx->recordShardSplitter(shardSplitter_);
     }

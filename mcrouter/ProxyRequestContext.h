@@ -14,11 +14,11 @@
 
 #include <folly/fibers/FiberManager.h>
 
+#include "mcrouter/ProxyRequestLogger.h"
+#include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
-#include "mcrouter/ProxyRequestLogger.h"
-#include "mcrouter/ProxyRequestPriority.h"
 
 namespace facebook {
 namespace memcache {
@@ -27,6 +27,8 @@ struct AccessPoint;
 
 namespace mcrouter {
 
+template <class RouterInfo>
+class Proxy;
 template <class RouterInfo>
 class ProxyRoute;
 
@@ -46,35 +48,10 @@ class ShardSplitter;
  * Records collected stats on destruction.
  */
 class ProxyRequestContext {
-public:
-  using ClientCallback = std::function<
-    void(folly::StringPiece, size_t, const AccessPoint&)>;
+ public:
+  using ClientCallback =
+      std::function<void(folly::StringPiece, size_t, const AccessPoint&)>;
   using ShardSplitCallback = std::function<void(const ShardSplitter&)>;
-
-  /**
-   * A request with this context will not be sent/logged anywhere.
-   *
-   * @param clientCallback  If non-nullptr, called by DestinationRoute when
-   *   the request would normally be sent to destination;
-   *   also in traverse() of DestinationRoute.
-   * @param shardSplitCallback  If non-nullptr, called by ShardSplitRoute
-   *   in traverse() with itself as the argument.
-   */
-  static std::shared_ptr<ProxyRequestContext> createRecording(
-      ProxyBase& proxy,
-      ClientCallback clientCallback,
-      ShardSplitCallback shardSplitCallback = nullptr);
-
-  /**
-   * Same as createRecording(), but also notifies the baton
-   * when this context is destroyed (i.e. all requests referencing it
-   * finish executing).
-   */
-  static std::shared_ptr<ProxyRequestContext> createRecordingNotify(
-      ProxyBase& proxy,
-      folly::fibers::Baton& baton,
-      ClientCallback clientCallback,
-      ShardSplitCallback shardSplitCallback = nullptr);
 
   virtual ~ProxyRequestContext();
 
@@ -86,9 +63,10 @@ public:
     return recording_;
   }
 
-  void recordDestination(folly::StringPiece poolName,
-                         size_t index,
-                         const AccessPoint& ap) const {
+  void recordDestination(
+      folly::StringPiece poolName,
+      size_t index,
+      const AccessPoint& ap) const {
     if (recording_ && recordingState_->clientCallback) {
       recordingState_->clientCallback(poolName, index, ap);
     }
@@ -116,14 +94,16 @@ public:
    * Called once a reply is received to record a stats sample if required.
    */
   template <class Request>
-  void onReplyReceived(const std::string& poolName,
-                       const AccessPoint& ap,
-                       folly::StringPiece strippedRoutingPrefix,
-                       const Request& request,
-                       const ReplyT<Request>& reply,
-                       const int64_t startTimeUs,
-                       const int64_t endTimeUs,
-                       const ReplyStatsContext replyStatsContext) {
+  void onReplyReceived(
+      const std::string& poolName,
+      const AccessPoint& ap,
+      folly::StringPiece strippedRoutingPrefix,
+      const Request& request,
+      const ReplyT<Request>& reply,
+      RequestClass requestClass,
+      const int64_t startTimeUs,
+      const int64_t endTimeUs,
+      const ReplyStatsContext replyStatsContext) {
     if (recording_) {
       return;
     }
@@ -134,6 +114,7 @@ public:
         strippedRoutingPrefix,
         request,
         reply,
+        requestClass,
         startTimeUs,
         endTimeUs,
         replyStatsContext);
@@ -171,7 +152,21 @@ public:
  protected:
   bool replied_{false};
 
+  /**
+   * The function that will be called when all replies (including async)
+   * come back.
+   * Guaranteed to be called after enqueueReply_ (right after in sync mode).
+   */
+  void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
+
   ProxyRequestContext(ProxyBase& pr, ProxyRequestPriority priority__);
+
+  enum RecordingT { Recording };
+  ProxyRequestContext(
+      RecordingT,
+      ProxyBase& pr,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback);
 
  private:
   ProxyBase& proxyBase_;
@@ -195,13 +190,6 @@ public:
     std::unique_ptr<RecordingState> recordingState_;
   };
 
-  /**
-   * The function that will be called when all replies (including async)
-   * come back.
-   * Guaranteed to be called after enqueueReply_ (right after in sync mode).
-   */
-  void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
-
   folly::Optional<ProxyRequestLogger> logger_;
   folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;
 
@@ -210,13 +198,6 @@ public:
   ProxyRequestPriority priority_{ProxyRequestPriority::kCritical};
 
   std::string userIpAddr_;
-
-  enum RecordingT { Recording };
-  ProxyRequestContext(
-      RecordingT,
-      ProxyBase& pr,
-      ClientCallback clientCallback,
-      ShardSplitCallback shardSplitCallback);
 
   ProxyRequestContext(const ProxyRequestContext&) = delete;
   ProxyRequestContext(ProxyRequestContext&&) noexcept = delete;
@@ -243,9 +224,89 @@ public:
     }
   };
 
-private:
+ private:
   friend class McrouterClient;
   friend class ProxyBase;
 };
 
-}}}  // facebook::memcache::mcrouter
+/**
+ * This class carries no state.  It is only used for its type information in
+ * certain places, such as in McrouterFiberContext.
+ */
+template <class RouterInfo>
+class ProxyRequestContextWithInfo : public ProxyRequestContext {
+ public:
+  /**
+   * A request with this context will not be sent/logged anywhere.
+   *
+   * @param clientCallback  If non-nullptr, called by DestinationRoute when
+   *   the request would normally be sent to destination;
+   *   also in traverse() of DestinationRoute.
+   * @param shardSplitCallback  If non-nullptr, called by ShardSplitRoute
+   *   in traverse() with itself as the argument.
+   */
+  static std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>
+  createRecording(
+      ProxyBase& proxy,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr) {
+    return std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>(
+        new ProxyRequestContextWithInfo<RouterInfo>(
+            Recording,
+            proxy,
+            std::move(clientCallback),
+            std::move(shardSplitCallback)));
+  }
+
+  /**
+   * Same as createRecording(), but also notifies the baton
+   * when this context is destroyed (i.e. all requests referencing it
+   * finish executing).
+   */
+  static std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>
+  createRecordingNotify(
+      ProxyBase& proxy,
+      folly::fibers::Baton& baton,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr) {
+    return std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>(
+        new ProxyRequestContextWithInfo<RouterInfo>(
+            Recording,
+            proxy,
+            std::move(clientCallback),
+            std::move(shardSplitCallback)),
+        [&baton](ProxyRequestContext* ctx) {
+          delete ctx;
+          baton.post();
+        });
+  }
+
+  ~ProxyRequestContextWithInfo() override {
+    if (reqComplete_) {
+      fiber_local<RouterInfo>::runWithoutLocals(
+          [this]() { reqComplete_(*this); });
+    }
+  }
+
+ protected:
+  ProxyRequestContextWithInfo(
+      Proxy<RouterInfo>& pr,
+      ProxyRequestPriority priority__)
+      : ProxyRequestContext(pr, priority__) {}
+
+ private:
+  ProxyRequestContextWithInfo(
+      RecordingT,
+      ProxyBase& proxyBase,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr)
+      : ProxyRequestContext(
+            Recording,
+            proxyBase,
+            std::move(clientCallback),
+            std::move(shardSplitCallback)) {}
+};
+
+} // mcrouter
+} // memcache
+} // facebook

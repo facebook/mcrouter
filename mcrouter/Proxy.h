@@ -36,14 +36,12 @@
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
-  struct dynamic;
-  class File;
+struct dynamic;
+class File;
 } // folly
 
 namespace facebook { namespace memcache {
 
-template <int op_id>
-struct McOperation;
 template <class T>
 class MessageQueue;
 

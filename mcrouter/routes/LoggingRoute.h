@@ -12,32 +12,38 @@
 #include <memory>
 #include <string>
 
-#include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Forwards requests to the child route, then logs the request and response.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class LoggingRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
   static std::string routeName() {
     return "logging";
   }
 
   explicit LoggingRoute(std::shared_ptr<RouteHandleIf> rh)
-    : child_(std::move(rh)) {}
+      : child_(std::move(rh)) {}
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (child_) {
       t(*child_, req);
     }
@@ -53,7 +59,7 @@ class LoggingRoute {
     }
 
     // Pull the IP (if available) out of the saved request
-    auto& ctx = mcrouter::fiber_local::getSharedCtx();
+    auto& ctx = mcrouter::fiber_local<RouterInfo>::getSharedCtx();
     auto& ip = ctx->userIpAddress();
     folly::StringPiece userIp;
     if (!ip.empty()) {
@@ -73,12 +79,12 @@ class LoggingRoute {
             userIp);
       }
     } else {
-      const auto replyLength = carbon::valuePtrUnsafe(reply) ?
-        carbon::valuePtrUnsafe(reply)->computeChainDataLength() : 0;
+      const auto replyLength = carbon::valuePtrUnsafe(reply)
+          ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
+          : 0;
       LOG(INFO) << "request key: " << req.key().fullKey()
                 << " response: " << mc_res_to_string(reply.result())
-                << " responseLength: " << replyLength
-                << " user ip: " << userIp;
+                << " responseLength: " << replyLength << " user ip: " << userIp;
     }
     return reply;
   }
@@ -87,4 +93,6 @@ class LoggingRoute {
   const std::shared_ptr<RouteHandleIf> child_;
 };
 
-}}} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

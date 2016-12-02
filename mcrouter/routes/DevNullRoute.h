@@ -22,10 +22,15 @@ namespace facebook { namespace memcache { namespace mcrouter {
 /**
  * Same as NullRoute, but with Mcrouter stats reporting.
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class DevNullRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
-  static std::string routeName() { return "devnull"; }
+  static std::string routeName() {
+    return "devnull";
+  }
 
   template <class Request>
   void traverse(const Request& req,
@@ -33,7 +38,7 @@ class DevNullRoute {
 
   template <class Request>
   static ReplyT<Request> route(const Request& req) {
-    auto& ctx = fiber_local::getSharedCtx();
+    auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
     ctx->proxy().stats().increment(dev_null_requests_stat);
     return createReply(DefaultReply, req);
   }

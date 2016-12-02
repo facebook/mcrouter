@@ -12,14 +12,16 @@
 #include <memory>
 
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 using TestRouteHandleIf = MemcacheRouteHandleIf;
+using TestRouterInfo = MemcacheRouterInfo;
 
 template <class Route>
 using TestRouteHandle = MemcacheRouteHandle<Route>;
 
-typedef std::shared_ptr<TestRouteHandleIf> TestRouteHandlePtr;
-
-}}  // facebook::memcache
+} // memcache
+} // facebook

@@ -33,11 +33,6 @@ ProxyRequestContext::~ProxyRequestContext() {
   }
 
   assert(replied_);
-  if (reqComplete_) {
-    fiber_local::runWithoutLocals([this]() {
-      reqComplete_(*this);
-    });
-  }
 
   if (processing_) {
     --proxyBase_.numRequestsProcessing_;
@@ -67,34 +62,6 @@ uint64_t ProxyRequestContext::senderId() const {
 
 void ProxyRequestContext::setSenderIdForTest(uint64_t id) {
   senderIdForTest_ = id;
-}
-
-std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecording(
-    ProxyBase& proxy,
-    ClientCallback clientCallback,
-    ShardSplitCallback shardSplitCallback) {
-  return std::shared_ptr<ProxyRequestContext>(
-    new ProxyRequestContext(Recording,
-                            proxy,
-                            std::move(clientCallback),
-                            std::move(shardSplitCallback))
-  );
-}
-
-std::shared_ptr<ProxyRequestContext> ProxyRequestContext::createRecordingNotify(
-    ProxyBase& proxy,
-    folly::fibers::Baton& baton,
-    ClientCallback clientCallback,
-    ShardSplitCallback shardSplitCallback) {
-  return std::shared_ptr<ProxyRequestContext>(
-    new ProxyRequestContext(Recording,
-                            proxy,
-                            std::move(clientCallback),
-                            std::move(shardSplitCallback)),
-    [&baton] (ProxyRequestContext* ctx) {
-      delete ctx;
-      baton.post();
-    });
 }
 
 ProxyRequestContext::ProxyRequestContext(

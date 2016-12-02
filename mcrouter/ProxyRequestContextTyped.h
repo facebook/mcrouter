@@ -20,7 +20,8 @@ template <class RouterInfo>
 class Proxy;
 
 template <class RouterInfo, class Request>
-class ProxyRequestContextTyped : public ProxyRequestContext {
+class ProxyRequestContextTyped
+    : public ProxyRequestContextWithInfo<RouterInfo> {
  public:
   using Type = ProxyRequestContextTyped<RouterInfo, Request>;
   /**
@@ -49,12 +50,12 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
   void startProcessing() override final;
 
   const ProxyConfig<RouterInfo>& proxyConfig() const {
-    assert(!recording());
+    assert(!this->recording());
     return *config_;
   }
 
   ProxyRoute<RouterInfo>& proxyRoute() const {
-    assert(!recording());
+    assert(!this->recording());
     return config_->proxyRoute();
   }
 
@@ -73,7 +74,9 @@ class ProxyRequestContextTyped : public ProxyRequestContext {
       Proxy<RouterInfo>& pr,
       const Request& req,
       ProxyRequestPriority priority__)
-      : ProxyRequestContext(pr, priority__), proxy_(pr), req_(&req) {}
+      : ProxyRequestContextWithInfo<RouterInfo>(pr, priority__),
+        proxy_(pr),
+        req_(&req) {}
 
   Proxy<RouterInfo>& proxy_;
 

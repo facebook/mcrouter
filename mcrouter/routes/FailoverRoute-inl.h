@@ -15,28 +15,28 @@ McrouterRouteHandlePtr
 makeNullOrSingletonRoute(std::vector<McrouterRouteHandlePtr> rh);
 
 template <template <typename...> class RouteHandle, class... Args>
-McrouterRouteHandlePtr
-makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
-                         Args&&... args) {
+McrouterRouteHandlePtr makeFailoverRouteInOrder(
+    std::vector<McrouterRouteHandlePtr> rh,
+    Args&&... args) {
   if (rh.size() <= 1) {
     return makeNullOrSingletonRoute(std::move(rh));
   }
 
   using FailoverPolicyT = FailoverInOrderPolicy<McrouterRouteHandleIf>;
-  return makeMcrouterRouteHandle<RouteHandle, FailoverPolicyT>(
-    std::move(rh), std::forward<Args>(args)...);
+  return makeMcrouterRouteHandleWithInfo<RouteHandle, FailoverPolicyT>(
+      std::move(rh), std::forward<Args>(args)...);
 }
 
 template <template <class...> class RouteHandle, class... Args>
-McrouterRouteHandlePtr
-makeFailoverRouteLeastFailures(std::vector<McrouterRouteHandlePtr> rh,
-                               Args&&... args) {
+McrouterRouteHandlePtr makeFailoverRouteLeastFailures(
+    std::vector<McrouterRouteHandlePtr> rh,
+    Args&&... args) {
   if (rh.size() <= 1) {
     return makeNullOrSingletonRoute(std::move(rh));
   }
 
   using FailoverPolicyT = FailoverLeastFailuresPolicy<McrouterRouteHandleIf>;
-  return makeMcrouterRouteHandle<RouteHandle, FailoverPolicyT>(
+  return makeMcrouterRouteHandleWithInfo<RouteHandle, FailoverPolicyT>(
       std::move(rh), std::forward<Args>(args)...);
 }
 
@@ -45,7 +45,6 @@ McrouterRouteHandlePtr makeFailoverRouteDefault(
     const folly::dynamic& json,
     std::vector<McrouterRouteHandlePtr> children,
     Args&&... args) {
-
   FailoverErrorsSettings failoverErrors;
   std::unique_ptr<FailoverRateLimiter> rateLimiter;
   bool failoverTagging = false;

@@ -25,19 +25,25 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 namespace {
 
+using FiberManagerContextTag =
+    typename fiber_local<MemcacheRouterInfo>::ContextTypeTag;
+
 McrouterInstance* getRouter() {
   McrouterOptions opts = defaultTestOptions();
   opts.config = "{ \"route\": \"NullRoute\" }";
   return McrouterInstance::init("test_shadow", opts);
 }
 
-std::shared_ptr<ProxyRequestContext> getContext() {
-  return ProxyRequestContext::createRecording(*getRouter()->getProxy(0),
-                                              nullptr);
+std::shared_ptr<ProxyRequestContextWithInfo<MemcacheRouterInfo>> getContext() {
+  return ProxyRequestContextWithInfo<MemcacheRouterInfo>::createRecording(
+      *getRouter()->getProxy(0), nullptr);
 }
 
-void sendWorkload(TestRouteHandle<SlowWarmUpRoute<TestRouteHandleIf>>& rh,
-                  size_t numReqs, size_t& numNormal, size_t& numFailover) {
+void sendWorkload(
+    TestRouteHandle<SlowWarmUpRoute<TestRouterInfo>>& rh,
+    size_t numReqs,
+    size_t& numNormal,
+    size_t& numFailover) {
   for (size_t i = 0; i < numReqs; ++i) {
     auto reply = rh.route(McGetRequest("0"));
     auto val = carbon::valueRangeSlow(reply).str();
@@ -59,7 +65,7 @@ TEST(SlowWarmUpRoute, basic) {
       /* step */      1.0,
       /* numReqs  */  5);
 
-  TestFiberManager fm{fiber_local::ContextTypeTag()};
+  TestFiberManager fm{FiberManagerContextTag()};
 
   std::vector<std::shared_ptr<TestHandle>> targets{
     std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
@@ -74,8 +80,8 @@ TEST(SlowWarmUpRoute, basic) {
 
   auto ctx = getContext();
   fm.run([&]() {
-    fiber_local::setSharedCtx(ctx);
-    TestRouteHandle<SlowWarmUpRoute<TestRouteHandleIf>> rh(
+    fiber_local<MemcacheRouterInfo>::setSharedCtx(ctx);
+    TestRouteHandle<SlowWarmUpRoute<TestRouterInfo>> rh(
         std::move(target),
         std::move(failoverTarget),
         std::move(settings));
@@ -135,7 +141,7 @@ TEST(SlowWarmUpRoute, minRequests) {
       /* step */      1.0,
       /* numReqs  */  100);
 
-  TestFiberManager fm{fiber_local::ContextTypeTag()};
+  TestFiberManager fm{FiberManagerContextTag()};
 
   std::vector<std::shared_ptr<TestHandle>> targets{
     std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
@@ -150,8 +156,8 @@ TEST(SlowWarmUpRoute, minRequests) {
 
   auto ctx = getContext();
   fm.run([&]() {
-    fiber_local::setSharedCtx(ctx);
-    TestRouteHandle<SlowWarmUpRoute<TestRouteHandleIf>> rh(
+    fiber_local<MemcacheRouterInfo>::setSharedCtx(ctx);
+    TestRouteHandle<SlowWarmUpRoute<TestRouterInfo>> rh(
         std::move(target),
         std::move(failoverTarget),
         std::move(settings));

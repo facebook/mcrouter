@@ -32,30 +32,33 @@ namespace facebook { namespace memcache { namespace mcrouter {
 namespace detail {
 
 template <class Request>
-inline void logOutlier(ProxyBase& proxy, GetLikeT<Request> = 0) {
-  REQUEST_CLASS_STATS(proxy, get, outlier, fiber_local::getRequestClass());
+inline void
+logOutlier(ProxyBase& proxy, RequestClass reqClass, GetLikeT<Request> = 0) {
+  REQUEST_CLASS_STATS(proxy, get, outlier, reqClass);
 }
 
 template <class Request>
-inline void logOutlier(ProxyBase& proxy, UpdateLikeT<Request> = 0) {
-  REQUEST_CLASS_STATS(proxy, set, outlier, fiber_local::getRequestClass());
+inline void
+logOutlier(ProxyBase& proxy, RequestClass reqClass, UpdateLikeT<Request> = 0) {
+  REQUEST_CLASS_STATS(proxy, set, outlier, reqClass);
 }
 
 template <class Request>
-inline void logOutlier(ProxyBase& proxy, DeleteLikeT<Request> = 0) {
-  REQUEST_CLASS_STATS(proxy, delete, outlier, fiber_local::getRequestClass());
+inline void
+logOutlier(ProxyBase& proxy, RequestClass reqClass, DeleteLikeT<Request> = 0) {
+  REQUEST_CLASS_STATS(proxy, delete, outlier, reqClass);
 }
 
 template <class Request>
 inline void logOutlier(
     ProxyBase& proxy,
+    RequestClass reqClass,
     OtherThanT<Request, GetLike<>, UpdateLike<>, DeleteLike<>> = 0) {
-  REQUEST_CLASS_STATS(proxy, other, outlier, fiber_local::getRequestClass());
+  REQUEST_CLASS_STATS(proxy, other, outlier, reqClass);
 }
 
 template <class Request>
-inline void logRequestClass(ProxyBase& proxy) {
-  auto reqClass = fiber_local::getRequestClass();
+inline void logRequestClass(ProxyBase& proxy, RequestClass reqClass) {
   auto operation =
       McOperation<OpFromType<Request, RequestOpMapping>::value>::mc_op;
 
@@ -111,12 +114,12 @@ void ProxyRequestLogger::log(const RequestLoggerContext& loggerContext) {
       proxy_->getRouterOptions().logging_rtt_outlier_threshold_us > 0 &&
       durationUs >= proxy_->getRouterOptions().logging_rtt_outlier_threshold_us;
 
-  logError(loggerContext.replyResult);
-  detail::logRequestClass<Request>(*proxy_);
+  logError(loggerContext.replyResult, loggerContext.requestClass);
+  detail::logRequestClass<Request>(*proxy_, loggerContext.requestClass);
   proxy_->stats().durationUs().insertSample(durationUs);
 
   if (isOutlier) {
-    detail::logOutlier<Request>(*proxy_);
+    detail::logOutlier<Request>(*proxy_, loggerContext.requestClass);
   }
 }
 

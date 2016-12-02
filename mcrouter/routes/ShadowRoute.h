@@ -32,10 +32,15 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * Key range might be updated at runtime.
  * We can shadow to multiple shadow destinations for a given normal route.
  */
-template <class RouteHandleIf, class ShadowPolicy>
+template <class RouterInfo, class ShadowPolicy>
 class ShadowRoute {
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
  public:
-  static std::string routeName() { return "shadow"; }
+  static std::string routeName() {
+    return "shadow";
+  }
 
   ShadowRoute(std::shared_ptr<RouteHandleIf> normalRoute,
               ShadowData<RouteHandleIf> shadowData,

@@ -95,18 +95,22 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRouteCommandForOp(
     [this, keyStr, proxy = proxy_]() {
       auto destinations = folly::make_unique<std::vector<std::string>>();
       folly::fibers::Baton baton;
-      auto rctx = ProxyRequestContext::createRecordingNotify(
-          *proxy,
-          baton,
-          [&destinations](folly::StringPiece, size_t, const AccessPoint& dest) {
-            destinations->push_back(dest.toHostPortString());
-          });
+      auto rctx =
+          ProxyRequestContextWithInfo<RouterInfo>::createRecordingNotify(
+              *proxy,
+              baton,
+              [&destinations](
+                  folly::StringPiece, size_t, const AccessPoint& dest) {
+                destinations->push_back(dest.toHostPortString());
+              });
       typename TypeFromOp<Operation::mc_op,
                           RequestOpMapping>::type recordingReq(keyStr);
-      fiber_local::runWithLocals([ctx = std::move(rctx),
-                                  &recordingReq,
-                                  &proxyRoute = proxyRoute_]() mutable {
-        fiber_local::setSharedCtx(std::move(ctx));
+      fiber_local<RouterInfo>::runWithLocals([
+        ctx = std::move(rctx),
+        &recordingReq,
+        &proxyRoute = proxyRoute_
+      ]() mutable {
+        fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
         /* ignore the reply */
         proxyRoute.route(recordingReq);
       });

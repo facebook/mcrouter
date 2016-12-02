@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,17 +17,18 @@ McrouterInstance* getTestRouter() {
   return McrouterInstance::init("test", opts);
 }
 
-std::shared_ptr<ProxyRequestContext> getTestContext() {
-  return ProxyRequestContext::createRecording(*getTestRouter()->getProxy(0),
-                                              nullptr);
+std::shared_ptr<ProxyRequestContextWithInfo<McrouterRouterInfo>>
+getTestContext() {
+  return ProxyRequestContextWithInfo<McrouterRouterInfo>::createRecording(
+      *getTestRouter()->getProxy(0), nullptr);
 }
 
 void mockFiberContext() {
-  std::shared_ptr<ProxyRequestContext> ctx;
+  std::shared_ptr<ProxyRequestContextWithInfo<McrouterRouterInfo>> ctx;
   folly::fibers::runInMainContext([&ctx](){
     ctx = getTestContext();
   });
-  fiber_local::setSharedCtx(std::move(ctx));
+  fiber_local<McrouterRouterInfo>::setSharedCtx(std::move(ctx));
 }
 
 }}} // facebook::memcache::mcrouter

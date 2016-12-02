@@ -16,7 +16,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 McrouterRouteHandlePtr makeShardSplitRoute(
     McrouterRouteHandlePtr rh,
     ShardSplitter shardSplitter) {
-  return makeMcrouterRouteHandle<ShardSplitRoute>(
+  return makeMcrouterRouteHandleWithInfo<ShardSplitRoute>(
       std::move(rh), std::move(shardSplitter));
 }
 

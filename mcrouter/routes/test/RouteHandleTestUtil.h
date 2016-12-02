@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -29,7 +29,8 @@ McrouterInstance* getTestRouter();
 /**
  * Create recording ProxyRequestContext for fiber locals
  */
-std::shared_ptr<ProxyRequestContext> getTestContext();
+std::shared_ptr<ProxyRequestContextWithInfo<McrouterRouterInfo>>
+getTestContext();
 
 /**
  * Set valid McrouterFiberContext in fiber locals
