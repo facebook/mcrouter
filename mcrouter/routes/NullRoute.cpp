@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,21 +9,19 @@
  */
 #include <folly/dynamic.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/NullRoute.h"
-#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterRouteHandlePtr makeNullRoute() {
-  return makeMcrouterRouteHandle<NullRoute>();
-}
-
 McrouterRouteHandlePtr makeNullRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
-  return makeNullRoute();
+  return makeNullRoute<McrouterRouteHandleIf>(factory, json);
+}
+
+McrouterRouteHandlePtr makeNullRoute() {
+  return createNullRoute<McrouterRouteHandleIf>();
 }
 
 }}}  // facebook::memcache::mcrouter

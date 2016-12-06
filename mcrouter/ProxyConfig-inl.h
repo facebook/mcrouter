@@ -31,7 +31,7 @@ ProxyConfig<RouterInfo>::ProxyConfig(
     std::string configMd5Digest,
     PoolFactory& poolFactory)
     : configMd5Digest_(std::move(configMd5Digest)) {
-  McRouteHandleProvider provider(proxy, poolFactory);
+  McRouteHandleProvider<RouterInfo> provider(proxy, poolFactory);
   RouteHandleFactory<typename RouterInfo::RouteHandleIf> factory(
       provider, proxy.getId());
 

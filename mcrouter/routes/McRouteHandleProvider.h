@@ -34,22 +34,31 @@ class ProxyBase;
  * RouteHandleProviderIf implementation that can create mcrouter-specific
  * routes.
  */
+template <class RouterInfo>
 class McRouteHandleProvider :
-  public RouteHandleProviderIf<McrouterRouteHandleIf> {
+  public RouteHandleProviderIf<typename RouterInfo::RouteHandleIf> {
  public:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+  using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+  using RouteHandleFactoryFunc = std::function<RouteHandlePtr(
+      RouteHandleFactory<RouteHandleIf>&,
+      const folly::dynamic&)>;
+  using RouteHandleFactoryMap = std::
+      unordered_map<folly::StringPiece, RouteHandleFactoryFunc, folly::Hash>;
+
   McRouteHandleProvider(ProxyBase& proxy, PoolFactory& poolFactory);
 
-  std::vector<McrouterRouteHandlePtr>
-  create(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-         folly::StringPiece type, const folly::dynamic& json) override final;
+  std::vector<RouteHandlePtr> create(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      folly::StringPiece type,
+      const folly::dynamic& json) override final;
 
-  folly::StringKeyedUnorderedMap<McrouterRouteHandlePtr>
-  releaseAsyncLogRoutes() {
+
+  folly::StringKeyedUnorderedMap<RouteHandlePtr> releaseAsyncLogRoutes() {
     return std::move(asyncLogRoutes_);
   }
 
-  folly::StringKeyedUnorderedMap<std::vector<McrouterRouteHandlePtr>>
-  releasePools() {
+  folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> releasePools() {
     return std::move(pools_);
   }
 
@@ -62,37 +71,38 @@ class McRouteHandleProvider :
   ~McRouteHandleProvider();
 
  private:
-  using RouteFunc = std::function<
-      McrouterRouteHandlePtr(RouteHandleFactory<McrouterRouteHandleIf>&,
-                             const folly::dynamic&)>;
   ProxyBase& proxy_;
   PoolFactory& poolFactory_;
   std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
 
   // poolName -> AsynclogRoute
-  folly::StringKeyedUnorderedMap<McrouterRouteHandlePtr> asyncLogRoutes_;
+  folly::StringKeyedUnorderedMap<RouteHandlePtr> asyncLogRoutes_;
 
   // poolName -> destinations
-  folly::StringKeyedUnorderedMap<std::vector<McrouterRouteHandlePtr>> pools_;
+  folly::StringKeyedUnorderedMap<std::vector<RouteHandlePtr>> pools_;
 
   // poolName -> AccessPoints
   folly::StringKeyedUnorderedMap<
     std::vector<std::shared_ptr<const AccessPoint>>
   > accessPoints_;
 
-  const std::unordered_map<folly::StringPiece, RouteFunc,
-                           folly::Hash> routeMap_;
+  const RouteHandleFactoryMap routeMap_;
 
-  const std::vector<McrouterRouteHandlePtr>&
-  makePool(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-           const PoolFactory::PoolJson& json);
+  const std::vector<RouteHandlePtr>& makePool(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      const PoolFactory::PoolJson& json);
 
-  McrouterRouteHandlePtr
-  makePoolRoute(RouteHandleFactory<McrouterRouteHandleIf>& factory,
-                const folly::dynamic& json);
+  RouteHandlePtr makePoolRoute(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      const folly::dynamic& json);
 
-  McrouterRouteHandlePtr
-  createAsynclogRoute(McrouterRouteHandlePtr route, std::string asynclogName);
+  RouteHandlePtr createAsynclogRoute(
+      RouteHandlePtr route,
+      std::string asynclogName);
+
+  RouteHandleFactoryMap buildRouteMap();
 };
 
 }}} // facebook::memcache::mcrouter
+
+#include "McRouteHandleProvider-inl.h"

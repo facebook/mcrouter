@@ -14,6 +14,7 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/options.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
@@ -27,8 +28,8 @@ TEST(RouteHandleFactoryTest, sanity) {
   auto router = getTestRouter();
   auto proxy = router->getProxy(0);
   PoolFactory pf(folly::dynamic::object(), router->configApi());
-  McRouteHandleProvider provider(*proxy, pf);
-  RouteHandleFactory<McrouterRouteHandleIf> factory(provider, proxy->getId());
+  McRouteHandleProvider<MemcacheRouterInfo> provider(*proxy, pf);
+  RouteHandleFactory<MemcacheRouteHandleIf> factory(provider, proxy->getId());
 
   auto rh = factory.create("AllAsyncRoute|ErrorRoute");
   EXPECT_TRUE(rh != nullptr);

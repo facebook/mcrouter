@@ -13,11 +13,19 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
+namespace folly {
+class dynamic;
+}
+
 namespace facebook { namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
 
 /**
  * Returns the default reply for each request right away
@@ -37,5 +45,21 @@ struct NullRoute {
     return createReply(DefaultReply, req);
   }
 };
+
+namespace mcrouter {
+
+template <class RouteHandleIf>
+std::shared_ptr<RouteHandleIf> createNullRoute() {
+  return makeRouteHandle<RouteHandleIf, NullRoute>();
+}
+
+template <class RouteHandleIf>
+std::shared_ptr<RouteHandleIf> makeNullRoute(
+    RouteHandleFactory<RouteHandleIf>&,
+    const folly::dynamic&) {
+  return createNullRoute<RouteHandleIf>();
+}
+
+} // mcrouter
 
 }} // facebook::memcache

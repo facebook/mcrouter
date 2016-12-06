@@ -16,11 +16,12 @@
 #include <folly/json.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/McrouterInstance.h"
+#include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/Proxy.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/options.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 
 using namespace facebook::memcache;
@@ -75,7 +76,7 @@ struct TestSetup {
       rhFactory_(rhProvider_, 0) {
   }
 
-  McRouteHandleProvider& provider() {
+  McRouteHandleProvider<MemcacheRouterInfo>& provider() {
     return rhProvider_;
   }
 
@@ -85,7 +86,7 @@ struct TestSetup {
  private:
   McrouterInstance* router_;
   PoolFactory poolFactory_;
-  McRouteHandleProvider rhProvider_;
+  McRouteHandleProvider<MemcacheRouterInfo> rhProvider_;
   RouteHandleFactory<McrouterRouteHandleIf> rhFactory_;
 
   static McrouterOptions getOpts() {

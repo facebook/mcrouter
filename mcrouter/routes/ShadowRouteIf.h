@@ -17,7 +17,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class ShadowSettings;
+struct ShadowSettings;
 
 template <class RouteHandleIf>
 using ShadowData = std::vector<std::pair<

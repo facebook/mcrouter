@@ -124,6 +124,7 @@ libmcroutercore_a_SOURCES = \
   routes/McImportResolver.cpp \
   routes/McImportResolver.h \
   routes/McRouteHandleBuilder.h \
+  routes/McRouteHandleProvider-inl.h \
   routes/McRouteHandleProvider.cpp \
   routes/McRouteHandleProvider.h \
   routes/McrouterRouteHandle.h \
