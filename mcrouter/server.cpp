@@ -13,8 +13,8 @@
 
 #include <cstdio>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterClient.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/Proxy.h"
@@ -24,6 +24,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -31,7 +32,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 namespace {
 
 void serverLoop(
-  McrouterInstance& router,
+  CarbonRouterInstance<McrouterRouterInfo>& router,
   size_t threadId,
   folly::EventBase& evb,
   AsyncMcServerWorker& worker,
@@ -119,7 +120,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
     AsyncMcServer server(opts);
     server.installShutdownHandler({SIGINT, SIGTERM});
 
-    auto router = McrouterInstance::init(
+    auto router = CarbonRouterInstance<McrouterRouterInfo>::init(
       "standalone",
       mcrouterOpts,
       server.eventBases());
@@ -155,7 +156,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
 
     LOG(INFO) << "Shutting down";
 
-    McrouterInstance::freeAllMcrouters();
+    freeAllRouters();
 
     if (!opts.unixDomainSockPath.empty()) {
       std::remove(opts.unixDomainSockPath.c_str());

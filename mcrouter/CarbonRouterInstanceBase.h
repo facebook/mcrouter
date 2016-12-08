@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 
@@ -38,12 +39,10 @@ class RuntimeVarsData;
 using ObservableRuntimeVars =
     Observable<std::shared_ptr<const RuntimeVarsData>>;
 
-using McrouterProxy = Proxy<McrouterRouterInfo>;
-
-class McrouterInstanceBase {
+class CarbonRouterInstanceBase {
  public:
-  explicit McrouterInstanceBase(McrouterOptions inputOptions);
-  virtual ~McrouterInstanceBase() = default;
+  explicit CarbonRouterInstanceBase(McrouterOptions inputOptions);
+  virtual ~CarbonRouterInstanceBase() = default;
 
   pid_t pid() const {
     return pid_;
@@ -123,7 +122,7 @@ class McrouterInstanceBase {
    * @return  nullptr if index is >= opts.num_proxies,
    *          pointer to the proxy otherwise.
    */
-  virtual McrouterProxy* getProxy(size_t index) const = 0;
+  virtual ProxyBase* getProxyBase(size_t index) const = 0;
 
  protected:
   const McrouterOptions opts_;

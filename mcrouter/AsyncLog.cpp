@@ -27,7 +27,7 @@
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/json.h>
 
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/options.h"

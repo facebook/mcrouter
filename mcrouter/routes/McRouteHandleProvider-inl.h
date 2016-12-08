@@ -11,7 +11,7 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/McrouterInstanceBase.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/ProxyBase.h"

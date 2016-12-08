@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2016, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,8 +19,8 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class McrouterInstance;
-class stat_t;
+class CarbonRouterInstanceBase;
+struct stat_t;
 
 class AdditionalLoggerIf {
 public:
@@ -39,7 +39,7 @@ class McrouterLogger {
    *                         is written.
    */
   explicit McrouterLogger(
-    McrouterInstance& router,
+    CarbonRouterInstanceBase& router,
     std::unique_ptr<AdditionalLoggerIf> additionalLogger = nullptr);
 
   ~McrouterLogger();
@@ -65,7 +65,7 @@ class McrouterLogger {
   void stop() noexcept;
 
  private:
-  McrouterInstance& router_;
+  CarbonRouterInstanceBase& router_;
 
   std::unique_ptr<AdditionalLoggerIf> additionalLogger_;
 

@@ -11,7 +11,7 @@ AC_INIT([mcrouter], [mcrouter_version], mcrouter@fb.com)
 
 AC_DEFINE_UNQUOTED([MCROUTER_PACKAGE_STRING], ["AC_PACKAGE_VERSION AC_PACKAGE_NAME"], [Full name and version of this package, with version coming first for libmemcached compatibility])
 
-AC_CONFIG_SRCDIR([McrouterInstance.h])
+AC_CONFIG_SRCDIR([CarbonRouterInstance.h])
 AC_CONFIG_HEADERS([config.h:config.hin])
 AC_CONFIG_LINKS([config-impl.h:mcrouter_config-impl.h])
 AC_CONFIG_LINKS([test/config.py:test/mcrouter_config.py])

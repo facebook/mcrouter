@@ -13,9 +13,9 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/FailoverContext.h"

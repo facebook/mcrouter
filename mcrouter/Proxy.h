@@ -48,14 +48,17 @@ class MessageQueue;
 namespace mcrouter {
 // forward declaration
 class McrouterClient;
-class McrouterInstance;
-class McrouterInstanceBase;
+template <class RouterInfo>
+class CarbonRouterInstance;
+class CarbonRouterInstanceBase;
 template <class RouterInfo>
 class ProxyConfig;
 class ProxyDestination;
 class ProxyRequestContext;
 template <class RouterInfo, class Request>
 class ProxyRequestContextTyped;
+template <class RouterInfo>
+class ProxyThread;
 class RuntimeVarsData;
 class ShardSplitter;
 
@@ -67,7 +70,7 @@ struct ShadowSettings {
    * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
    */
   static std::shared_ptr<ShadowSettings>
-  create(const folly::dynamic& json, McrouterInstanceBase& router);
+  create(const folly::dynamic& json, CarbonRouterInstanceBase& router);
 
   ~ShadowSettings();
 
@@ -100,7 +103,7 @@ struct ShadowSettings {
 
  private:
   ObservableRuntimeVars::CallbackHandle handle_;
-  void registerOnUpdateCallback(McrouterInstanceBase& router);
+  void registerOnUpdateCallback(CarbonRouterInstanceBase& router);
 
   std::string keyFractionRangeRv_;
   size_t startIndex_{0};
@@ -177,7 +180,7 @@ class Proxy : public ProxyBase {
   /**
    * @return Current value of the relaxed notification period if set.
    */
-  size_t queueNotifyPeriod() const;
+  size_t queueNotifyPeriod() const override;
 
   bool beingDestroyed() const {
     return beingDestroyed_;
@@ -208,10 +211,10 @@ class Proxy : public ProxyBase {
   std::shared_ptr<Proxy<RouterInfo>> self_;
 
   using Pointer = std::unique_ptr<Proxy<RouterInfo>, ProxyDelayedDestructor>;
-  static Pointer createProxy(McrouterInstanceBase& router,
+  static Pointer createProxy(CarbonRouterInstanceBase& router,
                              folly::EventBase& eventBase,
                              size_t id);
-  Proxy(McrouterInstanceBase& router, size_t id, folly::EventBase& evb);
+  Proxy(CarbonRouterInstanceBase& router, size_t id, folly::EventBase& evb);
 
   void messageReady(ProxyMessage::Type t, void* data);
 
@@ -313,9 +316,9 @@ class Proxy : public ProxyBase {
   void pump() override final;
 
   friend class McrouterClient;
-  friend class McrouterInstance;
+  friend class CarbonRouterInstance<RouterInfo>;
   friend class ProxyRequestContext;
-  friend class ProxyThread;
+  friend class ProxyThread<RouterInfo>;
 };
 
 template <class RouterInfo>

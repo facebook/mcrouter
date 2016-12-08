@@ -11,7 +11,7 @@
 
 #include <folly/Optional.h>
 
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"

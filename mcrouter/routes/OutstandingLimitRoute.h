@@ -17,8 +17,8 @@
 #include <folly/fibers/Baton.h>
 #include <folly/ScopeGuard.h>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperationTraits.h"

@@ -22,23 +22,11 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
-#include "mcrouter/lib/fbi/queue.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
 // Forward declaration.
 struct awriter_entry_t;
-
-struct awriter_callbacks_t {
-  void (*completed)(awriter_entry_t*, int);
-  int (*perform_write)(awriter_entry_t*);
-};
-
-struct awriter_entry_t {
-  TAILQ_ENTRY(awriter_entry_t) links;
-  void *context;
-  const awriter_callbacks_t *callbacks;
-};
 
 class AsyncWriter {
  public:
@@ -99,4 +87,6 @@ class AsyncWriter {
  */
 bool awriter_queue(AsyncWriter* w, awriter_entry_t *e);
 
-}}} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

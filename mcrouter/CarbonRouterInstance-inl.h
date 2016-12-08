@@ -7,16 +7,18 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "McrouterInstance.h"
+#include <vector>
 
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/DynamicConverter.h>
 #include <folly/fibers/FiberManager.h>
-#include <folly/json.h>
+#include <folly/io/async/EventBase.h>
 #include <folly/MapUtil.h>
 #include <folly/Singleton.h>
 
+#include "mcrouter/AsyncWriter.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/FileObserver.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/McrouterLogger.h"
@@ -26,123 +28,109 @@
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
-#include "mcrouter/ThreadUtil.h"
-#include "mcrouter/AsyncWriter.h"
-#include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/stats.h"
+#include "mcrouter/ThreadUtil.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-using McrouterProxyConfig = ProxyConfig<McrouterRouterInfo>;
+namespace detail {
+
+bool isValidRouterName(folly::StringPiece name);
 
 class McrouterManager {
  public:
-  McrouterManager() {
-    scheduleSingletonCleanup();
-  }
+  McrouterManager();
 
-  ~McrouterManager() {
-    freeAllMcrouters();
-  }
+  ~McrouterManager();
 
-  McrouterInstance* mcrouterGetCreate(
-    folly::StringPiece persistence_id,
-    const McrouterOptions& options,
-    const std::vector<folly::EventBase*>& evbs) {
-    std::shared_ptr<McrouterInstance> mcrouter;
+  void freeAllMcrouters();
+
+  template <class RouterInfo>
+  CarbonRouterInstance<RouterInfo>* mcrouterGetCreate(
+      folly::StringPiece persistence_id,
+      const McrouterOptions& options,
+      const std::vector<folly::EventBase*>& evbs) {
+    std::shared_ptr<CarbonRouterInstanceBase> mcrouterBase;
 
     {
       std::lock_guard<std::mutex> lg(mutex_);
-      mcrouter = folly::get_default(mcrouters_, persistence_id.str());
+      mcrouterBase = folly::get_default(mcrouters_, persistence_id.str());
     }
-    if (!mcrouter) {
+    if (!mcrouterBase) {
       std::lock_guard<std::mutex> ilg(initMutex_);
       {
         std::lock_guard<std::mutex> lg(mutex_);
-        mcrouter = folly::get_default(mcrouters_, persistence_id.str());
+        mcrouterBase = folly::get_default(mcrouters_, persistence_id.str());
       }
-      if (!mcrouter) {
-        mcrouter = McrouterInstance::create(options.clone(), evbs);
+      if (!mcrouterBase) {
+        std::shared_ptr<CarbonRouterInstance<RouterInfo>> mcrouter =
+            CarbonRouterInstance<RouterInfo>::create(options.clone(), evbs);
         if (mcrouter) {
           std::lock_guard<std::mutex> lg(mutex_);
           mcrouters_[persistence_id.str()] = mcrouter;
+          return mcrouter.get();
         }
       }
     }
-    return mcrouter.get();
+    return dynamic_cast<CarbonRouterInstance<RouterInfo>*>(mcrouterBase.get());
   }
 
-  McrouterInstance* mcrouterGet(folly::StringPiece persistence_id) {
+  template <class RouterInfo>
+  CarbonRouterInstance<RouterInfo>* mcrouterGet(
+      folly::StringPiece persistence_id) {
     std::lock_guard<std::mutex> lg(mutex_);
-
-    return folly::get_default(mcrouters_, persistence_id.str(), nullptr).get();
-  }
-
-  void freeAllMcrouters() {
-    std::lock_guard<std::mutex> lg(mutex_);
-    mcrouters_.clear();
+    auto mcrouterBase =
+        folly::get_default(mcrouters_, persistence_id.str(), nullptr).get();
+    return dynamic_cast<CarbonRouterInstance<RouterInfo>*>(mcrouterBase);
   }
 
  private:
-  std::unordered_map<std::string, std::shared_ptr<McrouterInstance>> mcrouters_;
+  std::unordered_map<std::string, std::shared_ptr<CarbonRouterInstanceBase>>
+      mcrouters_;
   // protects mcrouters_
   std::mutex mutex_;
   // initMutex_ must not be taken under mutex_, otherwise deadlock is possible
   std::mutex initMutex_;
 };
 
-namespace {
+extern folly::Singleton<McrouterManager> gMcrouterManager;
 
-folly::Singleton<McrouterManager> gMcrouterManager;
+} // detail
 
-bool isValidRouterName(folly::StringPiece name) {
-  if (name.empty()) {
-    return false;
-  }
-
-  for (auto c : name) {
-    if (!((c >= 'a' && c <= 'z') ||
-          (c >= 'A' && c <= 'Z') ||
-          (c >= '0' && c <= '9') ||
-          (c == '_') ||
-          (c == '-'))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-}  // anonymous namespace
-
-McrouterInstance* McrouterInstance::init(
-  folly::StringPiece persistence_id,
-  const McrouterOptions& options,
-  const std::vector<folly::EventBase*>& evbs) {
-
-  if (auto manager = gMcrouterManager.try_get()) {
-    return manager->mcrouterGetCreate(persistence_id, options, evbs);
+template <class RouterInfo>
+/* static  */ CarbonRouterInstance<RouterInfo>*
+CarbonRouterInstance<RouterInfo>::init(
+    folly::StringPiece persistence_id,
+    const McrouterOptions& options,
+    const std::vector<folly::EventBase*>& evbs) {
+  if (auto manager = detail::gMcrouterManager.try_get()) {
+    return manager->mcrouterGetCreate<RouterInfo>(
+        persistence_id, options, evbs);
   }
 
   return nullptr;
 }
 
-McrouterInstance* McrouterInstance::get(folly::StringPiece persistence_id) {
-  if (auto manager = gMcrouterManager.try_get()) {
-    return manager->mcrouterGet(persistence_id);
+template <class RouterInfo>
+CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::get(
+    folly::StringPiece persistence_id) {
+  if (auto manager = detail::gMcrouterManager.try_get()) {
+    return manager->mcrouterGet<RouterInfo>(persistence_id);
   }
 
   return nullptr;
 }
 
-McrouterInstance* McrouterInstance::createRaw(
-  McrouterOptions input_options,
-  const std::vector<folly::EventBase*>& evbs) {
-
+template <class RouterInfo>
+CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
+    McrouterOptions input_options,
+    const std::vector<folly::EventBase*>& evbs) {
   extraValidateOptions(input_options);
 
-  if (!isValidRouterName(input_options.service_name) ||
-      !isValidRouterName(input_options.router_name)) {
+  if (!detail::isValidRouterName(input_options.service_name) ||
+      !detail::isValidRouterName(input_options.router_name)) {
     throw std::runtime_error(
       "Invalid service_name or router_name provided; must be"
       " strings matching [a-zA-Z0-9_-]+");
@@ -165,7 +153,7 @@ McrouterInstance* McrouterInstance::createRaw(
     initFailureLogger();
   }
 
-  auto router = new McrouterInstance(std::move(input_options));
+  auto router = new CarbonRouterInstance<RouterInfo>(std::move(input_options));
 
   try {
     folly::json::serialization_opts jsonOpts;
@@ -181,8 +169,8 @@ McrouterInstance* McrouterInstance::createRaw(
   }
 
   // Ensure that Proxy's will be destroyed on the EventBase threads.
-  // TODO: fix (already existing) races between Proxy and McrouterInstance
-  // when McrouterInstance fails to configure and user has provided us with
+  // TODO: fix (already existing) races between Proxy and CarbonRouterInstance
+  // when CarbonRouterInstance fails to configure and user has provided us with
   // their own EventBases.
   for (size_t i = 0; i < router->proxies_.size(); ++i) {
     evbs[i]->runInEventBaseThread([proxy = router->releaseProxy(i)](){});
@@ -191,42 +179,46 @@ McrouterInstance* McrouterInstance::createRaw(
   return nullptr;
 }
 
-std::shared_ptr<McrouterInstance> McrouterInstance::create(
-  McrouterOptions input_options,
-  const std::vector<folly::EventBase*>& evbs) {
-
+template <class RouterInfo>
+std::shared_ptr<CarbonRouterInstance<RouterInfo>>
+CarbonRouterInstance<RouterInfo>::create(
+    McrouterOptions input_options,
+    const std::vector<folly::EventBase*>& evbs) {
   return folly::fibers::runInMainContext(
     [&] () mutable {
-      return std::shared_ptr<McrouterInstance>(
+      return std::shared_ptr<CarbonRouterInstance<RouterInfo>>(
         createRaw(std::move(input_options), evbs),
-        /* Custom deleter since ~McrouterInstance() is private */
-        [] (McrouterInstance* inst) {
+        /* Custom deleter since ~CarbonRouterInstance() is private */
+        [] (CarbonRouterInstance<RouterInfo>* inst) {
           delete inst;
         }
       );
     });
 }
 
-McrouterClient::Pointer McrouterInstance::createClient(
-  size_t max_outstanding,
-  bool max_outstanding_error) {
-
-  return McrouterClient::create(shared_from_this(),
+template <class RouterInfo>
+McrouterClient::Pointer CarbonRouterInstance<RouterInfo>::createClient(
+    size_t max_outstanding,
+    bool max_outstanding_error) {
+  return McrouterClient::create(this->shared_from_this(),
                                 max_outstanding,
                                 max_outstanding_error,
                                 /* sameThread= */ false);
 }
 
-McrouterClient::Pointer McrouterInstance::createSameThreadClient(
-  size_t max_outstanding) {
-
-  return McrouterClient::create(shared_from_this(),
+template <class RouterInfo>
+McrouterClient::Pointer
+CarbonRouterInstance<RouterInfo>::createSameThreadClient(
+    size_t max_outstanding) {
+  return McrouterClient::create(this->shared_from_this(),
                                 max_outstanding,
                                 /* maxOutstandingError= */ true,
                                 /* sameThread= */ true);
 }
 
-bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
+template <class RouterInfo>
+bool CarbonRouterInstance<RouterInfo>::spinUp(
+    const std::vector<folly::EventBase*>& evbs) {
   CHECK(evbs.empty() || evbs.size() == opts_.num_proxies);
 
   // Must init compression before creating proxies.
@@ -245,10 +237,12 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       try {
         if (evbs.empty()) {
-          proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
+          proxyThreads_.emplace_back(
+              folly::make_unique<ProxyThread<RouterInfo>>(*this, i));
         } else {
           CHECK(evbs[i] != nullptr);
-          proxies_.emplace_back(McrouterProxy::createProxy(*this, *evbs[i], i));
+          proxies_.emplace_back(
+              Proxy<RouterInfo>::createProxy(*this, *evbs[i], i));
         }
       } catch (...) {
         LOG(ERROR) << "Failed to create proxy";
@@ -286,13 +280,9 @@ bool McrouterInstance::spinUp(const std::vector<folly::EventBase*>& evbs) {
   return true;
 }
 
-void McrouterInstance::freeAllMcrouters() {
-  if (auto manager = gMcrouterManager.try_get()) {
-    manager->freeAllMcrouters();
-  }
-}
-
-McrouterProxy* McrouterInstance::getProxy(size_t index) const {
+template <class RouterInfo>
+Proxy<RouterInfo>* CarbonRouterInstance<RouterInfo>::getProxy(
+    size_t index) const {
   if (!proxies_.empty()) {
     assert(proxyThreads_.empty());
     return index < proxies_.size() ? proxies_[index].get() : nullptr;
@@ -303,33 +293,46 @@ McrouterProxy* McrouterInstance::getProxy(size_t index) const {
   }
 }
 
-McrouterProxy::Pointer McrouterInstance::releaseProxy(size_t index) {
+template <class RouterInfo>
+ProxyBase* CarbonRouterInstance<RouterInfo>::getProxyBase(size_t index) const {
+  return getProxy(index);
+}
+
+template <class RouterInfo>
+typename Proxy<RouterInfo>::Pointer
+CarbonRouterInstance<RouterInfo>::releaseProxy(size_t index) {
   assert(index < proxies_.size());
   return std::move(proxies_[index]);
 }
 
-McrouterInstance::McrouterInstance(McrouterOptions inputOptions)
-    : McrouterInstanceBase(std::move(inputOptions)) {}
+template <class RouterInfo>
+CarbonRouterInstance<RouterInfo>::CarbonRouterInstance(
+    McrouterOptions inputOptions)
+    : CarbonRouterInstanceBase(std::move(inputOptions)) {}
 
-void McrouterInstance::shutdownImpl() noexcept {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::shutdownImpl() noexcept {
   joinAuxiliaryThreads();
   for (auto& pt : proxyThreads_) {
     pt->stopAndJoin();
   }
 }
 
-void McrouterInstance::shutdown() noexcept {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::shutdown() noexcept {
   CHECK(!shutdownStarted_.exchange(true));
   shutdownImpl();
 }
 
-McrouterInstance::~McrouterInstance() {
+template <class RouterInfo>
+CarbonRouterInstance<RouterInfo>::~CarbonRouterInstance() {
   if (!shutdownStarted_.exchange(true)) {
     shutdownImpl();
   }
 }
 
-void McrouterInstance::subscribeToConfigUpdate() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::subscribeToConfigUpdate() {
   configUpdateHandle_ = configApi_->subscribe([this]() {
     bool success = false;
     {
@@ -348,7 +351,8 @@ void McrouterInstance::subscribeToConfigUpdate() {
   });
 }
 
-void McrouterInstance::spawnAuxiliaryThreads() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::spawnAuxiliaryThreads() {
   configApi_->startObserving();
   subscribeToConfigUpdate();
 
@@ -362,7 +366,8 @@ void McrouterInstance::spawnAuxiliaryThreads() {
   spawnStatLoggerThread();
 }
 
-void McrouterInstance::startAwriterThreads() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::startAwriterThreads() {
   if (!opts_.asynclog_disable) {
     if (!asyncWriter_->start("mcrtr-awriter")) {
       throw std::runtime_error("failed to spawn mcrouter awriter thread");
@@ -374,7 +379,8 @@ void McrouterInstance::startAwriterThreads() {
   }
 }
 
-void McrouterInstance::startObservingRuntimeVarsFile() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::startObservingRuntimeVarsFile() {
   boost::system::error_code ec;
   if (opts_.runtime_vars_file.empty() ||
       !boost::filesystem::exists(opts_.runtime_vars_file, ec)) {
@@ -395,7 +401,8 @@ void McrouterInstance::startObservingRuntimeVarsFile() {
   );
 }
 
-void McrouterInstance::statUpdaterThreadRun() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::statUpdaterThreadRun() {
   mcrouterSetThisThreadName(opts_, "stats");
 
   if (opts_.num_proxies == 0) {
@@ -435,12 +442,14 @@ void McrouterInstance::statUpdaterThreadRun() {
   }
 }
 
-void McrouterInstance::spawnStatLoggerThread() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::spawnStatLoggerThread() {
   mcrouterLogger_ = createMcrouterLogger(*this);
   mcrouterLogger_->start();
 }
 
-void McrouterInstance::joinAuxiliaryThreads() noexcept {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::joinAuxiliaryThreads() noexcept {
   // unsubscribe from config update
   configUpdateHandle_.reset();
   if (configApi_) {
@@ -467,12 +476,15 @@ void McrouterInstance::joinAuxiliaryThreads() noexcept {
   evbAuxiliaryThread_.stop();
 }
 
-void McrouterInstance::stopAwriterThreads() noexcept {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::stopAwriterThreads() noexcept {
   asyncWriter_->stop();
   statsLogWriter_->stop();
 }
 
-bool McrouterInstance::reconfigure(const ProxyConfigBuilder& builder) {
+template <class RouterInfo>
+bool CarbonRouterInstance<RouterInfo>::reconfigure(
+    const ProxyConfigBuilder& builder) {
   bool success = configure(builder);
 
   if (!success) {
@@ -485,13 +497,15 @@ bool McrouterInstance::reconfigure(const ProxyConfigBuilder& builder) {
   return success;
 }
 
-bool McrouterInstance::configure(const ProxyConfigBuilder& builder) {
+template <class RouterInfo>
+bool CarbonRouterInstance<RouterInfo>::configure(
+    const ProxyConfigBuilder& builder) {
   VLOG_IF(0, !opts_.constantly_reload_configs) << "started reconfiguring";
-  std::vector<std::shared_ptr<McrouterProxyConfig>> newConfigs;
+  std::vector<std::shared_ptr<ProxyConfig<RouterInfo>>> newConfigs;
   try {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       newConfigs.push_back(
-          builder.buildConfig<McrouterRouterInfo>(*getProxy(i)));
+          builder.buildConfig<RouterInfo>(*getProxy(i)));
     }
   } catch (const std::exception& e) {
     MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,
@@ -512,7 +526,9 @@ bool McrouterInstance::configure(const ProxyConfigBuilder& builder) {
   return true;
 }
 
-folly::Optional<ProxyConfigBuilder> McrouterInstance::createConfigBuilder() {
+template <class RouterInfo>
+folly::Optional<ProxyConfigBuilder>
+CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
   /* mark config attempt before, so that
      successful config is always >= last config attempt. */
   lastConfigAttempt_ = time(nullptr);
@@ -536,7 +552,8 @@ folly::Optional<ProxyConfigBuilder> McrouterInstance::createConfigBuilder() {
   return folly::none;
 }
 
-void McrouterInstance::registerOnUpdateCallbackForRxmits() {
+template <class RouterInfo>
+void CarbonRouterInstance<RouterInfo>::registerOnUpdateCallbackForRxmits() {
   rxmitHandle_ = rtVarsData().subscribeAndCall([this](
       std::shared_ptr<const RuntimeVarsData> /* oldVars */,
       std::shared_ptr<const RuntimeVarsData> newVars) {
@@ -552,4 +569,12 @@ void McrouterInstance::registerOnUpdateCallbackForRxmits() {
     }
   });
 }
-}}} // facebook::memcache::mcrouter
+
+template <class RouterInfo>
+/* static */ void CarbonRouterInstance<RouterInfo>::freeAllMcrouters() {
+  freeAllRouters();
+}
+
+} // mcrouter
+} // memcache
+} // facebook

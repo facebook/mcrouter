@@ -20,8 +20,14 @@ libmcroutercore_a_SOURCES = \
   AsyncTimer.h \
   AsyncWriter.cpp \
   AsyncWriter.h \
+  AsyncWriterEntry.h \
   CallbackPool-inl.h \
   CallbackPool.h \
+  CarbonRouterInstance-inl.h \
+  CarbonRouterInstance.cpp \
+  CarbonRouterInstance.h \
+  CarbonRouterInstanceBase.cpp \
+  CarbonRouterInstanceBase.h \
   Clock.h \
   ConfigApi.cpp \
   ConfigApi.h \
@@ -44,12 +50,9 @@ libmcroutercore_a_SOURCES = \
   McrouterClient.h \
   McrouterFiberContext.cpp \
   McrouterFiberContext.h \
-  McrouterInstance.cpp \
   McrouterInstance.h \
-  McrouterInstanceBase.cpp \
-  McrouterInstanceBase.h \
-  McrouterLogFailure.h \
   McrouterLogFailure.cpp \
+  McrouterLogFailure.h \
   McrouterLogger.cpp \
   McrouterLogger.h \
   Observable-inl.h \
@@ -86,7 +89,7 @@ libmcroutercore_a_SOURCES = \
   ProxyRequestPriority.h \
   ProxyStats.cpp \
   ProxyStats.h \
-  ProxyThread.cpp \
+  ProxyThread-inl.h \
   ProxyThread.h \
   route.cpp \
   route.h \

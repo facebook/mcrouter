@@ -30,23 +30,23 @@ class McrouterOptions;
 
 namespace mcrouter {
 
-class McrouterInstanceBase;
+class CarbonRouterInstanceBase;
 class ProxyDestinationMap;
 
 class ProxyBase {
  public:
   template <class RouterInfo>
   ProxyBase(
-      McrouterInstanceBase& rtr,
+      CarbonRouterInstanceBase& rtr,
       size_t id,
       folly::EventBase& evb,
       RouterInfo tag);
   virtual ~ProxyBase() = default;
 
-  const McrouterInstanceBase& router() const {
+  const CarbonRouterInstanceBase& router() const {
     return router_;
   }
-  McrouterInstanceBase& router() {
+  CarbonRouterInstanceBase& router() {
     return router_;
   }
 
@@ -56,7 +56,7 @@ class ProxyBase {
 
   /**
    * This method is equal to router().opts(), with the only difference,
-   * that it doesn't require the caller to know about McrouterInstanceBase.
+   * that it doesn't require the caller to know about CarbonRouterInstanceBase.
    * This allows to break include cycles.
    */
   const McrouterOptions& getRouterOptions() const;
@@ -95,8 +95,13 @@ class ProxyBase {
   /** Will let through requests from the above queue if we have capacity */
   virtual void pump() = 0;
 
+  /**
+   * @return Current value of the relaxed notification period if set.
+   */
+  virtual size_t queueNotifyPeriod() const = 0;
+
  private:
-  McrouterInstanceBase& router_;
+  CarbonRouterInstanceBase& router_;
   const size_t id_{0};
 
   folly::EventBase& eventBase_;

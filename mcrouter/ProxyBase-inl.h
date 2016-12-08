@@ -11,9 +11,9 @@
 #include <folly/Random.h>
 #include <folly/fibers/EventBaseLoopController.h>
 
-#include "mcrouter/ProxyDestinationMap.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstanceBase.h"
+#include "mcrouter/ProxyDestinationMap.h"
 
 namespace facebook {
 namespace memcache {
@@ -21,7 +21,7 @@ namespace mcrouter {
 
 template <class RouterInfo>
 ProxyBase::ProxyBase(
-    McrouterInstanceBase& rtr,
+    CarbonRouterInstanceBase& rtr,
     size_t id,
     folly::EventBase& evb,
     RouterInfo /* tag */)

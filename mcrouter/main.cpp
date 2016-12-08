@@ -31,11 +31,12 @@
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/McrouterInstance.h"
-#include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/Proxy.h"
 #include "mcrouter/config.h"
+#include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
+#include "mcrouter/Proxy.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/server.h"
 #include "mcrouter/standalone_options.h"
 #include "mcrouter/stats.h"
@@ -426,7 +427,8 @@ int main(int argc, char **argv) {
 
     if (validate_configs == ValidateConfigMode::EXIT) {
       try {
-        auto router = McrouterInstance::init("standalone-validate", opts);
+        auto router = CarbonRouterInstance<McrouterRouterInfo>::init(
+            "standalone-validate", opts);
         if (router == nullptr) {
           throw std::runtime_error("Couldn't create mcrouter");
         }

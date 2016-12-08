@@ -20,6 +20,7 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/AsyncWriter.h"
+#include "mcrouter/AsyncWriterEntry.h"
 #include "mcrouter/Proxy.h"
 
 using namespace facebook::memcache::mcrouter;

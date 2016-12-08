@@ -22,14 +22,13 @@
 #include <folly/Range.h>
 
 #include "mcrouter/config.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/StatsReply.h"
-#include "mcrouter/McrouterInstanceBase.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyThread.h"
 
 /**                             .__
  * __  _  _______ _______  ____ |__| ____    ____
@@ -116,9 +115,9 @@ struct ServerStat {
   }
 };
 
-int get_num_bins_used(const McrouterInstanceBase& router) {
+int get_num_bins_used(const CarbonRouterInstanceBase& router) {
   if (router.opts().num_proxies > 0) {
-    const ProxyBase* anyProxy = router.getProxy(0);
+    auto anyProxy = router.getProxyBase(0);
     if (anyProxy) {
       return anyProxy->stats().numBinsUsed();
     }
@@ -158,14 +157,16 @@ struct proc_stat_data_t {
   unsigned long rss;
 };
 
-double stats_aggregate_rate_value(const McrouterInstanceBase& router, int idx) {
+double stats_aggregate_rate_value(
+    const CarbonRouterInstanceBase& router,
+    int idx) {
   double rate = 0;
   int num_bins_used = get_num_bins_used(router);
 
   if (num_bins_used != 0) {
     uint64_t num = 0;
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      num += router.getProxy(i)->stats().getStatValueWithinWindow(idx);
+      num += router.getProxyBase(i)->stats().getStatValueWithinWindow(idx);
     }
     rate = (double)num / (num_bins_used * MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
   }
@@ -174,7 +175,7 @@ double stats_aggregate_rate_value(const McrouterInstanceBase& router, int idx) {
 }
 
 uint64_t stats_aggregate_max_value(
-    const McrouterInstanceBase& router,
+    const CarbonRouterInstanceBase& router,
     int idx) {
   uint64_t max = 0;
   int num_bins_used = get_num_bins_used(router);
@@ -182,7 +183,7 @@ uint64_t stats_aggregate_max_value(
   for (int j = 0; j < num_bins_used; ++j) {
     uint64_t binSum = 0;
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      binSum += router.getProxy(i)->stats().getStatBinValue(idx, j);
+      binSum += router.getProxyBase(i)->stats().getStatBinValue(idx, j);
     }
     max = std::max(max, binSum);
   }
@@ -191,14 +192,15 @@ uint64_t stats_aggregate_max_value(
 }
 
 uint64_t stats_aggregate_max_max_value(
-    const McrouterInstanceBase& router,
+    const CarbonRouterInstanceBase& router,
     int idx) {
   uint64_t max = 0;
   int num_bins_used = get_num_bins_used(router);
 
   for (int j = 0; j < num_bins_used; ++j) {
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      max = std::max(max, router.getProxy(i)->stats().getStatBinValue(idx, j));
+      max = std::max(
+          max, router.getProxyBase(i)->stats().getStatBinValue(idx, j));
     }
   }
   return max;
@@ -329,7 +331,7 @@ static int get_proc_stat(pid_t pid, proc_stat_data_t *data) {
   return 0;
 }
 
-void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
+void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   init_stats(stats);
 
   uint64_t config_last_success = 0;
@@ -345,7 +347,7 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
   uint64_t retransNumTotal = 0;
 
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-    auto proxy = router.getProxy(i);
+    auto proxy = router.getProxyBase(i);
     config_last_success = std::max(
         config_last_success, proxy->stats().getValue(config_last_success_stat));
     destinationBatchesSum +=
@@ -443,7 +445,7 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
   stats[fibers_pool_size_stat].data.uint64 = 0;
   stats[fibers_stack_high_watermark_stat].data.uint64 = 0;
   for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-    auto pr = router.getProxy(i);
+    auto pr = router.getProxyBase(i);
     stats[fibers_allocated_stat].data.uint64 +=
       pr->fiberManager().fibersAllocated();
     stats[fibers_pool_size_stat].data.uint64 +=
@@ -463,7 +465,7 @@ void prepare_stats(McrouterInstanceBase& router, stat_t* stats) {
   for (int i = 0; i < num_stats; i++) {
     if (stats[i].aggregate && !(stats[i].group & rate_stats)) {
       for (size_t j = 0; j < router.opts().num_proxies; ++j) {
-        auto pr = router.getProxy(j);
+        auto pr = router.getProxyBase(j);
         if (stats[i].type == stat_uint64) {
           stats[i].data.uint64 += pr->stats().getStat(i).data.uint64;
         } else if (stats[i].type == stat_int64) {
@@ -572,7 +574,7 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
     folly::StringKeyedUnorderedMap<ServerStat> serverStats;
     auto& router = proxy->router();
     for (size_t i = 0; i < router.opts().num_proxies; ++i) {
-      router.getProxy(i)->destinationMap()->foreachDestinationSynced(
+      router.getProxyBase(i)->destinationMap()->foreachDestinationSynced(
         [&serverStats](folly::StringPiece key, const ProxyDestination& pdstn) {
           auto& stat = serverStats[key];
           stat.isHardTko = pdstn.tracker->isHardTko();

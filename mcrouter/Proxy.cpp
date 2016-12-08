@@ -28,16 +28,15 @@
 
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/McrouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
-#include "mcrouter/ProxyThread.h"
 #include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/RuntimeVarsData.h"
@@ -76,7 +75,7 @@ bool processGetServiceInfoRequestImpl(
 
 std::shared_ptr<ShadowSettings> ShadowSettings::create(
     const folly::dynamic& json,
-    McrouterInstanceBase& router) {
+    CarbonRouterInstanceBase& router) {
   auto result = std::shared_ptr<ShadowSettings>(new ShadowSettings());
   try {
     checkLogic(json.isObject(), "json is not an object");
@@ -125,7 +124,8 @@ ShadowSettings::~ShadowSettings() {
   handle_.reset();
 }
 
-void ShadowSettings::registerOnUpdateCallback(McrouterInstanceBase& router) {
+void ShadowSettings::registerOnUpdateCallback(
+    CarbonRouterInstanceBase& router) {
   handle_ = router.rtVarsData().subscribeAndCall(
     [this](std::shared_ptr<const RuntimeVarsData> oldVars,
            std::shared_ptr<const RuntimeVarsData> newVars) {

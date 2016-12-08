@@ -17,27 +17,28 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterClient.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 
 using facebook::memcache::McGetReply;
 using facebook::memcache::McGetRequest;
+using facebook::memcache::MemcacheRouterInfo;
 using facebook::memcache::mcrouter::defaultTestOptions;
 using facebook::memcache::mcrouter::McrouterClient;
-using facebook::memcache::mcrouter::McrouterInstance;
+using facebook::memcache::mcrouter::CarbonRouterInstance;
 
 /**
  * This test provides an example of how to use the McrouterClient API.
  *
  * The recommended usage pattern is:
- *   1. In order to use mcrouter, the client needs a McrouterInstance, obtained
- *      through one of the static factory methods. In most long-lived programs,
- *      McrouterInstance::init() is the way to go.
- *   2. Create a McrouterClient object associated to the McrouterInstance
- *      via McrouterInstance::createClient() or
- *          McrouterInstance::createSameThreadClient().
+ *   1. In order to use mcrouter, the client needs a CarbonRouterInstance,
+ *      obtained through one of the static factory methods. In most long-lived
+ *      programs, CarbonRouterInstance::init() is the way to go.
+ *   2. Create a McrouterClient object associated to the CarbonRouterInstance
+ *      via CarbonRouterInstance::createClient() or
+ *          CarbonRouterInstance::createSameThreadClient().
  *   3. Send requests through mcrouter via McrouterClient::send(). (With some
  *      caveats; read the comments below.)
  */
@@ -51,7 +52,7 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
   opts.config_str = R"({ "route": "NullRoute" })";
 
   // Every program that uses mcrouter must have at least one (usually exactly
-  // one) McrouterInstance, which manages (re)configuration, starting up
+  // one) CarbonRouterInstance, which manages (re)configuration, starting up
   // request-handling proxies, stats logging, and more.
   // Using createSameThreadClient() makes most sense in situations where the
   // user controls their own EventBases, as below.
@@ -62,7 +63,8 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
     evbs.push_back(evb.get());
     threads.emplace_back([evb = std::move(evb)]() { evb->loopForever(); });
   }
-  auto router = McrouterInstance::init("sameThreadClientTest", opts, evbs);
+  auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
+      "sameThreadClientTest", opts, evbs);
 
   // When using createSameThreadClient(), users must ensure that client->send()
   // is only ever called on the same thread as the associated Proxy.
@@ -103,7 +105,7 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
 
   // Wait for proxy threads to complete outstanding requests and exit
   // gracefully. This ensures graceful destruction of the static
-  // McrouterInstance instance.
+  // CarbonRouterInstance instance.
   router->shutdown();
   for (auto evb : evbs) {
     evb->terminateLoopSoon();
@@ -121,7 +123,8 @@ TEST(McrouterClient, basicUsageRemoteThreadClient) {
   auto opts = defaultTestOptions();
   opts.config_str = R"({ "route": "NullRoute" })";
 
-  auto router = McrouterInstance::init("remoteThreadClientTest", opts);
+  auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
+      "remoteThreadClientTest", opts);
 
   // Create client that can safely send requests through a Proxy on another
   // thread

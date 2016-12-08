@@ -9,7 +9,7 @@
  */
 #include "McrouterClient.h"
 
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/lib/MessageQueue.h"
@@ -27,7 +27,7 @@ void McrouterClient::sendSameThread(std::unique_ptr<ProxyRequestContext> req) {
 }
 
 McrouterClient::McrouterClient(
-  std::weak_ptr<McrouterInstance> rtr,
+  std::weak_ptr<MemcacheMcrouterInstance> rtr,
   size_t maxOutstanding,
   bool maxOutstandingError,
   bool sameThread) :
@@ -53,7 +53,7 @@ McrouterClient::McrouterClient(
 }
 
 McrouterClient::Pointer McrouterClient::create(
-  std::weak_ptr<McrouterInstance> router,
+  std::weak_ptr<MemcacheMcrouterInstance> router,
   size_t maxOutstanding,
   bool maxOutstandingError,
   bool sameThread) {

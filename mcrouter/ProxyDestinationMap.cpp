@@ -14,7 +14,7 @@
 #include <folly/io/async/AsyncTimeout.h>
 #include <folly/io/async/EventBase.h>
 
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"

@@ -55,10 +55,9 @@ inline LogPostprocessCallbackFunc getLogPostprocessFunc() {
 
 namespace mcrouter {
 
+class CarbonRouterInstanceBase;
 class ConfigApi;
 class ExtraRouteHandleProviderIf;
-class McrouterInstance;
-class McrouterInstanceBase;
 class McrouterLogger;
 class McrouterStandaloneOptions;
 struct FailoverContext;
@@ -116,7 +115,8 @@ inline void standaloneInit(const McrouterOptions& opts,
 
 std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
 
-std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router);
+std::unique_ptr<McrouterLogger> createMcrouterLogger(
+    CarbonRouterInstanceBase& router);
 
 /**
  * @throws logic_error on invalid options
@@ -138,7 +138,7 @@ void initFailureLogger();
 /**
  * Initializes compression dictionaries for the given mcrouter instance
  */
-bool initCompression(McrouterInstanceBase& router);
+bool initCompression(CarbonRouterInstanceBase& router);
 
 void scheduleSingletonCleanup();
 

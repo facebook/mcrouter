@@ -12,8 +12,8 @@
 #include <memory>
 #include <string>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"

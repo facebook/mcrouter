@@ -10,7 +10,7 @@
 #include <folly/Memory.h>
 #include <folly/Range.h>
 
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogger.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
@@ -46,7 +46,8 @@ std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
   return folly::make_unique<McExtraRouteHandleProvider>();
 }
 
-std::unique_ptr<McrouterLogger> createMcrouterLogger(McrouterInstance& router) {
+std::unique_ptr<McrouterLogger> createMcrouterLogger(
+    CarbonRouterInstanceBase& router) {
   return folly::make_unique<McrouterLogger>(router);
 }
 
@@ -95,7 +96,7 @@ void logFailover(ProxyBase& proxy, const FailoverContext& failoverContext) {}
 
 void initFailureLogger() { }
 
-bool initCompression(McrouterInstanceBase&) {
+bool initCompression(CarbonRouterInstanceBase&) {
   return false;
 }
 

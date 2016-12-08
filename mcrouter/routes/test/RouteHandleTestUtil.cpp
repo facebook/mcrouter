@@ -11,10 +11,10 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterInstance* getTestRouter() {
+CarbonRouterInstance<McrouterRouterInfo>* getTestRouter() {
   McrouterOptions opts = defaultTestOptions();
   opts.config = "{ \"route\": \"NullRoute\" }";
-  return McrouterInstance::init("test", opts);
+  return CarbonRouterInstance<McrouterRouterInfo>::init("test", opts);
 }
 
 std::shared_ptr<ProxyRequestContextWithInfo<McrouterRouterInfo>>

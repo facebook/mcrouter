@@ -12,7 +12,7 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/options.h"
-#include "mcrouter/McrouterInstanceBase.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 
 namespace facebook {
 namespace memcache {

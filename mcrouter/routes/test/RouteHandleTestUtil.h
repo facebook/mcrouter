@@ -11,10 +11,10 @@
 
 #include <memory>
 
-#include "mcrouter/lib/test/RouteHandleTestUtil.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
@@ -24,7 +24,7 @@ using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 /**
  * Create mcrouter instance for test
  */
-McrouterInstance* getTestRouter();
+CarbonRouterInstance<McrouterRouterInfo>* getTestRouter();
 
 /**
  * Create recording ProxyRequestContext for fiber locals

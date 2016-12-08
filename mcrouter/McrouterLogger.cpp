@@ -24,7 +24,7 @@
 
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/McrouterInstance.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/stats.h"
@@ -115,7 +115,7 @@ void write_stats_to_disk(const McrouterOptions& opts,
   }
 }
 
-void write_config_sources_info_to_disk(McrouterInstance& router) {
+void write_config_sources_info_to_disk(CarbonRouterInstanceBase& router) {
   auto config_info_json = router.configApi().getConfigSourcesInfo();
 
   try {
@@ -131,7 +131,7 @@ void write_config_sources_info_to_disk(McrouterInstance& router) {
 
 }  // anonymous namespace
 
-McrouterLogger::McrouterLogger(McrouterInstance& router,
+McrouterLogger::McrouterLogger(CarbonRouterInstanceBase& router,
   std::unique_ptr<AdditionalLoggerIf> additionalLogger)
     : router_(router),
       additionalLogger_(std::move(additionalLogger)),

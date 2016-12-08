@@ -19,8 +19,8 @@
 #include <folly/Memory.h>
 #include <folly/Range.h>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyRequestContext.h"

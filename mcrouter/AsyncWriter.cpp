@@ -14,6 +14,7 @@
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/AsyncWriterEntry.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 

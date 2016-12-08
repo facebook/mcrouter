@@ -16,13 +16,14 @@
 #include <folly/json.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/options.h"
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -69,12 +70,12 @@ const char* const kPoolRoute =
 struct TestSetup {
  public:
   TestSetup()
-    : router_(McrouterInstance::init("test_get_route", getOpts())),
-      poolFactory_(folly::dynamic::object(),
-                   router_->configApi()),
-      rhProvider_(*router_->getProxy(0), poolFactory_),
-      rhFactory_(rhProvider_, 0) {
-  }
+      : router_(CarbonRouterInstance<McrouterRouterInfo>::init(
+            "test_get_route",
+            getOpts())),
+        poolFactory_(folly::dynamic::object(), router_->configApi()),
+        rhProvider_(*router_->getProxy(0), poolFactory_),
+        rhFactory_(rhProvider_, 0) {}
 
   McRouteHandleProvider<MemcacheRouterInfo>& provider() {
     return rhProvider_;
@@ -84,7 +85,7 @@ struct TestSetup {
     return rhFactory_.create(parseJsonString(jsonStr));
   }
  private:
-  McrouterInstance* router_;
+  CarbonRouterInstance<McrouterRouterInfo>* router_;
   PoolFactory poolFactory_;
   McRouteHandleProvider<MemcacheRouterInfo> rhProvider_;
   RouteHandleFactory<McrouterRouteHandleIf> rhFactory_;

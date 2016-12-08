@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "McrouterInstanceBase.h"
+#include "CarbonRouterInstanceBase.h"
 
 #include <boost/filesystem/operations.hpp>
 
@@ -19,7 +19,7 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-McrouterInstanceBase::McrouterInstanceBase(McrouterOptions inputOptions)
+CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
     : opts_(std::move(inputOptions)),
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
@@ -28,7 +28,7 @@ McrouterInstanceBase::McrouterInstanceBase(McrouterOptions inputOptions)
       asyncWriter_(folly::make_unique<AsyncWriter>()),
       leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {}
 
-void McrouterInstanceBase::setUpCompressionDictionaries(
+void CarbonRouterInstanceBase::setUpCompressionDictionaries(
     std::unordered_map<uint32_t, CodecConfigPtr>&& codecConfigs) noexcept {
   if (codecConfigs.empty() || compressionCodecManager_ != nullptr) {
     return;
@@ -37,13 +37,13 @@ void McrouterInstanceBase::setUpCompressionDictionaries(
       std::move(codecConfigs));
 }
 
-void McrouterInstanceBase::addStartupOpts(
+void CarbonRouterInstanceBase::addStartupOpts(
   std::unordered_map<std::string, std::string> additionalOpts) {
   additionalStartupOpts_.insert(additionalOpts.begin(), additionalOpts.end());
 }
 
 std::unordered_map<std::string, std::string>
-McrouterInstanceBase::getStartupOpts() const {
+CarbonRouterInstanceBase::getStartupOpts() const {
   constexpr size_t kMaxOptionValueLength = 256;
 
   auto result = opts_.toDict();

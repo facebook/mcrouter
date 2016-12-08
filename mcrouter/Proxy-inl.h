@@ -266,7 +266,7 @@ void Proxy<RouterInfo>::dispatchRequest(
 
 template <class RouterInfo>
 Proxy<RouterInfo>::Proxy(
-    McrouterInstanceBase& rtr,
+    CarbonRouterInstanceBase& rtr,
     size_t id,
     folly::EventBase& evb)
     : ProxyBase(rtr, id, evb, RouterInfo()) {
@@ -283,7 +283,7 @@ Proxy<RouterInfo>::Proxy(
 
 template <class RouterInfo>
 typename Proxy<RouterInfo>::Pointer Proxy<RouterInfo>::createProxy(
-    McrouterInstanceBase& router,
+    CarbonRouterInstanceBase& router,
     folly::EventBase& eventBase,
     size_t id) {
   /* This hack is needed to make sure Proxy stays alive

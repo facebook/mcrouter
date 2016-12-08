@@ -9,8 +9,8 @@
  */
 #include "ShadowRoute.h"
 
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"

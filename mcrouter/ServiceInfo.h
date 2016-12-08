@@ -38,7 +38,7 @@ class ServiceInfo {
   ~ServiceInfo();
 
  private:
-  class ServiceInfoImpl;
+  struct ServiceInfoImpl;
   std::unique_ptr<ServiceInfoImpl> impl_;
 };
 

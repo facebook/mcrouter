@@ -16,9 +16,9 @@
 #include <folly/Memory.h>
 
 #include "mcrouter/config.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/FileDataProvider.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/options.h"
 #include "mcrouter/ThreadUtil.h"

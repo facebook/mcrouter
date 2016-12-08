@@ -20,8 +20,8 @@
 
 #include "mcrouter/AsyncLog.h"
 #include "mcrouter/AsyncWriter.h"
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyRequestContext.h"

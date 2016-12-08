@@ -21,12 +21,14 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 template <class RouterInfo>
 class Proxy;
+template <class RouterInfo>
+class CarbonRouterInstance;
 
 class McrouterClient;
-class McrouterInstance;
 class ProxyRequestContext;
 
 using McrouterProxy = Proxy<McrouterRouterInfo>;
+using MemcacheMcrouterInstance = CarbonRouterInstance<McrouterRouterInfo>;
 
 /**
  * A mcrouter client is used to communicate with a mcrouter instance.
@@ -129,7 +131,7 @@ class McrouterClient {
   ~McrouterClient();
 
  private:
-  std::weak_ptr<McrouterInstance> router_;
+  std::weak_ptr<MemcacheMcrouterInstance> router_;
   bool sameThread_{false};
 
   McrouterProxy* proxy_{nullptr};
@@ -161,13 +163,13 @@ class McrouterClient {
   std::shared_ptr<McrouterClient> self_;
 
   McrouterClient(
-    std::weak_ptr<McrouterInstance> router,
+    std::weak_ptr<MemcacheMcrouterInstance> router,
     size_t maximum_outstanding,
     bool maximum_outstanding_error,
     bool sameThread);
 
   static Pointer create(
-    std::weak_ptr<McrouterInstance> router,
+    std::weak_ptr<MemcacheMcrouterInstance> router,
     size_t maximum_outstanding,
     bool maximum_outstanding_error,
     bool sameThread);
@@ -186,7 +188,7 @@ class McrouterClient {
   void sendRemoteThread(std::unique_ptr<ProxyRequestContext> req);
   void sendSameThread(std::unique_ptr<ProxyRequestContext> req);
 
-  friend class McrouterInstance;
+  friend class CarbonRouterInstance<McrouterRouterInfo>;
   friend class ProxyRequestContext;
 };
 

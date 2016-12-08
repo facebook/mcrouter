@@ -20,16 +20,15 @@
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
-class McrouterInstance;
+class CarbonRouterInstanceBase;
 
 template <class RouterInfo>
 class Proxy;
 
-using McrouterProxy = Proxy<McrouterRouterInfo>;
-
+template <class RouterInfo>
 class ProxyThread {
  public:
-  ProxyThread(McrouterInstance& router, size_t id);
+  ProxyThread(CarbonRouterInstanceBase& router, size_t id);
 
   /**
    * Stops the underlying proxy thread and joins it.
@@ -46,14 +45,14 @@ class ProxyThread {
    */
   void spawn();
 
-  McrouterProxy& proxy() {
+  Proxy<RouterInfo>& proxy() {
     return *proxy_;
   }
   folly::EventBase& eventBase() { return evb_; }
 
  private:
   folly::EventBase evb_;
-  McrouterProxy::Pointer proxy_;
+  typename Proxy<RouterInfo>::Pointer proxy_;
   std::thread thread_;
 
   enum class State {
@@ -67,5 +66,6 @@ class ProxyThread {
   void proxyThreadRun();
 };
 
-
 }}}  // facebook::memcache::mcrouter
+
+#include "ProxyThread-inl.h"
