@@ -20,9 +20,9 @@
 #include <folly/Range.h>
 
 #include "mcrouter/CallbackPool.h"
+#include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/ConfigApi.h"
-#include "mcrouter/McrouterClient.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 
@@ -100,17 +100,17 @@ class CarbonRouterInstance
    * @throw std::runtime_error  If the client cannot be created
    *   (i.e. attempting to create multiple clients to transient mcrouter).
    */
-  McrouterClient::Pointer
-  createClient(size_t maximum_outstanding_requests,
-               bool maximum_outstanding_requests_error = false);
+  typename CarbonRouterClient<RouterInfo>::Pointer createClient(
+      size_t maximum_outstanding_requests,
+      bool maximum_outstanding_requests_error = false);
 
   /**
    * Same as createClient(), but you must use it from the same thread that's
    * running the assigned proxy's event base.  The sends call into proxy
    * callbacks directly, bypassing the queue.
    */
-  McrouterClient::Pointer createSameThreadClient(
-    size_t maximum_outstanding_requests);
+  typename CarbonRouterClient<RouterInfo>::Pointer createSameThreadClient(
+      size_t maximum_outstanding_requests);
 
   /**
    * Shutdown all threads started by this instance. It's a blocking call and
@@ -140,9 +140,6 @@ class CarbonRouterInstance
   CarbonRouterInstance& operator=(CarbonRouterInstance&&) = delete;
 
  private:
-  std::mutex nextProxyMutex_;
-  unsigned int nextProxy_{0};
-
   CallbackPool<> onReconfigureSuccess_;
 
   // Lock to get before regenerating config structure
@@ -240,7 +237,7 @@ class CarbonRouterInstance
 
  private:
   friend class LegacyPrivateAccessor;
-  friend class McrouterClient;
+  friend class CarbonRouterClient<RouterInfo>;
   friend class McrouterManager;
   friend class ProxyDestinationMap;
 };

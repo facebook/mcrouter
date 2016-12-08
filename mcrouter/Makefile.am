@@ -23,6 +23,10 @@ libmcroutercore_a_SOURCES = \
   AsyncWriterEntry.h \
   CallbackPool-inl.h \
   CallbackPool.h \
+  CarbonRouterClient-inl.h \
+  CarbonRouterClient.h \
+  CarbonRouterClientBase.cpp \
+  CarbonRouterClientBase.h \
   CarbonRouterInstance-inl.h \
   CarbonRouterInstance.cpp \
   CarbonRouterInstance.h \
@@ -45,8 +49,6 @@ libmcroutercore_a_SOURCES = \
   mcrouter_config.cpp \
   mcrouter_config.h \
   mcrouter_options_list.h \
-  McrouterClient-inl.h \
-  McrouterClient.cpp \
   McrouterClient.h \
   McrouterFiberContext.cpp \
   McrouterFiberContext.h \

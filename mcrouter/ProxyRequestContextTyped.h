@@ -92,14 +92,13 @@ class ProxyRequestContextTyped
   friend class Proxy<RouterInfo>;
 };
 
-// TODO(@aap): Template by RouterInfo and kill McrouterRouterInfo
 /**
  * Creates a new proxy request context
  */
-template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
+template <class RouterInfo, class Request, class F>
+std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
 createProxyRequestContext(
-    Proxy<McrouterRouterInfo>& pr,
+    Proxy<RouterInfo>& pr,
     const Request& req,
     F&& f,
     ProxyRequestPriority priority = ProxyRequestPriority::kCritical);

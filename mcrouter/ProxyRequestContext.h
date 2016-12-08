@@ -33,7 +33,7 @@ template <class RouterInfo>
 class ProxyRoute;
 
 class ProxyBase;
-class McrouterClient;
+class CarbonRouterClientBase;
 class ShardSplitter;
 
 /**
@@ -149,6 +149,10 @@ class ProxyRequestContext {
     processing_ = true;
   }
 
+  void setRequester(std::shared_ptr<CarbonRouterClientBase> requester) {
+    requester_ = std::move(requester);
+  }
+
  protected:
   bool replied_{false};
 
@@ -178,7 +182,7 @@ class ProxyRequestContext {
 
   bool recording_{false};
 
-  std::shared_ptr<McrouterClient> requester_;
+  std::shared_ptr<CarbonRouterClientBase> requester_;
 
   struct RecordingState {
     ClientCallback clientCallback;
@@ -224,8 +228,7 @@ class ProxyRequestContext {
     }
   };
 
- private:
-  friend class McrouterClient;
+private:
   friend class ProxyBase;
 };
 

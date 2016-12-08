@@ -197,23 +197,26 @@ CarbonRouterInstance<RouterInfo>::create(
 }
 
 template <class RouterInfo>
-McrouterClient::Pointer CarbonRouterInstance<RouterInfo>::createClient(
+typename CarbonRouterClient<RouterInfo>::Pointer
+CarbonRouterInstance<RouterInfo>::createClient(
     size_t max_outstanding,
     bool max_outstanding_error) {
-  return McrouterClient::create(this->shared_from_this(),
-                                max_outstanding,
-                                max_outstanding_error,
-                                /* sameThread= */ false);
+  return CarbonRouterClient<RouterInfo>::create(
+      this->shared_from_this(),
+      max_outstanding,
+      max_outstanding_error,
+      /* sameThread= */ false);
 }
 
 template <class RouterInfo>
-McrouterClient::Pointer
+typename CarbonRouterClient<RouterInfo>::Pointer
 CarbonRouterInstance<RouterInfo>::createSameThreadClient(
     size_t max_outstanding) {
-  return McrouterClient::create(this->shared_from_this(),
-                                max_outstanding,
-                                /* maxOutstandingError= */ true,
-                                /* sameThread= */ true);
+  return CarbonRouterClient<RouterInfo>::create(
+      this->shared_from_this(),
+      max_outstanding,
+      /* maxOutstandingError= */ true,
+      /* sameThread= */ true);
 }
 
 template <class RouterInfo>

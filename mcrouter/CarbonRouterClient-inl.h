@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
 
 namespace facebook {
@@ -15,54 +16,56 @@ namespace mcrouter {
 
 namespace detail {
 template <class Request>
-void bumpMcrouterClientStats(CacheClientStats& stats,
-                             const Request& req,
-                             const ReplyT<Request>& reply,
-                             GetLikeT<Request> = 0) {
-
+void bumpCarbonRouterClientStats(
+    CacheClientStats& stats,
+    const Request& req,
+    const ReplyT<Request>& reply,
+    GetLikeT<Request> = 0) {
   auto replyBytes = carbon::valuePtrUnsafe(reply)
-    ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
-    : 0;
+      ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
+      : 0;
   stats.recordFetchRequest(req.key().fullKey().size(), replyBytes);
 }
 
 template <class Request>
-void bumpMcrouterClientStats(CacheClientStats& stats,
-                             const Request& req,
-                             const ReplyT<Request>& reply,
-                             UpdateLikeT<Request> = 0) {
-
+void bumpCarbonRouterClientStats(
+    CacheClientStats& stats,
+    const Request& req,
+    const ReplyT<Request>& reply,
+    UpdateLikeT<Request> = 0) {
   auto valueBytes = req.value().computeChainDataLength();
   stats.recordUpdateRequest(req.key().fullKey().size(), valueBytes);
 }
 
 template <class Request>
-void bumpMcrouterClientStats(CacheClientStats& stats,
-                             const Request& req,
-                             const ReplyT<Request>& reply,
-                             ArithmeticLikeT<Request> = 0) {
-
+void bumpCarbonRouterClientStats(
+    CacheClientStats& stats,
+    const Request& req,
+    const ReplyT<Request>& reply,
+    ArithmeticLikeT<Request> = 0) {
   stats.recordUpdateRequest(req.key().fullKey().size(), 0);
 }
 
 template <class Request>
-void bumpMcrouterClientStats(CacheClientStats& stats,
-                             const Request& req,
-                             const ReplyT<Request>& reply,
-                             DeleteLikeT<Request> = 0) {
-
+void bumpCarbonRouterClientStats(
+    CacheClientStats& stats,
+    const Request& req,
+    const ReplyT<Request>& reply,
+    DeleteLikeT<Request> = 0) {
   stats.recordInvalidateRequest(req.key().fullKey().size());
 }
 
 template <class Request>
-void bumpMcrouterClientStats(CacheClientStats& stats,
-                             const Request& req,
-                             const ReplyT<Request>& reply,
-                             OtherThanT<Request,
-                                        GetLike<>,
-                                        UpdateLike<>,
-                                        ArithmeticLike<>,
-                                        DeleteLike<>> = 0) {
+void bumpCarbonRouterClientStats(
+    CacheClientStats& stats,
+    const Request& req,
+    const ReplyT<Request>& reply,
+    OtherThanT<
+        Request,
+        GetLike<>,
+        UpdateLike<>,
+        ArithmeticLike<>,
+        DeleteLike<>> = 0) {
   // We don't have any other operation specific stats.
 }
 
@@ -78,16 +81,18 @@ const Request& unwrapRequest(std::reference_wrapper<const Request>& req) {
 
 } // detail
 
+template <class RouterInfo>
 template <class Request, class F>
-bool McrouterClient::send(const Request& req,
-                          F&& callback,
-                          folly::StringPiece ipAddr) {
+bool CarbonRouterClient<RouterInfo>::send(
+    const Request& req,
+    F&& callback,
+    folly::StringPiece ipAddr) {
   auto makePreq = [this, ipAddr, &req, &callback] {
     auto preq = createProxyRequestContext(*proxy_, req, [
       this,
       cb = std::forward<F>(callback)
     ](const Request& request, ReplyT<Request>&& reply) mutable {
-      detail::bumpMcrouterClientStats(stats_, request, reply);
+      detail::bumpCarbonRouterClientStats(stats_, request, reply);
       if (disconnected_) {
         // "Cancelled" reply.
         cb(request, ReplyT<Request>(mc_res_unknown));
@@ -96,7 +101,7 @@ bool McrouterClient::send(const Request& req,
       }
     });
 
-    preq->requester_ = self_;
+    preq->setRequester(self_);
     if (!ipAddr.empty()) {
       preq->setUserIpAddress(ipAddr);
     }
@@ -110,8 +115,9 @@ bool McrouterClient::send(const Request& req,
   return sendMultiImpl(1, makePreq, cancelRemaining);
 }
 
+template <class RouterInfo>
 template <class F, class G>
-bool McrouterClient::sendMultiImpl(
+bool CarbonRouterClient<RouterInfo>::sendMultiImpl(
     size_t nreqs,
     F&& makeNextPreq,
     G&& failRemaining) {
@@ -120,7 +126,7 @@ bool McrouterClient::sendMultiImpl(
     return false;
   }
 
-  if (maxOutstanding_ == 0) {
+  if (maxOutstanding() == 0) {
     if (sameThread_) {
       for (size_t i = 0; i < nreqs; ++i) {
         sendSameThread(makeNextPreq());
@@ -130,10 +136,10 @@ bool McrouterClient::sendMultiImpl(
         sendRemoteThread(makeNextPreq());
       }
     }
-  } else if (maxOutstandingError_) {
+  } else if (maxOutstandingError()) {
     for (size_t begin = 0; begin < nreqs;) {
       auto end = begin +
-          counting_sem_lazy_nonblocking(&outstandingReqsSem_, nreqs - begin);
+          counting_sem_lazy_nonblocking(outstandingReqsSem(), nreqs - begin);
       if (begin == end) {
         failRemaining();
         break;
@@ -158,7 +164,7 @@ bool McrouterClient::sendMultiImpl(
     size_t n = 0;
 
     while (i < nreqs) {
-      n += counting_sem_lazy_wait(&outstandingReqsSem_, nreqs - n);
+      n += counting_sem_lazy_wait(outstandingReqsSem(), nreqs - n);
       for (size_t j = i; j < n; ++j) {
         sendRemoteThread(makeNextPreq());
       }
@@ -169,8 +175,9 @@ bool McrouterClient::sendMultiImpl(
   return true;
 }
 
+template <class RouterInfo>
 template <class InputIt, class F>
-bool McrouterClient::send(
+bool CarbonRouterClient<RouterInfo>::send(
     InputIt begin,
     InputIt end,
     F&& callback,
@@ -185,7 +192,7 @@ bool McrouterClient::send(
         detail::unwrapRequest(*begin),
         [this, callback](
             const Request& request, ReplyT<Request>&& reply) mutable {
-          detail::bumpMcrouterClientStats(stats_, request, reply);
+          detail::bumpCarbonRouterClientStats(stats_, request, reply);
           if (disconnected_) {
             // "Cancelled" reply.
             callback(request, ReplyT<Request>(mc_res_unknown));
@@ -194,7 +201,7 @@ bool McrouterClient::send(
           }
         });
 
-    preq->requester_ = self_;
+    preq->setRequester(self_);
     if (!ipAddr.empty()) {
       preq->setUserIpAddress(ipAddr);
     }
@@ -215,6 +222,55 @@ bool McrouterClient::send(
       std::distance(begin, end),
       std::move(makeNextPreq),
       std::move(cancelRemaining));
+}
+
+template <class RouterInfo>
+void CarbonRouterClient<RouterInfo>::sendRemoteThread(
+    std::unique_ptr<ProxyRequestContext> req) {
+  proxy_->messageQueue_->blockingWriteRelaxed(ProxyMessage::Type::REQUEST,
+                                              req.release());
+}
+
+template <class RouterInfo>
+void CarbonRouterClient<RouterInfo>::sendSameThread(
+    std::unique_ptr<ProxyRequestContext> req) {
+  proxy_->messageReady(ProxyMessage::Type::REQUEST, req.release());
+}
+
+template <class RouterInfo>
+CarbonRouterClient<RouterInfo>::CarbonRouterClient(
+  std::weak_ptr<CarbonRouterInstance<RouterInfo>> rtr,
+  size_t maximumOutstanding,
+  bool maximumOutstandingError,
+  bool sameThread) :
+    CarbonRouterClientBase(maximumOutstanding, maximumOutstandingError),
+    router_(std::move(rtr)),
+    sameThread_(sameThread) {
+
+  if (auto router = router_.lock()) {
+    proxy_ = router->getProxy(router->nextProxyIndex());
+  }
+}
+
+template <class RouterInfo>
+typename CarbonRouterClient<RouterInfo>::Pointer
+CarbonRouterClient<RouterInfo>::create(
+    std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
+    size_t maximumOutstanding,
+    bool maximumOutstandingError,
+    bool sameThread) {
+  auto client = new CarbonRouterClient<RouterInfo>(
+      std::move(router),
+      maximumOutstanding,
+      maximumOutstandingError,
+      sameThread);
+  client->self_ = std::shared_ptr<CarbonRouterClient>(client);
+  return Pointer(client);
+}
+
+template <class RouterInfo>
+CarbonRouterClient<RouterInfo>::~CarbonRouterClient() {
+  assert(disconnected_);
 }
 
 } // mcrouter

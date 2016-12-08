@@ -9,14 +9,15 @@
  */
 #pragma once
 
+#include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
-#include "mcrouter/McrouterClient.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
@@ -35,9 +36,10 @@ class ServerOnRequest {
   using ReplyFunction = void (*)(McServerRequestContext&& ctx,
                                  ReplyT<Request>&& reply);
 
-  ServerOnRequest(McrouterClient& client, bool retainSourceIp)
-    : client_(client),
-      retainSourceIp_(retainSourceIp) {}
+  ServerOnRequest(
+      CarbonRouterClient<McrouterRouterInfo>& client,
+      bool retainSourceIp)
+      : client_(client), retainSourceIp_(retainSourceIp) {}
 
   template <class Request>
   void onRequest(McServerRequestContext&& ctx, Request&& req) {
@@ -87,7 +89,7 @@ class ServerOnRequest {
   }
 
  private:
-  McrouterClient& client_;
+  CarbonRouterClient<McrouterRouterInfo>& client_;
   bool retainSourceIp_{false};
 };
 

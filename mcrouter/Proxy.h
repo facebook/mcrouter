@@ -47,7 +47,8 @@ class MessageQueue;
 
 namespace mcrouter {
 // forward declaration
-class McrouterClient;
+template <class RouterInfo>
+class CarbonRouterClient;
 template <class RouterInfo>
 class CarbonRouterInstance;
 class CarbonRouterInstanceBase;
@@ -315,8 +316,8 @@ class Proxy : public ProxyBase {
   /** Will let through requests from the above queue if we have capacity */
   void pump() override final;
 
-  friend class McrouterClient;
   friend class CarbonRouterInstance<RouterInfo>;
+  friend class CarbonRouterClient<RouterInfo>;
   friend class ProxyRequestContext;
   friend class ProxyThread<RouterInfo>;
 };

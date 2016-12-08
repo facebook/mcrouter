@@ -124,6 +124,11 @@ class CarbonRouterInstanceBase {
    */
   virtual ProxyBase* getProxyBase(size_t index) const = 0;
 
+  /**
+   * Bump and return the index of the next proxy to be used by clients.
+   */
+  size_t nextProxyIndex();
+
  protected:
   const McrouterOptions opts_;
   const pid_t pid_;
@@ -160,6 +165,9 @@ class CarbonRouterInstanceBase {
   const std::unique_ptr<LeaseTokenMap> leaseTokenMap_;
 
   std::unordered_map<std::string, std::string> additionalStartupOpts_;
+
+  std::mutex nextProxyMutex_;
+  size_t nextProxy_{0};
 };
 
 }}} // facebook::memcache::mcrouter

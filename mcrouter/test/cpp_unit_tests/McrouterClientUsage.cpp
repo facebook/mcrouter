@@ -17,8 +17,8 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 
+#include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
-#include "mcrouter/McrouterClient.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 
@@ -26,24 +26,24 @@ using facebook::memcache::McGetReply;
 using facebook::memcache::McGetRequest;
 using facebook::memcache::MemcacheRouterInfo;
 using facebook::memcache::mcrouter::defaultTestOptions;
-using facebook::memcache::mcrouter::McrouterClient;
+using facebook::memcache::mcrouter::CarbonRouterClient;
 using facebook::memcache::mcrouter::CarbonRouterInstance;
 
 /**
- * This test provides an example of how to use the McrouterClient API.
+ * This test provides an example of how to use the CarbonRouterClient API.
  *
  * The recommended usage pattern is:
  *   1. In order to use mcrouter, the client needs a CarbonRouterInstance,
  *      obtained through one of the static factory methods. In most long-lived
  *      programs, CarbonRouterInstance::init() is the way to go.
- *   2. Create a McrouterClient object associated to the CarbonRouterInstance
- *      via CarbonRouterInstance::createClient() or
- *          CarbonRouterInstance::createSameThreadClient().
- *   3. Send requests through mcrouter via McrouterClient::send(). (With some
- *      caveats; read the comments below.)
+ *   2. Create a CarbonRouterClient object associated to the
+ *      CarbonRouterInstance via CarbonRouterInstance::createClient() or
+ *      CarbonRouterInstance::createSameThreadClient().
+ *   3. Send requests through mcrouter via CarbonRouterClient::send(). (With
+ *      some caveats; read the comments below.)
  */
 
-TEST(McrouterClient, basicUsageSameThreadClient) {
+TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   // Don't log stats in tests
   auto opts = defaultTestOptions();
   opts.num_proxies = 4;
@@ -116,7 +116,7 @@ TEST(McrouterClient, basicUsageSameThreadClient) {
   EXPECT_TRUE(replyReceived);
 }
 
-TEST(McrouterClient, basicUsageRemoteThreadClient) {
+TEST(CarbonRouterClient, basicUsageRemoteThreadClient) {
   // This test is a lot like the previous one, except this test demonstrates
   // the use of a client that can safely send a request through a Proxy
   // on another thread.  Much of the code is the exact same as before.

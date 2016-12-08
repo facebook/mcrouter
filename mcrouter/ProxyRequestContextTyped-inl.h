@@ -182,14 +182,14 @@ ProxyRequestContextTyped<RouterInfo, Request>::process(
       });
 }
 
-template <class Request, class F>
-std::unique_ptr<ProxyRequestContextTyped<McrouterRouterInfo, Request>>
-createProxyRequestContext(Proxy<McrouterRouterInfo>& pr,
+template <class RouterInfo, class Request, class F>
+std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
+createProxyRequestContext(Proxy<RouterInfo>& pr,
                           const Request& req,
                           F&& f,
                           ProxyRequestPriority priority) {
   using Type = detail::
-      ProxyRequestContextTypedWithCallback<McrouterRouterInfo, Request, F>;
+      ProxyRequestContextTypedWithCallback<RouterInfo, Request, F>;
   return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 

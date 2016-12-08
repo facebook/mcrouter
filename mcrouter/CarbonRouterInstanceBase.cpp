@@ -55,4 +55,12 @@ CarbonRouterInstanceBase::getStartupOpts() const {
   return result;
 }
 
+size_t CarbonRouterInstanceBase::nextProxyIndex() {
+  std::lock_guard<std::mutex> guard(nextProxyMutex_);
+  assert(nextProxy_ < opts().num_proxies);
+  size_t res = nextProxy_;
+  nextProxy_ = (nextProxy_ + 1) % opts().num_proxies;
+  return res;
+}
+
 }}} // facebook::memcache::mcrouter

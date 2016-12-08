@@ -11,7 +11,7 @@
 
 #include <folly/Memory.h>
 
-#include "mcrouter/McrouterClient.h"
+#include "mcrouter/CarbonRouterClientBase.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
 
@@ -41,8 +41,8 @@ ProxyRequestContext::~ProxyRequestContext() {
   }
 
   if (requester_) {
-    if (requester_->maxOutstanding_ != 0) {
-      counting_sem_post(&requester_->outstandingReqsSem_, 1);
+    if (requester_->maxOutstanding() != 0) {
+      counting_sem_post(requester_->outstandingReqsSem(), 1);
     }
   }
 
