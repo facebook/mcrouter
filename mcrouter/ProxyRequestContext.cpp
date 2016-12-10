@@ -21,8 +21,6 @@ ProxyRequestContext::ProxyRequestContext(
     ProxyBase& pr,
     ProxyRequestPriority priority__)
     : proxyBase_(pr), priority_(priority__) {
-  logger_.emplace(&proxyBase_);
-  additionalLogger_.emplace(&proxyBase_);
   proxyBase_.stats().incrementSafe(proxy_request_num_outstanding_stat);
 }
 

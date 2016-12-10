@@ -27,6 +27,8 @@ static_assert(false, "mcrouter: invalid build");
 #include <folly/Range.h>
 #include <folly/io/async/EventBase.h>
 
+#include "mcrouter/lib/Operation.h"
+
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
 #define DEBUG_FIFO_ROOT_DEFAULT "/var/mcrouter/fifos"
@@ -69,13 +71,15 @@ struct ProxyStatsContainer {
   explicit ProxyStatsContainer(ProxyBase&) {}
 };
 
-struct AdditionalProxyRequestLogger {
+class AdditionalProxyRequestLogger {
+ public:
   explicit AdditionalProxyRequestLogger(ProxyBase*) {}
   /**
    * Called once a reply is received to record a stats sample if required.
    */
-  void log(const RequestLoggerContext&) {
-  }
+  template <class Request>
+  void
+  log(const Request&, const ReplyT<Request>&, const RequestLoggerContext&) {}
 };
 
 /**

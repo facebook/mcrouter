@@ -158,7 +158,7 @@ class DestinationRoute {
   template <class Request, class... Args>
   ReplyT<Request> constructAndLog(
       const Request& req,
-      ProxyRequestContext& ctx,
+      ProxyRequestContextWithInfo<RouterInfo>& ctx,
       Args&&... args) const {
     auto now = nowUs();
     auto reply = createReply<Request>(std::forward<Args>(args)...);
@@ -177,7 +177,9 @@ class DestinationRoute {
   }
 
   template <class Request>
-  ReplyT<Request> doRoute(const Request& req, ProxyRequestContext& ctx) const {
+  ReplyT<Request> doRoute(
+      const Request& req,
+      ProxyRequestContextWithInfo<RouterInfo>& ctx) const {
     DestinationRequestCtx dctx(nowUs());
     folly::Optional<Request> newReq;
     folly::StringPiece strippedRoutingPrefix;

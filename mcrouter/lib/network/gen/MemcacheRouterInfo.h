@@ -20,6 +20,10 @@
 namespace facebook {
 namespace memcache {
 
+namespace mcrouter {
+class AdditionalProxyRequestLogger;
+} // mcrouter
+
 namespace detail {
 
 using MemcacheRoutableRequests = carbon::List<
@@ -49,6 +53,8 @@ struct MemcacheRouterInfo {
   template <class Route>
   using RouteHandle = MemcacheRouteHandle<Route>;
   using RoutableRequests = detail::MemcacheRoutableRequests;
+
+  using AdditionalLogger = mcrouter::AdditionalProxyRequestLogger;
 };
 
 } // memcache

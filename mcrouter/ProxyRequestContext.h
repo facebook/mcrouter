@@ -17,7 +17,7 @@
 #include "mcrouter/ProxyRequestLogger.h"
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
-#include "mcrouter/config.h"
+#include "mcrouter/config.h"  // memcache AdditionalProxyRequestLogger
 #include "mcrouter/lib/RequestLoggerContext.h"
 
 namespace facebook {
@@ -91,40 +91,6 @@ class ProxyRequestContext {
   }
 
   /**
-   * Called once a reply is received to record a stats sample if required.
-   */
-  template <class Request>
-  void onReplyReceived(
-      const std::string& poolName,
-      const AccessPoint& ap,
-      folly::StringPiece strippedRoutingPrefix,
-      const Request& request,
-      const ReplyT<Request>& reply,
-      RequestClass requestClass,
-      const int64_t startTimeUs,
-      const int64_t endTimeUs,
-      const ReplyStatsContext replyStatsContext) {
-    if (recording_) {
-      return;
-    }
-
-    RequestLoggerContext loggerContext(
-        poolName,
-        ap,
-        strippedRoutingPrefix,
-        request,
-        reply,
-        requestClass,
-        startTimeUs,
-        endTimeUs,
-        replyStatsContext);
-    assert(logger_.hasValue());
-    logger_->log<Request>(loggerContext);
-    assert(additionalLogger_.hasValue());
-    additionalLogger_->log(loggerContext);
-  }
-
-  /**
    * Continues processing current request.
    * Should be called only from the attached proxy thread.
    */
@@ -194,9 +160,6 @@ class ProxyRequestContext {
     std::unique_ptr<RecordingState> recordingState_;
   };
 
-  folly::Optional<ProxyRequestLogger> logger_;
-  folly::Optional<AdditionalProxyRequestLogger> additionalLogger_;
-
   uint64_t senderIdForTest_{0};
 
   ProxyRequestPriority priority_{ProxyRequestPriority::kCritical};
@@ -232,10 +195,6 @@ private:
   friend class ProxyBase;
 };
 
-/**
- * This class carries no state.  It is only used for its type information in
- * certain places, such as in McrouterFiberContext.
- */
 template <class RouterInfo>
 class ProxyRequestContextWithInfo : public ProxyRequestContext {
  public:
@@ -291,11 +250,49 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
     }
   }
 
+  /**
+   * Called once a reply is received to record a stats sample if required.
+   */
+  template <class Request>
+  void onReplyReceived(
+      const std::string& poolName,
+      const AccessPoint& ap,
+      folly::StringPiece strippedRoutingPrefix,
+      const Request& request,
+      const ReplyT<Request>& reply,
+      RequestClass requestClass,
+      const int64_t startTimeUs,
+      const int64_t endTimeUs,
+      const ReplyStatsContext replyStatsContext) {
+    if (recording()) {
+      return;
+    }
+
+    RequestLoggerContext loggerContext(
+        poolName,
+        ap,
+        strippedRoutingPrefix,
+        requestClass,
+        startTimeUs,
+        endTimeUs,
+        reply.result(),
+        replyStatsContext);
+    assert(logger_.hasValue());
+    logger_->log<Request>(loggerContext);
+    assert(additionalLogger_.hasValue());
+    additionalLogger_->log(request, reply, loggerContext);
+  }
+
+ private:
+  using AdditionalLogger = typename RouterInfo::AdditionalLogger;
+
  protected:
   ProxyRequestContextWithInfo(
       Proxy<RouterInfo>& pr,
       ProxyRequestPriority priority__)
-      : ProxyRequestContext(pr, priority__) {}
+      : ProxyRequestContext(pr, priority__),
+        logger_(ProxyRequestLogger(&pr)),
+        additionalLogger_(AdditionalLogger(&pr)) {}
 
  private:
   ProxyRequestContextWithInfo(
@@ -308,6 +305,9 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
             proxyBase,
             std::move(clientCallback),
             std::move(shardSplitCallback)) {}
+
+  folly::Optional<ProxyRequestLogger> logger_;
+  folly::Optional<AdditionalLogger> additionalLogger_;
 };
 
 } // mcrouter

@@ -291,5 +291,6 @@ reply McFlushAllReply {
 
 service {
   additional_requests: [];
+  on_reply_logger: mcrouter::AdditionalProxyRequestLogger;
   enable_shutdown: false;
 };
