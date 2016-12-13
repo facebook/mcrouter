@@ -164,8 +164,6 @@ AH_BOTTOM([#include "mcrouter_config.h"])
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/test/Makefile
-                 lib/allocator/Makefile
-                 lib/allocator/test/Makefile
                  lib/config/Makefile
                  lib/config/test/Makefile
                  lib/cycles/Makefile

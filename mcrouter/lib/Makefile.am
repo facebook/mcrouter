@@ -1,4 +1,4 @@
-SUBDIRS = . allocator config cycles fbi network test
+SUBDIRS = . config cycles fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -41,8 +41,6 @@ libmcrouter_a_SOURCES = \
   WeightedCh3HashFunc.h \
   ZstdCompressionCodec.cpp \
   ZstdCompressionCodec.h \
-  allocator/JemallocNodumpAllocator.h \
-  allocator/JemallocNodumpAllocator.cpp \
   carbon/Fields.h \
   carbon/CarbonQueueAppender.cpp \
   carbon/CarbonQueueAppender.h \

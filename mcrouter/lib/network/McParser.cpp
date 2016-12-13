@@ -15,9 +15,9 @@
 #include <folly/Format.h>
 #include <folly/Memory.h>
 #include <folly/ThreadLocal.h>
+#include <folly/experimental/JemallocNodumpAllocator.h>
 #include <folly/io/Cursor.h>
 
-#include "mcrouter/lib/allocator/JemallocNodumpAllocator.h"
 #include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
@@ -42,9 +42,9 @@ size_t mcOpToRequestTypeId(mc_op_t mc_op) {
   }
 }
 
-#ifdef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+#ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
 
-folly::ThreadLocal<JemallocNodumpAllocator> allocator;
+folly::ThreadLocal<folly::JemallocNodumpAllocator> allocator;
 
 folly::IOBuf copyToNodumpBuffer(
     const UmbrellaMessageInfo& umMsgInfo,
@@ -64,7 +64,7 @@ folly::IOBuf copyToNodumpBuffer(
                       p,
                       bufSize,
                       readBuffer.length(),
-                      JemallocNodumpAllocator::deallocate,
+                      folly::JemallocNodumpAllocator::deallocate,
                       reinterpret_cast<void*> (allocator->getFlags()));
 }
 
@@ -83,7 +83,7 @@ McParser::McParser(ParserCallback& callback,
       debugFifo_(debugFifo),
       readBuffer_(folly::IOBuf::CREATE, bufferSize_),
       useJemallocNodumpAllocator_(useJemallocNodumpAllocator) {
-#ifndef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+#ifndef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
   useJemallocNodumpAllocator_ = false;
 #endif
 }
@@ -185,7 +185,7 @@ bool McParser::readUmbrellaOrCaretData() {
           0 /* minHeadroom */,
           bufferSize_ - readBuffer_.length() /* minTailroom */);
     }
-#ifdef CAN_USE_JEMALLOC_NODUMP_ALLOCATOR
+#ifdef FOLLY_JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
     if (useJemallocNodumpAllocator_) {
       readBuffer_ = copyToNodumpBuffer(umMsgInfo_, readBuffer_);
     }
