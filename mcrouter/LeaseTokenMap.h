@@ -18,6 +18,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/Optional.h>
+#include <folly/Range.h>
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
