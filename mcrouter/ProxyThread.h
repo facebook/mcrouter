@@ -46,24 +46,21 @@ class ProxyThread {
   void spawn();
 
   Proxy<RouterInfo>& proxy() {
-    return *proxy_;
+    return proxyRef_;
   }
-  folly::EventBase& eventBase() { return evb_; }
+  folly::EventBase& eventBase() { return evbRef_; }
 
  private:
-  folly::EventBase evb_;
+  std::unique_ptr<folly::EventBase> evb_;
   typename Proxy<RouterInfo>::Pointer proxy_;
+  folly::EventBase& evbRef_;
+  Proxy<RouterInfo>& proxyRef_;
   std::thread thread_;
 
-  enum class State {
-    RUNNING,
-    STOPPING,
-    STOPPED
-  };
-  std::atomic<State> state_{State::STOPPED};
-
   void stopAwriterThreads();
-  void proxyThreadRun();
+  static void proxyThreadRun(
+      std::unique_ptr<folly::EventBase> evb,
+      typename Proxy<RouterInfo>::Pointer proxy);
 };
 
 }}}  // facebook::memcache::mcrouter

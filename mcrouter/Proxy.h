@@ -173,12 +173,6 @@ class Proxy : public ProxyBase {
   void sendMessage(ProxyMessage::Type t, void* data) noexcept;
 
   /**
-   * Must be called from the EventBase thread;
-   * drains message queue.
-   */
-  void drainMessageQueue();
-
-  /**
    * @return Current value of the relaxed notification period if set.
    */
   size_t queueNotifyPeriod() const override;

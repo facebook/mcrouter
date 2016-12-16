@@ -355,12 +355,6 @@ void Proxy<RouterInfo>::sendMessage(ProxyMessage::Type t, void* data) noexcept {
 }
 
 template <class RouterInfo>
-void Proxy<RouterInfo>::drainMessageQueue() {
-  CHECK(messageQueue_.get());
-  messageQueue_->drain();
-}
-
-template <class RouterInfo>
 size_t Proxy<RouterInfo>::queueNotifyPeriod() const {
   if (messageQueue_) {
     return messageQueue_->currentNotifyPeriod();

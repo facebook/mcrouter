@@ -13,6 +13,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/EventHandler.h>
+#include <folly/Memory.h>
 #include <folly/MPMCQueue.h>
 #include <folly/Random.h>
 
@@ -146,6 +147,31 @@ class MessageQueue {
       timeoutHandler_.attachEventBase(&evb);
       timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
     }
+
+    class MessageQueueDrainCallback : public folly::EventBase::LoopCallback {
+     public:
+       MessageQueueDrainCallback(folly::EventBase& evb__, MessageQueue& queue) :
+        evb_(evb__), queue_(queue) {
+          evb_.runBeforeLoop(this);
+        }
+
+      void runLoopCallback() noexcept override {
+        queue_.drain();
+        evb_.runBeforeLoop(this);
+      }
+
+     private:
+      folly::EventBase& evb_;
+      MessageQueue& queue_;
+    };
+
+    queueDrainCallback_ =
+        folly::make_unique<MessageQueueDrainCallback>(evb, *this);
+
+    evb.runOnDestruction(new folly::EventBase::FunctionLoopCallback(
+        [queueDrainCallback = queueDrainCallback_]() {
+          queueDrainCallback->cancelLoopCallback();
+        }));
   }
 
   size_t currentNotifyPeriod() const noexcept {
@@ -165,6 +191,9 @@ class MessageQueue {
   }
 
   ~MessageQueue() {
+    if (queueDrainCallback_) {
+      queueDrainCallback_->cancelLoopCallback();
+    }
     handler_.unregisterHandler();
     if (efd_ >= 0) {
       PCHECK(folly::closeNoInt(efd_) == 0);
@@ -257,6 +286,8 @@ class MessageQueue {
       notifier_.bumpMessages();
     }
   }
+
+  std::shared_ptr<folly::EventBase::LoopCallback> queueDrainCallback_;
 };
 
 }}  // facebook::memcache

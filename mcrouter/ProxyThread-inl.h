@@ -21,41 +21,42 @@ template <class RouterInfo>
 ProxyThread<RouterInfo>::ProxyThread(
     CarbonRouterInstanceBase& router,
     size_t id)
-    : evb_(/* enableTimeMeasurement */ false),
-      proxy_(Proxy<RouterInfo>::createProxy(router, evb_, id)) {}
+    : evb_(folly::make_unique<folly::EventBase>(
+          /* enableTimeMeasurement */ false)),
+      proxy_(Proxy<RouterInfo>::createProxy(router, *evb_, id)),
+      evbRef_(*evb_),
+      proxyRef_(*proxy_) {}
 
 template <class RouterInfo>
 void ProxyThread<RouterInfo>::spawn() {
-  CHECK(state_.exchange(State::RUNNING) == State::STOPPED);
-  thread_ = std::thread([this] () { proxyThreadRun(); });
+  CHECK(!thread_.joinable());
+  thread_ = std::thread([
+      evb = std::move(evb_), proxy = std::move(proxy_) ]() mutable {
+    proxyThreadRun(std::move(evb), std::move(proxy));
+  });
 }
 
 template <class RouterInfo>
 void ProxyThread<RouterInfo>::stopAndJoin() noexcept {
-  if (thread_.joinable() && proxy_->router().pid() == getpid()) {
-    CHECK(state_.exchange(State::STOPPING) == State::RUNNING);
-    proxy_->sendMessage(ProxyMessage::Type::SHUTDOWN, nullptr);
-    CHECK(state_.exchange(State::STOPPED) == State::STOPPING);
-    evb_.terminateLoopSoon();
+  if (thread_.joinable() && proxyRef_.router().pid() == getpid()) {
+    evbRef_.terminateLoopSoon();
     thread_.join();
   }
 }
 
 template <class RouterInfo>
-void ProxyThread<RouterInfo>::proxyThreadRun() {
-  mcrouterSetThisThreadName(proxy_->router().opts(), "mcrpxy");
+void ProxyThread<RouterInfo>::proxyThreadRun(
+    std::unique_ptr<folly::EventBase> evb,
+    typename Proxy<RouterInfo>::Pointer proxy) {
+  mcrouterSetThisThreadName(proxy->router().opts(), "mcrpxy");
 
-  while (state_ == State::RUNNING || proxy_->fiberManager().hasTasks()) {
-    evb_.loopOnce();
-    proxy_->drainMessageQueue();
-  }
+  evb->runOnDestruction(new folly::EventBase::FunctionLoopCallback(
+      [proxy = std::move(proxy)]() mutable {
+        /* make sure proxy is deleted on the proxy thread */
+        proxy.reset();
+      }));
 
-  while (state_ != State::STOPPED) {
-    evb_.loopOnce();
-  }
-
-  /* make sure proxy is deleted on the proxy thread */
-  proxy_.reset();
+  evb->loopForever();
+  evb.reset();
 }
-
 }}}  // facebook::memcache::mcrouter
