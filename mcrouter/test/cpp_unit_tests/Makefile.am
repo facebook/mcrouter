@@ -12,6 +12,7 @@ mcrouter_test_SOURCES = \
   observable_test.cpp \
   options_test.cpp \
   pool_factory_test.cpp \
+  ProxyRequestContextTest.cpp \
   route_test.cpp \
   runtime_vars_data_test.cpp
 

@@ -17,8 +17,8 @@
 #include "mcrouter/ProxyRequestLogger.h"
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
-#include "mcrouter/config.h"  // memcache AdditionalProxyRequestLogger
 #include "mcrouter/lib/RequestLoggerContext.h"
+#include "mcrouter/lib/carbon/NoopAdditionalLogger.h"
 
 namespace facebook {
 namespace memcache {
@@ -195,6 +195,26 @@ private:
   friend class ProxyBase;
 };
 
+namespace detail {
+
+template <class T>
+struct Void {
+  using type = void;
+};
+
+template <class RouterInfo, class U = void>
+struct RouterAdditionalLogger {
+  using type = carbon::NoopAdditionalLogger;
+};
+template <class RouterInfo>
+struct RouterAdditionalLogger<
+    RouterInfo,
+    typename Void<typename RouterInfo::AdditionalLogger>::type> {
+  using type = typename RouterInfo::AdditionalLogger;
+};
+
+} // detail
+
 template <class RouterInfo>
 class ProxyRequestContextWithInfo : public ProxyRequestContext {
  public:
@@ -284,7 +304,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
   }
 
  private:
-  using AdditionalLogger = typename RouterInfo::AdditionalLogger;
+  using AdditionalLogger =
+      typename detail::RouterAdditionalLogger<RouterInfo>::type;
 
  protected:
   ProxyRequestContextWithInfo(

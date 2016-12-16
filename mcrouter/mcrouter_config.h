@@ -28,6 +28,7 @@ static_assert(false, "mcrouter: invalid build");
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/carbon/NoopAdditionalLogger.h"
 
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
@@ -71,15 +72,10 @@ struct ProxyStatsContainer {
   explicit ProxyStatsContainer(ProxyBase&) {}
 };
 
-class AdditionalProxyRequestLogger {
+class AdditionalProxyRequestLogger : public carbon::NoopAdditionalLogger {
  public:
-  explicit AdditionalProxyRequestLogger(ProxyBase*) {}
-  /**
-   * Called once a reply is received to record a stats sample if required.
-   */
-  template <class Request>
-  void
-  log(const Request&, const ReplyT<Request>&, const RequestLoggerContext&) {}
+  explicit AdditionalProxyRequestLogger(ProxyBase* proxy)
+      : NoopAdditionalLogger(proxy) {}
 };
 
 /**

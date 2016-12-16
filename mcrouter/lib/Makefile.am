@@ -51,6 +51,7 @@ libmcrouter_a_SOURCES = \
   carbon/CommonSerializationTraits.h \
   carbon/Keys-inl.h \
   carbon/Keys.h \
+  carbon/NoopAdditionalLogger.h \
   carbon/ReplyCommon.h \
   carbon/RequestCommon.h \
   carbon/RequestReplyUtil.h \
