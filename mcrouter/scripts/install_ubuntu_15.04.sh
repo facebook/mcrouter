@@ -24,6 +24,7 @@ sudo apt-get install -y \
     libssl-dev \
     libtool \
     make \
+    pkg-config \
     python-dev \
     ragel
 
