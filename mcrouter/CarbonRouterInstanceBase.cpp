@@ -12,6 +12,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/Memory.h>
+#include <folly/ThreadName.h>
 
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
@@ -26,7 +27,11 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
       statsLogWriter_(
           folly::make_unique<AsyncWriter>(opts_.stats_async_queue_length)),
       asyncWriter_(folly::make_unique<AsyncWriter>()),
-      leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {}
+      leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
+        evbAuxiliaryThread_.getEventBase()->runInEventBaseThread([] {
+          folly::setThreadName("CarbonAux");
+        });
+      }
 
 void CarbonRouterInstanceBase::setUpCompressionDictionaries(
     std::unordered_map<uint32_t, CodecConfigPtr>&& codecConfigs) noexcept {
