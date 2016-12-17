@@ -16,7 +16,7 @@
 
 #include <folly/IntrusiveList.h>
 #include <folly/io/async/EventBase.h>
-#include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/io/async/EventBaseThread.h>
 #include <folly/Optional.h>
 #include <folly/Range.h>
 
@@ -43,7 +43,7 @@ class LeaseTokenMap {
    * @param leaseTokenTtl     How many milliseconds the lease token will live.
    *                          Must be greater than 0.
    */
-  explicit LeaseTokenMap(folly::ScopedEventBaseThread& evbThread,
+  explicit LeaseTokenMap(folly::EventBaseThread& evbThread,
                          uint32_t leaseTokenTtl = 10000);
   ~LeaseTokenMap();
 
@@ -144,7 +144,7 @@ class LeaseTokenMap {
    private:
     LeaseTokenMap& parent_;
   };
-  folly::ScopedEventBaseThread& evbThread_;
+  folly::EventBaseThread& evbThread_;
   TimeoutHandler timeoutHandler_;
   uint32_t leaseTokenTtlMs_;
 

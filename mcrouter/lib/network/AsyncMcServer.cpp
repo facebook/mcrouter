@@ -335,8 +335,7 @@ AsyncMcServer::AsyncMcServer(Options opts)
     : opts_(std::move(opts)) {
   if (opts_.congestionController.cpuControlTarget > 0 ||
       opts_.congestionController.memControlTarget > 0) {
-    auxiliaryEvbThread_ =
-        folly::make_unique<folly::ScopedEventBaseThread>(true /* auto start */);
+    auxiliaryEvbThread_ = folly::make_unique<folly::ScopedEventBaseThread>();
 
     if (opts_.congestionController.cpuControlTarget > 0) {
       opts_.worker.cpuController = std::make_shared<CpuController>(

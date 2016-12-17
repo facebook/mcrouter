@@ -13,7 +13,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/io/async/EventBaseThread.h>
 
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
@@ -142,7 +142,7 @@ class CarbonRouterInstanceBase {
   const std::unique_ptr<AsyncWriter> asyncWriter_;
 
   // Auxiliary EventBase thread.
-  folly::ScopedEventBaseThread evbAuxiliaryThread_;
+  folly::EventBaseThread evbAuxiliaryThread_;
 
   LogPostprocessCallbackFunc postprocessCallback_;
 

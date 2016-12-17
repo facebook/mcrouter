@@ -25,7 +25,7 @@ inline uint64_t applyMagic(uint32_t id) {
 
 } // anonymous
 
-LeaseTokenMap::LeaseTokenMap(folly::ScopedEventBaseThread& evbThread,
+LeaseTokenMap::LeaseTokenMap(folly::EventBaseThread& evbThread,
                              uint32_t leaseTokenTtl)
     : evbThread_(evbThread),
       timeoutHandler_(*this, *evbThread.getEventBase()),

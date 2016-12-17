@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 
 #include <folly/io/async/EventBase.h>
-#include <folly/io/async/ScopedEventBaseThread.h>
+#include <folly/io/async/EventBaseThread.h>
 #include <folly/Optional.h>
 
 #include "mcrouter/LeaseTokenMap.h"
@@ -41,7 +41,7 @@ void assertQueryFalse(LeaseTokenMap& map, std::string routeName,
 } // anonymous namespace
 
 TEST(LeaseTokenMap, sanity) {
-  folly::ScopedEventBaseThread evbAuxThread;
+  folly::EventBaseThread evbAuxThread;
   LeaseTokenMap map(evbAuxThread);
 
   EXPECT_EQ(map.size(), 0);
@@ -67,7 +67,7 @@ TEST(LeaseTokenMap, magicConflict) {
   // by memcached) that contains our "magic", LeaseTokenMap should handle it
   // gracefully.
 
-  folly::ScopedEventBaseThread evbAuxThread;
+  folly::EventBaseThread evbAuxThread;
   LeaseTokenMap map(evbAuxThread);
 
   EXPECT_EQ(map.size(), 0);
@@ -85,7 +85,7 @@ TEST(LeaseTokenMap, nestedRoutes) {
   // Simulates the following routing:
   // proxyRoute -> failover:route02 -> failover:route01 -> destinationRoute
 
-  folly::ScopedEventBaseThread evbAuxThread;
+  folly::EventBaseThread evbAuxThread;
   LeaseTokenMap map(evbAuxThread);
 
   // LEASE-GET
@@ -107,7 +107,7 @@ TEST(LeaseTokenMap, nestedRoutes) {
 
 TEST(LeaseTokenMap, shrink) {
   size_t tokenTtl = 100;
-  folly::ScopedEventBaseThread evbAuxThread;
+  folly::EventBaseThread evbAuxThread;
   LeaseTokenMap map(evbAuxThread, tokenTtl);
 
   EXPECT_EQ(map.size(), 0);
@@ -125,7 +125,7 @@ TEST(LeaseTokenMap, shrink) {
 
 TEST(LeaseTokenMap, stress) {
   size_t tokenTtl = 1000;
-  folly::ScopedEventBaseThread evbAuxThread;
+  folly::EventBaseThread evbAuxThread;
   LeaseTokenMap map(evbAuxThread, tokenTtl);
 
   EXPECT_EQ(map.size(), 0);
