@@ -16,7 +16,6 @@
 #include <folly/Hash.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 

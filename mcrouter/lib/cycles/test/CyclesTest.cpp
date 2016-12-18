@@ -13,7 +13,6 @@
 
 #include <folly/Memory.h>
 
-#include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/cycles/Cycles.h"
 
 using namespace facebook::memcache;

@@ -9,12 +9,9 @@
  */
 #include "route.h"
 
-#include <ctype.h>
-
 #include <memory>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/fbi/hash.h"
 
 namespace facebook { namespace memcache { namespace mcrouter {
 

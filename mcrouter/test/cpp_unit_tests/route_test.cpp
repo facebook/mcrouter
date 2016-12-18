@@ -11,7 +11,6 @@
 
 #include <gtest/gtest.h>
 
-#include "mcrouter/lib/fbi/nstring.h"
 #include "mcrouter/route.h"
 
 using facebook::memcache::mcrouter::match_pattern_route;

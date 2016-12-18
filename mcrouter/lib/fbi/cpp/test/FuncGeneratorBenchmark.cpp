@@ -8,7 +8,6 @@
  *
  */
 #include <algorithm>
-#include <exception>
 #include <functional>
 
 #include <folly/Benchmark.h>

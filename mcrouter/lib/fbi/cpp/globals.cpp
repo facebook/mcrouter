@@ -9,8 +9,6 @@
  */
 #include "globals.h"
 
-#include <unistd.h>
-
 #include <folly/IPAddress.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"

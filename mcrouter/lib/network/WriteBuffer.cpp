@@ -11,9 +11,7 @@
 #include <folly/String.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
-#include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 
