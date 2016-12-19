@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
@@ -26,8 +26,16 @@
 #include "mcrouter/routes/FailoverPolicy.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 
+namespace folly {
+struct dynamic;
+}
+
 namespace facebook {
 namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
 namespace mcrouter {
 
 /**
@@ -227,6 +235,12 @@ class FailoverRoute {
     return failoverErrors_.shouldFailover(reply, req);
   }
 };
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    ExtraRouteHandleProviderIf<RouterInfo>& extraProvider);
 
 } // mcrouter
 } // memcache

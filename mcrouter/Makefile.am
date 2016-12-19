@@ -107,7 +107,6 @@ libmcroutercore_a_SOURCES = \
   routes/BigValueRoute.h \
   routes/BigValueRouteIf.h \
   routes/DefaultShadowPolicy.h \
-  routes/DestinationRoute.cpp \
   routes/DestinationRoute.h \
   routes/DevNullRoute.cpp \
   routes/DevNullRoute.h \
@@ -116,15 +115,14 @@ libmcroutercore_a_SOURCES = \
   routes/FailoverPolicy.h \
   routes/FailoverRateLimiter.cpp \
   routes/FailoverRateLimiter.h \
-  routes/FailoverRoute.cpp \
+  routes/FailoverRoute-inl.h \
   routes/FailoverRoute.h \
   routes/FailoverWithExptimeRoute.cpp \
   routes/HashRoute.cpp \
   routes/HostIdRoute.cpp \
   routes/L1L2CacheRoute.cpp \
-  routes/LatestRoute.cpp \
-  routes/LoggingRoute.cpp \
-  routes/McExtraRouteHandleProvider.cpp \
+  routes/LatestRoute.h \
+  routes/McExtraRouteHandleProvider-inl.h \
   routes/McExtraRouteHandleProvider.h \
   routes/McImportResolver.cpp \
   routes/McImportResolver.h \
@@ -143,7 +141,6 @@ libmcroutercore_a_SOURCES = \
   routes/NullRoute.cpp \
   routes/OperationSelectorRoute.cpp \
   routes/OperationSelectorRoute.h \
-  routes/OutstandingLimitRoute.cpp \
   routes/OutstandingLimitRoute.h \
   routes/PrefixSelectorRoute.h \
   routes/ProxyRoute-inl.h \
@@ -151,7 +148,6 @@ libmcroutercore_a_SOURCES = \
   routes/RandomRoute.cpp \
   routes/RateLimiter.cpp \
   routes/RateLimiter.h \
-  routes/RateLimitRoute.cpp \
   routes/RateLimitRoute.h \
   routes/RootRoute.h \
   routes/RouteHandleMap-inl.h \
@@ -159,7 +155,6 @@ libmcroutercore_a_SOURCES = \
   routes/RoutePolicyMap-inl.h \
   routes/RoutePolicyMap.h \
   routes/RouteSelectorMap.h \
-  routes/ShadowRoute.cpp \
   routes/ShadowRoute.h \
   routes/ShadowRoute-inl.h \
   routes/ShadowRouteIf.h \
@@ -169,7 +164,6 @@ libmcroutercore_a_SOURCES = \
   routes/ShardSplitRoute.h \
   routes/ShardSplitter.cpp \
   routes/ShardSplitter.h \
-  routes/SlowWarmUpRoute.cpp \
   routes/SlowWarmupRoute.h \
   routes/SlowWarmUpRouteSettings.cpp \
   routes/SlowWarmupRouteSettings.h \

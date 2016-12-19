@@ -17,6 +17,7 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
@@ -35,13 +36,14 @@ makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
                          bool failoverTagging,
                          bool enableLeasePairing = false,
                          std::string name = "") {
-  return makeFailoverRouteInOrder<FailoverRoute>(std::move(rh),
-                                                 std::move(failoverErrors),
-                                                 std::move(rateLimiter),
-                                                 failoverTagging,
-                                                 enableLeasePairing,
-                                                 std::move(name),
-                                                 nullptr);
+  return makeFailoverRouteInOrder<McrouterRouterInfo, FailoverRoute>(
+      std::move(rh),
+      std::move(failoverErrors),
+      std::move(rateLimiter),
+      failoverTagging,
+      enableLeasePairing,
+      std::move(name),
+      nullptr);
 }
 
 }}}  // facebook::memcache::mcrouter
@@ -289,7 +291,7 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -312,7 +314,7 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 3);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -335,7 +337,7 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 3);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -359,7 +361,7 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -395,7 +397,7 @@ TEST(failoverRouteTest, leastFailuresCycle) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -433,7 +435,7 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 3);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -456,7 +458,7 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,
@@ -485,7 +487,7 @@ TEST(failoverRouteTest, leastFailuresComplex) {
   mockFiberContext();
   folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
                                                ("max_tries", 2);
-  auto rh = makeFailoverRouteLeastFailures<FailoverRoute>(
+  auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
     get_route_handles(test_handles),
     FailoverErrorsSettings(),
     nullptr,

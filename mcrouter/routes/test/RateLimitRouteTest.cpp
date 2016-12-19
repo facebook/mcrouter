@@ -15,6 +15,7 @@
 
 #include <folly/json.h>
 
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"

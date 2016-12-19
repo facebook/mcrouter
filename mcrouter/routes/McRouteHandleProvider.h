@@ -27,6 +27,7 @@ struct dynamic;
 
 namespace facebook { namespace memcache { namespace mcrouter {
 
+template <class RouteHandleIf>
 class ExtraRouteHandleProviderIf;
 class ProxyBase;
 
@@ -73,7 +74,7 @@ class McRouteHandleProvider :
  private:
   ProxyBase& proxy_;
   PoolFactory& poolFactory_;
-  std::unique_ptr<ExtraRouteHandleProviderIf> extraProvider_;
+  std::unique_ptr<ExtraRouteHandleProviderIf<RouterInfo>> extraProvider_;
 
   // poolName -> AsynclogRoute
   folly::StringKeyedUnorderedMap<RouteHandlePtr> asyncLogRoutes_;
@@ -101,6 +102,8 @@ class McRouteHandleProvider :
       std::string asynclogName);
 
   RouteHandleFactoryMap buildRouteMap();
+
+  std::unique_ptr<ExtraRouteHandleProviderIf<RouterInfo>> buildExtraProvider();
 };
 
 }}} // facebook::memcache::mcrouter

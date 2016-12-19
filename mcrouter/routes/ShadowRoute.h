@@ -20,8 +20,19 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
+#include "mcrouter/routes/DefaultShadowPolicy.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace folly {
+struct dynamic;
+}
+
+namespace facebook {
+namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
+namespace mcrouter {
 
 /**
  * Shadowing using dynamic settings.
@@ -43,7 +54,7 @@ class ShadowRoute {
   }
 
   ShadowRoute(std::shared_ptr<RouteHandleIf> normalRoute,
-              ShadowData<RouteHandleIf> shadowData,
+              ShadowData<RouterInfo> shadowData,
               ShadowPolicy shadowPolicy)
       : normal_(std::move(normalRoute)),
         shadowData_(std::move(shadowData)),
@@ -86,7 +97,7 @@ class ShadowRoute {
 
  private:
   const std::shared_ptr<RouteHandleIf> normal_;
-  const ShadowData<RouteHandleIf> shadowData_;
+  const ShadowData<RouterInfo> shadowData_;
   ShadowPolicy shadowPolicy_;
 
   template <class Request>
@@ -102,6 +113,31 @@ class ShadowRoute {
       std::shared_ptr<Request> adjustedReq) const;
 };
 
-}}}  // facebook::memcache::mcrouter
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeShadowRouteDefault(
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> normalRoute,
+    ShadowData<RouterInfo> shadowData,
+    DefaultShadowPolicy shadowPolicy);
+
+template <class RouterInfo>
+std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
+makeShadowRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
+    ProxyBase& proxy,
+    ExtraRouteHandleProviderIf<RouterInfo>& extraProvider);
+
+template <class RouterInfo>
+std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
+makeShadowRoutes(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    ProxyBase& proxy,
+    ExtraRouteHandleProviderIf<RouterInfo>& extraProvider);
+
+} // mcrouter
+} // memcache
+} // facebook
 
 #include "ShadowRoute-inl.h"

@@ -17,19 +17,30 @@
 #include <folly/fibers/Baton.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/CarbonRouterInstance.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/Proxy.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/lib/McOperationTraits.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/options.h"
+#include "mcrouter/ProxyBase.h"
+#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace folly {
+struct dynamic;
+}
+
+namespace facebook {
+namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
+namespace mcrouter {
 
 /*
  * No more than N requests will be allowed to be concurrently processed by child
@@ -152,4 +163,14 @@ class OutstandingLimitRoute {
   std::unordered_map<size_t, QueueEntry*> senderIdToEntry_;
 };
 
-}}}  // facebook::memcache::mcrouter
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeOutstandingLimitRoute(
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> normalRoute,
+    size_t maxOutstanding) {
+  return makeRouteHandleWithInfo<RouterInfo, OutstandingLimitRoute>(
+      std::move(normalRoute), maxOutstanding);
+}
+
+} // mcrouter
+} // memcache
+} // facebook

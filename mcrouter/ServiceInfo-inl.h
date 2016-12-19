@@ -31,6 +31,7 @@
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/options.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/standalone_options.h"
@@ -135,7 +136,23 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRouteCommandForOp(
 }
 
 template <class RouterInfo, int op_id>
-std::string routeHandlesCommandHelper(
+typename std::enable_if<
+    !std::is_same<RouterInfo, MemcacheRouterInfo>::value,
+    std::string>::type
+routeHandlesCommandHelper(
+    folly::StringPiece op,
+    folly::StringPiece key,
+    const ProxyRoute<RouterInfo>& proxyRoute,
+    McOpList::Item<op_id>) {
+  throw std::runtime_error(
+      "route_handles: just memcache protocol is supported");
+}
+
+template <class RouterInfo, int op_id>
+typename std::enable_if<
+    std::is_same<RouterInfo, MemcacheRouterInfo>::value,
+    std::string>::type
+routeHandlesCommandHelper(
     folly::StringPiece op,
     folly::StringPiece key,
     const ProxyRoute<RouterInfo>& proxyRoute,
@@ -291,8 +308,8 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
       auto op = args[0];
       auto key = args[1];
 
-      return routeHandlesCommandHelper(op, key, proxyRoute_,
-                                       McOpList::LastItem());
+      return routeHandlesCommandHelper(
+          op, key, proxyRoute_, McOpList::LastItem());
     }
   );
 

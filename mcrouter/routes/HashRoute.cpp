@@ -14,6 +14,7 @@
 #include "mcrouter/lib/Crc32HashFunc.h"
 #include "mcrouter/lib/routes/HashRoute.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShardHashFunc.h"
@@ -21,11 +22,6 @@
 namespace facebook { namespace memcache { namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute();
-
-McrouterRouteHandlePtr makeLatestRoute(
-  const folly::dynamic& json,
-  std::vector<McrouterRouteHandlePtr> targets,
-  size_t threadId);
 
 namespace {
 
@@ -133,7 +129,7 @@ McrouterRouteHandlePtr makeHashRoute(
   } else if (funcType == ConstShardHashFunc::type()) {
     return makeHashRouteConstShard(std::move(rh), std::move(salt));
   } else if (funcType == "Latest") {
-    return makeLatestRoute(json, std::move(rh), threadId);
+    return createLatestRoute<McrouterRouterInfo>(json, std::move(rh), threadId);
   }
   throwLogic("Unknown hash function: {}", funcType);
 }

@@ -16,6 +16,7 @@
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
 #include "mcrouter/standalone_options.h"
 
@@ -42,8 +43,9 @@ std::string performOptionSubstitution(std::string str) {
   return str;
 }
 
-std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider() {
-  return folly::make_unique<McExtraRouteHandleProvider>();
+std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
+createExtraRouteHandleProvider() {
+  return folly::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
 }
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(

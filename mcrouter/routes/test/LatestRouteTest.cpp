@@ -17,21 +17,14 @@
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/routes/LatestRoute.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
-
-namespace facebook { namespace memcache { namespace mcrouter {
-
-McrouterRouteHandlePtr makeLatestRoute(
-  const folly::dynamic& json,
-  std::vector<McrouterRouteHandlePtr> targets,
-  size_t id);
-
-}}}  // facebook::memcache::mcrouter
 
 TEST(latestRouteTest, one) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
@@ -43,7 +36,8 @@ TEST(latestRouteTest, one) {
 
   mockFiberContext();
   folly::dynamic settings = folly::dynamic::object("failover_count", 3);
-  auto rh = makeLatestRoute(settings, get_route_handles(test_handles), 0);
+  auto rh = createLatestRoute<McrouterRouterInfo>(
+      settings, get_route_handles(test_handles), 0);
 
   auto first = replyFor(*rh, "key")[0] - 'a';
 
@@ -85,8 +79,10 @@ TEST(latestRouteTest, weights) {
   std::vector<size_t> hits_per_index;
   hits_per_index.resize(4);
   for (int i = 0; i < 10000; i++) {
-    auto rh = makeLatestRoute(settings, get_route_handles(test_handles),
-                              /* threadId */ i);
+    auto rh = createLatestRoute<McrouterRouterInfo>(
+        settings,
+        get_route_handles(test_handles),
+        /* threadId */ i);
     auto index = replyFor(*rh, "key")[0] - 'a';
     hits_per_index[index]++;
   }
@@ -110,13 +106,17 @@ TEST(latestRouteTest, thread_local_failover) {
   settings["thread_local_failover"] = true;
   // verify we don't always get the same index
 
-  auto rh = makeLatestRoute(settings, get_route_handles(test_handles),
-                            /* threadId */ 0);
+  auto rh = createLatestRoute<McrouterRouterInfo>(
+      settings,
+      get_route_handles(test_handles),
+      /* threadId */ 0);
   auto last_thread_reply = replyFor(*rh, "key");
   auto replies_differ = false;
   for (int i = 1; i < 10; i++) {
-    rh = makeLatestRoute(settings, get_route_handles(test_handles),
-                              /* threadId */ i);
+    rh = createLatestRoute<McrouterRouterInfo>(
+        settings,
+        get_route_handles(test_handles),
+        /* threadId */ i);
     auto thread_reply = replyFor(*rh, "key");
     if (thread_reply != last_thread_reply) {
       replies_differ = true;
@@ -128,12 +128,16 @@ TEST(latestRouteTest, thread_local_failover) {
 
   // Disable thread_local_failover
   settings["thread_local_failover"] = false;
-  rh = makeLatestRoute(settings, get_route_handles(test_handles),
-                            /* threadId */ 0);
+  rh = createLatestRoute<McrouterRouterInfo>(
+      settings,
+      get_route_handles(test_handles),
+      /* threadId */ 0);
   last_thread_reply = replyFor(*rh, "key");
   for (int i = 1; i < 10; i++) {
-    auto rh = makeLatestRoute(settings, get_route_handles(test_handles),
-                              /* threadId */ i);
+    rh = createLatestRoute<McrouterRouterInfo>(
+        settings,
+        get_route_handles(test_handles),
+        /* threadId */ i);
     auto thread_reply = replyFor(*rh, "key");
     EXPECT_EQ(thread_reply, last_thread_reply);
     last_thread_reply = thread_reply;
@@ -153,7 +157,8 @@ TEST(latestRouteTest, leasePairingNoName) {
       "enable_lease_pairing", true)("failover_count", 3);
 
   EXPECT_ANY_THROW({
-    auto rh = makeLatestRoute(settings, get_route_handles(test_handles), 0);
+    auto rh = createLatestRoute<McrouterRouterInfo>(
+        settings, get_route_handles(test_handles), 0);
   });
 }
 
@@ -170,5 +175,6 @@ TEST(latestRouteTest, leasePairingWithName) {
       "enable_lease_pairing", true)("name", "01")("failover_count", 3);
 
   // Should not throw, as the name was provided
-  auto rh = makeLatestRoute(settings, get_route_handles(test_handles), 0);
+  auto rh = createLatestRoute<McrouterRouterInfo>(
+      settings, get_route_handles(test_handles), 0);
 }

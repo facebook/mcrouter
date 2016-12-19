@@ -41,6 +41,7 @@ struct dynamic;
 namespace facebook { namespace memcache {
 
 class McrouterOptions;
+struct MemcacheRouterInfo;
 
 using LogPostprocessCallbackFunc =
   std::function<
@@ -58,9 +59,11 @@ inline LogPostprocessCallbackFunc getLogPostprocessFunc() {
 
 namespace mcrouter {
 
+template <class RouteHandleIf>
+class ExtraRouteHandleProviderIf;
+
 class CarbonRouterInstanceBase;
 class ConfigApi;
-class ExtraRouteHandleProviderIf;
 class McrouterLogger;
 class McrouterStandaloneOptions;
 struct FailoverContext;
@@ -113,7 +116,8 @@ inline void standaloneInit(const McrouterOptions& opts,
                            const McrouterStandaloneOptions& standaloneOpts) {
 }
 
-std::unique_ptr<ExtraRouteHandleProviderIf> createExtraRouteHandleProvider();
+std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
+createExtraRouteHandleProvider();
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(
     CarbonRouterInstanceBase& router);

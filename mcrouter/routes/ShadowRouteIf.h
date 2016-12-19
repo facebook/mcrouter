@@ -15,15 +15,19 @@
 
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 struct ShadowSettings;
 
-template <class RouteHandleIf>
+template <class RouterInfo>
 using ShadowData = std::vector<std::pair<
-    std::shared_ptr<RouteHandleIf>,
+    std::shared_ptr<typename RouterInfo::RouteHandleIf>,
     std::shared_ptr<ShadowSettings>>>;
 
-using McrouterShadowData = ShadowData<McrouterRouteHandleIf>;
+using McrouterShadowData = ShadowData<McrouterRouterInfo>;
 
-}}}  // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

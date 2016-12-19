@@ -19,7 +19,7 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 
 namespace folly {
-class dynamic;
+struct dynamic;
 }
 
 namespace facebook { namespace memcache {
@@ -58,6 +58,16 @@ std::shared_ptr<RouteHandleIf> makeNullRoute(
     RouteHandleFactory<RouteHandleIf>&,
     const folly::dynamic&) {
   return createNullRoute<RouteHandleIf>();
+}
+
+template <class RouteHandleIf>
+std::shared_ptr<RouteHandleIf> makeNullOrSingletonRoute(
+    std::vector<std::shared_ptr<RouteHandleIf>> rh) {
+  assert(rh.size() <= 1);
+  if (rh.empty()) {
+    return createNullRoute<RouteHandleIf>();
+  }
+  return std::move(rh[0]);
 }
 
 } // mcrouter

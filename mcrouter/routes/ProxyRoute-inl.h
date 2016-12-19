@@ -11,10 +11,11 @@
 
 #include <folly/Optional.h>
 
-#include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/Proxy.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/routes/LoggingRoute.h"
 #include "mcrouter/routes/RootRoute.h"
 
 namespace facebook {
@@ -23,7 +24,6 @@ namespace mcrouter {
 
 McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr rh,
                                          BigValueRouteOptions options);
-McrouterRouteHandlePtr createLoggingRoute(McrouterRouteHandlePtr rh);
 
 namespace detail {
 
@@ -56,13 +56,15 @@ ProxyRoute<RouterInfo>::ProxyRoute(
     Proxy<RouterInfo>* proxy,
     const RouteSelectorMap<typename RouterInfo::RouteHandleIf>& routeSelectors)
     : proxy_(proxy),
-      root_(makeMcrouterRouteHandle<RootRoute>(proxy_, routeSelectors)) {
+      root_(makeRouteHandle<typename RouterInfo::RouteHandleIf, RootRoute>(
+          proxy_,
+          routeSelectors)) {
   if (proxy_->getRouterOptions().big_value_split_threshold != 0) {
     root_ = detail::wrapWithBigValueRoute(
         std::move(root_), proxy_->getRouterOptions());
   }
   if (proxy_->getRouterOptions().enable_logging_route) {
-    root_ = createLoggingRoute(std::move(root_));
+    root_ = createLoggingRoute<RouterInfo>(std::move(root_));
   }
 }
 

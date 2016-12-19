@@ -7,28 +7,32 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#pragma once
+
+#include <vector>
+
 #include <folly/dynamic.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/FailoverErrorsSettings.h"
-#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/routes/FailoverRateLimiter.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-namespace {
+namespace detail {
 
-std::vector<McrouterRouteHandlePtr>
-getTargets(std::vector<McrouterRouteHandlePtr> targets,
+template <class RouteHandleIf>
+std::vector<std::shared_ptr<RouteHandleIf>>
+getTargets(std::vector<std::shared_ptr<RouteHandleIf>> targets,
            size_t failoverCount,
            size_t threadId,
            std::vector<double> weights,
            folly::StringPiece salt) {
-  std::vector<McrouterRouteHandlePtr> failovers;
+  std::vector<std::shared_ptr<RouteHandleIf>> failovers;
   failoverCount = std::min(failoverCount, targets.size());
   size_t hashKey = folly::hash::hash_combine(0, globals::hostid());
   if (threadId != 0) {
@@ -49,13 +53,14 @@ getTargets(std::vector<McrouterRouteHandlePtr> targets,
   return failovers;
 }
 
-}  // anonymous
+} // detail
 
-McrouterRouteHandlePtr makeLatestRoute(
-  const folly::dynamic& json,
-  std::vector<McrouterRouteHandlePtr> targets,
-  size_t threadId) {
-
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+createLatestRoute(
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> targets,
+    size_t threadId) {
   size_t failoverCount = 5;
   size_t failoverThreadId = 0;
   folly::StringPiece salt;
@@ -85,9 +90,9 @@ McrouterRouteHandlePtr makeLatestRoute(
   } else {
     weights = ch3wParseWeights(json, targets.size());
   }
-  return makeFailoverRouteDefault<FailoverRoute>(
+  return makeFailoverRouteDefault<RouterInfo, FailoverRoute>(
       json,
-      getTargets(
+      detail::getTargets(
           std::move(targets),
           failoverCount,
           failoverThreadId,
@@ -95,10 +100,11 @@ McrouterRouteHandlePtr makeLatestRoute(
           salt));
 }
 
-McrouterRouteHandlePtr makeLatestRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLatestRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
-  std::vector<McrouterRouteHandlePtr> children;
+  std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children;
   if (json.isObject()) {
     if (auto jchildren = json.get_ptr("children")) {
       children = factory.createList(*jchildren);
@@ -106,7 +112,10 @@ McrouterRouteHandlePtr makeLatestRoute(
   } else {
     children = factory.createList(json);
   }
-  return makeLatestRoute(json, std::move(children), factory.getThreadId());
+  return createLatestRoute<RouterInfo>(
+      json, std::move(children), factory.getThreadId());
 }
 
-}}}  // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

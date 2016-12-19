@@ -25,9 +25,16 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+
+template <class RouterInfo>
+class RouteHandleFactory;
+
+namespace mcrouter {
 
 /**
  * Create a suffix for the shard ID which will make the key route to
@@ -156,4 +163,14 @@ class ShardSplitRoute {
   }
 };
 
-}}}  // facebook::memcache::mcrouter
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeShardSplitRoute(
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> rh,
+    ShardSplitter shardSplitter) {
+  return makeRouteHandleWithInfo<RouterInfo, ShardSplitRoute>(
+      std::move(rh), std::move(shardSplitter));
+}
+
+} // mcrouter
+} // memcache
+} // facebook

@@ -18,20 +18,24 @@ class ProxyBase;
 /**
  * Creates additional route handles for McRouteHandleProvider.
  */
-class McExtraRouteHandleProvider : public ExtraRouteHandleProviderIf {
+template <class RouterInfo>
+class McExtraRouteHandleProvider
+    : public ExtraRouteHandleProviderIf<RouterInfo> {
  public:
-  virtual McrouterRouteHandlePtr makeShadow(
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
+  virtual std::shared_ptr<RouteHandleIf> makeShadow(
       ProxyBase& proxy,
-      McrouterRouteHandlePtr destination,
-      McrouterShadowData data,
+      std::shared_ptr<RouteHandleIf> destination,
+      ShadowData<RouterInfo> data,
       folly::StringPiece shadowPolicy) override;
 
-  virtual McrouterRouteHandlePtr makeFailoverRoute(
+  virtual std::shared_ptr<RouteHandleIf> makeFailoverRoute(
       const folly::dynamic& json,
-      std::vector<McrouterRouteHandlePtr> children) override;
+      std::vector<std::shared_ptr<RouteHandleIf>> children) override;
 
-  virtual std::vector<McrouterRouteHandlePtr>
-  tryCreate(RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  virtual std::vector<std::shared_ptr<RouteHandleIf>>
+  tryCreate(RouteHandleFactory<RouteHandleIf>& factory,
             folly::StringPiece type,
             const folly::dynamic& json) override;
 
@@ -39,3 +43,5 @@ class McExtraRouteHandleProvider : public ExtraRouteHandleProviderIf {
 };
 
 }}}  // facebook::memcache::mcrouter
+
+#include "McExtraRouteHandleProvider-inl.h"

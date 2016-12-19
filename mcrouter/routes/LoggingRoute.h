@@ -12,16 +12,25 @@
 #include <memory>
 #include <string>
 
-#include "mcrouter/CarbonRouterInstance.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
+
+namespace folly {
+struct dynamic;
+}
 
 namespace facebook {
 namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
 namespace mcrouter {
 
 /**
@@ -92,6 +101,27 @@ class LoggingRoute {
  private:
   const std::shared_ptr<RouteHandleIf> child_;
 };
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> createLoggingRoute(
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> rh) {
+  return makeRouteHandleWithInfo<RouterInfo, LoggingRoute>(std::move(rh));
+}
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLoggingRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  std::shared_ptr<typename RouterInfo::RouteHandleIf> target;
+  if (json.isObject()) {
+    if (auto jtarget = json.get_ptr("target")) {
+      target = factory.create(*jtarget);
+    }
+  } else if (json.isString()) {
+    target = factory.create(json);
+  }
+  return createLoggingRoute<RouterInfo>(std::move(target));
+}
 
 } // mcrouter
 } // memcache

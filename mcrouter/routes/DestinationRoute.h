@@ -20,7 +20,7 @@
 
 #include "mcrouter/AsyncLog.h"
 #include "mcrouter/AsyncWriter.h"
-#include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyDestination.h"
@@ -29,12 +29,21 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
+namespace folly {
+struct dynamic;
+}
+
 namespace facebook {
 namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
 namespace mcrouter {
 
 /**
@@ -249,6 +258,21 @@ class DestinationRoute {
     return true;
   }
 };
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
+    std::shared_ptr<ProxyDestination> destination,
+    std::string poolName,
+    size_t indexInPool,
+    std::chrono::milliseconds timeout,
+    bool keepRoutingPrefix) {
+  return makeRouteHandleWithInfo<RouterInfo, DestinationRoute>(
+      std::move(destination),
+      std::move(poolName),
+      indexInPool,
+      timeout,
+      keepRoutingPrefix);
+}
 
 } // mcrouter
 } // memcache

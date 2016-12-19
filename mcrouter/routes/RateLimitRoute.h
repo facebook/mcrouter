@@ -14,9 +14,20 @@
 
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/RateLimiter.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace folly {
+struct dynamic;
+}
+
+namespace facebook {
+namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
+namespace mcrouter {
 
 /**
  * Requests sent through this route will be rate limited according
@@ -59,4 +70,27 @@ class RateLimitRoute {
   RateLimiter rl_;
 };
 
-}}}  // facebook::memcache::mcrouter
+template <class RouteHandleIf>
+std::shared_ptr<RouteHandleIf> createRateLimitRoute(
+    std::shared_ptr<RouteHandleIf> normalRoute,
+    RateLimiter rateLimiter) {
+  return makeRouteHandle<RouteHandleIf, RateLimitRoute>(
+      std::move(normalRoute), std::move(rateLimiter));
+}
+
+template <class RouteHandleIf>
+std::shared_ptr<RouteHandleIf> makeRateLimitRoute(
+    RouteHandleFactory<RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  checkLogic(json.isObject(), "RateLimitRoute is not an object");
+  auto jtarget = json.get_ptr("target");
+  checkLogic(jtarget, "RateLimitRoute: target not found");
+  auto target = factory.create(*jtarget);
+  auto jrates = json.get_ptr("rates");
+  checkLogic(jrates, "RateLimitRoute: rates not found");
+  return createRateLimitRoute(std::move(target), RateLimiter(*jrates));
+}
+
+} // mcrouter
+} // memcache
+} // facebook

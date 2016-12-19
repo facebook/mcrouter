@@ -24,20 +24,23 @@ class ProxyBase;
 /**
  * Interface to create additional route handles for McRouteHandleProvider.
  */
+template <class RouterInfo>
 class ExtraRouteHandleProviderIf {
  public:
-  virtual McrouterRouteHandlePtr makeShadow(
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+
+  virtual std::shared_ptr<RouteHandleIf> makeShadow(
       ProxyBase& proxy,
-      McrouterRouteHandlePtr destination,
-      McrouterShadowData data,
+      std::shared_ptr<RouteHandleIf> destination,
+      ShadowData<RouterInfo> data,
       folly::StringPiece shadowPolicy) = 0;
 
-  virtual McrouterRouteHandlePtr makeFailoverRoute(
+  virtual std::shared_ptr<RouteHandleIf> makeFailoverRoute(
       const folly::dynamic& json,
-      std::vector<McrouterRouteHandlePtr> children) = 0;
+      std::vector<std::shared_ptr<RouteHandleIf>> children) = 0;
 
-  virtual std::vector<McrouterRouteHandlePtr>
-  tryCreate(RouteHandleFactory<McrouterRouteHandleIf>& factory,
+  virtual std::vector<std::shared_ptr<RouteHandleIf>>
+  tryCreate(RouteHandleFactory<RouteHandleIf>& factory,
             folly::StringPiece type,
             const folly::dynamic& json) = 0;
 

@@ -9,41 +9,73 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache { namespace mcrouter {
+#include "mcrouter/routes/McRouteHandleBuilder.h"
+#include "mcrouter/lib/routes/NullRoute.h"
 
-McrouterRouteHandlePtr
-makeNullOrSingletonRoute(std::vector<McrouterRouteHandlePtr> rh);
+#include "mcrouter/routes/McrouterRouteHandle.h"
 
-template <template <typename...> class RouteHandle, class... Args>
-McrouterRouteHandlePtr makeFailoverRouteInOrder(
-    std::vector<McrouterRouteHandlePtr> rh,
-    Args&&... args) {
-  if (rh.size() <= 1) {
-    return makeNullOrSingletonRoute(std::move(rh));
-  }
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-  using FailoverPolicyT = FailoverInOrderPolicy<McrouterRouteHandleIf>;
-  return makeMcrouterRouteHandleWithInfo<RouteHandle, FailoverPolicyT>(
-      std::move(rh), std::forward<Args>(args)...);
-}
-
-template <template <class...> class RouteHandle, class... Args>
-McrouterRouteHandlePtr makeFailoverRouteLeastFailures(
-    std::vector<McrouterRouteHandlePtr> rh,
-    Args&&... args) {
-  if (rh.size() <= 1) {
-    return makeNullOrSingletonRoute(std::move(rh));
-  }
-
-  using FailoverPolicyT = FailoverLeastFailuresPolicy<McrouterRouteHandleIf>;
-  return makeMcrouterRouteHandleWithInfo<RouteHandle, FailoverPolicyT>(
-      std::move(rh), std::forward<Args>(args)...);
-}
-
-template <template <class...> class RouteHandle, class... Args>
-McrouterRouteHandlePtr makeFailoverRouteDefault(
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json,
-    std::vector<McrouterRouteHandlePtr> children,
+    ExtraRouteHandleProviderIf<RouterInfo>& extraProvider) {
+  std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children;
+  if (json.isObject()) {
+    if (auto jchildren = json.get_ptr("children")) {
+      children = factory.createList(*jchildren);
+    }
+  } else {
+    children = factory.createList(json);
+  }
+  return extraProvider.makeFailoverRoute(json, std::move(children));
+}
+
+template <
+    class RouterInfo,
+    template <typename...> class RouteHandle,
+    class... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteInOrder(
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
+    Args&&... args) {
+  if (rh.size() <= 1) {
+    return makeNullOrSingletonRoute(std::move(rh));
+  }
+
+  using FailoverPolicyT =
+      FailoverInOrderPolicy<typename RouterInfo::RouteHandleIf>;
+  return makeRouteHandleWithInfo<RouterInfo, RouteHandle, FailoverPolicyT>(
+      std::move(rh), std::forward<Args>(args)...);
+}
+
+template <
+    class RouterInfo,
+    template <class...> class RouteHandle,
+    class... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+makeFailoverRouteLeastFailures(
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
+    Args&&... args) {
+  if (rh.size() <= 1) {
+    return makeNullOrSingletonRoute(std::move(rh));
+  }
+
+  using FailoverPolicyT =
+      FailoverLeastFailuresPolicy<typename RouterInfo::RouteHandleIf>;
+  return makeRouteHandleWithInfo<RouterInfo, RouteHandle, FailoverPolicyT>(
+      std::move(rh), std::forward<Args>(args)...);
+}
+
+template <
+    class RouterInfo,
+    template <class...> class RouteHandle,
+    class... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
     Args&&... args) {
   FailoverErrorsSettings failoverErrors;
   std::unique_ptr<FailoverRateLimiter> rateLimiter;
@@ -81,21 +113,29 @@ McrouterRouteHandlePtr makeFailoverRouteDefault(
       checkLogic(jPolicyType != nullptr,
                  "Failover: failover_policy object is missing 'type' field");
       if (parseString(*jPolicyType, "type") == "LeastFailuresPolicy") {
-        return makeFailoverRouteLeastFailures<RouteHandle>(
-            std::move(children), std::move(failoverErrors),
-            std::move(rateLimiter), failoverTagging,
-            enableLeasePairing, std::move(name),
+        return makeFailoverRouteLeastFailures<RouterInfo, RouteHandle>(
+            std::move(children),
+            std::move(failoverErrors),
+            std::move(rateLimiter),
+            failoverTagging,
+            enableLeasePairing,
+            std::move(name),
             *jFailoverPolicy,
             std::forward<Args>(args)...);
       }
     }
   }
-  return makeFailoverRouteInOrder<RouteHandle>(
-      std::move(children), std::move(failoverErrors),
-      std::move(rateLimiter), failoverTagging,
-      enableLeasePairing, std::move(name),
+  return makeFailoverRouteInOrder<RouterInfo, RouteHandle>(
+      std::move(children),
+      std::move(failoverErrors),
+      std::move(rateLimiter),
+      failoverTagging,
+      enableLeasePairing,
+      std::move(name),
       nullptr,
       std::forward<Args>(args)...);
 }
 
-}}}  // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

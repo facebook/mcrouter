@@ -21,12 +21,15 @@
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/SlowWarmUpRouteSettings.h"
 
 namespace facebook {
 namespace memcache {
+
+template <class RouteHandleIf>
+class RouteHandleFactory;
+
 namespace mcrouter {
 
 /**
@@ -154,6 +157,15 @@ class SlowWarmUpRoute {
                rng) <= target;
   }
 };
+
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeSlowWarmUpRoute(
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> target,
+    std::shared_ptr<typename RouterInfo::RouteHandleIf> failoverTarget,
+    std::shared_ptr<SlowWarmUpRouteSettings> settings) {
+  return makeRouteHandleWithInfo<RouterInfo, SlowWarmUpRoute>(
+      std::move(target), std::move(failoverTarget), std::move(settings));
+}
 
 } // mcrouter
 } // memcache

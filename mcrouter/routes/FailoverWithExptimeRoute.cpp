@@ -45,13 +45,14 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   auto children = getFailoverChildren(std::move(normal),
                                       std::move(failover),
                                       failoverExptime);
-  return makeFailoverRouteInOrder<FailoverRoute>(std::move(children),
-                                                 std::move(failoverErrors),
-                                                 std::move(rateLimiter),
-                                                 /* failoverTagging */ false,
-                                                 /* enableLeasePairing */ false,
-                                                 "",
-                                                 nullptr);
+  return makeFailoverRouteInOrder<McrouterRouterInfo, FailoverRoute>(
+      std::move(children),
+      std::move(failoverErrors),
+      std::move(rateLimiter),
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "",
+      nullptr);
 }
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
@@ -77,7 +78,8 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
   auto children = getFailoverChildren(std::move(normal),
                                       std::move(failover),
                                       failoverExptime);
-  return makeFailoverRouteDefault<FailoverRoute>(json, std::move(children));
+  return makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+      json, std::move(children));
 }
 
 }}}  // facebook::memcache::mcrouter

@@ -23,136 +23,34 @@
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
+#include "mcrouter/routes/FailoverRoute.h"
+#include "mcrouter/routes/HashRouteFactory.h"
+#include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/RateLimiter.h"
-#include "mcrouter/routes/ShadowRouteIf.h"
+#include "mcrouter/routes/RateLimitRoute.h"
+#include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShardHashFunc.h"
+#include "mcrouter/routes/ShardSplitRoute.h"
 #include "mcrouter/routes/ShardSplitter.h"
+#include "mcrouter/routes/SlowWarmUpRoute.h"
 #include "mcrouter/routes/SlowWarmUpRouteSettings.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
-
-std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
-    const folly::dynamic& json,
-    std::vector<McrouterRouteHandlePtr> destinations,
-    ProxyBase& proxy,
-    ExtraRouteHandleProviderIf& extraProvider);
-
-std::vector<McrouterRouteHandlePtr> makeShadowRoutes(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
-    const folly::dynamic& json,
-    ProxyBase& proxy,
-    ExtraRouteHandleProviderIf& extraProvider);
-
-McrouterRouteHandlePtr makeAllAsyncRoute(McRouteHandleFactory& factory,
-                                         const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeAllFastestRoute(McRouteHandleFactory& factory,
-                                           const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeAllInitialRoute(McRouteHandleFactory& factory,
-                                           const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeAllMajorityRoute(McRouteHandleFactory& factory,
-                                            const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeAllSyncRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
-                                         std::string asynclogName);
-
-McrouterRouteHandlePtr makeDevNullRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeHostIdRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeDestinationRoute(
-  std::shared_ptr<ProxyDestination> destination,
-  std::string poolName,
-  size_t indexInPool,
-  std::chrono::milliseconds timeout,
-  bool keepRoutingPrefix);
-
-McrouterRouteHandlePtr makeErrorRoute(McRouteHandleFactory& factory,
-                                      const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeFailoverRoute(
-    McRouteHandleFactory& factory,
-    const folly::dynamic& json,
-    ExtraRouteHandleProviderIf& extraProvider);
-
-McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-  McRouteHandleFactory& factory,
-  const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeHashRoute(const folly::dynamic& json,
-                                     std::vector<McrouterRouteHandlePtr> rh,
-                                     size_t threadId);
-
-McrouterRouteHandlePtr makeHashRoute(McRouteHandleFactory& factory,
-                                     const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeL1L2CacheRoute(McRouteHandleFactory& factory,
-                                          const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeLatestRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeLoggingRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeMigrateRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeMissFailoverRoute(McRouteHandleFactory& factory,
-                                             const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeModifyExptimeRoute(McRouteHandleFactory& factory,
-                                              const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeModifyKeyRoute(McRouteHandleFactory& factory,
-                                          const folly::dynamic& json);
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLoggingRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json);
 
 template <class RouteHandleIf>
 std::shared_ptr<RouteHandleIf> makeNullRoute(
     RouteHandleFactory<RouteHandleIf>& factory,
     const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeOperationSelectorRoute(McRouteHandleFactory& factory,
-                                                  const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeOutstandingLimitRoute(
-  McrouterRouteHandlePtr normalRoute,
-  size_t maxOutstanding);
-
-McrouterRouteHandlePtr makeRateLimitRoute(McrouterRouteHandlePtr normalRoute,
-                                          RateLimiter rateLimiter);
-
-McrouterRouteHandlePtr makeRateLimitRoute(McRouteHandleFactory& factory,
-                                          const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeRandomRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeShardSplitRoute(McrouterRouteHandlePtr rh,
-                                           ShardSplitter);
-
-McrouterRouteHandlePtr makeWarmUpRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeSlowWarmUpRoute(
-    McrouterRouteHandlePtr target,
-    McrouterRouteHandlePtr failoverTarget,
-    std::shared_ptr<SlowWarmUpRouteSettings> settings);
-
-std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
-    const folly::dynamic& json);
 
 template <class RouterInfo>
 McRouteHandleProvider<RouterInfo>::McRouteHandleProvider(
@@ -160,7 +58,7 @@ McRouteHandleProvider<RouterInfo>::McRouteHandleProvider(
     PoolFactory& poolFactory)
     : proxy_(proxy),
       poolFactory_(poolFactory),
-      extraProvider_(createExtraRouteHandleProvider()),
+      extraProvider_(buildExtraProvider()),
       routeMap_(buildRouteMap()) {}
 
 template <class RouterInfo>
@@ -169,16 +67,28 @@ McRouteHandleProvider<RouterInfo>::~McRouteHandleProvider() {
 }
 
 template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf>
-McRouteHandleProvider<RouterInfo>::createAsynclogRoute(
-    RouteHandlePtr target,
-    std::string asynclogName) {
-  if (!proxy_.router().opts().asynclog_disable) {
-    target = makeAsynclogRoute(std::move(target), asynclogName);
-  }
-  asyncLogRoutes_.emplace(std::move(asynclogName), target);
-  return target;
+std::unique_ptr<ExtraRouteHandleProviderIf<RouterInfo>>
+McRouteHandleProvider<RouterInfo>::buildExtraProvider() {
+  return RouterInfo::buildExtraProvider();
 }
+
+template <>
+std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
+McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider();
+
+// Disable asynclog for other RouterInfos for now.
+template <class RouterInfo>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> McRouteHandleProvider<
+    RouterInfo>::createAsynclogRoute(RouteHandlePtr target, std::string) {
+  LOG(WARNING) << "Asynclog is not supported for that RouterInfo";
+  return std::move(target);
+}
+
+template <>
+std::shared_ptr<MemcacheRouteHandleIf>
+McRouteHandleProvider<MemcacheRouterInfo>::createAsynclogRoute(
+    std::shared_ptr<MemcacheRouteHandleIf> target,
+    std::string asynclogName);
 
 template <class RouterInfo>
 const std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>&
@@ -324,8 +234,8 @@ McRouteHandleProvider<RouterInfo>::makePool(
       pdstn->updatePoolName(name);
       pdstn->updateShortestTimeout(timeout);
 
-      destinations.push_back(makeDestinationRoute(
-        std::move(pdstn), name, i, timeout, keepRoutingPrefix));
+      destinations.push_back(makeDestinationRoute<RouterInfo>(
+          std::move(pdstn), name, i, timeout, keepRoutingPrefix));
     } // servers
 
     return pools_.emplace(name, std::move(destinations)).first->second;
@@ -358,7 +268,8 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
         auto v = parseInt(*maxOutstandingPtr, "max_outstanding", 0, 1000000);
         if (v) {
           for (auto& destination: destinations) {
-            destination = makeOutstandingLimitRoute(std::move(destination), v);
+            destination = makeOutstandingLimitRoute<RouterInfo>(
+                std::move(destination), v);
           }
         }
       }
@@ -382,8 +293,8 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
         }
 
         for (size_t i = 0; i < destinations.size(); ++i) {
-          destinations[i] = makeSlowWarmUpRoute(std::move(destinations[i]),
-              failoverTarget, slowWarmUpSettings);
+          destinations[i] = makeSlowWarmUpRoute<RouterInfo>(
+              std::move(destinations[i]), failoverTarget, slowWarmUpSettings);
         }
       }
 
@@ -414,17 +325,18 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
         }
       }
     }
-    auto route = makeHashRoute(jhashWithWeights, std::move(destinations),
-                               factory.getThreadId());
+    auto route = createHashRoute<RouterInfo>(
+        jhashWithWeights, std::move(destinations), factory.getThreadId());
 
     auto asynclogName = poolJson.name;
     bool needAsynclog = true;
     if (json.isObject()) {
       if (auto jrates = json.get_ptr("rates")) {
-        route = makeRateLimitRoute(std::move(route), RateLimiter(*jrates));
+        route = createRateLimitRoute(std::move(route), RateLimiter(*jrates));
       }
       if (auto jsplits = json.get_ptr("shard_splits")) {
-        route = makeShardSplitRoute(std::move(route), ShardSplitter(*jsplits));
+        route = makeShardSplitRoute<RouterInfo>(
+            std::move(route), ShardSplitter(*jsplits));
       }
       if (auto jasynclog = json.get_ptr("asynclog")) {
         needAsynclog = parseBool(*jasynclog, "asynclog");
@@ -466,6 +378,8 @@ McRouteHandleProvider<RouterInfo>::create(
     return makeShadowRoutes(factory, json, proxy_, *extraProvider_);
   } else if (type == "FailoverRoute") {
     return {makeFailoverRoute(factory, json, *extraProvider_)};
+  } else if (type == "PoolRoute") {
+    return {makePoolRoute(factory, json)};
   }
 
   auto it = routeMap_.find(type);
@@ -482,4 +396,6 @@ McRouteHandleProvider<RouterInfo>::create(
   throwLogic("Unknown RouteHandle: {}", type);
 }
 
-}}} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook
