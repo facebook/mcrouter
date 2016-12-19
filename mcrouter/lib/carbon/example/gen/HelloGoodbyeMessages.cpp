@@ -54,6 +54,7 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 void HelloReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -72,6 +73,10 @@ void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readRawInto(result());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(message());
         break;
       }
       default: {
@@ -120,6 +125,7 @@ void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 void GoodbyeReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, message());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -138,6 +144,10 @@ void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readRawInto(result());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(message());
         break;
       }
       default: {

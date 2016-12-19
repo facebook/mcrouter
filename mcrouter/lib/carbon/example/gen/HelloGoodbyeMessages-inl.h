@@ -35,11 +35,17 @@ void HelloReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
     return;
   }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
 }
 
 template <class V>
 void HelloReply::visitFields(V&& v) const {
   if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
     return;
   }
 }
@@ -63,11 +69,17 @@ void GoodbyeReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
     return;
   }
+  if (!v.visitField(2, "message", message_)) {
+    return;
+  }
 }
 
 template <class V>
 void GoodbyeReply::visitFields(V&& v) const {
   if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "message", message_)) {
     return;
   }
 }

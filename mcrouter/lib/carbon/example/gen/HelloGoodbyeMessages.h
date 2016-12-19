@@ -102,6 +102,12 @@ class HelloReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return result_;
   }
+  const std::string& message() const {
+    return message_;
+  }
+  std::string& message() {
+    return message_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -120,6 +126,7 @@ class HelloReply : public carbon::ReplyCommon {
 
  private:
   carbon::Result result_{mc_res_unknown};
+  std::string message_;
 };
 
 class GoodbyeReply;
@@ -190,6 +197,12 @@ class GoodbyeReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return result_;
   }
+  const std::string& message() const {
+    return message_;
+  }
+  std::string& message() {
+    return message_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -208,6 +221,7 @@ class GoodbyeReply : public carbon::ReplyCommon {
 
  private:
   carbon::Result result_{mc_res_unknown};
+  std::string message_;
 };
 
 } // hellogoodbye

@@ -12,6 +12,7 @@ request HelloRequest {
 
 reply HelloReply {
   1: Result result;
+  2: string message;
 };
 
 request GoodbyeRequest {
@@ -24,6 +25,7 @@ request GoodbyeRequest {
 
 reply GoodbyeReply {
   1: Result result;
+  2: string message;
 };
 
 service {};
