@@ -15,7 +15,28 @@
  */
 #pragma once
 
+#include <functional>
+#include <unordered_map>
+
+#include <folly/Range.h>
+
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
+
+// Forward declarations
+namespace folly {
+struct dynamic;
+} // folly
+
+namespace facebook {
+namespace memcache {
+template <class RouteHandleIf>
+class RouteHandleFactory;
+namespace mcrouter {
+template <class RouterInfo>
+class ExtraRouteHandleProviderIf;
+} // mcrouter
+} // memcache
+} // facebook
 
 namespace facebook {
 namespace memcache {
@@ -49,12 +70,27 @@ using MemcacheRoutableRequests = carbon::List<
 
 struct MemcacheRouterInfo {
   using RouteHandleIf = MemcacheRouteHandleIf;
+  using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
 
   template <class Route>
   using RouteHandle = MemcacheRouteHandle<Route>;
+
   using RoutableRequests = detail::MemcacheRoutableRequests;
 
   using AdditionalLogger = mcrouter::AdditionalProxyRequestLogger;
+
+  using RouteHandleFactoryMap = std::unordered_map<
+      folly::StringPiece,
+      std::function<RouteHandlePtr(
+          facebook::memcache::RouteHandleFactory<RouteHandleIf>&,
+          const folly::dynamic&)>,
+      folly::Hash>;
+
+  static RouteHandleFactoryMap buildRouteMap();
+
+  static std::unique_ptr<facebook::memcache::mcrouter::
+                             ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
+  buildExtraProvider();
 };
 
 } // memcache
