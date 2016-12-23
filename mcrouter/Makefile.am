@@ -139,7 +139,7 @@ libmcroutercore_a_SOURCES = \
   routes/ModifyKeyRoute.cpp \
   routes/ModifyKeyRoute.h \
   routes/NullRoute.cpp \
-  routes/OperationSelectorRoute.cpp \
+  routes/OperationSelectorRoute-inl.h \
   routes/OperationSelectorRoute.h \
   routes/OutstandingLimitRoute.h \
   routes/PrefixSelectorRoute.h \

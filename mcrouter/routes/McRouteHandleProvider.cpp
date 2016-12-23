@@ -15,6 +15,7 @@
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
+#include "mcrouter/routes/OperationSelectorRoute.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/ShadowRoute.h"
 
@@ -67,9 +68,6 @@ McrouterRouteHandlePtr makeModifyExptimeRoute(McRouteHandleFactory& factory,
 McrouterRouteHandlePtr makeModifyKeyRoute(McRouteHandleFactory& factory,
                                           const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeOperationSelectorRoute(McRouteHandleFactory& factory,
-                                                  const folly::dynamic& json);
-
 McrouterRouteHandlePtr makeRandomRoute(McRouteHandleFactory& factory,
                                        const folly::dynamic& json);
 
@@ -112,12 +110,12 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"AllMajorityRoute", &makeAllMajorityRoute},
       {"AllSyncRoute", &makeAllSyncRoute},
       {"AsynclogRoute",
-       [this](RouteHandleFactory<MemcacheRouteHandleIf>& factory,
-              const folly::dynamic& json) {
+       [this](
+           RouteHandleFactory<MemcacheRouteHandleIf>& factory,
+           const folly::dynamic& json) {
          auto p = parseAsynclogRoute(factory, json);
          return createAsynclogRoute(std::move(p.first), std::move(p.second));
-       }
-      },
+       }},
       {"DevNullRoute", &makeDevNullRoute},
       {"ErrorRoute", &makeErrorRoute},
       {"FailoverWithExptimeRoute", &makeFailoverWithExptimeRoute},
@@ -134,12 +132,13 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"ModifyExptimeRoute", &makeModifyExptimeRoute},
       {"ModifyKeyRoute", &makeModifyKeyRoute},
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},
-      {"OperationSelectorRoute", &makeOperationSelectorRoute},
+      {"OperationSelectorRoute",
+       &makeOperationSelectorRoute<MemcacheRouterInfo>},
       {"PoolRoute",
        [this](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makePoolRoute(factory, json);
        }},
-      {"PrefixPolicyRoute", &makeOperationSelectorRoute},
+      {"PrefixPolicyRoute", &makeOperationSelectorRoute<MemcacheRouterInfo>},
       {"RandomRoute", &makeRandomRoute},
       {"RateLimitRoute",
        [](McRouteHandleFactory& factory, const folly::dynamic& json) {

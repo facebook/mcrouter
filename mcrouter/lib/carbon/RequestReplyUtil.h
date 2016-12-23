@@ -14,7 +14,9 @@
 #include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
+
 #include "mcrouter/lib/carbon/TypeList.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook {
 namespace memcache {
@@ -105,6 +107,88 @@ template <class T, class... Ts>
 inline size_t getTypeIdByName(folly::StringPiece name, List<T, Ts...>) {
   return name == T::name ? T::typeId : getTypeIdByName(name, List<Ts...>());
 }
+
+namespace detail {
+template <class List>
+struct RequestListLimitsImpl;
+
+template <>
+struct RequestListLimitsImpl<List<>> {
+  static constexpr size_t minTypeId = std::numeric_limits<size_t>::max();
+  static constexpr size_t maxTypeId = std::numeric_limits<size_t>::min();
+  static constexpr size_t typeIdRangeSize = 0;
+};
+
+template <class T, class... Ts>
+struct RequestListLimitsImpl<List<T, Ts...>> {
+  static constexpr size_t minTypeId =
+      T::typeId <= RequestListLimitsImpl<List<Ts...>>::minTypeId
+      ? T::typeId
+      : RequestListLimitsImpl<List<Ts...>>::minTypeId;
+  static constexpr size_t maxTypeId =
+      T::typeId >= RequestListLimitsImpl<List<Ts...>>::maxTypeId
+      ? T::typeId
+      : RequestListLimitsImpl<List<Ts...>>::maxTypeId;
+  static constexpr size_t typeIdRangeSize = maxTypeId - minTypeId + 1;
+};
+} // detail
+
+/**
+ * Limits (min, max and rangeSize) of a list of requests.
+ */
+template <class RequestList>
+using RequestListLimits = detail::RequestListLimitsImpl<RequestList>;
+
+/**
+ * Map of type T, where the key is Request::typeId.
+ *
+ * @tparam RequestList  List of request.
+ * @tparam T            Type of the elements of the map.
+ */
+template <class RequestList, class T>
+class RequestIdMap {
+ public:
+  static constexpr size_t kMinId = RequestListLimits<RequestList>::minTypeId;
+  static constexpr size_t kMaxId = RequestListLimits<RequestList>::maxTypeId;
+  static constexpr size_t kSize =
+      RequestListLimits<RequestList>::typeIdRangeSize;
+
+  const T& getById(size_t id) const {
+    facebook::memcache::checkLogic(
+        kMinId <= id && id <= kMaxId,
+        "Id {} is out of range [{}, {}]",
+        id,
+        kMinId,
+        kMaxId);
+    return container_[id - kMinId];
+  }
+
+  template <class Request>
+  const T& getByRequestType() const {
+    static_assert(ListContains<RequestList, Request>::value,
+                  "Supplied Request type is not in RequestList");
+    return container_[Request::typeId - kMinId];
+  }
+
+  void set(size_t id, T&& val) {
+    facebook::memcache::checkLogic(
+        kMinId <= id && id <= kMaxId,
+        "Id {} is out of range [{}, {}]",
+        id,
+        kMinId,
+        kMaxId);
+    container_[id - kMinId] = std::move(val);
+  }
+
+ private:
+  std::array<T, kSize> container_;
+};
+
+template <class RequestList, class T>
+constexpr size_t RequestIdMap<RequestList, T>::kMinId;
+
+template <class RequestList, class T>
+constexpr size_t RequestIdMap<RequestList, T>::kMaxId;
 
 namespace detail {
 // Utility class useful for checking whether a particular OnRequest handler
