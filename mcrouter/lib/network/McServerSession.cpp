@@ -97,7 +97,7 @@ McServerSession::McServerSession(
 
   auto socket = transport_->getUnderlyingTransport<folly::AsyncSSLSocket>();
   if (socket != nullptr) {
-    socket->sslAccept(this, /* timeout = */ 0);
+    socket->sslAccept(this, /* timeout = */ std::chrono::milliseconds::zero());
   }
 }
 
