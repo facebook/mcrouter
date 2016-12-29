@@ -32,11 +32,140 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
+#include "mcrouter/lib/network/TypedMsg.h"
 #include "mcrouter/options.h"
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/standalone_options.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
+namespace detail {
+
+template <class RouterInfo>
+class RouteHandlesCommandDispatcher {
+ public:
+  bool dispatch(
+      size_t typeId,
+      folly::StringPiece key,
+      const ProxyRoute<RouterInfo>& proxyRoute,
+      std::string& outStr) {
+    return dispatcher_.dispatch(typeId, *this, key, proxyRoute, outStr);
+  }
+
+  template <class Request>
+  static void processMsg(
+      RouteHandlesCommandDispatcher<RouterInfo>& me,
+      folly::StringPiece key,
+      const ProxyRoute<RouterInfo>& proxyRoute,
+      std::string& outStr) {
+    outStr = me.processMsgInternal<Request>(key, proxyRoute);
+  }
+
+ private:
+  CallDispatcher<
+      // Request List
+      typename RouterInfo::RoutableRequests,
+      // Dispatcher class
+      detail::RouteHandlesCommandDispatcher<RouterInfo>,
+      // List of types of args to Dispatcher::processMsg()
+      folly::StringPiece,
+      const ProxyRoute<RouterInfo>&,
+      std::string&>
+      dispatcher_;
+
+  template <class Request>
+  std::string processMsgInternal(
+      folly::StringPiece key,
+      const ProxyRoute<RouterInfo>& proxyRoute) {
+    std::string tree;
+    int level = 0;
+    RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t(
+        [&tree, &level](const typename RouterInfo::RouteHandleIf& rh) {
+          tree.append(std::string(level, ' ') + rh.routeName() + '\n');
+          ++level;
+        },
+        [&level]() { --level; });
+    proxyRoute.traverse(Request(key), t);
+    return tree;
+  }
+};
+
+template <class RouterInfo>
+class RouteCommandDispatcher {
+ public:
+  bool dispatch(
+      size_t typeId,
+      const std::shared_ptr<
+          ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
+      folly::StringPiece keyStr,
+      ProxyBase& proxy,
+      const ProxyRoute<RouterInfo>& proxyRoute) {
+    return dispatcher_.dispatch(typeId, *this, ctx, keyStr, proxy, proxyRoute);
+  }
+
+  template <class Request>
+  static void processMsg(
+      RouteCommandDispatcher<RouterInfo>& me,
+      const std::shared_ptr<
+          ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
+      folly::StringPiece keyStr,
+      ProxyBase& proxy,
+      const ProxyRoute<RouterInfo>& proxyRoute) {
+  proxy.fiberManager().addTaskFinally(
+      [keyStr, &proxy, &proxyRoute]() {
+        auto destinations = folly::make_unique<std::vector<std::string>>();
+        folly::fibers::Baton baton;
+        auto rctx =
+            ProxyRequestContextWithInfo<RouterInfo>::createRecordingNotify(
+                proxy,
+                baton,
+                [&destinations](
+                    folly::StringPiece, size_t, const AccessPoint& dest) {
+                  destinations->push_back(dest.toHostPortString());
+                });
+        Request recordingReq(keyStr);
+        fiber_local<RouterInfo>::runWithLocals(
+            [ ctx = std::move(rctx), &recordingReq, &proxyRoute ]() mutable {
+              fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
+              /* ignore the reply */
+              proxyRoute.route(recordingReq);
+            });
+        baton.wait();
+        return destinations;
+      },
+      [ctx](folly::Try<std::unique_ptr<std::vector<std::string>>>&& data) {
+        std::string str;
+        const auto& destinations = *data;
+        for (const auto& d : *destinations) {
+          if (!str.empty()) {
+            str.push_back('\r');
+            str.push_back('\n');
+          }
+          str.append(d);
+        }
+        ReplyT<ServiceInfoRequest> reply(mc_res_found);
+        reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
+        ctx->sendReply(std::move(reply));
+      });
+  }
+
+ private:
+  CallDispatcher<
+      // Request List
+      typename RouterInfo::RoutableRequests,
+      // Dispatcher class
+      detail::RouteCommandDispatcher<RouterInfo>,
+      // List of types of args to Dispatcher::processMsg()
+      const std::shared_ptr<
+          ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>&,
+      folly::StringPiece,
+      ProxyBase&,
+      const ProxyRoute<RouterInfo>&>
+      dispatcher_;
+};
+
+} // detail
 
 template <class RouterInfo>
 struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
@@ -47,173 +176,22 @@ struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
     std::function<std::string(const std::vector<folly::StringPiece>& args)>>
   commands_;
 
+  detail::RouteHandlesCommandDispatcher<RouterInfo>
+      routeHandlesCommandDispatcher_;
+  mutable detail::RouteCommandDispatcher<RouterInfo> routeCommandDispatcher_;
+
   ServiceInfoImpl(ProxyBase* proxy, const ProxyConfig<RouterInfo>& config);
 
-  template <class Request>
   void handleRequest(
       folly::StringPiece req,
-      const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-          ctx) const;
+      const std::shared_ptr<
+          ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx) const;
 
-  template <class Request>
   void handleRouteCommand(
-      const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-          ctx,
+      const std::shared_ptr<
+          ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
       const std::vector<folly::StringPiece>& args) const;
-
-  template <class Request, class Operation>
-  void handleRouteCommandForOp(
-      const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-          ctx,
-      std::string keyStr,
-      Operation) const;
-
-  template <class Request>
-  void routeCommandHelper(
-      folly::StringPiece op,
-      folly::StringPiece key,
-      const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-          ctx,
-      McOpList::Item<0>) const;
-
-  template <class Request, int op_id>
-  void routeCommandHelper(
-      folly::StringPiece op,
-      folly::StringPiece key,
-      const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-          ctx,
-      McOpList::Item<op_id>) const;
 };
-
-template <class RouterInfo>
-template <class Request, class Operation>
-void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRouteCommandForOp(
-    const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-        ctx,
-    std::string keyStr,
-    Operation) const {
-  proxy_->fiberManager().addTaskFinally(
-    [this, keyStr, proxy = proxy_]() {
-      auto destinations = folly::make_unique<std::vector<std::string>>();
-      folly::fibers::Baton baton;
-      auto rctx =
-          ProxyRequestContextWithInfo<RouterInfo>::createRecordingNotify(
-              *proxy,
-              baton,
-              [&destinations](
-                  folly::StringPiece, size_t, const AccessPoint& dest) {
-                destinations->push_back(dest.toHostPortString());
-              });
-      typename TypeFromOp<Operation::mc_op,
-                          RequestOpMapping>::type recordingReq(keyStr);
-      fiber_local<RouterInfo>::runWithLocals([
-        ctx = std::move(rctx),
-        &recordingReq,
-        &proxyRoute = proxyRoute_
-      ]() mutable {
-        fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
-        /* ignore the reply */
-        proxyRoute.route(recordingReq);
-      });
-      baton.wait();
-      return destinations;
-    },
-    [ctx](folly::Try<std::unique_ptr<std::vector<std::string>>>&& data) {
-      std::string str;
-      const auto& destinations = *data;
-      for (const auto& d : *destinations) {
-        if (!str.empty()) {
-          str.push_back('\r');
-          str.push_back('\n');
-        }
-        str.append(d);
-      }
-      ReplyT<Request> reply(mc_res_found);
-      reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, str);
-      ctx->sendReply(std::move(reply));
-    }
-  );
-}
-
-template <class RouterInfo, int op_id>
-typename std::enable_if<
-    !std::is_same<RouterInfo, MemcacheRouterInfo>::value,
-    std::string>::type
-routeHandlesCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece key,
-    const ProxyRoute<RouterInfo>& proxyRoute,
-    McOpList::Item<op_id>) {
-  throw std::runtime_error(
-      "route_handles: just memcache protocol is supported");
-}
-
-template <class RouterInfo, int op_id>
-typename std::enable_if<
-    std::is_same<RouterInfo, MemcacheRouterInfo>::value,
-    std::string>::type
-routeHandlesCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece key,
-    const ProxyRoute<RouterInfo>& proxyRoute,
-    McOpList::Item<op_id>) {
-  if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
-    std::string tree;
-    int level = 0;
-    RouteHandleTraverser<typename RouterInfo::RouteHandleIf> t(
-        [&tree, &level](const typename RouterInfo::RouteHandleIf& rh) {
-          tree.append(std::string(level, ' ') + rh.routeName() + '\n');
-          ++level;
-        },
-        [&level]() { --level; });
-    proxyRoute.traverse(
-        typename TypeFromOp<
-            McOpList::Item<op_id>::op::mc_op,
-            RequestOpMapping>::type(key),
-        t);
-    return tree;
-  }
-
-  return routeHandlesCommandHelper(
-    op, key, proxyRoute, McOpList::Item<op_id-1>());
-}
-
-template <class RouterInfo>
-std::string routeHandlesCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece,
-    const ProxyRoute<RouterInfo>&,
-    McOpList::Item<0>) {
-  throw std::runtime_error("route_handles: unknown op " + op.str());
-}
-
-template <class RouterInfo>
-template <class Request>
-void ServiceInfo<RouterInfo>::ServiceInfoImpl::routeCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece,
-    const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&,
-    McOpList::Item<0>) const {
-  throw std::runtime_error("route: unknown op " + op.str());
-}
-
-template <class RouterInfo>
-template <class Request, int op_id>
-void ServiceInfo<RouterInfo>::ServiceInfoImpl::routeCommandHelper(
-    folly::StringPiece op,
-    folly::StringPiece key,
-    const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-        ctx,
-    McOpList::Item<op_id>) const {
-  if (op == mc_op_to_string(McOpList::Item<op_id>::op::mc_op)) {
-    handleRouteCommandForOp(ctx,
-                            key.str(),
-                            typename McOpList::Item<op_id>::op());
-    return;
-  }
-
-  routeCommandHelper(op, key, ctx, McOpList::Item<op_id-1>());
-}
 
 /* Must be here since unique_ptr destructor needs to know complete
    ServiceInfoImpl type */
@@ -305,11 +283,19 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
       if (args.size() != 2) {
         throw std::runtime_error("route_handles: 2 args expected");
       }
-      auto op = args[0];
+      auto requestName = args[0];
       auto key = args[1];
 
-      return routeHandlesCommandHelper(
-          op, key, proxyRoute_, McOpList::LastItem());
+      auto typeId = carbon::getTypeIdByName(
+          requestName, typename RouterInfo::RoutableRequests());
+
+      std::string res;
+      if (!routeHandlesCommandDispatcher_.dispatch(
+              typeId, key, proxyRoute_, res)) {
+        throw std::runtime_error(
+            folly::sformat("route: unknown request {}", requestName));
+      }
+      return res;
     }
   );
 
@@ -365,11 +351,10 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
 }
 
 template <class RouterInfo>
-template <class Request>
 void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRequest(
     folly::StringPiece key,
-    const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-        ctx) const {
+    const std::shared_ptr<
+        ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx) const {
   auto p = key.find('(');
   auto cmd = key;
   folly::StringPiece argsStr(key.end(), key.end());
@@ -404,32 +389,40 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRequest(
   } catch (const std::exception& e) {
     replyStr = std::string("ERROR: ") + e.what();
   }
-  ReplyT<Request> reply(mc_res_found);
+  ReplyT<ServiceInfoRequest> reply(mc_res_found);
   reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, replyStr);
   ctx->sendReply(std::move(reply));
 }
 
 template <class RouterInfo>
-template <class Request>
 void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRouteCommand(
-    const std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&
-        ctx,
+    const std::shared_ptr<
+        ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
     const std::vector<folly::StringPiece>& args) const {
   if (args.size() != 2) {
     throw std::runtime_error("route: 2 args expected");
   }
-  auto op = args[0];
+  auto requestName = args[0];
   auto key = args[1];
 
-  routeCommandHelper(op, key, ctx, McOpList::LastItem());
+  auto typeId = carbon::getTypeIdByName(
+      requestName, typename RouterInfo::RoutableRequests());
+
+  if (!routeCommandDispatcher_.dispatch(
+          typeId, ctx, key, *proxy_, proxyRoute_)) {
+    throw std::runtime_error(
+        folly::sformat("route: unknown request {}", requestName));
+  }
 }
 
 template <class RouterInfo>
 void ServiceInfo<RouterInfo>::handleRequest(
     folly::StringPiece key,
     const std::shared_ptr<
-        ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) const {
+        ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx) const {
   impl_->handleRequest(key, ctx);
 }
 
-}}}  // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook
