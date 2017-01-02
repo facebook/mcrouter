@@ -10,7 +10,6 @@
 #include "hash.h"
 
 #include <assert.h>
-#include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
