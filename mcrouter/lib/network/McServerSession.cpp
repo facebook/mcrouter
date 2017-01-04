@@ -193,6 +193,12 @@ void McServerSession::processMultiOpEnd() {
 void McServerSession::close() {
   DestructorGuard dg(this);
 
+  // Regardless of the reason we're closing, we should immediately stop reading
+  // from the socket or we may get into invalid state.
+  if (transport_) {
+    transport_->setReadCB(nullptr);
+  }
+
   if (currentMultiop_) {
     /* If we got closed in the middle of a multiop request,
        process it as if we saw the multi-op end sentinel */

@@ -10,7 +10,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import errno
 import re
+import socket
+import time
 
 from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
@@ -291,3 +294,51 @@ class TestMcrouterGeneratedErrors(McrouterTestCase):
         cmd = 'flush_all\r\n'
         res = mcrouter.issue_command(cmd)
         self.assertEqual('SERVER_ERROR Command disabled\r\n', res)
+
+
+class TestMcrouterParseError(McrouterTestCase):
+    config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
+    get_cmd = 'get test_key\r\n'
+
+    def get_mcrouter(self, server, args):
+        self.add_server(server)
+        return self.add_mcrouter(self.config, extra_args=args)
+
+    def connect(self, addr):
+        while True:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(addr)
+                return sock
+            except Exception as e:
+                if e.errno == errno.ECONNREFUSED:
+                    pass
+                else:
+                    raise
+
+    # Test that server properly handles parsing errors.
+    def test_parse_error(self):
+        mcrouter = self.get_mcrouter(SleepServer(),
+                                     ['--disable-miss-on-get-errors',
+                                      '--server-timeout', '3000'])
+        port = mcrouter.getport()
+        addr = ('localhost', port)
+        sock = self.connect(addr)
+        fd = sock.makefile()
+        # First send a normal request that will timeout followed by
+        # mallformed request that will cause parsing error.
+        sock.sendall(self.get_cmd + 'get\r\n')
+        # Make sure the buffer is flushed.
+        time.sleep(1)
+        # Now send another normal request, it shouldn't be processed, since
+        # server cannot parse further.
+        sock.sendall(self.get_cmd)
+
+        self.assertEquals('SERVER_ERROR timeout', fd.readline().strip())
+        self.assertEquals('CLIENT_ERROR malformed request',
+                          fd.readline().strip())
+
+        # Check that mcrouter is still alive.
+        self.assertTrue(mcrouter.is_alive())
+        res = mcrouter.issue_command(self.get_cmd)
+        self.assertEquals('SERVER_ERROR timeout\r\n', res)
