@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -63,7 +63,9 @@ class WriteBuffer {
   prepareTyped(
       McServerRequestContext&& ctx,
       Reply&& reply,
-      Destructor destructor = Destructor(nullptr, nullptr));
+      Destructor destructor,
+      const CompressionCodecMap* compressionCodecMap,
+      const CodecIdRange& codecIdRange);
 
   template <class Reply>
   typename std::enable_if<
@@ -74,7 +76,9 @@ class WriteBuffer {
   prepareTyped(
       McServerRequestContext&& ctx,
       Reply&& reply,
-      Destructor destructor = Destructor(nullptr, nullptr));
+      Destructor destructor,
+      const CompressionCodecMap* compressionCodecMap,
+      const CodecIdRange& codecIdRange);
 
   const struct iovec* getIovsBegin() const {
     return iovsBegin_;

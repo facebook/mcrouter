@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,28 +20,13 @@
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
-#include "mcrouter/lib/Compression.h"
-#include "mcrouter/lib/CompressionCodecManager.h"
 
 namespace facebook { namespace memcache {
 
-class CompressionCodec;
 template <class OnRequest, class RequestList>
 class McServerOnRequestWrapper;
 class McServerSession;
 class MultiOpParent;
-
-struct CompressionContext {
-  const CompressionCodecMap* compressionCodecMap{nullptr};
-
-  CodecIdRange codecIdRange = CodecIdRange::Empty;
-
-  CompressionContext(
-      const CompressionCodecMap* codecMap,
-      CodecIdRange codecRange)
-      : compressionCodecMap(codecMap),
-        codecIdRange(codecRange) {}
-};
 
 /**
  * API for users of McServer to send back a reply for a request.
@@ -89,8 +74,6 @@ class McServerRequestContext {
     folly::Optional<folly::IOBuf> key_;
   };
   std::unique_ptr<AsciiState> asciiState_;
-
-  std::unique_ptr<CompressionContext> compressionContext_;
 
   template <class Reply>
   bool noReply(const Reply& r) const;
@@ -159,10 +142,13 @@ class McServerRequestContext {
       uint64_t r,
       bool nr = false,
       std::shared_ptr<MultiOpParent> parent = nullptr,
-      bool isEndContext = false,
-      const CompressionCodecMap* compressionCodecMap = nullptr,
-      CodecIdRange range = CodecIdRange::Empty);
+      bool isEndContext = false);
 };
+
+static_assert(
+  sizeof(McServerRequestContext) == 32,
+  "Think twice before adding more fields to McServerRequestContext,"
+  " doing so WILL have perf implications");
 
 /**
  * McServerOnRequest is a polymorphic base class used as a callback

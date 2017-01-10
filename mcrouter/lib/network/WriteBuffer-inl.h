@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,7 +26,9 @@ typename std::enable_if<
 WriteBuffer::prepareTyped(
     McServerRequestContext&& ctx,
     Reply&& reply,
-    Destructor destructor) {
+    Destructor destructor,
+    const CompressionCodecMap* compressionCodecMap,
+    const CodecIdRange& codecIdRange) {
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
   if (destructor) {
@@ -41,30 +43,25 @@ WriteBuffer::prepareTyped(
     case mc_ascii_protocol:
       return asciiReply_.prepare(
           std::move(reply), ctx_->asciiKey(), iovsBegin_, iovsCount_);
-      break;
 
     case mc_umbrella_protocol:
       return umbrellaReply_.prepare(
           std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
-      break;
 
-    case mc_caret_protocol: {
+    case mc_caret_protocol:
       return caretReply_.prepare(
           std::move(reply),
           ctx_->reqid_,
-          ctx_->compressionContext_->codecIdRange,
-          ctx_->compressionContext_->compressionCodecMap,
+          codecIdRange,
+          compressionCodecMap,
           ctx_->getDropProbability(),
           iovsBegin_,
           iovsCount_);
-    }
-
-    break;
 
     default:
       CHECK(false);
+      return false;
   }
-  return false;
 }
 
 template <class Reply>
@@ -76,7 +73,9 @@ typename std::enable_if<
 WriteBuffer::prepareTyped(
     McServerRequestContext&& ctx,
     Reply&& reply,
-    Destructor destructor) {
+    Destructor destructor,
+    const CompressionCodecMap* compressionCodecMap,
+    const CodecIdRange& codecIdRange) {
   assert(protocol_ == mc_caret_protocol);
   ctx_.emplace(std::move(ctx));
   assert(!destructor_.hasValue());
@@ -95,8 +94,8 @@ WriteBuffer::prepareTyped(
   return caretReply_.prepare(
       std::move(reply),
       ctx_->reqid_,
-      ctx_->compressionContext_->codecIdRange,
-      ctx_->compressionContext_->compressionCodecMap,
+      codecIdRange,
+      compressionCodecMap,
       dropProbability,
       iovsBegin_,
       iovsCount_);

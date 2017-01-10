@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -237,6 +237,7 @@ class McServerSession :
 
   // Compression
   const CompressionCodecMap* compressionCodecMap_{nullptr};
+  CodecIdRange codecIdRange_ = CodecIdRange::Empty;
 
   ServerMcParser<McServerSession> parser_;
 
@@ -369,9 +370,11 @@ class McServerSession :
   void writeToDebugFifo(const WriteBuffer* wb) noexcept;
 
   /**
-   * Return the range of codec ids may be used to compress the reply.
+   * Update the connection's valid range of codec ids that may be used
+   * to compress the reply.  Any requests that are still in flight will be
+   * replied assuming this newly updated range.
    */
-  CodecIdRange getCompressionCodecIdRange(
+  void updateCompressionCodecIdRange(
       const UmbrellaMessageInfo& headerInfo) noexcept;
 
   McServerSession(

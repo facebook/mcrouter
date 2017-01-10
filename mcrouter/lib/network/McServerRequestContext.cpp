@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,15 +24,11 @@ McServerRequestContext::McServerRequestContext(
     uint64_t r,
     bool nr,
     std::shared_ptr<MultiOpParent> parent,
-    bool isEndContext,
-    const CompressionCodecMap* compressionCodecMap,
-    CodecIdRange codecRange)
+    bool isEndContext)
     : session_(&s),
       isEndContext_(isEndContext),
       noReply_(nr),
-      reqid_(r),
-      compressionContext_(folly::make_unique<CompressionContext>(
-          CompressionContext(compressionCodecMap, codecRange))) {
+      reqid_(r) {
   if (parent) {
     asciiState_ = folly::make_unique<AsciiState>();
     asciiState_->parent_ = std::move(parent);
@@ -49,8 +45,7 @@ McServerRequestContext::McServerRequestContext(
       noReply_(other.noReply_),
       replied_(other.replied_),
       reqid_(other.reqid_),
-      asciiState_(std::move(other.asciiState_)),
-      compressionContext_(std::move(other.compressionContext_)) {
+      asciiState_(std::move(other.asciiState_)) {
   other.session_ = nullptr;
 }
 
@@ -63,7 +58,6 @@ McServerRequestContext& McServerRequestContext::operator=(
   noReply_ = other.noReply_;
   replied_ = other.replied_;
   asciiState_ = std::move(other.asciiState_);
-  compressionContext_ = std::move(other.compressionContext_);
 
   other.session_ = nullptr;
 

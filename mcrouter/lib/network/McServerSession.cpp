@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -296,14 +296,14 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
     return;
   }
 
+  updateCompressionCodecIdRange(headerInfo);
+
   McServerRequestContext ctx(
       *this,
       headerInfo.reqId,
       false /* noReply */,
       nullptr /* multiOpParent */,
-      false /* isEndContext */,
-      compressionCodecMap_,
-      getCompressionCodecIdRange(headerInfo));
+      false /* isEndContext */);
 
   if (McVersionRequest::typeId == headerInfo.typeId &&
       options_.defaultVersionHandler) {
@@ -323,14 +323,15 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
   }
 }
 
-CodecIdRange McServerSession::getCompressionCodecIdRange(
+void McServerSession::updateCompressionCodecIdRange(
     const UmbrellaMessageInfo& headerInfo) noexcept {
 
   if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
-    return CodecIdRange::Empty;
+    codecIdRange_ = CodecIdRange::Empty;
+  } else {
+    codecIdRange_ = {headerInfo.supportedCodecsFirstId,
+                     headerInfo.supportedCodecsSize};
   }
-
-  return {headerInfo.supportedCodecsFirstId, headerInfo.supportedCodecsSize};
 }
 
 void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {

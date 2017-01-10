@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -83,7 +83,9 @@ void McServerRequestContext::replyImpl2(
   uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
   if (!wb->prepareTyped(
-          std::move(ctx), std::move(reply), std::move(destructorContainer))) {
+        std::move(ctx), std::move(reply), std::move(destructorContainer),
+        session->compressionCodecMap_,
+        session->codecIdRange_)) {
     session->transport_->close();
     return;
   }
