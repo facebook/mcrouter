@@ -28,4 +28,5 @@ reply GoodbyeReply {
   2: string message;
 };
 
-service {};
+service {
+};
