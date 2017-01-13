@@ -26,11 +26,16 @@
 
 #include <mcrouter/lib/routes/HashRoute.h>
 #include <mcrouter/lib/routes/NullRoute.h>
+#include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
+#include <mcrouter/routes/LatestRoute.h>
+#include <mcrouter/routes/LoggingRoute.h>
+#include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
+using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
 namespace facebook {
@@ -39,7 +44,16 @@ namespace memcache {
 /* static */ MemcacheRouterInfo::RouteHandleFactoryMap
 MemcacheRouterInfo::buildRouteMap() {
   RouteHandleFactoryMap map{
+      {"HashRoute",
+       [](RouteHandleFactory<RouteHandleIf>& factory,
+          const folly::dynamic& json) {
+         return makeHashRoute<MemcacheRouterInfo>(factory, json);
+       }},
+      {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
+      {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},
+      {"OperationSelectorRoute",
+       &makeOperationSelectorRoute<MemcacheRouterInfo>},
   };
   return map;
 }

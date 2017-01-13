@@ -26,11 +26,16 @@
 
 #include <mcrouter/lib/routes/HashRoute.h>
 #include <mcrouter/lib/routes/NullRoute.h>
+#include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
+#include <mcrouter/routes/LatestRoute.h>
+#include <mcrouter/routes/LoggingRoute.h>
+#include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
+using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
 namespace hellogoodbye {
@@ -38,7 +43,16 @@ namespace hellogoodbye {
 /* static */ HelloGoodbyeRouterInfo::RouteHandleFactoryMap
 HelloGoodbyeRouterInfo::buildRouteMap() {
   RouteHandleFactoryMap map{
+      {"HashRoute",
+       [](RouteHandleFactory<RouteHandleIf>& factory,
+          const folly::dynamic& json) {
+         return makeHashRoute<HelloGoodbyeRouterInfo>(factory, json);
+       }},
+      {"LatestRoute", &makeLatestRoute<HelloGoodbyeRouterInfo>},
+      {"LoggingRoute", &makeLoggingRoute<HelloGoodbyeRouterInfo>},
       {"NullRoute", &makeNullRoute<HelloGoodbyeRouteHandleIf>},
+      {"OperationSelectorRoute",
+       &makeOperationSelectorRoute<HelloGoodbyeRouterInfo>},
   };
   return map;
 }
