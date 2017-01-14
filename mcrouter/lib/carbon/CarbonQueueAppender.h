@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,9 +15,9 @@
 #include <utility>
 
 #include <folly/Bits.h>
-#include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
 #include <folly/Varint.h>
+#include <folly/io/IOBuf.h>
 
 namespace folly {
 class IOBuf;
@@ -172,8 +172,7 @@ class CarbonQueueAppenderStorage {
     struct iovec* nextIov = iovs_ + nIovsUsed_;
     auto bufCopy = buf;
     bufCopy.coalesce();
-    const auto nFilledRetry =
-        bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
+    const auto nFilledRetry = bufCopy.fillIov(nextIov, kMaxIovecs - nIovsUsed_);
     assert(nFilledRetry == 1);
     (void)nFilledRetry;
     ++nIovsUsed_;
@@ -193,7 +192,6 @@ class CarbonQueueAppenderStorage {
   }
 };
 
-
 /**
  * Mcrouter's own implementation of folly's QueueAppender.  CarbonQueueAppender
  * implements the portion of the folly::io::QueueAppender interface needed by
@@ -208,8 +206,7 @@ class CarbonQueueAppender {
   }
 
   template <class T>
-  typename std::enable_if<std::is_arithmetic<T>::value>::type
-  write(T value) {
+  typename std::enable_if<std::is_arithmetic<T>::value>::type write(T value) {
     const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&value);
     push(bytes, sizeof(T));
   }

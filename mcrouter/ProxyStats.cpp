@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,9 @@
  */
 #include "ProxyStats.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 ProxyStats::ProxyStats() {
   init_stats(stats_);
@@ -39,5 +41,6 @@ void ProxyStats::aggregate(size_t statId) {
 std::unique_lock<std::mutex> ProxyStats::lock() const {
   return std::unique_lock<std::mutex>(mutex_);
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

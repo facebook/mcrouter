@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,8 +12,8 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/dynamic.h>
 #include <folly/Hash.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
@@ -28,10 +28,10 @@ using std::make_shared;
 
 TEST(latestRouteTest, one) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
   };
 
   mockFiberContext();
@@ -65,10 +65,10 @@ TEST(latestRouteTest, one) {
 
 TEST(latestRouteTest, weights) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
   };
 
   mockFiberContext();
@@ -94,10 +94,10 @@ TEST(latestRouteTest, weights) {
 
 TEST(latestRouteTest, thread_local_failover) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
   };
 
   mockFiberContext();
@@ -146,15 +146,15 @@ TEST(latestRouteTest, thread_local_failover) {
 
 TEST(latestRouteTest, leasePairingNoName) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
   };
 
   mockFiberContext();
-  folly::dynamic settings = folly::dynamic::object(
-      "enable_lease_pairing", true)("failover_count", 3);
+  folly::dynamic settings =
+      folly::dynamic::object("enable_lease_pairing", true)("failover_count", 3);
 
   EXPECT_ANY_THROW({
     auto rh = createLatestRoute<McrouterRouterInfo>(
@@ -164,10 +164,10 @@ TEST(latestRouteTest, leasePairingNoName) {
 
 TEST(latestRouteTest, leasePairingWithName) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d")),
   };
 
   mockFiberContext();

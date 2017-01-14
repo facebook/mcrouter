@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,8 @@
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
 #endif
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 #ifdef LIBMC_FBTRACE_DISABLE
 
@@ -25,8 +26,9 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
   return false;
 }
 
-inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
-                             const mc_res_t result) {
+inline void fbTraceOnReceive(
+    const mc_fbtrace_info_s* fbtraceInfo,
+    const mc_res_t result) {
   // Do nothing by default.
 }
 
@@ -37,8 +39,11 @@ namespace {
 const char* FBTRACE_TAO = "tao";
 const char* FBTRACE_MC = "mc";
 
-inline void fbtraceAddItem(fbtrace_item_t* info, size_t& idx,
-                           folly::StringPiece key, folly::StringPiece value) {
+inline void fbtraceAddItem(
+    fbtrace_item_t* info,
+    size_t& idx,
+    folly::StringPiece key,
+    folly::StringPiece value) {
   fbtrace_item_t* item = &info[idx++];
   item->key = key.begin();
   item->key_len = key.size();
@@ -93,30 +98,30 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
   fbtraceAddItem(info, idx, "remote:host", dest);
   fbtraceAddItem(info, idx, folly::StringPiece(), folly::StringPiece());
 
-  const char *remote_service =
-    request.key().routingKey().startsWith("tao") ? FBTRACE_TAO : FBTRACE_MC;
+  const char* remote_service =
+      request.key().routingKey().startsWith("tao") ? FBTRACE_TAO : FBTRACE_MC;
 
   /* fbtrace talks to scribe via thrift,
      which can use up too much stack space */
-  return folly::fibers::runInMainContext(
-      [fbtraceInfo, remote_service, &info] {
-        if (fbtrace_request_send(
-                &fbtraceInfo->fbtrace->node,
-                &fbtraceInfo->child_node,
-                fbtraceInfo->metadata,
-                FBTRACE_METADATA_SZ,
-                Request::name,
-                remote_service,
-                info) != 0) {
-          VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
-          return false;
-        }
-        return true;
-      });
+  return folly::fibers::runInMainContext([fbtraceInfo, remote_service, &info] {
+    if (fbtrace_request_send(
+            &fbtraceInfo->fbtrace->node,
+            &fbtraceInfo->child_node,
+            fbtraceInfo->metadata,
+            FBTRACE_METADATA_SZ,
+            Request::name,
+            remote_service,
+            info) != 0) {
+      VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
+      return false;
+    }
+    return true;
+  });
 }
 
-inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
-                             const mc_res_t result) {
+inline void fbTraceOnReceive(
+    const mc_fbtrace_info_s* fbtraceInfo,
+    const mc_res_t result) {
   if (fbtraceInfo == nullptr) {
     return;
   }
@@ -131,14 +136,13 @@ inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
 
   /* fbtrace talks to scribe via thrift,
      which can use up too much stack space */
-  folly::fibers::runInMainContext(
-    [fbtraceInfo, &info] {
-      if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
-        VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();
-      }
-    });
+  folly::fibers::runInMainContext([fbtraceInfo, &info] {
+    if (fbtrace_reply_receive(&fbtraceInfo->child_node, info) != 0) {
+      VLOG(1) << "Error in fbtrace_reply_receive: " << fbtrace_error();
+    }
+  });
 }
 
 #endif
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

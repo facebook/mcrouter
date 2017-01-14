@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,15 +17,17 @@
 
 #include <folly/Range.h>
 
-#include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/PoolFactory.h"
+#include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouteHandleIf>
 class ExtraRouteHandleProviderIf;
@@ -36,8 +38,8 @@ class ProxyBase;
  * routes.
  */
 template <class RouterInfo>
-class McRouteHandleProvider :
-  public RouteHandleProviderIf<typename RouterInfo::RouteHandleIf> {
+class McRouteHandleProvider
+    : public RouteHandleProviderIf<typename RouterInfo::RouteHandleIf> {
  public:
   using RouteHandleIf = typename RouterInfo::RouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
@@ -54,7 +56,6 @@ class McRouteHandleProvider :
       folly::StringPiece type,
       const folly::dynamic& json) override final;
 
-
   folly::StringKeyedUnorderedMap<RouteHandlePtr> releaseAsyncLogRoutes() {
     return std::move(asyncLogRoutes_);
   }
@@ -64,7 +65,7 @@ class McRouteHandleProvider :
   }
 
   folly::StringKeyedUnorderedMap<
-    std::vector<std::shared_ptr<const AccessPoint>>>
+      std::vector<std::shared_ptr<const AccessPoint>>>
   releaseAccessPoints() {
     return std::move(accessPoints_);
   }
@@ -84,8 +85,8 @@ class McRouteHandleProvider :
 
   // poolName -> AccessPoints
   folly::StringKeyedUnorderedMap<
-    std::vector<std::shared_ptr<const AccessPoint>>
-  > accessPoints_;
+      std::vector<std::shared_ptr<const AccessPoint>>>
+      accessPoints_;
 
   const RouteHandleFactoryMap routeMap_;
 
@@ -105,7 +106,8 @@ class McRouteHandleProvider :
 
   std::unique_ptr<ExtraRouteHandleProviderIf<RouterInfo>> buildExtraProvider();
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "McRouteHandleProvider-inl.h"

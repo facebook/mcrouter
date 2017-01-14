@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,9 @@
 
 using namespace facebook::memcache::cycles::detail;
 
-namespace facebook { namespace memcache { namespace cycles {
+namespace facebook {
+namespace memcache {
+namespace cycles {
 
 namespace {
 
@@ -124,5 +126,6 @@ void stopExtracting() noexcept {
 void setClock(std::unique_ptr<Clock> clk) {
   clock = std::move(clk);
 }
-
-}}} // namespace facebook::memcache::cycles
+}
+}
+} // namespace facebook::memcache::cycles

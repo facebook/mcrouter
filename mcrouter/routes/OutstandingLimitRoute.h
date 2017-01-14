@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,19 +14,19 @@
 #include <vector>
 
 #include <folly/Conv.h>
-#include <folly/fibers/Baton.h>
 #include <folly/ScopeGuard.h>
+#include <folly/fibers/Baton.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyBase.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperationTraits.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/options.h"
-#include "mcrouter/ProxyBase.h"
-#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -58,8 +58,9 @@ class OutstandingLimitRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*target_, req);
   }
 
@@ -99,17 +100,21 @@ class OutstandingLimitRoute {
       baton.wait();
       if (waitingSince > 0) {
         if (GetLike<Request>::value) {
-          stats.increment(outstanding_route_get_wait_time_sum_us_stat,
-                    static_cast<uint64_t>(nowUs() - waitingSince));
-          stats.increment(outstanding_route_get_reqs_queued_helper_stat,
-                    currentGetReqsWaiting_);
+          stats.increment(
+              outstanding_route_get_wait_time_sum_us_stat,
+              static_cast<uint64_t>(nowUs() - waitingSince));
+          stats.increment(
+              outstanding_route_get_reqs_queued_helper_stat,
+              currentGetReqsWaiting_);
           --currentGetReqsWaiting_;
           stats.increment(outstanding_route_get_reqs_queued_stat, 1);
         } else if (UpdateLike<Request>::value) {
-          stats.increment(outstanding_route_update_wait_time_sum_us_stat,
-                    static_cast<uint64_t>(nowUs() - waitingSince));
-          stats.increment(outstanding_route_update_reqs_queued_helper_stat,
-                    currentUpdateReqsWaiting_);
+          stats.increment(
+              outstanding_route_update_wait_time_sum_us_stat,
+              static_cast<uint64_t>(nowUs() - waitingSince));
+          stats.increment(
+              outstanding_route_update_reqs_queued_helper_stat,
+              currentUpdateReqsWaiting_);
           --currentUpdateReqsWaiting_;
           stats.increment(outstanding_route_update_reqs_queued_stat, 1);
         }
@@ -153,8 +158,7 @@ class OutstandingLimitRoute {
     QueueEntry(QueueEntry&&) = delete;
     QueueEntry& operator=(QueueEntry&&) = delete;
 
-    explicit QueueEntry(size_t senderId_) : senderId(senderId_) {
-    }
+    explicit QueueEntry(size_t senderId_) : senderId(senderId_) {}
     size_t senderId;
     std::list<folly::fibers::Baton*> batons;
   };

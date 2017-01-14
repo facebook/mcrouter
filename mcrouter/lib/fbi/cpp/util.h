@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,15 +26,16 @@ namespace folly {
 struct dynamic;
 } // folly
 
-inline folly::Expected<folly::StringPiece, folly::ConversionCode>
-parseTo(folly::StringPiece sp, nstring_t& ns) noexcept {
+inline folly::Expected<folly::StringPiece, folly::ConversionCode> parseTo(
+    folly::StringPiece sp,
+    nstring_t& ns) noexcept {
   ns.str = (sp.empty() ? nullptr : (char*)sp.begin());
   ns.len = sp.size();
   return folly::StringPiece(sp.end(), sp.end());
 }
 
-
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * If `condition` is false, throws std::logic_error.
@@ -52,7 +53,7 @@ void checkLogic(bool condition, folly::StringPiece fmt, Args&&... args) {
  * `fmt` and `args` are passed to folly::format().
  */
 template <typename... Args>
-[[ noreturn ]] void throwLogic(folly::StringPiece fmt, Args&&... args) {
+[[noreturn]] void throwLogic(folly::StringPiece fmt, Args&&... args) {
   throw std::logic_error(folly::sformat(fmt, std::forward<Args>(args)...));
 }
 
@@ -72,13 +73,14 @@ void checkRuntime(bool condition, folly::StringPiece fmt, Args&&... args) {
  * `fmt` and `args` are passed to folly::format().
  */
 template <typename... Args>
-[[ noreturn ]] void throwRuntime(folly::StringPiece fmt, Args&&... args) {
+[[noreturn]] void throwRuntime(folly::StringPiece fmt, Args&&... args) {
   throw std::runtime_error(folly::sformat(fmt, std::forward<Args>(args)...));
 }
 
 /** folly::to style conversion routines */
 
-template <typename T, typename F> T to(const F& x);
+template <typename T, typename F>
+T to(const F& x);
 
 template <>
 inline nstring_t to<nstring_t>(const folly::StringPiece& sp) {
@@ -129,11 +131,11 @@ inline timeval_t to<timeval_t>(const std::chrono::milliseconds& ms) {
 
 /** timeval_t to milliseconds */
 template <>
-inline std::chrono::milliseconds
-to<std::chrono::milliseconds>(const timeval_t& t) {
+inline std::chrono::milliseconds to<std::chrono::milliseconds>(
+    const timeval_t& t) {
   using namespace std::chrono;
   return duration_cast<milliseconds>(
-    seconds(t.tv_sec) + microseconds(t.tv_usec));
+      seconds(t.tv_sec) + microseconds(t.tv_usec));
 }
 
 /**
@@ -141,7 +143,7 @@ to<std::chrono::milliseconds>(const timeval_t& t) {
  */
 inline bool sameMemoryRegion(folly::StringPiece a, folly::StringPiece b) {
   return (a.empty() && b.empty()) ||
-    (a.size() == b.size() && a.begin() == b.begin());
+      (a.size() == b.size() && a.begin() == b.begin());
 }
 
 /**
@@ -152,7 +154,6 @@ inline typename Map::mapped_type tryGet(
     const Map& map,
     const typename Map::key_type& key,
     const typename Map::mapped_type def = typename Map::mapped_type()) {
-
   auto it = map.find(key);
   return it == map.end() ? def : it->second;
 }
@@ -161,9 +162,12 @@ inline typename Map::mapped_type tryGet(
  * Returns string with length in [minLen, maxLen] and random characters
  * from range.
  */
-std::string randomString(size_t minLen = 1, size_t maxLen = 20,
-    folly::StringPiece range = "abcdefghijklmnopqrstuvwxyz"
-                               "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+std::string randomString(
+    size_t minLen = 1,
+    size_t maxLen = 20,
+    folly::StringPiece range =
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
 /**
  * Returns hash value for a given key.
@@ -176,8 +180,9 @@ uint32_t getMemcacheKeyHashValue(folly::StringPiece key);
  * The range is from 0 to (MAX(uint32_t)/sample_rate)
  * Used for probabilistic decisions, like stats sampling.
  */
-bool determineIfSampleKeyForViolet(uint32_t routingKeyHash,
-                                   uint32_t sample_period);
+bool determineIfSampleKeyForViolet(
+    uint32_t routingKeyHash,
+    uint32_t sample_period);
 
 /**
  * @return MD5 hash of a string
@@ -219,8 +224,9 @@ bool appendStringToFile(folly::StringPiece contents, const std::string& path);
  *
  * @return true on success, false otherwise
 */
-bool atomicallyWriteFileToDisk(folly::StringPiece contents,
-                               const std::string& absFilename);
+bool atomicallyWriteFileToDisk(
+    folly::StringPiece contents,
+    const std::string& absFilename);
 
 /**
  * Analogue of UNIX touch: changes file access and modification time, if file
@@ -234,8 +240,8 @@ bool touchFile(const std::string& path);
  * Make uint64 random number out of uint32. Especially useful for mt19937.
  */
 template <class RNG>
-typename std::enable_if<RNG::word_size == 32, uint64_t>::type
-randomInt64(RNG& rng) {
+typename std::enable_if<RNG::word_size == 32, uint64_t>::type randomInt64(
+    RNG& rng) {
   return ((uint64_t)rng() << 32) | (uint64_t)rng();
 }
 
@@ -243,8 +249,8 @@ randomInt64(RNG& rng) {
  * Specialization for random generator with uint64 result type.
  */
 template <class RNG>
-typename std::enable_if<RNG::word_size == 64, uint64_t>::type
-randomInt64(RNG& rng) {
+typename std::enable_if<RNG::word_size == 64, uint64_t>::type randomInt64(
+    RNG& rng) {
   return rng();
 }
 
@@ -256,8 +262,9 @@ std::string getThreadName();
 /**
  * Parse json string with `allow_trailing_comma` enabled by default
  */
-folly::dynamic parseJsonString(folly::StringPiece s,
-                               bool allow_trailing_comma = true);
+folly::dynamic parseJsonString(
+    folly::StringPiece s,
+    bool allow_trailing_comma = true);
 
 /**
  * @return returns a prefix of `s` with '...' appended if s is longer than
@@ -268,8 +275,8 @@ std::string shorten(folly::StringPiece s, size_t maxLength);
 /**
  * @return `s` where all occurences of `from` are replaced with `to`
  */
-std::string replaceAll(std::string s, const std::string& from,
-                       const std::string& to);
+std::string
+replaceAll(std::string s, const std::string& from, const std::string& to);
 
 /**
  * Same as folly::toPrettyJson but also sorts keys in dictionaries
@@ -280,5 +287,5 @@ std::string toPrettySortedJson(const folly::dynamic& json);
  * Makes sure a directory exists and is writable (e.g. create if not found, etc)
  */
 bool ensureDirExistsAndWritable(const std::string& path);
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

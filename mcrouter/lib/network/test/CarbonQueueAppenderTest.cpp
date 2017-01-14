@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,9 +18,9 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/gen/CarbonTest.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 using namespace facebook::memcache;
 
@@ -42,8 +42,8 @@ TEST(CarbonQueueAppenderTest, longString) {
   info.reqId = 456;
   info.traceId = 17;
 
-  size_t headerSize = caretPrepareHeader(
-      info, reinterpret_cast<char*>(storage.getHeaderBuf()));
+  size_t headerSize =
+      caretPrepareHeader(info, reinterpret_cast<char*>(storage.getHeaderBuf()));
   storage.reportHeaderSize(headerSize);
 
   folly::IOBuf input(folly::IOBuf::CREATE, 2048);
@@ -139,8 +139,8 @@ TEST(CarbonQueueAppender, manyFields) {
   info.reqId = 456;
   info.traceId = 17;
 
-  size_t headerSize = caretPrepareHeader(
-      info, reinterpret_cast<char*>(storage.getHeaderBuf()));
+  size_t headerSize =
+      caretPrepareHeader(info, reinterpret_cast<char*>(storage.getHeaderBuf()));
   storage.reportHeaderSize(headerSize);
 
   folly::IOBuf input(folly::IOBuf::CREATE, 1024);

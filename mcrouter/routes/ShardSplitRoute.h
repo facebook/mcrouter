@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,18 +13,18 @@
 #include <string>
 #include <vector>
 
+#include <folly/Range.h>
 #include <folly/dynamic.h>
 #include <folly/fibers/FiberManager.h>
-#include <folly/Range.h>
 
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/fbi/cpp/globals.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/fbi/cpp/globals.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/ShardSplitter.h"
 
@@ -62,9 +62,10 @@ namespace detail {
  *              and can be obtained via getShardId().
  * @return A new key which routes to the proper shard split for 'shard'.
  */
-std::string createSplitKey(folly::StringPiece fullKey,
-                           size_t offset,
-                           folly::StringPiece shard);
+std::string createSplitKey(
+    folly::StringPiece fullKey,
+    size_t offset,
+    folly::StringPiece shard);
 } // detail
 
 /**
@@ -86,8 +87,9 @@ class ShardSplitRoute {
       : rh_(std::move(rh)), shardSplitter_(std::move(shardSplitter)) {}
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
     if (ctx) {
       ctx->recordShardSplitter(shardSplitter_);
@@ -134,9 +136,8 @@ class ShardSplitRoute {
 
     if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       for (size_t i = 1; i < splitSize; ++i) {
-        folly::fibers::addTask([ r = rh_, req_ = splitReq(req, i, shard) ]() {
-          r->route(req_);
-        });
+        folly::fibers::addTask(
+            [ r = rh_, req_ = splitReq(req, i, shard) ]() { r->route(req_); });
       }
       return rh_->route(req);
     } else {
@@ -155,8 +156,8 @@ class ShardSplitRoute {
   // from request with key 'prefix:shard:suffix' creates a copy of
   // request with key 'prefix:shardXY:suffix'
   template <class Request>
-  Request splitReq(const Request& req, size_t offset,
-                   folly::StringPiece shard) const {
+  Request splitReq(const Request& req, size_t offset, folly::StringPiece shard)
+      const {
     auto reqCopy = req;
     reqCopy.key() = detail::createSplitKey(req.key().fullKey(), offset, shard);
     return reqCopy;

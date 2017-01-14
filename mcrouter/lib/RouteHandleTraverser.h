@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 #include <memory>
 #include <vector>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * DFS over RouteHandle tree. Calls StartFunc before entering a node and
@@ -25,11 +26,10 @@ class RouteHandleTraverser {
   using StartFunc = std::function<void(const RouteHandleIf& r)>;
   using EndFunc = std::function<void()>;
 
-  explicit RouteHandleTraverser(StartFunc start = nullptr,
-                                EndFunc end = nullptr)
-    : start_(std::move(start)),
-      end_(std::move(end)) {
-  }
+  explicit RouteHandleTraverser(
+      StartFunc start = nullptr,
+      EndFunc end = nullptr)
+      : start_(std::move(start)), end_(std::move(end)) {}
 
   template <class Request>
   void operator()(const RouteHandleIf& r, const Request& req) const {
@@ -43,8 +43,9 @@ class RouteHandleTraverser {
   }
 
   template <class Request>
-  void operator()(const std::vector<std::shared_ptr<RouteHandleIf>>& v,
-                  const Request& req) const {
+  void operator()(
+      const std::vector<std::shared_ptr<RouteHandleIf>>& v,
+      const Request& req) const {
     for (const auto& child : v) {
       operator()(*child, req);
     }
@@ -54,5 +55,5 @@ class RouteHandleTraverser {
   StartFunc start_;
   EndFunc end_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,16 +14,17 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
-#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/LoggingRoute.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/RootRoute.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-McrouterRouteHandlePtr makeBigValueRoute(McrouterRouteHandlePtr rh,
-                                         BigValueRouteOptions options);
+McrouterRouteHandlePtr makeBigValueRoute(
+    McrouterRouteHandlePtr rh,
+    BigValueRouteOptions options);
 
 namespace detail {
 

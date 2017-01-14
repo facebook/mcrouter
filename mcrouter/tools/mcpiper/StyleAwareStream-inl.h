@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Encoder>
 StyleAwareStream<Encoder>& endl(StyleAwareStream<Encoder>& stream) {
@@ -20,8 +21,7 @@ StyleAwareStream<Encoder>& endl(StyleAwareStream<Encoder>& stream) {
 
 template <class Encoder>
 StyleAwareStream<Encoder>::StyleAwareStream(std::ostream& out)
-    : encoder_(out), useColor_(true) {
-}
+    : encoder_(out), useColor_(true) {}
 
 template <class Encoder>
 void StyleAwareStream<Encoder>::setColorOutput(bool useColor) {
@@ -41,8 +41,8 @@ StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(const T& t) {
 }
 
 template <class Encoder>
-StyleAwareStream<Encoder>&
-StyleAwareStream<Encoder>::operator<<(const StyledString& s) {
+StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(
+    const StyledString& s) {
   if (useColor_) {
     encoder_.write(s);
   } else {
@@ -54,11 +54,8 @@ StyleAwareStream<Encoder>::operator<<(const StyledString& s) {
 template <class Encoder>
 template <bool containerMode, class... Args>
 StyleAwareStream<Encoder>& StyleAwareStream<Encoder>::operator<<(
-  const folly::Formatter<containerMode, Args...>& formatter) {
-
-  auto writer = [this] (folly::StringPiece sp) {
-    this->writePlain(sp);
-  };
+    const folly::Formatter<containerMode, Args...>& formatter) {
+  auto writer = [this](folly::StringPiece sp) { this->writePlain(sp); };
   formatter(writer);
   return *this;
 }
@@ -73,5 +70,5 @@ template <class Encoder>
 void StyleAwareStream<Encoder>::flush() const {
   encoder_.flush();
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

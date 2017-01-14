@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,8 +10,8 @@
 #include <gtest/gtest.h>
 
 #include <folly/Format.h>
-#include <folly/io/IOBuf.h>
 #include <folly/Random.h>
+#include <folly/io/IOBuf.h>
 #include <lz4.h>
 
 #include "mcrouter/lib/Lz4Immutable.h"
@@ -22,29 +22,29 @@ namespace {
 
 std::unique_ptr<folly::IOBuf> getAsciiDictionary() {
   static const char dic[] =
-    "VALUE key 0 10\r\n"
-    "0123456789\r\n"
-    "END\r\n"
-    "CLIENT_ERROR malformed request\r\n"
-    "VALUE anotherkey 0 12\r\n"
-    "anothervalue\r\n"
-    "END\r\n"
-    "END\r\n"
-    "VALUE test.aap.j 0 50\r\n"
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n"
-    "END\r\n"
-    "END\r\n";
-  return folly::IOBuf::wrapBuffer(reinterpret_cast<const uint8_t*>(dic),
-                                  sizeof(dic));
+      "VALUE key 0 10\r\n"
+      "0123456789\r\n"
+      "END\r\n"
+      "CLIENT_ERROR malformed request\r\n"
+      "VALUE anotherkey 0 12\r\n"
+      "anothervalue\r\n"
+      "END\r\n"
+      "END\r\n"
+      "VALUE test.aap.j 0 50\r\n"
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n"
+      "END\r\n"
+      "END\r\n";
+  return folly::IOBuf::wrapBuffer(
+      reinterpret_cast<const uint8_t*>(dic), sizeof(dic));
 }
 
 std::unique_ptr<folly::IOBuf> getAsciiData() {
   static const char reply[] =
-    "VALUE test.aap.f 0 12\r\n"
-    "thisisavalue\r\n"
-    "END\r\n";
-  return folly::IOBuf::wrapBuffer(reinterpret_cast<const uint8_t*>(reply),
-                                  sizeof(reply));
+      "VALUE test.aap.f 0 12\r\n"
+      "thisisavalue\r\n"
+      "END\r\n";
+  return folly::IOBuf::wrapBuffer(
+      reinterpret_cast<const uint8_t*>(reply), sizeof(reply));
 }
 
 std::unique_ptr<folly::IOBuf> getRandomAsciiData(
@@ -53,7 +53,7 @@ std::unique_ptr<folly::IOBuf> getRandomAsciiData(
   CHECK_GT(maxSize, minSize);
 
   static const char alphabet[] =
-    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   uint32_t size = folly::Random::rand32(minSize, maxSize);
   std::string reply;
@@ -151,7 +151,8 @@ std::unique_ptr<folly::IOBuf> lz4Decompress(
   int bytesWritten = LZ4_decompress_safe_usingDict(
       reinterpret_cast<const char*>(bytes.data()),
       reinterpret_cast<char*>(buffer->writableTail()),
-      data.length(), buffer->tailroom(),
+      data.length(),
+      buffer->tailroom(),
       reinterpret_cast<const char*>(dictionary->data()),
       dictionary->length());
 

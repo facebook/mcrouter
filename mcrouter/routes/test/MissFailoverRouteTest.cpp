@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,13 +27,12 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(missMissFailoverRouteTest, success) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
   EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
@@ -41,13 +40,12 @@ TEST(missMissFailoverRouteTest, success) {
 
 TEST(missMissFailoverRouteTest, once) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -55,13 +53,12 @@ TEST(missMissFailoverRouteTest, once) {
 
 TEST(missMissFailoverRouteTest, twice) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -69,13 +66,12 @@ TEST(missMissFailoverRouteTest, twice) {
 
 TEST(missMissFailoverRouteTest, fail) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))};
 
   TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
 
@@ -86,13 +82,12 @@ TEST(missMissFailoverRouteTest, fail) {
 
 TEST(missMissFailoverRouteTest, nonGetLike) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_notstored)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
-  };
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_notstored)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
 
   TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   McSetRequest req("0");
   req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");

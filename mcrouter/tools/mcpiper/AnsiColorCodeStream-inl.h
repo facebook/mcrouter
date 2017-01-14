@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class T>
 void AnsiColorCodeEncoder::writePlain(const T& t) {
@@ -19,5 +20,5 @@ void AnsiColorCodeEncoder::writePlain(const T& t) {
 
   out_ << t;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

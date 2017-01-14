@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,7 +23,7 @@ using facebook::memcache::mcrouter::Observable;
 struct NoCopy {
   int x;
 
-  explicit NoCopy(int x_ = 0) : x(x_) {};
+  explicit NoCopy(int x_ = 0) : x(x_){};
   NoCopy(const NoCopy&) = delete;
   NoCopy(NoCopy&&) = default;
 
@@ -66,13 +66,13 @@ TEST(Observable, sanity) {
   int prev = 0;
   int cur = -1;
 
-  auto onUpdate =
-    [&step, &prev, &cur](const NoCopy& oldData, const NoCopy& newData) {
-      EXPECT_EQ(oldData.x, prev);
-      EXPECT_EQ(newData.x, cur);
+  auto onUpdate = [&step, &prev, &cur](
+      const NoCopy& oldData, const NoCopy& newData) {
+    EXPECT_EQ(oldData.x, prev);
+    EXPECT_EQ(newData.x, cur);
 
-      ++step;
-    };
+    ++step;
+  };
 
   auto handle1 = data.subscribe(onUpdate);
   EXPECT_EQ(step, 0);
@@ -90,7 +90,7 @@ TEST(Observable, sanity) {
 TEST(Observable, rand) {
   Observable<int> data(1);
 
-  const int kValueToAchieve = 1<<8;
+  const int kValueToAchieve = 1 << 8;
   const int kSleepRange = 10;
 
   auto consumerFunc = [&data]() {
@@ -107,7 +107,7 @@ TEST(Observable, rand) {
 
     while (!finished) {
       std::this_thread::sleep_for(
-        std::chrono::milliseconds((rand()%kSleepRange) + 1));
+          std::chrono::milliseconds((rand() % kSleepRange) + 1));
     }
   };
 
@@ -121,7 +121,7 @@ TEST(Observable, rand) {
       data.set(val + 1);
 
       std::this_thread::sleep_for(
-        std::chrono::milliseconds((rand()%kSleepRange) + 1));
+          std::chrono::milliseconds((rand() % kSleepRange) + 1));
     }
   };
 

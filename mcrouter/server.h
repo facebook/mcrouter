@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McrouterOptions;
 
@@ -22,9 +23,10 @@ class McrouterStandaloneOptions;
  *
  * @return True if server shut down cleanly, false if any errors occurred.
  */
-bool runServer(const McrouterStandaloneOptions& standaloneOpts,
-               const McrouterOptions& mcrouterOpts);
+bool runServer(
+    const McrouterStandaloneOptions& standaloneOpts,
+    const McrouterOptions& mcrouterOpts);
 
-}  // facebook::memcache::mcrouter
-
-}}  // facebook::memcache
+} // facebook::memcache::mcrouter
+}
+} // facebook::memcache

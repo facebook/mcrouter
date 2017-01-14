@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Request traits allow grouping requests with similar semantics. This way
@@ -108,15 +109,13 @@ using ArithmeticLikeT = typename ArithmeticLike<Request>::Type;
  */
 template <typename Request, typename RequestTraitOrType, typename... Rest>
 struct OtherThan {
-  static const bool value =
-    OtherThan<Request, RequestTraitOrType>::value &&
-    OtherThan<Request, Rest...>::value;
+  static const bool value = OtherThan<Request, RequestTraitOrType>::value &&
+      OtherThan<Request, Rest...>::value;
 };
 
 template <typename Request, typename RequestTraitOrType>
 struct OtherThan<Request, RequestTraitOrType> {
-  static const bool value =
-    !std::is_same<Request, RequestTraitOrType>::value;
+  static const bool value = !std::is_same<Request, RequestTraitOrType>::value;
 };
 
 template <typename Request>
@@ -137,8 +136,7 @@ struct OtherThan<Request, ArithmeticLike<>> {
 };
 
 template <typename Request, typename... RequestTraitOrType>
-using OtherThanT = typename std::enable_if<
-    OtherThan<Request, RequestTraitOrType...>::value,
-    void*>::type;
-
-}} // facebook::memcache
+using OtherThanT = typename std::
+    enable_if<OtherThan<Request, RequestTraitOrType...>::value, void*>::type;
+}
+} // facebook::memcache

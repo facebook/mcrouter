@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,9 @@
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeErrorRoute(std::string valueToSet) {
   return makeMcrouterRouteHandle<ErrorRoute>(std::move(valueToSet));
@@ -23,8 +25,9 @@ McrouterRouteHandlePtr makeErrorRoute(std::string valueToSet) {
 McrouterRouteHandlePtr makeErrorRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json) {
-  checkLogic(json.isObject() || json.isString() || json.isNull(),
-             "ErrorRoute: should be string or object");
+  checkLogic(
+      json.isObject() || json.isString() || json.isNull(),
+      "ErrorRoute: should be string or object");
   std::string response;
   if (json.isString()) {
     response = json.getString();
@@ -36,5 +39,6 @@ McrouterRouteHandlePtr makeErrorRoute(
   }
   return makeErrorRoute(std::move(response));
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

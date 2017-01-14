@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,10 +12,10 @@
 
 #include <gtest/gtest.h>
 
+#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
-#include "mcrouter/McrouterInstance.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/SlowWarmUpRoute.h"
 
@@ -60,21 +60,23 @@ void sendWorkload(
 
 TEST(SlowWarmUpRoute, basic) {
   auto settings = std::make_shared<SlowWarmUpRouteSettings>(
-      /* enable */    0.5,
-      /* disable */   0.9,
-      /* start */     0.1,
-      /* step */      1.0,
-      /* numReqs  */  5);
+      /* enable */ 0.5,
+      /* disable */ 0.9,
+      /* start */ 0.1,
+      /* step */ 1.0,
+      /* numReqs  */ 5);
 
   TestFiberManager fm{FiberManagerContextTag()};
 
   std::vector<std::shared_ptr<TestHandle>> targets{
-    std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
-                                 UpdateRouteTestData(mc_res_stored),
-                                 DeleteRouteTestData(mc_res_notfound)),
-    std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"),
-                                 UpdateRouteTestData(mc_res_stored),
-                                 DeleteRouteTestData(mc_res_notfound)),
+      std::make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "a"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData(mc_res_notfound)),
+      std::make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "b"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData(mc_res_notfound)),
   };
   auto target = get_route_handles(targets)[0];
   auto failoverTarget = get_route_handles(targets)[1];
@@ -83,9 +85,7 @@ TEST(SlowWarmUpRoute, basic) {
   fm.run([&]() {
     fiber_local<MemcacheRouterInfo>::setSharedCtx(ctx);
     TestRouteHandle<SlowWarmUpRoute<TestRouterInfo>> rh(
-        std::move(target),
-        std::move(failoverTarget),
-        std::move(settings));
+        std::move(target), std::move(failoverTarget), std::move(settings));
 
     // send 10 gets -> moves hit rate to 1.
     for (int i = 0; i < 10; ++i) {
@@ -136,21 +136,23 @@ TEST(SlowWarmUpRoute, basic) {
 
 TEST(SlowWarmUpRoute, minRequests) {
   auto settings = std::make_shared<SlowWarmUpRouteSettings>(
-      /* enable */    0.5,
-      /* disable */   0.9,
-      /* start */     0.1,
-      /* step */      1.0,
-      /* numReqs  */  100);
+      /* enable */ 0.5,
+      /* disable */ 0.9,
+      /* start */ 0.1,
+      /* step */ 1.0,
+      /* numReqs  */ 100);
 
   TestFiberManager fm{FiberManagerContextTag()};
 
   std::vector<std::shared_ptr<TestHandle>> targets{
-    std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
-                                 UpdateRouteTestData(mc_res_stored),
-                                 DeleteRouteTestData(mc_res_notfound)),
-    std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"),
-                                 UpdateRouteTestData(mc_res_stored),
-                                 DeleteRouteTestData(mc_res_notfound)),
+      std::make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "a"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData(mc_res_notfound)),
+      std::make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "b"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData(mc_res_notfound)),
   };
   auto target = get_route_handles(targets)[0];
   auto failoverTarget = get_route_handles(targets)[1];
@@ -159,9 +161,7 @@ TEST(SlowWarmUpRoute, minRequests) {
   fm.run([&]() {
     fiber_local<MemcacheRouterInfo>::setSharedCtx(ctx);
     TestRouteHandle<SlowWarmUpRoute<TestRouterInfo>> rh(
-        std::move(target),
-        std::move(failoverTarget),
-        std::move(settings));
+        std::move(target), std::move(failoverTarget), std::move(settings));
 
     // send 90 deletes (which return miss) -> hit rate is 0.
     for (int i = 0; i < 90; ++i) {

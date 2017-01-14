@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,9 @@
 #include <functional>
 #include <memory>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Simple thread-safe class to handle pool of callbacks.
@@ -55,10 +57,12 @@ class CallbackPool {
    * Call all subscribed callbacks. Order of callbacks is undefined.
    */
   void notify(Args... args);
+
  private:
   std::shared_ptr<Data> data_;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "CallbackPool-inl.h"

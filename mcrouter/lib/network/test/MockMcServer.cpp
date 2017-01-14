@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,10 +19,10 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/network/test/MockMc.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
+#include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/test/MockMc.h"
 
 /**
  * Mock Memcached implementation.
@@ -87,8 +87,8 @@ class MockMcOnRequest {
       size_t timeout = 500;
       auto argStart = key.find('(');
       if (argStart != std::string::npos) {
-        timeout = folly::to<size_t>(key.subpiece(argStart + 1,
-                                                 key.size() - argStart - 2));
+        timeout = folly::to<size_t>(
+            key.subpiece(argStart + 1, key.size() - argStart - 2));
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
       McServerRequestContext::reply(std::move(ctx), Reply(mc_res_timeout));
@@ -138,8 +138,8 @@ class MockMcOnRequest {
         return;
 
       case MockMc::LeaseSetResult::STALE_STORED:
-        McServerRequestContext::reply(std::move(ctx),
-                                      Reply(mc_res_stalestored));
+        McServerRequestContext::reply(
+            std::move(ctx), Reply(mc_res_stalestored));
         return;
     }
   }
@@ -310,25 +310,26 @@ class MockMcOnRequest {
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
 
-
  private:
   MockMc mc_;
 };
 
-void serverLoop(size_t threadId, folly::EventBase& evb,
-                AsyncMcServerWorker& worker) {
+void serverLoop(
+    size_t threadId,
+    folly::EventBase& evb,
+    AsyncMcServerWorker& worker) {
   worker.setOnRequest(MemcacheRequestHandler<MockMcOnRequest>());
   evb.loop();
 }
 
 void usage(char** argv) {
-  std::cerr <<
-    "Arguments:\n"
-    "  -P <port>      TCP port on which to listen\n"
-    "  -t <fd>        TCP listen sock fd\n"
-    "  -s             Use ssl\n"
-    "Usage:\n"
-    "  $ " << argv[0] << " -p 15213\n";
+  std::cerr << "Arguments:\n"
+               "  -P <port>      TCP port on which to listen\n"
+               "  -t <fd>        TCP listen sock fd\n"
+               "  -s             Use ssl\n"
+               "Usage:\n"
+               "  $ "
+            << argv[0] << " -p 15213\n";
   exit(1);
 }
 

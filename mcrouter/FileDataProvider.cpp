@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,9 @@ using boost::filesystem::complete;
 using boost::filesystem::path;
 using boost::filesystem::read_symlink;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 const size_t INOTIFY_BUF_SIZE = 1024;
 
@@ -33,7 +35,7 @@ const size_t INOTIFY_BUF_SIZE = 1024;
  *  and the same for any symlinks (inotify should watch the symlink itself)
  */
 const uint32_t INOTIFY_MASK =
-  IN_MODIFY|IN_MOVE_SELF|IN_DELETE_SELF|IN_DONT_FOLLOW;
+    IN_MODIFY | IN_MOVE_SELF | IN_DELETE_SELF | IN_DONT_FOLLOW;
 
 void FileDataProvider::updateInotifyWatch() {
   /**
@@ -42,9 +44,12 @@ void FileDataProvider::updateInotifyWatch() {
    */
   auto inotifyFD = inotify_init();
   if (inotifyFD < 0) {
-    throw std::runtime_error(folly::format(
-        "Failed to initialize inotify for '{}'. Errno: '{}'",
-        filePath_.data(), errno).str());
+    throw std::runtime_error(
+        folly::format(
+            "Failed to initialize inotify for '{}'. Errno: '{}'",
+            filePath_.data(),
+            errno)
+            .str());
   }
   folly::File tmpInotify(inotifyFD, /* ownsFd */ true);
   /**
@@ -58,8 +63,9 @@ void FileDataProvider::updateInotifyWatch() {
     int wd = inotify_add_watch(inotifyFD, link.string().data(), INOTIFY_MASK);
     if (wd < 0) {
       throw std::runtime_error(
-        folly::format(
-          "Can not add inotify watch for '{}'", link.string().data()).str());
+          folly::format(
+              "Can not add inotify watch for '{}'", link.string().data())
+              .str());
     }
     // Read the link (if it is one)
     boost::system::error_code ec;
@@ -87,8 +93,7 @@ std::string FileDataProvider::load() const {
   std::string result;
   if (!folly::readFile(filePath_.data(), result)) {
     throw std::runtime_error(
-      folly::format(
-        "Can not read file '{}'", filePath_.data()).str());
+        folly::format("Can not read file '{}'", filePath_.data()).str());
   }
   return result;
 }
@@ -104,8 +109,8 @@ bool FileDataProvider::hasUpdate() {
   auto retval = poll(&pollfd, /* nfds = */ 1, /* timeout = */ 0);
   if (retval < 0) {
     throw std::runtime_error(
-      folly::format(
-        "poll on inotifyFD for '{}' failed", filePath_.data()).str());
+        folly::format("poll on inotifyFD for '{}' failed", filePath_.data())
+            .str());
   } else if (retval > 0) {
     struct inotify_event inotifyBuffer[INOTIFY_BUF_SIZE];
     // Data is ready to read from inotifyFD.  We need to read it so that
@@ -118,5 +123,6 @@ bool FileDataProvider::hasUpdate() {
   }
   return false;
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

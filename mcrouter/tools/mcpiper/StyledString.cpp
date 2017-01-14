@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,13 +9,12 @@
  */
 #include "StyledString.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
-StyledString::StyledString() {
-}
+StyledString::StyledString() {}
 
-StyledString::StyledString(std::string s, Color color)
-    : text_(std::move(s)) {
+StyledString::StyledString(std::string s, Color color) : text_(std::move(s)) {
   fg_.resize(text_.size(), color);
 }
 
@@ -75,5 +74,5 @@ Color StyledString::fgColorAt(size_t i) const {
 size_t StyledString::size() const {
   return text_.size();
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

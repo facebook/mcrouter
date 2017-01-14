@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -35,8 +35,7 @@ struct ListContainsImpl<List<>, T> {
 template <class T, class X, class... Xs>
 struct ListContainsImpl<List<X, Xs...>, T> {
   static constexpr bool value =
-    std::is_same<T, X>::value ||
-    ListContainsImpl<List<Xs...>, T>::value;
+      std::is_same<T, X>::value || ListContainsImpl<List<Xs...>, T>::value;
 };
 
 } // detail

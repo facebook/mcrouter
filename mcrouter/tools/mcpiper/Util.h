@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,13 +9,14 @@
  */
 #pragma once
 
-#include <string>
 #include <sys/time.h>
+#include <string>
 #include <vector>
 
 #include <boost/regex.hpp>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Return a list of strings that describes the flags present in
@@ -33,7 +34,8 @@ std::string printTimeOffset(const struct timeval& ts, struct timeval& prev);
  *
  * @return  boost::regex or nullptr if pattern is nullptr.
  */
-std::unique_ptr<boost::regex> buildRegex(const std::string& pattern,
-                                         bool ignoreCase = false) noexcept;
-
-}} // facebook::memcache
+std::unique_ptr<boost::regex> buildRegex(
+    const std::string& pattern,
+    bool ignoreCase = false) noexcept;
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -48,7 +48,6 @@ struct CodecConfig {
 };
 using CodecConfigPtr = std::unique_ptr<CodecConfig>;
 
-
 /**
  * Manager of compression codecs.
  */
@@ -74,7 +73,6 @@ class CompressionCodecManager {
 
   CompressionCodecMap* buildCodecMap();
 };
-
 
 /**
  * Represent a range of valid compression codecs ids
@@ -108,10 +106,10 @@ class CompressionCodecMap {
    * @return               The codec that best matches the filters
    *                       (or nullptr if none found).
    */
-   CompressionCodec* getBest(
-       const CodecIdRange& codecRange,
-       const size_t bodySize,
-       const size_t typeId) const noexcept;
+  CompressionCodec* getBest(
+      const CodecIdRange& codecRange,
+      const size_t bodySize,
+      const size_t typeId) const noexcept;
 
   /**
    * Returns the size of this map.
@@ -151,7 +149,8 @@ class CompressionCodecMap {
    */
   CompressionCodecMap(
       const std::unordered_map<uint32_t, CodecConfigPtr>& codecConfigs,
-      uint32_t smallestCodecId, uint32_t size);
+      uint32_t smallestCodecId,
+      uint32_t size);
 
   /**
    * Get the compression codec that best matches the filters considering
@@ -163,15 +162,15 @@ class CompressionCodecMap {
    * @return               The codec that best matches the filters
    *                       (or nullptr if none found).
    */
-   CompressionCodec* getBestByTypeId(
-       const CodecIdRange& codecRange,
-       const size_t bodySize,
-       const size_t typeId) const noexcept;
+  CompressionCodec* getBestByTypeId(
+      const CodecIdRange& codecRange,
+      const size_t bodySize,
+      const size_t typeId) const noexcept;
 
-   // Return the codecs_ vector index given the codec id.
-   uint32_t index(uint32_t id) const noexcept;
+  // Return the codecs_ vector index given the codec id.
+  uint32_t index(uint32_t id) const noexcept;
 
   friend class CompressionCodecManager;
 };
-}  // memcache
-}  // facebook
+} // memcache
+} // facebook

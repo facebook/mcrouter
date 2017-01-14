@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,7 +21,8 @@
 
 #include <glog/logging.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 const size_t kInfinity = std::numeric_limits<size_t>::max();
 
@@ -37,14 +38,14 @@ const size_t kInfinity = std::numeric_limits<size_t>::max();
 /// define the properties in std::allocator_traits.
 ///
 /// Note: ObjectPool is not thread-safe
-template<typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = std::allocator<T>>
 class ObjectPool : boost::noncopyable {
  public:
   /// Create an object pool with the given max capacity for the free list
   /// If maxCapacity == std::numeric_limits<size_t>::max() then the capacity
   /// of the free list is unbounded
   explicit ObjectPool(size_t maxCapacity = kInfinity)
-    : maxCapacity_(maxCapacity) {}
+      : maxCapacity_(maxCapacity) {}
 
   /// Allocate an object
   /// @param    args        Arguments to forward to T's constructor
@@ -53,9 +54,8 @@ class ObjectPool : boost::noncopyable {
   /// @throws               any exception thrown while constructing T,
   ///                       any exception thrown by the allocator while
   ///                       allocating the object
-  template<typename... Args>
+  template <typename... Args>
   T* alloc(Args&&... args) {
-
     // First check the free list
     auto* obj = getFromFreeList();
     if (obj == nullptr) {
@@ -107,7 +107,6 @@ class ObjectPool : boost::noncopyable {
   }
 
  private:
-
   // Return an object from the free list. The caller must invoke the
   // constructor
   //
@@ -135,9 +134,9 @@ class ObjectPool : boost::noncopyable {
       try {
         freeList_.push_back(obj);
         return;
-      } catch(const std::exception& e) {
-        LOG(ERROR) << "Failed while adding to free list - %s" <<  e.what();
-      } catch(...) {
+      } catch (const std::exception& e) {
+        LOG(ERROR) << "Failed while adding to free list - %s" << e.what();
+      } catch (...) {
         LOG(ERROR) << "Unknown exception while adding to free list";
       }
     }
@@ -147,23 +146,23 @@ class ObjectPool : boost::noncopyable {
     return;
   }
 
-  std::vector<T*,
-    typename std::allocator_traits<Allocator>::template rebind_alloc<T*>>
-    freeList_;                          // List of free objects
+  std::vector<
+      T*,
+      typename std::allocator_traits<Allocator>::template rebind_alloc<T*>>
+      freeList_; // List of free objects
 
-  Allocator allocator_;                 // Allocator used to allocate objects
+  Allocator allocator_; // Allocator used to allocate objects
 
-  const size_t maxCapacity_;            // Maximum number of objects that can be
-                                        // stored within the pool
+  const size_t maxCapacity_; // Maximum number of objects that can be
+  // stored within the pool
 };
 
 /// ThreadSafeObjectPool, as the name suggests, is a thread safe version of
 /// ObjectPool. It is based on ObjectPool but in addition it uses std::mutex
 /// to guarantee thread-safety.
-template<typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = std::allocator<T>>
 class ThreadSafeObjectPool {
  public:
-
   /// Create a thread-safe object pool with the give maxCapacity
   /// If maxCapacity == std::numeric_limits<size_t>::max() then capacity
   /// is infinity
@@ -176,7 +175,7 @@ class ThreadSafeObjectPool {
   /// @throws               any exception thrown while constructing T,
   ///                       any exception thrown by the allocator while
   ///                       allocating the object
-  template<typename... Args>
+  template <typename... Args>
   T* alloc(Args&&... args) {
     std::lock_guard<std::mutex> lg(mtx);
     return objectPool.alloc(std::forward<Args>(args)...);
@@ -198,8 +197,8 @@ class ThreadSafeObjectPool {
   }
 
  private:
-  ObjectPool<T,Allocator> objectPool;   // Object pool used for allocations
-  std::mutex mtx;                       // Mutex for mutual exclusion
+  ObjectPool<T, Allocator> objectPool; // Object pool used for allocations
+  std::mutex mtx; // Mutex for mutual exclusion
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

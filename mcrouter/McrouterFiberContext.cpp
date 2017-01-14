@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,9 @@
  */
 #include "McrouterFiberContext.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 const RequestClass RequestClass::kFailover{0x1};
 const RequestClass RequestClass::kShadow{0x2};
@@ -24,5 +26,6 @@ const char* RequestClass::toString() const {
   }
   return "normal";
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

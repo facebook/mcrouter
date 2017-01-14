@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,16 +15,16 @@
 
 using folly::WriteFlags;
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class MockAsyncSocket : public folly::AsyncTransportWrapper {
  public:
-  explicit MockAsyncSocket(SessionTestHarness& harness)
-      : harness_(harness) {
-  }
+  explicit MockAsyncSocket(SessionTestHarness& harness) : harness_(harness) {}
 
   // Methods inherited from TAsyncTransport
-  void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override {
+  void setReadCB(
+      folly::AsyncTransportWrapper::ReadCallback* callback) override {
     harness_.setReadCallback(callback);
   }
 
@@ -50,8 +50,8 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
       WriteFlags = WriteFlags::NONE) override {
     std::string out;
     for (size_t i = 0; i < count; ++i) {
-      out += std::string(reinterpret_cast<char*>(vec[i].iov_base),
-                         vec[i].iov_len);
+      out +=
+          std::string(reinterpret_cast<char*>(vec[i].iov_base), vec[i].iov_len);
     }
 
     harness_.write(out);
@@ -61,9 +61,10 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
     }
   }
 
-  void writeChain(folly::AsyncTransportWrapper::WriteCallback*,
-                  std::unique_ptr<folly::IOBuf>&&,
-                  WriteFlags = WriteFlags::NONE) override {
+  void writeChain(
+      folly::AsyncTransportWrapper::WriteCallback*,
+      std::unique_ptr<folly::IOBuf>&&,
+      WriteFlags = WriteFlags::NONE) override {
     throw std::runtime_error("not implemented");
   }
 
@@ -73,24 +74,36 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
   void shutdownWrite() override {}
   void shutdownWriteNow() override {}
 
-  void setSendTimeout(uint32_t milliseconds) override { }
-  uint32_t getSendTimeout() const override { return 0; }
+  void setSendTimeout(uint32_t milliseconds) override {}
+  uint32_t getSendTimeout() const override {
+    return 0;
+  }
 
-  bool readable() const override { return true; }
-  bool good() const override { return true; }
-  bool error() const override { return false; }
+  bool readable() const override {
+    return true;
+  }
+  bool good() const override {
+    return true;
+  }
+  bool error() const override {
+    return false;
+  }
   void attachEventBase(folly::EventBase* eventBase) override {}
   void detachEventBase() override {}
   folly::EventBase* getEventBase() const override {
     return &harness_.eventBase_;
   }
 
-  bool isDetachable() const override { return false; }
+  bool isDetachable() const override {
+    return false;
+  }
 
   void getLocalAddress(folly::SocketAddress* address) const override {}
   void getPeerAddress(folly::SocketAddress* address) const override {}
 
-  bool isEorTrackingEnabled() const override { return false; }
+  bool isEorTrackingEnabled() const override {
+    return false;
+  }
 
   void setEorTracking(bool track) override {}
 
@@ -161,5 +174,5 @@ void SessionTestHarness::flushSavedInputs() {
     }
   }
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

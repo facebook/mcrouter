@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #include "McClientRequestContext.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 constexpr size_t kSerializedRequestContextLength = 1024;
 
@@ -26,7 +27,8 @@ void McClientRequestContextBase::canceled() {
 }
 
 void McClientRequestContextBase::fireStateChangeCallbacks(
-    ReqState old, ReqState current) const {
+    ReqState old,
+    ReqState current) const {
   if (!onStateChange_) {
     return;
   }
@@ -75,19 +77,19 @@ McClientRequestContextBase::~McClientRequestContextBase() {
 }
 
 McClientRequestContextQueue::McClientRequestContextQueue(
-  bool outOfOrder) noexcept
-  : outOfOrder_(outOfOrder),
-    buckets_(kDefaultNumBuckets),
-    set_(McClientRequestContextBase::UnorderedSet::bucket_traits(
-      buckets_.data(), buckets_.size())) {
-}
+    bool outOfOrder) noexcept
+    : outOfOrder_(outOfOrder),
+      buckets_(kDefaultNumBuckets),
+      set_(McClientRequestContextBase::UnorderedSet::bucket_traits(
+          buckets_.data(),
+          buckets_.size())) {}
 
 void McClientRequestContextQueue::growBucketsArray() {
   // Allocate buckets array that is twice bigger than the current one.
-  std::vector<McClientRequestContextBase::UnorderedSet::bucket_type>
-  tmp(buckets_.size() * 2);
+  std::vector<McClientRequestContextBase::UnorderedSet::bucket_type> tmp(
+      buckets_.size() * 2);
   set_.rehash(McClientRequestContextBase::UnorderedSet::bucket_traits(
-    tmp.data(), tmp.size()));
+      tmp.data(), tmp.size()));
   // Use swap here, since it has better defined behaviour regarding iterators.
   buckets_.swap(tmp);
 }
@@ -174,7 +176,8 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
 }
 
 void McClientRequestContextQueue::failQueue(
-    McClientRequestContextBase::Queue& queue, mc_res_t error) {
+    McClientRequestContextBase::Queue& queue,
+    mc_res_t error) {
   while (!queue.empty()) {
     auto& req = queue.front();
     queue.pop_front();
@@ -186,11 +189,10 @@ void McClientRequestContextQueue::failQueue(
 
 McClientRequestContextBase::UnorderedSet::iterator
 McClientRequestContextQueue::getContextById(uint64_t id) {
-  return
-    set_.find(
+  return set_.find(
       id,
       std::hash<uint64_t>(),
-      [] (uint64_t i, const McClientRequestContextBase& ctx) {
+      [](uint64_t i, const McClientRequestContextBase& ctx) {
         return i == ctx.id;
       });
 }
@@ -245,12 +247,16 @@ McClientRequestContextQueue::getParserInitializer(uint64_t reqId) {
 
 std::string McClientRequestContextQueue::debugInfo() const {
   return folly::sformat(
-    "Currently have {} timedout initializers, {} requests in "
-    "replied queue, {} requests in pending reply queue, "
-    "{} requests in write queue and {} requests in pending queue, "
-    "the first alive request is: {}", timedOutInitializers_.size(),
-    repliedQueue_.size(), pendingReplyQueue_.size(), writeQueue_.size(),
-    pendingQueue_.size(), getFirstAliveRequestInfo());
+      "Currently have {} timedout initializers, {} requests in "
+      "replied queue, {} requests in pending reply queue, "
+      "{} requests in write queue and {} requests in pending queue, "
+      "the first alive request is: {}",
+      timedOutInitializers_.size(),
+      repliedQueue_.size(),
+      pendingReplyQueue_.size(),
+      writeQueue_.size(),
+      pendingQueue_.size(),
+      getFirstAliveRequestInfo());
 }
 
 std::string McClientRequestContextQueue::getFirstAliveRequestInfo() const {
@@ -265,27 +271,29 @@ std::string McClientRequestContextQueue::getFirstAliveRequestInfo() const {
   }
 
   size_t dataLen = 0;
-  for (size_t i = 0;
-       i < ctx->reqContext.getIovsCount(); ++i) {
+  for (size_t i = 0; i < ctx->reqContext.getIovsCount(); ++i) {
     dataLen += ctx->reqContext.getIovs()[i].iov_len;
   }
   dataLen = std::min(dataLen, kSerializedRequestContextLength);
   std::vector<char> data(dataLen);
 
   for (size_t i = 0, dataOffset = 0;
-       i < ctx->reqContext.getIovsCount() &&
-       dataOffset < dataLen; ++i) {
+       i < ctx->reqContext.getIovsCount() && dataOffset < dataLen;
+       ++i) {
     auto toCopy =
         std::min(dataLen - dataOffset, ctx->reqContext.getIovs()[i].iov_len);
-    memcpy(data.data() + dataOffset, ctx->reqContext.getIovs()[i].iov_base,
-           toCopy);
+    memcpy(
+        data.data() + dataOffset,
+        ctx->reqContext.getIovs()[i].iov_base,
+        toCopy);
     dataOffset += toCopy;
   }
 
-  return folly::sformat("{}, serialized data was: \"{}\"",
-                        ctx->getContextTypeStr(),
-                        folly::cEscape<std::string>(
-                            folly::StringPiece(data.data(), data.size())));
+  return folly::sformat(
+      "{}, serialized data was: \"{}\"",
+      ctx->getContextTypeStr(),
+      folly::cEscape<std::string>(
+          folly::StringPiece(data.data(), data.size())));
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

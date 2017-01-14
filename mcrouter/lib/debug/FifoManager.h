@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,7 +21,8 @@
 
 #include "mcrouter/lib/debug/Fifo.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Manager of fifos.
@@ -94,5 +95,5 @@ class FifoManager {
 
   friend class folly::Singleton<FifoManager>;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

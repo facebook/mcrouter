@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,16 +12,17 @@
 #include <folly/Benchmark.h>
 
 // for backward compatibility with gflags
-namespace gflags { } // gflags
-namespace google { using namespace gflags; } // google
+namespace gflags {} // gflags
+namespace google {
+using namespace gflags;
+} // google
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::SetCommandLineOptionWithMode(
-    "bm_min_iters", "100000", google::SET_FLAG_IF_DEFAULT
-  );
+      "bm_min_iters", "100000", google::SET_FLAG_IF_DEFAULT);
   folly::runBenchmarksOnFlag();
   return result;
 }

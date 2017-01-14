@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,8 @@
 
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 template <class MessageList, class Proc, class... Args>
@@ -22,7 +23,7 @@ struct CallDispatcherImpl;
 
 template <class T, class PairList>
 struct RequestFromReplyTypeImpl;
-}  // detail
+} // detail
 
 template <class MessageList>
 struct StaticChecker;
@@ -77,7 +78,7 @@ class CallDispatcher {
  private:
   detail::CallDispatcherImpl<MessageList, Proc, Args...> impl_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache
 
 #include "TypedMsg-inl.h"

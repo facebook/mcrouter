@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,7 +22,8 @@
 
 namespace fs = boost::filesystem;
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
@@ -31,7 +32,7 @@ constexpr size_t kHeaderMagicSize = sizeof(MessageHeader().magic());
 uint8_t getVersion(const folly::IOBufQueue& bufQueue) {
   const size_t kLength = kHeaderMagicSize + sizeof(MessageHeader().version());
   CHECK(bufQueue.chainLength() >= kLength)
-    << "Buffer queue length is smaller than (magic + version) bytes.";
+      << "Buffer queue length is smaller than (magic + version) bytes.";
 
   size_t offset = 0;
   auto buf = bufQueue.front();
@@ -44,7 +45,7 @@ uint8_t getVersion(const folly::IOBufQueue& bufQueue) {
 
 PacketHeader parsePacketHeader(folly::IOBufQueue& bufQueue) {
   CHECK(bufQueue.chainLength() >= sizeof(PacketHeader))
-    << "Invalid packet header buffer size!";
+      << "Invalid packet header buffer size!";
 
   auto buf = bufQueue.split(sizeof(PacketHeader));
   auto bytes = buf->coalesce();
@@ -52,8 +53,8 @@ PacketHeader parsePacketHeader(folly::IOBufQueue& bufQueue) {
   PacketHeader header;
   std::memcpy(&header, bytes.data(), sizeof(PacketHeader));
 
-  CHECK(header.packetSize() <= kFifoMaxPacketSize) <<
-    "Packet too large: " << header.packetSize();
+  CHECK(header.packetSize() <= kFifoMaxPacketSize) << "Packet too large: "
+                                                   << header.packetSize();
 
   return header;
 }
@@ -63,9 +64,9 @@ MessageHeader parseMessageHeader(folly::IOBufQueue& bufQueue) {
   const size_t messageHeaderSize = MessageHeader::size(version);
 
   CHECK(messageHeaderSize <= sizeof(MessageHeader))
-    << "MessageHeader struct cannot hold message header data";
+      << "MessageHeader struct cannot hold message header data";
   CHECK(bufQueue.chainLength() >= messageHeaderSize)
-    << "Invalid message header buffer size!";
+      << "Invalid message header buffer size!";
 
   auto buf = bufQueue.split(messageHeaderSize);
 
@@ -77,7 +78,7 @@ MessageHeader parseMessageHeader(folly::IOBufQueue& bufQueue) {
 
 bool isMessageHeader(const folly::IOBufQueue& bufQueue) {
   CHECK(bufQueue.chainLength() >= kHeaderMagicSize)
-    << "Buffer queue length is smaller than magic bytes.";
+      << "Buffer queue length is smaller than magic bytes.";
 
   uint32_t magic = 0;
   size_t i = 0;
@@ -99,11 +100,10 @@ bool isMessageHeader(const folly::IOBufQueue& bufQueue) {
 
 } // anonymous namespace
 
-FifoReadCallback::FifoReadCallback(std::string fifoName,
-                                   const MessageReadyFn& messageReady) noexcept
-    : fifoName_(std::move(fifoName)),
-      messageReady_(messageReady) {
-}
+FifoReadCallback::FifoReadCallback(
+    std::string fifoName,
+    const MessageReadyFn& messageReady) noexcept
+    : fifoName_(std::move(fifoName)), messageReady_(messageReady) {}
 
 void FifoReadCallback::getReadBuffer(void** bufReturn, size_t* lenReturn) {
   auto res = readBuffer_.preallocate(kMinSize, PIPE_BUF);
@@ -120,8 +120,9 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
       if (readBuffer_.chainLength() < pendingHeader_->packetSize()) {
         return;
       }
-      forwardMessage(pendingHeader_.value(),
-                     readBuffer_.split(pendingHeader_->packetSize()));
+      forwardMessage(
+          pendingHeader_.value(),
+          readBuffer_.split(pendingHeader_->packetSize()));
       pendingHeader_.clear();
     }
 
@@ -145,8 +146,8 @@ void FifoReadCallback::readDataAvailable(size_t len) noexcept {
         return;
       }
 
-      forwardMessage(packetHeader,
-                     readBuffer_.split(packetHeader.packetSize()));
+      forwardMessage(
+          packetHeader, readBuffer_.split(packetHeader.packetSize()));
     }
   } catch (const std::exception& ex) {
     CHECK(false) << "Unexpected exception: " << ex.what();
@@ -163,14 +164,20 @@ void FifoReadCallback::handleMessageHeader(MessageHeader msgHeader) noexcept {
   }
 }
 
-void FifoReadCallback::forwardMessage(const PacketHeader& header,
-                                      std::unique_ptr<folly::IOBuf> buf) {
+void FifoReadCallback::forwardMessage(
+    const PacketHeader& header,
+    std::unique_ptr<folly::IOBuf> buf) {
   auto data = buf->coalesce();
   CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
   if (typeId_ != 0) {
-    messageReady_(header.connectionId(), header.packetId(),
-                  std::move(from_), std::move(to_), typeId_, msgStartTime_,
-                  data);
+    messageReady_(
+        header.connectionId(),
+        header.packetId(),
+        std::move(from_),
+        std::move(to_),
+        typeId_,
+        msgStartTime_,
+        data);
     typeId_ = 0;
   } else {
     VLOG(2) << "Type id is 0. Skipping message.";
@@ -186,7 +193,9 @@ void FifoReadCallback::readErr(const folly::AsyncSocketException& e) noexcept {
 }
 
 FifoReaderManager::FifoReaderManager(
-    folly::EventBase& evb, MessageReadyFn messageReady, std::string dir,
+    folly::EventBase& evb,
+    MessageReadyFn messageReady,
+    std::string dir,
     std::unique_ptr<boost::regex> filenamePattern)
     : evb_(evb),
       messageReady_(std::move(messageReady)),
@@ -210,10 +219,10 @@ std::vector<std::string> FifoReaderManager::getMatchedFiles() const {
           continue;
         }
         auto& path = it->path();
-        if (!filenamePattern_ ||
-            boost::regex_search(path.filename().string(),
-                                *filenamePattern_,
-                                boost::regex_constants::match_default)) {
+        if (!filenamePattern_ || boost::regex_search(
+                                     path.filename().string(),
+                                     *filenamePattern_,
+                                     boost::regex_constants::match_default)) {
           fifos.emplace_back(path.string());
         }
       }
@@ -224,7 +233,6 @@ std::vector<std::string> FifoReaderManager::getMatchedFiles() const {
 
   return fifos;
 }
-
 
 void FifoReaderManager::runScanDirectory() {
   auto fifos = getMatchedFiles();
@@ -238,17 +246,15 @@ void FifoReaderManager::runScanDirectory() {
           new folly::AsyncPipeReader(&evb_, fd));
       auto callback = folly::make_unique<FifoReadCallback>(fifo, messageReady_);
       pipeReader->setReadCB(callback.get());
-      fifoReaders_.emplace(fifo,
-                           FifoReader(std::move(pipeReader),
-                                      std::move(callback)));
+      fifoReaders_.emplace(
+          fifo, FifoReader(std::move(pipeReader), std::move(callback)));
     } else {
       PLOG(WARNING) << "Error opening fifo: " << fifo;
     }
   }
 
-  evb_.runAfterDelay([this]() {
-      runScanDirectory();
-    }, kPollDirectoryIntervalMs);
+  evb_.runAfterDelay(
+      [this]() { runScanDirectory(); }, kPollDirectoryIntervalMs);
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

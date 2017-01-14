@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -36,17 +36,12 @@ void prepareRand() {
   }
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 TEST(Trie, SanityTest) {
   Trie<void*> trie;
 
-  std::string k[] = {
-    "hello",
-    "world",
-    "!helloo~",
-    ""
-  };
+  std::string k[] = {"hello", "world", "!helloo~", ""};
 
   // Get Misses
   for (auto& str : k) {
@@ -71,26 +66,12 @@ TEST(Trie, SanityTest) {
 TEST(Trie, PrefixTest) {
   Trie<void*> trie;
 
-  std::string k[] = {
-    "a",
-    "ab",
-    "abc",
-    "abd"
-  };
+  std::string k[] = {"a", "ab", "abc", "abd"};
 
-  std::string h[] = {
-    "a",
-    "ab111",
-    "abc",
-    "abdasdfkljasdklfjsdaklfjsdflkj"
-  };
+  std::string h[] = {"a", "ab111", "abc", "abdasdfkljasdklfjsdaklfjsdflkj"};
   int nkh = sizeof(h) / sizeof(h[0]);
 
-  std::string m[] = {
-    "b",
-    "cd",
-    ""
-  };
+  std::string m[] = {"b", "cd", ""};
 
   // Get Misses
   for (auto& str : h) {
@@ -125,16 +106,7 @@ TEST(Trie, PrefixTest2) {
 TEST(Trie, IteratorTest) {
   Trie<int> trie;
 
-  std::string k[] = {
-    "a",
-    "ab",
-    "abc",
-    "abd",
-    "baa",
-    "bab",
-    "baac",
-    ""
-  };
+  std::string k[] = {"a", "ab", "abc", "abd", "baa", "bab", "baac", ""};
   int nk = sizeof(k) / sizeof(k[0]);
 
   // Sets
@@ -158,23 +130,14 @@ TEST(Trie, IteratorTest) {
     ++count2[it.second];
   }
   for (auto i = 0; i < nk; ++i) {
-    EXPECT_TRUE(1 == count2[i+1]);
+    EXPECT_TRUE(1 == count2[i + 1]);
   }
 }
 
 TEST(Trie, ConstructorTest) {
   Trie<int> trie;
 
-  std::string k[] = {
-    "",
-    "a",
-    "ab",
-    "abc",
-    "abd",
-    "baa",
-    "baac",
-    "bab"
-  };
+  std::string k[] = {"", "a", "ab", "abc", "abd", "baa", "baac", "bab"};
   int nk = sizeof(k) / sizeof(k[0]);
 
   // Sets
@@ -252,7 +215,7 @@ TEST(Trie, RandTestGet) {
     map[keys[i]] = i;
   }
 
-  for (int i = 0; i < (1<<16); ++i) {
+  for (int i = 0; i < (1 << 16); ++i) {
     auto s = facebook::memcache::randomString(1, 20);
     auto it = map.find(s);
     if (it == map.end()) {
@@ -269,7 +232,7 @@ TEST(Trie, RandTestGetPrefix) {
     map[keys[i]] = i;
   }
 
-  for (int i = 0; i < (1<<16); ++i) {
+  for (int i = 0; i < (1 << 16); ++i) {
     auto s = facebook::memcache::randomString(1, 20);
     int need = -1;
     for (int i = s.length(); i >= 0; --i) {
@@ -317,7 +280,7 @@ TEST(Trie, Const) {
   EXPECT_TRUE(trie.cbegin()->second == 1);
 }
 
-int main(int argc, char **argv){
+int main(int argc, char** argv) {
   prepareRand();
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

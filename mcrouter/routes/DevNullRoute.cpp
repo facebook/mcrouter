@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,9 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeDevNullRoute() {
   return makeMcrouterRouteHandleWithInfo<DevNullRoute>();
@@ -27,5 +29,6 @@ McrouterRouteHandlePtr makeDevNullRoute(
     const folly::dynamic&) {
   return makeDevNullRoute();
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

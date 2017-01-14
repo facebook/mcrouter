@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,10 @@
 
 #include "mcrouter/lib/cycles/Accumulator.h"
 
-namespace facebook { namespace memcache { namespace cycles { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace cycles {
+namespace detail {
 
 ExtractorThread::~ExtractorThread() {
   stop();
@@ -26,15 +29,17 @@ void ExtractorThread::start(std::function<void(CycleStats)> fn) {
     return;
   }
 
-  thread_ = std::thread([this, func = std::move(fn)] {
+  thread_ = std::thread([ this, func = std::move(fn) ] {
     while (running_.load()) {
       func(detail::extract());
 
       // Sleep
       {
         std::unique_lock<std::mutex> lk(mutex_);
-        cv_.wait_for(lk, std::chrono::milliseconds(kExtractionIntervalMs),
-                         [this] { return !running_.load(); });
+        cv_.wait_for(
+            lk, std::chrono::milliseconds(kExtractionIntervalMs), [this] {
+              return !running_.load();
+            });
       }
     }
   });
@@ -48,5 +53,7 @@ void ExtractorThread::stop() noexcept {
     }
   }
 }
-
-}}}} // namespace facebook::memcache::cycles::detail
+}
+}
+}
+} // namespace facebook::memcache::cycles::detail

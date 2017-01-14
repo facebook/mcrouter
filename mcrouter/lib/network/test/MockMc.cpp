@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,8 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 void MockMc::CacheItem::updateLeaseToken() {
   static uint64_t leaseCounter = 100;
@@ -26,15 +27,12 @@ void MockMc::CacheItem::updateCasToken() {
   casToken = casCounter++;
 }
 
-MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v)
-    : value(std::move(v)) {
-}
+MockMc::Item::Item(std::unique_ptr<folly::IOBuf> v) : value(std::move(v)) {}
 
 MockMc::Item::Item(const folly::IOBuf& v, int32_t t, uint64_t f)
     : value(v.clone()),
-      exptime(t != 0 && t <= 60*60*24*30 ? t + time(nullptr) : t),
-      flags(f) {
-}
+      exptime(t != 0 && t <= 60 * 60 * 24 * 30 ? t + time(nullptr) : t),
+      flags(f) {}
 
 const MockMc::Item* MockMc::get(folly::StringPiece key) {
   auto it = findUnexpired(key);
@@ -122,8 +120,9 @@ bool MockMc::touch(folly::StringPiece key, int32_t newExptime) {
   if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
     return false;
   }
-  it->second.item.exptime = newExptime != 0 && newExptime <= 60*60*24*30
-    ? newExptime + time(nullptr) : newExptime;
+  it->second.item.exptime = newExptime != 0 && newExptime <= 60 * 60 * 24 * 30
+      ? newExptime + time(nullptr)
+      : newExptime;
   return true;
 }
 
@@ -132,15 +131,16 @@ bool MockMc::touch(folly::StringPiece key, int32_t newExptime) {
  *           (stale_item, token)  On a miss.
  *           (stale_item, 1)      On a hot miss (another lease outstanding).
  */
-std::pair<const MockMc::Item*, uint64_t>
-MockMc::leaseGet(folly::StringPiece key) {
+std::pair<const MockMc::Item*, uint64_t> MockMc::leaseGet(
+    folly::StringPiece key) {
   auto it = findUnexpired(key);
   if (it == citems_.end()) {
     /* Lease get on a non-existing item: create a new empty item and
        put it in TLRU with valid token */
-    it = citems_.insert(
-      std::make_pair(key.str(),
-                     CacheItem(Item(folly::IOBuf::copyBuffer(""))))).first;
+    it = citems_
+             .insert(std::make_pair(
+                 key.str(), CacheItem(Item(folly::IOBuf::copyBuffer("")))))
+             .first;
     it->second.state = CacheItem::TLRU;
     it->second.updateLeaseToken();
     it->second.updateCasToken();
@@ -165,8 +165,8 @@ MockMc::leaseGet(folly::StringPiece key) {
   CHECK(false);
 }
 
-MockMc::LeaseSetResult MockMc::leaseSet(folly::StringPiece key, Item item,
-                                        uint64_t token) {
+MockMc::LeaseSetResult
+MockMc::leaseSet(folly::StringPiece key, Item item, uint64_t token) {
   auto it = findUnexpired(key);
   if (it == citems_.end()) {
     /* Item doesn't exist in cache or TLRU */
@@ -174,8 +174,7 @@ MockMc::LeaseSetResult MockMc::leaseSet(folly::StringPiece key, Item item,
   }
 
   auto& citem = it->second;
-  if (citem.state == CacheItem::CACHE ||
-      citem.leaseToken == token) {
+  if (citem.state == CacheItem::CACHE || citem.leaseToken == token) {
     /* Either the item is a hit, or the token is valid. Regular set */
     set(key, std::move(item));
     return LeaseSetResult::STORED;
@@ -195,8 +194,8 @@ std::pair<const MockMc::Item*, uint64_t> MockMc::gets(folly::StringPiece key) {
   return std::make_pair(&it->second.item, it->second.casToken);
 }
 
-MockMc::CasResult MockMc::cas(folly::StringPiece key, Item item,
-                              uint64_t token) {
+MockMc::CasResult
+MockMc::cas(folly::StringPiece key, Item item, uint64_t token) {
   auto it = findUnexpired(key);
   if (it == citems_.end() || it->second.state != CacheItem::CACHE) {
     return CasResult::NOT_FOUND;
@@ -215,8 +214,7 @@ MockMc::findUnexpired(folly::StringPiece key) {
     return it;
   }
 
-  if (it->second.item.exptime > 0
-      && it->second.item.exptime <= time(nullptr)) {
+  if (it->second.item.exptime > 0 && it->second.item.exptime <= time(nullptr)) {
     citems_.erase(it);
     return citems_.end();
   }
@@ -227,5 +225,5 @@ MockMc::findUnexpired(folly::StringPiece key) {
 void MockMc::flushAll() {
   citems_.clear();
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

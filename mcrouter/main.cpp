@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -31,11 +31,11 @@
 #include <folly/Range.h>
 #include <folly/ScopeGuard.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/options.h"
 #include "mcrouter/Proxy.h"
+#include "mcrouter/config.h"
+#include "mcrouter/options.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/server.h"
 #include "mcrouter/standalone_options.h"
@@ -52,11 +52,7 @@ using std::vector;
 constexpr int kExitStatusTransientError = 2;
 constexpr int kExitStatusUnrecoverableError = 3;
 
-enum class ValidateConfigMode {
-  NONE = 0,
-  EXIT = 1,
-  RUN = 2
-};
+enum class ValidateConfigMode { NONE = 0, EXIT = 1, RUN = 2 };
 
 static McrouterOptions opts;
 static McrouterStandaloneOptions standaloneOpts;
@@ -64,17 +60,19 @@ static McrouterStandaloneOptions standaloneOpts;
 #define print_usage(opt, desc) fprintf(stderr, "\t%*s%s\n", -49, opt, desc)
 
 static void print_usage_and_die(char* progname, int errorCode) {
-
-  fprintf(stderr, "%s\n"
-          "usage: %s [options] -p port(s) --config file:<config-file>\n\n",
-          MCROUTER_PACKAGE_STRING, progname);
+  fprintf(
+      stderr,
+      "%s\n"
+      "usage: %s [options] -p port(s) --config file:<config-file>\n\n",
+      MCROUTER_PACKAGE_STRING,
+      progname);
 
   fprintf(stderr, "libmcrouter options:\n");
 
   auto opt_data = McrouterOptions::getOptionData();
   auto standalone_opt_data = McrouterStandaloneOptions::getOptionData();
-  opt_data.insert(opt_data.end(), standalone_opt_data.begin(),
-                  standalone_opt_data.end());
+  opt_data.insert(
+      opt_data.end(), standalone_opt_data.begin(), standalone_opt_data.end());
   std::string current_group;
   for (auto& opt : opt_data) {
     if (!opt.long_option.empty()) {
@@ -82,11 +80,17 @@ static void print_usage_and_die(char* progname, int errorCode) {
         current_group = opt.group;
         fprintf(stderr, "\n  %s\n", current_group.c_str());
       }
-      if (opt.short_option) fprintf(stderr, "\t-%c,", opt.short_option);
-      else fprintf(stderr, "\t   ");
+      if (opt.short_option)
+        fprintf(stderr, "\t-%c,", opt.short_option);
+      else
+        fprintf(stderr, "\t   ");
 
-      fprintf(stderr, " --%*s %s", -42, opt.long_option.c_str(),
-              opt.docstring.c_str());
+      fprintf(
+          stderr,
+          " --%*s %s",
+          -42,
+          opt.long_option.c_str(),
+          opt.docstring.c_str());
 
       if (opt.type != McrouterOptionData::Type::toggle)
         fprintf(stderr, " [default: %s]", opt.default_value.c_str());
@@ -97,29 +101,34 @@ static void print_usage_and_die(char* progname, int errorCode) {
 
   fprintf(stderr, "\nMisc options:\n");
 
-
-  print_usage("    --proxy-threads", "Like --num-proxies, but also accepts"
-              " 'auto' to start one thread per core");
+  print_usage(
+      "    --proxy-threads",
+      "Like --num-proxies, but also accepts"
+      " 'auto' to start one thread per core");
   print_usage("-h, --help", "help");
   print_usage("-V, --version", "version");
   print_usage("-v, --verbosity", "Set verbosity of VLOG");
-  print_usage("    --validate-config=exit|run",
-              "Enable strict config checking. If 'exit' or no argument "
-              "is provided, exit immediately with good or error status. "
-              "Otherwise keep running if config is valid.");
+  print_usage(
+      "    --validate-config=exit|run",
+      "Enable strict config checking. If 'exit' or no argument "
+      "is provided, exit immediately with good or error status. "
+      "Otherwise keep running if config is valid.");
 
   fprintf(stderr, "\nRETURN VALUE\n");
   print_usage("2", "On a problem that might be resolved by restarting later.");
-  static_assert(2 == kExitStatusTransientError,
-                "Transient error status must be 2");
-  print_usage("3", "On a problem that will definitely not be resolved by "
-              "restarting.");
-  static_assert(3 == kExitStatusUnrecoverableError,
-                "Unrecoverable error status must be 3");
+  static_assert(
+      2 == kExitStatusTransientError, "Transient error status must be 2");
+  print_usage(
+      "3",
+      "On a problem that will definitely not be resolved by "
+      "restarting.");
+  static_assert(
+      3 == kExitStatusUnrecoverableError,
+      "Unrecoverable error status must be 3");
   exit(errorCode);
 }
 
-std::string constructArgString(int argc, char **argv) {
+std::string constructArgString(int argc, char** argv) {
   std::string res;
   for (int i = 1; i < argc; ++i) {
     res += argv[i];
@@ -128,25 +137,25 @@ std::string constructArgString(int argc, char **argv) {
   return res;
 }
 
-static void parse_options(int argc,
-                          char** argv,
-                          unordered_map<string, string>& option_dict,
-                          unordered_map<string, string>& standalone_option_dict,
-                          unordered_set<string>& unrecognized_options,
-                          ValidateConfigMode* validate_configs,
-                          string* flavor) {
-
+static void parse_options(
+    int argc,
+    char** argv,
+    unordered_map<string, string>& option_dict,
+    unordered_map<string, string>& standalone_option_dict,
+    unordered_set<string>& unrecognized_options,
+    ValidateConfigMode* validate_configs,
+    string* flavor) {
   vector<option> long_options = {
-    { "verbosity",                   1, nullptr, 'v'},
-    { "help",                        0, nullptr, 'h'},
-    { "version",                     0, nullptr, 'V'},
-    { "validate-config",             2, nullptr,  0 },
-    { "proxy-threads",               1, nullptr,  0 },
+      {"verbosity", 1, nullptr, 'v'},
+      {"help", 0, nullptr, 'h'},
+      {"version", 0, nullptr, 'V'},
+      {"validate-config", 2, nullptr, 0},
+      {"proxy-threads", 1, nullptr, 0},
 
-    // Deprecated or not supported
-    { "gets",                        0, nullptr,  0 },
-    { "skip-sanity-checks",          0, nullptr,  0 },
-    { "retry-timeout",               1, nullptr,  0 },
+      // Deprecated or not supported
+      {"gets", 0, nullptr, 0},
+      {"skip-sanity-checks", 0, nullptr, 0},
+      {"retry-timeout", 1, nullptr, 0},
   };
 
   string optstring = "dD:v:hV";
@@ -155,18 +164,20 @@ static void parse_options(int argc,
   auto option_data = McrouterOptions::getOptionData();
   auto standalone_data = McrouterStandaloneOptions::getOptionData();
   auto combined_option_data = option_data;
-  combined_option_data.insert(combined_option_data.end(),
-                              standalone_data.begin(),
-                              standalone_data.end());
+  combined_option_data.insert(
+      combined_option_data.end(),
+      standalone_data.begin(),
+      standalone_data.end());
   for (auto& opt : combined_option_data) {
     if (!opt.long_option.empty()) {
       int extra_arg = (opt.type == McrouterOptionData::Type::toggle ? 0 : 1);
       long_options.push_back(
-        {opt.long_option.c_str(), extra_arg, nullptr, opt.short_option});
+          {opt.long_option.c_str(), extra_arg, nullptr, opt.short_option});
 
       if (opt.short_option) {
         optstring.push_back(opt.short_option);
-        if (extra_arg) optstring.push_back(':');
+        if (extra_arg)
+          optstring.push_back(':');
       }
     }
   }
@@ -175,100 +186,104 @@ static void parse_options(int argc,
 
   int long_index = -1;
   int c;
-  while ((c = getopt_long(argc, argv, optstring.c_str(), long_options.data(),
-                          &long_index)) != -1) {
+  while (
+      (c = getopt_long(
+           argc, argv, optstring.c_str(), long_options.data(), &long_index)) !=
+      -1) {
     switch (c) {
-    case 'v':
-      FLAGS_v = folly::to<int>(optarg);
-      break;
+      case 'v':
+        FLAGS_v = folly::to<int>(optarg);
+        break;
 
-    case 'h':
-      print_usage_and_die(argv[0], /* errorCode */ 0);
-      break;
-    case 'V':
-      printf("%s\n", MCROUTER_PACKAGE_STRING);
-      exit(0);
-      break;
+      case 'h':
+        print_usage_and_die(argv[0], /* errorCode */ 0);
+        break;
+      case 'V':
+        printf("%s\n", MCROUTER_PACKAGE_STRING);
+        exit(0);
+        break;
 
-    case 0:
-    default:
-      if (long_index != -1 &&
-          strcmp("constantly-reload-configs",
-                 long_options[long_index].name) == 0) {
-        LOG(ERROR) << "CRITICAL: You have enabled constantly-reload-configs. "
-          "This undocumented feature is incredibly dangerous. "
-          "It will result in massively increased CPU consumption. "
-          "It will trigger lots of edge cases, surely causing hard failures. "
-          "If you're using this for *anything* other than testing, "
-          "please resign.";
-      }
+      case 0:
+      default:
+        if (long_index != -1 &&
+            strcmp(
+                "constantly-reload-configs", long_options[long_index].name) ==
+                0) {
+          LOG(ERROR)
+              << "CRITICAL: You have enabled constantly-reload-configs. "
+                 "This undocumented feature is incredibly dangerous. "
+                 "It will result in massively increased CPU consumption. "
+                 "It will trigger lots of edge cases, surely causing hard failures. "
+                 "If you're using this for *anything* other than testing, "
+                 "please resign.";
+        }
 
-      /* If the current short/long option is found in opt_data,
-         set it in the opt_dict and return true.  False otherwise. */
-      auto find_and_set = [&] (const vector<McrouterOptionData>& opt_data,
-                               unordered_map<string, string>& opt_dict) {
-        for (auto& opt : opt_data) {
-          if (!opt.long_option.empty()) {
-            if ((opt.short_option && opt.short_option == c) ||
-                (!opt.long_option.empty() && long_index != -1 &&
-                 opt.long_option == long_options[long_index].name)) {
+        /* If the current short/long option is found in opt_data,
+           set it in the opt_dict and return true.  False otherwise. */
+        auto find_and_set = [&](
+            const vector<McrouterOptionData>& opt_data,
+            unordered_map<string, string>& opt_dict) {
+          for (auto& opt : opt_data) {
+            if (!opt.long_option.empty()) {
+              if ((opt.short_option && opt.short_option == c) ||
+                  (!opt.long_option.empty() && long_index != -1 &&
+                   opt.long_option == long_options[long_index].name)) {
+                if (opt.type == McrouterOptionData::Type::toggle) {
+                  opt_dict[opt.name] =
+                      (opt.default_value == "false" ? "1" : "0");
+                } else {
+                  opt_dict[opt.name] = optarg;
+                }
 
-              if (opt.type == McrouterOptionData::Type::toggle) {
-                opt_dict[opt.name] = (opt.default_value == "false" ?
-                                      "1" : "0");
-              } else {
-                opt_dict[opt.name] = optarg;
+                return true;
               }
-
-              return true;
             }
           }
+          return false;
+        };
+
+        if (find_and_set(option_data, option_dict)) {
+          break;
         }
-        return false;
-      };
 
-      if (find_and_set(option_data, option_dict)) {
-        break;
-      }
+        if (find_and_set(standalone_data, standalone_option_dict)) {
+          break;
+        }
 
-      if (find_and_set(standalone_data, standalone_option_dict)) {
-        break;
-      }
-
-      if (long_index == -1) {
-        unrecognized_options.insert(argv[optind - 1]);
-      } else if (strcmp("proxy-threads",
-                        long_options[long_index].name) == 0) {
-        if (strcmp(optarg, "auto") == 0) {
-          int nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-          if (nprocs > 0) {
-            option_dict["num_proxies"] = std::to_string(nprocs);
+        if (long_index == -1) {
+          unrecognized_options.insert(argv[optind - 1]);
+        } else if (
+            strcmp("proxy-threads", long_options[long_index].name) == 0) {
+          if (strcmp(optarg, "auto") == 0) {
+            int nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+            if (nprocs > 0) {
+              option_dict["num_proxies"] = std::to_string(nprocs);
+            } else {
+              LOG(INFO) << "Couldn't determine how many cores are available. "
+                           "Defaulting to "
+                        << DEFAULT_NUM_PROXIES << " proxy thread(s)";
+            }
           } else {
-            LOG(INFO) << "Couldn't determine how many cores are available. "
-                         "Defaulting to " << DEFAULT_NUM_PROXIES <<
-                         " proxy thread(s)";
+            option_dict["num_proxies"] = optarg;
           }
+        } else if (
+            strcmp("validate-config", long_options[long_index].name) == 0) {
+          if (!optarg || strcmp(optarg, "exit") == 0) {
+            *validate_configs = ValidateConfigMode::EXIT;
+          } else if (strcmp(optarg, "run") == 0) {
+            *validate_configs = ValidateConfigMode::RUN;
+          } else {
+            LOG(ERROR) << "Invalid argument for --validate-config: '" << optarg
+                       << "'. Ignoring the option.";
+          }
+        } else if (
+            strcmp("retry-timeout", long_options[long_index].name) == 0) {
+          LOG(WARNING) << "--retry-timeout is deprecated, use"
+                          " --probe-timeout-initial";
+          option_dict["probe_delay_initial_ms"] = optarg;
         } else {
-          option_dict["num_proxies"] = optarg;
+          unrecognized_options.insert(argv[optind - 1]);
         }
-      } else if (strcmp("validate-config",
-                        long_options[long_index].name) == 0) {
-        if (!optarg || strcmp(optarg, "exit") == 0) {
-          *validate_configs = ValidateConfigMode::EXIT;
-        } else if (strcmp(optarg, "run") == 0) {
-          *validate_configs = ValidateConfigMode::RUN;
-        } else {
-          LOG(ERROR) << "Invalid argument for --validate-config: '"
-                     << optarg << "'. Ignoring the option.";
-        }
-      } else if (strcmp("retry-timeout",
-                        long_options[long_index].name) == 0) {
-        LOG(WARNING) << "--retry-timeout is deprecated, use"
-                        " --probe-timeout-initial";
-        option_dict["probe_delay_initial_ms"] = optarg;
-      } else {
-        unrecognized_options.insert(argv[optind - 1]);
-      }
     }
     long_index = -1;
   }
@@ -290,8 +305,7 @@ static int validate_options() {
     LOG(ERROR) << "invalid number of proxy threads";
     return 0;
   }
-  if (standaloneOpts.ssl_ports.empty() &&
-      standaloneOpts.ports.empty() &&
+  if (standaloneOpts.ssl_ports.empty() && standaloneOpts.ports.empty() &&
       standaloneOpts.listen_sock_fd < 0 &&
       standaloneOpts.unix_domain_sock.empty()) {
     LOG(ERROR) << "invalid ports";
@@ -306,19 +320,19 @@ static int validate_options() {
   return 1;
 }
 
-void notify_command_line(int argc, char ** argv) {
+void notify_command_line(int argc, char** argv) {
   size_t len = 0;
   int ii;
-  char *cc;
+  char* cc;
 
   for (ii = 0; ii < argc; ii++) {
     len += 1 + strlen(argv[ii]);
   }
-  char *cmd_line = (char *) malloc(len + 1);
-  char *ptr = cmd_line;
+  char* cmd_line = (char*)malloc(len + 1);
+  char* ptr = cmd_line;
   for (ii = 0; ii < argc; ii++) {
     cc = argv[ii];
-    while(*cc) {
+    while (*cc) {
       *ptr++ = *cc++;
     }
     *ptr++ = ' ';
@@ -329,19 +343,25 @@ void notify_command_line(int argc, char ** argv) {
   free(cmd_line);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   FLAGS_v = 1;
   FLAGS_logtostderr = 1;
   google::InitGoogleLogging(argv[0]);
 
   unordered_map<string, string> option_dict, st_option_dict,
-    cmdline_option_dict, cmdline_st_option_dict;
+      cmdline_option_dict, cmdline_st_option_dict;
   unordered_set<string> unrecognized_options;
   ValidateConfigMode validate_configs{ValidateConfigMode::NONE};
   std::string flavor;
 
-  parse_options(argc, argv, cmdline_option_dict, cmdline_st_option_dict,
-                unrecognized_options, &validate_configs, &flavor);
+  parse_options(
+      argc,
+      argv,
+      cmdline_option_dict,
+      cmdline_st_option_dict,
+      unrecognized_options,
+      &validate_configs,
+      &flavor);
 
   if (flavor.empty()) {
     option_dict = cmdline_option_dict;
@@ -356,13 +376,14 @@ int main(int argc, char **argv) {
     }
   }
   auto log_file = st_option_dict.find("log_file");
-  if (log_file != st_option_dict.end()
-      && !log_file->second.empty()) {
-    auto fd = open(log_file->second.c_str(), O_CREAT | O_WRONLY | O_APPEND,
-                   S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH);
+  if (log_file != st_option_dict.end() && !log_file->second.empty()) {
+    auto fd = open(
+        log_file->second.c_str(),
+        O_CREAT | O_WRONLY | O_APPEND,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
     if (fd == -1) {
-      LOG(ERROR) << "Couldn't open log file " << log_file->second <<
-                    " for writing: " << strerror(errno);
+      LOG(ERROR) << "Couldn't open log file " << log_file->second
+                 << " for writing: " << strerror(errno);
     } else {
       LOG(INFO) << "Logging to " << log_file->second;
       PCHECK(dup2(fd, STDERR_FILENO));
@@ -370,17 +391,20 @@ int main(int argc, char **argv) {
   }
 
   auto commandArgs = constructArgString(argc, argv);
-  failure::setServiceContext("mcrouter",
-                             std::string(argv[0]) + " " + commandArgs);
+  failure::setServiceContext(
+      "mcrouter", std::string(argv[0]) + " " + commandArgs);
   failure::setHandler(failure::handlers::logToStdError());
 
-  auto check_errors =
-  [&] (const vector<McrouterOptionError>& errors) {
+  auto check_errors = [&](const vector<McrouterOptionError>& errors) {
     if (!errors.empty()) {
       for (auto& e : errors) {
-        MC_LOG_FAILURE(opts, failure::Category::kInvalidOption,
-                       "Option parse error: {}={}, {}",
-                       e.requestedName, e.requestedValue, e.errorMsg);
+        MC_LOG_FAILURE(
+            opts,
+            failure::Category::kInvalidOption,
+            "Option parse error: {}={}, {}",
+            e.requestedName,
+            e.requestedValue,
+            e.errorMsg);
       }
     }
   };
@@ -396,8 +420,11 @@ int main(int argc, char **argv) {
   check_errors(errors);
 
   for (const auto& option : unrecognized_options) {
-    MC_LOG_FAILURE(opts, failure::Category::kInvalidOption,
-                   "Unrecognized option: {}", option);
+    MC_LOG_FAILURE(
+        opts,
+        failure::Category::kInvalidOption,
+        "Unrecognized option: {}",
+        option);
   }
 
   srand(time(nullptr) + getpid());

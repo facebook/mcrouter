@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,15 +23,15 @@ TEST(Ch3Func, basic) {
   Ch3HashFunc func_max(furc_maximum_pool_size());
   Ch3HashFunc func_99999(99999);
 
-  //tests with 'sample' as key
+  // tests with 'sample' as key
   EXPECT_TRUE(func_100("sample") == 97);
   EXPECT_TRUE(func_1("sample") == 0);
 
-  //tests with empty string as key
+  // tests with empty string as key
   EXPECT_TRUE(func_100("") == 72);
   EXPECT_TRUE(func_1("") == 0);
 
-  //tests with max pool size
+  // tests with max pool size
   EXPECT_TRUE(func_max("") == 6173600);
   EXPECT_TRUE(func_max("sample") == 5167780);
 
@@ -43,7 +43,7 @@ TEST(Ch3Func, basic) {
   }
   EXPECT_TRUE(31015 == func_99999(test_max_key));
 
-  //127 .. -128
+  // 127 .. -128
   std::reverse(test_max_key.begin(), test_max_key.end());
   EXPECT_TRUE(67101 == func_99999(test_max_key));
 }
@@ -57,9 +57,7 @@ TEST(Ch3Func, ch3_3) {
     ++ch3_counts[ch3_func_3(key)];
   }
 
-  EXPECT_TRUE(std::vector<size_t>(
-    {307, 342, 351}) ==
-    ch3_counts);
+  EXPECT_TRUE(std::vector<size_t>({307, 342, 351}) == ch3_counts);
 }
 
 TEST(Ch3HashFunc, ch3_10) {
@@ -71,7 +69,8 @@ TEST(Ch3HashFunc, ch3_10) {
     ++ch3_counts[ch3_func_10(key)];
   }
 
-  EXPECT_TRUE(std::vector<size_t>(
-    {995, 955, 1046, 968, 1032, 972, 1016, 1038, 1010, 968}) ==
-    ch3_counts);
+  EXPECT_TRUE(
+      std::vector<size_t>(
+          {995, 955, 1046, 968, 1032, 972, 1016, 1038, 1010, 968}) ==
+      ch3_counts);
 }

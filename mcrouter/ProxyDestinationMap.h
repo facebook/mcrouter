@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,7 +20,8 @@
 
 #include "mcrouter/AsyncTimer.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct AccessPoint;
 
@@ -52,15 +53,17 @@ class ProxyDestinationMap {
    * otherwise, returns nullptr.
    */
   std::shared_ptr<ProxyDestination> find(
-      const AccessPoint& ap, std::chrono::milliseconds timeout) const;
+      const AccessPoint& ap,
+      std::chrono::milliseconds timeout) const;
   /**
    * If ProxyDestination is already stored in this object - returns it;
    * otherwise creates a new one.
    */
-  std::shared_ptr<ProxyDestination> emplace(std::shared_ptr<AccessPoint> ap,
-                                            std::chrono::milliseconds timeout,
-                                            uint64_t qosClass,
-                                            uint64_t qosPath);
+  std::shared_ptr<ProxyDestination> emplace(
+      std::shared_ptr<AccessPoint> ap,
+      std::chrono::milliseconds timeout,
+      uint64_t qosClass,
+      uint64_t qosPath);
 
   /**
    * Remove destination from both active and inactive lists
@@ -137,5 +140,6 @@ class ProxyDestinationMap {
 
   friend class AsyncTimer<ProxyDestinationMap>;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

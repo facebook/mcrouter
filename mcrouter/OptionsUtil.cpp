@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,16 +18,19 @@
 
 namespace fs = boost::filesystem;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
-std::string getDebugFifoFullPath(const McrouterOptions& opts,
-                                 folly::StringPiece fifoName) {
+std::string getDebugFifoFullPath(
+    const McrouterOptions& opts,
+    folly::StringPiece fifoName) {
   assert(!opts.debug_fifo_root.empty());
   auto directory = fs::path(opts.debug_fifo_root);
-  auto file = fs::path(folly::sformat("{}.{}.{}", getStatPrefix(opts),
-                                      fifoName, "debugfifo"));
+  auto file = fs::path(
+      folly::sformat("{}.{}.{}", getStatPrefix(opts), fifoName, "debugfifo"));
   return (directory / file).string();
 }
 
@@ -35,9 +38,7 @@ std::string getDebugFifoFullPath(const McrouterOptions& opts,
 
 std::string getStatPrefix(const McrouterOptions& opts) {
   return folly::sformat(
-    "libmcrouter.{}.{}",
-    opts.service_name,
-    opts.router_name);
+      "libmcrouter.{}.{}", opts.service_name, opts.router_name);
 }
 
 std::string getClientDebugFifoFullPath(const McrouterOptions& opts) {
@@ -47,5 +48,6 @@ std::string getClientDebugFifoFullPath(const McrouterOptions& opts) {
 std::string getServerDebugFifoFullPath(const McrouterOptions& opts) {
   return getDebugFifoFullPath(opts, "server");
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

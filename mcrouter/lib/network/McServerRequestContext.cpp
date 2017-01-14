@@ -12,7 +12,8 @@
 #include "mcrouter/lib/network/McServerSession.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 McServerSession& McServerRequestContext::session() {
   assert(session_ != nullptr);
@@ -25,10 +26,7 @@ McServerRequestContext::McServerRequestContext(
     bool nr,
     std::shared_ptr<MultiOpParent> parent,
     bool isEndContext)
-    : session_(&s),
-      isEndContext_(isEndContext),
-      noReply_(nr),
-      reqid_(r) {
+    : session_(&s), isEndContext_(isEndContext), noReply_(nr), reqid_(r) {
   if (parent) {
     asciiState_ = folly::make_unique<AsciiState>();
     asciiState_->parent_ = std::move(parent);
@@ -50,8 +48,7 @@ McServerRequestContext::McServerRequestContext(
 }
 
 McServerRequestContext& McServerRequestContext::operator=(
-  McServerRequestContext&& other) {
-
+    McServerRequestContext&& other) {
   session_ = other.session_;
   isEndContext_ = other.isEndContext_;
   reqid_ = other.reqid_;
@@ -75,9 +72,11 @@ McServerRequestContext::~McServerRequestContext() {
 // Note: defined in .cpp in order to avoid circular dependency between
 // McServerRequestContext.h and MultiOpParent.h.
 bool McServerRequestContext::moveReplyToParent(
-    mc_res_t result, uint32_t errorCode, std::string&& errorMessage) const {
+    mc_res_t result,
+    uint32_t errorCode,
+    std::string&& errorMessage) const {
   return hasParent() &&
-         parent().reply(result, errorCode, std::move(errorMessage));
+      parent().reply(result, errorCode, std::move(errorMessage));
 }
 
 // Also defined in .cpp to avoid the same circular dependency
@@ -103,4 +102,5 @@ double McServerRequestContext::getDropProbability() const {
 
   return dropProbability;
 }
-}}  // facebook::memcache
+}
+} // facebook::memcache

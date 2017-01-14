@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,15 +13,17 @@
 #include <vector>
 
 #include <folly/Conv.h>
-#include <folly/dynamic.h>
 #include <folly/String.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
 using folly::dynamic;
 using std::string;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
@@ -32,8 +34,8 @@ double asPositiveDouble(const dynamic& obj, const string& keyName) {
   return d;
 }
 
-double asPositiveDoubleDefault(const dynamic& obj, const string& keyName,
-                               double def) {
+double
+asPositiveDoubleDefault(const dynamic& obj, const string& keyName, double def) {
   if (obj.count(keyName) && obj[keyName].isNumber()) {
     auto d = obj[keyName].asDouble();
     checkLogic(d > 0.0, "{} is nonpositive", keyName);
@@ -84,5 +86,6 @@ std::string RateLimiter::toDebugStr() const {
   }
   return folly::join('|', pieces);
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,22 +9,25 @@
  */
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 #ifndef LIBMC_FBTRACE_DISABLE
 
 template <class Request>
-typename std::enable_if<RequestHasFbTraceInfo<Request>::value,
-                        const mc_fbtrace_info_s*>::type
-inline getFbTraceInfo(const Request& request) {
+typename std::enable_if<
+    RequestHasFbTraceInfo<Request>::value,
+    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&
+                                                              request) {
   return request.fbtraceInfo();
 }
 
 template <class Request>
-typename std::enable_if<!RequestHasFbTraceInfo<Request>::value,
-                        const mc_fbtrace_info_s*>::type
-inline getFbTraceInfo(const Request& request) {
+typename std::enable_if<
+    !RequestHasFbTraceInfo<Request>::value,
+    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&
+                                                              request) {
   return nullptr;
 }
 
@@ -33,13 +36,18 @@ inline getFbTraceInfo(const Request& request) {
 
 template <class Reply>
 void McClientRequestContextBase::reply(Reply&& r) {
-  assert(state() == ReqState::PENDING_REPLY_QUEUE ||
-         state() == ReqState::WRITE_QUEUE ||
-         state() == ReqState::WRITE_QUEUE_CANCELED);
+  assert(
+      state() == ReqState::PENDING_REPLY_QUEUE ||
+      state() == ReqState::WRITE_QUEUE ||
+      state() == ReqState::WRITE_QUEUE_CANCELED);
   if (replyType_ != typeid(Reply)) {
-    LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
-                "Attempt to forward a reply of a wrong type. Expected '{}', "
-                "but received '{}'!", replyType_.name(), typeid(Reply).name());
+    LOG_FAILURE(
+        "AsyncMcClient",
+        failure::Category::kBrokenLogic,
+        "Attempt to forward a reply of a wrong type. Expected '{}', "
+        "but received '{}'!",
+        replyType_.name(),
+        typeid(Reply).name());
 
     replyErrorImpl(mc_res_local_error);
     return;
@@ -91,7 +99,6 @@ template <class Request>
 typename McClientRequestContext<Request>::Reply
 McClientRequestContext<Request>::waitForReply(
     std::chrono::milliseconds timeout) {
-
   batonWaitTimeout_ = timeout;
   baton_.wait(batonTimeoutHandler_);
 
@@ -129,9 +136,11 @@ McClientRequestContext<Request>::waitForReply(
       return std::move(replyStorage_.value());
     case ReqState::WRITE_QUEUE_CANCELED:
     case ReqState::NONE:
-      LOG_FAILURE("AsyncMcClient", failure::Category::kBrokenLogic,
-                  "Unexpected state of request: {}!",
-                  static_cast<uint64_t>(state()));
+      LOG_FAILURE(
+          "AsyncMcClient",
+          failure::Category::kBrokenLogic,
+          "Unexpected state of request: {}!",
+          static_cast<uint64_t>(state()));
   }
   return Reply(mc_res_local_error);
 }
@@ -198,8 +207,10 @@ void McClientRequestContextQueue::reply(
     } else {
       // With old mc_parser it's possible to receive unexpected replies, we need
       // to ignore them. But we need to log this.
-      LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
-                  "Received unexpected reply from server!");
+      LOG_FAILURE(
+          "AsyncMcClient",
+          failure::Category::kOther,
+          "Received unexpected reply from server!");
     }
   }
 
@@ -216,5 +227,5 @@ void McClientRequestContextQueue::reply(
     }
   }
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

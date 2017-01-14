@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,12 +13,15 @@
 
 #include <glog/logging.h>
 
-#include <folly/io/async/EventBase.h>
 #include <folly/MPMCQueue.h>
 #include <folly/Random.h>
 #include <folly/ThreadLocal.h>
+#include <folly/io/async/EventBase.h>
 
-namespace facebook { namespace memcache { namespace cycles { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace cycles {
+namespace detail {
 
 // Interval between data aggregations in milliseconds (must be strictly less
 // than kExtractingIntervalMs).
@@ -97,10 +100,12 @@ CycleStats Accumulator::aggregate() {
 
   // Calculate percentils
   if (stats.numSamples > 0) {
-    std::sort(samples_.begin(), samples_.begin() + stats.numSamples,
-              [](const Sample& lhr, const Sample& rhs) {
-                return lhr.length < rhs.length;
-              });
+    std::sort(
+        samples_.begin(),
+        samples_.begin() + stats.numSamples,
+        [](const Sample& lhr, const Sample& rhs) {
+          return lhr.length < rhs.length;
+        });
     stats.min = samples_[0].length;
     stats.p01 = samples_[stats.numSamples * 0.01].length;
     stats.p05 = samples_[stats.numSamples * 0.05].length;
@@ -119,13 +124,15 @@ CycleStats Accumulator::aggregate() {
 }
 
 void Accumulator::scheduleNextAggregation() {
-  this->eventBase_->runAfterDelay([&] {
-    CycleStats stats = this->aggregate();
-    if (stats.numSamples > 0) {
-      gStatsQueue.write(stats);
-    }
-    this->scheduleNextAggregation();
-  }, kAggregationIntervalMs);
+  this->eventBase_->runAfterDelay(
+      [&] {
+        CycleStats stats = this->aggregate();
+        if (stats.numSamples > 0) {
+          gStatsQueue.write(stats);
+        }
+        this->scheduleNextAggregation();
+      },
+      kAggregationIntervalMs);
 }
 
 Accumulator& currentAccumulator() {
@@ -163,5 +170,7 @@ CycleStats extract() {
 
   return stats;
 }
-
-}}}} // namespace facebook::memcache::cycles::detail
+}
+}
+}
+} // namespace facebook::memcache::cycles::detail

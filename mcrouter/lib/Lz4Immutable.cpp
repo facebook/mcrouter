@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -320,8 +320,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
 
         uint32_t matchPos = getPositionOnHash(state_.table, hash);
         match.seek(matchPos);
-      } while (((match.tell() + dictionaryDiff) <=
-                source.tell()) ||
+      } while (((match.tell() + dictionaryDiff) <= source.tell()) ||
                (match.peek<uint32_t>() != source.peek<uint32_t>()));
 
       if (!running) {
@@ -330,8 +329,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     }
 
     // Catch up - try to expand the match backwards.
-    while (source.tell() > anchorCursor.tell() &&
-           match.tell() > 0) {
+    while (source.tell() > anchorCursor.tell() && match.tell() > 0) {
       source.retreat(1);
       match.retreat(1);
       if (LIKELY(source.peek<uint8_t>() != match.peek<uint8_t>())) {
@@ -343,8 +341,7 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
 
     // Write literal
     {
-      size_t literalLen =
-          source.tell() - anchorCursor.tell();
+      size_t literalLen = source.tell() - anchorCursor.tell();
       token = output++;
 
       // Check output limit
@@ -370,16 +367,15 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     }
 
     // Encode offset
-    uint16_t offset = dicCursor.totalLength() - match.tell() +
-        source.tell();
+    uint16_t offset = dicCursor.totalLength() - match.tell() + source.tell();
     writeLE(output, static_cast<uint16_t>(offset));
     output += 2;
 
     // Encode matchLength
     {
       // we cannot go past the dictionary
-      size_t posLimit = source.tell() +
-          (dicCursor.totalLength() - match.tell());
+      size_t posLimit =
+          source.tell() + (dicCursor.totalLength() - match.tell());
       // Nor go past the source buffer
       posLimit = std::min(posLimit, matchLimit);
 

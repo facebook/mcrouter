@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,8 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Ref is a reference counting wrapper with value semantics.
@@ -29,13 +30,14 @@ namespace facebook { namespace memcache {
  */
 template <class T, class RefPolicy>
 class Ref {
-  static_assert(noexcept(RefPolicy::increfOrNull),
-                "RefPolicy::increfOrNull should be noexcept");
-  static_assert(noexcept(RefPolicy::decref),
-                "RefPolicy::decref should be noexcept");
+  static_assert(
+      noexcept(RefPolicy::increfOrNull),
+      "RefPolicy::increfOrNull should be noexcept");
+  static_assert(
+      noexcept(RefPolicy::decref),
+      "RefPolicy::decref should be noexcept");
 
  public:
-
   /**
    * Construct an empty Ref.
    */
@@ -55,16 +57,16 @@ class Ref {
     return Ref(RefPolicy::increfOrNull(ref));
   }
 
-  Ref(Ref&& from) noexcept
-  : ref_(from.ref_) {
+  Ref(Ref&& from) noexcept : ref_(from.ref_) {
     from.ref_ = nullptr;
   }
 
   template <typename M, typename D>
   /* implicit */ Ref(std::unique_ptr<M, D>&& from) noexcept
       : ref_(from.release()) {
-    static_assert(std::is_same<D, typename RefPolicy::Deleter>::value,
-                  "unique_ptr deleter is not compatible with RefPolicy");
+    static_assert(
+        std::is_same<D, typename RefPolicy::Deleter>::value,
+        "unique_ptr deleter is not compatible with RefPolicy");
   }
 
   Ref& operator=(Ref&& from) noexcept {
@@ -78,8 +80,9 @@ class Ref {
 
   template <typename M, typename D>
   Ref& operator=(std::unique_ptr<M, D>&& from) noexcept {
-    static_assert(std::is_same<D, typename RefPolicy::Deleter>::value,
-                  "unique_ptr deleter is not compatible with RefPolicy");
+    static_assert(
+        std::is_same<D, typename RefPolicy::Deleter>::value,
+        "unique_ptr deleter is not compatible with RefPolicy");
 
     RefPolicy::decref(ref_);
     ref_ = from.release();
@@ -99,9 +102,15 @@ class Ref {
   /**
    * Access to the managed object
    */
-  T* operator->() const noexcept { return ref_; }
-  T* get() const noexcept { return ref_; }
-  T& operator*() const noexcept { return *ref_; }
+  T* operator->() const noexcept {
+    return ref_;
+  }
+  T* get() const noexcept {
+    return ref_;
+  }
+  T& operator*() const noexcept {
+    return *ref_;
+  }
 
   /**
    * Releases the managed object
@@ -125,5 +134,5 @@ class Ref {
 
   explicit Ref(T* ref) noexcept : ref_(ref) {}
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

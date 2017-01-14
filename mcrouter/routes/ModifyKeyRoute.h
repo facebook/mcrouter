@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,7 +25,9 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Modifies key of current request.
@@ -47,7 +49,9 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf>
 class ModifyKeyRoute {
  public:
-  static std::string routeName() { return "modify-key"; }
+  static std::string routeName() {
+    return "modify-key";
+  }
 
   ModifyKeyRoute(
       std::shared_ptr<RouteHandleIf> target,
@@ -62,8 +66,9 @@ class ModifyKeyRoute {
         keyReplace_(std::move(keyReplace)) {}
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto cloneReq = req;
     auto key = getModifiedKey(req.key());
     if (key) {
@@ -111,8 +116,8 @@ class ModifyKeyRoute {
   }
 
   template <class Request>
-  ReplyT<Request>
-  routeReqWithKey(const Request& req, folly::StringPiece key) const {
+  ReplyT<Request> routeReqWithKey(const Request& req, folly::StringPiece key)
+      const {
     auto err = isKeyValid(key);
     if (err != mc_req_err_valid) {
       return createReply<Request>(
@@ -125,5 +130,6 @@ class ModifyKeyRoute {
     return target_->route(cloneReq);
   }
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 
@@ -20,9 +21,7 @@ const std::chrono::milliseconds kMatchingKeyTimeout{5000};
 
 template <class Callback>
 SnifferParser<Callback>::SnifferParser(Callback& cb) noexcept
-    : callback_(cb),
-      parser_(*this) {
-}
+    : callback_(cb), parser_(*this) {}
 
 template <class Callback>
 void SnifferParser<Callback>::evictOldItems(TimePoint now) {
@@ -82,5 +81,5 @@ void SnifferParser<Callback>::replyReady(
       latency,
       replyStatsContext);
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

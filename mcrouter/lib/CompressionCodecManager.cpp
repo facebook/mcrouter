@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,8 +11,8 @@
 
 #include <algorithm>
 
-#include <folly/fibers/FiberManager.h>
 #include <folly/Format.h>
+#include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
 namespace facebook {
@@ -41,8 +41,7 @@ bool isApplicable(const CompressionCodec* codec, const size_t bodySize) {
  ***************************/
 CompressionCodecManager::CompressionCodecManager(
     std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs)
-    : codecConfigs_(std::move(codecConfigs)),
-      compressionCodecMap_([this]() {
+    : codecConfigs_(std::move(codecConfigs)), compressionCodecMap_([this]() {
         return folly::fibers::runInMainContext(
             [this]() { return buildCodecMap(); });
       }) {
@@ -100,12 +99,10 @@ CompressionCodecMap* CompressionCodecManager::buildCodecMap() {
   return new CompressionCodecMap(codecConfigs_, smallestCodecId_, size_);
 }
 
-
 /****************
  * CodecIdRange *
  ****************/
 const CodecIdRange CodecIdRange::Empty = CodecIdRange{1, 0};
-
 
 /***********************
  * CompressionCodecMap *

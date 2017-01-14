@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,15 +18,17 @@
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/TkoCounters.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-TkoTracker::TkoTracker(size_t tkoThreshold,
-                       size_t maxSoftTkos,
-                       TkoTrackerMap& trackerMap)
-  : tkoThreshold_(tkoThreshold),
-    maxSoftTkos_(maxSoftTkos),
-    trackerMap_(trackerMap) {
-}
+TkoTracker::TkoTracker(
+    size_t tkoThreshold,
+    size_t maxSoftTkos,
+    TkoTrackerMap& trackerMap)
+    : tkoThreshold_(tkoThreshold),
+      maxSoftTkos_(maxSoftTkos),
+      trackerMap_(trackerMap) {}
 
 bool TkoTracker::isHardTko() const {
   uintptr_t curSumFailures = sumFailures_;
@@ -93,9 +95,9 @@ bool TkoTracker::recordSoftFailure(ProxyDestination* pdstn) {
   do {
     /* If we're one failure below the limit, we're about to enter softTKO */
     if (curSumFailures == tkoThreshold_ - 1) {
-    /* If we're not allowed to TKO the box, leave it one hit away
-       Note, we need to check value to ensure we didn't already increment the
-       counter in a previous iteration */
+      /* If we're not allowed to TKO the box, leave it one hit away
+         Note, we need to check value to ensure we didn't already increment the
+         counter in a previous iteration */
       if (value != pdstnAddr && !incrementSoftTkoCount()) {
         return false;
       }
@@ -153,7 +155,7 @@ bool TkoTracker::recordSuccess(ProxyDestination* pdstn) {
   if (isResponsible(pdstn)) {
     /* Coming out of TKO, we need to decrement counters */
     if (isSoftTko()) {
-       decrementSoftTkoCount();
+      decrementSoftTkoCount();
     }
     if (isHardTko()) {
       --trackerMap_.globalTkos_.hardTkos;
@@ -188,9 +190,9 @@ TkoTracker::~TkoTracker() {
 }
 
 void TkoTrackerMap::updateTracker(
-  ProxyDestination& pdstn,
-  const size_t tkoThreshold,
-  const size_t maxSoftTkos) {
+    ProxyDestination& pdstn,
+    const size_t tkoThreshold,
+    const size_t maxSoftTkos) {
   auto key = pdstn.accessPoint()->toHostPortString();
   {
     std::lock_guard<std::mutex> lock(mx_);
@@ -216,8 +218,8 @@ TkoTrackerMap::getSuspectServers() {
     if (auto tracker = it.second.lock()) {
       auto failures = tracker->consecutiveFailureCount();
       if (failures > 0) {
-        result.emplace(it.first.str(),
-                       std::make_pair(tracker->isTko(), failures));
+        result.emplace(
+            it.first.str(), std::make_pair(tracker->isTko(), failures));
       }
     }
   }
@@ -249,5 +251,6 @@ void TkoTrackerMap::removeTracker(folly::StringPiece key) noexcept {
     trackers_.erase(it);
   }
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -82,8 +82,8 @@ class CarbonRouterInstance
    *   the provided options.
    */
   static std::shared_ptr<CarbonRouterInstance<RouterInfo>> create(
-    McrouterOptions input_options,
-    const std::vector<folly::EventBase*>& evbs = {});
+      McrouterOptions input_options,
+      const std::vector<folly::EventBase*>& evbs = {});
 
   /**
    * Destroys ALL active instances for ALL RouterInfos.
@@ -182,8 +182,8 @@ class CarbonRouterInstance
    * needs.
    */
   static CarbonRouterInstance<RouterInfo>* createRaw(
-    McrouterOptions input_options,
-    const std::vector<folly::EventBase*>& evbs);
+      McrouterOptions input_options,
+      const std::vector<folly::EventBase*>& evbs);
 
   explicit CarbonRouterInstance(McrouterOptions input_options);
 
@@ -219,9 +219,8 @@ class CarbonRouterInstance
   class LegacyPrivateAccessor {
    public:
     static CarbonRouterInstance<RouterInfo>* createRaw(
-      const McrouterOptions& opts,
-      const std::vector<folly::EventBase*>& evbs) {
-
+        const McrouterOptions& opts,
+        const std::vector<folly::EventBase*>& evbs) {
       return CarbonRouterInstance<RouterInfo>::createRaw(opts.clone(), evbs);
     }
 
@@ -229,8 +228,8 @@ class CarbonRouterInstance
       delete mcrouter;
     }
 
-    static CallbackPool<>&
-    onReconfigureSuccess(CarbonRouterInstance<RouterInfo>& mcrouter) {
+    static CallbackPool<>& onReconfigureSuccess(
+        CarbonRouterInstance<RouterInfo>& mcrouter) {
       return mcrouter.onReconfigureSuccess_;
     }
   };

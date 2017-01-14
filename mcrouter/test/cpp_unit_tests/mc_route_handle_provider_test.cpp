@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,16 +12,16 @@
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
+#include <folly/Memory.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/json.h>
-#include <folly/Memory.h>
 
 #include "mcrouter/CarbonRouterInstance.h"
+#include "mcrouter/PoolFactory.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/options.h"
-#include "mcrouter/PoolFactory.h"
-#include "mcrouter/Proxy.h"
 #include "mcrouter/routes/McRouteHandleProvider.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -33,35 +33,35 @@ namespace {
 const char* const kMemcacheConfig = "mcrouter/test/test_ascii.json";
 
 const char* const kAsynclogRoute =
- R"({
+    R"({
   "type": "AsynclogRoute",
   "name": "test",
   "target": "NullRoute"
  })";
 
 const char* const kConstShard =
- R"({
+    R"({
   "type": "HashRoute",
   "children": "ErrorRoute",
   "hash_func": "ConstShard"
  })";
 
 const char* const kInvalidHashFunc =
- R"({
+    R"({
   "type": "HashRoute",
   "children": "ErrorRoute",
   "hash_func": "InvalidHashFunc"
  })";
 
 const char* const kWarmUp =
- R"({
+    R"({
    "type": "WarmUpRoute",
    "cold": "ErrorRoute",
    "warm": "NullRoute"
  })";
 
 const char* const kPoolRoute =
- R"({
+    R"({
    "type": "PoolRoute",
    "pool": { "name": "mock", "servers": [ ] },
    "hash": { "hash_func": "Crc32" }
@@ -84,6 +84,7 @@ struct TestSetup {
   McrouterRouteHandlePtr getRoute(const char* jsonStr) {
     return rhFactory_.create(parseJsonString(jsonStr));
   }
+
  private:
   CarbonRouterInstance<McrouterRouterInfo>* router_;
   PoolFactory poolFactory_;
@@ -97,7 +98,7 @@ struct TestSetup {
   }
 };
 
-}  // anonymous
+} // anonymous
 
 TEST(McRouteHandleProviderTest, asynclog_route) {
   TestSetup setup;

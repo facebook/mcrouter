@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,10 +15,10 @@
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
-WriteBuffer::WriteBuffer(mc_protocol_t protocol)
-    : protocol_(protocol) {
+WriteBuffer::WriteBuffer(mc_protocol_t protocol) : protocol_(protocol) {
   switch (protocol_) {
     case mc_ascii_protocol:
       new (&asciiReply_) AsciiSerializedReply;
@@ -92,14 +92,14 @@ bool WriteBuffer::isEndContext() const {
   return ctx_.hasValue() ? ctx_->isEndContext() : false;
 }
 
-WriteBuffer::Queue& WriteBufferQueue::initFreeQueue(mc_protocol_t protocol)
-    noexcept {
-  assert(protocol == mc_ascii_protocol ||
-         protocol == mc_umbrella_protocol ||
-         protocol == mc_caret_protocol);
+WriteBuffer::Queue& WriteBufferQueue::initFreeQueue(
+    mc_protocol_t protocol) noexcept {
+  assert(
+      protocol == mc_ascii_protocol || protocol == mc_umbrella_protocol ||
+      protocol == mc_caret_protocol);
 
   static thread_local WriteBuffer::Queue freeQ[mc_nprotocols];
   return freeQ[static_cast<size_t>(protocol)];
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

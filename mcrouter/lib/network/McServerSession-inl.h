@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,11 +11,12 @@
 
 #include <memory>
 
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Request>
 void McServerSession::asciiRequestReady(
@@ -102,5 +103,5 @@ inline void McServerSession::umbrellaRequestReadyImpl(
   McServerRequestContext::reply(std::move(ctx), McShutdownReply(mc_res_ok));
   stateCb_.onShutdown();
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

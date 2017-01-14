@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,8 +19,10 @@
 
 __BEGIN_DECLS
 
-#define NSTRING_LIT(lit) {(char*)lit, sizeof(lit)-1}
-#define NSTRING_INIT(cs) {cs, strlen(cs)}
+#define NSTRING_LIT(lit) \
+  { (char*)lit, sizeof(lit) - 1 }
+#define NSTRING_INIT(cs) \
+  { cs, strlen(cs) }
 
 /** @deprecated, for compatibility only */
 #define NSTRING_CONST(cs) NSTRING_INIT(cs)
@@ -63,8 +65,7 @@ void nstring_del(const nstring_t* val);
 
 nstring_t* nstring_dup(const nstring_t* src);
 
-static inline void nstring_copy(nstring_t* dest,
-                                const nstring_t* src) {
+static inline void nstring_copy(nstring_t* dest, const nstring_t* src) {
   dest->len = src->len;
   if (dest->len > 0) {
     memcpy(dest->str, src->str, src->len);
@@ -80,9 +81,8 @@ static inline int nstring_cmp(const nstring_t* a, const nstring_t* b) {
   return result;
 }
 
-static inline int nstring_ncmp(const nstring_t* a,
-                               const nstring_t* b,
-                               const size_t len) {
+static inline int
+nstring_ncmp(const nstring_t* a, const nstring_t* b, const size_t len) {
   return strncmp(a->str, b->str, len);
 }
 
@@ -133,12 +133,12 @@ static inline size_t nstring_map_sizeof(const size_t buckets) {
 // This expects your map to be filled with n buckets, so if you do the stupid
 // thing and just declare a map at the top of your function, you will end up
 // in a world of hurt and won't know why
-static inline void _nstring_map_init(nstring_map_t* map,
-                                     const size_t buckets,
-                                     const uint32_t mask,
-                                     void* (*allocator)(const size_t),
-                                     void (*deallocator)(void*)) {
-
+static inline void _nstring_map_init(
+    nstring_map_t* map,
+    const size_t buckets,
+    const uint32_t mask,
+    void* (*allocator)(const size_t),
+    void (*deallocator)(void*)) {
   (void)mask; // unused parameter
 
   memset(map, '\0', nstring_map_sizeof(buckets));
@@ -149,10 +149,11 @@ static inline void _nstring_map_init(nstring_map_t* map,
 }
 
 /** @param mask TODO shouldn't we just calculate the mask?! */
-static inline nstring_map_t* nstring_map_new(const size_t buckets,
-                                             const uint32_t mask,
-                                             void* (*allocator)(const size_t),
-                                             void (*deallocator)(void*)) {
+static inline nstring_map_t* nstring_map_new(
+    const size_t buckets,
+    const uint32_t mask,
+    void* (*allocator)(const size_t),
+    void (*deallocator)(void*)) {
   nstring_map_t* map;
 
   if ((allocator == NULL) && (deallocator == NULL)) {
@@ -195,12 +196,13 @@ static inline size_t nstring_map_size(const nstring_map_t* map) {
   return map->count;
 }
 
-static inline nstring_map_entry_t** nstring_map_prev(nstring_map_t* map,
-                                                     const nstring_t* key) {
+static inline nstring_map_entry_t** nstring_map_prev(
+    nstring_map_t* map,
+    const nstring_t* key) {
   uint32_t hash = nstring_hash(key);
   nstring_map_entry_t** nextp = &map->heads[hash % map->buckets];
 
-  while(*nextp != NULL && nstring_cmp(&(*nextp)->key, key) != 0) {
+  while (*nextp != NULL && nstring_cmp(&(*nextp)->key, key) != 0) {
     nextp = &(*nextp)->next;
   }
   return nextp;
@@ -215,15 +217,16 @@ static inline nstring_map_entry_t** nstring_map_prev(nstring_map_t* map,
  *                  if old_value is NULL, it will be ignored
  * @return 0 on success, -1 on failure
  */
-static inline int nstring_map_set(nstring_map_t* map,
-                                  const nstring_t* key,
-                                  const void* value,
-                                  const void **old_value) {
+static inline int nstring_map_set(
+    nstring_map_t* map,
+    const nstring_t* key,
+    const void* value,
+    const void** old_value) {
   uint32_t hash = nstring_hash(key);
   nstring_map_entry_t* entry = map->heads[hash % map->buckets];
-  const void *old = NULL;
+  const void* old = NULL;
 
-  while(entry != NULL && nstring_cmp(&entry->key, key) != 0) {
+  while (entry != NULL && nstring_cmp(&entry->key, key) != 0) {
     entry = entry->next;
   }
 
@@ -263,12 +266,13 @@ static inline int nstring_map_set(nstring_map_t* map,
  * @param key key of item to get
  * @return value of item found (or NULL if not found)
  */
-static inline const void* nstring_map_get(const nstring_map_t* map,
-                                          const nstring_t* key) {
+static inline const void* nstring_map_get(
+    const nstring_map_t* map,
+    const nstring_t* key) {
   uint32_t hash = nstring_hash(key);
   const nstring_map_entry_t* entry = map->heads[hash % map->buckets];
 
-  while(entry != NULL && nstring_cmp(&entry->key, key) != 0) {
+  while (entry != NULL && nstring_cmp(&entry->key, key) != 0) {
     entry = entry->next;
   }
 
@@ -283,12 +287,13 @@ static inline const void* nstring_map_get(const nstring_map_t* map,
  *                  if old_value is NULL, it will be ignored
  * @return void
  */
-static inline void nstring_map_remove(nstring_map_t* map,
-                                      const nstring_t* key,
-                                      const void **old_value) {
+static inline void nstring_map_remove(
+    nstring_map_t* map,
+    const nstring_t* key,
+    const void** old_value) {
   nstring_map_entry_t** nextp = nstring_map_prev(map, key);
   nstring_map_entry_t* deleted_entry;
-  const void *old = NULL;
+  const void* old = NULL;
 
   if (*nextp != NULL) {
     deleted_entry = *nextp;
@@ -313,7 +318,6 @@ typedef struct nstring_map_iter_s {
   nstring_map_entry_t* next;
 } nstring_map_iter_t;
 
-
 /**
  * Initialize an iterator over _map_, setting it at the beginning of the map.
  * In multithreaded code, once an iterator has been initialized by calling this
@@ -322,15 +326,15 @@ typedef struct nstring_map_iter_s {
  * iterating. Iteration over an append-oly map is generally safe, but see
  * WARNING in a comment for nstring_map_iter_has_next().
  */
-static inline void nstring_map_iter_init(const nstring_map_t* map,
-                                         nstring_map_iter_t *iter) {
+static inline void nstring_map_iter_init(
+    const nstring_map_t* map,
+    nstring_map_iter_t* iter) {
   iter->map = map;
   iter->head = &map->heads[0];
   iter->next = NULL;
   iter->entry = NULL;
   iter->ix = 0;
 }
-
 
 /**
  * @return true iff _iter_ is a valid iterator on a nstring_map.
@@ -340,7 +344,6 @@ static inline void nstring_map_iter_init(const nstring_map_t* map,
 static inline int nstring_map_iter_is_valid(const nstring_map_iter_t* iter) {
   return iter->ix <= iter->map->count;
 }
-
 
 /**
  * @return false if _iter_ is at the last map entry, otherwise true
@@ -373,9 +376,9 @@ static inline int nstring_map_iter_has_next(const nstring_map_iter_t* iter) {
  * function is only safe to use if other threads never remove entries
  * from the map.
  */
-static inline nstring_map_entry_t* nstring_map_iter_next(nstring_map_iter_t *iter) {
-
-  nstring_map_entry_t* entry  = NULL;
+static inline nstring_map_entry_t* nstring_map_iter_next(
+    nstring_map_iter_t* iter) {
+  nstring_map_entry_t* entry = NULL;
   nstring_map_entry_t* next = iter->next;
   nstring_map_entry_t** head = iter->head;
   const nstring_map_t* map = iter->map;
@@ -405,21 +408,20 @@ static inline nstring_map_entry_t* nstring_map_iter_next(nstring_map_iter_t *ite
   return entry;
 }
 
-
 /*  nstring_map_sorted_iter functions, which allow you to
     iterate over the keys of an nstring_map in sorted order. */
 
-
 typedef struct nstring_map_sorted_iter_s {
-  const nstring_map_t *map;
+  const nstring_map_t* map;
   size_t count;
   size_t index;
   nstring_map_entry_t entry;
   nstring_t keys[0];
-} *nstring_map_sorted_iter_t;
+} * nstring_map_sorted_iter_t;
 
-
-static inline int nstring_map_sorted_iter_compare(const nstring_t *a, const nstring_t *b) {
+static inline int nstring_map_sorted_iter_compare(
+    const nstring_t* a,
+    const nstring_t* b) {
   size_t min_length = (a->len < b->len) ? a->len : b->len;
   int return_value = strncmp(a->str, b->str, min_length);
   if (return_value) {
@@ -428,10 +430,11 @@ static inline int nstring_map_sorted_iter_compare(const nstring_t *a, const nstr
   return a->len - b->len;
 }
 
-static inline nstring_map_sorted_iter_t nstring_map_sorted_iter_new(const nstring_map_t* map) {
+static inline nstring_map_sorted_iter_t nstring_map_sorted_iter_new(
+    const nstring_map_t* map) {
   size_t count = nstring_map_size(map);
-  nstring_map_sorted_iter_t i = (nstring_map_sorted_iter_t)
-    malloc(sizeof(*i) + (count * sizeof(nstring_t)));
+  nstring_map_sorted_iter_t i = (nstring_map_sorted_iter_t)malloc(
+      sizeof(*i) + (count * sizeof(nstring_t)));
   if (!i) {
     return NULL;
   }
@@ -442,18 +445,22 @@ static inline nstring_map_sorted_iter_t nstring_map_sorted_iter_new(const nstrin
 
   nstring_map_iter_t j;
   nstring_map_iter_init(map, &j);
-  nstring_map_entry_t *entry;
+  nstring_map_entry_t* entry;
   size_t index = 0;
   while ((entry = nstring_map_iter_next(&j)) != NULL) {
     i->keys[index++] = entry->key;
   }
   assert(index == count);
-  qsort(i->keys, count, sizeof(nstring_t),
-        (int (*)(const void *, const void *))nstring_map_sorted_iter_compare);
+  qsort(
+      i->keys,
+      count,
+      sizeof(nstring_t),
+      (int (*)(const void*, const void*))nstring_map_sorted_iter_compare);
   return i;
 }
 
-static inline nstring_map_entry_t* nstring_map_sorted_iter_next(nstring_map_sorted_iter_t i) {
+static inline nstring_map_entry_t* nstring_map_sorted_iter_next(
+    nstring_map_sorted_iter_t i) {
   if (i->index >= i->count) {
     return NULL;
   }
@@ -469,25 +476,25 @@ static inline void nstring_map_sorted_iter_del(nstring_map_sorted_iter_t i) {
 
 /** @return the index of needle in haystack, or -1 if not found. */
 static inline ssize_t nstrstr(nstring_t haystack, nstring_t needle) {
-    size_t i;
-    if (haystack.len >= needle.len) {
-        for (i = 0; i <= haystack.len - needle.len; ++i) {
-            if (memcmp(haystack.str + i, needle.str, needle.len) == 0) {
-                return i;
-            }
-        }
+  size_t i;
+  if (haystack.len >= needle.len) {
+    for (i = 0; i <= haystack.len - needle.len; ++i) {
+      if (memcmp(haystack.str + i, needle.str, needle.len) == 0) {
+        return i;
+      }
     }
-    return -1;
+  }
+  return -1;
 }
 
 /** These functions are only needed for Python. */
 
 nstring_map_iter_t* nstring_map_iter_new(const nstring_map_t* map);
 
-void nstring_map_iter_del(nstring_map_iter_t *iter);
+void nstring_map_iter_del(nstring_map_iter_t* iter);
 
-nstring_t* nstring_map_iter_get_key(nstring_map_iter_t *iter);
+nstring_t* nstring_map_iter_get_key(nstring_map_iter_t* iter);
 
-const void* nstring_map_iter_get_value(nstring_map_iter_t *iter);
+const void* nstring_map_iter_get_value(nstring_map_iter_t* iter);
 
 __END_DECLS

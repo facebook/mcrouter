@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,12 +11,14 @@
 
 #include <folly/Bits.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
-bool matchIPAddress(const folly::IPAddress& expectedIp,
-                    const folly::SocketAddress& address) {
+bool matchIPAddress(
+    const folly::IPAddress& expectedIp,
+    const folly::SocketAddress& address) {
   return !address.empty() && expectedIp == address.getIPAddress();
 }
 
@@ -38,10 +40,11 @@ std::string describeAddress(const folly::SocketAddress& address) {
 
 } // anonymous namespace
 
-MessagePrinter::MessagePrinter(Options options,
-                               Filter filter,
-                               std::unique_ptr<ValueFormatter> valueFormatter,
-                               std::ostream& targetOut)
+MessagePrinter::MessagePrinter(
+    Options options,
+    Filter filter,
+    std::unique_ptr<ValueFormatter> valueFormatter,
+    std::ostream& targetOut)
     : options_(std::move(options)),
       filter_(std::move(filter)),
       valueFormatter_(std::move(valueFormatter)),
@@ -51,16 +54,15 @@ MessagePrinter::MessagePrinter(Options options,
   }
 }
 
-bool MessagePrinter::matchAddress(const folly::SocketAddress& from,
-                                  const folly::SocketAddress& to) const {
+bool MessagePrinter::matchAddress(
+    const folly::SocketAddress& from,
+    const folly::SocketAddress& to) const {
   // Initial filters
-  if (!filter_.host.empty() &&
-      !matchIPAddress(filter_.host, from) &&
+  if (!filter_.host.empty() && !matchIPAddress(filter_.host, from) &&
       !matchIPAddress(filter_.host, to)) {
     return false;
   }
-  if (filter_.port != 0 &&
-      !matchPort(filter_.port, from) &&
+  if (filter_.port != 0 && !matchPort(filter_.port, from) &&
       !matchPort(filter_.port, to)) {
     return false;
   }
@@ -82,24 +84,25 @@ void MessagePrinter::countStats() {
   }
 }
 
-void MessagePrinter::printRawMessage(const struct iovec* iovsBegin,
-                                     size_t iovsCount) {
-    if (iovsBegin == nullptr) {
-      return;
-    }
-    uint64_t rawMessageSize = 0;
-    for (size_t i = 0; i < iovsCount; ++i) {
-      rawMessageSize += iovsBegin[i].iov_len;
-    }
-    StyledString rawMessage;
-    rawMessageSize = folly::Endian::little(rawMessageSize);
+void MessagePrinter::printRawMessage(
+    const struct iovec* iovsBegin,
+    size_t iovsCount) {
+  if (iovsBegin == nullptr) {
+    return;
+  }
+  uint64_t rawMessageSize = 0;
+  for (size_t i = 0; i < iovsCount; ++i) {
+    rawMessageSize += iovsBegin[i].iov_len;
+  }
+  StyledString rawMessage;
+  rawMessageSize = folly::Endian::little(rawMessageSize);
+  rawMessage.append(
+      std::string(reinterpret_cast<char*>(&rawMessageSize), sizeof(uint64_t)));
+  for (size_t i = 0; i < iovsCount; ++i) {
     rawMessage.append(std::string(
-        reinterpret_cast<char*>(&rawMessageSize), sizeof(uint64_t)));
-    for (size_t i = 0; i < iovsCount; ++i) {
-      rawMessage.append(std::string(
         static_cast<char*>(iovsBegin[i].iov_base), iovsBegin[i].iov_len));
-    }
-    printMessage(rawMessage);
+  }
+  printMessage(rawMessage);
 }
 
 void MessagePrinter::printMessage(const StyledString& message) {
@@ -160,7 +163,8 @@ std::string MessagePrinter::serializeMessageHeader(
  *         of all ocurrences.
  */
 std::vector<std::pair<size_t, size_t>> MessagePrinter::matchAll(
-    folly::StringPiece text, const boost::regex& pattern) const {
+    folly::StringPiece text,
+    const boost::regex& pattern) const {
   std::vector<std::pair<size_t, size_t>> result;
 
   boost::cregex_token_iterator it(text.begin(), text.end(), pattern);
@@ -171,5 +175,5 @@ std::vector<std::pair<size_t, size_t>> MessagePrinter::matchAll(
   }
   return result;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

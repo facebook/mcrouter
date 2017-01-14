@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,14 +9,16 @@
  */
 #include "ModifyExptimeRoute.h"
 
-#include <folly/dynamic.h>
 #include <folly/Range.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
@@ -55,8 +57,7 @@ McrouterRouteHandlePtr makeModifyExptimeRoute(
   checkLogic(jexptime->isInt(), "ModifyExptimeRoute: exptime is not an int");
   auto exptime = jexptime->getInt();
 
-  ModifyExptimeAction action{
-      ModifyExptimeAction::Set};
+  ModifyExptimeAction action{ModifyExptimeAction::Set};
   if (auto jaction = json.get_ptr("action")) {
     checkLogic(
         jaction->isString(), "ModifyExptimeRoute: action is not a string");
@@ -64,13 +65,13 @@ McrouterRouteHandlePtr makeModifyExptimeRoute(
   }
 
   // 0 means infinite exptime
-  if (action == ModifyExptimeAction::Min &&
-      exptime == 0) {
+  if (action == ModifyExptimeAction::Min && exptime == 0) {
     return target;
   }
 
   return makeMcrouterRouteHandle<ModifyExptimeRoute>(
       std::move(target), exptime, action);
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

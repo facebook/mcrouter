@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,8 +11,8 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/experimental/TestUtil.h>
 #include <folly/FileUtil.h>
+#include <folly/experimental/TestUtil.h>
 
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/options.h"
@@ -27,8 +27,9 @@ TEST(ConfigApi, file_change) {
   std::string contents = "a";
   std::string path(config.path().string());
 
-  EXPECT_EQ(folly::writeFull(config.fd(), contents.data(), contents.size()),
-            contents.size());
+  EXPECT_EQ(
+      folly::writeFull(config.fd(), contents.data(), contents.size()),
+      contents.size());
 
   McrouterOptions opts;
   opts.config = "file:" + path;
@@ -52,8 +53,9 @@ TEST(ConfigApi, file_change) {
   EXPECT_EQ(changes, 0);
 
   contents = "b";
-  EXPECT_EQ(folly::writeFull(config.fd(), contents.data(), contents.size()),
-            contents.size());
+  EXPECT_EQ(
+      folly::writeFull(config.fd(), contents.data(), contents.size()),
+      contents.size());
 
   // wait for the file to flush and api to check for update
   sleep(4);
@@ -72,8 +74,9 @@ TEST(ConfigApi, file_change) {
   api.subscribeToTrackedSources();
 
   contents = "c";
-  EXPECT_EQ(folly::writeFull(config.fd(), contents.data(), contents.size()),
-            contents.size());
+  EXPECT_EQ(
+      folly::writeFull(config.fd(), contents.data(), contents.size()),
+      contents.size());
 
   // wait for the file to flush
   sleep(4);

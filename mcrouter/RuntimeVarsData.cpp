@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,11 +11,13 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 RuntimeVarsData::RuntimeVarsData(folly::StringPiece json) {
   auto data = parseJsonString(json);
-  for (const auto& jiter: data.items()) {
+  for (const auto& jiter : data.items()) {
     auto& key = jiter.first;
     auto& value = jiter.second;
     if (!key.isString()) {
@@ -25,13 +27,14 @@ RuntimeVarsData::RuntimeVarsData(folly::StringPiece json) {
   }
 }
 
-folly::dynamic
-RuntimeVarsData::getVariableByName(const std::string& name) const {
+folly::dynamic RuntimeVarsData::getVariableByName(
+    const std::string& name) const {
   auto value = configData_.find(name);
   if (value == configData_.end()) {
     return nullptr;
   }
   return value->second;
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

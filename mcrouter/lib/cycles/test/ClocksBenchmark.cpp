@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -56,8 +56,10 @@ BENCHMARK_RELATIVE(RUsageClock, n) {
  */
 
 // for backward compatibility with gflags
-namespace gflags { } // gflags
-namespace google { using namespace gflags; } // google
+namespace gflags {} // gflags
+namespace google {
+using namespace gflags;
+} // google
 
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);

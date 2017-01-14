@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,8 @@
 
 #include <stdint.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class ListenSocket {
  public:
@@ -34,6 +35,7 @@ class ListenSocket {
   ListenSocket& operator=(ListenSocket&& other) noexcept;
   ListenSocket(const ListenSocket&) = delete;
   ListenSocket& operator=(const ListenSocket&) = delete;
+
  private:
   int socketFd_{-1};
   uint16_t port_{0};
@@ -43,5 +45,5 @@ class ListenSocket {
  * @return true  if port is open, false otherwise
  */
 bool isPortOpen(uint16_t port);
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

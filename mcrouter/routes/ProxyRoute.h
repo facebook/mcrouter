@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,20 +13,22 @@
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/Reply.h"
-#include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
+#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouterInfo>
 class Proxy;
@@ -37,7 +39,9 @@ class Proxy;
 template <class RouterInfo>
 class ProxyRoute {
  public:
-  static std::string routeName() { return "proxy"; }
+  static std::string routeName() {
+    return "proxy";
+  }
 
   ProxyRoute(
       Proxy<RouterInfo>* proxy,
@@ -114,7 +118,8 @@ class ProxyRoute {
   std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
   getAllDestinations() const;
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "ProxyRoute-inl.h"

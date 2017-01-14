@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,7 @@ cycles::CyclesClock cyclesClock;
 
 // Benchmark if we were using simply two RDTSC calls.
 BENCHMARK(CyclesClock, n) {
-  cycles::startExtracting([](cycles::CycleStats){});
+  cycles::startExtracting([](cycles::CycleStats) {});
   while (n--) {
     uint64_t startedAt = cyclesClock.read().ticks;
     uint64_t length = cyclesClock.read().ticks - startedAt;
@@ -36,7 +36,7 @@ BENCHMARK(CyclesClock, n) {
 
 // Benchmark for invalid (not labeled) intervals.
 BENCHMARK_RELATIVE(IntervalGuard_invalid, n) {
-  cycles::startExtracting([](cycles::CycleStats){});
+  cycles::startExtracting([](cycles::CycleStats) {});
   while (n--) {
     cycles::IntervalGuard ig;
     folly::doNotOptimizeAway(&ig);
@@ -56,7 +56,7 @@ BENCHMARK_RELATIVE(IntervalGuard_disabled, n) {
 
 // Benchmark for valid.
 BENCHMARK_RELATIVE(IntervalGuard_valid, n) {
-  cycles::startExtracting([](cycles::CycleStats){});
+  cycles::startExtracting([](cycles::CycleStats) {});
   while (n--) {
     cycles::IntervalGuard ig;
     cycles::label(1, 2);
@@ -65,12 +65,10 @@ BENCHMARK_RELATIVE(IntervalGuard_valid, n) {
   cycles::stopExtracting();
 }
 
-
 BENCHMARK_DRAW_LINE();
 
-
 BENCHMARK_RELATIVE(IntervalGuard_MultiThread, n) {
-  cycles::startExtracting([](cycles::CycleStats){});
+  cycles::startExtracting([](cycles::CycleStats) {});
   const size_t constexpr nThreads = 32;
   std::array<std::thread, nThreads> threads;
   for (size_t i = 0; i < nThreads; ++i) {

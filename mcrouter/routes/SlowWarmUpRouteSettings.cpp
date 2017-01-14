@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,30 +11,34 @@
 
 #include <string>
 
-#include <folly/dynamic.h>
 #include <folly/Random.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
-double asNumber(const folly::dynamic* maybeNumber,
-                const std::string& name) {
-  checkLogic(maybeNumber->isNumber(),
+double asNumber(const folly::dynamic* maybeNumber, const std::string& name) {
+  checkLogic(
+      maybeNumber->isNumber(),
       "SlowWarmUpSettings: '{}' must be a number, but was {}",
-      name, maybeNumber->typeName());
+      name,
+      maybeNumber->typeName());
   return maybeNumber->asDouble();
 }
 
 double getDouble01(const folly::dynamic& json, std::string name) {
   auto valJson = json.get_ptr(name);
-  checkLogic(valJson,
-      "SlowWarmUpSettings: Couldn't find '{}' in config", name);
+  checkLogic(valJson, "SlowWarmUpSettings: Couldn't find '{}' in config", name);
   double val = asNumber(valJson, name);
-  checkLogic(val >= 0.0 && val <= 1.0,
-      "SlowWarmUpSettings: '{}' must be a double in [0,1] range", name);
+  checkLogic(
+      val >= 0.0 && val <= 1.0,
+      "SlowWarmUpSettings: '{}' must be a double in [0,1] range",
+      name);
   return val;
 }
 
@@ -43,35 +47,45 @@ double getDouble01(const folly::dynamic& json, std::string name) {
 SlowWarmUpRouteSettings::SlowWarmUpRouteSettings(const folly::dynamic& json) {
   enableThreshold_ = getDouble01(json, "enable_threshold");
   disableThreshold_ = getDouble01(json, "disable_threshold");
-  checkLogic(enableThreshold_ < disableThreshold_, "SlowWarmUpSettings: "
+  checkLogic(
+      enableThreshold_ < disableThreshold_,
+      "SlowWarmUpSettings: "
       "'enable_threshold' must be strictly less than 'disable_threshold'.");
 
   const std::string startName = "start";
   if (auto startPtr = json.get_ptr(startName)) {
     start_ = asNumber(startPtr, startName);
-    checkLogic(start_ > 0.0 && start_ < 1.0,
+    checkLogic(
+        start_ > 0.0 && start_ < 1.0,
         "SlowWarmUpSettings: '{}' must be a double in (0,1) range, but was {}",
-        startName, start_);
+        startName,
+        start_);
   }
 
   const std::string stepName = "step";
   if (auto stepPtr = json.get_ptr(stepName)) {
     step_ = asNumber(stepPtr, stepName);
-    checkLogic(step_ > 0.0 && step_ < 100.0,
+    checkLogic(
+        step_ > 0.0 && step_ < 100.0,
         "SlowWarmUpSettings: '{}' must be in the (0,100) range, but was {}",
-        stepName, step_);
+        stepName,
+        step_);
   }
 
   const std::string minReqsName = "min_requests";
   if (auto minReqsPtr = json.get_ptr(minReqsName)) {
-    checkLogic(minReqsPtr->isInt(),
+    checkLogic(
+        minReqsPtr->isInt(),
         "SlowWarmUpSettings: '{}' must be an integer, but was {}",
-        minReqsName, minReqsPtr->typeName());
+        minReqsName,
+        minReqsPtr->typeName());
     minRequests_ = minReqsPtr->getInt();
-    checkLogic(minRequests_ > 0,
+    checkLogic(
+        minRequests_ > 0,
         "SlowWarmUpSettings: '{}' must be an integer greater than 0",
         minReqsName);
   }
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

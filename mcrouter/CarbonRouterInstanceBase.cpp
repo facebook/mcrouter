@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,9 @@
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
     : opts_(std::move(inputOptions)),
@@ -28,10 +30,9 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
           folly::make_unique<AsyncWriter>(opts_.stats_async_queue_length)),
       asyncWriter_(folly::make_unique<AsyncWriter>()),
       leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
-        evbAuxiliaryThread_.getEventBase()->runInEventBaseThread([] {
-          folly::setThreadName("CarbonAux");
-        });
-      }
+  evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
+      [] { folly::setThreadName("CarbonAux"); });
+}
 
 void CarbonRouterInstanceBase::setUpCompressionDictionaries(
     std::unordered_map<uint32_t, CodecConfigPtr>&& codecConfigs) noexcept {
@@ -43,7 +44,7 @@ void CarbonRouterInstanceBase::setUpCompressionDictionaries(
 }
 
 void CarbonRouterInstanceBase::addStartupOpts(
-  std::unordered_map<std::string, std::string> additionalOpts) {
+    std::unordered_map<std::string, std::string> additionalOpts) {
   additionalStartupOpts_.insert(additionalOpts.begin(), additionalOpts.end());
 }
 
@@ -67,5 +68,6 @@ size_t CarbonRouterInstanceBase::nextProxyIndex() {
   nextProxy_ = (nextProxy_ + 1) % opts().num_proxies;
   return res;
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

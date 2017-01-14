@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,8 +9,8 @@
  */
 #pragma once
 
-#include <limits>
 #include <stdint.h>
+#include <limits>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -201,8 +201,9 @@ class CarbonProtocolWriter {
 
   // Serialize Carbon-generated structure members and mixins
   template <class T>
-  typename std::enable_if<IsCarbonStruct<T>::value, void>::type
-  writeField(const int16_t id, const T& data) {
+  typename std::enable_if<IsCarbonStruct<T>::value, void>::type writeField(
+      const int16_t id,
+      const T& data) {
     writeFieldHeader(FieldType::Struct, id);
     writeRaw(data);
   }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,8 +23,8 @@ using namespace facebook::memcache;
 TEST(WeightedCh3HashFunc, basic) {
   WeightedCh3HashFunc func_100(std::vector<double>(100, 1.0));
   WeightedCh3HashFunc func_1({1.0});
-  WeightedCh3HashFunc func_max(std::vector<double>(furc_maximum_pool_size(),
-                                                   1.0));
+  WeightedCh3HashFunc func_max(
+      std::vector<double>(furc_maximum_pool_size(), 1.0));
   WeightedCh3HashFunc func_99999(std::vector<double>(99999, 1.0));
 
   EXPECT_TRUE(97 == func_100("sample"));
@@ -44,7 +44,7 @@ TEST(WeightedCh3HashFunc, basic) {
   }
   EXPECT_TRUE(31015 == func_99999(test_max_key));
 
-  //127 .. -128
+  // 127 .. -128
   std::reverse(test_max_key.begin(), test_max_key.end());
   EXPECT_TRUE(67101 == func_99999(test_max_key));
 }
@@ -83,19 +83,15 @@ TEST(WeightedCh3HashFunc, reducedWeight) {
   }
 
   /* Note reduced weight for the 3rd box */
-  EXPECT_TRUE(std::vector<size_t>(
-    {307, 342, 351}) ==
-    ch3_counts);
-  EXPECT_TRUE(std::vector<size_t>(
-    {341, 371, 288}) ==
-    wch3_counts);
+  EXPECT_TRUE(std::vector<size_t>({307, 342, 351}) == ch3_counts);
+  EXPECT_TRUE(std::vector<size_t>({341, 371, 288}) == wch3_counts);
 }
 
 /* Compare ch3 and wch3 */
 TEST(WeightedCh3HashFunc, randomWeights) {
   Ch3HashFunc ch3_func_10(10);
   WeightedCh3HashFunc wch3_func_10(
-    {0.429, 0.541, 0.117, 0.998, 0.283, 0.065, 0.109, 0.042, 0.676, 0.943});
+      {0.429, 0.541, 0.117, 0.998, 0.283, 0.065, 0.109, 0.042, 0.676, 0.943});
 
   std::vector<size_t> ch3_counts(10, 0);
   std::vector<size_t> wch3_counts(10, 0);
@@ -107,10 +103,12 @@ TEST(WeightedCh3HashFunc, randomWeights) {
     ++wch3_counts[wch3_func_10(key)];
   }
 
-  EXPECT_TRUE(std::vector<size_t>(
-    {995, 955, 1046, 968, 1032, 972, 1016, 1038, 1010, 968}) ==
-    ch3_counts);
-  EXPECT_TRUE(std::vector<size_t>(
-    {1016, 1252, 288, 2354, 661, 195, 247, 122, 1668, 2197}) ==
-    wch3_counts);
+  EXPECT_TRUE(
+      std::vector<size_t>(
+          {995, 955, 1046, 968, 1032, 972, 1016, 1038, 1010, 968}) ==
+      ch3_counts);
+  EXPECT_TRUE(
+      std::vector<size_t>(
+          {1016, 1252, 288, 2354, 661, 195, 247, 122, 1668, 2197}) ==
+      wch3_counts);
 }

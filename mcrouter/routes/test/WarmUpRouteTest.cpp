@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,15 +30,18 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(warmUpRouteTest, warmUp) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
-                            UpdateRouteTestData(mc_res_stored),
-                            DeleteRouteTestData(mc_res_deleted)),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"),
-                            UpdateRouteTestData(mc_res_stored),
-                            DeleteRouteTestData(mc_res_notfound)),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, ""),
-                            UpdateRouteTestData(mc_res_notstored),
-                            DeleteRouteTestData(mc_res_notfound)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "a"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData(mc_res_deleted)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "b"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData(mc_res_notfound)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_notfound, ""),
+          UpdateRouteTestData(mc_res_notstored),
+          DeleteRouteTestData(mc_res_notfound)),
   };
   auto route_handles = get_route_handles(test_handles);
 
@@ -46,28 +49,25 @@ TEST(warmUpRouteTest, warmUp) {
 
   fm.run([&]() {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
-      route_handles[0], route_handles[1], 1);
+        route_handles[0], route_handles[1], 1);
 
-    auto reply_get = rh.route(
-        McGetRequest("key_get"));
+    auto reply_get = rh.route(McGetRequest("key_get"));
     EXPECT_EQ("b", carbon::valueRangeSlow(reply_get).str());
     EXPECT_NE(vector<string>{"key_get"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_get"}, test_handles[1]->saw_keys);
     (test_handles[0]->saw_keys).clear();
     (test_handles[1]->saw_keys).clear();
 
-    auto reply_del = rh.route(
-        McDeleteRequest("key_del"));
+    auto reply_del = rh.route(McDeleteRequest("key_del"));
     EXPECT_EQ(mc_res_notfound, reply_del.result());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[1]->saw_keys);
   });
   fm.run([&]() {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
-      route_handles[0], route_handles[2], 1);
+        route_handles[0], route_handles[2], 1);
 
-    auto reply_get = rh.route(
-        McGetRequest("key_get"));
+    auto reply_get = rh.route(McGetRequest("key_get"));
     EXPECT_EQ("a", carbon::valueRangeSlow(reply_get).str());
     EXPECT_EQ(vector<string>{"key_get"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_get"}, test_handles[2]->saw_keys);
@@ -76,19 +76,16 @@ TEST(warmUpRouteTest, warmUp) {
     EXPECT_EQ((vector<uint32_t>{0, 1}), test_handles[2]->sawExptimes);
     (test_handles[0]->saw_keys).clear();
     (test_handles[2]->saw_keys).clear();
-    EXPECT_EQ((vector<std::string>{ "get", "add" }),
-              test_handles[2]->sawOperations);
+    EXPECT_EQ(
+        (vector<std::string>{"get", "add"}), test_handles[2]->sawOperations);
   });
   fm.run([&]() {
     TestRouteHandle<WarmUpRoute<TestRouteHandleIf>> rh(
-      route_handles[0], route_handles[2], 1);
+        route_handles[0], route_handles[2], 1);
 
-    auto reply_del = rh.route(
-        McDeleteRequest("key_del"));
+    auto reply_del = rh.route(McDeleteRequest("key_del"));
     EXPECT_EQ(mc_res_notfound, reply_del.result());
     EXPECT_NE(vector<string>{"key_del"}, test_handles[0]->saw_keys);
     EXPECT_EQ(vector<string>{"key_del"}, test_handles[2]->saw_keys);
   });
-
-
 }

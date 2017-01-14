@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -36,31 +36,31 @@ inline folly::IOBuf* bufPtr(folly::IOBuf& buf) {
 } // detail
 
 template <class R>
-typename std::enable_if<R::hasValue, const folly::IOBuf*>::type
-valuePtrUnsafe(const R& requestOrReply) {
+typename std::enable_if<R::hasValue, const folly::IOBuf*>::type valuePtrUnsafe(
+    const R& requestOrReply) {
   return detail::bufPtr(const_cast<R&>(requestOrReply).value());
 }
 template <class R>
-typename std::enable_if<R::hasValue, folly::IOBuf*>::type
-valuePtrUnsafe(R& requestOrReply) {
+typename std::enable_if<R::hasValue, folly::IOBuf*>::type valuePtrUnsafe(
+    R& requestOrReply) {
   return detail::bufPtr(requestOrReply.value());
 }
 template <class R>
-typename std::enable_if<!R::hasValue, folly::IOBuf*>::type
-valuePtrUnsafe(const R& requestOrReply) {
+typename std::enable_if<!R::hasValue, folly::IOBuf*>::type valuePtrUnsafe(
+    const R& requestOrReply) {
   return nullptr;
 }
 
 template <class R>
-typename std::enable_if<R::hasValue, folly::StringPiece>::type
-valueRangeSlow(R& requestOrReply) {
+typename std::enable_if<R::hasValue, folly::StringPiece>::type valueRangeSlow(
+    R& requestOrReply) {
   auto* buf = detail::bufPtr(requestOrReply.value());
   return buf ? folly::StringPiece(buf->coalesce()) : folly::StringPiece();
 }
 
 template <class R>
-typename std::enable_if<!R::hasValue, folly::StringPiece>::type
-valueRangeSlow(R& requestOrReply) {
+typename std::enable_if<!R::hasValue, folly::StringPiece>::type valueRangeSlow(
+    R& requestOrReply) {
   return folly::StringPiece();
 }
 
@@ -83,8 +83,7 @@ typename std::enable_if<R::hasFlags, uint64_t>::type getFlags(
 }
 
 template <class R>
-typename std::enable_if<!R::hasFlags, uint64_t>::type getFlags(
-    const R&) {
+typename std::enable_if<!R::hasFlags, uint64_t>::type getFlags(const R&) {
   return 0;
 }
 
@@ -165,8 +164,9 @@ class RequestIdMap {
 
   template <class Request>
   const T& getByRequestType() const {
-    static_assert(ListContains<RequestList, Request>::value,
-                  "Supplied Request type is not in RequestList");
+    static_assert(
+        ListContains<RequestList, Request>::value,
+        "Supplied Request type is not in RequestList");
     return container_[Request::typeId - kMinId];
   }
 
@@ -207,6 +207,7 @@ class CanHandleRequest {
   static constexpr std::false_type check(...) {
     return {};
   }
+
  public:
   template <class Request, class OnRequest>
   static constexpr auto value() -> decltype(check<Request, OnRequest>(0)) {

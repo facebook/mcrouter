@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,31 +15,32 @@
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
-#include "mcrouter/config.h"
-#include "mcrouter/lib/network/AsyncMcServer.h"
-#include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyThread.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/ServerOnRequest.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/network/AsyncMcServer.h"
+#include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/standalone_options.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
 void serverLoop(
-  CarbonRouterInstance<McrouterRouterInfo>& router,
-  size_t threadId,
-  folly::EventBase& evb,
-  AsyncMcServerWorker& worker,
-  const McrouterStandaloneOptions& standaloneOpts) {
-
-  auto routerClient = router.createSameThreadClient(
-      0 /* maximum_outstanding_requests */);
+    CarbonRouterInstance<McrouterRouterInfo>& router,
+    size_t threadId,
+    folly::EventBase& evb,
+    AsyncMcServerWorker& worker,
+    const McrouterStandaloneOptions& standaloneOpts) {
+  auto routerClient =
+      router.createSameThreadClient(0 /* maximum_outstanding_requests */);
 
   auto proxy = router.getProxy(threadId);
   // Manually override proxy assignment
@@ -47,10 +48,10 @@ void serverLoop(
 
   worker.setOnRequest(MemcacheRequestHandler<ServerOnRequest>(
       *routerClient, standaloneOpts.retain_source_ip));
-  worker.setOnConnectionAccepted([proxy] () {
-      proxy->stats().increment(successful_client_connections_stat);
-      proxy->stats().increment(num_clients_stat);
-    });
+  worker.setOnConnectionAccepted([proxy]() {
+    proxy->stats().increment(successful_client_connections_stat);
+    proxy->stats().increment(num_clients_stat);
+  });
   worker.setOnConnectionCloseFinish(
       [proxy](facebook::memcache::McServerSession&) {
         proxy->stats().decrement(num_clients_stat);
@@ -70,8 +71,7 @@ void serverLoop(
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
      We can clean this up once we convert everything to EventBase */
-  while (worker.isAlive() ||
-         worker.writesPending() ||
+  while (worker.isAlive() || worker.writesPending() ||
          proxy->fiberManager().hasTasks()) {
     evb.loopOnce();
   }
@@ -82,8 +82,9 @@ void serverLoop(
 
 } // anonymous
 
-bool runServer(const McrouterStandaloneOptions& standaloneOpts,
-               const McrouterOptions& mcrouterOpts) {
+bool runServer(
+    const McrouterStandaloneOptions& standaloneOpts,
+    const McrouterOptions& mcrouterOpts) {
   AsyncMcServer::Options opts;
 
   if (standaloneOpts.listen_sock_fd >= 0) {
@@ -104,8 +105,8 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
   opts.tcpListenBacklog = standaloneOpts.tcp_listen_backlog;
   opts.worker.defaultVersionHandler = false;
   opts.worker.maxInFlight = standaloneOpts.max_client_outstanding_reqs;
-  opts.worker.sendTimeout = std::chrono::milliseconds{
-    standaloneOpts.client_timeout_ms};
+  opts.worker.sendTimeout =
+      std::chrono::milliseconds{standaloneOpts.client_timeout_ms};
   if (!mcrouterOpts.debug_fifo_root.empty()) {
     opts.worker.debugFifoPath = getServerDebugFifoFullPath(mcrouterOpts);
   }
@@ -121,9 +122,7 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
     server.installShutdownHandler({SIGINT, SIGTERM});
 
     auto router = CarbonRouterInstance<McrouterRouterInfo>::init(
-      "standalone",
-      mcrouterOpts,
-      server.eventBases());
+        "standalone", mcrouterOpts, server.eventBases());
 
     if (router == nullptr) {
       LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
@@ -142,15 +141,13 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
     }
 
     server.spawn(
-      [router, &standaloneOpts] (size_t threadId,
-                                 folly::EventBase& evb,
-                                 AsyncMcServerWorker& worker) {
-        serverLoop(*router, threadId, evb, worker, standaloneOpts);
-      },
-      [router]() {
-        router->shutdown();
-      }
-    );
+        [router, &standaloneOpts](
+            size_t threadId,
+            folly::EventBase& evb,
+            AsyncMcServerWorker& worker) {
+          serverLoop(*router, threadId, evb, worker, standaloneOpts);
+        },
+        [router]() { router->shutdown(); });
 
     server.join();
 
@@ -167,5 +164,6 @@ bool runServer(const McrouterStandaloneOptions& standaloneOpts,
   }
   return true;
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,8 +19,8 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/route.h"
-#include "mcrouter/routes/ShadowRouteIf.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
+#include "mcrouter/routes/ShadowRouteIf.h"
 
 namespace folly {
 struct dynamic;
@@ -53,17 +53,18 @@ class ShadowRoute {
     return "shadow";
   }
 
-  ShadowRoute(std::shared_ptr<RouteHandleIf> normalRoute,
-              ShadowData<RouterInfo> shadowData,
-              ShadowPolicy shadowPolicy)
+  ShadowRoute(
+      std::shared_ptr<RouteHandleIf> normalRoute,
+      ShadowData<RouterInfo> shadowData,
+      ShadowPolicy shadowPolicy)
       : normal_(std::move(normalRoute)),
         shadowData_(std::move(shadowData)),
-        shadowPolicy_(std::move(shadowPolicy)) {
-  }
+        shadowPolicy_(std::move(shadowPolicy)) {}
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*normal_, req);
     for (auto& shadowData : shadowData_) {
       t(*shadowData.first, req);
@@ -78,7 +79,7 @@ class ShadowRoute {
       if (shouldShadow(req, iter.second.get())) {
         if (!adjustedReq) {
           adjustedReq = std::make_shared<Request>(
-            shadowPolicy_.updateRequestForShadowing(req));
+              shadowPolicy_.updateRequestForShadowing(req));
         }
         if (!normalReply && shadowPolicy_.shouldDelayShadow(req)) {
           normalReply = normal_->route(*adjustedReq);

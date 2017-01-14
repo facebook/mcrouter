@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,8 +9,8 @@
  */
 #pragma once
 
-#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
@@ -84,34 +84,37 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
   std::string name;
   if (json.isObject()) {
     if (auto jLeasePairing = json.get_ptr("enable_lease_pairing")) {
-      checkLogic(jLeasePairing->isBool(),
-                 "Failover: enable_lease_pairing is not bool");
+      checkLogic(
+          jLeasePairing->isBool(),
+          "Failover: enable_lease_pairing is not bool");
       enableLeasePairing = jLeasePairing->getBool();
     }
     if (auto jName = json.get_ptr("name")) {
       checkLogic(jName->isString(), "Failover: name is not a string");
       name = jName->getString();
     } else {
-      checkLogic(!enableLeasePairing,
-                 "Failover: name is required when lease pairing is enabled");
+      checkLogic(
+          !enableLeasePairing,
+          "Failover: name is required when lease pairing is enabled");
     }
     if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
       failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
     }
     if (auto jFailoverTag = json.get_ptr("failover_tag")) {
-      checkLogic(jFailoverTag->isBool(),
-                 "Failover: failover_tag is not bool");
+      checkLogic(jFailoverTag->isBool(), "Failover: failover_tag is not bool");
       failoverTagging = jFailoverTag->getBool();
     }
     if (auto jFailoverLimit = json.get_ptr("failover_limit")) {
       rateLimiter = folly::make_unique<FailoverRateLimiter>(*jFailoverLimit);
     }
     if (auto jFailoverPolicy = json.get_ptr("failover_policy")) {
-      checkLogic(jFailoverPolicy->isObject(),
-                 "Failover: failover_policy is not object");
+      checkLogic(
+          jFailoverPolicy->isObject(),
+          "Failover: failover_policy is not object");
       auto jPolicyType = jFailoverPolicy->get_ptr("type");
-      checkLogic(jPolicyType != nullptr,
-                 "Failover: failover_policy object is missing 'type' field");
+      checkLogic(
+          jPolicyType != nullptr,
+          "Failover: failover_policy object is missing 'type' field");
       if (parseString(*jPolicyType, "type") == "LeastFailuresPolicy") {
         return makeFailoverRouteLeastFailures<RouterInfo, RouteHandle>(
             std::move(children),

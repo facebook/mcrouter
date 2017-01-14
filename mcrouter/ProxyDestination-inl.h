@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,9 @@
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/Operation.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class Request>
 ReplyT<Request> ProxyDestination::send(
@@ -45,5 +47,6 @@ bool ProxyDestination::shouldDrop() const {
   return std::generate_canonical<double, std::numeric_limits<double>::digits>(
              proxy->randomGenerator()) < dropProbability;
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

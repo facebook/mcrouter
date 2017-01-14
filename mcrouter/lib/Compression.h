@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -127,22 +127,30 @@ class CompressionCodec {
   /**
    * Return the codec's type.
    */
-  CompressionCodecType type() const { return type_; }
+  CompressionCodecType type() const {
+    return type_;
+  }
 
   /**
    * Return the id of this codec.
    */
-  uint32_t id() const { return id_; }
+  uint32_t id() const {
+    return id_;
+  }
 
   /**
    * Return the compression level used by this codec.
    */
-  uint32_t compressionLevel() const { return compressionLevel_; }
+  uint32_t compressionLevel() const {
+    return compressionLevel_;
+  }
 
   /**
    * Return the filtering options used by this codec.
    */
-  FilteringOptions filteringOptions() const { return filteringOptions_; }
+  FilteringOptions filteringOptions() const {
+    return filteringOptions_;
+  }
 
  protected:
   /**

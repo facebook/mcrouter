@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,13 +14,14 @@
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute();
 
 McrouterRouteHandlePtr makeAllAsyncRoute(
-  std::vector<McrouterRouteHandlePtr> rh) {
-
+    std::vector<McrouterRouteHandlePtr> rh) {
   if (rh.empty()) {
     return makeNullRoute();
   }
@@ -41,5 +42,6 @@ McrouterRouteHandlePtr makeAllAsyncRoute(
   }
   return makeAllAsyncRoute(std::move(children));
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,16 +9,16 @@
  */
 #include "MultiOpParent.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 MultiOpParent::MultiOpParent(McServerSession& session, uint64_t blockReqid)
-    : session_(session),
-      block_(session, blockReqid, true /* noReply */) {
-}
+    : session_(session), block_(session, blockReqid, true /* noReply */) {}
 
-bool MultiOpParent::reply(mc_res_t result,
-                          uint32_t errorCode,
-                          std::string&& errorMessage) {
+bool MultiOpParent::reply(
+    mc_res_t result,
+    uint32_t errorCode,
+    std::string&& errorMessage) {
   bool stolen = false;
   // If not a hit or a miss, and we didn't store a reply yet,
   // take ownership of the error reply and tell caller not to reply
@@ -62,5 +62,5 @@ void MultiOpParent::release() {
   // blocking context
   McServerRequestContext::reply(std::move(block_), McGetReply());
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

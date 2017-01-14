@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,9 +12,9 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/experimental/TestUtil.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
+#include <folly/experimental/TestUtil.h>
 
 #include "mcrouter/flavor.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -30,18 +30,20 @@ TEST(Flavor, readStandaloneFlavor) {
   // Write temporary flavor file to test.
   TemporaryFile flavorFile("web-standalone");
   std::string flavorContents =
-    "{"
+      "{"
       "\"libmcrouter_options\": {"
-        "\"default_route\": \"abc\" /* comment */"
+      "\"default_route\": \"abc\" /* comment */"
       "},"
       "\"standalone_options\": {"
-        "\"port\": \"11001\", "
-        "\"log_file\": \"mcrouter.log\""
+      "\"port\": \"11001\", "
+      "\"log_file\": \"mcrouter.log\""
       "}"
-    "}";
+      "}";
   std::string flavorPath(flavorFile.path().string());
-  EXPECT_EQ(folly::writeFull(flavorFile.fd(), flavorContents.data(),
-        flavorContents.size()), flavorContents.size());
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorFile.fd(), flavorContents.data(), flavorContents.size()),
+      flavorContents.size());
 
   // Reads the flavor file to test.
   std::unordered_map<std::string, std::string> libmcrouter_opts;
@@ -68,14 +70,16 @@ TEST(Flavor, readLibmcrouterFlavor) {
   // Write temporary libmcrouter flavor file to test.
   TemporaryFile flavorFile("web");
   std::string flavorContents =
-    "{"
+      "{"
       "\"options\": {"
-        "\"default_route\": \"abc\""
+      "\"default_route\": \"abc\""
       "}"
-    "}";
+      "}";
   std::string flavorPath(flavorFile.path().string());
-  EXPECT_EQ(folly::writeFull(flavorFile.fd(),
-        flavorContents.data(), flavorContents.size()), flavorContents.size());
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorFile.fd(), flavorContents.data(), flavorContents.size()),
+      flavorContents.size());
 
   // Reads the flavor file to test.
   std::unordered_map<std::string, std::string> libmcrouter_opts;
@@ -97,28 +101,33 @@ TEST(Flavor, readFlavorFromTwoFiles) {
   // Write temporary standalone flavor file to test.
   TemporaryFile flavorStandaloneFile("web-standalone");
   std::string flavorStandaloneContents =
-    "{"
+      "{"
       "\"standalone_options\": {"
-        "\"port\": \"11001\", /* comment */"
-        "\"log_file\": \"mcrouter.log\""
+      "\"port\": \"11001\", /* comment */"
+      "\"log_file\": \"mcrouter.log\""
       "}"
-    "}";
+      "}";
   std::string flavorStandalonePath(flavorStandaloneFile.path().string());
-  EXPECT_EQ(folly::writeFull(flavorStandaloneFile.fd(),
-        flavorStandaloneContents.data(), flavorStandaloneContents.size()),
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorStandaloneFile.fd(),
+          flavorStandaloneContents.data(),
+          flavorStandaloneContents.size()),
       flavorStandaloneContents.size());
 
   // Write temporary libmcrouter flavor file to test.
   std::string flavorPath(eraseStr(flavorStandalonePath, "-standalone"));
   folly::File flavorFile(flavorPath.data(), O_RDWR | O_CREAT);
   std::string flavorContents =
-    "{"
+      "{"
       "\"options\": {"
-        "\"default_route\": \"abc\""
+      "\"default_route\": \"abc\""
       "}"
-    "}";
-  EXPECT_EQ(folly::writeFull(flavorFile.fd(),
-        flavorContents.data(), flavorContents.size()), flavorContents.size());
+      "}";
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorFile.fd(), flavorContents.data(), flavorContents.size()),
+      flavorContents.size());
 
   // Reads the flavor file to test. Expects that we read from both files.
   std::unordered_map<std::string, std::string> libmcrouter_opts;
@@ -144,32 +153,37 @@ TEST(Flavor, readFlavorFromTwoFilesShouldOverrideLibmcrouterOptions) {
   // Write temporary standalone flavor file to test.
   TemporaryFile flavorStandaloneFile("web-standalone");
   std::string flavorStandaloneContents =
-    "{"
+      "{"
       "\"libmcrouter_options\": {"
-        "\"default_route\": \"def\""
+      "\"default_route\": \"def\""
       "},"
       "\"standalone_options\": {"
-        "\"port\": \"11001\", "
-        "\"log_file\": \"mcrouter.log\""
+      "\"port\": \"11001\", "
+      "\"log_file\": \"mcrouter.log\""
       "}"
-    "}";
+      "}";
   std::string flavorStandalonePath(flavorStandaloneFile.path().string());
-  EXPECT_EQ(folly::writeFull(flavorStandaloneFile.fd(),
-        flavorStandaloneContents.data(), flavorStandaloneContents.size()),
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorStandaloneFile.fd(),
+          flavorStandaloneContents.data(),
+          flavorStandaloneContents.size()),
       flavorStandaloneContents.size());
 
   // Write temporary libmcrouter flavor file to test.
   std::string flavorPath(eraseStr(flavorStandalonePath, "-standalone"));
   folly::File flavorFile(flavorPath.data(), O_RDWR | O_CREAT);
   std::string flavorContents =
-    "{"
+      "{"
       "\"options\": {"
-        "// comment\n"
-        "\"default_route\": \"abc\""
+      "// comment\n"
+      "\"default_route\": \"abc\""
       "}"
-    "}";
-  EXPECT_EQ(folly::writeFull(flavorFile.fd(),
-        flavorContents.data(), flavorContents.size()), flavorContents.size());
+      "}";
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorFile.fd(), flavorContents.data(), flavorContents.size()),
+      flavorContents.size());
 
   // Reads the flavor file to test. Expects that we read from both files.
   std::unordered_map<std::string, std::string> libmcrouter_opts;
@@ -195,31 +209,36 @@ TEST(Flavor, readFlavorShouldReportMalformedStandaloneFlavor) {
   // Write temporary standalone flavor file to test.
   TemporaryFile flavorStandaloneFile("web-standalone");
   std::string flavorStandaloneContents =
-    "{"
+      "{"
       "\"standalone_options\": {"
-        "\"port\": \"11001\", "
-        "\"log_file\": \"mcrouter.log\""
+      "\"port\": \"11001\", "
+      "\"log_file\": \"mcrouter.log\""
       "},"
       "\"libmcrouter_options\": ["
-        "--i-have-no-idea-what-i'm-doing"
+      "--i-have-no-idea-what-i'm-doing"
       "]"
-    "}";
+      "}";
   std::string flavorStandalonePath(flavorStandaloneFile.path().string());
-  EXPECT_EQ(folly::writeFull(flavorStandaloneFile.fd(),
-        flavorStandaloneContents.data(), flavorStandaloneContents.size()),
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorStandaloneFile.fd(),
+          flavorStandaloneContents.data(),
+          flavorStandaloneContents.size()),
       flavorStandaloneContents.size());
 
   // Write temporary libmcrouter flavor file to test.
   std::string flavorPath(eraseStr(flavorStandalonePath, "-standalone"));
   folly::File flavorFile(flavorPath.data(), O_RDWR | O_CREAT);
   std::string flavorContents =
-    "{"
+      "{"
       "\"options\": {"
-        "\"default_route\": \"abc\""
+      "\"default_route\": \"abc\""
       "}"
-    "}";
-  EXPECT_EQ(folly::writeFull(flavorFile.fd(),
-        flavorContents.data(), flavorContents.size()), flavorContents.size());
+      "}";
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorFile.fd(), flavorContents.data(), flavorContents.size()),
+      flavorContents.size());
 
   // Reads the flavor file to test. Expects that we read from both files.
   std::unordered_map<std::string, std::string> libmcrouter_opts;
@@ -232,28 +251,33 @@ TEST(Flavor, readFlavorShouldReportMalformedLibmcrouterFlavor) {
   // Write temporary standalone flavor file to test.
   TemporaryFile flavorStandaloneFile("web-standalone");
   std::string flavorStandaloneContents =
-    "{"
+      "{"
       "\"standalone_options\": {"
-        "\"port\": \"11001\", "
-        "\"log_file\": \"mcrouter.log\""
+      "\"port\": \"11001\", "
+      "\"log_file\": \"mcrouter.log\""
       "}"
-    "}";
+      "}";
   std::string flavorStandalonePath(flavorStandaloneFile.path().string());
-  EXPECT_EQ(folly::writeFull(flavorStandaloneFile.fd(),
-        flavorStandaloneContents.data(), flavorStandaloneContents.size()),
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorStandaloneFile.fd(),
+          flavorStandaloneContents.data(),
+          flavorStandaloneContents.size()),
       flavorStandaloneContents.size());
 
   // Write temporary libmcrouter flavor file to test.
   std::string flavorPath(eraseStr(flavorStandalonePath, "-standalone"));
   folly::File flavorFile(flavorPath.data(), O_RDWR | O_CREAT);
   std::string flavorContents =
-    "{"
+      "{"
       "\"libmcrouter_options\": {"
-        "\"default_route\": \"abc\""
+      "\"default_route\": \"abc\""
       "}"
-    "}";
-  EXPECT_EQ(folly::writeFull(flavorFile.fd(),
-        flavorContents.data(), flavorContents.size()), flavorContents.size());
+      "}";
+  EXPECT_EQ(
+      folly::writeFull(
+          flavorFile.fd(), flavorContents.data(), flavorContents.size()),
+      flavorContents.size());
 
   // Reads the flavor file to test. Expects that we read from both files.
   std::unordered_map<std::string, std::string> libmcrouter_opts;

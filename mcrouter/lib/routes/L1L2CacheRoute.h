@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,17 +15,18 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * This route handle is intended to be used for two level caching.
@@ -46,27 +47,30 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class L1L2CacheRoute {
  public:
-  static std::string routeName() { return "l1l2-cache"; }
+  static std::string routeName() {
+    return "l1l2-cache";
+  }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*l1_, req);
     t(*l2_, req);
   }
 
-  L1L2CacheRoute(std::shared_ptr<RouteHandleIf> l1,
-                 std::shared_ptr<RouteHandleIf> l2,
-                 uint32_t upgradingL1Exptime,
-                 size_t ncacheExptime,
-                 size_t ncacheUpdatePeriod)
-  : l1_(std::move(l1)),
-    l2_(std::move(l2)),
-    upgradingL1Exptime_(upgradingL1Exptime),
-    ncacheExptime_(ncacheExptime),
-    ncacheUpdatePeriod_(ncacheUpdatePeriod),
-    ncacheUpdateCounter_(ncacheUpdatePeriod) {
-
+  L1L2CacheRoute(
+      std::shared_ptr<RouteHandleIf> l1,
+      std::shared_ptr<RouteHandleIf> l2,
+      uint32_t upgradingL1Exptime,
+      size_t ncacheExptime,
+      size_t ncacheUpdatePeriod)
+      : l1_(std::move(l1)),
+        l2_(std::move(l2)),
+        upgradingL1Exptime_(upgradingL1Exptime),
+        ncacheExptime_(ncacheExptime),
+        ncacheUpdatePeriod_(ncacheUpdatePeriod),
+        ncacheUpdateCounter_(ncacheUpdatePeriod) {
     assert(l1_ != nullptr);
     assert(l2_ != nullptr);
   }
@@ -100,7 +104,7 @@ class L1L2CacheRoute {
       ]() { l1->route(addReq); });
     } else if (isMissResult(l2Reply.result()) && ncacheUpdatePeriod_) {
       folly::fibers::addTask(
-          [l1 = l1_, addReq = l1Ncache<McAddRequest>(req, ncacheExptime_)]() {
+          [ l1 = l1_, addReq = l1Ncache<McAddRequest>(req, ncacheExptime_) ]() {
             l1->route(addReq);
           });
     }
@@ -108,9 +112,8 @@ class L1L2CacheRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req,
-                        OtherThanT<Request, GetLike<>> = 0) const {
-
+  ReplyT<Request> route(const Request& req, OtherThanT<Request, GetLike<>> = 0)
+      const {
     return l1_->route(req);
   }
 
@@ -123,9 +126,10 @@ class L1L2CacheRoute {
   size_t ncacheUpdateCounter_{0};
 
   template <class ToRequest, class Request, class Reply>
-  static ToRequest l1UpdateFromL2(const Request& origReq,
-                                  const Reply& reply,
-                                  size_t upgradingL1Exptime) {
+  static ToRequest l1UpdateFromL2(
+      const Request& origReq,
+      const Reply& reply,
+      size_t upgradingL1Exptime) {
     ToRequest req;
     req.key() = origReq.key();
     if (auto replyValue = carbon::valuePtrUnsafe(reply)) {
@@ -148,21 +152,23 @@ class L1L2CacheRoute {
 
   template <class Request>
   void updateL1Ncache(const Request& req) {
-    folly::fibers::addTask(
-      [l1 = l1_, l2 = l2_, creq = req,
-       upgradingL1Exptime = upgradingL1Exptime_,
-       ncacheExptime = ncacheExptime_]() {
-        auto l2Reply = l2->route(creq);
-        if (isHitResult(l2Reply.result())) {
-          l1->route(
-              l1UpdateFromL2<McSetRequest>(creq, l2Reply, upgradingL1Exptime));
-        } else {
-          /* bump TTL on the ncache entry */
-          l1->route(l1Ncache<McSetRequest>(creq, ncacheExptime));
-        }
+    folly::fibers::addTask([
+      l1 = l1_,
+      l2 = l2_,
+      creq = req,
+      upgradingL1Exptime = upgradingL1Exptime_,
+      ncacheExptime = ncacheExptime_
+    ]() {
+      auto l2Reply = l2->route(creq);
+      if (isHitResult(l2Reply.result())) {
+        l1->route(
+            l1UpdateFromL2<McSetRequest>(creq, l2Reply, upgradingL1Exptime));
+      } else {
+        /* bump TTL on the ncache entry */
+        l1->route(l1Ncache<McSetRequest>(creq, ncacheExptime));
       }
-    );
+    });
   }
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

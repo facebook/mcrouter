@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,14 +15,14 @@
 #include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
+#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/TypedMsg.h"
+#include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/test/ClientSocket.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/MockMc.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
-#include "mcrouter/lib/network/TypedMsg.h"
-#include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 using namespace facebook::memcache;
 
@@ -125,8 +125,8 @@ TEST(CarbonMockMc, basic) {
   caretParseHeader((uint8_t*)reply.data(), reply.size(), replyInfo);
   EXPECT_EQ(100, replyInfo.reqId);
   EXPECT_EQ(2, replyInfo.typeId);
-  auto readBuf = folly::IOBuf::wrapBuffer(reply.data() + replyInfo.headerSize,
-                                          replyInfo.bodySize);
+  auto readBuf = folly::IOBuf::wrapBuffer(
+      reply.data() + replyInfo.headerSize, replyInfo.bodySize);
   carbon::CarbonProtocolReader reader(carbon::CarbonCursor(readBuf.get()));
   McGetReply getReply;
   getReply.deserialize(reader);

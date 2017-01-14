@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,9 +13,9 @@
 #include <string>
 #include <type_traits>
 
-#include <folly/io/IOBuf.h>
 #include <folly/Range.h>
 #include <folly/SpookyHashV2.h>
+#include <folly/io/IOBuf.h>
 
 namespace carbon {
 
@@ -86,16 +86,26 @@ class Keys {
     return *this;
   }
 
-  size_t size() const { return size(key_); }
+  size_t size() const {
+    return size(key_);
+  }
 
-  bool empty() const { return key_.empty(); }
+  bool empty() const {
+    return key_.empty();
+  }
 
   folly::StringPiece fullKey() const {
     return {reinterpret_cast<const char*>(key_.data()), size()};
   }
-  folly::StringPiece keyWithoutRoute() const { return keyWithoutRoute_; }
-  folly::StringPiece routingPrefix() const { return routingPrefix_; }
-  folly::StringPiece routingKey() const { return routingKey_; }
+  folly::StringPiece keyWithoutRoute() const {
+    return keyWithoutRoute_;
+  }
+  folly::StringPiece routingPrefix() const {
+    return routingPrefix_;
+  }
+  folly::StringPiece routingKey() const {
+    return routingKey_;
+  }
   uint32_t routingKeyHash() const {
     if (!routingKeyHash_) {
       const auto keyPiece = fullKey();
@@ -146,8 +156,12 @@ class Keys {
     routingKeyHash_ = other.routingKeyHash_;
   }
 
-  static size_t size(const folly::IOBuf& buf) { return buf.length(); }
-  static size_t size(const std::string& str) { return str.size(); }
+  static size_t size(const folly::IOBuf& buf) {
+    return buf.length();
+  }
+  static size_t size(const std::string& str) {
+    return str.size();
+  }
 
   void trimStart(size_t n) {
     return trimStartImpl(key_, n);
@@ -171,6 +185,6 @@ class Keys {
   mutable uint32_t routingKeyHash_{0};
 };
 
-} //carbon
+} // carbon
 
 #include "Keys-inl.h"

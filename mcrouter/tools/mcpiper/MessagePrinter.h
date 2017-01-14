@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,7 +22,8 @@
 #include "mcrouter/tools/mcpiper/StyledString.h"
 #include "mcrouter/tools/mcpiper/ValueFormatter.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Class responsible for formatting and printing requests and replies.
@@ -85,10 +86,11 @@ class MessagePrinter {
    * @param filter          Message filter.
    * @param valueFormatter  Class used to format the values of messages.
    */
-  MessagePrinter(Options options,
-                 Filter filter,
-                 std::unique_ptr<ValueFormatter> valueFormatter,
-                 std::ostream& targetOut = std::cout);
+  MessagePrinter(
+      Options options,
+      Filter filter,
+      std::unique_ptr<ValueFormatter> valueFormatter,
+      std::ostream& targetOut = std::cout);
 
   /**
    * Return stats of message printer.
@@ -120,31 +122,32 @@ class MessagePrinter {
 
   // SnifferParser Callbacks
   template <class Request>
-  void requestReady(uint64_t msgId,
-                    Request&& request,
-                    const folly::SocketAddress& from,
-                    const folly::SocketAddress& to,
-                    mc_protocol_t protocol);
+  void requestReady(
+      uint64_t msgId,
+      Request&& request,
+      const folly::SocketAddress& from,
+      const folly::SocketAddress& to,
+      mc_protocol_t protocol);
 
   template <class Reply>
-  void replyReady(uint64_t msgId,
-                  Reply&& reply,
-                  std::string key,
-                  const folly::SocketAddress& from,
-                  const folly::SocketAddress& to,
-                  mc_protocol_t protocol,
-                  int64_t latencyUs,
-                  ReplyStatsContext replyStatsContext);
+  void replyReady(
+      uint64_t msgId,
+      Reply&& reply,
+      std::string key,
+      const folly::SocketAddress& from,
+      const folly::SocketAddress& to,
+      mc_protocol_t protocol,
+      int64_t latencyUs,
+      ReplyStatsContext replyStatsContext);
 
   template <class Request>
-  void printRawRequest(uint64_t msgId,
-                       const Request& request,
-                       mc_protocol_t protocol);
+  void printRawRequest(
+      uint64_t msgId,
+      const Request& request,
+      mc_protocol_t protocol);
 
   template <class Reply>
-  void printRawReply(uint64_t msgId,
-                     Reply&& reply,
-                     mc_protocol_t protocol);
+  void printRawReply(uint64_t msgId, Reply&& reply, mc_protocol_t protocol);
 
   void printRawMessage(const struct iovec* iovsBegin, size_t iovsCount);
 
@@ -166,8 +169,9 @@ class MessagePrinter {
    * @return      True if the addresses matches the specified filters
    *              (and thus should be printed). False otherwise.
    */
-  bool matchAddress(const folly::SocketAddress& from,
-                    const folly::SocketAddress& to) const;
+  bool matchAddress(
+      const folly::SocketAddress& from,
+      const folly::SocketAddress& to) const;
 
   /**
    * Matches all the occurences of "pattern" in "text"
@@ -176,17 +180,20 @@ class MessagePrinter {
    *         of all ocurrences.
    */
   std::vector<std::pair<size_t, size_t>> matchAll(
-      folly::StringPiece text, const boost::regex& pattern) const;
+      folly::StringPiece text,
+      const boost::regex& pattern) const;
 
-  std::string serializeConnectionDetails(const folly::SocketAddress& from,
-                                         const folly::SocketAddress& to,
-                                         mc_protocol_t protocol);
+  std::string serializeConnectionDetails(
+      const folly::SocketAddress& from,
+      const folly::SocketAddress& to,
+      mc_protocol_t protocol);
 
-  std::string serializeMessageHeader(folly::StringPiece messageName,
-                                     mc_res_t result,
-                                     const std::string& key);
+  std::string serializeMessageHeader(
+      folly::StringPiece messageName,
+      mc_res_t result,
+      const std::string& key);
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "MessagePrinter-inl.h"

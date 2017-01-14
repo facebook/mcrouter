@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,8 @@
 
 #include <cstdint>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 enum class Color : uint8_t {
   DEFAULT,
@@ -32,5 +33,5 @@ enum class Color : uint8_t {
   YELLOW,
   DARKYELLOW
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,8 @@
 
 #include "mcrouter/tools/mcpiper/Color.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * A string that has additional style data.
@@ -100,5 +101,5 @@ class StyledString {
   std::vector<Color> fg_;
   std::vector<Color> stack_;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,11 +9,11 @@
  */
 #include "MockMcClientTransport.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 MockMcClientTransport::MockMcClientTransport(folly::EventBase& eventBase)
-    : eventBase_(eventBase) {
-}
+    : eventBase_(eventBase) {}
 
 void MockMcClientTransport::fakeDataRead(const char* buf, size_t bytes) {
   fakeDataRead(reinterpret_cast<const uint8_t*>(buf), bytes);
@@ -23,12 +23,13 @@ void MockMcClientTransport::fakeDataRead(const uint8_t* buf, size_t bytes) {
   readDataQueue_.push(std::make_pair(buf, bytes));
 }
 
-void MockMcClientTransport::setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) {
+void MockMcClientTransport::setReadCB(
+    folly::AsyncTransportWrapper::ReadCallback* callback) {
   readCallback_ = callback;
 }
 
-MockMcClientTransport::ReadCallback*
-MockMcClientTransport::getReadCallback() const {
+MockMcClientTransport::ReadCallback* MockMcClientTransport::getReadCallback()
+    const {
   return dynamic_cast<MockMcClientTransport::ReadCallback*>(readCallback_);
 }
 
@@ -68,11 +69,9 @@ void MockMcClientTransport::closeNow() {
   }
 }
 
-void MockMcClientTransport::shutdownWrite() {
-}
+void MockMcClientTransport::shutdownWrite() {}
 
-void MockMcClientTransport::shutdownWriteNow() {
-}
+void MockMcClientTransport::shutdownWriteNow() {}
 
 bool MockMcClientTransport::good() const {
   return true;
@@ -106,8 +105,7 @@ folly::EventBase* MockMcClientTransport::getEventBase() const {
   return &eventBase_;
 }
 
-void MockMcClientTransport::setSendTimeout(uint32_t) {
-}
+void MockMcClientTransport::setSendTimeout(uint32_t) {}
 
 uint32_t MockMcClientTransport::getSendTimeout() const {
   return 0;
@@ -166,8 +164,9 @@ void MockMcClientTransport::runLoopCallback() noexcept {
     uint8_t* bufferStart = reinterpret_cast<uint8_t*>(buffer);
     uint8_t* bufferEnd = bufferStart + bufferSize;
     while (bufferStart < bufferEnd && !readDataQueue_.empty()) {
-      auto toCopy = std::min(static_cast<size_t>(bufferEnd - bufferStart),
-                             readDataQueue_.front().second);
+      auto toCopy = std::min(
+          static_cast<size_t>(bufferEnd - bufferStart),
+          readDataQueue_.front().second);
       memcpy(bufferStart, readDataQueue_.front().first, toCopy);
       bufferStart += toCopy;
       if (toCopy < readDataQueue_.front().second) {
@@ -187,5 +186,5 @@ void MockMcClientTransport::ensureLoopScheduled() {
     eventBase_.runInLoop(this);
   }
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

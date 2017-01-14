@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,12 +11,14 @@
 
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * True if pattern (like "/foo/a*c/") matches a route (like "/foo/abc")
  */
-bool match_pattern_route(folly::StringPiece pattern,
-                         folly::StringPiece route);
-
-}}} // facebook::memcache::mcrouter
+bool match_pattern_route(folly::StringPiece pattern, folly::StringPiece route);
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,16 +13,17 @@
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 
 namespace folly {
 struct dynamic;
 }
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class RouteHandleIf>
 class RouteHandleFactory;
@@ -37,8 +38,9 @@ struct NullRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const { }
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {}
 
   template <class Request>
   static ReplyT<Request> route(const Request& req) {
@@ -71,5 +73,5 @@ std::shared_ptr<RouteHandleIf> makeNullOrSingletonRoute(
 }
 
 } // mcrouter
-
-}} // facebook::memcache
+}
+} // facebook::memcache

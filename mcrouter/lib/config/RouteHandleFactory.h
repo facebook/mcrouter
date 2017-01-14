@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,11 +12,12 @@
 #include <memory>
 #include <vector>
 
+#include <folly/Range.h>
 #include <folly/dynamic.h>
 #include <folly/experimental/StringKeyedUnorderedMap.h>
-#include <folly/Range.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class RouteHandleIf>
 class RouteHandleProviderIf;
@@ -36,8 +37,9 @@ class RouteHandleFactory {
    * @param provider  creates single node of RouteHandle tree
    * @param threadId  thread where route handles will run
    */
-  RouteHandleFactory(RouteHandleProviderIf<RouteHandleIf>& provider,
-                     size_t threadId);
+  RouteHandleFactory(
+      RouteHandleProviderIf<RouteHandleIf>& provider,
+      size_t threadId);
 
   /**
    * Adds a named route handle that may be used later.
@@ -76,10 +78,11 @@ class RouteHandleFactory {
   /// Thread where route handles created by this factory will be used
   size_t threadId_;
 
-  const std::vector<RouteHandlePtr>&
-  createNamed(folly::StringPiece name, const folly::dynamic& json);
+  const std::vector<RouteHandlePtr>& createNamed(
+      folly::StringPiece name,
+      const folly::dynamic& json);
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "RouteHandleFactory-inl.h"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,9 @@
 
 #include "mcrouter/lib/CompressionCodecManager.h"
 
-namespace facebook { namespace memcache { namespace test {
+namespace facebook {
+namespace memcache {
+namespace test {
 
 namespace {
 
@@ -27,7 +29,7 @@ std::string createBinaryData(size_t size) {
   dic.reserve(size);
   for (size_t i = 0; i < size; ++i) {
     dic.push_back(static_cast<char>(
-          folly::Random::rand32(0, std::numeric_limits<char>::max() + 1)));
+        folly::Random::rand32(0, std::numeric_limits<char>::max() + 1)));
   }
   return dic;
 }
@@ -45,11 +47,11 @@ void validateCodec(CompressionCodec* codec) {
   EXPECT_EQ(buf->coalesce(), uncompressedData->coalesce());
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 TEST(CompressionCodecManager, basic) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
@@ -62,7 +64,7 @@ TEST(CompressionCodecManager, basic) {
   EXPECT_TRUE(codecMap);
   EXPECT_EQ(1, codecMap->getIdRange().firstId);
   EXPECT_EQ(64, codecMap->getIdRange().size);
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     validateCodec(codecMap->get(i));
   }
 }
@@ -77,10 +79,7 @@ TEST(CompressionCodecManager, basicNotEnabledWithFilters) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
-            i,
-            CompressionCodecType::LZ4,
-            createBinaryData(i * 1024),
-            filters));
+            i, CompressionCodecType::LZ4, createBinaryData(i * 1024), filters));
   }
 
   CompressionCodecManager codecManager(std::move(codecConfigs));
@@ -91,7 +90,7 @@ TEST(CompressionCodecManager, basicNotEnabledWithFilters) {
   EXPECT_EQ(64, codecMap->getIdRange().size);
   size_t enabledCodecs = 0;
   size_t sameTypeId = 0;
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     auto codec = codecMap->get(i);
     if (codec->filteringOptions().isEnabled) {
       validateCodec(codec);
@@ -107,7 +106,7 @@ TEST(CompressionCodecManager, basicNotEnabledWithFilters) {
 
 TEST(CompressionCodecManager, basicEnabled) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
@@ -125,7 +124,7 @@ TEST(CompressionCodecManager, basicEnabled) {
   EXPECT_EQ(1, codecMap->getIdRange().firstId);
   EXPECT_EQ(64, codecMap->getIdRange().size);
   size_t enabledCodecs = 0;
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     auto codec = codecMap->get(i);
     if (codec->filteringOptions().isEnabled) {
       validateCodec(codec);
@@ -137,7 +136,7 @@ TEST(CompressionCodecManager, basicEnabled) {
 
 TEST(CompressionCodecManager, missingStart) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
-  for (uint32_t i = 10; i <= 64; ++ i) {
+  for (uint32_t i = 10; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
@@ -150,7 +149,7 @@ TEST(CompressionCodecManager, missingStart) {
   EXPECT_TRUE(codecMap);
   EXPECT_EQ(10, codecMap->getIdRange().firstId);
   EXPECT_EQ(55, codecMap->getIdRange().size);
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     if (i < 10) {
       EXPECT_FALSE(codecMap->get(i));
     } else {
@@ -161,13 +160,13 @@ TEST(CompressionCodecManager, missingStart) {
 
 TEST(CompressionCodecManager, missingMiddle) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
-  for (uint32_t i = 1; i <= 20; ++ i) {
+  for (uint32_t i = 1; i <= 20; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024)));
   }
-  for (uint32_t i = 50; i <= 64; ++ i) {
+  for (uint32_t i = 50; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
@@ -180,7 +179,7 @@ TEST(CompressionCodecManager, missingMiddle) {
   EXPECT_TRUE(codecMap);
   EXPECT_EQ(50, codecMap->getIdRange().firstId);
   EXPECT_EQ(15, codecMap->getIdRange().size);
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     if (i >= 50) {
       validateCodec(codecMap->get(i));
     } else {
@@ -191,7 +190,7 @@ TEST(CompressionCodecManager, missingMiddle) {
 
 TEST(CompressionCodecManager, missingEnd) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
-  for (uint32_t i = 1; i <= 50; ++ i) {
+  for (uint32_t i = 1; i <= 50; ++i) {
     codecConfigs.emplace(
         i,
         folly::make_unique<CodecConfig>(
@@ -204,7 +203,7 @@ TEST(CompressionCodecManager, missingEnd) {
   EXPECT_TRUE(codecMap);
   EXPECT_EQ(1, codecMap->getIdRange().firstId);
   EXPECT_EQ(50, codecMap->getIdRange().size);
-  for (uint32_t i = 1; i <= 64; ++ i) {
+  for (uint32_t i = 1; i <= 64; ++i) {
     if (i <= 50) {
       validateCodec(codecMap->get(i));
     } else {
@@ -467,4 +466,6 @@ TEST(CompressionCodecManager, getBest_serverWithoutCodecs) {
       codecMap->getBest(
           CodecIdRange{1, 6}, 1234 /* body size */, 0 /* reply type id */));
 }
-}}}  // facebook::memcache::test
+}
+}
+} // facebook::memcache::test

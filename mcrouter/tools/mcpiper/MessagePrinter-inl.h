@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,26 +11,26 @@
 
 #include <folly/Format.h>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 #include "mcrouter/tools/mcpiper/Util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 
 // Exptime
 template <class M>
-typename std::enable_if<M::hasExptime, int32_t>::type
-getExptime(const M& req) {
+typename std::enable_if<M::hasExptime, int32_t>::type getExptime(const M& req) {
   return req.exptime();
 }
 template <class M>
-typename std::enable_if<!M::hasExptime, int32_t>::type
-getExptime(const M& reply) {
+typename std::enable_if<!M::hasExptime, int32_t>::type getExptime(
+    const M& reply) {
   return 0;
 }
 
@@ -50,28 +50,28 @@ inline int64_t getLeaseToken(const McLeaseSetRequest& msg) {
 template <class M>
 typename std::enable_if<carbon::IsRequestTrait<M>::value, folly::StringPiece>::
     type
-getMessage(const M& msg) {
+    getMessage(const M& msg) {
   return folly::StringPiece();
 }
 
 template <class M>
 typename std::enable_if<!carbon::IsRequestTrait<M>::value, folly::StringPiece>::
     type
-getMessage(const M& msg) {
+    getMessage(const M& msg) {
   return msg.message();
 }
 
 template <class M>
 constexpr
-typename std::enable_if<carbon::IsRequestTrait<M>::value, const char*>::type
-getName() {
+    typename std::enable_if<carbon::IsRequestTrait<M>::value, const char*>::type
+    getName() {
   return M::name;
 }
 
 template <class M>
-constexpr
-typename std::enable_if<!carbon::IsRequestTrait<M>::value, const char*>::type
-getName() {
+constexpr typename std::
+    enable_if<!carbon::IsRequestTrait<M>::value, const char*>::type
+    getName() {
   using MatchingRequest = RequestFromReplyType<M, RequestReplyPairs>;
   return MatchingRequest::name;
 }
@@ -79,11 +79,12 @@ getName() {
 } // detail
 
 template <class Request>
-void MessagePrinter::requestReady(uint64_t msgId,
-                                  Request&& request,
-                                  const folly::SocketAddress& from,
-                                  const folly::SocketAddress& to,
-                                  mc_protocol_t protocol) {
+void MessagePrinter::requestReady(
+    uint64_t msgId,
+    Request&& request,
+    const folly::SocketAddress& from,
+    const folly::SocketAddress& to,
+    mc_protocol_t protocol) {
   if (auto out = filterAndBuildOutput(
           msgId,
           request,
@@ -102,23 +103,17 @@ void MessagePrinter::requestReady(uint64_t msgId,
 }
 
 template <class Reply>
-void MessagePrinter::replyReady(uint64_t msgId,
-                                Reply&& reply,
-                                std::string key,
-                                const folly::SocketAddress& from,
-                                const folly::SocketAddress& to,
-                                mc_protocol_t protocol,
-                                int64_t latencyUs,
-                                ReplyStatsContext replyStatsContext) {
+void MessagePrinter::replyReady(
+    uint64_t msgId,
+    Reply&& reply,
+    std::string key,
+    const folly::SocketAddress& from,
+    const folly::SocketAddress& to,
+    mc_protocol_t protocol,
+    int64_t latencyUs,
+    ReplyStatsContext replyStatsContext) {
   if (auto out = filterAndBuildOutput(
-          msgId,
-          reply,
-          key,
-          reply.result(),
-          from,
-          to,
-          protocol,
-          latencyUs)) {
+          msgId, reply, key, reply.result(), from, to, protocol, latencyUs)) {
     stats_.numBytesBeforeCompression +=
         replyStatsContext.replySizeBeforeCompression;
     stats_.numBytesAfterCompression +=
@@ -187,8 +182,7 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
   out.append(folly::sformat("0x{:x}", msgId), format_.dataValueColor);
 
   if (latencyUs > 0) { // it is 0 only for requests
-    out.append("\n  request/response latency (us): ",
-      format_.msgAttrColor);
+    out.append("\n  request/response latency (us): ", format_.msgAttrColor);
     out.append(folly::to<std::string>(latencyUs), format_.dataValueColor);
   }
 
@@ -214,8 +208,9 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
 
   if (detail::getExptime(message)) {
     out.append("\n  exptime: ", format_.msgAttrColor);
-    out.append(folly::sformat("{:d}", detail::getExptime(message)),
-               format_.dataValueColor);
+    out.append(
+        folly::sformat("{:d}", detail::getExptime(message)),
+        format_.dataValueColor);
   }
   if (auto leaseToken = detail::getLeaseToken(message)) {
     out.append("\n  lease-token: ", format_.msgAttrColor);
@@ -231,19 +226,18 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
 
   if (!value.empty()) {
     size_t uncompressedSize;
-    auto formattedValue =
-      valueFormatter_->uncompressAndFormat(value,
-                                           message.flags(),
-                                           format_,
-                                           uncompressedSize);
+    auto formattedValue = valueFormatter_->uncompressAndFormat(
+        value, message.flags(), format_, uncompressedSize);
 
     out.append("  value size: ", format_.msgAttrColor);
     if (uncompressedSize != value.size()) {
       out.append(
-        folly::sformat("{} uncompressed, {} compressed, {:.2f}% savings",
-                       uncompressedSize, value.size(),
-                       100.0 - 100.0 * value.size() / uncompressedSize),
-        format_.dataValueColor);
+          folly::sformat(
+              "{} uncompressed, {} compressed, {:.2f}% savings",
+              uncompressedSize,
+              value.size(),
+              100.0 - 100.0 * value.size() / uncompressedSize),
+          format_.dataValueColor);
     } else {
       out.append(folly::to<std::string>(value.size()), format_.dataValueColor);
     }
@@ -281,9 +275,10 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
 }
 
 template <class Reply>
-void MessagePrinter::printRawReply(uint64_t msgId,
-                                   Reply&& reply,
-                                   mc_protocol_t protocol) {
+void MessagePrinter::printRawReply(
+    uint64_t msgId,
+    Reply&& reply,
+    mc_protocol_t protocol) {
   const struct iovec* iovsBegin = nullptr;
   size_t iovsCount = 0;
   UmbrellaSerializedMessage umbrellaSerializedMessage;
@@ -298,13 +293,13 @@ void MessagePrinter::printRawReply(uint64_t msgId,
       break;
     case mc_caret_protocol:
       caretSerializedMessage.prepare(
-        std::move(reply),
-        msgId,
-        CodecIdRange::Empty,
-        nullptr, /* codec map */
-        0.0, /* drop probability */
-        iovsBegin,
-        iovsCount);
+          std::move(reply),
+          msgId,
+          CodecIdRange::Empty,
+          nullptr, /* codec map */
+          0.0, /* drop probability */
+          iovsBegin,
+          iovsCount);
       break;
     default:
       CHECK(false);
@@ -314,9 +309,10 @@ void MessagePrinter::printRawReply(uint64_t msgId,
 }
 
 template <class Request>
-void MessagePrinter::printRawRequest(uint64_t msgId,
-                                     const Request& request,
-                                     mc_protocol_t protocol) {
+void MessagePrinter::printRawRequest(
+    uint64_t msgId,
+    const Request& request,
+    mc_protocol_t protocol) {
   if (protocol == mc_ascii_protocol) {
     LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
     return;
@@ -348,5 +344,5 @@ inline StyledString MessagePrinter::getTypeSpecificAttributes(
 
   return out;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,14 +10,15 @@
 #pragma once
 
 #include <folly/FileUtil.h>
+#include <folly/MPMCQueue.h>
+#include <folly/Memory.h>
+#include <folly/Random.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/EventHandler.h>
-#include <folly/Memory.h>
-#include <folly/MPMCQueue.h>
-#include <folly/Random.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Relaxed notification - slight increase of average (not p99) latency
@@ -40,9 +41,10 @@ class Notifier {
    *
    * @param nowFunc  Function that returns current time in us.
    */
-  Notifier(size_t noNotifyRate,
-           int64_t waitThresholdUs,
-           NowUsecFunc nowFunc) noexcept;
+  Notifier(
+      size_t noNotifyRate,
+      int64_t waitThresholdUs,
+      NowUsecFunc nowFunc) noexcept;
 
   void bumpMessages() noexcept {
     ++curMessages_;
@@ -118,19 +120,19 @@ class MessageQueue {
    * @param notifyCallback  Called every time after a notification
    *   event is posted.
    */
-  MessageQueue(size_t capacity,
-               std::function<void(T&&)> onMessage,
-               size_t noNotifyRate,
-               int64_t waitThreshold,
-               Notifier::NowUsecFunc nowFunc,
-               std::function<void()> notifyCallback)
+  MessageQueue(
+      size_t capacity,
+      std::function<void(T&&)> onMessage,
+      size_t noNotifyRate,
+      int64_t waitThreshold,
+      Notifier::NowUsecFunc nowFunc,
+      std::function<void()> notifyCallback)
       : queue_(capacity),
         onMessage_(std::move(onMessage)),
         notifier_(noNotifyRate, waitThreshold, nowFunc),
         handler_(*this),
         timeoutHandler_(*this),
         notifyCallback_(std::move(notifyCallback)) {
-
     efd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);
     PCHECK(efd_ >= 0);
   }
@@ -141,7 +143,7 @@ class MessageQueue {
   void attachEventBase(folly::EventBase& evb) {
     handler_.initHandler(&evb, efd_);
     handler_.registerHandler(
-      folly::EventHandler::READ | folly::EventHandler::PERSIST);
+        folly::EventHandler::READ | folly::EventHandler::PERSIST);
 
     if (notifier_.noNotifyRate() > 0) {
       timeoutHandler_.attachEventBase(&evb);
@@ -150,10 +152,10 @@ class MessageQueue {
 
     class MessageQueueDrainCallback : public folly::EventBase::LoopCallback {
      public:
-       MessageQueueDrainCallback(folly::EventBase& evb__, MessageQueue& queue) :
-        evb_(evb__), queue_(queue) {
-          evb_.runBeforeLoop(this);
-        }
+      MessageQueueDrainCallback(folly::EventBase& evb__, MessageQueue& queue)
+          : evb_(evb__), queue_(queue) {
+        evb_.runBeforeLoop(this);
+      }
 
       void runLoopCallback() noexcept override {
         queue_.drain();
@@ -184,10 +186,7 @@ class MessageQueue {
    * Note: the user must guarantee that the queue is empty on destruction.
    */
   void drain() {
-    notifier_.drainWhileNonEmpty(
-      [this] () {
-        drainImpl();
-      });
+    notifier_.drainWhileNonEmpty([this]() { drainImpl(); });
   }
 
   ~MessageQueue() {
@@ -289,5 +288,5 @@ class MessageQueue {
 
   std::shared_ptr<folly::EventBase::LoopCallback> queueDrainCallback_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

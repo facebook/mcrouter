@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,9 @@
 
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class ProxyBase;
 
@@ -34,14 +36,15 @@ class McExtraRouteHandleProvider
       const folly::dynamic& json,
       std::vector<std::shared_ptr<RouteHandleIf>> children) override;
 
-  virtual std::vector<std::shared_ptr<RouteHandleIf>>
-  tryCreate(RouteHandleFactory<RouteHandleIf>& factory,
-            folly::StringPiece type,
-            const folly::dynamic& json) override;
+  virtual std::vector<std::shared_ptr<RouteHandleIf>> tryCreate(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      folly::StringPiece type,
+      const folly::dynamic& json) override;
 
   virtual ~McExtraRouteHandleProvider() {}
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "McExtraRouteHandleProvider-inl.h"

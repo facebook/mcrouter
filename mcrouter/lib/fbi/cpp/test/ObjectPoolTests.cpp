@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,7 @@
 
 using namespace facebook::memcache;
 
-template<typename T>
+template <typename T>
 struct TestAllocator : public std::allocator<T> {
  public:
   typedef typename std::allocator<T>::size_type size_type;
@@ -35,11 +35,13 @@ struct TestAllocator : public std::allocator<T> {
   static int nDeAllocations;
 };
 
-template<typename T> int TestAllocator<T>::nAllocations;
-template<typename T> int TestAllocator<T>::nDeAllocations;
+template <typename T>
+int TestAllocator<T>::nAllocations;
+template <typename T>
+int TestAllocator<T>::nDeAllocations;
 
 struct TestType {
-  TestType() : TestType{0,0} {}
+  TestType() : TestType{0, 0} {}
   TestType(int a, int b) {
     TestType::nConstructed++;
     m1 = a;
@@ -56,8 +58,7 @@ struct TestType {
 int TestType::nConstructed;
 int TestType::nDestructed;
 
-class TestException {
-};
+class TestException {};
 
 struct TestTypeThrowing {
   TestTypeThrowing(int val, bool throwEx) {
@@ -72,7 +73,7 @@ struct TestTypeThrowing {
 TEST(ObjectPool, Basic) {
   auto* pool = new ObjectPool<TestType, TestAllocator<TestType>>(2);
 
-  auto checkCounters = [=] (int nc, int nd, int na, int nda) {
+  auto checkCounters = [=](int nc, int nd, int na, int nda) {
     EXPECT_EQ(TestType::nConstructed, nc);
     EXPECT_EQ(TestType::nDestructed, nd);
     EXPECT_EQ(TestAllocator<TestType>::nAllocations, na);

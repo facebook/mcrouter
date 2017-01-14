@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #include "McSerializedRequest.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 McSerializedRequest::~McSerializedRequest() {
   switch (protocol_) {
@@ -28,5 +29,5 @@ McSerializedRequest::~McSerializedRequest() {
       break;
   }
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

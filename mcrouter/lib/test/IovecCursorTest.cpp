@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,8 +17,8 @@ using namespace facebook::memcache;
 
 namespace {
 
-std::pair<IovecCursor, std::vector<struct iovec>>
-getIovecCursor(const std::vector<folly::StringPiece>& buffers) {
+std::pair<IovecCursor, std::vector<struct iovec>> getIovecCursor(
+    const std::vector<folly::StringPiece>& buffers) {
   std::vector<struct iovec> iovs(buffers.size());
   for (size_t i = 0; i < buffers.size(); ++i) {
     iovs[i].iov_base = const_cast<char*>(buffers[i].data());
@@ -33,7 +33,7 @@ getIovecCursor(const std::vector<folly::StringPiece>& buffers) {
 TEST(IovecCursor, construct) {
   std::string buf1 = "12345";
   std::string buf2 = "67890";
-  auto p = getIovecCursor({ buf1, buf2 });
+  auto p = getIovecCursor({buf1, buf2});
   auto& cursor = p.first;
 
   EXPECT_TRUE(cursor.hasDataAvailable());
@@ -45,7 +45,7 @@ TEST(IovecCursor, basic) {
   std::string buf2 = "345";
   std::string buf3 = "6789";
   std::string buf1 = "012";
-  auto p = getIovecCursor({ buf1, buf2, buf3 });
+  auto p = getIovecCursor({buf1, buf2, buf3});
   auto& cursor = p.first;
 
   char dest[10] = {'\0'};
@@ -84,7 +84,7 @@ TEST(IovecCursor, peek) {
   folly::StringPiece buf3(reinterpret_cast<char*>(&int3), sizeof(uint16_t));
   folly::StringPiece buf1(reinterpret_cast<char*>(&int1), sizeof(uint64_t));
 
-  auto p = getIovecCursor({ buf1, buf2, buf3 });
+  auto p = getIovecCursor({buf1, buf2, buf3});
   auto& cursor = p.first;
 
   EXPECT_EQ(int1, cursor.peek<uint64_t>());
@@ -124,7 +124,7 @@ TEST(IovecCursor, read) {
   folly::StringPiece buf3(reinterpret_cast<char*>(&int3), sizeof(uint16_t));
   folly::StringPiece buf1(reinterpret_cast<char*>(&int1), sizeof(uint64_t));
 
-  auto p = getIovecCursor({ buf1, buf2, buf3 });
+  auto p = getIovecCursor({buf1, buf2, buf3});
   auto& cursor = p.first;
   EXPECT_EQ(14, cursor.totalLength());
 
@@ -144,7 +144,7 @@ TEST(IovecCursor, read) {
 TEST(IovecCursor, advance_retreat) {
   std::string buf1 = "12345";
   std::string buf2 = "67890";
-  auto p = getIovecCursor({ buf1, buf2 });
+  auto p = getIovecCursor({buf1, buf2});
   auto& cursor = p.first;
 
   char dest[3] = {'\0'};
@@ -159,7 +159,6 @@ TEST(IovecCursor, advance_retreat) {
   cursor.peekInto(reinterpret_cast<uint8_t*>(dest), 2);
   EXPECT_STREQ("23", dest);
 
-
   cursor.advance(3);
   EXPECT_EQ(4, cursor.tell());
   cursor.peekInto(reinterpret_cast<uint8_t*>(dest), 2);
@@ -170,7 +169,6 @@ TEST(IovecCursor, advance_retreat) {
   cursor.peekInto(reinterpret_cast<uint8_t*>(dest), 2);
   EXPECT_STREQ("34", dest);
 
-
   cursor.advance(4);
   EXPECT_EQ(6, cursor.tell());
   cursor.peekInto(reinterpret_cast<uint8_t*>(dest), 2);
@@ -180,7 +178,6 @@ TEST(IovecCursor, advance_retreat) {
   EXPECT_EQ(3, cursor.tell());
   cursor.peekInto(reinterpret_cast<uint8_t*>(dest), 2);
   EXPECT_STREQ("45", dest);
-
 
   cursor.advance(5);
   EXPECT_EQ(8, cursor.tell());
@@ -196,7 +193,7 @@ TEST(IovecCursor, advance_retreat) {
 TEST(IovecCursor, advance_retreat_edge_cases) {
   std::string buf1 = "12345";
   std::string buf2 = "67890";
-  auto p = getIovecCursor({ buf1, buf2 });
+  auto p = getIovecCursor({buf1, buf2});
   auto& cursor = p.first;
 
   cursor.seek(0);

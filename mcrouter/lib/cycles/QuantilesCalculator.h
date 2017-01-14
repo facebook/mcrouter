@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,9 @@
 #include <cstdint>
 #include <map>
 
-namespace facebook { namespace memcache { namespace cycles {
+namespace facebook {
+namespace memcache {
+namespace cycles {
 
 namespace detail {
 
@@ -37,7 +39,7 @@ struct GkTuple {
  * This is an implementation of Greenwald-Khanna (GK) algorithm
  * (paper: http://dl.acm.org/citation.cfm?id=375670).
  */
-template<class T>
+template <class T>
 class QuantilesCalculator {
  public:
   static_assert(std::is_arithmetic<T>::value, "T must be a numeric type.");
@@ -94,7 +96,8 @@ class QuantilesCalculator {
 
   void compress();
 };
-
-}}} // namespace facebook::memcache::cycles
+}
+}
+} // namespace facebook::memcache::cycles
 
 #include "QuantilesCalculator-inl.h"

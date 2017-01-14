@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,17 +16,18 @@
 
 #include <boost/any.hpp>
 
-#include "mcrouter/config.h"
 #include "mcrouter/RoutingPrefix.h"
+#include "mcrouter/config.h"
 
 #define DEFAULT_NUM_PROXIES 1
 
 /**
  * NOTE: must be kept in sync with kLogLifetime in mcreplay2/EventReader.cpp
  */
-#define DEFAULT_ASYNCLOG_LIFETIME (15 * 60)  // New log every fifteen minutes
+#define DEFAULT_ASYNCLOG_LIFETIME (15 * 60) // New log every fifteen minutes
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct McrouterOptionError {
   std::string requestedName;
@@ -71,14 +72,14 @@ class McrouterOptionsBase {
   std::unordered_map<std::string, std::string> toDict() const;
 
   std::vector<McrouterOptionError> updateFromDict(
-    const std::unordered_map<std::string, std::string>& new_opts);
+      const std::unordered_map<std::string, std::string>& new_opts);
 
   virtual ~McrouterOptionsBase() {}
 
-  virtual void
-  forEach(std::function<void(const std::string& name,
-                             McrouterOptionData::Type type,
-                             const boost::any& value)> f) const = 0;
+  virtual void forEach(std::function<void(
+                           const std::string& name,
+                           McrouterOptionData::Type type,
+                           const boost::any& value)> f) const = 0;
 };
 
 #define OPTIONS_FILE "mcrouter/mcrouter_options_list.h"
@@ -95,6 +96,6 @@ namespace options {
  */
 std::string substituteTemplates(std::string str);
 
-}  // facebook::memcache::options
-
-}}  // facebook::memcache
+} // facebook::memcache::options
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,9 +14,11 @@
 
 using namespace facebook::memcache;
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 class UmbrellaMessageInfo;
-}}
+}
+}
 
 struct DummyMultiOpEnd {};
 
@@ -96,7 +98,8 @@ class TestRunner {
   }
 
  private:
-  template <class Request> class ExpectedRequestCallback;
+  template <class Request>
+  class ExpectedRequestCallback;
 
   class ExpectedCallbackBase {
    public:
@@ -108,8 +111,7 @@ class TestRunner {
 
       if (reqType_ == typeid(Request) && noreply == noreply_) {
         auto& message =
-            *reinterpret_cast<
-                const ExpectedRequestCallback<Request>*>(this);
+            *reinterpret_cast<const ExpectedRequestCallback<Request>*>(this);
         return compareRequests(message.req_, req);
       } else {
         return false;
@@ -119,11 +121,11 @@ class TestRunner {
     }
 
     virtual ~ExpectedCallbackBase() = default;
+
    protected:
     template <class Request>
     ExpectedCallbackBase(const Request&, bool noreply)
-        : reqType_(typeid(Request)),
-          noreply_(noreply) {}
+        : reqType_(typeid(Request)), noreply_(noreply) {}
 
    private:
     std::type_index reqType_;
@@ -134,9 +136,9 @@ class TestRunner {
   class ExpectedRequestCallback : public ExpectedCallbackBase {
    public:
     explicit ExpectedRequestCallback(Request req, bool noreply = false)
-        : ExpectedCallbackBase(req, noreply),
-          req_(std::move(req)) {}
+        : ExpectedCallbackBase(req, noreply), req_(std::move(req)) {}
     virtual ~ExpectedRequestCallback() = default;
+
    private:
     Request req_;
 
@@ -146,14 +148,15 @@ class TestRunner {
   class ExpectedMultiOpEndCallback
       : public ExpectedRequestCallback<DummyMultiOpEnd> {
    public:
-    ExpectedMultiOpEndCallback()
-        : ExpectedRequestCallback(DummyMultiOpEnd()) {}
+    ExpectedMultiOpEndCallback() : ExpectedRequestCallback(DummyMultiOpEnd()) {}
   };
 
   class ParserOnRequest {
    public:
-    ParserOnRequest(std::vector<std::unique_ptr<ExpectedCallbackBase>>& cbs,
-                    bool isError) : callbacks_(cbs), isError_(isError) {}
+    ParserOnRequest(
+        std::vector<std::unique_ptr<ExpectedCallbackBase>>& cbs,
+        bool isError)
+        : callbacks_(cbs), isError_(isError) {}
 
     bool isFinished() const {
       return finished_;
@@ -166,6 +169,7 @@ class TestRunner {
     void setParser(ServerMcParser<ParserOnRequest>* parser) {
       parser_ = parser;
     }
+
    private:
     std::vector<std::unique_ptr<ExpectedCallbackBase>>& callbacks_;
     ServerMcParser<ParserOnRequest>* parser_{nullptr};
@@ -183,7 +187,7 @@ class TestRunner {
     template <class Request>
     void umbrellaRequestReady(Request&&, uint64_t) {
       ASSERT_TRUE(false)
-        << "umbrellaRequestReady should never be called for ASCII";
+          << "umbrellaRequestReady should never be called for ASCII";
     }
 
     void parseError(mc_res_t, folly::StringPiece reason) {
@@ -202,10 +206,9 @@ class TestRunner {
     void checkNext(Request&& req, bool noreply) {
       EXPECT_LT(id_, callbacks_.size()) << "Unexpected callback!";
       if (id_ < callbacks_.size()) {
-        bool validationRes =
-            callbacks_[id_]->validate(req, noreply);
+        bool validationRes = callbacks_[id_]->validate(req, noreply);
         EXPECT_TRUE(validationRes)
-          << "Wrong callback was called or parsed incorrect request!";
+            << "Wrong callback was called or parsed incorrect request!";
         if (!validationRes) {
           finished_ = true;
           failed_ = true;
@@ -241,9 +244,8 @@ class TestRunner {
 
   bool runImpl(folly::IOBuf data) {
     ParserOnRequest onRequest(callbacks_, isError_);
-    ServerMcParser<ParserOnRequest> parser(onRequest,
-                                           4096 /* min buffer size */,
-                                           4096 /* max buffer size */);
+    ServerMcParser<ParserOnRequest> parser(
+        onRequest, 4096 /* min buffer size */, 4096 /* max buffer size */);
     onRequest.setParser(&parser);
 
     for (auto range : data) {
@@ -286,10 +288,11 @@ std::string createBigValue() {
 }
 
 template <class Request>
-Request createUpdateLike(folly::StringPiece key,
-                         folly::StringPiece value,
-                         uint64_t flags,
-                         int32_t exptime) {
+Request createUpdateLike(
+    folly::StringPiece key,
+    folly::StringPiece value,
+    uint64_t flags,
+    int32_t exptime) {
   // Test regular request
   Request r(key);
   r.value() =
@@ -334,8 +337,9 @@ void getLikeTest(std::string opCmd) {
       .run(opCmd + " test:stepan:1 test:stepan:2\n")
       .expectNext(Request("test:stepan:3"))
       .expectMultiOpEnd()
-      .run(opCmd + " test:stepan:1 test:stepan:2\r\n" +
-           opCmd + " test:stepan:3\r\n");
+      .run(
+          opCmd + " test:stepan:1 test:stepan:2\r\n" + opCmd +
+          " test:stepan:3\r\n");
 
   TestRunner().expectError().run(opCmd + "no:space:before:key\r\n");
 
@@ -349,49 +353,58 @@ const char* kTestValue = "someSmallTestValue";
 template <class Request>
 void setLikeTest(std::string opCmd) {
   TestRunner()
-      .expectNext(createUpdateLike<Request>(
-            "test:stepan:1", kTestValue, 123, 651342))
-      .run("{} test:stepan:1 123 651342 {}\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{}   test:stepan:1 123 651342 {}\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1   123 651342 {}\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123   651342 {}\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123 651342 {}  \r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123 651342 {}  \n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123 651342 {}  \r\n{}\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123 651342 {}  \n{}\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue);
+      .expectNext(
+          createUpdateLike<Request>("test:stepan:1", kTestValue, 123, 651342))
+      .run(
+          "{} test:stepan:1 123 651342 {}\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{}   test:stepan:1 123 651342 {}\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1   123 651342 {}\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123   651342 {}\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123 651342 {}  \r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123 651342 {}  \n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123 651342 {}  \r\n{}\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123 651342 {}  \n{}\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue);
 
   // Test negative exptime.
   TestRunner()
       .expectNext(createUpdateLike<Request>(
-            "test:stepan:1", kTestValue, 123, -12341232))
-      .run("{} test:stepan:1 123 -12341232 {}\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue);
+          "test:stepan:1", kTestValue, 123, -12341232))
+      .run(
+          "{} test:stepan:1 123 -12341232 {}\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue);
 
   // Test bad set command format.
   TestRunner().expectError().run(
@@ -402,30 +415,34 @@ void setLikeTest(std::string opCmd) {
 
   // Test noreply.
   TestRunner()
-      .expectNext(createUpdateLike<Request>(
-            "test:stepan:1", kTestValue, 123, 651342),
-            true)
-      .run("{} test:stepan:1 123 651342 {} noreply\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123 651342 {}   noreply\r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue)
-      .run("{} test:stepan:1 123 651342 {} noreply  \r\n{}\r\n",
-           opCmd,
-           strlen(kTestValue),
-           kTestValue);
+      .expectNext(
+          createUpdateLike<Request>("test:stepan:1", kTestValue, 123, 651342),
+          true)
+      .run(
+          "{} test:stepan:1 123 651342 {} noreply\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123 651342 {}   noreply\r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue)
+      .run(
+          "{} test:stepan:1 123 651342 {} noreply  \r\n{}\r\n",
+          opCmd,
+          strlen(kTestValue),
+          kTestValue);
 
   // Test big value.
   std::string bigValue = createBigValue();
   TestRunner()
       .expectNext(createUpdateLike<Request>("test:stepan:1", bigValue, 345, -2))
-      .run("{} test:stepan:1 345 -2 {}\r\n{}\r\n",
-           opCmd,
-           bigValue.size(),
-           bigValue);
+      .run(
+          "{} test:stepan:1 345 -2 {}\r\n{}\r\n",
+          opCmd,
+          bigValue.size(),
+          bigValue);
 }
 
 template <class Request>
@@ -451,26 +468,26 @@ void multiTokenOpTest(std::string opCmd) {
 template <class Request>
 void arithmeticTest(std::string opCmd) {
   TestRunner()
-    .expectNext(createArithmeticLike<Request>("test:stepan:1", 1324123))
-    .run(opCmd + " test:stepan:1 1324123\r\n")
-    .run(opCmd + "     test:stepan:1    1324123   \r\n")
-    .run(opCmd + " test:stepan:1  1324123 \r\n");
+      .expectNext(createArithmeticLike<Request>("test:stepan:1", 1324123))
+      .run(opCmd + " test:stepan:1 1324123\r\n")
+      .run(opCmd + "     test:stepan:1    1324123   \r\n")
+      .run(opCmd + " test:stepan:1  1324123 \r\n");
 
   TestRunner()
-    .expectNext(createArithmeticLike<Request>("test:stepan:1", 1324),
-                true)
-    .run(opCmd + " test:stepan:1 1324 noreply\r\n")
-    .run(opCmd + "     test:stepan:1    1324   noreply  \r\n")
-    .run(opCmd + " test:stepan:1  1324 noreply \r\n");
+      .expectNext(createArithmeticLike<Request>("test:stepan:1", 1324), true)
+      .run(opCmd + " test:stepan:1 1324 noreply\r\n")
+      .run(opCmd + "     test:stepan:1    1324   noreply  \r\n")
+      .run(opCmd + " test:stepan:1  1324 noreply \r\n");
 
   // No delta.
-  TestRunner().expectError()
-    .run(opCmd + " test:stepan:1 noreply\r\n")
-    .run(opCmd + "     test:stepan:1       noreply  \r\n")
-    .run(opCmd + " test:stepan:1   noreply \r\n");
+  TestRunner()
+      .expectError()
+      .run(opCmd + " test:stepan:1 noreply\r\n")
+      .run(opCmd + "     test:stepan:1       noreply  \r\n")
+      .run(opCmd + " test:stepan:1   noreply \r\n");
 }
 
-}  // anonymous
+} // anonymous
 
 TEST(McServerAsciiParserHarness, get) {
   getLikeTest<McGetRequest>("get");
@@ -510,8 +527,7 @@ TEST(McServerAsciiParserHarness, prepend) {
 
 TEST(McServerAsciiParserHarness, quit) {
   TestRunner()
-      .expectNext(McQuitRequest(),
-                  true /* quit is always noreply */)
+      .expectNext(McQuitRequest(), true /* quit is always noreply */)
       .run("quit\r\n")
       .run("quit    \r\n");
 }
@@ -550,8 +566,7 @@ TEST(McServerAsciiParserHarness, delete) {
       .run("delete test:stepan:1\r\n")
       .run("delete  test:stepan:1  \r\n");
   TestRunner()
-      .expectNext(McDeleteRequest("test:stepan:1"),
-                  true)
+      .expectNext(McDeleteRequest("test:stepan:1"), true)
       .run("delete test:stepan:1 noreply\r\n")
       .run("delete  test:stepan:1  noreply   \r\n");
 
@@ -621,10 +636,7 @@ TEST(McServerAsciiParserHarness, flush_all) {
 
 TEST(McServerAsciiParserHarness, flush_regex) {
   // Flush_regex expects a key.
-  TestRunner()
-      .expectError()
-      .run("flush_regex\r\n")
-      .run("flush_regex     \r\n");
+  TestRunner().expectError().run("flush_regex\r\n").run("flush_regex     \r\n");
 
   TestRunner()
       .expectNext(McFlushReRequest("test:stepan:1"))
@@ -634,51 +646,55 @@ TEST(McServerAsciiParserHarness, flush_regex) {
 }
 
 TEST(McServerAsciiParserHarness, lease_set) {
-  auto r = createUpdateLike<McLeaseSetRequest>(
-      "test:stepan:1", kTestValue, 1, 65);
+  auto r =
+      createUpdateLike<McLeaseSetRequest>("test:stepan:1", kTestValue, 1, 65);
   r.leaseToken() = 123;
 
   TestRunner()
       .expectNext(r)
       .run("lease-set test:stepan:1 123 1 65 18\r\nsomeSmallTestValue\r\n")
-      .run("lease-set   test:stepan:1   123   1   65   18  \r\n"
-           "someSmallTestValue\r\n");
+      .run(
+          "lease-set   test:stepan:1   123   1   65   18  \r\n"
+          "someSmallTestValue\r\n");
 
   TestRunner()
       .expectNext(r, true)
-      .run("lease-set test:stepan:1 123 1 65 18 noreply\r\n"
-           "someSmallTestValue\r\n")
-      .run("lease-set   test:stepan:1   123   1   65   18  noreply  \r\n"
-           "someSmallTestValue\r\n");
+      .run(
+          "lease-set test:stepan:1 123 1 65 18 noreply\r\n"
+          "someSmallTestValue\r\n")
+      .run(
+          "lease-set   test:stepan:1   123   1   65   18  noreply  \r\n"
+          "someSmallTestValue\r\n");
 }
 
 TEST(McServerAsciiParserHarness, cas) {
-  auto r = createUpdateLike<McCasRequest>(
-      "test:stepan:1", kTestValue, 1, 65);
+  auto r = createUpdateLike<McCasRequest>("test:stepan:1", kTestValue, 1, 65);
   r.casToken() = 123;
 
   TestRunner()
       .expectNext(r)
       .run("cas test:stepan:1 1 65 18 123\r\nsomeSmallTestValue\r\n")
-      .run("cas   test:stepan:1   1   65   18  123  \r\n"
-           "someSmallTestValue\r\n");
+      .run(
+          "cas   test:stepan:1   1   65   18  123  \r\n"
+          "someSmallTestValue\r\n");
 
   TestRunner()
       .expectNext(r, true)
-      .run("cas test:stepan:1 1 65 18 123 noreply\r\n"
-           "someSmallTestValue\r\n")
-      .run("cas   test:stepan:1   1   65   18   123   noreply  \r\n"
-           "someSmallTestValue\r\n");
+      .run(
+          "cas test:stepan:1 1 65 18 123 noreply\r\n"
+          "someSmallTestValue\r\n")
+      .run(
+          "cas   test:stepan:1   1   65   18   123   noreply  \r\n"
+          "someSmallTestValue\r\n");
 }
 
 TEST(McServerAsciiParserHarness, allOps) {
-  auto casRequest = createUpdateLike<McCasRequest>(
-      "test:stepan:11", "Facebook", 765, -1);
+  auto casRequest =
+      createUpdateLike<McCasRequest>("test:stepan:11", "Facebook", 765, -1);
   casRequest.casToken() = 893;
 
   auto leaseSetRequest =
-    createUpdateLike<McLeaseSetRequest>(
-        "test:stepan:12", "hAcK", 294, 563);
+      createUpdateLike<McLeaseSetRequest>("test:stepan:12", "hAcK", 294, 563);
   leaseSetRequest.leaseToken() = 846;
 
   McDeleteRequest deleteRequest("test:stepan:13");
@@ -694,16 +710,14 @@ TEST(McServerAsciiParserHarness, allOps) {
       .expectMultiOpEnd()
       .expectNext(McMetagetRequest("test:stepan:4"))
       .expectMultiOpEnd()
-      .expectNext(createUpdateLike<McSetRequest>(
-            "test:stepan:5", "Abc", 1, 2))
+      .expectNext(createUpdateLike<McSetRequest>("test:stepan:5", "Abc", 1, 2))
       .expectNext(createUpdateLike<McAddRequest>(
-            "test:stepan:6", "abcdefgHiJklMNo", 3, 4))
-      .expectNext(createUpdateLike<McReplaceRequest>(
-            "test:stepan:7", "A", 6, 7))
-      .expectNext(createUpdateLike<McAppendRequest>(
-            "test:stepan:8", "", 8, 9))
-      .expectNext(createUpdateLike<McPrependRequest>(
-            "test:stepan:9", "xYZ", 10, 11))
+          "test:stepan:6", "abcdefgHiJklMNo", 3, 4))
+      .expectNext(
+          createUpdateLike<McReplaceRequest>("test:stepan:7", "A", 6, 7))
+      .expectNext(createUpdateLike<McAppendRequest>("test:stepan:8", "", 8, 9))
+      .expectNext(
+          createUpdateLike<McPrependRequest>("test:stepan:9", "xYZ", 10, 11))
       .expectNext(casRequest)
       .expectNext(leaseSetRequest)
       .expectNext(deleteRequest)
@@ -712,10 +726,8 @@ TEST(McServerAsciiParserHarness, allOps) {
       .expectNext(McQuitRequest(), true)
       .expectNext(McVersionRequest())
       .expectNext(McShutdownRequest())
-      .expectNext(createArithmeticLike<McIncrRequest>(
-            "arithm!", 90))
-      .expectNext(createArithmeticLike<McDecrRequest>(
-            "ArItHm!", 87))
+      .expectNext(createArithmeticLike<McIncrRequest>("arithm!", 90))
+      .expectNext(createArithmeticLike<McDecrRequest>("ArItHm!", 87))
       .expectNext(McFlushAllRequest())
       .expectNext(McFlushReRequest("^reGex$"))
       .run(

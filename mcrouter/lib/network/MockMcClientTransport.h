@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,8 @@
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Simple TAsyncTransport implementation that consumes data and provides
@@ -39,17 +40,20 @@ class MockMcClientTransport : public folly::AsyncTransportWrapper,
   void setReadCB(folly::AsyncTransportWrapper::ReadCallback* callback) override;
   ReadCallback* getReadCallback() const override;
 
-  void write(folly::AsyncTransportWrapper::WriteCallback* callback,
-             const void* buf,
-             size_t bytes,
-             WriteFlags flags = WriteFlags::NONE) override;
-  void writev(folly::AsyncTransportWrapper::WriteCallback* callback,
-              const iovec* vec,
-              size_t count,
-              WriteFlags flags = WriteFlags::NONE) override;
-  void writeChain(folly::AsyncTransportWrapper::WriteCallback* callback,
-                  std::unique_ptr<folly::IOBuf>&& buf,
-                  WriteFlags flags = WriteFlags::NONE) override;
+  void write(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      const void* buf,
+      size_t bytes,
+      WriteFlags flags = WriteFlags::NONE) override;
+  void writev(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      const iovec* vec,
+      size_t count,
+      WriteFlags flags = WriteFlags::NONE) override;
+  void writeChain(
+      folly::AsyncTransportWrapper::WriteCallback* callback,
+      std::unique_ptr<folly::IOBuf>&& buf,
+      WriteFlags flags = WriteFlags::NONE) override;
 
   // folly::AsyncTransport overrides
 
@@ -75,6 +79,7 @@ class MockMcClientTransport : public folly::AsyncTransportWrapper,
   size_t getRawBytesWritten() const override;
   size_t getAppBytesReceived() const override;
   size_t getRawBytesReceived() const override;
+
  private:
   void runLoopCallback() noexcept override;
   void ensureLoopScheduled();
@@ -82,8 +87,8 @@ class MockMcClientTransport : public folly::AsyncTransportWrapper,
   folly::EventBase& eventBase_;
   bool loopCallbackScheduled_{false};
   folly::AsyncTransportWrapper::ReadCallback* readCallback_{nullptr};
-  std::queue<std::pair<const uint8_t*,size_t>> readDataQueue_;
+  std::queue<std::pair<const uint8_t*, size_t>> readDataQueue_;
   std::queue<folly::AsyncTransportWrapper::WriteCallback*> writeCallbacks_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

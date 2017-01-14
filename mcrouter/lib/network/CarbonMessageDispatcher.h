@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,8 @@
 #include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/TypedMsg.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McServerRequestContext;
 
@@ -61,11 +62,16 @@ class CarbonMessageDispatcher {
   /**
    * @return true iff headerInfo.typeId corresponds to a message in MessageList
    */
-  bool dispatchTypedRequest(const UmbrellaMessageInfo& headerInfo,
-                            const folly::IOBuf& buffer,
-                            Args&&... args) {
-    return dispatcher_.dispatch(headerInfo.typeId, *this, headerInfo, buffer,
-                                std::forward<Args>(args)...);
+  bool dispatchTypedRequest(
+      const UmbrellaMessageInfo& headerInfo,
+      const folly::IOBuf& buffer,
+      Args&&... args) {
+    return dispatcher_.dispatch(
+        headerInfo.typeId,
+        *this,
+        headerInfo,
+        buffer,
+        std::forward<Args>(args)...);
   }
 
   // Default onTypedMessage() implementation
@@ -86,8 +92,8 @@ class CarbonMessageDispatcher {
     M req;
     req.setTraceId(headerInfo.traceId);
     req.deserialize(reader);
-    static_cast<Proc&>(me)
-        .onTypedMessage(std::move(req), std::forward<Args>(args)...);
+    static_cast<Proc&>(me).onTypedMessage(
+        std::move(req), std::forward<Args>(args)...);
   }
 
  private:
@@ -99,5 +105,5 @@ class CarbonMessageDispatcher {
       Args...>
       dispatcher_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

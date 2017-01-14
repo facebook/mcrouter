@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,9 @@
 
 #include "mcrouter/routes/PrefixSelectorRoute.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace detail {
 
@@ -66,7 +68,7 @@ RoutePolicyMap<RouteHandleIf>::RoutePolicyMap(
       if (existing != t.end()) {
         existing->second.push_back(std::move(clusterHandlePair));
       } else {
-        t.emplace(it.first, { clusterHandlePair });
+        t.emplace(it.first, {clusterHandlePair});
       }
     }
   }
@@ -91,4 +93,6 @@ RoutePolicyMap<RouteHandleIf>::getTargetsForKey(folly::StringPiece key) const {
   auto result = ut_.findPrefix(key);
   return result == ut_.end() ? emptyV_ : result->second;
 }
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

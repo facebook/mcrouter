@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,20 +17,25 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class SlowWarmUpRouteSettings {
  public:
   SlowWarmUpRouteSettings() = default;
   explicit SlowWarmUpRouteSettings(const folly::dynamic& json);
-  SlowWarmUpRouteSettings(double enableTs, double disableTs,
-                          double startFraction, double stepPercent,
-                          size_t minReqs)
-    : enableThreshold_(enableTs),
-      disableThreshold_(disableTs),
-      start_(startFraction),
-      step_(stepPercent),
-      minRequests_(minReqs) { }
+  SlowWarmUpRouteSettings(
+      double enableTs,
+      double disableTs,
+      double startFraction,
+      double stepPercent,
+      size_t minReqs)
+      : enableThreshold_(enableTs),
+        disableThreshold_(disableTs),
+        start_(startFraction),
+        step_(stepPercent),
+        minRequests_(minReqs) {}
 
   double enableThreshold() const {
     return enableThreshold_;
@@ -64,5 +69,6 @@ class SlowWarmUpRouteSettings {
   // Mininum number of requests to start computing hit rate.
   size_t minRequests_{100};
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

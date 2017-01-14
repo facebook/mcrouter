@@ -15,7 +15,8 @@
 #include "mcrouter/lib/network/MemoryController.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Reply>
 typename std::enable_if<
@@ -100,5 +101,5 @@ WriteBuffer::prepareTyped(
       iovsBegin_,
       iovsCount_);
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

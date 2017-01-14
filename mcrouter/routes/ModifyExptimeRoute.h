@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,12 +20,11 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-enum class ModifyExptimeAction {
-  Set,
-  Min
-};
+enum class ModifyExptimeAction { Set, Min };
 
 const char* actionToString(ModifyExptimeAction action);
 
@@ -42,8 +41,8 @@ template <class RouteHandleIf>
 class ModifyExptimeRoute {
  public:
   std::string routeName() const {
-    return folly::sformat("modify-exptime|{}|exptime={}",
-                          actionToString(action_), exptime_);
+    return folly::sformat(
+        "modify-exptime|{}|exptime={}", actionToString(action_), exptime_);
   }
 
   ModifyExptimeRoute(
@@ -55,8 +54,9 @@ class ModifyExptimeRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*target_, req);
   }
 
@@ -97,5 +97,6 @@ class ModifyExptimeRoute {
   const int32_t exptime_;
   const ModifyExptimeAction action_;
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

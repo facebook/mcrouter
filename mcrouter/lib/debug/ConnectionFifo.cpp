@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -253,8 +253,8 @@ bool ConnectionFifo::writeData(
   while (iovIter.hasData()) {
     // Build pipeIov
     while (iovIter.hasData() && !pipeIov.full()) {
-      auto bytesAppended = pipeIov.append(iovIter.currentBuffer(),
-                                          iovIter.currentBufferLength());
+      auto bytesAppended = pipeIov.append(
+          iovIter.currentBuffer(), iovIter.currentBufferLength());
       iovIter.advance(bytesAppended);
       packetSize += bytesAppended;
     }

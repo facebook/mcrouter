@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,15 +18,19 @@
 struct mc_fbtrace_info_s;
 typedef mc_fbtrace_info_s mc_fbtrace_info_t;
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Class that uses SFINAE to check if Request type provides fbtraceInfo method.
  */
 template <class Request>
 class RequestHasFbTraceInfo {
-  template <class T> static char check(decltype(&T::fbtraceInfo));
-  template <class T> static int check(...);
+  template <class T>
+  static char check(decltype(&T::fbtraceInfo));
+  template <class T>
+  static int check(...);
+
  public:
   static constexpr bool value = sizeof(check<Request>(0)) == sizeof(char);
 };
@@ -34,9 +38,10 @@ class RequestHasFbTraceInfo {
 template <class Request>
 bool fbTraceOnSend(const Request& request, const AccessPoint& ap);
 
-inline void fbTraceOnReceive(const mc_fbtrace_info_s* fbtraceInfo,
-                             const mc_res_t result);
-
-}}  // facebook::memcache
+inline void fbTraceOnReceive(
+    const mc_fbtrace_info_s* fbtraceInfo,
+    const mc_res_t result);
+}
+} // facebook::memcache
 
 #include "FBTrace-inl.h"

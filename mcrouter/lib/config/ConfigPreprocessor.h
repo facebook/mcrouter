@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,7 +17,8 @@
 #include <folly/dynamic.h>
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class ImportResolverIf;
 
@@ -40,10 +41,10 @@ class ConfigPreprocessor {
    * @throws std::logic_error/folly::ParseError if jsonC is invalid
    */
   static folly::dynamic getConfigWithoutMacros(
-    folly::StringPiece jsonC,
-    ImportResolverIf& importResolver,
-    folly::StringKeyedUnorderedMap<folly::dynamic> globalParams,
-    size_t nestedLimit = 250);
+      folly::StringPiece jsonC,
+      ImportResolverIf& importResolver,
+      folly::StringKeyedUnorderedMap<folly::dynamic> globalParams,
+      size_t nestedLimit = 250);
 
  private:
   /**
@@ -70,8 +71,8 @@ class ConfigPreprocessor {
   folly::StringKeyedUnorderedMap<std::unique_ptr<Const>> consts_;
   folly::StringKeyedUnorderedMap<folly::dynamic> importCache_;
   folly::StringKeyedUnorderedMap<
-    std::function<folly::dynamic(folly::dynamic&&, const Context&)>
-  > builtInCalls_;
+      std::function<folly::dynamic(folly::dynamic&&, const Context&)>>
+      builtInCalls_;
 
   mutable size_t nestedLimit_;
 
@@ -83,9 +84,10 @@ class ConfigPreprocessor {
    *                macros.
    * @param nestedLimit maximum number of nested macros/objects.
    */
-  ConfigPreprocessor(ImportResolverIf& importResolver,
-                     folly::StringKeyedUnorderedMap<folly::dynamic> globals,
-                     size_t nestedLimit);
+  ConfigPreprocessor(
+      ImportResolverIf& importResolver,
+      folly::StringKeyedUnorderedMap<folly::dynamic> globals,
+      size_t nestedLimit);
 
   /**
    * Expands all macros found in json
@@ -95,8 +97,8 @@ class ConfigPreprocessor {
    *
    * @return json object without macros
    */
-  folly::dynamic
-  expandMacros(folly::dynamic json, const Context& context) const;
+  folly::dynamic expandMacros(folly::dynamic json, const Context& context)
+      const;
 
   /**
    * Parses parameters passed to macro call inside string like in
@@ -110,21 +112,23 @@ class ConfigPreprocessor {
    * Substitute params from context (substrings like %paramName%)
    * with their values
    */
-  folly::dynamic
-  replaceParams(folly::StringPiece str, const Context& context) const;
+  folly::dynamic replaceParams(folly::StringPiece str, const Context& context)
+      const;
 
   /**
    * Expand macro inside string like in "@macroName(params)"
    *                                     ^................^
    *                                           macro
    */
-  folly::dynamic
-  expandStringMacro(folly::StringPiece str, const Context& params) const;
+  folly::dynamic expandStringMacro(
+      folly::StringPiece str,
+      const Context& params) const;
 
-  void addMacro(folly::StringPiece name,
-                const std::vector<folly::dynamic>& params,
-                std::function<folly::dynamic(Context&&)> func,
-                bool autoExpand = true);
+  void addMacro(
+      folly::StringPiece name,
+      const std::vector<folly::dynamic>& params,
+      std::function<folly::dynamic(Context&&)> func,
+      bool autoExpand = true);
 
   void parseMacroDef(const folly::dynamic& key, const folly::dynamic& obj);
 
@@ -132,5 +136,5 @@ class ConfigPreprocessor {
 
   void addConst(folly::StringPiece name, folly::dynamic result);
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

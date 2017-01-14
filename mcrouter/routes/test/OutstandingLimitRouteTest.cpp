@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,7 +26,7 @@ std::string makeKey(uint64_t id) {
   return folly::sformat("test-key:{}", id);
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 void sendRequest(
     folly::fibers::FiberManager& fm,
@@ -38,16 +38,16 @@ void sendRequest(
   context->setSenderIdForTest(senderId);
 
   fm.addTask([&rh, id, context, &replyOrder]() {
-      McGetRequest request(makeKey(id));
-      fiber_local<MemcacheRouterInfo>::setSharedCtx(std::move(context));
-      rh.route(request);
-      replyOrder.push_back(makeKey(id));
-    });
+    McGetRequest request(makeKey(id));
+    fiber_local<MemcacheRouterInfo>::setSharedCtx(std::move(context));
+    rh.route(request);
+    replyOrder.push_back(makeKey(id));
+  });
 }
 
 TEST(oustandingLimitRouteTest, basic) {
-  auto normalHandle = std::make_shared<TestHandle>(
-    GetRouteTestData(mc_res_found, "a"));
+  auto normalHandle =
+      std::make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"));
 
   McrouterRouteHandle<OutstandingLimitRoute<McrouterRouterInfo>> rh(
       normalHandle->rh, 3);
@@ -76,13 +76,11 @@ TEST(oustandingLimitRouteTest, basic) {
   sendRequest(fm, rh, 14, 0, replyOrder);
 
   auto& loopController =
-    dynamic_cast<folly::fibers::SimpleLoopController&>(fm.loopController());
+      dynamic_cast<folly::fibers::SimpleLoopController&>(fm.loopController());
   loopController.loop([&]() {
-      fm.addTask([&]() {
-          normalHandle->unpause();
-        });
-      loopController.stop();
-    });
+    fm.addTask([&]() { normalHandle->unpause(); });
+    loopController.stop();
+  });
 
   EXPECT_EQ(14, replyOrder.size());
   EXPECT_EQ(makeKey(1), replyOrder[0]);

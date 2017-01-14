@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,7 +26,8 @@ struct SerializationTraits<Keys<Storage>> {
   }
 
   static void write(
-      const Keys<Storage>& key, carbon::CarbonProtocolWriter& writer) {
+      const Keys<Storage>& key,
+      carbon::CarbonProtocolWriter& writer) {
     writer.writeRaw(key.raw());
   }
 
@@ -43,7 +44,8 @@ struct SerializationTraits<folly::Optional<T>> {
   }
 
   static void write(
-      const folly::Optional<T>& opt, carbon::CarbonProtocolWriter& writer) {
+      const folly::Optional<T>& opt,
+      carbon::CarbonProtocolWriter& writer) {
     writer.writeRaw(*opt);
   }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,5 +12,6 @@
 #include <functional>
 
 double measure_time(std::function<void(void)> f);
-double measure_time_concurrent(unsigned thread_count,
-                               std::function<void(unsigned)> f);
+double measure_time_concurrent(
+    unsigned thread_count,
+    std::function<void(unsigned)> f);

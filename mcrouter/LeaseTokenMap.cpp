@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,12 +9,14 @@
  */
 #include "LeaseTokenMap.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
-constexpr uint64_t kClearIdMask =   0xFFFFFFFF00000000;
-constexpr uint64_t kAddMagicMask =  0x7aceb00c00000000;
+constexpr uint64_t kClearIdMask = 0xFFFFFFFF00000000;
+constexpr uint64_t kAddMagicMask = 0x7aceb00c00000000;
 
 inline bool hasMagic(uint64_t token) {
   return (token & kClearIdMask) == kAddMagicMask;
@@ -25,23 +27,21 @@ inline uint64_t applyMagic(uint32_t id) {
 
 } // anonymous
 
-LeaseTokenMap::LeaseTokenMap(folly::EventBaseThread& evbThread,
-                             uint32_t leaseTokenTtl)
+LeaseTokenMap::LeaseTokenMap(
+    folly::EventBaseThread& evbThread,
+    uint32_t leaseTokenTtl)
     : evbThread_(evbThread),
       timeoutHandler_(*this, *evbThread.getEventBase()),
       leaseTokenTtlMs_(leaseTokenTtl) {
   assert(leaseTokenTtlMs_ > 0);
-  evbThread_.getEventBase()->runInEventBaseThread([this]() {
-    timeoutHandler_.scheduleTimeout(leaseTokenTtlMs_);
-  });
+  evbThread_.getEventBase()->runInEventBaseThread(
+      [this]() { timeoutHandler_.scheduleTimeout(leaseTokenTtlMs_); });
 }
 
 LeaseTokenMap::~LeaseTokenMap() {
   if (evbThread_.running()) {
     evbThread_.getEventBase()->runImmediatelyOrRunInEventBaseThreadAndWait(
-      [this]() {
-        timeoutHandler_.cancelTimeout();
-      });
+        [this]() { timeoutHandler_.cancelTimeout(); });
   }
 }
 
@@ -50,18 +50,21 @@ uint64_t LeaseTokenMap::insert(std::string routeName, Item item) {
 
   uint64_t specialToken = applyMagic(nextId_++);
 
-  auto it = data_.emplace(specialToken,
-                          LeaseTokenMap::ListItem(specialToken,
-                                                  std::move(routeName),
-                                                  std::move(item),
-                                                  leaseTokenTtlMs_));
+  auto it = data_.emplace(
+      specialToken,
+      LeaseTokenMap::ListItem(
+          specialToken,
+          std::move(routeName),
+          std::move(item),
+          leaseTokenTtlMs_));
   invalidationQueue_.push_back(it.first->second);
 
   return specialToken;
 }
 
 folly::Optional<LeaseTokenMap::Item> LeaseTokenMap::query(
-    folly::StringPiece routeName, uint64_t token) {
+    folly::StringPiece routeName,
+    uint64_t token) {
   folly::Optional<LeaseTokenMap::Item> item;
 
   if (!hasMagic(token)) {
@@ -80,8 +83,9 @@ folly::Optional<LeaseTokenMap::Item> LeaseTokenMap::query(
   return item;
 }
 
-uint64_t LeaseTokenMap::getOriginalLeaseToken(folly::StringPiece routeName,
-                                              uint64_t token) const {
+uint64_t LeaseTokenMap::getOriginalLeaseToken(
+    folly::StringPiece routeName,
+    uint64_t token) const {
   if (!hasMagic(token)) {
     return token;
   }
@@ -111,7 +115,8 @@ void LeaseTokenMap::onTimeout() {
     timeoutHandler_.scheduleTimeout(leaseTokenTtlMs_);
   } else {
     auto nextExpiration = std::chrono::duration_cast<std::chrono::milliseconds>(
-        invalidationQueue_.front().tokenTimeout - now).count();
+                              invalidationQueue_.front().tokenTimeout - now)
+                              .count();
     timeoutHandler_.scheduleTimeout(std::max<uint32_t>(nextExpiration, 1));
   }
 }
@@ -124,5 +129,6 @@ size_t LeaseTokenMap::size() const {
 bool LeaseTokenMap::conflicts(uint64_t originalToken) {
   return hasMagic(originalToken);
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

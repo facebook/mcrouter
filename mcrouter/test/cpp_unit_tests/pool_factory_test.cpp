@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,9 +11,9 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/Range.h>
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/json.h>
-#include <folly/Range.h>
 
 #include "mcrouter/ConfigApiIf.h"
 #include "mcrouter/PoolFactory.h"
@@ -27,11 +27,10 @@ class MockConfigApi : public ConfigApiIf {
   MockConfigApi() = default;
 
   explicit MockConfigApi(folly::StringKeyedUnorderedMap<std::string> pools)
-    : pools_(std::move(pools)) {
-  }
+      : pools_(std::move(pools)) {}
 
-  bool get(ConfigType type, const std::string& path,
-           std::string& contents) override final {
+  bool get(ConfigType type, const std::string& path, std::string& contents)
+      override final {
     ++getCalls_;
     if (type != ConfigType::Pool) {
       return false;
@@ -53,6 +52,7 @@ class MockConfigApi : public ConfigApiIf {
   size_t getCalls() const {
     return getCalls_;
   }
+
  private:
   folly::StringKeyedUnorderedMap<std::string> pools_;
   size_t getCalls_{0};
@@ -62,7 +62,8 @@ class MockConfigApi : public ConfigApiIf {
 
 TEST(PoolFactory, inherit_loop) {
   MockConfigApi api;
-  PoolFactory factory(folly::parseJson(R"({
+  PoolFactory factory(
+      folly::parseJson(R"({
     "pools": {
       "A": {
         "inherit": "B"
@@ -74,7 +75,8 @@ TEST(PoolFactory, inherit_loop) {
         "inherit": "A"
       }
     }
-  })"), api);
+  })"),
+      api);
   try {
     factory.parsePool("A");
   } catch (const std::logic_error& e) {
@@ -86,9 +88,9 @@ TEST(PoolFactory, inherit_loop) {
 
 TEST(PoolFactory, inherit_cache) {
   MockConfigApi api(folly::StringKeyedUnorderedMap<std::string>{
-    { "api_pool", "{ \"servers\": [ \"localhost:1234\" ] }" }
-  });
-  PoolFactory factory(folly::parseJson(R"({
+      {"api_pool", "{ \"servers\": [ \"localhost:1234\" ] }"}});
+  PoolFactory factory(
+      folly::parseJson(R"({
     "pools": {
       "A": {
         "inherit": "api_pool",
@@ -103,7 +105,8 @@ TEST(PoolFactory, inherit_cache) {
         "server_timeout": 15
       }
     }
-  })"), api);
+  })"),
+      api);
   auto poolA = factory.parsePool("A");
   EXPECT_EQ("A", poolA.name.str());
   EXPECT_EQ(5, poolA.json["server_timeout"].getInt());

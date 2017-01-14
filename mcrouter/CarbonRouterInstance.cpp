@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -39,11 +39,8 @@ bool isValidRouterName(folly::StringPiece name) {
   }
 
   for (auto c : name) {
-    if (!((c >= 'a' && c <= 'z') ||
-          (c >= 'A' && c <= 'Z') ||
-          (c >= '0' && c <= '9') ||
-          (c == '_') ||
-          (c == '-'))) {
+    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') || (c == '_') || (c == '-'))) {
       return false;
     }
   }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,62 +25,77 @@ namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 
-McrouterRouteHandlePtr makeAllAsyncRoute(McRouteHandleFactory& factory,
-                                         const folly::dynamic& json);
+McrouterRouteHandlePtr makeAllAsyncRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAllFastestRoute(McRouteHandleFactory& factory,
-                                           const folly::dynamic& json);
+McrouterRouteHandlePtr makeAllFastestRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAllInitialRoute(McRouteHandleFactory& factory,
-                                           const folly::dynamic& json);
+McrouterRouteHandlePtr makeAllInitialRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAllMajorityRoute(McRouteHandleFactory& factory,
-                                            const folly::dynamic& json);
+McrouterRouteHandlePtr makeAllMajorityRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAllSyncRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
+McrouterRouteHandlePtr makeAllSyncRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeDevNullRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
+McrouterRouteHandlePtr makeDevNullRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeHostIdRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
+McrouterRouteHandlePtr makeHostIdRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeErrorRoute(McRouteHandleFactory& factory,
-                                      const folly::dynamic& json);
+McrouterRouteHandlePtr makeErrorRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-  McRouteHandleFactory& factory,
-  const folly::dynamic& json);
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeL1L2CacheRoute(McRouteHandleFactory& factory,
-                                          const folly::dynamic& json);
+McrouterRouteHandlePtr makeL1L2CacheRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeMigrateRoute(McRouteHandleFactory& factory,
-                                        const folly::dynamic& json);
+McrouterRouteHandlePtr makeMigrateRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeMissFailoverRoute(McRouteHandleFactory& factory,
-                                             const folly::dynamic& json);
+McrouterRouteHandlePtr makeMissFailoverRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeModifyExptimeRoute(McRouteHandleFactory& factory,
-                                              const folly::dynamic& json);
+McrouterRouteHandlePtr makeModifyExptimeRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeModifyKeyRoute(McRouteHandleFactory& factory,
-                                          const folly::dynamic& json);
+McrouterRouteHandlePtr makeModifyKeyRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeRandomRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
+McrouterRouteHandlePtr makeRandomRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeWarmUpRoute(McRouteHandleFactory& factory,
-                                       const folly::dynamic& json);
+McrouterRouteHandlePtr makeWarmUpRoute(
+    McRouteHandleFactory& factory,
+    const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAsynclogRoute(McrouterRouteHandlePtr rh,
-                                         std::string asynclogName);
+McrouterRouteHandlePtr makeAsynclogRoute(
+    McrouterRouteHandlePtr rh,
+    std::string asynclogName);
 
 std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
     const folly::dynamic& json);
-
 
 template <>
 std::shared_ptr<MemcacheRouteHandleIf>

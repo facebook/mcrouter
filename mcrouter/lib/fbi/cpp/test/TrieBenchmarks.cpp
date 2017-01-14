@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,13 +25,13 @@ namespace {
 template <class Value>
 class KeyPrefixMap : public folly::StringKeyedUnorderedMap<Value> {
   using Base = folly::StringKeyedUnorderedMap<Value>;
- public:
 
+ public:
   using iterator = typename Base::iterator;
 
   std::pair<iterator, bool> emplace(folly::StringPiece key, Value v) {
-    auto it = std::lower_bound(prefixLength_.begin(), prefixLength_.end(),
-                               key.size());
+    auto it = std::lower_bound(
+        prefixLength_.begin(), prefixLength_.end(), key.size());
     if (it == prefixLength_.end() || *it != key.size()) {
       prefixLength_.insert(it, key.size());
     }
@@ -55,6 +55,7 @@ class KeyPrefixMap : public folly::StringKeyedUnorderedMap<Value> {
   using Base::find;
   using Base::begin;
   using Base::end;
+
  private:
   std::vector<size_t> prefixLength_;
 };
@@ -67,72 +68,32 @@ int x = 0;
 
 void prepareRand() {
   std::vector<std::string> keys[3] = {
-    {
-      "abacaba",
-      "abacabadabacaba",
-      "b123",
-      "qwerty:qwerty:qwerty:123456",
-    },
-    {
-      "AMC",
-      "ayk",
-      "brq",
-      "bxj",
-      "fgn",
-      "fkr",
-      "fm0",
-      "gig",
-      "gtg",
-      "gtm",
-      "iag",
-      "kkb",
-      "kki",
-      "kkx",
-      "kkz",
-      "kqf",
-      "kqg",
-      "mbf",
-      "mft",
-      "mgg",
-      "mgj",
-      "mgr",
-      "mhk",
-      "mun",
-      "rmg",
-      "rak",
-      "rdk",
-      "rxg",
-      "tm2",
-      "tzb",
-      "tzh",
-      "zbg",
-      "zgq",
-      "zug",
-    },
-    {
-      "hsdfbfda.ghu",
-      "hsdfbfda.abc",
-      "rbfdhkjs.abc",
-      "rbjfyvbl.abc",
-      "rbl.fsgjhdfb",
-      "rbl.fdnolfbv",
-      "rblkmvnf.abc",
-      "rblplmbf.ghu",
-      "rblplmbf.abc",
-      "rubajvnr.ghu",
-      "rubajvnr.abc",
-    }
-  };
+      {
+          "abacaba", "abacabadabacaba", "b123", "qwerty:qwerty:qwerty:123456",
+      },
+      {
+          "AMC", "ayk", "brq", "bxj", "fgn", "fkr", "fm0", "gig", "gtg",
+          "gtm", "iag", "kkb", "kki", "kkx", "kkz", "kqf", "kqg", "mbf",
+          "mft", "mgg", "mgj", "mgr", "mhk", "mun", "rmg", "rak", "rdk",
+          "rxg", "tm2", "tzb", "tzh", "zbg", "zgq", "zug",
+      },
+      {
+          "hsdfbfda.ghu",
+          "hsdfbfda.abc",
+          "rbfdhkjs.abc",
+          "rbjfyvbl.abc",
+          "rbl.fsgjhdfb",
+          "rbl.fdnolfbv",
+          "rblkmvnf.abc",
+          "rblplmbf.ghu",
+          "rblplmbf.abc",
+          "rubajvnr.ghu",
+          "rubajvnr.abc",
+      }};
 
-  std::string missKeys[] = {
-    "zahskjsdf",
-    "aba",
-    "",
-    "z",
-    "asdjl:dafnsjsdf"
-  };
+  std::string missKeys[] = {"zahskjsdf", "aba", "", "z", "asdjl:dafnsjsdf"};
 
-  for (int i = 0 ; i < 3; ++i) {
+  for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < keys[i].size(); ++j) {
       randTrie[i].emplace(keys[i][j], i + j + 1);
       randMap[i].emplace(keys[i][j], i + j + 1);
@@ -168,7 +129,7 @@ void runGetPrefix(Container& c, int id) {
   }
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 BENCHMARK(Trie_get0) {
   runGet(randTrie[0], 0);
@@ -218,7 +179,7 @@ BENCHMARK_RELATIVE(Map_get_prefix2) {
   runGet(randMap[2], 2);
 }
 
-int main(int argc, char **argv){
+int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
   prepareRand();

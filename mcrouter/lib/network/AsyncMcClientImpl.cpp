@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,29 +12,31 @@
 #include <netinet/tcp.h>
 
 #include <folly/EvictingCacheMap.h>
-#include <folly/io/async/AsyncSSLSocket.h>
-#include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 #include <folly/SingletonThreadLocal.h>
+#include <folly/io/async/AsyncSSLSocket.h>
+#include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/MockMcClientTransport.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 constexpr size_t kReadBufferSizeMin = 256;
 constexpr size_t kReadBufferSizeMax = 4096;
 
 namespace detail {
 class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
-public:
+ public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
       : client_(client) {}
   ~OnEventBaseDestructionCallback() {}
   void runLoopCallback() noexcept override final {
     client_.closeNow();
   }
+
  private:
   AsyncMcClientImpl& client_;
 };
@@ -48,8 +50,7 @@ public:
  */
 class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
  public:
-  explicit WriterLoop(AsyncMcClientImpl& client)
-      : client_(client) {}
+  explicit WriterLoop(AsyncMcClientImpl& client) : client_(client) {}
   ~WriterLoop() {}
   void runLoopCallback() noexcept override final {
     // Delay this write until the end of current loop (e.g. after
@@ -63,6 +64,7 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
     rescheduled_ = false;
     client_.pushMessages();
   }
+
  private:
   bool rescheduled_{false};
   AsyncMcClientImpl& client_;
@@ -73,12 +75,12 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     ConnectionOptions options)
     : eventBase_(eventBase),
       connectionOptions_(std::move(options)),
-      outOfOrder_(connectionOptions_.accessPoint->getProtocol() !=
-                  mc_ascii_protocol),
+      outOfOrder_(
+          connectionOptions_.accessPoint->getProtocol() != mc_ascii_protocol),
       queue_(outOfOrder_),
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
-        folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
+          folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
   eventBase_.runOnDestruction(eventBaseDestructionCallback_.get());
   if (connectionOptions_.compressionCodecMap) {
     supportedCompressionCodecs_ =
@@ -117,10 +119,8 @@ void AsyncMcClientImpl::setStatusCallbacks(
     std::function<void(bool)> onDown) {
   DestructorGuard dg(this);
 
-  statusCallbacks_ = ConnectionStatusCallbacks {
-    std::move(onUp),
-    std::move(onDown)
-  };
+  statusCallbacks_ =
+      ConnectionStatusCallbacks{std::move(onUp), std::move(onDown)};
 
   if (connectionState_ == ConnectionState::UP && statusCallbacks_.onUp) {
     statusCallbacks_.onUp();
@@ -132,10 +132,8 @@ void AsyncMcClientImpl::setRequestStatusCallbacks(
     std::function<void(int numToSend)> onWrite) {
   DestructorGuard dg(this);
 
-  requestStatusCallbacks_ = RequestStatusCallbacks {
-    std::move(onStateChange),
-    std::move(onWrite)
-  };
+  requestStatusCallbacks_ =
+      RequestStatusCallbacks{std::move(onStateChange), std::move(onWrite)};
 }
 
 AsyncMcClientImpl::~AsyncMcClientImpl() {
@@ -188,8 +186,7 @@ size_t AsyncMcClientImpl::getNumToSend() const {
     if (maxInflight_ <= getInflightRequestCount()) {
       numToSend = 0;
     } else {
-      numToSend = std::min(numToSend,
-                           maxInflight_ - getInflightRequestCount());
+      numToSend = std::min(numToSend, maxInflight_ - getInflightRequestCount());
     }
   }
   return numToSend;
@@ -229,9 +226,11 @@ void AsyncMcClientImpl::pushMessages() {
       debugFifo_.startMessage(MessageDirection::Sent, req.reqContext.typeId());
       debugFifo_.writeData(iov, iovcnt);
     }
-    socket_->writev(this, iov, iovcnt,
-                    numToSend == 1 ? folly::WriteFlags::NONE
-                    : folly::WriteFlags::CORK);
+    socket_->writev(
+        this,
+        iov,
+        iovcnt,
+        numToSend == 1 ? folly::WriteFlags::NONE : folly::WriteFlags::CORK);
     --numToSend;
   }
   writeScheduled_ = false;
@@ -242,7 +241,9 @@ namespace {
 
 void createTCPKeepAliveOptions(
     folly::AsyncSocket::OptionMap& options,
-    int cnt, int idle, int interval) {
+    int cnt,
+    int idle,
+    int interval) {
   // 0 means KeepAlive is disabled.
   if (cnt != 0) {
 #ifdef SO_KEEPALIVE
@@ -272,12 +273,10 @@ void createTCPKeepAliveOptions(
   }
 }
 
-const folly::AsyncSocket::OptionKey getQoSOptionKey(
-    sa_family_t addressFamily) {
-  static const folly::AsyncSocket::OptionKey kIpv4OptKey =
-    {IPPROTO_IP, IP_TOS};
-  static const folly::AsyncSocket::OptionKey kIpv6OptKey =
-    {IPPROTO_IPV6, IPV6_TCLASS};
+const folly::AsyncSocket::OptionKey getQoSOptionKey(sa_family_t addressFamily) {
+  static const folly::AsyncSocket::OptionKey kIpv4OptKey = {IPPROTO_IP, IP_TOS};
+  static const folly::AsyncSocket::OptionKey kIpv6OptKey = {IPPROTO_IPV6,
+                                                            IPV6_TCLASS};
   return (addressFamily == AF_INET) ? kIpv4OptKey : kIpv6OptKey;
 }
 
@@ -289,29 +288,32 @@ uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
   static const uint64_t kHighClass = 0x60;
   static const uint64_t kHighestClass = 0x80;
   static const uint64_t kQoSClasses[] = {
-    kDefaultClass, kLowestClass, kMediumClass, kHighClass, kHighestClass
-  };
+      kDefaultClass, kLowestClass, kMediumClass, kHighClass, kHighestClass};
 
   // path
-  static const uint64_t kAnyPathNoProtection      = 0x00;
-  static const uint64_t kAnyPathProtection        = 0x04;
+  static const uint64_t kAnyPathNoProtection = 0x00;
+  static const uint64_t kAnyPathProtection = 0x04;
   static const uint64_t kShortestPathNoProtection = 0x08;
-  static const uint64_t kShortestPathProtection   = 0x0c;
-  static const uint64_t kQoSPaths[] = {
-    kAnyPathNoProtection, kAnyPathProtection,
-    kShortestPathNoProtection, kShortestPathProtection
-  };
+  static const uint64_t kShortestPathProtection = 0x0c;
+  static const uint64_t kQoSPaths[] = {kAnyPathNoProtection,
+                                       kAnyPathProtection,
+                                       kShortestPathNoProtection,
+                                       kShortestPathProtection};
 
   if (qosClassLvl > 4) {
     qosClassLvl = 0;
-    LOG_FAILURE("AsyncMcClient", failure::Category::kSystemError,
-                "Invalid QoS class value in AsyncMcClient");
+    LOG_FAILURE(
+        "AsyncMcClient",
+        failure::Category::kSystemError,
+        "Invalid QoS class value in AsyncMcClient");
   }
 
   if (qosPathLvl > 3) {
     qosPathLvl = 0;
-    LOG_FAILURE("AsyncMcClient", failure::Category::kSystemError,
-                "Invalid QoS path value in AsyncMcClient");
+    LOG_FAILURE(
+        "AsyncMcClient",
+        failure::Category::kSystemError,
+        "Invalid QoS path value in AsyncMcClient");
   }
 
   return kQoSClasses[qosClassLvl] | kQoSPaths[qosPathLvl];
@@ -319,28 +321,36 @@ uint64_t getQoS(uint64_t qosClassLvl, uint64_t qosPathLvl) {
 
 void createQoSClassOption(
     folly::AsyncSocket::OptionMap& options,
-    const sa_family_t addressFamily, uint64_t qosClass, uint64_t qosPath) {
+    const sa_family_t addressFamily,
+    uint64_t qosClass,
+    uint64_t qosPath) {
   const auto& optkey = getQoSOptionKey(addressFamily);
   options[optkey] = getQoS(qosClass, qosPath);
 }
 
-void checkWhetherQoSIsApplied(const folly::SocketAddress& address,
-                              int socketFd,
-                              const ConnectionOptions& connectionOptions) {
+void checkWhetherQoSIsApplied(
+    const folly::SocketAddress& address,
+    int socketFd,
+    const ConnectionOptions& connectionOptions) {
   const auto& optkey = getQoSOptionKey(address.getFamily());
 
-  const uint64_t expectedValue = getQoS(connectionOptions.qosClass,
-                                        connectionOptions.qosPath);
+  const uint64_t expectedValue =
+      getQoS(connectionOptions.qosClass, connectionOptions.qosPath);
 
   uint64_t val = 0;
   socklen_t len = sizeof(expectedValue);
   int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
   if (rv != 0 || val != expectedValue) {
-    LOG_FAILURE("AsyncMcClient", failure::Category::kSystemError,
-                "Failed to apply QoS! "
-                "Return Value: {} (expected: {}). "
-                "QoS Value: {} (expected: {}).",
-                rv, 0, val, expectedValue);
+    LOG_FAILURE(
+        "AsyncMcClient",
+        failure::Category::kSystemError,
+        "Failed to apply QoS! "
+        "Return Value: {} (expected: {}). "
+        "QoS Value: {} (expected: {}).",
+        rv,
+        0,
+        val,
+        expectedValue);
   }
 }
 
@@ -349,12 +359,17 @@ folly::AsyncSocket::OptionMap createSocketOptions(
     const ConnectionOptions& connectionOptions) {
   folly::AsyncSocket::OptionMap options;
 
-  createTCPKeepAliveOptions(options,
-    connectionOptions.tcpKeepAliveCount, connectionOptions.tcpKeepAliveIdle,
-    connectionOptions.tcpKeepAliveInterval);
+  createTCPKeepAliveOptions(
+      options,
+      connectionOptions.tcpKeepAliveCount,
+      connectionOptions.tcpKeepAliveIdle,
+      connectionOptions.tcpKeepAliveInterval);
   if (connectionOptions.enableQoS) {
-    createQoSClassOption(options, address.getFamily(),
-        connectionOptions.qosClass, connectionOptions.qosPath);
+    createQoSClassOption(
+        options,
+        address.getFamily(),
+        connectionOptions.qosClass,
+        connectionOptions.qosPath);
   }
 
   return options;
@@ -371,8 +386,7 @@ class SslSessionDestructor {
   }
 };
 
-using SslSessionUniquePtr =
-    std::unique_ptr<SSL_SESSION, SslSessionDestructor>;
+using SslSessionUniquePtr = std::unique_ptr<SSL_SESSION, SslSessionDestructor>;
 
 using SslSessionCache =
     folly::EvictingCacheMap<std::string, SslSessionUniquePtr>;
@@ -408,7 +422,6 @@ SSL_SESSION* getSslSession(const AccessPoint& ap) {
 
 ///////////////////////////////////////////////////////////////////////////
 
-
 } // anonymous namespace
 
 void AsyncMcClientImpl::attemptConnection() {
@@ -429,9 +442,9 @@ void AsyncMcClientImpl::attemptConnection() {
       auto sslContext = connectionOptions_.sslContextProvider();
       if (!sslContext) {
         connectErr(folly::AsyncSocketException(
-                     folly::AsyncSocketException::SSL_ERROR,
-                     "SSLContext provider returned nullptr, "
-                     "check SSL certificates"));
+            folly::AsyncSocketException::SSL_ERROR,
+            "SSLContext provider returned nullptr, "
+            "check SSL certificates"));
         return;
       }
 
@@ -451,22 +464,22 @@ void AsyncMcClientImpl::attemptConnection() {
     folly::SocketAddress address;
     try {
       address = folly::SocketAddress(
-        connectionOptions_.accessPoint->getHost(),
-        connectionOptions_.accessPoint->getPort(),
-        /* allowNameLookup */ true);
+          connectionOptions_.accessPoint->getHost(),
+          connectionOptions_.accessPoint->getPort(),
+          /* allowNameLookup */ true);
     } catch (const std::system_error& e) {
-      LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
-                  "{}", e.what());
+      LOG_FAILURE(
+          "AsyncMcClient", failure::Category::kBadEnvironment, "{}", e.what());
       connectErr(folly::AsyncSocketException(
-                     folly::AsyncSocketException::NOT_OPEN, ""));
+          folly::AsyncSocketException::NOT_OPEN, ""));
       return;
     }
 
     auto socketOptions = createSocketOptions(address, connectionOptions_);
 
     socket.setSendTimeout(connectionOptions_.writeTimeout.count());
-    socket.connect(this, address, connectionOptions_.writeTimeout.count(),
-                   socketOptions);
+    socket.connect(
+        this, address, connectionOptions_.writeTimeout.count(), socketOptions);
 
     // If AsyncSocket::connect() fails, socket_ may have been reset
     if (socket_ && connectionOptions_.enableQoS) {
@@ -531,9 +544,12 @@ void AsyncMcClientImpl::connectErr(
   }
 
   if (ex.getType() == folly::AsyncSocketException::SSL_ERROR) {
-    LOG_FAILURE("AsyncMcClient", failure::Category::kBadEnvironment,
-                "SSLError: {}. Connect to {} failed.",
-                ex.what(), connectionOptions_.accessPoint->toHostPortString());
+    LOG_FAILURE(
+        "AsyncMcClient",
+        failure::Category::kBadEnvironment,
+        "SSLError: {}. Connect to {} failed.",
+        ex.what(),
+        connectionOptions_.accessPoint->toHostPortString());
   }
 
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
@@ -570,7 +586,7 @@ void AsyncMcClientImpl::processShutdown() {
       // We can safely close connection, it will stop all writes.
       socket_->close();
 
-      /* fallthrough */
+    /* fallthrough */
 
     case ConnectionState::ERROR:
       queue_.failAllSent(isAborting_ ? mc_res_aborted : mc_res_remote_error);
@@ -598,7 +614,7 @@ void AsyncMcClientImpl::processShutdown() {
       }
       return;
     case ConnectionState::CONNECTING:
-      // connectError is not a remote error, it's processed in connectError.
+    // connectError is not a remote error, it's processed in connectError.
     case ConnectionState::DOWN:
       // We shouldn't have any errors while not connected.
       CHECK(false);
@@ -632,8 +648,9 @@ void AsyncMcClientImpl::readErr(
 }
 
 void AsyncMcClientImpl::writeSuccess() noexcept {
-  assert(connectionState_ == ConnectionState::UP ||
-         connectionState_ == ConnectionState::ERROR);
+  assert(
+      connectionState_ == ConnectionState::UP ||
+      connectionState_ == ConnectionState::ERROR);
   DestructorGuard dg(this);
   auto& req = queue_.markNextAsSent();
   req.scheduleTimeout();
@@ -651,15 +668,15 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
 }
 
 void AsyncMcClientImpl::writeErr(
-    size_t bytesWritten, const folly::AsyncSocketException& ex) noexcept {
-
-  assert(connectionState_ == ConnectionState::UP ||
-         connectionState_ == ConnectionState::ERROR);
+    size_t bytesWritten,
+    const folly::AsyncSocketException& ex) noexcept {
+  assert(
+      connectionState_ == ConnectionState::UP ||
+      connectionState_ == ConnectionState::ERROR);
 
   VLOG(1) << "Failed to write into socket with remote endpoint \""
-          << connectionOptions_.accessPoint->toString()
-          << "\", wrote " << bytesWritten
-          << " bytes. Exception: " << ex.what();
+          << connectionOptions_.accessPoint->toString() << "\", wrote "
+          << bytesWritten << " bytes. Exception: " << ex.what();
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
@@ -669,22 +686,30 @@ void AsyncMcClientImpl::writeErr(
 
 folly::StringPiece AsyncMcClientImpl::clientStateToStr() const {
   switch (connectionState_) {
-    case ConnectionState::UP: return "UP";
-    case ConnectionState::DOWN: return "DOWN";
-    case ConnectionState::CONNECTING: return "CONNECTING";
-    case ConnectionState::ERROR: return "ERROR";
+    case ConnectionState::UP:
+      return "UP";
+    case ConnectionState::DOWN:
+      return "DOWN";
+    case ConnectionState::CONNECTING:
+      return "CONNECTING";
+    case ConnectionState::ERROR:
+      return "ERROR";
   }
   return "state is incorrect";
 }
 
 void AsyncMcClientImpl::logErrorWithContext(folly::StringPiece reason) {
-  LOG_FAILURE("AsyncMcClient", failure::Category::kOther,
-              "Error: \"{}\", client state: {}, remote endpoint: {}, "
-              "number of requests sent through this client: {}, "
-              "McClientRequestContextQueue info: {}",
-              reason, clientStateToStr(),
-              connectionOptions_.accessPoint->toString(), nextMsgId_,
-              queue_.debugInfo());
+  LOG_FAILURE(
+      "AsyncMcClient",
+      failure::Category::kOther,
+      "Error: \"{}\", client state: {}, remote endpoint: {}, "
+      "number of requests sent through this client: {}, "
+      "McClientRequestContextQueue info: {}",
+      reason,
+      clientStateToStr(),
+      connectionOptions_.accessPoint->toString(),
+      nextMsgId_,
+      queue_.debugInfo());
 }
 
 void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {
@@ -712,8 +737,9 @@ bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
 
 namespace {
 const char* DELETED = "DELETED\r\n";
-const char* FOUND = "VALUE we:always:ignore:key:here 0 15\r\n"
-                    "veryRandomValue\r\nEND\r\n";
+const char* FOUND =
+    "VALUE we:always:ignore:key:here 0 15\r\n"
+    "veryRandomValue\r\nEND\r\n";
 const char* STORED = "STORED\r\n";
 const char* TOUCHED = "TOUCHED\r\n";
 } // anonymous
@@ -768,18 +794,18 @@ void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
   }
   auto selfWeak = selfPtr_;
   eventBase_.runInEventBaseThread([selfWeak, timeout]() {
-      if (auto self = selfWeak.lock()) {
-        if (!self->connectionOptions_.writeTimeout.count() ||
-            self->connectionOptions_.writeTimeout > timeout) {
-          self->connectionOptions_.writeTimeout = timeout;
-        }
-
-        if (self->socket_) {
-          self->socket_->setSendTimeout(
-            self->connectionOptions_.writeTimeout.count());
-        }
+    if (auto self = selfWeak.lock()) {
+      if (!self->connectionOptions_.writeTimeout.count() ||
+          self->connectionOptions_.writeTimeout > timeout) {
+        self->connectionOptions_.writeTimeout = timeout;
       }
-    });
+
+      if (self->socket_) {
+        self->socket_->setSendTimeout(
+            self->connectionOptions_.writeTimeout.count());
+      }
+    }
+  });
 }
 
 double AsyncMcClientImpl::getRetransmissionInfo() {
@@ -792,10 +818,9 @@ double AsyncMcClientImpl::getRetransmissionInfo() {
     if (socket.getSockOpt(IPPROTO_TCP, TCP_INFO, &tcpinfo, &len) == 0) {
       const uint64_t totalKBytes = socket.getRawBytesWritten() / 1000;
       if (totalKBytes == lastKBytes_) {
-          return 0.0;
+        return 0.0;
       }
-      const auto retransPerKByte =
-          (tcpinfo.tcpi_total_retrans - lastRetrans_) /
+      const auto retransPerKByte = (tcpinfo.tcpi_total_retrans - lastRetrans_) /
           (double)(totalKBytes - lastKBytes_);
       lastKBytes_ = totalKBytes;
       lastRetrans_ = tcpinfo.tcpi_total_retrans;
@@ -804,5 +829,5 @@ double AsyncMcClientImpl::getRetransmissionInfo() {
   }
   return -1.0;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

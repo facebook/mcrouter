@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,9 @@
 
 #include <type_traits>
 
-namespace facebook { namespace memcache { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace detail {
 
 /* Concatenate implementation */
 
@@ -23,14 +25,16 @@ struct ConcatenateListsImpl<List<Items1...>, List<Items2...>> {
 template <class List1, class... Lists>
 struct ConcatenateListsImpl<List1, Lists...> {
   using type = typename ConcatenateListsImpl<
-      List1, typename ConcatenateListsImpl<Lists...>::type>::type;
+      List1,
+      typename ConcatenateListsImpl<Lists...>::type>::type;
 };
 
 /* Concatenate unit tests */
 static_assert(
-    std::is_same<List<int, double, float, long, char>,
-                 ConcatenateListsT<List<int, double>, List<float, long>,
-                                   List<char>>>::value,
+    std::is_same<
+        List<int, double, float, long, char>,
+        ConcatenateListsT<List<int, double>, List<float, long>, List<char>>>::
+        value,
     "concatenate is broken");
 
 /* Sort implementation */
@@ -67,27 +71,47 @@ template <class MessageList, size_t N>
 using SortImplT = typename SortImpl<MessageList, N>::type;
 
 template <class... Ts, size_t N>
-struct SortImpl<List<Ts...>, N,
-                typename std::enable_if<N == sizeof...(Ts)>::type> {
+struct SortImpl<
+    List<Ts...>,
+    N,
+    typename std::enable_if<N == sizeof...(Ts)>::type> {
   using type = List<Ts...>;
 };
 template <class... Ts, size_t N>
-struct SortImpl<List<Ts...>, N,
-                typename std::enable_if<(N < sizeof...(Ts))>::type> {
+struct SortImpl<
+    List<Ts...>,
+    N,
+    typename std::enable_if<(N < sizeof...(Ts))>::type> {
   using type = SortImplT<SortIterT<List<Ts...>>, N + 1>;
 };
 
 /* Sort unit test */
 namespace detail {
 namespace type_list_sort_test {
-struct A { static constexpr size_t typeId = 0; };
-struct B { static constexpr size_t typeId = 1; };
-struct C { static constexpr size_t typeId = 2; };
-struct D { static constexpr size_t typeId = 3; };
-struct E { static constexpr size_t typeId = 4; };
-struct F { static constexpr size_t typeId = 5; };
-struct G { static constexpr size_t typeId = 6; };
-struct H { static constexpr size_t typeId = 7; };
+struct A {
+  static constexpr size_t typeId = 0;
+};
+struct B {
+  static constexpr size_t typeId = 1;
+};
+struct C {
+  static constexpr size_t typeId = 2;
+};
+struct D {
+  static constexpr size_t typeId = 3;
+};
+struct E {
+  static constexpr size_t typeId = 4;
+};
+struct F {
+  static constexpr size_t typeId = 5;
+};
+struct G {
+  static constexpr size_t typeId = 6;
+};
+struct H {
+  static constexpr size_t typeId = 7;
+};
 static_assert(
     std::is_same<
         List<A, B, C, D, E, F, G, H>,
@@ -125,13 +149,17 @@ struct ExpandImpl<Start, List<>> {
 
 /* PairListFirst test */
 static_assert(
-    std::is_same<PairListFirstT<List<Pair<int, double>, Pair<float, char>>>,
-                 List<int, float>>::value,
+    std::is_same<
+        PairListFirstT<List<Pair<int, double>, Pair<float, char>>>,
+        List<int, float>>::value,
     "PairListFirst list is broken");
 
 /* PairListSecond test */
 static_assert(
-    std::is_same<PairListSecondT<List<Pair<int, double>, Pair<float, char>>>,
-                 List<double, char>>::value,
+    std::is_same<
+        PairListSecondT<List<Pair<int, double>, Pair<float, char>>>,
+        List<double, char>>::value,
     "PairListSecond list is broken");
-}}} // facebook::memcache::detail
+}
+}
+} // facebook::memcache::detail

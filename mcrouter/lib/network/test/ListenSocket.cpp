@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,8 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 std::pair<int, uint16_t> createAndBind(uint16_t port) {
   struct addrinfo hints;
@@ -42,8 +43,10 @@ std::pair<int, uint16_t> createAndBind(uint16_t port) {
 
   auto socketFd = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (socketFd < 0) {
-    throwRuntime("Failed to create a socket for port {}: {}",
-                 port, folly::errnoStr(errno));
+    throwRuntime(
+        "Failed to create a socket for port {}: {}",
+        port,
+        folly::errnoStr(errno));
   }
   if (::bind(socketFd, res->ai_addr, res->ai_addrlen) != 0) {
     auto errStr = folly::errnoStr(errno);
@@ -67,16 +70,17 @@ ListenSocket::ListenSocket() {
   socketFd_ = sockPort.first;
   port_ = sockPort.second;
   if (::listen(socketFd_, SOMAXCONN) != 0) {
-    throwRuntime("Failed to listen on a socket for port {}: {}",
-                 port_, folly::errnoStr(errno));
+    throwRuntime(
+        "Failed to listen on a socket for port {}: {}",
+        port_,
+        folly::errnoStr(errno));
   }
 
   VLOG(1) << "Listening on " << socketFd_ << ", port " << port_;
 }
 
 ListenSocket::ListenSocket(ListenSocket&& other) noexcept
-    : socketFd_(other.socketFd_),
-      port_(other.port_) {
+    : socketFd_(other.socketFd_), port_(other.port_) {
   other.socketFd_ = -1;
   other.port_ = 0;
 }
@@ -112,5 +116,5 @@ bool isPortOpen(uint16_t port) {
     return true;
   }
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

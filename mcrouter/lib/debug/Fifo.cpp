@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -80,8 +80,8 @@ bool Fifo::tryConnect() noexcept {
     if (!create(path_.c_str())) {
       static bool logged{false};
       if (!logged) {
-        VLOG(1) << "Error creating debug fifo at \"" << path_ << "\": "
-                << strerror(errno) << " [" << errno << "]";
+        VLOG(1) << "Error creating debug fifo at \"" << path_
+                << "\": " << strerror(errno) << " [" << errno << "]";
         logged = true;
       }
       return false;
@@ -89,8 +89,7 @@ bool Fifo::tryConnect() noexcept {
   }
 
   if (!isFifo(path_.c_str()) || !canWrite(path_.c_str())) {
-    if (!removeFile(path_.c_str()) ||
-        !create(path_.c_str())) {
+    if (!removeFile(path_.c_str()) || !create(path_.c_str())) {
       return false;
     }
   }

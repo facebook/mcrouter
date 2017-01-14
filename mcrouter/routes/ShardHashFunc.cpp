@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,9 @@
 
 #include <folly/dynamic.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 bool getShardId(folly::StringPiece key, folly::StringPiece& shardId) {
   size_t colon = qfind(key, ':');
@@ -30,10 +32,7 @@ bool getShardId(folly::StringPiece key, folly::StringPiece& shardId) {
   return true;
 }
 
-ConstShardHashFunc::ConstShardHashFunc(size_t n)
-    : n_(n),
-      ch3_(n) {
-}
+ConstShardHashFunc::ConstShardHashFunc(size_t n) : n_(n), ch3_(n) {}
 
 size_t ConstShardHashFunc::operator()(folly::StringPiece key) const {
   size_t index;
@@ -43,13 +42,13 @@ size_t ConstShardHashFunc::operator()(folly::StringPiece key) const {
   return ch3_(key);
 }
 
-bool ConstShardHashFunc::shardLookup(folly::StringPiece key,
-                                     size_t* result) const {
+bool ConstShardHashFunc::shardLookup(folly::StringPiece key, size_t* result)
+    const {
   folly::StringPiece shard;
   if (!getShardId(key, shard)) {
     return false;
   }
-  for (const auto& iter: shard) {
+  for (const auto& iter : shard) {
     if (!isdigit(iter)) {
       return false;
     }
@@ -67,5 +66,6 @@ bool ConstShardHashFunc::shardLookup(folly::StringPiece key,
   *result = index;
   return true;
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

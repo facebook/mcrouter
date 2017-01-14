@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -44,8 +44,7 @@ __BEGIN_DECLS
  * Copyright (c) 2009- Facebook -- All Rights Reserved
  */
 
-uint32_t furc_hash(const char* const key, const size_t len,
-                   const uint32_t m);
+uint32_t furc_hash(const char* const key, const size_t len, const uint32_t m);
 
 uint32_t furc_maximum_pool_size(void);
 
@@ -57,8 +56,8 @@ uint32_t furc_maximum_pool_size(void);
  *
  * 64-bit hash for 64-bit platforms
  */
-uint64_t murmur_hash_64A(const void* const key, const size_t len,
-                         const uint32_t seed);
+uint64_t
+murmur_hash_64A(const void* const key, const size_t len, const uint32_t seed);
 
 /**
  * Computes a CRC32 hash of the first |len| characters of the |key|.

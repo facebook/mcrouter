@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -49,80 +49,77 @@ std::string getUsage(const char* binaryName) {
       "Search for PATTERN in each mcrouter debug fifo in FIFO_ROOT "
       "(see options list) directory.\n"
       "If PATTERN is not provided, match everything.\n"
-      "PATTERN is, by default, a basic regular expression (BRE).\n"
-      , binaryName);
+      "PATTERN is, by default, a basic regular expression (BRE).\n",
+      binaryName);
 }
 
-Settings parseOptions(int argc, char **argv) {
+Settings parseOptions(int argc, char** argv) {
   Settings settings;
 
   namespace po = boost::program_options;
 
   // Named options
   po::options_description namedOpts("Allowed options");
-  namedOpts.add_options()
-    ("help,h", "Print this help message.")
-    ("version", "Print mcpiper version and exit.")
-    ("fifo-root,f",
+  namedOpts.add_options()("help,h", "Print this help message.")(
+      "version", "Print mcpiper version and exit.")(
+      "fifo-root,f",
       po::value<std::string>(&settings.fifoRoot),
-      "Path of mcrouter fifo's directory.")
-    ("filename-pattern,P",
+      "Path of mcrouter fifo's directory.")(
+      "filename-pattern,P",
       po::value<std::string>(&settings.filenamePattern),
-      "Basic regular expression (BRE) to match the name of the fifos.")
-    ("host,H",
+      "Basic regular expression (BRE) to match the name of the fifos.")(
+      "host,H",
       po::value<std::string>(&settings.host),
-      "Show only messages sent/received to provided IP address.")
-    ("ignore-case,i",
+      "Show only messages sent/received to provided IP address.")(
+      "ignore-case,i",
       po::bool_switch(&settings.ignoreCase)->default_value(false),
-      "Ignore case on search patterns")
-    ("invert-match,v",
+      "Ignore case on search patterns")(
+      "invert-match,v",
       po::bool_switch(&settings.invertMatch)->default_value(false),
-      "Invert match")
-    ("max-messages,n",
+      "Invert match")(
+      "max-messages,n",
       po::value<uint32_t>(&settings.maxMessages),
-      "Display only <arg> messages and exit.")
-    ("num-after-match,A",
+      "Display only <arg> messages and exit.")(
+      "num-after-match,A",
       po::value<uint32_t>(&settings.numAfterMatch),
-      "Shows <arg> messages after a matched message.")
-    ("port,p",
+      "Shows <arg> messages after a matched message.")(
+      "port,p",
       po::value<uint16_t>(&settings.port),
-      "Show only messages transmitted in provided port.")
-    ("quiet,q",
+      "Show only messages transmitted in provided port.")(
+      "quiet,q",
       po::bool_switch(&settings.quiet)->default_value(false),
-      "Doesn't display values.")
-    ("time-format,t",
+      "Doesn't display values.")(
+      "time-format,t",
       po::value<std::string>(&settings.timeFormat),
       "Displays timestamp on every match; "
-      "ARG is \"absolute\", \"diff\" or \"offset\".")
-    ("value-min-size,m",
+      "ARG is \"absolute\", \"diff\" or \"offset\".")(
+      "value-min-size,m",
       po::value<uint32_t>(&settings.valueMinSize),
-      "Minimum size of the value of messages to display")
-    ("value-max-size,M",
+      "Minimum size of the value of messages to display")(
+      "value-max-size,M",
       po::value<uint32_t>(&settings.valueMaxSize),
-      "Maximum size of the value of messages to display")
-    ("min-latency-us,l",
+      "Maximum size of the value of messages to display")(
+      "min-latency-us,l",
       po::value<int64_t>(&settings.minLatencyUs),
-      "Minimum latency in micros of messages to display")
-    ("protocol",
+      "Minimum latency in micros of messages to display")(
+      "protocol",
       po::value<std::string>(&settings.protocol),
       "Show only data transmitted in the provided protocol; "
-      "ARG is \"ascii\", \"umbrella\" or \"caret\".")
-    ("verbose",
+      "ARG is \"ascii\", \"umbrella\" or \"caret\".")(
+      "verbose",
       po::value<size_t>(&settings.verboseLevel),
-      "Set verbose level")
-    ("raw",
+      "Set verbose level")(
+      "raw",
       po::bool_switch(&settings.raw)->default_value(false),
       "Prints raw data. Format: firstly size(8 bytes) then message. "
-      "ASCII protocol is not supported")
-  ;
+      "ASCII protocol is not supported");
 
   // Positional arguments - hidden from the help message
   po::options_description hiddenOpts("Hidden options");
-  hiddenOpts.add_options()
-    ("match-expression",
-     po::value<std::string>(&settings.matchExpression),
-     "Match expression")
-  ;
+  hiddenOpts.add_options()(
+      "match-expression",
+      po::value<std::string>(&settings.matchExpression),
+      "Match expression");
   po::positional_options_description posArgs;
   posArgs.add("match-expression", 1);
 
@@ -134,8 +131,12 @@ Settings parseOptions(int argc, char **argv) {
     allOpts.add(namedOpts).add(hiddenOpts);
 
     // Parse
-    po::store(po::command_line_parser(argc, argv)
-        .options(allOpts).positional(posArgs).run(), vm);
+    po::store(
+        po::command_line_parser(argc, argv)
+            .options(allOpts)
+            .positional(posArgs)
+            .run(),
+        vm);
     po::notify(vm);
   } catch (po::error& ex) {
     LOG(ERROR) << ex.what();
@@ -159,7 +160,7 @@ Settings parseOptions(int argc, char **argv) {
 
   // Handles constraints
   CHECK(!settings.fifoRoot.empty())
-    << "Fifo's directory (--fifo-root) cannot be empty";
+      << "Fifo's directory (--fifo-root) cannot be empty";
 
   FLAGS_v = settings.verboseLevel;
 
@@ -168,7 +169,7 @@ Settings parseOptions(int argc, char **argv) {
 
 } // anonymous namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   struct sigaction sa;
   memset(&sa, 0, sizeof(struct sigaction));
   sa.sa_handler = cleanExit;

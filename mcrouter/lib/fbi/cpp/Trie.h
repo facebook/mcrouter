@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,8 @@
 
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Simple Trie implementation.
@@ -25,8 +26,9 @@ namespace facebook { namespace memcache {
  */
 template <class Value>
 class Trie {
-  static_assert(sizeof(folly::StringPiece::value_type) == 1,
-                "Trie works only with 8 bit character types");
+  static_assert(
+      sizeof(folly::StringPiece::value_type) == 1,
+      "Trie works only with 8 bit character types");
 
   /**
    * iterator implementation
@@ -35,6 +37,7 @@ class Trie {
    */
   template <class T, class V>
   class iterator_base;
+
  public:
   typedef std::pair<const std::string, Value> value_type;
   typedef Value mapped_type;
@@ -127,7 +130,7 @@ class Trie {
     return c & 15;
   }
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "Trie-inl.h"

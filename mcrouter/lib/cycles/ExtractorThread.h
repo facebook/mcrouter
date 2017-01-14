@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,7 +17,10 @@
 
 #include "mcrouter/lib/cycles/Cycles.h"
 
-namespace facebook { namespace memcache { namespace cycles { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace cycles {
+namespace detail {
 
 /**
  * Thread that will do the extraction.
@@ -63,5 +66,7 @@ class ExtractorThread {
   // The thread itself
   std::thread thread_;
 };
-
-}}}} // namespace facebook::memcache::cycles::detail
+}
+}
+}
+} // namespace facebook::memcache::cycles::detail

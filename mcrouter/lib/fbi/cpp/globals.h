@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,9 @@
 
 #include <stdint.h>
 
-namespace facebook { namespace memcache { namespace globals {
+namespace facebook {
+namespace memcache {
+namespace globals {
 
 /**
  * @return lazy-initialized hostid.
@@ -26,7 +28,10 @@ uint32_t hostid();
 struct HostidMock {
   explicit HostidMock(uint32_t value);
   void reset();
-  ~HostidMock() { reset(); }
+  ~HostidMock() {
+    reset();
+  }
 };
-
-}}} // facebook::memcache::globals
+}
+}
+} // facebook::memcache::globals

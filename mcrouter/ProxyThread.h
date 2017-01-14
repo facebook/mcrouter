@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,9 @@
 #include "mcrouter/Proxy.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class CarbonRouterInstanceBase;
 
@@ -48,7 +50,9 @@ class ProxyThread {
   Proxy<RouterInfo>& proxy() {
     return proxyRef_;
   }
-  folly::EventBase& eventBase() { return evbRef_; }
+  folly::EventBase& eventBase() {
+    return evbRef_;
+  }
 
  private:
   std::unique_ptr<folly::EventBase> evb_;
@@ -62,7 +66,8 @@ class ProxyThread {
       std::unique_ptr<folly::EventBase> evb,
       typename Proxy<RouterInfo>::Pointer proxy);
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "ProxyThread-inl.h"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,13 +11,14 @@
 
 #include <vector>
 
-#include <folly/dynamic.h>
 #include <folly/Memory.h>
+#include <folly/dynamic.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McResUtil.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 FailoverErrorsSettings::List::List(std::vector<std::string> errors) {
   init(std::move(errors));
@@ -59,17 +60,13 @@ void FailoverErrorsSettings::List::init(std::vector<std::string> errors) {
       }
     }
 
-    checkLogic(i < mc_nres,
-        "Failover error '{}' is not a valid error type.", error);
+    checkLogic(
+        i < mc_nres, "Failover error '{}' is not a valid error type.", error);
   }
 }
 
-
 FailoverErrorsSettings::FailoverErrorsSettings(std::vector<std::string> errors)
-    : gets_(errors),
-      updates_(errors),
-      deletes_(std::move(errors)) {
-}
+    : gets_(errors), updates_(errors), deletes_(std::move(errors)) {}
 
 FailoverErrorsSettings::FailoverErrorsSettings(
     std::vector<std::string> errorsGet,
@@ -77,11 +74,11 @@ FailoverErrorsSettings::FailoverErrorsSettings(
     std::vector<std::string> errorsDelete)
     : gets_(std::move(errorsGet)),
       updates_(std::move(errorsUpdate)),
-      deletes_(std::move(errorsDelete)) {
-}
+      deletes_(std::move(errorsDelete)) {}
 
 FailoverErrorsSettings::FailoverErrorsSettings(const folly::dynamic& json) {
-  checkLogic(json.isObject() || json.isArray(),
+  checkLogic(
+      json.isObject() || json.isArray(),
       "Failover errors must be either an array or an object.");
 
   if (json.isObject()) {
@@ -100,5 +97,5 @@ FailoverErrorsSettings::FailoverErrorsSettings(const folly::dynamic& json) {
     deletes_ = FailoverErrorsSettings::List(json);
   }
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

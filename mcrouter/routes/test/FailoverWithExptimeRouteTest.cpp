@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,7 +23,9 @@ using namespace facebook::memcache::mcrouter;
 using std::make_shared;
 using std::vector;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 using FiberManagerContextTag =
@@ -36,27 +38,28 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     int32_t failoverExptime,
     FailoverErrorsSettings failoverErrors,
     std::unique_ptr<FailoverRateLimiter> rateLimiter);
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 TEST(failoverWithExptimeRouteTest, success) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   auto rh = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rh->route(McGetRequest("0"));
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
@@ -66,29 +69,31 @@ TEST(failoverWithExptimeRouteTest, success) {
 
 TEST(failoverWithExptimeRouteTest, once) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_timeout)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "a"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_notfound)),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_notfound))
-  };
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "b"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_notfound)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "c"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_notfound))};
 
   auto rh = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rh->route(McGetRequest("0"));
     EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -103,29 +108,31 @@ TEST(failoverWithExptimeRouteTest, once) {
 
 TEST(failoverWithExptimeRouteTest, twice) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_timeout)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "a"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_timeout)),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_notfound))
-  };
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "b"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_timeout)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_found, "c"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_notfound))};
 
   auto rh = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rh->route(McGetRequest("0"));
     EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -140,29 +147,31 @@ TEST(failoverWithExptimeRouteTest, twice) {
 
 TEST(failoverWithExptimeRouteTest, fail) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_timeout)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "a"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_timeout)),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"),
-                            UpdateRouteTestData(),
-                            DeleteRouteTestData(mc_res_timeout))
-  };
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "b"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_timeout)),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "c"),
+          UpdateRouteTestData(),
+          DeleteRouteTestData(mc_res_timeout))};
 
   auto rh = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rh->route(McGetRequest("0"));
 
@@ -179,24 +188,22 @@ TEST(failoverWithExptimeRouteTest, fail) {
 
 void testFailoverGet(mc_res_t res) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(res, "a")),
+      make_shared<TestHandle>(GetRouteTestData(res, "a")),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   auto rhNoFail = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(std::vector<std::string>{}),
-    nullptr);
-
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(std::vector<std::string>{}),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rhNoFail->route(McGetRequest("0"));
     EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
@@ -204,13 +211,13 @@ void testFailoverGet(mc_res_t res) {
   });
 
   auto rhFail = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rhFail->route(McGetRequest("0"));
     EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -219,23 +226,22 @@ void testFailoverGet(mc_res_t res) {
 
 void testFailoverUpdate(mc_res_t res) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(UpdateRouteTestData(res)),
+      make_shared<TestHandle>(UpdateRouteTestData(res)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
-  };
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
 
   auto rhNoFail = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(std::vector<std::string>{}),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(std::vector<std::string>{}),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     McSetRequest req("0");
     req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
@@ -249,13 +255,13 @@ void testFailoverUpdate(mc_res_t res) {
   });
 
   auto rhFail = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     McSetRequest req("0");
     req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "a");
@@ -269,27 +275,25 @@ void testFailoverUpdate(mc_res_t res) {
 
 void testFailoverDelete(mc_res_t res) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(DeleteRouteTestData(res)),
+      make_shared<TestHandle>(DeleteRouteTestData(res)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted)),
-    make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))
-  };
+      make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted)),
+      make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))};
 
   auto rhNoFail = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(std::vector<std::string>{}),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(std::vector<std::string>{}),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     McDeleteRequest req("0");
-    auto reply = rhNoFail->route(
-        McDeleteRequest("0"));
+    auto reply = rhNoFail->route(McDeleteRequest("0"));
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
     // only normal handle sees the key
     EXPECT_EQ(vector<std::string>{"0"}, normalHandle[0]->saw_keys);
@@ -298,13 +302,13 @@ void testFailoverDelete(mc_res_t res) {
   });
 
   auto rhFail = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     auto reply = rhFail->route(McDeleteRequest("0"));
     EXPECT_EQ(1, failoverHandles[0]->saw_keys.size());
@@ -332,23 +336,22 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnTko) {
 
 TEST(failoverWithExptimeRouteTest, noFailoverOnArithmetic) {
   std::vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_connect_timeout)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_connect_timeout)),
   };
   auto normalRh = get_route_handles(normalHandle);
   std::vector<std::shared_ptr<TestHandle>> failoverHandles{
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
-  };
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
 
   auto rh = makeFailoverWithExptimeRoute(
-    normalRh[0],
-    get_route_handles(failoverHandles),
-    2,
-    FailoverErrorsSettings(),
-    nullptr);
+      normalRh[0],
+      get_route_handles(failoverHandles),
+      2,
+      FailoverErrorsSettings(),
+      nullptr);
 
   TestFiberManager fm{FiberManagerContextTag()};
-  fm.run([&]{
+  fm.run([&] {
     mockFiberContext();
     McIncrRequest req("0");
     req.delta() = 1;

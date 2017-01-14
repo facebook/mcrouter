@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,15 +13,15 @@
 
 #include <folly/String.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-RoutingPrefix::RoutingPrefix(std::string prefix)
-    : prefix_(std::move(prefix)) {
+RoutingPrefix::RoutingPrefix(std::string prefix) : prefix_(std::move(prefix)) {
   initFromPrefix();
 }
 
-RoutingPrefix::RoutingPrefix(const char* prefix)
-    : prefix_(prefix) {
+RoutingPrefix::RoutingPrefix(const char* prefix) : prefix_(prefix) {
   initFromPrefix();
 }
 
@@ -67,13 +67,11 @@ void RoutingPrefix::initFromPrefix() {
   std::vector<folly::StringPiece> parts;
   folly::split("/", prefix_, parts);
   // empty, region (non-empty), cluster (non-empty), empty
-  if (parts.size() != 4 ||
-      !parts[0].empty() ||
-      parts[1].empty() ||
-      parts[2].empty() ||
-      !parts[3].empty()) {
-    throw std::invalid_argument("Routing prefix (" + prefix_ +
-                                ") should be of the form /region/cluster/");
+  if (parts.size() != 4 || !parts[0].empty() || parts[1].empty() ||
+      parts[2].empty() || !parts[3].empty()) {
+    throw std::invalid_argument(
+        "Routing prefix (" + prefix_ +
+        ") should be of the form /region/cluster/");
   }
 
   region_ = parts[1];
@@ -85,8 +83,9 @@ void RoutingPrefix::initFromPrefixUnsafe() {
   assert(splitPos != std::string::npos);
 
   region_.assign(prefix_.data() + 1, prefix_.data() + splitPos);
-  cluster_.assign(prefix_.data() + splitPos + 1,
-                  prefix_.data() + prefix_.size() - 1);
+  cluster_.assign(
+      prefix_.data() + splitPos + 1, prefix_.data() + prefix_.size() - 1);
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

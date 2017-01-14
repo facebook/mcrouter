@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 
 #include <folly/IntrusiveList.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * TODO: enforce using UniqueIntrusiveListHook
@@ -26,12 +27,14 @@ using UniqueIntrusiveListHook = folly::SafeIntrusiveListHook;
  * All entries still in the list are deleted on destruction.
  * Only allows pushing/popping unique_ptr<T>.
  */
-template<typename T, UniqueIntrusiveListHook T::* PtrToMember,
-         typename TDeleter = std::default_delete<T>>
+template <
+    typename T,
+    UniqueIntrusiveListHook T::*PtrToMember,
+    typename TDeleter = std::default_delete<T>>
 class UniqueIntrusiveList {
  public:
   using iterator =
-    typename folly::CountedIntrusiveList<T, PtrToMember>::iterator;
+      typename folly::CountedIntrusiveList<T, PtrToMember>::iterator;
 
   UniqueIntrusiveList(const UniqueIntrusiveList&) = delete;
   UniqueIntrusiveList& operator=(const UniqueIntrusiveList&) = delete;
@@ -42,11 +45,7 @@ class UniqueIntrusiveList {
    * Will destroy any elements still in the list.
    */
   ~UniqueIntrusiveList() {
-    list_.clear_and_dispose(
-      [] (T* t) {
-        TDeleter()(t);
-      }
-    );
+    list_.clear_and_dispose([](T* t) { TDeleter()(t); });
   }
 
   /**
@@ -84,18 +83,34 @@ class UniqueIntrusiveList {
   }
 
   /* IntrusiveList interface */
-  bool empty() const { return list_.empty(); }
+  bool empty() const {
+    return list_.empty();
+  }
 
-  size_t size() const { return list_.size(); }
+  size_t size() const {
+    return list_.size();
+  }
 
-  T& front() { return list_.front(); }
-  const T& front() const { return list_.front(); }
+  T& front() {
+    return list_.front();
+  }
+  const T& front() const {
+    return list_.front();
+  }
 
-  T& back() { return list_.back(); }
-  const T& back() const { return list_.back(); }
+  T& back() {
+    return list_.back();
+  }
+  const T& back() const {
+    return list_.back();
+  }
 
-  iterator begin() { return list_.begin(); }
-  iterator end() { return list_.end(); }
+  iterator begin() {
+    return list_.begin();
+  }
+  iterator end() {
+    return list_.end();
+  }
 
   iterator iterator_to(T& t) {
     return list_.iterator_to(t);
@@ -104,5 +119,5 @@ class UniqueIntrusiveList {
  private:
   folly::CountedIntrusiveList<T, PtrToMember> list_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

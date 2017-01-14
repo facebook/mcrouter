@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,10 +9,11 @@
  */
 #pragma once
 
-#include <folly/detail/CacheLocality.h>
 #include <folly/SpinLock.h>
+#include <folly/detail/CacheLocality.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct CacheClientCounters {
   size_t fetchCount{0};
@@ -69,5 +70,5 @@ class CacheClientStats {
   mutable folly::SpinLock lock_ FOLLY_ALIGN_TO_AVOID_FALSE_SHARING;
   CacheClientCounters counters_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

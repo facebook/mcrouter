@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,9 @@
 
 #include <cstdint>
 
-namespace facebook { namespace memcache { namespace cycles {
+namespace facebook {
+namespace memcache {
+namespace cycles {
 
 struct Metering {
   // Number of ticks
@@ -20,10 +22,8 @@ struct Metering {
   uint64_t contextSwitches;
 };
 inline Metering operator-(const Metering& lhs, const Metering& rhs) {
-  return Metering{
-    lhs.ticks - rhs.ticks,
-    lhs.contextSwitches - rhs.contextSwitches
-  };
+  return Metering{lhs.ticks - rhs.ticks,
+                  lhs.contextSwitches - rhs.contextSwitches};
 }
 
 /**
@@ -65,5 +65,6 @@ class RUsageClock : public Clock {
  public:
   Metering read() const override final;
 };
-
-}}} // namespace facebook::memcache::cycles
+}
+}
+} // namespace facebook::memcache::cycles

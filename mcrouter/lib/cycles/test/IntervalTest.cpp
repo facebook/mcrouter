@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,8 +23,8 @@ TEST(Interval, basic) {
   const size_t reqType = 1;
   const uint64_t reqId = 2;
 
-  Interval interval(Metering{length, contextSwitches},
-                    IntervalLabel(reqType, reqId));
+  Interval interval(
+      Metering{length, contextSwitches}, IntervalLabel(reqType, reqId));
 
   EXPECT_EQ(length, interval.length());
   EXPECT_EQ(contextSwitches, interval.contextSwitches());

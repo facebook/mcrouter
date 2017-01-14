@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,7 +25,7 @@ void ShadowRoute<RouterInfo, ShadowPolicy>::dispatchShadowRequest(
     std::shared_ptr<typename RouterInfo::RouteHandleIf> shadow,
     std::shared_ptr<Request> adjustedReq) const {
   folly::fibers::addTask(
-      [shadow = std::move(shadow), adjustedReq = std::move(adjustedReq)]() {
+      [ shadow = std::move(shadow), adjustedReq = std::move(adjustedReq) ]() {
         // we don't want to spool shadow requests
         fiber_local<RouterInfo>::clearAsynclogName();
         fiber_local<RouterInfo>::addRequestClass(RequestClass::kShadow);
@@ -52,8 +52,9 @@ makeShadowRoutes(
     ExtraRouteHandleProviderIf<RouterInfo>& extraProvider) {
   folly::StringPiece shadowPolicy = "default";
   if (auto jshadow_policy = json.get_ptr("shadow_policy")) {
-    checkLogic(jshadow_policy->isString(),
-               "ShadowRoute: shadow_policy is not a string");
+    checkLogic(
+        jshadow_policy->isString(),
+        "ShadowRoute: shadow_policy is not a string");
     shadowPolicy = jshadow_policy->stringPiece();
   }
 
@@ -61,25 +62,28 @@ makeShadowRoutes(
   checkLogic(jshadows, "ShadowRoute: route doesn't contain shadows field");
 
   if (!jshadows->isArray()) {
-    MC_LOG_FAILURE(proxy.router().opts(),
-                   failure::Category::kInvalidConfig,
-                   "ShadowRoute: shadows specified in route is not an array");
+    MC_LOG_FAILURE(
+        proxy.router().opts(),
+        failure::Category::kInvalidConfig,
+        "ShadowRoute: shadows specified in route is not an array");
     return children;
   }
 
   ShadowData<RouterInfo> data;
   for (auto& shadow : *jshadows) {
     if (!shadow.isObject()) {
-      MC_LOG_FAILURE(proxy.router().opts(),
-                     failure::Category::kInvalidConfig,
-                     "ShadowRoute: shadow is not an object");
+      MC_LOG_FAILURE(
+          proxy.router().opts(),
+          failure::Category::kInvalidConfig,
+          "ShadowRoute: shadow is not an object");
       continue;
     }
     auto jtarget = shadow.get_ptr("target");
     if (!jtarget) {
-      MC_LOG_FAILURE(proxy.router().opts(),
-                     failure::Category::kInvalidConfig,
-                     "ShadowRoute shadows: no target for shadow");
+      MC_LOG_FAILURE(
+          proxy.router().opts(),
+          failure::Category::kInvalidConfig,
+          "ShadowRoute shadows: no target for shadow");
       continue;
     }
     try {
@@ -88,10 +92,11 @@ makeShadowRoutes(
         data.emplace_back(factory.create(*jtarget), std::move(s));
       }
     } catch (const std::exception& e) {
-      MC_LOG_FAILURE(proxy.router().opts(),
-                     failure::Category::kInvalidConfig,
-                     "Can not create shadow for ShadowRoute: {}",
-                     e.what());
+      MC_LOG_FAILURE(
+          proxy.router().opts(),
+          failure::Category::kInvalidConfig,
+          "Can not create shadow for ShadowRoute: {}",
+          e.what());
     }
   }
   for (size_t i = 0; i < children.size(); ++i) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,22 +11,23 @@
 
 #include <string>
 
-#include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/Varint.h>
+#include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/umbrella.h"
-#include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/CaretHeader.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/CaretHeader.h"
 
 namespace folly {
 class IOBuf;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 enum class UmbrellaParseStatus {
   OK,
@@ -34,8 +35,10 @@ enum class UmbrellaParseStatus {
   NOT_ENOUGH_DATA,
 };
 
-UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
-                                        UmbrellaMessageInfo& infoOut);
+UmbrellaParseStatus umbrellaParseHeader(
+    const uint8_t* buf,
+    size_t nbuf,
+    UmbrellaMessageInfo& infoOut);
 
 /**
  * Parses caret message header
@@ -43,9 +46,8 @@ UmbrellaParseStatus umbrellaParseHeader(const uint8_t* buf, size_t nbuf,
  * @param pointer to buffer and length
  * @return parsed status
  */
-UmbrellaParseStatus caretParseHeader(const uint8_t* buf,
-                                     size_t nbuf,
-                                     UmbrellaMessageInfo& info);
+UmbrellaParseStatus
+caretParseHeader(const uint8_t* buf, size_t nbuf, UmbrellaMessageInfo& info);
 
 /**
  * Prepares the caret message header.
@@ -91,9 +93,12 @@ bool umbrellaIsReply(const uint8_t* header, size_t nheader);
  * @throws                 std::runtime_error on any parse error.
  */
 template <class Request>
-ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
-                                   const uint8_t* header, size_t nheader,
-                                   const uint8_t* body, size_t nbody);
+ReplyT<Request> umbrellaParseReply(
+    const folly::IOBuf& source,
+    const uint8_t* header,
+    size_t nheader,
+    const uint8_t* body,
+    size_t nbody);
 
 /**
  * Parse an on-the-wire Umbrella request.
@@ -110,9 +115,13 @@ ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
  * @throws                 std::runtime_error on any parse error.
  */
 template <class Request>
-Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
-                             size_t nheader, const uint8_t* body, size_t nbody,
-                             uint64_t& reqidOut);
+Request umbrellaParseRequest(
+    const folly::IOBuf& source,
+    const uint8_t* header,
+    size_t nheader,
+    const uint8_t* body,
+    size_t nbody,
+    uint64_t& reqidOut);
 
 class UmbrellaSerializedMessage {
  public:
@@ -120,17 +129,22 @@ class UmbrellaSerializedMessage {
   void clear();
 
   template <class Reply>
-  bool prepare(Reply&& reply, uint64_t reqid,
-               const struct iovec*& iovOut, size_t& niovOut) {
+  bool prepare(
+      Reply&& reply,
+      uint64_t reqid,
+      const struct iovec*& iovOut,
+      size_t& niovOut) {
     static constexpr mc_op_t op = OpFromType<Reply, ReplyOpMapping>::value;
     return prepareReplyImpl(std::move(reply), op, reqid, iovOut, niovOut);
   }
 
   template <class Request>
-  bool prepare(const Request& request, uint64_t reqid,
-               const struct iovec*& iovOut, size_t& niovOut) {
-    static constexpr mc_op_t op =
-      OpFromType<Request, RequestOpMapping>::value;
+  bool prepare(
+      const Request& request,
+      uint64_t reqid,
+      const struct iovec*& iovOut,
+      size_t& niovOut) {
+    static constexpr mc_op_t op = OpFromType<Request, RequestOpMapping>::value;
     return prepareRequestImpl(request, op, reqid, iovOut, niovOut);
   }
 
@@ -155,15 +169,26 @@ class UmbrellaSerializedMessage {
   bool error_{false};
 
   void appendInt(entry_type_t type, int32_t tag, uint64_t val);
-  void appendString(int32_t tag, const uint8_t* data, size_t len,
-                    entry_type_t type = BSTRING);
+  void appendString(
+      int32_t tag,
+      const uint8_t* data,
+      size_t len,
+      entry_type_t type = BSTRING);
 
   template <class Request>
-  bool prepareRequestImpl(const Request& request, mc_op_t op, uint64_t reqid,
-                          const struct iovec*& iovOut, size_t& niovOut);
+  bool prepareRequestImpl(
+      const Request& request,
+      mc_op_t op,
+      uint64_t reqid,
+      const struct iovec*& iovOut,
+      size_t& niovOut);
   template <class Reply>
-  bool prepareReplyImpl(Reply&& reply, mc_op_t op, uint64_t reqid,
-                        const struct iovec*& iovOut, size_t& niovOut);
+  bool prepareReplyImpl(
+      Reply&& reply,
+      mc_op_t op,
+      uint64_t reqid,
+      const struct iovec*& iovOut,
+      size_t& niovOut);
 
   /**
    * Request and reply helpers used to serialize fields specific to a
@@ -203,8 +228,7 @@ class UmbrellaSerializedMessage {
     appendInt(U64, msg_delta, reply.delta());
   }
 
-  inline void prepareHelper(
-      const McDecrRequest& request) {
+  inline void prepareHelper(const McDecrRequest& request) {
     appendInt(U64, msg_delta, request.delta());
   }
 
@@ -222,9 +246,10 @@ class UmbrellaSerializedMessage {
     if (!reply.ipAddress().empty()) {
       assert(!auxString_.hasValue());
       auxString_.emplace(reply.ipAddress());
-      appendString(msg_value,
-                   reinterpret_cast<const uint8_t*>(auxString_->data()),
-                   auxString_->size());
+      appendString(
+          msg_value,
+          reinterpret_cast<const uint8_t*>(auxString_->data()),
+          auxString_->size());
     }
   }
 
@@ -236,12 +261,12 @@ class UmbrellaSerializedMessage {
   size_t finalizeMessage();
 
   UmbrellaSerializedMessage(const UmbrellaSerializedMessage&) = delete;
-  UmbrellaSerializedMessage& operator=(
-    const UmbrellaSerializedMessage&) = delete;
+  UmbrellaSerializedMessage& operator=(const UmbrellaSerializedMessage&) =
+      delete;
   UmbrellaSerializedMessage(UmbrellaSerializedMessage&&) noexcept = delete;
   UmbrellaSerializedMessage& operator=(UmbrellaSerializedMessage&&) = delete;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "UmbrellaProtocol-inl.h"

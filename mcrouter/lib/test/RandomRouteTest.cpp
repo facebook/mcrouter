@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,13 +27,13 @@ using TestHandle = TestHandleImpl<TestRouteHandleIf>;
 
 TEST(randomRouteTest, success) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
   };
 
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
   EXPECT_TRUE(isHitResult(reply.result()));
@@ -41,12 +41,12 @@ TEST(randomRouteTest, success) {
 
 TEST(randomRouteTest, cover) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
   };
 
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   int hit = 0, miss = 0;
   const int rounds = 32;
@@ -63,13 +63,13 @@ TEST(randomRouteTest, cover) {
 
 TEST(randomRouteTest, fail) {
   vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "c")),
   };
 
   TestRouteHandle<RandomRoute<TestRouteHandleIf>> rh(
-    get_route_handles(test_handles));
+      get_route_handles(test_handles));
 
   auto reply = rh.route(McGetRequest("0"));
 

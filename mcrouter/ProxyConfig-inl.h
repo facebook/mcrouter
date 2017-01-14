@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,7 +22,9 @@
 #include "mcrouter/routes/ProxyRoute.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouterInfo>
 ProxyConfig<RouterInfo>::ProxyConfig(
@@ -47,8 +49,9 @@ ProxyConfig<RouterInfo>::ProxyConfig(
         factory.addNamed(it.first.stringPiece(), it.second);
       }
     } else {
-      throwLogic("named_handles is {} expected array/object",
-                 jNamedHandles->typeName());
+      throwLogic(
+          "named_handles is {} expected array/object",
+          jNamedHandles->typeName());
     }
   }
 
@@ -56,15 +59,17 @@ ProxyConfig<RouterInfo>::ProxyConfig(
 
   auto jRoute = json.get_ptr("route");
   auto jRoutes = json.get_ptr("routes");
-  checkLogic(!jRoute || !jRoutes,
-             "Invalid config: both 'route' and 'routes' are specified");
+  checkLogic(
+      !jRoute || !jRoutes,
+      "Invalid config: both 'route' and 'routes' are specified");
   if (jRoute) {
     routeSelectors[proxy.getRouterOptions().default_route] = std::make_shared<
         PrefixSelectorRoute<typename RouterInfo::RouteHandleIf>>(
         factory, *jRoute);
   } else if (jRoutes) { // jRoutes
-    checkLogic(jRoutes->isArray() || jRoutes->isObject(),
-               "Config: routes is not array/object");
+    checkLogic(
+        jRoutes->isArray() || jRoutes->isObject(),
+        "Config: routes is not array/object");
     if (jRoutes->isArray()) {
       for (const auto& it : *jRoutes) {
         checkLogic(it.isObject(), "RoutePolicy is not an object");
@@ -97,8 +102,7 @@ ProxyConfig<RouterInfo>::ProxyConfig(
   pools_ = provider.releasePools();
   accessPoints_ = provider.releaseAccessPoints();
   proxyRoute_ =
-      std::make_shared<ProxyRoute<RouterInfo>>(
-          &proxy, routeSelectors);
+      std::make_shared<ProxyRoute<RouterInfo>>(&proxy, routeSelectors);
   serviceInfo_ = std::make_shared<ServiceInfo<RouterInfo>>(&proxy, *this);
 }
 
@@ -117,5 +121,6 @@ size_t ProxyConfig<RouterInfo>::calcNumClients() const {
   }
   return result;
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,8 @@
 
 #include <folly/Memory.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 std::string getDefaultFifoRoot() {
   return "/var/mcrouter/fifos";
@@ -32,5 +33,5 @@ bool initCompression() {
 const CompressionCodecMap* getCompressionCodecMap() {
   return nullptr;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

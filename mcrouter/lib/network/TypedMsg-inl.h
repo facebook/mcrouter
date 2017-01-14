@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,12 +9,14 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace detail {
 
 template <class Proc, class... Args>
 using DispatchFunc = void (*)(Proc&, Args...);
 
- /* Function pointer for Proc::processMsg<M> */
+/* Function pointer for Proc::processMsg<M> */
 template <class M, class Proc, class... Args>
 struct DispatchImpl {
   static constexpr DispatchFunc<Proc, Args...> func =
@@ -67,5 +69,6 @@ struct RequestFromReplyTypeImpl<T, List<P, Ps...>> {
       typename P::First,
       typename RequestFromReplyTypeImpl<T, List<Ps...>>::type>::type;
 };
-
-}}}  // facebook::memcache::detail
+}
+}
+} // facebook::memcache::detail

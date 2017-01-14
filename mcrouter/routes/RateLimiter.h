@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,9 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * This is a container for TokenBucket rate limiters for different
@@ -46,29 +48,27 @@ class RateLimiter {
   template <class Request>
   bool canPassThrough(GetLikeT<Request> = 0) {
     return LIKELY(
-      !getsTb_ ||
-      getsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
+        !getsTb_ ||
+        getsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
   bool canPassThrough(UpdateLikeT<Request> = 0) {
     return LIKELY(
-      !setsTb_ ||
-      setsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
+        !setsTb_ ||
+        setsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
   bool canPassThrough(DeleteLikeT<Request> = 0) {
     return LIKELY(
-      !deletesTb_ ||
-      deletesTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
+        !deletesTb_ ||
+        deletesTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
-  bool canPassThrough(OtherThanT<Request,
-                                 GetLike<>,
-                                 UpdateLike<>,
-                                 DeleteLike<>> = 0) {
+  bool canPassThrough(
+      OtherThanT<Request, GetLike<>, UpdateLike<>, DeleteLike<>> = 0) {
     return true;
   }
 
@@ -82,5 +82,6 @@ class RateLimiter {
   folly::Optional<folly::TokenBucket> setsTb_;
   folly::Optional<folly::TokenBucket> deletesTb_;
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

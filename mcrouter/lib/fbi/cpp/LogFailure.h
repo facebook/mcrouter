@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,7 +17,9 @@
 #include <folly/Format.h>
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache { namespace failure {
+namespace facebook {
+namespace memcache {
+namespace failure {
 
 class Category {
  public:
@@ -55,18 +57,19 @@ class Category {
    * If nothing else fits, use this one (or custom string).
    */
   static const char* const kOther;
+
  private:
   Category() {}
 };
 
 typedef std::function<void(
-  folly::StringPiece file,
-  int line,
-  folly::StringPiece service,
-  folly::StringPiece category,
-  folly::StringPiece msg,
-  const std::map<std::string, std::string>& contexts)>
-HandlerFunc;
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg,
+    const std::map<std::string, std::string>& contexts)>
+    HandlerFunc;
 
 namespace handlers {
 
@@ -76,7 +79,7 @@ std::pair<std::string, HandlerFunc> logToStdError();
 
 std::pair<std::string, HandlerFunc> throwLogicError();
 
-}  // handlers
+} // handlers
 
 namespace detail {
 
@@ -84,27 +87,32 @@ namespace detail {
  * Log failure according to action for given category (see @setCategoryAction).
  * If no special action is provided, default constructed one will be used.
  */
-void log(folly::StringPiece file,
-         int line,
-         folly::StringPiece service,
-         folly::StringPiece category,
-         folly::StringPiece msg);
+void log(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg);
 
 /**
  * log overload to format messages automatically.
  */
 template <typename... Args>
-void log(folly::StringPiece file,
-         int line,
-         folly::StringPiece service,
-         folly::StringPiece category,
-         folly::StringPiece msgFormat,
-         Args&&... args) {
-  log(file, line, service, category,
+void log(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msgFormat,
+    Args&&... args) {
+  log(file,
+      line,
+      service,
+      category,
       folly::format(msgFormat, std::forward<Args>(args)...).str());
 }
 
-}  // detail
+} // detail
 
 /**
  * Add new failure handler. Names should be unique.
@@ -147,5 +155,6 @@ void setServiceContext(folly::StringPiece service, std::string context);
 
 #define LOG_FAILURE(...) \
   facebook::memcache::failure::detail::log(__FILE__, __LINE__, __VA_ARGS__)
-
-}}}  // facebook::memcache::failure
+}
+}
+} // facebook::memcache::failure

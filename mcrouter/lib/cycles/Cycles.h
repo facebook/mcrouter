@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -57,7 +57,9 @@ class EventBase;
  *    // Stop the extractor thread.
  *    cycles::stopExtracting();
  */
-namespace facebook { namespace memcache { namespace cycles {
+namespace facebook {
+namespace memcache {
+namespace cycles {
 
 /**
  * Setup function that must be called once for each EventBase that is used to
@@ -162,5 +164,6 @@ void stopExtracting() noexcept;
  * Sets the clock to use for cycles measumenet.
  */
 void setClock(std::unique_ptr<Clock> clk);
-
-}}} // namespace facebook::memcache::cycles
+}
+}
+} // namespace facebook::memcache::cycles

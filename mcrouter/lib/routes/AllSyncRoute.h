@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,15 +13,16 @@
 #include <string>
 #include <vector>
 
-#include <folly/fibers/ForEach.h>
 #include <folly/Optional.h>
+#include <folly/fibers/ForEach.h>
 
-#include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Sends the same request to all child route handles.
@@ -30,7 +31,9 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class AllSyncRoute {
  public:
-  static std::string routeName() { return "all-sync"; }
+  static std::string routeName() {
+    return "all-sync";
+  }
 
   explicit AllSyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
@@ -38,8 +41,9 @@ class AllSyncRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(children_, req);
   }
 
@@ -48,9 +52,9 @@ class AllSyncRoute {
     using Reply = ReplyT<Request>;
 
     const auto& children = children_;
-    auto fs = makeFuncGenerator([&req, &children](size_t id) {
-      return children[id]->route(req);
-    }, children_.size());
+    auto fs = makeFuncGenerator(
+        [&req, &children](size_t id) { return children[id]->route(req); },
+        children_.size());
 
     folly::Optional<Reply> reply;
     folly::fibers::forEach(
@@ -65,5 +69,5 @@ class AllSyncRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

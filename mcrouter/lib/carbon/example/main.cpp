@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,11 +15,11 @@
 
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbye.h"
 #include "mcrouter/lib/carbon/example/gen/HelloGoodbyeRouterInfo.h"
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-#include "mcrouter/lib/mc/msg.h"
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
@@ -31,7 +31,7 @@ using namespace hellogoodbye;
 
 namespace {
 
-constexpr uint16_t kPort  = 11303;
+constexpr uint16_t kPort = 11303;
 constexpr uint16_t kPort2 = 11305;
 
 struct HelloGoodbyeOnRequest {
@@ -65,7 +65,6 @@ AsyncMcServer::Options getOpts(uint16_t port) {
   opts.numThreads = 4;
   return opts;
 }
-
 
 void testClientServer() {
   // Run simple HelloGoodbye server
@@ -117,12 +116,10 @@ void sendHelloRequestSync(
   HelloRequest req(std::move(key));
   folly::fibers::Baton baton;
 
-  client->send(
-      req, [&baton](const HelloRequest&, HelloReply&& reply) {
-        LOG(INFO) << "Reply received! Result: "
-                  << mc_res_to_string(reply.result());
-        baton.post();
-      });
+  client->send(req, [&baton](const HelloRequest&, HelloReply&& reply) {
+    LOG(INFO) << "Reply received! Result: " << mc_res_to_string(reply.result());
+    baton.post();
+  });
 
   // Ensure proxies have a chance to send all outstanding requests. Note the
   // extra synchronization required when using a remote-thread client.
@@ -140,7 +137,7 @@ void testRouter() {
   McrouterOptions routerOpts;
   routerOpts.num_proxies = 2;
   routerOpts.asynclog_disable = true;
-  //routerOpts.config_str = R"({"route": "NullRoute"})";
+  // routerOpts.config_str = R"({"route": "NullRoute"})";
   routerOpts.config_str = R"(
   {
     "pools": {
@@ -179,7 +176,7 @@ void testRouter() {
 int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
 
-  //testClientServer();
+  // testClientServer();
   testRouter();
 
   return 0;

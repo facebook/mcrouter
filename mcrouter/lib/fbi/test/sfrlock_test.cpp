@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,27 +27,27 @@ TEST(sfrlock, concurrent_reads_sanity) {
 
   sfrlock_init(&sfrlock);
 
-  measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          sfrlock_rdlock(&sfrlock);
-          sfrlock_rdunlock(&sfrlock);
-        }
+  measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      sfrlock_rdlock(&sfrlock);
+      sfrlock_rdunlock(&sfrlock);
+    }
 
-        sfrlock_rdlock(&sfrlock);
-      });
+    sfrlock_rdlock(&sfrlock);
+  });
 }
 
 TEST(sfrlock, concurrent_reads_sanity_cpp) {
   const unsigned thread_count = 20;
   SFRLock sfrlock;
 
-  measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          std::lock_guard<SFRReadLock> lg(sfrlock.readLock());
-        }
+  measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      std::lock_guard<SFRReadLock> lg(sfrlock.readLock());
+    }
 
-        sfrlock.readLock().lock();
-      });
+    sfrlock.readLock().lock();
+  });
 }
 
 TEST(sfrlock, contended_writes_sanity) {
@@ -57,13 +57,13 @@ TEST(sfrlock, contended_writes_sanity) {
 
   sfrlock_init(&sfrlock);
 
-  measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          sfrlock_wrlock(&sfrlock);
-          cnt++;
-          sfrlock_wrunlock(&sfrlock);
-        }
-      });
+  measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      sfrlock_wrlock(&sfrlock);
+      cnt++;
+      sfrlock_wrunlock(&sfrlock);
+    }
+  });
   EXPECT_EQ(cnt, thread_count * repeat);
 }
 
@@ -72,14 +72,14 @@ TEST(sfrlock, contended_writes_sanity_cpp) {
   const unsigned thread_count = 5;
   SFRLock sfrlock;
 
-  measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          {
-            std::lock_guard<SFRWriteLock> lg(sfrlock.writeLock());
-            cnt++;
-          }
-        }
-      });
+  measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      {
+        std::lock_guard<SFRWriteLock> lg(sfrlock.writeLock());
+        cnt++;
+      }
+    }
+  });
   EXPECT_EQ(cnt, thread_count * repeat);
 }
 
@@ -91,24 +91,24 @@ TEST(sfrlock, contended_reads_write_sanity) {
 
   sfrlock_init(&sfrlock);
 
-  measure_time_concurrent(thread_count, [&] (unsigned idx) {
-        if (!idx) {
-          for (unsigned j = repeat / 5; j; j--) {
-            sfrlock_wrlock(&sfrlock);
-            for (unsigned k = inc; k; k--) {
-              cnt++;
-            }
-            sfrlock_wrunlock(&sfrlock);
-            usleep(1);
-          }
-        } else {
-          for (unsigned j = repeat; j; j--) {
-            sfrlock_rdlock(&sfrlock);
-            EXPECT_EQ(cnt % inc, 0);
-            sfrlock_rdunlock(&sfrlock);
-          }
+  measure_time_concurrent(thread_count, [&](unsigned idx) {
+    if (!idx) {
+      for (unsigned j = repeat / 5; j; j--) {
+        sfrlock_wrlock(&sfrlock);
+        for (unsigned k = inc; k; k--) {
+          cnt++;
         }
-      });
+        sfrlock_wrunlock(&sfrlock);
+        usleep(1);
+      }
+    } else {
+      for (unsigned j = repeat; j; j--) {
+        sfrlock_rdlock(&sfrlock);
+        EXPECT_EQ(cnt % inc, 0);
+        sfrlock_rdunlock(&sfrlock);
+      }
+    }
+  });
   EXPECT_EQ(cnt, inc * repeat / 5);
 }
 
@@ -118,26 +118,26 @@ TEST(sfrlock, contended_reads_write_sanity_cpp) {
   const unsigned inc = 100;
   SFRLock sfrlock;
 
-  measure_time_concurrent(thread_count, [&] (unsigned idx) {
-        if (!idx) {
-          for (unsigned j = repeat / 5; j; j--) {
-            {
-              std::lock_guard<SFRWriteLock> lg(sfrlock.writeLock());
-              for (unsigned k = inc; k; k--) {
-                cnt++;
-              }
-            }
-            usleep(1);
-          }
-        } else {
-          for (unsigned j = repeat; j; j--) {
-            {
-              std::lock_guard<SFRReadLock> lg(sfrlock.readLock());
-              EXPECT_EQ(cnt % inc, 0);
-            }
+  measure_time_concurrent(thread_count, [&](unsigned idx) {
+    if (!idx) {
+      for (unsigned j = repeat / 5; j; j--) {
+        {
+          std::lock_guard<SFRWriteLock> lg(sfrlock.writeLock());
+          for (unsigned k = inc; k; k--) {
+            cnt++;
           }
         }
-      });
+        usleep(1);
+      }
+    } else {
+      for (unsigned j = repeat; j; j--) {
+        {
+          std::lock_guard<SFRReadLock> lg(sfrlock.readLock());
+          EXPECT_EQ(cnt % inc, 0);
+        }
+      }
+    }
+  });
   EXPECT_EQ(cnt, inc * repeat / 5);
 }
 
@@ -149,24 +149,24 @@ TEST(sfrlock, contended_reads_writes_sanity) {
 
   sfrlock_init(&sfrlock);
 
-  measure_time_concurrent(thread_count, [&] (unsigned idx) {
-        if (idx < thread_count / 2) {
-          for (unsigned j = repeat / 5; j; j--) {
-            sfrlock_wrlock(&sfrlock);
-            for (unsigned k = inc; k; k--) {
-              cnt++;
-            }
-            sfrlock_wrunlock(&sfrlock);
-            usleep(1);
-          }
-        } else {
-          for (unsigned j = repeat; j; j--) {
-            sfrlock_rdlock(&sfrlock);
-            EXPECT_EQ(cnt % inc, 0);
-            sfrlock_rdunlock(&sfrlock);
-          }
+  measure_time_concurrent(thread_count, [&](unsigned idx) {
+    if (idx < thread_count / 2) {
+      for (unsigned j = repeat / 5; j; j--) {
+        sfrlock_wrlock(&sfrlock);
+        for (unsigned k = inc; k; k--) {
+          cnt++;
         }
-      });
+        sfrlock_wrunlock(&sfrlock);
+        usleep(1);
+      }
+    } else {
+      for (unsigned j = repeat; j; j--) {
+        sfrlock_rdlock(&sfrlock);
+        EXPECT_EQ(cnt % inc, 0);
+        sfrlock_rdunlock(&sfrlock);
+      }
+    }
+  });
   EXPECT_EQ(cnt, inc * (repeat / 5) * (thread_count / 2));
 }
 
@@ -176,26 +176,26 @@ TEST(sfrlock, contended_reads_writes_sanity_cpp) {
   const unsigned inc = 100;
   SFRLock sfrlock;
 
-  measure_time_concurrent(thread_count, [&] (unsigned idx) {
-        if (idx < thread_count / 2) {
-          for (unsigned j = repeat / 5; j; j--) {
-            {
-              std::lock_guard<SFRWriteLock> lg(sfrlock.writeLock());
-              for (unsigned k = inc; k; k--) {
-                cnt++;
-              }
-            }
-            usleep(1);
-          }
-        } else {
-          for (unsigned j = repeat; j; j--) {
-            {
-              std::lock_guard<SFRReadLock> lg(sfrlock.readLock());
-              EXPECT_EQ(cnt % inc, 0);
-            }
+  measure_time_concurrent(thread_count, [&](unsigned idx) {
+    if (idx < thread_count / 2) {
+      for (unsigned j = repeat / 5; j; j--) {
+        {
+          std::lock_guard<SFRWriteLock> lg(sfrlock.writeLock());
+          for (unsigned k = inc; k; k--) {
+            cnt++;
           }
         }
-      });
+        usleep(1);
+      }
+    } else {
+      for (unsigned j = repeat; j; j--) {
+        {
+          std::lock_guard<SFRReadLock> lg(sfrlock.readLock());
+          EXPECT_EQ(cnt % inc, 0);
+        }
+      }
+    }
+  });
   EXPECT_EQ(cnt, inc * (repeat / 5) * (thread_count / 2));
 }
 
@@ -210,31 +210,35 @@ TEST(sfrlock, uncontended_read_cost) {
   pthread_rwlock_init(&rwlock, nullptr);
   pthread_mutex_init(&mutex, nullptr);
 
-  r = measure_time([&] () {
-        for (unsigned cnt = repeat; cnt; cnt--) {
-          sfrlock_rdlock(&sfrlock);
-          sfrlock_rdunlock(&sfrlock);
-        }
-      });
+  r = measure_time([&]() {
+    for (unsigned cnt = repeat; cnt; cnt--) {
+      sfrlock_rdlock(&sfrlock);
+      sfrlock_rdunlock(&sfrlock);
+    }
+  });
   printf("sfrlock_t time: %lf ms\n", r / 1e6);
 
-  t = measure_time([&] () {
-        for (unsigned cnt = repeat; cnt; cnt--) {
-          pthread_rwlock_rdlock(&rwlock);
-          pthread_rwlock_unlock(&rwlock);
-        }
-      });
-  printf("pthread_rwlock_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time([&]() {
+    for (unsigned cnt = repeat; cnt; cnt--) {
+      pthread_rwlock_rdlock(&rwlock);
+      pthread_rwlock_unlock(&rwlock);
+    }
+  });
+  printf(
+      "pthread_rwlock_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
-  t = measure_time([&] () {
-        for (unsigned cnt = repeat; cnt; cnt--) {
-          pthread_mutex_lock(&mutex);
-          pthread_mutex_unlock(&mutex);
-        }
-      });
-  printf("pthread_mutex_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time([&]() {
+    for (unsigned cnt = repeat; cnt; cnt--) {
+      pthread_mutex_lock(&mutex);
+      pthread_mutex_unlock(&mutex);
+    }
+  });
+  printf(
+      "pthread_mutex_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
   pthread_rwlock_destroy(&rwlock);
   pthread_mutex_destroy(&mutex);
@@ -251,31 +255,35 @@ TEST(sfrlock, uncontended_write_cost) {
   pthread_rwlock_init(&rwlock, nullptr);
   pthread_mutex_init(&mutex, nullptr);
 
-  r = measure_time([&] () {
-        for (unsigned cnt = repeat; cnt; cnt--) {
-          sfrlock_wrlock(&sfrlock);
-          sfrlock_wrunlock(&sfrlock);
-        }
-      });
+  r = measure_time([&]() {
+    for (unsigned cnt = repeat; cnt; cnt--) {
+      sfrlock_wrlock(&sfrlock);
+      sfrlock_wrunlock(&sfrlock);
+    }
+  });
   printf("sfrlock_t time: %lf ms\n", r / 1e6);
 
-  t = measure_time([&] () {
-        for (unsigned cnt = repeat; cnt; cnt--) {
-          pthread_rwlock_wrlock(&rwlock);
-          pthread_rwlock_unlock(&rwlock);
-        }
-      });
-  printf("pthread_rwlock_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time([&]() {
+    for (unsigned cnt = repeat; cnt; cnt--) {
+      pthread_rwlock_wrlock(&rwlock);
+      pthread_rwlock_unlock(&rwlock);
+    }
+  });
+  printf(
+      "pthread_rwlock_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
-  t = measure_time([&] () {
-        for (unsigned cnt = repeat; cnt; cnt--) {
-          pthread_mutex_lock(&mutex);
-          pthread_mutex_unlock(&mutex);
-        }
-      });
-  printf("pthread_mutex_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time([&]() {
+    for (unsigned cnt = repeat; cnt; cnt--) {
+      pthread_mutex_lock(&mutex);
+      pthread_mutex_unlock(&mutex);
+    }
+  });
+  printf(
+      "pthread_mutex_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
   pthread_rwlock_destroy(&rwlock);
   pthread_mutex_destroy(&mutex);
@@ -293,31 +301,35 @@ TEST(sfrlock, concurrent_read_cost) {
   pthread_rwlock_init(&rwlock, nullptr);
   pthread_mutex_init(&mutex, nullptr);
 
-  r = measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          sfrlock_rdlock(&sfrlock);
-          sfrlock_rdunlock(&sfrlock);
-        }
-      });
+  r = measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      sfrlock_rdlock(&sfrlock);
+      sfrlock_rdunlock(&sfrlock);
+    }
+  });
   printf("sfrlock_t time: %lf ms\n", r / 1e6);
 
-  t = measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          pthread_rwlock_rdlock(&rwlock);
-          pthread_rwlock_unlock(&rwlock);
-        }
-      });
-  printf("pthread_rwlock_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      pthread_rwlock_rdlock(&rwlock);
+      pthread_rwlock_unlock(&rwlock);
+    }
+  });
+  printf(
+      "pthread_rwlock_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
-  t = measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          pthread_mutex_lock(&mutex);
-          pthread_mutex_unlock(&mutex);
-        }
-      });
-  printf("pthread_mutex_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      pthread_mutex_lock(&mutex);
+      pthread_mutex_unlock(&mutex);
+    }
+  });
+  printf(
+      "pthread_mutex_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
   pthread_rwlock_destroy(&rwlock);
   pthread_mutex_destroy(&mutex);
@@ -335,31 +347,35 @@ TEST(sfrlock, contended_write_cost) {
   pthread_rwlock_init(&rwlock, nullptr);
   pthread_mutex_init(&mutex, nullptr);
 
-  r = measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          sfrlock_wrlock(&sfrlock);
-          sfrlock_wrunlock(&sfrlock);
-        }
-      });
+  r = measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      sfrlock_wrlock(&sfrlock);
+      sfrlock_wrunlock(&sfrlock);
+    }
+  });
   printf("sfrlock_t time: %lf ms\n", r / 1e6);
 
-  t = measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          pthread_rwlock_wrlock(&rwlock);
-          pthread_rwlock_unlock(&rwlock);
-        }
-      });
-  printf("pthread_rwlock_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      pthread_rwlock_wrlock(&rwlock);
+      pthread_rwlock_unlock(&rwlock);
+    }
+  });
+  printf(
+      "pthread_rwlock_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
-  t = measure_time_concurrent(thread_count, [&] (unsigned) {
-        for (unsigned j = repeat; j; j--) {
-          pthread_mutex_lock(&mutex);
-          pthread_mutex_unlock(&mutex);
-        }
-      });
-  printf("pthread_mutex_t time: %lf ms (%+.2lf%%)\n", t / 1e6,
-         -(1 - (t / r)) * 100);
+  t = measure_time_concurrent(thread_count, [&](unsigned) {
+    for (unsigned j = repeat; j; j--) {
+      pthread_mutex_lock(&mutex);
+      pthread_mutex_unlock(&mutex);
+    }
+  });
+  printf(
+      "pthread_mutex_t time: %lf ms (%+.2lf%%)\n",
+      t / 1e6,
+      -(1 - (t / r)) * 100);
 
   pthread_rwlock_destroy(&rwlock);
   pthread_mutex_destroy(&mutex);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,8 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/tools/mcpiper/ClientServerMcParser.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Wrapper around ClientServerMcParser that also tracks of information
@@ -37,8 +38,9 @@ class SnifferParser {
     return parser_;
   }
 
-  void setAddresses(folly::SocketAddress fromAddress,
-                    folly::SocketAddress toAddress) {
+  void setAddresses(
+      folly::SocketAddress fromAddress,
+      folly::SocketAddress toAddress) {
     fromAddress_ = std::move(fromAddress);
     toAddress_ = std::move(toAddress);
   }
@@ -59,7 +61,7 @@ class SnifferParser {
         : reqId(id),
           key(std::move(k)),
           msgStartTimeUs(msgStartTimeUs),
-          created(now) { }
+          created(now) {}
 
     uint64_t reqId;
     std::string key;
@@ -102,7 +104,7 @@ class SnifferParser {
 
   friend class ClientServerMcParser<SnifferParser>;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "SnifferParser-inl.h"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Used by ConfigPreprocessor. Implementation should load additional files
@@ -30,5 +31,5 @@ class ImportResolverIf {
 
   virtual ~ImportResolverIf() {}
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

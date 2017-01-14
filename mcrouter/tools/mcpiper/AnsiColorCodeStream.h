@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,8 @@
 
 #include "mcrouter/tools/mcpiper/StyleAwareStream.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Produces Ansi terminal color codes for a StyledString with color.
@@ -44,7 +45,7 @@ class AnsiColorCodeEncoder {
 };
 
 using AnsiColorCodeStream = StyleAwareStream<AnsiColorCodeEncoder>;
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "mcrouter/tools/mcpiper/AnsiColorCodeStream-inl.h"

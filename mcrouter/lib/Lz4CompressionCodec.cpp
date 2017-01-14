@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -34,9 +34,8 @@ Lz4CompressionCodec::Lz4CompressionCodec(
       reinterpret_cast<const char*>(dictionary_->data()),
       dictionary_->length());
   if (res != dictionary_->length()) {
-    throw std::runtime_error(
-        folly::sformat(
-            "LZ4 codec: Failed to load dictionary. Return code: {}", res));
+    throw std::runtime_error(folly::sformat(
+        "LZ4 codec: Failed to load dictionary. Return code: {}", res));
   }
 }
 
@@ -82,7 +81,8 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
   int bytesWritten = LZ4_decompress_safe_usingDict(
       reinterpret_cast<const char*>(data.data()),
       reinterpret_cast<char*>(buffer->writableTail()),
-      data.length(), buffer->tailroom(),
+      data.length(),
+      buffer->tailroom(),
       reinterpret_cast<const char*>(dictionary_->data()),
       dictionary_->length());
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,46 +28,56 @@ __BEGIN_DECLS
 
 #define FBI_DBG_LOGFILE_ENVVAR "FBDBG_LOGFILE"
 
-#define FBI_STATIC_ASSERT(COND)                 \
-  typedef char static_assertion[(COND)?1:-1] __attribute__((__unused__))
+#define FBI_STATIC_ASSERT(COND) \
+  typedef char static_assertion[(COND) ? 1 : -1] __attribute__((__unused__))
 
 #ifndef __ASSERT_FUNCTION
 #define __ASSERT_FUNCTION __func__
 #endif
 
 /** FBI_ASSERT always checks, even with NDEBUG */
-extern void _assert_func(const char *assertion, const char *file,
-                         int line, const char *function);
-#define FBI_ASSERT(expr) \
-  ((expr)                       \
-   ? __ASSERT_VOID_CAST (0)                                             \
-   : (_assert_func (__STRING(expr), __FILE__, __LINE__, __ASSERT_FUNCTION), \
-      __ASSERT_VOID_CAST (0)))
+extern void _assert_func(
+    const char* assertion,
+    const char* file,
+    int line,
+    const char* function);
+#define FBI_ASSERT(expr)                                                       \
+  ((expr)                                                                      \
+       ? __ASSERT_VOID_CAST(0)                                                 \
+       : (_assert_func(__STRING(expr), __FILE__, __LINE__, __ASSERT_FUNCTION), \
+          __ASSERT_VOID_CAST(0)))
 
 #define FBI_VERIFY(X) FBI_ASSERT(X)
 
-typedef void (*assert_hook_fn)(const char *assert_msg);
+typedef void (*assert_hook_fn)(const char* assert_msg);
 extern void fbi_set_assert_hook(assert_hook_fn assert_hook);
 
 #include "nstring.h"
 
-void fbi_dbg_log(const char* principal, const char* component,
-                 const char* function, const int line,
-                 const char* type, const uint level,
-                 const int indent_offset, const char* format, ...)
-    __attribute__ ((__format__ (__printf__, 8, 9))); /* tell gcc to check printf args */
+void fbi_dbg_log(
+    const char* principal,
+    const char* component,
+    const char* function,
+    const int line,
+    const char* type,
+    const uint level,
+    const int indent_offset,
+    const char* format,
+    ...)
+    __attribute__((
+        __format__(__printf__, 8, 9))); /* tell gcc to check printf args */
 
 uint fbi_get_debug();
 void fbi_set_debug(const uint level);
 
-const nstring_t*  fbi_get_debug_logfile();
+const nstring_t* fbi_get_debug_logfile();
 void fbi_set_debug_logfile(const nstring_t* value);
 
 typedef enum fbi_data_format_e {
-  fbi_date_default  = 0,  /* default is unix time stamps */
-  fbi_date_unix     = 0,  /* unix time */
-  fbi_date_local,         /* human readable format in local time */
-  fbi_date_utc,           /* human readable format in UTC */
+  fbi_date_default = 0, /* default is unix time stamps */
+  fbi_date_unix = 0, /* unix time */
+  fbi_date_local, /* human readable format in local time */
+  fbi_date_utc, /* human readable format in UTC */
   fbi_date_max
 } fbi_date_format_t;
 
@@ -99,12 +109,21 @@ void dbg_exit();
 #endif
 #endif
 
-#define dbg_log(t, l, io, f, args...) do {                              \
-    const uint __level = (l);                                           \
-    if (__level <= DEBUG_MAX_LEVEL && __level <= fbi_get_debug()) {     \
-      fbi_dbg_log(DEBUG_PRINCIPAL, __FILE__, __FUNCTION__, __LINE__,    \
-                  (t), __level, (io), (f), ##args);                     \
-    }                                                                   \
+#define dbg_log(t, l, io, f, args...)                               \
+  do {                                                              \
+    const uint __level = (l);                                       \
+    if (__level <= DEBUG_MAX_LEVEL && __level <= fbi_get_debug()) { \
+      fbi_dbg_log(                                                  \
+          DEBUG_PRINCIPAL,                                          \
+          __FILE__,                                                 \
+          __FUNCTION__,                                             \
+          __LINE__,                                                 \
+          (t),                                                      \
+          __level,                                                  \
+          (io),                                                     \
+          (f),                                                      \
+          ##args);                                                  \
+    }                                                               \
   } while (0)
 
 #define FBI_LOG_CRITICAL 10
@@ -120,16 +139,18 @@ void dbg_exit();
 #define FBI_LOG_DEFAULT FBI_LOG_INFO
 
 #define _dbg_at(l, t, io, f, args...) dbg_log(t, l, io, f, ##args)
-#define dbg_at(l, f, args...)   _dbg_at(l, NULL, 0, f, ##args)
+#define dbg_at(l, f, args...) _dbg_at(l, NULL, 0, f, ##args)
 
-#define dbg_fentry(f, args...)  _dbg_at(FBI_LOG_SPEW, "fentry", 1, f, ##args)
-#define dbg_fexit(f, args...)   _dbg_at(FBI_LOG_SPEW, "fexit", -1, f, ##args)
-#define dbg_error(f, args...)   _dbg_at(FBI_LOG_ERROR, "error", 0, f, ##args)
-#define dbg_perror(f, args...)  _dbg_at(FBI_LOG_ERROR, "error", 0, f ": %s", \
-                                        ##args, strerror(errno))
-#define dbg_critical(f, args...) _dbg_at(FBI_LOG_CRITICAL, "critical", 0, f, ##args)
+#define dbg_fentry(f, args...) _dbg_at(FBI_LOG_SPEW, "fentry", 1, f, ##args)
+#define dbg_fexit(f, args...) _dbg_at(FBI_LOG_SPEW, "fexit", -1, f, ##args)
 #define dbg_error(f, args...) _dbg_at(FBI_LOG_ERROR, "error", 0, f, ##args)
-#define dbg_warning(f, args...) _dbg_at(FBI_LOG_WARNING, "warning", 0, f, ##args)
+#define dbg_perror(f, args...) \
+  _dbg_at(FBI_LOG_ERROR, "error", 0, f ": %s", ##args, strerror(errno))
+#define dbg_critical(f, args...) \
+  _dbg_at(FBI_LOG_CRITICAL, "critical", 0, f, ##args)
+#define dbg_error(f, args...) _dbg_at(FBI_LOG_ERROR, "error", 0, f, ##args)
+#define dbg_warning(f, args...) \
+  _dbg_at(FBI_LOG_WARNING, "warning", 0, f, ##args)
 #define dbg_notify(f, args...) _dbg_at(FBI_LOG_NOTIFY, "notify", 0, f, ##args)
 #define dbg_info(f, args...) _dbg_at(FBI_LOG_INFO, "info", 0, f, ##args)
 #define dbg_debug(f, args...) _dbg_at(FBI_LOG_DEBUG, "debug", 0, f, ##args)
@@ -137,6 +158,5 @@ void dbg_exit();
 #define dbg_low(f, args...) _dbg_at(FBI_LOG_LOW, "low", 0, f, ##args)
 #define dbg_medium(f, args...) _dbg_at(FBI_LOG_MEDIUM, "medium", 0, f, ##args)
 #define dbg_high(f, args...) _dbg_at(FBI_LOG_HIGH, "high", 0, f, ##args)
-
 
 __END_DECLS

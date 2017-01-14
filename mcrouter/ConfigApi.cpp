@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,19 +11,21 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <folly/dynamic.h>
 #include <folly/FileUtil.h>
 #include <folly/Memory.h>
+#include <folly/dynamic.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/FileDataProvider.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/options.h"
 #include "mcrouter/ThreadUtil.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/options.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 const char* const kMcrouterConfigKey = "mcrouter_config";
 const char* const kConfigFile = "config_file";
@@ -37,9 +39,7 @@ ConfigApi::~ConfigApi() {
 }
 
 ConfigApi::ConfigApi(const McrouterOptions& opts)
-    : opts_(opts),
-      finish_(false) {
-}
+    : opts_(opts), finish_(false) {}
 
 ConfigApi::CallbackHandle ConfigApi::subscribe(Callback callback) {
   return callbacks_.subscribe(std::move(callback));
@@ -80,8 +80,7 @@ bool ConfigApi::checkFileUpdate() {
         hasUpdate |= file.provider->hasUpdate();
       }
     } catch (const std::exception& e) {
-      LOG(ERROR) << "Check " << file.path << " for update failed: "
-                 << e.what();
+      LOG(ERROR) << "Check " << file.path << " for update failed: " << e.what();
       // check with hash, if it throws error something is totally wrong,
       // reconfiguration thread will log error and finish.
       file.provider.reset();
@@ -101,9 +100,9 @@ void ConfigApi::configThreadRun() {
       callbacks_.notify();
       {
         std::unique_lock<std::mutex> lk(finishMutex_);
-        finishCV_.wait_for(lk, std::chrono::milliseconds(10),
-                           [this] { return finish_.load(); });
-
+        finishCV_.wait_for(lk, std::chrono::milliseconds(10), [this] {
+          return finish_.load();
+        });
       }
     }
     return;
@@ -114,11 +113,16 @@ void ConfigApi::configThreadRun() {
     try {
       hasUpdate = checkFileUpdate();
     } catch (const std::exception& e) {
-      MC_LOG_FAILURE(opts_, memcache::failure::Category::kOther,
-                     "Check for config update failed: {}", e.what());
+      MC_LOG_FAILURE(
+          opts_,
+          memcache::failure::Category::kOther,
+          "Check for config update failed: {}",
+          e.what());
     } catch (...) {
-      MC_LOG_FAILURE(opts_, memcache::failure::Category::kOther,
-                     "Check for config update failed with unknown error");
+      MC_LOG_FAILURE(
+          opts_,
+          memcache::failure::Category::kOther,
+          "Check for config update failed with unknown error");
     }
     // There are a couple of races that can happen here
     // First, the IN_MODIFY event can be fired before the write is complete,
@@ -133,9 +137,9 @@ void ConfigApi::configThreadRun() {
     {
       std::unique_lock<std::mutex> lk(finishMutex_);
       finishCV_.wait_for(
-        lk, std::chrono::milliseconds(opts_.reconfiguration_delay_ms),
-        [this] { return finish_.load(); });
-
+          lk,
+          std::chrono::milliseconds(opts_.reconfiguration_delay_ms),
+          [this] { return finish_.load(); });
     }
 
     if (hasUpdate) {
@@ -184,8 +188,10 @@ bool ConfigApi::getConfigFile(std::string& contents, std::string& path) {
   return false;
 }
 
-bool ConfigApi::get(ConfigType type, const std::string& path,
-                    std::string& contents) {
+bool ConfigApi::get(
+    ConfigType type,
+    const std::string& path,
+    std::string& contents) {
   std::string fullPath;
   folly::StringPiece configPath = path;
   folly::StringPiece configOpt = opts_.config;
@@ -259,8 +265,8 @@ void ConfigApi::subscribeToTrackedSources() {
         }
       } catch (const std::exception& e) {
         // it's not that bad, we will check for change in hash
-        LOG(INFO) << "Can not start watching " << file.path <<
-                     " for modifications: " << e.what();
+        LOG(INFO) << "Can not start watching " << file.path
+                  << " for modifications: " << e.what();
       }
     }
   }
@@ -318,5 +324,6 @@ folly::dynamic ConfigApi::getConfigSourcesInfo() {
 bool ConfigApi::isFirstConfig() const {
   return isFirstConfig_;
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

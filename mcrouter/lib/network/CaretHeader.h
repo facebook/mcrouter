@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,8 @@
  */
 #pragma once
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 constexpr char kCaretMagicByte = '^';
 constexpr size_t kMaxAdditionalFields = 4;
@@ -59,5 +60,5 @@ enum class CaretAdditionalFieldType {
   // Drop Probability of each request.
   DROP_PROBABILITY = 5,
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

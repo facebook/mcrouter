@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,16 +11,17 @@
 
 #include <limits>
 
-namespace facebook { namespace memcache { namespace cycles {
+namespace facebook {
+namespace memcache {
+namespace cycles {
 
-template<class T>
-QuantilesCalculator<T>::QuantilesCalculator(double eps)
-    : eps_(eps) {
+template <class T>
+QuantilesCalculator<T>::QuantilesCalculator(double eps) : eps_(eps) {
   assert(eps > 0.0);
   summary_.emplace(std::numeric_limits<T>::max(), detail::GkTuple{1, 0});
 }
 
-template<class T>
+template <class T>
 void QuantilesCalculator<T>::insert(T v) {
   ++n_;
 
@@ -54,7 +55,7 @@ void QuantilesCalculator<T>::insert(T v) {
   }
 }
 
-template<class T>
+template <class T>
 T QuantilesCalculator<T>::query(double q) const {
   assert(q >= 0.0 && q <= 1.0);
 
@@ -92,7 +93,7 @@ T QuantilesCalculator<T>::query(double q) const {
  * We might have overlapping rMin/rMax pairs. This method simply
  * gets rid of these useless elements.
  */
-template<class T>
+template <class T>
 void QuantilesCalculator<T>::compress() {
   uint64_t epsN = 2 * eps_ * n_;
 
@@ -106,5 +107,6 @@ void QuantilesCalculator<T>::compress() {
     cur = next;
   }
 }
-
-}}} // facebook::memcache::cycles
+}
+}
+} // facebook::memcache::cycles

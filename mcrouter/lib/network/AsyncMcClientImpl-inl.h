@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,8 @@
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Request>
 ReplyT<Request> AsyncMcClientImpl::sendSync(
@@ -87,5 +88,5 @@ template <>
 inline double AsyncMcClientImpl::getDropProbability<McDeleteRequest>() const {
   return parser_ ? parser_->getDropProbability() : 0.0;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

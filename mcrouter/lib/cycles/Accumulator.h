@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,10 @@ namespace folly {
 class EventBase;
 } // folly
 
-namespace facebook { namespace memcache { namespace cycles { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace cycles {
+namespace detail {
 
 /**
  * Represents a sample - formed by one or more Intervals related to the
@@ -84,5 +87,7 @@ Accumulator& currentAccumulator();
  * accumulator per thread).
  */
 CycleStats extract();
-
-}}}} // namespace facebook::memcache::cycles::detail
+}
+}
+}
+} // namespace facebook::memcache::cycles::detail

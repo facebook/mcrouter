@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,12 +15,11 @@
 
 #include <folly/Memory.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Value>
-Trie<Value>::Trie(const Trie& other)
-  : parent_(other.parent_),
-    c_(other.c_) {
+Trie<Value>::Trie(const Trie& other) : parent_(other.parent_), c_(other.c_) {
   if (other.value_) {
     value_ = folly::make_unique<value_type>(*other.value_);
   }
@@ -69,8 +68,8 @@ Trie<Value>& Trie<Value>::operator=(Trie&& other) {
 }
 
 template <class Value>
-typename Trie<Value>::const_iterator
-Trie<Value>::find(folly::StringPiece key) const {
+typename Trie<Value>::const_iterator Trie<Value>::find(
+    folly::StringPiece key) const {
   return const_iterator(findImpl(key));
 }
 
@@ -99,7 +98,7 @@ template <class Value>
 void Trie<Value>::emplace(folly::StringPiece key, Value val) {
   auto node = this;
   for (const auto c : key) {
-    size_t steps[] = { getTopHalf(c), getBottomHalf(c) };
+    size_t steps[] = {getTopHalf(c), getBottomHalf(c)};
     for (auto ci : steps) {
       auto& nx = node->next_[ci];
       if (!nx) {
@@ -115,8 +114,8 @@ void Trie<Value>::emplace(folly::StringPiece key, Value val) {
 }
 
 template <class Value>
-typename Trie<Value>::const_iterator
-Trie<Value>::findPrefix(folly::StringPiece key) const {
+typename Trie<Value>::const_iterator Trie<Value>::findPrefix(
+    folly::StringPiece key) const {
   return const_iterator(findPrefixImpl(key));
 }
 
@@ -198,19 +197,19 @@ void Trie<Value>::clear() {
 template <class Value>
 template <class T, class V>
 class Trie<Value>::iterator_base
-  : public boost::iterator_facade<
-      /* Derived */ iterator_base<T, V>,
-      /* Value */ V,
-      /* CategoryOrTraversal */ boost::forward_traversal_tag>
-{
+    : public boost::iterator_facade<
+          /* Derived */ iterator_base<T, V>,
+          /* Value */ V,
+          /* CategoryOrTraversal */ boost::forward_traversal_tag> {
  public:
   iterator_base() = default;
+
  private:
   friend class Trie<Value>;
   friend class boost::iterator_core_access;
   T* t_{nullptr};
 
-  explicit iterator_base(T* trie) : t_(trie) { }
+  explicit iterator_base(T* trie) : t_(trie) {}
 
   void increment() {
     // nonrecursive DFS over Trie.
@@ -247,5 +246,5 @@ class Trie<Value>::iterator_base
     return *t_->value_;
   }
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

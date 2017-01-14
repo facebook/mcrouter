@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,17 +9,19 @@
  */
 #pragma once
 
+#include <folly/Range.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/WhenN.h>
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
-#include <folly/Range.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Reply.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace detail {
 template <class InputIterator>
@@ -43,8 +45,7 @@ InputIterator reduce(InputIterator begin, InputIterator end) {
 
 template <class Reply>
 std::vector<Reply> BigValueRoute::collectAllByBatches(
-  std::vector<std::function<Reply()>>& fs) const {
-
+    std::vector<std::function<Reply()>>& fs) const {
   auto batchSize = options_.batchSize_;
   if (batchSize == 0) {
     batchSize = fs.size();
@@ -94,16 +95,12 @@ ReplyT<Request> BigValueRoute::route(const Request& req, GetLikeT<Request>)
 
   auto& target = *ch_;
   for (const auto& req_b : reqs) {
-    fs.push_back(
-      [&target, &req_b]() {
-        return target.route(req_b);
-      }
-    );
+    fs.push_back([&target, &req_b]() { return target.route(req_b); });
   }
 
   auto replies = collectAllByBatches(fs);
   return mergeChunkGetReplies(
-    replies.begin(), replies.end(), std::move(initialReply));
+      replies.begin(), replies.end(), std::move(initialReply));
 }
 
 template <class Request>
@@ -119,11 +116,7 @@ ReplyT<Request> BigValueRoute::route(const Request& req, UpdateLikeT<Request>)
 
   auto& target = *ch_;
   for (const auto& req_b : reqs_info_pair.first) {
-    fs.push_back(
-      [&target, &req_b]() {
-        return target.route(req_b);
-      }
-    );
+    fs.push_back([&target, &req_b]() { return target.route(req_b); });
   }
 
   auto replies = collectAllByBatches(fs);
@@ -149,8 +142,7 @@ ReplyT<Request> BigValueRoute::route(
 }
 
 template <class ToRequest, class FromRequest>
-std::pair<std::vector<ToRequest>,
-          typename BigValueRoute::ChunksInfo>
+std::pair<std::vector<ToRequest>, typename BigValueRoute::ChunksInfo>
 BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
   int num_chunks =
       (req.value().computeChainDataLength() + options_.threshold_ - 1) /
@@ -174,9 +166,9 @@ BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
 }
 
 template <class ToRequest, class FromRequest>
-std::vector<ToRequest>
-BigValueRoute::chunkGetRequests(const FromRequest& req,
-                                const ChunksInfo& info) const {
+std::vector<ToRequest> BigValueRoute::chunkGetRequests(
+    const FromRequest& req,
+    const ChunksInfo& info) const {
   std::vector<ToRequest> big_get_reqs;
   big_get_reqs.reserve(info.numChunks());
 
@@ -189,12 +181,11 @@ BigValueRoute::chunkGetRequests(const FromRequest& req,
   return big_get_reqs;
 }
 
-template<typename InputIterator, class Reply>
+template <typename InputIterator, class Reply>
 Reply BigValueRoute::mergeChunkGetReplies(
-  InputIterator begin,
-  InputIterator end,
-  Reply&& initialReply) const {
-
+    InputIterator begin,
+    InputIterator end,
+    Reply&& initialReply) const {
   auto reduced_reply_it = detail::reduce(begin, end);
   if (!isHitResult(reduced_reply_it->result())) {
     return Reply(reduced_reply_it->result());
@@ -215,5 +206,6 @@ Reply BigValueRoute::mergeChunkGetReplies(
   initialReply.result() = reduced_reply_it->result();
   return initialReply;
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

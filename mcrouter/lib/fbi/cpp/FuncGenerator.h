@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,8 @@
 
 #include <boost/iterator/iterator_facade.hpp>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Container-like class that provides a way to generate range of objects
@@ -31,38 +32,33 @@ namespace facebook { namespace memcache {
  */
 template <class Func>
 struct FuncGenerator {
-  static_assert(!std::is_reference<Func>::value,
-                "FuncGenerator doesn't work with reference types");
+  static_assert(
+      !std::is_reference<Func>::value,
+      "FuncGenerator doesn't work with reference types");
 
   struct Functor {
-    Functor(Func* f, size_t id)
-      : f_(f),
-        id_(id) {
-    }
+    Functor(Func* f, size_t id) : f_(f), id_(id) {}
 
     typename std::result_of<Func(size_t)>::type operator()() const {
       assert(f_);
       return (*f_)(id_);
     }
+
    private:
     Func* f_{nullptr};
     size_t id_{0};
   };
 
   class Iterator : public boost::iterator_facade<
-      Iterator,
-      Functor,
-      std::random_access_iterator_tag,
-      Functor,
-      int64_t
-    > {
+                       Iterator,
+                       Functor,
+                       std::random_access_iterator_tag,
+                       Functor,
+                       int64_t> {
    public:
     Iterator() = default;
 
-    Iterator(Func& f, size_t id)
-        : f_(&f),
-          id_(id) {
-    }
+    Iterator(Func& f, size_t id) : f_(&f), id_(id) {}
 
    private:
     friend class boost::iterator_core_access;
@@ -97,10 +93,7 @@ struct FuncGenerator {
     }
   };
 
-  FuncGenerator(Func&& f, size_t n)
-      : f_(std::move(f)),
-        n_(n) {
-  }
+  FuncGenerator(Func&& f, size_t n) : f_(std::move(f)), n_(n) {}
 
   Iterator begin() {
     return Iterator(f_, 0);
@@ -109,15 +102,17 @@ struct FuncGenerator {
   Iterator end() {
     return Iterator(f_, n_);
   }
+
  private:
   Func f_;
   size_t n_;
 };
 
 template <class Func>
-FuncGenerator<typename std::remove_reference<Func>::type>
-makeFuncGenerator(Func&& f, size_t n) {
-  return { std::forward<Func>(f), n };
+FuncGenerator<typename std::remove_reference<Func>::type> makeFuncGenerator(
+    Func&& f,
+    size_t n) {
+  return {std::forward<Func>(f), n};
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

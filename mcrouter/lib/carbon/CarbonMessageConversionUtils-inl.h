@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -61,7 +61,9 @@ class ToDynamicVisitor {
     static auto check(int x) -> decltype(
         std::declval<T>().visitFields(std::declval<ToDynamicVisitor>()),
         char());
-    template <class T> static int check(...);
+    template <class T>
+    static int check(...);
+
    public:
     static constexpr bool value = sizeof(check<M>(0)) == sizeof(char);
   };
@@ -138,15 +140,17 @@ class ToDynamicVisitor {
   }
 
   template <class T>
-  typename std::enable_if<std::is_convertible<T, folly::StringPiece>::value,
-                          folly::dynamic>::type
+  typename std::enable_if<
+      std::is_convertible<T, folly::StringPiece>::value,
+      folly::dynamic>::type
   toDynamic4(const T& value) const {
     return folly::StringPiece(value);
   }
 
   template <class T>
-  typename std::enable_if<!std::is_convertible<T, folly::StringPiece>::value,
-                          folly::dynamic>::type
+  typename std::enable_if<
+      !std::is_convertible<T, folly::StringPiece>::value,
+      folly::dynamic>::type
   toDynamic4(const T& value) const {
     if (!opts_.ignoreUnserializableTypes) {
       return "(not serializable)";
@@ -158,8 +162,9 @@ class ToDynamicVisitor {
 } // detail
 
 template <class Message>
-folly::dynamic convertToFollyDynamic(const Message& m,
-                                     FollyDynamicConversionOptions opts) {
+folly::dynamic convertToFollyDynamic(
+    const Message& m,
+    FollyDynamicConversionOptions opts) {
   detail::ToDynamicVisitor visitor(opts);
   m.visitFields(visitor);
   return visitor.moveOutput();

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,7 +22,8 @@ namespace folly {
 class SSLContext;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * A struct for storing all connection related options.
@@ -30,15 +31,14 @@ namespace facebook { namespace memcache {
 struct ConnectionOptions {
   using SocketOptions = folly::AsyncSocket::OptionMap;
 
-  ConnectionOptions(folly::StringPiece host_,
-                    uint16_t port_,
-                    mc_protocol_t protocol_)
-    : accessPoint(std::make_shared<AccessPoint>(host_, port_, protocol_)) {
-  }
+  ConnectionOptions(
+      folly::StringPiece host_,
+      uint16_t port_,
+      mc_protocol_t protocol_)
+      : accessPoint(std::make_shared<AccessPoint>(host_, port_, protocol_)) {}
 
   explicit ConnectionOptions(std::shared_ptr<const AccessPoint> ap)
-    : accessPoint(std::move(ap)) {
-  }
+      : accessPoint(std::move(ap)) {}
 
   /**
    * For performance testing only.
@@ -97,15 +97,13 @@ struct ConnectionOptions {
    * established, else it will be called for each attempt to establish
    * connection.
    */
-  std::function<std::shared_ptr<folly::SSLContext>()>
-    sslContextProvider;
+  std::function<std::shared_ptr<folly::SSLContext>()> sslContextProvider;
 
   /**
    * Path of the debug fifo.
    * If empty, debug fifo is disabled.
    */
   std::string debugFifoPath;
-
 
   /**
    * enable ssl session caching
@@ -123,5 +121,5 @@ struct ConnectionOptions {
    */
   const CompressionCodecMap* compressionCodecMap{nullptr};
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

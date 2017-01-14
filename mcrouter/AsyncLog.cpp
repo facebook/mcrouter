@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -38,7 +38,9 @@ constexpr folly::StringPiece kAsyncLogMagic2{"AS2.0"};
 
 using folly::dynamic;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
@@ -57,7 +59,6 @@ void closeFd(int fd) {
 
 } // anonymous namespace
 
-
 bool AsyncLog::openFile() {
   char path[PATH_MAX + 1];
   time_t now = time(nullptr);
@@ -74,15 +75,18 @@ bool AsyncLog::openFile() {
   }
 
   localtime_r(&now, &date);
-  char hour_path[PATH_MAX+1];
+  char hour_path[PATH_MAX + 1];
   time_t hour_time = now - (now % 3600);
-  if (snprintf(hour_path, PATH_MAX, "%s/%04d%02d%02dT%02d-%lld",
-               options_.async_spool.c_str(),
-               date.tm_year + 1900,
-               date.tm_mon + 1,
-               date.tm_mday,
-               date.tm_hour,
-               (long long) hour_time) > PATH_MAX) {
+  if (snprintf(
+          hour_path,
+          PATH_MAX,
+          "%s/%04d%02d%02dT%02d-%lld",
+          options_.async_spool.c_str(),
+          date.tm_year + 1900,
+          date.tm_mon + 1,
+          date.tm_mday,
+          date.tm_hour,
+          (long long)hour_time) > PATH_MAX) {
     hour_path[PATH_MAX] = '\0';
     MC_LOG_FAILURE(
         options_,
@@ -114,19 +118,22 @@ bool AsyncLog::openFile() {
     }
   }
 
-  if (snprintf(path, PATH_MAX, "%s/%04d%02d%02dT%02d%02d%02d-%lld-%s-%s-t%d-%p",
-               hour_path,
-               date.tm_year + 1900,
-               date.tm_mon + 1,
-               date.tm_mday,
-               date.tm_hour,
-               date.tm_min,
-               date.tm_sec,
-               (long long) now,
-               options_.service_name.c_str(),
-               options_.router_name.c_str(),
-               tid,
-               this) > PATH_MAX) {
+  if (snprintf(
+          path,
+          PATH_MAX,
+          "%s/%04d%02d%02dT%02d%02d%02d-%lld-%s-%s-t%d-%p",
+          hour_path,
+          date.tm_year + 1900,
+          date.tm_mon + 1,
+          date.tm_mday,
+          date.tm_hour,
+          date.tm_min,
+          date.tm_sec,
+          (long long)now,
+          options_.service_name.c_str(),
+          options_.router_name.c_str(),
+          tid,
+          this) > PATH_MAX) {
     path[PATH_MAX] = '\0';
     MC_LOG_FAILURE(
         options_,
@@ -230,10 +237,12 @@ void AsyncLog::writeDelete(
   }
 
   if (!openFile()) {
-    MC_LOG_FAILURE(options_,
-                   memcache::failure::Category::kSystemError,
-                   "asynclog_open() failed (key {}, pool {})",
-                   key, poolName);
+    MC_LOG_FAILURE(
+        options_,
+        memcache::failure::Category::kSystemError,
+        "asynclog_open() failed (key {}, pool {})",
+        key,
+        poolName);
     return;
   }
 
@@ -248,7 +257,8 @@ void AsyncLog::writeDelete(
   }
 
   auto timestamp_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::system_clock::now().time_since_epoch()).count();
+                          std::chrono::system_clock::now().time_since_epoch())
+                          .count();
   jsonOut.push_back(1e-3 * timestamp_ms);
 
   jsonOut.push_back(std::string("C"));
@@ -259,11 +269,14 @@ void AsyncLog::writeDelete(
 
   ssize_t size = folly::writeFull(file_->fd(), jstr.data(), jstr.size());
   if (size == -1 || size_t(size) < jstr.size()) {
-    MC_LOG_FAILURE(options_,
-                   memcache::failure::Category::kSystemError,
-                   "Error fully writing asynclog request (key {}, pool {})",
-                   key, poolName);
+    MC_LOG_FAILURE(
+        options_,
+        memcache::failure::Category::kSystemError,
+        "Error fully writing asynclog request (key {}, pool {})",
+        key,
+        poolName);
   }
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

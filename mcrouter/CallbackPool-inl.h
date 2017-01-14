@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,10 +14,12 @@
 
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /* CallbackPool::CallbackHandle */
-template<typename... Args>
+template <typename... Args>
 struct CallbackPool<Args...>::CallbackHandleImpl {
  public:
   CallbackHandleImpl(const CallbackHandleImpl&) = delete;
@@ -26,6 +28,7 @@ struct CallbackPool<Args...>::CallbackHandleImpl {
     std::lock_guard<SFRWriteLock> lck(data_->callbackLock.writeLock());
     data_->callbacks.erase(this);
   }
+
  private:
   friend class CallbackPool;
 
@@ -33,15 +36,14 @@ struct CallbackPool<Args...>::CallbackHandleImpl {
   const OnUpdateFunc func_;
 
   CallbackHandleImpl(std::shared_ptr<Data> data, OnUpdateFunc func)
-      : data_(std::move(data)),
-        func_(std::move(func)) {
+      : data_(std::move(data)), func_(std::move(func)) {
     std::lock_guard<SFRWriteLock> lck(data_->callbackLock.writeLock());
     data_->callbacks.insert(this);
   }
 };
 
 /* CallbackPool::Data */
-template<typename... Args>
+template <typename... Args>
 struct CallbackPool<Args...>::Data {
   std::set<CallbackHandleImpl*> callbacks;
   SFRLock callbackLock;
@@ -49,12 +51,10 @@ struct CallbackPool<Args...>::Data {
 
 /* CallbackPool */
 
-template<typename... Args>
-CallbackPool<Args...>::CallbackPool()
-  : data_(std::make_shared<Data>()) {
-}
+template <typename... Args>
+CallbackPool<Args...>::CallbackPool() : data_(std::make_shared<Data>()) {}
 
-template<typename... Args>
+template <typename... Args>
 void CallbackPool<Args...>::notify(Args... args) {
   std::lock_guard<SFRReadLock> lck(data_->callbackLock.readLock());
   for (auto& it : data_->callbacks) {
@@ -68,11 +68,12 @@ void CallbackPool<Args...>::notify(Args... args) {
   }
 }
 
-template<typename... Args>
-typename CallbackPool<Args...>::CallbackHandle
-CallbackPool<Args...>::subscribe(OnUpdateFunc callback) {
+template <typename... Args>
+typename CallbackPool<Args...>::CallbackHandle CallbackPool<Args...>::subscribe(
+    OnUpdateFunc callback) {
   return std::unique_ptr<CallbackHandleImpl>(
-    new CallbackHandleImpl(data_, std::move(callback)));
+      new CallbackHandleImpl(data_, std::move(callback)));
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -11,7 +11,8 @@
 #include "mcrouter/lib/network/McServerSession.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Reply>
 void McServerRequestContext::reply(
@@ -83,9 +84,11 @@ void McServerRequestContext::replyImpl2(
   uint64_t reqid = ctx.reqid_;
   auto wb = session->writeBufs_->get();
   if (!wb->prepareTyped(
-        std::move(ctx), std::move(reply), std::move(destructorContainer),
-        session->compressionCodecMap_,
-        session->codecIdRange_)) {
+          std::move(ctx),
+          std::move(reply),
+          std::move(destructorContainer),
+          session->compressionCodecMap_,
+          session->codecIdRange_)) {
     session->transport_->close();
     return;
   }
@@ -127,14 +130,13 @@ struct HasDispatchTypedRequest {
 
 template <class T>
 struct HasDispatchTypedRequest<
-  T,
-  typename std::enable_if<
-    std::is_same<
-      decltype(std::declval<T>().dispatchTypedRequest(
-                 std::declval<UmbrellaMessageInfo>(),
-                 std::declval<folly::IOBuf>(),
-                 std::declval<McServerRequestContext>())),
-      bool>::value>::type> {
+    T,
+    typename std::enable_if<std::is_same<
+        decltype(std::declval<T>().dispatchTypedRequest(
+            std::declval<UmbrellaMessageInfo>(),
+            std::declval<folly::IOBuf>(),
+            std::declval<McServerRequestContext>())),
+        bool>::value>::type> {
   static constexpr std::true_type value{};
 };
 
@@ -144,8 +146,10 @@ void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
     const folly::IOBuf& reqBuf,
     McServerRequestContext&& ctx) {
   dispatchTypedRequestIfDefined(
-    headerInfo, reqBuf, std::move(ctx),
-    HasDispatchTypedRequest<OnRequest>::value);
+      headerInfo,
+      reqBuf,
+      std::move(ctx),
+      HasDispatchTypedRequest<OnRequest>::value);
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

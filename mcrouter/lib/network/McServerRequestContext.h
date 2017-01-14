@@ -12,16 +12,17 @@
 #include <string>
 #include <utility>
 
-#include <folly/io/IOBuf.h>
 #include <folly/Optional.h>
+#include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/McRequestList.h"
+#include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class OnRequest, class RequestList>
 class McServerOnRequestWrapper;
@@ -64,7 +65,7 @@ class McServerRequestContext {
   McServerSession* session_;
 
   /* Pack these together, operation + flags takes one word */
-  bool isEndContext_{false};  // Used to mark end of ASCII multi-get request
+  bool isEndContext_{false}; // Used to mark end of ASCII multi-get request
   bool noReply_;
   bool replied_{false};
 
@@ -146,9 +147,9 @@ class McServerRequestContext {
 };
 
 static_assert(
-  sizeof(McServerRequestContext) == 32,
-  "Think twice before adding more fields to McServerRequestContext,"
-  " doing so WILL have perf implications");
+    sizeof(McServerRequestContext) == 32,
+    "Think twice before adding more fields to McServerRequestContext,"
+    " doing so WILL have perf implications");
 
 /**
  * McServerOnRequest is a polymorphic base class used as a callback
@@ -211,7 +212,7 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
 
   template <class... Args>
   explicit McServerOnRequestWrapper(Args&&... args)
-    : onRequest_(std::forward<Args>(args)...) {}
+      : onRequest_(std::forward<Args>(args)...) {}
 
   void caretRequestReady(
       const UmbrellaMessageInfo& headerInfo,
@@ -263,9 +264,8 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
 
   template <class... Args>
   explicit McServerOnRequestWrapper(Args&&... args)
-    : McServerOnRequestWrapper<OnRequest, List<Requests...>>(
-        std::forward<Args>(args)...) {
-  }
+      : McServerOnRequestWrapper<OnRequest, List<Requests...>>(
+            std::forward<Args>(args)...) {}
 
   void requestReady(McServerRequestContext&& ctx, Request&& req)
       override final {
@@ -275,7 +275,7 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
         carbon::detail::CanHandleRequest::value<Request, OnRequest>());
   }
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "McServerRequestContext-inl.h"

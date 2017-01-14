@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,9 @@
 
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouteHandleIf>
 class PrefixSelectorRoute;
@@ -21,4 +23,6 @@ class PrefixSelectorRoute;
 template <class RouteHandleIf>
 using RouteSelectorMap = folly::StringKeyedUnorderedMap<
     std::shared_ptr<PrefixSelectorRoute<RouteHandleIf>>>;
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,13 +13,15 @@
 #include <string>
 #include <vector>
 
+#include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * For get-like requests, sends the same request sequentially
@@ -38,13 +40,14 @@ class MissFailoverRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(targets_, req);
   }
 
   explicit MissFailoverRoute(
-    std::vector<std::shared_ptr<RouteHandleIf>> targets)
+      std::vector<std::shared_ptr<RouteHandleIf>> targets)
       : targets_(std::move(targets)) {
     assert(targets_.size() > 1);
   }
@@ -83,12 +86,12 @@ class MissFailoverRoute {
   ReplyT<Request> route(
       const Request& req,
       OtherThanT<Request, GetLike<>, DeleteLike<>> = 0) const {
-
     return targets_[0]->route(req);
   }
 
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

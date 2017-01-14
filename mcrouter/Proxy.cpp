@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,24 +26,26 @@
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 
-#include "mcrouter/config-impl.h"
-#include "mcrouter/config.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/options.h"
 #include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
-#include "mcrouter/routes/RateLimiter.h"
-#include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
+#include "mcrouter/config-impl.h"
+#include "mcrouter/config.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/options.h"
+#include "mcrouter/routes/RateLimiter.h"
+#include "mcrouter/routes/ShardSplitter.h"
 #include "mcrouter/stats.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace detail {
 
@@ -80,8 +82,8 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
   try {
     checkLogic(json.isObject(), "json is not an object");
     if (auto jKeyFractionRange = json.get_ptr("key_fraction_range")) {
-      checkLogic(jKeyFractionRange->isArray(),
-                 "key_fraction_range is not an array");
+      checkLogic(
+          jKeyFractionRange->isArray(), "key_fraction_range is not an array");
       auto ar = folly::convertTo<std::vector<double>>(*jKeyFractionRange);
       checkLogic(ar.size() == 2, "key_fraction_range size is not 2");
       result->setKeyRange(ar[0], ar[1]);
@@ -95,13 +97,17 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
       result->endIndex_ = ar[1];
     }
     if (auto jKeyFractionRangeRv = json.get_ptr("key_fraction_range_rv")) {
-      checkLogic(jKeyFractionRangeRv->isString(),
-                 "key_fraction_range_rv is not a string");
+      checkLogic(
+          jKeyFractionRangeRv->isString(),
+          "key_fraction_range_rv is not a string");
       result->keyFractionRangeRv_ = jKeyFractionRangeRv->getString();
     }
   } catch (const std::logic_error& e) {
-    MC_LOG_FAILURE(router.opts(), failure::Category::kInvalidConfig,
-                   "ShadowSettings: {}", e.what());
+    MC_LOG_FAILURE(
+        router.opts(),
+        failure::Category::kInvalidConfig,
+        "ShadowSettings: {}",
+        e.what());
     return nullptr;
   }
 
@@ -111,8 +117,11 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
 }
 
 void ShadowSettings::setKeyRange(double start, double end) {
-  checkLogic(0 <= start && start <= end && end <= 1,
-             "invalid key_fraction_range [{}, {}]", start, end);
+  checkLogic(
+      0 <= start && start <= end && end <= 1,
+      "invalid key_fraction_range [{}, {}]",
+      start,
+      end);
   uint64_t keyStart = start * std::numeric_limits<uint32_t>::max();
   uint64_t keyEnd = end * std::numeric_limits<uint32_t>::max();
   keyRange_ = (keyStart << 32UL) | keyEnd;
@@ -126,25 +135,34 @@ ShadowSettings::~ShadowSettings() {
 
 void ShadowSettings::registerOnUpdateCallback(
     CarbonRouterInstanceBase& router) {
-  handle_ = router.rtVarsData().subscribeAndCall(
-    [this](std::shared_ptr<const RuntimeVarsData> oldVars,
-           std::shared_ptr<const RuntimeVarsData> newVars) {
-      if (!newVars || keyFractionRangeRv_.empty()) {
-        return;
-      }
-      auto val = newVars->getVariableByName(keyFractionRangeRv_);
-      if (val != nullptr) {
-        checkLogic(val.isArray(),
-                   "runtime vars: {} is not an array", keyFractionRangeRv_);
-        checkLogic(val.size() == 2,
-                   "runtime vars: size of {} is not 2", keyFractionRangeRv_);
-        checkLogic(val[0].isNumber(),
-                   "runtime vars: {}#0 is not a number", keyFractionRangeRv_);
-        checkLogic(val[1].isNumber(),
-                   "runtime vars: {}#1 is not a number", keyFractionRangeRv_);
-        setKeyRange(val[0].asDouble(), val[1].asDouble());
-      }
-    });
+  handle_ = router.rtVarsData().subscribeAndCall([this](
+      std::shared_ptr<const RuntimeVarsData> oldVars,
+      std::shared_ptr<const RuntimeVarsData> newVars) {
+    if (!newVars || keyFractionRangeRv_.empty()) {
+      return;
+    }
+    auto val = newVars->getVariableByName(keyFractionRangeRv_);
+    if (val != nullptr) {
+      checkLogic(
+          val.isArray(),
+          "runtime vars: {} is not an array",
+          keyFractionRangeRv_);
+      checkLogic(
+          val.size() == 2,
+          "runtime vars: size of {} is not 2",
+          keyFractionRangeRv_);
+      checkLogic(
+          val[0].isNumber(),
+          "runtime vars: {}#0 is not a number",
+          keyFractionRangeRv_);
+      checkLogic(
+          val[1].isNumber(),
+          "runtime vars: {}#1 is not a number",
+          keyFractionRangeRv_);
+      setKeyRange(val[0].asDouble(), val[1].asDouble());
+    }
+  });
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

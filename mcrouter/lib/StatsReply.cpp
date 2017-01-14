@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 
 #include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 McStatsReply StatsReply::getReply() {
   /**
@@ -34,5 +35,5 @@ McStatsReply StatsReply::getReply() {
 
   return reply;
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

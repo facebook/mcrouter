@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,11 +12,12 @@
 #include <string>
 #include <type_traits>
 
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/Operation.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * For existing memcache operations, we use a template trick:
@@ -35,5 +36,5 @@ template <class M>
 struct ReplyType {
   using type = typename M::reply_type;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

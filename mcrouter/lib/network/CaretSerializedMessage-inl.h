@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,14 +10,16 @@
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Request>
-bool CaretSerializedMessage::prepare(const Request& req,
-                                     size_t reqId,
-                                     const CodecIdRange& supportedCodecs,
-                                     const struct iovec*& iovOut,
-                                     size_t& niovOut) noexcept {
+bool CaretSerializedMessage::prepare(
+    const Request& req,
+    size_t reqId,
+    const CodecIdRange& supportedCodecs,
+    const struct iovec*& iovOut,
+    size_t& niovOut) noexcept {
   return fill(
       req,
       reqId,
@@ -50,13 +52,14 @@ bool CaretSerializedMessage::prepare(
 }
 
 template <class Message>
-bool CaretSerializedMessage::fill(const Message& message,
-                                  uint32_t reqId,
-                                  size_t typeId,
-                                  uint64_t traceId,
-                                  const CodecIdRange& supportedCodecs,
-                                  const struct iovec*& iovOut,
-                                  size_t& niovOut) {
+bool CaretSerializedMessage::fill(
+    const Message& message,
+    uint32_t reqId,
+    size_t typeId,
+    uint64_t traceId,
+    const CodecIdRange& supportedCodecs,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
   // Serialize body into storage_. Note we must defer serialization of header.
   try {
     serializeCarbonStruct(message, storage_);
@@ -97,8 +100,7 @@ bool CaretSerializedMessage::fill(
   auto uncompressedSize = storage_.computeBodySize();
   auto codec = (compressionCodecMap == nullptr)
       ? nullptr
-      : compressionCodecMap->getBest(
-            supportedCodecs, uncompressedSize, typeId);
+      : compressionCodecMap->getBest(supportedCodecs, uncompressedSize, typeId);
 
   if (maybeCompress(codec, uncompressedSize)) {
     info.usedCodecId = codec->id();
@@ -109,8 +111,9 @@ bool CaretSerializedMessage::fill(
   return true;
 }
 
-inline bool CaretSerializedMessage::maybeCompress(CompressionCodec* codec,
-                                                  size_t uncompressedSize) {
+inline bool CaretSerializedMessage::maybeCompress(
+    CompressionCodec* codec,
+    size_t uncompressedSize) {
   if (!codec) {
     return false;
   }
@@ -162,5 +165,5 @@ inline void CaretSerializedMessage::fillImpl(
   iovOut = iovs.first;
   niovOut = iovs.second;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

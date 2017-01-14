@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,35 +13,46 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 constexpr uint32_t kMaxTimeout = 1000000;
 
-int64_t parseInt(const folly::dynamic& json,
-                 folly::StringPiece name, int64_t min, int64_t max) {
+int64_t parseInt(
+    const folly::dynamic& json,
+    folly::StringPiece name,
+    int64_t min,
+    int64_t max) {
   checkLogic(json.isInt(), "{} expected int, found {}", name, json.typeName());
   auto t = json.getInt();
-  checkLogic(min <= t && t <= max,
-             "{} should be in range [{},{}], got {}", name, min, max, t);
+  checkLogic(
+      min <= t && t <= max,
+      "{} should be in range [{},{}], got {}",
+      name,
+      min,
+      max,
+      t);
   return t;
 }
 
 bool parseBool(const folly::dynamic& json, folly::StringPiece name) {
-  checkLogic(json.isBool(),
-             "{} expected bool, found {}", name, json.typeName());
+  checkLogic(
+      json.isBool(), "{} expected bool, found {}", name, json.typeName());
   return json.getBool();
 }
 
-std::chrono::milliseconds
-parseTimeout(const folly::dynamic& json, folly::StringPiece name) {
+std::chrono::milliseconds parseTimeout(
+    const folly::dynamic& json,
+    folly::StringPiece name) {
   return std::chrono::milliseconds{parseInt(json, name, 1, kMaxTimeout)};
 }
 
-folly::StringPiece
-parseString(const folly::dynamic& json, folly::StringPiece name) {
-  checkLogic(json.isString(),
-             "{} expected string, found {}", name, json.typeName());
+folly::StringPiece parseString(
+    const folly::dynamic& json,
+    folly::StringPiece name) {
+  checkLogic(
+      json.isString(), "{} expected string, found {}", name, json.typeName());
   return json.stringPiece();
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

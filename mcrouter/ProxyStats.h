@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,9 @@
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/stats.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class ProxyStats {
  public:
@@ -119,7 +121,6 @@ class ProxyStats {
     stat_set_uint64(stats_, stat, newValue);
   }
 
-
   uint64_t getValue(stat_name_t stat) const {
     return stat_get_uint64(stats_, stat);
   }
@@ -151,8 +152,9 @@ class ProxyStats {
    * every MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND second by setting the oldest
    * time bin to stats[stat_name], and then reset stats[stat_name] to 0.
    */
-  uint64_t statsBin_[num_stats][MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
-                                MOVING_AVERAGE_BIN_SIZE_IN_SECOND]{};
+  uint64_t statsBin_[num_stats]
+                    [MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
+                     MOVING_AVERAGE_BIN_SIZE_IN_SECOND]{};
   /*
    * statsNumWithinWindow_[stat_name] contains the count of stat "stat_name"
    * in the past MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND seconds. This array is
@@ -169,5 +171,6 @@ class ProxyStats {
    */
   size_t numBinsUsed_{0};
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

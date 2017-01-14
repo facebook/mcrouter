@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,7 @@ class OPTIONS_NAME : public McrouterOptionsBase {
 #define MCROUTER_OPTION_OTHER(_t, _n, _f, _l, _s, _d) \
   MCROUTER_OPTION(_t, _n, _f, _l, _s, _d, other)
 
-  #include OPTIONS_FILE
+#include OPTIONS_FILE
 
   OPTIONS_NAME() = default;
 
@@ -35,16 +35,17 @@ class OPTIONS_NAME : public McrouterOptionsBase {
     return *this;
   }
 
-  void forEach(std::function<void(const std::string&,
-                                  McrouterOptionData::Type,
-                                  const boost::any&)> f) const {
+  void forEach(
+      std::function<
+          void(const std::string&, McrouterOptionData::Type, const boost::any&)>
+          f) const {
+#undef MCROUTER_OPTION
+#define MCROUTER_OPTION(_type, _name, _f, _l, _s, _d, _Type) \
+  f(#_name,                                                  \
+    McrouterOptionData::Type::_Type,                         \
+    boost::any(const_cast<_type*>(&_name)));
 
-    #undef MCROUTER_OPTION
-    #define MCROUTER_OPTION(_type, _name, _f, _l, _s, _d, _Type)  \
-      f(#_name, McrouterOptionData::Type::_Type,                  \
-        boost::any(const_cast<_type*>(&_name)));
-
-    #include OPTIONS_FILE
+#include OPTIONS_FILE
   }
 
   static std::vector<McrouterOptionData> getOptionData() {
@@ -53,25 +54,26 @@ class OPTIONS_NAME : public McrouterOptionsBase {
 
 #undef MCROUTER_OPTION
 #define MCROUTER_OPTION(_type, _name, _default, _lopt, _sopt, _doc, _Type) \
-    {                                                                      \
-      McrouterOptionData opt;                                              \
-      opt.type = McrouterOptionData::Type:: _Type;                         \
-      opt.name = #_name;                                                   \
-      opt.group = current_group;                                           \
-      opt.default_value = #_default;                                       \
-      opt.long_option = _lopt;                                             \
-      opt.short_option = _sopt;                                            \
-      opt.docstring = _doc;                                                \
-      ret.push_back(opt);                                                  \
-    }
+  {                                                                        \
+    McrouterOptionData opt;                                                \
+    opt.type = McrouterOptionData::Type::_Type;                            \
+    opt.name = #_name;                                                     \
+    opt.group = current_group;                                             \
+    opt.default_value = #_default;                                         \
+    opt.long_option = _lopt;                                               \
+    opt.short_option = _sopt;                                              \
+    opt.docstring = _doc;                                                  \
+    ret.push_back(opt);                                                    \
+  }
 
 #undef MCROUTER_OPTION_GROUP
 #define MCROUTER_OPTION_GROUP(_name) current_group = _name;
 
-    #include OPTIONS_FILE
+#include OPTIONS_FILE
 
     return ret;
   }
+
  private:
   OPTIONS_NAME(const OPTIONS_NAME&) = default;
   OPTIONS_NAME& operator=(const OPTIONS_NAME&) = default;

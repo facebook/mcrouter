@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,8 +13,8 @@
 
 #if FOLLY_HAVE_LIBLZ4
 #include "mcrouter/lib/Compression.h"
-#include "mcrouter/lib/IovecCursor.h"
 #include "mcrouter/lib/IOBufUtil.h"
+#include "mcrouter/lib/IovecCursor.h"
 
 #include <lz4.h>
 
@@ -38,9 +38,9 @@ class Lz4CompressionCodec : public CompressionCodec {
 
  private:
   struct Deleter {
-     void operator()(LZ4_stream_t* stream) const {
-       LZ4_freeStream(stream);
-     }
+    void operator()(LZ4_stream_t* stream) const {
+      LZ4_freeStream(stream);
+    }
   };
   static constexpr size_t kMaxDictionarySize = 64 * 1024;
 

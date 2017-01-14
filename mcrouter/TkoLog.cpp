@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,12 +11,12 @@
 
 #include "mcrouter/lib/network/AccessPoint.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 TkoLog::TkoLog(const AccessPoint& ap, const TkoCounters& gt)
-  : accessPoint(ap),
-    globalTkos(gt) {
-}
+    : accessPoint(ap), globalTkos(gt) {}
 
 std::string TkoLog::eventName() const {
   switch (event) {
@@ -32,5 +32,6 @@ std::string TkoLog::eventName() const {
       return "unknown";
   }
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

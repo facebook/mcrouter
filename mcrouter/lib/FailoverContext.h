@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,15 +13,16 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/Operation.h"
 
 namespace folly {
 class IOBuf;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct AccessPoint;
 
@@ -29,24 +30,25 @@ namespace mcrouter {
 
 struct FailoverContext {
   template <class Request>
-  FailoverContext(size_t numRetries_,
-                  size_t maxRetries_,
-                  const Request& request,
-                  const ReplyT<Request>& normal,
-                  const ReplyT<Request>& failover)
-    : requestName(Request::name),
-      fullKey(request.key().fullKey()),
-      routingKey(request.key().routingKey()),
-      keyWithoutRoute(request.key().keyWithoutRoute()),
-      requestValue(carbon::valuePtrUnsafe(request)),
-      normalValue(carbon::valuePtrUnsafe(normal)),
-      normalDestination(normal.destination().get()),
-      normalResult(normal.result()),
-      failoverValue(carbon::valuePtrUnsafe(failover)),
-      failoverDestination(failover.destination().get()),
-      failoverResult(failover.result()),
-      numRetries(numRetries_),
-      maxRetries(maxRetries_) {}
+  FailoverContext(
+      size_t numRetries_,
+      size_t maxRetries_,
+      const Request& request,
+      const ReplyT<Request>& normal,
+      const ReplyT<Request>& failover)
+      : requestName(Request::name),
+        fullKey(request.key().fullKey()),
+        routingKey(request.key().routingKey()),
+        keyWithoutRoute(request.key().keyWithoutRoute()),
+        requestValue(carbon::valuePtrUnsafe(request)),
+        normalValue(carbon::valuePtrUnsafe(normal)),
+        normalDestination(normal.destination().get()),
+        normalResult(normal.result()),
+        failoverValue(carbon::valuePtrUnsafe(failover)),
+        failoverDestination(failover.destination().get()),
+        failoverResult(failover.result()),
+        numRetries(numRetries_),
+        maxRetries(maxRetries_) {}
 
   FailoverContext(const FailoverContext&) = delete;
   FailoverContext& operator=(const FailoverContext&) = delete;
@@ -72,5 +74,6 @@ struct FailoverContext {
   const size_t numRetries;
   const size_t maxRetries;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

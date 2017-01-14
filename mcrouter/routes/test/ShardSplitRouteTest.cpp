@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -38,10 +38,10 @@ void testShardingForOp(ShardSplitter splitter) {
   for (size_t i = 0; i < kNumSplits; ++i) {
     globals::HostidMock hostidMock(i);
 
-    vector<std::shared_ptr<TestHandle>> handles{
-        make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
-                                UpdateRouteTestData(mc_res_found),
-                                DeleteRouteTestData(mc_res_found))};
+    vector<std::shared_ptr<TestHandle>> handles{make_shared<TestHandle>(
+        GetRouteTestData(mc_res_found, "a"),
+        UpdateRouteTestData(mc_res_found),
+        DeleteRouteTestData(mc_res_found))};
     auto rh = get_route_handles(handles)[0];
     McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
         rh, splitter);
@@ -56,10 +56,12 @@ void testShardingForOp(ShardSplitter splitter) {
     if (i == 0) {
       EXPECT_EQ(vector<string>{"test:123:"}, handles[0]->saw_keys);
     } else {
-      EXPECT_EQ(vector<string>{folly::sformat("test:123{}{}:",
-                                              (char)('a' + (i - 1) % 26),
-                                              (char)('a' + (i - 1) / 26))},
-                handles[0]->saw_keys);
+      EXPECT_EQ(
+          vector<string>{folly::sformat(
+              "test:123{}{}:",
+              (char)('a' + (i - 1) % 26),
+              (char)('a' + (i - 1) / 26))},
+          handles[0]->saw_keys);
     }
   }
 }
@@ -67,10 +69,10 @@ void testShardingForOp(ShardSplitter splitter) {
 template <class Request>
 void testDirectOp(ShardSplitter splitter) {
   globals::HostidMock hostidMock(1);
-  vector<std::shared_ptr<TestHandle>> handles{
-      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"),
-                              UpdateRouteTestData(mc_res_found),
-                              DeleteRouteTestData(mc_res_found))};
+  vector<std::shared_ptr<TestHandle>> handles{make_shared<TestHandle>(
+      GetRouteTestData(mc_res_found, "a"),
+      UpdateRouteTestData(mc_res_found),
+      DeleteRouteTestData(mc_res_found))};
   auto rh = get_route_handles(handles)[0];
   McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
       rh, splitter);
@@ -115,9 +117,8 @@ TEST(shardSplitRoute, simpleSplit_deleteFanout) {
   constexpr size_t kNumSplits = 26 * 26 + 1;
   std::vector<std::string> allKeys{"test:123:"};
   for (size_t i = 0; i < kNumSplits - 1; ++i) {
-    allKeys.emplace_back(folly::sformat("test:123{}{}:",
-                                        (char)('a' + i % 26),
-                                        (char)('a' + i / 26)));
+    allKeys.emplace_back(folly::sformat(
+        "test:123{}{}:", (char)('a' + i % 26), (char)('a' + i / 26)));
   }
 
   vector<std::shared_ptr<TestHandle>> handles{

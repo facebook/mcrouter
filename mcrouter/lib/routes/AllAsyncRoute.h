@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,8 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Sends the same request to all child route handles.
@@ -27,7 +28,9 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf>
 class AllAsyncRoute {
  public:
-  static std::string routeName() { return "all-async"; }
+  static std::string routeName() {
+    return "all-async";
+  }
 
   explicit AllAsyncRoute(std::vector<std::shared_ptr<RouteHandleIf>> rh)
       : children_(std::move(rh)) {
@@ -35,8 +38,9 @@ class AllAsyncRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(children_, req);
   }
 
@@ -44,10 +48,7 @@ class AllAsyncRoute {
   ReplyT<Request> route(const Request& req) const {
     auto reqCopy = std::make_shared<Request>(req);
     for (auto& rh : children_) {
-      folly::fibers::addTask(
-        [rh, reqCopy]() {
-          rh->route(*reqCopy);
-        });
+      folly::fibers::addTask([rh, reqCopy]() { rh->route(*reqCopy); });
     }
     return NullRoute<RouteHandleIf>::route(req);
   }
@@ -55,5 +56,5 @@ class AllAsyncRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

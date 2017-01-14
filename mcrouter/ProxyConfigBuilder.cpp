@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,22 +21,23 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McImportResolver.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
-                                       ConfigApi& configApi,
-                                       folly::StringPiece jsonC)
+ProxyConfigBuilder::ProxyConfigBuilder(
+    const McrouterOptions& opts,
+    ConfigApi& configApi,
+    folly::StringPiece jsonC)
     : json_(nullptr) {
-
   McImportResolver importResolver(configApi);
   folly::StringKeyedUnorderedMap<folly::dynamic> globalParams{
-    { "default-route", opts.default_route.str() },
-    { "default-region", opts.default_route.getRegion().str() },
-    { "default-cluster", opts.default_route.getCluster().str() },
-    { "hostid", globals::hostid() },
-    { "router-name", opts.router_name },
-    { "service-name", opts.service_name }
-  };
+      {"default-route", opts.default_route.str()},
+      {"default-region", opts.default_route.getRegion().str()},
+      {"default-cluster", opts.default_route.getCluster().str()},
+      {"hostid", globals::hostid()},
+      {"router-name", opts.router_name},
+      {"service-name", opts.service_name}};
   auto additionalParams = additionalConfigParams();
   for (auto& it : additionalParams) {
     globalParams.emplace(it.first, std::move(it.second));
@@ -46,13 +47,12 @@ ProxyConfigBuilder::ProxyConfigBuilder(const McrouterOptions& opts,
   }
 
   json_ = ConfigPreprocessor::getConfigWithoutMacros(
-    jsonC,
-    importResolver,
-    std::move(globalParams));
+      jsonC, importResolver, std::move(globalParams));
 
   poolFactory_ = folly::make_unique<PoolFactory>(json_, configApi);
 
   configMd5Digest_ = Md5Hash(jsonC);
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

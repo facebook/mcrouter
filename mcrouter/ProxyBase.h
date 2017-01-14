@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,8 +16,8 @@
 #include <folly/fibers/FiberManager.h>
 
 #include "mcrouter/AsyncLog.h"
-#include "mcrouter/config.h"
 #include "mcrouter/ProxyStats.h"
+#include "mcrouter/config.h"
 
 namespace folly {
 class EventBase;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,10 +22,7 @@ namespace memcache {
 /**
  * Represents the direction of a ConnectionFifo message.
  */
-enum class MessageDirection : uint8_t {
-  Sent = 0,
-  Received = 1
-};
+enum class MessageDirection : uint8_t { Sent = 0, Received = 1 };
 
 constexpr folly::StringPiece kUnixSocketPrefix{"US:"};
 
@@ -151,9 +148,10 @@ struct FOLLY_PACK_ATTR PacketHeader {
   uint32_t packetId_{0};
 };
 constexpr uint32_t kFifoMaxPacketSize = PIPE_BUF - sizeof(PacketHeader);
-static_assert(PIPE_BUF > sizeof(MessageHeader) + sizeof(PacketHeader),
-              "sizeof(PacketHeader) + sizeof(MessageHeader) "
-              "must be smaller than PIPE_BUF.");
+static_assert(
+    PIPE_BUF > sizeof(MessageHeader) + sizeof(PacketHeader),
+    "sizeof(PacketHeader) + sizeof(MessageHeader) "
+    "must be smaller than PIPE_BUF.");
 
 } // memcache
 } // facebook

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,17 +13,18 @@
 #include <string>
 
 #include <folly/Function.h>
-#include <folly/io/async/AsyncTransport.h>
-#include <folly/io/async/EventBase.h>
 #include <folly/Memory.h>
 #include <folly/Range.h>
+#include <folly/io/async/AsyncTransport.h>
+#include <folly/io/async/EventBase.h>
 
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/McServerSession.h"
-#include "mcrouter/lib/Reply.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McServerSession;
 class MockAsyncSocket;
@@ -38,6 +39,7 @@ class SessionTestHarness {
     void onShutdown() override final {}
   };
   static NoopCallback noopCb;
+
  public:
   /**
    * Create a SessionTestHarness
@@ -148,14 +150,14 @@ class SessionTestHarness {
   class Transaction : public TransactionIf {
    public:
     Transaction(Request&& req, folly::Function<void(const Request&)> replyFn)
-      : req_(std::move(req)),
-        replyFn_(std::move(replyFn)) {}
+        : req_(std::move(req)), replyFn_(std::move(replyFn)) {}
     std::string key() const override final {
       return req_.key().fullKey().str();
     }
     void reply() override final {
       replyFn_(req_);
     }
+
    private:
     const Request req_;
     folly::Function<void(const Request&)> replyFn_;
@@ -172,8 +174,7 @@ class SessionTestHarness {
     output_.push_back(out.str());
   }
 
-  void setReadCallback(
-      folly::AsyncTransportWrapper::ReadCallback* read) {
+  void setReadCallback(folly::AsyncTransportWrapper::ReadCallback* read) {
     read_ = read;
   }
 
@@ -213,25 +214,23 @@ class SessionTestHarness {
         std::move(req), std::move(replyFn));
   }
 
-  std::unique_ptr<Transaction<McGetRequest>>
-  makeTransaction(McServerRequestContext&& ctx,
-                  McGetRequest&& req) {
+  std::unique_ptr<Transaction<McGetRequest>> makeTransaction(
+      McServerRequestContext&& ctx,
+      McGetRequest&& req) {
     auto value = req.key().fullKey().str() + "_value";
-    auto replyFn = [ctx = std::move(ctx), value = std::move(value)](
+    auto replyFn = [ ctx = std::move(ctx), value = std::move(value) ](
         const McGetRequest&) mutable {
       McGetReply reply(mc_res_found);
       reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     };
-    return
-      folly::make_unique<Transaction<McGetRequest>>(
+    return folly::make_unique<Transaction<McGetRequest>>(
         std::move(req), std::move(replyFn));
   }
 
   class OnRequest {
    public:
-    explicit OnRequest(SessionTestHarness& harness) :
-        harness_(harness) {}
+    explicit OnRequest(SessionTestHarness& harness) : harness_(harness) {}
 
     template <class Request>
     void onRequest(McServerRequestContext&& ctx, Request&& req) {
@@ -246,5 +245,5 @@ class SessionTestHarness {
 };
 
 inline SessionTestHarness::TransactionIf::~TransactionIf() {}
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

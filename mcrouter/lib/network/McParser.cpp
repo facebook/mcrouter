@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,14 +21,15 @@
 #include "mcrouter/lib/cycles/Clocks.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 // Adjust buffer size after this many CPU cycles (~2 billion)
 constexpr uint64_t kAdjustBufferSizeCpuCycles = 1UL << 31;
 
 size_t mcOpToRequestTypeId(mc_op_t mc_op) {
-  switch(mc_op) {
+  switch (mc_op) {
 #define THRIFT_OP(MC_OPERATION)                                           \
   case MC_OPERATION::mc_op: {                                             \
     using Request =                                                       \
@@ -60,23 +61,25 @@ folly::IOBuf copyToNodumpBuffer(
   folly::io::Cursor c(&readBuffer);
   c.pull(p, readBuffer.length());
   // Transfer ownership to a new IOBuf
-  return folly::IOBuf(folly::IOBuf::TAKE_OWNERSHIP,
-                      p,
-                      bufSize,
-                      readBuffer.length(),
-                      folly::JemallocNodumpAllocator::deallocate,
-                      reinterpret_cast<void*> (allocator->getFlags()));
+  return folly::IOBuf(
+      folly::IOBuf::TAKE_OWNERSHIP,
+      p,
+      bufSize,
+      readBuffer.length(),
+      folly::JemallocNodumpAllocator::deallocate,
+      reinterpret_cast<void*>(allocator->getFlags()));
 }
 
 #endif
 
 } // anonymous
 
-McParser::McParser(ParserCallback& callback,
-                   size_t minBufferSize,
-                   size_t maxBufferSize,
-                   const bool useJemallocNodumpAllocator,
-                   ConnectionFifo* debugFifo)
+McParser::McParser(
+    ParserCallback& callback,
+    size_t minBufferSize,
+    size_t maxBufferSize,
+    const bool useJemallocNodumpAllocator,
+    ConnectionFifo* debugFifo)
     : callback_(callback),
       bufferSize_(minBufferSize),
       maxBufferSize_(maxBufferSize),
@@ -128,8 +131,8 @@ bool McParser::readUmbrellaOrCaretData() {
     if (parseStatus != UmbrellaParseStatus::OK) {
       callback_.parseError(
           mc_res_remote_error,
-          folly::sformat("Error parsing {} header",
-                         mc_protocol_to_string(protocol_)));
+          folly::sformat(
+              "Error parsing {} header", mc_protocol_to_string(protocol_)));
       return false;
     }
 
@@ -219,8 +222,8 @@ bool McParser::readDataAvailable(size_t len) {
     if (protocol_ == mc_ascii_protocol) {
       outOfOrder_ = false;
     } else {
-      assert(protocol_ == mc_umbrella_protocol ||
-             protocol_ == mc_caret_protocol);
+      assert(
+          protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol);
       outOfOrder_ = true;
     }
   }
@@ -236,5 +239,5 @@ double McParser::getDropProbability() const {
   return static_cast<double>(umMsgInfo_.dropProbability) /
       kDropProbabilityNormalizer;
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

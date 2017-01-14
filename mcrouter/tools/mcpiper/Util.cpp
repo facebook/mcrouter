@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,8 @@
 
 #include "mcrouter/lib/mc/msg.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
@@ -45,15 +46,20 @@ std::vector<std::string> describeFlags(uint64_t flags) {
 
 std::string printTimeAbsolute(const struct timeval& ts) {
   struct tm t;
-  localtime_r((const time_t *)&ts.tv_sec, &t);
+  localtime_r((const time_t*)&ts.tv_sec, &t);
 
-  return folly::sformat("{:02}/{:02}/{:02} {:02}:{:02}:{:02}.{:06} ",
-                       t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour,
-                       t.tm_min, t.tm_sec, static_cast<uint32_t>(ts.tv_usec));
+  return folly::sformat(
+      "{:02}/{:02}/{:02} {:02}:{:02}:{:02}.{:06} ",
+      t.tm_year + 1900,
+      t.tm_mon + 1,
+      t.tm_mday,
+      t.tm_hour,
+      t.tm_min,
+      t.tm_sec,
+      static_cast<uint32_t>(ts.tv_usec));
 }
 
-std::string printTimeDiff(const struct timeval& ts,
-                          struct timeval& prev) {
+std::string printTimeDiff(const struct timeval& ts, struct timeval& prev) {
   uint32_t secs, usecs;
 
   secs = ts.tv_sec - prev.tv_sec;
@@ -70,8 +76,7 @@ std::string printTimeDiff(const struct timeval& ts,
   return folly::sformat("+{}.{:06} ", secs, usecs);
 }
 
-std::string printTimeOffset(const struct timeval& ts,
-                            struct timeval& prev) {
+std::string printTimeOffset(const struct timeval& ts, struct timeval& prev) {
   uint32_t secs, usecs;
 
   secs = ts.tv_sec - prev.tv_sec;
@@ -92,12 +97,13 @@ std::string printTimeOffset(const struct timeval& ts,
   return folly::sformat("+{}.{:06} ", secs, usecs);
 }
 
-std::unique_ptr<boost::regex> buildRegex(const std::string& pattern,
-                                         bool ignoreCase) noexcept {
+std::unique_ptr<boost::regex> buildRegex(
+    const std::string& pattern,
+    bool ignoreCase) noexcept {
   if (!pattern.empty()) {
     try {
-      return folly::make_unique<boost::regex>(pattern,
-                                              getRegexFlags(ignoreCase));
+      return folly::make_unique<boost::regex>(
+          pattern, getRegexFlags(ignoreCase));
     } catch (const std::exception& e) {
       LOG(ERROR) << folly::sformat("Invalid pattern ({}) provided: ", pattern)
                  << e.what();
@@ -106,5 +112,5 @@ std::unique_ptr<boost::regex> buildRegex(const std::string& pattern,
   }
   return nullptr;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

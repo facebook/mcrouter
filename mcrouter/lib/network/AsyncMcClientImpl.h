@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,9 +13,9 @@
 #include <string>
 
 #include <folly/fibers/Baton.h>
+#include <folly/io/IOBufQueue.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
-#include <folly/io/IOBufQueue.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/Operation.h"
@@ -26,7 +26,8 @@
 #include "mcrouter/lib/network/McClientRequestContext.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 class OnEventBaseDestructionCallback;
@@ -37,16 +38,14 @@ class OnEventBaseDestructionCallback;
  *
  * This is an impl class, user should use AsyncMcClient.
  */
-class AsyncMcClientImpl :
-      public folly::DelayedDestruction,
-      private folly::AsyncSocket::ConnectCallback,
-      private folly::AsyncTransportWrapper::ReadCallback,
-      private folly::AsyncTransportWrapper::WriteCallback {
-
+class AsyncMcClientImpl : public folly::DelayedDestruction,
+                          private folly::AsyncSocket::ConnectCallback,
+                          private folly::AsyncTransportWrapper::ReadCallback,
+                          private folly::AsyncTransportWrapper::WriteCallback {
  public:
-
-  static std::shared_ptr<AsyncMcClientImpl> create(folly::EventBase& eventBase,
-                                                   ConnectionOptions options);
+  static std::shared_ptr<AsyncMcClientImpl> create(
+      folly::EventBase& eventBase,
+      ConnectionOptions options);
 
   AsyncMcClientImpl(const AsyncMcClientImpl&) = delete;
   AsyncMcClientImpl& operator=(const AsyncMcClientImpl&) = delete;
@@ -55,8 +54,8 @@ class AsyncMcClientImpl :
   void closeNow();
 
   void setStatusCallbacks(
-    std::function<void()> onUp,
-    std::function<void(bool)> onDown);
+      std::function<void()> onUp,
+      std::function<void(bool)> onDown);
 
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
@@ -150,10 +149,9 @@ class AsyncMcClientImpl :
 
   bool isAborting_{false};
   std::unique_ptr<detail::OnEventBaseDestructionCallback>
-    eventBaseDestructionCallback_;
+      eventBaseDestructionCallback_;
 
-  AsyncMcClientImpl(folly::EventBase& eventBase,
-                    ConnectionOptions options);
+  AsyncMcClientImpl(folly::EventBase& eventBase, ConnectionOptions options);
 
   ~AsyncMcClientImpl();
 
@@ -176,8 +174,8 @@ class AsyncMcClientImpl :
 
   // TAsyncSocket::ConnectCallback overrides
   void connectSuccess() noexcept override final;
-  void connectErr(const folly::AsyncSocketException& ex)
-    noexcept override final;
+  void connectErr(
+      const folly::AsyncSocketException& ex) noexcept override final;
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
@@ -191,8 +189,9 @@ class AsyncMcClientImpl :
 
   // AsyncTransportWrapper::WriteCallback overrides
   void writeSuccess() noexcept override final;
-  void writeErr(size_t bytesWritten,
-                const folly::AsyncSocketException& ex) noexcept override final;
+  void writeErr(
+      size_t bytesWritten,
+      const folly::AsyncSocketException& ex) noexcept override final;
 
   // Callbacks for McParser.
   template <class Reply>
@@ -205,7 +204,7 @@ class AsyncMcClientImpl :
 
   static void incMsgId(size_t& msgId);
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "AsyncMcClientImpl-inl.h"

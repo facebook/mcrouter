@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,17 +11,19 @@
 
 #include <folly/Bits.h>
 
-#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
+#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/network/MemcacheMessageHelpers.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 
-template <msg_field_t TagId> class Tag{};
+template <msg_field_t TagId>
+class Tag {};
 using CasTag = Tag<msg_cas>;
 using DeltaTag = Tag<msg_delta>;
 using ErrCodeTag = Tag<msg_err_code>;
@@ -35,9 +37,16 @@ using ValueTag = Tag<msg_value>;
 
 template <class Operation, class Message>
 struct TagSet {
-  using Tags =
-    List<CasTag, DeltaTag, ErrCodeTag, ExptimeTag, FlagsTag,
-         LeaseTokenTag, NumberTag, ResultTag, ValueTag>;
+  using Tags = List<
+      CasTag,
+      DeltaTag,
+      ErrCodeTag,
+      ExptimeTag,
+      FlagsTag,
+      LeaseTokenTag,
+      NumberTag,
+      ResultTag,
+      ValueTag>;
 };
 
 /**
@@ -294,118 +303,185 @@ template <class... Tags>
 struct FieldPolicyHandler<List<Tags...>> {
   template <class Op, class Message, class Tag>
   static typename std::enable_if<Has<Tag, Tags...>::value, void>::type
-  parseField(Op, Tag, Message& message, const folly::IOBuf& source,
-             const uint8_t* body, const um_elist_entry_t& entry) {
+  parseField(
+      Op,
+      Tag,
+      Message& message,
+      const folly::IOBuf& source,
+      const uint8_t* body,
+      const um_elist_entry_t& entry) {
     parseFieldImpl(Op(), Tag(), message, source, body, entry);
   }
 
   template <class Op, class Message, class Tag>
   static typename std::enable_if<!Has<Tag, Tags...>::value, void>::type
-  parseField(Op, Tag, Message& message, const folly::IOBuf& source,
-             const uint8_t* body, const um_elist_entry_t& entry) {
+  parseField(
+      Op,
+      Tag,
+      Message& message,
+      const folly::IOBuf& source,
+      const uint8_t* body,
+      const um_elist_entry_t& entry) {
     // If we're parsing a field that's not in the tags list, something is wrong
-    LOG(ERROR)
-      << "Parsing unexpected field with tag type " << typeid(Tag).name()
-      << " for operation " << typeid(Op).name()
-      << " and message " << typeid(Message).name();
+    LOG(ERROR) << "Parsing unexpected field with tag type "
+               << typeid(Tag).name() << " for operation " << typeid(Op).name()
+               << " and message " << typeid(Message).name();
   }
 };
 
 template <class Op, class Message>
-void parseFieldImpl(Op, CasTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    CasTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   message.casToken() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, DeltaTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    DeltaTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   message.delta() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, ErrCodeTag, Message& message,
-                    const folly::IOBuf& source, const uint8_t* body,
-                    const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    ErrCodeTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   message.appSpecificErrorCode() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, ExptimeTag, Message& message,
-                    const folly::IOBuf& source, const uint8_t* body,
-                    const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    ExptimeTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   setExptime(message, folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, FlagsTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    FlagsTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   setFlags(message, folly::Endian::big((uint64_t)entry.data.val));
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, LeaseTokenTag, Message& message,
-                    const folly::IOBuf& source, const uint8_t* body,
-                    const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    LeaseTokenTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   message.leaseToken() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, NumberTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    NumberTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   message.age() = folly::Endian::big((uint64_t)entry.data.val);
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, ResultTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    ResultTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   auto umResult = folly::Endian::big((uint64_t)entry.data.val);
   if (umResult >= mc_nres) {
-    throw std::runtime_error(
-      folly::sformat("Attempt to parse invalid data, received result is {}, "
-                     "which exceeds the number of known results: {}.", umResult,
-                     static_cast<uint64_t>(mc_nres)));
+    throw std::runtime_error(folly::sformat(
+        "Attempt to parse invalid data, received result is {}, "
+        "which exceeds the number of known results: {}.",
+        umResult,
+        static_cast<uint64_t>(mc_nres)));
   }
   message.result() = (mc_res_t)kUmbrellaResToMc[umResult];
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, KeyTag, Message& message,
-                    const folly::IOBuf& source, const uint8_t* body,
-                    const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    KeyTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   folly::IOBuf tmp;
-  if (!cloneInto(tmp, source,
-                 body + folly::Endian::big((uint32_t)entry.data.str.offset),
-                 folly::Endian::big((uint32_t)entry.data.str.len) - 1)) {
+  if (!cloneInto(
+          tmp,
+          source,
+          body + folly::Endian::big((uint32_t)entry.data.str.offset),
+          folly::Endian::big((uint32_t)entry.data.str.len) - 1)) {
     throw std::runtime_error("Value: invalid offset/length");
   }
   message.key() = std::move(tmp);
 }
 
 template <class Op, class Message>
-void parseValueFieldImpl(Op, Message& message, const folly::IOBuf& source,
-                         const uint8_t* body, const um_elist_entry_t& entry) {
+void parseValueFieldImpl(
+    Op,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   // TODO(jmswen) Consider migrating error messages from 'value' field to
   // 'message' field for Carbon replies
   folly::IOBuf tmp;
-  if (!cloneInto(tmp, source,
-                 body + folly::Endian::big((uint32_t)entry.data.str.offset),
-                 folly::Endian::big((uint32_t)entry.data.str.len) - 1)) {
+  if (!cloneInto(
+          tmp,
+          source,
+          body + folly::Endian::big((uint32_t)entry.data.str.offset),
+          folly::Endian::big((uint32_t)entry.data.str.len) - 1)) {
     throw std::runtime_error("Value: invalid offset/length");
   }
   setValue(message, std::move(tmp));
 }
 
 template <class Op, class Message>
-void parseFieldImpl(Op, ValueTag, Message& message, const folly::IOBuf& source,
-                    const uint8_t* body, const um_elist_entry_t& entry) {
+void parseFieldImpl(
+    Op,
+    ValueTag,
+    Message& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   parseValueFieldImpl(Op(), message, source, body, entry);
 }
 
-inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
-                           McMetagetReply& message,
-                           const folly::IOBuf& source, const uint8_t* body,
-                           const um_elist_entry_t& entry) {
+inline void parseFieldImpl(
+    McOperation<mc_op_metaget>,
+    ValueTag,
+    McMetagetReply& message,
+    const folly::IOBuf& source,
+    const uint8_t* body,
+    const um_elist_entry_t& entry) {
   const auto valueLen = folly::Endian::big((uint32_t)entry.data.str.len);
   // Avoid wraparound; copyAsString (below) requires that valueLen - 1 > 0
   if (valueLen <= 1) {
@@ -443,13 +519,18 @@ inline void parseFieldImpl(McOperation<mc_op_metaget>, ValueTag,
 }
 
 template <class Message, class Op>
-void umbrellaParseMessage(Message& message, Op, const folly::IOBuf& source,
-                          const uint8_t* header, size_t nheader,
-                          const uint8_t* body, size_t nbody) {
+void umbrellaParseMessage(
+    Message& message,
+    Op,
+    const folly::IOBuf& source,
+    const uint8_t* header,
+    size_t nheader,
+    const uint8_t* body,
+    size_t nbody) {
   auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
   size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
-  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
-      != header + nheader) {
+  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries]) !=
+      header + nheader) {
     throw std::runtime_error("Invalid number of entries");
   }
   using Handler = FieldPolicyHandler<typename TagSet<Op, Message>::Tags>;
@@ -475,8 +556,8 @@ void umbrellaParseMessage(Message& message, Op, const folly::IOBuf& source,
         Handler::parseField(Op(), FlagsTag(), message, source, body, entry);
         break;
       case msg_lease_id:
-        Handler::parseField(Op(), LeaseTokenTag(), message, source, body,
-                            entry);
+        Handler::parseField(
+            Op(), LeaseTokenTag(), message, source, body, entry);
         break;
       case msg_number:
         Handler::parseField(Op(), NumberTag(), message, source, body, entry);
@@ -511,12 +592,15 @@ void umbrellaParseMessage(Message& message, Op, const folly::IOBuf& source,
   }
 }
 
-}  // detail
+} // detail
 
 template <class Request>
-ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
-                                   const uint8_t* header, size_t nheader,
-                                   const uint8_t* body, size_t nbody) {
+ReplyT<Request> umbrellaParseReply(
+    const folly::IOBuf& source,
+    const uint8_t* header,
+    size_t nheader,
+    const uint8_t* body,
+    size_t nbody) {
   using namespace detail;
   using Op = McOperation<OpFromType<Request, RequestOpMapping>::value>;
 
@@ -526,11 +610,12 @@ ReplyT<Request> umbrellaParseReply(const folly::IOBuf& source,
 }
 
 template <class Request>
-bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
-                                                   mc_op_t op,
-                                                   uint64_t reqid,
-                                                   const struct iovec*& iovOut,
-                                                   size_t& niovOut) {
+bool UmbrellaSerializedMessage::prepareRequestImpl(
+    const Request& request,
+    mc_op_t op,
+    uint64_t reqid,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
   niovOut = 0;
 
   appendInt(I32, msg_op, umbrella_op_from_mc[op]);
@@ -547,16 +632,17 @@ bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
 
   auto key = request.key().fullKey();
   if (key.begin() != nullptr) {
-    appendString(msg_key, reinterpret_cast<const uint8_t*>(key.begin()),
-                 key.size());
+    appendString(
+        msg_key, reinterpret_cast<const uint8_t*>(key.begin()), key.size());
   }
 
   auto valuePtr = carbon::valuePtrUnsafe(request);
   if (valuePtr != nullptr) {
     auto valueRange = coalesceAndGetRange(const_cast<folly::IOBuf&>(*valuePtr));
-    appendString(msg_value,
-                 reinterpret_cast<const uint8_t*>(valueRange.begin()),
-                 valueRange.size());
+    appendString(
+        msg_value,
+        reinterpret_cast<const uint8_t*>(valueRange.begin()),
+        valueRange.size());
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -564,9 +650,11 @@ bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
   auto fbtraceInfo = request.fbtraceInfo();
   if (fbtraceInfo) {
     auto fbtraceLen = strlen(fbtraceInfo->metadata);
-    appendString(msg_fbtrace,
-                 reinterpret_cast<const uint8_t*>(fbtraceInfo->metadata),
-                 fbtraceLen, CSTRING);
+    appendString(
+        msg_fbtrace,
+        reinterpret_cast<const uint8_t*>(fbtraceInfo->metadata),
+        fbtraceLen,
+        CSTRING);
   }
 
 #endif
@@ -582,11 +670,12 @@ bool UmbrellaSerializedMessage::prepareRequestImpl(const Request& request,
 }
 
 template <class Reply>
-bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
-                                                 mc_op_t op,
-                                                 uint64_t reqid,
-                                                 const struct iovec*& iovOut,
-                                                 size_t& niovOut) {
+bool UmbrellaSerializedMessage::prepareReplyImpl(
+    Reply&& reply,
+    mc_op_t op,
+    uint64_t reqid,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
   niovOut = 0;
 
   appendInt(I32, msg_op, umbrella_op_from_mc[op]);
@@ -610,9 +699,10 @@ bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
     assert(!iobuf_.hasValue());
     iobuf_.emplace(std::move(*valuePtr));
     auto valueRange = coalesceAndGetRange(*iobuf_);
-    appendString(msg_value,
-                 reinterpret_cast<const uint8_t*>(valueRange.begin()),
-                 valueRange.size());
+    appendString(
+        msg_value,
+        reinterpret_cast<const uint8_t*>(valueRange.begin()),
+        valueRange.size());
   }
 
   // It is important that we write msg_result after msg_value. Parsing
@@ -630,9 +720,13 @@ bool UmbrellaSerializedMessage::prepareReplyImpl(Reply&& reply,
 }
 
 template <class Request>
-Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
-                             size_t nheader, const uint8_t* body, size_t nbody,
-                             uint64_t& reqidOut) {
+Request umbrellaParseRequest(
+    const folly::IOBuf& source,
+    const uint8_t* header,
+    size_t nheader,
+    const uint8_t* body,
+    size_t nbody,
+    uint64_t& reqidOut) {
   using Op = McOperation<OpFromType<Request, RequestOpMapping>::value>;
 
   Request req;
@@ -641,8 +735,8 @@ Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
 
   auto msg = reinterpret_cast<const entry_list_msg_t*>(header);
   size_t nentries = folly::Endian::big((uint16_t)msg->nentries);
-  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries])
-      != header + nheader) {
+  if (reinterpret_cast<const uint8_t*>(&msg->entries[nentries]) !=
+      header + nheader) {
     throw std::runtime_error("Invalid number of entries");
   }
 
@@ -701,5 +795,5 @@ Request umbrellaParseRequest(const folly::IOBuf& source, const uint8_t* header,
 
   return req;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

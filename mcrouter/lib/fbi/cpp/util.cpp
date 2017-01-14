@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,16 +20,16 @@
 #include <openssl/md5.h>
 
 #include <folly/FileUtil.h>
-#include <folly/json.h>
 #include <folly/Random.h>
 #include <folly/ScopeGuard.h>
 #include <folly/SpookyHashV2.h>
+#include <folly/json.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
-std::string randomString(size_t minLen, size_t maxLen,
-                         folly::StringPiece range) {
-
+std::string
+randomString(size_t minLen, size_t maxLen, folly::StringPiece range) {
   assert(minLen <= maxLen);
   assert(!range.empty());
 
@@ -41,22 +41,24 @@ std::string randomString(size_t minLen, size_t maxLen,
 }
 
 uint32_t getMemcacheKeyHashValue(folly::StringPiece key) {
-  return
-    folly::hash::SpookyHashV2::Hash32(key.begin(), key.size(), /* seed= */ 0);
+  return folly::hash::SpookyHashV2::Hash32(
+      key.begin(), key.size(), /* seed= */ 0);
 }
 
-bool determineIfSampleKeyForViolet(uint32_t routingKeyHash,
-                                   uint32_t sample_period) {
+bool determineIfSampleKeyForViolet(
+    uint32_t routingKeyHash,
+    uint32_t sample_period) {
   assert(sample_period > 0);
   const uint32_t m = std::numeric_limits<uint32_t>::max();
-  uint32_t keyHashMax = m/sample_period;
+  uint32_t keyHashMax = m / sample_period;
 
   return routingKeyHash <= keyHashMax;
 }
 
 std::string Md5Hash(folly::StringPiece input) {
   unsigned char result[MD5_DIGEST_LENGTH];
-  MD5(reinterpret_cast<const unsigned char*>(input.data()), input.size(),
+  MD5(reinterpret_cast<const unsigned char*>(input.data()),
+      input.size(),
       result);
 
   std::string ret;
@@ -74,8 +76,10 @@ std::string Md5Hash(folly::StringPiece input) {
 }
 
 namespace {
-bool writeToFile(folly::StringPiece contents, const std::string& path,
-                 int flags) {
+bool writeToFile(
+    folly::StringPiece contents,
+    const std::string& path,
+    int flags) {
   int fd = folly::openNoInt(path.data(), flags, 0664);
   if (fd == -1) {
     return false;
@@ -96,8 +100,9 @@ bool appendStringToFile(folly::StringPiece contents, const std::string& path) {
   return writeToFile(contents, path, O_CREAT | O_WRONLY | O_APPEND);
 }
 
-bool atomicallyWriteFileToDisk(folly::StringPiece contents,
-                               const std::string& absFilename) {
+bool atomicallyWriteFileToDisk(
+    folly::StringPiece contents,
+    const std::string& absFilename) {
   boost::filesystem::path tempFilePath;
   auto tempFileGuard = folly::makeGuard([&tempFilePath]() {
     if (!tempFilePath.empty()) {
@@ -113,7 +118,7 @@ bool atomicallyWriteFileToDisk(folly::StringPiece contents,
       return false;
     }
     auto tempFileName = filePath.filename().string() + ".temp-" +
-      randomString(/* minLen */ 10, /* maxLen */ 10);
+        randomString(/* minLen */ 10, /* maxLen */ 10);
     tempFilePath = fileDir / tempFileName;
 
     boost::filesystem::create_directories(fileDir);
@@ -143,7 +148,6 @@ bool touchFile(const std::string& path) {
 
 // one day we should move it to folly/ThreadName.h
 std::string getThreadName() {
-
 #if defined(__GLIBC__) && !defined(__APPLE__)
 #if __GLIBC_PREREQ(2, 12)
 
@@ -158,8 +162,9 @@ std::string getThreadName() {
   return "unknown";
 }
 
-folly::dynamic parseJsonString(folly::StringPiece s,
-                               bool allow_trailing_comma) {
+folly::dynamic parseJsonString(
+    folly::StringPiece s,
+    bool allow_trailing_comma) {
   folly::json::serialization_opts opts;
   opts.allow_trailing_comma = allow_trailing_comma;
   return folly::parseJson(s, opts);
@@ -172,8 +177,8 @@ std::string shorten(folly::StringPiece s, size_t maxLength) {
   return s.subpiece(0, maxLength - 3).str() + "...";
 }
 
-std::string replaceAll(std::string s, const std::string& from,
-                       const std::string& to) {
+std::string
+replaceAll(std::string s, const std::string& from, const std::string& to) {
   auto pos = s.find(from);
   while (pos != std::string::npos) {
     s.replace(pos, from.size(), to);
@@ -211,5 +216,5 @@ bool ensureDirExistsAndWritable(const std::string& path) {
 
   return true;
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

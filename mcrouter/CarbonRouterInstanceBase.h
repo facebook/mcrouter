@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,11 +18,12 @@
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/Observable.h"
+#include "mcrouter/TkoTracker.h"
 #include "mcrouter/options.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
-#include "mcrouter/TkoTracker.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 // Forward declarations
 struct CodecConfig;
@@ -169,5 +170,6 @@ class CarbonRouterInstanceBase {
   std::mutex nextProxyMutex_;
   size_t nextProxy_{0};
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

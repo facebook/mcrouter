@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,9 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace detail {
+namespace facebook {
+namespace memcache {
+namespace detail {
 
 template <class Request>
 class CallbackBase<List<Request>> {
@@ -39,7 +41,9 @@ class CallbackWrapper<Callback, List<Request>>
  public:
   explicit CallbackWrapper(Callback& callback) : callback_(callback) {}
 
-  void multiOpEnd() noexcept override final { callback_.multiOpEnd(); }
+  void multiOpEnd() noexcept override final {
+    callback_.multiOpEnd();
+  }
 
   using CallbackBase<McRequestList>::onRequest;
 
@@ -137,10 +141,11 @@ void McClientAsciiParser::initializeReplyParser() {
 /**
  * Append piece of IOBuf in range [posStart, posEnd) to destination IOBuf.
  */
-inline void McAsciiParserBase::appendKeyPiece(const folly::IOBuf& from,
-                                              folly::IOBuf& to,
-                                              const char* posStart,
-                                              const char* posEnd) {
+inline void McAsciiParserBase::appendKeyPiece(
+    const folly::IOBuf& from,
+    folly::IOBuf& to,
+    const char* posStart,
+    const char* posEnd) {
   // No need to process empty piece.
   if (UNLIKELY(posEnd == posStart)) {
     return;
@@ -159,18 +164,19 @@ inline void McAsciiParserBase::appendKeyPiece(const folly::IOBuf& from,
 /**
  * Trim IOBuf to reference only data from range [posStart, posEnd).
  */
-inline void McAsciiParserBase::trimIOBufToRange(folly::IOBuf& buffer,
-                                                const char* posStart,
-                                                const char* posEnd) {
+inline void McAsciiParserBase::trimIOBufToRange(
+    folly::IOBuf& buffer,
+    const char* posStart,
+    const char* posEnd) {
   buffer.trimStart(posStart - reinterpret_cast<const char*>(buffer.data()));
   buffer.trimEnd(buffer.length() - (posEnd - posStart));
 }
 
 template <class Callback>
 McServerAsciiParser::McServerAsciiParser(Callback& callback)
-    : callback_(folly::make_unique<
-          detail::CallbackWrapper<Callback, McRequestList>>(callback)) {
-}
+    : callback_(
+          folly::make_unique<detail::CallbackWrapper<Callback, McRequestList>>(
+              callback)) {}
 
 template <class Reply>
 void McClientAsciiParser::consumeErrorMessage(const folly::IOBuf&) {
@@ -214,20 +220,23 @@ void McClientAsciiParser::consumeIpAddrHelper(const folly::IOBuf&) {
 }
 
 inline void McClientAsciiParser::initFirstCharIOBuf(
-    const folly::IOBuf& from, folly::IOBuf& to, const char* pos) {
-
+    const folly::IOBuf& from,
+    folly::IOBuf& to,
+    const char* pos) {
   // Copy current IOBuf.
   from.cloneOneInto(to);
   trimIOBufToRange(to, pos, pos + 1);
 }
 
 inline void McClientAsciiParser::appendCurrentCharTo(
-    const folly::IOBuf& from, folly::IOBuf& to, const char* pos) {
-
+    const folly::IOBuf& from,
+    folly::IOBuf& to,
+    const char* pos) {
   // If it is just a next char in the same memory chunk, just append it.
   // Otherwise we need to append new IOBuf.
   if (to.prev()->data() + to.prev()->length() ==
-        reinterpret_cast<const void*>(pos) && to.prev()->tailroom() > 0) {
+          reinterpret_cast<const void*>(pos) &&
+      to.prev()->tailroom() > 0) {
     to.prev()->append(1);
   } else {
     auto nextPiece = from.cloneOne();
@@ -240,5 +249,5 @@ template <class Reply>
 void McClientAsciiParser::resetErrorMessage(Reply& message) {
   message.message().clear();
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

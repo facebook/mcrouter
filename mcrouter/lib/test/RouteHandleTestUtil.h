@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,40 +13,43 @@
 #include <string>
 #include <vector>
 
+#include <folly/Memory.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/SimpleLoopController.h>
 #include <folly/fibers/WhenN.h>
-#include <folly/Memory.h>
 
-#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/IOBufUtil.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 
 template <class M>
-typename std::enable_if<M::hasFlags>::type
-testSetFlags(M& message, uint64_t flags) {
+typename std::enable_if<M::hasFlags>::type testSetFlags(
+    M& message,
+    uint64_t flags) {
   message.flags() = flags;
 }
 template <class M>
-typename std::enable_if<!M::hasFlags>::type
-testSetFlags(M&, uint64_t) {}
+typename std::enable_if<!M::hasFlags>::type testSetFlags(M&, uint64_t) {}
 
 template <class Reply>
-typename std::enable_if<Reply::hasValue, void>::type
-setReplyValue(Reply& reply, const std::string& val) {
+typename std::enable_if<Reply::hasValue, void>::type setReplyValue(
+    Reply& reply,
+    const std::string& val) {
   reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, val);
 }
 template <class Reply>
-typename std::enable_if<!Reply::hasValue, void>::type
-setReplyValue(Reply& reply, const std::string& val) {}
+typename std::enable_if<!Reply::hasValue, void>::type setReplyValue(
+    Reply& reply,
+    const std::string& val) {}
 } // detail
 
 struct GetRouteTestData {
@@ -54,36 +57,28 @@ struct GetRouteTestData {
   std::string value_;
   int64_t flags_;
 
-  GetRouteTestData() :
-    result_(mc_res_unknown), value_(std::string()), flags_(0) {
-  }
+  GetRouteTestData()
+      : result_(mc_res_unknown), value_(std::string()), flags_(0) {}
 
-  GetRouteTestData(
-      mc_res_t result, const std::string& value, int64_t flags = 0) :
-    result_(result), value_(value), flags_(flags) {
-  }
+  GetRouteTestData(mc_res_t result, const std::string& value, int64_t flags = 0)
+      : result_(result), value_(value), flags_(flags) {}
 };
 
 struct UpdateRouteTestData {
   mc_res_t result_;
   uint64_t flags_;
 
-  UpdateRouteTestData() :
-    result_(mc_res_unknown), flags_(0) {
-  }
+  UpdateRouteTestData() : result_(mc_res_unknown), flags_(0) {}
 
-  explicit UpdateRouteTestData(mc_res_t result,
-                      uint64_t flags = 0) :
-    result_(result), flags_(flags) {
-  }
+  explicit UpdateRouteTestData(mc_res_t result, uint64_t flags = 0)
+      : result_(result), flags_(flags) {}
 };
 
 struct DeleteRouteTestData {
   mc_res_t result_;
 
-  explicit DeleteRouteTestData(mc_res_t result = mc_res_unknown) :
-    result_(result) {
-  }
+  explicit DeleteRouteTestData(mc_res_t result = mc_res_unknown)
+      : result_(result) {}
 };
 
 template <class RouteHandleIf>
@@ -109,37 +104,42 @@ struct TestHandleImpl {
 
   explicit TestHandleImpl(GetRouteTestData td)
       : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
-            td, UpdateRouteTestData(), DeleteRouteTestData(), this)
-        ),
+            td,
+            UpdateRouteTestData(),
+            DeleteRouteTestData(),
+            this)),
         isTko(false),
-        isPaused(false) {
-  }
+        isPaused(false) {}
 
   explicit TestHandleImpl(UpdateRouteTestData td)
       : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
-            GetRouteTestData(), td, DeleteRouteTestData(), this)
-        ),
+            GetRouteTestData(),
+            td,
+            DeleteRouteTestData(),
+            this)),
         isTko(false),
-        isPaused(false) {
-  }
+        isPaused(false) {}
 
   explicit TestHandleImpl(DeleteRouteTestData td)
       : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
-            GetRouteTestData(), UpdateRouteTestData(), td, this)
-        ),
+            GetRouteTestData(),
+            UpdateRouteTestData(),
+            td,
+            this)),
         isTko(false),
-        isPaused(false) {
-  }
+        isPaused(false) {}
 
-  TestHandleImpl(GetRouteTestData g_td,
-                 UpdateRouteTestData u_td,
-                 DeleteRouteTestData d_td)
+  TestHandleImpl(
+      GetRouteTestData g_td,
+      UpdateRouteTestData u_td,
+      DeleteRouteTestData d_td)
       : rh(makeRouteHandle<RouteHandleIf, RecordingRoute>(
-            g_td, u_td, d_td, this)
-        ),
+            g_td,
+            u_td,
+            d_td,
+            this)),
         isTko(false),
-        isPaused(false) {
-  }
+        isPaused(false) {}
 
   void setTko() {
     isTko = true;
@@ -155,18 +155,18 @@ struct TestHandleImpl {
 
   void unpause() {
     folly::fibers::addTask([this]() {
-        for (auto& promise: promises_) {
-          promise.setValue();
-        }
-        promises_.clear();
-      });
+      for (auto& promise : promises_) {
+        promise.setValue();
+      }
+      promises_.clear();
+    });
   }
 
   void wait() {
     assert(isPaused);
     folly::fibers::await([this](folly::fibers::Promise<void> promise) {
-        promises_.push_back(std::move(promise));
-      });
+      promises_.push_back(std::move(promise));
+    });
     isPaused = false;
   }
 };
@@ -174,21 +174,25 @@ struct TestHandleImpl {
 /* Records all the keys we saw */
 template <class RouteHandleIf>
 struct RecordingRoute {
-  static std::string routeName() { return "test"; }
+  static std::string routeName() {
+    return "test";
+  }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const { }
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {}
 
   GetRouteTestData dataGet_;
   UpdateRouteTestData dataUpdate_;
   DeleteRouteTestData dataDelete_;
   TestHandleImpl<RouteHandleIf>* h_;
 
-  RecordingRoute(GetRouteTestData g_td,
-                 UpdateRouteTestData u_td,
-                 DeleteRouteTestData d_td,
-                 TestHandleImpl<RouteHandleIf>* h)
+  RecordingRoute(
+      GetRouteTestData g_td,
+      UpdateRouteTestData u_td,
+      DeleteRouteTestData d_td,
+      TestHandleImpl<RouteHandleIf>* h)
       : dataGet_(g_td), dataUpdate_(u_td), dataDelete_(d_td), h_(h) {}
 
   template <class Request>
@@ -231,8 +235,7 @@ struct RecordingRoute {
 
 template <class RouteHandleIf>
 inline std::vector<std::shared_ptr<RouteHandleIf>> get_route_handles(
-  const std::vector<std::shared_ptr<TestHandleImpl<RouteHandleIf>>>& hs) {
-
+    const std::vector<std::shared_ptr<TestHandleImpl<RouteHandleIf>>>& hs) {
   std::vector<std::shared_ptr<RouteHandleIf>> r;
   for (auto& h : hs) {
     r.push_back(h->rh);
@@ -256,15 +259,14 @@ class TestFiberManager {
 
   void runAll(std::vector<std::function<void()>>&& fs) {
     auto& fm = fm_;
-    auto& loopController =
-      dynamic_cast<folly::fibers::SimpleLoopController&>(fm_.loopController());
-    fm.addTask(
-      [&fs, &loopController]() {
-        folly::fibers::collectAll(fs.begin(), fs.end());
-        loopController.stop();
-      });
+    auto& loopController = dynamic_cast<folly::fibers::SimpleLoopController&>(
+        fm_.loopController());
+    fm.addTask([&fs, &loopController]() {
+      folly::fibers::collectAll(fs.begin(), fs.end());
+      loopController.stop();
+    });
 
-    loopController.loop([](){});
+    loopController.loop([]() {});
   }
 
   folly::fibers::FiberManager& getFiberManager() {
@@ -285,5 +287,5 @@ std::string replyFor(Rh& rh, const std::string& key) {
   auto reply = rh.route(McGetRequest(key));
   return carbon::valueRangeSlow(reply).str();
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,30 +19,28 @@
 #include <mutex>
 #include <thread>
 
-#include <folly/io/async/AsyncServerSocket.h>
-#include <folly/io/async/EventBase.h>
-#include <folly/io/async/ScopedEventBaseThread.h>
-#include <folly/io/async/SSLContext.h>
 #include <folly/Memory.h>
 #include <folly/String.h>
+#include <folly/io/async/AsyncServerSocket.h>
+#include <folly/io/async/EventBase.h>
+#include <folly/io/async/SSLContext.h>
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 /* Global pointer to the server for signal handlers */
 facebook::memcache::AsyncMcServer* gServer;
 } // anonymous
 
-
 class ShutdownPipe : public folly::EventHandler {
-public:
-  ShutdownPipe(AsyncMcServer& server,
-               folly::EventBase& evb)
-      : folly::EventHandler(&evb),
-        server_(server) {
+ public:
+  ShutdownPipe(AsyncMcServer& server, folly::EventBase& evb)
+      : folly::EventHandler(&evb), server_(server) {
     fd_ = eventfd(0, 0);
     if (UNLIKELY(fd_ == -1)) {
       throw std::runtime_error(
@@ -80,22 +78,18 @@ class McServerThread {
         evb_(/* enableTimeMeasurement */ false),
         worker_(server.opts_.worker, evb_),
         acceptCallback_(this, false),
-        sslAcceptCallback_(this, true) {
-  }
+        sslAcceptCallback_(this, true) {}
 
   enum AcceptorT { Acceptor };
 
-  McServerThread(
-    AcceptorT,
-    AsyncMcServer& server)
+  McServerThread(AcceptorT, AsyncMcServer& server)
       : server_(server),
         evb_(/* enableTimeMeasurement */ false),
         worker_(server.opts_.worker, evb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(true),
-        shutdownPipe_(folly::make_unique<ShutdownPipe>(server, evb_)) {
-  }
+        shutdownPipe_(folly::make_unique<ShutdownPipe>(server, evb_)) {}
 
   folly::EventBase& eventBase() {
     return evb_;
@@ -103,7 +97,7 @@ class McServerThread {
 
   void waitForAcceptor() {
     std::unique_lock<std::mutex> lock(acceptorLock_);
-    acceptorCv_.wait(lock, [this] () { return acceptorSetup_; });
+    acceptorCv_.wait(lock, [this]() { return acceptorSetup_; });
     if (spawnException_) {
       thread_.join();
       std::rethrow_exception(spawnException_);
@@ -111,47 +105,42 @@ class McServerThread {
   }
 
   void spawn(AsyncMcServer::LoopFn fn, size_t threadId) {
-    worker_.setOnShutdownOperation(
-      [&] () {
-        server_.shutdown();
-      });
+    worker_.setOnShutdownOperation([&]() { server_.shutdown(); });
 
-    thread_ = std::thread{
-      [fn, threadId, this] (){
-        if (accepting_) {
-          startAccepting();
+    thread_ = std::thread{[fn, threadId, this]() {
+      if (accepting_) {
+        startAccepting();
 
-          if (spawnException_) {
-            return;
-          }
+        if (spawnException_) {
+          return;
         }
+      }
 
-        fn(threadId, evb_, worker_);
+      fn(threadId, evb_, worker_);
 
-        // Detach the server sockets from the acceptor thread.
-        // If we don't do this, the TAsyncSSLServerSocket destructor
-        // will try to do it, and a segfault will result if the
-        // socket destructor runs after the threads' destructors.
-        if (accepting_) {
-          socket_.reset();
-          sslSocket_.reset();
-        }
-      }};
+      // Detach the server sockets from the acceptor thread.
+      // If we don't do this, the TAsyncSSLServerSocket destructor
+      // will try to do it, and a segfault will result if the
+      // socket destructor runs after the threads' destructors.
+      if (accepting_) {
+        socket_.reset();
+        sslSocket_.reset();
+      }
+    }};
   }
 
   /* Safe to call from other threads */
   void shutdown() {
-    auto result = evb_.runInEventBaseThread(
-      [&] () {
-        if (accepting_) {
-          socket_.reset();
-          sslSocket_.reset();
-        }
-        if (shutdownPipe_) {
-          shutdownPipe_->unregisterHandler();
-        }
-        worker_.shutdown();
-      });
+    auto result = evb_.runInEventBaseThread([&]() {
+      if (accepting_) {
+        socket_.reset();
+        sslSocket_.reset();
+      }
+      if (shutdownPipe_) {
+        shutdownPipe_->unregisterHandler();
+      }
+      worker_.shutdown();
+    });
 
     if (!result) {
       throw std::runtime_error("error calling runInEventBaseThread");
@@ -171,21 +160,20 @@ class McServerThread {
   }
 
  private:
-  class AcceptCallback :
-      public folly::AsyncServerSocket::AcceptCallback {
+  class AcceptCallback : public folly::AsyncServerSocket::AcceptCallback {
    public:
     AcceptCallback(McServerThread* mcServerThread, bool secure)
-        : mcServerThread_(mcServerThread), secure_(secure) { }
+        : mcServerThread_(mcServerThread), secure_(secure) {}
     void connectionAccepted(
         int fd,
         const folly::SocketAddress& clientAddr) noexcept override final {
       if (secure_) {
         auto& opts = mcServerThread_->server_.opts_;
-        auto sslCtx = getSSLContext(opts.pemCertPath, opts.pemKeyPath,
-                                    opts.pemCaPath);
+        auto sslCtx =
+            getSSLContext(opts.pemCertPath, opts.pemKeyPath, opts.pemCaPath);
         if (sslCtx) {
           sslCtx->setVerificationOption(
-            folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
+              folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
           mcServerThread_->worker_.addSecureClientSocket(fd, std::move(sslCtx));
         } else {
           ::close(fd);
@@ -197,6 +185,7 @@ class McServerThread {
     void acceptError(const std::exception& ex) noexcept override final {
       LOG(ERROR) << "Connection accept error: " << ex.what();
     }
+
    private:
     McServerThread* mcServerThread_{nullptr};
     bool secure_{false};
@@ -227,15 +216,16 @@ class McServerThread {
       auto& opts = server_.opts_;
 
       if (opts.existingSocketFd != -1) {
-        checkLogic(opts.ports.empty() && opts.sslPorts.empty(),
-                   "Can't use ports if using existing socket");
+        checkLogic(
+            opts.ports.empty() && opts.sslPorts.empty(),
+            "Can't use ports if using existing socket");
         if (!opts.pemCertPath.empty() || !opts.pemKeyPath.empty() ||
             !opts.pemCaPath.empty()) {
           checkLogic(
-            !opts.pemCertPath.empty() && !opts.pemKeyPath.empty() &&
-            !opts.pemCaPath.empty(),
-            "All of pemCertPath, pemKeyPath and pemCaPath are required "
-            "if at least one of them set");
+              !opts.pemCertPath.empty() && !opts.pemKeyPath.empty() &&
+                  !opts.pemCaPath.empty(),
+              "All of pemCertPath, pemKeyPath and pemCaPath are required "
+              "if at least one of them set");
 
           sslSocket_.reset(new folly::AsyncServerSocket());
           sslSocket_->useExistingSocket(opts.existingSocketFd);
@@ -244,18 +234,19 @@ class McServerThread {
           socket_->useExistingSocket(opts.existingSocketFd);
         }
       } else if (!opts.unixDomainSockPath.empty()) {
-        checkLogic(opts.ports.empty() && opts.sslPorts.empty() &&
-          (opts.existingSocketFd == -1),
-          "Can't listen on port and unix domain socket at the same time");
+        checkLogic(
+            opts.ports.empty() && opts.sslPorts.empty() &&
+                (opts.existingSocketFd == -1),
+            "Can't listen on port and unix domain socket at the same time");
         std::remove(opts.unixDomainSockPath.c_str());
         socket_.reset(new folly::AsyncServerSocket());
         folly::SocketAddress serverAddress;
         serverAddress.setFromPath(opts.unixDomainSockPath);
         socket_->bind(serverAddress);
       } else {
-        checkLogic(!server_.opts_.ports.empty() ||
-                   !server_.opts_.sslPorts.empty(),
-                   "At least one port (plain or SSL) must be speicified");
+        checkLogic(
+            !server_.opts_.ports.empty() || !server_.opts_.sslPorts.empty(),
+            "At least one port (plain or SSL) must be speicified");
         if (!server_.opts_.ports.empty()) {
           socket_.reset(new folly::AsyncServerSocket());
           for (auto port : server_.opts_.ports) {
@@ -263,11 +254,12 @@ class McServerThread {
           }
         }
         if (!server_.opts_.sslPorts.empty()) {
-          checkLogic(!server_.opts_.pemCertPath.empty() &&
-                     !server_.opts_.pemKeyPath.empty() &&
-                     !server_.opts_.pemCaPath.empty(),
-                     "All of pemCertPath, pemKeyPath, pemCaPath required"
-                     " with sslPorts");
+          checkLogic(
+              !server_.opts_.pemCertPath.empty() &&
+                  !server_.opts_.pemKeyPath.empty() &&
+                  !server_.opts_.pemCaPath.empty(),
+              "All of pemCertPath, pemKeyPath, pemCaPath required"
+              " with sslPorts");
 
           sslSocket_.reset(new folly::AsyncServerSocket());
           for (auto sslPort : server_.opts_.sslPorts) {
@@ -307,8 +299,9 @@ class McServerThread {
   }
 };
 
-void AsyncMcServer::Options::setPerThreadMaxConns(size_t globalMaxConns,
-                                                  size_t numThreads_) {
+void AsyncMcServer::Options::setPerThreadMaxConns(
+    size_t globalMaxConns,
+    size_t numThreads_) {
   if (globalMaxConns == 0) {
     worker.maxConns = 0;
     return;
@@ -331,8 +324,7 @@ void AsyncMcServer::Options::setPerThreadMaxConns(size_t globalMaxConns,
   worker.maxConns = (globalMaxConns + numThreads_ - 1) / numThreads_;
 }
 
-AsyncMcServer::AsyncMcServer(Options opts)
-    : opts_(std::move(opts)) {
+AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
   if (opts_.congestionController.cpuControlTarget > 0 ||
       opts_.congestionController.memControlTarget > 0) {
     auxiliaryEvbThread_ = folly::make_unique<folly::ScopedEventBaseThread>();
@@ -358,8 +350,8 @@ AsyncMcServer::AsyncMcServer(Options opts)
     throw std::invalid_argument(folly::sformat(
         "Unexpected option: opts_.numThreads={}", opts_.numThreads));
   }
-  threads_.emplace_back(folly::make_unique<McServerThread>(
-                          McServerThread::Acceptor, *this));
+  threads_.emplace_back(
+      folly::make_unique<McServerThread>(McServerThread::Acceptor, *this));
   for (size_t i = 1; i < opts_.numThreads; ++i) {
     threads_.emplace_back(folly::make_unique<McServerThread>(*this));
   }
@@ -412,8 +404,7 @@ void AsyncMcServer::spawn(LoopFn fn, std::function<void()> onShutdown) {
       return;
     }
   } while (!signalShutdownState_.compare_exchange_weak(
-             state,
-             SignalShutdownState::SPAWNED));
+      state, SignalShutdownState::SPAWNED));
 }
 
 void AsyncMcServer::shutdown() {
@@ -438,7 +429,7 @@ void AsyncMcServer::installShutdownHandler(const std::vector<int>& signals) {
 
   struct sigaction act;
   memset(&act, 0, sizeof(struct sigaction));
-  act.sa_handler = [] (int) {
+  act.sa_handler = [](int) {
     if (gServer) {
       gServer->shutdownFromSignalHandler();
     }
@@ -467,8 +458,7 @@ void AsyncMcServer::shutdownFromSignalHandler() {
       return;
     }
   } while (!signalShutdownState_.compare_exchange_weak(
-             state,
-             SignalShutdownState::SHUTDOWN));
+      state, SignalShutdownState::SHUTDOWN));
 }
 
 void AsyncMcServer::join() {
@@ -476,5 +466,5 @@ void AsyncMcServer::join() {
     thread->join();
   }
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

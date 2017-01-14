@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,14 +16,16 @@
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeWarmUpRoute(
-  McrouterRouteHandlePtr warm,
-  McrouterRouteHandlePtr cold,
-  folly::Optional<uint32_t> exptime) {
+    McrouterRouteHandlePtr warm,
+    McrouterRouteHandlePtr cold,
+    folly::Optional<uint32_t> exptime) {
   return makeMcrouterRouteHandle<WarmUpRoute>(
-    std::move(warm), std::move(cold), std::move(exptime));
+      std::move(warm), std::move(cold), std::move(exptime));
 }
 
 McrouterRouteHandlePtr makeWarmUpRoute(
@@ -34,23 +36,24 @@ McrouterRouteHandlePtr makeWarmUpRoute(
   checkLogic(json.count("warm"), "WarmUpRoute: no warm route");
   bool enableMetaget = isMetagetAvailable();
   if (auto jenableMetaget = json.get_ptr("enable_metaget")) {
-    checkLogic(jenableMetaget->isBool(),
-               "WarmUpRoute: enable_metaget is not a boolean");
+    checkLogic(
+        jenableMetaget->isBool(),
+        "WarmUpRoute: enable_metaget is not a boolean");
     enableMetaget = jenableMetaget->getBool();
   }
   folly::Optional<uint32_t> exptime;
   if (auto jexptime = json.get_ptr("exptime")) {
-    checkLogic(jexptime->isInt(),
-               "WarmUpRoute: exptime is not an integer");
+    checkLogic(jexptime->isInt(), "WarmUpRoute: exptime is not an integer");
     exptime = jexptime->getInt();
   } else if (!enableMetaget) {
     exptime = 0;
   }
 
   return makeWarmUpRoute(
-    factory.create(json["warm"]),
-    factory.create(json["cold"]),
-    std::move(exptime));
+      factory.create(json["warm"]),
+      factory.create(json["cold"]),
+      std::move(exptime));
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,8 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /*
  * Determine the protocol by looking at the first byte
@@ -46,8 +47,9 @@ class McParser {
      *                    (header and body)
      * @return            False on any parse errors.
      */
-    virtual bool umMessageReady(const UmbrellaMessageInfo& info,
-                                const folly::IOBuf& buffer) = 0;
+    virtual bool umMessageReady(
+        const UmbrellaMessageInfo& info,
+        const folly::IOBuf& buffer) = 0;
 
     /**
      * caretMessageReady should be called after we have successfully parsed the
@@ -58,8 +60,9 @@ class McParser {
      *                    (header and body)
      * @return            False on any parse errors.
      */
-    virtual bool caretMessageReady(const UmbrellaMessageInfo& headerInfo,
-                                   const folly::IOBuf& buffer) = 0;
+    virtual bool caretMessageReady(
+        const UmbrellaMessageInfo& headerInfo,
+        const folly::IOBuf& buffer) = 0;
 
     /**
      * Handle ascii data read.
@@ -75,11 +78,12 @@ class McParser {
     virtual void parseError(mc_res_t result, folly::StringPiece reason) = 0;
   };
 
-  McParser(ParserCallback& cb,
-           size_t minBufferSize,
-           size_t maxBufferSize,
-           const bool useJemallocNodumpAllocator = false,
-           ConnectionFifo* debugFifo = nullptr);
+  McParser(
+      ParserCallback& cb,
+      size_t minBufferSize,
+      size_t maxBufferSize,
+      const bool useJemallocNodumpAllocator = false,
+      ConnectionFifo* debugFifo = nullptr);
 
   ~McParser() = default;
 
@@ -115,6 +119,7 @@ class McParser {
   double getDropProbability() const;
 
   void reset();
+
  private:
   bool seenFirstByte_{false};
   bool outOfOrder_{false};
@@ -145,5 +150,5 @@ class McParser {
 };
 
 inline McParser::ParserCallback::~ParserCallback() {}
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,16 +11,16 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/FileUtil.h>
+#include <folly/ScopeGuard.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
-#include <folly/FileUtil.h>
 #include <folly/io/async/EventBase.h>
-#include <folly/ScopeGuard.h>
 
+#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
-#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -28,8 +28,8 @@ using namespace facebook::memcache::test;
 
 void serverShutdownTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol, ssl);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.sendGet("shutdown", mc_res_notfound);
   client.waitForReplies();
   server->join();
@@ -46,8 +46,8 @@ TEST(AsyncMcClient, serverShutdownSsl) {
 
 void simpleAsciiTimeoutTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol, ssl);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_timeout);
@@ -68,8 +68,8 @@ TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
 
 void simpleUmbrellaTimeoutTest(SSLContextProvider ssl) {
   auto server = TestServer::create(true, ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_umbrella_protocol, ssl);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_umbrella_protocol, ssl);
   client.sendGet("nohold1", mc_res_found);
   client.sendGet("hold", mc_res_timeout);
   client.sendGet("nohold2", mc_res_found);
@@ -118,24 +118,30 @@ TEST(AsyncMcClient, immeadiateConnectFailSsl) {
 
 void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
   bool loggedFailure = false;
-  failure::addHandler({
-    name,
-    [&loggedFailure](folly::StringPiece, int, folly::StringPiece,
-                     folly::StringPiece, folly::StringPiece msg,
-                     const std::map<std::string, std::string>&) {
-      if (msg.contains("SSLError")) {
-        loggedFailure = true;
-      }
-    }
-  });
+  failure::addHandler({name,
+                       [&loggedFailure](
+                           folly::StringPiece,
+                           int,
+                           folly::StringPiece,
+                           folly::StringPiece,
+                           folly::StringPiece msg,
+                           const std::map<std::string, std::string>&) {
+                         if (msg.contains("SSLError")) {
+                           loggedFailure = true;
+                         }
+                       }});
   SCOPE_EXIT {
     failure::removeHandler(name);
   };
   auto server = TestServer::create(true, true);
-  TestClient brokenClient("localhost", server->getListenPort(), 200,
-                          mc_umbrella_protocol, ssl);
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_umbrella_protocol, validSsl());
+  TestClient brokenClient(
+      "localhost", server->getListenPort(), 200, mc_umbrella_protocol, ssl);
+  TestClient client(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_umbrella_protocol,
+      validSsl());
   brokenClient.sendGet("test", mc_res_connect_error);
   brokenClient.waitForReplies();
   EXPECT_TRUE(loggedFailure);
@@ -157,8 +163,8 @@ TEST(AsyncMcClient, brokenCerts) {
 
 void inflightThrottleTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol, ssl);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(5, 6);
   for (size_t i = 0; i < 5; ++i) {
     client.sendGet("hold", mc_res_timeout);
@@ -182,8 +188,8 @@ TEST(AsyncMcClient, inflightThrottleSsl) {
 
 void inflightThrottleFlushTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol, ssl);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(6, 6);
   for (size_t i = 0; i < 5; ++i) {
     client.sendGet("hold", mc_res_found);
@@ -208,8 +214,8 @@ TEST(AsyncMcClient, inflightThrottleFlushSsl) {
 
 void outstandingThrottleTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol, ssl);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client.setThrottle(5, 5);
   for (size_t i = 0; i < 5; ++i) {
     client.sendGet("hold", mc_res_timeout);
@@ -234,10 +240,10 @@ TEST(AsyncMcClient, outstandingThrottleSsl) {
 
 void connectionErrorTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
-  TestClient client1("localhost", server->getListenPort(), 200,
-                     mc_ascii_protocol, ssl);
-  TestClient client2("localhost", server->getListenPort(), 200,
-                     mc_ascii_protocol, ssl);
+  TestClient client1(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
+  TestClient client2(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol, ssl);
   client1.sendGet("shutdown", mc_res_notfound);
   client1.waitForReplies();
   /* sleep override */ usleep(10000);
@@ -255,14 +261,21 @@ TEST(AsyncMcClient, connectionErrorSsl) {
   connectionErrorTest(validSsl());
 }
 
-void basicTest(mc_protocol_t protocol,
-               SSLContextProvider ssl,
-               uint64_t qosClass = 0,
-               uint64_t qosPath = 0) {
-  auto server = TestServer::create(protocol != mc_ascii_protocol,
-                                   ssl != noSsl());
-  TestClient client("localhost", server->getListenPort(), 200, protocol,
-                    ssl, qosClass, qosPath);
+void basicTest(
+    mc_protocol_t protocol,
+    SSLContextProvider ssl,
+    uint64_t qosClass = 0,
+    uint64_t qosPath = 0) {
+  auto server =
+      TestServer::create(protocol != mc_ascii_protocol, ssl != noSsl());
+  TestClient client(
+      "localhost",
+      server->getListenPort(),
+      200,
+      protocol,
+      ssl,
+      qosClass,
+      qosPath);
   client.sendGet("test1", mc_res_found);
   client.sendGet("test2", mc_res_found);
   client.sendGet("empty", mc_res_found);
@@ -303,8 +316,11 @@ TEST(AsyncMcClient, basicCaretSsl) {
   basicTest(mc_caret_protocol, validSsl());
 }
 
-void qosTest(mc_protocol_t protocol, SSLContextProvider ssl,
-             uint64_t qosClass, uint64_t qosPath) {
+void qosTest(
+    mc_protocol_t protocol,
+    SSLContextProvider ssl,
+    uint64_t qosClass,
+    uint64_t qosPath) {
   basicTest(protocol, ssl, qosClass, qosPath);
 }
 
@@ -415,11 +431,11 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   //  3. Delete EventBase, this in turn should case proper cleanup
   //     in AsyncMcClient.
   auto eventBase = folly::make_unique<folly::EventBase>();
-  auto fiberManager =
-    folly::make_unique<folly::fibers::FiberManager>(
+  auto fiberManager = folly::make_unique<folly::fibers::FiberManager>(
       folly::make_unique<folly::fibers::EventBaseLoopController>());
   dynamic_cast<folly::fibers::EventBaseLoopController&>(
-    fiberManager->loopController()).attachEventBase(*eventBase);
+      fiberManager->loopController())
+      .attachEventBase(*eventBase);
   bool wasUp = false;
   bool replied = false;
   bool wentDown = false;
@@ -428,18 +444,14 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   opts.writeTimeout = std::chrono::milliseconds(1000);
   auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
-    [&wasUp] {
-      wasUp = true;
-    },
-    [&wentDown] (bool) {
-      wentDown = true;
-    });
+      [&wasUp] { wasUp = true; }, [&wentDown](bool) { wentDown = true; });
 
   fiberManager->addTask([&client, &replied] {
     McGetRequest req("hold");
     auto reply = client->sendSync(req, std::chrono::milliseconds(100));
-    EXPECT_STREQ(mc_res_to_string(reply.result()),
-                 mc_res_to_string(mc_res_connect_timeout));
+    EXPECT_STREQ(
+        mc_res_to_string(reply.result()),
+        mc_res_to_string(mc_res_connect_timeout));
     replied = true;
   });
 
@@ -459,8 +471,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
 
 TEST(AsyncMcClient, asciiSentTimeouts) {
   auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol);
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
   client.sendGet("hold", mc_res_timeout);
@@ -477,8 +489,8 @@ TEST(AsyncMcClient, asciiSentTimeouts) {
 
 TEST(AsyncMcClient, asciiPendingTimeouts) {
   auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_ascii_protocol);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
   client.sendGet("test", mc_res_found);
@@ -500,8 +512,8 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
   auto bigValue = genBigValue();
   auto server = TestServer::create(false /* outOfOrder */, false /* useSsl */);
   // Use very large write timeout, so that we never timeout writes.
-  TestClient client("localhost", server->getListenPort(), 10000,
-                    mc_ascii_protocol);
+  TestClient client(
+      "localhost", server->getListenPort(), 10000, mc_ascii_protocol);
   // Allow only up to two requests in flight.
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
@@ -528,8 +540,8 @@ TEST(AsyncMcClient, asciiSendingTimeouts) {
 
 TEST(AsyncMcClient, oooUmbrellaTimeouts) {
   auto server = TestServer::create(true /* outOfOrder */, false /* useSsl */);
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_umbrella_protocol);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_umbrella_protocol);
   // Allow only up to two requests in flight.
   client.setThrottle(2, 0);
   client.sendGet("sleep", mc_res_timeout, 500);
@@ -547,32 +559,28 @@ TEST(AsyncMcClient, oooUmbrellaTimeouts) {
 }
 
 TEST(AsyncMcClient, tonsOfConnections) {
-  auto server = TestServer::create(false /* outOfOrder */,
-                                   false /* useSsl */,
-                                   10,
-                                   250,
-                                   3 /* maxConns */);
+  auto server = TestServer::create(
+      false /* outOfOrder */, false /* useSsl */, 10, 250, 3 /* maxConns */);
 
   bool wentDown = false;
 
   /* Create a client to see if it gets evicted. */
-  TestClient client("localhost", server->getListenPort(), 1,
-                    mc_ascii_protocol);
-  client.setStatusCallbacks([]{}, [&wentDown](bool) { wentDown = true; });
+  TestClient client("localhost", server->getListenPort(), 1, mc_ascii_protocol);
+  client.setStatusCallbacks([] {}, [&wentDown](bool) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
   /* Create 3 more clients to evict the first client. */
-  TestClient client2("localhost", server->getListenPort(), 200,
-                     mc_ascii_protocol);
+  TestClient client2(
+      "localhost", server->getListenPort(), 200, mc_ascii_protocol);
   client2.sendGet("test", mc_res_found);
   client2.waitForReplies();
-  TestClient client3("localhost", server->getListenPort(), 300,
-                     mc_ascii_protocol);
+  TestClient client3(
+      "localhost", server->getListenPort(), 300, mc_ascii_protocol);
   client3.sendGet("test", mc_res_found);
   client3.waitForReplies();
-  TestClient client4("localhost", server->getListenPort(), 400,
-                     mc_ascii_protocol);
+  TestClient client4(
+      "localhost", server->getListenPort(), 400, mc_ascii_protocol);
   client4.sendGet("test", mc_res_found);
   client4.waitForReplies();
 
@@ -610,12 +618,12 @@ void umbrellaBinaryReply(std::string data, mc_res_t expectedResult) {
 TEST(AsyncMcClient, binaryUmbrellaReply) {
   // This is a serialized umbrella reply for get operation with
   // mc_res_notfound result and reqid = 1.
-  std::string data
-    {'}', '\000', '\000', '\003', '\000', '\000', '\000', ',', '\000', '\001',
-     '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000', '\000',
-     '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000', '\000',
-     '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002', '\000',
-     '\000', '\000', '\000', '\000', '\000', '\000', '\003'};
+  std::string data{
+      '}',    '\000', '\000', '\003', '\000', '\000', '\000', ',',    '\000',
+      '\001', '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000',
+      '\000', '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000',
+      '\000', '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002',
+      '\000', '\000', '\000', '\000', '\000', '\000', '\000', '\003'};
 
   umbrellaBinaryReply(data, mc_res_notfound);
 }
@@ -623,12 +631,12 @@ TEST(AsyncMcClient, binaryUmbrellaReply) {
 TEST(AsyncMcClient, curruptedUmbrellaReply) {
   // This is a serialized umbrella reply for get operation with
   // reqid = 1, it contains invalid result code (771).
-  std::string data
-    {'}', '\000', '\000', '\003', '\000', '\000', '\000', ',', '\000', '\001',
-     '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000', '\000',
-     '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000', '\000',
-     '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002', '\000',
-     '\000', '\000', '\000', '\000', '\000', '\003', '\003'};
+  std::string data{
+      '}',    '\000', '\000', '\003', '\000', '\000', '\000', ',',    '\000',
+      '\001', '\000', '\001', '\000', '\000', '\000', '\000', '\000', '\000',
+      '\000', '\005', '\000', '\004', '\000', '\004', '\000', '\000', '\000',
+      '\000', '\000', '\000', '\000', '\001', '\000', '\001', '\000', '\002',
+      '\000', '\000', '\000', '\000', '\000', '\000', '\003', '\003'};
 
   umbrellaBinaryReply(data, mc_res_remote_error);
 }
@@ -639,10 +647,8 @@ TEST(AsyncMcClient, SslSessionCache) {
   auto constexpr nConnAttempts = 10;
 
   for (int i = 0; i < nConnAttempts; i++) {
-    TestClient client("::1",
-                      server->getListenPort(),
-                      200, mc_umbrella_protocol,
-                      validSsl());
+    TestClient client(
+        "::1", server->getListenPort(), 200, mc_umbrella_protocol, validSsl());
     LOG(INFO) << "Connection attempt: " << i;
     client.sendGet("test", mc_res_found);
     client.waitForReplies();
@@ -662,12 +668,13 @@ TEST(AsyncMcClient, SslSessionCache) {
 }
 
 void versionTest(mc_protocol_t protocol, bool useDefaultVersion) {
-  auto server = TestServer::create(protocol != mc_ascii_protocol /* OOO */,
-                                   false /* useSsl */,
-                                   10    /* maxInflight */,
-                                   200   /* timeoutMs */,
-                                   10    /* maxConns */,
-                                   useDefaultVersion);
+  auto server = TestServer::create(
+      protocol != mc_ascii_protocol /* OOO */,
+      false /* useSsl */,
+      10 /* maxInflight */,
+      200 /* timeoutMs */,
+      10 /* maxConns */,
+      useDefaultVersion);
   TestClient client("localhost", server->getListenPort(), 200, protocol);
 
   client.sendVersion(server->version());
@@ -702,8 +709,8 @@ TEST(AsyncMcClient, caretVersionUserSpecified) {
 
 TEST(AsyncMcClient, caretAdditionalFields) {
   auto server = TestServer::create(true /* OOO */, false /* useSsl */);
-  TestClient client("localhost", server->getListenPort(), 200,
-                    mc_caret_protocol);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
   // Mix in some normal get requests
   for (int i = 0; i < 1000; ++i) {
     client.sendGet("trace_id", mc_res_found);

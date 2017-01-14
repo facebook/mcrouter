@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,11 +12,12 @@
 #include "mcrouter/ConfigApiIf.h"
 #include "mcrouter/lib/config/ImportResolverIf.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McImportResolver::McImportResolver(ConfigApiIf& configApi)
-  : configApi_(configApi) {
-}
+    : configApi_(configApi) {}
 
 std::string McImportResolver::import(folly::StringPiece path) {
   std::string ret;
@@ -25,5 +26,6 @@ std::string McImportResolver::import(folly::StringPiece path) {
   }
   return ret;
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

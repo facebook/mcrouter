@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,8 @@
 
 #include "mcrouter/lib/network/McServerSession.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Single threaded list of connections with LRU eviction logic.
@@ -50,11 +51,12 @@ class ConnectionTracker : public McServerSession::StateCallback {
    *
    * @throws std::runtime_exception when fails to create a session.
    */
-  void add(folly::AsyncTransportWrapper::UniquePtr transport,
-           std::shared_ptr<McServerOnRequest> cb,
-           AsyncMcServerWorkerOptions options,
-           void* userCtxt,
-           const CompressionCodecMap* compressionCodecMap);
+  void add(
+      folly::AsyncTransportWrapper::UniquePtr transport,
+      std::shared_ptr<McServerOnRequest> cb,
+      AsyncMcServerWorkerOptions options,
+      void* userCtxt,
+      const CompressionCodecMap* compressionCodecMap);
 
   /**
    * Close all connections (sessions)
@@ -65,6 +67,7 @@ class ConnectionTracker : public McServerSession::StateCallback {
    * Check if we have pending writes on any connection (session)
    */
   bool writesPending() const;
+
  private:
   McServerSession::Queue sessions_;
   std::function<void(McServerSession&)> onWriteQuiescence_;
@@ -83,5 +86,5 @@ class ConnectionTracker : public McServerSession::StateCallback {
   void onCloseFinish(McServerSession& session) override final;
   void onShutdown() override final;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

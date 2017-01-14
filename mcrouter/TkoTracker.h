@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,12 +16,14 @@
 #include <unordered_map>
 #include <utility>
 
-#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/TkoCounters.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class ProxyDestination;
 class TkoTrackerMap;
@@ -133,6 +135,7 @@ class TkoTracker {
   bool removeDestination(ProxyDestination* pdstn);
 
   ~TkoTracker();
+
  private:
   // The string is stored in TkoTrackerMap::trackers_
   folly::StringPiece key_;
@@ -175,9 +178,10 @@ class TkoTracker {
    *        the router
    * @param globalTkoStats number of TKO destination for current router
    */
-  TkoTracker(size_t tkoThreshold,
-             size_t maxSoftTkos,
-             TkoTrackerMap& trackerMap);
+  TkoTracker(
+      size_t tkoThreshold,
+      size_t maxSoftTkos,
+      TkoTrackerMap& trackerMap);
 
   friend class TkoTrackerMap;
 };
@@ -194,9 +198,10 @@ class TkoTrackerMap {
   /**
    * Creates/updates TkoTracker for `pdstn` and updates `pdstn->tko` pointer.
    */
-  void updateTracker(ProxyDestination& pdstn,
-                     const size_t tkoThreshold,
-                     const size_t maxSoftTkos);
+  void updateTracker(
+      ProxyDestination& pdstn,
+      const size_t tkoThreshold,
+      const size_t maxSoftTkos);
 
   /**
    * @return  number of servers that recently returned error replies.
@@ -217,6 +222,7 @@ class TkoTrackerMap {
   }
 
   std::weak_ptr<TkoTracker> getTracker(folly::StringPiece key);
+
  private:
   std::mutex mx_;
   folly::StringKeyedUnorderedMap<std::weak_ptr<TkoTracker>> trackers_;
@@ -228,5 +234,6 @@ class TkoTrackerMap {
 
   friend class TkoTracker;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,8 @@
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Checks whether the given memcache key is valid.
@@ -43,5 +44,5 @@ inline mc_req_err_t isKeyValid(folly::StringPiece key) {
 
   return mc_req_err_valid;
 }
-
-}}
+}
+}

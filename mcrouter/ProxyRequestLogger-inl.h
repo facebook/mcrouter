@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,27 +7,29 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
-#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/options.h"
-#include "mcrouter/ProxyBase.h"
 #include "mcrouter/stats.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-#define REQUEST_CLASS_STATS(proxy, OP, SUFFIX, reqClass)                       \
-    do {                                                                       \
-      if (reqClass.isNormal()) {                                               \
-        proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _stat);           \
-        proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _count_stat);     \
-      }                                                                        \
-      proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _all_stat);         \
-      proxy.stats().increment(cmd_ ## OP ## _ ## SUFFIX ## _all_count_stat);   \
-    } while(0)
+#define REQUEST_CLASS_STATS(proxy, OP, SUFFIX, reqClass)           \
+  do {                                                             \
+    if (reqClass.isNormal()) {                                     \
+      proxy.stats().increment(cmd_##OP##_##SUFFIX##_stat);         \
+      proxy.stats().increment(cmd_##OP##_##SUFFIX##_count_stat);   \
+    }                                                              \
+    proxy.stats().increment(cmd_##OP##_##SUFFIX##_all_stat);       \
+    proxy.stats().increment(cmd_##OP##_##SUFFIX##_all_count_stat); \
+  } while (0)
 
 namespace detail {
 
@@ -122,5 +124,6 @@ void ProxyRequestLogger::log(const RequestLoggerContext& loggerContext) {
     detail::logOutlier<Request>(*proxy_, loggerContext.requestClass);
   }
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

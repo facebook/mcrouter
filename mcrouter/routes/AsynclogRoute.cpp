@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,7 +17,9 @@
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeAsynclogRoute(
     McrouterRouteHandlePtr rh,
@@ -35,21 +37,23 @@ std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
     const folly::dynamic& json) {
   std::string asynclogName;
   McrouterRouteHandlePtr target;
-  checkLogic(json.isObject() || json.isString(),
-             "AsynclogRoute should be object or string");
+  checkLogic(
+      json.isObject() || json.isString(),
+      "AsynclogRoute should be object or string");
   if (json.isString()) {
     asynclogName = json.getString();
     target = factory.create(json);
   } else { // object
     auto jname = json.get_ptr("name");
-    checkLogic(jname && jname->isString(),
-               "AsynclogRoute: required string name");
+    checkLogic(
+        jname && jname->isString(), "AsynclogRoute: required string name");
     auto jtarget = json.get_ptr("target");
     checkLogic(jtarget, "AsynclogRoute: target not found");
     asynclogName = jname->getString();
     target = factory.create(*jtarget);
   }
-  return { std::move(target), std::move(asynclogName) };
+  return {std::move(target), std::move(asynclogName)};
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,13 +21,15 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
-
-std::string genProxyDestinationKey(const AccessPoint& ap,
-                                   std::chrono::milliseconds timeout) {
+std::string genProxyDestinationKey(
+    const AccessPoint& ap,
+    std::chrono::milliseconds timeout) {
   if (ap.getProtocol() == mc_ascii_protocol) {
     // we cannot send requests with different timeouts for ASCII, since
     // it will break in-order nature of the protocol
@@ -40,8 +42,8 @@ std::string genProxyDestinationKey(const AccessPoint& ap,
 } // anonymous
 
 struct ProxyDestinationMap::StateList {
-  using List = folly::IntrusiveList<ProxyDestination,
-                                    &ProxyDestination::stateListHook_>;
+  using List =
+      folly::IntrusiveList<ProxyDestination, &ProxyDestination::stateListHook_>;
   List list;
 };
 
@@ -52,14 +54,14 @@ ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
       inactivityTimeout_(0),
       resetTimer_(nullptr) {}
 
-std::shared_ptr<ProxyDestination>
-ProxyDestinationMap::emplace(std::shared_ptr<AccessPoint> ap,
-                             std::chrono::milliseconds timeout,
-                             uint64_t qosClass,
-                             uint64_t qosPath) {
+std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
+    std::shared_ptr<AccessPoint> ap,
+    std::chrono::milliseconds timeout,
+    uint64_t qosClass,
+    uint64_t qosPath) {
   auto key = genProxyDestinationKey(*ap, timeout);
-  auto destination = ProxyDestination::create(*proxy_, std::move(ap),
-      timeout, qosClass, qosPath);
+  auto destination = ProxyDestination::create(
+      *proxy_, std::move(ap), timeout, qosClass, qosPath);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
     auto destIt = destinations_.emplace(key, destination);
@@ -69,9 +71,9 @@ ProxyDestinationMap::emplace(std::shared_ptr<AccessPoint> ap,
   // Update shared area of ProxyDestinations with same key from different
   // threads. This shared area is represented with TkoTracker class.
   proxy_->router().tkoTrackerMap().updateTracker(
-    *destination,
-    proxy_->router().opts().failures_until_tko,
-    proxy_->router().opts().maximum_soft_tkos);
+      *destination,
+      proxy_->router().opts().failures_until_tko,
+      proxy_->router().opts().maximum_soft_tkos);
 
   return destination;
 }
@@ -81,7 +83,8 @@ ProxyDestinationMap::emplace(std::shared_ptr<AccessPoint> ap,
  * otherwise, returns nullptr.
  */
 std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
-    const AccessPoint& ap, std::chrono::milliseconds timeout) const {
+    const AccessPoint& ap,
+    std::chrono::milliseconds timeout) const {
   auto key = genProxyDestinationKey(ap, timeout);
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
@@ -90,8 +93,8 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
 }
 
 // Note: caller must be holding destionationsLock_.
-std::shared_ptr<ProxyDestination>
-ProxyDestinationMap::find(const std::string& key) const {
+std::shared_ptr<ProxyDestination> ProxyDestinationMap::find(
+    const std::string& key) const {
   auto it = destinations_.find(key);
   if (it == destinations_.end()) {
     return nullptr;
@@ -140,9 +143,10 @@ void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
 
   resetTimer_->attachEventBase(std::addressof(proxy_->eventBase()));
   if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
-    MC_LOG_FAILURE(proxy_->router().opts(),
-                   memcache::failure::Category::kSystemError,
-                   "failed to schedule inactivity timer");
+    MC_LOG_FAILURE(
+        proxy_->router().opts(),
+        memcache::failure::Category::kSystemError,
+        "failed to schedule inactivity timer");
   }
 }
 
@@ -151,13 +155,14 @@ void ProxyDestinationMap::timerCallback() {
 
   assert(inactivityTimeout_ > 0);
   if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
-    MC_LOG_FAILURE(proxy_->router().opts(),
-                   memcache::failure::Category::kSystemError,
-                   "failed to re-schedule inactivity timer");
+    MC_LOG_FAILURE(
+        proxy_->router().opts(),
+        memcache::failure::Category::kSystemError,
+        "failed to re-schedule inactivity timer");
   }
 }
 
-ProxyDestinationMap::~ProxyDestinationMap() {
+ProxyDestinationMap::~ProxyDestinationMap() {}
 }
-
-}}} // facebook::memcache::mcrouter
+}
+} // facebook::memcache::mcrouter

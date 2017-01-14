@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,10 +13,12 @@
 #include <unordered_map>
 
 namespace folly {
-  struct dynamic;
+struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Reads mcrouter flavor file and fills the given dictionaries.
@@ -48,8 +50,10 @@ bool readFlavor(
  *
  * @returns           True if successfully parsed. False otherwise.
  */
-bool parse_json_options(const folly::dynamic& json,
-                        const std::string& field_name,
-                        std::unordered_map<std::string, std::string>& opts);
-
-}}}  // facebook::memcache::mcrouter
+bool parse_json_options(
+    const folly::dynamic& json,
+    const std::string& field_name,
+    std::unordered_map<std::string, std::string>& opts);
+}
+}
+} // facebook::memcache::mcrouter

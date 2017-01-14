@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,13 +23,15 @@ namespace {
 constexpr size_t kMaxSplits = 26 * 26 + 1;
 constexpr size_t kHostIdModulo = 16384;
 
-size_t checkShardSplitSize(const folly::StringPiece shardId,
-                           const folly::dynamic& splitValue,
-                           folly::StringPiece name) {
-  checkLogic(splitValue.isInt(),
-             "ShardSplitter: {} is not an int for {}",
-             name,
-             shardId);
+size_t checkShardSplitSize(
+    const folly::StringPiece shardId,
+    const folly::dynamic& splitValue,
+    folly::StringPiece name) {
+  checkLogic(
+      splitValue.isInt(),
+      "ShardSplitter: {} is not an int for {}",
+      name,
+      shardId);
   auto split = splitValue.asInt();
   checkLogic(
       split > 0, "ShardSplitter: {} value is <= 0 for {}", name, shardId);
@@ -52,13 +54,14 @@ size_t ShardSplitter::ShardSplitInfo::getSplitSizeForCurrentHost() const {
       return newSplitSize_;
     } else {
       double point = std::chrono::duration_cast<std::chrono::duration<double>>(
-                         now - startTime_).count() /
-                     migrationPeriod_.count();
+                         now - startTime_)
+                         .count() /
+          migrationPeriod_.count();
       return globals::hostid() % kHostIdModulo /
-                         static_cast<double>(kHostIdModulo) <
-                     point
-                 ? newSplitSize_
-                 : oldSplitSize_;
+                  static_cast<double>(kHostIdModulo) <
+              point
+          ? newSplitSize_
+          : oldSplitSize_;
     }
   }
   return newSplitSize_;
@@ -69,14 +72,16 @@ ShardSplitter::ShardSplitter(const folly::dynamic& json) {
 
   auto now = std::chrono::system_clock::now();
   for (const auto& it : json.items()) {
-    checkLogic(it.first.isString(),
-               "ShardSplitter: expected string for key in shard split config, "
-               "but got {}",
-               it.first.typeName());
+    checkLogic(
+        it.first.isString(),
+        "ShardSplitter: expected string for key in shard split config, "
+        "but got {}",
+        it.first.typeName());
     folly::StringPiece shardId = it.first.getString();
-    checkLogic(it.second.isInt() || it.second.isObject(),
-               "ShardSplitter: split config for {} is not an int or object",
-               it.first.asString());
+    checkLogic(
+        it.second.isInt() || it.second.isObject(),
+        "ShardSplitter: split config for {} is not an int or object",
+        it.first.asString());
     if (it.second.isInt()) {
       auto splitCnt = checkShardSplitSize(shardId, it.second, "shard_splits");
       if (splitCnt != 1) {
@@ -90,45 +95,53 @@ ShardSplitter::ShardSplitter(const folly::dynamic& json) {
       auto newSplit =
           checkShardSplitSize(shardId, newSplitJson, "new_split_size");
       auto startTimeJson = it.second.getDefault("split_start", 0);
-      checkLogic(startTimeJson.isInt(),
-                 "ShardSplitter: split_start is not an int for {}",
-                 shardId);
-      checkLogic(startTimeJson.asInt() >= 0,
-                 "ShardSplitter: split_start is negative for {}",
-                 shardId);
+      checkLogic(
+          startTimeJson.isInt(),
+          "ShardSplitter: split_start is not an int for {}",
+          shardId);
+      checkLogic(
+          startTimeJson.asInt() >= 0,
+          "ShardSplitter: split_start is negative for {}",
+          shardId);
       std::chrono::system_clock::time_point startTime(
           std::chrono::seconds(startTimeJson.asInt()));
       auto migrationPeriodJson = it.second.getDefault("migration_period", 0);
-      checkLogic(migrationPeriodJson.isInt(),
-                 "ShardSplitter: migration_period is not an int for {}",
-                 shardId);
-      checkLogic(migrationPeriodJson.asInt() >= 0,
-                 "ShardSplitter: migration_period is negative for {}",
-                 shardId);
+      checkLogic(
+          migrationPeriodJson.isInt(),
+          "ShardSplitter: migration_period is not an int for {}",
+          shardId);
+      checkLogic(
+          migrationPeriodJson.asInt() >= 0,
+          "ShardSplitter: migration_period is negative for {}",
+          shardId);
       std::chrono::duration<double> migrationPeriod(
           migrationPeriodJson.asInt());
       auto fanoutDeletesJson = it.second.getDefault("fanout_deletes", false);
-      checkLogic(fanoutDeletesJson.isBool(),
-                 "ShardSplitter: fanout_deletes is not bool for {}",
-                 shardId);
+      checkLogic(
+          fanoutDeletesJson.isBool(),
+          "ShardSplitter: fanout_deletes is not bool for {}",
+          shardId);
       if (now > startTime + migrationPeriod || newSplit == oldSplit) {
         shardSplits_.emplace(
             shardId.str(),
             ShardSplitInfo(newSplit, fanoutDeletesJson.asBool()));
       } else {
-        shardSplits_.emplace(shardId.str(),
-                             ShardSplitInfo(oldSplit,
-                                            newSplit,
-                                            startTime,
-                                            migrationPeriod,
-                                            fanoutDeletesJson.asBool()));
+        shardSplits_.emplace(
+            shardId.str(),
+            ShardSplitInfo(
+                oldSplit,
+                newSplit,
+                startTime,
+                migrationPeriod,
+                fanoutDeletesJson.asBool()));
       }
     }
   }
 }
 
 const ShardSplitter::ShardSplitInfo* ShardSplitter::getShardSplit(
-    folly::StringPiece routingKey, folly::StringPiece& shard) const {
+    folly::StringPiece routingKey,
+    folly::StringPiece& shard) const {
   if (!getShardId(routingKey, shard)) {
     return nullptr;
   }

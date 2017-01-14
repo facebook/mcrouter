@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,7 +26,8 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct ReplyStatsContext;
 
@@ -40,18 +41,16 @@ struct DestinationRequestCtx {
   int64_t startTime{0};
   int64_t endTime{0};
 
-  explicit DestinationRequestCtx(int64_t now)
-    : startTime(now) {
-  }
+  explicit DestinationRequestCtx(int64_t now) : startTime(now) {}
 };
 
 class ProxyDestination {
  public:
   enum class State {
-    kNew,           // never connected
-    kUp,            // currently connected
-    kDown,          // currently down
-    kClosed,        // closed due to inactive
+    kNew, // never connected
+    kUp, // currently connected
+    kDown, // currently down
+    kClosed, // closed due to inactive
     kNumStates
   };
 
@@ -179,6 +178,8 @@ class ProxyDestination {
   friend class ProxyDestinationMap;
   friend class AsyncTimer<ProxyDestination>;
 };
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "ProxyDestination-inl.h"

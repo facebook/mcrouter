@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,8 @@
 
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class ClientSocket {
  public:
@@ -28,7 +29,6 @@ class ClientSocket {
   explicit ClientSocket(uint16_t port);
   ~ClientSocket();
 
-
   /**
    * Write data to socket.
    *
@@ -37,8 +37,9 @@ class ClientSocket {
    *
    * @throws std::runtime_error  if failed to write data
    */
-  void write(folly::StringPiece data,
-             std::chrono::milliseconds timeout = std::chrono::seconds(1));
+  void write(
+      folly::StringPiece data,
+      std::chrono::milliseconds timeout = std::chrono::seconds(1));
 
   /**
    * Send a request and receive a reply of `replySize`.
@@ -49,20 +50,21 @@ class ClientSocket {
    * @throws std::runtime_error  if failed to send/receive data
    */
   std::string sendRequest(
-    folly::StringPiece request,
-    size_t replySize,
-    std::chrono::milliseconds timeout = std::chrono::seconds(1));
+      folly::StringPiece request,
+      size_t replySize,
+      std::chrono::milliseconds timeout = std::chrono::seconds(1));
   std::string sendRequest(
-    folly::StringPiece request,
-    std::chrono::milliseconds timeout = std::chrono::seconds(1));
+      folly::StringPiece request,
+      std::chrono::milliseconds timeout = std::chrono::seconds(1));
 
   // movable, but not copyable
   ClientSocket(ClientSocket&& other) noexcept;
   ClientSocket& operator=(ClientSocket&& other) noexcept;
   ClientSocket(const ClientSocket&) = delete;
   ClientSocket& operator=(const ClientSocket&) = delete;
+
  private:
   int socketFd_{-1};
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

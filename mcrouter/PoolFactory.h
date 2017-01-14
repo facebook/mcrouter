@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,9 @@
 #include <folly/dynamic.h>
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class ConfigApiIf;
 
@@ -23,7 +25,7 @@ class PoolFactory {
  public:
   struct PoolJson {
     PoolJson(folly::StringPiece name_, const folly::dynamic& json_)
-      : name(name_), json(json_) {}
+        : name(name_), json(json_) {}
 
     const folly::StringPiece name;
     const folly::dynamic& json;
@@ -46,15 +48,12 @@ class PoolFactory {
   PoolJson parsePool(const folly::dynamic& json);
 
  private:
-  enum class PoolState {
-    NEW,
-    PARSING,
-    PARSED
-  };
+  enum class PoolState { NEW, PARSING, PARSED };
   folly::StringKeyedUnorderedMap<std::pair<folly::dynamic, PoolState>> pools_;
   ConfigApiIf& configApi_;
 
   PoolJson parseNamedPool(folly::StringPiece name);
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

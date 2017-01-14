@@ -19,7 +19,8 @@
 #include "mcrouter/lib/network/MultiOpParent.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
@@ -67,12 +68,12 @@ McServerSession& McServerSession::create(
 }
 
 McServerSession::McServerSession(
-  folly::AsyncTransportWrapper::UniquePtr transport,
-  std::shared_ptr<McServerOnRequest> cb,
-  StateCallback& stateCb,
-  AsyncMcServerWorkerOptions options,
-  void* userCtxt,
-  const CompressionCodecMap* codecMap)
+    folly::AsyncTransportWrapper::UniquePtr transport,
+    std::shared_ptr<McServerOnRequest> cb,
+    StateCallback& stateCb,
+    AsyncMcServerWorkerOptions options,
+    void* userCtxt,
+    const CompressionCodecMap* codecMap)
     : transport_(std::move(transport)),
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
@@ -82,12 +83,12 @@ McServerSession::McServerSession(
       pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
-      parser_(*this,
-              options_.minBufferSize,
-              options_.maxBufferSize,
-              &debugFifo_),
+      parser_(
+          *this,
+          options_.minBufferSize,
+          options_.maxBufferSize,
+          &debugFifo_),
       userCtxt_(userCtxt) {
-
   try {
     transport_->getPeerAddress(&socketAddress_);
   } catch (const std::exception& e) {
@@ -112,9 +113,7 @@ void McServerSession::resume(PauseReason reason) {
 
   /* Client can half close the socket and in those cases there is
      no point in enabling reads */
-  if (!pauseState_ &&
-      state_ == STREAMING &&
-      transport_->good()) {
+  if (!pauseState_ && state_ == STREAMING && transport_->good()) {
     transport_->setReadCB(this);
   }
 }
@@ -285,8 +284,9 @@ void McServerSession::onRequest(McQuitRequest&&, bool) {
   close();
 }
 
-void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
-                                        const folly::IOBuf& reqBody) {
+void McServerSession::caretRequestReady(
+    const UmbrellaMessageInfo& headerInfo,
+    const folly::IOBuf& reqBody) {
   DestructorGuard dg(this);
 
   assert(parser_.protocol() == mc_caret_protocol);
@@ -325,7 +325,6 @@ void McServerSession::caretRequestReady(const UmbrellaMessageInfo& headerInfo,
 
 void McServerSession::updateCompressionCodecIdRange(
     const UmbrellaMessageInfo& headerInfo) noexcept {
-
   if (headerInfo.supportedCodecsSize == 0 || !compressionCodecMap_) {
     codecIdRange_ = CodecIdRange::Empty;
   } else {
@@ -345,8 +344,7 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   errorReply.message() = reason.str();
   errorReply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, reason.str());
   McServerRequestContext::reply(
-    McServerRequestContext(*this, tailReqid_++),
-    std::move(errorReply));
+      McServerRequestContext(*this, tailReqid_++), std::move(errorReply));
   close();
 }
 
@@ -395,9 +393,10 @@ void McServerSession::sendWrites() {
       if (UNLIKELY(debugFifo_.isConnected())) {
         writeToDebugFifo(wb.get());
       }
-      iovs.insert(iovs.end(),
-                  wb->getIovsBegin(),
-                  wb->getIovsBegin() + wb->getIovsCount());
+      iovs.insert(
+          iovs.end(),
+          wb->getIovsBegin(),
+          wb->getIovsBegin() + wb->getIovsCount());
     }
     if (pendingWrites_->empty()) {
       wb->markEndOfBatch();
@@ -443,17 +442,17 @@ void McServerSession::writeSuccess() noexcept {
 }
 
 void McServerSession::writeErr(
-  size_t bytesWritten,
-  const folly::AsyncSocketException& ex) noexcept {
-
+    size_t bytesWritten,
+    const folly::AsyncSocketException& ex) noexcept {
   DestructorGuard dg(this);
   completeWrite();
   close();
 }
 
-bool McServerSession::handshakeVer(folly::AsyncSSLSocket*,
-                                   bool preverifyOk,
-                                   X509_STORE_CTX* ctx) noexcept {
+bool McServerSession::handshakeVer(
+    folly::AsyncSSLSocket*,
+    bool preverifyOk,
+    X509_STORE_CTX* ctx) noexcept {
   if (!preverifyOk) {
     return false;
   }
@@ -501,6 +500,7 @@ void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {
 }
 
 void McServerSession::handshakeErr(
-    folly::AsyncSSLSocket*, const folly::AsyncSocketException&) noexcept {}
+    folly::AsyncSSLSocket*,
+    const folly::AsyncSocketException&) noexcept {}
 } // memcache
 } // facebook

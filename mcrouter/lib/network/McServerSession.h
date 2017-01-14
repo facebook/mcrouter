@@ -10,8 +10,8 @@
 #pragma once
 
 #include <folly/IntrusiveList.h>
-#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncSSLSocket.h>
+#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
 #include <folly/io/async/EventBase.h>
@@ -22,7 +22,8 @@
 #include "mcrouter/lib/network/ServerMcParser.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McServerOnRequest;
 class McServerRequestContext;
@@ -34,17 +35,16 @@ class WriteBufferQueue;
 /**
  * A session owns a single transport, and processes the request/reply stream.
  */
-class McServerSession :
-      public folly::DelayedDestruction,
-      private folly::AsyncSSLSocket::HandshakeCB,
-      private folly::AsyncTransportWrapper::ReadCallback,
-      private folly::AsyncTransportWrapper::WriteCallback {
+class McServerSession : public folly::DelayedDestruction,
+                        private folly::AsyncSSLSocket::HandshakeCB,
+                        private folly::AsyncTransportWrapper::ReadCallback,
+                        private folly::AsyncTransportWrapper::WriteCallback {
  private:
   folly::SafeIntrusiveListHook hook_;
 
  public:
-  using Queue = folly::CountedIntrusiveList<McServerSession,
-                                            &McServerSession::hook_>;
+  using Queue =
+      folly::CountedIntrusiveList<McServerSession, &McServerSession::hook_>;
 
   class StateCallback {
    public:
@@ -176,12 +176,12 @@ class McServerSession :
   bool hasPendingMultiOp_{false};
 
   enum State {
-    STREAMING,  /* close() was not called */
-    CLOSING,    /* close() was called, waiting on pending requests */
-    CLOSED,     /* close() was called and connection was torn down.
-                   This is a short lived state to prevent another close()
-                   between the first close() and McServerSession destruction
-                   from doing anything */
+    STREAMING, /* close() was not called */
+    CLOSING, /* close() was called, waiting on pending requests */
+    CLOSED, /* close() was called and connection was torn down.
+               This is a short lived state to prevent another close()
+               between the first close() and McServerSession destruction
+               from doing anything */
   };
   State state_{STREAMING};
 
@@ -324,14 +324,11 @@ class McServerSession :
   }
 
   /* ASCII parser callbacks for special commands */
-  void onRequest(McVersionRequest&& req,
-                 bool noreply);
+  void onRequest(McVersionRequest&& req, bool noreply);
 
-  void onRequest(McShutdownRequest&& req,
-                 bool noreply);
+  void onRequest(McShutdownRequest&& req, bool noreply);
 
-  void onRequest(McQuitRequest&& req,
-                 bool noreply);
+  void onRequest(McQuitRequest&& req, bool noreply);
 
   void multiOpEnd();
 
@@ -350,15 +347,15 @@ class McServerSession :
 
   /* TAsyncTransport's writeCallback */
   void writeSuccess() noexcept override final;
-  void writeErr(size_t bytesWritten,
-                const folly::AsyncSocketException& ex)
-    noexcept override final;
-
+  void writeErr(
+      size_t bytesWritten,
+      const folly::AsyncSocketException& ex) noexcept override final;
 
   /* AsyncSSLSocket::HandshakeCB interface */
-  bool handshakeVer(folly::AsyncSSLSocket* sock,
-                    bool preverifyOk,
-                    X509_STORE_CTX* ctx) noexcept override final;
+  bool handshakeVer(
+      folly::AsyncSSLSocket* sock,
+      bool preverifyOk,
+      X509_STORE_CTX* ctx) noexcept override final;
   void handshakeSuc(folly::AsyncSSLSocket* sock) noexcept override final;
   void handshakeErr(
       folly::AsyncSSLSocket* sock,
@@ -378,12 +375,12 @@ class McServerSession :
       const UmbrellaMessageInfo& headerInfo) noexcept;
 
   McServerSession(
-    folly::AsyncTransportWrapper::UniquePtr transport,
-    std::shared_ptr<McServerOnRequest> cb,
-    StateCallback& stateCb,
-    AsyncMcServerWorkerOptions options,
-    void* userCtxt,
-    const CompressionCodecMap* codecMap);
+      folly::AsyncTransportWrapper::UniquePtr transport,
+      std::shared_ptr<McServerOnRequest> cb,
+      StateCallback& stateCb,
+      AsyncMcServerWorkerOptions options,
+      void* userCtxt,
+      const CompressionCodecMap* codecMap);
 
   McServerSession(const McServerSession&) = delete;
   McServerSession& operator=(const McServerSession&) = delete;
@@ -391,8 +388,7 @@ class McServerSession :
   friend class McServerRequestContext;
   friend class ServerMcParser<McServerSession>;
 };
-
-
-}}  // facebook::memcache
+}
+} // facebook::memcache
 
 #include "McServerSession-inl.h"

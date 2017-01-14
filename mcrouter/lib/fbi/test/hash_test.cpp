@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,18 +15,19 @@
 
 #include "mcrouter/lib/fbi/hash.h"
 
-#define MAX_KEY_LENGTH       249
+#define MAX_KEY_LENGTH 249
 
-#define NUM_SAMPLES          1000000    /* one million */
-#define NUM_POOLS            42
+#define NUM_SAMPLES 1000000 /* one million */
+#define NUM_POOLS 42
 
-#define NUM_SERVERS          64
-#define NUM_LOOKUPS          1000000
+#define NUM_SERVERS 64
+#define NUM_LOOKUPS 1000000
 
 #define HASH_STOP "|#|"
-#define EXTREME_KEY_INTERVAL 100        /* every EXTREME_KEY_INTERVAL, just use
-                                         * a uniform random generator to
-                                         * determine the key length. */
+#define EXTREME_KEY_INTERVAL                  \
+  100 /* every EXTREME_KEY_INTERVAL, just use \
+       * a uniform random generator to        \
+       * determine the key length. */
 
 namespace {
 double drand() {
@@ -63,20 +64,22 @@ double dlognormal_variate(double mu, double sigma) {
   return u;
 }
 
-uint32_t lognormal_variate(double mu, double sigma, uint32_t min_clip,
-                           uint32_t max_clip) {
+uint32_t lognormal_variate(
+    double mu,
+    double sigma,
+    uint32_t min_clip,
+    uint32_t max_clip) {
   double u = dlognormal_variate(mu, sigma);
   uint32_t rv;
 
   assert(min_clip <= max_clip);
 
-  if (max_clip != 0 &&
-      u >= (double) max_clip) {
+  if (max_clip != 0 && u >= (double)max_clip) {
     rv = max_clip;
   } else if (u <= min_clip) {
     rv = min_clip;
   } else {
-    rv = (uint32_t) u;
+    rv = (uint32_t)u;
   }
   return rv;
 }
@@ -95,10 +98,9 @@ char* make_random_key(char* buffer, size_t maxLength) {
     assert(buffer);
   }
 
-  for (i = 0; i < klen; i ++) {
+  for (i = 0; i < klen; i++) {
     char c;
-    while (! isprint((c = rand() % 256)) ||
-           c == ' ')
+    while (!isprint((c = rand() % 256)) || c == ' ')
       ;
 
     buffer[i] = c;
@@ -148,7 +150,8 @@ TEST(ch3, verify_correctness) {
 
     pools[num_pools] = std::vector<uint64_t>(sizes[num_pools]);
 
-    if (sizes[num_pools] == maximum_pool_size) break;
+    if (sizes[num_pools] == maximum_pool_size)
+      break;
   }
 
   for (i = 0; i < NUM_SAMPLES; ++i) {
@@ -167,7 +170,7 @@ TEST(ch3, verify_correctness) {
       // make sure that this key either hashes the same server,
       // or hashes to a new server
       if (previous_num != num && j > 0) {
-        EXPECT_GE(num, sizes[j-1]);
+        EXPECT_GE(num, sizes[j - 1]);
       }
 
       previous_num = num;
@@ -182,7 +185,7 @@ TEST(ch3, verify_correctness) {
     uint32_t pool_size = sizes[i];
     if (pool_size > 1000)
       break;
-    double expected_mean = ((double) NUM_SAMPLES) / pool_size;
+    double expected_mean = ((double)NUM_SAMPLES) / pool_size;
 
     double max_diff = 0;
     double sum = 0;
@@ -210,9 +213,8 @@ TEST(ch3, verify_correctness) {
   }
 }
 
-static uint32_t __attribute__ ((__noinline__))
-  inconsistent_hashing_lookup(uint32_t hash_value,
-                              uint32_t pool_size) {
+static uint32_t __attribute__((__noinline__))
+inconsistent_hashing_lookup(uint32_t hash_value, uint32_t pool_size) {
   asm(""); /* Enforce noinline. */
   return hash_value % pool_size;
 }
@@ -231,8 +233,7 @@ TEST(ch3, timing) {
   fflush(stdout);
 
   srand(time(nullptr));
-  for (i = 0, keys_itr = keys.data();
-       i < NUM_LOOKUPS;
+  for (i = 0, keys_itr = keys.data(); i < NUM_LOOKUPS;
        ++i, keys_itr += MAX_KEY_LENGTH + 1) {
     make_random_key(keys_itr, MAX_KEY_LENGTH);
   }
@@ -242,30 +243,28 @@ TEST(ch3, timing) {
   fflush(stdout);
 
   gettimeofday(&lstart, nullptr);
-  for (i = 0, keys_itr = keys.data();
-       i < NUM_LOOKUPS;
+  for (i = 0, keys_itr = keys.data(); i < NUM_LOOKUPS;
        ++i, keys_itr += MAX_KEY_LENGTH + 1) {
     uint32_t hash_code = crc32_hash(keys_itr, strlen(keys_itr));
     uint32_t server_num = inconsistent_hashing_lookup(hash_code, NUM_SERVERS);
 
-    (void) server_num; /* to avoid compiler warning */
+    (void)server_num; /* to avoid compiler warning */
   }
   gettimeofday(&lend, nullptr);
   printf(" done\n");
 
-  start = ((uint64_t) lstart.tv_sec) * 1000000 + lstart.tv_usec;
-  end = ((uint64_t) lend.tv_sec) * 1000000 + lend.tv_usec;
-  printf("Lookup:\t\t\t%zdus total\t%0.3fus/query\n",
-         (end - start), ((float) (end - start)) / NUM_LOOKUPS);
-
-
+  start = ((uint64_t)lstart.tv_sec) * 1000000 + lstart.tv_usec;
+  end = ((uint64_t)lend.tv_sec) * 1000000 + lend.tv_usec;
+  printf(
+      "Lookup:\t\t\t%zdus total\t%0.3fus/query\n",
+      (end - start),
+      ((float)(end - start)) / NUM_LOOKUPS);
 
   printf("Starting consistent hashing timing tests...");
   fflush(stdout);
 
   gettimeofday(&lstart, nullptr);
-  for (i = 0, keys_itr = keys.data();
-       i < NUM_LOOKUPS;
+  for (i = 0, keys_itr = keys.data(); i < NUM_LOOKUPS;
        ++i, keys_itr += MAX_KEY_LENGTH + 1) {
     auto res = furc_hash(keys_itr, strlen(keys_itr), NUM_SERVERS);
     EXPECT_LT(res, NUM_SERVERS);
@@ -273,8 +272,10 @@ TEST(ch3, timing) {
   gettimeofday(&lend, nullptr);
   printf(" done\n");
 
-  start = ((uint64_t) lstart.tv_sec) * 1000000 + lstart.tv_usec;
-  end = ((uint64_t) lend.tv_sec) * 1000000 + lend.tv_usec;
-  printf("Lookup:\t\t\t%zdus total\t%0.3fus/query\n",
-         (end - start), ((float) (end - start)) / NUM_LOOKUPS);
+  start = ((uint64_t)lstart.tv_sec) * 1000000 + lstart.tv_usec;
+  end = ((uint64_t)lend.tv_sec) * 1000000 + lend.tv_usec;
+  printf(
+      "Lookup:\t\t\t%zdus total\t%0.3fus/query\n",
+      (end - start),
+      ((float)(end - start)) / NUM_LOOKUPS);
 }

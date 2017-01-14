@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,14 +30,15 @@ namespace folly {
 
 namespace {
 
-template <class T> struct IsVector : public std::false_type {};
-template <class T> struct IsVector<vector<T>> : public std::true_type {};
+template <class T>
+struct IsVector : public std::false_type {};
+template <class T>
+struct IsVector<vector<T>> : public std::true_type {};
 
-}  // anonymous namespace
+} // anonymous namespace
 
 template <class Tgt>
-typename std::enable_if<IsVector<Tgt>::value, Tgt>::type
-to(const string& str) {
+typename std::enable_if<IsVector<Tgt>::value, Tgt>::type to(const string& str) {
   Tgt res;
   vector<string> parts;
   folly::split(",", str, parts, /* ignoreEmpty= */ true);
@@ -48,30 +49,29 @@ to(const string& str) {
 }
 
 template <class Tgt, class Src>
-typename std::enable_if<IsVector<Src>::value && IsSomeString<Tgt>::value,
-                        Tgt>::type
-to(const Src& value) {
+typename std::enable_if<IsVector<Src>::value && IsSomeString<Tgt>::value, Tgt>::
+    type
+    to(const Src& value) {
   return folly::join(",", value);
 }
 
 template <class Tgt>
-typename std::enable_if<std::is_same<string, Tgt>::value, Tgt>::type
-to(const facebook::memcache::mcrouter::RoutingPrefix& prefix) {
+typename std::enable_if<std::is_same<string, Tgt>::value, Tgt>::type to(
+    const facebook::memcache::mcrouter::RoutingPrefix& prefix) {
   return prefix;
 }
 
 template <class Tgt>
 typename std::enable_if<
-  std::is_same<facebook::memcache::mcrouter::RoutingPrefix, Tgt>::value,
-  facebook::memcache::mcrouter::RoutingPrefix
->::type
+    std::is_same<facebook::memcache::mcrouter::RoutingPrefix, Tgt>::value,
+    facebook::memcache::mcrouter::RoutingPrefix>::type
 to(const string& value) {
   return facebook::memcache::mcrouter::RoutingPrefix(value);
 }
 
 template <class Tgt>
-typename std::enable_if<std::is_same<string, Tgt>::value, Tgt>::type
-to(const unordered_map<string, string>& m) {
+typename std::enable_if<std::is_same<string, Tgt>::value, Tgt>::type to(
+    const unordered_map<string, string>& m) {
   vector<string> result;
   for (const auto& it : m) {
     result.push_back(folly::to<string>(it.first, ":", it.second));
@@ -81,9 +81,8 @@ to(const unordered_map<string, string>& m) {
 
 template <class Tgt>
 typename std::enable_if<
-  std::is_same<unordered_map<string, string>, Tgt>::value,
-  unordered_map<string, string>
->::type
+    std::is_same<unordered_map<string, string>, Tgt>::value,
+    unordered_map<string, string>>::type
 to(const string& s) {
   vector<folly::StringPiece> pairs;
   folly::split(',', s, pairs);
@@ -92,16 +91,18 @@ to(const string& s) {
     string key;
     string value;
     facebook::memcache::checkLogic(
-      folly::split(':', it, key, value),
-      "Invalid string map pair: '{}'. Expected name:value.", it);
+        folly::split(':', it, key, value),
+        "Invalid string map pair: '{}'. Expected name:value.",
+        it);
     result.emplace(std::move(key), std::move(value));
   }
   return result;
 }
 
-}  // folly
+} // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
@@ -118,17 +119,14 @@ bool tryToString(const boost::any& value, string& res) {
 
 string toString(const boost::any& value) {
   string res;
-  bool ok = tryToString<int64_t>(value, res) ||
-            tryToString<int>(value, res) ||
-            tryToString<uint32_t>(value, res) ||
-            tryToString<size_t>(value, res) ||
-            tryToString<unsigned int>(value, res) ||
-            tryToString<double>(value, res) ||
-            tryToString<bool>(value, res) ||
-            tryToString<string>(value, res) ||
-            tryToString<vector<uint16_t>>(value, res) ||
-            tryToString<mcrouter::RoutingPrefix>(value, res) ||
-            tryToString<unordered_map<string, string>>(value, res);
+  bool ok = tryToString<int64_t>(value, res) || tryToString<int>(value, res) ||
+      tryToString<uint32_t>(value, res) || tryToString<size_t>(value, res) ||
+      tryToString<unsigned int>(value, res) ||
+      tryToString<double>(value, res) || tryToString<bool>(value, res) ||
+      tryToString<string>(value, res) ||
+      tryToString<vector<uint16_t>>(value, res) ||
+      tryToString<mcrouter::RoutingPrefix>(value, res) ||
+      tryToString<unordered_map<string, string>>(value, res);
   checkLogic(ok, "Unsupported option type: {}", value.type().name());
   return res;
 }
@@ -145,16 +143,14 @@ bool tryFromString(const string& str, const boost::any& value) {
 
 void fromString(const string& str, const boost::any& value) {
   bool ok = tryFromString<int64_t>(str, value) ||
-            tryFromString<int>(str, value) ||
-            tryFromString<uint32_t>(str, value) ||
-            tryFromString<size_t>(str, value) ||
-            tryFromString<unsigned int>(str, value) ||
-            tryFromString<double>(str, value) ||
-            tryFromString<bool>(str, value) ||
-            tryFromString<string>(str, value) ||
-            tryFromString<vector<uint16_t>>(str, value) ||
-            tryFromString<mcrouter::RoutingPrefix>(str, value) ||
-            tryFromString<unordered_map<string, string>>(str, value);
+      tryFromString<int>(str, value) || tryFromString<uint32_t>(str, value) ||
+      tryFromString<size_t>(str, value) ||
+      tryFromString<unsigned int>(str, value) ||
+      tryFromString<double>(str, value) || tryFromString<bool>(str, value) ||
+      tryFromString<string>(str, value) ||
+      tryFromString<vector<uint16_t>>(str, value) ||
+      tryFromString<mcrouter::RoutingPrefix>(str, value) ||
+      tryFromString<unordered_map<string, string>>(str, value);
 
   checkLogic(ok, "Unsupported option type: {}", value.type().name());
 }
@@ -177,29 +173,28 @@ string optionTypeToString(McrouterOptionData::Type type) {
   }
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 unordered_map<string, string> McrouterOptionsBase::toDict() const {
   unordered_map<string, string> ret;
 
-  forEach([&ret](const string& name,
-                 McrouterOptionData::Type type,
-                 const boost::any& value) {
-    ret[name] = toString(value);
-  });
+  forEach([&ret](
+      const string& name,
+      McrouterOptionData::Type type,
+      const boost::any& value) { ret[name] = toString(value); });
 
   return ret;
 }
 
 vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
-  const unordered_map<string, string>& new_opts) {
-
+    const unordered_map<string, string>& new_opts) {
   vector<McrouterOptionError> errors;
   unordered_set<string> seen;
 
-  forEach([&errors, &seen, &new_opts](const string& name,
-                                      McrouterOptionData::Type type,
-                                      const boost::any& value) {
+  forEach([&errors, &seen, &new_opts](
+      const string& name,
+      McrouterOptionData::Type type,
+      const boost::any& value) {
     auto it = new_opts.find(name);
     if (it != new_opts.end()) {
       auto subValue = options::substituteTemplates(it->second);
@@ -210,7 +205,7 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
         e.requestedName = name;
         e.requestedValue = subValue;
         e.errorMsg = "couldn't convert value to " + optionTypeToString(type) +
-                     ". Exception: " + ex.what();
+            ". Exception: " + ex.what();
         errors.push_back(std::move(e));
       } catch (...) {
         McrouterOptionError e;
@@ -227,9 +222,12 @@ vector<McrouterOptionError> McrouterOptionsBase::updateFromDict(
      during new option roll out */
   for (const auto& kv : new_opts) {
     if (seen.find(kv.first) == seen.end()) {
-      LOG_FAILURE("mcrouter", failure::Category::kInvalidOption,
-                  "Unknown option name: {}={}",
-                  kv.first, kv.second);
+      LOG_FAILURE(
+          "mcrouter",
+          failure::Category::kInvalidOption,
+          "Unknown option name: {}={}",
+          kv.first,
+          kv.second);
     }
   }
 
@@ -242,8 +240,10 @@ string substituteTemplates(string str) {
   if (str.find(kTempCpuCores) != string::npos) {
     auto c = std::thread::hardware_concurrency();
     if (c == 0) {
-      LOG_FAILURE("mcrouter", failure::Category::kSystemError,
-                  "Can not get number of CPU cores. Using 1 instead.");
+      LOG_FAILURE(
+          "mcrouter",
+          failure::Category::kSystemError,
+          "Can not get number of CPU cores. Using 1 instead.");
       c = 1;
     }
     str = replaceAll(std::move(str), kTempCpuCores, folly::to<string>(c));
@@ -251,6 +251,6 @@ string substituteTemplates(string str) {
   return mcrouter::performOptionSubstitution(std::move(str));
 }
 
-}  // facebook::memcache::options
-
-}}  // facebook::memcache
+} // facebook::memcache::options
+}
+} // facebook::memcache

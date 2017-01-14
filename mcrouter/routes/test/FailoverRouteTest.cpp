@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,9 +17,9 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/lib/test/TestRouteHandle.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverRoute.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -27,15 +27,17 @@ using namespace facebook::memcache::mcrouter;
 
 using std::make_shared;
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-McrouterRouteHandlePtr
-makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
-                         FailoverErrorsSettings failoverErrors,
-                         std::unique_ptr<FailoverRateLimiter> rateLimiter,
-                         bool failoverTagging,
-                         bool enableLeasePairing = false,
-                         std::string name = "") {
+McrouterRouteHandlePtr makeFailoverRouteInOrder(
+    std::vector<McrouterRouteHandlePtr> rh,
+    FailoverErrorsSettings failoverErrors,
+    std::unique_ptr<FailoverRateLimiter> rateLimiter,
+    bool failoverTagging,
+    bool enableLeasePairing = false,
+    std::string name = "") {
   return makeFailoverRouteInOrder<McrouterRouterInfo, FailoverRoute>(
       std::move(rh),
       std::move(failoverErrors),
@@ -45,21 +47,22 @@ makeFailoverRouteInOrder(std::vector<McrouterRouteHandlePtr> rh,
       std::move(name),
       nullptr);
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 TEST(failoverRouteTest, success) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
-  auto rh = makeFailoverRouteInOrder(get_route_handles(test_handles),
-                                     FailoverErrorsSettings(),
-                                     nullptr,
-                                     /* failoverTagging */ false);
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
@@ -67,16 +70,16 @@ TEST(failoverRouteTest, success) {
 
 TEST(failoverRouteTest, once) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
-  auto rh = makeFailoverRouteInOrder(get_route_handles(test_handles),
-                                     FailoverErrorsSettings(),
-                                     nullptr,
-                                     /* failoverTagging */ false);
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -84,16 +87,16 @@ TEST(failoverRouteTest, once) {
 
 TEST(failoverRouteTest, twice) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
-  auto rh = makeFailoverRouteInOrder(get_route_handles(test_handles),
-                                     FailoverErrorsSettings(),
-                                     nullptr,
-                                     /* failoverTagging */ false);
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -101,16 +104,16 @@ TEST(failoverRouteTest, twice) {
 
 TEST(failoverRouteTest, fail) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))};
 
   mockFiberContext();
-  auto rh = makeFailoverRouteInOrder(get_route_handles(test_handles),
-                                     FailoverErrorsSettings(),
-                                     nullptr,
-                                     /* failoverTagging */ false);
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
 
@@ -120,17 +123,16 @@ TEST(failoverRouteTest, fail) {
 
 TEST(failoverRouteTest, customErrorOnce) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(std::vector<std::string>{"remote_error"}),
-    nullptr,
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(std::vector<std::string>{"remote_error"}),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -138,18 +140,17 @@ TEST(failoverRouteTest, customErrorOnce) {
 
 TEST(failoverRouteTest, customErrorTwice) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(std::vector<std::string>{
-      "remote_error", "local_error"}),
-    nullptr,
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(
+          std::vector<std::string>{"remote_error", "local_error"}),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -157,17 +158,16 @@ TEST(failoverRouteTest, customErrorTwice) {
 
 TEST(failoverRouteTest, customErrorUpdate) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_local_error)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_found))
-  };
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_local_error)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_found))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(std::vector<std::string>{"remote_error"}),
-    nullptr,
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(std::vector<std::string>{"remote_error"}),
+      nullptr,
+      /* failoverTagging */ false);
 
   McSetRequest req("0");
   req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
@@ -177,20 +177,19 @@ TEST(failoverRouteTest, customErrorUpdate) {
 
 TEST(failoverRouteTest, separateErrorsGet) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_remote_error, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_local_error, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(
-      /* gets */    std::vector<std::string>{"remote_error"},
-      /* updates */ std::vector<std::string>{"remote_error", "local_error"},
-      /* deletes */ std::vector<std::string>{"local_error"}),
-    nullptr,
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(
+          /* gets */ std::vector<std::string>{"remote_error"},
+          /* updates */ std::vector<std::string>{"remote_error", "local_error"},
+          /* deletes */ std::vector<std::string>{"local_error"}),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -198,20 +197,19 @@ TEST(failoverRouteTest, separateErrorsGet) {
 
 TEST(failoverRouteTest, separateErrorsUpdate) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_local_error)),
-    make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))
-  };
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_remote_error)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_local_error)),
+      make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(
-      /* gets */    std::vector<std::string>{"remote_error"},
-      /* updates */ std::vector<std::string>{"remote_error", "local_error"},
-      /* deletes */ std::vector<std::string>{"local_error"}),
-    nullptr,
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(
+          /* gets */ std::vector<std::string>{"remote_error"},
+          /* updates */ std::vector<std::string>{"remote_error", "local_error"},
+          /* deletes */ std::vector<std::string>{"local_error"}),
+      nullptr,
+      /* failoverTagging */ false);
 
   {
     McSetRequest req("0");
@@ -235,20 +233,19 @@ TEST(failoverRouteTest, separateErrorsUpdate) {
 
 TEST(failoverRouteTest, separateErrorsDelete) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(DeleteRouteTestData(mc_res_local_error)),
-    make_shared<TestHandle>(DeleteRouteTestData(mc_res_remote_error)),
-    make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))
-  };
+      make_shared<TestHandle>(DeleteRouteTestData(mc_res_local_error)),
+      make_shared<TestHandle>(DeleteRouteTestData(mc_res_remote_error)),
+      make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(
-      /* gets */    std::vector<std::string>{"remote_error"},
-      /* updates */ std::vector<std::string>{"remote_error", "local_error"},
-      /* deletes */ std::vector<std::string>{"local_error"}),
-    nullptr,
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(
+          /* gets */ std::vector<std::string>{"remote_error"},
+          /* updates */ std::vector<std::string>{"remote_error", "local_error"},
+          /* deletes */ std::vector<std::string>{"local_error"}),
+      nullptr,
+      /* failoverTagging */ false);
 
   auto reply = rh->route(McDeleteRequest("0"));
   EXPECT_EQ(mc_res_remote_error, reply.result());
@@ -256,16 +253,15 @@ TEST(failoverRouteTest, separateErrorsDelete) {
 
 TEST(failoverRouteTest, rateLimit) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b"))};
 
   mockFiberContext();
   auto rh = makeFailoverRouteInOrder(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    folly::make_unique<FailoverRateLimiter>(0.5, 1),
-    /* failoverTagging */ false);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      folly::make_unique<FailoverRateLimiter>(0.5, 1),
+      /* failoverTagging */ false);
 
   // tokens: 1
   auto reply1 = rh->route(McGetRequest("0"));
@@ -283,22 +279,21 @@ TEST(failoverRouteTest, rateLimit) {
 
 TEST(failoverRouteTest, leastFailuresNoFailover) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 2);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 2);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
@@ -306,22 +301,21 @@ TEST(failoverRouteTest, leastFailuresNoFailover) {
 
 TEST(failoverRouteTest, leastFailuresFailoverOnce) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 3);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 3);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -329,22 +323,21 @@ TEST(failoverRouteTest, leastFailuresFailoverOnce) {
 
 TEST(failoverRouteTest, leastFailuresFailoverTwice) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 3);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 3);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -352,25 +345,24 @@ TEST(failoverRouteTest, leastFailuresFailoverTwice) {
 
 TEST(failoverRouteTest, leastFailuresLastSucceeds) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "d"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 2);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 2);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
-  auto reply1= rh->route(McGetRequest("0"));
+  auto reply1 = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
 
   auto reply2 = rh->route(McGetRequest("0"));
@@ -388,25 +380,24 @@ TEST(failoverRouteTest, leastFailuresLastSucceeds) {
 
 TEST(failoverRouteTest, leastFailuresCycle) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "d"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "d"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 2);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 2);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
-  auto reply1= rh->route(McGetRequest("0"));
+  auto reply1 = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());
 
   auto reply2 = rh->route(McGetRequest("0"));
@@ -427,22 +418,21 @@ TEST(failoverRouteTest, leastFailuresCycle) {
 
 TEST(failoverRouteTest, leastFailuresFailAll) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 3);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 3);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
@@ -450,22 +440,21 @@ TEST(failoverRouteTest, leastFailuresFailAll) {
 
 TEST(failoverRouteTest, leastFailuresFailAllLimit) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))
-  };
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 2);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 2);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
   auto reply = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
@@ -473,28 +462,30 @@ TEST(failoverRouteTest, leastFailuresFailAllLimit) {
 
 TEST(failoverRouteTest, leastFailuresComplex) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a"),
-                            UpdateRouteTestData(mc_res_timeout),
-                            DeleteRouteTestData()),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b"),
-                            UpdateRouteTestData(mc_res_stored),
-                            DeleteRouteTestData()),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"),
-                            UpdateRouteTestData(mc_res_timeout),
-                            DeleteRouteTestData())
-  };
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "a"),
+          UpdateRouteTestData(mc_res_timeout),
+          DeleteRouteTestData()),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "b"),
+          UpdateRouteTestData(mc_res_stored),
+          DeleteRouteTestData()),
+      make_shared<TestHandle>(
+          GetRouteTestData(mc_res_timeout, "c"),
+          UpdateRouteTestData(mc_res_timeout),
+          DeleteRouteTestData())};
 
   mockFiberContext();
-  folly::dynamic json = folly::dynamic::object ("type", "LeastFailuresPolicy")
-                                               ("max_tries", 2);
+  folly::dynamic json =
+      folly::dynamic::object("type", "LeastFailuresPolicy")("max_tries", 2);
   auto rh = makeFailoverRouteLeastFailures<McrouterRouterInfo, FailoverRoute>(
-    get_route_handles(test_handles),
-    FailoverErrorsSettings(),
-    nullptr,
-    /* failoverTagging */ false,
-    /* enableLeasePairing */ false,
-    "route01",
-    json);
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false,
+      /* enableLeasePairing */ false,
+      "route01",
+      json);
 
   auto reply1 = rh->route(McGetRequest("0"));
   EXPECT_EQ("b", carbon::valueRangeSlow(reply1).str());

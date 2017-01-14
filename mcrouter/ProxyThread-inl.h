@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,9 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/MessageQueue.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouterInfo>
 ProxyThread<RouterInfo>::ProxyThread(
@@ -30,10 +32,10 @@ ProxyThread<RouterInfo>::ProxyThread(
 template <class RouterInfo>
 void ProxyThread<RouterInfo>::spawn() {
   CHECK(!thread_.joinable());
-  thread_ = std::thread([
-      evb = std::move(evb_), proxy = std::move(proxy_) ]() mutable {
-    proxyThreadRun(std::move(evb), std::move(proxy));
-  });
+  thread_ = std::thread(
+      [ evb = std::move(evb_), proxy = std::move(proxy_) ]() mutable {
+        proxyThreadRun(std::move(evb), std::move(proxy));
+      });
 }
 
 template <class RouterInfo>
@@ -59,4 +61,6 @@ void ProxyThread<RouterInfo>::proxyThreadRun(
   evb->loopForever();
   evb.reset();
 }
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

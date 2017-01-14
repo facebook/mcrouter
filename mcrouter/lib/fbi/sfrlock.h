@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -89,42 +89,43 @@ typedef struct {
 #define SFRLOCK_WRITE_LOCKED 0x80000000U
 
 __BEGIN_DECLS
-void sfrlock_init(sfrlock_t *l);
-void sfrlock_rdlock_contended(sfrlock_t *l);
-void sfrlock_wrlock_contended(sfrlock_t *l);
-void sfrlock_wake_waiters(sfrlock_t *l);
+void sfrlock_init(sfrlock_t* l);
+void sfrlock_rdlock_contended(sfrlock_t* l);
+void sfrlock_wrlock_contended(sfrlock_t* l);
+void sfrlock_wake_waiters(sfrlock_t* l);
 
-static inline void sfrlock_rdlock(sfrlock_t *lock) {
-//we may want to rewrite this just using asm for clang
+static inline void sfrlock_rdlock(sfrlock_t* lock) {
+// we may want to rewrite this just using asm for clang
 #if __x86_64__ && !SFRLOCK_FORCE_INTRINSICS && !__clang__
-  asm volatile goto ("movl %0, %%eax;"        /* Read the lock value. */
-                "1: testl %%eax, %%eax;"
-                "js 1f;"                      /* If the most significant bit is
-                                               * set, there is a writer so we
-                                               * must take the contended path.
-                                               */
-                "lea 0x1(%%rax), %%rdi;"      /* Otherwise, store in rdi the
-                                               * current value of lock plus one.
-                                               */
-                "lock cmpxchgl %%edi, %0;"    /* Atomically try to store the
-                                               * new value on the lock. It only
-                                               * succeeds if the value in the
-                                               * lock is still what's in eax.
-                                               */
-                "jz %l[exit];"                /* If the store succeeded, the
-                                               * lock is now acquired and we
-                                               * can return to the caller.
-                                               */
-                "jmp 1b;"                     /* Otherwise, we have the new
-                                               * value in eax, so try again
-                                               * until we suceeed or a writer
-                                               * shows up.
-                                               */
-                "1:"
-                :
-                : "m" (lock->value)
-                : "rax", "rdi", "memory", "cc"
-                : exit);
+  asm volatile goto(
+      "movl %0, %%eax;" /* Read the lock value. */
+      "1: testl %%eax, %%eax;"
+      "js 1f;" /* If the most significant bit is
+                * set, there is a writer so we
+                * must take the contended path.
+                */
+      "lea 0x1(%%rax), %%rdi;" /* Otherwise, store in rdi the
+                                * current value of lock plus one.
+                                */
+      "lock cmpxchgl %%edi, %0;" /* Atomically try to store the
+                                  * new value on the lock. It only
+                                  * succeeds if the value in the
+                                  * lock is still what's in eax.
+                                  */
+      "jz %l[exit];" /* If the store succeeded, the
+                      * lock is now acquired and we
+                      * can return to the caller.
+                      */
+      "jmp 1b;" /* Otherwise, we have the new
+                 * value in eax, so try again
+                 * until we suceeed or a writer
+                 * shows up.
+                 */
+      "1:"
+      :
+      : "m"(lock->value)
+      : "rax", "rdi", "memory", "cc"
+      : exit);
 
   sfrlock_rdlock_contended(lock);
 exit:
@@ -144,35 +145,36 @@ exit:
 #endif
 }
 
-static inline void sfrlock_rdunlock(sfrlock_t *lock) {
+static inline void sfrlock_rdunlock(sfrlock_t* lock) {
 #if __x86_64__ && !SFRLOCK_FORCE_INTRINSICS && !__clang__
-  asm volatile goto ("xorl %%edi, %%edi;"   /* Zero-out edi. */
-                "decl %%edi;"               /* Decrement edi, making it -1. */
-                "lock xaddl %%edi, %0;"     /* Add edi to the current value of
-                                             * the lock. The old value is
-                                             * stored in back in edi.
-                                             */
-                "dec %%edi;"                 /* Decrement edi, to get the value
-                                              * we actually stored in the lock.
-                                              */
-                "jns %l[exit];"              /* If the most significant bit is
-                                              * not set, there is no writer
-                                              * attempting to acquire the lock,
-                                              * so we don't need wake anyone.
-                                              */
-                "shl %%edi;"                 /* Shift the lock value to the
-                                              * left to throw away the most
-                                              * significant bit.
-                                              */
-                "jnz %l[exit];"               /* If the value is non-zero, we
-                                               * are not the last reader, so
-                                               * we must not wake up the writer
-                                               * just yet.
-                                               */
-                :
-                : "m" (lock->value)
-                : "rdi", "memory", "cc"
-                : exit);
+  asm volatile goto(
+      "xorl %%edi, %%edi;" /* Zero-out edi. */
+      "decl %%edi;" /* Decrement edi, making it -1. */
+      "lock xaddl %%edi, %0;" /* Add edi to the current value of
+                               * the lock. The old value is
+                               * stored in back in edi.
+                               */
+      "dec %%edi;" /* Decrement edi, to get the value
+                    * we actually stored in the lock.
+                    */
+      "jns %l[exit];" /* If the most significant bit is
+                       * not set, there is no writer
+                       * attempting to acquire the lock,
+                       * so we don't need wake anyone.
+                       */
+      "shl %%edi;" /* Shift the lock value to the
+                    * left to throw away the most
+                    * significant bit.
+                    */
+      "jnz %l[exit];" /* If the value is non-zero, we
+                       * are not the last reader, so
+                       * we must not wake up the writer
+                       * just yet.
+                       */
+      :
+      : "m"(lock->value)
+      : "rdi", "memory", "cc"
+      : exit);
 
   sfrlock_wake_waiters(lock);
 exit:
@@ -184,25 +186,26 @@ exit:
 #endif
 }
 
-static inline void sfrlock_wrlock(sfrlock_t *lock) {
+static inline void sfrlock_wrlock(sfrlock_t* lock) {
 #if __x86_64__ && !SFRLOCK_FORCE_INTRINSICS && !__clang__
-  asm volatile goto ("xorl %%eax, %%eax;"     /* Zero-out eax. */
-                "movl $0x80000000, %%edi;"    /* Set edi to the lock state
-                                               * where there are no readers
-                                               * and a writer.
-                                               */
-                "lock cmpxchgl %%edi, %0;"    /* Atomically try to set the lock
-                                               * value, it only succeeds if the
-                                               * lock value is zero (eax).
-                                               */
-                "jz %l[exit];"                /* If we succeeded, the lock is
-                                               * acquired and we can skip the
-                                               * uncontended path.
-                                               */
-                :
-                : "m" (lock->value)
-                : "rax", "rdi", "memory", "cc"
-                : exit);
+  asm volatile goto(
+      "xorl %%eax, %%eax;" /* Zero-out eax. */
+      "movl $0x80000000, %%edi;" /* Set edi to the lock state
+                                  * where there are no readers
+                                  * and a writer.
+                                  */
+      "lock cmpxchgl %%edi, %0;" /* Atomically try to set the lock
+                                  * value, it only succeeds if the
+                                  * lock value is zero (eax).
+                                  */
+      "jz %l[exit];" /* If we succeeded, the lock is
+                      * acquired and we can skip the
+                      * uncontended path.
+                      */
+      :
+      : "m"(lock->value)
+      : "rax", "rdi", "memory", "cc"
+      : exit);
 
   sfrlock_wrlock_contended(lock);
 exit:
@@ -214,21 +217,22 @@ exit:
 #endif
 }
 
-static inline void sfrlock_wrunlock(sfrlock_t *lock) {
+static inline void sfrlock_wrunlock(sfrlock_t* lock) {
 #if __x86_64__ && !SFRLOCK_FORCE_INTRINSICS && !__clang__
-  asm volatile goto ("xorl %%edi, %%edi;"  /* Zero-out edi. */
-                "xchgl %%edi, %0;"         /* Store edi in the lock, which in
-                                            * effect, releases it.
-                                            */
-                "mov %1, %%edi;"           /* Read the waiter count. */
-                "test %%edi, %%edi;"
-                "jz %l[exit];"             /* If there are no waiters, just
-                                            * skip the wake up system call.
-                                            */
-                :
-                : "m" (lock->value), "m" (lock->waiters)
-                : "rdi", "memory", "cc"
-                : exit);
+  asm volatile goto(
+      "xorl %%edi, %%edi;" /* Zero-out edi. */
+      "xchgl %%edi, %0;" /* Store edi in the lock, which in
+                          * effect, releases it.
+                          */
+      "mov %1, %%edi;" /* Read the waiter count. */
+      "test %%edi, %%edi;"
+      "jz %l[exit];" /* If there are no waiters, just
+                      * skip the wake up system call.
+                      */
+      :
+      : "m"(lock->value), "m"(lock->waiters)
+      : "rdi", "memory", "cc"
+      : exit);
 
   sfrlock_wake_waiters(lock);
 exit:

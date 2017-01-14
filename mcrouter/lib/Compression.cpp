@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,10 +14,10 @@
 #include <folly/Portability.h>
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/IovecCursor.h"
 #include "mcrouter/lib/Lz4CompressionCodec.h"
 #include "mcrouter/lib/Lz4ImmutableCompressionCodec.h"
 #include "mcrouter/lib/ZstdCompressionCodec.h"
-#include "mcrouter/lib/IovecCursor.h"
 
 namespace facebook {
 namespace memcache {
@@ -133,8 +133,8 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
           codecFilteringOptions,
           codecCompressionLevel);
 #else
-    LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
-    return nullptr;
+      LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
+      return nullptr;
 #endif // FOLLY_HAVE_LIBLZ4
     case CompressionCodecType::LZ4Immutable:
       return folly::make_unique<Lz4ImmutableCompressionCodec>(

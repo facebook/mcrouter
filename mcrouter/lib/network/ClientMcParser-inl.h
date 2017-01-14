@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,13 +7,14 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <folly/io/Cursor.h>
 #include <folly/Format.h>
+#include <folly/io/Cursor.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class Callback>
 ClientMcParser<Callback>::ClientMcParser(
@@ -93,9 +94,10 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
   callback_.replyReady(
       std::move(reply),
       0, /* reqId */
-      ReplyStatsContext(0 /* usedCodecId  */,
-                        replySize /* reply size before compression */,
-                        replySize /* reply size after compression */));
+      ReplyStatsContext(
+          0 /* usedCodecId  */,
+          replySize /* reply size before compression */,
+          replySize /* reply size after compression */));
   replyForwarder_ = nullptr;
 }
 
@@ -105,7 +107,6 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
     const UmbrellaMessageInfo& info,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
-
   auto reply = umbrellaParseReply<Request>(
       buffer,
       buffer.data(),
@@ -125,7 +126,6 @@ void ClientMcParser<Callback>::forwardCaretReply(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer,
     uint64_t reqId) {
-
   const folly::IOBuf* finalBuffer = &buffer;
   size_t offset = headerInfo.headerSize;
 
@@ -144,9 +144,7 @@ void ClientMcParser<Callback>::forwardCaretReply(
   reply.deserialize(reader);
 
   callback_.replyReady(
-      std::move(reply),
-      reqId,
-      getCompressionStats(headerInfo));
+      std::move(reply), reqId, getCompressionStats(headerInfo));
 }
 
 template <class Callback>
@@ -169,12 +167,13 @@ std::unique_ptr<folly::IOBuf> ClientMcParser<Callback>::decompress(
 }
 
 template <class Callback>
-bool ClientMcParser<Callback>::umMessageReady(const UmbrellaMessageInfo& info,
-                                              const folly::IOBuf& buffer) {
+bool ClientMcParser<Callback>::umMessageReady(
+    const UmbrellaMessageInfo& info,
+    const folly::IOBuf& buffer) {
   if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
-    std::string reason =
-        folly::sformat("Expected {} protocol, but received umbrella!",
-                        mc_protocol_to_string(parser_.protocol()));
+    std::string reason = folly::sformat(
+        "Expected {} protocol, but received umbrella!",
+        mc_protocol_to_string(parser_.protocol()));
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }
@@ -200,9 +199,9 @@ bool ClientMcParser<Callback>::caretMessageReady(
     const UmbrellaMessageInfo& headerInfo,
     const folly::IOBuf& buffer) {
   if (UNLIKELY(parser_.protocol() != mc_caret_protocol)) {
-    const auto reason =
-      folly::sformat("Expected {} protocol, but received Caret!",
-                      mc_protocol_to_string(parser_.protocol()));
+    const auto reason = folly::sformat(
+        "Expected {} protocol, but received Caret!",
+        mc_protocol_to_string(parser_.protocol()));
     callback_.parseError(mc_res_local_error, reason);
     return false;
   }
@@ -224,9 +223,9 @@ bool ClientMcParser<Callback>::caretMessageReady(
 template <class Callback>
 void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
   if (UNLIKELY(parser_.protocol() != mc_ascii_protocol)) {
-    std::string reason(
-      folly::sformat("Expected {} protocol, but received ASCII!",
-                      mc_protocol_to_string(parser_.protocol())));
+    std::string reason(folly::sformat(
+        "Expected {} protocol, but received ASCII!",
+        mc_protocol_to_string(parser_.protocol())));
     callback_.parseError(mc_res_local_error, reason);
     return;
   }
@@ -239,8 +238,9 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
         std::string reason(folly::sformat(
             "Received unexpected data from remote endpoint: '{}'!",
             folly::cEscape<std::string>(folly::StringPiece(
-                data, data + std::min(readBuffer.length(),
-                                      static_cast<size_t>(128))))));
+                data,
+                data +
+                    std::min(readBuffer.length(), static_cast<size_t>(128))))));
         callback_.parseError(mc_res_local_error, reason);
         return;
       }
@@ -257,25 +257,27 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
         (this->*replyForwarder_)();
         break;
       case McAsciiParserBase::State::ERROR:
-        callback_.parseError(mc_res_local_error,
-                             asciiParser_.getErrorDescription());
+        callback_.parseError(
+            mc_res_local_error, asciiParser_.getErrorDescription());
         return;
       case McAsciiParserBase::State::PARTIAL:
         // Buffer was completely consumed.
         break;
       case McAsciiParserBase::State::UNINIT:
         // We fed parser some data, it shouldn't remain in State::NONE.
-        callback_.parseError(mc_res_local_error,
-                             "Sent data to AsciiParser but it remained in "
-                             "UNINIT state!");
+        callback_.parseError(
+            mc_res_local_error,
+            "Sent data to AsciiParser but it remained in "
+            "UNINIT state!");
         return;
     }
   }
 }
 
 template <class Callback>
-void ClientMcParser<Callback>::parseError(mc_res_t result,
-                                          folly::StringPiece reason) {
+void ClientMcParser<Callback>::parseError(
+    mc_res_t result,
+    folly::StringPiece reason) {
   callback_.parseError(result, reason);
 }
 
@@ -318,5 +320,5 @@ double ClientMcParser<Callback>::getDropProbability() const {
 
   return 0.0;
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

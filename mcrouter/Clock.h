@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,9 @@
 
 #include <folly/Singleton.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <typename DurationT>
 struct SteadyClock {
@@ -35,7 +37,7 @@ class MockableClockBase {
   using duration_type = DurationT;
   virtual duration_type time_since_epoch() const = 0;
   virtual void sleep_for(const duration_type& sleep_duration) = 0;
-  virtual ~MockableClockBase() { }
+  virtual ~MockableClockBase() {}
 };
 
 template <typename DurationT>
@@ -50,6 +52,7 @@ class FakeClock : public MockableClockBase<DurationT> {
   void sleep_for(const duration_type& sleep_duration) override {
     this->ticks_ += sleep_duration;
   }
+
  private:
   duration_type ticks_;
 };
@@ -77,5 +80,6 @@ struct MockableClock {
     singleton_type::try_get()->sleep_for(sleep_duration);
   }
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

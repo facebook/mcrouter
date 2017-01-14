@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,10 +9,11 @@
  */
 #include "IOBufUtil.h"
 
-#include <folly/io/IOBuf.h>
 #include <folly/Range.h>
+#include <folly/io/IOBuf.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 folly::StringPiece getRange(const std::unique_ptr<folly::IOBuf>& buf) {
   if (!buf) {
@@ -45,15 +46,15 @@ folly::StringPiece coalesceAndGetRange(folly::Optional<folly::IOBuf>& buf) {
 
 bool hasSameMemoryRegion(const folly::IOBuf& buf, folly::StringPiece range) {
   return !buf.isChained() &&
-    (buf.length() == 0 ||
-     (range.begin() == reinterpret_cast<const char*>(buf.data()) &&
-      range.size() == buf.length()));
+      (buf.length() == 0 ||
+       (range.begin() == reinterpret_cast<const char*>(buf.data()) &&
+        range.size() == buf.length()));
 }
 
 bool hasSameMemoryRegion(const folly::IOBuf& a, const folly::IOBuf& b) {
   return !a.isChained() && !b.isChained() &&
-    ((a.length() == 0 && b.length() == 0) ||
-     (a.data() == b.data() && a.length() == b.length()));
+      ((a.length() == 0 && b.length() == 0) ||
+       (a.data() == b.data() && a.length() == b.length()));
 }
 
 void copyInto(char* raw, const folly::IOBuf& buf) {
@@ -91,5 +92,5 @@ coalesceIovecs(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
   }
   return coalesceSlow(iov, iovcnt, destCapacity);
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

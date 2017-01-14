@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,9 +13,9 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/Memory.h>
 #include <folly/fibers/Baton.h>
 #include <folly/io/async/EventBase.h>
-#include <folly/Memory.h>
 
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstance.h"
@@ -88,7 +88,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   client->setProxy(proxy);
 
   bool replyReceived = false;
-  eventBase.runInEventBaseThread([client = client.get(), &replyReceived]() {
+  eventBase.runInEventBaseThread([ client = client.get(), &replyReceived ]() {
     // We must ensure that req will remain alive all the way through the reply
     // callback given to client->send(). This demonstrates one way of ensuring
     // this.

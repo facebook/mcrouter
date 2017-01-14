@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,10 @@
 
 #include <folly/Random.h>
 
-namespace facebook { namespace memcache { namespace cycles { namespace test {
+namespace facebook {
+namespace memcache {
+namespace cycles {
+namespace test {
 
 class ExactCalculator {
  public:
@@ -30,14 +33,15 @@ class ExactCalculator {
     std::sort(all_.begin(), all_.end());
     return all_[(all_.size() - 1) * q];
   }
+
  private:
   std::vector<uint64_t> all_;
 };
 
 typedef boost::accumulators::accumulator_set<
-  uint64_t, boost::accumulators::stats<
-    boost::accumulators::tag::p_square_quantile
-  >> accumulator_t;
+    uint64_t,
+    boost::accumulators::stats<boost::accumulators::tag::p_square_quantile>>
+    accumulator_t;
 class BoostCalculator {
  public:
   void insert(uint64_t v) {
@@ -46,10 +50,13 @@ class BoostCalculator {
   uint64_t query() {
     return boost::accumulators::p_square_quantile(acc_);
   }
+
  private:
   accumulator_t acc_{boost::accumulators::quantile_probability = 0.5};
 };
 
 uint64_t normalRnd();
-
-}}}} // facebook::memcache::cycles::test
+}
+}
+}
+} // facebook::memcache::cycles::test

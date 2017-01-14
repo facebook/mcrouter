@@ -16,14 +16,15 @@
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
-#include "mcrouter/lib/network/CaretSerializedMessage.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/network/CaretSerializedMessage.h"
+#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class WriteBuffer {
  private:
@@ -83,7 +84,9 @@ class WriteBuffer {
   const struct iovec* getIovsBegin() const {
     return iovsBegin_;
   }
-  size_t getIovsCount() const { return iovsCount_; }
+  size_t getIovsCount() const {
+    return iovsCount_;
+  }
 
   /**
    * Checks if we should send a reply for this request.
@@ -135,15 +138,12 @@ class WriteBuffer {
 
 // The only purpose of this class is to avoid a circular #include dependency
 // between WriteBuffer.h and McServerSession.h.
-class WriteBufferIntrusiveList : public WriteBuffer::Queue {
-};
+class WriteBufferIntrusiveList : public WriteBuffer::Queue {};
 
 class WriteBufferQueue {
  public:
   explicit WriteBufferQueue(mc_protocol_t protocol) noexcept
-      : protocol_(protocol),
-        tlFreeQueue_(initFreeQueue(protocol_)) {
-  }
+      : protocol_(protocol), tlFreeQueue_(initFreeQueue(protocol_)) {}
 
   std::unique_ptr<WriteBuffer> get() {
     if (tlFreeQueue_.empty()) {
@@ -153,7 +153,9 @@ class WriteBufferQueue {
     }
   }
 
-  void push(std::unique_ptr<WriteBuffer> wb) { queue_.pushBack(std::move(wb)); }
+  void push(std::unique_ptr<WriteBuffer> wb) {
+    queue_.pushBack(std::move(wb));
+  }
 
   void pop(bool popBatch) {
     bool done = false;
@@ -187,7 +189,7 @@ class WriteBufferQueue {
   WriteBufferQueue(WriteBufferQueue&&) noexcept = delete;
   WriteBufferQueue& operator=(WriteBufferQueue&&) = delete;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache
 
 #include "WriteBuffer-inl.h"

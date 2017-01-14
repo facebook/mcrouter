@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 constexpr size_t kProtocolTailContextLength = 128;
 
@@ -60,14 +61,13 @@ void McAsciiParserBase::handleError(folly::IOBuf& buffer) {
   state_ = State::ERROR;
   // We've encoutered error we need to do proper logging.
   auto start = reinterpret_cast<const char*>(buffer.data());
-  auto length = std::min(p_ - start + kProtocolTailContextLength,
-                         buffer.length());
+  auto length =
+      std::min(p_ - start + kProtocolTailContextLength, buffer.length());
 
-  currentErrorDescription_ =
-    folly::sformat("Error parsing message '{}' at character {}!",
-                   folly::cEscape<std::string>(
-                     folly::StringPiece(start, start + length)),
-                   p_ - start);
+  currentErrorDescription_ = folly::sformat(
+      "Error parsing message '{}' at character {}!",
+      folly::cEscape<std::string>(folly::StringPiece(start, start + length)),
+      p_ - start);
 }
 
 folly::StringPiece McAsciiParserBase::getErrorDescription() const {
@@ -100,5 +100,5 @@ bool McAsciiParserBase::readValue(folly::IOBuf& buffer, folly::IOBuf& to) {
 
   return true;
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,12 +13,15 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-static bool match_pattern_helper(const char* pi,
-                                 const char* pend,
-                                 const char* ri,
-                                 const char* rend) {
+static bool match_pattern_helper(
+    const char* pi,
+    const char* pend,
+    const char* ri,
+    const char* rend) {
   while (pi != pend) {
     if (ri == rend) {
       return false;
@@ -59,10 +62,10 @@ static bool match_pattern_helper(const char* pi,
 /**
  * True if pattern (like "/foo/a*c/") matches a route (like "/foo/abc")
  */
-bool match_pattern_route(folly::StringPiece pattern,
-                         folly::StringPiece route) {
-  return match_pattern_helper(pattern.begin(), pattern.end(),
-                              route.begin(), route.end());
+bool match_pattern_route(folly::StringPiece pattern, folly::StringPiece route) {
+  return match_pattern_helper(
+      pattern.begin(), pattern.end(), route.begin(), route.end());
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

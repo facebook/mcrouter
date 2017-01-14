@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,9 +12,12 @@
 #include <limits>
 #include <random>
 
-#include <folly/fibers/Fiber.h>
 #include <folly/Memory.h>
+#include <folly/fibers/Fiber.h>
 
+#include "mcrouter/McrouterLogFailure.h"
+#include "mcrouter/OptionsUtil.h"
+#include "mcrouter/TkoTracker.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McResUtil.h"
@@ -22,13 +25,12 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
-#include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/OptionsUtil.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/stats.h"
-#include "mcrouter/TkoTracker.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
@@ -40,8 +42,9 @@ constexpr double kProbeJitterDelta = kProbeJitterMax - kProbeJitterMin;
 // kReconnectionHoldoffFactor.
 constexpr uint32_t kReconnectionHoldoffFactor = 25;
 
-static_assert(kProbeJitterMax >= kProbeJitterMin,
-              "ProbeJitterMax should be greater or equal tham ProbeJitterMin");
+static_assert(
+    kProbeJitterMax >= kProbeJitterMin,
+    "ProbeJitterMax should be greater or equal tham ProbeJitterMin");
 
 stat_name_t getStatName(ProxyDestination::State st) {
   switch (st) {
@@ -59,7 +62,7 @@ stat_name_t getStatName(ProxyDestination::State st) {
   return num_stats; // shouldn't reach here
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
   assert(!proxy->router().opts().disable_tko_tracking);
@@ -82,9 +85,10 @@ void ProxyDestination::schedule_next_probe() {
   assert(delay_ms > 0);
 
   if (!probeTimer_.scheduleTimeout(delay_ms)) {
-    MC_LOG_FAILURE(proxy->router().opts(),
-                   memcache::failure::Category::kSystemError,
-                   "failed to schedule probe timer for ProxyDestination");
+    MC_LOG_FAILURE(
+        proxy->router().opts(),
+        memcache::failure::Category::kSystemError,
+        "failed to schedule probe timer for ProxyDestination");
   }
 }
 
@@ -102,8 +106,7 @@ void ProxyDestination::timerCallback() {
       pdstn->proxy->destinationMap()->markAsActive(*pdstn);
       // will reconnect if connection was closed
       auto reply = pdstn->getAsyncMcClient().sendSync(
-        *pdstn->probe_req,
-        pdstn->shortestTimeout_);
+          *pdstn->probe_req, pdstn->shortestTimeout_);
       pdstn->handle_tko(reply.result(), true);
       pdstn->probe_req.reset();
     });
@@ -265,12 +268,8 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
     uint64_t qosPath) {
-  std::shared_ptr<ProxyDestination> ptr(new ProxyDestination(
-    proxy,
-    std::move(ap),
-    timeout,
-    qosClass,
-    qosPath));
+  std::shared_ptr<ProxyDestination> ptr(
+      new ProxyDestination(proxy, std::move(ap), timeout, qosClass, qosPath));
   ptr->selfPtr_ = ptr;
   return ptr;
 }
@@ -359,63 +358,61 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   if (accessPoint_->useSsl()) {
-    checkLogic(!opts.pem_cert_path.empty() &&
-               !opts.pem_key_path.empty() &&
-               !opts.pem_ca_path.empty(),
-               "Some of ssl key paths are not set!");
+    checkLogic(
+        !opts.pem_cert_path.empty() && !opts.pem_key_path.empty() &&
+            !opts.pem_ca_path.empty(),
+        "Some of ssl key paths are not set!");
     options.sslContextProvider = [&opts] {
-      return getSSLContext(opts.pem_cert_path, opts.pem_key_path,
-                           opts.pem_ca_path);
+      return getSSLContext(
+          opts.pem_cert_path, opts.pem_key_path, opts.pem_ca_path);
     };
   }
 
-  auto client = folly::make_unique<AsyncMcClient>(proxy->eventBase(),
-                                                  std::move(options));
+  auto client =
+      folly::make_unique<AsyncMcClient>(proxy->eventBase(), std::move(options));
   {
     folly::SpinLockGuard g(clientLock_);
     client_ = std::move(client);
   }
 
   client_->setRequestStatusCallbacks(
-    [this](int pending, int inflight) {
-      if (pending != 0) {
-        proxy->stats().increment(destination_pending_reqs_stat, pending);
-        proxy->stats().setValue(
-            destination_max_pending_reqs_stat,
-            std::max(
-                proxy->stats().getValue(destination_max_pending_reqs_stat),
-                proxy->stats().getValue(destination_pending_reqs_stat)));
-      }
-      if (inflight != 0) {
-        proxy->stats().increment(destination_inflight_reqs_stat, inflight);
-        proxy->stats().setValue(
-            destination_max_inflight_reqs_stat,
-            std::max(
-                proxy->stats().getValue(destination_max_inflight_reqs_stat),
-                proxy->stats().getValue(destination_inflight_reqs_stat)));
-      }
-    },
-    [this](size_t numToSend) {
-      proxy->stats().increment(destination_batches_sum_stat);
-      proxy->stats().increment(destination_requests_sum_stat, numToSend);
-    });
+      [this](int pending, int inflight) {
+        if (pending != 0) {
+          proxy->stats().increment(destination_pending_reqs_stat, pending);
+          proxy->stats().setValue(
+              destination_max_pending_reqs_stat,
+              std::max(
+                  proxy->stats().getValue(destination_max_pending_reqs_stat),
+                  proxy->stats().getValue(destination_pending_reqs_stat)));
+        }
+        if (inflight != 0) {
+          proxy->stats().increment(destination_inflight_reqs_stat, inflight);
+          proxy->stats().setValue(
+              destination_max_inflight_reqs_stat,
+              std::max(
+                  proxy->stats().getValue(destination_max_inflight_reqs_stat),
+                  proxy->stats().getValue(destination_inflight_reqs_stat)));
+        }
+      },
+      [this](size_t numToSend) {
+        proxy->stats().increment(destination_batches_sum_stat);
+        proxy->stats().increment(destination_requests_sum_stat, numToSend);
+      });
 
   client_->setStatusCallbacks(
-    [this] () mutable {
-      setState(State::kUp);
-    },
-    [this] (bool aborting) mutable {
-      if (aborting) {
-        setState(State::kClosed);
-      } else {
-        setState(State::kDown);
-        handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
-      }
-    });
+      [this]() mutable { setState(State::kUp); },
+      [this](bool aborting) mutable {
+        if (aborting) {
+          setState(State::kClosed);
+        } else {
+          setState(State::kDown);
+          handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
+        }
+      });
 
   if (opts.target_max_inflight_requests > 0) {
-    client_->setThrottle(opts.target_max_inflight_requests,
-                         opts.target_max_pending_requests);
+    client_->setThrottle(
+        opts.target_max_inflight_requests, opts.target_max_pending_requests);
   }
 }
 
@@ -429,10 +426,10 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
     VLOG(1) << accessPoint_->toHostPortString() << " (" << poolName_ << ") "
-            << eventStr << ". Total hard TKOs: "
-            << tracker->globalTkos().hardTkos << "; soft TKOs: "
-            << tracker->globalTkos().softTkos << ". Reply: "
-            << mc_res_to_string(result);
+            << eventStr
+            << ". Total hard TKOs: " << tracker->globalTkos().hardTkos
+            << "; soft TKOs: " << tracker->globalTkos().softTkos
+            << ". Reply: " << mc_res_to_string(result);
   };
 
   switch (event) {
@@ -508,5 +505,6 @@ void ProxyDestination::updateShortestTimeout(
     }
   }
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

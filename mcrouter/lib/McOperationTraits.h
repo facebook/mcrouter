@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,8 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/OperationTraits.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /*
  * GetLike, DeleteLike, etc. specializations for McOperation types.
@@ -105,5 +106,5 @@ struct ArithmeticLike<McOperation<mc_op_decr>> {
   static const bool value = true;
   typedef void* Type;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

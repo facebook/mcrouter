@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,9 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Returns shard id part of a key. Shard id is first number surrounded by
@@ -47,7 +49,9 @@ class ConstShardHashFunc {
 
   size_t operator()(folly::StringPiece key) const;
 
-  static const char* type() { return "ConstShard"; }
+  static const char* type() {
+    return "ConstShard";
+  }
 
  private:
   size_t n_;
@@ -55,5 +59,6 @@ class ConstShardHashFunc {
 
   bool shardLookup(folly::StringPiece key, size_t* result) const;
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

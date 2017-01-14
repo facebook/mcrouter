@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -51,11 +51,12 @@ class CaretSerializedMessage {
    * @return true iff message was successfully prepared.
    */
   template <class Request>
-  bool prepare(const Request& req,
-               size_t reqId,
-               const CodecIdRange& supportedCodecs,
-               const struct iovec*& iovOut,
-               size_t& niovOut) noexcept;
+  bool prepare(
+      const Request& req,
+      size_t reqId,
+      const CodecIdRange& supportedCodecs,
+      const struct iovec*& iovOut,
+      size_t& niovOut) noexcept;
 
   /**
    * Prepare replies for serialization
@@ -71,44 +72,48 @@ class CaretSerializedMessage {
    * @return true if message was successfully prepared.
    */
   template <class Reply>
-  bool prepare(Reply&& reply,
-               size_t reqId,
-               const CodecIdRange& supportedCodecs,
-               const CompressionCodecMap* compressionCodecMap,
-               double dropProbability,
-               const struct iovec*& iovOut,
-               size_t& niovOut) noexcept;
+  bool prepare(
+      Reply&& reply,
+      size_t reqId,
+      const CodecIdRange& supportedCodecs,
+      const CompressionCodecMap* compressionCodecMap,
+      double dropProbability,
+      const struct iovec*& iovOut,
+      size_t& niovOut) noexcept;
 
  private:
   carbon::CarbonQueueAppenderStorage storage_;
 
   template <class Message>
-  bool fill(const Message& message,
-            uint32_t reqId,
-            size_t typeId,
-            uint64_t traceId,
-            const CodecIdRange& supportedCodecs,
-            const struct iovec*& iovOut,
-            size_t& niovOut);
+  bool fill(
+      const Message& message,
+      uint32_t reqId,
+      size_t typeId,
+      uint64_t traceId,
+      const CodecIdRange& supportedCodecs,
+      const struct iovec*& iovOut,
+      size_t& niovOut);
 
   template <class Message>
-  bool fill(const Message& message,
-            uint32_t reqId,
-            size_t typeId,
-            uint64_t traceId,
-            const CodecIdRange& supportedCodecs,
-            const CompressionCodecMap* compressionCodecMap,
-            double dropProbability,
-            const struct iovec*& iovOut,
-            size_t& niovOut);
+  bool fill(
+      const Message& message,
+      uint32_t reqId,
+      size_t typeId,
+      uint64_t traceId,
+      const CodecIdRange& supportedCodecs,
+      const CompressionCodecMap* compressionCodecMap,
+      double dropProbability,
+      const struct iovec*& iovOut,
+      size_t& niovOut);
 
-  void fillImpl(UmbrellaMessageInfo& info,
-                uint32_t reqId,
-                size_t typeId,
-                uint64_t traceId,
-                double dropProbability,
-                const struct iovec*& iovOut,
-                size_t& niovOut);
+  void fillImpl(
+      UmbrellaMessageInfo& info,
+      uint32_t reqId,
+      size_t typeId,
+      uint64_t traceId,
+      double dropProbability,
+      const struct iovec*& iovOut,
+      size_t& niovOut);
 
   /**
    * Compress body of message in storage_

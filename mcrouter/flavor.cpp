@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,12 +16,14 @@
 #include <boost/filesystem/path.hpp>
 
 #include <folly/FileUtil.h>
-#include <folly/json.h>
 #include <folly/Range.h>
+#include <folly/json.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
@@ -88,8 +90,8 @@ bool readStandaloneFlavor(
     std::unordered_map<std::string, std::string>& standalone_opts,
     std::unordered_map<std::string, std::string>& libmcrouter_opts) {
   try {
-    auto json = parseJsonString(
-      folly::json::stripComments(standalone_flavor_json));
+    auto json =
+        parseJsonString(folly::json::stripComments(standalone_flavor_json));
 
     if (!parse_json_options(json, "standalone_options", standalone_opts)) {
       return false;
@@ -124,8 +126,8 @@ bool readFlavor(
   std::string standaloneFlavor = getStandaloneFlavor(flavor);
   std::string standaloneFlavorJson;
   if (folly::readFile(standaloneFlavor.data(), standaloneFlavorJson)) {
-    if (!readStandaloneFlavor(standaloneFlavorJson, standalone_opts,
-                              libmcrouter_opts)) {
+    if (!readStandaloneFlavor(
+            standaloneFlavorJson, standalone_opts, libmcrouter_opts)) {
       return false;
     }
   }
@@ -133,7 +135,7 @@ bool readFlavor(
   libmcrouter_opts["router_name"] = getRouterNameFromFlavor(flavor);
   try {
     libmcrouter_opts["flavor_name"] =
-      boost::filesystem::absolute(flavor).string();
+        boost::filesystem::absolute(flavor).string();
   } catch (const boost::filesystem::filesystem_error& e) {
     LOG(ERROR) << "Error getting the absolute path of flavor. Exception: "
                << e.what();
@@ -143,9 +145,10 @@ bool readFlavor(
   return true;
 }
 
-bool parse_json_options(const folly::dynamic& json,
-                        const std::string& field_name,
-                        std::unordered_map<std::string, std::string>& opts) {
+bool parse_json_options(
+    const folly::dynamic& json,
+    const std::string& field_name,
+    std::unordered_map<std::string, std::string>& opts) {
   auto it = json.find(field_name);
   if (it == json.items().end()) {
     return false;
@@ -153,13 +156,13 @@ bool parse_json_options(const folly::dynamic& json,
 
   const auto& jopts = it->second;
   if (!jopts.isObject()) {
-    LOG(ERROR) << "Error parsing flavor config: " << field_name <<
-                  " is not an object";
+    LOG(ERROR) << "Error parsing flavor config: " << field_name
+               << " is not an object";
     return false;
   }
 
   try {
-    for (auto& jiter: jopts.items()) {
+    for (auto& jiter : jopts.items()) {
       opts[jiter.first.asString()] = jiter.second.asString();
     }
   } catch (...) {
@@ -168,5 +171,6 @@ bool parse_json_options(const folly::dynamic& json,
 
   return true;
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

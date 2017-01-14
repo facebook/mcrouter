@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,15 +14,17 @@
 #include <unordered_map>
 #include <vector>
 
-#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Portability.h>
 #include <folly/Range.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/config.h"
 #include "mcrouter/routes/RoutePolicyMap.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class RoutingPrefix;
 
@@ -31,18 +33,19 @@ class RoutingPrefix;
 template <class RouteHandleIf>
 class RouteHandleMap {
  public:
-  RouteHandleMap(const RouteSelectorMap<RouteHandleIf>& routeSelectors,
-                 const RoutingPrefix& defaultRoute,
-                 bool sendInvalidRouteToDefault);
+  RouteHandleMap(
+      const RouteSelectorMap<RouteHandleIf>& routeSelectors,
+      const RoutingPrefix& defaultRoute,
+      bool sendInvalidRouteToDefault);
 
   /**
    * @return pointer to a precalculated vector of route handles that a request
    * with the given prefix and key should be forwarded to. nullptr if vector for
    * this prefix wasn't precalculated.
    */
-  const std::vector<std::shared_ptr<RouteHandleIf>>*
-  getTargetsForKeyFast(folly::StringPiece prefix,
-                       folly::StringPiece key) const;
+  const std::vector<std::shared_ptr<RouteHandleIf>>* getTargetsForKeyFast(
+      folly::StringPiece prefix,
+      folly::StringPiece key) const;
 
   /**
    * @return A vector of route handles that a request with
@@ -70,10 +73,11 @@ class RouteHandleMap {
           f) const;
 
   FOLLY_NOINLINE const std::vector<std::shared_ptr<RouteHandleIf>>*
-  getTargetsForKeyFallback(folly::StringPiece prefix,
-                           folly::StringPiece key) const;
+  getTargetsForKeyFallback(folly::StringPiece prefix, folly::StringPiece key)
+      const;
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "RouteHandleMap-inl.h"

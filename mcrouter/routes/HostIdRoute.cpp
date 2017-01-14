@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,18 +7,21 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <folly/dynamic.h>
 #include <folly/Hash.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeNullRoute();
 
-McrouterRouteHandlePtr makeHostIdRoute(std::vector<McrouterRouteHandlePtr> rh,
+McrouterRouteHandlePtr makeHostIdRoute(
+    std::vector<McrouterRouteHandlePtr> rh,
     folly::StringPiece salt) {
   if (rh.empty()) {
     return makeNullRoute();
@@ -49,5 +52,6 @@ McrouterRouteHandlePtr makeHostIdRoute(
 
   return makeHostIdRoute(std::move(children), salt);
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

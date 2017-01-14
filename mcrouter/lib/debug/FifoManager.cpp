@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,14 +20,15 @@
 
 #include <folly/Format.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
 folly::Singleton<FifoManager> gFifoManager;
 
 pid_t gettid() {
-  return (pid_t) syscall (SYS_gettid);
+  return (pid_t)syscall(SYS_gettid);
 }
 
 } // anonymous namespace
@@ -47,8 +48,9 @@ FifoManager::FifoManager() {
 
       {
         std::unique_lock<std::mutex> lk(mutex_);
-        cv_.wait_for(lk, std::chrono::milliseconds(1000),
-                     [this]() { return !running_; });
+        cv_.wait_for(lk, std::chrono::milliseconds(1000), [this]() {
+          return !running_;
+        });
         if (!running_) {
           break;
         }
@@ -103,5 +105,5 @@ void FifoManager::clear() {
 /* static  */ std::shared_ptr<FifoManager> FifoManager::getInstance() {
   return folly::Singleton<FifoManager>::try_get();
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

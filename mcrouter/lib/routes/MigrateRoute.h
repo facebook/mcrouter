@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,19 +13,20 @@
 #include <string>
 #include <vector>
 
+#include <folly/Optional.h>
 #include <folly/dynamic.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/WhenN.h>
-#include <folly/Optional.h>
 
-#include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * This route handle changes behavior based on Migration mode.
@@ -44,11 +45,14 @@ namespace facebook { namespace memcache {
 template <class RouteHandleIf, typename TimeProvider>
 class MigrateRoute {
  public:
-  static std::string routeName() { return "migrate"; }
+  static std::string routeName() {
+    return "migrate";
+  }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     auto mask = routeMask(req);
     if (mask & kFromMask) {
       t(*from_, req);
@@ -58,17 +62,17 @@ class MigrateRoute {
     }
   }
 
-  MigrateRoute(std::shared_ptr<RouteHandleIf> fh,
-               std::shared_ptr<RouteHandleIf> th,
-               time_t start_time_sec,
-               time_t interval_sec,
-               TimeProvider tp)
+  MigrateRoute(
+      std::shared_ptr<RouteHandleIf> fh,
+      std::shared_ptr<RouteHandleIf> th,
+      time_t start_time_sec,
+      time_t interval_sec,
+      TimeProvider tp)
       : from_(std::move(fh)),
         to_(std::move(th)),
         startTimeSec_(start_time_sec),
         intervalSec_(interval_sec),
         tp_(tp) {
-
     assert(from_ != nullptr);
     assert(to_ != nullptr);
   }
@@ -80,19 +84,16 @@ class MigrateRoute {
     auto mask = routeMask(req);
 
     switch (mask) {
-      case kFromMask: return from_->route(req);
-      case kToMask: return to_->route(req);
+      case kFromMask:
+        return from_->route(req);
+      case kToMask:
+        return to_->route(req);
       default: {
         auto& from = from_;
         auto& to = to_;
-        std::function<Reply()> fs[2] {
-          [&req, &from]() {
-            return from->route(req);
-          },
-          [&req, &to]() {
-            return to->route(req);
-          }
-        };
+        std::function<Reply()> fs[2]{
+            [&req, &from]() { return from->route(req); },
+            [&req, &to]() { return to->route(req); }};
 
         folly::Optional<Reply> reply;
         folly::fibers::forEach(fs, fs + 2, [&reply](size_t id, Reply newReply) {
@@ -104,6 +105,7 @@ class MigrateRoute {
       }
     }
   }
+
  private:
   static constexpr int kFromMask = 1;
   static constexpr int kToMask = 2;
@@ -122,7 +124,7 @@ class MigrateRoute {
       return kFromMask;
     }
 
-    if (curr < (startTimeSec_ + 2*intervalSec_)) {
+    if (curr < (startTimeSec_ + 2 * intervalSec_)) {
       return kFromMask | kToMask;
     }
 
@@ -131,9 +133,8 @@ class MigrateRoute {
   }
 
   template <class Request>
-  int routeMask(const Request& req,
-                OtherThanT<Request, DeleteLike<>> = 0) const {
-
+  int routeMask(const Request& req, OtherThanT<Request, DeleteLike<>> = 0)
+      const {
     time_t curr = tp_();
 
     if (curr < (startTimeSec_ + intervalSec_)) {
@@ -143,5 +144,5 @@ class MigrateRoute {
     }
   }
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,8 +9,9 @@
  */
 #pragma once
 
-namespace carbon { namespace detail {
+namespace carbon {
+namespace detail {
 
 constexpr size_t kDefaultStackSize = 16;
-
-}} // carbon::detail
+}
+} // carbon::detail

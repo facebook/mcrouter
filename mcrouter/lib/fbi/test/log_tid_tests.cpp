@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -70,7 +70,7 @@ static void* dbgs(void* arg) {
   uint saved_lvl = fbi_get_debug();
   fbi_set_debug(UINT_MAX);
 
-  long unsigned exp_tid = (long unsigned) pthread_self();
+  long unsigned exp_tid = (long unsigned)pthread_self();
   long unsigned tid = 0;
 
 #define TID_SCAN_STR "%20lu%*[^\n]"

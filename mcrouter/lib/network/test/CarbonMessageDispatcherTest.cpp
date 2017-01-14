@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,8 +13,8 @@
 
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/CarbonMessageDispatcher.h"
+#include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 #include "mcrouter/lib/network/gen/Memcache.h"
@@ -32,9 +32,7 @@ struct TestCallback
 
   template <class F, class B>
   TestCallback(F&& onGet, B&& onSet)
-      : onGet_(std::move(onGet)),
-        onSet_(std::move(onSet)) {
-  }
+      : onGet_(std::move(onGet)), onSet_(std::move(onSet)) {}
 
   void onTypedMessage(McGetRequest&& req) {
     onGet_(std::move(req));
@@ -92,9 +90,7 @@ TEST(CarbonMessage, basic) {
         getCalled = true;
         EXPECT_EQ(req.key().fullKey(), folly::StringPiece("12345"));
       },
-      [&setCalled](McSetRequest&&) {
-        setCalled = true;
-      });
+      [&setCalled](McSetRequest&&) { setCalled = true; });
 
   bool ret;
 

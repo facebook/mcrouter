@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,9 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * TokenBucket rate limiter for failover route.
@@ -26,8 +28,7 @@ namespace facebook { namespace memcache { namespace mcrouter {
 class FailoverRateLimiter {
  public:
   FailoverRateLimiter(double rate, double burst)
-    : tb_(rate, burst, /* allow `burst` requests at time 0 */ -1e6) {
-  }
+      : tb_(rate, burst, /* allow `burst` requests at time 0 */ -1e6) {}
 
   /**
    * @param json  Rate limiting configuration; must be an object. Format:
@@ -56,9 +57,11 @@ class FailoverRateLimiter {
   bool failoverAllowed() {
     return tb_.consume(1, totalReqs_);
   }
+
  private:
   folly::TokenBucket tb_;
   size_t totalReqs_{0};
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

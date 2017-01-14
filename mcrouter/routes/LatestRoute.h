@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,12 +26,12 @@ namespace mcrouter {
 namespace detail {
 
 template <class RouteHandleIf>
-std::vector<std::shared_ptr<RouteHandleIf>>
-getTargets(std::vector<std::shared_ptr<RouteHandleIf>> targets,
-           size_t failoverCount,
-           size_t threadId,
-           std::vector<double> weights,
-           folly::StringPiece salt) {
+std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
+    std::vector<std::shared_ptr<RouteHandleIf>> targets,
+    size_t failoverCount,
+    size_t threadId,
+    std::vector<double> weights,
+    folly::StringPiece salt) {
   std::vector<std::shared_ptr<RouteHandleIf>> failovers;
   failoverCount = std::min(failoverCount, targets.size());
   size_t hashKey = folly::hash::hash_combine(0, globals::hostid());
@@ -56,8 +56,7 @@ getTargets(std::vector<std::shared_ptr<RouteHandleIf>> targets,
 } // detail
 
 template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf>
-createLatestRoute(
+std::shared_ptr<typename RouterInfo::RouteHandleIf> createLatestRoute(
     const folly::dynamic& json,
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> targets,
     size_t threadId) {
@@ -67,8 +66,9 @@ createLatestRoute(
 
   if (json.isObject()) {
     if (auto jfailoverCount = json.get_ptr("failover_count")) {
-      checkLogic(jfailoverCount->isInt(),
-                 "LatestRoute: failover_count is not an integer");
+      checkLogic(
+          jfailoverCount->isInt(),
+          "LatestRoute: failover_count is not an integer");
       failoverCount = jfailoverCount->getInt();
     }
     if (auto jsalt = json.get_ptr("salt")) {
@@ -76,8 +76,9 @@ createLatestRoute(
       salt = jsalt->stringPiece();
     }
     if (auto jthreadLocalFailover = json.get_ptr("thread_local_failover")) {
-      checkLogic(jthreadLocalFailover->isBool(),
-                 "LatestRoute: thread_local_failover is not a boolean");
+      checkLogic(
+          jthreadLocalFailover->isBool(),
+          "LatestRoute: thread_local_failover is not a boolean");
       if (jthreadLocalFailover->getBool()) {
         failoverThreadId = threadId;
       }

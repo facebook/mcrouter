@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McrouterOptions;
 
@@ -21,7 +22,7 @@ namespace mcrouter {
 
 std::string routerName(const McrouterOptions& opts);
 
-#define MC_LOG_FAILURE(opts, ...) \
-  LOG_FAILURE(routerName(opts), __VA_ARGS__)
-
-}}}  // facebook::memcache::mcrouter
+#define MC_LOG_FAILURE(opts, ...) LOG_FAILURE(routerName(opts), __VA_ARGS__)
+}
+}
+} // facebook::memcache::mcrouter

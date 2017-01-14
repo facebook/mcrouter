@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,8 @@
 
 #include <folly/Hash.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /*
  * The algorithm of RendezvousHash goes like this:
@@ -124,8 +125,8 @@ size_t RendezvousHash::get(uint64_t key) const {
     double combinedHash = computeHash(it.first + key);
     double scaledHash = combinedHash / std::numeric_limits<uint64_t>::max();
     double scaledWeight = it.second > std::numeric_limits<double>::epsilon()
-      ? std::pow(scaledHash, 1.0 / it.second)
-      : 0.0;
+        ? std::pow(scaledHash, 1.0 / it.second)
+        : 0.0;
     if (scaledWeight > maxWeight) {
       maxWeightId = i;
       maxWeight = scaledWeight;
@@ -154,5 +155,5 @@ uint64_t RendezvousHash::computeHash(folly::StringPiece key) const {
 uint64_t RendezvousHash::computeHash(uint64_t i) const {
   return folly::hash::twang_mix64(i);
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

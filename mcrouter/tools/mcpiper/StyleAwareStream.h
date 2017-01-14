@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,8 @@
 
 #include "mcrouter/tools/mcpiper/StyledString.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * A StyleAwareStream uses an Encoder to print out StyledStrings.
@@ -44,11 +45,11 @@ class StyleAwareStream {
   template <class T>
   StyleAwareStream& operator<<(const T& t);
 
-  template<bool containerMode, class... Args>
+  template <bool containerMode, class... Args>
   StyleAwareStream& operator<<(
-    const folly::Formatter<containerMode, Args...>& formatter);
+      const folly::Formatter<containerMode, Args...>& formatter);
   StyleAwareStream& operator<<(
-   StyleAwareStream<Encoder>& (*f)(StyleAwareStream<Encoder>&));
+      StyleAwareStream<Encoder>& (*f)(StyleAwareStream<Encoder>&));
 
   /**
    * Write a StyledString possibly in color (if enabled).
@@ -67,7 +68,7 @@ class StyleAwareStream {
 
 template <class Encoder>
 StyleAwareStream<Encoder>& endl(StyleAwareStream<Encoder>&);
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "StyleAwareStream-inl.h"

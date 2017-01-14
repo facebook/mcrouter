@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,9 @@
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ModifyExptimeRoute.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 namespace {
 
@@ -23,7 +25,6 @@ std::vector<McrouterRouteHandlePtr> getFailoverChildren(
     McrouterRouteHandlePtr normal,
     std::vector<McrouterRouteHandlePtr> failover,
     int32_t failoverExptime) {
-
   std::vector<McrouterRouteHandlePtr> children;
   children.push_back(std::move(normal));
   for (auto& frh : failover) {
@@ -34,7 +35,7 @@ std::vector<McrouterRouteHandlePtr> getFailoverChildren(
   return children;
 }
 
-}  // anonymous
+} // anonymous
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     McrouterRouteHandlePtr normal,
@@ -42,9 +43,8 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     int32_t failoverExptime,
     FailoverErrorsSettings failoverErrors,
     std::unique_ptr<FailoverRateLimiter> rateLimiter) {
-  auto children = getFailoverChildren(std::move(normal),
-                                      std::move(failover),
-                                      failoverExptime);
+  auto children = getFailoverChildren(
+      std::move(normal), std::move(failover), failoverExptime);
   return makeFailoverRouteInOrder<McrouterRouterInfo, FailoverRoute>(
       std::move(children),
       std::move(failoverErrors),
@@ -65,8 +65,10 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
 
   int32_t failoverExptime = 60;
   if (auto jexptime = json.get_ptr("failover_exptime")) {
-    checkLogic(jexptime->isInt(), "FailoverWithExptimeRoute: "
-                                  "failover_exptime is not an integer");
+    checkLogic(
+        jexptime->isInt(),
+        "FailoverWithExptimeRoute: "
+        "failover_exptime is not an integer");
     failoverExptime = jexptime->getInt();
   }
 
@@ -75,11 +77,11 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     failover = factory.createList(*jfailover);
   }
 
-  auto children = getFailoverChildren(std::move(normal),
-                                      std::move(failover),
-                                      failoverExptime);
+  auto children = getFailoverChildren(
+      std::move(normal), std::move(failover), failoverExptime);
   return makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
       json, std::move(children));
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

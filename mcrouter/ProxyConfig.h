@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,14 +12,15 @@
 #include <memory>
 #include <string>
 
-#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct AccessPoint;
 
@@ -62,8 +63,8 @@ class ProxyConfig {
   }
 
   const folly::StringKeyedUnorderedMap<
-    std::vector<std::shared_ptr<const AccessPoint>>
-  >& getAccessPoints() const {
+      std::vector<std::shared_ptr<const AccessPoint>>>&
+  getAccessPoints() const {
     return accessPoints_;
   }
 
@@ -80,8 +81,8 @@ class ProxyConfig {
       std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>>
       pools_;
   folly::StringKeyedUnorderedMap<
-    std::vector<std::shared_ptr<const AccessPoint>>
-  > accessPoints_;
+      std::vector<std::shared_ptr<const AccessPoint>>>
+      accessPoints_;
 
   /**
    * Parses config and creates ProxyRoute
@@ -96,7 +97,8 @@ class ProxyConfig {
 
   friend class ProxyConfigBuilder;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "ProxyConfig-inl.h"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,19 +20,19 @@
 #include <memory>
 #include <string>
 
-#include <folly/detail/CacheLocality.h>
 #include <folly/Range.h>
+#include <folly/detail/CacheLocality.h>
 
-#include "mcrouter/config.h"
 #include "mcrouter/ExponentialSmoothData.h"
+#include "mcrouter/Observable.h"
+#include "mcrouter/ProxyBase.h"
+#include "mcrouter/ProxyRequestPriority.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
-#include "mcrouter/Observable.h"
 #include "mcrouter/options.h"
-#include "mcrouter/ProxyBase.h"
-#include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
@@ -40,7 +40,8 @@ struct dynamic;
 class File;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class T>
 class MessageQueue;
@@ -70,8 +71,9 @@ struct ShadowSettings {
   /**
    * @return  nullptr if config is invalid, new ShadowSettings struct otherwise
    */
-  static std::shared_ptr<ShadowSettings>
-  create(const folly::dynamic& json, CarbonRouterInstanceBase& router);
+  static std::shared_ptr<ShadowSettings> create(
+      const folly::dynamic& json,
+      CarbonRouterInstanceBase& router);
 
   ~ShadowSettings();
 
@@ -94,7 +96,7 @@ struct ShadowSettings {
   // [start, end] where 0 <= start <= end <= numeric_limits<uint32_t>::max()
   std::pair<uint32_t, uint32_t> keyRange() const {
     auto fraction = keyRange_.load();
-    return { fraction >> 32, fraction & ((1UL << 32) - 1) };
+    return {fraction >> 32, fraction & ((1UL << 32) - 1)};
   }
 
   /**
@@ -118,19 +120,14 @@ struct ShadowSettings {
 };
 
 struct ProxyMessage {
-  enum class Type {
-    REQUEST,
-    OLD_CONFIG,
-    SHUTDOWN
-  };
+  enum class Type { REQUEST, OLD_CONFIG, SHUTDOWN };
 
   Type type{Type::REQUEST};
   void* data{nullptr};
 
   constexpr ProxyMessage() = default;
 
-  ProxyMessage(Type t, void* d) noexcept
-      : type(t), data(d) {}
+  ProxyMessage(Type t, void* d) noexcept : type(t), data(d) {}
 };
 
 template <class RouterInfo>
@@ -206,9 +203,10 @@ class Proxy : public ProxyBase {
   std::shared_ptr<Proxy<RouterInfo>> self_;
 
   using Pointer = std::unique_ptr<Proxy<RouterInfo>, ProxyDelayedDestructor>;
-  static Pointer createProxy(CarbonRouterInstanceBase& router,
-                             folly::EventBase& eventBase,
-                             size_t id);
+  static Pointer createProxy(
+      CarbonRouterInstanceBase& router,
+      folly::EventBase& eventBase,
+      size_t id);
   Proxy(CarbonRouterInstanceBase& router, size_t id, folly::EventBase& evb);
 
   void messageReady(ProxyMessage::Type t, void* data);
@@ -216,14 +214,14 @@ class Proxy : public ProxyBase {
   /** Process and reply stats request */
   void routeHandlesProcessRequest(
       const McStatsRequest& req,
-      std::unique_ptr<
-          ProxyRequestContextTyped<RouterInfo, McStatsRequest>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McStatsRequest>>
+          ctx);
 
   /** Process and reply to a version request */
   void routeHandlesProcessRequest(
       const McVersionRequest& req,
-      std::unique_ptr<
-          ProxyRequestContextTyped<RouterInfo, McVersionRequest>> ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McVersionRequest>>
+          ctx);
 
   /** Route request through route handle tree */
   template <class Request>
@@ -247,8 +245,7 @@ class Proxy : public ProxyBase {
   template <class Request>
   void processRequest(
       const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
-          ctx);
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
 
   /**
    * We use this wrapper instead of putting 'hook' inside ProxyRequestContext
@@ -281,15 +278,15 @@ class Proxy : public ProxyBase {
    public:
     WaitingRequest(
         const Request& req,
-        std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
-            ctx);
+        std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
     void process(Proxy* proxy) override final;
-    void setTimePushedOnQueue(int64_t now) { timePushedOnQueue_ = now; }
+    void setTimePushedOnQueue(int64_t now) {
+      timePushedOnQueue_ = now;
+    }
 
    private:
     const Request& req_;
-    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
-        ctx_;
+    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx_;
 
     int64_t timePushedOnQueue_{-1};
   };
@@ -319,8 +316,8 @@ class Proxy : public ProxyBase {
 template <class RouterInfo>
 struct old_config_req_t {
   explicit old_config_req_t(std::shared_ptr<ProxyConfig<RouterInfo>> config)
-    : config_(std::move(config)) {
-  }
+      : config_(std::move(config)) {}
+
  private:
   std::shared_ptr<ProxyConfig<RouterInfo>> config_;
 };
@@ -329,6 +326,8 @@ template <class RouterInfo>
 void proxy_config_swap(
     Proxy<RouterInfo>* proxy,
     std::shared_ptr<ProxyConfig<RouterInfo>> config);
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "Proxy-inl.h"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,10 +9,10 @@
  */
 #include "ProxyBase.h"
 
+#include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/options.h"
-#include "mcrouter/CarbonRouterInstanceBase.h"
 
 namespace facebook {
 namespace memcache {

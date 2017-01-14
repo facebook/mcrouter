@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,8 @@
 
 using folly::SSLContext;
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
@@ -31,9 +32,8 @@ struct CertPaths {
   folly::StringPiece pemCaPath;
 
   bool operator==(const CertPaths& other) const {
-    return pemCertPath == other.pemCertPath &&
-           pemKeyPath == other.pemKeyPath &&
-           pemCaPath == other.pemCaPath;
+    return pemCertPath == other.pemCertPath && pemKeyPath == other.pemKeyPath &&
+        pemCaPath == other.pemCaPath;
   }
 };
 
@@ -56,8 +56,9 @@ struct ContextInfo {
 struct CertPathsHasher {
   size_t operator()(const CertPaths& paths) const {
     return folly::hash::hash_combine_generic<folly::hash::StdHasher>(
-      paths.pemCertPath.hash(), paths.pemKeyPath.hash(),
-      paths.pemCaPath.hash());
+        paths.pemCertPath.hash(),
+        paths.pemKeyPath.hash(),
+        paths.pemCaPath.hash());
   }
 };
 
@@ -79,16 +80,23 @@ struct SSLContextDeleter {
   }
 };
 
-void logCertFailure(folly::StringPiece name, folly::StringPiece path,
-                    const std::exception& ex) {
-  LOG_FAILURE("SSLCert", failure::Category::kBadEnvironment,
-              "Failed to load {} from \"{}\", ex: {}", name, path, ex.what());
+void logCertFailure(
+    folly::StringPiece name,
+    folly::StringPiece path,
+    const std::exception& ex) {
+  LOG_FAILURE(
+      "SSLCert",
+      failure::Category::kBadEnvironment,
+      "Failed to load {} from \"{}\", ex: {}",
+      name,
+      path,
+      ex.what());
 }
 
-std::shared_ptr<SSLContext> handleSSLCertsUpdate(folly::StringPiece pemCertPath,
-                                                 folly::StringPiece pemKeyPath,
-                                                 folly::StringPiece pemCaPath) {
-
+std::shared_ptr<SSLContext> handleSSLCertsUpdate(
+    folly::StringPiece pemCertPath,
+    folly::StringPiece pemKeyPath,
+    folly::StringPiece pemCaPath) {
   std::shared_ptr<SSLContext> sslContext(new SSLContext(), SSLContextDeleter());
 
   // Load certificate.
@@ -123,29 +131,34 @@ std::shared_ptr<SSLContext> handleSSLCertsUpdate(folly::StringPiece pemCertPath,
     return nullptr;
   }
 
-  // Try to disable compression if possible to reduce CPU and memory usage.
+// Try to disable compression if possible to reduce CPU and memory usage.
 #ifdef SSL_OP_NO_COMPRESSION
   try {
     sslContext->setOptions(SSL_OP_NO_COMPRESSION);
   } catch (const std::runtime_error& ex) {
-    LOG_FAILURE("SSLCert", failure::Category::kSystemError,
-                "Failed to apply SSL_OP_NO_COMPRESSION flag onto SSLContext "
-                "with files: pemCertPath='{}', pemKeyPath='{}', pemCaPath='{}'",
-                pemCertPath, pemKeyPath, pemCaPath);
+    LOG_FAILURE(
+        "SSLCert",
+        failure::Category::kSystemError,
+        "Failed to apply SSL_OP_NO_COMPRESSION flag onto SSLContext "
+        "with files: pemCertPath='{}', pemKeyPath='{}', pemCaPath='{}'",
+        pemCertPath,
+        pemKeyPath,
+        pemCaPath);
     // We failed to disable compression, but the SSLContext itself is good to
     // use.
   }
 #endif
   return sslContext;
 }
-}  // anonymous
+} // anonymous
 
-std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
-                                          folly::StringPiece pemKeyPath,
-                                          folly::StringPiece pemCaPath) {
+std::shared_ptr<SSLContext> getSSLContext(
+    folly::StringPiece pemCertPath,
+    folly::StringPiece pemKeyPath,
+    folly::StringPiece pemCaPath) {
   static constexpr std::chrono::minutes kSslReloadInterval{30};
   thread_local std::unordered_map<CertPaths, ContextInfo, CertPathsHasher>
-  localContexts;
+      localContexts;
 
   CertPaths paths;
   paths.pemCertPath = pemCertPath;
@@ -172,7 +185,6 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
   auto now = std::chrono::steady_clock::now();
   if (contextInfo.context == nullptr ||
       now - contextInfo.lastLoadTime > kSslReloadInterval) {
-
     if (auto updated =
             handleSSLCertsUpdate(pemCertPath, pemKeyPath, pemCaPath)) {
       contextInfo.lastLoadTime = now;
@@ -180,7 +192,7 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
       contextInfo.context->setSessionCacheContext("async-server");
       SSL_CTX_set_timeout(contextInfo.context->getSSLCtx(), kSessionLifeTime);
 
-      #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
+#ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
       auto mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
           contextInfo.context.get(), nullptr);
       mgr->setTLSTicketKeySeeds({"aaaa"}, {"bbbb"}, {"cccc"});
@@ -190,11 +202,11 @@ std::shared_ptr<SSLContext> getSSLContext(folly::StringPiece pemCertPath,
           reinterpret_cast<uintptr_t>(contextInfo.context.get());
       assert(contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
       contextToTicketMgr()->emplace(mapKey, std::move(mgr));
-      #endif
+#endif
     }
   }
 
   return contextInfo.context;
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

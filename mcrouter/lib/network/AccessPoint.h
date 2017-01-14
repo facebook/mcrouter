@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,14 +16,16 @@
 
 #include "mcrouter/lib/mc/protocol.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct AccessPoint {
-  explicit AccessPoint(folly::StringPiece host = "",
-                       uint16_t port = 0,
-                       mc_protocol_t protocol = mc_unknown_protocol,
-                       bool useSsl = false,
-                       bool compressed = false);
+  explicit AccessPoint(
+      folly::StringPiece host = "",
+      uint16_t port = 0,
+      mc_protocol_t protocol = mc_unknown_protocol,
+      bool useSsl = false,
+      bool compressed = false);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
@@ -84,5 +86,5 @@ struct AccessPoint {
   bool isV6_{false};
   bool compressed_{false};
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

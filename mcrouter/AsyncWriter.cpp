@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,9 @@
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 AsyncWriter::AsyncWriter(size_t maxQueueSize)
     : maxQueueSize_(maxQueueSize),
@@ -26,8 +28,8 @@ AsyncWriter::AsyncWriter(size_t maxQueueSize)
           folly::make_unique<folly::fibers::EventBaseLoopController>()),
       eventBase_(/* enableTimeMeasurement */ false) {
   auto& c = fiberManager_.loopController();
-  dynamic_cast<folly::fibers::EventBaseLoopController&>(c)
-      .attachEventBase(eventBase_);
+  dynamic_cast<folly::fibers::EventBaseLoopController&>(c).attachEventBase(
+      eventBase_);
 }
 
 AsyncWriter::~AsyncWriter() {
@@ -71,9 +73,12 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
     });
     folly::setThreadName(thread_.native_handle(), threadName);
   } catch (const std::system_error& e) {
-    LOG_FAILURE("mcrouter", memcache::failure::Category::kSystemError,
-                "Can not start AsyncWriter thread {}: {}", threadName,
-                e.what());
+    LOG_FAILURE(
+        "mcrouter",
+        memcache::failure::Category::kSystemError,
+        "Can not start AsyncWriter thread {}: {}",
+        threadName,
+        e.what());
     return false;
   }
 
@@ -95,18 +100,17 @@ bool AsyncWriter::run(std::function<void()> f) {
     } while (!queueSize_.compare_exchange_weak(size, size + 1));
   }
 
-  fiberManager_.addTaskRemote([this, f_ = std::move(f)]() {
-      fiberManager_.runInMainContext(std::move(f_));
-      if (maxQueueSize_ != 0) {
-        --queueSize_;
-      }
+  fiberManager_.addTaskRemote([ this, f_ = std::move(f) ]() {
+    fiberManager_.runInMainContext(std::move(f_));
+    if (maxQueueSize_ != 0) {
+      --queueSize_;
+    }
   });
   return true;
 }
 
-
-bool awriter_queue(AsyncWriter* w, awriter_entry_t *e) {
-  return w->run([e, w] () {
+bool awriter_queue(AsyncWriter* w, awriter_entry_t* e) {
+  return w->run([e, w]() {
     if (!w->isActive()) {
       e->callbacks->completed(e, EPIPE);
       return;
@@ -115,5 +119,6 @@ bool awriter_queue(AsyncWriter* w, awriter_entry_t *e) {
     e->callbacks->completed(e, r);
   });
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

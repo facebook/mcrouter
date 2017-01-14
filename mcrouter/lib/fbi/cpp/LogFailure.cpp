@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -26,26 +26,37 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache { namespace failure {
+namespace facebook {
+namespace memcache {
+namespace failure {
 
 namespace {
 
-std::string createMessage(folly::StringPiece file,
-                          int line,
-                          folly::StringPiece service,
-                          folly::StringPiece category,
-                          folly::StringPiece msg,
-                          const std::map<std::string, std::string>& contexts) {
+std::string createMessage(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg,
+    const std::map<std::string, std::string>& contexts) {
   auto nowUs = std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::system_clock::now().time_since_epoch()).count();
-  auto result = folly::sformat("FAILURE {}.{} {} [{}] [{}] [{}] {}:{}] {}\n",
-    nowUs / 1000000, nowUs % 1000000, getpid(), service, category,
-    getThreadName(), file, line, msg);
+                   std::chrono::system_clock::now().time_since_epoch())
+                   .count();
+  auto result = folly::sformat(
+      "FAILURE {}.{} {} [{}] [{}] [{}] {}:{}] {}\n",
+      nowUs / 1000000,
+      nowUs % 1000000,
+      getpid(),
+      service,
+      category,
+      getThreadName(),
+      file,
+      line,
+      msg);
 
   auto contextIt = contexts.find(service.str());
   if (contextIt != contexts.end()) {
-    result += folly::sformat("\"{}\": {}", contextIt->first,
-                                    contextIt->second);
+    result += folly::sformat("\"{}\": {}", contextIt->first, contextIt->second);
   } else {
     for (const auto& it : contexts) {
       result += folly::sformat("\"{}\": {}\n", it.first, it.second);
@@ -54,24 +65,26 @@ std::string createMessage(folly::StringPiece file,
   return result;
 }
 
-void vlogErrorImpl(folly::StringPiece file,
-                   int line,
-                   folly::StringPiece service,
-                   folly::StringPiece category,
-                   folly::StringPiece msg,
-                   const std::map<std::string, std::string>& contexts) {
+void vlogErrorImpl(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg,
+    const std::map<std::string, std::string>& contexts) {
   bool logPrefixSaved = FLAGS_log_prefix;
   FLAGS_log_prefix = false;
   VLOG(1) << createMessage(file, line, service, category, msg, contexts);
   FLAGS_log_prefix = logPrefixSaved;
 }
 
-void logToStdErrorImpl(folly::StringPiece file,
-                       int line,
-                       folly::StringPiece service,
-                       folly::StringPiece category,
-                       folly::StringPiece msg,
-                       const std::map<std::string, std::string>& contexts) {
+void logToStdErrorImpl(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg,
+    const std::map<std::string, std::string>& contexts) {
   bool logPrefixSaved = FLAGS_log_prefix;
   FLAGS_log_prefix = false;
   LOG(ERROR) << createMessage(file, line, service, category, msg, contexts);
@@ -79,12 +92,13 @@ void logToStdErrorImpl(folly::StringPiece file,
 }
 
 template <class Error>
-void throwErrorImpl(folly::StringPiece file,
-                    int line,
-                    folly::StringPiece service,
-                    folly::StringPiece category,
-                    folly::StringPiece msg,
-                    const std::map<std::string, std::string>& contexts) {
+void throwErrorImpl(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg,
+    const std::map<std::string, std::string>& contexts) {
   throw Error(createMessage(file, line, service, category, msg, contexts));
 }
 
@@ -96,32 +110,31 @@ struct StaticContainer {
 
   // { handler name, handler func }
   std::vector<std::pair<std::string, HandlerFunc>> handlers = {
-    handlers::verboseLogToStdError()
-  };
+      handlers::verboseLogToStdError()};
 };
 
 folly::Singleton<StaticContainer> containerSingleton;
 
-}  // anonymous namespace
+} // anonymous namespace
 
 namespace handlers {
 
 std::pair<std::string, HandlerFunc> verboseLogToStdError() {
   return std::make_pair<std::string, HandlerFunc>(
-    "logToStdError", &vlogErrorImpl);
+      "logToStdError", &vlogErrorImpl);
 }
 
 std::pair<std::string, HandlerFunc> logToStdError() {
   return std::make_pair<std::string, HandlerFunc>(
-    "logToStdError", &logToStdErrorImpl);
+      "logToStdError", &logToStdErrorImpl);
 }
 
 std::pair<std::string, HandlerFunc> throwLogicError() {
   return std::make_pair<std::string, HandlerFunc>(
-    "throwLogicError", &throwErrorImpl<std::logic_error>);
+      "throwLogicError", &throwErrorImpl<std::logic_error>);
 }
 
-}  //handlers
+} // handlers
 
 const char* const Category::kBadEnvironment = "bad-environment";
 const char* const Category::kInvalidOption = "invalid-option";
@@ -183,11 +196,12 @@ void setServiceContext(folly::StringPiece service, std::string context) {
 
 namespace detail {
 
-void log(folly::StringPiece file,
-         int line,
-         folly::StringPiece service,
-         folly::StringPiece category,
-         folly::StringPiece msg) {
+void log(
+    folly::StringPiece file,
+    int line,
+    folly::StringPiece service,
+    folly::StringPiece category,
+    folly::StringPiece msg) {
   std::map<std::string, std::string> contexts;
   std::vector<std::pair<std::string, HandlerFunc>> handlers;
   if (auto container = containerSingleton.try_get()) {
@@ -200,6 +214,7 @@ void log(folly::StringPiece file,
   }
 }
 
-}  // detail
-
-}}}  // facebook::memcache::failure
+} // detail
+}
+}
+} // facebook::memcache::failure

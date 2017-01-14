@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,13 +12,15 @@
 #include <memory>
 #include <string>
 
-#include <folly/dynamic.h>
 #include <folly/Range.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/PoolFactory.h"
 #include "mcrouter/options.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouterInfo>
 class ProxyConfig;
@@ -29,25 +31,27 @@ class ConfigApi;
 
 class ProxyConfigBuilder {
  public:
-  ProxyConfigBuilder(const McrouterOptions& opts,
-                     ConfigApi& configApi,
-                     folly::StringPiece jsonC);
+  ProxyConfigBuilder(
+      const McrouterOptions& opts,
+      ConfigApi& configApi,
+      folly::StringPiece jsonC);
 
   template <class RouterInfo>
   std::shared_ptr<ProxyConfig<RouterInfo>> buildConfig(
       Proxy<RouterInfo>& proxy) const {
-    return std::shared_ptr<ProxyConfig<RouterInfo>>(
-        new ProxyConfig<RouterInfo>(
-            proxy, json_, configMd5Digest_, *poolFactory_));
+    return std::shared_ptr<ProxyConfig<RouterInfo>>(new ProxyConfig<RouterInfo>(
+        proxy, json_, configMd5Digest_, *poolFactory_));
   }
 
   const folly::dynamic& preprocessedConfig() const {
     return json_;
   }
+
  private:
   folly::dynamic json_;
   std::unique_ptr<PoolFactory> poolFactory_;
   std::string configMd5Digest_;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

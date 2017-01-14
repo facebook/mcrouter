@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,9 @@
 
 #include "mcrouter/options.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /*
 ** Observation of mcrouter in production indicates that
@@ -30,5 +32,6 @@ namespace facebook { namespace memcache { namespace mcrouter {
 
 #undef OPTIONS_FILE
 #undef OPTIONS_NAME
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

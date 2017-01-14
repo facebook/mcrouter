@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -38,7 +38,9 @@ class OperationSelectorRoute {
   using RoutableRequests = typename RouterInfo::RoutableRequests;
 
  public:
-  static std::string routeName() { return "operation-selector"; }
+  static std::string routeName() {
+    return "operation-selector";
+  }
 
   OperationSelectorRoute(
       carbon::RequestIdMap<RoutableRequests, RouteHandlePtr> operationPolicies,
@@ -47,8 +49,9 @@ class OperationSelectorRoute {
         defaultPolicy_(std::move(defaultPolicy)) {}
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     if (const auto& rh =
             operationPolicies_.template getByRequestType<Request>()) {
       t(*rh, req);
@@ -69,10 +72,10 @@ class OperationSelectorRoute {
     return ReplyT<Request>();
   }
 
-private:
- const carbon::RequestIdMap<RoutableRequests, RouteHandlePtr>
-     operationPolicies_;
- const RouteHandlePtr defaultPolicy_;
+ private:
+  const carbon::RequestIdMap<RoutableRequests, RouteHandlePtr>
+      operationPolicies_;
+  const RouteHandlePtr defaultPolicy_;
 };
 
 template <class RouterInfo>

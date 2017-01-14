@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,22 +11,21 @@
 
 #include <string>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-enum class ConfigType {
-  ConfigFile = 0,
-  ConfigImport = 1,
-  Pool = 2
-};
+enum class ConfigType { ConfigFile = 0, ConfigImport = 1, Pool = 2 };
 
 class ConfigApiIf {
  public:
-  virtual bool get(ConfigType type, const std::string& path,
-                   std::string& contents) = 0;
+  virtual bool
+  get(ConfigType type, const std::string& path, std::string& contents) = 0;
 
   virtual bool getConfigFile(std::string& config, std::string& path) = 0;
 
   virtual ~ConfigApiIf() = default;
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

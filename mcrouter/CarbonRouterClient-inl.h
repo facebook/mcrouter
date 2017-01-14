@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -227,8 +227,8 @@ bool CarbonRouterClient<RouterInfo>::send(
 template <class RouterInfo>
 void CarbonRouterClient<RouterInfo>::sendRemoteThread(
     std::unique_ptr<ProxyRequestContext> req) {
-  proxy_->messageQueue_->blockingWriteRelaxed(ProxyMessage::Type::REQUEST,
-                                              req.release());
+  proxy_->messageQueue_->blockingWriteRelaxed(
+      ProxyMessage::Type::REQUEST, req.release());
 }
 
 template <class RouterInfo>
@@ -239,14 +239,13 @@ void CarbonRouterClient<RouterInfo>::sendSameThread(
 
 template <class RouterInfo>
 CarbonRouterClient<RouterInfo>::CarbonRouterClient(
-  std::weak_ptr<CarbonRouterInstance<RouterInfo>> rtr,
-  size_t maximumOutstanding,
-  bool maximumOutstandingError,
-  bool sameThread) :
-    CarbonRouterClientBase(maximumOutstanding, maximumOutstandingError),
-    router_(std::move(rtr)),
-    sameThread_(sameThread) {
-
+    std::weak_ptr<CarbonRouterInstance<RouterInfo>> rtr,
+    size_t maximumOutstanding,
+    bool maximumOutstandingError,
+    bool sameThread)
+    : CarbonRouterClientBase(maximumOutstanding, maximumOutstandingError),
+      router_(std::move(rtr)),
+      sameThread_(sameThread) {
   if (auto router = router_.lock()) {
     proxy_ = router->getProxy(router->nextProxyIndex());
   }

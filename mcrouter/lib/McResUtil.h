@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,8 @@
 
 #include "mcrouter/lib/mc/msg.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 inline int resultSeverity(mc_res_t result) {
   switch (result) {
@@ -171,8 +172,8 @@ inline bool isRedirectResult(const mc_res_t result) {
  * Was the data found?
  */
 inline bool isHitResult(const mc_res_t result) {
-  return result == mc_res_deleted || result == mc_res_found
-    || result == mc_res_touched;
+  return result == mc_res_deleted || result == mc_res_found ||
+      result == mc_res_touched;
 }
 
 /**
@@ -199,5 +200,5 @@ inline bool isStoredResult(const mc_res_t result) {
 inline bool worseThan(mc_res_t first, mc_res_t second) {
   return resultSeverity(first) > resultSeverity(second);
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

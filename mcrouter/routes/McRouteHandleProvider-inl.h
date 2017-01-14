@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,18 +18,18 @@
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/network/AccessPoint.h"
-#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/fbi/cpp/ParsingUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/network/AccessPoint.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 #include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
-#include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/RateLimitRoute.h"
+#include "mcrouter/routes/RateLimiter.h"
 #include "mcrouter/routes/ShadowRoute.h"
 #include "mcrouter/routes/ShardHashFunc.h"
 #include "mcrouter/routes/ShardSplitRoute.h"
@@ -50,7 +50,6 @@ template <class RouteHandleIf>
 std::shared_ptr<RouteHandleIf> makeNullRoute(
     RouteHandleFactory<RouteHandleIf>& factory,
     const folly::dynamic& json);
-
 
 template <class RouterInfo>
 McRouteHandleProvider<RouterInfo>::McRouteHandleProvider(
@@ -107,16 +106,22 @@ McRouteHandleProvider<RouterInfo>::makePool(
   folly::StringPiece region, cluster;
   if (auto jregion = json.get_ptr("region")) {
     if (!jregion->isString()) {
-      MC_LOG_FAILURE(opts, memcache::failure::Category::kInvalidConfig,
-                     "Pool {}: pool_region is not a string", name);
+      MC_LOG_FAILURE(
+          opts,
+          memcache::failure::Category::kInvalidConfig,
+          "Pool {}: pool_region is not a string",
+          name);
     } else {
       region = jregion->stringPiece();
     }
   }
   if (auto jcluster = json.get_ptr("cluster")) {
     if (!jcluster->isString()) {
-      MC_LOG_FAILURE(opts, memcache::failure::Category::kInvalidConfig,
-                     "Pool {}: pool_cluster is not a string", name);
+      MC_LOG_FAILURE(
+          opts,
+          memcache::failure::Category::kInvalidConfig,
+          "Pool {}: pool_cluster is not a string",
+          name);
     } else {
       cluster = jcluster->stringPiece();
     }
@@ -199,14 +204,16 @@ McRouteHandleProvider<RouterInfo>::makePool(
     destinations.reserve(jservers->size());
     for (size_t i = 0; i < jservers->size(); ++i) {
       const auto& server = jservers->at(i);
-      checkLogic(server.isString() || server.isObject(),
-                 "server #{} is not a string/object", i);
+      checkLogic(
+          server.isString() || server.isObject(),
+          "server #{} is not a string/object",
+          i);
       if (server.isObject()) {
         destinations.push_back(factory.create(server));
         continue;
       }
-      auto ap = AccessPoint::create(server.stringPiece(), protocol, useSsl,
-                                    port, enableCompression);
+      auto ap = AccessPoint::create(
+          server.stringPiece(), protocol, useSsl, port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {
@@ -228,8 +235,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
       auto pdstn = proxy_.destinationMap()->find(*ap, timeout);
       if (!pdstn) {
         pdstn = proxy_.destinationMap()->emplace(
-          std::move(ap), timeout, qosClass, qosPath
-        );
+            std::move(ap), timeout, qosClass, qosPath);
       }
       pdstn->updatePoolName(name);
       pdstn->updateShortestTimeout(timeout);
@@ -249,8 +255,9 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf>
 McRouteHandleProvider<RouterInfo>::makePoolRoute(
     RouteHandleFactory<RouteHandleIf>& factory,
     const folly::dynamic& json) {
-  checkLogic(json.isObject() || json.isString(),
-             "PoolRoute should be object or string");
+  checkLogic(
+      json.isObject() || json.isString(),
+      "PoolRoute should be object or string");
   const folly::dynamic* jpool;
   if (json.isObject()) {
     jpool = json.get_ptr("pool");
@@ -267,27 +274,29 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
       if (auto maxOutstandingPtr = json.get_ptr("max_outstanding")) {
         auto v = parseInt(*maxOutstandingPtr, "max_outstanding", 0, 1000000);
         if (v) {
-          for (auto& destination: destinations) {
+          for (auto& destination : destinations) {
             destination = makeOutstandingLimitRoute<RouterInfo>(
                 std::move(destination), v);
           }
         }
       }
       if (auto slowWarmUpJson = json.get_ptr("slow_warmup")) {
-        checkLogic(slowWarmUpJson->isObject(),
-                   "slow_warmup must be a json object");
+        checkLogic(
+            slowWarmUpJson->isObject(), "slow_warmup must be a json object");
 
         auto failoverTargetJson = slowWarmUpJson->get_ptr("failoverTarget");
-        checkLogic(failoverTargetJson,
-                   "couldn't find 'failoverTarget' property in slow_warmup");
+        checkLogic(
+            failoverTargetJson,
+            "couldn't find 'failoverTarget' property in slow_warmup");
         auto failoverTarget = factory.create(*failoverTargetJson);
 
         std::shared_ptr<SlowWarmUpRouteSettings> slowWarmUpSettings;
         if (auto settingsJson = slowWarmUpJson->get_ptr("settings")) {
-          checkLogic(settingsJson->isObject(),
-                     "'settings' in slow_warmup must be a json object.");
+          checkLogic(
+              settingsJson->isObject(),
+              "'settings' in slow_warmup must be a json object.");
           slowWarmUpSettings =
-            std::make_shared<SlowWarmUpRouteSettings>(*settingsJson);
+              std::make_shared<SlowWarmUpRouteSettings>(*settingsJson);
         } else {
           slowWarmUpSettings = std::make_shared<SlowWarmUpRouteSettings>();
         }
@@ -307,15 +316,15 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
     // add weights and override whatever we have in PoolRoute::hash
     folly::dynamic jhashWithWeights = folly::dynamic::object();
     if (auto jWeights = poolJson.json.get_ptr("weights")) {
-      jhashWithWeights = folly::dynamic::object
-        ("hash_func", WeightedCh3HashFunc::type())
-        ("weights", *jWeights);
+      jhashWithWeights = folly::dynamic::object(
+          "hash_func", WeightedCh3HashFunc::type())("weights", *jWeights);
     }
 
     if (json.isObject()) {
       if (auto jhash = json.get_ptr("hash")) {
-        checkLogic(jhash->isObject() || jhash->isString(),
-                   "hash is not object/string");
+        checkLogic(
+            jhash->isObject() || jhash->isString(),
+            "hash is not object/string");
         if (jhash->isString()) {
           jhashWithWeights["hash_func"] = *jhash;
         } else { // object

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,9 @@
 
 #include <folly/Range.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Stores mcrouter routing prefix ("/region/cluster/" string).
@@ -39,13 +41,23 @@ class RoutingPrefix {
   RoutingPrefix& operator=(RoutingPrefix&& other) noexcept;
 
   // Conversion to string and StringPiece
-  /* implicit */ operator const std::string&() const { return prefix_; }
-  /* implicit */ operator folly::StringPiece() const { return prefix_; }
-  const std::string& str() const { return prefix_; }
+  /* implicit */ operator const std::string&() const {
+    return prefix_;
+  }
+  /* implicit */ operator folly::StringPiece() const {
+    return prefix_;
+  }
+  const std::string& str() const {
+    return prefix_;
+  }
 
   // 'region' and 'cluster' parts accessors
-  folly::StringPiece getRegion() const { return region_; }
-  folly::StringPiece getCluster() const { return cluster_; }
+  folly::StringPiece getRegion() const {
+    return region_;
+  }
+  folly::StringPiece getCluster() const {
+    return cluster_;
+  }
 
  private:
   std::string prefix_;
@@ -55,5 +67,6 @@ class RoutingPrefix {
   void initFromPrefix();
   void initFromPrefixUnsafe();
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

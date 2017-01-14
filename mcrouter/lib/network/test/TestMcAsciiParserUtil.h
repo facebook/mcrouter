@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,16 +16,18 @@
 
 namespace folly {
 class IOBuf;
-}  // folly
+} // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Given total data length and max piece size, generates all possible
  * combinations to split data in chunks.
  */
-std::vector<std::vector<size_t>> genChunkedDataSets(size_t length,
-                                                    size_t maxPieceSize);
+std::vector<std::vector<size_t>> genChunkedDataSets(
+    size_t length,
+    size_t maxPieceSize);
 
 /**
  * Given total data length and max piece size, returns number of
@@ -33,7 +35,8 @@ std::vector<std::vector<size_t>> genChunkedDataSets(size_t length,
  */
 size_t chunkedDataSetsCnt(size_t length, size_t maxPieceSize);
 
-std::unique_ptr<folly::IOBuf> chunkData(folly::IOBuf data,
-                                        const std::vector<size_t>& pieces);
-
-}}  // facebook::memcache
+std::unique_ptr<folly::IOBuf> chunkData(
+    folly::IOBuf data,
+    const std::vector<size_t>& pieces);
+}
+} // facebook::memcache

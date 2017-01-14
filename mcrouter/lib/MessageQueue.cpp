@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,21 +9,21 @@
  */
 #include "MessageQueue.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
-Notifier::Notifier(size_t noNotifyRate,
-                   int64_t waitThreshold,
-                   NowUsecFunc nowFunc) noexcept
+Notifier::Notifier(
+    size_t noNotifyRate,
+    int64_t waitThreshold,
+    NowUsecFunc nowFunc) noexcept
     : noNotifyRate_(noNotifyRate),
       waitThreshold_(waitThreshold),
       nowFunc_(nowFunc),
       lastTimeUsec_(nowFunc_()),
-      state_(State::EMPTY) {
-}
+      state_(State::EMPTY) {}
 
 bool Notifier::shouldNotifyRelaxed() noexcept {
-  if (waitThreshold_ &&
-      nowFunc_() - waitStart_ > waitThreshold_) {
+  if (waitThreshold_ && nowFunc_() - waitStart_ > waitThreshold_) {
     return shouldNotify();
   }
 
@@ -44,7 +44,7 @@ void Notifier::maybeUpdatePeriod() noexcept {
   if (now - lastTimeUsec_ > kUpdatePeriodUsec) {
     auto secElapsed = (double)(now - lastTimeUsec_) / 1000000.0;
     size_t notifyEvery = 1000000;
-    double msgPerSec = (double) curMessages_ / secElapsed;
+    double msgPerSec = (double)curMessages_ / secElapsed;
     double p = 1.0 - msgPerSec / noNotifyRate_;
     if (p > 0.0) {
       notifyEvery = 1.0 / p;
@@ -59,5 +59,5 @@ void Notifier::maybeUpdatePeriod() noexcept {
     curMessages_ = 0;
   }
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

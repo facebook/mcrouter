@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,19 +17,19 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /* CH3 consistent hashing function object */
 class Ch3HashFunc {
  public:
-  explicit Ch3HashFunc(size_t n)
-      : n_(n) {
+  explicit Ch3HashFunc(size_t n) : n_(n) {
     if (!n_ || n_ > furc_maximum_pool_size()) {
       throw std::logic_error("Pool size out of range for Ch3");
     }
   }
 
-  size_t operator() (folly::StringPiece hashable) const {
+  size_t operator()(folly::StringPiece hashable) const {
     return furc_hash(hashable.data(), hashable.size(), n_);
   }
 
@@ -40,5 +40,5 @@ class Ch3HashFunc {
  private:
   size_t n_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

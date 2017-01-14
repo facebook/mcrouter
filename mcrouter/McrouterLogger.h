@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,13 +17,15 @@
 #include <thread>
 #include <vector>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class CarbonRouterInstanceBase;
 struct stat_t;
 
 class AdditionalLoggerIf {
-public:
+ public:
   virtual ~AdditionalLoggerIf() {}
 
   virtual void log(const std::vector<stat_t>& stats) = 0;
@@ -39,8 +41,8 @@ class McrouterLogger {
    *                         is written.
    */
   explicit McrouterLogger(
-    CarbonRouterInstanceBase& router,
-    std::unique_ptr<AdditionalLoggerIf> additionalLogger = nullptr);
+      CarbonRouterInstanceBase& router,
+      std::unique_ptr<AdditionalLoggerIf> additionalLogger = nullptr);
 
   ~McrouterLogger();
 
@@ -92,5 +94,6 @@ class McrouterLogger {
    */
   void logStartupOptions();
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

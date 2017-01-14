@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,8 +13,8 @@
 #include <memory>
 #include <unordered_set>
 
-#include <folly/io/async/AsyncSocket.h>
 #include <folly/Optional.h>
+#include <folly/io/async/AsyncSocket.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/ConnectionTracker.h"
@@ -26,7 +26,8 @@ class EventBase;
 class SSLContext;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class CompressionCodecMap;
 class McServerOnRequest;
@@ -40,8 +41,9 @@ class AsyncMcServerWorker {
    * @param opts       Options
    * @param eventBase  eventBase that will process socket events
    */
-  explicit AsyncMcServerWorker(AsyncMcServerWorkerOptions opts,
-                               folly::EventBase& eventBase);
+  explicit AsyncMcServerWorker(
+      AsyncMcServerWorkerOptions opts,
+      folly::EventBase& eventBase);
 
   /**
    * Moves in ownership of an externally accepted client socket.
@@ -79,10 +81,11 @@ class AsyncMcServerWorker {
    */
   template <class OnRequest>
   void setOnRequest(OnRequest onRequest) {
-    static_assert(std::is_class<OnRequest>::value,
-                  "setOnRequest(): onRequest must be a class type");
+    static_assert(
+        std::is_class<OnRequest>::value,
+        "setOnRequest(): onRequest must be a class type");
     onRequest_ = std::make_shared<McServerOnRequestWrapper<OnRequest>>(
-      std::move(onRequest));
+        std::move(onRequest));
   }
 
   /**
@@ -163,9 +166,7 @@ class AsyncMcServerWorker {
   bool writesPending() const;
 
  private:
-  bool addClientSocket(
-      folly::AsyncSocket::UniquePtr&& socket,
-      void* userCtxt);
+  bool addClientSocket(folly::AsyncSocket::UniquePtr&& socket, void* userCtxt);
 
   AsyncMcServerWorkerOptions opts_;
   folly::EventBase& eventBase_;
@@ -186,6 +187,5 @@ class AsyncMcServerWorker {
   AsyncMcServerWorker(AsyncMcServerWorker&&) noexcept = delete;
   AsyncMcServerWorker& operator=(AsyncMcServerWorker&&) = delete;
 };
-
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

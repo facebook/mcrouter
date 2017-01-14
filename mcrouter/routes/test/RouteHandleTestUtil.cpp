@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,9 @@
  */
 #include "RouteHandleTestUtil.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 CarbonRouterInstance<McrouterRouterInfo>* getTestRouter() {
   McrouterOptions opts = defaultTestOptions();
@@ -25,10 +27,9 @@ getTestContext() {
 
 void mockFiberContext() {
   std::shared_ptr<ProxyRequestContextWithInfo<McrouterRouterInfo>> ctx;
-  folly::fibers::runInMainContext([&ctx](){
-    ctx = getTestContext();
-  });
+  folly::fibers::runInMainContext([&ctx]() { ctx = getTestContext(); });
   fiber_local<McrouterRouterInfo>::setSharedCtx(std::move(ctx));
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

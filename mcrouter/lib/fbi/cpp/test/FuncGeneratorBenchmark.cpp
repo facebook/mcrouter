@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,15 +28,13 @@ void run(Iterator begin, Iterator end) {
   }
   if (sum != n * (n - 1) / 2) {
     throw std::runtime_error(folly::to<std::string>(
-      "Bad sum: ", sum, ", expected: ", n * (n + 1) / 2));
+        "Bad sum: ", sum, ", expected: ", n * (n + 1) / 2));
   }
   folly::doNotOptimizeAway(sum);
 }
 
 void runFuncRange(size_t n) {
-  auto v = makeFuncGenerator([](size_t id) {
-    return id;
-  }, n);
+  auto v = makeFuncGenerator([](size_t id) { return id; }, n);
 
   run(v.begin(), v.end());
 }
@@ -46,15 +44,13 @@ void runVector(size_t n) {
   v.reserve(n);
 
   for (size_t i = 0; i < n; ++i) {
-    v.emplace_back([i]() {
-      return i;
-    });
+    v.emplace_back([i]() { return i; });
   }
 
   run(v.begin(), v.end());
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 BENCHMARK(FuncRange_2, n) {
   for (int i = 0; i < n; ++i) {
@@ -104,7 +100,7 @@ BENCHMARK_RELATIVE(Vector_100, n) {
   }
 }
 
-int main(int argc, char **argv){
+int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   folly::runBenchmarks();
   return 0;

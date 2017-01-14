@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,8 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class RouteHandleIf>
 class RouteHandleFactory;
@@ -39,11 +40,12 @@ class RouteHandleProviderIf {
    * @param type which RouteHandle is represented by json.
    * @param json JSON object with RouteHandle representation.
    */
-  virtual std::vector<std::shared_ptr<RouteHandleIf>>
-  create(RouteHandleFactory<RouteHandleIf>& factory, folly::StringPiece type,
-         const folly::dynamic& json) = 0;
+  virtual std::vector<std::shared_ptr<RouteHandleIf>> create(
+      RouteHandleFactory<RouteHandleIf>& factory,
+      folly::StringPiece type,
+      const folly::dynamic& json) = 0;
 
-  virtual ~RouteHandleProviderIf() {};
+  virtual ~RouteHandleProviderIf(){};
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

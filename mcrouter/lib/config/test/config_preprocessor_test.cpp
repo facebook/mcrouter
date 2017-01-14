@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,8 +14,8 @@
 #include <gtest/gtest.h>
 
 #include <folly/FileUtil.h>
-#include <folly/json.h>
 #include <folly/Range.h>
+#include <folly/json.h>
 
 #include "mcrouter/lib/config/ConfigPreprocessor.h"
 #include "mcrouter/lib/config/ImportResolverIf.h"
@@ -26,16 +26,15 @@ using facebook::memcache::ImportResolverIf;
 using facebook::memcache::parseJsonString;
 
 const std::string kTestFile =
-  "mcrouter/lib/config/test/config_preprocessor_test_file.json";
+    "mcrouter/lib/config/test/config_preprocessor_test_file.json";
 const std::string kTestFileErrors =
-  "mcrouter/lib/config/test/config_preprocessor_test_errors.json";
+    "mcrouter/lib/config/test/config_preprocessor_test_errors.json";
 const std::string kTestFileComments =
-  "mcrouter/lib/config/test/config_preprocessor_test_comments.json";
+    "mcrouter/lib/config/test/config_preprocessor_test_comments.json";
 
 const folly::StringKeyedUnorderedMap<folly::dynamic> kGlobalParams = {
-  { "testGlobal", "test" },
-  { "templGlobal", "templ" }
-};
+    {"testGlobal", "test"},
+    {"templGlobal", "templ"}};
 
 class MockImportResolver : public ImportResolverIf {
   std::string import(folly::StringPiece path) override final {
@@ -52,21 +51,20 @@ class MockImportResolver : public ImportResolverIf {
   }
 };
 
-void runCase(const folly::dynamic& consts,
-             const folly::dynamic& macros,
-             const std::string& caseName,
-             const folly::dynamic& caseObj) {
-
+void runCase(
+    const folly::dynamic& consts,
+    const folly::dynamic& macros,
+    const std::string& caseName,
+    const folly::dynamic& caseObj) {
   LOG(INFO) << "  Case: " << caseName;
   auto orig = caseObj["orig"];
   auto expand = caseObj["expand"];
 
-  folly::dynamic obj = folly::dynamic::object("consts", consts)
-                                             ("macros", macros)
-                                             ("orig", orig);
+  folly::dynamic obj =
+      folly::dynamic::object("consts", consts)("macros", macros)("orig", orig);
   MockImportResolver resolver;
   auto result = ConfigPreprocessor::getConfigWithoutMacros(
-    folly::toJson(obj), resolver, kGlobalParams);
+      folly::toJson(obj), resolver, kGlobalParams);
 
   auto origExpand = result["orig"];
 
@@ -128,8 +126,8 @@ TEST(ConfigPreprocessorTest, errors) {
     LOG(INFO) << "Case: " << testCase.first.asString();
     auto caseStr = folly::toJson(testCase.second);
     try {
-      ConfigPreprocessor::getConfigWithoutMacros(caseStr, resolver,
-                                                 kGlobalParams);
+      ConfigPreprocessor::getConfigWithoutMacros(
+          caseStr, resolver, kGlobalParams);
     } catch (const std::logic_error& e) {
       LOG(INFO) << "success " << e.what();
       continue;
@@ -146,8 +144,8 @@ TEST(ConfigPreprocessorTest, comments) {
     FAIL() << "can not read test file " << kTestFileErrors;
   }
 
-  auto json = ConfigPreprocessor::getConfigWithoutMacros(jsonStr, resolver,
-                                                         kGlobalParams);
+  auto json = ConfigPreprocessor::getConfigWithoutMacros(
+      jsonStr, resolver, kGlobalParams);
 
   folly::json::serialization_opts opts;
   opts.sort_keys = true;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -189,9 +189,9 @@ TEST(RendezvousHash, ConsistentFlowToDecreasedWeightNode) {
     // traffic should only flow from the zero weight node to others
     size_t id = hashes.get(i);
     if (mapping[i] == kNumNodes - 1) {
-       ASSERT_TRUE(mapping[i] != id);
+      ASSERT_TRUE(mapping[i] != id);
     } else {
-       ASSERT_TRUE(mapping[i] == id);
+      ASSERT_TRUE(mapping[i] == id);
     }
   }
 }
@@ -224,35 +224,33 @@ TEST(RendezvousHash, ConsistencyWithDecreasedWeight) {
 
 TEST(ConsistentHashRing, DistributionAccuracy) {
   constexpr size_t kNumRequests = 20000;
-  folly::StringPiece keys[] = {
-    "first_proxy",
-    "second_proxy",
-    "third_proxy",
-    "fourth_proxy",
-    "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f"
-  };
+  folly::StringPiece keys[] = {"first_proxy",
+                               "second_proxy",
+                               "third_proxy",
+                               "fourth_proxy",
+                               "a",
+                               "b",
+                               "c",
+                               "d",
+                               "e",
+                               "f"};
 
   std::vector<double> weights[] = {
-    {248.0, 342.0, 2.0, 384.0},
-    {10.0, 10.0, 10.0, 10.0},
-    {25.0, 25.0, 10.0, 10.0},
-    {100.0, 10.0, 10.0, 1.0},
-    {100.0, 5.0, 5.0, 5.0},
-    {922337203685.0, 12395828300.0, 50192385101.0, 59293845010.0},
-    {0.5, 0.1, 0.01, 1.0},
-    {0.9, 1.1, 10, 0.01},
-    {0.01, 0.001, 0.0001, 0.0},
-    {0.5, 1.0},
-    {0.1},
-    {100, 1, 0, 0, 0, 0, 0, 0, 1, 1},
-    {0.5, 1.0, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0},
-    {1e-7, 1e-8, 1e-9},
-    {1e-8, 1.0},
+      {248.0, 342.0, 2.0, 384.0},
+      {10.0, 10.0, 10.0, 10.0},
+      {25.0, 25.0, 10.0, 10.0},
+      {100.0, 10.0, 10.0, 1.0},
+      {100.0, 5.0, 5.0, 5.0},
+      {922337203685.0, 12395828300.0, 50192385101.0, 59293845010.0},
+      {0.5, 0.1, 0.01, 1.0},
+      {0.9, 1.1, 10, 0.01},
+      {0.01, 0.001, 0.0001, 0.0},
+      {0.5, 1.0},
+      {0.1},
+      {100, 1, 0, 0, 0, 0, 0, 0, 1, 1},
+      {0.5, 1.0, 0.5, 1.0, 0.5, 1.0, 0.5, 1.0},
+      {1e-7, 1e-8, 1e-9},
+      {1e-8, 1.0},
   };
 
   for (auto& weight : weights) {

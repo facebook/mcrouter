@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,7 +15,9 @@
 
 #include "mcrouter/lib/config/ImportResolverIf.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 class ConfigApiIf;
 
@@ -31,8 +33,10 @@ class McImportResolver : public ImportResolverIf {
    * @throws std::runtime_error if can not load file
    */
   std::string import(folly::StringPiece path);
+
  private:
   ConfigApiIf& configApi_;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

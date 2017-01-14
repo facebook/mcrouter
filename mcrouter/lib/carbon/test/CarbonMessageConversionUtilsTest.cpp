@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -39,8 +39,8 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testDouble() = 5.6;
   r.testShortString() = "abcdef";
   r.testLongString() = "asdfghjkl;'eqtirgwuifhiivlzkhbvjkhc3978y42h97*&687gba";
-  r.testIobuf() = folly::IOBuf(folly::IOBuf::CopyBufferOp(),
-                               folly::StringPiece("TestTheBuf"));
+  r.testIobuf() = folly::IOBuf(
+      folly::IOBuf::CopyBufferOp(), folly::StringPiece("TestTheBuf"));
   r.testStruct().baseInt64Member() = 345;
   r.testStruct().stringMember() = "nestedSimpleStruct";
   r.testOptionalString() = "tstOptStr";

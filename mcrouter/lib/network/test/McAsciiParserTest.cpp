@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,8 +16,8 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/network/ClientMcParser.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/McAsciiParser.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/TestMcAsciiParserUtil.h"
 
 using namespace facebook::memcache;
@@ -38,12 +38,13 @@ class McAsciiParserHarness {
  public:
   explicit McAsciiParserHarness(folly::IOBuf data) : data_(std::move(data)) {}
   explicit McAsciiParserHarness(const char* str)
-    : data_(IOBuf::COPY_BUFFER, str, strlen(str)) {}
+      : data_(IOBuf::COPY_BUFFER, str, strlen(str)) {}
 
   template <class Request>
   void expectNext(ReplyT<Request> reply, bool failure = false);
 
   void runTest(int maxPieceSize);
+
  private:
   using ParserT = ClientMcParser<McAsciiParserHarness>;
   friend ParserT;
@@ -55,10 +56,10 @@ class McAsciiParserHarness {
 
     virtual ~ReplyInfoBase() {}
     virtual void initializeParser(ParserT& parser) const = 0;
+
    protected:
     ReplyInfoBase(bool shouldFail_, std::type_index type_)
-      : shouldFail(shouldFail_), type(type_) {
-    }
+        : shouldFail(shouldFail_), type(type_) {}
   };
 
   template <class Reply>
@@ -67,19 +68,16 @@ class McAsciiParserHarness {
     Reply reply;
 
     ReplyInfoWithReply(Reply reply, bool failure)
-      : ReplyInfoBase(failure, typeid(Reply)), reply(std::move(reply)) {
-    }
+        : ReplyInfoBase(failure, typeid(Reply)), reply(std::move(reply)) {}
   };
 
   template <class Request>
-  class ReplyInfo :
-    public ReplyInfoWithReply<ReplyT<Request>> {
+  class ReplyInfo : public ReplyInfoWithReply<ReplyT<Request>> {
    public:
     using Reply = ReplyT<Request>;
 
     ReplyInfo(Reply reply, bool failure)
-      : ReplyInfoWithReply<Reply>(std::move(reply), failure) {
-    }
+        : ReplyInfoWithReply<Reply>(std::move(reply), failure) {}
 
     void initializeParser(ParserT& parser) const override final {
       parser.expectNext<Request>();
@@ -141,8 +139,8 @@ class McAsciiParserHarness {
 
 template <class Request>
 void McAsciiParserHarness::expectNext(ReplyT<Request> reply, bool failure) {
-  replies_.push_back(folly::make_unique<ReplyInfo<Request>>(
-    std::move(reply), failure));
+  replies_.push_back(
+      folly::make_unique<ReplyInfo<Request>>(std::move(reply), failure));
 }
 
 void McAsciiParserHarness::runTest(int maxPieceSize) {
@@ -152,8 +150,8 @@ void McAsciiParserHarness::runTest(int maxPieceSize) {
   if (maxPieceSize >= 0) {
     auto storedData = std::move(data_);
     storedData.coalesce();
-    auto splits = genChunkedDataSets(storedData.length(),
-                                     static_cast<size_t>(maxPieceSize));
+    auto splits = genChunkedDataSets(
+        storedData.length(), static_cast<size_t>(maxPieceSize));
     LOG(INFO) << "Number of tests generated: " << splits.size();
     for (const auto& split : splits) {
       data_ = std::move(*chunkData(storedData, split));
@@ -201,8 +199,10 @@ Reply setVersion(Reply reply, std::string version) {
 }
 
 McMetagetReply createMetagetHitReply(
-    int32_t age, uint32_t exptime, uint64_t flags, std::string host) {
-
+    int32_t age,
+    uint32_t exptime,
+    uint64_t flags,
+    std::string host) {
   McMetagetReply msg;
   msg.age() = age;
   msg.exptime() = exptime;
@@ -232,7 +232,7 @@ Reply replyWithMessage(mc_res_t res, std::string msg) {
   return reply;
 }
 
-}  // anonymous
+} // anonymous
 
 /**
  * Test get
@@ -252,14 +252,14 @@ TYPED_TEST(McAsciiParserTestGet, GetHit) {
 TYPED_TEST(McAsciiParserTestGet, GetHit_Empty) {
   McAsciiParserHarness h("VALUE t 5 0\r\n\r\nEND\r\n");
   h.expectNext<TypeParam>(
-    setFlags(setValue(ReplyT<TypeParam>(mc_res_found), ""), 5));
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), ""), 5));
   h.runTest(2);
 }
 
 TYPED_TEST(McAsciiParserTestGet, GetHit_WithSpaces) {
   McAsciiParserHarness h("VALUE  test  15889  5\r\ntest \r\nEND\r\n");
   h.expectNext<TypeParam>(
-    setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 15889));
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 15889));
   h.runTest(1);
 }
 
@@ -298,7 +298,7 @@ TYPED_TEST(McAsciiParserTestGet, GetServerError) {
 TYPED_TEST(McAsciiParserTestGet, GetHitMiss) {
   McAsciiParserHarness h("VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n");
   h.expectNext<TypeParam>(
-    setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 17));
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test "), 17));
   h.expectNext<TypeParam>(ReplyT<TypeParam>(mc_res_notfound), false);
   h.runTest(1);
 }
@@ -313,10 +313,9 @@ TYPED_TEST_CASE(McAsciiParserTestGets, GetsTypes);
 
 TYPED_TEST(McAsciiParserTestGets, GetsHit) {
   McAsciiParserHarness h("VALUE test 1120 10 573\r\ntest test \r\nEND\r\n");
-  h.expectNext<TypeParam>(
-    setCas(
-      setFlags(
-        setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120), 573));
+  h.expectNext<TypeParam>(setCas(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120),
+      573));
   h.runTest(1);
 }
 
@@ -325,42 +324,36 @@ TYPED_TEST(McAsciiParserTestGets, GetsHit) {
  */
 template <class Request>
 class McAsciiParserTestLeaseGet : public ::testing::Test {};
-using LeaseGetTypes =
-  ::testing::Types<McLeaseGetRequest>;
+using LeaseGetTypes = ::testing::Types<McLeaseGetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestLeaseGet, LeaseGetTypes);
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetHit) {
   McAsciiParserHarness h("VALUE test 1120 10\r\ntest test \r\nEND\r\n");
   h.expectNext<TypeParam>(
-    setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120));
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_found), "test test "), 1120));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetFoundStale) {
   McAsciiParserHarness h("LVALUE test 1 1120 10\r\ntest test \r\nEND\r\n");
-  h.expectNext<TypeParam>(
-    setLeaseToken(
+  h.expectNext<TypeParam>(setLeaseToken(
       setFlags(
-        setValue(ReplyT<TypeParam>(mc_res_notfound), "test test "), 1120), 1));
+          setValue(ReplyT<TypeParam>(mc_res_notfound), "test test "), 1120),
+      1));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetHotMiss) {
   McAsciiParserHarness h("LVALUE test 1 1120 0\r\n\r\nEND\r\n");
-  h.expectNext<TypeParam>(
-    setLeaseToken(
-      setFlags(
-        setValue(ReplyT<TypeParam>(mc_res_notfound), ""), 1120), 1));
+  h.expectNext<TypeParam>(setLeaseToken(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_notfound), ""), 1120), 1));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetMiss) {
   McAsciiParserHarness h("LVALUE test 162481237786486239 112 0\r\n\r\nEND\r\n");
-  h.expectNext<TypeParam>(
-    setLeaseToken(
-      setFlags(
-        setValue(ReplyT<TypeParam>(mc_res_notfound), ""),
-        112),
+  h.expectNext<TypeParam>(setLeaseToken(
+      setFlags(setValue(ReplyT<TypeParam>(mc_res_notfound), ""), 112),
       162481237786486239ull));
   h.runTest(1);
 }
@@ -369,7 +362,7 @@ TYPED_TEST(McAsciiParserTestLeaseGet, LeaseGetMiss) {
  * Test set
  */
 template <class Request>
-class McAsciiParserTestSet: public ::testing::Test {};
+class McAsciiParserTestSet : public ::testing::Test {};
 using SetTypes = ::testing::Types<McSetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestSet, SetTypes);
 
@@ -389,7 +382,7 @@ TYPED_TEST(McAsciiParserTestSet, SetNotStored) {
  * Test add
  */
 template <class Request>
-class McAsciiParserTestAdd: public ::testing::Test {};
+class McAsciiParserTestAdd : public ::testing::Test {};
 using AddTypes = ::testing::Types<McAddRequest>;
 TYPED_TEST_CASE(McAsciiParserTestAdd, AddTypes);
 
@@ -416,8 +409,7 @@ TYPED_TEST(McAsciiParserTestAdd, AddExists) {
  */
 template <class Request>
 class McAsciiParserTestLeaseSet : public ::testing::Test {};
-using LeaseSetTypes =
-  ::testing::Types<McLeaseSetRequest>;
+using LeaseSetTypes = ::testing::Types<McLeaseSetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestLeaseSet, LeaseSetTypes);
 
 TYPED_TEST(McAsciiParserTestLeaseSet, LeaseSetStored) {
@@ -483,8 +475,7 @@ TYPED_TEST(McAsciiParserTestDecr, DecrNotFound) {
  */
 template <class Request>
 class McAsciiParserTestVersion : public ::testing::Test {};
-using VersionTypes =
-  ::testing::Types<McVersionRequest>;
+using VersionTypes = ::testing::Types<McVersionRequest>;
 TYPED_TEST_CASE(McAsciiParserTestVersion, VersionTypes);
 
 TYPED_TEST(McAsciiParserTestVersion, Version) {
@@ -539,8 +530,7 @@ TYPED_TEST(McAsciiParserTestTouch, TouchNotFound) {
  */
 template <class Request>
 class McAsciiParserTestMetaget : public ::testing::Test {};
-using MetagetTypes =
-  ::testing::Types<McMetagetRequest>;
+using MetagetTypes = ::testing::Types<McMetagetRequest>;
 TYPED_TEST_CASE(McAsciiParserTestMetaget, MetagetTypes);
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetMiss) {
@@ -550,35 +540,39 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetMiss) {
 }
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv6) {
-  McAsciiParserHarness h("META test:key age:345644; exptime:35; "
-                         "from:2001:dbaf:7654:7578:12:06ef::1; "
-                         "is_transient:38\r\nEND\r\n");
+  McAsciiParserHarness h(
+      "META test:key age:345644; exptime:35; "
+      "from:2001:dbaf:7654:7578:12:06ef::1; "
+      "is_transient:38\r\nEND\r\n");
   h.expectNext<TypeParam>(
-    createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
+      createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Ipv4) {
-  McAsciiParserHarness h("META test:key age:  345644; exptime:  35; "
-                         "from:  23.84.127.32; "
-                         "is_transient:  48\r\nEND\r\n");
+  McAsciiParserHarness h(
+      "META test:key age:  345644; exptime:  35; "
+      "from:  23.84.127.32; "
+      "is_transient:  48\r\nEND\r\n");
   h.expectNext<TypeParam>(
       createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown) {
-  McAsciiParserHarness h("META test:key age:  unknown; exptime:  37; "
-                         "from: unknown; "
-                         "is_transient:  48\r\nEND\r\n");
+  McAsciiParserHarness h(
+      "META test:key age:  unknown; exptime:  37; "
+      "from: unknown; "
+      "is_transient:  48\r\nEND\r\n");
   h.expectNext<TypeParam>(createMetagetHitReply(-1, 37, 48, "unknown"));
   h.runTest(1);
 }
 
 TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne) {
-  McAsciiParserHarness h("META test:key age:  -1; exptime:  37; "
-                         "from: unknown; "
-                         "is_transient:  48\r\nEND\r\n");
+  McAsciiParserHarness h(
+      "META test:key age:  -1; exptime:  37; "
+      "from: unknown; "
+      "is_transient:  48\r\nEND\r\n");
   h.expectNext<TypeParam>(createMetagetHitReply(-1, 37, 48, "unknown"));
   h.runTest(1);
 }
@@ -588,8 +582,7 @@ TYPED_TEST(McAsciiParserTestMetaget, MetagetHit_Unknown_NegativeOne) {
  */
 TEST(McAsciiParserTestFlushAll, FlushAll) {
   McAsciiParserHarness h("OK\r\n");
-  h.expectNext<McFlushAllRequest>(
-      McFlushAllReply(mc_res_ok));
+  h.expectNext<McFlushAllRequest>(McFlushAllReply(mc_res_ok));
   h.runTest(0);
 }
 
@@ -597,140 +590,93 @@ TEST(McAsciiParserHarness, AllAtOnce) {
   /**
    *    * Parse all non-failure tests as one stream.
    *       */
-  McAsciiParserHarness h("VALUE t 10 2\r\nte\r\nEND\r\n"
-                         "VALUE t 5 0\r\n\r\nEND\r\n"
-                         "VALUE  test  15889  5\r\ntest \r\nEND\r\n"
-                         "END\r\n"
-                         "CLIENT_ERROR what\r\n"
-                         "SERVER_ERROR what\r\n"
-                         "VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n"
-                         "VALUE test 1120 10 573\r\ntest test \r\nEND\r\n"
-                         "VALUE test 1120 10\r\ntest test \r\nEND\r\n"
-                         "LVALUE test 1 1120 10\r\ntest test \r\nEND\r\n"
-                         "LVALUE test 1 1120 0\r\n\r\nEND\r\n"
-                         "LVALUE test 162481237786486239 112 0\r\n\r\nEND\r\n"
-                         "STORED\r\n"
-                         "NOT_STORED\r\n"
-                         "STORED\r\n"
-                         "NOT_STORED\r\n"
-                         "EXISTS\r\n"
-                         "STORED\r\n"
-                         "NOT_STORED\r\n"
-                         "STALE_STORED\r\n"
-                         "3636\r\n"
-                         "NOT_FOUND\r\n"
-                         "1534\r\n"
-                         "NOT_FOUND\r\n"
-                         "VERSION HarnessTest\r\n"
-                         "DELETED\r\n"
-                         "NOT_FOUND\r\n"
-                         "END\r\n"
-                         "META test:key age:345644; exptime:35; "
-                         "from:2001:dbaf:7654:7578:12:06ef::1; "
-                         "is_transient:38\r\nEND\r\n"
-                         "META test:key age:  345644; exptime:  35; "
-                         "from:  23.84.127.32; "
-                         "is_transient:  48\r\nEND\r\n"
-                         "META test:key age:  unknown; exptime:  37; "
-                         "from: unknown; "
-                         "is_transient:  48\r\nEND\r\n"
-                         "TOUCHED\r\n");
+  McAsciiParserHarness h(
+      "VALUE t 10 2\r\nte\r\nEND\r\n"
+      "VALUE t 5 0\r\n\r\nEND\r\n"
+      "VALUE  test  15889  5\r\ntest \r\nEND\r\n"
+      "END\r\n"
+      "CLIENT_ERROR what\r\n"
+      "SERVER_ERROR what\r\n"
+      "VALUE test 17  5\r\ntest \r\nEND\r\nEND\r\n"
+      "VALUE test 1120 10 573\r\ntest test \r\nEND\r\n"
+      "VALUE test 1120 10\r\ntest test \r\nEND\r\n"
+      "LVALUE test 1 1120 10\r\ntest test \r\nEND\r\n"
+      "LVALUE test 1 1120 0\r\n\r\nEND\r\n"
+      "LVALUE test 162481237786486239 112 0\r\n\r\nEND\r\n"
+      "STORED\r\n"
+      "NOT_STORED\r\n"
+      "STORED\r\n"
+      "NOT_STORED\r\n"
+      "EXISTS\r\n"
+      "STORED\r\n"
+      "NOT_STORED\r\n"
+      "STALE_STORED\r\n"
+      "3636\r\n"
+      "NOT_FOUND\r\n"
+      "1534\r\n"
+      "NOT_FOUND\r\n"
+      "VERSION HarnessTest\r\n"
+      "DELETED\r\n"
+      "NOT_FOUND\r\n"
+      "END\r\n"
+      "META test:key age:345644; exptime:35; "
+      "from:2001:dbaf:7654:7578:12:06ef::1; "
+      "is_transient:38\r\nEND\r\n"
+      "META test:key age:  345644; exptime:  35; "
+      "from:  23.84.127.32; "
+      "is_transient:  48\r\nEND\r\n"
+      "META test:key age:  unknown; exptime:  37; "
+      "from: unknown; "
+      "is_transient:  48\r\nEND\r\n"
+      "TOUCHED\r\n");
   h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), "te"),
-               10));
+      setFlags(setValue(McGetReply(mc_res_found), "te"), 10));
   h.expectNext<McGetRequest>(
-      setFlags(setValue(McGetReply(mc_res_found), ""),
-               5));
+      setFlags(setValue(McGetReply(mc_res_found), ""), 5));
   h.expectNext<McGetRequest>(
-      setFlags(
-        setValue(McGetReply(mc_res_found), "test "),
-        15889));
-  h.expectNext<McGetRequest>(
-      McGetReply(mc_res_notfound));
+      setFlags(setValue(McGetReply(mc_res_found), "test "), 15889));
+  h.expectNext<McGetRequest>(McGetReply(mc_res_notfound));
   h.expectNext<McGetRequest>(
       replyWithMessage<McGetReply>(mc_res_client_error, "what"));
   h.expectNext<McGetRequest>(
       replyWithMessage<McGetReply>(mc_res_remote_error, "what"));
   h.expectNext<McGetRequest>(
-      setFlags(
-        setValue(McGetReply(mc_res_found), "test "),
-        17));
+      setFlags(setValue(McGetReply(mc_res_found), "test "), 17));
+  h.expectNext<McGetRequest>(McGetReply(mc_res_notfound));
+  h.expectNext<McGetsRequest>(setCas(
+      setFlags(setValue(McGetsReply(mc_res_found), "test test "), 1120), 573));
   h.expectNext<McGetRequest>(
-      McGetReply(mc_res_notfound));
-  h.expectNext<McGetsRequest>(
-      setCas(
-        setFlags(
-          setValue(McGetsReply(mc_res_found),
-            "test test "),
-          1120),
-        573));
-  h.expectNext<McGetRequest>(
-      setFlags(
-        setValue(
-          McGetReply(mc_res_found), "test test "),
-        1120));
-  h.expectNext<McLeaseGetRequest>(
-      setLeaseToken(
-        setFlags(
-          setValue(
-            McLeaseGetReply(mc_res_notfound),
-            "test test "),
-          1120),
-        1));
-  h.expectNext<McLeaseGetRequest>(
-      setLeaseToken(
-        setFlags(
-          setValue(
-            McLeaseGetReply(mc_res_notfound), ""),
-          1120),
-        1));
-  h.expectNext<McLeaseGetRequest>(
-      setLeaseToken(
-        setFlags(
-          setValue(
-            McLeaseGetReply(mc_res_notfound), ""),
-          112),
-        162481237786486239ull));
-  h.expectNext<McSetRequest>(
-      McSetReply(mc_res_stored));
-  h.expectNext<McSetRequest>(
-      McSetReply(mc_res_notstored));
-  h.expectNext<McAddRequest>(
-      McAddReply(mc_res_stored));
-  h.expectNext<McAddRequest>(
-      McAddReply(mc_res_notstored));
-  h.expectNext<McAddRequest>(
-      McAddReply(mc_res_exists));
-  h.expectNext<McLeaseSetRequest>(
-      McLeaseSetReply(mc_res_stored));
-  h.expectNext<McLeaseSetRequest>(
-      McLeaseSetReply(mc_res_notstored));
-  h.expectNext<McLeaseSetRequest>(
-      McLeaseSetReply(mc_res_stalestored));
-  h.expectNext<McIncrRequest>(
-      setDelta(McIncrReply(mc_res_stored), 3636));
-  h.expectNext<McIncrRequest>(
-      McIncrReply(mc_res_notfound));
-  h.expectNext<McDecrRequest>(
-      setDelta(McDecrReply(mc_res_stored), 1534));
-  h.expectNext<McDecrRequest>(
-      McDecrReply(mc_res_notfound));
+      setFlags(setValue(McGetReply(mc_res_found), "test test "), 1120));
+  h.expectNext<McLeaseGetRequest>(setLeaseToken(
+      setFlags(setValue(McLeaseGetReply(mc_res_notfound), "test test "), 1120),
+      1));
+  h.expectNext<McLeaseGetRequest>(setLeaseToken(
+      setFlags(setValue(McLeaseGetReply(mc_res_notfound), ""), 1120), 1));
+  h.expectNext<McLeaseGetRequest>(setLeaseToken(
+      setFlags(setValue(McLeaseGetReply(mc_res_notfound), ""), 112),
+      162481237786486239ull));
+  h.expectNext<McSetRequest>(McSetReply(mc_res_stored));
+  h.expectNext<McSetRequest>(McSetReply(mc_res_notstored));
+  h.expectNext<McAddRequest>(McAddReply(mc_res_stored));
+  h.expectNext<McAddRequest>(McAddReply(mc_res_notstored));
+  h.expectNext<McAddRequest>(McAddReply(mc_res_exists));
+  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(mc_res_stored));
+  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(mc_res_notstored));
+  h.expectNext<McLeaseSetRequest>(McLeaseSetReply(mc_res_stalestored));
+  h.expectNext<McIncrRequest>(setDelta(McIncrReply(mc_res_stored), 3636));
+  h.expectNext<McIncrRequest>(McIncrReply(mc_res_notfound));
+  h.expectNext<McDecrRequest>(setDelta(McDecrReply(mc_res_stored), 1534));
+  h.expectNext<McDecrRequest>(McDecrReply(mc_res_notfound));
   h.expectNext<McVersionRequest>(
-      setVersion(
-        McVersionReply(mc_res_ok), "HarnessTest"));
-  h.expectNext<McDeleteRequest>(
-      McDeleteReply(mc_res_deleted));
-  h.expectNext<McDeleteRequest>(
-      McDeleteReply(mc_res_notfound));
-  h.expectNext<McMetagetRequest>(
-      McMetagetReply(mc_res_notfound));
+      setVersion(McVersionReply(mc_res_ok), "HarnessTest"));
+  h.expectNext<McDeleteRequest>(McDeleteReply(mc_res_deleted));
+  h.expectNext<McDeleteRequest>(McDeleteReply(mc_res_notfound));
+  h.expectNext<McMetagetRequest>(McMetagetReply(mc_res_notfound));
   h.expectNext<McMetagetRequest>(
       createMetagetHitReply(345644, 35, 38, "2001:dbaf:7654:7578:12:06ef::1"));
   h.expectNext<McMetagetRequest>(
       createMetagetHitReply(345644, 35, 48, "23.84.127.32"));
-  h.expectNext<McMetagetRequest>(
-      createMetagetHitReply(-1, 37, 48, "unknown"));
-  h.expectNext<McTouchRequest>(
-      McTouchReply(mc_res_touched));
+  h.expectNext<McMetagetRequest>(createMetagetHitReply(-1, 37, 48, "unknown"));
+  h.expectNext<McTouchRequest>(McTouchReply(mc_res_touched));
   h.runTest(1);
 }

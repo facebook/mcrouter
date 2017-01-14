@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,7 +28,6 @@ typedef enum mc_protocol_e {
   mc_nprotocols, // placeholder
 } mc_protocol_t;
 
-
 static inline mc_protocol_t mc_string_to_protocol(const char* str) {
   if (!strcmp(str, "ascii")) {
     return mc_ascii_protocol;
@@ -44,12 +43,8 @@ static inline mc_protocol_t mc_string_to_protocol(const char* str) {
 }
 
 static inline const char* mc_protocol_to_string(const mc_protocol_t value) {
-  static const char* const strings[]= {
-    "unknown-protocol",
-    "ascii",
-    "binary",
-    "umbrella",
-    "caret",
+  static const char* const strings[] = {
+      "unknown-protocol", "ascii", "binary", "umbrella", "caret",
   };
   return strings[value < mc_nprotocols ? value : mc_unknown_protocol];
 }

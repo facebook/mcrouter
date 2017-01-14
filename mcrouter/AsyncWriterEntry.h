@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,8 +25,8 @@ struct awriter_callbacks_t {
 
 struct awriter_entry_t {
   TAILQ_ENTRY(awriter_entry_t) links;
-  void *context;
-  const awriter_callbacks_t *callbacks;
+  void* context;
+  const awriter_callbacks_t* callbacks;
 };
 
 } // mcrouter

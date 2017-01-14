@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -30,13 +30,13 @@ using std::vector;
 
 TEST(shadowRouteTest, defaultPolicy) {
   vector<std::shared_ptr<TestHandle>> normalHandle{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
   };
   auto normalRh = get_route_handles(normalHandle)[0];
 
   vector<std::shared_ptr<TestHandle>> shadowHandles{
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
-    make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c")),
   };
 
   TestFiberManager fm{fiber_local<McrouterRouterInfo>::ContextTypeTag()};
@@ -47,14 +47,13 @@ TEST(shadowRouteTest, defaultPolicy) {
 
   auto shadowRhs = get_route_handles(shadowHandles);
   McrouterShadowData shadowData{
-    {std::move(shadowRhs[0]), settings},
-    {std::move(shadowRhs[1]), settings},
+      {std::move(shadowRhs[0]), settings}, {std::move(shadowRhs[1]), settings},
   };
 
-  McrouterRouteHandle<ShadowRoute<McrouterRouterInfo, DefaultShadowPolicy>>
-      rh(normalRh, std::move(shadowData), DefaultShadowPolicy());
+  McrouterRouteHandle<ShadowRoute<McrouterRouterInfo, DefaultShadowPolicy>> rh(
+      normalRh, std::move(shadowData), DefaultShadowPolicy());
 
-  fm.run([&] () {
+  fm.run([&]() {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 
@@ -66,7 +65,7 @@ TEST(shadowRouteTest, defaultPolicy) {
   EXPECT_TRUE(shadowHandles[1]->saw_keys.empty());
   settings->setKeyRange(0, 1);
 
-  fm.run([&] () {
+  fm.run([&]() {
     mockFiberContext();
     auto reply = rh.route(McGetRequest("key"));
 

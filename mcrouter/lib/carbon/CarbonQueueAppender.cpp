@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -20,7 +20,7 @@ void CarbonQueueAppenderStorage::coalesce() {
   finalizeLastIovec();
 
   canUsePreviousIov_ = false;
-  nIovsUsed_ = 1;  // headerBuf_ always considered used
+  nIovsUsed_ = 1; // headerBuf_ always considered used
   storageIdx_ = 0;
 
   size_t newCapacity = 0;

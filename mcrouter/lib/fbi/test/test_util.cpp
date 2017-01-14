@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -24,13 +24,14 @@ double measure_time(std::function<void(void)> f) {
   return ts.tv_sec * 1e9 + ts.tv_nsec - before;
 }
 
-double measure_time_concurrent(unsigned thread_count,
-                               std::function<void(unsigned)> f) {
+double measure_time_concurrent(
+    unsigned thread_count,
+    std::function<void(unsigned)> f) {
   struct info {
     std::thread thread;
-    pthread_rwlock_t *gate;
+    pthread_rwlock_t* gate;
     unsigned idx;
-  } *ti;
+  } * ti;
   unsigned i;
   pthread_rwlock_t gate;
   timespec ts;
@@ -45,11 +46,13 @@ double measure_time_concurrent(unsigned thread_count,
   for (i = 0; i < thread_count; i++) {
     ti[i].gate = &gate;
     ti[i].idx = i;
-    ti[i].thread = std::thread([&](info *t) {
+    ti[i].thread = std::thread(
+        [&](info* t) {
           pthread_rwlock_rdlock(t->gate);
           f(t->idx);
           pthread_rwlock_unlock(t->gate);
-        }, ti + i);
+        },
+        ti + i);
   }
 
   // Let threads go and wait for them to finish.
@@ -62,7 +65,7 @@ double measure_time_concurrent(unsigned thread_count,
   }
   clock_gettime(CLOCK_MONOTONIC, &ts);
   v = ts.tv_sec * 1e9 + ts.tv_nsec - before;
-  delete [] ti;
+  delete[] ti;
   pthread_rwlock_destroy(&gate);
   return v;
 }

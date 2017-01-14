@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -25,7 +25,8 @@ class EventBase;
 class ScopedEventBaseThread;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class AsyncMcServerWorker;
 class McServerThread;
@@ -35,7 +36,6 @@ class McServerThread;
  */
 class AsyncMcServer {
  public:
-
   /**
    * Server startup options
    */
@@ -110,9 +110,9 @@ class AsyncMcServer {
    * Args are threadId (0 to numThreads - 1), eventBase and the thread's worker
    * The user is responsible for calling eventBase.loop() or similar.
    */
-  typedef std::function<void(size_t,
-                             folly::EventBase&,
-                             facebook::memcache::AsyncMcServerWorker&)> LoopFn;
+  typedef std::function<
+      void(size_t, folly::EventBase&, facebook::memcache::AsyncMcServerWorker&)>
+      LoopFn;
 
   explicit AsyncMcServer(Options opts);
   ~AsyncMcServer();
@@ -178,12 +178,12 @@ class AsyncMcServer {
 
   enum class SignalShutdownState : uint64_t { STARTUP, SHUTDOWN, SPAWNED };
   std::atomic<SignalShutdownState> signalShutdownState_{
-    SignalShutdownState::STARTUP};
+      SignalShutdownState::STARTUP};
 
   AsyncMcServer(const AsyncMcServer&) = delete;
   AsyncMcServer& operator=(const AsyncMcServer&) = delete;
 
   friend class McServerThread;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

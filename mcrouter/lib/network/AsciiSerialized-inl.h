@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,27 +7,28 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 struct AsciiSerializedRequest::PrepareImplWrapper {
   template <class Request>
   using PrepareType =
-    decltype(std::declval<AsciiSerializedRequest>().prepareImpl(
-      std::declval<const Request&>()));
+      decltype(std::declval<AsciiSerializedRequest>().prepareImpl(
+          std::declval<const Request&>()));
 
   template <class Request>
   typename std::enable_if<
-    std::is_same<PrepareType<Request>, std::false_type>::value,
-    bool>::type
-  static prepare(AsciiSerializedRequest& s, const Request& request) {
+      std::is_same<PrepareType<Request>, std::false_type>::value,
+      bool>::
+      type static prepare(AsciiSerializedRequest& s, const Request& request) {
     return false;
   }
 
   template <class Request>
   typename std::enable_if<
-    std::is_same<PrepareType<Request>, void>::value,
-    bool>::type
-  static prepare(AsciiSerializedRequest& s, const Request& request) {
+      std::is_same<PrepareType<Request>, void>::value,
+      bool>::
+      type static prepare(AsciiSerializedRequest& s, const Request& request) {
     s.prepareImpl(request);
     return true;
   }
@@ -46,9 +47,10 @@ void AsciiSerializedRequest::addStrings(Arg&& arg, Args&&... args) {
 }
 
 template <class Request>
-bool AsciiSerializedRequest::prepare(const Request& request,
-                                     const struct iovec*& iovOut,
-                                     size_t& niovOut) {
+bool AsciiSerializedRequest::prepare(
+    const Request& request,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
   iovsCount_ = 0;
   auto r = PrepareImplWrapper::prepare(*this, request);
   iovOut = iovs_;
@@ -67,5 +69,5 @@ void AsciiSerializedReply::addStrings(Arg&& arg, Args&&... args) {
   addString(std::forward<Arg>(arg));
   addStrings(std::forward<Args>(args)...);
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

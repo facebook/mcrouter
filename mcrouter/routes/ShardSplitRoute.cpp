@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -28,9 +28,10 @@ std::string shardSplitSuffix(size_t offset) {
 
 namespace detail {
 
-std::string createSplitKey(folly::StringPiece fullKey,
-                           size_t offset,
-                           folly::StringPiece shard) {
+std::string createSplitKey(
+    folly::StringPiece fullKey,
+    size_t offset,
+    folly::StringPiece shard) {
   if (!offset) {
     return fullKey.str();
   }

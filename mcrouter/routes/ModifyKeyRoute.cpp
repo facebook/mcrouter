@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,9 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 McrouterRouteHandlePtr makeModifyKeyRoute(
     RouteHandleFactory<McrouterRouteHandleIf>& factory,
@@ -76,4 +78,6 @@ McrouterRouteHandlePtr makeModifyKeyRoute(
       modifyInplace,
       std::move(keyReplace));
 }
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,11 +14,11 @@
 #include <folly/Format.h>
 #include <folly/Hash.h>
 #include <folly/IPAddress.h>
-#include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/Optional.h>
 #include <folly/Random.h>
 #include <folly/String.h>
+#include <folly/json.h>
 
 #include "mcrouter/lib/config/ImportResolverIf.h"
 #include "mcrouter/lib/config/RendezvousHash.h"
@@ -34,31 +34,32 @@ using std::placeholders::_2;
 using std::string;
 using std::vector;
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace {
 
 class NestedLimitGuard {
  public:
-  explicit NestedLimitGuard(size_t& nestedLimit)
-      : nestedLimit_(nestedLimit) {
+  explicit NestedLimitGuard(size_t& nestedLimit) : nestedLimit_(nestedLimit) {
     checkLogic(--nestedLimit_ > 0, "Too many nested macros. Check for cycles.");
   }
   ~NestedLimitGuard() {
     ++nestedLimit_;
   }
+
  private:
   size_t& nestedLimit_;
 };
 
 StringPiece asStringPiece(const dynamic& obj, StringPiece objName) {
-  checkLogic(obj.isString(), "{} is {}, string expected",
-             objName, obj.typeName());
+  checkLogic(
+      obj.isString(), "{} is {}, string expected", objName, obj.typeName());
   return obj.stringPiece();
 }
 
-const dynamic& tryGet(const dynamic& obj, const dynamic& key,
-                      StringPiece objName) {
+const dynamic&
+tryGet(const dynamic& obj, const dynamic& key, StringPiece objName) {
   auto it = obj.find(key);
   checkLogic(it != obj.items().end(), "{}: '{}' not found", objName, key);
   return it->second;
@@ -71,8 +72,10 @@ dynamic moveGet(dynamic& obj, const dynamic& key, StringPiece objName) {
 }
 
 template <class Value>
-const Value& tryGet(const folly::StringKeyedUnorderedMap<Value>& map,
-                    StringPiece key, StringPiece objName) {
+const Value& tryGet(
+    const folly::StringKeyedUnorderedMap<Value>& map,
+    StringPiece key,
+    StringPiece objName) {
   auto it = map.find(key);
   checkLogic(it != map.end(), "{}: '{}' not found", objName, key);
   return it->second;
@@ -113,7 +116,7 @@ StringPiece trim(StringPiece sp) {
  */
 size_t matchingUnescapedBracket(StringPiece s, size_t i) {
   int diffOpenedClosed = 0;
-  for (;i < s.size(); ++i) {
+  for (; i < s.size(); ++i) {
     if (s[i] == '\\') {
       ++i;
       continue;
@@ -168,12 +171,8 @@ size_t unescapeUntil(StringPiece from, string& to, char c) {
 
 class ConfigPreprocessor::Context {
  private:
-  enum class VarState {
-    DEAD,
-    RAW,
-    EXPAND,
-    LAZY_EXPAND
-  };
+  enum class VarState { DEAD, RAW, EXPAND, LAZY_EXPAND };
+
  public:
   enum ExtendedTypeT { Extended };
 
@@ -186,13 +185,10 @@ class ConfigPreprocessor::Context {
   Context& operator=(Context&&) = default;
 
   explicit Context(const ConfigPreprocessor& prep)
-    : prep_(prep),
-      baseContext_(true) {}
+      : prep_(prep), baseContext_(true) {}
 
   Context(ExtendedTypeT, const Context& outer, bool baseContext = false)
-    : prep_(outer.prep_),
-      outer_(&outer),
-      baseContext_(baseContext) {}
+      : prep_(outer.prep_), outer_(&outer), baseContext_(baseContext) {}
 
   const ConfigPreprocessor& prep() const {
     return prep_;
@@ -302,34 +298,37 @@ class ConfigPreprocessor::Macro {
  public:
   using Func = std::function<dynamic(Context&&)>;
 
-  Macro(const ConfigPreprocessor& prep,
-        StringPiece name,
-        const vector<dynamic>& params,
-        Func f,
-        bool autoExpand = true)
-    : prep_(prep),
-      f_(std::move(f)),
-      autoExpand_(autoExpand),
-      name_(name) {
-
+  Macro(
+      const ConfigPreprocessor& prep,
+      StringPiece name,
+      const vector<dynamic>& params,
+      Func f,
+      bool autoExpand = true)
+      : prep_(prep), f_(std::move(f)), autoExpand_(autoExpand), name_(name) {
     initParams(params);
   }
 
-  dynamic getResult(const vector<StringPiece>& params,
-                    const Context& ctx) const {
-    checkLogic(minParamCnt_ <= params.size(),
-               "Too few arguments for macro {}. Expected at least {} got {}",
-               name_, minParamCnt_, params.size());
+  dynamic getResult(const vector<StringPiece>& params, const Context& ctx)
+      const {
+    checkLogic(
+        minParamCnt_ <= params.size(),
+        "Too few arguments for macro {}. Expected at least {} got {}",
+        name_,
+        minParamCnt_,
+        params.size());
 
-    checkLogic(params.size() <= maxParamCnt_,
-               "Too many arguments for macro {}. Expected at most {} got {}",
-               name_, maxParamCnt_, params.size());
+    checkLogic(
+        params.size() <= maxParamCnt_,
+        "Too many arguments for macro {}. Expected at most {} got {}",
+        name_,
+        maxParamCnt_,
+        params.size());
 
     Context result(Context::Extended, ctx, /* base */ true);
     for (size_t i = 0; i < params.size(); i++) {
       if (autoExpand_) {
-        result.addExpanded(std::get<0>(params_[i]),
-                           prep_.expandStringMacro(params[i], ctx));
+        result.addExpanded(
+            std::get<0>(params_[i]), prep_.expandStringMacro(params[i], ctx));
       } else {
         result.addRaw(std::get<0>(params_[i]), params[i]);
       }
@@ -348,16 +347,18 @@ class ConfigPreprocessor::Macro {
     for (const auto& p : params_) {
       auto it = obj.get_ptr(std::get<0>(p));
       if (!it) {
-        checkLogic(!std::get<2>(p),
-                   "Macro call {}: '{}' parameter not found",
-                   name_, std::get<0>(p));
+        checkLogic(
+            !std::get<2>(p),
+            "Macro call {}: '{}' parameter not found",
+            name_,
+            std::get<0>(p));
         if (!std::get<1>(p).isNull()) {
           result.addExpanded(std::get<0>(p), std::get<1>(p));
         }
       } else {
         if (autoExpand_) {
-          result.addExpanded(std::get<0>(p),
-                             prep_.expandMacros(std::move(*it), ctx));
+          result.addExpanded(
+              std::get<0>(p), prep_.expandMacros(std::move(*it), ctx));
         } else {
           result.addRaw(std::get<0>(p), std::move(*it));
         }
@@ -384,8 +385,9 @@ class ConfigPreprocessor::Macro {
       if (param.isString()) { // param name
         params_.emplace_back(param.getString(), nullptr, true);
       } else if (param.isObject()) { // object (name & default)
-        auto name = asStringPiece(tryGet(param, "name", "Macro param object"),
-                                  "Macro param object name");
+        auto name = asStringPiece(
+            tryGet(param, "name", "Macro param object"),
+            "Macro param object name");
 
         if (auto defaultPtr = param.get_ptr("default")) {
           hasOptional = true;
@@ -399,14 +401,16 @@ class ConfigPreprocessor::Macro {
           params_.emplace_back(name.str(), nullptr, true);
         }
       } else {
-        throwLogic("Macro param is {}, expected string/object",
-                   param.typeName());
+        throwLogic(
+            "Macro param is {}, expected string/object", param.typeName());
       }
 
-      checkLogic(hasOptional || !needOptional,
-                 "Incorrect defaults/optionals in macro {}. "
-                 "All params after optional/default one should also be "
-                 "optional or have default value", name_);
+      checkLogic(
+          hasOptional || !needOptional,
+          "Incorrect defaults/optionals in macro {}. "
+          "All params after optional/default one should also be "
+          "optional or have default value",
+          name_);
 
       needOptional = needOptional || hasOptional;
     }
@@ -417,13 +421,8 @@ class ConfigPreprocessor::Macro {
 
 class ConfigPreprocessor::Const {
  public:
-  Const(const ConfigPreprocessor& prep,
-        StringPiece name,
-        dynamic result)
-    : prep_(prep),
-      name_(name),
-      result_(std::move(result)) {
-  }
+  Const(const ConfigPreprocessor& prep, StringPiece name, dynamic result)
+      : prep_(prep), name_(name), result_(std::move(result)) {}
 
   const dynamic& getResult() const {
     if (!expanded_) {
@@ -436,6 +435,7 @@ class ConfigPreprocessor::Const {
     }
     return result_;
   }
+
  private:
   mutable bool expanded_{false};
   const ConfigPreprocessor& prep_;
@@ -451,9 +451,10 @@ class ConfigPreprocessor::BuiltIns {
    * Loads JSONM from external source via importResolver.
    * Usage: @import(path)
    */
-  static dynamic importMacro(ConfigPreprocessor& p,
-                             ImportResolverIf& importResolver,
-                             Context&& ctx) {
+  static dynamic importMacro(
+      ConfigPreprocessor& p,
+      ImportResolverIf& importResolver,
+      Context&& ctx) {
     auto path = ctx.expandRawArg("path");
     auto pathStr = asStringPiece(path, "import path");
     // cache each result by path, so we won't import same path twice
@@ -465,8 +466,8 @@ class ConfigPreprocessor::BuiltIns {
     try {
       auto jsonC = importResolver.import(pathStr);
       // result may contain comments, macros, etc.
-      result = p.expandMacros(parseJsonString(stripComments(jsonC)),
-                              Context(p));
+      result =
+          p.expandMacros(parseJsonString(stripComments(jsonC)), Context(p));
     } catch (const std::exception& e) {
       if (auto defaultVal = ctx.tryExpandRawArg("default")) {
         p.importCache_.emplace(pathStr, *defaultVal);
@@ -515,20 +516,26 @@ class ConfigPreprocessor::BuiltIns {
    */
   static dynamic weightedHashMacro(Context&& ctx) {
     const auto& dictionary = ctx.at("dictionary");
-    checkLogic(dictionary.isObject(),
-               "WeightedHash: dictionary is {}, expected object",
-               dictionary.typeName());
+    checkLogic(
+        dictionary.isObject(),
+        "WeightedHash: dictionary is {}, expected object",
+        dictionary.typeName());
 
     const auto& key = ctx.at("key");
     vector<std::pair<StringPiece, double>> weights;
     for (const auto& it : dictionary.items()) {
       auto name = it.first.stringPiece();
-      checkLogic(it.second.isNumber(),
-                 "WeightedHash: {} weight is {}, expected number",
-                 name, it.second.typeName());
+      checkLogic(
+          it.second.isNumber(),
+          "WeightedHash: {} weight is {}, expected number",
+          name,
+          it.second.typeName());
       auto weight = it.second.asDouble();
-      checkLogic(-0.01 <= weight, "WeightedHash: {} weight {} is negative",
-                 name, weight);
+      checkLogic(
+          -0.01 <= weight,
+          "WeightedHash: {} weight {} is negative",
+          name,
+          weight);
       weights.emplace_back(name, std::max(weight, 0.0));
     }
     checkLogic(!weights.empty(), "WeightedHash: dictionary is empty");
@@ -539,8 +546,8 @@ class ConfigPreprocessor::BuiltIns {
     } else if (key.isString()) {
       keyHash = folly::Hash()(key.stringPiece());
     } else {
-      throwLogic("WeightedHash: key is {}, expected string or int",
-                 key.typeName());
+      throwLogic(
+          "WeightedHash: key is {}, expected string or int", key.typeName());
     }
     try {
       auto id = RendezvousHash(weights.begin(), weights.end()).get(keyHash);
@@ -558,8 +565,8 @@ class ConfigPreprocessor::BuiltIns {
     try {
       return ctx.at("value").asInt();
     } catch (const std::exception& e) {
-      throwLogic("Can not cast {} to int:\n{}",
-                 ctx.at("value").typeName(), e.what());
+      throwLogic(
+          "Can not cast {} to int:\n{}", ctx.at("value").typeName(), e.what());
     }
   }
 
@@ -571,8 +578,10 @@ class ConfigPreprocessor::BuiltIns {
     try {
       return ctx.at("value").asString();
     } catch (const std::exception& e) {
-      throwLogic("Can not cast {} to string:\n{}",
-                 ctx.at("value").typeName(), e.what());
+      throwLogic(
+          "Can not cast {} to string:\n{}",
+          ctx.at("value").typeName(),
+          e.what());
     }
   }
 
@@ -584,8 +593,10 @@ class ConfigPreprocessor::BuiltIns {
     try {
       return ctx.at("value").asBool();
     } catch (const std::exception& e) {
-      throwLogic("Can not cast {} to boolean:\n{}",
-                 ctx.at("value").typeName(), e.what());
+      throwLogic(
+          "Can not cast {} to boolean:\n{}",
+          ctx.at("value").typeName(),
+          e.what());
     }
   }
 
@@ -634,8 +645,9 @@ class ConfigPreprocessor::BuiltIns {
 
     // get first param, it will determine the result type (array or object)
     auto res = std::move(mergeParams[0]);
-    checkLogic(res.isArray() || res.isObject() || res.isString(),
-               "Merge: first param is not array/object/string");
+    checkLogic(
+        res.isArray() || res.isObject() || res.isString(),
+        "Merge: first param is not array/object/string");
     for (size_t i = 1; i < mergeParams.size(); ++i) {
       auto& it = mergeParams[i];
       if (res.isArray()) {
@@ -669,8 +681,9 @@ class ConfigPreprocessor::BuiltIns {
   static dynamic shuffleMacro(Context&& ctx) {
     auto dictionary = ctx.move("dictionary");
 
-    checkLogic(dictionary.isObject() || dictionary.isArray(),
-               "Shuffle: dictionary is not array/object");
+    checkLogic(
+        dictionary.isObject() || dictionary.isArray(),
+        "Shuffle: dictionary is not array/object");
 
     static std::minstd_rand engine(folly::randomNumberSeed());
     if (dictionary.isArray()) {
@@ -694,24 +707,26 @@ class ConfigPreprocessor::BuiltIns {
     auto dictionary = ctx.expandRawArg("dictionary");
     const auto key = ctx.expandRawArg("key");
 
-    checkLogic(dictionary.isObject() || dictionary.isArray(),
-               "Select: dictionary is {}, expected array/object",
-               dictionary.typeName());
+    checkLogic(
+        dictionary.isObject() || dictionary.isArray(),
+        "Select: dictionary is {}, expected array/object",
+        dictionary.typeName());
 
     if (dictionary.isObject()) {
-      checkLogic(key.isString(),
-                 "Select: dictionary is an object, key is not a string");
+      checkLogic(
+          key.isString(),
+          "Select: dictionary is an object, key is not a string");
       if (auto jValue = dictionary.get_ptr(key)) {
         return std::move(*jValue);
       }
       if (auto defaultVal = ctx.tryExpandRawArg("default")) {
         return std::move(*defaultVal);
       }
-      throwLogic("Select: '{}' not found, default not specified",
-                 key.stringPiece());
+      throwLogic(
+          "Select: '{}' not found, default not specified", key.stringPiece());
     } else { // array
-      checkLogic(key.isInt(),
-                 "Select: dictionary is an array, key is not an integer");
+      checkLogic(
+          key.isInt(), "Select: dictionary is an array, key is not an integer");
       auto id = key.getInt();
       if (id < 0) {
         id += dictionary.size();
@@ -722,8 +737,8 @@ class ConfigPreprocessor::BuiltIns {
       if (auto defaultVal = ctx.tryExpandRawArg("default")) {
         return std::move(*defaultVal);
       }
-      throwLogic("Select: index {} is out of range [0, {})",
-                 id, dictionary.size());
+      throwLogic(
+          "Select: index {} is out of range [0, {})", id, dictionary.size());
     }
   }
 
@@ -751,8 +766,9 @@ class ConfigPreprocessor::BuiltIns {
     const auto& to = ctx.at("to");
     auto dict = ctx.move("dictionary");
 
-    checkLogic(dict.isObject() || dict.isArray() || dict.isString(),
-               "Slice: dictionary is not array/object/string");
+    checkLogic(
+        dict.isObject() || dict.isArray() || dict.isString(),
+        "Slice: dictionary is not array/object/string");
 
     if (dict.isObject()) {
       dynamic res = dynamic::object();
@@ -824,8 +840,9 @@ class ConfigPreprocessor::BuiltIns {
     auto value = ctx.move("value");
     auto dict = ctx.move("dictionary");
 
-    checkLogic(dict.isObject() || dict.isArray(),
-               "Set: dictionary is not array/object");
+    checkLogic(
+        dict.isObject() || dict.isArray(),
+        "Set: dictionary is not array/object");
 
     if (dict.isObject()) {
       checkLogic(key.isString(), "Set: key is not a string");
@@ -834,8 +851,11 @@ class ConfigPreprocessor::BuiltIns {
     } else { // array
       checkLogic(key.isInt(), "Set: key is not an int");
       auto id = key.getInt();
-      checkLogic(0 <= id && static_cast<size_t>(id) < dict.size(),
-                 "Set: key '{}' is out of range [0..{})", id, dict.size());
+      checkLogic(
+          0 <= id && static_cast<size_t>(id) < dict.size(),
+          "Set: key '{}' is out of range [0..{})",
+          id,
+          dict.size());
       dict[id] = std::move(value);
       return dict;
     }
@@ -867,8 +887,9 @@ class ConfigPreprocessor::BuiltIns {
     const auto& dictionary = ctx.at("dictionary");
     const auto& key = ctx.at("key");
     if (dictionary.isObject()) {
-      checkLogic(key.isString(),
-                 "Contains: dictionary is an object, key is not a string");
+      checkLogic(
+          key.isString(),
+          "Contains: dictionary is an object, key is not a string");
       return dictionary.find(key) != dictionary.items().end();
     } else if (dictionary.isArray()) {
       for (const auto& it : dictionary) {
@@ -878,12 +899,14 @@ class ConfigPreprocessor::BuiltIns {
       }
       return false;
     } else if (dictionary.isString()) {
-      checkLogic(key.isString(),
-                 "Contains: dictionary is a string, key is not a string");
+      checkLogic(
+          key.isString(),
+          "Contains: dictionary is a string, key is not a string");
       return dictionary.stringPiece().find(key.stringPiece()) != string::npos;
     } else {
-      throwLogic("Contains: dictionary is {}, expected object/array/string",
-                 dictionary.typeName());
+      throwLogic(
+          "Contains: dictionary is {}, expected object/array/string",
+          dictionary.typeName());
     }
   }
 
@@ -893,8 +916,9 @@ class ConfigPreprocessor::BuiltIns {
    */
   static dynamic emptyMacro(Context&& ctx) {
     const auto& dict = ctx.at("dictionary");
-    checkLogic(dict.isObject() || dict.isArray() || dict.isString(),
-               "empty: dictionary is not object/array/string");
+    checkLogic(
+        dict.isObject() || dict.isArray() || dict.isString(),
+        "empty: dictionary is not object/array/string");
     return dict.empty();
   }
 
@@ -1005,8 +1029,9 @@ class ConfigPreprocessor::BuiltIns {
    */
   static dynamic sizeMacro(Context&& ctx) {
     const auto& dict = ctx.at("dictionary");
-    checkLogic(dict.isObject() || dict.isArray() || dict.isString(),
-               "size: dictionary is not object/array/string");
+    checkLogic(
+        dict.isObject() || dict.isArray() || dict.isString(),
+        "size: dictionary is not object/array/string");
     return dict.size();
   }
 
@@ -1135,8 +1160,8 @@ class ConfigPreprocessor::BuiltIns {
   static dynamic definedMacro(Context&& ctx) {
     auto name = asStringPiece(ctx.at("name"), "Defined: name");
     auto& consts = ctx.prep().consts_;
-    return (ctx.outer() && ctx.outer()->contains(name))
-      || consts.find(name) != consts.end();
+    return (ctx.outer() && ctx.outer()->contains(name)) ||
+        consts.find(name) != consts.end();
   }
 
   /**
@@ -1167,7 +1192,8 @@ class ConfigPreprocessor::BuiltIns {
           // found matching ip, no need to continue
           return false;
         }
-      } catch (const std::exception&) { }
+      } catch (const std::exception&) {
+      }
       return true;
     };
 
@@ -1214,14 +1240,14 @@ class ConfigPreprocessor::BuiltIns {
    * Extended context is current context with two additional parameters:
    * %keyName% (key of current entry) and %itemName% (value of current entry)
    */
-  static dynamic transform(ConfigPreprocessor* p,
-                           dynamic&& json,
-                           const Context& ctx) {
+  static dynamic
+  transform(ConfigPreprocessor* p, dynamic&& json, const Context& ctx) {
     auto dictionary =
-      p->expandMacros(moveGet(json, "dictionary", "Transform"), ctx);
+        p->expandMacros(moveGet(json, "dictionary", "Transform"), ctx);
 
-    checkLogic(dictionary.isObject() || dictionary.isArray(),
-               "Transform: dictionary is not array/object");
+    checkLogic(
+        dictionary.isObject() || dictionary.isArray(),
+        "Transform: dictionary is not array/object");
 
     if (dictionary.empty()) {
       return dictionary;
@@ -1249,31 +1275,30 @@ class ConfigPreprocessor::BuiltIns {
         // add %key% and %item% to current context.
         keyRef = std::move(key);
         itemRef = std::move(value);
-        auto nKey = keyTransform
-          ? p->expandMacros(*keyTransform, extContext)
-          : keyRef;
-        checkLogic(nKey.isArray() || nKey.isString(),
-                   "Transformed key is not array/string");
+        auto nKey =
+            keyTransform ? p->expandMacros(*keyTransform, extContext) : keyRef;
+        checkLogic(
+            nKey.isArray() || nKey.isString(),
+            "Transformed key is not array/string");
         if (nKey.isArray() && nKey.empty()) {
           continue;
         }
-        auto nItem = itemTransform
-          ? p->expandMacros(*itemTransform, extContext)
-          : std::move(itemRef);
+        auto nItem = itemTransform ? p->expandMacros(*itemTransform, extContext)
+                                   : std::move(itemRef);
         if (nKey.isString()) {
           res.insert(std::move(nKey), std::move(nItem));
         } else { // array
           for (auto& keyIt : nKey) {
-            checkLogic(keyIt.isString(),
-                       "Transformed key list item is not a string");
+            checkLogic(
+                keyIt.isString(), "Transformed key list item is not a string");
             res.insert(std::move(keyIt), nItem);
           }
         }
       }
       return res;
     } else { // array
-      checkLogic(itemTransform,
-                 "Transform: itemTransform is required for array");
+      checkLogic(
+          itemTransform, "Transform: itemTransform is required for array");
       for (size_t index = 0; index < dictionary.size(); ++index) {
         auto& item = dictionary[index];
         // add %key% and %item% to current context.
@@ -1306,16 +1331,16 @@ class ConfigPreprocessor::BuiltIns {
    * %keyName% (key of current entry), %itemName% (value of current entry)
    * and %valueName% - current value.
    */
-  static dynamic process(ConfigPreprocessor* p,
-                         dynamic&& json,
-                         const Context& ctx) {
+  static dynamic
+  process(ConfigPreprocessor* p, dynamic&& json, const Context& ctx) {
     auto dictionary =
-      p->expandMacros(moveGet(json, "dictionary", "Process"), ctx);
+        p->expandMacros(moveGet(json, "dictionary", "Process"), ctx);
     auto value = p->expandMacros(moveGet(json, "initialValue", "Process"), ctx);
     const auto& transform = tryGet(json, "transform", "Process");
 
-    checkLogic(dictionary.isObject() || dictionary.isArray(),
-               "Process: dictionary is not array/object");
+    checkLogic(
+        dictionary.isObject() || dictionary.isArray(),
+        "Process: dictionary is not array/object");
 
     StringPiece itemNameStr = "item";
     if (auto itemName = json.get_ptr("itemName")) {
@@ -1391,12 +1416,11 @@ class ConfigPreprocessor::BuiltIns {
    *  "where": <condition>
    *  "top": 2
    */
-  static dynamic foreach(ConfigPreprocessor* p,
-                         dynamic&& json,
-                         const Context& ctx) {
+  static dynamic
+  foreach(ConfigPreprocessor* p, dynamic&& json, const Context& ctx) {
     auto from = p->expandMacros(moveGet(json, "from", "Foreach"), ctx);
-    checkLogic(from.isObject() || from.isArray(),
-               "Foreach: from is not object/array");
+    checkLogic(
+        from.isObject() || from.isArray(), "Foreach: from is not object/array");
     StringPiece itemStr = "item";
     if (auto jItem = json.get_ptr("item")) {
       itemStr = asStringPiece(*jItem, "Foreach: item");
@@ -1408,8 +1432,9 @@ class ConfigPreprocessor::BuiltIns {
     size_t top = from.size();
     if (auto jTopField = json.get_ptr("top")) {
       auto jtop = p->expandMacros(std::move(*jTopField), ctx);
-      checkLogic(jtop.isInt() && jtop.getInt() >= 0,
-                 "Foreach: top should be a non-negative integer");
+      checkLogic(
+          jtop.isInt() && jtop.getInt() >= 0,
+          "Foreach: top should be a non-negative integer");
       top = jtop.getInt();
     }
     auto useIt = json.find("use");
@@ -1423,8 +1448,9 @@ class ConfigPreprocessor::BuiltIns {
     auto appendUseToResult = [&]() {
       auto use = p->expandMacros(useIt->second, extContext);
       if (result.isNull()) {
-        checkLogic(use.isObject() || use.isArray(),
-                   "Foreach: expanded item is not object/array");
+        checkLogic(
+            use.isObject() || use.isArray(),
+            "Foreach: expanded item is not object/array");
         result = std::move(use);
       } else {
         if (result.isObject()) {
@@ -1510,108 +1536,111 @@ class ConfigPreprocessor::BuiltIns {
 ///////////////////////////////ConfigPreprocessor///////////////////////////////
 
 ConfigPreprocessor::ConfigPreprocessor(
-      ImportResolverIf& importResolver,
-      folly::StringKeyedUnorderedMap<dynamic> globals,
-      size_t nestedLimit)
-  : nestedLimit_(nestedLimit) {
-
+    ImportResolverIf& importResolver,
+    folly::StringKeyedUnorderedMap<dynamic> globals,
+    size_t nestedLimit)
+    : nestedLimit_(nestedLimit) {
   for (auto& it : globals) {
     addConst(it.first, std::move(it.second));
   }
 
-  addMacro("import", { "path", dynamic::object("name", "default")
-                                              ("optional", true) },
-    [this, &importResolver](Context&& ctx) {
-      return BuiltIns::importMacro(*this, importResolver, std::move(ctx));
-    }, false);
+  addMacro(
+      "import",
+      {"path", dynamic::object("name", "default")("optional", true)},
+      [this, &importResolver](Context&& ctx) {
+        return BuiltIns::importMacro(*this, importResolver, std::move(ctx));
+      },
+      false);
 
-  addMacro("hash", { "value" }, &BuiltIns::hashMacro);
+  addMacro("hash", {"value"}, &BuiltIns::hashMacro);
 
-  addMacro("weightedHash", { "dictionary", "key" },
-           &BuiltIns::weightedHashMacro);
+  addMacro("weightedHash", {"dictionary", "key"}, &BuiltIns::weightedHashMacro);
 
-  addMacro("int", { "value" }, &BuiltIns::intMacro);
+  addMacro("int", {"value"}, &BuiltIns::intMacro);
 
-  addMacro("str", { "value" }, &BuiltIns::strMacro);
+  addMacro("str", {"value"}, &BuiltIns::strMacro);
 
-  addMacro("bool", { "value" }, &BuiltIns::boolMacro);
+  addMacro("bool", {"value"}, &BuiltIns::boolMacro);
 
-  addMacro("keys", { "dictionary" }, &BuiltIns::keysMacro);
+  addMacro("keys", {"dictionary"}, &BuiltIns::keysMacro);
 
-  addMacro("values", { "dictionary" }, &BuiltIns::valuesMacro);
+  addMacro("values", {"dictionary"}, &BuiltIns::valuesMacro);
 
-  addMacro("merge", { "params" }, &BuiltIns::mergeMacro);
+  addMacro("merge", {"params"}, &BuiltIns::mergeMacro);
 
-  addMacro("select",
-           { "dictionary", "key", dynamic::object("name", "default")
-                                                 ("optional", true) },
-           &BuiltIns::selectMacro, false);
+  addMacro(
+      "select",
+      {"dictionary",
+       "key",
+       dynamic::object("name", "default")("optional", true)},
+      &BuiltIns::selectMacro,
+      false);
 
-  addMacro("shuffle", { "dictionary" }, &BuiltIns::shuffleMacro);
+  addMacro("shuffle", {"dictionary"}, &BuiltIns::shuffleMacro);
 
-  addMacro("slice", { "dictionary", "from", "to" }, &BuiltIns::sliceMacro);
+  addMacro("slice", {"dictionary", "from", "to"}, &BuiltIns::sliceMacro);
 
-  addMacro("split", { "dictionary", "delim" }, &BuiltIns::splitMacro);
+  addMacro("split", {"dictionary", "delim"}, &BuiltIns::splitMacro);
 
-  addMacro("range", { "from", "to" }, &BuiltIns::rangeMacro);
+  addMacro("range", {"from", "to"}, &BuiltIns::rangeMacro);
 
-  addMacro("contains", { "dictionary", "key" }, &BuiltIns::containsMacro);
+  addMacro("contains", {"dictionary", "key"}, &BuiltIns::containsMacro);
 
-  addMacro("empty", { "dictionary" }, &BuiltIns::emptyMacro);
+  addMacro("empty", {"dictionary"}, &BuiltIns::emptyMacro);
 
-  addMacro("equals", { "A", "B" }, &BuiltIns::equalsMacro);
+  addMacro("equals", {"A", "B"}, &BuiltIns::equalsMacro);
 
-  addMacro("isArray", { "value" }, &BuiltIns::isArrayMacro);
+  addMacro("isArray", {"value"}, &BuiltIns::isArrayMacro);
 
-  addMacro("isBool", { "value" }, &BuiltIns::isBoolMacro);
+  addMacro("isBool", {"value"}, &BuiltIns::isBoolMacro);
 
-  addMacro("isInt", { "value" }, &BuiltIns::isIntMacro);
+  addMacro("isInt", {"value"}, &BuiltIns::isIntMacro);
 
-  addMacro("isObject", { "value" }, &BuiltIns::isObjectMacro);
+  addMacro("isObject", {"value"}, &BuiltIns::isObjectMacro);
 
-  addMacro("isString", { "value" }, &BuiltIns::isStringMacro);
+  addMacro("isString", {"value"}, &BuiltIns::isStringMacro);
 
-  addMacro("less", { "A", "B" }, &BuiltIns::lessMacro);
+  addMacro("less", {"A", "B"}, &BuiltIns::lessMacro);
 
-  addMacro("and", { "A", "B" }, &BuiltIns::andMacro, false);
+  addMacro("and", {"A", "B"}, &BuiltIns::andMacro, false);
 
-  addMacro("or", { "A", "B" }, &BuiltIns::orMacro, false);
+  addMacro("or", {"A", "B"}, &BuiltIns::orMacro, false);
 
-  addMacro("not", { "A" }, &BuiltIns::notMacro);
+  addMacro("not", {"A"}, &BuiltIns::notMacro);
 
-  addMacro("size", { "dictionary" }, &BuiltIns::sizeMacro);
+  addMacro("size", {"dictionary"}, &BuiltIns::sizeMacro);
 
-  addMacro("add", { "A", "B" }, &BuiltIns::addMacro);
+  addMacro("add", {"A", "B"}, &BuiltIns::addMacro);
 
-  addMacro("sub", { "A", "B" }, &BuiltIns::subMacro);
+  addMacro("sub", {"A", "B"}, &BuiltIns::subMacro);
 
-  addMacro("mul", { "A", "B" }, &BuiltIns::mulMacro);
+  addMacro("mul", {"A", "B"}, &BuiltIns::mulMacro);
 
-  addMacro("div", { "A", "B" }, &BuiltIns::divMacro);
+  addMacro("div", {"A", "B"}, &BuiltIns::divMacro);
 
-  addMacro("mod", { "A", "B" }, &BuiltIns::modMacro);
+  addMacro("mod", {"A", "B"}, &BuiltIns::modMacro);
 
-  addMacro("fail", { "msg" }, &BuiltIns::failMacro);
+  addMacro("fail", {"msg"}, &BuiltIns::failMacro);
 
-  addMacro("sort", { "dictionary" }, &BuiltIns::sortMacro);
+  addMacro("sort", {"dictionary"}, &BuiltIns::sortMacro);
 
-  addMacro("set", { "dictionary", "key", "value" }, &BuiltIns::setMacro);
+  addMacro("set", {"dictionary", "key", "value"}, &BuiltIns::setMacro);
 
-  addMacro("if", { "condition", "is_true", "is_false" },
-           &BuiltIns::ifMacro, false);
+  addMacro(
+      "if", {"condition", "is_true", "is_false"}, &BuiltIns::ifMacro, false);
 
-  addMacro("define", { "result" }, &BuiltIns::defineMacro);
+  addMacro("define", {"result"}, &BuiltIns::defineMacro);
 
-  addMacro("defined", { "name" }, &BuiltIns::definedMacro);
+  addMacro("defined", {"name"}, &BuiltIns::definedMacro);
 
-  addMacro("isLocalIp", { "ip" }, &BuiltIns::isLocalIpMacro);
+  addMacro("isLocalIp", {"ip"}, &BuiltIns::isLocalIpMacro);
 
   builtInCalls_.emplace("macroDef", &BuiltIns::noop);
 
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
 
-  builtInCalls_.emplace("transform",
-    std::bind(&BuiltIns::transform, this, _1, _2));
+  builtInCalls_.emplace(
+      "transform", std::bind(&BuiltIns::transform, this, _1, _2));
 
   builtInCalls_.emplace("process", std::bind(&BuiltIns::process, this, _1, _2));
 
@@ -1623,17 +1652,19 @@ void ConfigPreprocessor::addConst(StringPiece name, folly::dynamic result) {
   it->second = folly::make_unique<Const>(*this, it->first, std::move(result));
 }
 
-void ConfigPreprocessor::addMacro(StringPiece name,
-                                  const vector<dynamic>& params,
-                                  Macro::Func func,
-                                  bool autoExpand) {
+void ConfigPreprocessor::addMacro(
+    StringPiece name,
+    const vector<dynamic>& params,
+    Macro::Func func,
+    bool autoExpand) {
   auto it = macros_.emplace(name, nullptr).first;
-  it->second = folly::make_unique<Macro>(*this, it->first, params,
-                                         std::move(func), autoExpand);
+  it->second = folly::make_unique<Macro>(
+      *this, it->first, params, std::move(func), autoExpand);
 }
 
-dynamic ConfigPreprocessor::replaceParams(StringPiece str,
-                                          const Context& context) const {
+dynamic ConfigPreprocessor::replaceParams(
+    StringPiece str,
+    const Context& context) const {
   string buf;
   while (!str.empty()) {
     auto pos = unescapeUntil(str, buf, '%');
@@ -1644,22 +1675,26 @@ dynamic ConfigPreprocessor::replaceParams(StringPiece str,
 
     string paramName;
     auto nextPos = unescapeUntil(str, paramName, '%');
-    checkLogic(nextPos != string::npos,
-               "Odd number of percent signs in string around '{}'", str);
+    checkLogic(
+        nextPos != string::npos,
+        "Odd number of percent signs in string around '{}'",
+        str);
 
     // first check current context, then global context
     auto paramPtr = context.find(paramName);
     const auto& substitution = paramPtr
-      ? *paramPtr
-      : tryGet(consts_, paramName, "Param in string")->getResult();
+        ? *paramPtr
+        : tryGet(consts_, paramName, "Param in string")->getResult();
 
     if (buf.empty() && nextPos == str.size() - 1) {
       // whole string is a parameter. May be substituted to any value.
       return substitution;
     } else {
       // param inside string e.g. a%param%b
-      checkLogic(substitution.isString(),
-                 "Param in string '{}' is not a string", paramName);
+      checkLogic(
+          substitution.isString(),
+          "Param in string '{}' is not a string",
+          paramName);
       auto sp = substitution.stringPiece();
       buf.append(sp.begin(), sp.end());
     }
@@ -1715,8 +1750,9 @@ vector<StringPiece> ConfigPreprocessor::getCallParams(StringPiece str) const {
   return result;
 }
 
-dynamic ConfigPreprocessor::expandStringMacro(StringPiece str,
-                                              const Context& context) const {
+dynamic ConfigPreprocessor::expandStringMacro(
+    StringPiece str,
+    const Context& context) const {
   NestedLimitGuard nestedGuard(nestedLimit_);
 
   if (str.empty()) {
@@ -1734,8 +1770,8 @@ dynamic ConfigPreprocessor::expandStringMacro(StringPiece str,
   auto paramStart = findUnescaped(str, '(');
   if (paramStart != string::npos) {
     // macro in string with params e.g. @a()
-    checkLogic(str[str.size() - 1] == ')',
-               "No closing bracket for call '{}'", str);
+    checkLogic(
+        str[str.size() - 1] == ')', "No closing bracket for call '{}'", str);
 
     name = str.subpiece(1, paramStart - 1);
 
@@ -1758,8 +1794,8 @@ dynamic ConfigPreprocessor::expandStringMacro(StringPiece str,
   }
 }
 
-dynamic ConfigPreprocessor::expandMacros(dynamic json,
-                                         const Context& context) const {
+dynamic ConfigPreprocessor::expandMacros(dynamic json, const Context& context)
+    const {
   NestedLimitGuard nestedGuard(nestedLimit_);
 
   if (json.isString()) {
@@ -1768,8 +1804,8 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
   } else if (json.isObject()) {
     folly::Optional<Context> extContext;
     if (auto jVars = json.get_ptr("vars")) {
-      checkLogic(jVars->isObject(), "vars is {}, expected object",
-                 jVars->typeName());
+      checkLogic(
+          jVars->isObject(), "vars is {}, expected object", jVars->typeName());
 
       extContext.emplace(Context::Extended, context);
       // since vars may use other vars from local context, we
@@ -1821,11 +1857,11 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
       try {
         auto nKey = expandMacros(it.first, localContext);
         checkLogic(nKey.isString(), "Expanded key is not a string");
-        result.insert(std::move(nKey),
-                      expandMacros(std::move(value), localContext));
+        result.insert(
+            std::move(nKey), expandMacros(std::move(value), localContext));
       } catch (const std::logic_error& e) {
-        throwLogic("Raw object property '{}':\n{}",
-                   it.first.stringPiece(), e.what());
+        throwLogic(
+            "Raw object property '{}':\n{}", it.first.stringPiece(), e.what());
       }
     }
     return result;
@@ -1845,20 +1881,23 @@ dynamic ConfigPreprocessor::expandMacros(dynamic json,
   }
 }
 
-void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
-                                       const dynamic& obj) {
+void ConfigPreprocessor::parseMacroDef(
+    const dynamic& jkey,
+    const dynamic& obj) {
   auto key = asStringPiece(jkey, "macro definition key");
   checkLogic(obj.isObject(), "'{}' macro definition is not an object", key);
-  auto objType = asStringPiece(tryGet(obj, "type", "macro definition"),
-                               "macro definition type");
+  auto objType = asStringPiece(
+      tryGet(obj, "type", "macro definition"), "macro definition type");
 
   if (objType == "macroDef") {
     const auto& res = tryGet(obj, "result", "Macro definition");
     vector<dynamic> params;
     auto paramsIt = obj.find("params");
     if (paramsIt != obj.items().end()) {
-      checkLogic(paramsIt->second.isArray(),
-                 "'{}' macroDef params is not an array", key);
+      checkLogic(
+          paramsIt->second.isArray(),
+          "'{}' macroDef params is not an array",
+          key);
       for (auto& paramObj : paramsIt->second) {
         params.push_back(paramObj);
       }
@@ -1877,8 +1916,9 @@ void ConfigPreprocessor::parseMacroDef(const dynamic& jkey,
 
 void ConfigPreprocessor::parseMacroDefs(dynamic jmacros) {
   auto macros = expandMacros(std::move(jmacros), Context(*this));
-  checkLogic(macros.isObject() || macros.isArray(),
-             "config macros is not an array/object");
+  checkLogic(
+      macros.isObject() || macros.isArray(),
+      "config macros is not an array/object");
 
   if (macros.isObject()) {
     for (const auto& it : macros.items()) {
@@ -1896,7 +1936,6 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
     ImportResolverIf& importResolver,
     folly::StringKeyedUnorderedMap<dynamic> globalParams,
     size_t nestedLimit) {
-
   auto config = parseJsonString(stripComments(jsonC));
   checkLogic(config.isObject(), "config is not an object");
 
@@ -1911,5 +1950,5 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
 
   return prep.expandMacros(std::move(config), Context(prep));
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

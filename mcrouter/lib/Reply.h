@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,12 +12,13 @@
 #include <string>
 #include <utility>
 
-#include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Type tags for Reply constructors.
@@ -62,5 +63,5 @@ template <class Request>
 ReplyT<Request> createReply(BusyReplyT) {
   return ReplyT<Request>(mc_res_busy);
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

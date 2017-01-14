@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,18 +18,18 @@ using namespace facebook::memcache;
 TEST(Crc32Func, basic) {
   Crc32HashFunc func_100(100);
   Crc32HashFunc func_1(1);
-  Crc32HashFunc func_max((1<<30)-1);
+  Crc32HashFunc func_max((1 << 30) - 1);
   Crc32HashFunc func_99999(99999);
 
-  //tests with 'sample' as key
+  // tests with 'sample' as key
   EXPECT_EQ(func_100("sample"), 7);
   EXPECT_EQ(func_1("sample"), 0);
 
-  //tests with empty string as key
+  // tests with empty string as key
   EXPECT_EQ(func_100(""), 0);
   EXPECT_EQ(func_1(""), 0);
 
-  //tests with max pool size
+  // tests with max pool size
   EXPECT_EQ(func_max(""), 0);
   EXPECT_EQ(func_max("sample"), 822834884);
 
@@ -41,7 +41,7 @@ TEST(Crc32Func, basic) {
   }
   EXPECT_EQ(11697, func_99999(test_max_key));
 
-  //127 .. -128
+  // 127 .. -128
   std::reverse(test_max_key.begin(), test_max_key.end());
   EXPECT_EQ(97630, func_99999(test_max_key));
 }

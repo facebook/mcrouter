@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,7 +14,8 @@
 #include "mcrouter/tools/mcpiper/PrettyFormat.h"
 #include "mcrouter/tools/mcpiper/StyledString.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Formats the value part of request/reply.
@@ -42,13 +43,14 @@ class ValueFormatter {
    * @param uncompressedSize  Output parameter containing the uncompressed size.
    * @return                  The formatted value.
    */
-  virtual StyledString uncompressAndFormat(folly::StringPiece value,
-                                           uint64_t flags,
-                                           PrettyFormat format,
-                                           size_t& uncompressedSize) noexcept {
+  virtual StyledString uncompressAndFormat(
+      folly::StringPiece value,
+      uint64_t flags,
+      PrettyFormat format,
+      size_t& uncompressedSize) noexcept {
     uncompressedSize = value.size();
     return StyledString(value.str(), format.dataValueColor);
   }
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache

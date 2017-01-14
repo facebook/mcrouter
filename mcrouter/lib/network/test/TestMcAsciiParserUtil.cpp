@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,10 +11,12 @@
 
 #include <folly/io/IOBuf.h>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
-std::vector<std::vector<size_t>> genChunkedDataSets(size_t length,
-                                                    size_t maxPieceSize) {
+std::vector<std::vector<size_t>> genChunkedDataSets(
+    size_t length,
+    size_t maxPieceSize) {
   std::vector<std::vector<std::vector<size_t>>> m(length + 1);
   for (size_t i = 1; i <= std::min(length, maxPieceSize); ++i) {
     m[i].push_back({i});
@@ -45,8 +47,9 @@ size_t chunkedDataSetsCnt(size_t length, size_t maxPieceSize) {
   return m[length];
 }
 
-std::unique_ptr<folly::IOBuf> chunkData(folly::IOBuf data,
-                                        const std::vector<size_t>& pieces) {
+std::unique_ptr<folly::IOBuf> chunkData(
+    folly::IOBuf data,
+    const std::vector<size_t>& pieces) {
   data.coalesce();
   size_t start = 0;
   std::unique_ptr<folly::IOBuf> buffer;
@@ -61,5 +64,5 @@ std::unique_ptr<folly::IOBuf> chunkData(folly::IOBuf data,
   }
   return buffer;
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

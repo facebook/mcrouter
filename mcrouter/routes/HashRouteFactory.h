@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,11 +12,11 @@
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/Ch3HashFunc.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/Crc32HashFunc.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/HashRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/ShardHashFunc.h"
@@ -47,9 +47,8 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteCrc32(
 
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteCh3(
-  std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
-  std::string salt) {
-
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
+    std::string salt) {
   auto n = rh.size();
   if (n == 0) {
     return createNullRoute<typename RouterInfo::RouteHandleIf>();
@@ -141,8 +140,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
 
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRoute(
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>&
-        factory,
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
   std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children;
   if (json.isObject()) {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -7,9 +7,9 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/Proxy.h"
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/Proxy.h"
 
 namespace facebook {
 namespace memcache {
@@ -46,8 +46,9 @@ class ProxyRequestContextTypedWithCallback
 constexpr const char* kCommandNotSupportedStr = "Command not supported";
 
 template <class RouterInfo, class Request>
-bool precheckKey(ProxyRequestContextTyped<RouterInfo, Request>& preq,
-                 const Request& req) {
+bool precheckKey(
+    ProxyRequestContextTyped<RouterInfo, Request>& preq,
+    const Request& req) {
   auto key = req.key().fullKey();
   auto err = isKeyValid(key);
   if (err != mc_req_err_valid) {
@@ -63,8 +64,9 @@ bool precheckKey(ProxyRequestContextTyped<RouterInfo, Request>& preq,
 // otherwise they reply it with error and return false;
 
 template <class RouterInfo, class Request>
-bool precheckRequest(ProxyRequestContextTyped<RouterInfo, Request>& preq,
-                     const Request& req) {
+bool precheckRequest(
+    ProxyRequestContextTyped<RouterInfo, Request>& preq,
+    const Request& req) {
   return precheckKey(preq, req);
 }
 
@@ -184,12 +186,13 @@ ProxyRequestContextTyped<RouterInfo, Request>::process(
 
 template <class RouterInfo, class Request, class F>
 std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
-createProxyRequestContext(Proxy<RouterInfo>& pr,
-                          const Request& req,
-                          F&& f,
-                          ProxyRequestPriority priority) {
-  using Type = detail::
-      ProxyRequestContextTypedWithCallback<RouterInfo, Request, F>;
+createProxyRequestContext(
+    Proxy<RouterInfo>& pr,
+    const Request& req,
+    F&& f,
+    ProxyRequestPriority priority) {
+  using Type =
+      detail::ProxyRequestContextTypedWithCallback<RouterInfo, Request, F>;
   return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 

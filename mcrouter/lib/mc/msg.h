@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -58,35 +58,64 @@ typedef enum mc_op_e {
 mc_op_t mc_op_from_string(const char* str);
 static inline const char* mc_op_to_string(const mc_op_t op) {
   switch (op) {
-    case mc_op_unknown: return "unknown";
-    case mc_op_echo: return "echo";
-    case mc_op_quit: return "quit";
-    case mc_op_version: return "version";
-    case mc_op_servererr: return "servererr";
-    case mc_op_get: return "get";
-    case mc_op_set: return "set";
-    case mc_op_add: return "add";
-    case mc_op_replace: return "replace";
-    case mc_op_append: return "append";
-    case mc_op_prepend: return "prepend";
-    case mc_op_cas: return "cas";
-    case mc_op_delete: return "delete";
-    case mc_op_touch: return "touch";
-    case mc_op_incr: return "incr";
-    case mc_op_decr: return "decr";
-    case mc_op_flushall: return "flushall";
-    case mc_op_flushre: return "flushre";
-    case mc_op_stats: return "stats";
-    case mc_op_verbosity: return "verbosity";
-    case mc_op_lease_get: return "lease-get";
-    case mc_op_lease_set: return "lease-set";
-    case mc_op_shutdown: return "shutdown";
-    case mc_op_end: return "end";
-    case mc_op_metaget: return "metaget";
-    case mc_op_exec: return "exec";
-    case mc_op_gets: return "gets";
-    case mc_op_get_service_info: return "get-service-info";
-    case mc_nops: return "unknown";
+    case mc_op_unknown:
+      return "unknown";
+    case mc_op_echo:
+      return "echo";
+    case mc_op_quit:
+      return "quit";
+    case mc_op_version:
+      return "version";
+    case mc_op_servererr:
+      return "servererr";
+    case mc_op_get:
+      return "get";
+    case mc_op_set:
+      return "set";
+    case mc_op_add:
+      return "add";
+    case mc_op_replace:
+      return "replace";
+    case mc_op_append:
+      return "append";
+    case mc_op_prepend:
+      return "prepend";
+    case mc_op_cas:
+      return "cas";
+    case mc_op_delete:
+      return "delete";
+    case mc_op_touch:
+      return "touch";
+    case mc_op_incr:
+      return "incr";
+    case mc_op_decr:
+      return "decr";
+    case mc_op_flushall:
+      return "flushall";
+    case mc_op_flushre:
+      return "flushre";
+    case mc_op_stats:
+      return "stats";
+    case mc_op_verbosity:
+      return "verbosity";
+    case mc_op_lease_get:
+      return "lease-get";
+    case mc_op_lease_set:
+      return "lease-set";
+    case mc_op_shutdown:
+      return "shutdown";
+    case mc_op_end:
+      return "end";
+    case mc_op_metaget:
+      return "metaget";
+    case mc_op_exec:
+      return "exec";
+    case mc_op_gets:
+      return "gets";
+    case mc_op_get_service_info:
+      return "get-service-info";
+    case mc_nops:
+      return "unknown";
   };
   return "unknown";
 }
@@ -130,10 +159,10 @@ typedef enum mc_res_e {
   mc_res_aborted,
   mc_res_client_error,
   mc_res_local_error, /* an error internal to libmc */
- /* an error was reported by the remote server.
+  /* an error was reported by the remote server.
 
-    TODO I think this can also be triggered by a communications problem or
-    disconnect, but I think these should be separate errors. (fugalh) */
+     TODO I think this can also be triggered by a communications problem or
+     disconnect, but I think these should be separate errors. (fugalh) */
   mc_res_remote_error,
   /* in progress -- */
   mc_res_waiting,
@@ -142,106 +171,166 @@ typedef enum mc_res_e {
 
 static inline const char* mc_res_to_string(const mc_res_t result) {
   switch (result) {
-    case mc_res_unknown: return "mc_res_unknown";
-    case mc_res_deleted: return "mc_res_deleted";
-    case mc_res_touched: return "mc_res_touched";
-    case mc_res_found: return "mc_res_found";
-    case mc_res_foundstale: return "mc_res_foundstale";
-    case mc_res_notfound: return "mc_res_notfound";
-    case mc_res_notfoundhot: return "mc_res_notfoundhot";
-    case mc_res_notstored: return "mc_res_notstored";
-    case mc_res_stalestored: return "mc_res_stalestored";
-    case mc_res_ok: return "mc_res_ok";
-    case mc_res_stored: return "mc_res_stored";
-    case mc_res_exists: return "mc_res_exists";
+    case mc_res_unknown:
+      return "mc_res_unknown";
+    case mc_res_deleted:
+      return "mc_res_deleted";
+    case mc_res_touched:
+      return "mc_res_touched";
+    case mc_res_found:
+      return "mc_res_found";
+    case mc_res_foundstale:
+      return "mc_res_foundstale";
+    case mc_res_notfound:
+      return "mc_res_notfound";
+    case mc_res_notfoundhot:
+      return "mc_res_notfoundhot";
+    case mc_res_notstored:
+      return "mc_res_notstored";
+    case mc_res_stalestored:
+      return "mc_res_stalestored";
+    case mc_res_ok:
+      return "mc_res_ok";
+    case mc_res_stored:
+      return "mc_res_stored";
+    case mc_res_exists:
+      return "mc_res_exists";
     /* soft errors -- */
-    case mc_res_ooo: return "mc_res_ooo";
-    case mc_res_timeout: return "mc_res_timeout";
-    case mc_res_connect_timeout: return "mc_res_connect_timeout";
-    case mc_res_connect_error: return "mc_res_connect_error";
-    case mc_res_busy: return "mc_res_busy";
-    case mc_res_try_again: return "mc_res_try_again";
-    case mc_res_shutdown: return "mc_res_shutdown";
-    case mc_res_tko: return "mc_res_tko";
+    case mc_res_ooo:
+      return "mc_res_ooo";
+    case mc_res_timeout:
+      return "mc_res_timeout";
+    case mc_res_connect_timeout:
+      return "mc_res_connect_timeout";
+    case mc_res_connect_error:
+      return "mc_res_connect_error";
+    case mc_res_busy:
+      return "mc_res_busy";
+    case mc_res_try_again:
+      return "mc_res_try_again";
+    case mc_res_shutdown:
+      return "mc_res_shutdown";
+    case mc_res_tko:
+      return "mc_res_tko";
     /* hard errors -- */
-    case mc_res_bad_command: return "mc_res_bad_command";
-    case mc_res_bad_key: return "mc_res_bad_key";
-    case mc_res_bad_flags: return "mc_res_bad_flags";
-    case mc_res_bad_exptime: return "mc_res_bad_exptime";
-    case mc_res_bad_lease_id: return "mc_res_bad_lease_id";
-    case mc_res_bad_cas_id: return "mc_res_bad_cas_id";
-    case mc_res_bad_value: return "mc_res_bad_value";
-    case mc_res_aborted: return "mc_res_aborted";
-    case mc_res_client_error: return "mc_res_client_error";
-    case mc_res_local_error: return "mc_res_local_error";
-    case mc_res_remote_error: return "mc_res_remote_error";
+    case mc_res_bad_command:
+      return "mc_res_bad_command";
+    case mc_res_bad_key:
+      return "mc_res_bad_key";
+    case mc_res_bad_flags:
+      return "mc_res_bad_flags";
+    case mc_res_bad_exptime:
+      return "mc_res_bad_exptime";
+    case mc_res_bad_lease_id:
+      return "mc_res_bad_lease_id";
+    case mc_res_bad_cas_id:
+      return "mc_res_bad_cas_id";
+    case mc_res_bad_value:
+      return "mc_res_bad_value";
+    case mc_res_aborted:
+      return "mc_res_aborted";
+    case mc_res_client_error:
+      return "mc_res_client_error";
+    case mc_res_local_error:
+      return "mc_res_local_error";
+    case mc_res_remote_error:
+      return "mc_res_remote_error";
     /* in progress -- */
-    case mc_res_waiting: return "mc_res_waiting";
-    case mc_nres: return "mc_res_unknown";
+    case mc_res_waiting:
+      return "mc_res_waiting";
+    case mc_nres:
+      return "mc_res_unknown";
   }
   return "mc_res_unknown";
 }
 
 enum mc_msg_flags_t {
-    MC_MSG_FLAG_PHP_SERIALIZED = 0x1,
-    MC_MSG_FLAG_COMPRESSED = 0x2,
-    MC_MSG_FLAG_FB_SERIALIZED = 0x4,
-    MC_MSG_FLAG_FB_COMPACT_SERIALIZED = 0x8,
-    MC_MSG_FLAG_ASCII_INT_SERIALIZED = 0x10,
-    MC_MSG_FLAG_NZLIB_COMPRESSED = 0x800,
-    MC_MSG_FLAG_QUICKLZ_COMPRESSED = 0x2000,
-    MC_MSG_FLAG_SNAPPY_COMPRESSED = 0x4000,
-    MC_MSG_FLAG_BIG_VALUE = 0X8000,
-    MC_MSG_FLAG_NEGATIVE_CACHE = 0x10000,
-    MC_MSG_FLAG_HOT_KEY = 0x20000,
-    /* Bits reserved for application-specific extension flags: */
-    MC_MSG_FLAG_USER_1 = 0x100000000LL,
-    MC_MSG_FLAG_USER_2 = 0x200000000LL,
-    MC_MSG_FLAG_USER_3 = 0x400000000LL,
-    MC_MSG_FLAG_USER_4 = 0x800000000LL,
-    MC_MSG_FLAG_USER_5 = 0x1000000000LL,
-    MC_MSG_FLAG_USER_6 = 0x2000000000LL,
-    MC_MSG_FLAG_USER_7 = 0x4000000000LL,
-    MC_MSG_FLAG_USER_8 = 0x8000000000LL,
-    MC_MSG_FLAG_USER_9 = 0x10000000000LL,
-    MC_MSG_FLAG_USER_10 = 0x20000000000LL,
-    MC_MSG_FLAG_USER_11 = 0x40000000000LL,
-    MC_MSG_FLAG_USER_12 = 0x80000000000LL,
-    MC_MSG_FLAG_USER_13 = 0x100000000000LL,
-    MC_MSG_FLAG_USER_14 = 0x200000000000LL,
-    MC_MSG_FLAG_USER_15 = 0x400000000000LL,
-    MC_MSG_FLAG_USER_16 = 0x800000000000LL
+  MC_MSG_FLAG_PHP_SERIALIZED = 0x1,
+  MC_MSG_FLAG_COMPRESSED = 0x2,
+  MC_MSG_FLAG_FB_SERIALIZED = 0x4,
+  MC_MSG_FLAG_FB_COMPACT_SERIALIZED = 0x8,
+  MC_MSG_FLAG_ASCII_INT_SERIALIZED = 0x10,
+  MC_MSG_FLAG_NZLIB_COMPRESSED = 0x800,
+  MC_MSG_FLAG_QUICKLZ_COMPRESSED = 0x2000,
+  MC_MSG_FLAG_SNAPPY_COMPRESSED = 0x4000,
+  MC_MSG_FLAG_BIG_VALUE = 0X8000,
+  MC_MSG_FLAG_NEGATIVE_CACHE = 0x10000,
+  MC_MSG_FLAG_HOT_KEY = 0x20000,
+  /* Bits reserved for application-specific extension flags: */
+  MC_MSG_FLAG_USER_1 = 0x100000000LL,
+  MC_MSG_FLAG_USER_2 = 0x200000000LL,
+  MC_MSG_FLAG_USER_3 = 0x400000000LL,
+  MC_MSG_FLAG_USER_4 = 0x800000000LL,
+  MC_MSG_FLAG_USER_5 = 0x1000000000LL,
+  MC_MSG_FLAG_USER_6 = 0x2000000000LL,
+  MC_MSG_FLAG_USER_7 = 0x4000000000LL,
+  MC_MSG_FLAG_USER_8 = 0x8000000000LL,
+  MC_MSG_FLAG_USER_9 = 0x10000000000LL,
+  MC_MSG_FLAG_USER_10 = 0x20000000000LL,
+  MC_MSG_FLAG_USER_11 = 0x40000000000LL,
+  MC_MSG_FLAG_USER_12 = 0x80000000000LL,
+  MC_MSG_FLAG_USER_13 = 0x100000000000LL,
+  MC_MSG_FLAG_USER_14 = 0x200000000000LL,
+  MC_MSG_FLAG_USER_15 = 0x400000000000LL,
+  MC_MSG_FLAG_USER_16 = 0x800000000000LL
 };
 
 static inline const char* mc_flag_to_string(const enum mc_msg_flags_t flag) {
   switch (flag) {
-    case MC_MSG_FLAG_PHP_SERIALIZED: return "PHP_SERIALIZED";
-    case MC_MSG_FLAG_COMPRESSED: return "COMPRESSED";
-    case MC_MSG_FLAG_FB_SERIALIZED: return "FB_SERIALIZED";
-    case MC_MSG_FLAG_FB_COMPACT_SERIALIZED: return "FB_COMPACT_SERIALIZED";
-    case MC_MSG_FLAG_ASCII_INT_SERIALIZED: return "ASCII_INT_SERIALIZED";
-    case MC_MSG_FLAG_NZLIB_COMPRESSED: return "NZLIB_COMPRESSED";
-    case MC_MSG_FLAG_QUICKLZ_COMPRESSED: return "QUICKLZ_COMPRESSED";
-    case MC_MSG_FLAG_SNAPPY_COMPRESSED: return "SNAPPY_COMPRESSED";
-    case MC_MSG_FLAG_BIG_VALUE: return "BIG_VALUE";
-    case MC_MSG_FLAG_NEGATIVE_CACHE: return "NEGATIVE_CACHE";
-    case MC_MSG_FLAG_HOT_KEY: return "HOT_KEY";
-    case MC_MSG_FLAG_USER_1: return "USER_1";
-    case MC_MSG_FLAG_USER_2: return "USER_2";
-    case MC_MSG_FLAG_USER_3: return "USER_3";
-    case MC_MSG_FLAG_USER_4: return "USER_4";
-    case MC_MSG_FLAG_USER_5: return "USER_5";
-    case MC_MSG_FLAG_USER_6: return "USER_6";
-    case MC_MSG_FLAG_USER_7: return "USER_7";
-    case MC_MSG_FLAG_USER_8: return "USER_8";
-    case MC_MSG_FLAG_USER_9: return "USER_9";
-    case MC_MSG_FLAG_USER_10: return "USER_10";
-    case MC_MSG_FLAG_USER_11: return "USER_11";
-    case MC_MSG_FLAG_USER_12: return "USER_12";
-    case MC_MSG_FLAG_USER_13: return "USER_13";
-    case MC_MSG_FLAG_USER_14: return "USER_14";
-    case MC_MSG_FLAG_USER_15: return "USER_15";
-    case MC_MSG_FLAG_USER_16: return "USER_16";
+    case MC_MSG_FLAG_PHP_SERIALIZED:
+      return "PHP_SERIALIZED";
+    case MC_MSG_FLAG_COMPRESSED:
+      return "COMPRESSED";
+    case MC_MSG_FLAG_FB_SERIALIZED:
+      return "FB_SERIALIZED";
+    case MC_MSG_FLAG_FB_COMPACT_SERIALIZED:
+      return "FB_COMPACT_SERIALIZED";
+    case MC_MSG_FLAG_ASCII_INT_SERIALIZED:
+      return "ASCII_INT_SERIALIZED";
+    case MC_MSG_FLAG_NZLIB_COMPRESSED:
+      return "NZLIB_COMPRESSED";
+    case MC_MSG_FLAG_QUICKLZ_COMPRESSED:
+      return "QUICKLZ_COMPRESSED";
+    case MC_MSG_FLAG_SNAPPY_COMPRESSED:
+      return "SNAPPY_COMPRESSED";
+    case MC_MSG_FLAG_BIG_VALUE:
+      return "BIG_VALUE";
+    case MC_MSG_FLAG_NEGATIVE_CACHE:
+      return "NEGATIVE_CACHE";
+    case MC_MSG_FLAG_HOT_KEY:
+      return "HOT_KEY";
+    case MC_MSG_FLAG_USER_1:
+      return "USER_1";
+    case MC_MSG_FLAG_USER_2:
+      return "USER_2";
+    case MC_MSG_FLAG_USER_3:
+      return "USER_3";
+    case MC_MSG_FLAG_USER_4:
+      return "USER_4";
+    case MC_MSG_FLAG_USER_5:
+      return "USER_5";
+    case MC_MSG_FLAG_USER_6:
+      return "USER_6";
+    case MC_MSG_FLAG_USER_7:
+      return "USER_7";
+    case MC_MSG_FLAG_USER_8:
+      return "USER_8";
+    case MC_MSG_FLAG_USER_9:
+      return "USER_9";
+    case MC_MSG_FLAG_USER_10:
+      return "USER_10";
+    case MC_MSG_FLAG_USER_11:
+      return "USER_11";
+    case MC_MSG_FLAG_USER_12:
+      return "USER_12";
+    case MC_MSG_FLAG_USER_13:
+      return "USER_13";
+    case MC_MSG_FLAG_USER_14:
+      return "USER_14";
+    case MC_MSG_FLAG_USER_15:
+      return "USER_15";
+    case MC_MSG_FLAG_USER_16:
+      return "USER_16";
   }
   return "UNKNOWN";
 }

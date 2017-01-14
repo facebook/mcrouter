@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,18 +14,20 @@
 #include <unordered_set>
 #include <vector>
 
-#include <folly/fibers/FiberManager.h>
 #include <folly/Hash.h>
+#include <folly/fibers/FiberManager.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/Proxy.h"
+#include "mcrouter/RoutingPrefix.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/route.h"
 #include "mcrouter/routes/PrefixSelectorRoute.h"
 #include "mcrouter/routes/RoutePolicyMap.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
-#include "mcrouter/RoutingPrefix.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 constexpr const char* kFallbackCluster = "fallback";
 
@@ -72,8 +74,10 @@ RouteHandleMap<RouteHandleIf>::RouteHandleMap(
     bool sendInvalidRouteToDefault)
     : defaultRoute_(defaultRoute),
       sendInvalidRouteToDefault_(sendInvalidRouteToDefault) {
-  checkLogic(routeSelectors.find(defaultRoute_) != routeSelectors.end(),
-             "invalid default route: {}", defaultRoute_.str());
+  checkLogic(
+      routeSelectors.find(defaultRoute_) != routeSelectors.end(),
+      "invalid default route: {}",
+      defaultRoute_.str());
 
   detail::RouteSelectorVector<RouteHandleIf> allRoutes;
   folly::StringKeyedUnorderedMap<detail::RouteSelectorVector<RouteHandleIf>>
@@ -161,32 +165,32 @@ RouteHandleMap<RouteHandleIf>::getTargetsForKeySlow(
   } c(this);
 
   auto result = folly::fibers::runInMainContext(
-    [&c, prefix, key] () -> std::vector<std::shared_ptr<RouteHandleIf>> {
-      c.rhMap->foreachRoutePolicy(prefix,
-        [&c, key] (const std::shared_ptr<RoutePolicyMap<RouteHandleIf>>& r) {
-          const auto& policies = r->getTargetsForKey(key);
-          for (const auto& policy : policies) {
-            c.seen.insert(policy);
-            if (!c.first) {
-              c.first = policy;
-            }
-          }
-        });
+      [&c, prefix, key]() -> std::vector<std::shared_ptr<RouteHandleIf>> {
+        c.rhMap->foreachRoutePolicy(
+            prefix,
+            [&c, key](const std::shared_ptr<RoutePolicyMap<RouteHandleIf>>& r) {
+              const auto& policies = r->getTargetsForKey(key);
+              for (const auto& policy : policies) {
+                c.seen.insert(policy);
+                if (!c.first) {
+                  c.first = policy;
+                }
+              }
+            });
 
-      if (!c.first) {
-        return {};
-      }
+        if (!c.first) {
+          return {};
+        }
 
-      std::vector<std::shared_ptr<RouteHandleIf>> rh;
-      rh.reserve(c.seen.size());
-      rh.push_back(c.first);
-      if (c.seen.size() > 1) {
-        c.seen.erase(c.first);
-        rh.insert(rh.end(), c.seen.begin(), c.seen.end());
-      }
-      return rh;
-    }
-  );
+        std::vector<std::shared_ptr<RouteHandleIf>> rh;
+        rh.reserve(c.seen.size());
+        rh.push_back(c.first);
+        if (c.seen.size() > 1) {
+          c.seen.erase(c.first);
+          rh.insert(rh.end(), c.seen.begin(), c.seen.end());
+        }
+        return rh;
+      });
   if (result.empty() && sendInvalidRouteToDefault_) {
     return defaultRouteMap_->getTargetsForKey(key);
   }
@@ -257,5 +261,6 @@ RouteHandleMap<RouteHandleIf>::getTargetsForKeyFallback(
   }
   return &emptyV_;
 }
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

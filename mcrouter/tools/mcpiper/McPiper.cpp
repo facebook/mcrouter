@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -56,9 +56,7 @@ MessagePrinter::Options getOptions(const Settings& settings, McPiper* mcpiper) {
   }
 
   // Exit function
-  options.stopRunningFn = [mcpiper]() {
-    mcpiper->stop();
-  };
+  options.stopRunningFn = [mcpiper]() { mcpiper->stop(); };
 
   return options;
 }
@@ -74,8 +72,9 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   // Host
   if (!settings.host.empty()) {
     try {
-      filter.host = folly::SocketAddress(settings.host,
-                      1 /* port */, true /* allowNameLookup */).getIPAddress();
+      filter.host = folly::SocketAddress(
+                        settings.host, 1 /* port */, true /* allowNameLookup */)
+                        .getIPAddress();
       std::cerr << "Host: " << filter.host.toFullyQualified() << std::endl;
     } catch (...) {
       LOG(ERROR) << "Invalid IP address provided: " << filter.host;
@@ -92,8 +91,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   // Protocol
   if (!settings.protocol.empty()) {
     auto protocol = mc_string_to_protocol(settings.protocol.c_str());
-    if (protocol == mc_ascii_protocol ||
-        protocol == mc_caret_protocol ||
+    if (protocol == mc_ascii_protocol || protocol == mc_caret_protocol ||
         protocol == mc_umbrella_protocol) {
       filter.protocol.emplace(protocol);
     } else {
@@ -126,8 +124,8 @@ void McPiper::stop() {
 void McPiper::run(Settings settings, std::ostream& targetOut) {
   running_ = true;
   // Builds filename pattern
-  auto filenamePattern = buildRegex(settings.filenamePattern,
-                                    settings.ignoreCase);
+  auto filenamePattern =
+      buildRegex(settings.filenamePattern, settings.ignoreCase);
   if (filenamePattern) {
     std::cerr << "Filename pattern: " << *filenamePattern << std::endl;
   }
@@ -179,8 +177,11 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
   initCompression();
 
   folly::EventBase eventBase;
-  FifoReaderManager fifoManager(eventBase, fifoReaderCallback,
-                                settings.fifoRoot, std::move(filenamePattern));
+  FifoReaderManager fifoManager(
+      eventBase,
+      fifoReaderCallback,
+      settings.fifoRoot,
+      std::move(filenamePattern));
 
   eventBase.setMaxReadAtOnce(1);
   while (running_) {

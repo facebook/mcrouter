@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,17 +15,19 @@
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/lib/mc/msg.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * This route handle allows for substantial changes in the number of boxes in
@@ -58,22 +60,25 @@ namespace facebook { namespace memcache { namespace mcrouter {
 template <class RouteHandleIf>
 class WarmUpRoute {
  public:
-  static std::string routeName() { return "warm-up"; }
+  static std::string routeName() {
+    return "warm-up";
+  }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*cold_, req);
     t(*warm_, req);
   }
 
-  WarmUpRoute(std::shared_ptr<RouteHandleIf> warm,
-              std::shared_ptr<RouteHandleIf> cold,
-              folly::Optional<uint32_t> exptime)
-  : warm_(std::move(warm)),
-    cold_(std::move(cold)),
-    exptime_(std::move(exptime)) {
-
+  WarmUpRoute(
+      std::shared_ptr<RouteHandleIf> warm,
+      std::shared_ptr<RouteHandleIf> cold,
+      folly::Optional<uint32_t> exptime)
+      : warm_(std::move(warm)),
+        cold_(std::move(cold)),
+        exptime_(std::move(exptime)) {
     assert(warm_ != nullptr);
     assert(cold_ != nullptr);
   }
@@ -90,11 +95,9 @@ class WarmUpRoute {
     uint32_t exptime;
     if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
       folly::fibers::addTask([
-          cold = cold_,
-          addReq = coldUpdateFromWarm<McAddRequest>(
-            req, warmReply, exptime)]() {
-        cold->route(addReq);
-      });
+        cold = cold_,
+        addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime)
+      ]() { cold->route(addReq); });
     }
     return warmReply;
   }
@@ -124,13 +127,12 @@ class WarmUpRoute {
     if (isHitResult(warmReply.result()) &&
         getExptimeForCold(reqOpGet, exptime)) {
       // update cold route with lease set
-      auto setReq = coldUpdateFromWarm<McLeaseSetRequest>(
-          reqOpGet, warmReply, exptime);
+      auto setReq =
+          coldUpdateFromWarm<McLeaseSetRequest>(reqOpGet, warmReply, exptime);
       setReq.leaseToken() = coldReply.leaseToken();
 
-      folly::fibers::addTask([cold = cold_, req = std::move(setReq)]() {
-        cold->route(req);
-      });
+      folly::fibers::addTask(
+          [ cold = cold_, req = std::move(setReq) ]() { cold->route(req); });
       // On hit, no need to copy appSpecificErrorCode or message
       McLeaseGetReply reply(warmReply.result());
       reply.flags() = warmReply.flags();
@@ -153,8 +155,7 @@ class WarmUpRoute {
     uint32_t exptime;
     if (isHitResult(warmReply.result()) && getExptimeForCold(req, exptime)) {
       // update cold route if we have the value
-      auto addReq = coldUpdateFromWarm<McAddRequest>(
-          req, warmReply, exptime);
+      auto addReq = coldUpdateFromWarm<McAddRequest>(req, warmReply, exptime);
       cold_->route(addReq);
       // and grab cas token again
       return cold_->route(req);
@@ -175,9 +176,10 @@ class WarmUpRoute {
   const folly::Optional<uint32_t> exptime_;
 
   template <class ToRequest, class Request, class Reply>
-  static ToRequest coldUpdateFromWarm(const Request& origReq,
-                                      const Reply& reply,
-                                      uint32_t exptime) {
+  static ToRequest coldUpdateFromWarm(
+      const Request& origReq,
+      const Reply& reply,
+      uint32_t exptime) {
     ToRequest req(origReq.key().fullKey());
     folly::IOBuf cloned = carbon::valuePtrUnsafe(reply)
         ? carbon::valuePtrUnsafe(reply)->cloneAsValue()
@@ -210,5 +212,6 @@ class WarmUpRoute {
     return false;
   }
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,6 +27,7 @@ class SFRReadLock {
   void unlock() {
     sfrlock_rdunlock(lock_);
   }
+
  private:
   friend class SFRLock;
 
@@ -48,6 +49,7 @@ class SFRWriteLock {
   void unlock() {
     sfrlock_wrunlock(lock_);
   }
+
  private:
   friend class SFRLock;
 
@@ -90,6 +92,7 @@ class SFRLock {
   SFRWriteLock& writeLock() {
     return writeLock_;
   }
+
  private:
   sfrlock_t lock_;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -15,12 +15,14 @@
 #include <unordered_map>
 
 #include <folly/IntrusiveList.h>
-#include <folly/io/async/EventBase.h>
-#include <folly/io/async/EventBaseThread.h>
 #include <folly/Optional.h>
 #include <folly/Range.h>
+#include <folly/io/async/EventBase.h>
+#include <folly/io/async/EventBaseThread.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Class responsible for mapping lease-tokens to destinations.
@@ -43,8 +45,9 @@ class LeaseTokenMap {
    * @param leaseTokenTtl     How many milliseconds the lease token will live.
    *                          Must be greater than 0.
    */
-  explicit LeaseTokenMap(folly::EventBaseThread& evbThread,
-                         uint32_t leaseTokenTtl = 10000);
+  explicit LeaseTokenMap(
+      folly::EventBaseThread& evbThread,
+      uint32_t leaseTokenTtl = 10000);
   ~LeaseTokenMap();
 
   /**
@@ -83,8 +86,8 @@ class LeaseTokenMap {
    * @return            The original lease token (i.e. the one returned by
    *                    memcached).
    */
-  uint64_t getOriginalLeaseToken(folly::StringPiece routeName,
-                                 uint64_t token) const;
+  uint64_t getOriginalLeaseToken(folly::StringPiece routeName, uint64_t token)
+      const;
 
   /**
    * Return the size of the data structure (i.e. how many tokens are stored).
@@ -103,14 +106,16 @@ class LeaseTokenMap {
     using Clock = std::chrono::steady_clock;
     using TimePoint = std::chrono::time_point<Clock>;
 
-    ListItem(uint64_t sToken, std::string route,
-             Item it, uint32_t tokenTimeoutMs)
+    ListItem(
+        uint64_t sToken,
+        std::string route,
+        Item it,
+        uint32_t tokenTimeoutMs)
         : specialToken(sToken),
           routeName(std::move(route)),
           item(std::move(it)),
-          tokenTimeout(Clock::now() +
-                       std::chrono::milliseconds(tokenTimeoutMs)) {
-    }
+          tokenTimeout(
+              Clock::now() + std::chrono::milliseconds(tokenTimeoutMs)) {}
 
     uint64_t specialToken;
     std::string routeName;
@@ -134,9 +139,7 @@ class LeaseTokenMap {
   class TimeoutHandler : public folly::AsyncTimeout {
    public:
     explicit TimeoutHandler(LeaseTokenMap& parent, folly::EventBase& evb)
-        : folly::AsyncTimeout(&evb),
-          parent_(parent) {
-    }
+        : folly::AsyncTimeout(&evb), parent_(parent) {}
     void timeoutExpired() noexcept override final {
       parent_.onTimeout();
     }
@@ -150,5 +153,6 @@ class LeaseTokenMap {
 
   void onTimeout();
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

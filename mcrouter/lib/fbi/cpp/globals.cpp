@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,15 +14,17 @@
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 #include "mcrouter/lib/fbi/network.h"
 
-namespace facebook { namespace memcache { namespace globals {
+namespace facebook {
+namespace memcache {
+namespace globals {
 
 namespace {
 
-bool getAddrHash(const sockaddr *addr, void *ctx) {
+bool getAddrHash(const sockaddr* addr, void* ctx) {
   try {
     folly::IPAddress ip(addr);
     if (!ip.isLoopback() && !ip.isLinkLocal()) {
-      auto result = (uint32_t*) ctx;
+      auto result = (uint32_t*)ctx;
       result[0] = 1;
       result[1] = ip.hash();
       return false;
@@ -39,14 +41,19 @@ uint32_t getHash() {
   uint32_t result[2] = {0};
 
   if (!for_each_localaddr(getAddrHash, result)) {
-    LOG_FAILURE("mcrouter", failure::Category::kSystemError,
-                "Can not enumerate local addresses: {}", strerror(errno));
+    LOG_FAILURE(
+        "mcrouter",
+        failure::Category::kSystemError,
+        "Can not enumerate local addresses: {}",
+        strerror(errno));
     return 0;
   }
 
   if (result[0] == 0) {
-    LOG_FAILURE("mcrouter", failure::Category::kBadEnvironment,
-                "Can not find a valid ip addresss");
+    LOG_FAILURE(
+        "mcrouter",
+        failure::Category::kBadEnvironment,
+        "Can not find a valid ip addresss");
     return 0;
   }
 
@@ -58,7 +65,7 @@ uint32_t* getHostIdStorage() {
   return &h;
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 uint32_t hostid() {
   return *getHostIdStorage();
@@ -71,5 +78,6 @@ HostidMock::HostidMock(uint32_t value) {
 void HostidMock::reset() {
   *getHostIdStorage() = getHash();
 }
-
-}}} // facebook::memcache::globals
+}
+}
+} // facebook::memcache::globals

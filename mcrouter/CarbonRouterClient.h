@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -40,7 +40,7 @@ template <class RouterInfo>
 class CarbonRouterClient : public CarbonRouterClientBase {
  private:
   struct Disconnecter {
-    void operator() (CarbonRouterClient<RouterInfo>* client) {
+    void operator()(CarbonRouterClient<RouterInfo>* client) {
       client->disconnected_ = true;
       /* We only access self_ when we need to send a request, which only
          the user can do. Since the user is destroying the pointer,
@@ -56,8 +56,9 @@ class CarbonRouterClient : public CarbonRouterClientBase {
 
  public:
   using Pointer = std::unique_ptr<CarbonRouterClient<RouterInfo>, Disconnecter>;
-  using Queue = folly::IntrusiveList<CarbonRouterClient<RouterInfo>,
-                                     &CarbonRouterClient<RouterInfo>::hook_>;
+  using Queue = folly::IntrusiveList<
+      CarbonRouterClient<RouterInfo>,
+      &CarbonRouterClient<RouterInfo>::hook_>;
 
   /**
    * Asynchronously send a single request with the given operation.
@@ -79,9 +80,10 @@ class CarbonRouterClient : public CarbonRouterClientBase {
    */
   template <class Request, class F>
   /* Don't attempt instantiation when we want the other overload of send() */
-  bool send(const Request& req,
-            F&& callback,
-            folly::StringPiece ipAddr = folly::StringPiece());
+  bool send(
+      const Request& req,
+      F&& callback,
+      folly::StringPiece ipAddr = folly::StringPiece());
 
   /**
    * Multi requests version of send.
@@ -143,16 +145,16 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   std::shared_ptr<CarbonRouterClient<RouterInfo>> self_;
 
   CarbonRouterClient(
-    std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
-    size_t maximum_outstanding,
-    bool maximum_outstanding_error,
-    bool sameThread);
+      std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
+      size_t maximum_outstanding,
+      bool maximum_outstanding_error,
+      bool sameThread);
 
   static Pointer create(
-    std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
-    size_t maximum_outstanding,
-    bool maximum_outstanding_error,
-    bool sameThread);
+      std::weak_ptr<CarbonRouterInstance<RouterInfo>> router,
+      size_t maximum_outstanding,
+      bool maximum_outstanding_error,
+      bool sameThread);
 
   /**
    * Batch send requests.

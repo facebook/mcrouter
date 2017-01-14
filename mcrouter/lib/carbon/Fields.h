@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,21 +21,21 @@ class IOBuf;
 namespace carbon {
 
 enum class FieldType : uint8_t {
-  Stop   = 0x0,
-  True   = 0x1,
-  False  = 0x2,
-  Int8   = 0x3,
-  Int16  = 0x4,
-  Int32  = 0x5,
-  Int64  = 0x6,
+  Stop = 0x0,
+  True = 0x1,
+  False = 0x2,
+  Int8 = 0x3,
+  Int16 = 0x4,
+  Int32 = 0x5,
+  Int64 = 0x6,
   Double = 0x7,
   Binary = 0x8,
-  List   = 0x9,
+  List = 0x9,
   // TODO
   // Set    = 0xa,
   // Map    = 0xb,
   Struct = 0xc,
-  Float  = 0xd
+  Float = 0xd
 };
 
 template <class T>

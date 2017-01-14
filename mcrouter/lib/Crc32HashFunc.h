@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,15 +17,15 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /* Crc32 : crc32 hashing function object */
 class Crc32HashFunc {
  public:
-  explicit Crc32HashFunc(size_t n)
-      : n_(n) {}
+  explicit Crc32HashFunc(size_t n) : n_(n) {}
 
-  size_t operator() (folly::StringPiece hashable) const {
+  size_t operator()(folly::StringPiece hashable) const {
     auto res = crc32_hash(hashable.data(), hashable.size());
     return (res & 0x7fffffff) % n_;
   }
@@ -37,5 +37,5 @@ class Crc32HashFunc {
  private:
   size_t n_;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

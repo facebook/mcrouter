@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -38,23 +38,22 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McrouterOptions;
 struct MemcacheRouterInfo;
 
-using LogPostprocessCallbackFunc =
-  std::function<
-    void(
-      folly::StringPiece, // Key requested
-      uint64_t flags, // Reply flags
-      folly::StringPiece, // The value in the reply
-      const char* const, // Name of operation (e.g. 'get')
-      const folly::StringPiece)>; // User ip
+using LogPostprocessCallbackFunc = std::function<void(
+    folly::StringPiece, // Key requested
+    uint64_t flags, // Reply flags
+    folly::StringPiece, // The value in the reply
+    const char* const, // Name of operation (e.g. 'get')
+    const folly::StringPiece)>; // User ip
 
 template <class T>
 inline LogPostprocessCallbackFunc getLogPostprocessFunc() {
-    return nullptr;
+  return nullptr;
 }
 
 namespace mcrouter {
@@ -86,7 +85,8 @@ class AdditionalProxyRequestLogger : public carbon::NoopAdditionalLogger {
  */
 inline int64_t nowUs() {
   return std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::steady_clock::now().time_since_epoch()).count();
+             std::chrono::steady_clock::now().time_since_epoch())
+      .count();
 }
 
 /**
@@ -112,9 +112,9 @@ std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts);
 
 std::string performOptionSubstitution(std::string str);
 
-inline void standaloneInit(const McrouterOptions& opts,
-                           const McrouterStandaloneOptions& standaloneOpts) {
-}
+inline void standaloneInit(
+    const McrouterOptions& opts,
+    const McrouterStandaloneOptions& standaloneOpts) {}
 
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 createExtraRouteHandleProvider();
@@ -157,7 +157,8 @@ void insertCustomStartupOpts(folly::dynamic& options);
 std::string getBinPath(folly::StringPiece name);
 
 #ifndef MCROUTER_PACKAGE_STRING
-  #define MCROUTER_PACKAGE_STRING "1.0.0 mcrouter"
+#define MCROUTER_PACKAGE_STRING "1.0.0 mcrouter"
 #endif
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

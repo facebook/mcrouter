@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,7 +17,8 @@ namespace folly {
 struct dynamic;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 /**
  * Converts `json` to an integer and checks it's in [min,max] range.
@@ -25,8 +26,11 @@ namespace facebook { namespace memcache {
  *
  * @throws std::logic_error if `json` is not an integer or out of range.
  */
-int64_t parseInt(const folly::dynamic& json,
-                 folly::StringPiece name, int64_t min, int64_t max);
+int64_t parseInt(
+    const folly::dynamic& json,
+    folly::StringPiece name,
+    int64_t min,
+    int64_t max);
 
 /**
  * Converts `json` to boolean value.
@@ -42,8 +46,9 @@ bool parseBool(const folly::dynamic& json, folly::StringPiece name);
  *
  * @throws std::logic_error if `json` is not a string.
  */
-folly::StringPiece
-parseString(const folly::dynamic& json, folly::StringPiece name);
+folly::StringPiece parseString(
+    const folly::dynamic& json,
+    folly::StringPiece name);
 
 /**
  * Parses `json` to an integer representing timeout.
@@ -51,7 +56,8 @@ parseString(const folly::dynamic& json, folly::StringPiece name);
  *
  * @throws std::logic_error if `json` is not an integer or out of range.
  */
-std::chrono::milliseconds
-parseTimeout(const folly::dynamic& json, folly::StringPiece name);
-
-}}  // facebook::memcache
+std::chrono::milliseconds parseTimeout(
+    const folly::dynamic& json,
+    folly::StringPiece name);
+}
+} // facebook::memcache

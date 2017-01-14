@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,14 +11,14 @@
 
 #include <functional>
 
-#include <folly/io/IOBuf.h>
 #include <folly/Range.h>
+#include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
 #include "mcrouter/lib/network/McParser.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
-#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 #include "mcrouter/tools/mcpiper/Config.h"
 
@@ -26,7 +26,8 @@ namespace folly {
 class IOBuf;
 } // folly
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 constexpr size_t kReadBufferSizeMin = 256;
 constexpr size_t kReadBufferSizeMax = 4096;
@@ -36,8 +37,7 @@ namespace detail {
 template <class ReplyParser>
 class ExpectNextDispatcher {
  public:
-  explicit ExpectNextDispatcher(ReplyParser* parser)
-    : replyParser_(parser) {}
+  explicit ExpectNextDispatcher(ReplyParser* parser) : replyParser_(parser) {}
 
   void dispatch(size_t typeId) {
     dispatcher_.dispatch(typeId, *this);
@@ -65,8 +65,7 @@ class ClientServerMcParser {
  public:
   class ReplyCallback {
    public:
-    explicit ReplyCallback(Callback& callback)
-      : callback_(callback) {}
+    explicit ReplyCallback(Callback& callback) : callback_(callback) {}
 
     template <class Reply>
     void replyReady(
@@ -74,9 +73,7 @@ class ClientServerMcParser {
         uint64_t msgId,
         ReplyStatsContext replyStatsContext) {
       callback_.template replyReady<Reply>(
-          msgId,
-          std::move(reply),
-          replyStatsContext);
+          msgId, std::move(reply), replyStatsContext);
     }
 
     bool nextReplyAvailable(uint64_t) {
@@ -95,13 +92,11 @@ class ClientServerMcParser {
                                const UmbrellaMessageInfo&> {
    public:
     template <class M>
-    void onTypedMessage(M&& req,
-                        const UmbrellaMessageInfo& headerInfo) {
+    void onTypedMessage(M&& req, const UmbrellaMessageInfo& headerInfo) {
       callback_.requestReady(headerInfo.reqId, std::move(req));
     }
 
-    explicit RequestCallback(Callback& callback)
-      : callback_(callback) {}
+    explicit RequestCallback(Callback& callback) : callback_(callback) {}
 
     template <class Request>
     void onRequest(Request&& req, bool noreply) {
@@ -113,8 +108,9 @@ class ClientServerMcParser {
       callback_.requestReady(msgId, std::move(req));
     }
 
-    void caretRequestReady(const UmbrellaMessageInfo& headerInfo,
-                           const folly::IOBuf& buffer) {
+    void caretRequestReady(
+        const UmbrellaMessageInfo& headerInfo,
+        const folly::IOBuf& buffer) {
       this->dispatchTypedRequest(headerInfo, buffer, headerInfo);
     }
 
@@ -125,7 +121,6 @@ class ClientServerMcParser {
     Callback& callback_;
   };
 
-
   /**
    * Creates the client/server parser.
    *
@@ -133,13 +128,17 @@ class ClientServerMcParser {
    *                  request/reply is successfully parsed.
    */
   explicit ClientServerMcParser(Callback& callback)
-    : replyCallback_(callback),
-      requestCallback_(callback),
-      replyParser_(folly::make_unique<ClientMcParser<ReplyCallback>>(
-        replyCallback_, kReadBufferSizeMin, kReadBufferSizeMax)),
-      requestParser_(folly::make_unique<ServerMcParser<RequestCallback>>(
-        requestCallback_, kReadBufferSizeMin, kReadBufferSizeMax)),
-      expectNextDispatcher_(replyParser_.get()) {}
+      : replyCallback_(callback),
+        requestCallback_(callback),
+        replyParser_(folly::make_unique<ClientMcParser<ReplyCallback>>(
+            replyCallback_,
+            kReadBufferSizeMin,
+            kReadBufferSizeMax)),
+        requestParser_(folly::make_unique<ServerMcParser<RequestCallback>>(
+            requestCallback_,
+            kReadBufferSizeMin,
+            kReadBufferSizeMax)),
+        expectNextDispatcher_(replyParser_.get()) {}
 
   /**
    * Feed data into the parser. The callback will be called as soon
@@ -175,7 +174,7 @@ class ClientServerMcParser {
   detail::ExpectNextDispatcher<ClientMcParser<ReplyCallback>>
       expectNextDispatcher_;
 };
-
-}} // facebook::memcache
+}
+} // facebook::memcache
 
 #include "ClientServerMcParser-inl.h"

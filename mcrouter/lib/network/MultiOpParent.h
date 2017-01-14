@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,11 +13,11 @@
 
 #include <folly/Optional.h>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McServerSession;
 
@@ -91,5 +91,5 @@ class MultiOpParent {
 
   void release();
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

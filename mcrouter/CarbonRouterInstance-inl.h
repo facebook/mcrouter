@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,10 +12,10 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/DynamicConverter.h>
-#include <folly/fibers/FiberManager.h>
-#include <folly/io/async/EventBase.h>
 #include <folly/MapUtil.h>
 #include <folly/Singleton.h>
+#include <folly/fibers/FiberManager.h>
+#include <folly/io/async/EventBase.h>
 
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
@@ -28,8 +28,8 @@
 #include "mcrouter/ProxyThread.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/ServiceInfo.h"
-#include "mcrouter/stats.h"
 #include "mcrouter/ThreadUtil.h"
+#include "mcrouter/stats.h"
 
 namespace facebook {
 namespace memcache {
@@ -132,21 +132,21 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
   if (!detail::isValidRouterName(input_options.service_name) ||
       !detail::isValidRouterName(input_options.router_name)) {
     throw std::runtime_error(
-      "Invalid service_name or router_name provided; must be"
-      " strings matching [a-zA-Z0-9_-]+");
+        "Invalid service_name or router_name provided; must be"
+        " strings matching [a-zA-Z0-9_-]+");
   }
 
   if (input_options.test_mode) {
     // test-mode disables all logging.
     LOG(WARNING) << "Running mcrouter in test mode. This mode should not be "
-      "used in production.";
+                    "used in production.";
     applyTestMode(input_options);
   }
 
   if (!input_options.async_spool.empty()) {
     auto rc = ::access(input_options.async_spool.c_str(), W_OK);
-    PLOG_IF(WARNING, rc) << "Error while checking spooldir (" <<
-      input_options.async_spool << ")";
+    PLOG_IF(WARNING, rc) << "Error while checking spooldir ("
+                         << input_options.async_spool << ")";
   }
 
   if (input_options.enable_failure_logging) {
@@ -184,16 +184,12 @@ std::shared_ptr<CarbonRouterInstance<RouterInfo>>
 CarbonRouterInstance<RouterInfo>::create(
     McrouterOptions input_options,
     const std::vector<folly::EventBase*>& evbs) {
-  return folly::fibers::runInMainContext(
-    [&] () mutable {
-      return std::shared_ptr<CarbonRouterInstance<RouterInfo>>(
+  return folly::fibers::runInMainContext([&]() mutable {
+    return std::shared_ptr<CarbonRouterInstance<RouterInfo>>(
         createRaw(std::move(input_options), evbs),
         /* Custom deleter since ~CarbonRouterInstance() is private */
-        [] (CarbonRouterInstance<RouterInfo>* inst) {
-          delete inst;
-        }
-      );
-    });
+        [](CarbonRouterInstance<RouterInfo>* inst) { delete inst; });
+  });
 }
 
 template <class RouterInfo>
@@ -291,8 +287,8 @@ Proxy<RouterInfo>* CarbonRouterInstance<RouterInfo>::getProxy(
     return index < proxies_.size() ? proxies_[index].get() : nullptr;
   } else {
     assert(proxies_.empty());
-    return index < proxyThreads_.size() ?
-                   &proxyThreads_[index]->proxy() : nullptr;
+    return index < proxyThreads_.size() ? &proxyThreads_[index]->proxy()
+                                        : nullptr;
   }
 }
 
@@ -362,10 +358,7 @@ void CarbonRouterInstance<RouterInfo>::spawnAuxiliaryThreads() {
   startAwriterThreads();
   startObservingRuntimeVarsFile();
   registerOnUpdateCallbackForRxmits();
-  statUpdaterThread_ = std::thread(
-    [this] () {
-      statUpdaterThreadRun();
-    });
+  statUpdaterThread_ = std::thread([this]() { statUpdaterThreadRun(); });
   spawnStatLoggerThread();
 }
 
@@ -396,12 +389,11 @@ void CarbonRouterInstance<RouterInfo>::startObservingRuntimeVarsFile() {
   };
 
   startObservingFile(
-    opts_.runtime_vars_file,
-    *evbAuxiliaryThread_.getEventBase(),
-    opts_.file_observer_poll_period_ms,
-    opts_.file_observer_sleep_before_update_ms,
-    std::move(onUpdate)
-  );
+      opts_.runtime_vars_file,
+      *evbAuxiliaryThread_.getEventBase(),
+      opts_.file_observer_poll_period_ms,
+      opts_.file_observer_sleep_before_update_ms,
+      std::move(onUpdate));
 }
 
 template <class RouterInfo>
@@ -414,17 +406,18 @@ void CarbonRouterInstance<RouterInfo>::statUpdaterThreadRun() {
 
   // the idx of the oldest bin
   int idx = 0;
-  static const int BIN_NUM = (MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
-                            MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
+  static const int BIN_NUM =
+      (MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
+       MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
 
   while (true) {
     {
       /* Wait for the full timeout unless shutdown is started */
       std::unique_lock<std::mutex> lock(statUpdaterCvMutex_);
       if (statUpdaterCv_.wait_for(
-            lock,
-            std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND),
-            [this]() { return shutdownStarted_.load(); })) {
+              lock,
+              std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND),
+              [this]() { return shutdownStarted_.load(); })) {
         /* Shutdown was initiated, so we stop this thread */
         break;
       }
@@ -507,12 +500,14 @@ bool CarbonRouterInstance<RouterInfo>::configure(
   std::vector<std::shared_ptr<ProxyConfig<RouterInfo>>> newConfigs;
   try {
     for (size_t i = 0; i < opts_.num_proxies; i++) {
-      newConfigs.push_back(
-          builder.buildConfig<RouterInfo>(*getProxy(i)));
+      newConfigs.push_back(builder.buildConfig<RouterInfo>(*getProxy(i)));
     }
   } catch (const std::exception& e) {
-    MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,
-                   "Failed to reconfigure: {}", e.what());
+    MC_LOG_FAILURE(
+        opts(),
+        failure::Category::kInvalidConfig,
+        "Failed to reconfigure: {}",
+        e.what());
     return false;
   }
 
@@ -520,11 +515,11 @@ bool CarbonRouterInstance<RouterInfo>::configure(
     proxy_config_swap(getProxy(i), newConfigs[i]);
   }
 
-  VLOG_IF(0, !opts_.constantly_reload_configs) <<
-      "reconfigured " << opts_.num_proxies << " proxies with " <<
-      newConfigs[0]->getPools().size() << " pools, " <<
-      newConfigs[0]->calcNumClients() << " clients " <<
-      newConfigs[0]->getConfigMd5Digest() << ")";
+  VLOG_IF(0, !opts_.constantly_reload_configs)
+      << "reconfigured " << opts_.num_proxies << " proxies with "
+      << newConfigs[0]->getPools().size() << " pools, "
+      << newConfigs[0]->calcNumClients() << " clients "
+      << newConfigs[0]->getConfigMd5Digest() << ")";
 
   return true;
 }
@@ -544,12 +539,18 @@ CarbonRouterInstance<RouterInfo>::createConfigBuilder() {
       // each proxy
       return ProxyConfigBuilder(opts_, configApi(), config);
     } catch (const std::exception& e) {
-      MC_LOG_FAILURE(opts(), failure::Category::kInvalidConfig,
-                     "Failed to reconfigure: {}", e.what());
+      MC_LOG_FAILURE(
+          opts(),
+          failure::Category::kInvalidConfig,
+          "Failed to reconfigure: {}",
+          e.what());
     }
   }
-  MC_LOG_FAILURE(opts(), failure::Category::kBadEnvironment,
-                 "Can not read config from {}", path);
+  MC_LOG_FAILURE(
+      opts(),
+      failure::Category::kBadEnvironment,
+      "Can not read config from {}",
+      path);
   configFailures_++;
   configApi_->abandonTrackedSources();
   return folly::none;

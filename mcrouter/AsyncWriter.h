@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -17,13 +17,15 @@
 #include <memory>
 #include <thread>
 
+#include <folly/Range.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
-#include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 // Forward declaration.
 struct awriter_entry_t;
@@ -71,6 +73,7 @@ class AsyncWriter {
    * Waits for all the functions to complete
    */
   ~AsyncWriter();
+
  private:
   const size_t maxQueueSize_;
   std::atomic<size_t> queueSize_{0};
@@ -85,7 +88,7 @@ class AsyncWriter {
 /**
  * @return true on success, false otherwise
  */
-bool awriter_queue(AsyncWriter* w, awriter_entry_t *e);
+bool awriter_queue(AsyncWriter* w, awriter_entry_t* e);
 
 } // mcrouter
 } // memcache

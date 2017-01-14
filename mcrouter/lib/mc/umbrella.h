@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -27,23 +27,23 @@ __BEGIN_DECLS
 // Each entry has a type
 typedef enum entry_type_e {
   UNDEF = 0,
-  I32,                      // int32_t
-  U32,                      // uint32_t
-  I64,                      // int64_t
-  U64,                      // uint64_t
-  CSTRING,                  // char * (null terminated c string
-  BSTRING,                  // char * (binary blob)
+  I32, // int32_t
+  U32, // uint32_t
+  I64, // int64_t
+  U64, // uint64_t
+  CSTRING, // char * (null terminated c string
+  BSTRING, // char * (binary blob)
 } entry_type_t;
 
 typedef struct um_elist_entry_s {
-  uint16_t type;        // What's the type of this entry?
-  uint16_t tag;         // Application-specific tag for this entry
+  uint16_t type; // What's the type of this entry?
+  uint16_t tag; // Application-specific tag for this entry
   union {
-    struct {            // If it's a string:
-      uint32_t offset;  //   How far into the body does the string start?
-      uint32_t len;     //   How long is the string?
+    struct { // If it's a string:
+      uint32_t offset; //   How far into the body does the string start?
+      uint32_t len; //   How long is the string?
     } str;
-    uint64_t val;       // If it's an int, just throw it into a uint64_t
+    uint64_t val; // If it's an int, just throw it into a uint64_t
   } data;
 } __attribute__((__packed__)) um_elist_entry_t;
 
@@ -59,7 +59,7 @@ typedef struct entry_list_msg_s {
   uint32_t total_size; // MUST be first! (for length-prefixed-ness)
   um_elist_entry_t entries[0]; // The entries follow
   // And then the body comes.  len(body) = total_size - len(entries)
-} __attribute__((__packed__))  entry_list_msg_t;
+} __attribute__((__packed__)) entry_list_msg_t;
 
 typedef enum msg_field_e {
   msg_undefined = 0,

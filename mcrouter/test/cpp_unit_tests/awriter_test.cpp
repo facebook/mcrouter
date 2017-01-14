@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,10 +14,10 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/experimental/TestUtil.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
 #include <folly/Memory.h>
+#include <folly/experimental/TestUtil.h>
 
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/AsyncWriterEntry.h"
@@ -31,7 +31,7 @@ using folly::test::TemporaryFile;
 #define WRITE_STRING_LEN (sizeof(WRITE_STRING) - 1)
 
 class AtomicCounter {
-public:
+ public:
   AtomicCounter() {
     cnt = 0;
     pthread_mutex_init(&lock, nullptr);
@@ -65,7 +65,7 @@ public:
     pthread_mutex_unlock(&lock);
   }
 
-private:
+ private:
   pthread_cond_t cond;
   pthread_mutex_t lock;
   int cnt;
@@ -77,7 +77,9 @@ struct counts {
 
   AtomicCounter cnt;
 
-  counts() { success = failure = 0; }
+  counts() {
+    success = failure = 0;
+  }
 
   void reset() {
     success = 0;
@@ -93,12 +95,12 @@ struct writelog_entry_t {
 };
 
 struct testing_context_t {
-  counts *counter;
+  counts* counter;
   writelog_entry_t log_context;
 };
 
-void callback_counter(awriter_entry_t *e, int result) {
-  testing_context_t *w = (testing_context_t*)e->context;
+void callback_counter(awriter_entry_t* e, int result) {
+  testing_context_t* w = (testing_context_t*)e->context;
   if (result) {
     w->counter->failure++;
   } else {
@@ -109,11 +111,9 @@ void callback_counter(awriter_entry_t *e, int result) {
 }
 
 static int test_entry_writer(awriter_entry_t* e) {
-  writelog_entry_t *entry = &((testing_context_t*)e->context)->log_context;
+  writelog_entry_t* entry = &((testing_context_t*)e->context)->log_context;
   ssize_t size =
-    folly::writeFull(entry->file->fd(),
-                     entry->buf.data(),
-                     entry->buf.size());
+      folly::writeFull(entry->file->fd(), entry->buf.data(), entry->buf.size());
   if (size == -1) {
     return errno;
   }
@@ -123,10 +123,8 @@ static int test_entry_writer(awriter_entry_t* e) {
   return 0;
 }
 
-static const awriter_callbacks_t test_callbacks = {
-  &callback_counter,
-  &test_entry_writer
-};
+static const awriter_callbacks_t test_callbacks = {&callback_counter,
+                                                   &test_entry_writer};
 
 // Simple test that creates a number of async writers and
 // then destroys them.

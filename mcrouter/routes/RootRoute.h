@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
-#include <folly/fibers/FiberManager.h>
 #include <folly/Likely.h>
+#include <folly/fibers/FiberManager.h>
 
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
@@ -23,12 +23,16 @@
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteHandleMap.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 template <class RouteHandleIf>
 class RootRoute {
  public:
-  static std::string routeName() { return "root"; }
+  static std::string routeName() {
+    return "root";
+  }
 
   RootRoute(
       ProxyBase* proxy,
@@ -40,8 +44,9 @@ class RootRoute {
             opts_.send_invalid_route_to_default) {}
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const {
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {
     const auto* rhPtr = rhMap_.getTargetsForKeyFast(
         req.key().routingPrefix(), req.key().routingKey());
     if (LIKELY(rhPtr != nullptr)) {
@@ -115,10 +120,9 @@ class RootRoute {
 
   template <class Request>
   ReplyT<Request> routeImpl(
-    const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
-    const Request& req,
-    OtherThanT<Request, GetLike<>, ArithmeticLike<>> = 0) const {
-
+      const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
+      const Request& req,
+      OtherThanT<Request, GetLike<>, ArithmeticLike<>> = 0) const {
     if (!opts_.allow_only_gets) {
       return doRoute(rh, req);
     }
@@ -127,18 +131,15 @@ class RootRoute {
   }
 
   template <class Request>
-  ReplyT<Request> doRoute(const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
-                          const Request& req) const {
-
+  ReplyT<Request> doRoute(
+      const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
+      const Request& req) const {
     if (!rh.empty()) {
       if (rh.size() > 1) {
         auto reqCopy = std::make_shared<Request>(req);
         for (size_t i = 1; i < rh.size(); ++i) {
           auto r = rh[i];
-          folly::fibers::addTask(
-            [r, reqCopy]() {
-              r->route(*reqCopy);
-            });
+          folly::fibers::addTask([r, reqCopy]() { r->route(*reqCopy); });
         }
       }
       return rh[0]->route(req);
@@ -146,5 +147,6 @@ class RootRoute {
     return createReply<Request>(ErrorReply);
   }
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

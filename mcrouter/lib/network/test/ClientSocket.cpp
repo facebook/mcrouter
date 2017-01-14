@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -23,7 +23,8 @@
 
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 ClientSocket::ClientSocket(uint16_t port) {
   struct addrinfo hints;
@@ -41,8 +42,10 @@ ClientSocket::ClientSocket(uint16_t port) {
   };
   socketFd_ = ::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (socketFd_ < 0) {
-    throwRuntime("Failed to create a socket for port {}: {}",
-                 port, folly::errnoStr(errno));
+    throwRuntime(
+        "Failed to create a socket for port {}: {}",
+        port,
+        folly::errnoStr(errno));
   }
 
   if (::connect(socketFd_, res->ai_addr, res->ai_addrlen) != 0) {
@@ -74,11 +77,16 @@ ClientSocket::~ClientSocket() {
   }
 }
 
-void ClientSocket::write(folly::StringPiece data,
-                         std::chrono::milliseconds timeout) {
+void ClientSocket::write(
+    folly::StringPiece data,
+    std::chrono::milliseconds timeout) {
   auto tmo = to<timeval_t>(timeout);
-  ::setsockopt(socketFd_, SOL_SOCKET, SO_SNDTIMEO,
-               reinterpret_cast<char*>(&tmo), sizeof(timeval_t));
+  ::setsockopt(
+      socketFd_,
+      SOL_SOCKET,
+      SO_SNDTIMEO,
+      reinterpret_cast<char*>(&tmo),
+      sizeof(timeval_t));
 
   ssize_t n = folly::writeFull(socketFd_, data.data(), data.size());
   if (n == -1) {
@@ -88,19 +96,26 @@ void ClientSocket::write(folly::StringPiece data,
     throwRuntime("failed to write to socket: {}", folly::errnoStr(errno));
   }
 
-  checkRuntime(n == data.size(),
-               "failed to write to socket. Written {}, expected {}",
-               n, data.size());
+  checkRuntime(
+      n == data.size(),
+      "failed to write to socket. Written {}, expected {}",
+      n,
+      data.size());
 }
 
-std::string ClientSocket::sendRequest(folly::StringPiece request,
-                                      size_t replySize,
-                                      std::chrono::milliseconds timeout) {
+std::string ClientSocket::sendRequest(
+    folly::StringPiece request,
+    size_t replySize,
+    std::chrono::milliseconds timeout) {
   write(request, timeout);
 
   auto tmo = to<timeval_t>(timeout);
-  ::setsockopt(socketFd_, SOL_SOCKET, SO_RCVTIMEO,
-               reinterpret_cast<char*>(&tmo), sizeof(timeval_t));
+  ::setsockopt(
+      socketFd_,
+      SOL_SOCKET,
+      SO_RCVTIMEO,
+      reinterpret_cast<char*>(&tmo),
+      sizeof(timeval_t));
 
   std::vector<char> replyBuf(replySize + 1);
   ssize_t n = folly::readFull(socketFd_, replyBuf.data(), replySize);
@@ -112,19 +127,26 @@ std::string ClientSocket::sendRequest(folly::StringPiece request,
   } else if (n == 0) {
     throwRuntime("peer closed the socket");
   }
-  checkRuntime(n == replySize,
-               "failed to read from socket. Read {}, expected {}",
-               n, replySize);
+  checkRuntime(
+      n == replySize,
+      "failed to read from socket. Read {}, expected {}",
+      n,
+      replySize);
   return std::string(replyBuf.data(), n);
 }
 
-std::string ClientSocket::sendRequest(folly::StringPiece request,
-                                      std::chrono::milliseconds timeout) {
+std::string ClientSocket::sendRequest(
+    folly::StringPiece request,
+    std::chrono::milliseconds timeout) {
   write(request, timeout);
 
   auto tmo = to<timeval_t>(timeout);
-  ::setsockopt(socketFd_, SOL_SOCKET, SO_RCVTIMEO,
-               reinterpret_cast<char*>(&tmo), sizeof(timeval_t));
+  ::setsockopt(
+      socketFd_,
+      SOL_SOCKET,
+      SO_RCVTIMEO,
+      reinterpret_cast<char*>(&tmo),
+      sizeof(timeval_t));
 
   const size_t maxReplySize = 1000000;
   std::vector<char> replyBuf(maxReplySize + 1);
@@ -135,9 +157,10 @@ std::string ClientSocket::sendRequest(folly::StringPiece request,
     }
     throwRuntime("failed to read from socket: {}", folly::errnoStr(errno));
   }
-  checkRuntime(n < maxReplySize,
-               "the reply buffer may be too small because we used it up");
+  checkRuntime(
+      n < maxReplySize,
+      "the reply buffer may be too small because we used it up");
   return std::string(replyBuf.data(), n);
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache

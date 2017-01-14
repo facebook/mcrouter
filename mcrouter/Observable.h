@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,13 +14,15 @@
 #include "mcrouter/CallbackPool.h"
 #include "mcrouter/lib/fbi/cpp/sfrlock.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Wrapper for Data that allows to register callbacks that will be called
  * on each Data change.
  */
-template<class Data>
+template <class Data>
 class Observable {
  public:
   /**
@@ -31,14 +33,14 @@ class Observable {
    * @param newData - value after update
    */
   typedef typename CallbackPool<const Data&, const Data&>::OnUpdateFunc
-  OnUpdateOldNew;
+      OnUpdateOldNew;
 
   /**
    * Callback handle for this Observable. Once it is destroyed corresponding
    * callback will be unsubscribed.
    */
   typedef typename CallbackPool<const Data&, const Data&>::CallbackHandle
-  CallbackHandle;
+      CallbackHandle;
 
   explicit Observable(Data data = Data());
 
@@ -69,7 +71,7 @@ class Observable {
    *
    * @param Args arguments for Data constructor
    */
-  template<typename... Args>
+  template <typename... Args>
   inline void emplace(Args&&... args);
 
   /**
@@ -83,7 +85,8 @@ class Observable {
 
   SFRLock dataLock_;
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter
 
 #include "Observable-inl.h"

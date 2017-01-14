@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,23 +11,25 @@
 
 #include <utility>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/TypedMsg.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 namespace detail {
-  // Hack: we rely on the fact that request typeId's are always odd and the
-  // corresponding reply's typeId is the request's typeId + 1.
-  inline bool isRequestTypeId(uint32_t typeId) {
-    return typeId % 2 == 1;
-  }
+// Hack: we rely on the fact that request typeId's are always odd and the
+// corresponding reply's typeId is the request's typeId + 1.
+inline bool isRequestTypeId(uint32_t typeId) {
+  return typeId % 2 == 1;
+}
 } // detail
 
 template <class Callback>
-void ClientServerMcParser<Callback>::parse(folly::ByteRange data,
-                                           uint32_t typeId,
-                                           bool isFirstPacket) {
+void ClientServerMcParser<Callback>::parse(
+    folly::ByteRange data,
+    uint32_t typeId,
+    bool isFirstPacket) {
   const auto isRequest = detail::isRequestTypeId(typeId);
 
   // Inform replyParser_ that a reply with type corresponding to typeId is
@@ -63,5 +65,5 @@ void ClientServerMcParser<Callback>::parse(folly::ByteRange data,
     source += numBytes;
   }
 }
-
-}} // facebook::memcache
+}
+} // facebook::memcache

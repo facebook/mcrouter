@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -14,8 +14,8 @@
 
 #include <boost/intrusive/unordered_set.hpp>
 
-#include <folly/fibers/Baton.h>
 #include <folly/IntrusiveList.h>
+#include <folly/fibers/Baton.h>
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/ClientMcParser.h"
@@ -23,7 +23,8 @@
 #include "mcrouter/lib/network/McSerializedRequest.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class AsyncMcClientImpl;
 struct CodecIdRange;
@@ -34,20 +35,19 @@ class McClientRequestContextQueue;
  * processing inside of AsyncMcClient.
  */
 class McClientRequestContextBase
-  : public boost::intrusive::unordered_set_base_hook<> {
+    : public boost::intrusive::unordered_set_base_hook<> {
  public:
-  using InitializerFuncPtr =
-    void (*)(ClientMcParser<AsyncMcClientImpl>&);
+  using InitializerFuncPtr = void (*)(ClientMcParser<AsyncMcClientImpl>&);
 
   McSerializedRequest reqContext;
   uint64_t id;
 
   McClientRequestContextBase(const McClientRequestContextBase&) = delete;
-  McClientRequestContextBase& operator=(const McClientRequestContextBase& other)
-    = delete;
+  McClientRequestContextBase& operator=(
+      const McClientRequestContextBase& other) = delete;
   McClientRequestContextBase(McClientRequestContextBase&&) = delete;
-  McClientRequestContextBase& operator=(McClientRequestContextBase&& other)
-    = delete;
+  McClientRequestContextBase& operator=(McClientRequestContextBase&& other) =
+      delete;
 
   /**
    * Returns fake data (specific to this request and operation) that can be used
@@ -164,8 +164,9 @@ class McClientRequestContextBase
 
  public:
   struct Equal {
-    bool operator()(const McClientRequestContextBase& a,
-                    const McClientRequestContextBase& b) const {
+    bool operator()(
+        const McClientRequestContextBase& a,
+        const McClientRequestContextBase& b) const {
       return a.id == b.id;
     }
   };
@@ -176,12 +177,13 @@ class McClientRequestContextBase
     }
   };
 
-  using Queue = folly::CountedIntrusiveList<McClientRequestContextBase,
-                                            &McClientRequestContextBase::hook_>;
-  using UnorderedSet =
-    boost::intrusive::unordered_set<McClientRequestContextBase,
-                                    boost::intrusive::equal<Equal>,
-                                    boost::intrusive::hash<Hash>>;
+  using Queue = folly::CountedIntrusiveList<
+      McClientRequestContextBase,
+      &McClientRequestContextBase::hook_>;
+  using UnorderedSet = boost::intrusive::unordered_set<
+      McClientRequestContextBase,
+      boost::intrusive::equal<Equal>,
+      boost::intrusive::hash<Hash>>;
 };
 
 template <class Request>
@@ -205,6 +207,7 @@ class McClientRequestContext : public McClientRequestContextBase {
   virtual std::string getContextTypeStr() const override final;
 
   Reply waitForReply(std::chrono::milliseconds timeout);
+
  private:
   folly::Optional<Reply> replyStorage_;
 
@@ -221,10 +224,10 @@ class McClientRequestContextQueue {
 
   McClientRequestContextQueue(const McClientRequestContextQueue&) = delete;
   McClientRequestContextQueue& operator=(
-    const McClientRequestContextQueue& other) = delete;
+      const McClientRequestContextQueue& other) = delete;
   McClientRequestContextQueue(McClientRequestContextQueue&&) = delete;
-  McClientRequestContextQueue& operator=(
-    McClientRequestContextQueue&& other) = delete;
+  McClientRequestContextQueue& operator=(McClientRequestContextQueue&& other) =
+      delete;
 
   size_t getPendingRequestCount() const noexcept;
   size_t getInflightRequestCount() const noexcept;
@@ -280,10 +283,7 @@ class McClientRequestContextQueue {
    * Does nothing if the request was already removed from the queue.
    */
   template <class Reply>
-  void reply(
-      uint64_t id,
-      Reply&& reply,
-      ReplyStatsContext replyStatsContext);
+  void reply(uint64_t id, Reply&& reply, ReplyStatsContext replyStatsContext);
 
   /**
    * Obtain a function that should be used to initialize parser for given
@@ -294,8 +294,8 @@ class McClientRequestContextQueue {
    * Note: for out of order may return nullptr in case a request with given id
    *       was cancelled.
    */
-  McClientRequestContextBase::InitializerFuncPtr
-  getParserInitializer(uint64_t reqId = 0);
+  McClientRequestContextBase::InitializerFuncPtr getParserInitializer(
+      uint64_t reqId = 0);
 
   /**
    * Get a debug info about current queue state.
@@ -328,12 +328,12 @@ class McClientRequestContextQueue {
 
   // Storage for parser initializers for timed out requests.
   std::queue<McClientRequestContextBase::InitializerFuncPtr>
-  timedOutInitializers_;
+      timedOutInitializers_;
 
   void failQueue(McClientRequestContextBase::Queue& queue, mc_res_t error);
 
-  McClientRequestContextBase::UnorderedSet::iterator
-  getContextById(uint64_t id);
+  McClientRequestContextBase::UnorderedSet::iterator getContextById(
+      uint64_t id);
   void removeFromSet(McClientRequestContextBase& req);
 
   /**
@@ -358,7 +358,7 @@ class McClientRequestContextQueue {
 
   std::string getFirstAliveRequestInfo() const;
 };
-
-}}  // facebook::memcache
+}
+} // facebook::memcache
 
 #include "McClientRequestContext-inl.h"

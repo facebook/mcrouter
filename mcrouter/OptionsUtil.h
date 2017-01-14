@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,7 +11,8 @@
 
 #include <string>
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 class McrouterOptions;
 
@@ -39,5 +40,6 @@ std::string getClientDebugFifoFullPath(const McrouterOptions& opts);
  * @return        Full path of the fifo.
  */
 std::string getServerDebugFifoFullPath(const McrouterOptions& opts);
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

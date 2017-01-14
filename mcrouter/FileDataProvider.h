@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,9 @@
 
 #include <folly/File.h>
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 /**
  * DataProvider that works with file: loads data from file and checks
  * if the file has changed.
@@ -42,6 +44,7 @@ class FileDataProvider {
    * @throw runtime_error if inotify watch can not be checked or recreated
    */
   bool hasUpdate();
+
  private:
   const std::string filePath_;
   folly::File inotify_;
@@ -52,5 +55,6 @@ class FileDataProvider {
    */
   void updateInotifyWatch();
 };
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

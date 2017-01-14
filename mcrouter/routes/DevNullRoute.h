@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,15 +9,17 @@
  */
 #pragma once
 
-#include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/Reply.h"
-#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/Reply.h"
+#include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Same as NullRoute, but with Mcrouter stats reporting.
@@ -33,8 +35,9 @@ class DevNullRoute {
   }
 
   template <class Request>
-  void traverse(const Request& req,
-                const RouteHandleTraverser<RouteHandleIf>& t) const { }
+  void traverse(
+      const Request& req,
+      const RouteHandleTraverser<RouteHandleIf>& t) const {}
 
   template <class Request>
   static ReplyT<Request> route(const Request& req) {
@@ -43,5 +46,6 @@ class DevNullRoute {
     return createReply(DefaultReply, req);
   }
 };
-
-}}}  // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

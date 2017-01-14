@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -45,7 +45,6 @@ bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, GetRequest>>& ctx,
     GetLikeT<GetRequest> = 0);
-
 
 template <class Request>
 void bumpStats(ProxyStats& stats, const Request&) {
@@ -136,8 +135,7 @@ template <class RouterInfo>
 template <class Request>
 Proxy<RouterInfo>::WaitingRequest<Request>::WaitingRequest(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>>
-        ctx)
+    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx)
     : req_(req), ctx_(std::move(ctx)) {}
 
 template <class RouterInfo>
@@ -151,7 +149,7 @@ void Proxy<RouterInfo>::WaitingRequest<Request>::process(
 
     if (durationInQueueUs >
         1000 * static_cast<int64_t>(
-          proxy->getRouterOptions().waiting_request_timeout_ms)) {
+                   proxy->getRouterOptions().waiting_request_timeout_ms)) {
       ctx_->sendReply(mc_res_busy);
       return;
     }
@@ -168,9 +166,8 @@ typename std::enable_if<
 Proxy<RouterInfo>::routeHandlesProcessRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> uctx) {
-  auto sharedCtx =
-      ProxyRequestContextTyped<RouterInfo, Request>::process(
-          std::move(uctx), getConfigUnsafe());
+  auto sharedCtx = ProxyRequestContextTyped<RouterInfo, Request>::process(
+      std::move(uctx), getConfigUnsafe());
 
   if (detail::processGetServiceInfoRequest(req, sharedCtx)) {
     return;
@@ -179,7 +176,7 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
   auto funcCtx = sharedCtx;
 
   fiberManager().addTaskFinally(
-      [&req, ctx = std::move(funcCtx)]() mutable {
+      [&req, ctx = std::move(funcCtx) ]() mutable {
         try {
           auto& proute = ctx->proxyRoute();
           fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
@@ -188,14 +185,14 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
           auto err = folly::sformat(
               "Error routing request of type {}!"
               " Exception: {}",
-              typeid(Request).name(), e.what());
+              typeid(Request).name(),
+              e.what());
           ReplyT<Request> reply(mc_res_local_error);
           reply.message() = std::move(err);
           return reply;
         }
       },
-      [ctx = std::move(sharedCtx)](
-          folly::Try<ReplyT<Request>>&& reply) {
+      [ctx = std::move(sharedCtx)](folly::Try<ReplyT<Request>> && reply) {
         ctx->sendReply(std::move(*reply));
       });
 }
@@ -247,8 +244,7 @@ void Proxy<RouterInfo>::dispatchRequest(
       return;
     }
     auto& queue = waitingRequests_[static_cast<int>(ctx->priority())];
-    auto w = folly::make_unique<WaitingRequest<Request>>(
-        req, std::move(ctx));
+    auto w = folly::make_unique<WaitingRequest<Request>>(req, std::move(ctx));
     // Only enable timeout on waitingRequests_ queue when queue throttling is
     // enabled
     if (getRouterOptions().proxy_max_inflight_requests > 0 &&
@@ -291,21 +287,20 @@ typename Proxy<RouterInfo>::Pointer Proxy<RouterInfo>::createProxy(
   auto proxy = std::shared_ptr<Proxy>(new Proxy(router, id, eventBase));
   proxy->self_ = proxy;
 
-  eventBase.runInEventBaseThread(
-    [proxy, &eventBase] () {
-      proxy->messageQueue_->attachEventBase(eventBase);
+  eventBase.runInEventBaseThread([proxy, &eventBase]() {
+    proxy->messageQueue_->attachEventBase(eventBase);
 
-      dynamic_cast<folly::fibers::EventBaseLoopController&>(
-        proxy->fiberManager().loopController()).attachEventBase(eventBase);
+    dynamic_cast<folly::fibers::EventBaseLoopController&>(
+        proxy->fiberManager().loopController())
+        .attachEventBase(eventBase);
 
-      std::chrono::milliseconds connectionResetInterval{
-        proxy->router().opts().reset_inactive_connection_interval
-      };
+    std::chrono::milliseconds connectionResetInterval{
+        proxy->router().opts().reset_inactive_connection_interval};
 
-      if (connectionResetInterval.count() > 0) {
-        proxy->destinationMap()->setResetTimer(connectionResetInterval);
-      }
-    });
+    if (connectionResetInterval.count() > 0) {
+      proxy->destinationMap()->setResetTimer(connectionResetInterval);
+    }
+  });
 
   return Pointer(proxy.get());
 }
@@ -365,19 +360,15 @@ size_t Proxy<RouterInfo>::queueNotifyPeriod() const {
 template <class RouterInfo>
 void Proxy<RouterInfo>::messageReady(ProxyMessage::Type t, void* data) {
   switch (t) {
-    case ProxyMessage::Type::REQUEST:
-    {
+    case ProxyMessage::Type::REQUEST: {
       auto preq = reinterpret_cast<ProxyRequestContext*>(data);
       preq->startProcessing();
-    }
-    break;
+    } break;
 
-    case ProxyMessage::Type::OLD_CONFIG:
-    {
+    case ProxyMessage::Type::OLD_CONFIG: {
       auto oldConfig = reinterpret_cast<old_config_req_t<RouterInfo>*>(data);
       delete oldConfig;
-    }
-    break;
+    } break;
 
     case ProxyMessage::Type::SHUTDOWN:
       /*
@@ -411,8 +402,9 @@ void Proxy<RouterInfo>::pump() {
   auto numPriorities = static_cast<int>(ProxyRequestPriority::kNumPriorities);
   for (int i = 0; i < numPriorities; ++i) {
     auto& queue = waitingRequests_[i];
-    while (numRequestsProcessing_ < router().opts().proxy_max_inflight_requests
-           && !queue.empty()) {
+    while (numRequestsProcessing_ <
+               router().opts().proxy_max_inflight_requests &&
+           !queue.empty()) {
       --numRequestsWaiting_;
       auto w = queue.popFront();
       stats().decrement(proxy_reqs_waiting_stat);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,17 +11,19 @@
 
 #include "mcrouter/McrouterFiberContext.h"
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
-#define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)                      \
-    do {                                                                       \
-      if (reqClass.isNormal()) {                                               \
-        proxy->stats().increment(result_ ## ERROR ## _stat);                   \
-        proxy->stats().increment(result_ ## ERROR ## _count_stat);             \
-      }                                                                        \
-      proxy->stats().increment(result_ ## ERROR ## _all_stat);                 \
-      proxy->stats().increment(result_ ## ERROR ## _all_count_stat);           \
-    } while(0)
+#define REQUEST_CLASS_ERROR_STATS(proxy, ERROR, reqClass)      \
+  do {                                                         \
+    if (reqClass.isNormal()) {                                 \
+      proxy->stats().increment(result_##ERROR##_stat);         \
+      proxy->stats().increment(result_##ERROR##_count_stat);   \
+    }                                                          \
+    proxy->stats().increment(result_##ERROR##_all_stat);       \
+    proxy->stats().increment(result_##ERROR##_all_count_stat); \
+  } while (0)
 
 void ProxyRequestLogger::logError(mc_res_t result, RequestClass reqClass) {
   if (isErrorResult(result)) {
@@ -46,5 +48,6 @@ void ProxyRequestLogger::logError(mc_res_t result, RequestClass reqClass) {
     REQUEST_CLASS_ERROR_STATS(proxy_, local_error, reqClass);
   }
 }
-
-}}} // facebook::memcache::mcrouter
+}
+}
+} // facebook::memcache::mcrouter

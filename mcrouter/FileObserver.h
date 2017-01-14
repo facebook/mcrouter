@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,9 @@ namespace folly {
 class EventBase;
 } // folly
 
-namespace facebook { namespace memcache { namespace mcrouter {
+namespace facebook {
+namespace memcache {
+namespace mcrouter {
 
 /**
  * Starts a periodic thread that watches the given file path for changes.
@@ -30,11 +32,13 @@ namespace facebook { namespace memcache { namespace mcrouter {
  * @param onUpdate callback function to call when there is a update seen
  * @param fallbackOnError function to call if inotify calls fails
  */
-bool startObservingFile(const std::string& filePath,
-                        folly::EventBase& evb,
-                        uint32_t pollPeriodMs,
-                        uint32_t sleepBeforeUpdateMs,
-                        std::function<void(std::string)> onUpdate,
-                        std::function<void()> fallbackOnError = nullptr);
-
-}}} // facebook::memcache::mcrouter
+bool startObservingFile(
+    const std::string& filePath,
+    folly::EventBase& evb,
+    uint32_t pollPeriodMs,
+    uint32_t sleepBeforeUpdateMs,
+    std::function<void(std::string)> onUpdate,
+    std::function<void()> fallbackOnError = nullptr);
+}
+}
+} // facebook::memcache::mcrouter

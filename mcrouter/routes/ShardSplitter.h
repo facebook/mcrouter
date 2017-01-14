@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,8 +11,8 @@
 
 #include <chrono>
 
-#include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/Range.h>
+#include <folly/experimental/StringKeyedUnorderedMap.h>
 
 #include "mcrouter/config.h"
 
@@ -35,11 +35,12 @@ class ShardSplitter {
           fanoutDeletes_(fanoutDeletes),
           migrating_(false) {}
 
-    ShardSplitInfo(size_t oldSplitSize,
-                   size_t newSplitSize,
-                   std::chrono::system_clock::time_point startTime,
-                   std::chrono::duration<double> migrationPeriod,
-                   bool fanoutDeletes)
+    ShardSplitInfo(
+        size_t oldSplitSize,
+        size_t newSplitSize,
+        std::chrono::system_clock::time_point startTime,
+        std::chrono::duration<double> migrationPeriod,
+        bool fanoutDeletes)
         : oldSplitSize_(oldSplitSize),
           newSplitSize_(newSplitSize),
           startTime_(startTime),
@@ -47,9 +48,15 @@ class ShardSplitter {
           fanoutDeletes_(fanoutDeletes),
           migrating_(true) {}
 
-    bool fanoutDeletesEnabled() const { return fanoutDeletes_; }
-    size_t getOldSplitSize() const { return oldSplitSize_; }
-    size_t getNewSplitSize() const { return newSplitSize_; }
+    bool fanoutDeletesEnabled() const {
+      return fanoutDeletes_;
+    }
+    size_t getOldSplitSize() const {
+      return oldSplitSize_;
+    }
+    size_t getNewSplitSize() const {
+      return newSplitSize_;
+    }
     size_t getSplitSizeForCurrentHost() const;
 
    private:
@@ -70,8 +77,9 @@ class ShardSplitter {
    * @return  nullptr if key doesn't have valid shard id, or if there is no
    *          shard split found. Otherwise returns pointer to ShardSplitInfo.
    */
-  const ShardSplitInfo* getShardSplit(folly::StringPiece key,
-                                      folly::StringPiece& shardId) const;
+  const ShardSplitInfo* getShardSplit(
+      folly::StringPiece key,
+      folly::StringPiece& shardId) const;
 
   const folly::StringKeyedUnorderedMap<ShardSplitInfo>& getShardSplits() const {
     return shardSplits_;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -12,48 +12,51 @@
 #include "mcrouter/lib/config/RouteHandleProviderIf.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
-namespace facebook { namespace memcache {
+namespace facebook {
+namespace memcache {
 
 template <class RouteHandleIf>
 RouteHandleFactory<RouteHandleIf>::RouteHandleFactory(
     RouteHandleProviderIf<RouteHandleIf>& provider,
     size_t threadId)
-    : provider_(provider),
-      threadId_(threadId) {
-}
+    : provider_(provider), threadId_(threadId) {}
 
 template <class RouteHandleIf>
 void RouteHandleFactory<RouteHandleIf>::addNamed(
-  folly::StringPiece name,
-  folly::dynamic json) {
-
+    folly::StringPiece name,
+    folly::dynamic json) {
   if (json.isObject()) {
     if (auto jName = json.get_ptr("name")) {
-      checkLogic(jName->isString() && jName->stringPiece() == name,
-                 "Ambiguous RouteHandle name in object for {}", name);
+      checkLogic(
+          jName->isString() && jName->stringPiece() == name,
+          "Ambiguous RouteHandle name in object for {}",
+          name);
     } else {
       json["name"] = name;
     }
   }
-  checkLogic(registered_.emplace(name, std::move(json)).second,
-             "Route handle '{}' was already registered", name);
+  checkLogic(
+      registered_.emplace(name, std::move(json)).second,
+      "Route handle '{}' was already registered",
+      name);
 }
 
 template <class RouteHandleIf>
-std::shared_ptr<RouteHandleIf>
-RouteHandleFactory<RouteHandleIf>::create(const folly::dynamic& json) {
+std::shared_ptr<RouteHandleIf> RouteHandleFactory<RouteHandleIf>::create(
+    const folly::dynamic& json) {
   auto result = createList(json);
 
-  checkLogic(result.size() == 1, "{} RouteHandles in list, expected 1",
-             result.size());
+  checkLogic(
+      result.size() == 1, "{} RouteHandles in list, expected 1", result.size());
 
   return std::move(result.back());
 }
 
 template <class RouteHandleIf>
 const std::vector<std::shared_ptr<RouteHandleIf>>&
-RouteHandleFactory<RouteHandleIf>::createNamed(folly::StringPiece name,
-                                               const folly::dynamic& json) {
+RouteHandleFactory<RouteHandleIf>::createNamed(
+    folly::StringPiece name,
+    const folly::dynamic& json) {
   auto seenIt = seen_.find(name);
   if (seenIt != seen_.end()) {
     // we had the same named handle already. Reuse it.
@@ -98,8 +101,8 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
     } else {
       auto jType = json.get_ptr("type");
       checkLogic(jType, "No type field in RouteHandle json object");
-      checkLogic(jType->isString(),
-                 "Type field in RouteHandle is not a string");
+      checkLogic(
+          jType->isString(), "Type field in RouteHandle is not a string");
       return provider_.create(*this, jType->stringPiece(), json);
     }
   } else if (json.isString()) {
@@ -138,8 +141,8 @@ RouteHandleFactory<RouteHandleIf>::createList(const folly::dynamic& json) {
     seen_.emplace(handlePiece, ret);
     return ret;
   }
-  throwLogic("RouteHandle is {}, expected object/array/string",
-             json.typeName());
+  throwLogic(
+      "RouteHandle is {}, expected object/array/string", json.typeName());
 }
-
-}}  // facebook::memcache
+}
+} // facebook::memcache
