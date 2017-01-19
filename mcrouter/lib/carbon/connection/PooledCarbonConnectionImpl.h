@@ -44,7 +44,7 @@ class PooledCarbonConnectionImpl {
       auto clientId = folly::Random::rand32(connections_.size());
       for (const Request& req : reqs) {
         connections_[clientId]->sendRequestOne(req, cb);
-        clientId = (++clientId) % (connections_.size());
+        clientId = (clientId + 1) % connections_.size();
       }
     } else {
       connections_[folly::Random::rand32(connections_.size())]
