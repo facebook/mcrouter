@@ -57,6 +57,7 @@ libmcrouter_a_SOURCES = \
   carbon/RequestReplyUtil.h \
   carbon/Result.h \
   carbon/SerializationTraits.h \
+  carbon/TypeList-inl.h \
   carbon/TypeList.h \
   carbon/Util.h \
   carbon/Variant.h \
@@ -93,6 +94,7 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/LogFailure.h \
   fbi/cpp/Trie-inl.h \
   fbi/cpp/Trie.h \
+  fbi/cpp/TypeList-inl.h \
   fbi/cpp/TypeList.h \
   fbi/cpp/globals.cpp \
   fbi/cpp/globals.h \

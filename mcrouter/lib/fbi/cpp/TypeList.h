@@ -65,14 +65,9 @@ struct KV {
  * (T, List<Ts...>) -> List<T, Ts...>
  */
 template <class T, class L>
-struct Prepend;
+using Prepend = typename carbon::Prepend<T, L>;
 template <class T, class L>
 using PrependT = typename Prepend<T, L>::type;
-
-template <class T, class... Ts>
-struct Prepend<T, List<Ts...>> {
-  using type = List<T, Ts...>;
-};
 
 /**
  * Sorts a list of Carbon messages by typeId.

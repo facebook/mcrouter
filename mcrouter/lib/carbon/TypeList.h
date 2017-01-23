@@ -20,27 +20,21 @@ struct List {};
 /**
  * ListContains<L, T>::value == true if and only if T appears in L
  */
-namespace detail {
+template <class L, class T>
+struct ListContains;
 
-template <class List, class T>
-struct ListContainsImpl {
-  static constexpr bool value = false;
-};
+/**
+ * (T, List<Ts...>) -> List<T, Ts...>
+ */
+template <class T, class L>
+struct Prepend;
 
-template <class T>
-struct ListContainsImpl<List<>, T> {
-  static constexpr bool value = false;
-};
-
-template <class T, class X, class... Xs>
-struct ListContainsImpl<List<X, Xs...>, T> {
-  static constexpr bool value =
-      std::is_same<T, X>::value || ListContainsImpl<List<Xs...>, T>::value;
-};
-
-} // detail
-
-template <class List, class T>
-using ListContains = typename detail::ListContainsImpl<List, T>;
+/**
+ * ListDedup<L>::type, contains a List of unique items from L
+ */
+template <class L, class Enable = void>
+struct ListDedup;
 
 } // carbon
+
+#include "TypeList-inl.h"
