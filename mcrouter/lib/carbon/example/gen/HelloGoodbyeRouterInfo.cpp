@@ -17,6 +17,7 @@
 
 #include <unordered_map>
 
+#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -59,7 +60,8 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
 /* static */
 std::unique_ptr<ExtraRouteHandleProviderIf<HelloGoodbyeRouterInfo>>
 HelloGoodbyeRouterInfo::buildExtraProvider() {
-  return std::make_unique<McExtraRouteHandleProvider<HelloGoodbyeRouterInfo>>();
+  return folly::make_unique<
+      McExtraRouteHandleProvider<HelloGoodbyeRouterInfo>>();
 }
 
 } // hellogoodbye

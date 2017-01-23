@@ -17,6 +17,7 @@
 
 #include <unordered_map>
 
+#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -60,7 +61,7 @@ MemcacheRouterInfo::buildRouteMap() {
 /* static */
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 MemcacheRouterInfo::buildExtraProvider() {
-  return std::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
+  return folly::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
 }
 
 } // memcache
