@@ -27,27 +27,27 @@ struct MemcacheRouterStatsConfig {
   static constexpr size_t kNumRequestGroups = 6;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
       sumStatNames{{folly::StringPiece("cmd_delete_count"),
-                    folly::StringPiece("cmd_lease_get_count"),
                     folly::StringPiece("cmd_get_count"),
+                    folly::StringPiece("cmd_lease_get_count"),
                     folly::StringPiece("cmd_lease_set_count"),
                     folly::StringPiece("cmd_set_count"),
                     folly::StringPiece("cmd_other_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
       rateStatNames{{folly::StringPiece("cmd_delete"),
-                     folly::StringPiece("cmd_lease_get"),
                      folly::StringPiece("cmd_get"),
+                     folly::StringPiece("cmd_lease_get"),
                      folly::StringPiece("cmd_lease_set"),
                      folly::StringPiece("cmd_set"),
                      folly::StringPiece("cmd_other"),
                      folly::StringPiece("cmd_delete_out"),
-                     folly::StringPiece("cmd_lease_get_out"),
                      folly::StringPiece("cmd_get_out"),
+                     folly::StringPiece("cmd_lease_get_out"),
                      folly::StringPiece("cmd_lease_set_out"),
                      folly::StringPiece("cmd_set_out"),
                      folly::StringPiece("cmd_other_out"),
                      folly::StringPiece("cmd_delete_out_all"),
-                     folly::StringPiece("cmd_lease_get_out_all"),
                      folly::StringPiece("cmd_get_out_all"),
+                     folly::StringPiece("cmd_lease_get_out_all"),
                      folly::StringPiece("cmd_lease_set_out_all"),
                      folly::StringPiece("cmd_set_out_all"),
                      folly::StringPiece("cmd_other_out_all")}};
@@ -101,7 +101,7 @@ MemcacheRouterStatsConfig::getStatGroup<McFlushReRequest>() {
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McGetRequest>() {
-  return 2; // stat group 'get'
+  return 1; // stat group 'get'
 }
 
 template <>
@@ -119,7 +119,7 @@ MemcacheRouterStatsConfig::getStatGroup<McIncrRequest>() {
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McLeaseGetRequest>() {
-  return 1; // stat group 'lease_get'
+  return 2; // stat group 'lease_get'
 }
 
 template <>

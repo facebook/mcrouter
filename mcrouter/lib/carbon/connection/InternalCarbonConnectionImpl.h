@@ -21,21 +21,22 @@
 
 namespace carbon {
 
+struct InternalCarbonConnectionOptions {
+  InternalCarbonConnectionOptions() = default;
+  size_t maxOutstanding{1024};
+  size_t maxOutstandingError{false};
+};
+
 template <class If>
 class InternalCarbonConnectionImpl {
  public:
   using RecreateFunc = std::function<std::unique_ptr<If>()>;
 
-  struct Options {
-    Options() {}
-    size_t maxOutstanding{1024};
-    size_t maxOutstandingError{false};
-  };
-
   explicit InternalCarbonConnectionImpl(
       const std::string& persistenceId,
-      RecreateFunc recreateFunc,
-      const Options& options = Options())
+      const InternalCarbonConnectionOptions& options =
+          InternalCarbonConnectionOptions(),
+      RecreateFunc recreateFunc = nullptr)
       : recreateFunc_(std::move(recreateFunc)) {
     init(
         facebook::memcache::mcrouter::CarbonRouterInstance<
@@ -46,8 +47,9 @@ class InternalCarbonConnectionImpl {
   explicit InternalCarbonConnectionImpl(
       const std::string& persistenceId,
       const facebook::memcache::McrouterOptions& mcrouterOptions,
-      RecreateFunc recreateFunc,
-      const Options& options = Options())
+      const InternalCarbonConnectionOptions& options =
+          InternalCarbonConnectionOptions(),
+      RecreateFunc recreateFunc = nullptr)
       : recreateFunc_(std::move(recreateFunc)) {
     init(
         facebook::memcache::mcrouter::CarbonRouterInstance<
@@ -57,8 +59,9 @@ class InternalCarbonConnectionImpl {
 
   explicit InternalCarbonConnectionImpl(
       const facebook::memcache::McrouterOptions& mcrouterOptions,
-      RecreateFunc recreateFunc,
-      const Options& options = Options())
+      const InternalCarbonConnectionOptions& options =
+          InternalCarbonConnectionOptions(),
+      RecreateFunc recreateFunc = nullptr)
       : recreateFunc_(std::move(recreateFunc)) {
     transientRouter_ = facebook::memcache::mcrouter::CarbonRouterInstance<
         typename If::RouterInfo>::create(mcrouterOptions.clone());
@@ -101,7 +104,8 @@ class InternalCarbonConnectionImpl {
   }
 
  private:
-  facebook::memcache::mcrouter::McrouterClient::Pointer client_;
+  typename facebook::memcache::mcrouter::CarbonRouterClient<
+      typename If::RouterInfo>::Pointer client_;
   facebook::memcache::mcrouter::CarbonRouterInstance<typename If::RouterInfo>*
       router_;
   std::shared_ptr<facebook::memcache::mcrouter::CarbonRouterInstance<
@@ -112,7 +116,7 @@ class InternalCarbonConnectionImpl {
   void init(
       facebook::memcache::mcrouter::CarbonRouterInstance<
           typename If::RouterInfo>* router,
-      const Options& options) {
+      const InternalCarbonConnectionOptions& options) {
     router_ = router;
     if (!router_) {
       throw std::runtime_error("Failed to initialize router");

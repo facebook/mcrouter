@@ -64,7 +64,8 @@ class CarbonTestConnection {
           std::reference_wrapper<const test2::util::YetAnotherRequest>>&&,
       carbon::RequestCb<test2::util::YetAnotherRequest>) = 0;
 
-  virtual CacheClientCounters getStatCounters() const noexcept = 0;
+  virtual facebook::memcache::CacheClientCounters getStatCounters() const
+      noexcept = 0;
   virtual std::unordered_map<std::string, std::string> getConfigOptions() = 0;
   virtual bool healthCheck() = 0;
   virtual std::unique_ptr<CarbonTestConnection> recreate() = 0;
@@ -79,7 +80,7 @@ class CarbonTestConnectionImpl : public CarbonTestConnection {
 
   ~CarbonTestConnectionImpl() = default;
 
-  CacheClientCounters getStatCounters() const noexcept {
+  facebook::memcache::CacheClientCounters getStatCounters() const noexcept {
     return impl_.getStatCounters();
   }
 

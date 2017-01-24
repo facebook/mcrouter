@@ -119,12 +119,8 @@ TEST(MemcacheInternalConnectionTest, simpleInternalConnection) {
       )",
       "localhost",
       server->getListenPort());
-  auto recreateFunc = [&]() {
-    return std::make_unique<facebook::memcache::MemcacheInternalConnection>(
-        "simple-internal-test", mcrouterOptions, nullptr);
-  };
   auto conn = std::make_unique<facebook::memcache::MemcacheInternalConnection>(
-      "simple-internal-test", mcrouterOptions, std::move(recreateFunc));
+      "simple-internal-test", mcrouterOptions);
   facebook::memcache::McSetRequest request("internal");
   request.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "connection");
   folly::fibers::Baton baton;
@@ -174,15 +170,11 @@ TEST(MemcachePooledConnectionTest, PooledInternalConnection) {
       )",
       "localhost",
       server->getListenPort());
-  auto recreateFunc = [&]() {
-    return std::make_unique<facebook::memcache::MemcacheInternalConnection>(
-        "pooled-internal-test", mcrouterOptions, nullptr /* recreateFunc */);
-  };
   std::vector<std::unique_ptr<facebook::memcache::MemcacheConnection>> conns;
   for (int i = 0; i < 4; i++) {
     conns.push_back(
         std::make_unique<facebook::memcache::MemcacheInternalConnection>(
-            "pooled-internal-test", mcrouterOptions, std::move(recreateFunc)));
+            "pooled-internal-test", mcrouterOptions));
   }
   auto pooledConn =
       std::make_unique<facebook::memcache::MemcachePooledConnection>(

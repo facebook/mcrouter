@@ -141,7 +141,8 @@ class MemcacheConnection {
       std::vector<std::reference_wrapper<const McTouchRequest>>&&,
       carbon::RequestCb<McTouchRequest>) = 0;
 
-  virtual CacheClientCounters getStatCounters() const noexcept = 0;
+  virtual facebook::memcache::CacheClientCounters getStatCounters() const
+      noexcept = 0;
   virtual std::unordered_map<std::string, std::string> getConfigOptions() = 0;
   virtual bool healthCheck() = 0;
   virtual std::unique_ptr<MemcacheConnection> recreate() = 0;
@@ -156,7 +157,7 @@ class MemcacheConnectionImpl : public MemcacheConnection {
 
   ~MemcacheConnectionImpl() = default;
 
-  CacheClientCounters getStatCounters() const noexcept {
+  facebook::memcache::CacheClientCounters getStatCounters() const noexcept {
     return impl_.getStatCounters();
   }
 
