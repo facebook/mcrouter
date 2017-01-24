@@ -7,6 +7,9 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+
+#include <folly/Memory.h>
+
 namespace carbon {
 namespace detail {
 
@@ -185,7 +188,7 @@ void ExternalCarbonConnectionImpl::sendRequestOne(
   try {
     impl_->sendRequestOne(req, std::move(cb));
   } catch (const CarbonConnectionRecreateException&) {
-    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
+    impl_ = folly::make_unique<Impl>(connectionOptions_, options_);
     return impl_->sendRequestOne(req, std::move(cb));
   }
 }
@@ -197,7 +200,7 @@ void ExternalCarbonConnectionImpl::sendRequestMulti(
   try {
     impl_->sendRequestMulti(std::move(reqs), std::move(cb));
   } catch (const CarbonConnectionRecreateException&) {
-    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
+    impl_ = folly::make_unique<Impl>(connectionOptions_, options_);
     return impl_->sendRequestMulti(std::move(reqs), std::move(cb));
   }
 }

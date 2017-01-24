@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <folly/Memory.h>
 #include <folly/Random.h>
 
 #include <mcrouter/lib/CacheClientStats.h>
@@ -79,7 +80,7 @@ class PooledCarbonConnectionImpl {
     for (auto i = 0; i < connections_.size(); ++i) {
       newConnections.push_back(connections_[i]->recreate());
     }
-    return std::make_unique<Impl>(
+    return folly::make_unique<Impl>(
         std::move(newConnections), splitBatchedRequests_);
   }
 
