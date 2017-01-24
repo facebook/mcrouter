@@ -96,139 +96,14 @@ STUI(destination_max_inflight_reqs, 0, 1)
 #define GROUP ods_stats | detailed_stats | count_stats
 STUI(rate_limited_log_count, 0, 1)
 #undef GROUP
-#define GROUP \
-  ods_stats | mcproxy_stats | cmd_all_stats | cmd_in_stats | count_stats
-STUI(cmd_cas_count, 0, 1)
-STUI(cmd_delete_count, 0, 1)
-STUI(cmd_get_count, 0, 1)
-STUI(cmd_gets_count, 0, 1)
-STUI(cmd_set_count, 0, 1)
-#undef GROUP
-#define GROUP                                                               \
-  ods_stats | mcproxy_stats | cmd_all_stats | cmd_out_stats | count_stats | \
-      outlier_stats
-STUI(cmd_cas_outlier_count, 0, 1)
-STUI(cmd_cas_outlier_all_count, 0, 1)
-STUI(cmd_delete_outlier_count, 0, 1)
-STUI(cmd_delete_outlier_all_count, 0, 1)
-STUI(cmd_get_outlier_count, 0, 1)
-STUI(cmd_get_outlier_all_count, 0, 1)
-STUI(cmd_gets_outlier_count, 0, 1)
-STUI(cmd_gets_outlier_all_count, 0, 1)
-STUI(cmd_set_outlier_count, 0, 1)
-STUI(cmd_set_outlier_all_count, 0, 1)
-STUI(cmd_other_outlier_count, 0, 1)
-STUI(cmd_other_outlier_all_count, 0, 1)
-#undef GROUP
-#define GROUP                                                                 \
-  ods_stats | mcproxy_stats | detailed_stats | cmd_all_stats | cmd_in_stats | \
-      rate_stats
-STUIR(cmd_cas, 0, 1)
-STUIR(cmd_delete, 0, 1)
-STUIR(cmd_get, 0, 1)
-STUIR(cmd_gets, 0, 1)
-STUIR(cmd_set, 0, 1)
-#undef GROUP
-#define GROUP                                                                  \
-  ods_stats | mcproxy_stats | detailed_stats | cmd_all_stats | cmd_out_stats | \
-      rate_stats | outlier_stats
-STUIR(cmd_cas_outlier, 0, 1)
-STUIR(cmd_cas_outlier_all, 0, 1)
-STUIR(cmd_delete_outlier, 0, 1)
-STUIR(cmd_delete_outlier_all, 0, 1)
-STUIR(cmd_get_outlier, 0, 1)
-STUIR(cmd_get_outlier_all, 0, 1)
-STUIR(cmd_gets_outlier, 0, 1)
-STUIR(cmd_gets_outlier_all, 0, 1)
-STUIR(cmd_set_outlier, 0, 1)
-STUIR(cmd_set_outlier_all, 0, 1)
-STUIR(cmd_other_outlier, 0, 1)
-STUIR(cmd_other_outlier_all, 0, 1)
-#undef GROUP
-#define GROUP ods_stats | cmd_all_stats | cmd_in_stats | count_stats
-STUI(cmd_add_count, 0, 1)
-STUI(cmd_decr_count, 0, 1)
-STUI(cmd_incr_count, 0, 1)
-STUI(cmd_lease_get_count, 0, 1)
-STUI(cmd_lease_set_count, 0, 1)
-STUI(cmd_meta_count, 0, 1)
-STUI(cmd_other_count, 0, 1)
-STUI(cmd_replace_count, 0, 1)
-STUI(cmd_stats_count, 0, 1)
+#define GROUP ods_stats | count_stats
 STUI(redirected_lease_set_count, 0, 1)
 #undef GROUP
-#define GROUP \
-  ods_stats | detailed_stats | cmd_all_stats | cmd_in_stats | rate_stats
-STUIR(cmd_add, 0, 1)
-STUIR(cmd_decr, 0, 1)
-STUIR(cmd_incr, 0, 1)
-STUIR(cmd_lease_get, 0, 1)
-STUIR(cmd_lease_set, 0, 1)
-STUIR(cmd_meta, 0, 1)
-STUIR(cmd_other, 0, 1)
-STUIR(cmd_replace, 0, 1)
-STUIR(cmd_stats, 0, 1)
-STUIR(replies_compressed, 0, 1)
-STUIR(replies_not_compressed, 0, 1)
-STUIR(reply_traffic_before_compression, 0, 1)
-STUIR(reply_traffic_after_compression, 0, 1)
-#undef GROUP
-#define GROUP cmd_all_stats | cmd_out_stats | count_stats
-STUI(cmd_cas_out_count, 0, 1)
-STUI(cmd_cas_out_all_count, 0, 1)
-STUI(cmd_delete_out_count, 0, 1)
-STUI(cmd_delete_out_all_count, 0, 1)
-STUI(cmd_get_out_count, 0, 1)
-STUI(cmd_get_out_all_count, 0, 1)
-STUI(cmd_gets_out_count, 0, 1)
-STUI(cmd_gets_out_all_count, 0, 1)
-STUI(cmd_set_out_count, 0, 1)
-STUI(cmd_set_out_all_count, 0, 1)
-STUI(cmd_add_out_count, 0, 1)
-STUI(cmd_add_out_all_count, 0, 1)
-STUI(cmd_decr_out_count, 0, 1)
-STUI(cmd_decr_out_all_count, 0, 1)
-STUI(cmd_incr_out_count, 0, 1)
-STUI(cmd_incr_out_all_count, 0, 1)
-STUI(cmd_lease_get_out_count, 0, 1)
-STUI(cmd_lease_get_out_all_count, 0, 1)
-STUI(cmd_lease_set_out_count, 0, 1)
-STUI(cmd_lease_set_out_all_count, 0, 1)
-STUI(cmd_meta_out_count, 0, 1)
-STUI(cmd_meta_out_all_count, 0, 1)
-STUI(cmd_other_out_count, 0, 1)
-STUI(cmd_other_out_all_count, 0, 1)
-STUI(cmd_replace_out_count, 0, 1)
-STUI(cmd_replace_out_all_count, 0, 1)
-#undef GROUP
-#define GROUP \
-  ods_stats | detailed_stats | cmd_all_stats | cmd_out_stats | rate_stats
-STUIR(cmd_cas_out, 0, 1)
-STUIR(cmd_cas_out_all, 0, 1)
-STUIR(cmd_delete_out, 0, 1)
-STUIR(cmd_delete_out_all, 0, 1)
-STUIR(cmd_get_out, 0, 1)
-STUIR(cmd_get_out_all, 0, 1)
-STUIR(cmd_gets_out, 0, 1)
-STUIR(cmd_gets_out_all, 0, 1)
-STUIR(cmd_set_out, 0, 1)
-STUIR(cmd_set_out_all, 0, 1)
-STUIR(cmd_add_out, 0, 1)
-STUIR(cmd_add_out_all, 0, 1)
-STUIR(cmd_decr_out, 0, 1)
-STUIR(cmd_decr_out_all, 0, 1)
-STUIR(cmd_incr_out, 0, 1)
-STUIR(cmd_incr_out_all, 0, 1)
-STUIR(cmd_lease_get_out, 0, 1)
-STUIR(cmd_lease_get_out_all, 0, 1)
-STUIR(cmd_lease_set_out, 0, 1)
-STUIR(cmd_lease_set_out_all, 0, 1)
-STUIR(cmd_meta_out, 0, 1)
-STUIR(cmd_meta_out_all, 0, 1)
-STUIR(cmd_other_out, 0, 1)
-STUIR(cmd_other_out_all, 0, 1)
-STUIR(cmd_replace_out, 0, 1)
-STUIR(cmd_replace_out_all, 0, 1)
+#define GROUP ods_stats | detailed_stats | rate_stats
+  STUIR(replies_compressed, 0, 1)
+  STUIR(replies_not_compressed, 0, 1)
+  STUIR(reply_traffic_before_compression, 0, 1)
+  STUIR(reply_traffic_after_compression, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats
 STUI(config_age, 0, 0)

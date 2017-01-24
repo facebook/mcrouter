@@ -155,7 +155,7 @@ void ProxyRequestContextTyped<RouterInfo, Request>::startProcessing() {
     return;
   }
 
-  if (proxy_.beingDestroyed()) {
+  if (this->proxy_.beingDestroyed()) {
     /* We can't process this, since 1) we destroyed the config already,
        and 2) the clients are winding down, so we wouldn't get any
        meaningful response back anyway. */
@@ -164,7 +164,7 @@ void ProxyRequestContextTyped<RouterInfo, Request>::startProcessing() {
     return;
   }
 
-  proxy_.dispatchRequest(*req_, std::move(self));
+  this->proxy_.dispatchRequest(*req_, std::move(self));
 }
 
 template <class RouterInfo, class Request>

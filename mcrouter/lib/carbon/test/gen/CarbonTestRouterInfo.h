@@ -20,7 +20,10 @@
 
 #include <folly/Range.h>
 
+#include <mcrouter/lib/carbon/Stats.h>
+
 #include "mcrouter/lib/carbon/test/gen/CarbonTestRouteHandleIf.h"
+#include "mcrouter/lib/carbon/test/gen/CarbonTestRouterStats.h"
 
 // Forward declarations
 namespace folly {
@@ -57,8 +60,9 @@ struct CarbonTestRouterInfo {
 
   template <class Route>
   using RouteHandle = CarbonTestRouteHandle<Route>;
-
   using RoutableRequests = detail::CarbonTestRoutableRequests;
+
+  using RouterStats = carbon::Stats<CarbonTestRouterStatsConfig>;
 
   using RouteHandleFactoryMap = std::unordered_map<
       folly::StringPiece,

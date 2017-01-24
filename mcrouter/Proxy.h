@@ -178,6 +178,14 @@ class Proxy : public ProxyBase {
     return beingDestroyed_;
   }
 
+  typename RouterInfo::RouterStats& requestStats() {
+    return requestStats_;
+  }
+
+  folly::dynamic dumpRequestStats(bool filterZeroes) const override final {
+    return requestStats_.dump(filterZeroes);
+  }
+
  private:
   // If true, processing new requests is not safe.
   bool beingDestroyed_{false};
@@ -185,6 +193,8 @@ class Proxy : public ProxyBase {
   /** Read/write lock for config pointer */
   SFRLock configLock_;
   std::shared_ptr<ProxyConfig<RouterInfo>> config_;
+
+  typename RouterInfo::RouterStats requestStats_;
 
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
 

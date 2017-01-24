@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -16,7 +16,7 @@
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/LeaseTokenMap.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/FailoverContext.h"
 #include "mcrouter/lib/FailoverErrorsSettings.h"

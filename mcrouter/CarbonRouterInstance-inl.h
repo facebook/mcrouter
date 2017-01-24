@@ -432,6 +432,7 @@ void CarbonRouterInstance<RouterInfo>::statUpdaterThreadRun() {
 
     for (size_t i = 0; i < opts_.num_proxies; ++i) {
       getProxy(i)->stats().aggregate(idx);
+      getProxy(i)->requestStats().advanceBin();
     }
 
     idx = (idx + 1) % BIN_NUM;

@@ -21,9 +21,9 @@
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyBase.h"
+#include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/McRequestList.h"
@@ -99,7 +99,7 @@ class RouteCommandDispatcher {
       const std::shared_ptr<
           ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
       folly::StringPiece keyStr,
-      ProxyBase& proxy,
+      Proxy<RouterInfo>& proxy,
       const ProxyRoute<RouterInfo>& proxyRoute) {
     return dispatcher_.dispatch(typeId, *this, ctx, keyStr, proxy, proxyRoute);
   }
@@ -110,7 +110,7 @@ class RouteCommandDispatcher {
       const std::shared_ptr<
           ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
       folly::StringPiece keyStr,
-      ProxyBase& proxy,
+      Proxy<RouterInfo>& proxy,
       const ProxyRoute<RouterInfo>& proxyRoute) {
     proxy.fiberManager().addTaskFinally(
         [keyStr, &proxy, &proxyRoute]() {
@@ -160,7 +160,7 @@ class RouteCommandDispatcher {
       const std::shared_ptr<
           ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>&,
       folly::StringPiece,
-      ProxyBase&,
+      Proxy<RouterInfo>&,
       const ProxyRoute<RouterInfo>&>
       dispatcher_;
 };
@@ -169,7 +169,7 @@ class RouteCommandDispatcher {
 
 template <class RouterInfo>
 struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
-  ProxyBase* proxy_;
+  Proxy<RouterInfo>* proxy_;
   ProxyRoute<RouterInfo>& proxyRoute_;
   std::unordered_map<
       std::string,
@@ -180,7 +180,9 @@ struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
       routeHandlesCommandDispatcher_;
   mutable detail::RouteCommandDispatcher<RouterInfo> routeCommandDispatcher_;
 
-  ServiceInfoImpl(ProxyBase* proxy, const ProxyConfig<RouterInfo>& config);
+  ServiceInfoImpl(
+      Proxy<RouterInfo>* proxy,
+      const ProxyConfig<RouterInfo>& config);
 
   void handleRequest(
       folly::StringPiece req,
@@ -200,13 +202,13 @@ ServiceInfo<RouterInfo>::~ServiceInfo() {}
 
 template <class RouterInfo>
 ServiceInfo<RouterInfo>::ServiceInfo(
-    ProxyBase* proxy,
+    Proxy<RouterInfo>* proxy,
     const ProxyConfig<RouterInfo>& config)
     : impl_(folly::make_unique<ServiceInfoImpl>(proxy, config)) {}
 
 template <class RouterInfo>
 ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
-    ProxyBase* proxy,
+    Proxy<RouterInfo>* proxy,
     const ProxyConfig<RouterInfo>& config)
     : proxy_(proxy), proxyRoute_(config.proxyRoute()) {
   commands_.emplace("version", [](const std::vector<folly::StringPiece>& args) {

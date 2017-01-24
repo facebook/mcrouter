@@ -11,7 +11,7 @@
 
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyBase.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -46,6 +46,7 @@ class DevNullRoute {
     return createReply(DefaultReply, req);
   }
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

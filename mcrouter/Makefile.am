@@ -86,7 +86,6 @@ libmcroutercore_a_SOURCES = \
   ProxyRequestContextTyped-inl.h \
   ProxyRequestContextTyped.h \
   ProxyRequestLogger-inl.h \
-  ProxyRequestLogger.cpp \
   ProxyRequestLogger.h \
   ProxyRequestPriority.h \
   ProxyStats.cpp \

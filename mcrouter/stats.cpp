@@ -22,6 +22,7 @@
 #include <folly/json.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyDestination.h"
 #include "mcrouter/ProxyDestinationMap.h"
@@ -465,6 +466,7 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
     stats[duration_us_stat].data.dbl += pr->stats().durationUs().value();
     stats[client_queue_notify_period_stat].data.dbl += pr->queueNotifyPeriod();
   }
+
   if (router.opts().num_proxies > 0) {
     stats[duration_us_stat].data.dbl /= router.opts().num_proxies;
     stats[client_queue_notify_period_stat].data.dbl /=
@@ -513,12 +515,6 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
     return all_stats;
   } else if (str == "detailed") {
     return detailed_stats;
-  } else if (str == "cmd") {
-    return cmd_all_stats;
-  } else if (str == "cmd-in") {
-    return cmd_in_stats;
-  } else if (str == "cmd-out") {
-    return cmd_out_stats;
   } else if (str == "cmd-error") {
     return cmd_error_stats;
   } else if (str == "ods") {
@@ -529,8 +525,6 @@ static stat_group_t stat_parse_group_str(folly::StringPiece str) {
     return suspect_server_stats;
   } else if (str == "count") {
     return count_stats;
-  } else if (str == "outlier") {
-    return outlier_stats;
   } else if (str.empty()) {
     return mcproxy_stats;
   } else {
@@ -573,6 +567,33 @@ McStatsReply stats_reply(ProxyBase* proxy, folly::StringPiece group_str) {
         reply.addStat(stat->name, max_max_stat_to_str(proxy, ii));
       } else {
         reply.addStat(stat->name, stat_to_str(stat, nullptr));
+      }
+    }
+  }
+
+  if (groups & (mcproxy_stats | all_stats | detailed_stats | ods_stats)) {
+    folly::dynamic requestStats(folly::dynamic::object());
+    const auto& router = proxy->router();
+    for (size_t i = 0; i < router.opts().num_proxies; ++i) {
+      const auto proxyRequestStats =
+          router.getProxyBase(i)->dumpRequestStats(false /* filterZeroes */);
+      for (const auto& k : proxyRequestStats.keys()) {
+        requestStats.setDefault(k, 0) += proxyRequestStats[k];
+      }
+    }
+
+    for (const auto& k : requestStats.keys()) {
+      if (requestStats[k].isInt()) {
+        reply.addStat(
+            k.asString(), folly::to<std::string>(requestStats[k].asInt()));
+      } else if (requestStats[k].isDouble()) {
+        reply.addStat(
+            k.asString(), folly::to<std::string>(requestStats[k].asDouble()));
+      } else {
+        MC_LOG_FAILURE(
+            proxy->router().opts(),
+            failure::Category::kOther,
+            folly::sformat("Couldn't serialize Carbon stat {}", k.asString()));
       }
     }
   }

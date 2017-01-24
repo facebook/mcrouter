@@ -20,11 +20,13 @@
 
 #include <folly/DynamicConverter.h>
 #include <folly/ThreadName.h>
+#include <folly/dynamic.h>
 #include <folly/json.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/OptionsUtil.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/stats.h"
@@ -82,17 +84,13 @@ void write_stats_file(
 
 void write_stats_to_disk(
     const McrouterOptions& opts,
-    const std::vector<stat_t>& stats) {
+    const std::vector<stat_t>& stats,
+    const folly::dynamic& requestStats) {
   try {
     std::string prefix = getStatPrefix(opts) + ".";
     folly::dynamic jstats = folly::dynamic::object;
 
     for (size_t i = 0; i < stats.size(); ++i) {
-      if (opts.logging_rtt_outlier_threshold_us == 0 &&
-          (stats[i].group & outlier_stats)) {
-        // outlier detection is disabled
-        continue;
-      }
       if (stats[i].group & ods_stats) {
         auto key = prefix + stats[i].name.str();
 
@@ -113,6 +111,10 @@ void write_stats_to_disk(
             continue;
         }
       }
+    }
+
+    for (const auto& kv : requestStats.items()) {
+      jstats[folly::to<std::string>(prefix, kv.first.asString())] = kv.second;
     }
 
     write_stats_file(opts, kStatsSfx, jstats);
@@ -232,6 +234,15 @@ void McrouterLogger::log() {
   std::vector<stat_t> stats(num_stats);
   prepare_stats(router_, stats.data());
 
+  folly::dynamic requestStats(folly::dynamic::object());
+  for (size_t i = 0; i < router_.opts().num_proxies; ++i) {
+    const auto proxyRequestStats =
+        router_.getProxyBase(i)->dumpRequestStats(true /* filterZeroes */);
+    for (const auto& k : proxyRequestStats.keys()) {
+      requestStats.setDefault(k, 0) += proxyRequestStats[k];
+    }
+  }
+
   for (int i = 0; i < num_stats; ++i) {
     if (stats[i].group & rate_stats) {
       stats[i].type = stat_double;
@@ -245,7 +256,7 @@ void McrouterLogger::log() {
     }
   }
 
-  write_stats_to_disk(router_.opts(), stats);
+  write_stats_to_disk(router_.opts(), stats, requestStats);
   write_config_sources_info_to_disk(router_);
 
   for (const auto& filepath : touchStatsFilepaths_) {
@@ -256,6 +267,7 @@ void McrouterLogger::log() {
     additionalLogger_->log(stats);
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

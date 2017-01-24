@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,15 +9,158 @@
  */
 #pragma once
 
-#include "mcrouter/ProxyConfig.h"
 #include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestLogger.h"
+#include "mcrouter/lib/RequestLoggerContext.h"
+#include "mcrouter/lib/carbon/NoopAdditionalLogger.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
 template <class RouterInfo>
+class ProxyConfig;
+template <class RouterInfo>
 class Proxy;
+namespace detail {
+
+template <class T>
+struct Void {
+  using type = void;
+};
+
+template <class RouterInfo, class U = void>
+struct RouterAdditionalLogger {
+  using type = carbon::NoopAdditionalLogger;
+};
+template <class RouterInfo>
+struct RouterAdditionalLogger<
+    RouterInfo,
+    typename Void<typename RouterInfo::AdditionalLogger>::type> {
+  using type = typename RouterInfo::AdditionalLogger;
+};
+
+} // detail
+
+template <class RouterInfo>
+class ProxyRequestContextWithInfo : public ProxyRequestContext {
+ public:
+  /**
+   * A request with this context will not be sent/logged anywhere.
+   *
+   * @param clientCallback  If non-nullptr, called by DestinationRoute when
+   *   the request would normally be sent to destination;
+   *   also in traverse() of DestinationRoute.
+   * @param shardSplitCallback  If non-nullptr, called by ShardSplitRoute
+   *   in traverse() with itself as the argument.
+   */
+  static std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>
+  createRecording(
+      Proxy<RouterInfo>& proxy,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr) {
+    return std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>(
+        new ProxyRequestContextWithInfo<RouterInfo>(
+            Recording,
+            proxy,
+            std::move(clientCallback),
+            std::move(shardSplitCallback)));
+  }
+
+  /**
+   * Same as createRecording(), but also notifies the baton
+   * when this context is destroyed (i.e. all requests referencing it
+   * finish executing).
+   */
+  static std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>
+  createRecordingNotify(
+      Proxy<RouterInfo>& proxy,
+      folly::fibers::Baton& baton,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr) {
+    return std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>(
+        new ProxyRequestContextWithInfo<RouterInfo>(
+            Recording,
+            proxy,
+            std::move(clientCallback),
+            std::move(shardSplitCallback)),
+        [&baton](ProxyRequestContext* ctx) {
+          delete ctx;
+          baton.post();
+        });
+  }
+
+  ~ProxyRequestContextWithInfo() override {
+    if (reqComplete_) {
+      fiber_local<RouterInfo>::runWithoutLocals(
+          [this]() { reqComplete_(*this); });
+    }
+  }
+
+  /**
+   * Called once a reply is received to record a stats sample if required.
+   */
+  template <class Request>
+  void onReplyReceived(
+      const std::string& poolName,
+      const AccessPoint& ap,
+      folly::StringPiece strippedRoutingPrefix,
+      const Request& request,
+      const ReplyT<Request>& reply,
+      RequestClass requestClass,
+      const int64_t startTimeUs,
+      const int64_t endTimeUs,
+      const ReplyStatsContext replyStatsContext) {
+    if (recording()) {
+      return;
+    }
+
+    RequestLoggerContext loggerContext(
+        poolName,
+        ap,
+        strippedRoutingPrefix,
+        requestClass,
+        startTimeUs,
+        endTimeUs,
+        reply.result(),
+        replyStatsContext);
+    assert(logger_.hasValue());
+    logger_->template log<Request>(loggerContext);
+    assert(additionalLogger_.hasValue());
+    additionalLogger_->log(request, reply, loggerContext);
+  }
+
+ private:
+  using AdditionalLogger =
+      typename detail::RouterAdditionalLogger<RouterInfo>::type;
+
+ protected:
+  ProxyRequestContextWithInfo(
+      Proxy<RouterInfo>& pr,
+      ProxyRequestPriority priority__)
+      : ProxyRequestContext(pr, priority__),
+        proxy_(pr),
+        logger_(ProxyRequestLogger<RouterInfo>(pr)),
+        additionalLogger_(AdditionalLogger(&pr)) {}
+
+  Proxy<RouterInfo>& proxy_;
+
+ private:
+  ProxyRequestContextWithInfo(
+      RecordingT,
+      Proxy<RouterInfo>& pr,
+      ClientCallback clientCallback,
+      ShardSplitCallback shardSplitCallback = nullptr)
+      : ProxyRequestContext(
+            Recording,
+            pr,
+            std::move(clientCallback),
+            std::move(shardSplitCallback)),
+        proxy_(pr) {}
+
+  folly::Optional<ProxyRequestLogger<RouterInfo>> logger_;
+  folly::Optional<AdditionalLogger> additionalLogger_;
+};
 
 template <class RouterInfo, class Request>
 class ProxyRequestContextTyped
@@ -75,10 +218,7 @@ class ProxyRequestContextTyped
       const Request& req,
       ProxyRequestPriority priority__)
       : ProxyRequestContextWithInfo<RouterInfo>(pr, priority__),
-        proxy_(pr),
         req_(&req) {}
-
-  Proxy<RouterInfo>& proxy_;
 
   std::shared_ptr<const ProxyConfig<RouterInfo>> config_;
 

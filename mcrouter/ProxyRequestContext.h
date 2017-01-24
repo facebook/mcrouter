@@ -12,13 +12,11 @@
 #include <memory>
 #include <string>
 
+#include <folly/Range.h>
 #include <folly/fibers/FiberManager.h>
 
-#include "mcrouter/ProxyRequestLogger.h"
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
-#include "mcrouter/lib/RequestLoggerContext.h"
-#include "mcrouter/lib/carbon/NoopAdditionalLogger.h"
 
 namespace facebook {
 namespace memcache {
@@ -193,142 +191,6 @@ class ProxyRequestContext {
 
  private:
   friend class ProxyBase;
-};
-
-namespace detail {
-
-template <class T>
-struct Void {
-  using type = void;
-};
-
-template <class RouterInfo, class U = void>
-struct RouterAdditionalLogger {
-  using type = carbon::NoopAdditionalLogger;
-};
-template <class RouterInfo>
-struct RouterAdditionalLogger<
-    RouterInfo,
-    typename Void<typename RouterInfo::AdditionalLogger>::type> {
-  using type = typename RouterInfo::AdditionalLogger;
-};
-
-} // detail
-
-template <class RouterInfo>
-class ProxyRequestContextWithInfo : public ProxyRequestContext {
- public:
-  /**
-   * A request with this context will not be sent/logged anywhere.
-   *
-   * @param clientCallback  If non-nullptr, called by DestinationRoute when
-   *   the request would normally be sent to destination;
-   *   also in traverse() of DestinationRoute.
-   * @param shardSplitCallback  If non-nullptr, called by ShardSplitRoute
-   *   in traverse() with itself as the argument.
-   */
-  static std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>
-  createRecording(
-      ProxyBase& proxy,
-      ClientCallback clientCallback,
-      ShardSplitCallback shardSplitCallback = nullptr) {
-    return std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>(
-        new ProxyRequestContextWithInfo<RouterInfo>(
-            Recording,
-            proxy,
-            std::move(clientCallback),
-            std::move(shardSplitCallback)));
-  }
-
-  /**
-   * Same as createRecording(), but also notifies the baton
-   * when this context is destroyed (i.e. all requests referencing it
-   * finish executing).
-   */
-  static std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>
-  createRecordingNotify(
-      ProxyBase& proxy,
-      folly::fibers::Baton& baton,
-      ClientCallback clientCallback,
-      ShardSplitCallback shardSplitCallback = nullptr) {
-    return std::shared_ptr<ProxyRequestContextWithInfo<RouterInfo>>(
-        new ProxyRequestContextWithInfo<RouterInfo>(
-            Recording,
-            proxy,
-            std::move(clientCallback),
-            std::move(shardSplitCallback)),
-        [&baton](ProxyRequestContext* ctx) {
-          delete ctx;
-          baton.post();
-        });
-  }
-
-  ~ProxyRequestContextWithInfo() override {
-    if (reqComplete_) {
-      fiber_local<RouterInfo>::runWithoutLocals(
-          [this]() { reqComplete_(*this); });
-    }
-  }
-
-  /**
-   * Called once a reply is received to record a stats sample if required.
-   */
-  template <class Request>
-  void onReplyReceived(
-      const std::string& poolName,
-      const AccessPoint& ap,
-      folly::StringPiece strippedRoutingPrefix,
-      const Request& request,
-      const ReplyT<Request>& reply,
-      RequestClass requestClass,
-      const int64_t startTimeUs,
-      const int64_t endTimeUs,
-      const ReplyStatsContext replyStatsContext) {
-    if (recording()) {
-      return;
-    }
-
-    RequestLoggerContext loggerContext(
-        poolName,
-        ap,
-        strippedRoutingPrefix,
-        requestClass,
-        startTimeUs,
-        endTimeUs,
-        reply.result(),
-        replyStatsContext);
-    assert(logger_.hasValue());
-    logger_->log<Request>(loggerContext);
-    assert(additionalLogger_.hasValue());
-    additionalLogger_->log(request, reply, loggerContext);
-  }
-
- private:
-  using AdditionalLogger =
-      typename detail::RouterAdditionalLogger<RouterInfo>::type;
-
- protected:
-  ProxyRequestContextWithInfo(
-      Proxy<RouterInfo>& pr,
-      ProxyRequestPriority priority__)
-      : ProxyRequestContext(pr, priority__),
-        logger_(ProxyRequestLogger(&pr)),
-        additionalLogger_(AdditionalLogger(&pr)) {}
-
- private:
-  ProxyRequestContextWithInfo(
-      RecordingT,
-      ProxyBase& proxyBase,
-      ClientCallback clientCallback,
-      ShardSplitCallback shardSplitCallback = nullptr)
-      : ProxyRequestContext(
-            Recording,
-            proxyBase,
-            std::move(clientCallback),
-            std::move(shardSplitCallback)) {}
-
-  folly::Optional<ProxyRequestLogger> logger_;
-  folly::Optional<AdditionalLogger> additionalLogger_;
 };
 
 } // mcrouter

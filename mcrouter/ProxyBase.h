@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <random>
 
+#include <folly/dynamic.h>
 #include <folly/fibers/FiberManager.h>
 
 #include "mcrouter/AsyncLog.h"
@@ -41,6 +42,7 @@ class ProxyBase {
       size_t id,
       folly::EventBase& evb,
       RouterInfo tag);
+
   virtual ~ProxyBase() = default;
 
   const CarbonRouterInstanceBase& router() const {
@@ -99,6 +101,8 @@ class ProxyBase {
    * @return Current value of the relaxed notification period if set.
    */
   virtual size_t queueNotifyPeriod() const = 0;
+
+  virtual folly::dynamic dumpRequestStats(bool filterZeroes) const = 0;
 
  private:
   CarbonRouterInstanceBase& router_;

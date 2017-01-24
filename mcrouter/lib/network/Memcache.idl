@@ -293,4 +293,18 @@ service {
   additional_requests: [];
   on_reply_logger: mcrouter::AdditionalProxyRequestLogger;
   enable_shutdown: false;
+  stats: {
+    McDeleteRequest,
+    McGetRequest,
+    McSetRequest,
+    # For backwards compatibility in stats names
+    lease_get: [
+      McLeaseGetRequest
+    ],
+    lease_set: [
+      McLeaseSetRequest
+    ],
+    # Remaining requests grouped into 'other' group
+    other: *
+  };
 };

@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2017, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -73,8 +73,7 @@ class TestMcrouterBasic(McrouterTestCase):
         self.assertTrue(res)
 
         # Stats with args
-        args = ['detailed', 'cmd', 'cmd-in', 'cmd-out', 'cmd-error',
-                'servers', 'suspect_servers', 'count', 'outlier']
+        args = ['detailed', 'cmd-error', 'servers', 'suspect_servers', 'count']
         for arg in args:
             res = mcr.issue_command_and_read_all('stats{0}\r\n'.format(arg))
             self.assertTrue('CLIENT_ERROR' in res)

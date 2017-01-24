@@ -20,7 +20,10 @@
 
 #include <folly/Range.h>
 
+#include <mcrouter/lib/carbon/Stats.h>
+
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterStats.h"
 
 // Forward declarations
 namespace folly {
@@ -74,10 +77,9 @@ struct MemcacheRouterInfo {
 
   template <class Route>
   using RouteHandle = MemcacheRouteHandle<Route>;
-
   using RoutableRequests = detail::MemcacheRoutableRequests;
-
   using AdditionalLogger = mcrouter::AdditionalProxyRequestLogger;
+  using RouterStats = carbon::Stats<MemcacheRouterStatsConfig>;
 
   using RouteHandleFactoryMap = std::unordered_map<
       folly::StringPiece,

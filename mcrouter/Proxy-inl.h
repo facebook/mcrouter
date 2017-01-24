@@ -10,10 +10,10 @@
 #include <folly/fibers/EventBaseLoopController.h>
 
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/ProxyConfig.h"
-#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/MessageQueue.h"
+#include "mcrouter/lib/carbon/Stats.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/options.h"
@@ -23,6 +23,9 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+template <class RouterInfo>
+class ProxyConfig;
 
 namespace detail {
 
@@ -45,89 +48,6 @@ bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, GetRequest>>& ctx,
     GetLikeT<GetRequest> = 0);
-
-template <class Request>
-void bumpStats(ProxyStats& stats, const Request&) {
-  stats.increment(cmd_other_stat);
-  stats.increment(cmd_other_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McStatsRequest&) {
-  stats.increment(cmd_stats_stat);
-  stats.increment(cmd_stats_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McCasRequest&) {
-  stats.increment(cmd_cas_stat);
-  stats.increment(cmd_cas_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McGetRequest&) {
-  stats.increment(cmd_get_stat);
-  stats.increment(cmd_get_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McGetsRequest&) {
-  stats.increment(cmd_gets_stat);
-  stats.increment(cmd_gets_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McMetagetRequest&) {
-  stats.increment(cmd_meta_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McAddRequest&) {
-  stats.increment(cmd_add_stat);
-  stats.increment(cmd_add_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McReplaceRequest&) {
-  stats.increment(cmd_replace_stat);
-  stats.increment(cmd_replace_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McSetRequest&) {
-  stats.increment(cmd_set_stat);
-  stats.increment(cmd_set_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McIncrRequest&) {
-  stats.increment(cmd_incr_stat);
-  stats.increment(cmd_incr_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McDecrRequest&) {
-  stats.increment(cmd_decr_stat);
-  stats.increment(cmd_decr_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McDeleteRequest&) {
-  stats.increment(cmd_delete_stat);
-  stats.increment(cmd_delete_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McLeaseSetRequest&) {
-  stats.increment(cmd_lease_set_stat);
-  stats.increment(cmd_lease_set_count_stat);
-}
-
-template <>
-inline void bumpStats(ProxyStats& stats, const McLeaseGetRequest&) {
-  stats.increment(cmd_lease_get_stat);
-  stats.increment(cmd_lease_get_count_stat);
-}
 
 } // detail
 
@@ -166,6 +86,8 @@ typename std::enable_if<
 Proxy<RouterInfo>::routeHandlesProcessRequest(
     const Request& req,
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> uctx) {
+  requestStats_.template bump<Request>(carbon::RouterStatTypes::Incoming);
+
   auto sharedCtx = ProxyRequestContextTyped<RouterInfo, Request>::process(
       std::move(uctx), getConfigUnsafe());
 
@@ -223,7 +145,6 @@ void Proxy<RouterInfo>::processRequest(
   ctx->markAsProcessing();
   ++numRequestsProcessing_;
   stats().increment(proxy_reqs_processing_stat);
-  detail::bumpStats(stats(), req);
 
   routeHandlesProcessRequest(req, std::move(ctx));
 
