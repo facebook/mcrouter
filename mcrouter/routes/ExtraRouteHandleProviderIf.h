@@ -14,7 +14,6 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
 
 namespace facebook {

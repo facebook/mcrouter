@@ -19,7 +19,6 @@
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/routes/NullRoute.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
 struct dynamic;

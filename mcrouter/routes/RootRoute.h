@@ -20,7 +20,6 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteHandleMap.h"
 
 namespace facebook {

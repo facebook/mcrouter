@@ -23,7 +23,6 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
 
 namespace facebook {
@@ -65,50 +64,6 @@ class ProxyRoute {
     return AllSyncRoute<typename RouterInfo::RouteHandleIf>(
                getAllDestinations())
         .route(req);
-  }
-
-  // Routing disabled for the commands bellow.
-  // TODO(@aap): Remove after refactoring Proxy.
-  McVersionReply route(const McVersionRequest&) const {
-    throw std::runtime_error("Routing version command is not supported.");
-  }
-  McStatsReply route(const McStatsRequest&) const {
-    throw std::runtime_error("Routing stats command is not supported.");
-  }
-  McShutdownReply route(const McShutdownRequest&) const {
-    throw std::runtime_error("Routing shutdown command is not supported.");
-  }
-  McQuitReply route(const McQuitRequest& req) const {
-    throw std::runtime_error("Routing quit command is not supported.");
-  }
-  McExecReply route(const McExecRequest& req) const {
-    throw std::runtime_error("Routing exec command is not supported.");
-  }
-
-  void traverse(
-      const McVersionRequest&,
-      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
-    throw std::runtime_error("Routing version command is not supported.");
-  }
-  void traverse(
-      const McStatsRequest&,
-      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
-    throw std::runtime_error("Routing stats command is not supported.");
-  }
-  void traverse(
-      const McShutdownRequest&,
-      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
-    throw std::runtime_error("Routing shutdown command is not supported.");
-  }
-  void traverse(
-      const McQuitRequest& req,
-      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
-    throw std::runtime_error("Routing quit command is not supported.");
-  }
-  void traverse(
-      const McExecRequest& req,
-      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
-    throw std::runtime_error("Routing exec command is not supported.");
   }
 
  private:

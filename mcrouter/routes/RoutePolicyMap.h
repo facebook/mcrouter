@@ -15,7 +15,6 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/fbi/cpp/Trie.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
 namespace memcache {

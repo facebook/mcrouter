@@ -16,7 +16,6 @@
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/Proxy.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
 namespace memcache {

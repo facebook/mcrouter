@@ -20,7 +20,6 @@
 #include "mcrouter/Observable.h"
 #include "mcrouter/TkoTracker.h"
 #include "mcrouter/options.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
 namespace memcache {

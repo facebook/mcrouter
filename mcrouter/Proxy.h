@@ -33,7 +33,6 @@
 #include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/UniqueIntrusiveList.h"
 #include "mcrouter/options.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace folly {
 struct dynamic;
