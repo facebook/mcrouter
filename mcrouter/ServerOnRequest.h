@@ -13,11 +13,8 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/CarbonMessageDispatcher.h"
-#include "mcrouter/lib/network/CarbonMessageList.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
 namespace memcache {
@@ -32,15 +29,14 @@ struct ServerRequestContext {
       : ctx(std::move(ctx_)), req(std::move(req_)) {}
 };
 
+template <class RouterInfo>
 class ServerOnRequest {
  public:
   template <class Request>
   using ReplyFunction =
       void (*)(McServerRequestContext&& ctx, ReplyT<Request>&& reply);
 
-  ServerOnRequest(
-      CarbonRouterClient<McrouterRouterInfo>& client,
-      bool retainSourceIp)
+  ServerOnRequest(CarbonRouterClient<RouterInfo>& client, bool retainSourceIp)
       : client_(client), retainSourceIp_(retainSourceIp) {}
 
   template <class Request>
@@ -89,9 +85,9 @@ class ServerOnRequest {
   }
 
  private:
-  CarbonRouterClient<McrouterRouterInfo>& client_;
+  CarbonRouterClient<RouterInfo>& client_;
   bool retainSourceIp_{false};
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

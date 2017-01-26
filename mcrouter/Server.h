@@ -23,10 +23,13 @@ class McrouterStandaloneOptions;
  *
  * @return True if server shut down cleanly, false if any errors occurred.
  */
+template <class RouterInfo, template <class> class RequestHandler>
 bool runServer(
     const McrouterStandaloneOptions& standaloneOpts,
     const McrouterOptions& mcrouterOpts);
 
-} // facebook::memcache::mcrouter
-}
-} // facebook::memcache
+} // mcrouter
+} // memcache
+} // facebook
+
+#include "Server-inl.h"

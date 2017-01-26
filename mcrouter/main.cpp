@@ -34,10 +34,11 @@
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/Proxy.h"
+#include "mcrouter/Server.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/options.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
-#include "mcrouter/server.h"
 #include "mcrouter/standalone_options.h"
 #include "mcrouter/stats.h"
 
@@ -454,7 +455,7 @@ int main(int argc, char** argv) {
 
     if (validate_configs == ValidateConfigMode::EXIT) {
       try {
-        auto router = CarbonRouterInstance<McrouterRouterInfo>::init(
+        auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
             "standalone-validate", opts);
         if (router == nullptr) {
           throw std::runtime_error("Couldn't create mcrouter");
@@ -475,7 +476,8 @@ int main(int argc, char** argv) {
   standaloneInit(opts, standaloneOpts);
 
   set_standalone_args(commandArgs);
-  if (!runServer(standaloneOpts, opts)) {
+  if (!runServer<MemcacheRouterInfo, MemcacheRequestHandler>(
+          standaloneOpts, opts)) {
     exit(kExitStatusTransientError);
   }
 }

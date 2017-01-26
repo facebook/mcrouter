@@ -7,8 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "server.h"
-
 #include <signal.h>
 
 #include <cstdio>
@@ -23,22 +21,23 @@
 #include "mcrouter/config.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/standalone_options.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace {
+namespace detail {
 
+template <class RouterInfo, template <class> class RequestHandler>
 void serverLoop(
-    CarbonRouterInstance<McrouterRouterInfo>& router,
+    CarbonRouterInstance<RouterInfo>& router,
     size_t threadId,
     folly::EventBase& evb,
     AsyncMcServerWorker& worker,
     const McrouterStandaloneOptions& standaloneOpts) {
+  using RequestHandlerType = RequestHandler<ServerOnRequest<RouterInfo>>;
+
   auto routerClient =
       router.createSameThreadClient(0 /* maximum_outstanding_requests */);
 
@@ -46,8 +45,8 @@ void serverLoop(
   // Manually override proxy assignment
   routerClient->setProxy(proxy);
 
-  worker.setOnRequest(MemcacheRequestHandler<ServerOnRequest>(
-      *routerClient, standaloneOpts.retain_source_ip));
+  worker.setOnRequest(
+      RequestHandlerType(*routerClient, standaloneOpts.retain_source_ip));
   worker.setOnConnectionAccepted([proxy]() {
     proxy->stats().increment(successful_client_connections_stat);
     proxy->stats().increment(num_clients_stat);
@@ -80,8 +79,9 @@ void serverLoop(
   router.releaseProxy(threadId);
 }
 
-} // anonymous
+} // detail
 
+template <class RouterInfo, template <class> class RequestHandler>
 bool runServer(
     const McrouterStandaloneOptions& standaloneOpts,
     const McrouterOptions& mcrouterOpts) {
@@ -121,7 +121,7 @@ bool runServer(
     AsyncMcServer server(opts);
     server.installShutdownHandler({SIGINT, SIGTERM});
 
-    auto router = CarbonRouterInstance<McrouterRouterInfo>::init(
+    auto router = CarbonRouterInstance<RouterInfo>::init(
         "standalone", mcrouterOpts, server.eventBases());
 
     if (router == nullptr) {
@@ -145,7 +145,8 @@ bool runServer(
             size_t threadId,
             folly::EventBase& evb,
             AsyncMcServerWorker& worker) {
-          serverLoop(*router, threadId, evb, worker, standaloneOpts);
+          detail::serverLoop<RouterInfo, RequestHandler>(
+              *router, threadId, evb, worker, standaloneOpts);
         },
         [router]() { router->shutdown(); });
 
@@ -164,6 +165,7 @@ bool runServer(
   }
   return true;
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

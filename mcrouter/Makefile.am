@@ -188,8 +188,8 @@ libmcroutercore_a_SOURCES = \
 
 mcrouter_SOURCES = \
   main.cpp \
-  server.cpp \
-  server.h \
+  Server-inl.h \
+  Server.h \
   ServerOnRequest.h \
   standalone_options.h \
   standalone_options_list.h
