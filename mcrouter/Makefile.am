@@ -94,7 +94,7 @@ libmcroutercore_a_SOURCES = \
   ProxyThread.h \
   route.cpp \
   route.h \
-  routes/AllAsyncRoute.cpp \
+  routes/AllAsyncRouteFactory.h \
   routes/AllFastestRoute.cpp \
   routes/AllInitialRoute.cpp \
   routes/AllMajorityRoute.cpp \

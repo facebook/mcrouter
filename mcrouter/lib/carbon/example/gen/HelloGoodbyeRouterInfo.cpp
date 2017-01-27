@@ -26,6 +26,7 @@
 
 #include <mcrouter/lib/routes/HashRoute.h>
 #include <mcrouter/lib/routes/NullRoute.h>
+#include <mcrouter/routes/AllAsyncRouteFactory.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
@@ -43,6 +44,7 @@ namespace hellogoodbye {
 /* static */ HelloGoodbyeRouterInfo::RouteHandleFactoryMap
 HelloGoodbyeRouterInfo::buildRouteMap() {
   RouteHandleFactoryMap map{
+      {"AllAsyncRoute", &makeAllAsyncRoute<HelloGoodbyeRouterInfo>},
       {"HashRoute",
        [](RouteHandleFactory<RouteHandleIf>& factory,
           const folly::dynamic& json) {

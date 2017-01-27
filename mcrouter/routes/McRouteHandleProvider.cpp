@@ -11,6 +11,7 @@
 
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/routes/AllAsyncRouteFactory.h"
 #include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/LatestRoute.h"
@@ -24,10 +25,6 @@ namespace memcache {
 namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
-
-McrouterRouteHandlePtr makeAllAsyncRoute(
-    McRouteHandleFactory& factory,
-    const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeAllFastestRoute(
     McRouteHandleFactory& factory,
@@ -119,7 +116,7 @@ template <>
 typename McRouteHandleProvider<MemcacheRouterInfo>::RouteHandleFactoryMap
 McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
   RouteHandleFactoryMap map{
-      {"AllAsyncRoute", &makeAllAsyncRoute},
+      {"AllAsyncRoute", &makeAllAsyncRoute<MemcacheRouterInfo>},
       {"AllFastestRoute", &makeAllFastestRoute},
       {"AllInitialRoute", &makeAllInitialRoute},
       {"AllMajorityRoute", &makeAllMajorityRoute},
