@@ -29,6 +29,7 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
       statsLogWriter_(
           folly::make_unique<AsyncWriter>(opts_.stats_async_queue_length)),
       asyncWriter_(folly::make_unique<AsyncWriter>()),
+      rtVarsData_(std::make_shared<ObservableRuntimeVars>()),
       leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
   evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
       [] { folly::setThreadName("CarbonAux"); });

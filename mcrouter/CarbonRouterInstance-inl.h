@@ -377,16 +377,28 @@ void CarbonRouterInstance<RouterInfo>::startAwriterThreads() {
 
 template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::startObservingRuntimeVarsFile() {
-  boost::system::error_code ec;
-  if (opts_.runtime_vars_file.empty() ||
-      !boost::filesystem::exists(opts_.runtime_vars_file, ec)) {
+  if (opts_.runtime_vars_file.empty()) {
     return;
   }
 
-  auto& rtVarsDataRef = rtVarsData();
-  auto onUpdate = [&rtVarsDataRef](std::string data) {
-    rtVarsDataRef.set(std::make_shared<const RuntimeVarsData>(std::move(data)));
+  auto onUpdate = [rtVarsDataWeak = rtVarsDataWeak()](std::string data) {
+    if (auto rtVarsDataPtr = rtVarsDataWeak.lock()) {
+      rtVarsDataPtr->set(
+          std::make_shared<const RuntimeVarsData>(std::move(data)));
+    }
   };
+
+  rtVarsDataObserver_ =
+      startObservingRuntimeVarsFileCustom(opts_.runtime_vars_file, onUpdate);
+
+  if (rtVarsDataObserver_) {
+    return;
+  }
+
+  boost::system::error_code ec;
+  if (!boost::filesystem::exists(opts_.runtime_vars_file, ec)) {
+    return;
+  }
 
   startObservingFile(
       opts_.runtime_vars_file,

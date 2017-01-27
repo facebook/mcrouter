@@ -73,6 +73,10 @@ class CarbonRouterInstanceBase {
   }
 
   ObservableRuntimeVars& rtVarsData() {
+    return *rtVarsData_;
+  }
+
+  std::weak_ptr<ObservableRuntimeVars> rtVarsDataWeak() {
     return rtVarsData_;
   }
 
@@ -154,12 +158,14 @@ class CarbonRouterInstanceBase {
   // Stores whether we should reconnect after hitting rxmit threshold
   std::atomic<bool> disableRxmitReconnection_{false};
 
+  folly::Optional<folly::observer::Observer<std::string>> rtVarsDataObserver_;
+
  private:
   TkoTrackerMap tkoTrackerMap_;
   std::unique_ptr<const CompressionCodecManager> compressionCodecManager_;
 
   // Stores data for runtime variables.
-  ObservableRuntimeVars rtVarsData_;
+  const std::shared_ptr<ObservableRuntimeVars> rtVarsData_;
 
   // Keep track of lease tokens of failed over requests.
   const std::unique_ptr<LeaseTokenMap> leaseTokenMap_;

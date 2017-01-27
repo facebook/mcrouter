@@ -25,6 +25,7 @@ static_assert(false, "mcrouter: invalid build");
 #include <utility>
 
 #include <folly/Range.h>
+#include <folly/experimental/observer/Observer.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/lib/Operation.h"
@@ -159,6 +160,13 @@ std::string getBinPath(folly::StringPiece name);
 #ifndef MCROUTER_PACKAGE_STRING
 #define MCROUTER_PACKAGE_STRING "1.0.0 mcrouter"
 #endif
+
+inline folly::Optional<folly::observer::Observer<std::string>>
+startObservingRuntimeVarsFileCustom(
+    folly::StringPiece file,
+    std::function<void(std::string)> onUpdate) {
+  return folly::none;
+}
 }
 }
 } // facebook::memcache::mcrouter
