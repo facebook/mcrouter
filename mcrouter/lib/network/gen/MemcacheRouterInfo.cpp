@@ -30,6 +30,7 @@
 #include <mcrouter/routes/AllFastestRouteFactory.h>
 #include <mcrouter/routes/AllInitialRouteFactory.h>
 #include <mcrouter/routes/AllMajorityRouteFactory.h>
+#include <mcrouter/routes/AllSyncRouteFactory.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
@@ -52,6 +53,7 @@ MemcacheRouterInfo::buildRouteMap() {
       {"AllFastestRoute", &makeAllFastestRoute<MemcacheRouterInfo>},
       {"AllInitialRoute", &makeAllInitialRoute<MemcacheRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<MemcacheRouterInfo>},
+      {"AllSyncRoute", &makeAllSyncRoute<MemcacheRouterInfo>},
       {"HashRoute",
        [](RouteHandleFactory<RouteHandleIf>& factory,
           const folly::dynamic& json) {
