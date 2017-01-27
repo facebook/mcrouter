@@ -23,6 +23,12 @@ class CarbonConnectionRecreateException : public std::runtime_error {
       : std::runtime_error(what) {}
 };
 
+class CarbonConnectionException : public std::runtime_error {
+ public:
+  explicit CarbonConnectionException(const std::string& what)
+      : std::runtime_error(what) {}
+};
+
 template <class Request>
 using RequestCb =
     std::function<void(const Request&, facebook::memcache::ReplyT<Request>&&)>;

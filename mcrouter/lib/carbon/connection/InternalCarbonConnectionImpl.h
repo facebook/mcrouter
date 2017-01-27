@@ -119,13 +119,13 @@ class InternalCarbonConnectionImpl {
       const InternalCarbonConnectionOptions& options) {
     router_ = router;
     if (!router_) {
-      throw std::runtime_error("Failed to initialize router");
+      throw CarbonConnectionException("Failed to initialize router");
     }
     try {
       client_ = router_->createClient(
           options.maxOutstanding, options.maxOutstandingError);
     } catch (const std::runtime_error& e) {
-      throw std::runtime_error(
+      throw CarbonConnectionException(
           std::string("Failed to initialize router client: ") + e.what());
     }
   }
