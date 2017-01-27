@@ -60,7 +60,7 @@ template <class RouterInfo, class GetRequest>
 bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, GetRequest>>& ctx,
-    GetLikeT<GetRequest>) {
+    carbon::GetLikeT<GetRequest>) {
   static const char* const kInternalGetPrefix = "__mcrouter__.";
 
   if (!req.key().fullKey().startsWith(kInternalGetPrefix)) {

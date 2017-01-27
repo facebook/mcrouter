@@ -13,9 +13,11 @@
 
 #include <folly/Format.h>
 
+#include "mcrouter/ProxyRequestContext.h"
+#include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/network/gen/MemcacheRouteHandleIf.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
 
@@ -63,15 +65,18 @@ class BigValueRoute {
       BigValueRouteOptions options);
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const;
+  ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0)
+      const;
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, UpdateLikeT<Request> = 0) const;
+  ReplyT<Request> route(const Request& req, carbon::UpdateLikeT<Request> = 0)
+      const;
 
   template <class Request>
   ReplyT<Request> route(
       const Request& req,
-      OtherThanT<Request, GetLike<>, UpdateLike<>> = 0) const;
+      carbon::OtherThanT<Request, carbon::GetLike<>, carbon::UpdateLike<>> =
+          0) const;
 
  private:
   const std::shared_ptr<MemcacheRouteHandleIf> ch_;

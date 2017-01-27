@@ -12,7 +12,6 @@
 #include <folly/Optional.h>
 #include <folly/TokenBucket.h>
 
-#include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
 
 namespace folly {
@@ -46,21 +45,21 @@ class RateLimiter {
   explicit RateLimiter(const folly::dynamic& json);
 
   template <class Request>
-  bool canPassThrough(GetLikeT<Request> = 0) {
+  bool canPassThrough(carbon::GetLikeT<Request> = 0) {
     return LIKELY(
         !getsTb_ ||
         getsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
-  bool canPassThrough(UpdateLikeT<Request> = 0) {
+  bool canPassThrough(carbon::UpdateLikeT<Request> = 0) {
     return LIKELY(
         !setsTb_ ||
         setsTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
   }
 
   template <class Request>
-  bool canPassThrough(DeleteLikeT<Request> = 0) {
+  bool canPassThrough(carbon::DeleteLikeT<Request> = 0) {
     return LIKELY(
         !deletesTb_ ||
         deletesTb_->consume(1.0, folly::TokenBucket::defaultClockNow()));
@@ -68,7 +67,11 @@ class RateLimiter {
 
   template <class Request>
   bool canPassThrough(
-      OtherThanT<Request, GetLike<>, UpdateLike<>, DeleteLike<>> = 0) {
+      carbon::OtherThanT<
+          Request,
+          carbon::GetLike<>,
+          carbon::UpdateLike<>,
+          carbon::DeleteLike<>> = 0) {
     return true;
   }
 

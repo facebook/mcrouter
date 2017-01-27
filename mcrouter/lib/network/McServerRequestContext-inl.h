@@ -31,8 +31,8 @@ void McServerRequestContext::reply(
 }
 
 template <class Reply, class... Args>
-typename std::enable_if<
-    GetLike<RequestFromReplyType<Reply, RequestReplyPairs>>::value>::type
+typename std::enable_if<carbon::GetLike<
+    RequestFromReplyType<Reply, RequestReplyPairs>>::value>::type
 McServerRequestContext::replyImpl(
     McServerRequestContext&& ctx,
     Reply&& reply,
@@ -49,9 +49,9 @@ McServerRequestContext::replyImpl(
 }
 
 template <class Reply, class... Args>
-typename std::enable_if<OtherThan<
+typename std::enable_if<carbon::OtherThan<
     RequestFromReplyType<Reply, RequestReplyPairs>,
-    GetLike<>>::value>::type
+    carbon::GetLike<>>::value>::type
 McServerRequestContext::replyImpl(
     McServerRequestContext&& ctx,
     Reply&& reply,

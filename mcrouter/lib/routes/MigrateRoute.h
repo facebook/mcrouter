@@ -117,7 +117,7 @@ class MigrateRoute {
   const TimeProvider tp_;
 
   template <class Request>
-  int routeMask(const Request& req, DeleteLikeT<Request> = 0) const {
+  int routeMask(const Request& req, carbon::DeleteLikeT<Request> = 0) const {
     time_t curr = tp_();
 
     if (curr < startTimeSec_) {
@@ -133,8 +133,9 @@ class MigrateRoute {
   }
 
   template <class Request>
-  int routeMask(const Request& req, OtherThanT<Request, DeleteLike<>> = 0)
-      const {
+  int routeMask(
+      const Request& req,
+      carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
     time_t curr = tp_();
 
     if (curr < (startTimeSec_ + intervalSec_)) {
@@ -144,5 +145,5 @@ class MigrateRoute {
     }
   }
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook

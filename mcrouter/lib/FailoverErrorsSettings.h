@@ -16,7 +16,7 @@
 
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/mc/msg.h"
 
 namespace folly {
@@ -40,7 +40,7 @@ class FailoverErrorsSettings {
   bool shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
-      DeleteLikeT<Request> = 0) const {
+      carbon::DeleteLikeT<Request> = 0) const {
     return deletes_.shouldFailover(reply.result());
   }
 
@@ -48,7 +48,7 @@ class FailoverErrorsSettings {
   bool shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
-      GetLikeT<Request> = 0) const {
+      carbon::GetLikeT<Request> = 0) const {
     return gets_.shouldFailover(reply.result());
   }
 
@@ -56,7 +56,7 @@ class FailoverErrorsSettings {
   bool shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
-      UpdateLikeT<Request> = 0) const {
+      carbon::UpdateLikeT<Request> = 0) const {
     return updates_.shouldFailover(reply.result());
   }
 
@@ -64,7 +64,11 @@ class FailoverErrorsSettings {
   bool shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
-      OtherThanT<Request, DeleteLike<>, GetLike<>, UpdateLike<>> = 0) const {
+      carbon::OtherThanT<
+          Request,
+          carbon::DeleteLike<>,
+          carbon::GetLike<>,
+          carbon::UpdateLike<>> = 0) const {
     return isFailoverErrorResult(reply.result());
   }
 

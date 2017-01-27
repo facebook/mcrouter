@@ -9,17 +9,14 @@
  */
 #pragma once
 
-namespace facebook {
-namespace memcache {
+namespace carbon {
 
 /**
- * Request traits allow grouping requests with similar semantics. This way
- * we can write code that deals with for example get, lease-get or metaget in a
- * similar way only once.
+ * Routing groups allow grouping requests with similar semantics. This way
+ * we can write code that deals with similar operations only once.
  *
  * For example the following method will exist only if Request represents
- * a memcached ASCII get, lease-get or metaget, or the corresponding Caret
- * analogs (McGetRequest, McLeaseGetRqeuest, and McMetagetRequest).
+ * an operation that is in the "get" routing group.
  *
  * template <typename Request>
  * Result method(..., Request, GetLike<Request>::Type = 0)
@@ -28,8 +25,7 @@ namespace memcache {
 /**
  * @class GetLike
  * @tparam Request Request type
- * @brief Utility class to check if Request type is get-like (get, metaget or
- *        lease-get)
+ * @brief Utility class to check if Request type is get-like.
  *
  * Boolean 'value' field will be true if and only if Request is get-like
  * Public member typedef 'Type' equal to void* will exist if and only if
@@ -46,8 +42,7 @@ using GetLikeT = typename GetLike<Request>::Type;
 /**
  * @class UpdateLike
  * @tparam Request Request type
- * @brief Utility class to check if Request type is update-like (set, add,
- *        replace or lease-set)
+ * @brief Utility class to check if Request type is update-like
  *
  * Boolean 'value' field will be true if and only if Request is update-like
  * Public member typedef 'Type' equal to void* will exist if and only if
@@ -64,7 +59,7 @@ using UpdateLikeT = typename UpdateLike<Request>::Type;
 /**
  * @class DeleteLike
  * @tparam Request Request type
- * @brief Utility class to check if Request type is delete-like (delete)
+ * @brief Utility class to check if Request type is delete-like
  *
  * Boolean 'value' field will be true if and only if Request is delete-like
  * Public member typedef 'Type' equal to void* will exist if and only if
@@ -81,8 +76,7 @@ using DeleteLikeT = typename DeleteLike<Request>::Type;
 /**
  * @class ArithmeticLike
  * @tparam Request Request type
- * @brief Utility class to check if Request type is arithmetic-like (incr,
- *        decr)
+ * @brief Utility class to check if Request type is arithmetic-like
  *
  * Boolean 'value' field will be true if and only if Request is
  * arithmetic-like
@@ -138,5 +132,4 @@ struct OtherThan<Request, ArithmeticLike<>> {
 template <typename Request, typename... RequestTraitOrType>
 using OtherThanT = typename std::
     enable_if<OtherThan<Request, RequestTraitOrType...>::value, void*>::type;
-}
-} // facebook::memcache
+} // carbon

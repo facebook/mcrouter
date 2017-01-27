@@ -73,19 +73,22 @@ class MissFailoverRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
+  ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0)
+      const {
     return routeImpl(req);
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
+  ReplyT<Request> route(const Request& req, carbon::DeleteLikeT<Request> = 0)
+      const {
     return routeImpl(req);
   }
 
   template <class Request>
   ReplyT<Request> route(
       const Request& req,
-      OtherThanT<Request, GetLike<>, DeleteLike<>> = 0) const {
+      carbon::OtherThanT<Request, carbon::GetLike<>, carbon::DeleteLike<>> =
+          0) const {
     return targets_[0]->route(req);
   }
 

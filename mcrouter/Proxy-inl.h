@@ -11,7 +11,6 @@
 
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyRequestContextTyped.h"
-#include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/MessageQueue.h"
 #include "mcrouter/lib/carbon/Stats.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
@@ -47,7 +46,7 @@ template <class RouterInfo, class GetRequest>
 bool processGetServiceInfoRequestImpl(
     const GetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, GetRequest>>& ctx,
-    GetLikeT<GetRequest> = 0);
+    carbon::GetLikeT<GetRequest> = 0);
 
 } // detail
 

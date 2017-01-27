@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -94,7 +94,8 @@ class DestinationRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
+  ReplyT<Request> route(const Request& req, carbon::DeleteLikeT<Request> = 0)
+      const {
     auto reply = routeWithDestination(req);
     if (isFailoverErrorResult(reply.result()) && spool(req)) {
       reply = createReply(DefaultReply, req);
@@ -106,7 +107,7 @@ class DestinationRoute {
   template <class Request>
   ReplyT<Request> route(
       const Request& req,
-      OtherThanT<Request, DeleteLike<>> = 0) const {
+      carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
     return routeWithDestination(req);
   }
 

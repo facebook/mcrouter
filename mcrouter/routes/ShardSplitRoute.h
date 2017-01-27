@@ -21,8 +21,8 @@
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
@@ -104,7 +104,7 @@ class ShardSplitRoute {
     }
 
     auto splitSize = split->getSplitSizeForCurrentHost();
-    if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
+    if (carbon::DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       // Note: the order here is part of the API and must not be changed.
       // We traverse the primary split and then other splits in order.
       t(*rh_, req);
@@ -134,7 +134,7 @@ class ShardSplitRoute {
       return rh_->route(req);
     }
 
-    if (DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
+    if (carbon::DeleteLike<Request>::value && split->fanoutDeletesEnabled()) {
       for (size_t i = 1; i < splitSize; ++i) {
         folly::fibers::addTask(
             [ r = rh_, req_ = splitReq(req, i, shard) ]() { r->route(req_); });

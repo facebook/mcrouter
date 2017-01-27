@@ -20,9 +20,9 @@
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
@@ -210,13 +210,13 @@ struct RecordingRoute {
     h_->saw_keys.push_back(req.key().fullKey().str());
     h_->sawOperations.push_back(Request::name);
     h_->sawExptimes.push_back(req.exptime());
-    if (GetLike<Request>::value) {
+    if (carbon::GetLike<Request>::value) {
       reply.result() = dataGet_.result_;
       detail::setReplyValue(reply, dataGet_.value_);
       detail::testSetFlags(reply, dataGet_.flags_);
       return reply;
     }
-    if (UpdateLike<Request>::value) {
+    if (carbon::UpdateLike<Request>::value) {
       assert(carbon::valuePtrUnsafe(req) != nullptr);
       auto val = carbon::valuePtrUnsafe(req)->clone();
       folly::StringPiece sp_value = coalesceAndGetRange(val);
@@ -225,7 +225,7 @@ struct RecordingRoute {
       detail::testSetFlags(reply, dataUpdate_.flags_);
       return reply;
     }
-    if (DeleteLike<Request>::value) {
+    if (carbon::DeleteLike<Request>::value) {
       reply.result() = dataDelete_.result_;
       return reply;
     }

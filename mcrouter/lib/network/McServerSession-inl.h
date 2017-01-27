@@ -34,7 +34,7 @@ void McServerSession::asciiRequestReady(
     return;
   }
 
-  if (GetLike<Request>::value && !currentMultiop_) {
+  if (carbon::GetLike<Request>::value && !currentMultiop_) {
     currentMultiop_ = std::make_shared<MultiOpParent>(*this, tailReqid_++);
   }
   uint64_t reqid;

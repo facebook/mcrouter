@@ -81,14 +81,14 @@ class McServerRequestContext {
   bool noReply(const McLeaseGetReply& r) const;
 
   template <class Reply, class... Args>
-  static typename std::enable_if<
-      GetLike<RequestFromReplyType<Reply, RequestReplyPairs>>::value>::type
+  static typename std::enable_if<carbon::GetLike<
+      RequestFromReplyType<Reply, RequestReplyPairs>>::value>::type
   replyImpl(McServerRequestContext&& ctx, Reply&& reply, Args&&... args);
 
   template <class Reply, class... Args>
-  static typename std::enable_if<OtherThan<
+  static typename std::enable_if<carbon::OtherThan<
       RequestFromReplyType<Reply, RequestReplyPairs>,
-      GetLike<>>::value>::type
+      carbon::GetLike<>>::value>::type
   replyImpl(McServerRequestContext&& ctx, Reply&& reply, Args&&... args);
 
   template <class Reply>

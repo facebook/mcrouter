@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -18,9 +18,9 @@
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/SlowWarmUpRouteSettings.h"
 
@@ -92,7 +92,8 @@ class SlowWarmUpRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) const {
+  ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0)
+      const {
     auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
     if (warmingUp() && !shouldSendRequest(proxy.randomGenerator())) {
       return fiber_local<RouterInfo>::runWithLocals([this, &req]() {
@@ -105,8 +106,9 @@ class SlowWarmUpRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, OtherThanT<Request, GetLike<>> = 0)
-      const {
+  ReplyT<Request> route(
+      const Request& req,
+      carbon::OtherThanT<Request, carbon::GetLike<>> = 0) const {
     return routeImpl(req);
   }
 

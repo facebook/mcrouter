@@ -93,7 +93,7 @@ class RootRoute {
   ReplyT<Request> routeImpl(
       const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
       const Request& req,
-      GetLikeT<Request> = 0) const {
+      carbon::GetLikeT<Request> = 0) const {
     auto reply = doRoute(rh, req);
     if (isErrorResult(reply.result()) && opts_.miss_on_get_errors &&
         !rh.empty()) {
@@ -108,7 +108,7 @@ class RootRoute {
   ReplyT<Request> routeImpl(
       const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
       const Request& req,
-      ArithmeticLikeT<Request> = 0) const {
+      carbon::ArithmeticLikeT<Request> = 0) const {
     auto reply = opts_.allow_only_gets ? createReply(DefaultReply, req)
                                        : doRoute(rh, req);
     if (isErrorResult(reply.result())) {
@@ -121,7 +121,8 @@ class RootRoute {
   ReplyT<Request> routeImpl(
       const std::vector<std::shared_ptr<RouteHandleIf>>& rh,
       const Request& req,
-      OtherThanT<Request, GetLike<>, ArithmeticLike<>> = 0) const {
+      carbon::OtherThanT<Request, carbon::GetLike<>, carbon::ArithmeticLike<>> =
+          0) const {
     if (!opts_.allow_only_gets) {
       return doRoute(rh, req);
     }

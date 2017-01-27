@@ -10,10 +10,9 @@
 #pragma once
 
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/OperationTraits.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 
-namespace facebook {
-namespace memcache {
+namespace carbon {
 
 /*
  * GetLike, DeleteLike, etc. specializations for McOperation types.
@@ -24,87 +23,86 @@ namespace memcache {
  * See also mcrouter/lib/network/CarbonMessageTraits.h.
  */
 template <>
-struct GetLike<McOperation<mc_op_get>> {
+struct GetLike<facebook::memcache::McOperation<mc_op_get>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<McOperation<mc_op_gets>> {
+struct GetLike<facebook::memcache::McOperation<mc_op_gets>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<McOperation<mc_op_metaget>> {
+struct GetLike<facebook::memcache::McOperation<mc_op_metaget>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct GetLike<McOperation<mc_op_lease_get>> {
+struct GetLike<facebook::memcache::McOperation<mc_op_lease_get>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_set>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_set>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_add>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_add>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_replace>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_replace>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_lease_set>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_lease_set>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_append>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_append>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_prepend>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_prepend>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct UpdateLike<McOperation<mc_op_cas>> {
+struct UpdateLike<facebook::memcache::McOperation<mc_op_cas>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct DeleteLike<McOperation<mc_op_delete>> {
+struct DeleteLike<facebook::memcache::McOperation<mc_op_delete>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct ArithmeticLike<McOperation<mc_op_incr>> {
+struct ArithmeticLike<facebook::memcache::McOperation<mc_op_incr>> {
   static const bool value = true;
   typedef void* Type;
 };
 
 template <>
-struct ArithmeticLike<McOperation<mc_op_decr>> {
+struct ArithmeticLike<facebook::memcache::McOperation<mc_op_decr>> {
   static const bool value = true;
   typedef void* Type;
 };
-}
-} // facebook::memcache
+} // carbon

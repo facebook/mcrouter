@@ -21,7 +21,6 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyRequestContext.h"
-#include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -88,17 +87,17 @@ class OutstandingLimitRoute {
       auto& stats = ctx->proxy().stats();
       folly::fibers::Baton baton;
       int64_t waitingSince = 0;
-      if (GetLike<Request>::value) {
+      if (carbon::GetLike<Request>::value) {
         ++currentGetReqsWaiting_;
         waitingSince = nowUs();
-      } else if (UpdateLike<Request>::value) {
+      } else if (carbon::UpdateLike<Request>::value) {
         ++currentUpdateReqsWaiting_;
         waitingSince = nowUs();
       }
       entry.batons.push_back(&baton);
       baton.wait();
       if (waitingSince > 0) {
-        if (GetLike<Request>::value) {
+        if (carbon::GetLike<Request>::value) {
           stats.increment(
               outstanding_route_get_wait_time_sum_us_stat,
               static_cast<uint64_t>(nowUs() - waitingSince));
@@ -107,7 +106,7 @@ class OutstandingLimitRoute {
               currentGetReqsWaiting_);
           --currentGetReqsWaiting_;
           stats.increment(outstanding_route_get_reqs_queued_stat, 1);
-        } else if (UpdateLike<Request>::value) {
+        } else if (carbon::UpdateLike<Request>::value) {
           stats.increment(
               outstanding_route_update_wait_time_sum_us_stat,
               static_cast<uint64_t>(nowUs() - waitingSince));

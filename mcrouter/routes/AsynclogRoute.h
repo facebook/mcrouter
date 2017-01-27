@@ -10,7 +10,6 @@
 #pragma once
 
 #include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
@@ -44,7 +43,8 @@ class AsynclogRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, DeleteLikeT<Request> = 0) const {
+  ReplyT<Request> route(const Request& req, carbon::DeleteLikeT<Request> = 0)
+      const {
     return fiber_local<RouterInfo>::runWithLocals([this, &req]() {
       fiber_local<RouterInfo>::setAsynclogName(asynclogName_);
       return rh_->route(req);
@@ -54,7 +54,7 @@ class AsynclogRoute {
   template <class Request>
   ReplyT<Request> route(
       const Request& req,
-      OtherThanT<Request, DeleteLike<>> = 0) const {
+      carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
     return rh_->route(req);
   }
 
@@ -62,6 +62,6 @@ class AsynclogRoute {
   const std::shared_ptr<RouteHandleIf> rh_;
   const std::string asynclogName_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

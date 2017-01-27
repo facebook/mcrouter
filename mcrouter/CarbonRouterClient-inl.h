@@ -20,7 +20,7 @@ void bumpCarbonRouterClientStats(
     CacheClientStats& stats,
     const Request& req,
     const ReplyT<Request>& reply,
-    GetLikeT<Request> = 0) {
+    carbon::GetLikeT<Request> = 0) {
   auto replyBytes = carbon::valuePtrUnsafe(reply)
       ? carbon::valuePtrUnsafe(reply)->computeChainDataLength()
       : 0;
@@ -32,7 +32,7 @@ void bumpCarbonRouterClientStats(
     CacheClientStats& stats,
     const Request& req,
     const ReplyT<Request>& reply,
-    UpdateLikeT<Request> = 0) {
+    carbon::UpdateLikeT<Request> = 0) {
   auto valueBytes = req.value().computeChainDataLength();
   stats.recordUpdateRequest(req.key().fullKey().size(), valueBytes);
 }
@@ -42,7 +42,7 @@ void bumpCarbonRouterClientStats(
     CacheClientStats& stats,
     const Request& req,
     const ReplyT<Request>& reply,
-    ArithmeticLikeT<Request> = 0) {
+    carbon::ArithmeticLikeT<Request> = 0) {
   stats.recordUpdateRequest(req.key().fullKey().size(), 0);
 }
 
@@ -51,7 +51,7 @@ void bumpCarbonRouterClientStats(
     CacheClientStats& stats,
     const Request& req,
     const ReplyT<Request>& reply,
-    DeleteLikeT<Request> = 0) {
+    carbon::DeleteLikeT<Request> = 0) {
   stats.recordInvalidateRequest(req.key().fullKey().size());
 }
 
@@ -60,12 +60,12 @@ void bumpCarbonRouterClientStats(
     CacheClientStats& stats,
     const Request& req,
     const ReplyT<Request>& reply,
-    OtherThanT<
+    carbon::OtherThanT<
         Request,
-        GetLike<>,
-        UpdateLike<>,
-        ArithmeticLike<>,
-        DeleteLike<>> = 0) {
+        carbon::GetLike<>,
+        carbon::UpdateLike<>,
+        carbon::ArithmeticLike<>,
+        carbon::DeleteLike<>> = 0) {
   // We don't have any other operation specific stats.
 }
 

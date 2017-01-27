@@ -62,7 +62,8 @@ class ModifyExptimeRoute {
 
   template <class Request>
   typename std::enable_if<
-      Request::hasExptime && OtherThan<Request, DeleteLike<>>::value,
+      Request::hasExptime &&
+          carbon::OtherThan<Request, carbon::DeleteLike<>>::value,
       ReplyT<Request>>::type
   route(const Request& req) const {
     switch (action_) {
@@ -86,7 +87,7 @@ class ModifyExptimeRoute {
 
   template <class Request>
   typename std::enable_if<
-      !Request::hasExptime || DeleteLike<Request>::value,
+      !Request::hasExptime || carbon::DeleteLike<Request>::value,
       ReplyT<Request>>::type
   route(const Request& req) const {
     return target_->route(req);
@@ -97,6 +98,6 @@ class ModifyExptimeRoute {
   const int32_t exptime_;
   const ModifyExptimeAction action_;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

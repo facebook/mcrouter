@@ -18,9 +18,9 @@
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
@@ -76,7 +76,7 @@ class L1L2CacheRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, GetLikeT<Request> = 0) {
+  ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0) {
     auto l1Reply = l1_->route(req);
     if (isHitResult(l1Reply.result())) {
       if (l1Reply.flags() & MC_MSG_FLAG_NEGATIVE_CACHE) {
@@ -112,8 +112,9 @@ class L1L2CacheRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, OtherThanT<Request, GetLike<>> = 0)
-      const {
+  ReplyT<Request> route(
+      const Request& req,
+      carbon::OtherThanT<Request, carbon::GetLike<>> = 0) const {
     return l1_->route(req);
   }
 

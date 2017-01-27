@@ -73,8 +73,9 @@ void BigValueRoute::traverse(
 }
 
 template <class Request>
-ReplyT<Request> BigValueRoute::route(const Request& req, GetLikeT<Request>)
-    const {
+ReplyT<Request> BigValueRoute::route(
+    const Request& req,
+    carbon::GetLikeT<Request>) const {
   auto initialReply = ch_->route(req);
   if (!isHitResult(initialReply.result()) ||
       !(initialReply.flags() & MC_MSG_FLAG_BIG_VALUE)) {
@@ -104,8 +105,9 @@ ReplyT<Request> BigValueRoute::route(const Request& req, GetLikeT<Request>)
 }
 
 template <class Request>
-ReplyT<Request> BigValueRoute::route(const Request& req, UpdateLikeT<Request>)
-    const {
+ReplyT<Request> BigValueRoute::route(
+    const Request& req,
+    carbon::UpdateLikeT<Request>) const {
   if (req.value().computeChainDataLength() <= options_.threshold_) {
     return ch_->route(req);
   }
@@ -137,7 +139,8 @@ ReplyT<Request> BigValueRoute::route(const Request& req, UpdateLikeT<Request>)
 template <class Request>
 ReplyT<Request> BigValueRoute::route(
     const Request& req,
-    OtherThanT<Request, GetLike<>, UpdateLike<>>) const {
+    carbon::OtherThanT<Request, carbon::GetLike<>, carbon::UpdateLike<>>)
+    const {
   return ch_->route(req);
 }
 

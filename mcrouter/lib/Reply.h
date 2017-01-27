@@ -30,7 +30,7 @@ enum BusyReplyT { BusyReply };
 
 template <class Request>
 ReplyT<Request>
-createReply(DefaultReplyT, const Request&, UpdateLikeT<Request> = 0) {
+createReply(DefaultReplyT, const Request&, carbon::UpdateLikeT<Request> = 0) {
   return ReplyT<Request>(mc_res_notstored);
 }
 
@@ -38,7 +38,7 @@ template <class Request>
 ReplyT<Request> createReply(
     DefaultReplyT,
     const Request&,
-    OtherThanT<Request, UpdateLike<>> = 0) {
+    carbon::OtherThanT<Request, carbon::UpdateLike<>> = 0) {
   return ReplyT<Request>(mc_res_notfound);
 }
 

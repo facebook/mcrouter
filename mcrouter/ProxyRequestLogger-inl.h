@@ -10,12 +10,9 @@
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyBase.h"
-#include "mcrouter/lib/McOperationTraits.h"
 #include "mcrouter/lib/McResUtil.h"
-#include "mcrouter/lib/OperationTraits.h"
 #include "mcrouter/lib/RequestLoggerContext.h"
 #include "mcrouter/lib/carbon/Stats.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/options.h"
 #include "mcrouter/stats.h"
 
