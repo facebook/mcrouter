@@ -109,7 +109,7 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
               typeid(Request).name(),
               e.what());
           ReplyT<Request> reply(mc_res_local_error);
-          reply.message() = std::move(err);
+          carbon::setMessageIfPresent(reply, std::move(err));
           return reply;
         }
       },
@@ -127,11 +127,13 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
     const Request&,
     std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> uctx) {
   ReplyT<Request> reply(mc_res_local_error);
-  reply.message() = folly::sformat(
-      "Couldn't route request of type {} "
-      "because the operation is not supported by RouteHandles "
-      "library!",
-      typeid(Request).name());
+  carbon::setMessageIfPresent(
+      reply,
+      folly::sformat(
+          "Couldn't route request of type {} "
+          "because the operation is not supported by RouteHandles "
+          "library!",
+          typeid(Request).name()));
   uctx->sendReply(std::move(reply));
 }
 

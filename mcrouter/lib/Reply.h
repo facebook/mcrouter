@@ -50,7 +50,7 @@ ReplyT<Request> createReply(ErrorReplyT) {
 template <class Request>
 ReplyT<Request> createReply(ErrorReplyT, std::string errorMessage) {
   ReplyT<Request> reply(mc_res_local_error);
-  reply.message() = std::move(errorMessage);
+  carbon::setMessageIfPresent(reply, std::move(errorMessage));
   return reply;
 }
 

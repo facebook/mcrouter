@@ -53,7 +53,7 @@ bool precheckKey(
   auto err = isKeyValid(key);
   if (err != mc_req_err_valid) {
     ReplyT<Request> reply(mc_res_local_error);
-    reply.message() = mc_req_err_to_string(err);
+    carbon::setMessageIfPresent(reply, mc_req_err_to_string(err));
     preq.sendReply(std::move(reply));
     return false;
   }
@@ -99,7 +99,7 @@ bool precheckRequest(
     const McFlushReRequest&) {
   // Return 'Not supported' message
   McFlushReReply reply(mc_res_local_error);
-  reply.message() = kCommandNotSupportedStr;
+  carbon::setMessageIfPresent(reply, kCommandNotSupportedStr);
   preq.sendReply(std::move(reply));
   return false;
 }
@@ -110,7 +110,7 @@ bool precheckRequest(
     const McFlushAllRequest&) {
   if (!preq.proxy().getRouterOptions().enable_flush_cmd) {
     McFlushAllReply reply(mc_res_local_error);
-    reply.message() = "Command disabled";
+    carbon::setMessageIfPresent(reply, "Command disabled");
     preq.sendReply(std::move(reply));
     return false;
   }

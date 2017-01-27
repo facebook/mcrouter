@@ -12,7 +12,6 @@ request HelloRequest {
 
 reply HelloReply {
   1: Result result;
-  2: string message;
 };
 
 request GoodbyeRequest {

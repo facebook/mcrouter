@@ -27,6 +27,26 @@ class McServerRequestContext;
 namespace carbon {
 
 namespace detail {
+
+template <typename T, typename = std::string&>
+struct HasMessage : std::false_type {};
+
+template <typename T>
+struct HasMessage<T, decltype(std::declval<T>().message())> : std::true_type {};
+
+} // detail
+
+template <typename Reply>
+typename std::enable_if<detail::HasMessage<Reply>::value>::type
+setMessageIfPresent(Reply& reply, std::string msg) {
+  reply.message() = std::move(msg);
+}
+
+template <typename Reply>
+typename std::enable_if<!detail::HasMessage<Reply>::value>::type
+setMessageIfPresent(Reply&, std::string) {}
+
+namespace detail {
 inline folly::IOBuf* bufPtr(folly::Optional<folly::IOBuf>& buf) {
   return buf.get_pointer();
 }
