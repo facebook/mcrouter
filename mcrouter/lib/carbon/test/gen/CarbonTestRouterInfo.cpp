@@ -28,6 +28,7 @@
 #include <mcrouter/lib/routes/NullRoute.h>
 #include <mcrouter/routes/AllAsyncRouteFactory.h>
 #include <mcrouter/routes/AllFastestRouteFactory.h>
+#include <mcrouter/routes/AllInitialRouteFactory.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
@@ -48,6 +49,7 @@ CarbonTestRouterInfo::buildRouteMap() {
   RouteHandleFactoryMap map{
       {"AllAsyncRoute", &makeAllAsyncRoute<CarbonTestRouterInfo>},
       {"AllFastestRoute", &makeAllFastestRoute<CarbonTestRouterInfo>},
+      {"AllInitialRoute", &makeAllInitialRoute<CarbonTestRouterInfo>},
       {"HashRoute",
        [](RouteHandleFactory<RouteHandleIf>& factory,
           const folly::dynamic& json) {
