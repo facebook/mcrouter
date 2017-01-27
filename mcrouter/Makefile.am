@@ -95,7 +95,7 @@ libmcroutercore_a_SOURCES = \
   route.cpp \
   route.h \
   routes/AllAsyncRouteFactory.h \
-  routes/AllFastestRoute.cpp \
+  routes/AllFastestRouteFactory.h \
   routes/AllInitialRoute.cpp \
   routes/AllMajorityRoute.cpp \
   routes/AllSyncRoute.cpp \
