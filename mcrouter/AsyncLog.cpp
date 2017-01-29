@@ -10,7 +10,6 @@
 #include "AsyncLog.h"
 
 #include <fcntl.h>
-#include <limits.h>
 #include <stdio.h>
 #include <sys/dir.h>
 #include <sys/stat.h>

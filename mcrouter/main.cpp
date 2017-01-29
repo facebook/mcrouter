@@ -29,7 +29,6 @@
 #include <folly/Format.h>
 #include <folly/Memory.h>
 #include <folly/Range.h>
-#include <folly/ScopeGuard.h>
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"

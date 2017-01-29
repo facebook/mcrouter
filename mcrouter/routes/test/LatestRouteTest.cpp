@@ -12,7 +12,6 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/Hash.h>
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/FailoverErrorsSettings.h"

@@ -11,7 +11,6 @@
 
 #include <string>
 
-#include <folly/Random.h>
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/fbi/cpp/util.h"

@@ -10,11 +10,9 @@
 #include <chrono>
 #include <thread>
 
-#include <glog/logging.h>
 #include <gtest/gtest.h>
 
 #include <folly/Optional.h>
-#include <folly/io/async/EventBase.h>
 #include <folly/io/async/EventBaseThread.h>
 
 #include "mcrouter/LeaseTokenMap.h"
