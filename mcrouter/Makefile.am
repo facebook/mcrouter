@@ -109,7 +109,7 @@ libmcroutercore_a_SOURCES = \
   routes/DestinationRoute.h \
   routes/DevNullRoute.cpp \
   routes/DevNullRoute.h \
-  routes/ErrorRoute.cpp \
+  routes/ErrorRouteFactory.h \
   routes/ExtraRouteHandleProviderIf.h \
   routes/FailoverPolicy.h \
   routes/FailoverRateLimiter.cpp \
