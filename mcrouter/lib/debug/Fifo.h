@@ -66,6 +66,11 @@ class Fifo {
   bool write(void* buf, size_t len) noexcept;
 
  private:
+  /**
+   * Creates a fifo on the given path.
+   *
+   * @throw std::invalid_argument  If path is empty.
+   */
   explicit Fifo(std::string path);
 
   // Path of the fifo

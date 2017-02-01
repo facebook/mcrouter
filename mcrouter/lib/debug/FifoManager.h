@@ -39,7 +39,8 @@ class FifoManager {
    * basePath/threadId pair.
    *
    * @param fifoBasePath  Base path of the fifo.
-   * @return              The "thread_local" fifo.
+   * @return              The "thread_local" fifo, or nullptr if fifoBasePath
+   *                      is empty.
    */
   std::shared_ptr<Fifo> fetchThreadLocal(const std::string& fifoBasePath);
 

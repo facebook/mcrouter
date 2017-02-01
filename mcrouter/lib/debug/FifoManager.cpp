@@ -77,7 +77,10 @@ std::shared_ptr<Fifo> FifoManager::fetch(const std::string& fifoPath) {
 
 std::shared_ptr<Fifo> FifoManager::fetchThreadLocal(
     const std::string& fifoBasePath) {
-  CHECK(!fifoBasePath.empty()) << "Fifo base path must not be empty";
+  if (UNLIKELY(fifoBasePath.empty())) {
+    LOG(ERROR) << "Cannot create a debug fifo with empty path.";
+    return nullptr;
+  }
 
   return fetch(folly::sformat("{0}.{1}", fifoBasePath, gettid()));
 }

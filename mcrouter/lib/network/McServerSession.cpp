@@ -29,8 +29,9 @@ ConnectionFifo getDebugFifo(
     const folly::AsyncTransportWrapper* transport) {
   if (!path.empty()) {
     if (auto fifoManager = FifoManager::getInstance()) {
-      auto fifo = fifoManager->fetchThreadLocal(path);
-      return ConnectionFifo(std::move(fifo), transport);
+      if (auto fifo = fifoManager->fetchThreadLocal(path)) {
+        return ConnectionFifo(std::move(fifo), transport);
+      }
     }
   }
   return ConnectionFifo();

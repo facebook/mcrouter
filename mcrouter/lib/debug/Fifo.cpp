@@ -53,7 +53,9 @@ bool isFifo(const char* fifoPath) {
 } // anonymous namespace
 
 Fifo::Fifo(std::string path) : path_(std::move(path)) {
-  CHECK(!path_.empty()) << "Fifo path cannot be empty";
+  if (UNLIKELY(path_.empty())) {
+    throw std::invalid_argument("Fifo path cannot be empty");
+  }
   auto dir = boost::filesystem::path(path_).parent_path().string();
   ensureDirExistsAndWritable(dir);
 }
