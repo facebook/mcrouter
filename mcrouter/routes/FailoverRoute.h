@@ -150,6 +150,12 @@ class FailoverRoute {
   }
 
  private:
+  enum class FailoverType {
+    NONE,
+    NORMAL,
+    CONDITIONAL,
+  };
+
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const FailoverErrorsSettings failoverErrors_;
   std::unique_ptr<FailoverRateLimiter> rateLimiter_;
@@ -165,17 +171,33 @@ class FailoverRoute {
 
   template <class Request>
   ReplyT<Request> doRoute(const Request& req, size_t& childIndex) {
+    auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
+
+    bool conditionalFailover = false;
+    SCOPE_EXIT {
+      if (conditionalFailover) {
+        proxy.stats().increment(failover_conditional_stat);
+      }
+    };
+
     auto normalReply = targets_[0]->route(req);
     childIndex = 0;
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
     }
-    if (fiber_local<RouterInfo>::getSharedCtx()->failoverDisabled() ||
-        !shouldFailover(normalReply, req)) {
+    if (fiber_local<RouterInfo>::getSharedCtx()->failoverDisabled()) {
       return normalReply;
     }
+    switch (shouldFailover(normalReply, req)) {
+      case FailoverType::NONE:
+        return normalReply;
+      case FailoverType::CONDITIONAL:
+        conditionalFailover = true;
+        break;
+      default:
+        break;
+    }
 
-    auto& proxy = fiber_local<RouterInfo>::getSharedCtx()->proxy();
     proxy.stats().increment(failover_all_stat);
 
     if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
@@ -185,7 +207,12 @@ class FailoverRoute {
 
     // Failover
     return fiber_local<RouterInfo>::runWithLocals(
-        [this, &req, &proxy, &normalReply, &childIndex]() {
+        [this,
+         &req,
+         &proxy,
+         &normalReply,
+         &childIndex,
+         &conditionalFailover]() {
           fiber_local<RouterInfo>::setFailoverTag(
               failoverTagging_ && req.key().hasHashStop());
           fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
@@ -210,8 +237,14 @@ class FailoverRoute {
           auto nx = cur;
           for (++nx; nx != failoverPolicy_.end(); ++cur, ++nx) {
             auto failoverReply = doFailover(cur);
-            if (!shouldFailover(failoverReply, req)) {
-              return failoverReply;
+            switch (shouldFailover(failoverReply, req)) {
+              case FailoverType::NONE:
+                return failoverReply;
+              case FailoverType::CONDITIONAL:
+                conditionalFailover = true;
+                break;
+              default:
+                break;
             }
           }
 
@@ -224,15 +257,24 @@ class FailoverRoute {
         });
   }
 
-  bool shouldFailover(const McSetReply& reply, const McSetRequest& req) const {
-    return failoverErrors_.shouldFailover(reply, req) ||
-        additionalFailoverCheck(
-               reply.result(), req.key().fullKey(), req.value());
+  // TODO t15812771 update this to work with all UpdateLike requests
+  FailoverType shouldFailover(const McSetReply& reply, const McSetRequest& req)
+      const {
+    if (failoverErrors_.shouldFailover(reply, req)) {
+      return FailoverType::NORMAL;
+    }
+    if (additionalFailoverCheck(
+            reply.result(), req.key().fullKey(), req.value())) {
+      return FailoverType::CONDITIONAL;
+    }
+    return FailoverType::NONE;
   }
 
   template <class Request>
-  bool shouldFailover(const ReplyT<Request>& reply, const Request& req) const {
-    return failoverErrors_.shouldFailover(reply, req);
+  FailoverType shouldFailover(const ReplyT<Request>& reply, const Request& req)
+      const {
+    return failoverErrors_.shouldFailover(reply, req) ? FailoverType::NORMAL
+                                                      : FailoverType::NONE;
   }
 };
 

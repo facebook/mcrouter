@@ -131,6 +131,7 @@ STUIR(request_success, 0, 1)
 STUIR(request_replied, 0, 1)
 STUIR(client_queue_notifications, 0, 1)
 STUIR(failover_all, 0, 1)
+STUIR(failover_conditional, 0, 1)
 STUIR(failover_all_failed, 0, 1)
 STUIR(failover_rate_limited, 0, 1)
 #undef GROUP
