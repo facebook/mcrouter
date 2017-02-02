@@ -53,6 +53,8 @@ struct HelloGoodbyeRouterInfo {
   using RouteHandleIf = HelloGoodbyeRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
 
+  static constexpr const char* name = "HelloGoodbye";
+
   template <class Route>
   using RouteHandle = HelloGoodbyeRouteHandle<Route>;
   using RoutableRequests = detail::HelloGoodbyeRoutableRequests;

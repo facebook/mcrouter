@@ -58,6 +58,8 @@ struct CarbonTestRouterInfo {
   using RouteHandleIf = CarbonTestRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
 
+  static constexpr const char* name = "CarbonTest";
+
   template <class Route>
   using RouteHandle = CarbonTestRouteHandle<Route>;
   using RoutableRequests = detail::CarbonTestRoutableRequests;

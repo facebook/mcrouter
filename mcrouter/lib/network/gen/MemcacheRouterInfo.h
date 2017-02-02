@@ -75,6 +75,8 @@ struct MemcacheRouterInfo {
   using RouteHandleIf = MemcacheRouteHandleIf;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
 
+  static constexpr const char* name = "Memcache";
+
   template <class Route>
   using RouteHandle = MemcacheRouteHandle<Route>;
   using RoutableRequests = detail::MemcacheRoutableRequests;
