@@ -17,7 +17,6 @@
 
 #include <unordered_map>
 
-#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/dynamic.h>
 
@@ -73,7 +72,7 @@ CarbonTestRouterInfo::buildRouteMap() {
 /* static */
 std::unique_ptr<ExtraRouteHandleProviderIf<CarbonTestRouterInfo>>
 CarbonTestRouterInfo::buildExtraProvider() {
-  return folly::make_unique<McExtraRouteHandleProvider<CarbonTestRouterInfo>>();
+  return std::make_unique<McExtraRouteHandleProvider<CarbonTestRouterInfo>>();
 }
 
 } // test
