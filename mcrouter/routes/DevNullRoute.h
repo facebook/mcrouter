@@ -15,6 +15,9 @@
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/routes/DevNullRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
@@ -47,6 +50,21 @@ class DevNullRoute {
   }
 };
 
+namespace detail {
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeDevNullRoute() {
+  return makeRouteHandleWithInfo<RouterInfo, DevNullRoute>();
+}
+
+} // detail
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeDevNullRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>&,
+    const folly::dynamic&) {
+  return detail::makeDevNullRoute<RouterInfo>();
+}
 } // mcrouter
 } // memcache
 } // facebook

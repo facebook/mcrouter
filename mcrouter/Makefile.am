@@ -107,7 +107,6 @@ libmcroutercore_a_SOURCES = \
   routes/BigValueRouteIf.h \
   routes/DefaultShadowPolicy.h \
   routes/DestinationRoute.h \
-  routes/DevNullRoute.cpp \
   routes/DevNullRoute.h \
   routes/ErrorRouteFactory.h \
   routes/ExtraRouteHandleProviderIf.h \
