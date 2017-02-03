@@ -340,6 +340,9 @@ void checkWhetherQoSIsApplied(
   uint64_t val = 0;
   socklen_t len = sizeof(expectedValue);
   int rv = getsockopt(socketFd, optkey.level, optkey.optname, &val, &len);
+  // Zero out last 2 bits as they are not used for the QOS value
+  constexpr uint64_t kMaskTwoLeastSignificantBits = 0xFFFFFFFc;
+  val = val & kMaskTwoLeastSignificantBits;
   if (rv != 0 || val != expectedValue) {
     LOG_FAILURE(
         "AsyncMcClient",
