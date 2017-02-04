@@ -37,6 +37,7 @@
 #include <mcrouter/routes/HostIdRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
+#include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
 
@@ -66,6 +67,7 @@ MemcacheRouterInfo::buildRouteMap() {
       {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},
+      {"MigrateRoute", &makeMigrateRoute<MemcacheRouterInfo>},
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<MemcacheRouterInfo>},

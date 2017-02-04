@@ -7,24 +7,31 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#pragma once
+
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/MigrateRoute.h"
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/TimeProviderFunc.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-McrouterRouteHandlePtr makeMigrateRoute(
-    McrouterRouteHandlePtr fh,
-    McrouterRouteHandlePtr th,
+namespace detail {
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeMigrateRoute(
+    typename RouterInfo::RouteHandlePtr fh,
+    typename RouterInfo::RouteHandlePtr th,
     time_t start_time_sec,
     time_t interval_sec) {
-  return makeMcrouterRouteHandle<MigrateRoute, TimeProviderFunc>(
+  return makeRouteHandle<
+      typename RouterInfo::RouteHandleIf,
+      MigrateRoute,
+      TimeProviderFunc>(
       std::move(fh),
       std::move(th),
       start_time_sec,
@@ -32,8 +39,11 @@ McrouterRouteHandlePtr makeMigrateRoute(
       TimeProviderFunc());
 }
 
-McrouterRouteHandlePtr makeMigrateRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+} // detail
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeMigrateRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "MigrateRoute should be object");
   checkLogic(
@@ -49,12 +59,12 @@ McrouterRouteHandlePtr makeMigrateRoute(
     intervalSec = jinterval->asInt();
   }
 
-  return makeMigrateRoute(
+  return detail::makeMigrateRoute<RouterInfo>(
       factory.create(json["from"]),
       factory.create(json["to"]),
       startTimeSec,
       intervalSec);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook
