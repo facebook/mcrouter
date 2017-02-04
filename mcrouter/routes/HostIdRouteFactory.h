@@ -7,24 +7,28 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#pragma once
+
 #include <folly/Hash.h>
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/globals.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
+#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-McrouterRouteHandlePtr makeNullRoute();
+namespace detail {
 
-McrouterRouteHandlePtr makeHostIdRoute(
-    std::vector<McrouterRouteHandlePtr> rh,
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeHostIdRoute(
+    std::vector<typename RouterInfo::RouteHandlePtr> rh,
     folly::StringPiece salt) {
   if (rh.empty()) {
-    return makeNullRoute();
+    return createNullRoute<typename RouterInfo::RouteHandleIf>();
   }
   size_t hostIdHash = globals::hostid();
   if (!salt.empty()) {
@@ -33,10 +37,13 @@ McrouterRouteHandlePtr makeHostIdRoute(
   return std::move(rh[hostIdHash % rh.size()]);
 }
 
-McrouterRouteHandlePtr makeHostIdRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+} // detail
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeHostIdRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
-  std::vector<McrouterRouteHandlePtr> children;
+  std::vector<typename RouterInfo::RouteHandlePtr> children;
   folly::StringPiece salt;
   if (json.isObject()) {
     if (auto jchildren = json.get_ptr("children")) {
@@ -50,7 +57,7 @@ McrouterRouteHandlePtr makeHostIdRoute(
     children = factory.createList(json);
   }
 
-  return makeHostIdRoute(std::move(children), salt);
+  return detail::makeHostIdRoute<RouterInfo>(std::move(children), salt);
 }
 }
 }

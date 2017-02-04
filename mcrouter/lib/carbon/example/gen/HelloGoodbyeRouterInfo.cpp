@@ -34,6 +34,7 @@
 #include <mcrouter/routes/ErrorRouteFactory.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
+#include <mcrouter/routes/HostIdRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
@@ -61,6 +62,7 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
           const folly::dynamic& json) {
          return makeHashRoute<HelloGoodbyeRouterInfo>(factory, json);
        }},
+      {"HostIdRoute", &makeHostIdRoute<HelloGoodbyeRouterInfo>},
       {"LatestRoute", &makeLatestRoute<HelloGoodbyeRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<HelloGoodbyeRouterInfo>},
       {"NullRoute", &makeNullRoute<HelloGoodbyeRouteHandleIf>},

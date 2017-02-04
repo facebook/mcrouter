@@ -20,6 +20,7 @@
 #include "mcrouter/routes/ErrorRouteFactory.h"
 #include "mcrouter/routes/FailoverRoute.h"
 #include "mcrouter/routes/HashRouteFactory.h"
+#include "mcrouter/routes/HostIdRouteFactory.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
 #include "mcrouter/routes/OperationSelectorRoute.h"
@@ -32,9 +33,6 @@ namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 
-McrouterRouteHandlePtr makeHostIdRoute(
-    McRouteHandleFactory& factory,
-    const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     McRouteHandleFactory& factory,
@@ -117,7 +115,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
        [](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makeHashRoute<McrouterRouterInfo>(factory, json);
        }},
-      {"HostIdRoute", &makeHostIdRoute},
+      {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
       {"L1L2CacheRoute", &makeL1L2CacheRoute},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},

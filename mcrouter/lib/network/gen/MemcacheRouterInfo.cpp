@@ -34,6 +34,7 @@
 #include <mcrouter/routes/ErrorRouteFactory.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
+#include <mcrouter/routes/HostIdRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
@@ -62,6 +63,7 @@ MemcacheRouterInfo::buildRouteMap() {
           const folly::dynamic& json) {
          return makeHashRoute<MemcacheRouterInfo>(factory, json);
        }},
+      {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},

@@ -34,6 +34,7 @@
 #include <mcrouter/routes/ErrorRouteFactory.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
+#include <mcrouter/routes/HostIdRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
@@ -62,6 +63,7 @@ CarbonTestRouterInfo::buildRouteMap() {
           const folly::dynamic& json) {
          return makeHashRoute<CarbonTestRouterInfo>(factory, json);
        }},
+      {"HostIdRoute", &makeHostIdRoute<CarbonTestRouterInfo>},
       {"LatestRoute", &makeLatestRoute<CarbonTestRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<CarbonTestRouterInfo>},
       {"NullRoute", &makeNullRoute<CarbonTestRouteHandleIf>},
