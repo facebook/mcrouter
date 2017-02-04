@@ -7,25 +7,29 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#pragma once
+
 #include <folly/dynamic.h>
 
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/routes/L1L2CacheRoute.h"
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-McrouterRouteHandlePtr makeL1L2CacheRoute(
-    McrouterRouteHandlePtr l1,
-    McrouterRouteHandlePtr l2,
+namespace detail {
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeL1L2CacheRoute(
+    typename RouterInfo::RouteHandlePtr l1,
+    typename RouterInfo::RouteHandlePtr l2,
     uint32_t upgradingL1Exptime,
     size_t ncacheExptime,
     size_t ncacheUpdatePeriod) {
-  return makeMcrouterRouteHandle<L1L2CacheRoute>(
+  return makeRouteHandle<typename RouterInfo::RouteHandleIf, L1L2CacheRoute>(
       std::move(l1),
       std::move(l2),
       upgradingL1Exptime,
@@ -33,8 +37,11 @@ McrouterRouteHandlePtr makeL1L2CacheRoute(
       ncacheUpdatePeriod);
 }
 
-McrouterRouteHandlePtr makeL1L2CacheRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+} // detail
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeL1L2CacheRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "L1L2CacheRoute should be an object");
   checkLogic(json.count("l1"), "L1L2CacheRoute: no l1 route");
@@ -63,13 +70,13 @@ McrouterRouteHandlePtr makeL1L2CacheRoute(
     ncacheUpdatePeriod = json["ncacheUpdatePeriod"].getInt();
   }
 
-  return makeL1L2CacheRoute(
+  return detail::makeL1L2CacheRoute<RouterInfo>(
       factory.create(json["l1"]),
       factory.create(json["l2"]),
       upgradingL1Exptime,
       ncacheExptime,
       ncacheUpdatePeriod);
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook
