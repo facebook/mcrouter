@@ -40,6 +40,7 @@
 #include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
+#include <mcrouter/routes/RandomRouteFactory.h>
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
@@ -70,6 +71,7 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
       {"NullRoute", &makeNullRoute<HelloGoodbyeRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<HelloGoodbyeRouterInfo>},
+      {"RandomRoute", &makeRandomRoute<HelloGoodbyeRouterInfo>},
   };
   return map;
 }

@@ -40,6 +40,7 @@
 #include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
+#include <mcrouter/routes/RandomRouteFactory.h>
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
@@ -71,6 +72,7 @@ CarbonTestRouterInfo::buildRouteMap() {
       {"NullRoute", &makeNullRoute<CarbonTestRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<CarbonTestRouterInfo>},
+      {"RandomRoute", &makeRandomRoute<CarbonTestRouterInfo>},
   };
   return map;
 }

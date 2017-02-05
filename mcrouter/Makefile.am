@@ -143,7 +143,7 @@ libmcroutercore_a_SOURCES = \
   routes/PrefixSelectorRoute.h \
   routes/ProxyRoute-inl.h \
   routes/ProxyRoute.h \
-  routes/RandomRoute.cpp \
+  routes/RandomRouteFactory.h \
   routes/RateLimiter.cpp \
   routes/RateLimiter.h \
   routes/RateLimitRoute.h \

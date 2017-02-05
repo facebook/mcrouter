@@ -40,6 +40,7 @@
 #include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
+#include <mcrouter/routes/RandomRouteFactory.h>
 
 #include <mcrouter/routes/McExtraRouteHandleProvider.h>
 
@@ -71,6 +72,7 @@ MemcacheRouterInfo::buildRouteMap() {
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<MemcacheRouterInfo>},
+      {"RandomRoute", &makeRandomRoute<MemcacheRouterInfo>},
   };
   return map;
 }

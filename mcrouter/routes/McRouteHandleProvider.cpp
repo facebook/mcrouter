@@ -27,6 +27,7 @@
 #include "mcrouter/routes/MigrateRouteFactory.h"
 #include "mcrouter/routes/OperationSelectorRoute.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
+#include "mcrouter/routes/RandomRouteFactory.h"
 #include "mcrouter/routes/ShadowRoute.h"
 
 namespace facebook {
@@ -49,10 +50,6 @@ McrouterRouteHandlePtr makeModifyExptimeRoute(
     const folly::dynamic& json);
 
 McrouterRouteHandlePtr makeModifyKeyRoute(
-    McRouteHandleFactory& factory,
-    const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeRandomRoute(
     McRouteHandleFactory& factory,
     const folly::dynamic& json);
 
@@ -125,7 +122,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
          return makePoolRoute(factory, json);
        }},
       {"PrefixPolicyRoute", &makeOperationSelectorRoute<MemcacheRouterInfo>},
-      {"RandomRoute", &makeRandomRoute},
+      {"RandomRoute", &makeRandomRoute<MemcacheRouterInfo>},
       {"RateLimitRoute",
        [](McRouteHandleFactory& factory, const folly::dynamic& json) {
          return makeRateLimitRoute(factory, json);
