@@ -13,11 +13,16 @@
 #include <string>
 #include <vector>
 
+#include <folly/dynamic.h>
+
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook {
 namespace memcache {
@@ -95,6 +100,40 @@ class MissFailoverRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
 };
+
+namespace detail {
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeMissFailoverRoute(
+    std::vector<typename RouterInfo::RouteHandlePtr> targets) {
+  if (targets.empty()) {
+    return createNullRoute<typename RouterInfo::RouteHandleIf>();
+  }
+
+  if (targets.size() == 1) {
+    return std::move(targets[0]);
+  }
+
+  return makeRouteHandleWithInfo<RouterInfo, MissFailoverRoute>(
+      std::move(targets));
 }
+
+} // detail
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeMissFailoverRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  std::vector<typename RouterInfo::RouteHandlePtr> children;
+  if (json.isObject()) {
+    if (auto jchildren = json.get_ptr("children")) {
+      children = factory.createList(*jchildren);
+    }
+  } else {
+    children = factory.createList(json);
+  }
+  return detail::makeMissFailoverRoute<RouterInfo>(std::move(children));
 }
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

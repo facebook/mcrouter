@@ -25,6 +25,7 @@
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
 #include "mcrouter/routes/MigrateRouteFactory.h"
+#include "mcrouter/routes/MissFailoverRoute.h"
 #include "mcrouter/routes/OperationSelectorRoute.h"
 #include "mcrouter/routes/OutstandingLimitRoute.h"
 #include "mcrouter/routes/RandomRouteFactory.h"
@@ -38,10 +39,6 @@ using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 
 
 McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-    McRouteHandleFactory& factory,
-    const folly::dynamic& json);
-
-McrouterRouteHandlePtr makeMissFailoverRoute(
     McRouteHandleFactory& factory,
     const folly::dynamic& json);
 
@@ -111,7 +108,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},
       {"MigrateRoute", &makeMigrateRoute<MemcacheRouterInfo>},
-      {"MissFailoverRoute", &makeMissFailoverRoute},
+      {"MissFailoverRoute", &makeMissFailoverRoute<MemcacheRouterInfo>},
       {"ModifyExptimeRoute", &makeModifyExptimeRoute},
       {"ModifyKeyRoute", &makeModifyKeyRoute},
       {"NullRoute", &makeNullRoute<MemcacheRouteHandleIf>},

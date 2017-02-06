@@ -38,6 +38,7 @@
 #include <mcrouter/routes/LatestRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/MigrateRouteFactory.h>
+#include <mcrouter/routes/MissFailoverRoute.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
 #include <mcrouter/routes/RandomRouteFactory.h>
@@ -69,6 +70,7 @@ CarbonTestRouterInfo::buildRouteMap() {
       {"LatestRoute", &makeLatestRoute<CarbonTestRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<CarbonTestRouterInfo>},
       {"MigrateRoute", &makeMigrateRoute<CarbonTestRouterInfo>},
+      {"MissFailoverRoute", &makeMissFailoverRoute<CarbonTestRouterInfo>},
       {"NullRoute", &makeNullRoute<CarbonTestRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<CarbonTestRouterInfo>},
