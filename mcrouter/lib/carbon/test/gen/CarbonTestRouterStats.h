@@ -27,22 +27,22 @@ struct CarbonTestRouterStatsConfig {
   static constexpr size_t kNumRequestGroups = 4;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
       sumStatNames{{folly::StringPiece("cmd_AnotherRequest_count"),
-                    folly::StringPiece("cmd_TestRequest_count"),
-                    folly::StringPiece("cmd_TestRequestStringKey_count"),
-                    folly::StringPiece("cmd_YetAnotherRequest_count")}};
+                    folly::StringPiece("cmd_test_count"),
+                    folly::StringPiece("cmd_testStringKey_count"),
+                    folly::StringPiece("cmd_yet_another_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
       rateStatNames{{folly::StringPiece("cmd_AnotherRequest"),
-                     folly::StringPiece("cmd_TestRequest"),
-                     folly::StringPiece("cmd_TestRequestStringKey"),
-                     folly::StringPiece("cmd_YetAnotherRequest"),
+                     folly::StringPiece("cmd_test"),
+                     folly::StringPiece("cmd_testStringKey"),
+                     folly::StringPiece("cmd_yet_another"),
                      folly::StringPiece("cmd_AnotherRequest_out"),
-                     folly::StringPiece("cmd_TestRequest_out"),
-                     folly::StringPiece("cmd_TestRequestStringKey_out"),
-                     folly::StringPiece("cmd_YetAnotherRequest_out"),
+                     folly::StringPiece("cmd_test_out"),
+                     folly::StringPiece("cmd_testStringKey_out"),
+                     folly::StringPiece("cmd_yet_another_out"),
                      folly::StringPiece("cmd_AnotherRequest_out_all"),
-                     folly::StringPiece("cmd_TestRequest_out_all"),
-                     folly::StringPiece("cmd_TestRequestStringKey_out_all"),
-                     folly::StringPiece("cmd_YetAnotherRequest_out_all")}};
+                     folly::StringPiece("cmd_test_out_all"),
+                     folly::StringPiece("cmd_testStringKey_out_all"),
+                     folly::StringPiece("cmd_yet_another_out_all")}};
 
   template <class Request>
   static constexpr size_t getStatGroup();
@@ -57,19 +57,19 @@ CarbonTestRouterStatsConfig::getStatGroup<AnotherRequest>() {
 template <>
 inline constexpr size_t
 CarbonTestRouterStatsConfig::getStatGroup<TestRequest>() {
-  return 1; // stat group 'TestRequest'
+  return 1; // stat group 'test'
 }
 
 template <>
 inline constexpr size_t
 CarbonTestRouterStatsConfig::getStatGroup<TestRequestStringKey>() {
-  return 2; // stat group 'TestRequestStringKey'
+  return 2; // stat group 'testStringKey'
 }
 
 template <>
 inline constexpr size_t
 CarbonTestRouterStatsConfig::getStatGroup<test2::util::YetAnotherRequest>() {
-  return 3; // stat group 'YetAnotherRequest'
+  return 3; // stat group 'yet_another'
 }
 
 } // test

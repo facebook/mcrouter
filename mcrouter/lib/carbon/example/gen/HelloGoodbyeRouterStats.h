@@ -25,15 +25,15 @@ namespace hellogoodbye {
 struct HelloGoodbyeRouterStatsConfig {
   static constexpr size_t kNumRequestGroups = 2;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
-      sumStatNames{{folly::StringPiece("cmd_GoodbyeRequest_count"),
-                    folly::StringPiece("cmd_HelloRequest_count")}};
+      sumStatNames{{folly::StringPiece("cmd_goodbye_count"),
+                    folly::StringPiece("cmd_hello_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
-      rateStatNames{{folly::StringPiece("cmd_GoodbyeRequest"),
-                     folly::StringPiece("cmd_HelloRequest"),
-                     folly::StringPiece("cmd_GoodbyeRequest_out"),
-                     folly::StringPiece("cmd_HelloRequest_out"),
-                     folly::StringPiece("cmd_GoodbyeRequest_out_all"),
-                     folly::StringPiece("cmd_HelloRequest_out_all")}};
+      rateStatNames{{folly::StringPiece("cmd_goodbye"),
+                     folly::StringPiece("cmd_hello"),
+                     folly::StringPiece("cmd_goodbye_out"),
+                     folly::StringPiece("cmd_hello_out"),
+                     folly::StringPiece("cmd_goodbye_out_all"),
+                     folly::StringPiece("cmd_hello_out_all")}};
 
   template <class Request>
   static constexpr size_t getStatGroup();
@@ -42,13 +42,13 @@ struct HelloGoodbyeRouterStatsConfig {
 template <>
 inline constexpr size_t
 HelloGoodbyeRouterStatsConfig::getStatGroup<GoodbyeRequest>() {
-  return 0; // stat group 'GoodbyeRequest'
+  return 0; // stat group 'goodbye'
 }
 
 template <>
 inline constexpr size_t
 HelloGoodbyeRouterStatsConfig::getStatGroup<HelloRequest>() {
-  return 1; // stat group 'HelloRequest'
+  return 1; // stat group 'hello'
 }
 
 } // hellogoodbye
