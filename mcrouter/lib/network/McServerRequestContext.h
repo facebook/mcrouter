@@ -17,8 +17,8 @@
 
 #include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {

@@ -13,8 +13,8 @@
 #include <folly/Range.h>
 
 #include "mcrouter/lib/McOperation.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheRoutingGroups.h"
 
 namespace facebook {
 namespace memcache {

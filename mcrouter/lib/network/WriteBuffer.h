@@ -13,10 +13,10 @@
 
 #include <folly/io/IOBuf.h>
 
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/AsciiSerialized.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/CaretSerializedMessage.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"

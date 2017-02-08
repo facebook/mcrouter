@@ -12,7 +12,7 @@
 #include <folly/Optional.h>
 #include <folly/TokenBucket.h>
 
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 
 namespace folly {
 struct dynamic;

@@ -13,8 +13,8 @@
 #include <utility>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
 namespace facebook {

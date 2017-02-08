@@ -19,7 +19,7 @@
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/config.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/routes/RouteHandleMap.h"
 
 namespace facebook {

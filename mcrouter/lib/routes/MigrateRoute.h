@@ -21,9 +21,9 @@
 #include "mcrouter/lib/McResUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
 
 namespace facebook {
 namespace memcache {

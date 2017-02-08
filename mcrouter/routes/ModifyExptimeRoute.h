@@ -15,10 +15,11 @@
 #include <vector>
 
 #include <folly/Conv.h>
+#include <folly/Format.h>
 
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/lib/network/CarbonMessageTraits.h"
+#include "mcrouter/lib/carbon/RoutingGroups.h"
 
 namespace facebook {
 namespace memcache {

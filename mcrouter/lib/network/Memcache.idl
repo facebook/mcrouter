@@ -307,4 +307,28 @@ service {
     # Remaining requests grouped into 'other' group
     other: *
   };
+  routing_groups: {
+    get: [
+      McGetRequest,
+      McGetsRequest,
+      McMetagetRequest,
+      McLeaseGetRequest
+    ],
+    update: [ 
+      McSetRequest,
+      McAddRequest,
+      McReplaceRequest,
+      McLeaseSetRequest,
+      McAppendRequest,
+      McPrependRequest,
+      McCasRequest
+    ],
+    delete: [
+      McDeleteRequest
+    ],
+    arithmetic: [
+      McIncrRequest,
+      McDecrRequest
+    ]
+  };
 };
