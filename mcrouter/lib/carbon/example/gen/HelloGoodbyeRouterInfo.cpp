@@ -39,6 +39,7 @@
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/MissFailoverRoute.h>
+#include <mcrouter/routes/ModifyKeyRoute.h>
 #include <mcrouter/routes/OperationSelectorRoute.h>
 #include <mcrouter/routes/OutstandingLimitRoute.h>
 #include <mcrouter/routes/RandomRouteFactory.h>
@@ -70,6 +71,7 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
       {"LoggingRoute", &makeLoggingRoute<HelloGoodbyeRouterInfo>},
       {"MigrateRoute", &makeMigrateRoute<HelloGoodbyeRouterInfo>},
       {"MissFailoverRoute", &makeMissFailoverRoute<HelloGoodbyeRouterInfo>},
+      {"ModifyKeyRoute", &makeModifyKeyRoute<HelloGoodbyeRouterInfo>},
       {"NullRoute", &makeNullRoute<HelloGoodbyeRouteHandleIf>},
       {"OperationSelectorRoute",
        &makeOperationSelectorRoute<HelloGoodbyeRouterInfo>},

@@ -16,11 +16,16 @@
 
 #include <folly/Conv.h>
 #include <folly/Optional.h>
+#include <folly/dynamic.h>
 
+#include "mcrouter/RoutingPrefix.h"
 #include "mcrouter/lib/McKey.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
+#include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
@@ -130,6 +135,66 @@ class ModifyKeyRoute {
     return target_->route(cloneReq);
   }
 };
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeModifyKeyRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json) {
+  auto jtarget = json.get_ptr("target");
+  checkLogic(jtarget, "ModifyKeyRoute: no target");
+
+  folly::Optional<std::string> routingPrefix;
+  if (auto jroutingPrefix = json.get_ptr("set_routing_prefix")) {
+    auto rp = jroutingPrefix->stringPiece();
+    if (rp.empty()) {
+      routingPrefix = "";
+    } else {
+      try {
+        routingPrefix = RoutingPrefix(rp).str();
+      } catch (const std::exception& e) {
+        throw std::logic_error(
+            "ModifyKeyRoute: set_routing_prefix: " + std::string(e.what()));
+      }
+    }
+  }
+  std::string keyPrefix;
+  if (auto jkeyPrefix = json.get_ptr("ensure_key_prefix")) {
+    keyPrefix = jkeyPrefix->getString();
+    auto err = isKeyValid(keyPrefix);
+    checkLogic(
+        keyPrefix.empty() || err == mc_req_err_valid,
+        "ModifyKeyRoute: invalid key prefix '{}', {}",
+        keyPrefix,
+        mc_req_err_to_string(err));
+  }
+
+  folly::Optional<std::string> keyReplace;
+  if (auto jkeyReplace = json.get_ptr("replace_key_prefix")) {
+    keyReplace = jkeyReplace->getString();
+    auto err = isKeyValid(keyReplace.value());
+    checkLogic(
+        keyReplace.value().empty() || err == mc_req_err_valid,
+        "ModifyKeyRoute: invalid key prefix '{}', {}",
+        keyReplace.value(),
+        mc_req_err_to_string(err));
+  }
+
+  bool modifyInplace = false;
+  if (auto joverwrite = json.get_ptr("modify_inplace")) {
+    checkLogic(
+        !keyReplace.hasValue(),
+        "replace_key_prefix and modify_inplace cannot be used together");
+    checkLogic(
+        joverwrite->isBool(), "ModifyKeyRoute: modify_inplace is not a bool");
+    modifyInplace = joverwrite->asBool();
+  }
+  return makeRouteHandle<typename RouterInfo::RouteHandleIf, ModifyKeyRoute>(
+      factory.create(*jtarget),
+      std::move(routingPrefix),
+      std::move(keyPrefix),
+      modifyInplace,
+      std::move(keyReplace));
 }
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook
