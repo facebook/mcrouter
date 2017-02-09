@@ -28,4 +28,7 @@ reply GoodbyeReply {
 };
 
 service {
+  additional_route_handles: [
+    DuplicateRoute @ "mcrouter/lib/carbon/example/DuplicateRoute.h"
+  ];
 };

@@ -146,7 +146,11 @@ void testRouter() {
         "protocol": "caret"
       }
     },
-    "route": "PoolRoute|A"
+    "route": {
+      "type": "DuplicateRoute",
+      "target": "PoolRoute|A",
+      "copies": 5
+    }
   }
   )";
 
