@@ -74,10 +74,15 @@ struct MockableClock {
   using duration_type = typename MockableClockBase<DurationT>::duration_type;
   using singleton_type = folly::Singleton<MockableClockBase<DurationT>, Tag>;
   static duration_type time_since_epoch() {
-    return singleton_type::try_get()->time_since_epoch();
+    auto obj = singleton_type::try_get();
+    return obj ? obj->time_since_epoch()
+               : MockableSteadyClock<duration_type>().time_since_epoch();
   }
   static void sleep_for(const duration_type& sleep_duration) {
-    singleton_type::try_get()->sleep_for(sleep_duration);
+    auto obj = singleton_type::try_get();
+    if (obj) {
+      obj->sleep_for(sleep_duration);
+    }
   }
 };
 }
