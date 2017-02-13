@@ -53,6 +53,22 @@ class IsCarbonStruct {
 namespace detail {
 
 template <class T>
+class SerializationTraitsDefined {
+  template <class C>
+  static constexpr decltype(
+      SerializationTraits<C>::read,
+      SerializationTraits<C>::write,
+      std::true_type())
+  check(int);
+
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value};
+};
+
+template <class T, class Enable = void>
 struct TypeToField {};
 
 template <>
@@ -126,37 +142,27 @@ struct TypeToField<folly::IOBuf> {
 };
 
 template <class T>
+struct TypeToField<T, typename std::enable_if<std::is_enum<T>::value>::type> {
+  static constexpr FieldType fieldType{
+      TypeToField<typename std::underlying_type<T>::type>::fieldType};
+};
+
+template <class T>
+struct TypeToField<T, typename std::enable_if<IsCarbonStruct<T>::value>::type> {
+  static constexpr FieldType fieldType{FieldType::Struct};
+};
+
+template <class T>
+struct TypeToField<
+    T,
+    typename std::enable_if<SerializationTraitsDefined<T>::value>::type> {
+  static constexpr FieldType fieldType{FieldType::Binary};
+};
+
+template <class T>
 struct TypeToField<std::vector<T>> {
   static constexpr FieldType fieldType{FieldType::List};
 };
 
-template <class T>
-class SerializationTraitsDefined {
-  template <class C>
-  static constexpr decltype(
-      SerializationTraits<C>::read,
-      SerializationTraits<C>::write,
-      std::true_type())
-  check(int);
-
-  template <class C>
-  static constexpr std::false_type check(...);
-
- public:
-  static constexpr bool value{decltype(check<T>(0))::value};
-};
-
-template <class T>
-class HasFieldType {
-  template <class C>
-  static constexpr decltype(TypeToField<C>::fieldType, std::true_type()) check(
-      int);
-
-  template <class C>
-  static constexpr std::false_type check(...);
-
- public:
-  static constexpr bool value{decltype(check<T>(0))::value};
-};
 } // detail
 } // carbon

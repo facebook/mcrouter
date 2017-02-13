@@ -305,7 +305,8 @@ class CarbonProtocolWriter {
         v.size() <= std::numeric_limits<uint32_t>::max(),
         "Input to writeRaw() for vector too long (len = {})",
         v.size());
-    writeListSizeAndInnerType(static_cast<uint32_t>(v.size()), FieldType::List);
+    writeListSizeAndInnerType(
+        static_cast<uint32_t>(v.size()), detail::TypeToField<T>::fieldType);
     for (const auto& e : v) {
       writeRaw(e);
     }
