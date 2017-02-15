@@ -9,7 +9,11 @@
  */
 #pragma once
 
+#include <memory>
+
+#include <folly/Optional.h>
 #include <folly/Range.h>
+#include <wangle/ssl/TLSTicketKeySeeds.h>
 
 namespace folly {
 class SSLContext;
@@ -26,6 +30,8 @@ namespace memcache {
 std::shared_ptr<folly::SSLContext> getSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
-    folly::StringPiece pemCaPath);
-}
-} // facebook::memcache
+    folly::StringPiece pemCaPath,
+    folly::Optional<wangle::TLSTicketKeySeeds> = folly::none);
+
+} // memcache
+} // facebook

@@ -39,6 +39,12 @@ MCROUTER_OPTION_OTHER(
     no_short,
     "SSL Port(s) to listen on (comma separated)")
 
+MCROUTER_OPTION_STRING(
+  tls_ticket_key_seed_path, "",
+  "tls-ticket-key-seed-path", no_short,
+  "Path to file containing JSON object for old, current, and new seeds"
+  " used to generate TLS ticket keys")
+
 MCROUTER_OPTION_INTEGER(
     int,
     listen_sock_fd,

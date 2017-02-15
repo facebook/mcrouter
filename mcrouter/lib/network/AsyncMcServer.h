@@ -17,6 +17,9 @@
 
 #include <sys/socket.h>
 
+#include <folly/SharedMutex.h>
+#include <wangle/ssl/TLSTicketKeySeeds.h>
+
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/CongestionController.h"
 
@@ -24,6 +27,10 @@ namespace folly {
 class EventBase;
 class ScopedEventBaseThread;
 } // folly
+
+namespace wangle {
+class TLSCredProcessor;
+} // wangle
 
 namespace facebook {
 namespace memcache {
@@ -79,6 +86,12 @@ class AsyncMcServer {
     std::string pemCertPath;
     std::string pemKeyPath;
     std::string pemCaPath;
+
+    /**
+     * Path to JSON file containing old, current, and new seeds used for TLS
+     * ticket key generation.
+     */
+    std::string tlsTicketKeySeedPath;
 
     /**
      * Number of threads to spawn, must be positive.
@@ -168,10 +181,20 @@ class AsyncMcServer {
    */
   void join();
 
+  /**
+   * Getter/setter for seeds to be used to generate keys encrypting TLS tickets.
+   */
+  void setTicketKeySeeds(wangle::TLSTicketKeySeeds seeds);
+  wangle::TLSTicketKeySeeds getTicketKeySeeds() const;
+
  private:
   std::unique_ptr<folly::ScopedEventBaseThread> auxiliaryEvbThread_;
   Options opts_;
   std::vector<std::unique_ptr<McServerThread>> threads_;
+
+  std::unique_ptr<wangle::TLSCredProcessor> ticketKeySeedPoller_;
+  wangle::TLSTicketKeySeeds tlsTicketKeySeeds_;
+  mutable folly::SharedMutex tlsTicketKeySeedsLock_;
 
   std::atomic<bool> alive_{true};
   std::function<void()> onShutdown_;
@@ -180,10 +203,13 @@ class AsyncMcServer {
   std::atomic<SignalShutdownState> signalShutdownState_{
       SignalShutdownState::STARTUP};
 
+  void startPollingTicketKeySeeds();
+
   AsyncMcServer(const AsyncMcServer&) = delete;
   AsyncMcServer& operator=(const AsyncMcServer&) = delete;
 
   friend class McServerThread;
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -20,6 +20,7 @@
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>
+#include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
@@ -142,8 +143,9 @@ TestServer::TestServer(
     int timeoutMs,
     size_t maxConns,
     bool useDefaultVersion,
-    size_t numThreads)
-    : outOfOrder_(outOfOrder) {
+    size_t numThreads,
+    bool useTicketKeySeeds)
+    : outOfOrder_(outOfOrder), useTicketKeySeeds_(useSsl && useTicketKeySeeds) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = numThreads;
   opts_.worker.defaultVersionHandler = useDefaultVersion;
@@ -161,6 +163,12 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
   LOG(INFO) << "Spawning AsyncMcServer";
 
   server_ = folly::make_unique<AsyncMcServer>(opts_);
+  if (useTicketKeySeeds_) {
+    wangle::TLSTicketKeySeeds seeds{
+        .oldSeeds = {"aaaa"}, .currentSeeds = {"bbbb"}, .newSeeds = {"cccc"},
+    };
+    server_->setTicketKeySeeds(std::move(seeds));
+  }
   server_->spawn(
       [this, init](size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
         init(worker);

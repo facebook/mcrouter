@@ -13,6 +13,7 @@
 
 #include <folly/io/async/SSLContext.h>
 #include <wangle/ssl/TLSTicketKeyManager.h>
+#include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
@@ -155,7 +156,8 @@ std::shared_ptr<SSLContext> handleSSLCertsUpdate(
 std::shared_ptr<SSLContext> getSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
-    folly::StringPiece pemCaPath) {
+    folly::StringPiece pemCaPath,
+    folly::Optional<wangle::TLSTicketKeySeeds> ticketKeySeeds) {
   static constexpr std::chrono::minutes kSslReloadInterval{30};
   thread_local std::unordered_map<CertPaths, ContextInfo, CertPathsHasher>
       localContexts;
@@ -193,20 +195,27 @@ std::shared_ptr<SSLContext> getSSLContext(
       SSL_CTX_set_timeout(contextInfo.context->getSSLCtx(), kSessionLifeTime);
 
 #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
-      auto mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
-          contextInfo.context.get(), nullptr);
-      mgr->setTLSTicketKeySeeds({"aaaa"}, {"bbbb"}, {"cccc"});
+      if (ticketKeySeeds.hasValue()) {
+        auto mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
+            contextInfo.context.get(), nullptr);
+        mgr->setTLSTicketKeySeeds(
+            std::move(ticketKeySeeds->oldSeeds),
+            std::move(ticketKeySeeds->currentSeeds),
+            std::move(ticketKeySeeds->newSeeds));
 
-      /* store in the map */
-      const auto mapKey =
-          reinterpret_cast<uintptr_t>(contextInfo.context.get());
-      assert(contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
-      contextToTicketMgr()->emplace(mapKey, std::move(mgr));
+        /* store in the map */
+        const auto mapKey =
+            reinterpret_cast<uintptr_t>(contextInfo.context.get());
+        assert(
+            contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
+        contextToTicketMgr()->emplace(mapKey, std::move(mgr));
+      }
 #endif
     }
   }
 
   return contextInfo.context;
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

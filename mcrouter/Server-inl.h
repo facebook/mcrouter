@@ -94,6 +94,7 @@ bool runServer(
   } else {
     opts.ports = standaloneOpts.ports;
     opts.sslPorts = standaloneOpts.ssl_ports;
+    opts.tlsTicketKeySeedPath = standaloneOpts.tls_ticket_key_seed_path;
     opts.pemCertPath = mcrouterOpts.pem_cert_path;
     opts.pemKeyPath = mcrouterOpts.pem_key_path;
     opts.pemCaPath = mcrouterOpts.pem_ca_path;

@@ -18,13 +18,17 @@
 #include <cstdio>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include <folly/Memory.h>
+#include <folly/SharedMutex.h>
 #include <folly/String.h>
 #include <folly/io/async/AsyncServerSocket.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/SSLContext.h>
 #include <folly/io/async/ScopedEventBaseThread.h>
+#include <wangle/ssl/TLSCredProcessor.h>
+#include <wangle/ssl/TLSTicketKeySeeds.h>
 
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
@@ -168,9 +172,14 @@ class McServerThread {
         int fd,
         const folly::SocketAddress& clientAddr) noexcept override final {
       if (secure_) {
-        auto& opts = mcServerThread_->server_.opts_;
-        auto sslCtx =
-            getSSLContext(opts.pemCertPath, opts.pemKeyPath, opts.pemCaPath);
+        const auto& server = mcServerThread_->server_;
+        auto& opts = server.opts_;
+        auto sslCtx = getSSLContext(
+            opts.pemCertPath,
+            opts.pemKeyPath,
+            opts.pemCaPath,
+            server.getTicketKeySeeds());
+
         if (sslCtx) {
           sslCtx->setVerificationOption(
               folly::SSLContext::SSLVerifyPeerEnum::VERIFY_REQ_CLIENT_CERT);
@@ -346,6 +355,14 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
     }
   }
 
+  if (!opts_.tlsTicketKeySeedPath.empty()) {
+    if (auto initialSeeds = wangle::TLSCredProcessor::processTLSTickets(
+            opts_.tlsTicketKeySeedPath)) {
+      tlsTicketKeySeeds_ = std::move(*initialSeeds);
+    }
+    startPollingTicketKeySeeds();
+  }
+
   if (opts_.numThreads == 0) {
     throw std::invalid_argument(folly::sformat(
         "Unexpected option: opts_.numThreads={}", opts_.numThreads));
@@ -466,5 +483,27 @@ void AsyncMcServer::join() {
     thread->join();
   }
 }
+
+void AsyncMcServer::setTicketKeySeeds(wangle::TLSTicketKeySeeds seeds) {
+  folly::SharedMutex::WriteHolder writeGuard(tlsTicketKeySeedsLock_);
+  tlsTicketKeySeeds_ = std::move(seeds);
 }
-} // facebook::memcache
+
+wangle::TLSTicketKeySeeds AsyncMcServer::getTicketKeySeeds() const {
+  folly::SharedMutex::ReadHolder readGuard(tlsTicketKeySeedsLock_);
+  return tlsTicketKeySeeds_;
+}
+
+void AsyncMcServer::startPollingTicketKeySeeds() {
+  // Caller assumed to have checked opts_.tlsTicketKeySeedPath is non-empty
+  ticketKeySeedPoller_ = folly::make_unique<wangle::TLSCredProcessor>(
+      opts_.tlsTicketKeySeedPath, opts_.pemCertPath);
+  ticketKeySeedPoller_->addTicketCallback(
+      [this](wangle::TLSTicketKeySeeds updatedSeeds) {
+        setTicketKeySeeds(std::move(updatedSeeds));
+        VLOG(0) << "Updated TLSTicketKeySeeds";
+      });
+}
+
+} // memcache
+} // facebook

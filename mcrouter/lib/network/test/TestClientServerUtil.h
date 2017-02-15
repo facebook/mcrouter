@@ -77,7 +77,8 @@ class TestServer {
       int timeoutMs = 250,
       size_t maxConns = 100,
       bool useDefaultVersion = false,
-      size_t numThreads = 1) {
+      size_t numThreads = 1,
+      bool useTicketKeySeeds = false) {
     std::unique_ptr<TestServer> server(new TestServer(
         outOfOrder,
         useSsl,
@@ -85,7 +86,8 @@ class TestServer {
         timeoutMs,
         maxConns,
         useDefaultVersion,
-        numThreads));
+        numThreads,
+        useTicketKeySeeds));
     server->run([& s = *server](AsyncMcServerWorker & worker) {
       worker.setOnRequest(
           MemcacheRequestHandler<OnRequest>(s.shutdown_, s.outOfOrder_));
@@ -116,6 +118,7 @@ class TestServer {
   AsyncMcServer::Options opts_;
   std::unique_ptr<AsyncMcServer> server_;
   bool outOfOrder_{false};
+  bool useTicketKeySeeds_{false};
   std::atomic<bool> shutdown_{false};
   std::atomic<size_t> acceptedConns_{0};
 
@@ -126,7 +129,8 @@ class TestServer {
       int timeoutMs,
       size_t maxConns,
       bool useDefaultVersion,
-      size_t numThreads);
+      size_t numThreads,
+      bool useTicketKeySeeds);
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };
