@@ -69,7 +69,7 @@ bool umbrellaGetTagValue(
 }
 
 void resetAdditionalFields(UmbrellaMessageInfo& info) {
-  info.traceId = 0;
+  info.traceId = {0, 0};
   info.supportedCodecsFirstId = 0;
   info.supportedCodecsSize = 0;
   info.usedCodecId = 0;
@@ -79,7 +79,10 @@ void resetAdditionalFields(UmbrellaMessageInfo& info) {
 
 size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
   size_t nAdditionalFields = 0;
-  if (info.traceId != 0) {
+  if (info.traceId.first != 0) {
+    ++nAdditionalFields;
+  }
+  if (info.traceId.second != 0) {
     ++nAdditionalFields;
   }
   if (info.supportedCodecsFirstId != 0) {
@@ -122,7 +125,9 @@ size_t serializeAdditionalFields(
   uint8_t* buf = destination;
 
   buf += serializeAdditionalFieldIfNonZero(
-      buf, CaretAdditionalFieldType::TRACE_ID, info.traceId);
+      buf, CaretAdditionalFieldType::TRACE_ID, info.traceId.first);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf, CaretAdditionalFieldType::TRACE_NODE_ID, info.traceId.second);
   buf += serializeAdditionalFieldIfNonZero(
       buf,
       CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID,
@@ -224,14 +229,17 @@ UmbrellaParseStatus caretParseHeader(
       uint64_t fieldValue = folly::decodeVarint(range);
 
       if (fieldType >
-          static_cast<uint64_t>(CaretAdditionalFieldType::DROP_PROBABILITY)) {
+          static_cast<uint64_t>(CaretAdditionalFieldType::TRACE_NODE_ID)) {
         // Additional Field Type not recognized, ignore.
         continue;
       }
 
       switch (static_cast<CaretAdditionalFieldType>(fieldType)) {
         case CaretAdditionalFieldType::TRACE_ID:
-          headerInfo.traceId = fieldValue;
+          headerInfo.traceId.first = fieldValue;
+          break;
+        case CaretAdditionalFieldType::TRACE_NODE_ID:
+          headerInfo.traceId.second = fieldValue;
           break;
         case CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID:
           headerInfo.supportedCodecsFirstId = fieldValue;

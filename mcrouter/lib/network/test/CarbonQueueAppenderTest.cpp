@@ -40,7 +40,7 @@ TEST(CarbonQueueAppenderTest, longString) {
   info.bodySize = storage.computeBodySize();
   info.typeId = 123;
   info.reqId = 456;
-  info.traceId = 17;
+  info.traceId = {17, 18};
 
   size_t headerSize =
       caretPrepareHeader(info, reinterpret_cast<char*>(storage.getHeaderBuf()));
@@ -59,7 +59,8 @@ TEST(CarbonQueueAppenderTest, longString) {
   caretParseHeader((uint8_t*)input.data(), input.length(), inputHeader);
   EXPECT_EQ(123, inputHeader.typeId);
   EXPECT_EQ(456, inputHeader.reqId);
-  EXPECT_EQ(17, inputHeader.traceId);
+  EXPECT_EQ(17, inputHeader.traceId.first);
+  EXPECT_EQ(18, inputHeader.traceId.second);
 
   McGetReply inputReply;
   auto inputBody = folly::IOBuf::wrapBuffer(
@@ -137,7 +138,7 @@ TEST(CarbonQueueAppender, manyFields) {
   info.bodySize = storage.computeBodySize();
   info.typeId = 123;
   info.reqId = 456;
-  info.traceId = 17;
+  info.traceId = {17, 18};
 
   size_t headerSize =
       caretPrepareHeader(info, reinterpret_cast<char*>(storage.getHeaderBuf()));
@@ -156,7 +157,8 @@ TEST(CarbonQueueAppender, manyFields) {
   caretParseHeader((uint8_t*)input.data(), input.length(), inputHeader);
   EXPECT_EQ(123, inputHeader.typeId);
   EXPECT_EQ(456, inputHeader.reqId);
-  EXPECT_EQ(17, inputHeader.traceId);
+  EXPECT_EQ(17, inputHeader.traceId.first);
+  EXPECT_EQ(18, inputHeader.traceId.second);
 
   test::ManyFields manyFields2;
   auto inputBody = folly::IOBuf::wrapBuffer(

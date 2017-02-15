@@ -9,11 +9,13 @@
  */
 #pragma once
 
+#include <utility>
+
 namespace facebook {
 namespace memcache {
 
 constexpr char kCaretMagicByte = '^';
-constexpr size_t kMaxAdditionalFields = 4;
+constexpr size_t kMaxAdditionalFields = 5;
 constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
     1 /* GroupVarint header (lengths of 4 ints) */ +
     4 * sizeof(uint32_t) /* body size, typeId, reqId, num additional fields */ +
@@ -36,7 +38,7 @@ struct UmbrellaMessageInfo {
   uint32_t reqId;
 
   // Additional fields
-  uint64_t traceId;
+  std::pair<uint64_t, uint64_t> traceId{0, 0};
   uint64_t supportedCodecsFirstId{0};
   uint64_t supportedCodecsSize{0};
   uint64_t usedCodecId{0};
@@ -59,6 +61,10 @@ enum class CaretAdditionalFieldType {
 
   // Drop Probability of each request.
   DROP_PROBABILITY = 5,
+
+  // Node ID for trace
+  TRACE_NODE_ID = 6,
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <utility>
+
 #include <folly/Range.h>
 #include <folly/Varint.h>
 
@@ -89,7 +91,7 @@ class CaretSerializedMessage {
       const Message& message,
       uint32_t reqId,
       size_t typeId,
-      uint64_t traceId,
+      std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const struct iovec*& iovOut,
       size_t& niovOut);
@@ -99,7 +101,7 @@ class CaretSerializedMessage {
       const Message& message,
       uint32_t reqId,
       size_t typeId,
-      uint64_t traceId,
+      std::pair<uint64_t, uint64_t> traceId,
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
       double dropProbability,
@@ -110,7 +112,7 @@ class CaretSerializedMessage {
       UmbrellaMessageInfo& info,
       uint32_t reqId,
       size_t typeId,
-      uint64_t traceId,
+      std::pair<uint64_t, uint64_t> traceId,
       double dropProbability,
       const struct iovec*& iovOut,
       size_t& niovOut);

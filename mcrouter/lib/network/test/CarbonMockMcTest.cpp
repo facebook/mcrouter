@@ -103,7 +103,7 @@ TEST(CarbonMockMc, basic) {
   requestInfo.bodySize = storage.computeBodySize();
   requestInfo.typeId = 1;
   requestInfo.reqId = 100;
-  requestInfo.traceId = 0;
+  requestInfo.traceId = {0, 0};
   requestInfo.headerSize = caretPrepareHeader(
       requestInfo, reinterpret_cast<char*>(storage.getHeaderBuf()));
   storage.reportHeaderSize(requestInfo.headerSize);

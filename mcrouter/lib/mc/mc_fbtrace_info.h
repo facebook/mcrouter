@@ -15,6 +15,7 @@
 #include <sys/uio.h>
 
 #include "fbtrace/libfbtrace/c/fbtrace.h"
+#include "fbtrace/libfbtrace/c/fbtrace_encode.h"
 
 __BEGIN_DECLS
 

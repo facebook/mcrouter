@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -8,6 +8,8 @@
  *
  */
 #pragma once
+
+#include <utility>
 
 #include "mcrouter/lib/Ref.h"
 
@@ -34,12 +36,36 @@ class RequestCommon {
   RequestCommon& operator=(RequestCommon&&) = default;
 #endif
 
-  uint64_t traceId() const {
-    return traceId_;
+  std::pair<uint64_t, uint64_t> traceToInts() const {
+    // Trace metadata consists of trace ID and node ID
+    std::pair<uint64_t, uint64_t> traceMetadata{0, 0};
+#ifndef LIBMC_FBTRACE_DISABLE
+    if (!fbtraceInfo_.get() ||
+        fbtrace_decode(fbtraceInfo_->metadata, &traceMetadata.first) != 0 ||
+        fbtrace_decode(
+            fbtraceInfo_->metadata + kTraceIdSize, &traceMetadata.second) !=
+            0) {
+      return {0, 0};
+    }
+#endif
+    return traceMetadata;
   }
 
-  void setTraceId(uint64_t carbonTraceId) {
-    traceId_ = carbonTraceId;
+  void setTraceId(std::pair<uint64_t, uint64_t> traceId) {
+#ifndef LIBMC_FBTRACE_DISABLE
+    if (traceId.first == 0 || traceId.second == 0) {
+      return;
+    }
+
+    auto traceInfo = McFbtraceRef::moveRef(new_mc_fbtrace_info(0));
+    if (!traceInfo.get() ||
+        fbtrace_encode(traceId.first, traceInfo->metadata) != 0 ||
+        fbtrace_encode(traceId.second, traceInfo->metadata + kTraceIdSize) !=
+            0) {
+      return;
+    }
+    fbtraceInfo_ = std::move(traceInfo);
+#endif
   }
 
 #ifndef LIBMC_FBTRACE_DISABLE
@@ -56,7 +82,8 @@ class RequestCommon {
 #endif
 
  private:
-  uint64_t traceId_{0};
+  static constexpr size_t kTraceIdSize = 11;
+
 #ifndef LIBMC_FBTRACE_DISABLE
   struct McFbtraceRefPolicy {
     struct Deleter {

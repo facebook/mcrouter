@@ -90,7 +90,9 @@ void TestServerOnRequest::onRequest(
       size_t valSize = folly::to<size_t>(key);
       value = std::string(valSize, 'a');
     } else if (req.key().fullKey() == "trace_id") {
-      value = folly::to<std::string>(req.traceId());
+      const auto traceMetadata = req.traceToInts();
+      value =
+          folly::sformat("{}:{}", traceMetadata.first, traceMetadata.second);
     } else if (req.key().fullKey() != "empty") {
       value = req.key().fullKey().str();
     }
@@ -251,7 +253,7 @@ void TestClient::sendGet(
   fm_.addTask([ key = std::move(key), expectedResult, this, timeoutMs ]() {
     McGetRequest req(key);
     if (req.key().fullKey() == "trace_id") {
-      req.setTraceId(12345);
+      req.setTraceId({12345, 67890});
     }
 
     try {
@@ -271,9 +273,9 @@ void TestClient::sendGet(
               value.size());
         } else if (req.key().fullKey() == "trace_id") {
           checkLogic(
-              value == "12345",
+              value == "12345:67890",
               "Expected value to equal trace ID {}, got {}",
-              12345,
+              "12345:67890",
               value);
         } else {
           checkLogic(
