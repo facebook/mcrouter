@@ -92,15 +92,15 @@ static FILE* dbg_init_0() {
   char fname[MAXPATHLEN + 1];
   int si = 0;
   int di = 0;
-  while (si < dbg_log_fname->len) {
-    if (si + 4 <= dbg_log_fname->len &&
+  while (si < (int)dbg_log_fname->len) {
+    if (si + 4 <= (int)dbg_log_fname->len &&
         !memcmp(dbg_log_fname->str + si, "%pid", 4)) {
       di += snprintf(fname + di, sizeof(fname) - di, "%u", getpid());
       si += 4;
     } else {
       fname[di++] = dbg_log_fname->str[si++];
     }
-    if (di >= sizeof(fname)) {
+    if (di >= (int)sizeof(fname)) {
       return stderr;
     }
   }
@@ -265,8 +265,8 @@ void fbi_dbg_log(const char *principal, const char* component,
   }
 
   if (indent_offset < 0) {
-    FBI_ASSERT(tls_indent_level >= -indent_offset);
-    if (tls_indent_level < -indent_offset) {
+    FBI_ASSERT(tls_indent_level >= (uint) -indent_offset);
+    if (tls_indent_level < (uint) -indent_offset) {
         tls_indent_level = 0;
     } else {
         tls_indent_level += indent_offset;
