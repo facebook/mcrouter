@@ -19,6 +19,7 @@
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 namespace facebook {
 namespace memcache {
@@ -48,9 +49,7 @@ class AsynclogRoute {
     t(*rh_, req);
   }
 
-  template <class Request>
-  ReplyT<Request> route(const Request& req, carbon::DeleteLikeT<Request> = 0)
-      const {
+  memcache::McDeleteReply route(const memcache::McDeleteRequest& req) const {
     return fiber_local<RouterInfo>::runWithLocals([this, &req]() {
       fiber_local<RouterInfo>::setAsynclogName(asynclogName_);
       return rh_->route(req);
@@ -58,9 +57,7 @@ class AsynclogRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(
-      const Request& req,
-      carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
+  ReplyT<Request> route(const Request& req) const {
     return rh_->route(req);
   }
 

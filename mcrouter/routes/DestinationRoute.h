@@ -93,9 +93,7 @@ class DestinationRoute {
     }
   }
 
-  template <class Request>
-  ReplyT<Request> route(const Request& req, carbon::DeleteLikeT<Request> = 0)
-      const {
+  memcache::McDeleteReply route(const memcache::McDeleteRequest& req) const {
     auto reply = routeWithDestination(req);
     if (isFailoverErrorResult(reply.result()) && spool(req)) {
       reply = createReply(DefaultReply, req);
@@ -105,9 +103,7 @@ class DestinationRoute {
   }
 
   template <class Request>
-  ReplyT<Request> route(
-      const Request& req,
-      carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
+  ReplyT<Request> route(const Request& req) const {
     return routeWithDestination(req);
   }
 
