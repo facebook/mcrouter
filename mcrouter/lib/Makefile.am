@@ -104,15 +104,11 @@ libmcrouter_a_SOURCES = \
   fbi/cpp/sfrlock.h \
   fbi/cpp/util.cpp \
   fbi/cpp/util.h \
-  fbi/debug.c \
-  fbi/debug.h \
   fbi/decls.h \
   fbi/hash.c \
   fbi/hash.h \
   fbi/network.c \
   fbi/network.h \
-  fbi/nstring.c \
-  fbi/nstring.h \
   fbi/queue.h \
   fbi/sfrlock.c \
   fbi/sfrlock.h \
