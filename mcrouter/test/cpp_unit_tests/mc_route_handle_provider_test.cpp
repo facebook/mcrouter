@@ -99,16 +99,6 @@ struct TestSetup {
 
 } // anonymous
 
-TEST(McRouteHandleProviderTest, asynclog_route) {
-  TestSetup setup;
-  auto rh = setup.getRoute(kAsynclogRoute);
-  EXPECT_TRUE(rh != nullptr);
-  EXPECT_EQ("asynclog:test", rh->routeName());
-  auto asynclogRoutes = setup.provider().releaseAsyncLogRoutes();
-  EXPECT_EQ(1, asynclogRoutes.size());
-  EXPECT_EQ("asynclog:test", asynclogRoutes["test"]->routeName());
-}
-
 TEST(McRouteHandleProviderTest, sanity) {
   auto rh = TestSetup().getRoute(kConstShard);
   EXPECT_TRUE(rh != nullptr);

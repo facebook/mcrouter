@@ -23,6 +23,7 @@
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
+#include "mcrouter/routes/AsynclogRoute.h"
 #include "mcrouter/routes/DestinationRoute.h"
 #include "mcrouter/routes/ExtraRouteHandleProviderIf.h"
 #include "mcrouter/routes/FailoverRoute.h"
@@ -75,19 +76,17 @@ template <>
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider();
 
-// Disable asynclog for other RouterInfos for now.
 template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> McRouteHandleProvider<
-    RouterInfo>::createAsynclogRoute(RouteHandlePtr target, std::string) {
-  LOG(WARNING) << "Asynclog is not supported for that RouterInfo";
-  return std::move(target);
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+McRouteHandleProvider<RouterInfo>::createAsynclogRoute(
+    RouteHandlePtr target,
+    std::string asynclogName) {
+  if (!proxy_.router().opts().asynclog_disable) {
+    target = makeAsynclogRoute<RouterInfo>(std::move(target), asynclogName);
+  }
+  asyncLogRoutes_.emplace(std::move(asynclogName), target);
+  return target;
 }
-
-template <>
-std::shared_ptr<MemcacheRouteHandleIf>
-McRouteHandleProvider<MemcacheRouterInfo>::createAsynclogRoute(
-    std::shared_ptr<MemcacheRouteHandleIf> target,
-    std::string asynclogName);
 
 template <class RouterInfo>
 const std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>&

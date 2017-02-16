@@ -51,26 +51,6 @@ McrouterRouteHandlePtr makeWarmUpRoute(
     McRouteHandleFactory& factory,
     const folly::dynamic& json);
 
-McrouterRouteHandlePtr makeAsynclogRoute(
-    McrouterRouteHandlePtr rh,
-    std::string asynclogName);
-
-std::pair<McrouterRouteHandlePtr, std::string> parseAsynclogRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
-    const folly::dynamic& json);
-
-template <>
-std::shared_ptr<MemcacheRouteHandleIf>
-McRouteHandleProvider<MemcacheRouterInfo>::createAsynclogRoute(
-    std::shared_ptr<MemcacheRouteHandleIf> target,
-    std::string asynclogName) {
-  if (!proxy_.router().opts().asynclog_disable) {
-    target = makeAsynclogRoute(std::move(target), asynclogName);
-  }
-  asyncLogRoutes_.emplace(std::move(asynclogName), target);
-  return target;
-}
-
 template <>
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider() {
@@ -86,13 +66,6 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
       {"AllInitialRoute", &makeAllInitialRoute<MemcacheRouterInfo>},
       {"AllMajorityRoute", &makeAllMajorityRoute<MemcacheRouterInfo>},
       {"AllSyncRoute", &makeAllSyncRoute<MemcacheRouterInfo>},
-      {"AsynclogRoute",
-       [this](
-           RouteHandleFactory<MemcacheRouteHandleIf>& factory,
-           const folly::dynamic& json) {
-         auto p = parseAsynclogRoute(factory, json);
-         return createAsynclogRoute(std::move(p.first), std::move(p.second));
-       }},
       {"DevNullRoute", &makeDevNullRoute<MemcacheRouterInfo>},
       {"ErrorRoute", &makeErrorRoute<MemcacheRouterInfo>},
       {"FailoverWithExptimeRoute", &makeFailoverWithExptimeRoute},
