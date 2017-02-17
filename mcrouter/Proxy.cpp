@@ -47,34 +47,6 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace detail {
-
-bool processGetServiceInfoRequest(
-    const McGetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<McrouterRouterInfo, McGetRequest>>&
-        ctx) {
-  return processGetServiceInfoRequestImpl(req, ctx);
-}
-
-template <class RouterInfo, class GetRequest>
-bool processGetServiceInfoRequestImpl(
-    const GetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, GetRequest>>& ctx,
-    carbon::GetLikeT<GetRequest>) {
-  static const char* const kInternalGetPrefix = "__mcrouter__.";
-
-  if (!req.key().fullKey().startsWith(kInternalGetPrefix)) {
-    return false;
-  }
-  auto& config = ctx->proxyConfig();
-  auto key = req.key().fullKey();
-  key.advance(strlen(kInternalGetPrefix));
-  config.serviceInfo()->handleRequest(key, ctx);
-  return true;
-}
-
-} // detail
-
 std::shared_ptr<ShadowSettings> ShadowSettings::create(
     const folly::dynamic& json,
     CarbonRouterInstanceBase& router) {

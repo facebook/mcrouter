@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <folly/Range.h>
 #include <folly/fibers/EventBaseLoopController.h>
 
 #include "mcrouter/McrouterFiberContext.h"
@@ -28,25 +29,36 @@ class ProxyConfig;
 
 namespace detail {
 
-// TODO(@aap): Make ServceInfo work with something other than
-//             MemcacheRouterInfo/McGetRequest
+template <class RouterInfo>
+bool processGetServiceInfoRequestImpl(
+    const McGetRequest& req,
+    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) {
+  constexpr folly::StringPiece kInternalGetPrefix("__mcrouter__.");
+
+  if (!req.key().fullKey().startsWith(kInternalGetPrefix)) {
+    return false;
+  }
+  auto& config = ctx->proxyConfig();
+  auto key = req.key().fullKey();
+  key.advance(kInternalGetPrefix.size());
+  config.serviceInfo()->handleRequest(key, ctx);
+  return true;
+}
+
+template <class RouterInfo>
 bool processGetServiceInfoRequest(
     const McGetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<McrouterRouterInfo, McGetRequest>>&
-        ctx);
+    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) {
+  return processGetServiceInfoRequestImpl(req, ctx);
+}
 
 template <class RouterInfo, class Request>
-bool processGetServiceInfoRequest(
+typename std::enable_if<!std::is_same<Request, McGetRequest>::value, bool>::type
+processGetServiceInfoRequest(
     const Request&,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&) {
   return false;
 }
-
-template <class RouterInfo, class GetRequest>
-bool processGetServiceInfoRequestImpl(
-    const GetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, GetRequest>>& ctx,
-    carbon::GetLikeT<GetRequest> = 0);
 
 } // detail
 
