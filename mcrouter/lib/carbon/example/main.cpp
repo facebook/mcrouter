@@ -61,6 +61,7 @@ inline void spawnServer(AsyncMcServer& server) {
 
 AsyncMcServer::Options getOpts(uint16_t port) {
   AsyncMcServer::Options opts;
+  opts.worker.debugFifoPath = "./hello-goodbye";
   opts.ports.push_back(port);
   opts.numThreads = 4;
   return opts;
