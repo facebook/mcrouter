@@ -12,6 +12,7 @@
 #include <folly/Memory.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
+#include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/SSLContext.h>
 
@@ -41,23 +42,33 @@ bool AsyncMcServerWorker::addClientSocket(int fd, void* userCtxt) {
 }
 
 bool AsyncMcServerWorker::addClientSocket(
-    folly::AsyncSocket::UniquePtr&& socket,
+    folly::AsyncSocket::UniquePtr socket,
+    void* userCtxt) {
+  socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
+  socket->setNoDelay(true);
+  return addClientTransport(std::move(socket), userCtxt);
+}
+
+bool AsyncMcServerWorker::addClientTransport(
+    folly::AsyncTransportWrapper::UniquePtr transport,
     void* userCtxt) {
   if (!onRequest_) {
-    throw std::logic_error("can't add a socket without onRequest callback");
+    throw std::logic_error("can't add a transport without onRequest callback");
   }
 
   if (onAccepted_) {
     onAccepted_();
   }
 
-  socket->setSendTimeout(opts_.sendTimeout.count());
-  socket->setMaxReadsPerEvent(opts_.maxReadsPerEvent);
-  socket->setNoDelay(true);
+  transport->setSendTimeout(opts_.sendTimeout.count());
 
   try {
     tracker_.add(
-        std::move(socket), onRequest_, opts_, userCtxt, compressionCodecMap_);
+        std::move(transport),
+        onRequest_,
+        opts_,
+        userCtxt,
+        compressionCodecMap_);
     return true;
   } catch (const std::exception& ex) {
     // TODO: record stats about failure
