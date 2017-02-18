@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include <algorithm>
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -103,6 +105,19 @@ class ShadowRoute {
 
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
+    // If configured to use an explicit list of keys to be shadowed, check for
+    // req.key() in that list. Otherwise, decide to shadow based on keyRange().
+    const auto& keysToShadow = settings->keysToShadow();
+    if (!keysToShadow.empty()) {
+      const auto hashAndKeyToFind =
+          std::make_tuple(req.key().routingKeyHash(), req.key().routingKey());
+      return std::binary_search(
+          keysToShadow.begin(),
+          keysToShadow.end(),
+          hashAndKeyToFind,
+          std::less<std::tuple<uint32_t, folly::StringPiece>>());
+    }
+
     auto range = settings->keyRange();
     return range.first <= req.key().routingKeyHash() &&
         req.key().routingKeyHash() <= range.second;

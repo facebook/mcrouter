@@ -53,6 +53,7 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
   auto result = std::shared_ptr<ShadowSettings>(new ShadowSettings());
   try {
     checkLogic(json.isObject(), "json is not an object");
+
     if (auto jKeyFractionRange = json.get_ptr("key_fraction_range")) {
       checkLogic(
           jKeyFractionRange->isArray(), "key_fraction_range is not an array");
@@ -73,6 +74,20 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
           jKeyFractionRangeRv->isString(),
           "key_fraction_range_rv is not a string");
       result->keyFractionRangeRv_ = jKeyFractionRangeRv->getString();
+    }
+    if (auto jKeysToShadow = json.get_ptr("keys_to_shadow")) {
+      checkLogic(jKeysToShadow->isArray(), "keys_to_shadow is not an array");
+      // Configs cannot mix usage of keys_to_shadow with either index_range,
+      // key_fraction_range, or key_fraction_range_rv.
+      const auto keysToShadow =
+          folly::convertTo<std::vector<std::string>>(*jKeysToShadow);
+      checkLogic(
+          keysToShadow.empty() || (!json.get_ptr("index_range") &&
+                                   !json.get_ptr("key_fraction_range") &&
+                                   !json.get_ptr("key_fraction_range_rv")),
+          "Cannot mix nonempty keys_to_shadow array with index_range,"
+          " key_fraction_range, or key_fraction_range_rv");
+      result->setKeysToShadow(keysToShadow);
     }
   } catch (const std::logic_error& e) {
     MC_LOG_FAILURE(

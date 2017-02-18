@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -26,6 +26,7 @@ class TestShadow(McrouterTestCase):
         self.mc_bar_0 = self.add_server(Memcached())
         self.mc_bar_1 = self.add_server(Memcached())
         self.mc_foo_shadow = self.add_server(Memcached())
+        self.mc_foo_shadow_specific_keys = self.add_server(Memcached())
         self.mc_bar_shadow = self.add_server(Memcached())
 
     def get_mcrouter(self, more_extra_args=[]):
@@ -55,6 +56,27 @@ class TestShadow(McrouterTestCase):
             else:
                 self.assertIsNone(self.mc_foo_shadow.get(key))
                 self.assertIsNone(self.mc_bar_shadow.get(key))
+
+    def test_normal_shadow_specific_keys(self):
+        mcrouter = self.get_mcrouter()
+        kv = [('f' + str(i), 'value' + str(i)) for i in range(101, 111)]
+        shadow_list = range(101, 107)
+        shadow_keys = [kv[i - 101][0] for i in shadow_list]
+
+        for key, value in kv:
+            mcrouter.set(key, value)
+
+        # shadow is async, so wait until all sets complete
+        time.sleep(1)
+
+        for key, value in kv:
+            self.assertTrue(self.mc_foo_0.get(key) == value or
+                            self.mc_foo_1.get(key) == value)
+            if key in shadow_keys:
+                self.assertEqual(self.mc_foo_shadow_specific_keys.get(key),
+                                 value)
+            else:
+                self.assertIsNone(self.mc_foo_shadow_specific_keys.get(key))
 
     def test_regional_shadow(self):
         mcrouter = self.get_mcrouter()

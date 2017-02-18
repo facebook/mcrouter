@@ -16,9 +16,12 @@
 #include <sys/resource.h>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <folly/Range.h>
 #include <folly/detail/CacheLocality.h>
@@ -28,6 +31,7 @@
 #include "mcrouter/ProxyBase.h"
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config.h"
+#include "mcrouter/lib/carbon/Keys.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
@@ -103,6 +107,23 @@ struct ShadowSettings {
    */
   void setKeyRange(double start, double end);
 
+  /**
+   * Specify a list of keys to be shadowed. Cannot be mixed with index range/key
+   * fraction range-based shadowing.
+   */
+  void setKeysToShadow(const std::vector<std::string>& keys) {
+    keysToShadow_.clear();
+    for (const auto& key : keys) {
+      const auto hash = carbon::Keys<std::string>(key).routingKeyHash();
+      keysToShadow_.emplace_back(hash, key);
+    }
+    std::sort(keysToShadow_.begin(), keysToShadow_.end());
+  }
+
+  const std::vector<std::tuple<uint32_t, std::string>>& keysToShadow() const {
+    return keysToShadow_;
+  }
+
  private:
   ObservableRuntimeVars::CallbackHandle handle_;
   void registerOnUpdateCallback(CarbonRouterInstanceBase& router);
@@ -110,6 +131,11 @@ struct ShadowSettings {
   std::string keyFractionRangeRv_;
   size_t startIndex_{0};
   size_t endIndex_{0};
+
+  // Ideally, this would just be an unordered set<Key<string>>, but we need to
+  // allow for comparing to Key<IOBuf>. We can work with a vector<Key<string>>
+  // sorted by routingKeyHash.
+  std::vector<std::tuple<uint32_t, std::string>> keysToShadow_;
 
   std::atomic<uint64_t> keyRange_{0};
 

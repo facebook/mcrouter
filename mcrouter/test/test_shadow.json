@@ -22,6 +22,9 @@
     "foo-shadow": {
       "servers": [ "127.0.0.1:11712" ]
     },
+    "foo-shadow-specific-keys": {
+      "servers": [ "127.0.0.1:11713" ]
+    },
     "bar-shadow": {
       "servers": [ "127.0.0.1:11722" ]
     }
@@ -66,6 +69,10 @@
             "index_range": [0, 2],
             "key_fraction_range": [0.0, 0.1],
             "key_fraction_range_rv": "key_fraction_range_0"
+          },
+          {
+            "target": "PoolRoute|foo-shadow-specific-keys",
+            "keys_to_shadow": ["f101", "f102", "f103", "f104", "f105", "f106"]
           },
           {
             "target": "PoolRoute|bar-shadow",

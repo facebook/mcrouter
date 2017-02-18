@@ -103,8 +103,9 @@ makeShadowRoutes(
   for (size_t i = 0; i < children.size(); ++i) {
     ShadowData<RouterInfo> childrenShadows;
     for (const auto& shadowData : data) {
-      if (shadowData.second->startIndex() <= i &&
-          i < shadowData.second->endIndex()) {
+      if ((shadowData.second->startIndex() <= i &&
+           i < shadowData.second->endIndex()) ||
+          !shadowData.second->keysToShadow().empty()) {
         childrenShadows.push_back(shadowData);
       }
     }
