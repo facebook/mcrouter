@@ -39,8 +39,17 @@ using CarbonTestRequestList = carbon::List<
 } // detail
 
 template <class OnRequest>
-using CarbonTestRequestHandler =
-    carbon::CarbonRequestHandler<OnRequest, detail::CarbonTestRequestList>;
+class CarbonTestRequestHandler
+    : public carbon::
+          CarbonRequestHandler<OnRequest, detail::CarbonTestRequestList> {
+ public:
+  static constexpr const char* name = "CarbonTest";
+
+  template <class... Args>
+  explicit CarbonTestRequestHandler(Args&&... args)
+      : carbon::CarbonRequestHandler<OnRequest, detail::CarbonTestRequestList>(
+            std::forward<Args>(args)...) {}
+};
 
 } // test
 } // carbon

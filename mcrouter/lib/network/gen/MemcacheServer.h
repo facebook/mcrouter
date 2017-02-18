@@ -52,8 +52,17 @@ using MemcacheRequestList = carbon::List<
 } // detail
 
 template <class OnRequest>
-using MemcacheRequestHandler =
-    carbon::CarbonRequestHandler<OnRequest, detail::MemcacheRequestList>;
+class MemcacheRequestHandler
+    : public carbon::
+          CarbonRequestHandler<OnRequest, detail::MemcacheRequestList> {
+ public:
+  static constexpr const char* name = "Memcache";
+
+  template <class... Args>
+  explicit MemcacheRequestHandler(Args&&... args)
+      : carbon::CarbonRequestHandler<OnRequest, detail::MemcacheRequestList>(
+            std::forward<Args>(args)...) {}
+};
 
 } // memcache
 } // facebook

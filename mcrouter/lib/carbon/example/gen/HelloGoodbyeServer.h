@@ -36,7 +36,17 @@ using HelloGoodbyeRequestList = carbon::List<
 } // detail
 
 template <class OnRequest>
-using HelloGoodbyeRequestHandler =
-    carbon::CarbonRequestHandler<OnRequest, detail::HelloGoodbyeRequestList>;
+class HelloGoodbyeRequestHandler
+    : public carbon::
+          CarbonRequestHandler<OnRequest, detail::HelloGoodbyeRequestList> {
+ public:
+  static constexpr const char* name = "HelloGoodbye";
+
+  template <class... Args>
+  explicit HelloGoodbyeRequestHandler(Args&&... args)
+      : carbon::
+            CarbonRequestHandler<OnRequest, detail::HelloGoodbyeRequestList>(
+                std::forward<Args>(args)...) {}
+};
 
 } // hellogoodbye
