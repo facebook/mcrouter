@@ -11,6 +11,8 @@
 
 #include <chrono>
 
+#include <folly/Range.h>
+
 namespace facebook {
 namespace memcache {
 
@@ -108,7 +110,9 @@ class IovecIterator {
   size_t curBufLen_{0};
 };
 
-MessageHeader buildMsgHeader(const folly::AsyncTransportWrapper* transport) {
+MessageHeader buildMsgHeader(
+    const folly::AsyncTransportWrapper* transport,
+    const folly::StringPiece routerName) {
   MessageHeader header;
   header.setConnectionId(reinterpret_cast<uintptr_t>(transport));
 
@@ -141,6 +145,20 @@ MessageHeader buildMsgHeader(const folly::AsyncTransportWrapper* transport) {
     VLOG(2) << "Error getting host/port to write to debug fifo: " << e.what();
   }
 
+  // set router name
+  header.routerNameModifiable()[0] = '\0';
+  if (!routerName.empty()) {
+    int res = std::snprintf(
+        header.routerNameModifiable(),
+        MessageHeader::kRouterNameMaxSize,
+        "%s",
+        routerName.str().c_str());
+    if (res < 0) {
+      LOG(ERROR) << "Error writing router name '" << routerName
+                 << "' to debug fifo";
+    }
+  }
+
   return header;
 }
 
@@ -150,9 +168,10 @@ ConnectionFifo::ConnectionFifo() noexcept {}
 
 ConnectionFifo::ConnectionFifo(
     std::shared_ptr<Fifo> debugFifo,
-    const folly::AsyncTransportWrapper* transport) noexcept
+    const folly::AsyncTransportWrapper* transport,
+    const folly::StringPiece routerName) noexcept
     : debugFifo_(std::move(debugFifo)),
-      currentMessageHeader_(buildMsgHeader(transport)) {}
+      currentMessageHeader_(buildMsgHeader(transport, routerName)) {}
 
 bool ConnectionFifo::isConnected() const noexcept {
   return debugFifo_ && debugFifo_->isConnected();

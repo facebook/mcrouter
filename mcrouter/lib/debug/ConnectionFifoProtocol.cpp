@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -67,10 +67,13 @@ folly::SocketAddress MessageHeader::getPeerAddress() {
   switch (v) {
     case 1:
       return sizeof(MessageHeader) - sizeof(localPort_) - sizeof(direction_) -
-          sizeof(typeId_) - sizeof(timeUs_);
+          sizeof(typeId_) - sizeof(timeUs_) - kRouterNameMaxSize;
     case 2:
-      return sizeof(MessageHeader) - sizeof(typeId_) - sizeof(timeUs_);
+      return sizeof(MessageHeader) - sizeof(typeId_) - sizeof(timeUs_) -
+          kRouterNameMaxSize;
     case 3:
+      return sizeof(MessageHeader) - kRouterNameMaxSize;
+    case 4:
       return sizeof(MessageHeader);
     default:
       throw std::logic_error(folly::sformat("Invalid version {}", v));

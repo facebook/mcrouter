@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <folly/Range.h>
 #include <folly/io/async/AsyncTransport.h>
 
 #include "mcrouter/lib/debug/ConnectionFifoProtocol.h"
@@ -36,10 +37,12 @@ class ConnectionFifo {
    *
    * @param debugFifo   Underlying FIFO to which the data will be written.
    * @param transport   Transport from which data will be mirrored.
+   * @param routerName  Name of the router.
    */
   ConnectionFifo(
       std::shared_ptr<Fifo> debugFifo,
-      const folly::AsyncTransportWrapper* transport) noexcept;
+      const folly::AsyncTransportWrapper* transport,
+      const folly::StringPiece routerName = "") noexcept;
 
   /**
    * Tells whether or not there is a client connected to the underlying FIFO.
