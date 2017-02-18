@@ -162,6 +162,11 @@ void FifoReadCallback::handleMessageHeader(MessageHeader msgHeader) noexcept {
   if (msgHeader.direction() == MessageDirection::Received) {
     std::swap(from_, to_);
   }
+  if (!msgHeader.routerName()[0]) {
+    carbonRouterName_ = facebook::memcache::MemcacheRouterInfo::name;
+  } else {
+    carbonRouterName_ = msgHeader.routerName();
+  }
 }
 
 void FifoReadCallback::forwardMessage(
@@ -169,6 +174,13 @@ void FifoReadCallback::forwardMessage(
     std::unique_ptr<folly::IOBuf> buf) {
   auto data = buf->coalesce();
   CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
+
+  if (carbonRouterName_ != facebook::memcache::MemcacheRouterInfo::name) {
+    LOG(WARNING) << "Carbon protocol " << carbonRouterName_
+                 << " is not supported yet.";
+    return;
+  }
+
   if (typeId_ != 0) {
     messageReady_(
         header.connectionId(),
@@ -256,5 +268,5 @@ void FifoReaderManager::runScanDirectory() {
   evb_.runAfterDelay(
       [this]() { runScanDirectory(); }, kPollDirectoryIntervalMs);
 }
-}
-} // facebook::memcache
+} // memcache
+} // facebook

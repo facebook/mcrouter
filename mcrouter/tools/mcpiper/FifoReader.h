@@ -23,6 +23,7 @@
 #include <folly/io/async/AsyncSocketException.h>
 
 #include "mcrouter/lib/debug/ConnectionFifoProtocol.h"
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 
 namespace folly {
 class EventBase;
@@ -34,12 +35,14 @@ namespace memcache {
 class FifoReader;
 
 /**
- * Function called when a message is completely read from the fifo.
+ * Function called when a message packet is completely read from the fifo.
  *
  * @param connectionId  Id of the connection.
  * @param packetId      Id of the packet.
  * @param from          Address of the endpoint that sent the message.
  * @param to            Address of the endpoint that received the message.
+ * @param typeId        Id of the type of the request/reply.
+ * @param msgStartTime  The time the request/reply was received/send.
  * @param data          The data of the message.
  */
 using MessageReadyFn = std::function<void(
@@ -75,8 +78,12 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
   // Addresses of the endpoints of the message currently being read.
   folly::SocketAddress from_;
   folly::SocketAddress to_;
+
   uint32_t typeId_{0};
   uint64_t msgStartTime_{0};
+
+  // Name of the carbon router.
+  std::string carbonRouterName_ = facebook::memcache::MemcacheRouterInfo::name;
 
   void forwardMessage(
       const PacketHeader& header,
@@ -128,5 +135,5 @@ class FifoReaderManager {
   std::vector<std::string> getMatchedFiles() const;
   void runScanDirectory();
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
