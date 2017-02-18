@@ -234,7 +234,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
       auto pdstn = proxy_.destinationMap()->find(*ap, timeout);
       if (!pdstn) {
         pdstn = proxy_.destinationMap()->emplace(
-            std::move(ap), timeout, qosClass, qosPath);
+            std::move(ap), timeout, qosClass, qosPath, RouterInfo::name);
       }
       pdstn->updatePoolName(name);
       pdstn->updateShortestTimeout(timeout);

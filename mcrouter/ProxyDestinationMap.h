@@ -63,7 +63,8 @@ class ProxyDestinationMap {
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
-      uint64_t qosPath);
+      uint64_t qosPath,
+      std::string routerInfoName);
 
   /**
    * Remove destination from both active and inactive lists

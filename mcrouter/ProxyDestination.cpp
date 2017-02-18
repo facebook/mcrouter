@@ -267,9 +267,15 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
-    uint64_t qosPath) {
-  std::shared_ptr<ProxyDestination> ptr(
-      new ProxyDestination(proxy, std::move(ap), timeout, qosClass, qosPath));
+    uint64_t qosPath,
+    std::string routerInfoName) {
+  std::shared_ptr<ProxyDestination> ptr(new ProxyDestination(
+      proxy,
+      std::move(ap),
+      timeout,
+      qosClass,
+      qosPath,
+      std::move(routerInfoName)));
   ptr->selfPtr_ = ptr;
   return ptr;
 }
@@ -300,12 +306,14 @@ ProxyDestination::ProxyDestination(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
-    uint64_t qosPath)
+    uint64_t qosPath,
+    std::string routerInfoName)
     : proxy(&proxy_),
       accessPoint_(std::move(ap)),
       shortestTimeout_(timeout),
       qosClass_(qosClass),
       qosPath_(qosPath),
+      routerInfoName_(std::move(routerInfoName)),
       rxmitsToCloseConnection_(
           proxy->router().opts().min_rxmit_reconnect_threshold),
       probeTimer_(*this) {
@@ -342,6 +350,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
   options.sessionCachingEnabled = opts.ssl_connection_cache;
+  options.routerInfoName = routerInfoName_;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }

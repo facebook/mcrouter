@@ -58,10 +58,16 @@ std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
     std::shared_ptr<AccessPoint> ap,
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
-    uint64_t qosPath) {
+    uint64_t qosPath,
+    std::string routerInfoName) {
   auto key = genProxyDestinationKey(*ap, timeout);
   auto destination = ProxyDestination::create(
-      *proxy_, std::move(ap), timeout, qosClass, qosPath);
+      *proxy_,
+      std::move(ap),
+      timeout,
+      qosClass,
+      qosPath,
+      std::move(routerInfoName));
   {
     std::lock_guard<std::mutex> lck(destinationsLock_);
     auto destIt = destinations_.emplace(key, destination);

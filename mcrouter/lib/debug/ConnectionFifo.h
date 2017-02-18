@@ -42,7 +42,7 @@ class ConnectionFifo {
   ConnectionFifo(
       std::shared_ptr<Fifo> debugFifo,
       const folly::AsyncTransportWrapper* transport,
-      const folly::StringPiece routerName = "") noexcept;
+      const std::string& routerName) noexcept;
 
   /**
    * Tells whether or not there is a client connected to the underlying FIFO.

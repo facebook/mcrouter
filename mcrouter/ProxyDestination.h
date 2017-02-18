@@ -116,6 +116,7 @@ class ProxyDestination {
   std::chrono::milliseconds shortestTimeout_{0};
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
+  std::string routerInfoName_;
   uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
 
   Stats stats_;
@@ -137,7 +138,8 @@ class ProxyDestination {
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
-      uint64_t qosPath);
+      uint64_t qosPath,
+      std::string routerInfoName);
 
   void setState(State st);
 
@@ -162,7 +164,8 @@ class ProxyDestination {
       std::shared_ptr<AccessPoint> ap,
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
-      uint64_t qosPath);
+      uint64_t qosPath,
+      std::string routerInfoName);
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 

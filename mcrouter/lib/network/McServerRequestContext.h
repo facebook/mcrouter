@@ -196,7 +196,22 @@ class McServerOnRequestIf<List<Request, Requests...>>
   virtual ~McServerOnRequestIf() = default;
 };
 
-class McServerOnRequest : public McServerOnRequestIf<McRequestList> {};
+class McServerOnRequest : public McServerOnRequestIf<McRequestList> {
+ public:
+  explicit McServerOnRequest(std::string requestHandlerName)
+      : requestHandlerName_(std::move(requestHandlerName)) {}
+
+  /**
+   * Return the name of the request handler being used in this
+   * instance of McServerOnRequest.
+   */
+  const std::string& name() const {
+    return requestHandlerName_;
+  }
+
+ private:
+  std::string requestHandlerName_;
+};
 
 /**
  * Helper class to wrap user-defined callbacks in a correct virtual interface.
@@ -212,7 +227,8 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
 
   template <class... Args>
   explicit McServerOnRequestWrapper(Args&&... args)
-      : onRequest_(std::forward<Args>(args)...) {}
+      : McServerOnRequest(OnRequest::name),
+        onRequest_(std::forward<Args>(args)...) {}
 
   void caretRequestReady(
       const UmbrellaMessageInfo& headerInfo,

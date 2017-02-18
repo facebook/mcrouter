@@ -26,11 +26,12 @@ namespace {
 
 ConnectionFifo getDebugFifo(
     const std::string& path,
-    const folly::AsyncTransportWrapper* transport) {
+    const folly::AsyncTransportWrapper* transport,
+    const std::string& requestHandlerName) {
   if (!path.empty()) {
     if (auto fifoManager = FifoManager::getInstance()) {
       if (auto fifo = fifoManager->fetchThreadLocal(path)) {
-        return ConnectionFifo(std::move(fifo), transport);
+        return ConnectionFifo(std::move(fifo), transport, requestHandlerName);
       }
     }
   }
@@ -80,7 +81,10 @@ McServerSession::McServerSession(
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
       options_(std::move(options)),
-      debugFifo_(getDebugFifo(options_.debugFifoPath, transport_.get())),
+      debugFifo_(getDebugFifo(
+          options_.debugFifoPath,
+          transport_.get(),
+          onRequest_->name())),
       pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),

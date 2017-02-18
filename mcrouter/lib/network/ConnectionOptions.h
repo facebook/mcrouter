@@ -106,6 +106,11 @@ struct ConnectionOptions {
   std::string debugFifoPath;
 
   /**
+   * Name of the router that owns this connection.
+   */
+  std::string routerInfoName;
+
+  /**
    * enable ssl session caching
    */
   bool sessionCachingEnabled{false};

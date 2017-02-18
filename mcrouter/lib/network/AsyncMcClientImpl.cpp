@@ -504,7 +504,8 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
     if (auto fifoManager = FifoManager::getInstance()) {
       if (auto fifo =
               fifoManager->fetchThreadLocal(connectionOptions_.debugFifoPath)) {
-        debugFifo_ = ConnectionFifo(std::move(fifo), socket_.get());
+        debugFifo_ = ConnectionFifo(
+            std::move(fifo), socket_.get(), connectionOptions_.routerInfoName);
       }
     }
   }
