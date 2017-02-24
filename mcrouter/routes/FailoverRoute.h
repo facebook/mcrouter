@@ -213,8 +213,7 @@ class FailoverRoute {
          &normalReply,
          &childIndex,
          &conditionalFailover]() {
-          fiber_local<RouterInfo>::setFailoverTag(
-              failoverTagging_ && req.key().hasHashStop());
+          fiber_local<RouterInfo>::setFailoverTag(failoverTagging_);
           fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
           auto doFailover = [this, &req, &proxy, &normalReply](
               typename FailoverPolicyT::Iterator& child) {

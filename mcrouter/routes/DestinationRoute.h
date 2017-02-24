@@ -62,11 +62,6 @@ class DestinationRoute {
         timeout_.count());
   }
 
-  std::string keyWithFailoverTag(folly::StringPiece fullKey) const {
-    const char* const kFailoverTag = ":failover=1";
-    return folly::to<std::string>(fullKey, kFailoverTag);
-  }
-
   /**
    * @param destination The destination where the request is to be sent
    */
@@ -199,11 +194,7 @@ class DestinationRoute {
       if (!newReq) {
         newReq.emplace(req);
       }
-      auto newKey = keyWithFailoverTag(newReq->key().fullKey());
-      /* It's always safe to not append a failover tag */
-      if (newKey.size() <= MC_KEY_MAX_LEN) {
-        newReq->key() = std::move(newKey);
-      }
+      carbon::detail::setRequestFailover(*newReq);
     }
 
     const auto& reqToSend = newReq ? *newReq : req;
