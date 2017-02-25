@@ -121,7 +121,6 @@ void ThreadInfo::releaseClient(std::weak_ptr<Client> clientWeak) {
     if (auto client = clientWeak.lock()) {
       clients_.erase(client);
       client->closeNow();
-      assert(client.unique());
     }
   });
 }
