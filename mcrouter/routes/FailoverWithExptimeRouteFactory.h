@@ -7,45 +7,49 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#pragma once
+
 #include "mcrouter/lib/FailoverErrorsSettings.h"
+#include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
 #include "mcrouter/routes/FailoverRoute.h"
-#include "mcrouter/routes/McRouteHandleBuilder.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/ModifyExptimeRoute.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace {
+namespace detail {
 
-std::vector<McrouterRouteHandlePtr> getFailoverChildren(
-    McrouterRouteHandlePtr normal,
-    std::vector<McrouterRouteHandlePtr> failover,
+template <class RouterInfo>
+std::vector<typename RouterInfo::RouteHandlePtr> getFailoverChildren(
+    typename RouterInfo::RouteHandlePtr normal,
+    std::vector<typename RouterInfo::RouteHandlePtr> failover,
     int32_t failoverExptime) {
-  std::vector<McrouterRouteHandlePtr> children;
+  std::vector<typename RouterInfo::RouteHandlePtr> children;
   children.push_back(std::move(normal));
   for (auto& frh : failover) {
-    auto rh = makeMcrouterRouteHandle<ModifyExptimeRoute>(
-        std::move(frh), failoverExptime, ModifyExptimeAction::Min);
+    auto rh =
+        makeRouteHandle<typename RouterInfo::RouteHandleIf, ModifyExptimeRoute>(
+            std::move(frh), failoverExptime, ModifyExptimeAction::Min);
     children.push_back(std::move(rh));
   }
   return children;
 }
 
-} // anonymous
+} // detail
 
-McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-    McrouterRouteHandlePtr normal,
-    std::vector<McrouterRouteHandlePtr> failover,
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr createFailoverWithExptimeRoute(
+    typename RouterInfo::RouteHandlePtr normal,
+    std::vector<typename RouterInfo::RouteHandlePtr> failover,
     int32_t failoverExptime,
     FailoverErrorsSettings failoverErrors,
     std::unique_ptr<FailoverRateLimiter> rateLimiter) {
-  auto children = getFailoverChildren(
+  auto children = detail::getFailoverChildren<RouterInfo>(
       std::move(normal), std::move(failover), failoverExptime);
-  return makeFailoverRouteInOrder<McrouterRouterInfo, FailoverRoute>(
+  return makeFailoverRouteInOrder<RouterInfo, FailoverRoute>(
       std::move(children),
       std::move(failoverErrors),
       std::move(rateLimiter),
@@ -55,8 +59,9 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
       nullptr);
 }
 
-McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-    RouteHandleFactory<McrouterRouteHandleIf>& factory,
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeFailoverWithExptimeRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "FailoverWithExptimeRoute is not an object");
   auto jnormal = json.get_ptr("normal");
@@ -72,14 +77,14 @@ McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
     failoverExptime = jexptime->getInt();
   }
 
-  std::vector<McrouterRouteHandlePtr> failover;
+  std::vector<typename RouterInfo::RouteHandlePtr> failover;
   if (auto jfailover = json.get_ptr("failover")) {
     failover = factory.createList(*jfailover);
   }
 
-  auto children = getFailoverChildren(
+  auto children = detail::getFailoverChildren<RouterInfo>(
       std::move(normal), std::move(failover), failoverExptime);
-  return makeFailoverRouteDefault<McrouterRouterInfo, FailoverRoute>(
+  return makeFailoverRouteDefault<RouterInfo, FailoverRoute>(
       json, std::move(children));
 }
 }

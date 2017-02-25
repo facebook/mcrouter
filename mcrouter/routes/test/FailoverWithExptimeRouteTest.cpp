@@ -15,6 +15,8 @@
 #include "mcrouter/lib/FailoverErrorsSettings.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/FailoverRateLimiter.h"
+#include "mcrouter/routes/FailoverWithExptimeRouteFactory.h"
+#include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
 
 using namespace facebook::memcache;
@@ -31,13 +33,6 @@ namespace {
 using FiberManagerContextTag =
     typename fiber_local<MemcacheRouterInfo>::ContextTypeTag;
 } // anonymous
-
-McrouterRouteHandlePtr makeFailoverWithExptimeRoute(
-    McrouterRouteHandlePtr normal,
-    std::vector<McrouterRouteHandlePtr> failover,
-    int32_t failoverExptime,
-    FailoverErrorsSettings failoverErrors,
-    std::unique_ptr<FailoverRateLimiter> rateLimiter);
 }
 }
 } // facebook::memcache::mcrouter
@@ -51,7 +46,7 @@ TEST(failoverWithExptimeRouteTest, success) {
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
-  auto rh = makeFailoverWithExptimeRoute(
+  auto rh = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -85,7 +80,7 @@ TEST(failoverWithExptimeRouteTest, once) {
           UpdateRouteTestData(),
           DeleteRouteTestData(mc_res_notfound))};
 
-  auto rh = makeFailoverWithExptimeRoute(
+  auto rh = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -124,7 +119,7 @@ TEST(failoverWithExptimeRouteTest, twice) {
           UpdateRouteTestData(),
           DeleteRouteTestData(mc_res_notfound))};
 
-  auto rh = makeFailoverWithExptimeRoute(
+  auto rh = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -163,7 +158,7 @@ TEST(failoverWithExptimeRouteTest, fail) {
           UpdateRouteTestData(),
           DeleteRouteTestData(mc_res_timeout))};
 
-  auto rh = makeFailoverWithExptimeRoute(
+  auto rh = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -195,7 +190,7 @@ void testFailoverGet(mc_res_t res) {
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "c"))};
 
-  auto rhNoFail = makeFailoverWithExptimeRoute(
+  auto rhNoFail = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -210,7 +205,7 @@ void testFailoverGet(mc_res_t res) {
     EXPECT_EQ(vector<uint32_t>{0}, normalHandle[0]->sawExptimes);
   });
 
-  auto rhFail = makeFailoverWithExptimeRoute(
+  auto rhFail = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -233,7 +228,7 @@ void testFailoverUpdate(mc_res_t res) {
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
 
-  auto rhNoFail = makeFailoverWithExptimeRoute(
+  auto rhNoFail = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -254,7 +249,7 @@ void testFailoverUpdate(mc_res_t res) {
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 
-  auto rhFail = makeFailoverWithExptimeRoute(
+  auto rhFail = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -282,7 +277,7 @@ void testFailoverDelete(mc_res_t res) {
       make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted)),
       make_shared<TestHandle>(DeleteRouteTestData(mc_res_deleted))};
 
-  auto rhNoFail = makeFailoverWithExptimeRoute(
+  auto rhNoFail = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -301,7 +296,7 @@ void testFailoverDelete(mc_res_t res) {
     EXPECT_EQ(0, failoverHandles[1]->saw_keys.size());
   });
 
-  auto rhFail = makeFailoverWithExptimeRoute(
+  auto rhFail = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
@@ -343,7 +338,7 @@ TEST(failoverWithExptimeRouteTest, noFailoverOnArithmetic) {
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored)),
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_stored))};
 
-  auto rh = makeFailoverWithExptimeRoute(
+  auto rh = createFailoverWithExptimeRoute<McrouterRouterInfo>(
       normalRh[0],
       get_route_handles(failoverHandles),
       2,
