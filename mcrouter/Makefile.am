@@ -130,7 +130,6 @@ libmcroutercore_a_SOURCES = \
   routes/McrouterRouteHandle.h \
   routes/MigrateRouteFactory.h \
   routes/MissFailoverRoute.h \
-  routes/ModifyExptimeRoute.cpp \
   routes/ModifyExptimeRoute.h \
   routes/ModifyKeyRoute.h \
   routes/NullRoute.cpp \
