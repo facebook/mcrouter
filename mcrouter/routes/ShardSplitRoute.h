@@ -113,7 +113,10 @@ class ShardSplitRoute {
       }
     } else {
       size_t i = globals::hostid() % splitSize;
-      if (i == 0) {
+      // Note that foreachPossibleClient always calls traverse on a request with
+      // no flags set.
+      if (i == 0 || (carbon::GetLike<Request>::value &&
+                     alwaysSendToMainShardSplit(req.flags()))) {
         t(*rh_, req);
         return;
       }
@@ -142,7 +145,8 @@ class ShardSplitRoute {
       return rh_->route(req);
     } else {
       size_t i = globals::hostid() % splitSize;
-      if (i == 0) {
+      if (i == 0 || (carbon::GetLike<Request>::value &&
+                     alwaysSendToMainShardSplit(req.flags()))) {
         return rh_->route(req);
       }
       return rh_->route(splitReq(req, i, shard));

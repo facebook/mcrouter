@@ -81,6 +81,10 @@ class AdditionalProxyRequestLogger : public carbon::NoopAdditionalLogger {
       : NoopAdditionalLogger(proxy) {}
 };
 
+inline bool alwaysSendToMainShardSplit(uint64_t /* flags */) {
+  return false;
+}
+
 /**
  * @return monotonic time suitable for measuring intervals in microseconds.
  */

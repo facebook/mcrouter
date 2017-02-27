@@ -18,53 +18,15 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/routes/ShardSplitRoute.h"
 #include "mcrouter/routes/test/RouteHandleTestUtil.h"
+#include "mcrouter/routes/test/ShardSplitRouteTestUtil.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
+using namespace facebook::memcache::mcrouter::test;
 
 using std::make_shared;
 using std::string;
 using std::vector;
-
-namespace {
-using FiberManagerContextTag =
-    typename fiber_local<MemcacheRouterInfo>::ContextTypeTag;
-
-constexpr size_t kNumSplits = 26 * 26 + 1;
-} // anonymous
-
-template <class Request>
-void testShardingForOp(ShardSplitter splitter) {
-  for (size_t i = 0; i < kNumSplits; ++i) {
-    globals::HostidMock hostidMock(i);
-
-    vector<std::shared_ptr<TestHandle>> handles{make_shared<TestHandle>(
-        GetRouteTestData(mc_res_found, "a"),
-        UpdateRouteTestData(mc_res_found),
-        DeleteRouteTestData(mc_res_found))};
-    auto rh = get_route_handles(handles)[0];
-    McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
-        rh, splitter);
-
-    TestFiberManager fm{FiberManagerContextTag()};
-    fm.run([&] {
-      mockFiberContext();
-      auto reply = splitRoute.route(Request("test:123:"));
-      EXPECT_EQ(mc_res_found, reply.result());
-    });
-
-    if (i == 0) {
-      EXPECT_EQ(vector<string>{"test:123:"}, handles[0]->saw_keys);
-    } else {
-      EXPECT_EQ(
-          vector<string>{folly::sformat(
-              "test:123{}{}:",
-              (char)('a' + (i - 1) % 26),
-              (char)('a' + (i - 1) / 26))},
-          handles[0]->saw_keys);
-    }
-  }
-}
 
 template <class Request>
 void testDirectOp(ShardSplitter splitter) {
