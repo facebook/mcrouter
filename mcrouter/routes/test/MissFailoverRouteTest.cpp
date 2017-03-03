@@ -80,6 +80,54 @@ TEST(missMissFailoverRouteTest, fail) {
   EXPECT_EQ(mc_res_timeout, reply.result());
 }
 
+TEST(missMissFailoverRouteTest, bestOnError1) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))};
+
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
+      get_route_handles(test_handles), true);
+
+  auto reply = rh.route(McGetRequest("0"));
+
+  // Should return the first and the only healthy reply
+  EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
+  EXPECT_EQ(mc_res_notfound, reply.result());
+}
+
+TEST(missMissFailoverRouteTest, bestOnError2) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "c"))};
+
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
+      get_route_handles(test_handles), true);
+
+  auto reply = rh.route(McGetRequest("0"));
+
+  // Should return the only failover-healthy reply
+  EXPECT_EQ("b", carbon::valueRangeSlow(reply).str());
+  EXPECT_EQ(mc_res_notfound, reply.result());
+}
+
+TEST(missMissFailoverRouteTest, bestOnError3) {
+  vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(mc_res_timeout, "a")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "b")),
+      make_shared<TestHandle>(GetRouteTestData(mc_res_notfound, "c"))};
+
+  TestRouteHandle<MissFailoverRoute<TestRouterInfo>> rh(
+      get_route_handles(test_handles), true);
+
+  auto reply = rh.route(McGetRequest("0"));
+
+  // Should get the LAST healthy reply
+  EXPECT_EQ("c", carbon::valueRangeSlow(reply).str());
+  EXPECT_EQ(mc_res_notfound, reply.result());
+}
+
 TEST(missMissFailoverRouteTest, nonGetLike) {
   vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(UpdateRouteTestData(mc_res_notstored)),
