@@ -164,6 +164,7 @@ libmcroutercore_a_SOURCES = \
   routes/TimeProviderFunc.h \
   routes/WarmUpRoute.cpp \
   routes/WarmUpRoute.h \
+  RouterRegistry-impl.h \
   RoutingPrefix.cpp \
   RoutingPrefix.h \
   RuntimeVarsData.cpp \

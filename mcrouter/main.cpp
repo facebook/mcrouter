@@ -33,10 +33,9 @@
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/Proxy.h"
+#include "mcrouter/RouterRegistry.h"
 #include "mcrouter/Server.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
-#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/options.h"
 #include "mcrouter/standalone_options.h"
 #include "mcrouter/stats.h"
@@ -343,6 +342,34 @@ void notify_command_line(int argc, char** argv) {
   free(cmd_line);
 }
 
+template <class RouterInfo, template <class> class RequestHandler>
+void validateConfigAndExit() {
+  try {
+    auto router =
+        CarbonRouterInstance<RouterInfo>::init("standalone-validate", opts);
+    if (router == nullptr) {
+      throw std::runtime_error("Couldn't create mcrouter");
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter: " << e.what();
+    exit(kExitStatusUnrecoverableError);
+  } catch (...) {
+    LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter";
+    exit(kExitStatusUnrecoverableError);
+  }
+
+  /* Exit immediately with good code */
+  _exit(0);
+}
+
+template <class RouterInfo, template <class> class RequestHandler>
+void run() {
+  LOG(INFO) << "Starting " << RouterInfo::name << " router";
+  if (!runServer<RouterInfo, RequestHandler>(standaloneOpts, opts)) {
+    exit(kExitStatusTransientError);
+  }
+}
+
 int main(int argc, char** argv) {
   FLAGS_v = 1;
   FLAGS_logtostderr = 1;
@@ -453,30 +480,13 @@ int main(int argc, char** argv) {
     failure::addHandler(failure::handlers::throwLogicError());
 
     if (validate_configs == ValidateConfigMode::EXIT) {
-      try {
-        auto router = CarbonRouterInstance<MemcacheRouterInfo>::init(
-            "standalone-validate", opts);
-        if (router == nullptr) {
-          throw std::runtime_error("Couldn't create mcrouter");
-        }
-      } catch (const std::exception& e) {
-        LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter: " << e.what();
-        exit(kExitStatusUnrecoverableError);
-      } catch (...) {
-        LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter";
-        exit(kExitStatusUnrecoverableError);
-      }
-
-      /* Exit immediately with good code */
-      _exit(0);
+      CALL_BY_ROUTER_NAME(
+          standaloneOpts.carbon_router_name, validateConfigAndExit);
     }
   }
 
   standaloneInit(opts, standaloneOpts);
 
   set_standalone_args(commandArgs);
-  if (!runServer<MemcacheRouterInfo, MemcacheRequestHandler>(
-          standaloneOpts, opts)) {
-    exit(kExitStatusTransientError);
-  }
+  CALL_BY_ROUTER_NAME(standaloneOpts.carbon_router_name, run);
 }

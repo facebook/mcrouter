@@ -34,6 +34,7 @@ TESTS += \
   test_mcrouter_errors.py \
   test_mcrouter_sanity_mock.py \
   test_mcrouter_to_mcrouter_tko.py \
+  test_memcache_router.py \
   test_migrated_failover.py \
   test_miss_on_error_arith_ops.py \
   test_modify_exptime.py \

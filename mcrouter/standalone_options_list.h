@@ -23,6 +23,13 @@ MCROUTER_OPTION_GROUP("Standalone mcrouter options")
 
 MCROUTER_OPTION_STRING(log_file, "", "log-path", 'L', "Log file path")
 
+MCROUTER_OPTION_STRING(
+    carbon_router_name,
+    "Memcache",
+    "carbon-router-name",
+    no_short,
+    "Name of the carbon router to use")
+
 MCROUTER_OPTION_OTHER(
     std::vector<uint16_t>,
     ports,
