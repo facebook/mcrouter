@@ -44,10 +44,14 @@ class ExtraRouteHandleProviderIf;
 
 namespace facebook {
 namespace memcache {
-
 namespace mcrouter {
 class AdditionalProxyRequestLogger;
 } // mcrouter
+} // memcache
+} // facebook
+
+namespace facebook {
+namespace memcache {
 
 namespace detail {
 
@@ -81,7 +85,8 @@ struct MemcacheRouterInfo {
   template <class Route>
   using RouteHandle = MemcacheRouteHandle<Route>;
   using RoutableRequests = detail::MemcacheRoutableRequests;
-  using AdditionalLogger = mcrouter::AdditionalProxyRequestLogger;
+  using AdditionalLogger =
+      facebook::memcache::mcrouter::AdditionalProxyRequestLogger;
   using RouterStats = carbon::Stats<MemcacheRouterStatsConfig>;
 
   using RouteHandleFactoryMap = std::unordered_map<

@@ -291,7 +291,7 @@ reply McFlushAllReply {
 
 service {
   additional_requests: [];
-  on_reply_logger: mcrouter::AdditionalProxyRequestLogger;
+  on_reply_logger: facebook::memcache::mcrouter::AdditionalProxyRequestLogger;
   enable_shutdown: false;
   stats: {
     McDeleteRequest,
@@ -314,7 +314,7 @@ service {
       McMetagetRequest,
       McLeaseGetRequest
     ],
-    update: [ 
+    update: [
       McSetRequest,
       McAddRequest,
       McReplaceRequest,
