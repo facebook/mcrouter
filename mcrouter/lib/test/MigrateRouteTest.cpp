@@ -128,7 +128,7 @@ TEST(migrateRouteTest, migrate) {
        },
 
        [&]() { // case 3: curr_time < start_time + 2*interval
-         vector<std::shared_ptr<TestHandle>> test_handles{
+         vector<std::shared_ptr<TestHandle>> test_handles_3{
              make_shared<TestHandle>(
                  GetRouteTestData(mc_res_notfound, "a"),
                  UpdateRouteTestData(),
@@ -138,7 +138,7 @@ TEST(migrateRouteTest, migrate) {
                  UpdateRouteTestData(),
                  DeleteRouteTestData(mc_res_deleted)),
          };
-         auto route_handles_c3 = get_route_handles(test_handles);
+         auto route_handles_c3 = get_route_handles(test_handles_3);
          TestRouteHandle<MigrateRoute<TestRouteHandleIf, TimeProviderFunc>> rh(
              route_handles_c3[0],
              route_handles_c3[1],
@@ -155,10 +155,10 @@ TEST(migrateRouteTest, migrate) {
 
          auto reply_get = rh.route(req_get);
          EXPECT_EQ("b", carbon::valueRangeSlow(reply_get).str());
-         EXPECT_NE(vector<string>{"key_get"}, test_handles[0]->saw_keys);
-         EXPECT_EQ(vector<string>{"key_get"}, test_handles[1]->saw_keys);
-         (test_handles[0]->saw_keys).clear();
-         (test_handles[1]->saw_keys).clear();
+         EXPECT_NE(vector<string>{"key_get"}, test_handles_3[0]->saw_keys);
+         EXPECT_EQ(vector<string>{"key_get"}, test_handles_3[1]->saw_keys);
+         (test_handles_3[0]->saw_keys).clear();
+         (test_handles_3[1]->saw_keys).clear();
 
          McDeleteRequest req_del("key_del");
          cnt = 0;
@@ -167,8 +167,8 @@ TEST(migrateRouteTest, migrate) {
 
          auto reply_del = rh.route(req_del);
          EXPECT_EQ(mc_res_notfound, reply_del.result());
-         EXPECT_EQ(vector<string>{"key_del"}, test_handles[0]->saw_keys);
-         EXPECT_EQ(vector<string>{"key_del"}, test_handles[1]->saw_keys);
+         EXPECT_EQ(vector<string>{"key_del"}, test_handles_3[0]->saw_keys);
+         EXPECT_EQ(vector<string>{"key_del"}, test_handles_3[1]->saw_keys);
        },
 
        [&]() { // case 4: curr_time > start_time + 2*interval
