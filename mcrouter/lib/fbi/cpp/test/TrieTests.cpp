@@ -235,8 +235,8 @@ TEST(Trie, RandTestGetPrefix) {
   for (int i = 0; i < (1 << 16); ++i) {
     auto s = facebook::memcache::randomString(1, 20);
     int need = -1;
-    for (int i = s.length(); i >= 0; --i) {
-      auto it = map.find(s.substr(0, i));
+    for (int j = s.length(); j >= 0; --j) {
+      auto it = map.find(s.substr(0, j));
       if (it != map.end()) {
         need = it->second;
         break;
