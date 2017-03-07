@@ -77,7 +77,7 @@ class PooledCarbonConnectionImpl {
   template <class Impl>
   std::unique_ptr<If> recreate() {
     std::vector<std::unique_ptr<If>> newConnections;
-    for (auto i = 0; i < connections_.size(); ++i) {
+    for (size_t i = 0; i < connections_.size(); ++i) {
       newConnections.push_back(connections_[i]->recreate());
     }
     return folly::make_unique<Impl>(
