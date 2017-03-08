@@ -11,6 +11,11 @@
 
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
+#include "mcrouter/lib/network/gen/MemcacheServer.h"
+#include "mcrouter/tools/mcpiper/MessagePrinter.h"
+#include "mcrouter/tools/mcpiper/SnifferParser.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -32,6 +37,25 @@ bool initCompression() {
 
 const CompressionCodecMap* getCompressionCodecMap() {
   return nullptr;
+}
+
+std::unordered_map<
+    uint64_t,
+    std::unique_ptr<SnifferParserBase<MessagePrinter>>>::iterator
+addCarbonSnifferParser(
+    std::string /* routerName */,
+    std::unordered_map<
+        uint64_t,
+        std::unique_ptr<SnifferParserBase<MessagePrinter>>>& parserMap,
+    uint64_t connectionId,
+    MessagePrinter& printer) {
+  return parserMap
+      .emplace(
+          connectionId,
+          std::make_unique<SnifferParser<
+              MessagePrinter,
+              memcache::detail::MemcacheRequestList>>(printer))
+      .first;
 }
 }
 } // facebook::memcache

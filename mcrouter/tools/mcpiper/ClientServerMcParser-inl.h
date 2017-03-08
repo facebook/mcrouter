@@ -25,8 +25,8 @@ inline bool isRequestTypeId(uint32_t typeId) {
 }
 } // detail
 
-template <class Callback>
-void ClientServerMcParser<Callback>::parse(
+template <class Callback, class RequestList>
+void ClientServerMcParser<Callback, RequestList>::parse(
     folly::ByteRange data,
     uint32_t typeId,
     bool isFirstPacket) {

@@ -34,7 +34,7 @@ constexpr size_t kReadBufferSizeMax = 4096;
 
 namespace detail {
 
-template <class ReplyParser>
+template <class ReplyParser, class RequestList>
 class ExpectNextDispatcher {
  public:
   explicit ExpectNextDispatcher(ReplyParser* parser) : replyParser_(parser) {}
@@ -55,12 +55,12 @@ class ExpectNextDispatcher {
 
  private:
   ReplyParser* replyParser_;
-  CallDispatcher<McRequestList, ExpectNextDispatcher> dispatcher_;
+  CallDispatcher<RequestList, ExpectNextDispatcher> dispatcher_;
 };
 
 } // detail
 
-template <class Callback>
+template <class Callback, class RequestList>
 class ClientServerMcParser {
  public:
   class ReplyCallback {
@@ -87,7 +87,7 @@ class ClientServerMcParser {
   };
 
   struct RequestCallback : public CarbonMessageDispatcher<
-                               McRequestList,
+                               RequestList,
                                RequestCallback,
                                const UmbrellaMessageInfo&> {
    public:
@@ -171,7 +171,7 @@ class ClientServerMcParser {
   std::unique_ptr<ClientMcParser<ReplyCallback>> replyParser_;
   std::unique_ptr<ServerMcParser<RequestCallback>> requestParser_;
 
-  detail::ExpectNextDispatcher<ClientMcParser<ReplyCallback>>
+  detail::ExpectNextDispatcher<ClientMcParser<ReplyCallback>, RequestList>
       expectNextDispatcher_;
 };
 }

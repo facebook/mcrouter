@@ -155,7 +155,7 @@ class MessagePrinter {
 
   void countStats();
 
-  friend class SnifferParser<MessagePrinter>;
+  friend class SnifferParserBase<MessagePrinter>;
 
   template <class Message>
   StyledString getTypeSpecificAttributes(const Message& msg);

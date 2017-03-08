@@ -18,6 +18,9 @@ namespace facebook {
 namespace memcache {
 
 class CompressionCodecMap;
+class MessagePrinter;
+template <class T>
+class SnifferParserBase;
 
 /**
  * Returns the default fifo root.
@@ -44,5 +47,19 @@ bool initCompression();
  * If compression is not initialized, return nullptr.
  */
 const CompressionCodecMap* getCompressionCodecMap();
+
+/**
+ * Adds SnifferParser based on protocol to the parser map
+ */
+std::unordered_map<
+    uint64_t,
+    std::unique_ptr<SnifferParserBase<MessagePrinter>>>::iterator
+addCarbonSnifferParser(
+    std::string name,
+    std::unordered_map<
+        uint64_t,
+        std::unique_ptr<SnifferParserBase<MessagePrinter>>>& parserMap,
+    uint64_t connectionId,
+    MessagePrinter& printer);
 }
 } // facebook::memcache

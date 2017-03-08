@@ -43,6 +43,7 @@ class FifoReader;
  * @param to            Address of the endpoint that received the message.
  * @param typeId        Id of the type of the request/reply.
  * @param msgStartTime  The time the request/reply was received/send.
+ * @param routerName    Generated router name that helps identify protocol.
  * @param data          The data of the message.
  */
 using MessageReadyFn = std::function<void(
@@ -52,6 +53,7 @@ using MessageReadyFn = std::function<void(
     folly::SocketAddress to,
     uint32_t typeId,
     uint64_t msgStartTime,
+    std::string routerName,
     folly::ByteRange data)>;
 
 class FifoReadCallback : public folly::AsyncReader::ReadCallback {
@@ -83,7 +85,7 @@ class FifoReadCallback : public folly::AsyncReader::ReadCallback {
   uint64_t msgStartTime_{0};
 
   // Name of the carbon router.
-  std::string carbonRouterName_ = facebook::memcache::MemcacheRouterInfo::name;
+  std::string carbonRouterName_;
 
   void forwardMessage(
       const PacketHeader& header,

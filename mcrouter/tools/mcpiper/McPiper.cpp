@@ -136,7 +136,10 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
       createValueFormatter(),
       targetOut);
 
-  std::unordered_map<uint64_t, SnifferParser<MessagePrinter>> parserMap;
+  std::unordered_map<
+      uint64_t,
+      std::unique_ptr<SnifferParserBase<MessagePrinter>>>
+      parserMap;
 
   // Callback from fifoManager. Read the data and feed the correct parser.
   auto fifoReaderCallback = [&parserMap, this](
@@ -146,6 +149,7 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
       folly::SocketAddress to,
       uint32_t typeId,
       uint64_t msgStartTime,
+      std::string routerName,
       folly::ByteRange data) {
     if (!running_) {
       return;
@@ -155,23 +159,18 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
     }
     auto it = parserMap.find(connectionId);
     if (it == parserMap.end()) {
-      it = parserMap
-               .emplace(
-                   std::piecewise_construct,
-                   std::forward_as_tuple(connectionId),
-                   std::forward_as_tuple(*messagePrinter_))
-               .first;
+      it = addCarbonSnifferParser(
+          routerName, parserMap, connectionId, *messagePrinter_);
     }
     auto& snifferParser = it->second;
 
     if (packetId == 0) {
-      snifferParser.parser().reset();
+      snifferParser->resetParser();
     }
 
-    snifferParser.setAddresses(std::move(from), std::move(to));
-    snifferParser.setCurrentMsgStartTime(msgStartTime);
-    snifferParser.parser().parse(
-        data, typeId, packetId == 0 /* isFirstPacket */);
+    snifferParser->setAddresses(std::move(from), std::move(to));
+    snifferParser->setCurrentMsgStartTime(msgStartTime);
+    snifferParser->parse(data, typeId, packetId == 0 /* isFirstPacket */);
   };
 
   initCompression();
