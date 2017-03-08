@@ -79,8 +79,9 @@ class McServerThread {
  public:
   explicit McServerThread(AsyncMcServer& server)
       : server_(server),
-        evb_(/* enableTimeMeasurement */ false),
-        worker_(server.opts_.worker, evb_),
+        evb_(std::make_unique<folly::EventBase>(
+            /* enableTimeMeasurement */ false)),
+        worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true) {}
 
@@ -88,15 +89,16 @@ class McServerThread {
 
   McServerThread(AcceptorT, AsyncMcServer& server)
       : server_(server),
-        evb_(/* enableTimeMeasurement */ false),
-        worker_(server.opts_.worker, evb_),
+        evb_(std::make_unique<folly::EventBase>(
+            /* enableTimeMeasurement */ false)),
+        worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(true),
-        shutdownPipe_(folly::make_unique<ShutdownPipe>(server, evb_)) {}
+        shutdownPipe_(folly::make_unique<ShutdownPipe>(server, *evb_)) {}
 
   folly::EventBase& eventBase() {
-    return evb_;
+    return *evb_;
   }
 
   void waitForAcceptor() {
@@ -120,7 +122,7 @@ class McServerThread {
         }
       }
 
-      fn(threadId, evb_, worker_);
+      fn(threadId, *evb_, worker_);
 
       // Detach the server sockets from the acceptor thread.
       // If we don't do this, the TAsyncSSLServerSocket destructor
@@ -129,16 +131,32 @@ class McServerThread {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
+        for (auto& acceptor : acceptorsKeepAlive_) {
+          acceptor.first
+              ->add([keepAlive = std::move(acceptor.second)]() mutable {
+                keepAlive.reset();
+              });
+        }
+        acceptorsKeepAlive_.clear();
       }
+
+      evb_.reset();
     }};
   }
 
   /* Safe to call from other threads */
   void shutdown() {
-    auto result = evb_.runInEventBaseThread([&]() {
+    auto result = evb_->runInEventBaseThread([&]() {
       if (accepting_) {
         socket_.reset();
         sslSocket_.reset();
+        for (auto& acceptor : acceptorsKeepAlive_) {
+          acceptor.first
+              ->add([keepAlive = std::move(acceptor.second)]() mutable {
+                keepAlive.reset();
+              });
+        }
+        acceptorsKeepAlive_.clear();
       }
       if (shutdownPipe_) {
         shutdownPipe_->unregisterHandler();
@@ -201,7 +219,7 @@ class McServerThread {
   };
 
   AsyncMcServer& server_;
-  folly::EventBase evb_;
+  std::unique_ptr<folly::EventBase> evb_;
   std::thread thread_;
   AsyncMcServerWorker worker_;
   AcceptCallback acceptCallback_;
@@ -217,6 +235,8 @@ class McServerThread {
 
   folly::AsyncServerSocket::UniquePtr socket_;
   folly::AsyncServerSocket::UniquePtr sslSocket_;
+  std::vector<std::pair<folly::EventBase*, folly::Executor::KeepAlive>>
+      acceptorsKeepAlive_;
   std::unique_ptr<ShutdownPipe> shutdownPipe_;
 
   void startAccepting() {
@@ -280,20 +300,24 @@ class McServerThread {
       if (socket_) {
         socket_->listen(server_.opts_.tcpListenBacklog);
         socket_->startAccepting();
-        socket_->attachEventBase(&evb_);
+        socket_->attachEventBase(evb_.get());
       }
       if (sslSocket_) {
         sslSocket_->listen(server_.opts_.tcpListenBacklog);
         sslSocket_->startAccepting();
-        sslSocket_->attachEventBase(&evb_);
+        sslSocket_->attachEventBase(evb_.get());
       }
 
       for (auto& t : server_.threads_) {
         if (socket_ != nullptr) {
-          socket_->addAcceptCallback(&t->acceptCallback_, &t->evb_);
+          socket_->addAcceptCallback(&t->acceptCallback_, t->evb_.get());
         }
         if (sslSocket_ != nullptr) {
-          sslSocket_->addAcceptCallback(&t->sslAcceptCallback_, &t->evb_);
+          sslSocket_->addAcceptCallback(&t->sslAcceptCallback_, t->evb_.get());
+        }
+        if (socket_ != nullptr || sslSocket_ != nullptr || t.get() != this) {
+          acceptorsKeepAlive_.emplace_back(
+              t->evb_.get(), t->evb_->getKeepAliveToken());
         }
       }
     } catch (...) {
