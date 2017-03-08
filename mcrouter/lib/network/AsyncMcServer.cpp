@@ -79,7 +79,7 @@ class McServerThread {
  public:
   explicit McServerThread(AsyncMcServer& server)
       : server_(server),
-        evb_(std::make_unique<folly::EventBase>(
+        evb_(folly::make_unique<folly::EventBase>(
             /* enableTimeMeasurement */ false)),
         worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),
@@ -89,7 +89,7 @@ class McServerThread {
 
   McServerThread(AcceptorT, AsyncMcServer& server)
       : server_(server),
-        evb_(std::make_unique<folly::EventBase>(
+        evb_(folly::make_unique<folly::EventBase>(
             /* enableTimeMeasurement */ false)),
         worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),

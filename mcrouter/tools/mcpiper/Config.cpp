@@ -52,7 +52,7 @@ addCarbonSnifferParser(
   return parserMap
       .emplace(
           connectionId,
-          std::make_unique<SnifferParser<
+          folly::make_unique<SnifferParser<
               MessagePrinter,
               memcache::detail::MemcacheRequestList>>(printer))
       .first;
