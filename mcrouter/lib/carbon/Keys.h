@@ -108,7 +108,7 @@ class Keys {
   }
   uint32_t routingKeyHash() const {
     if (!routingKeyHash_) {
-      const auto keyPiece = fullKey();
+      const auto keyPiece = routingKey();
       routingKeyHash_ = folly::hash::SpookyHashV2::Hash32(
           keyPiece.begin(), keyPiece.size(), /* seed= */ 0);
     }

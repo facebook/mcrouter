@@ -59,7 +59,9 @@ class TestShadow(McrouterTestCase):
 
     def test_normal_shadow_specific_keys(self):
         mcrouter = self.get_mcrouter()
-        kv = [('f' + str(i), 'value' + str(i)) for i in range(101, 111)]
+        # hashstop and after should be ignored as far as routing goes
+        kv = [('f' + str(i) + "|#|ignored", 'value' + str(i))
+              for i in range(101, 111)]
         shadow_list = range(101, 107)
         shadow_keys = [kv[i - 101][0] for i in shadow_list]
 
