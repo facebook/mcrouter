@@ -21,8 +21,8 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  google::SetCommandLineOptionWithMode(
-      "bm_min_iters", "100000", google::SET_FLAG_IF_DEFAULT);
+  gflags::SetCommandLineOptionWithMode(
+      "bm_min_iters", "100000", gflags::SET_FLAG_IF_DEFAULT);
   folly::runBenchmarksOnFlag();
   return result;
 }
