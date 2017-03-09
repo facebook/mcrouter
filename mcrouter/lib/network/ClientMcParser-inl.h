@@ -315,9 +315,13 @@ ReplyStatsContext ClientMcParser<Callback>::getCompressionStats(
 template <class Callback>
 double ClientMcParser<Callback>::getDropProbability() const {
   if (parser_.protocol() == mc_caret_protocol) {
-    return parser_.getDropProbability();
+    const auto dropProbability = parser_.getDropProbability();
+    if (dropProbability >= 0.0 && dropProbability <= 1.0) {
+      return dropProbability;
+    }
+    callback_.logErrorWithContext(folly::sformat(
+        "Invalid drop probability: {}, resetting to 0", dropProbability));
   }
-
   return 0.0;
 }
 }
