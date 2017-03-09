@@ -399,6 +399,15 @@ MCROUTER_OPTION_STRING(
     no_short,
     "Directory where the last valid config will be saved.")
 
+MCROUTER_OPTION_INTEGER(
+    int,
+    max_dumped_config_age,
+    1 * 60 * 60 /* 1 hour */,
+    "max-dumped-config-age",
+    no_short,
+    "Max age of backup config files that mcrouter is allowed to use"
+    " (in seconds). 0 to disable using dumped configs.")
+
 MCROUTER_OPTION_STRING(
     config_file,
     "",

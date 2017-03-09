@@ -246,6 +246,17 @@ bool ConfigApi::getConfigFile(std::string& contents, std::string& path) {
   return false;
 }
 
+bool ConfigApi::readFile(const std::string& path, std::string& contents) {
+  bool fileRead = false;
+  if (shouldReadFromBackupFiles()) {
+    fileRead = readFromBackupFile(kFilePrefix, path, contents);
+  }
+  if (!fileRead) {
+    fileRead = folly::readFile(path.data(), contents);
+  }
+  return fileRead;
+}
+
 bool ConfigApi::get(
     ConfigType type,
     const std::string& path,
@@ -278,7 +289,7 @@ bool ConfigApi::get(
     fullPath = path;
   }
 
-  if (!folly::readFile(fullPath.data(), contents)) {
+  if (!readFile(fullPath, contents)) {
     return false;
   }
 
@@ -304,8 +315,10 @@ void ConfigApi::trackConfigSources() {
 void ConfigApi::subscribeToTrackedSources() {
   std::lock_guard<std::mutex> lock(fileInfoMutex_);
   assert(tracking_);
+  lastConfigFromBackupFiles_ = shouldReadFromBackupFiles();
   tracking_ = false;
   isFirstConfig_ = false;
+  readFromBackupFiles_ = false;
 
   if (!opts_.disable_reload_configs) {
     // start watching for updates
@@ -390,7 +403,7 @@ void ConfigApi::dumpConfigSourceToDisk(
     const std::string& name,
     const std::string& contents,
     const std::string& md5OrVersion) {
-  if (!dumpConfigToDisk_) {
+  if (!dumpConfigToDisk_ || lastConfigFromBackupFiles_) {
     return;
   }
 
@@ -428,6 +441,51 @@ void ConfigApi::dumpConfigSourceToDisk(
       ensureDirectoryExists(directory);
     }
   }
+}
+
+bool ConfigApi::readFromBackupFile(
+    const std::string& sourcePrefix,
+    const std::string& name,
+    std::string& contents) const {
+  auto filePath = getBackupConfigDirectory(opts_) /
+      getBackupConfigFileName(sourcePrefix, name);
+  if (!boost::filesystem::exists(filePath)) {
+    LOG(WARNING) << "Backup file '" << filePath << "' not found.";
+    return false;
+  }
+
+  auto now = nowWallSec();
+  auto lastWriteTime = boost::filesystem::last_write_time(filePath);
+  if (lastWriteTime + opts_.max_dumped_config_age < now) {
+    LOG(WARNING) << "Config backup '" << sourcePrefix << name
+                 << "' too old to be trusted. "
+                 << "Age: " << now - lastWriteTime << " seconds. "
+                 << "Max age allowed: " << opts_.max_dumped_config_age
+                 << " seconds.";
+    return false;
+  }
+
+  LOG(INFO) << "Reading config source " << sourcePrefix << name
+            << " from backup.";
+  return folly::readFile(filePath.c_str(), contents);
+}
+
+void ConfigApi::enableReadingFromBackupFiles() {
+  if (!isFirstConfig()) {
+    throw std::logic_error(
+        "Reading from backup files is just allowed on the first configuration");
+  }
+  if (opts_.max_dumped_config_age == 0) {
+    LOG(WARNING) << "Reading configs from backup is disabled "
+                    "(max_dumped_config_age == 0)";
+    return;
+  }
+  readFromBackupFiles_ = true;
+  LOG(WARNING) << "Enabling read config from backup files.";
+}
+
+bool ConfigApi::shouldReadFromBackupFiles() const {
+  return readFromBackupFiles_;
 }
 
 } // mcrouter

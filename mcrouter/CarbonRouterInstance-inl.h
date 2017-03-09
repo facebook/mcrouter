@@ -230,7 +230,13 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
 
     auto builder = createConfigBuilder();
     if (!builder) {
-      return false;
+      // If we cannot create ConfigBuilder from normal config,
+      // try creating it from backup files.
+      configApi_->enableReadingFromBackupFiles();
+      builder = createConfigBuilder();
+      if (!builder) {
+        return false;
+      }
     }
 
     for (size_t i = 0; i < opts_.num_proxies; i++) {
@@ -249,9 +255,24 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
       }
     }
 
-    if (!reconfigure(builder.value())) {
-      LOG(ERROR) << "Failed to configure proxies";
-      return false;
+    if (configure(builder.value())) {
+      configApi_->subscribeToTrackedSources();
+    } else {
+      configFailures_++;
+      configApi_->abandonTrackedSources();
+
+      // If we successfully created ConfigBuilder from normal config, but
+      // failed to configure, we have to create ConfigBuilder again,
+      // this time reading from backup files.
+      configApi_->enableReadingFromBackupFiles();
+      builder = createConfigBuilder();
+      if (configure(builder.value())) {
+        configApi_->subscribeToTrackedSources();
+      } else {
+        configApi_->abandonTrackedSources();
+        LOG(ERROR) << "Failed to configure proxies";
+        return false;
+      }
     }
   }
 
