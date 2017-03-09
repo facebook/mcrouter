@@ -48,15 +48,15 @@ inline int64_t getLeaseToken(const McLeaseSetRequest& msg) {
 
 // Message
 template <class M>
-typename std::enable_if<carbon::IsRequestTrait<M>::value, folly::StringPiece>::
-    type
+typename std::
+    enable_if<!carbon::detail::HasMessage<M>::value, folly::StringPiece>::type
     getMessage(const M& msg) {
   return folly::StringPiece();
 }
 
 template <class M>
-typename std::enable_if<!carbon::IsRequestTrait<M>::value, folly::StringPiece>::
-    type
+typename std::
+    enable_if<carbon::detail::HasMessage<M>::value, folly::StringPiece>::type
     getMessage(const M& msg) {
   return msg.message();
 }
@@ -73,6 +73,33 @@ constexpr typename std::
     enable_if<!carbon::IsRequestTrait<M>::value, const char*>::type
     getName() {
   return MatchingRequest<M>::name();
+}
+
+template <class Reply>
+typename std::enable_if<
+    !std::is_same<RequestFromReplyType<Reply, RequestReplyPairs>, void>::value,
+    void>::type
+prepareUmbrellaRawReply(
+    UmbrellaSerializedMessage& umbrellaSerializedMessage,
+    Reply&& reply,
+    uint64_t reqid,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
+  umbrellaSerializedMessage.prepare(std::move(reply), reqid, iovOut, niovOut);
+}
+
+template <class Reply>
+typename std::enable_if<
+    std::is_same<RequestFromReplyType<Reply, RequestReplyPairs>, void>::value,
+    void>::type
+prepareUmbrellaRawReply(
+    UmbrellaSerializedMessage& umbrellaSerializedMessage,
+    Reply&& reply,
+    uint64_t reqid,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
+  LOG(ERROR) << "Umbrella Protocol does not support a reply type"
+             << " that is not Memcache compatible!";
 }
 
 } // detail
@@ -287,8 +314,12 @@ void MessagePrinter::printRawReply(
       LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
       break;
     case mc_umbrella_protocol:
-      umbrellaSerializedMessage.prepare(
-          std::move(reply), msgId, iovsBegin, iovsCount);
+      detail::prepareUmbrellaRawReply(
+          umbrellaSerializedMessage,
+          std::move(reply),
+          msgId,
+          iovsBegin,
+          iovsCount);
       break;
     case mc_caret_protocol:
       caretSerializedMessage.prepare(

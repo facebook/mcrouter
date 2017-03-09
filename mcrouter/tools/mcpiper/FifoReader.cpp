@@ -175,12 +175,6 @@ void FifoReadCallback::forwardMessage(
   auto data = buf->coalesce();
   CHECK(data.size() == header.packetSize()) << "Invalid header buffer size!";
 
-  if (carbonRouterName_ != facebook::memcache::MemcacheRouterInfo::name) {
-    LOG(WARNING) << "Carbon protocol " << carbonRouterName_
-                 << " is not supported yet.";
-    return;
-  }
-
   if (typeId_ != 0) {
     messageReady_(
         header.connectionId(),
