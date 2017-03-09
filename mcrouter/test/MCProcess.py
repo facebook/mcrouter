@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2017, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -612,11 +612,14 @@ class McrouterBase(MCProcess):
         os.mkdir(self.stats_dir)
         self.debug_fifo_root = os.path.join(base_dir.path, 'fifos')
         os.mkdir(self.debug_fifo_root)
+        self.config_dump_root = os.path.join(base_dir.path, 'config')
+        os.mkdir(self.config_dump_root)
 
         args.extend(['-L', self.log,
                      '-a', self.async_spool,
                      '--stats-root', self.stats_dir,
-                     '--debug-fifo-root', self.debug_fifo_root])
+                     '--debug-fifo-root', self.debug_fifo_root,
+                     '--config-dump-root', self.config_dump_root])
 
         listen_sock = None
         if port is None:

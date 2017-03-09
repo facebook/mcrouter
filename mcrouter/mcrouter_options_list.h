@@ -393,6 +393,13 @@ MCROUTER_OPTION_STRING(
     " this option supersedes the deprecated config-file and config-str options.")
 
 MCROUTER_OPTION_STRING(
+    config_dump_root,
+    CONFIG_DUMP_ROOT_DEFAULT,
+    "config-dump-root",
+    no_short,
+    "Directory where the last valid config will be saved.")
+
+MCROUTER_OPTION_STRING(
     config_file,
     "",
     "config-file",

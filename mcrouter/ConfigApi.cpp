@@ -9,10 +9,11 @@
  */
 #include "ConfigApi.h"
 
-#include <boost/filesystem/path.hpp>
+#include <boost/filesystem.hpp>
 
 #include <folly/FileUtil.h>
 #include <folly/Memory.h>
+#include <folly/String.h>
 #include <folly/dynamic.h>
 
 #include "mcrouter/CarbonRouterInstance.h"
@@ -27,10 +28,65 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
+namespace {
+
 const char* const kMcrouterConfigKey = "mcrouter_config";
 const char* const kConfigFile = "config_file";
 const char* const kConfigImport = "config_import";
 const int kConfigReloadInterval = 60;
+
+boost::filesystem::path getBackupConfigDirectory(const McrouterOptions& opts) {
+  return boost::filesystem::path(opts.config_dump_root) / opts.service_name /
+      opts.router_name;
+}
+
+boost::filesystem::path getBackupConfigFileName(
+    folly::StringPiece sourcePrefix,
+    folly::StringPiece name) {
+  sourcePrefix.removeSuffix(':');
+  return boost::filesystem::path(folly::sformat(
+      "{}-{}", sourcePrefix, folly::uriEscape<std::string>(name)));
+}
+
+bool ensureDirectoryExists(boost::filesystem::path directory) {
+  if (directory.empty() || boost::filesystem::exists(directory)) {
+    return true;
+  }
+  if (ensureDirectoryExists(directory.parent_path())) {
+    boost::system::error_code ec;
+    auto created = boost::filesystem::create_directory(directory, ec);
+    if (!created) {
+      LOG(ERROR) << "Failed to create directory '" << directory
+                 << "'. Error code: " << ec;
+    }
+    return created;
+  }
+  return false;
+}
+
+bool setupDumpConfigToDisk(const McrouterOptions& opts) {
+  if (opts.config_dump_root.empty()) {
+    return false;
+  }
+  if (opts.service_name.empty() || opts.router_name.empty()) {
+    MC_LOG_FAILURE(
+        opts,
+        memcache::failure::Category::kOther,
+        "Service name or router name not set. Configs won't be saved to disk.");
+    return false;
+  }
+  if (!ensureDirectoryExists(getBackupConfigDirectory(opts))) {
+    MC_LOG_FAILURE(
+        opts,
+        memcache::failure::Category::kOther,
+        "Failed to setup directory for dumping configs. "
+        "Configs won't be saved to disk.");
+    return false;
+  }
+  return true;
+}
+
+} // anonymous namespace
 
 const char* const ConfigApi::kFilePrefix = "file:";
 
@@ -39,7 +95,9 @@ ConfigApi::~ConfigApi() {
 }
 
 ConfigApi::ConfigApi(const McrouterOptions& opts)
-    : opts_(opts), finish_(false) {}
+    : opts_(opts),
+      finish_(false),
+      dumpConfigToDisk_(setupDumpConfigToDisk(opts)) {}
 
 ConfigApi::CallbackHandle ConfigApi::subscribe(Callback callback) {
   return callbacks_.subscribe(std::move(callback));
@@ -233,6 +291,7 @@ bool ConfigApi::get(
     file.type = type;
     file.lastMd5Check = nowWallSec();
     file.md5 = Md5Hash(contents);
+    file.content = contents; // copy file contents so that we can dump it later
   }
   return true;
 }
@@ -252,6 +311,7 @@ void ConfigApi::subscribeToTrackedSources() {
     // start watching for updates
     for (auto& it : trackedFiles_) {
       auto& file = it.second;
+      dumpConfigSourceToDisk(kFilePrefix, file.path, file.content, file.md5);
       try {
         if (!file.provider) {
           // reuse existing providers
@@ -324,6 +384,52 @@ folly::dynamic ConfigApi::getConfigSourcesInfo() {
 bool ConfigApi::isFirstConfig() const {
   return isFirstConfig_;
 }
+
+void ConfigApi::dumpConfigSourceToDisk(
+    const std::string& sourcePrefix,
+    const std::string& name,
+    const std::string& contents,
+    const std::string& md5OrVersion) {
+  if (!dumpConfigToDisk_) {
+    return;
+  }
+
+  auto directory = getBackupConfigDirectory(opts_);
+  auto filePath =
+      (directory / getBackupConfigFileName(sourcePrefix, name)).string();
+
+  bool shouldRewrite = true;
+  auto backupFileIt = backupFiles_.find(filePath);
+  if (backupFileIt == backupFiles_.end()) {
+    backupFileIt = backupFiles_.emplace(filePath, "").first;
+  } else {
+    shouldRewrite = (backupFileIt->second != md5OrVersion);
+  }
+
+  if (shouldRewrite) {
+    if (atomicallyWriteFileToDisk(contents, filePath)) {
+      backupFileIt->second = md5OrVersion;
+    } else {
+      MC_LOG_FAILURE(
+          opts_,
+          memcache::failure::Category::kOther,
+          "Error while dumping last valid config to disk. "
+          "Failed to write file {}.",
+          filePath);
+      ensureDirectoryExists(directory);
+    }
+  } else {
+    if (!touchFile(filePath)) {
+      MC_LOG_FAILURE(
+          opts_,
+          memcache::failure::Category::kOther,
+          "Error while touching backup config file {}",
+          filePath);
+      ensureDirectoryExists(directory);
+    }
+  }
 }
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

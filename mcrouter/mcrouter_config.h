@@ -34,6 +34,7 @@ static_assert(false, "mcrouter: invalid build");
 #define MCROUTER_RUNTIME_VARS_DEFAULT ""
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
 #define DEBUG_FIFO_ROOT_DEFAULT "/var/mcrouter/fifos"
+#define CONFIG_DUMP_ROOT_DEFAULT "/var/mcrouter/config"
 
 namespace folly {
 struct dynamic;

@@ -120,6 +120,23 @@ class ConfigApi : public ConfigApiIf {
    */
   virtual bool checkFileUpdate();
 
+  /**
+   * Save a piece of config source to disk.
+   *
+   * @param sourcePrefix  Where this config comes from (e.g. file).
+   * @param name          Name of this peice of config.
+   *                      NOTE: sourcePrefix + name should uniquely identify
+   *                      this config source.
+   * @param contents      The actual config.
+   * @param md5OrVersion  A piece of metadata that can "uniquely" identify the
+   *                      "contents" provided.
+   */
+  void dumpConfigSourceToDisk(
+      const std::string& sourcePrefix,
+      const std::string& name,
+      const std::string& contents,
+      const std::string& md5OrVersion);
+
  private:
   struct FileInfo {
     std::string path;
@@ -127,6 +144,7 @@ class ConfigApi : public ConfigApiIf {
     ConfigType type{ConfigType::ConfigFile};
     std::unique_ptr<FileDataProvider> provider;
     time_t lastMd5Check{0}; // last hash check in seconds since epoch
+    std::string content;
 
     bool checkMd5Changed();
   };
@@ -140,6 +158,11 @@ class ConfigApi : public ConfigApiIf {
   std::mutex finishMutex_;
   std::condition_variable finishCV_;
   std::atomic<bool> finish_;
+
+  const bool dumpConfigToDisk_{false};
+
+  // file path -> md5
+  std::unordered_map<std::string, std::string> backupFiles_;
 
   bool isFirstConfig_{true};
 
