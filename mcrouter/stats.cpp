@@ -430,6 +430,7 @@ void prepare_stats(CarbonRouterInstanceBase& router, stat_t* stats) {
   stats[config_last_success_stat].data.uint64 = config_last_success;
   stats[config_last_attempt_stat].data.uint64 = router.lastConfigAttempt();
   stats[config_failures_stat].data.uint64 = router.configFailures();
+  stats[configs_from_disk_stat].data.uint64 = router.configsFromDisk();
 
   stats[pid_stat].data.int64 = getpid();
   stats[parent_pid_stat].data.int64 = getppid();

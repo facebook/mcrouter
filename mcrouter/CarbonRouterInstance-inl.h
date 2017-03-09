@@ -225,6 +225,7 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
     initCompression(*this);
   }
 
+  bool configuredFromDisk = false;
   {
     std::lock_guard<std::mutex> lg(configReconfigLock_);
 
@@ -233,6 +234,7 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
       // If we cannot create ConfigBuilder from normal config,
       // try creating it from backup files.
       configApi_->enableReadingFromBackupFiles();
+      configuredFromDisk = true;
       builder = createConfigBuilder();
       if (!builder) {
         return false;
@@ -265,6 +267,7 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
       // failed to configure, we have to create ConfigBuilder again,
       // this time reading from backup files.
       configApi_->enableReadingFromBackupFiles();
+      configuredFromDisk = true;
       builder = createConfigBuilder();
       if (configure(builder.value())) {
         configApi_->subscribeToTrackedSources();
@@ -274,6 +277,10 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
         return false;
       }
     }
+  }
+
+  if (configuredFromDisk) {
+    configsFromDisk_++;
   }
 
   startTime_ = time(nullptr);
