@@ -15,7 +15,7 @@
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/carbon/TypeList.h"
+#include "mcrouter/lib/fbi/cpp/TypeList.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 #include "mcrouter/lib/mc/protocol.h"
 
@@ -63,7 +63,26 @@ setRequestFailover(Request& req) {
   }
 }
 
+template <class RequestList>
+struct GetRequestReplyPairsImpl;
+
+template <class Request, class... Requests>
+struct GetRequestReplyPairsImpl<List<Request, Requests...>> {
+  using type = facebook::memcache::PrependT<
+      facebook::memcache::Pair<Request, typename Request::reply_type>,
+      typename GetRequestReplyPairsImpl<List<Requests...>>::type>;
+};
+
+template <>
+struct GetRequestReplyPairsImpl<List<>> {
+  using type = List<>;
+};
+
 } // detail
+
+template <class RequestList>
+using GetRequestReplyPairs =
+    typename detail::GetRequestReplyPairsImpl<RequestList>::type;
 
 template <typename Reply>
 typename std::enable_if<detail::HasMessage<Reply>::value>::type

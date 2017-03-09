@@ -7,6 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <type_traits>
+
 namespace carbon {
 
 template <class T>
@@ -42,6 +44,19 @@ struct ListDedup<
     List<X, Xs...>,
     typename std::enable_if<ListContains<List<Xs...>, X>::value>::type> {
   using type = typename ListDedup<List<Xs...>>::type;
+};
+
+template <class First>
+struct FindByPairFirst<First, List<>> {
+  using type = void;
+};
+
+template <class First, class P1, class... Ps>
+struct FindByPairFirst<First, List<P1, Ps...>> {
+  using type = typename std::conditional<
+      std::is_same<First, typename P1::First>::value,
+      typename P1::Second,
+      typename FindByPairFirst<First, List<Ps...>>::type>::type;
 };
 
 } // carbon

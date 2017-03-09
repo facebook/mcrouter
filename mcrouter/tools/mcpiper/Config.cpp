@@ -19,6 +19,18 @@
 namespace facebook {
 namespace memcache {
 
+namespace detail {
+
+using RequestReplyRegistry = carbon::GetRequestReplyPairs<MemcacheRequestList>;
+
+template <class Reply>
+constexpr const char* MatchingRequest<Reply>::name() {
+  using Request = RequestFromReplyType<Reply, RequestReplyRegistry>;
+  return Request::name;
+}
+
+} // detail
+
 std::string getDefaultFifoRoot() {
   return "/var/mcrouter/fifos";
 }

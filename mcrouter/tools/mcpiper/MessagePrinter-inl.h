@@ -72,8 +72,7 @@ template <class M>
 constexpr typename std::
     enable_if<!carbon::IsRequestTrait<M>::value, const char*>::type
     getName() {
-  using MatchingRequest = RequestFromReplyType<M, RequestReplyPairs>;
-  return MatchingRequest::name;
+  return MatchingRequest<M>::name();
 }
 
 } // detail

@@ -22,6 +22,15 @@ class MessagePrinter;
 template <class T>
 class SnifferParserBase;
 
+namespace detail {
+
+template <class Reply>
+struct MatchingRequest {
+  static constexpr const char* name();
+};
+
+} // detail
+
 /**
  * Returns the default fifo root.
  */

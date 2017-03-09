@@ -35,6 +35,12 @@ struct Prepend;
 template <class L, class Enable = void>
 struct ListDedup;
 
+/**
+ * (First, List<P...>) -> Second
+ */
+template <class First, class PairList>
+struct FindByPairFirst;
+
 } // carbon
 
 #include "TypeList-inl.h"
