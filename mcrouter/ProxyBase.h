@@ -15,14 +15,11 @@
 
 #include <folly/dynamic.h>
 #include <folly/fibers/FiberManager.h>
+#include <folly/io/async/VirtualEventBase.h>
 
 #include "mcrouter/AsyncLog.h"
 #include "mcrouter/ProxyStats.h"
 #include "mcrouter/config.h"
-
-namespace folly {
-class EventBase;
-}
 
 namespace facebook {
 namespace memcache {
@@ -40,7 +37,7 @@ class ProxyBase {
   ProxyBase(
       CarbonRouterInstanceBase& rtr,
       size_t id,
-      folly::EventBase& evb,
+      folly::VirtualEventBase& evb,
       RouterInfo tag);
 
   virtual ~ProxyBase() = default;
@@ -63,7 +60,7 @@ class ProxyBase {
    */
   const McrouterOptions& getRouterOptions() const;
 
-  folly::EventBase& eventBase() {
+  folly::VirtualEventBase& eventBase() {
     return eventBase_;
   }
 
@@ -108,7 +105,7 @@ class ProxyBase {
   CarbonRouterInstanceBase& router_;
   const size_t id_{0};
 
-  folly::EventBase& eventBase_;
+  folly::VirtualEventBase& eventBase_;
   folly::fibers::FiberManager fiberManager_;
 
   AsyncLog asyncLog_;

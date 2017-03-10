@@ -116,7 +116,7 @@ void ProxyDestination::timerCallback() {
 
 void ProxyDestination::start_sending_probes() {
   probe_delay_next_ms = proxy->router().opts().probe_delay_initial_ms;
-  probeTimer_.attachEventBase(std::addressof(proxy->eventBase()));
+  probeTimer_.attachTimeoutManager(std::addressof(proxy->eventBase()));
   schedule_next_probe();
 }
 

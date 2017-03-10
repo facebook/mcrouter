@@ -38,6 +38,7 @@ struct ReplyStatsContext;
 class AsyncMcClient {
  public:
   AsyncMcClient(folly::EventBase& eventBase, ConnectionOptions options);
+  AsyncMcClient(folly::VirtualEventBase& eventBase, ConnectionOptions options);
 
   /**
    * Close connection and fail all outstanding requests immediately.

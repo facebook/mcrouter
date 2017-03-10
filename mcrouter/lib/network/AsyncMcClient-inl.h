@@ -17,6 +17,11 @@ namespace memcache {
 inline AsyncMcClient::AsyncMcClient(
     folly::EventBase& eventBase,
     ConnectionOptions options)
+    : AsyncMcClient(eventBase.getVirtualEventBase(), options) {}
+
+inline AsyncMcClient::AsyncMcClient(
+    folly::VirtualEventBase& eventBase,
+    ConnectionOptions options)
     : base_(AsyncMcClientImpl::create(eventBase, std::move(options))) {}
 
 inline void AsyncMcClient::closeNow() {

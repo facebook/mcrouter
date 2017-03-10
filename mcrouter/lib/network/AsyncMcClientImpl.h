@@ -16,6 +16,7 @@
 #include <folly/io/IOBufQueue.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
+#include <folly/io/async/VirtualEventBase.h>
 
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/Operation.h"
@@ -44,7 +45,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
                           private folly::AsyncTransportWrapper::WriteCallback {
  public:
   static std::shared_ptr<AsyncMcClientImpl> create(
-      folly::EventBase& eventBase,
+      folly::VirtualEventBase& eventBase,
       ConnectionOptions options);
 
   AsyncMcClientImpl(const AsyncMcClientImpl&) = delete;
@@ -151,7 +152,9 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   std::unique_ptr<detail::OnEventBaseDestructionCallback>
       eventBaseDestructionCallback_;
 
-  AsyncMcClientImpl(folly::EventBase& eventBase, ConnectionOptions options);
+  AsyncMcClientImpl(
+      folly::VirtualEventBase& eventBase,
+      ConnectionOptions options);
 
   ~AsyncMcClientImpl();
 

@@ -32,7 +32,6 @@ namespace mcrouter {
 
 class McrouterManager;
 
-template <class RouterInfo>
 class ProxyThread;
 
 /**
@@ -127,11 +126,6 @@ class CarbonRouterInstance
    */
   Proxy<RouterInfo>* getProxy(size_t index) const;
 
-  /**
-   * Release ownership of a proxy
-   */
-  typename Proxy<RouterInfo>::Pointer releaseProxy(size_t index);
-
   bool configure(const ProxyConfigBuilder& builder);
 
   CarbonRouterInstance(const CarbonRouterInstance&) = delete;
@@ -165,17 +159,17 @@ class CarbonRouterInstance
   ConfigApi::CallbackHandle configUpdateHandle_;
 
   /**
-   * Exactly one of these vectors will contain opts.num_proxies elements,
-   * others will be empty.
-   *
-   * Standalone/sync mode: we don't startup proxy threads, so Mcrouter
-   * owns the proxies directly.
-   *
-   * Embedded mode: Mcrouter owns ProxyThreads, which managed the lifetime
-   * of proxies on their own threads.
+   * Both these vectors will contain opts.num_proxies elements.
    */
-  std::vector<typename Proxy<RouterInfo>::Pointer> proxies_;
-  std::vector<std::unique_ptr<ProxyThread<RouterInfo>>> proxyThreads_;
+  std::vector<Proxy<RouterInfo>*> proxies_;
+  std::vector<std::unique_ptr<folly::VirtualEventBase>> proxyEvbs_;
+
+  /**
+   * This will contain opts.num_proxies elements in Embedded mode (mcrouter
+   * owns proxy threads).
+   * In case of Standalone/sync mode, this vector is empty.
+   */
+  std::vector<std::unique_ptr<ProxyThread>> proxyThreads_;
 
   /**
    * The only reason this is a separate function is due to legacy accessor

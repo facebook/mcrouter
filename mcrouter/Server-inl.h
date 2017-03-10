@@ -70,13 +70,9 @@ void serverLoop(
   /* TODO(libevent): the only reason this is not simply evb.loop() is
      because we need to call asox stuff on every loop iteration.
      We can clean this up once we convert everything to EventBase */
-  while (worker.isAlive() || worker.writesPending() ||
-         proxy->fiberManager().hasTasks()) {
+  while (worker.isAlive() || worker.writesPending()) {
     evb.loopOnce();
   }
-
-  // destroy proxy on proxy thread
-  router.releaseProxy(threadId);
 }
 
 } // detail
@@ -141,6 +137,7 @@ bool runServer(
       initCompression(*router);
     }
 
+    folly::Baton<> shutdownBaton;
     server.spawn(
         [router, &standaloneOpts](
             size_t threadId,
@@ -149,8 +146,10 @@ bool runServer(
           detail::serverLoop<RouterInfo, RequestHandler>(
               *router, threadId, evb, worker, standaloneOpts);
         },
-        [router]() { router->shutdown(); });
+        [&shutdownBaton]() { shutdownBaton.post(); });
 
+    shutdownBaton.wait();
+    router->shutdown();
     server.join();
 
     LOG(INFO) << "Shutting down";

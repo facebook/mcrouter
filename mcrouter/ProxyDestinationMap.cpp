@@ -147,7 +147,7 @@ void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
   inactivityTimeout_ = static_cast<uint32_t>(interval.count());
   resetTimer_ = folly::make_unique<TimerType>(*this);
 
-  resetTimer_->attachEventBase(std::addressof(proxy_->eventBase()));
+  resetTimer_->attachTimeoutManager(std::addressof(proxy_->eventBase()));
   if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
     MC_LOG_FAILURE(
         proxy_->router().opts(),

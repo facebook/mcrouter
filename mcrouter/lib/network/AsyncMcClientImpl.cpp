@@ -71,9 +71,9 @@ class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
 };
 
 AsyncMcClientImpl::AsyncMcClientImpl(
-    folly::EventBase& eventBase,
+    folly::VirtualEventBase& eventBase,
     ConnectionOptions options)
-    : eventBase_(eventBase),
+    : eventBase_(eventBase.getEventBase()),
       connectionOptions_(std::move(options)),
       outOfOrder_(
           connectionOptions_.accessPoint->getProtocol() != mc_ascii_protocol),
@@ -81,7 +81,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
           folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
-  eventBase_.runOnDestruction(eventBaseDestructionCallback_.get());
+  eventBase.runOnDestruction(eventBaseDestructionCallback_.get());
   if (connectionOptions_.compressionCodecMap) {
     supportedCompressionCodecs_ =
         connectionOptions_.compressionCodecMap->getIdRange();
@@ -89,7 +89,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
 }
 
 std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
-    folly::EventBase& eventBase,
+    folly::VirtualEventBase& eventBase,
     ConnectionOptions options) {
   if (options.accessPoint->getProtocol() != mc_ascii_protocol &&
       options.noNetwork) {

@@ -168,14 +168,22 @@ CarbonRouterInstance<RouterInfo>* CarbonRouterInstance<RouterInfo>::createRaw(
   } catch (...) {
   }
 
-  // Ensure that Proxy's will be destroyed on the EventBase threads.
-  // TODO: fix (already existing) races between Proxy and CarbonRouterInstance
-  // when CarbonRouterInstance fails to configure and user has provided us with
-  // their own EventBases.
-  for (size_t i = 0; i < router->proxies_.size(); ++i) {
-    evbs[i]->runInEventBaseThread([proxy = router->releaseProxy(i)](){});
+  // Proxy destruction depends on EventBase loop running. Ensure that all user
+  // EventBases have their loops running and if not - loop them ourselves.
+  std::vector<std::pair<folly::EventBase*, std::thread>> tmpThreads;
+  for (auto evbPtr : evbs) {
+    if (evbPtr->isRunning()) {
+      continue;
+    }
+    tmpThreads.emplace_back(
+        evbPtr, std::thread([evbPtr] { evbPtr->loopForever(); }));
   }
   delete router;
+  for (auto& tmpThread : tmpThreads) {
+    tmpThread.first->terminateLoopSoon();
+    tmpThread.second.join();
+  }
+
   return nullptr;
 }
 
@@ -242,17 +250,28 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
     }
 
     for (size_t i = 0; i < opts_.num_proxies; i++) {
-      try {
-        if (evbs.empty()) {
-          proxyThreads_.emplace_back(
-              folly::make_unique<ProxyThread<RouterInfo>>(*this, i));
-        } else {
-          CHECK(evbs[i] != nullptr);
-          proxies_.emplace_back(
-              Proxy<RouterInfo>::createProxy(*this, *evbs[i], i));
+      if (evbs.empty()) {
+        try {
+          proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
+        } catch (...) {
+          LOG(ERROR) << "Failed to start proxy thread: "
+                     << folly::exceptionStr(std::current_exception());
+          return false;
         }
+        proxyEvbs_.push_back(folly::make_unique<folly::VirtualEventBase>(
+            proxyThreads_.back()->getEventBase()));
+      } else {
+        CHECK(evbs[i] != nullptr);
+        proxyEvbs_.push_back(
+            folly::make_unique<folly::VirtualEventBase>(*evbs[i]));
+      }
+
+      try {
+        proxies_.emplace_back(
+            Proxy<RouterInfo>::createProxy(*this, *proxyEvbs_[i], i));
       } catch (...) {
-        LOG(ERROR) << "Failed to create proxy";
+        LOG(ERROR) << "Failed to create proxy: "
+                   << folly::exceptionStr(std::current_exception());
         return false;
       }
     }
@@ -285,18 +304,6 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
 
   startTime_ = time(nullptr);
 
-  for (auto& pt : proxyThreads_) {
-    try {
-      pt->spawn();
-    } catch (const std::system_error& e) {
-      LOG(ERROR) << "Failed to start proxy thread: " << e.what();
-      return false;
-    } catch (...) {
-      LOG(ERROR) << "Failed to start proxy thread";
-      return false;
-    }
-  }
-
   try {
     spawnAuxiliaryThreads();
   } catch (const std::exception& e) {
@@ -310,26 +317,12 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
 template <class RouterInfo>
 Proxy<RouterInfo>* CarbonRouterInstance<RouterInfo>::getProxy(
     size_t index) const {
-  if (!proxies_.empty()) {
-    assert(proxyThreads_.empty());
-    return index < proxies_.size() ? proxies_[index].get() : nullptr;
-  } else {
-    assert(proxies_.empty());
-    return index < proxyThreads_.size() ? &proxyThreads_[index]->proxy()
-                                        : nullptr;
-  }
+  return index < proxies_.size() ? proxies_[index] : nullptr;
 }
 
 template <class RouterInfo>
 ProxyBase* CarbonRouterInstance<RouterInfo>::getProxyBase(size_t index) const {
   return getProxy(index);
-}
-
-template <class RouterInfo>
-typename Proxy<RouterInfo>::Pointer
-CarbonRouterInstance<RouterInfo>::releaseProxy(size_t index) {
-  assert(index < proxies_.size());
-  return std::move(proxies_[index]);
 }
 
 template <class RouterInfo>
@@ -340,6 +333,8 @@ CarbonRouterInstance<RouterInfo>::CarbonRouterInstance(
 template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::shutdownImpl() noexcept {
   joinAuxiliaryThreads();
+  // Join all proxy threads
+  proxyEvbs_.clear();
   for (auto& pt : proxyThreads_) {
     pt->stopAndJoin();
   }

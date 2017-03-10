@@ -36,7 +36,7 @@ Client::Client(
     : connectionOptions_(connectionOptions),
       options_(options),
       client_(
-          *folly::EventBaseManager::get()->getEventBase(),
+          folly::EventBaseManager::get()->getEventBase()->getVirtualEventBase(),
           connectionOptions_) {
   if (options_.maxOutstanding > 0) {
     counting_sem_init(&outstandingReqsSem_, options_.maxOutstanding);
@@ -65,16 +65,16 @@ void Client::closeNow() {
 
 ThreadInfo::ThreadInfo()
     : fiberManager_(
-          folly::make_unique<folly::fibers::EventBaseLoopController>()) {
+          folly::make_unique<folly::fibers::VirtualEventBaseLoopController>()) {
   folly::Baton<> baton;
 
   thread_ = std::thread([this, &baton] {
     folly::setThreadName("mc-eccc-pool");
 
     folly::EventBase* evb = folly::EventBaseManager::get()->getEventBase();
-    dynamic_cast<folly::fibers::EventBaseLoopController&>(
+    dynamic_cast<folly::fibers::VirtualEventBaseLoopController&>(
         fiberManager_.loopController())
-        .attachEventBase(*evb);
+        .attachEventBase(evb->getVirtualEventBase());
     // At this point it is safe to use fiberManager.
     baton.post();
     evb->loopForever();
@@ -84,14 +84,6 @@ ThreadInfo::ThreadInfo()
       client->closeNow();
     }
     clients_.clear();
-
-    // Drain fiber manager.
-    while (fiberManager_.hasTasks()) {
-      evb->loop();
-    }
-
-    // Drain all remaining events.
-    evb->loop();
   });
 
   // Wait until the thread is properly initialized.

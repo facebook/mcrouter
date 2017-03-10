@@ -62,8 +62,6 @@ class ProxyDestination;
 class ProxyRequestContext;
 template <class RouterInfo, class Request>
 class ProxyRequestContextTyped;
-template <class RouterInfo>
-class ProxyThread;
 class RuntimeVarsData;
 class ShardSplitter;
 
@@ -223,26 +221,14 @@ class Proxy : public ProxyBase {
 
   std::unique_ptr<MessageQueue<ProxyMessage>> messageQueue_;
 
-  struct ProxyDelayedDestructor {
-    void operator()(Proxy* proxy) {
-      /* We only access self_ during construction, so this code should
-         never run concurrently.
-
-         Note: not proxy->self_.reset(), since this could destroy client
-         from inside the call to reset(), destroying self_ while the method
-         is still running. */
-      auto stolenPtr = std::move(proxy->self_);
-    }
-  };
-
-  std::shared_ptr<Proxy<RouterInfo>> self_;
-
-  using Pointer = std::unique_ptr<Proxy<RouterInfo>, ProxyDelayedDestructor>;
-  static Pointer createProxy(
+  static Proxy<RouterInfo>* createProxy(
       CarbonRouterInstanceBase& router,
-      folly::EventBase& eventBase,
+      folly::VirtualEventBase& evb,
       size_t id);
-  Proxy(CarbonRouterInstanceBase& router, size_t id, folly::EventBase& evb);
+  Proxy(
+      CarbonRouterInstanceBase& router,
+      size_t id,
+      folly::VirtualEventBase& evb);
 
   void messageReady(ProxyMessage::Type t, void* data);
 
@@ -345,7 +331,6 @@ class Proxy : public ProxyBase {
   friend class CarbonRouterInstance<RouterInfo>;
   friend class CarbonRouterClient<RouterInfo>;
   friend class ProxyRequestContext;
-  friend class ProxyThread<RouterInfo>;
 };
 
 template <class RouterInfo>

@@ -198,7 +198,7 @@ template <class RouterInfo>
 Proxy<RouterInfo>::Proxy(
     CarbonRouterInstanceBase& rtr,
     size_t id,
-    folly::EventBase& evb)
+    folly::VirtualEventBase& evb)
     : ProxyBase(rtr, id, evb, RouterInfo()) {
   messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
       router().opts().client_queue_size,
@@ -212,31 +212,36 @@ Proxy<RouterInfo>::Proxy(
 }
 
 template <class RouterInfo>
-typename Proxy<RouterInfo>::Pointer Proxy<RouterInfo>::createProxy(
+Proxy<RouterInfo>* Proxy<RouterInfo>::createProxy(
     CarbonRouterInstanceBase& router,
-    folly::EventBase& eventBase,
+    folly::VirtualEventBase& eventBase,
     size_t id) {
-  /* This hack is needed to make sure Proxy stays alive
-     until at least event base managed to run the callback below */
-  auto proxy = std::shared_ptr<Proxy>(new Proxy(router, id, eventBase));
-  proxy->self_ = proxy;
+  auto proxy = std::unique_ptr<Proxy>(new Proxy(router, id, eventBase));
+  auto proxyPtr = proxy.get();
 
-  eventBase.runInEventBaseThread([proxy, &eventBase]() {
-    proxy->messageQueue_->attachEventBase(eventBase);
+  eventBase.runInEventBaseThread([proxyPtr, &eventBase]() {
+    proxyPtr->messageQueue_->attachEventBase(eventBase);
 
-    dynamic_cast<folly::fibers::EventBaseLoopController&>(
-        proxy->fiberManager().loopController())
+    dynamic_cast<folly::fibers::VirtualEventBaseLoopController&>(
+        proxyPtr->fiberManager().loopController())
         .attachEventBase(eventBase);
 
     std::chrono::milliseconds connectionResetInterval{
-        proxy->router().opts().reset_inactive_connection_interval};
+        proxyPtr->router().opts().reset_inactive_connection_interval};
 
     if (connectionResetInterval.count() > 0) {
-      proxy->destinationMap()->setResetTimer(connectionResetInterval);
+      proxyPtr->destinationMap()->setResetTimer(connectionResetInterval);
     }
   });
 
-  return Pointer(proxy.get());
+  // We want proxy life-time to be tied to VirtualEventBase.
+  eventBase.runOnDestruction(new folly::EventBase::FunctionLoopCallback(
+      [proxy = std::move(proxy)]() mutable {
+        /* make sure proxy is deleted on the proxy thread */
+        proxy.reset();
+      }));
+
+  return proxyPtr;
 }
 
 template <class RouterInfo>

@@ -13,9 +13,9 @@
 #include <folly/MPMCQueue.h>
 #include <folly/Memory.h>
 #include <folly/Random.h>
-#include <folly/io/async/EventBase.h>
 #include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/EventHandler.h>
+#include <folly/io/async/VirtualEventBase.h>
 
 namespace facebook {
 namespace memcache {
@@ -140,13 +140,13 @@ class MessageQueue {
   /**
    * Must be called from the event base thread.
    */
-  void attachEventBase(folly::EventBase& evb) {
-    handler_.initHandler(&evb, efd_);
+  void attachEventBase(folly::VirtualEventBase& evb) {
+    handler_.initHandler(&evb.getEventBase(), efd_);
     handler_.registerHandler(
         folly::EventHandler::READ | folly::EventHandler::PERSIST);
 
     if (notifier_.noNotifyRate() > 0) {
-      timeoutHandler_.attachEventBase(&evb);
+      timeoutHandler_.attachTimeoutManager(&evb);
       timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
     }
 
@@ -167,8 +167,8 @@ class MessageQueue {
       MessageQueue& queue_;
     };
 
-    queueDrainCallback_ =
-        folly::make_unique<MessageQueueDrainCallback>(evb, *this);
+    queueDrainCallback_ = folly::make_unique<MessageQueueDrainCallback>(
+        evb.getEventBase(), *this);
 
     evb.runOnDestruction(new folly::EventBase::FunctionLoopCallback(
         [queueDrainCallback = queueDrainCallback_]() {
