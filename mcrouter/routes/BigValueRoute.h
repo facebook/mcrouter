@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <folly/Format.h>
+#include <folly/Traits.h>
 
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/lib/McOperation.h"
@@ -36,6 +37,9 @@ namespace mcrouter {
  * getlike requests and forward to child route handle.
  * Merge all the replies and return it.
  * 3. Else return the reply.
+ *
+ * Note that the above describes how lease-get logically works, but the
+ * actual implementation of BigValueRoute for lease-gets is more complicated.
  *
  * For update-like request:
  * 1. If value size is below or equal to threshold option,
@@ -65,8 +69,13 @@ class BigValueRoute {
       BigValueRouteOptions options);
 
   template <class Request>
-  ReplyT<Request> route(const Request& req, carbon::GetLikeT<Request> = 0)
-      const;
+  typename std::enable_if<
+      folly::IsOneOf<Request, McGetRequest, McGetsRequest>::value,
+      ReplyT<Request>>::type
+  route(const Request& req) const;
+
+  McMetagetReply route(const McMetagetRequest& req) const;
+  McLeaseGetReply route(const McLeaseGetRequest& req) const;
 
   template <class Request>
   ReplyT<Request> route(const Request& req, carbon::UpdateLikeT<Request> = 0)
@@ -84,8 +93,8 @@ class BigValueRoute {
 
   class ChunksInfo {
    public:
-    explicit ChunksInfo(folly::StringPiece reply_value);
-    explicit ChunksInfo(uint32_t num_chunks);
+    explicit ChunksInfo(folly::StringPiece replyValue);
+    explicit ChunksInfo(uint32_t numChunks);
 
     folly::IOBuf toStringType() const;
     uint32_t numChunks() const;
@@ -99,16 +108,21 @@ class BigValueRoute {
     bool valid_;
   };
 
-  template <class Reply>
-  std::vector<Reply> collectAllByBatches(
-      std::vector<std::function<Reply()>>& fs) const;
+  McLeaseGetReply doLeaseGetRoute(
+      const McLeaseGetRequest& req,
+      size_t retriesLeft) const;
 
-  template <class ToRequest, class FromRequest>
-  std::pair<std::vector<ToRequest>, ChunksInfo> chunkUpdateRequests(
+  template <class FuncIt>
+  std::vector<typename std::result_of<
+      typename std::iterator_traits<FuncIt>::value_type()>::type>
+  collectAllByBatches(FuncIt beginF, FuncIt endF) const;
+
+  template <class FromRequest>
+  std::pair<std::vector<McSetRequest>, ChunksInfo> chunkUpdateRequests(
       const FromRequest& req) const;
 
-  template <class ToRequest, class FromRequest>
-  std::vector<ToRequest> chunkGetRequests(
+  template <class FromRequest>
+  std::vector<McGetRequest> chunkGetRequests(
       const FromRequest& req,
       const ChunksInfo& info) const;
 
@@ -116,13 +130,14 @@ class BigValueRoute {
   Reply mergeChunkGetReplies(
       InputIterator begin,
       InputIterator end,
-      Reply&& init_reply) const;
+      Reply&& initReply) const;
 
   folly::IOBuf
   createChunkKey(folly::StringPiece key, uint32_t index, uint64_t suffix) const;
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook
 
 #include "BigValueRoute-inl.h"

@@ -302,9 +302,9 @@ class MCProcess(ProcessBase):
         return True
 
     def _set(self, command, key, value, replicate=False, noreply=False,
-             exptime=0):
+             exptime=0, flags=0):
         value = str(value)
-        flags = 1024 if replicate else 0
+        flags = flags | (1024 if replicate else 0)
         self.socket.sendall("%s %s %d %d %d%s\r\n%s\r\n" %
                             (command, key, flags, exptime, len(value),
                             (' noreply' if noreply else ''), value))
@@ -335,8 +335,9 @@ class MCProcess(ProcessBase):
             return re.match("STALE_STORED", answer)
         return re.match("STORED", answer)
 
-    def set(self, key, value, replicate=False, noreply=False, exptime=0):
-        return self._set("set", key, value, replicate, noreply, exptime)
+    def set(self, key, value, replicate=False, noreply=False, exptime=0,
+            flags=0):
+        return self._set("set", key, value, replicate, noreply, exptime, flags)
 
     def add(self, key, value, replicate=False, noreply=False):
         return self._set("add", key, value, replicate, noreply)

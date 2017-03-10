@@ -15,7 +15,7 @@
 #include <folly/Conv.h>
 #include <folly/Format.h>
 
-#include "mcrouter/lib/network/gen/Memcache.h"
+#include "mcrouter/lib/network/gen/MemcacheMessages.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
 #include "mcrouter/routes/BigValueRoute.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
@@ -28,9 +28,11 @@ using std::vector;
 
 using TestHandle = TestHandleImpl<McrouterRouteHandleIf>;
 
-static const int version = 1;
-static const int threshold = 128;
-static const BigValueRouteOptions opts(threshold, /* batchSize= */ 0);
+namespace {
+constexpr int version = 1;
+constexpr size_t threshold = 128;
+constexpr BigValueRouteOptions opts(threshold, /* batchSize= */ 0);
+} // anonymous
 
 TEST(BigValueRouteTest, smallvalue) {
   // for small values, this route handle simply passes it to child route handle

@@ -100,8 +100,7 @@ class MockMcOnRequest {
       McServerRequestContext::reply(std::move(ctx), Reply(mc_res_notfound));
     } else {
       Reply reply(mc_res_found);
-      auto cloned = item->value->cloneAsValue();
-      reply.value() = std::move(cloned);
+      reply.value() = item->value->cloneAsValue();
       reply.flags() = item->flags;
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     }
@@ -114,9 +113,9 @@ class MockMcOnRequest {
 
     auto out = mc_.leaseGet(key);
     Reply reply(mc_res_found);
-    auto cloned = out.first->value->cloneAsValue();
-    reply.value() = std::move(cloned);
+    reply.value() = out.first->value->cloneAsValue();
     reply.leaseToken() = out.second;
+    reply.flags() = out.first->flags;
     if (out.second) {
       reply.result() = mc_res_notfound;
     }
