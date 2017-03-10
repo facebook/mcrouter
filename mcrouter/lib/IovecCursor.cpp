@@ -16,8 +16,8 @@ namespace memcache {
 
 IovecCursor::IovecCursor(const struct iovec* iov, size_t iovcnt)
     : iov_(iov), iovLength_(iovcnt), totalLength_(computeTotalLength()) {
-  assert(totalLength_ > 0);
-  curBufLen_ = iov_[iovIndex_].iov_len;
+  curBufLen_ = iovcnt > 0 ? iov_[iovIndex_].iov_len : 0;
+  advanceBufferIfEmpty();
 }
 
 bool IovecCursor::hasDataAvailable() const {
@@ -86,7 +86,7 @@ void IovecCursor::readInto(uint8_t* dest, size_t size) {
 }
 
 void IovecCursor::advanceBufferIfEmpty() {
-  if (hasDataAvailable() && (curBufLen_ == 0)) {
+  while (hasDataAvailable() && (curBufLen_ == 0)) {
     ++iovIndex_;
     curBufPos_ = 0;
     if (iovIndex_ < iovLength_) {

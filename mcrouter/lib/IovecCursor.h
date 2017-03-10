@@ -23,6 +23,12 @@ namespace memcache {
  */
 class IovecCursor {
  public:
+  /**
+   * Builds an IovecCursor.
+   *
+   * @param iov     Array of iovec.
+   * @param iovcnt  Size of iovcnt (must be greater than 0).
+   */
   IovecCursor(const struct iovec* iov, size_t iovcnt);
 
   /**

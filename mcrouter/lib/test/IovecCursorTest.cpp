@@ -41,6 +41,15 @@ TEST(IovecCursor, construct) {
   EXPECT_EQ(0, cursor.tell());
 }
 
+TEST(IovecCursor, construct_empty) {
+  std::string buf1 = "";
+  auto p = getIovecCursor({ buf1 });
+  auto& cursor = p.first;
+
+  EXPECT_FALSE(cursor.hasDataAvailable());
+  EXPECT_EQ(0, cursor.totalLength());
+}
+
 TEST(IovecCursor, basic) {
   std::string buf2 = "345";
   std::string buf3 = "6789";

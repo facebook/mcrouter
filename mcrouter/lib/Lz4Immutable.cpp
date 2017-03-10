@@ -9,8 +9,6 @@
  */
 #include "Lz4Immutable.h"
 
-#include <type_traits>
-
 #include <folly/Bits.h>
 #include <folly/Format.h>
 
@@ -238,6 +236,10 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
 std::unique_ptr<folly::IOBuf> Lz4Immutable::compress(
     const struct iovec* iov,
     size_t iovcnt) const {
+  if (UNLIKELY(iovcnt == 0)) {
+    return folly::IOBuf::create(0);
+  }
+
   IovecCursor source(iov, iovcnt);
 
   if (source.totalLength() > kMaxInputSize) {
@@ -450,6 +452,10 @@ std::unique_ptr<folly::IOBuf> Lz4Immutable::decompress(
     const struct iovec* iov,
     size_t iovcnt,
     size_t uncompressedSize) const noexcept {
+  if (UNLIKELY(uncompressedSize == 0)) {
+    return folly::IOBuf::create(0);
+  }
+
   // Creates a match cursor - a cursor that will keep track of matches
   // found in the dictionary.
   struct iovec dicIov = getDictionaryIovec(state_);

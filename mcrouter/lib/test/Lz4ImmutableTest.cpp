@@ -204,6 +204,25 @@ TEST(Lz4Immutable, lz4Compatibility_binary) {
   EXPECT_EQ(sourceStr, decompressedStr);
 }
 
+TEST(Lz4Immutable, emptyData) {
+  auto dictionary = getAsciiDictionary();
+  Lz4Immutable compressor(dictionary->clone());
+
+  auto source = folly::IOBuf::create(0);
+  auto sourceSize = source->computeChainDataLength();
+
+  // Compress
+  auto compressed = compressor.compress(*source);
+
+  // Uncompress
+  auto decompressed = compressor.decompress(*compressed, sourceSize);
+
+  EXPECT_EQ(sourceSize, decompressed->computeChainDataLength());
+  auto sourceStr = source->moveToFbString();
+  auto decompressedStr = decompressed->moveToFbString();
+  EXPECT_EQ(sourceStr, decompressedStr);
+}
+
 TEST(Lz4Immutable, largeData_ascii) {
   auto dictionary = getAsciiDictionary();
   Lz4Immutable compressor(dictionary->clone());
