@@ -397,7 +397,8 @@ MCROUTER_OPTION_STRING(
     CONFIG_DUMP_ROOT_DEFAULT,
     "config-dump-root",
     no_short,
-    "Directory where the last valid config will be saved.")
+    "Directory where the last valid config will be saved. "
+    "Empty string to disable.")
 
 MCROUTER_OPTION_INTEGER(
     int,
