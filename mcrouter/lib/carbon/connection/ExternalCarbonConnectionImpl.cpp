@@ -65,14 +65,14 @@ void Client::closeNow() {
 
 ThreadInfo::ThreadInfo()
     : fiberManager_(
-          folly::make_unique<folly::fibers::VirtualEventBaseLoopController>()) {
+          folly::make_unique<folly::fibers::EventBaseLoopController>()) {
   folly::Baton<> baton;
 
   thread_ = std::thread([this, &baton] {
     folly::setThreadName("mc-eccc-pool");
 
     folly::EventBase* evb = folly::EventBaseManager::get()->getEventBase();
-    dynamic_cast<folly::fibers::VirtualEventBaseLoopController&>(
+    dynamic_cast<folly::fibers::EventBaseLoopController&>(
         fiberManager_.loopController())
         .attachEventBase(evb->getVirtualEventBase());
     // At this point it is safe to use fiberManager.

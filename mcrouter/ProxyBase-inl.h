@@ -30,7 +30,7 @@ ProxyBase::ProxyBase(
       eventBase_(evb),
       fiberManager_(
           typename fiber_local<RouterInfo>::ContextTypeTag(),
-          folly::make_unique<folly::fibers::VirtualEventBaseLoopController>(),
+          folly::make_unique<folly::fibers::EventBaseLoopController>(),
           getFiberManagerOptions(router_.opts())),
       asyncLog_(router_.opts()),
       destinationMap_(folly::make_unique<ProxyDestinationMap>(this)) {

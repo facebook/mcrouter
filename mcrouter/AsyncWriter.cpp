@@ -51,7 +51,7 @@ void AsyncWriter::stop() noexcept {
     thread_.join();
   } else {
     while (fiberManager_.hasTasks()) {
-      fiberManager_.loopUntilNoReady();
+      eventBase_.loopOnce();
     }
   }
 }

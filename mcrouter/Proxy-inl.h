@@ -222,7 +222,7 @@ Proxy<RouterInfo>* Proxy<RouterInfo>::createProxy(
   eventBase.runInEventBaseThread([proxyPtr, &eventBase]() {
     proxyPtr->messageQueue_->attachEventBase(eventBase);
 
-    dynamic_cast<folly::fibers::VirtualEventBaseLoopController&>(
+    dynamic_cast<folly::fibers::EventBaseLoopController&>(
         proxyPtr->fiberManager().loopController())
         .attachEventBase(eventBase);
 
