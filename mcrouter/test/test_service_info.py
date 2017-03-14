@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -24,7 +24,8 @@ class TestServiceInfo(McrouterTestCase):
 
     def test_route_format(self):
         ports = [self.mc1.port, self.mc2.port]
-        route = self.mcrouter.get("__mcrouter__.route(set,a)")
+        # Test a key 'abc,def' with a comma
+        route = self.mcrouter.get("__mcrouter__.route(set,abc,def)")
         parts = route.split("\r\n")
         self.assertEqual(len(parts), 2)
         for i, part in enumerate(parts):
@@ -38,7 +39,8 @@ class TestServiceInfo(McrouterTestCase):
         self.assertEqual(hostid, self.mcrouter.get("__mcrouter__.hostid"))
 
     def _check_route_handles(self, op):
-        cmd = "__mcrouter__.route_handles({},abc)".format(op)
+        # Test a key 'abc,def' with a comma
+        cmd = "__mcrouter__.route_handles({},abc,def)".format(op)
         rh = self.mcrouter.get(cmd)
         self.assertTrue("root" in rh)
         self.assertTrue("127.0.0.1" in rh)

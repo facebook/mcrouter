@@ -358,7 +358,16 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRequest(
   }
   std::vector<folly::StringPiece> args;
   if (!argsStr.empty()) {
-    folly::split(',', argsStr, args);
+    // Handle keys with commas correctly for route and route_handles subcommands
+    if (cmd.startsWith("route")) {
+      const auto pos = argsStr.find(',');
+      if (pos != std::string::npos) {
+        args.emplace_back(argsStr.data(), pos);
+        args.emplace_back(argsStr.data() + pos + 1, argsStr.size() - pos - 1);
+      }
+    } else {
+      folly::split(',', argsStr, args);
+    }
   }
 
   std::string replyStr;
