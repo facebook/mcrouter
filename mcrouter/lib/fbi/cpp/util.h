@@ -248,5 +248,10 @@ std::string toPrettySortedJson(const folly::dynamic& json);
  * Makes sure a directory exists and is writable (e.g. create if not found, etc)
  */
 bool ensureDirExistsAndWritable(const std::string& path);
+
+/**
+ * Makes sure that a file or directory has the desired permissions.
+ */
+bool ensureHasPermission(const std::string& path, mode_t mode);
 }
 } // facebook::memcache

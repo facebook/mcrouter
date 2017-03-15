@@ -201,16 +201,20 @@ bool ensureDirExistsAndWritable(const std::string& path) {
     return false;
   }
 
+  return ensureHasPermission(path, 0777);
+}
+
+bool ensureHasPermission(const std::string& path, mode_t mode) {
   struct stat st;
   if (::stat(path.c_str(), &st) != 0) {
     return false;
   }
 
-  if ((st.st_mode & 0777) == 0777) {
+  if ((st.st_mode & mode) == mode) {
     return true;
   }
 
-  if (::chmod(path.c_str(), 0777) != 0) {
+  if (::chmod(path.c_str(), mode) != 0) {
     return false;
   }
 

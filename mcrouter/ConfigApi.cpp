@@ -48,13 +48,13 @@ boost::filesystem::path getBackupConfigFileName(
       "{}-{}", sourcePrefix, folly::uriEscape<std::string>(name)));
 }
 
-bool ensureDirectoryExists(boost::filesystem::path directory) {
+bool ensureConfigDirectoryExists(boost::filesystem::path directory) {
   if (directory.empty() || boost::filesystem::exists(directory)) {
     return true;
   }
-  if (ensureDirectoryExists(directory.parent_path())) {
+  if (ensureConfigDirectoryExists(directory.parent_path())) {
     boost::system::error_code ec;
-    auto created = boost::filesystem::create_directory(directory, ec);
+    auto created = ensureDirExistsAndWritable(directory.string());
     if (!created) {
       LOG(ERROR) << "Failed to create directory '" << directory
                  << "'. Error code: " << ec;
@@ -75,7 +75,7 @@ bool setupDumpConfigToDisk(const McrouterOptions& opts) {
         "Service name or router name not set. Configs won't be saved to disk.");
     return false;
   }
-  if (!ensureDirectoryExists(getBackupConfigDirectory(opts))) {
+  if (!ensureConfigDirectoryExists(getBackupConfigDirectory(opts))) {
     MC_LOG_FAILURE(
         opts,
         memcache::failure::Category::kOther,
@@ -421,6 +421,9 @@ void ConfigApi::dumpConfigSourceToDisk(
 
   if (shouldRewrite) {
     if (atomicallyWriteFileToDisk(contents, filePath)) {
+      // Makes sure the file has the correct permission for when we decide to
+      // run mcrouter with another user.
+      ensureHasPermission(filePath, 0666);
       backupFileIt->second = md5OrVersion;
     } else {
       MC_LOG_FAILURE(
@@ -429,7 +432,7 @@ void ConfigApi::dumpConfigSourceToDisk(
           "Error while dumping last valid config to disk. "
           "Failed to write file {}.",
           filePath);
-      ensureDirectoryExists(directory);
+      ensureConfigDirectoryExists(directory);
     }
   } else {
     if (!touchFile(filePath)) {
@@ -438,7 +441,7 @@ void ConfigApi::dumpConfigSourceToDisk(
           memcache::failure::Category::kOther,
           "Error while touching backup config file {}",
           filePath);
-      ensureDirectoryExists(directory);
+      ensureConfigDirectoryExists(directory);
     }
   }
 }
