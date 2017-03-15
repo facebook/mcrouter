@@ -35,7 +35,15 @@ using CarbonCursor = folly::io::Cursor;
 
 class CarbonProtocolReader {
  public:
-  explicit CarbonProtocolReader(const CarbonCursor& cursor) : cursor_(cursor) {}
+  explicit CarbonProtocolReader(const CarbonCursor& c) : cursor_(c) {}
+
+  void setCursor(const CarbonCursor& c) {
+    cursor_ = c;
+  }
+
+  const CarbonCursor& cursor() const {
+    return cursor_;
+  }
 
   template <class T>
   void readRawInto(std::vector<T>& v) {

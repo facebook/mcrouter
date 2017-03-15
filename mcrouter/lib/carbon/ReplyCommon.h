@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,11 +11,13 @@
 
 #include <memory>
 
+#include "mcrouter/lib/mc/msg.h"
+
 namespace facebook {
 namespace memcache {
 struct AccessPoint;
-}
-}
+} // memcache
+} // facebook
 
 namespace carbon {
 
@@ -33,6 +35,20 @@ class ReplyCommon {
 
  private:
   std::shared_ptr<const facebook::memcache::AccessPoint> destination_;
+};
+
+class ReplyCommonThrift : public ReplyCommon {
+ public:
+  mc_res_t result() const {
+    return result_;
+  }
+
+  mc_res_t& result() {
+    return result_;
+  }
+
+ private:
+  mc_res_t result_{mc_res_unknown};
 };
 
 } // carbon

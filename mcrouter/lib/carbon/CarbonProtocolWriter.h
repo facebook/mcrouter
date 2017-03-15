@@ -332,6 +332,11 @@ class CarbonProtocolWriter {
     writeRaw(static_cast<UnderlyingType>(e));
   }
 
+  // Append a buffer of already serialized data.
+  void appendRawData(std::unique_ptr<folly::IOBuf> buf) {
+    appender_.insert(std::move(buf));
+  }
+
  private:
   template <class T>
   void doWriteVarint(T val) {
