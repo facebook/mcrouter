@@ -38,6 +38,7 @@ class Variant {
         std::is_move_constructible<T>::value,
         "Variant::operator=(T&&) requires that T be move-constructible");
     emplace<T>(std::forward<T>(t));
+    return *this;
   }
 
   ~Variant() noexcept {
@@ -54,7 +55,7 @@ class Variant {
    * @param args  arguments that will be passed to the constructor of T
    */
   template <class T, class... Args>
-  void emplace(Args&&... args) {
+  T& emplace(Args&&... args) {
     static_assert(
         facebook::memcache::Has<T, Ts...>::value,
         "Wrong type used with Variant!");
@@ -67,6 +68,7 @@ class Variant {
     new (&storage_) T(std::forward<Args>(args)...);
     type_ = typeid(T);
     cleanupFun_ = &Variant::cleanup<T>;
+    return reinterpret_cast<T&>(storage_);
   }
 
   /**
