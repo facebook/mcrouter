@@ -74,7 +74,7 @@ void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case -1: {
-        _carbon_basestruct_.deserialize(reader);
+        reader.readRawInto(_carbon_basestruct_);
         break;
       }
       case 1: {

@@ -62,7 +62,7 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case -1: {
-        _carbon_simplestruct_.deserialize(reader);
+        reader.readRawInto(_carbon_simplestruct_);
         break;
       }
       case 1: {
@@ -134,7 +134,7 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         break;
       }
       case 18: {
-        testStruct().deserialize(reader);
+        reader.readRawInto(testStruct());
         break;
       }
       case 19: {
