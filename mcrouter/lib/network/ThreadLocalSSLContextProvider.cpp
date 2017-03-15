@@ -11,6 +11,7 @@
 
 #include <unordered_map>
 
+#include <folly/Hash.h>
 #include <folly/io/async/SSLContext.h>
 #include <wangle/ssl/TLSTicketKeyManager.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
@@ -56,10 +57,7 @@ struct ContextInfo {
 
 struct CertPathsHasher {
   size_t operator()(const CertPaths& paths) const {
-    return folly::hash::hash_combine_generic<folly::hash::StdHasher>(
-        paths.pemCertPath.hash(),
-        paths.pemKeyPath.hash(),
-        paths.pemCaPath.hash());
+    return folly::Hash()(paths.pemCertPath, paths.pemKeyPath, paths.pemCaPath);
   }
 };
 

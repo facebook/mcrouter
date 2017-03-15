@@ -97,7 +97,7 @@ void ClientSocket::write(
   }
 
   checkRuntime(
-      n == data.size(),
+      static_cast<size_t>(n) == data.size(),
       "failed to write to socket. Written {}, expected {}",
       n,
       data.size());
@@ -128,7 +128,7 @@ std::string ClientSocket::sendRequest(
     throwRuntime("peer closed the socket");
   }
   checkRuntime(
-      n == replySize,
+      static_cast<size_t>(n) == replySize,
       "failed to read from socket. Read {}, expected {}",
       n,
       replySize);
@@ -158,9 +158,10 @@ std::string ClientSocket::sendRequest(
     throwRuntime("failed to read from socket: {}", folly::errnoStr(errno));
   }
   checkRuntime(
-      n < maxReplySize,
+      static_cast<size_t>(n) < maxReplySize,
       "the reply buffer may be too small because we used it up");
   return std::string(replyBuf.data(), n);
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook
