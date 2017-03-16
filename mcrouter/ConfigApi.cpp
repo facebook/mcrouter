@@ -86,6 +86,20 @@ bool setupDumpConfigToDisk(const McrouterOptions& opts) {
   return true;
 }
 
+template <class Tag>
+void logFailureEveryN(
+    const McrouterOptions& opts,
+    const char* category,
+    std::string msg,
+    int n) {
+  static thread_local uint64_t count = 0;
+  if ((count++ % n) == 0) {
+    MC_LOG_FAILURE(opts, category, msg);
+  }
+}
+struct DumpFileTag;
+struct TouchFileTag;
+
 } // anonymous namespace
 
 const char* const ConfigApi::kFilePrefix = "file:";
@@ -426,21 +440,24 @@ void ConfigApi::dumpConfigSourceToDisk(
       ensureHasPermission(filePath, 0666);
       backupFileIt->second = md5OrVersion;
     } else {
-      MC_LOG_FAILURE(
+      logFailureEveryN<DumpFileTag>(
           opts_,
           memcache::failure::Category::kOther,
-          "Error while dumping last valid config to disk. "
-          "Failed to write file {}.",
-          filePath);
+          folly::sformat(
+              "Error while dumping last valid config to disk. "
+              "Failed to write file {}.",
+              filePath),
+          1000);
       ensureConfigDirectoryExists(directory);
     }
   } else {
     if (!touchFile(filePath)) {
-      MC_LOG_FAILURE(
+      logFailureEveryN<TouchFileTag>(
           opts_,
           memcache::failure::Category::kOther,
-          "Error while touching backup config file {}",
-          filePath);
+          folly::sformat(
+              "Error while touching backup config file {}", filePath),
+          1000);
       ensureConfigDirectoryExists(directory);
     }
   }
