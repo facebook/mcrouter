@@ -14,6 +14,7 @@
 #include <boost/program_options.hpp>
 
 #include <folly/Format.h>
+#include <folly/Singleton.h>
 
 using namespace facebook::memcache::mcpiper;
 
@@ -170,6 +171,7 @@ Settings parseOptions(int argc, char** argv) {
 } // anonymous namespace
 
 int main(int argc, char** argv) {
+  folly::SingletonVault::singleton()->registrationComplete();
   struct sigaction sa;
   memset(&sa, 0, sizeof(struct sigaction));
   sa.sa_handler = cleanExit;

@@ -9,6 +9,8 @@
  */
 #include <gtest/gtest.h>
 
+#include <folly/init/Init.h>
+
 #include <folly/Benchmark.h>
 
 // for backward compatibility with gflags
@@ -19,6 +21,7 @@ using namespace gflags;
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv);
   int result = RUN_ALL_TESTS();
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   gflags::SetCommandLineOptionWithMode(

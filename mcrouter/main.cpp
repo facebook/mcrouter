@@ -29,6 +29,7 @@
 #include <folly/Format.h>
 #include <folly/Memory.h>
 #include <folly/Range.h>
+#include <folly/Singleton.h>
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
@@ -371,6 +372,7 @@ void run() {
 }
 
 int main(int argc, char** argv) {
+  folly::SingletonVault::singleton()->registrationComplete();
   FLAGS_v = 1;
   FLAGS_logtostderr = 1;
   google::InitGoogleLogging(argv[0]);
