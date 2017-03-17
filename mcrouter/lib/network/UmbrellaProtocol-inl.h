@@ -592,6 +592,18 @@ void umbrellaParseMessage(
   }
 }
 
+template <class Request>
+typename std::enable_if<Request::hasKey, folly::StringPiece>::type getKey(
+    const Request& req) {
+  return req.key().fullKey();
+}
+
+template <class Request>
+typename std::enable_if<!Request::hasKey, folly::StringPiece>::type getKey(
+    const Request& req) {
+  return folly::StringPiece();
+}
+
 } // detail
 
 template <class Request>
@@ -630,7 +642,7 @@ bool UmbrellaSerializedMessage::prepareRequestImpl(
   // Serialize type-specific fields, e.g., cas token for cas requests
   prepareHelper(request);
 
-  auto key = request.key().fullKey();
+  auto key = detail::getKey(request);
   if (key.begin() != nullptr) {
     appendString(
         msg_key, reinterpret_cast<const uint8_t*>(key.begin()), key.size());

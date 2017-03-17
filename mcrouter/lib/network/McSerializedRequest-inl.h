@@ -10,6 +10,22 @@
 namespace facebook {
 namespace memcache {
 
+namespace detail {
+
+template <class Request>
+typename std::enable_if<Request::hasKey, uint64_t>::type getKeySize(
+    const Request& req) {
+  return req.key().size();
+}
+
+template <class Request>
+typename std::enable_if<!Request::hasKey, uint64_t>::type getKeySize(
+    const Request&) {
+  return 0;
+}
+
+} // detail
+
 template <class Request>
 McSerializedRequest::McSerializedRequest(
     const Request& req,
@@ -20,7 +36,7 @@ McSerializedRequest::McSerializedRequest(
   switch (protocol_) {
     case mc_ascii_protocol:
       new (&asciiRequest_) AsciiSerializedRequest;
-      if (req.key().size() > MC_KEY_MAX_LEN_ASCII) {
+      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_ASCII) {
         result_ = Result::BAD_KEY;
         return;
       }
@@ -30,7 +46,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_caret_protocol:
       new (&caretRequest_) CaretSerializedMessage;
-      if (req.key().size() > MC_KEY_MAX_LEN_UMBRELLA) {
+      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_UMBRELLA) {
         return;
       }
       if (!caretRequest_.prepare(
@@ -40,7 +56,7 @@ McSerializedRequest::McSerializedRequest(
       break;
     case mc_umbrella_protocol:
       new (&umbrellaMessage_) UmbrellaSerializedMessage;
-      if (req.key().size() > MC_KEY_MAX_LEN_UMBRELLA) {
+      if (detail::getKeySize(req) > MC_KEY_MAX_LEN_UMBRELLA) {
         return;
       }
       if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
@@ -55,5 +71,6 @@ McSerializedRequest::McSerializedRequest(
       iovsCount_ = 0;
   }
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

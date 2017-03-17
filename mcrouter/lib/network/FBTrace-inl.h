@@ -38,6 +38,7 @@ namespace {
 
 const char* FBTRACE_TAO = "tao";
 const char* FBTRACE_MC = "mc";
+const char* FBTRACE_OTHER = "other";
 
 inline void fbtraceAddItem(
     fbtrace_item_t* info,
@@ -76,6 +77,19 @@ template <class Request>
 typename std::enable_if<!Request::hasValue, void>::type
 addTraceValue(const Request&, fbtrace_item_t*, size_t) {}
 
+template <class Request>
+typename std::enable_if<Request::hasKey, const char*>::type getRemoteService(
+    const Request& request) {
+  return request.key().routingKey().startsWith("tao") ? FBTRACE_TAO
+                                                      : FBTRACE_MC;
+}
+
+template <class Request>
+typename std::enable_if<!Request::hasKey, const char*>::type getRemoteService(
+    const Request&) {
+  return FBTRACE_OTHER;
+}
+
 } // anonymous
 
 template <class Request>
@@ -98,19 +112,18 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap) {
   fbtraceAddItem(info, idx, "remote:host", dest);
   fbtraceAddItem(info, idx, folly::StringPiece(), folly::StringPiece());
 
-  const char* remote_service =
-      request.key().routingKey().startsWith("tao") ? FBTRACE_TAO : FBTRACE_MC;
+  const char* remoteService = getRemoteService(request);
 
   /* fbtrace talks to scribe via thrift,
      which can use up too much stack space */
-  return folly::fibers::runInMainContext([fbtraceInfo, remote_service, &info] {
+  return folly::fibers::runInMainContext([fbtraceInfo, remoteService, &info] {
     if (fbtrace_request_send(
             &fbtraceInfo->fbtrace->node,
             &fbtraceInfo->child_node,
             fbtraceInfo->metadata,
             FBTRACE_METADATA_SZ,
             Request::name,
-            remote_service,
+            remoteService,
             info) != 0) {
       VLOG(1) << "Error in fbtrace_request_send: " << fbtrace_error();
       return false;
