@@ -46,6 +46,7 @@ void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(20 /* field id */, testOptionalString());
   writer.writeField(21 /* field id */, testOptionalIobuf());
   writer.writeField(22 /* field id */, testEnumVec());
+  writer.writeField(23 /* field id */, testUnion());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -152,6 +153,10 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 22: {
         reader.readRawInto(testEnumVec());
+        break;
+      }
+      case 23: {
+        reader.readRawInto(testUnion());
         break;
       }
       default: {

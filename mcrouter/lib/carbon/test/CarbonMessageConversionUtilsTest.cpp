@@ -48,6 +48,7 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testEnumVec() = std::vector<carbon::test2::util::SimpleEnum>(
       {carbon::test2::util::SimpleEnum::One,
        carbon::test2::util::SimpleEnum::Twenty});
+  r.testUnion().emplace<2>(true);
 
   folly::dynamic expected = folly::dynamic::object(
       "__Base",
@@ -74,7 +75,8 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
           "vectorMember", folly::dynamic::array()))(
       "testOptionalString", "tstOptStr")(
       "testList", folly::dynamic::array("abc", "bce", "xyz"))(
-      "testEnumVec", folly::dynamic::array(1, 20));
+      "testEnumVec", folly::dynamic::array(1, 20))(
+      "testUnion", folly::dynamic::object("umember2", true));
 
   EXPECT_EQ(expected, carbon::convertToFollyDynamic(r));
 }

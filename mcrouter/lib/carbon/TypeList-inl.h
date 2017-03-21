@@ -59,4 +59,16 @@ struct FindByPairFirst<First, List<P1, Ps...>> {
       typename FindByPairFirst<First, List<Ps...>>::type>::type;
 };
 
+template <int K>
+struct FindByKey<K, List<>> {
+  using type = void;
+};
+template <int K, class KV1, class... KVs>
+struct FindByKey<K, List<KV1, KVs...>> {
+  using type = typename std::conditional<
+      K == KV1::Key,
+      typename KV1::Value,
+      typename FindByKey<K, List<KVs...>>::type>::type;
+};
+
 } // carbon

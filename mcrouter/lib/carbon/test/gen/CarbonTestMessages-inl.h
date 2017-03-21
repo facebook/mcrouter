@@ -92,6 +92,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(22, "testEnumVec", testEnumVec_)) {
     return;
   }
+  if (!v.visitField(23, "testUnion", testUnion_)) {
+    return;
+  }
 }
 
 template <class V>
@@ -166,6 +169,9 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(22, "testEnumVec", testEnumVec_)) {
+    return;
+  }
+  if (!v.visitField(23, "testUnion", testUnion_)) {
     return;
   }
 }

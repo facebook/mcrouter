@@ -43,6 +43,10 @@ class CarbonProtocolWriter {
     if (!b) {
       return;
     }
+    writeFieldAlways(id, b);
+  }
+
+  void writeFieldAlways(const int16_t id, const bool b) {
     writeFieldHeader(b ? FieldType::True : FieldType::False, id);
   }
 
@@ -50,6 +54,10 @@ class CarbonProtocolWriter {
     if (!c) {
       return;
     }
+    writeFieldAlways(id, c);
+  }
+
+  void writeFieldAlways(const int16_t id, const char c) {
     writeFieldHeader(FieldType::Int8, id);
     writeRaw(c);
   }
@@ -58,6 +66,10 @@ class CarbonProtocolWriter {
     if (!i) {
       return;
     }
+    writeFieldAlways(id, i);
+  }
+
+  void writeFieldAlways(const int16_t id, const int8_t i) {
     writeFieldHeader(FieldType::Int8, id);
     writeRaw(i);
   }
@@ -66,6 +78,10 @@ class CarbonProtocolWriter {
     if (!i) {
       return;
     }
+    writeFieldAlways(id, i);
+  }
+
+  void writeFieldAlways(const int16_t id, const int16_t i) {
     writeFieldHeader(FieldType::Int16, id);
     writeRaw(i);
   }
@@ -74,6 +90,10 @@ class CarbonProtocolWriter {
     if (!i) {
       return;
     }
+    writeFieldAlways(id, i);
+  }
+
+  void writeFieldAlways(const int16_t id, const int32_t i) {
     writeFieldHeader(FieldType::Int32, id);
     writeRaw(i);
   }
@@ -82,6 +102,10 @@ class CarbonProtocolWriter {
     if (!i) {
       return;
     }
+    writeFieldAlways(id, i);
+  }
+
+  void writeFieldAlways(const int16_t id, const int64_t i) {
     writeFieldHeader(FieldType::Int64, id);
     writeRaw(i);
   }
@@ -90,6 +114,10 @@ class CarbonProtocolWriter {
     if (!ui) {
       return;
     }
+    writeFieldAlways(id, ui);
+  }
+
+  void writeFieldAlways(const int16_t id, const uint8_t ui) {
     writeFieldHeader(FieldType::Int8, id);
     writeRaw(ui);
   }
@@ -98,6 +126,10 @@ class CarbonProtocolWriter {
     if (!ui) {
       return;
     }
+    writeFieldAlways(id, ui);
+  }
+
+  void writeFieldAlways(const int16_t id, const uint16_t ui) {
     writeFieldHeader(FieldType::Int16, id);
     writeRaw(ui);
   }
@@ -106,6 +138,10 @@ class CarbonProtocolWriter {
     if (!ui) {
       return;
     }
+    writeFieldAlways(id, ui);
+  }
+
+  void writeFieldAlways(const int16_t id, const uint32_t ui) {
     writeFieldHeader(FieldType::Int32, id);
     writeRaw(ui);
   }
@@ -114,6 +150,10 @@ class CarbonProtocolWriter {
     if (!ui) {
       return;
     }
+    writeFieldAlways(id, ui);
+  }
+
+  void writeFieldAlways(const int16_t id, const uint64_t ui) {
     writeFieldHeader(FieldType::Int64, id);
     writeRaw(ui);
   }
@@ -124,6 +164,14 @@ class CarbonProtocolWriter {
       const T e) {
     using UnderlyingType = typename std::underlying_type<T>::type;
     writeField(id, static_cast<UnderlyingType>(e));
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, void>::type writeFieldAlways(
+      const int16_t id,
+      const T e) {
+    using UnderlyingType = typename std::underlying_type<T>::type;
+    writeFieldAlways(id, static_cast<UnderlyingType>(e));
   }
 
   void writeField(const int16_t id, const float f) {
@@ -138,6 +186,10 @@ class CarbonProtocolWriter {
     if (f == 0.0) {
       return;
     }
+    writeFieldAlways(id, f);
+  }
+
+  void writeFieldAlways(const int16_t id, const float f) {
     writeFieldHeader(FieldType::Float, id);
     writeRaw(f);
   }
@@ -154,6 +206,10 @@ class CarbonProtocolWriter {
     if (d == 0.0) {
       return;
     }
+    writeFieldAlways(id, d);
+  }
+
+  void writeFieldAlways(const int16_t id, const double d) {
     writeFieldHeader(FieldType::Double, id);
     writeRaw(d);
   }
@@ -166,6 +222,14 @@ class CarbonProtocolWriter {
     writeField(id, static_cast<int16_t>(res));
   }
 
+  void writeFieldAlways(const int16_t id, const Result res) {
+    static_assert(
+        sizeof(Result) == sizeof(mc_res_t),
+        "Carbon currently assumes sizeof(Result) == sizeof(mc_res_t)");
+    // Note that this actually narrows mc_res_t from int to int16_t
+    writeFieldAlways(id, static_cast<int16_t>(res));
+  }
+
   template <class T>
   typename std::
       enable_if<folly::IsOneOf<T, std::string, folly::IOBuf>::value, void>::type
@@ -173,12 +237,24 @@ class CarbonProtocolWriter {
     if (t.empty()) {
       return;
     }
+    writeFieldAlways(id, t);
+  }
+
+  template <class T>
+  typename std::
+      enable_if<folly::IsOneOf<T, std::string, folly::IOBuf>::value, void>::type
+      writeFieldAlways(const int16_t id, const T& t) {
     writeFieldHeader(FieldType::Binary, id);
     writeRaw(t);
   }
 
   template <class T>
   void writeField(const int16_t id, const std::vector<T>& v) {
+    writeFieldAlways(id, v);
+  }
+
+  template <class T>
+  void writeFieldAlways(const int16_t id, const std::vector<T>& v) {
     facebook::memcache::checkRuntime(
         v.size() <= std::numeric_limits<uint32_t>::max(),
         "Input to writeField() for vector too long (len = {})",
@@ -194,9 +270,16 @@ class CarbonProtocolWriter {
       type
       writeField(const int16_t id, const T& data) {
     if (!SerializationTraits<T>::isEmpty(data)) {
-      writeFieldHeader(FieldType::Binary, id);
-      SerializationTraits<T>::write(data, *this);
+      writeFieldAlways(id, data);
     }
+  }
+
+  template <class T>
+  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
+      type
+      writeFieldAlways(const int16_t id, const T& data) {
+    writeFieldHeader(FieldType::Binary, id);
+    SerializationTraits<T>::write(data, *this);
   }
 
   // Serialize Carbon-generated structure members and mixins
@@ -204,6 +287,12 @@ class CarbonProtocolWriter {
   typename std::enable_if<IsCarbonStruct<T>::value, void>::type writeField(
       const int16_t id,
       const T& data) {
+    writeFieldAlways(id, data);
+  }
+
+  template <class T>
+  typename std::enable_if<IsCarbonStruct<T>::value, void>::type
+  writeFieldAlways(const int16_t id, const T& data) {
     writeFieldHeader(FieldType::Struct, id);
     writeRaw(data);
   }

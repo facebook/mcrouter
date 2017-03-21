@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2017, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -238,6 +238,15 @@ TEST(CarbonBasic, setAndGet) {
   req.testEnumVec() = enums;
   EXPECT_EQ(enums, req.testEnumVec());
 
+  // Union
+  req.testUnion().emplace<2>(true);
+  bool b = req.testUnion().get<2>();
+  EXPECT_TRUE(b);
+  req.testUnion().emplace<1>(123);
+  EXPECT_EQ(123, req.testUnion().get<1>());
+  req.testUnion().emplace<3>("a");
+  EXPECT_EQ("a", req.testUnion().get<3>());
+
   // folly::Optional fields
   const auto s = longString();
   req.testOptionalString() = s;
@@ -281,11 +290,24 @@ TEST(CarbonTest, serializeDeserialize) {
   EXPECT_FALSE(outRequest.testOptionalString().hasValue());
   // Other optional field gets a value of zero length
   outRequest.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "");
+  // Union
+  outRequest.testUnion().emplace<3>("abc");
 
   outRequest.testEnumVec().push_back(carbon::test2::util::SimpleEnum::Twenty);
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
+}
+
+TEST(CarbonTest, unionZeroSerialization) {
+  TestRequest outRequest;
+  outRequest.testUnion().emplace<1>(0);
+  auto inRequest = serializeAndDeserialize(outRequest);
+  EXPECT_EQ(0, inRequest.testUnion().get<1>());
+
+  outRequest.testUnion().emplace<3>("");
+  inRequest = serializeAndDeserialize(outRequest);
+  EXPECT_EQ("", inRequest.testUnion().get<3>());
 }
 
 TEST(CarbonTest, mixins) {

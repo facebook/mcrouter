@@ -30,6 +30,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/carbon/Variant.h>
 
 #include "mcrouter/lib/carbon/test/a/b/gen/BMessages.h"
 

@@ -41,6 +41,12 @@ struct ListDedup;
 template <class First, class PairList>
 struct FindByPairFirst;
 
+/**
+ * (K, List<KV...>) -> V
+ */
+template <int K, class L>
+struct FindByKey;
+
 } // carbon
 
 #include "TypeList-inl.h"

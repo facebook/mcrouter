@@ -30,6 +30,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/carbon/Variant.h>
 
 #include "mcrouter/lib/carbon/test/a/gen/AMessages.h"
 #include "mcrouter/lib/network/gen/CommonMessages.h"
@@ -231,6 +233,12 @@ class TestRequest : public carbon::RequestCommon {
   std::vector<test2::util::SimpleEnum>& testEnumVec() {
     return testEnumVec_;
   }
+  const test2::util::SimpleUnion& testUnion() const {
+    return testUnion_;
+  }
+  test2::util::SimpleUnion& testUnion() {
+    return testUnion_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -271,6 +279,7 @@ class TestRequest : public carbon::RequestCommon {
   folly::Optional<std::string> testOptionalString_;
   folly::Optional<folly::IOBuf> testOptionalIobuf_;
   std::vector<test2::util::SimpleEnum> testEnumVec_;
+  test2::util::SimpleUnion testUnion_;
 };
 
 class TestReply : public carbon::ReplyCommon {

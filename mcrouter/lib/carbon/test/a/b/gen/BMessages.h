@@ -30,6 +30,8 @@
 #include <mcrouter/lib/carbon/RequestCommon.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/carbon/Result.h>
+#include <mcrouter/lib/carbon/TypeList.h>
+#include <mcrouter/lib/carbon/Variant.h>
 
 namespace carbon {
 namespace test2 {
@@ -79,6 +81,106 @@ class SimpleStruct {
 
  private:
   int64_t member1_{0};
+};
+
+class SimpleUnion {
+ private:
+  using _IdTypeMap = carbon::List<
+      facebook::memcache::KV<1, int64_t>,
+      facebook::memcache::KV<2, bool>,
+      facebook::memcache::KV<3, std::string>>;
+
+ public:
+  SimpleUnion() = default;
+  SimpleUnion(const SimpleUnion&) = default;
+  SimpleUnion& operator=(const SimpleUnion&) = default;
+  SimpleUnion(SimpleUnion&&) = default;
+  SimpleUnion& operator=(SimpleUnion&&) = default;
+
+  uint32_t which() const {
+    return _which_;
+  }
+
+  int64_t& umember1() {
+    if (_which_ != 1) {
+      throw std::runtime_error("umember1 is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<int64_t>();
+  }
+  int64_t umember1() const {
+    if (_which_ != 1) {
+      throw std::runtime_error("umember1 is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<int64_t>();
+  }
+
+  bool& umember2() {
+    if (_which_ != 2) {
+      throw std::runtime_error("umember2 is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<bool>();
+  }
+  bool umember2() const {
+    if (_which_ != 2) {
+      throw std::runtime_error("umember2 is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<bool>();
+  }
+
+  std::string& umember3() {
+    if (_which_ != 3) {
+      throw std::runtime_error("umember3 is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<std::string>();
+  }
+  const std::string& umember3() const {
+    if (_which_ != 3) {
+      throw std::runtime_error("umember3 is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<std::string>();
+  }
+
+  template <uint32_t id, class C = typename FindByKey<id, _IdTypeMap>::type>
+  C& get() {
+    if (id != _which_) {
+      throw std::runtime_error("Type id is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<C>();
+  }
+
+  template <uint32_t id, class C = typename FindByKey<id, _IdTypeMap>::type>
+  const C& get() const {
+    if (id != _which_) {
+      throw std::runtime_error("Type id is not set in union SimpleUnion.");
+    }
+    return _carbon_variant.get<C>();
+  }
+
+  /* Note: Emplace invalidates all previous accessor references.
+   * Please exercise caution.
+   */
+  template <
+      uint32_t id,
+      class... Args,
+      class C = typename FindByKey<id, _IdTypeMap>::type>
+  C& emplace(Args&&... args) {
+    _which_ = id;
+    return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  uint32_t _which_{0};
+
+  carbon::Variant<int64_t, bool, std::string> _carbon_variant;
 };
 
 class YetAnotherReply;

@@ -34,6 +34,58 @@ void SimpleStruct::visitFields(V&& v) const {
 }
 
 template <class V>
+void SimpleUnion::visitFields(V&& v) {
+  switch (_which_) {
+    case 1: {
+      if (!v.visitField(1, "umember1", umember1())) {
+        return;
+      }
+      break;
+    }
+    case 2: {
+      if (!v.visitField(2, "umember2", umember2())) {
+        return;
+      }
+      break;
+    }
+    case 3: {
+      if (!v.visitField(3, "umember3", umember3())) {
+        return;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+template <class V>
+void SimpleUnion::visitFields(V&& v) const {
+  switch (_which_) {
+    case 1: {
+      if (!v.visitField(1, "umember1", umember1())) {
+        return;
+      }
+      break;
+    }
+    case 2: {
+      if (!v.visitField(2, "umember2", umember2())) {
+        return;
+      }
+      break;
+    }
+    case 3: {
+      if (!v.visitField(3, "umember3", umember3())) {
+        return;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+template <class V>
 void YetAnotherRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
     return;
