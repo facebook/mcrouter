@@ -10,6 +10,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <cassert>
+
+#include <folly/ScopeGuard.h>
 
 namespace facebook {
 namespace memcache {
@@ -26,7 +29,25 @@ class ListenSocket {
     return port_;
   }
 
+  /*
+   * Get the socket fd. Note that the socket will be closed in
+   * destructor ~ListenSocket. If the caller of this funciton intends to close
+   * this fd, then use the other function releaseSocketFd()
+   */
   int getSocketFd() const {
+    assert(socketFd_ != -1);
+    return socketFd_;
+  }
+
+  /*
+   * Get the socket fd. Note that the caller of this function is responsible
+   * to close this fd
+   */
+  int releaseSocketFd() {
+    assert(socketFd_ != -1);
+    SCOPE_EXIT {
+      socketFd_ = -1;
+    };
     return socketFd_;
   }
 

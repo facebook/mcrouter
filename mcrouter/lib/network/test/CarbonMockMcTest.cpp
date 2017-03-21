@@ -77,7 +77,7 @@ TEST(CarbonMockMc, basic) {
   ListenSocket listenSock;
 
   AsyncMcServer::Options opts;
-  opts.existingSocketFd = listenSock.getSocketFd();
+  opts.existingSocketFd = listenSock.releaseSocketFd();
   opts.numThreads = 1;
 
   MockMc mc;

@@ -162,6 +162,10 @@ TestServer::TestServer(
 void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
   LOG(INFO) << "Spawning AsyncMcServer";
 
+  // take ownership of the socket before starting the server as
+  // its closed in the server
+  sock_.releaseSocketFd();
+
   server_ = folly::make_unique<AsyncMcServer>(opts_);
   if (useTicketKeySeeds_) {
     wangle::TLSTicketKeySeeds seeds{
