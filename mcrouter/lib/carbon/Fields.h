@@ -31,9 +31,8 @@ enum class FieldType : uint8_t {
   Double = 0x7,
   Binary = 0x8,
   List = 0x9,
-  // TODO
-  // Set    = 0xa,
-  // Map    = 0xb,
+  Set = 0xa,
+  Map = 0xb,
   Struct = 0xc,
   Float = 0xd
 };

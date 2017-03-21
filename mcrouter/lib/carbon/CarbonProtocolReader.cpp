@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -10,6 +10,14 @@
 #include "CarbonProtocolReader.h"
 
 namespace carbon {
+void CarbonProtocolReader::skipContainer() {
+  const auto pr = readContainerFieldSizeAndInnerType();
+  const auto fieldType = pr.first;
+  const auto len = pr.second;
+  for (uint32_t i = 0; i < len; ++i) {
+    skip(fieldType);
+  }
+}
 
 void CarbonProtocolReader::skip(const FieldType ft) {
   switch (ft) {
@@ -46,12 +54,7 @@ void CarbonProtocolReader::skip(const FieldType ft) {
       break;
     }
     case FieldType::List: {
-      const auto pr = readVectorFieldSizeAndInnerType();
-      const auto fieldType = pr.first;
-      const auto len = pr.second;
-      for (size_t i = 0; i < len; ++i) {
-        skip(fieldType);
-      }
+      skipContainer();
       break;
     }
     case FieldType::Struct: {
@@ -64,6 +67,24 @@ void CarbonProtocolReader::skip(const FieldType ft) {
         skip(fieldType);
       }
       readStructEnd();
+      break;
+    }
+    case FieldType::Set: {
+      skipContainer();
+      break;
+    }
+    case FieldType::Map: {
+      const auto len = readVarint<uint32_t>();
+      uint8_t byte = 0;
+      if (len > 0) {
+        byte = readByte();
+        const auto keyType = static_cast<FieldType>((byte & 0xf0) >> 4);
+        const auto valType = static_cast<FieldType>(byte & 0x0f);
+        for (uint32_t i = 0; i < len; ++i) {
+          skip(keyType);
+          skip(valType);
+        }
+      }
       break;
     }
     default: { break; }

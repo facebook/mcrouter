@@ -48,7 +48,7 @@ class CarbonProtocolReader {
   template <class T>
   void readRawInto(std::vector<T>& v) {
     v.clear();
-    const auto pr = readVectorFieldSizeAndInnerType();
+    const auto pr = readContainerFieldSizeAndInnerType();
     const auto len = pr.second;
     v.reserve(len);
     for (size_t i = 0; i < len; ++i) {
@@ -168,7 +168,7 @@ class CarbonProtocolReader {
     nestedStructFieldIds_.pop_back();
   }
 
-  std::pair<FieldType, uint32_t> readVectorFieldSizeAndInnerType() {
+  std::pair<FieldType, uint32_t> readContainerFieldSizeAndInnerType() {
     std::pair<FieldType, uint32_t> pr;
     const uint8_t byte = readByte();
     pr.first = static_cast<FieldType>(byte & 0x0f);
@@ -199,6 +199,8 @@ class CarbonProtocolReader {
   void skip(const FieldType fieldType);
 
  private:
+  void skipContainer();
+
   uint8_t readByte() {
     return cursor_.template read<uint8_t>();
   }
