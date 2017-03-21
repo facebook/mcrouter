@@ -100,6 +100,9 @@ TEST(MemcachePooledConnectionTest, PooledExternalConnection) {
 }
 
 TEST(MemcacheInternalConnectionTest, simpleInternalConnection) {
+  folly::SingletonVault::singleton()->destroyInstances();
+  folly::SingletonVault::singleton()->reenableInstances();
+
   auto server = facebook::memcache::test::TestServer::create(
       false /* outOfOrder */, false /* useSsl */);
   facebook::memcache::McrouterOptions mcrouterOptions;
@@ -151,6 +154,9 @@ TEST(MemcacheInternalConnectionTest, simpleInternalConnection) {
 }
 
 TEST(MemcachePooledConnectionTest, PooledInternalConnection) {
+  folly::SingletonVault::singleton()->destroyInstances();
+  folly::SingletonVault::singleton()->reenableInstances();
+
   auto server = facebook::memcache::test::TestServer::create(
       false /* outOfOrder */, false /* useSsl */);
   facebook::memcache::McrouterOptions mcrouterOptions;
