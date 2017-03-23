@@ -163,6 +163,24 @@ struct Has<Y, X, Xs...> {
 };
 
 /**
+ * (T, Ts...) -> Index of first occurrence of T in Ts...
+ */
+template <class T, class... Ts>
+struct IndexOf;
+
+template <class T>
+struct IndexOf<T> {
+  static constexpr int32_t value = -1;
+};
+
+template <class T, class U, class... Us>
+struct IndexOf<T, U, Us...> {
+  static constexpr int32_t value = std::is_same<T, U>::value
+      ? 0
+      : (IndexOf<T, Us...>::value >= 0 ? 1 + IndexOf<T, Us...>::value : -1);
+};
+
+/**
  * Xs -> true iff all Xs are pairwise distinct types
  */
 template <class... Xs>
@@ -249,7 +267,8 @@ struct MapTImpl<F, List<X, Xs...>> {
 
 template <template <typename> class F, typename List>
 using MapT = typename detail::MapTImpl<F, List>::type;
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook
 
 #include "TypeList-inl.h"

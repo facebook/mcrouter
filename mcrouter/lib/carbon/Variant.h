@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <cassert>
 #include <type_traits>
 #include <typeindex>
 #include <utility>
@@ -26,11 +27,45 @@ class Variant {
 
   Variant() = default;
 
-  Variant(const Variant&) = default;
-  Variant(Variant&&) = default;
+  Variant(const Variant& other) {
+    *this = other;
+  }
 
-  Variant& operator=(const Variant&) = default;
-  Variant& operator=(Variant&&) = default;
+  Variant& operator=(const Variant& other) {
+    using CopierFun = void (*)(Variant&, const Variant&);
+    static constexpr CopierFun dispatcher[sizeof...(Ts)] = {
+        &Variant::copier<Ts>...};
+
+    if (cleanupFun_) {
+      cleanupFun_(*this);
+    }
+
+    const int32_t otherWhich = other.which_;
+    if (otherWhich >= 0 && otherWhich < sizeof...(Ts)) {
+      dispatcher[otherWhich](*this, other);
+    }
+    return *this;
+  }
+
+  Variant(Variant&& other) noexcept {
+    *this = std::move(other);
+  }
+
+  Variant& operator=(Variant&& other) noexcept {
+    using MoverFun = void (*)(Variant&, Variant &&);
+    static constexpr MoverFun dispatcher[sizeof...(Ts)] = {
+        &Variant::mover<Ts>...};
+
+    if (cleanupFun_) {
+      cleanupFun_(*this);
+    }
+
+    const int32_t otherWhich = other.which_;
+    if (otherWhich >= 0 && otherWhich < sizeof...(Ts)) {
+      dispatcher[otherWhich](*this, std::move(other));
+    }
+    return *this;
+  }
 
   template <class T>
   Variant& operator=(T&& t) {
@@ -44,7 +79,7 @@ class Variant {
   ~Variant() noexcept {
     // Do proper cleanup of the storage.
     if (cleanupFun_) {
-      (this->*cleanupFun_)();
+      cleanupFun_(*this);
     }
   }
 
@@ -61,12 +96,12 @@ class Variant {
         "Wrong type used with Variant!");
     // Cleanup previous value if we have one.
     if (cleanupFun_) {
-      (this->*cleanupFun_)();
+      cleanupFun_(*this);
     }
 
     // Perform proper setup.
     new (&storage_) T(std::forward<Args>(args)...);
-    type_ = typeid(T);
+    which_ = facebook::memcache::IndexOf<T, Ts...>::value;
     cleanupFun_ = &Variant::cleanup<T>;
     return reinterpret_cast<T&>(storage_);
   }
@@ -80,7 +115,8 @@ class Variant {
     static_assert(
         facebook::memcache::Has<T, Ts...>::value,
         "Attempt to access incompatible type in Variant!");
-    assert(type_ == typeid(T) && cleanupFun_ != nullptr);
+    assert(which_ == (facebook::memcache::IndexOf<T, Ts...>::value));
+    assert(cleanupFun_ != nullptr);
     return reinterpret_cast<T&>(storage_);
   }
 
@@ -89,16 +125,17 @@ class Variant {
     static_assert(
         facebook::memcache::Has<T, Ts...>::value,
         "Attempt to access incompatible type in Variant!");
-    assert(type_ == typeid(T) && cleanupFun_ != nullptr);
+    assert(which_ == (facebook::memcache::IndexOf<T, Ts...>::value));
+    assert(cleanupFun_ != nullptr);
     return reinterpret_cast<const T&>(storage_);
   }
 
-  /**
-   * Return the type of the currently stored object.
-   * If there's no object stored, will return typeid(void).
-   */
-  std::type_index which() const noexcept {
-    return type_;
+  std::type_index which() const {
+    static constexpr std::type_index types[sizeof...(Ts)] = {typeid(Ts)...};
+    if (which_ >= 0 && which_ < sizeof...(Ts)) {
+      return types[which_];
+    }
+    return typeid(void);
   }
 
  private:
@@ -106,14 +143,33 @@ class Variant {
       facebook::memcache::Fold<facebook::memcache::MaxOp, sizeof(Ts)...>::value;
 
   typename std::aligned_storage<kStorageSize>::type storage_;
-  std::type_index type_{typeid(void)};
-  void (Variant::*cleanupFun_)() noexcept {nullptr};
+  int32_t which_{-1};
+  void (*cleanupFun_)(Variant&) noexcept {nullptr};
 
   template <class T>
-  void cleanup() noexcept {
-    reinterpret_cast<T&>(storage_).~T();
-    type_ = typeid(void);
-    cleanupFun_ = nullptr;
+  static void cleanup(Variant& me) noexcept {
+    reinterpret_cast<T&>(me.storage_).~T();
+    me.which_ = -1;
+    me.cleanupFun_ = nullptr;
+  }
+
+  template <class T>
+  static void copier(Variant& me, const Variant& other) {
+    new (&me.storage_) T(other.get<T>());
+    me.which_ = other.which_;
+    me.cleanupFun_ = other.cleanupFun_;
+  }
+
+  template <class T>
+  static void mover(Variant& me, Variant&& other) noexcept {
+    static_assert(
+        std::is_nothrow_move_constructible<T>::value,
+        "Variant may only be used with types with noexcept move constructors");
+
+    new (&me.storage_) T(std::move(other.get<T>()));
+    me.which_ = other.which_;
+    me.cleanupFun_ = other.cleanupFun_;
+    other.cleanupFun_(other);
   }
 };
 
