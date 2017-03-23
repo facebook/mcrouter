@@ -16,5 +16,5 @@ mcrouter_routes_test_CPPFLAGS = -I$(top_srcdir)/.. -I$(top_srcdir)/lib/gtest/inc
 mcrouter_routes_test_LDADD = \
   $(top_builddir)/libmcroutercore.a \
   $(top_builddir)/lib/libmcrouter.a \
-  $(top_builddir)/lib/libgtest.la \
+  $(top_builddir)/lib/libtestmain.la \
   -lfollybenchmark

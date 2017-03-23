@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -11,10 +11,9 @@
 #include <cstdint>
 #include <random>
 
-#include <gflags/gflags.h>
-
 #include <folly/Benchmark.h>
 #include <folly/Random.h>
+#include <folly/init/Init.h>
 
 #include "mcrouter/lib/cycles/QuantilesCalculator.h"
 #include "mcrouter/lib/cycles/test/QuantilesTestHelper.h"
@@ -61,7 +60,7 @@ BENCHMARK_RELATIVE(Gk, n) {
  * ============================================================================
  */
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  folly::init(&argc, &argv, true /* removeFlags */);
   folly::runBenchmarks();
   return 0;
 }

@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 
+#include <folly/init/Init.h>
+
 #include "mcrouter/lib/fbi/cpp/Trie.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
 
@@ -281,7 +283,8 @@ TEST(Trie, Const) {
 }
 
 int main(int argc, char** argv) {
-  prepareRand();
   testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv);
+  prepareRand();
   return RUN_ALL_TESTS();
 }

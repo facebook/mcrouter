@@ -22,5 +22,5 @@ mcrouter_network_test_SOURCES = \
 mcrouter_network_test_CPPFLAGS = -I$(top_srcdir)/.. -I$(top_srcdir)/lib/gtest/include
 mcrouter_network_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
-  $(top_builddir)/lib/network/libtest_util.a \
-  $(top_builddir)/lib/libgtestmain.la
+  $(top_builddir)/lib/libtestmain.la \
+  $(top_builddir)/lib/network/libtest_util.a

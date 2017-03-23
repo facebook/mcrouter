@@ -12,6 +12,7 @@
 
 #include <folly/Benchmark.h>
 #include <folly/Conv.h>
+#include <folly/init/Init.h>
 
 #include "mcrouter/lib/fbi/cpp/FuncGenerator.h"
 
@@ -101,7 +102,7 @@ BENCHMARK_RELATIVE(Vector_100, n) {
 }
 
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  folly::init(&argc, &argv, true /* removeFlags */);
   folly::runBenchmarks();
   return 0;
 }

@@ -15,6 +15,7 @@
 #include <glog/logging.h>
 
 #include <folly/Format.h>
+#include <folly/Singleton.h>
 
 #include "mcrouter/lib/McOperation.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
@@ -333,7 +334,7 @@ void usage(char** argv) {
 }
 
 int main(int argc, char** argv) {
-  google::InitGoogleLogging(argv[0]);
+  folly::SingletonVault::singleton()->registrationComplete();
 
   AsyncMcServer::Options opts;
   opts.worker.versionString = "MockMcServer-1.0";

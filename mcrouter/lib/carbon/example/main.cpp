@@ -10,6 +10,7 @@
 #include <chrono>
 
 #include <folly/fibers/FiberManagerMap.h>
+#include <folly/init/Init.h>
 #include <folly/io/async/EventBase.h>
 #include <glog/logging.h>
 
@@ -179,7 +180,7 @@ void testRouter() {
 } // anonymous
 
 int main(int argc, char* argv[]) {
-  google::InitGoogleLogging(argv[0]);
+  folly::init(&argc, &argv);
 
   // testClientServer();
   testRouter();

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015, Facebook, Inc.
+ *  Copyright (c) 2015-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,10 @@
  */
 #include <gtest/gtest.h>
 
+#include <folly/init/Init.h>
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv);
   return RUN_ALL_TESTS();
 }

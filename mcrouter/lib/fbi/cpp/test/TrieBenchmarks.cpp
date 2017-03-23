@@ -15,6 +15,7 @@
 
 #include <folly/Benchmark.h>
 #include <folly/experimental/StringKeyedUnorderedMap.h>
+#include <folly/init/Init.h>
 
 #include "mcrouter/lib/fbi/cpp/Trie.h"
 
@@ -180,8 +181,7 @@ BENCHMARK_RELATIVE(Map_get_prefix2) {
 }
 
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  folly::init(&argc, &argv, true /* removeFlags */);
   prepareRand();
   folly::runBenchmarks();
   LOG(INFO) << "check: " << x;

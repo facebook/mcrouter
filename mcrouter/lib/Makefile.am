@@ -205,12 +205,9 @@ libmcrouter_a_CPPFLAGS = -I$(top_srcdir)/..
 libmcrouter_a_CFLAGS = -I$(top_srcdir)/..
 
 # build gtest on check
-check_LTLIBRARIES = libgtest.la libgtestmain.la
+check_LTLIBRARIES = libtestmain.la
 check_PROGRAMS =
 
-libgtest_la_CPPFLAGS = -Igtest/include -Igtest
-libgtest_la_SOURCES = gtest/src/gtest-all.cc
-
-libgtestmain_la_CPPFLAGS = -Igtest/include -Igtest
-libgtestmain_la_SOURCES = gtest/src/gtest_main.cc
-libgtestmain_la_LIBADD = libgtest.la
+libtestmain_la_CPPFLAGS = -Igtest/include -Igtest
+libtestmain_la_SOURCES = TestMain.cpp gtest/src/gtest-all.cc
+libtestmain_la_LIBADD = -lfolly -lfollyinit

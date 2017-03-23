@@ -10,9 +10,8 @@
 #include <array>
 #include <thread>
 
-#include <gflags/gflags.h>
-
 #include <folly/Benchmark.h>
+#include <folly/init/Init.h>
 
 #include "mcrouter/lib/cycles/Cycles.h"
 
@@ -101,7 +100,7 @@ BENCHMARK_RELATIVE(IntervalGuard_MultiThread, n) {
  * ============================================================================
  */
 int main(int argc, char** argv) {
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+  folly::init(&argc, &argv, true /* removeFlags */);
   folly::runBenchmarks();
   return 0;
 }
