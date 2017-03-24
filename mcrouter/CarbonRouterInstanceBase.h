@@ -118,8 +118,8 @@ class CarbonRouterInstanceBase {
     return configFailures_;
   }
 
-  size_t configsFromDisk() const {
-    return configsFromDisk_;
+  bool configuredFromDisk() const {
+    return configuredFromDisk_;
   }
 
   bool isRxmitReconnectionDisabled() const {
@@ -158,7 +158,7 @@ class CarbonRouterInstanceBase {
   uint64_t startTime_{0};
   time_t lastConfigAttempt_{0};
   size_t configFailures_{0};
-  size_t configsFromDisk_{0};
+  bool configuredFromDisk_{false};
 
   // Stores whether we should reconnect after hitting rxmit threshold
   std::atomic<bool> disableRxmitReconnection_{false};
