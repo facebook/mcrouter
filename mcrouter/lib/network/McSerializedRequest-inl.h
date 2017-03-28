@@ -24,6 +24,35 @@ typename std::enable_if<!Request::hasKey, uint64_t>::type getKeySize(
   return 0;
 }
 
+template <class Request>
+typename std::enable_if<
+    ListContains<McRequestList, Request>::value,
+    McSerializedRequest::Result>::type
+prepareUmbrella(
+    const Request& req,
+    UmbrellaSerializedMessage& serialized,
+    size_t reqId,
+    const struct iovec*& iovOut,
+    size_t& niovOut) {
+  return serialized.prepare(req, reqId, iovOut, niovOut)
+      ? McSerializedRequest::Result::OK
+      : McSerializedRequest::Result::ERROR;
+}
+
+template <class Request>
+typename std::enable_if<
+    !ListContains<McRequestList, Request>::value,
+    McSerializedRequest::Result>::type
+prepareUmbrella(
+    const Request&,
+    UmbrellaSerializedMessage&,
+    size_t,
+    const struct iovec*&,
+    size_t&) {
+  // Error out umbrella serialization of non-umbrella requests.
+  return McSerializedRequest::Result::ERROR;
+}
+
 } // detail
 
 template <class Request>
@@ -59,9 +88,9 @@ McSerializedRequest::McSerializedRequest(
       if (detail::getKeySize(req) > MC_KEY_MAX_LEN_UMBRELLA) {
         return;
       }
-      if (!umbrellaMessage_.prepare(req, reqId, iovsBegin_, iovsCount_)) {
-        result_ = Result::ERROR;
-      }
+
+      result_ = detail::prepareUmbrella(
+          req, umbrellaMessage_, reqId, iovsBegin_, iovsCount_);
       break;
     case mc_unknown_protocol:
     case mc_binary_protocol:

@@ -39,6 +39,9 @@ class ReplyCommon {
 
 class ReplyCommonThrift : public ReplyCommon {
  public:
+  explicit ReplyCommonThrift(mc_res_t result__ = mc_res_unknown)
+      : result_(result__) {}
+
   mc_res_t result() const {
     return result_;
   }
