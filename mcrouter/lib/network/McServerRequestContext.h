@@ -240,7 +240,9 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
       const folly::IOBuf& reqBody,
       McServerRequestContext&& ctx,
       std::true_type) {
-    onRequest_.dispatchTypedRequest(headerInfo, reqBody, std::move(ctx));
+    if (!onRequest_.dispatchTypedRequest(headerInfo, reqBody, std::move(ctx))) {
+      throw std::runtime_error("dispatchTypedRequestIfDefined got bad request");
+    }
   }
 
   void dispatchTypedRequestIfDefined(

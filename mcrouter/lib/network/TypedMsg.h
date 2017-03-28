@@ -67,6 +67,9 @@ class CallDispatcher {
    * @return true iff id is the typeId of a message in MessageList
    */
   bool dispatch(size_t id, Proc& proc, Args... args) {
+    if (id >= impl_.array_.size()) {
+      return false;
+    }
     auto& f = impl_.array_[id];
     if (f == nullptr) {
       return false;

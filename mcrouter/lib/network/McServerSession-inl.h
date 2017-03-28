@@ -47,7 +47,11 @@ void McServerSession::asciiRequestReady(
   if (result == mc_res_bad_key) {
     McServerRequestContext::reply(std::move(ctx), Reply(mc_res_bad_key));
   } else {
-    onRequest_->requestReady(std::move(ctx), std::move(req));
+    try {
+      onRequest_->requestReady(std::move(ctx), std::move(req));
+    } catch (...) {
+      McServerRequestContext::reply(std::move(ctx), Reply(mc_res_remote_error));
+    }
   }
 }
 
