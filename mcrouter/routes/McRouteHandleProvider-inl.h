@@ -197,8 +197,18 @@ McRouteHandleProvider<RouterInfo>::makePool(
     }
     // servers
     auto jservers = json.get_ptr("servers");
+    auto jhostnames = json.get_ptr("hostnames");
     checkLogic(jservers, "servers not found");
     checkLogic(jservers->isArray(), "servers is not an array");
+    checkLogic(
+        !jhostnames || jhostnames->isArray(), "hostnames is not an array");
+    checkLogic(
+        !jhostnames || jhostnames->size() == jservers->size(),
+        "hostnames expected to be of the same size as servers, "
+        "expected {}, got {}",
+        jservers->size(),
+        jhostnames ? jhostnames->size() : 0);
+
     std::vector<RouteHandlePtr> destinations;
     destinations.reserve(jservers->size());
     for (size_t i = 0; i < jservers->size(); ++i) {
@@ -212,7 +222,12 @@ McRouteHandleProvider<RouterInfo>::makePool(
         continue;
       }
       auto ap = AccessPoint::create(
-          server.stringPiece(), protocol, useSsl, port, enableCompression);
+          server.stringPiece(),
+          protocol,
+          useSsl,
+          port,
+          enableCompression,
+          jhostnames ? jhostnames->at(i).asString() : "");
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {

@@ -80,11 +80,13 @@ AccessPoint::AccessPoint(
     uint16_t port,
     mc_protocol_t protocol,
     bool useSsl,
-    bool compressed)
+    bool compressed,
+    std::string hostname)
     : port_(port),
       protocol_(protocol),
       useSsl_(useSsl),
-      compressed_(compressed) {
+      compressed_(compressed),
+      hostname_(hostname) {
   try {
     folly::IPAddress ip(host);
     host_ = ip.toFullyQualified();
@@ -101,7 +103,8 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
     mc_protocol_t defaultProtocol,
     bool defaultUseSsl,
     uint16_t portOverride,
-    bool defaultCompressed) {
+    bool defaultCompressed,
+    std::string hostname) {
   if (apString.empty()) {
     return nullptr;
   }
@@ -140,7 +143,8 @@ std::shared_ptr<AccessPoint> AccessPoint::create(
         portOverride != 0 ? portOverride : folly::to<uint16_t>(port),
         protocol.empty() ? defaultProtocol : parseProtocol(protocol),
         encr.empty() ? defaultUseSsl : parseSsl(encr),
-        comp.empty() ? defaultCompressed : parseCompressed(comp));
+        comp.empty() ? defaultCompressed : parseCompressed(comp),
+        hostname);
   } catch (const std::exception&) {
     return nullptr;
   }
