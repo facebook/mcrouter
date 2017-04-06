@@ -16,6 +16,7 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
+#include "mcrouter/tools/mcpiper/McPiperVisitor.h"
 #include "mcrouter/tools/mcpiper/Util.h"
 
 namespace facebook {
@@ -231,21 +232,6 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
       out.popAppendColor();
     }
   }
-
-  if (detail::getExptime(message)) {
-    out.append("\n  exptime: ", format_.msgAttrColor);
-    out.append(
-        folly::sformat("{:d}", detail::getExptime(message)),
-        format_.dataValueColor);
-  }
-  if (auto leaseToken = detail::getLeaseToken(message)) {
-    out.append("\n  lease-token: ", format_.msgAttrColor);
-    out.append(folly::sformat("{:d}", leaseToken), format_.dataValueColor);
-  }
-  if (!detail::getMessage(message).empty()) {
-    out.append("\n  message: ", format_.msgAttrColor);
-    out.append(detail::getMessage(message).str(), format_.dataValueColor);
-  }
   out.append(getTypeSpecificAttributes(message));
 
   out.pushBack('\n');
@@ -354,25 +340,8 @@ void MessagePrinter::printRawRequest(
 
 template <class Message>
 StyledString MessagePrinter::getTypeSpecificAttributes(const Message& msg) {
-  StyledString out;
-  return out;
+  return carbon::print(msg, detail::getName<Message>());
 }
-template <>
-inline StyledString MessagePrinter::getTypeSpecificAttributes(
-    const McMetagetReply& msg) {
-  StyledString out;
 
-  out.append("\n  age: ", format_.msgAttrColor);
-  out.append(
-      msg.age() ? folly::sformat("{:d}", msg.age()) : "unknown",
-      format_.dataValueColor);
-
-  if (!msg.ipAddress().empty()) {
-    out.append("\n  ip address: ", format_.msgAttrColor);
-    out.append(folly::sformat("{}", msg.ipAddress()), format_.dataValueColor);
-  }
-
-  return out;
-}
 }
 } // facebook::memcache
