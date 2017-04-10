@@ -263,5 +263,12 @@ void FifoReaderManager::runScanDirectory() {
   evb_.runAfterDelay(
       [this]() { runScanDirectory(); }, kPollDirectoryIntervalMs);
 }
+
+void FifoReaderManager::unregisterCallbacks() {
+  for (auto& fifoReader : fifoReaders_) {
+    fifoReader.second.first->setReadCB(nullptr);
+  }
+}
+
 } // memcache
 } // facebook

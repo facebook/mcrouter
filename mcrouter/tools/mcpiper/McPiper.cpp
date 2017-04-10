@@ -119,6 +119,9 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
 
 void McPiper::stop() {
   running_ = false;
+  if (fifoReaderManager_) {
+    fifoReaderManager_->unregisterCallbacks();
+  }
 }
 
 void McPiper::run(Settings settings, std::ostream& targetOut) {
@@ -176,16 +179,17 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
   initCompression();
 
   folly::EventBase eventBase;
-  FifoReaderManager fifoManager(
+  fifoReaderManager_ = std::make_unique<FifoReaderManager>(
       eventBase,
       fifoReaderCallback,
       settings.fifoRoot,
       std::move(filenamePattern));
 
-  eventBase.setMaxReadAtOnce(1);
   while (running_) {
     eventBase.loopOnce();
   }
+
+  fifoReaderManager_.reset();
 }
 
 } // mcpiper namespace

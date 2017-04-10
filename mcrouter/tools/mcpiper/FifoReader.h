@@ -122,6 +122,11 @@ class FifoReaderManager {
   FifoReaderManager(const FifoReaderManager&) = delete;
   FifoReaderManager& operator=(const FifoReaderManager&) = delete;
 
+  /**
+   * Unregisters all fifo readers
+   */
+  void unregisterCallbacks();
+
  private:
   using FifoReader = std::pair<
       folly::AsyncPipeReader::UniquePtr,

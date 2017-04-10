@@ -11,7 +11,10 @@
 
 #include <iostream>
 
+#include <folly/io/async/EventBase.h>
+
 #include "mcrouter/tools/mcpiper/Config.h"
+#include "mcrouter/tools/mcpiper/FifoReader.h"
 #include "mcrouter/tools/mcpiper/MessagePrinter.h"
 
 namespace facebook {
@@ -53,6 +56,7 @@ class McPiper {
 
  private:
   std::unique_ptr<MessagePrinter> messagePrinter_;
+  std::unique_ptr<FifoReaderManager> fifoReaderManager_;
   bool running_{false};
 };
 
