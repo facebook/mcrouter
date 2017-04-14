@@ -10,9 +10,11 @@
 #pragma once
 
 #include <folly/Optional.h>
+#include <vector>
 
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
+#include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
 #include "mcrouter/lib/carbon/SerializationTraits.h"
 
@@ -21,6 +23,8 @@ namespace carbon {
 // SerializationTraits specialization for Keys<>
 template <class Storage>
 struct SerializationTraits<Keys<Storage>> {
+  static constexpr carbon::FieldType kWireType = carbon::FieldType::Binary;
+
   static Keys<Storage> read(carbon::CarbonProtocolReader& reader) {
     return Keys<Storage>(reader.readRaw<Storage>());
   }
@@ -39,6 +43,9 @@ struct SerializationTraits<Keys<Storage>> {
 // SerializationTraits specialization for folly::Optional<>
 template <class T>
 struct SerializationTraits<folly::Optional<T>> {
+  static constexpr carbon::FieldType kWireType =
+      detail::TypeToField<T>::fieldType;
+
   static folly::Optional<T> read(carbon::CarbonProtocolReader& reader) {
     return folly::Optional<T>(reader.readRaw<T>());
   }
@@ -51,6 +58,37 @@ struct SerializationTraits<folly::Optional<T>> {
 
   static bool isEmpty(const folly::Optional<T>& opt) {
     return !opt.hasValue();
+  }
+};
+
+template <class T>
+struct SerializationTraits<std::vector<T>> {
+  static constexpr carbon::FieldType kWireType = carbon::FieldType::List;
+
+  using inner_type = T;
+
+  static size_t size(const std::vector<T>& vec) {
+    return vec.size();
+  }
+
+  static void emplace(std::vector<T>& vec, T&& t) {
+    vec.emplace_back(std::move(t));
+  }
+
+  static void clear(std::vector<T>& vec) {
+    vec.clear();
+  }
+
+  static void reserve(std::vector<T>& vec, size_t len) {
+    vec.reserve(len);
+  }
+
+  static auto begin(const std::vector<T>& vec) -> decltype(vec.begin()) {
+    return vec.begin();
+  }
+
+  static auto end(const std::vector<T>& vec) -> decltype(vec.end()) {
+    return vec.end();
   }
 };
 

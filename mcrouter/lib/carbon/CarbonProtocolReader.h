@@ -46,13 +46,17 @@ class CarbonProtocolReader {
   }
 
   template <class T>
-  void readRawInto(std::vector<T>& v) {
-    v.clear();
+  typename std::enable_if<
+      SerializationTraits<T>::kWireType == FieldType::List,
+      void>::type
+  readRawInto(T& v) {
+    SerializationTraits<T>::clear(v);
     const auto pr = readContainerFieldSizeAndInnerType();
     const auto len = pr.second;
-    v.reserve(len);
+    SerializationTraits<T>::reserve(v, len);
     for (size_t i = 0; i < len; ++i) {
-      v.emplace_back(readRaw<T>());
+      SerializationTraits<T>::emplace(
+          v, readRaw<typename SerializationTraits<T>::inner_type>());
     }
   }
 
@@ -80,9 +84,8 @@ class CarbonProtocolReader {
   }
 
   template <class T>
-  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
-      type
-      readRawInto(T& data) {
+  typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
+  readRawInto(T& data) {
     data = SerializationTraits<T>::read(*this);
   }
 

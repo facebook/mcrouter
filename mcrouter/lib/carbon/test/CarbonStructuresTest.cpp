@@ -138,6 +138,9 @@ TEST(CarbonBasic, defaultConstructed) {
   // Vector of enums
   EXPECT_TRUE(req.testEnumVec().empty());
 
+  // Vector of vectors
+  EXPECT_TRUE(req.testNestedVec().empty());
+
   // folly::Optional fields
   EXPECT_FALSE(req.testOptionalString());
   EXPECT_FALSE(req.testOptionalIobuf());
@@ -247,6 +250,11 @@ TEST(CarbonBasic, setAndGet) {
   req.testUnion().emplace<3>("a");
   EXPECT_EQ("a", req.testUnion().get<3>());
 
+  // Vector of vectors
+  std::vector<std::vector<uint64_t>> vectors = {{1, 1, 1}, {2, 2}};
+  req.testNestedVec() = vectors;
+  EXPECT_EQ(vectors, req.testNestedVec());
+
   // folly::Optional fields
   const auto s = longString();
   req.testOptionalString() = s;
@@ -294,6 +302,8 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testUnion().emplace<3>("abc");
 
   outRequest.testEnumVec().push_back(carbon::test2::util::SimpleEnum::Twenty);
+
+  outRequest.testNestedVec().push_back({100, 2000});
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);

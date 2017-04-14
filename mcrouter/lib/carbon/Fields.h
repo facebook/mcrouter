@@ -52,7 +52,7 @@ class IsCarbonStruct {
 namespace detail {
 
 template <class T>
-class SerializationTraitsDefined {
+class IsUserReadWriteDefined {
   template <class C>
   static constexpr decltype(
       SerializationTraits<C>::read,
@@ -65,6 +65,44 @@ class SerializationTraitsDefined {
 
  public:
   static constexpr bool value{decltype(check<T>(0))::value};
+};
+
+template <class T>
+class IsSerializableViaTraits {
+  template <class C>
+  static constexpr decltype(SerializationTraits<C>::kWireType, std::true_type())
+  check(int);
+
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value};
+};
+
+template <class T, FieldType Type, typename Enable = void>
+struct IsOfTraitFieldType;
+
+template <class T, FieldType Type>
+struct IsOfTraitFieldType<
+    T,
+    Type,
+    typename std::enable_if<IsSerializableViaTraits<T>::value>::type> {
+  static constexpr bool value = SerializationTraits<T>::kWireType == Type;
+};
+
+template <class T, FieldType Type>
+struct IsOfTraitFieldType<
+    T,
+    Type,
+    typename std::enable_if<!IsSerializableViaTraits<T>::value>::type> {
+  static constexpr bool value = false;
+};
+
+template <class T>
+struct IsLinearContainer {
+  static constexpr bool value = IsOfTraitFieldType<T, FieldType::List>::value ||
+      IsOfTraitFieldType<T, FieldType::Set>::value;
 };
 
 template <class T, class Enable = void>
@@ -154,14 +192,10 @@ struct TypeToField<T, typename std::enable_if<IsCarbonStruct<T>::value>::type> {
 template <class T>
 struct TypeToField<
     T,
-    typename std::enable_if<SerializationTraitsDefined<T>::value>::type> {
-  static constexpr FieldType fieldType{FieldType::Binary};
+    typename std::enable_if<IsSerializableViaTraits<T>::value>::type> {
+  static constexpr FieldType fieldType{SerializationTraits<T>::kWireType};
 };
 
-template <class T>
-struct TypeToField<std::vector<T>> {
-  static constexpr FieldType fieldType{FieldType::List};
-};
 
 } // detail
 } // carbon

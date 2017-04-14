@@ -26,11 +26,12 @@ request TestRequest with 1: SimpleStruct as Base {
   16: string testLongString;
   17: IOBuf testIobuf;
   18: SimpleStruct testStruct;
-  19: vector<string> testList;
+  19: std::vector<string> testList;
   20: Optional<string> testOptionalString;
   21: Optional<IOBuf> testOptionalIobuf;
-  22: vector<test2::util::SimpleEnum> testEnumVec;
+  22: std::vector<test2::util::SimpleEnum> testEnumVec;
   23: test2::util::SimpleUnion testUnion;
+  24: std::vector<std::vector<uint64_t>> testNestedVec;
 };
 
 reply TestReply {

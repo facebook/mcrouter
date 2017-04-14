@@ -249,36 +249,43 @@ class CarbonProtocolWriter {
   }
 
   template <class T>
-  void writeField(const int16_t id, const std::vector<T>& v) {
+  typename std::enable_if<
+      SerializationTraits<T>::kWireType == FieldType::List,
+      void>::type
+  writeField(const int16_t id, const T& v) {
+    if (SerializationTraits<T>::size(v) == 0) {
+      return;
+    }
     writeFieldAlways(id, v);
   }
 
   template <class T>
-  void writeFieldAlways(const int16_t id, const std::vector<T>& v) {
+  typename std::enable_if<
+      SerializationTraits<T>::kWireType == FieldType::List,
+      void>::type
+  writeFieldAlways(const int16_t id, const T& v) {
     facebook::memcache::checkRuntime(
-        v.size() <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeField() for vector too long (len = {})",
-        v.size());
-    writeFieldHeader(FieldType::List, id);
+        SerializationTraits<T>::size(v) <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeField() for type too long (len = {})",
+        SerializationTraits<T>::size(v));
+    writeFieldHeader(SerializationTraits<T>::kWireType, id);
     writeRaw(v);
   }
 
   // Serialize user-provided types that have suitable specializations of
   // carbon::SerializationTraits<>.
   template <class T>
-  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
-      type
-      writeField(const int16_t id, const T& data) {
+  typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
+  writeField(const int16_t id, const T& data) {
     if (!SerializationTraits<T>::isEmpty(data)) {
       writeFieldAlways(id, data);
     }
   }
 
   template <class T>
-  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
-      type
-      writeFieldAlways(const int16_t id, const T& data) {
-    writeFieldHeader(FieldType::Binary, id);
+  typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
+  writeFieldAlways(const int16_t id, const T& data) {
+    writeFieldHeader(SerializationTraits<T>::kWireType, id);
     SerializationTraits<T>::write(data, *this);
   }
 
@@ -389,15 +396,22 @@ class CarbonProtocolWriter {
   }
 
   template <class T>
-  void writeRaw(const std::vector<T>& v) {
+  typename std::enable_if<
+      SerializationTraits<T>::kWireType == FieldType::List,
+      void>::type
+  writeRaw(const T& v) {
     facebook::memcache::checkRuntime(
-        v.size() <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeRaw() for vector too long (len = {})",
-        v.size());
+        SerializationTraits<T>::size(v) <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeRaw() for type too long (len = {})",
+        SerializationTraits<T>::size(v));
     writeListSizeAndInnerType(
-        static_cast<uint32_t>(v.size()), detail::TypeToField<T>::fieldType);
-    for (const auto& e : v) {
-      writeRaw(e);
+        static_cast<uint32_t>(SerializationTraits<T>::size(v)),
+        detail::TypeToField<
+            typename SerializationTraits<T>::inner_type>::fieldType);
+    for (auto it = SerializationTraits<T>::begin(v);
+         it != SerializationTraits<T>::end(v);
+         ++it) {
+      writeRaw(*it);
     }
   }
 
@@ -408,9 +422,8 @@ class CarbonProtocolWriter {
   }
 
   template <class T>
-  typename std::enable_if<detail::SerializationTraitsDefined<T>::value, void>::
-      type
-      writeRaw(const T& data) {
+  typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
+  writeRaw(const T& data) {
     SerializationTraits<T>::write(data, *this);
   }
 

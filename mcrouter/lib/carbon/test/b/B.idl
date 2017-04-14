@@ -10,5 +10,5 @@ struct SimpleStruct with 1: BaseStruct {
   1: int32_t int32Member;
   2: string stringMember;
   3: test2::util::SimpleEnum enumMember;
-  4: vector<test2::util::SimpleStruct> vectorMember;
+  4: std::vector<test2::util::SimpleStruct> vectorMember;
 };

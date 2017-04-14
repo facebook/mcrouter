@@ -9,6 +9,8 @@
  */
 #include <string>
 
+#include "mcrouter/lib/carbon/CommonSerializationTraits.h"
+#include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
 
 namespace carbon {
@@ -54,20 +56,6 @@ class ToDynamicVisitor {
   folly::dynamic value_;
   FollyDynamicConversionOptions opts_;
 
-  // Detect Carbon generated structures by presence of visitFields method.
-  template <class M>
-  class IsCarbonStruct {
-    template <class T>
-    static auto check(int x) -> decltype(
-        std::declval<T>().visitFields(std::declval<ToDynamicVisitor>()),
-        char());
-    template <class T>
-    static int check(...);
-
-   public:
-    static constexpr bool value = sizeof(check<M>(0)) == sizeof(char);
-  };
-
   folly::dynamic toDynamic(char c) const {
     return folly::dynamic(std::string(1, c));
   }
@@ -87,15 +75,6 @@ class ToDynamicVisitor {
       return toDynamic(*value);
     }
     return nullptr;
-  }
-
-  template <class T>
-  folly::dynamic toDynamic(const std::vector<T>& value) const {
-    folly::dynamic array = folly::dynamic::array();
-    for (const auto& v : value) {
-      array.push_back(toDynamic(v));
-    }
-    return array;
   }
 
   template <class T>
@@ -152,6 +131,24 @@ class ToDynamicVisitor {
       !std::is_convertible<T, folly::StringPiece>::value,
       folly::dynamic>::type
   toDynamic4(const T& value) const {
+    return toDynamic5(value);
+  }
+
+  template <class T>
+  typename std::enable_if<IsLinearContainer<T>::value, folly::dynamic>::type
+  toDynamic5(const T& value) const {
+    folly::dynamic array = folly::dynamic::array();
+    for (auto it = SerializationTraits<T>::begin(value);
+         it != SerializationTraits<T>::end(value);
+         ++it) {
+      array.push_back(toDynamic(*it));
+    }
+    return array;
+  }
+
+  template <class T>
+  typename std::enable_if<!IsLinearContainer<T>::value, folly::dynamic>::type
+  toDynamic5(const T& value) const {
     if (!opts_.ignoreUnserializableTypes) {
       return "(not serializable)";
     }

@@ -239,6 +239,12 @@ class TestRequest : public carbon::RequestCommon {
   test2::util::SimpleUnion& testUnion() {
     return testUnion_;
   }
+  const std::vector<std::vector<uint64_t>>& testNestedVec() const {
+    return testNestedVec_;
+  }
+  std::vector<std::vector<uint64_t>>& testNestedVec() {
+    return testNestedVec_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -280,6 +286,7 @@ class TestRequest : public carbon::RequestCommon {
   folly::Optional<folly::IOBuf> testOptionalIobuf_;
   std::vector<test2::util::SimpleEnum> testEnumVec_;
   test2::util::SimpleUnion testUnion_;
+  std::vector<std::vector<uint64_t>> testNestedVec_;
 };
 
 class TestReply : public carbon::ReplyCommon {
