@@ -140,7 +140,9 @@ class SimpleUnion {
     return _carbon_variant.get<std::string>();
   }
 
-  template <uint32_t id, class C = typename FindByKey<id, _IdTypeMap>::type>
+  template <
+      uint32_t id,
+      class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   C& get() {
     if (id != _which_) {
       throw std::runtime_error("Type id is not set in union SimpleUnion.");
@@ -148,7 +150,9 @@ class SimpleUnion {
     return _carbon_variant.get<C>();
   }
 
-  template <uint32_t id, class C = typename FindByKey<id, _IdTypeMap>::type>
+  template <
+      uint32_t id,
+      class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   const C& get() const {
     if (id != _which_) {
       throw std::runtime_error("Type id is not set in union SimpleUnion.");
@@ -162,7 +166,7 @@ class SimpleUnion {
   template <
       uint32_t id,
       class... Args,
-      class C = typename FindByKey<id, _IdTypeMap>::type>
+      class C = typename carbon::FindByKey<id, _IdTypeMap>::type>
   C& emplace(Args&&... args) {
     _which_ = id;
     return _carbon_variant.emplace<C>(std::forward<Args>(args)...);
