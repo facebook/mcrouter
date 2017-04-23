@@ -102,6 +102,9 @@ class SimpleUnion {
   }
 
   int64_t& umember1() {
+    if (_which_ == 0) {
+      return emplace<1>();
+    }
     if (_which_ != 1) {
       throw std::runtime_error("umember1 is not set in union SimpleUnion.");
     }
@@ -115,6 +118,9 @@ class SimpleUnion {
   }
 
   bool& umember2() {
+    if (_which_ == 0) {
+      return emplace<2>();
+    }
     if (_which_ != 2) {
       throw std::runtime_error("umember2 is not set in union SimpleUnion.");
     }
@@ -128,6 +134,9 @@ class SimpleUnion {
   }
 
   std::string& umember3() {
+    if (_which_ == 0) {
+      return emplace<3>();
+    }
     if (_which_ != 3) {
       throw std::runtime_error("umember3 is not set in union SimpleUnion.");
     }
