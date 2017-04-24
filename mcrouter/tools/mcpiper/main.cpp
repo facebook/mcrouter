@@ -113,7 +113,10 @@ Settings parseOptions(int argc, char** argv) {
       "raw",
       po::bool_switch(&settings.raw)->default_value(false),
       "Prints raw data. Format: firstly size(8 bytes) then message. "
-      "ASCII protocol is not supported");
+      "ASCII protocol is not supported")(
+      "script",
+      po::bool_switch(&settings.script)->default_value(false),
+      "Machine-readable JSON output (useful for post-processing).");
 
   // Positional arguments - hidden from the help message
   po::options_description hiddenOpts("Hidden options");

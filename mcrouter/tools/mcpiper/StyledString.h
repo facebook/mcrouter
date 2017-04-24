@@ -96,6 +96,13 @@ class StyledString {
    */
   size_t size() const;
 
+  /**
+   * @return  True iff the string is empty.
+   */
+  bool empty() const noexcept {
+    return text_.empty();
+  }
+
  private:
   std::string text_;
   std::vector<Color> fg_;

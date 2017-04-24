@@ -56,6 +56,9 @@ class MessagePrinter {
 
     // Getting raw data in binary format
     bool raw{false};
+
+    // Machine-readable JSON format (has no effect if raw is true)
+    bool script{false};
   };
 
   struct Stats {

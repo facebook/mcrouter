@@ -32,8 +32,10 @@ MessagePrinter::Options getOptions(const Settings& settings, McPiper* mcpiper) {
   options.numAfterMatch = settings.numAfterMatch;
   options.quiet = settings.quiet;
   options.raw = settings.raw;
+  options.script = settings.script;
   options.maxMessages = settings.maxMessages;
-  options.disableColor = settings.raw || !isatty(fileno(stdout));
+  options.disableColor =
+      settings.raw || settings.script || !isatty(fileno(stdout));
 
   // Time Function
   static struct timeval prevTs = {0, 0};

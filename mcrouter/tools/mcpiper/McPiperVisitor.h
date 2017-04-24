@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <cctype>
 #include <type_traits>
 #include <typeinfo>
 #include <unordered_set>
@@ -16,6 +17,7 @@
 
 #include <folly/Conv.h>
 #include <folly/Range.h>
+#include <folly/json.h>
 
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
@@ -34,7 +36,8 @@ class McPiperVisitor {
                                                          "key"};
 
  public:
-  McPiperVisitor() = default;
+  explicit McPiperVisitor(bool script)
+      : script_(script), nested(script_ ? 1 : 0) {}
 
   template <class T>
   bool enterMixin(size_t id, folly::StringPiece name, const T& t) {
@@ -62,6 +65,7 @@ class McPiperVisitor {
   }
 
  private:
+  const bool script_;
   facebook::memcache::StyledString out_;
   const facebook::memcache::PrettyFormat format_{};
   uint32_t nested{0};
@@ -73,10 +77,21 @@ class McPiperVisitor {
   void renderHeader(folly::StringPiece name) {
     if (!name.empty()) {
       auto s = getSpaces();
-      out_.append("\n  ");
-      out_.append(getSpaces());
-      out_.append(name.str(), format_.msgAttrColor);
-      out_.append(": ", format_.msgAttrColor);
+      if (script_) {
+        if (!out_.empty()) {
+          out_.append(",");
+        }
+        out_.append("\n  ");
+        out_.append(getSpaces());
+        out_.append("\"");
+        out_.append(name.str());
+        out_.append("\": ");
+      } else {
+        out_.append("\n  ");
+        out_.append(getSpaces());
+        out_.append(name.str(), format_.msgAttrColor);
+        out_.append(": ", format_.msgAttrColor);
+      }
     }
   }
 
@@ -92,7 +107,7 @@ class McPiperVisitor {
   typename std::enable_if<carbon::IsCarbonStruct<T>::value, void>::type render(
       folly::StringPiece name,
       const T& t) {
-    McPiperVisitor printer;
+    McPiperVisitor printer(script_);
     renderHeader(name);
     nested += 1;
     printer.setNested(nested);
@@ -101,7 +116,7 @@ class McPiperVisitor {
     auto str = std::move(printer).styled();
     out_.pushBack('{');
     out_.append(str);
-    out_.append("\n ");
+    out_.append("\n  ");
     out_.append(getSpaces());
     out_.pushBack('}');
   }
@@ -111,16 +126,16 @@ class McPiperVisitor {
     renderHeader(name);
     out_.pushBack('[');
 
-    McPiperVisitor printer;
     bool firstInArray = true;
     for (const auto& t : ts) {
       if (!firstInArray) {
         out_.pushBack(',');
       }
-      printer.render("", t);
       firstInArray = false;
+      McPiperVisitor printer(script_);
+      printer.render("", t);
+      out_.append(std::move(printer).styled());
     }
-    out_.append(std::move(printer).styled());
     out_.pushBack(']');
   }
 };
@@ -147,13 +162,24 @@ template <>
 inline void McPiperVisitor::render(
     folly::StringPiece name,
     const std::string& str) {
-  if (str.empty()) {
+  if (!script_ && str.empty()) {
     return;
   }
   renderHeader(name);
-  out_.pushBack('\"');
-  out_.append(str, format_.dataValueColor);
-  out_.pushBack('\"');
+  if (script_) {
+    out_.append("\"");
+    if (!std::all_of<std::string::const_iterator, int(int)>(
+            str.begin(), str.end(), std::isprint)) {
+      /* JSON doesn't deal with arbitrary binary data - the input string
+         must be valid UTF-8.  So we just hex encode the whole string. */
+      out_.append(folly::hexlify(str));
+    } else {
+      out_.append(folly::cEscape<std::string>(str));
+    }
+    out_.append("\"");
+  } else {
+    out_.append(folly::backslashify(str));
+  }
 }
 
 template <>
@@ -173,8 +199,9 @@ inline void McPiperVisitor::render(folly::StringPiece name, const bool& b) {
 } // detail
 
 template <class R>
-facebook::memcache::StyledString print(const R& req, folly::StringPiece name) {
-  detail::McPiperVisitor printer;
+facebook::memcache::StyledString
+print(const R& req, folly::StringPiece name, bool script) {
+  detail::McPiperVisitor printer(script);
   req.visitFields(printer);
   return std::move(printer).styled();
 }

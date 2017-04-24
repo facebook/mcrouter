@@ -42,6 +42,7 @@ struct Settings {
   size_t verboseLevel{0};
   std::string protocol;
   bool raw{false};
+  bool script{false};
 };
 
 class McPiper {

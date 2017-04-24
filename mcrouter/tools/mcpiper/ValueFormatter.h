@@ -40,6 +40,7 @@ class ValueFormatter {
    * @param value             The value to uncompress and format.
    * @param flags             Flags
    * @param format            Format to use.
+   * @param script            If true, produce a machine readable JSON output
    * @param uncompressedSize  Output parameter containing the uncompressed size.
    * @return                  The formatted value.
    */
@@ -47,6 +48,7 @@ class ValueFormatter {
       folly::StringPiece value,
       uint64_t flags,
       PrettyFormat format,
+      bool script,
       size_t& uncompressedSize) noexcept {
     uncompressedSize = value.size();
     return StyledString(value.str(), format.dataValueColor);

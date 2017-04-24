@@ -186,36 +186,67 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
   StyledString out;
   out.append("\n");
 
+  if (options_.script) {
+    out.append("{\n", format_.dataOpColor);
+    /* always present, makes comma accounting simpler */
+    out.append(folly::sformat("  \"reqid\": {}", msgId));
+  }
+
   if (options_.printTimeFn) {
     timeval ts;
     gettimeofday(&ts, nullptr);
-    out.append(options_.printTimeFn(ts));
+
+    if (options_.script) {
+      out.append(
+          folly::sformat(",\n  \"ts\": \"{}\"", options_.printTimeFn(ts)));
+    } else {
+      out.append(options_.printTimeFn(ts));
+      out.append(" ");
+    }
   }
 
   out.append(serializeConnectionDetails(from, to, protocol));
-  out.append("\n");
 
-  out.append("{\n", format_.dataOpColor);
+  if (!options_.script) {
+    out.append("\n{\n", format_.dataOpColor);
+  }
 
   auto msgHeader =
       serializeMessageHeader(detail::getName<Message>(), result, key);
   if (!msgHeader.empty()) {
-    out.append("  ");
+    if (options_.script) {
+      out.append(",\n  ");
+    } else {
+      out.append("  ");
+    }
     out.append(std::move(msgHeader), format_.headerColor);
   }
 
   // Msg attributes
-  out.append("\n  reqid: ", format_.msgAttrColor);
-  out.append(folly::sformat("0x{:x}", msgId), format_.dataValueColor);
+  if (!options_.script) {
+    /* Rendered above for script mode */
+    out.append("\n  reqid: ", format_.msgAttrColor);
+    out.append(folly::sformat("0x{:x}", msgId), format_.dataValueColor);
+  }
 
   if (latencyUs > 0) { // it is 0 only for requests
-    out.append("\n  request/response latency (us): ", format_.msgAttrColor);
+    if (options_.script) {
+      out.append(",\n  \"rtt_us\": ");
+    } else {
+      out.append("\n  request/response latency (us): ", format_.msgAttrColor);
+    }
     out.append(folly::to<std::string>(latencyUs), format_.dataValueColor);
   }
 
-  out.append("\n  flags: ", format_.msgAttrColor);
-  out.append(folly::sformat("0x{:x}", message.flags()), format_.dataValueColor);
-  if (message.flags()) {
+  if (options_.script) {
+    out.append(",\n  \"flags\": ");
+    out.append(folly::to<std::string>(message.flags()));
+  } else {
+    out.append("\n  flags: ", format_.msgAttrColor);
+    out.append(
+        folly::sformat("0x{:x}", message.flags()), format_.dataValueColor);
+  }
+  if (!options_.script && message.flags()) {
     auto flagDesc = describeFlags(message.flags());
     if (!flagDesc.empty()) {
       out.pushAppendColor(format_.attrColor);
@@ -232,36 +263,54 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
       out.popAppendColor();
     }
   }
-  out.append(getTypeSpecificAttributes(message));
-
-  out.pushBack('\n');
+  if (options_.script) {
+    out.append(",\n  \"message\": {");
+    out.append(getTypeSpecificAttributes(message));
+    out.append("\n  }");
+  } else {
+    out.append(getTypeSpecificAttributes(message));
+  }
 
   if (!value.empty()) {
     size_t uncompressedSize;
     auto formattedValue = valueFormatter_->uncompressAndFormat(
-        value, message.flags(), format_, uncompressedSize);
+        value, message.flags(), format_, options_.script, uncompressedSize);
 
-    out.append("  value size: ", format_.msgAttrColor);
-    if (uncompressedSize != value.size()) {
-      out.append(
-          folly::sformat(
-              "{} uncompressed, {} compressed, {:.2f}% savings",
-              uncompressedSize,
-              value.size(),
-              100.0 - 100.0 * value.size() / uncompressedSize),
-          format_.dataValueColor);
+    if (options_.script) {
+      out.append(folly::sformat(",\n  \"value_wire_bytes\": {}", value.size()));
+      out.append(folly::sformat(
+          ",\n  \"value_uncompressed_bytes\": {}", uncompressedSize));
     } else {
-      out.append(folly::to<std::string>(value.size()), format_.dataValueColor);
+      out.append("\n  value size: ", format_.msgAttrColor);
+      if (uncompressedSize != value.size()) {
+        out.append(
+            folly::sformat(
+                "{} uncompressed, {} compressed, {:.2f}% savings",
+                uncompressedSize,
+                value.size(),
+                100.0 - 100.0 * value.size() / uncompressedSize),
+            format_.dataValueColor);
+      } else {
+        out.append(
+            folly::to<std::string>(value.size()), format_.dataValueColor);
+      }
     }
 
     if (!options_.quiet) {
-      out.append("\n  value: ", format_.msgAttrColor);
+      if (options_.script) {
+        out.append(",\n  \"value\": ");
+      } else {
+        out.append("\n  value: ", format_.msgAttrColor);
+      }
       out.append(formattedValue);
     }
-    out.pushBack('\n');
   }
 
-  out.append("}\n", format_.dataOpColor);
+  if (options_.script) {
+    out.append("\n},\n");
+  } else {
+    out.append("\n}\n", format_.dataOpColor);
+  }
 
   // Match pattern
   if (filter_.pattern) {
@@ -340,7 +389,7 @@ void MessagePrinter::printRawRequest(
 
 template <class Message>
 StyledString MessagePrinter::getTypeSpecificAttributes(const Message& msg) {
-  return carbon::print(msg, detail::getName<Message>());
+  return carbon::print(msg, detail::getName<Message>(), options_.script);
 }
 
 }

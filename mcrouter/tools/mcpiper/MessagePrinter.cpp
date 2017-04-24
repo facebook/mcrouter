@@ -118,16 +118,30 @@ std::string MessagePrinter::serializeConnectionDetails(
   std::string out;
 
   if (!from.empty()) {
-    out.append(describeAddress(from));
+    if (options_.script) {
+      out.append(
+          folly::sformat(",\n  \"from\": \"{}\"", describeAddress(from)));
+    } else {
+      out.append(describeAddress(from));
+    }
   }
-  if (!from.empty() || !to.empty()) {
+  if (!options_.script && (!from.empty() || !to.empty())) {
     out.append(" -> ");
   }
   if (!to.empty()) {
-    out.append(describeAddress(to));
+    if (options_.script) {
+      out.append(folly::sformat(",\n  \"to\": \"{}\"", describeAddress(to)));
+    } else {
+      out.append(describeAddress(to));
+    }
   }
   if ((!from.empty() || !to.empty()) && protocol != mc_unknown_protocol) {
-    out.append(folly::sformat(" ({})", mc_protocol_to_string(protocol)));
+    if (options_.script) {
+      out.append(folly::sformat(
+          ",\n  \"protocol\": \"{}\"", mc_protocol_to_string(protocol)));
+    } else {
+      out.append(folly::sformat(" ({})", mc_protocol_to_string(protocol)));
+    }
   }
 
   return out;
@@ -139,18 +153,26 @@ std::string MessagePrinter::serializeMessageHeader(
     const std::string& key) {
   std::string out;
 
-  out.append(messageName.data());
-  if (result != mc_res_unknown) {
-    if (out.size() > 0) {
-      out.push_back(' ');
+  if (options_.script) {
+    out.append(folly::sformat("\"type\": \"{}\"", messageName.data()));
+    if (result != mc_res_unknown) {
+      out.append(
+          folly::sformat(",\n  \"result\": \"{}\"", mc_res_to_string(result)));
     }
-    out.append(mc_res_to_string(result));
-  }
-  if (key.size()) {
-    if (out.size() > 0) {
-      out.push_back(' ');
+    if (!key.empty()) {
+      out.append(
+          folly::sformat(",\n  \"key\": \"{}\"", folly::backslashify(key)));
     }
-    out.append(folly::backslashify(key));
+  } else {
+    out.append(messageName.data());
+    if (result != mc_res_unknown) {
+      out.push_back(' ');
+      out.append(mc_res_to_string(result));
+    }
+    if (!key.empty()) {
+      out.push_back(' ');
+      out.append(folly::backslashify(key));
+    }
   }
 
   return out;
