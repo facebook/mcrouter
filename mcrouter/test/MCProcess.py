@@ -443,7 +443,7 @@ class MCProcess(ProcessBase):
 
         s = {}
         l = None
-        fds = select.select([self.fd], [], [], 2.0)
+        fds = select.select([self.fd], [], [], 5.0)
         if len(fds[0]) == 0:
             return None
         while l != 'END':
@@ -764,9 +764,12 @@ class Memcached(MCProcess):
 
             # delay here until the server goes up
             self.ensure_connected()
-            l = 20
+            l = 10
             s = self.stats()
-            while (len(s) == 0 and l > 0):
+            while ((not s or len(s) == 0) and l > 0):
+                # Note, we need to reconnect, because it's possible the
+                # server is still going to process previous requests.
+                self.ensure_connected()
                 s = self.stats()
                 time.sleep(0.5)
                 l = l - 1
