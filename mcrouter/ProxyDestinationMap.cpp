@@ -51,8 +51,7 @@ ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
     : proxy_(proxy),
       active_(folly::make_unique<StateList>()),
       inactive_(folly::make_unique<StateList>()),
-      inactivityTimeout_(0),
-      resetTimer_(nullptr) {}
+      inactivityTimeout_(0) {}
 
 std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(
     std::shared_ptr<AccessPoint> ap,
@@ -141,30 +140,23 @@ void ProxyDestinationMap::resetAllInactive() {
 }
 
 void ProxyDestinationMap::setResetTimer(std::chrono::milliseconds interval) {
-  using TimerType = AsyncTimer<ProxyDestinationMap>;
-
   assert(interval.count() > 0);
   inactivityTimeout_ = static_cast<uint32_t>(interval.count());
-  resetTimer_ = folly::make_unique<TimerType>(*this);
-
-  resetTimer_->attachTimeoutManager(std::addressof(proxy_->eventBase()));
-  if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
-    MC_LOG_FAILURE(
-        proxy_->router().opts(),
-        memcache::failure::Category::kSystemError,
-        "failed to schedule inactivity timer");
-  }
+  resetTimer_ =
+      folly::AsyncTimeout::make(proxy_->eventBase(), [this]() noexcept {
+        resetAllInactive();
+        scheduleTimer(false /* initialAttempt */);
+      });
+  scheduleTimer(true /* initialAttempt */);
 }
 
-void ProxyDestinationMap::timerCallback() {
-  resetAllInactive();
-
-  assert(inactivityTimeout_ > 0);
+void ProxyDestinationMap::scheduleTimer(bool initialAttempt) {
   if (!resetTimer_->scheduleTimeout(inactivityTimeout_)) {
     MC_LOG_FAILURE(
         proxy_->router().opts(),
         memcache::failure::Category::kSystemError,
-        "failed to re-schedule inactivity timer");
+        "failed to {}schedule inactivity timer",
+        initialAttempt ? "" : "re-");
   }
 }
 

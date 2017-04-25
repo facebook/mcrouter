@@ -84,7 +84,7 @@ void ProxyDestination::schedule_next_probe() {
   delay_ms = (double)delay_ms * (1.0 + tmo_jitter_pct);
   assert(delay_ms > 0);
 
-  if (!probeTimer_.scheduleTimeout(delay_ms)) {
+  if (!probeTimer_->scheduleTimeout(delay_ms)) {
     MC_LOG_FAILURE(
         proxy->router().opts(),
         memcache::failure::Category::kSystemError,
@@ -92,43 +92,35 @@ void ProxyDestination::schedule_next_probe() {
   }
 }
 
-void ProxyDestination::timerCallback() {
-  // Note that the previous probe might still be in flight
-  if (!probe_req) {
-    probe_req = folly::make_unique<McVersionRequest>();
-    ++stats_.probesSent;
-    auto selfPtr = selfPtr_;
-    proxy->fiberManager().addTask([selfPtr]() mutable {
-      auto pdstn = selfPtr.lock();
-      if (pdstn == nullptr) {
-        return;
-      }
-      pdstn->proxy->destinationMap()->markAsActive(*pdstn);
-      // will reconnect if connection was closed
-      auto reply = pdstn->getAsyncMcClient().sendSync(
-          *pdstn->probe_req, pdstn->shortestTimeout_);
-      pdstn->handle_tko(reply.result(), true);
-      pdstn->probe_req.reset();
-    });
-  }
-  schedule_next_probe();
-}
-
 void ProxyDestination::start_sending_probes() {
   probe_delay_next_ms = proxy->router().opts().probe_delay_initial_ms;
-  probeTimer_.attachTimeoutManager(std::addressof(proxy->eventBase()));
+  probeTimer_ =
+      folly::AsyncTimeout::make(proxy->eventBase(), [this]() noexcept {
+        // Note that the previous probe might still be in flight
+        if (!probeInflight_) {
+          probeInflight_ = true;
+          ++stats_.probesSent;
+          proxy->fiberManager().addTask([selfPtr = selfPtr_]() mutable {
+            auto pdstn = selfPtr.lock();
+            if (pdstn == nullptr) {
+              return;
+            }
+            pdstn->proxy->destinationMap()->markAsActive(*pdstn);
+            // will reconnect if connection was closed
+            auto reply = pdstn->getAsyncMcClient().sendSync(
+                McVersionRequest(), pdstn->shortestTimeout_);
+            pdstn->handle_tko(reply.result(), true);
+            pdstn->probeInflight_ = false;
+          });
+        }
+        schedule_next_probe();
+      });
   schedule_next_probe();
 }
 
 void ProxyDestination::stop_sending_probes() {
   stats_.probesSent = 0;
-
-  // Cancel timeout before calling detachEventBase to prevent an assert failure.
-  probeTimer_.cancelTimeout();
-
-  // Need to detach event base here. Otherwise attachEventBase on next call to
-  // start_sending_probes will assert(false).
-  probeTimer_.detachEventBase();
+  probeTimer_.reset();
 }
 
 void ProxyDestination::handle_tko(const mc_res_t result, bool is_probe_req) {
@@ -315,8 +307,7 @@ ProxyDestination::ProxyDestination(
       qosPath_(qosPath),
       routerInfoName_(std::move(routerInfoName)),
       rxmitsToCloseConnection_(
-          proxy->router().opts().min_rxmit_reconnect_threshold),
-      probeTimer_(*this) {
+          proxy->router().opts().min_rxmit_reconnect_threshold) {
   static uint64_t next_magic = 0x12345678900000LL;
   magic_ = __sync_fetch_and_add(&next_magic, 1);
   proxy->stats().increment(num_servers_new_stat);

@@ -15,8 +15,8 @@
 
 #include <folly/IntrusiveList.h>
 #include <folly/SpinLock.h>
+#include <folly/io/async/AsyncTimeout.h>
 
-#include "mcrouter/AsyncTimer.h"
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/config.h"
@@ -126,12 +126,12 @@ class ProxyDestination {
   uint64_t lastConnCloseCycles_{0}; // Cycles when connection was last closed
 
   int probe_delay_next_ms{0};
-  std::unique_ptr<McVersionRequest> probe_req;
+  bool probeInflight_{false};
   std::string poolName_;
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
 
-  AsyncTimer<ProxyDestination> probeTimer_;
+  std::unique_ptr<folly::AsyncTimeout> probeTimer_;
 
   static std::shared_ptr<ProxyDestination> create(
       ProxyBase& proxy,
@@ -169,8 +169,6 @@ class ProxyDestination {
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 
-  void timerCallback();
-
   void handleRxmittingConnection();
 
   void* stateList_{nullptr};
@@ -179,7 +177,6 @@ class ProxyDestination {
   std::weak_ptr<ProxyDestination> selfPtr_;
 
   friend class ProxyDestinationMap;
-  friend class AsyncTimer<ProxyDestination>;
 };
 }
 }

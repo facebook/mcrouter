@@ -17,7 +17,6 @@ CLEANFILES = \
 libmcroutercore_a_SOURCES = \
   AsyncLog.cpp \
   AsyncLog.h \
-  AsyncTimer.h \
   AsyncWriter.cpp \
   AsyncWriter.h \
   AsyncWriterEntry.h \
