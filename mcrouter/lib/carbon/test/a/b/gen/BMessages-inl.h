@@ -36,24 +36,18 @@ void SimpleStruct::visitFields(V&& v) const {
 template <class V>
 void SimpleUnion::visitFields(V&& v) {
   switch (_which_) {
-    case 1: {
-      if (!v.visitField(1, "umember1", umember1())) {
-        return;
-      }
+    case 1:
+      v.visitField(1, "umember1", umember1());
       break;
-    }
-    case 2: {
-      if (!v.visitField(2, "umember2", umember2())) {
-        return;
-      }
+
+    case 2:
+      v.visitField(2, "umember2", umember2());
       break;
-    }
-    case 3: {
-      if (!v.visitField(3, "umember3", umember3())) {
-        return;
-      }
+
+    case 3:
+      v.visitField(3, "umember3", umember3());
       break;
-    }
+
     default:
       break;
   }
@@ -62,26 +56,50 @@ void SimpleUnion::visitFields(V&& v) {
 template <class V>
 void SimpleUnion::visitFields(V&& v) const {
   switch (_which_) {
-    case 1: {
-      if (!v.visitField(1, "umember1", umember1())) {
-        return;
-      }
+    case 1:
+      v.visitField(1, "umember1", umember1());
       break;
-    }
-    case 2: {
-      if (!v.visitField(2, "umember2", umember2())) {
-        return;
-      }
+
+    case 2:
+      v.visitField(2, "umember2", umember2());
       break;
-    }
-    case 3: {
-      if (!v.visitField(3, "umember3", umember3())) {
-        return;
-      }
+
+    case 3:
+      v.visitField(3, "umember3", umember3());
       break;
-    }
+
     default:
       break;
+  }
+}
+
+template <class V>
+void SimpleUnion::foreachMember(V&& v) {
+  if (!v.template visitUnionMember<1, int64_t>("umember1", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<2, bool>("umember2", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<3, std::string>("umember3", *this)) {
+    return;
+  }
+}
+
+template <class V>
+void SimpleUnion::foreachMember(V&& v) const {
+  if (!v.template visitUnionMember<1, int64_t>("umember1", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<2, bool>("umember2", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<3, std::string>("umember3", *this)) {
+    return;
   }
 }
 

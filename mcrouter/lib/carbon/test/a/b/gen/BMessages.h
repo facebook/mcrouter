@@ -189,6 +189,10 @@ class SimpleUnion {
   void visitFields(V&& v);
   template <class V>
   void visitFields(V&& v) const;
+  template <class V>
+  void foreachMember(V&& v);
+  template <class V>
+  void foreachMember(V&& v) const;
 
  private:
   uint32_t _which_{0};
