@@ -176,8 +176,6 @@ libmcrouter_a_SOURCES = \
   network/MemcacheMessageHelpers.h \
   network/MemoryController.cpp \
   network/MemoryController.h \
-  network/MockMcClientTransport.cpp \
-  network/MockMcClientTransport.h \
   network/MultiOpParent.cpp \
   network/MultiOpParent.h \
   network/ServerMcParser-inl.h \

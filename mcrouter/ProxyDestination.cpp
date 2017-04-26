@@ -335,7 +335,6 @@ void ProxyDestination::initializeAsyncMcClient() {
 
   ConnectionOptions options(accessPoint_);
   auto& opts = proxy->router().opts();
-  options.noNetwork = opts.no_network;
   options.tcpKeepAliveCount = opts.keepalive_cnt;
   options.tcpKeepAliveIdle = opts.keepalive_idle_s;
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;

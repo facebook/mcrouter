@@ -41,15 +41,6 @@ struct ConnectionOptions {
       : accessPoint(std::move(ap)) {}
 
   /**
-   * For performance testing only.
-   * If this flag is set, each request won't be sent over network, instead it
-   * will be processed by fake transport, that will reply each request with some
-   * basic reply (e.g. STORED, DELETED, or some random string for get requests).
-   * Currently works only for ascii protocol.
-   */
-  bool noNetwork{false};
-
-  /**
    * Access point of the destination.
    */
   std::shared_ptr<const AccessPoint> accessPoint;

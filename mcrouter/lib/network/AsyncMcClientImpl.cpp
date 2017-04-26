@@ -19,7 +19,6 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
-#include "mcrouter/lib/network/MockMcClientTransport.h"
 
 namespace facebook {
 namespace memcache {
@@ -91,11 +90,6 @@ AsyncMcClientImpl::AsyncMcClientImpl(
 std::shared_ptr<AsyncMcClientImpl> AsyncMcClientImpl::create(
     folly::VirtualEventBase& eventBase,
     ConnectionOptions options) {
-  if (options.accessPoint->getProtocol() != mc_ascii_protocol &&
-      options.noNetwork) {
-    throw std::logic_error("No network mode is supported only for ascii");
-  }
-
   auto client = std::shared_ptr<AsyncMcClientImpl>(
       new AsyncMcClientImpl(eventBase, std::move(options)), Destructor());
   client->selfPtr_ = client;
@@ -435,12 +429,6 @@ void AsyncMcClientImpl::attemptConnection() {
 
     connectionState_ = ConnectionState::CONNECTING;
 
-    if (connectionOptions_.noNetwork) {
-      socket_.reset(new MockMcClientTransport(eventBase_));
-      connectSuccess();
-      return;
-    }
-
     if (connectionOptions_.sslContextProvider) {
       auto sslContext = connectionOptions_.sslContextProvider();
       if (!sslContext) {
@@ -451,7 +439,7 @@ void AsyncMcClientImpl::attemptConnection() {
         return;
       }
 
-      auto* sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
+      auto sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
       if (connectionOptions_.sessionCachingEnabled) {
         /* If we have an existing session try to re-use */
         auto* session = getSslSession(*connectionOptions_.accessPoint);
@@ -461,8 +449,6 @@ void AsyncMcClientImpl::attemptConnection() {
     } else {
       socket_.reset(new folly::AsyncSocket(&eventBase_));
     }
-
-    auto& socket = dynamic_cast<folly::AsyncSocket&>(*socket_);
 
     folly::SocketAddress address;
     try {
@@ -480,13 +466,13 @@ void AsyncMcClientImpl::attemptConnection() {
 
     auto socketOptions = createSocketOptions(address, connectionOptions_);
 
-    socket.setSendTimeout(connectionOptions_.writeTimeout.count());
-    socket.connect(
+    socket_->setSendTimeout(connectionOptions_.writeTimeout.count());
+    socket_->connect(
         this, address, connectionOptions_.writeTimeout.count(), socketOptions);
 
     // If AsyncSocket::connect() fails, socket_ may have been reset
     if (socket_ && connectionOptions_.enableQoS) {
-      checkWhetherQoSIsApplied(address, socket.getFd(), connectionOptions_);
+      checkWhetherQoSIsApplied(address, socket_->getFd(), connectionOptions_);
     }
   });
 }
@@ -660,11 +646,6 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
   auto& req = queue_.markNextAsSent();
   req.scheduleTimeout();
 
-  // In case of no-network we need to provide fake reply.
-  if (connectionOptions_.noNetwork) {
-    sendFakeReply(req);
-  }
-
   // It is possible that we're already processing error, but still have a
   // successfull write.
   if (connectionState_ == ConnectionState::ERROR) {
@@ -738,52 +719,6 @@ bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
   }
 
   return false;
-}
-
-namespace {
-const char* DELETED = "DELETED\r\n";
-const char* FOUND =
-    "VALUE we:always:ignore:key:here 0 15\r\n"
-    "veryRandomValue\r\nEND\r\n";
-const char* STORED = "STORED\r\n";
-const char* TOUCHED = "TOUCHED\r\n";
-} // anonymous
-
-template <>
-const char* McClientRequestContext<McGetRequest>::fakeReply() const {
-  return FOUND;
-}
-
-template <>
-const char* McClientRequestContext<McLeaseGetRequest>::fakeReply() const {
-  return FOUND;
-}
-
-template <>
-const char* McClientRequestContext<McSetRequest>::fakeReply() const {
-  return STORED;
-}
-
-template <>
-const char* McClientRequestContext<McLeaseSetRequest>::fakeReply() const {
-  return STORED;
-}
-
-template <>
-const char* McClientRequestContext<McDeleteRequest>::fakeReply() const {
-  return DELETED;
-}
-
-template <>
-const char* McClientRequestContext<McTouchRequest>::fakeReply() const {
-  return TOUCHED;
-}
-
-void AsyncMcClientImpl::sendFakeReply(McClientRequestContextBase& request) {
-  auto& transport = dynamic_cast<MockMcClientTransport&>(*socket_);
-  auto msg = request.fakeReply();
-  auto msgLen = strlen(msg);
-  transport.fakeDataRead(msg, msgLen);
 }
 
 void AsyncMcClientImpl::incMsgId(size_t& msgId) {

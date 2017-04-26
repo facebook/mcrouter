@@ -120,7 +120,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
   ConnectionOptions connectionOptions_;
-  folly::AsyncTransportWrapper::UniquePtr socket_;
+  folly::AsyncSocket::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
 
@@ -202,8 +202,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   void parseError(mc_res_t result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
-
-  void sendFakeReply(McClientRequestContextBase& request);
 
   static void incMsgId(size_t& msgId);
 };

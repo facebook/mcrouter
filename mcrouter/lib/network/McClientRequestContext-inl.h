@@ -86,11 +86,6 @@ void McClientRequestContext<Request>::replyErrorImpl(mc_res_t result) {
 }
 
 template <class Request>
-const char* McClientRequestContext<Request>::fakeReply() const {
-  return "CLIENT_ERROR unsupported operation\r\n";
-}
-
-template <class Request>
 std::string McClientRequestContext<Request>::getContextTypeStr() const {
   return folly::sformat("RequestT is {}", typeid(Request).name());
 }

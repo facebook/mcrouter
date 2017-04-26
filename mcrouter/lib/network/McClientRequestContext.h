@@ -50,12 +50,6 @@ class McClientRequestContextBase
       delete;
 
   /**
-   * Returns fake data (specific to this request and operation) that can be used
-   * to simulate a reply from network
-   */
-  virtual const char* fakeReply() const = 0;
-
-  /**
    * Get string representation of a type of the context.
    * (E.g. operation + request type).
    */
@@ -201,8 +195,6 @@ class McClientRequestContext : public McClientRequestContextBase {
       const std::function<void(int pendingDiff, int inflightDiff)>&
           onStateChange,
       const CodecIdRange& supportedCodecs);
-
-  const char* fakeReply() const override final;
 
   virtual std::string getContextTypeStr() const override final;
 

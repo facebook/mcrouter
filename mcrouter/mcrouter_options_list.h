@@ -272,13 +272,6 @@ MCROUTER_OPTION_INTEGER(
     " per target per thread.  Requests that would exceed this limit are dropped"
     " immediately.")
 
-MCROUTER_OPTION_TOGGLE(
-    no_network,
-    false,
-    "no-network",
-    no_short,
-    "Debug only. Return random generated replies, do not use network.")
-
 MCROUTER_OPTION_INTEGER(
     size_t,
     proxy_max_inflight_requests,
