@@ -4,6 +4,8 @@ set -ex
 
 [ -n "$1" ] || ( echo "Install dir missing"; exit 1 )
 
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+
 sudo apt-get update
 
 sudo apt-get install -y \
@@ -13,6 +15,7 @@ sudo apt-get install -y \
     cmake \
     flex \
     g++ \
+    g++-4.9 \
     gcc \
     git \
     libboost1.54-all-dev \
@@ -29,5 +32,8 @@ sudo apt-get install -y \
     ragel
 
 cd "$(dirname "$0")" || ( echo "cd fail"; exit 1 )
+
+export CC="gcc-4.9"
+export CXX="g++-4.9"
 
 ./get_and_build_everything.sh ubuntu-14.04 "$@"
