@@ -50,6 +50,11 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
        carbon::test2::util::SimpleEnum::Twenty});
   r.testUnion().emplace<2>(true);
   r.testNestedVec() = {{1, 1, 1}, {2, 2, 2}};
+  r.testUMap() = std::unordered_map<std::string, std::string>(
+      {{"key", "value"}, {"adele", "beyonce"}});
+  r.testMap() = std::map<double, double>({{3.14, 2.7}, {0.577, 0.2}});
+  r.testComplexMap() = std::map<std::string, std::vector<uint16_t>>(
+      {{"hello", {1, 1, 1}}, {"world", {2, 2, 2}}});
 
   folly::dynamic expected = folly::dynamic::object(
       "__Base",
@@ -80,7 +85,12 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
       "testUnion", folly::dynamic::object("umember2", true))(
       "testNestedVec",
       folly::dynamic::array(
-          folly::dynamic::array(1, 1, 1), folly::dynamic::array(2, 2, 2)));
+          folly::dynamic::array(1, 1, 1), folly::dynamic::array(2, 2, 2)))(
+      "testUMap", folly::dynamic::object("key", "value")("adele", "beyonce"))(
+      "testMap", folly::dynamic::object("3.14", 2.7)("0.577", 0.2))(
+      "testComplexMap",
+      folly::dynamic::object("hello", folly::dynamic::array(1, 1, 1))(
+          "world", folly::dynamic::array(2, 2, 2)));
 
   EXPECT_EQ(expected, carbon::convertToFollyDynamic(r));
 }

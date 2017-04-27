@@ -245,6 +245,24 @@ class TestRequest : public carbon::RequestCommon {
   std::vector<std::vector<uint64_t>>& testNestedVec() {
     return testNestedVec_;
   }
+  const std::unordered_map<std::string, std::string>& testUMap() const {
+    return testUMap_;
+  }
+  std::unordered_map<std::string, std::string>& testUMap() {
+    return testUMap_;
+  }
+  const std::map<double, double>& testMap() const {
+    return testMap_;
+  }
+  std::map<double, double>& testMap() {
+    return testMap_;
+  }
+  const std::map<std::string, std::vector<uint16_t>>& testComplexMap() const {
+    return testComplexMap_;
+  }
+  std::map<std::string, std::vector<uint16_t>>& testComplexMap() {
+    return testComplexMap_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -287,6 +305,9 @@ class TestRequest : public carbon::RequestCommon {
   std::vector<test2::util::SimpleEnum> testEnumVec_;
   test2::util::SimpleUnion testUnion_;
   std::vector<std::vector<uint64_t>> testNestedVec_;
+  std::unordered_map<std::string, std::string> testUMap_;
+  std::map<double, double> testMap_;
+  std::map<std::string, std::vector<uint16_t>> testComplexMap_;
 };
 
 class TestReply : public carbon::ReplyCommon {

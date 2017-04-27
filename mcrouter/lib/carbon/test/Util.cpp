@@ -83,6 +83,10 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
 
   EXPECT_EQ(a.testNestedVec(), b.testNestedVec());
 
+  EXPECT_EQ(a.testUMap(), b.testUMap());
+  EXPECT_EQ(a.testMap(), b.testMap());
+  EXPECT_EQ(a.testComplexMap(), b.testComplexMap());
+
   EXPECT_EQ(a.testOptionalString(), b.testOptionalString());
   compareOptionalIobuf(a.testOptionalIobuf(), b.testOptionalIobuf());
 }

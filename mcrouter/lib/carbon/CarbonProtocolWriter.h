@@ -272,6 +272,28 @@ class CarbonProtocolWriter {
     writeRaw(v);
   }
 
+  template <class T>
+  typename std::
+      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
+      writeField(const int16_t id, const T& m) {
+    if (SerializationTraits<T>::size(m) == 0) {
+      return;
+    }
+    writeFieldAlways(id, m);
+  }
+
+  template <class T>
+  typename std::
+      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
+      writeFieldAlways(const int16_t id, const T& m) {
+    facebook::memcache::checkRuntime(
+        SerializationTraits<T>::size(m) <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeField() for map too long (size = {})",
+        SerializationTraits<T>::size(m));
+    writeFieldHeader(FieldType::Map, id);
+    writeRaw(m);
+  }
+
   // Serialize user-provided types that have suitable specializations of
   // carbon::SerializationTraits<>.
   template <class T>
@@ -319,7 +341,7 @@ class CarbonProtocolWriter {
     writeByte(FieldType::Stop);
   }
 
-  void writeListSizeAndInnerType(
+  void writeLinearContainerFieldSizeAndInnerType(
       const uint32_t size,
       const FieldType fieldType) {
     if (size < 0x0f) {
@@ -327,6 +349,18 @@ class CarbonProtocolWriter {
     } else {
       writeByte(0xf0 | static_cast<uint8_t>(fieldType));
       writeVarint(size);
+    }
+  }
+
+  void writeKVContainerFieldSizeAndInnerTypes(
+      const uint32_t size,
+      const FieldType keyType,
+      const FieldType valueType) {
+    writeVarint(size);
+    if (size > 0) {
+      writeByte(
+          (static_cast<uint8_t>(keyType) << 4) |
+          static_cast<uint8_t>(valueType));
     }
   }
 
@@ -404,7 +438,7 @@ class CarbonProtocolWriter {
         SerializationTraits<T>::size(v) <= std::numeric_limits<uint32_t>::max(),
         "Input to writeRaw() for type too long (len = {})",
         SerializationTraits<T>::size(v));
-    writeListSizeAndInnerType(
+    writeLinearContainerFieldSizeAndInnerType(
         static_cast<uint32_t>(SerializationTraits<T>::size(v)),
         detail::TypeToField<
             typename SerializationTraits<T>::inner_type>::fieldType);
@@ -412,6 +446,30 @@ class CarbonProtocolWriter {
          it != SerializationTraits<T>::end(v);
          ++it) {
       writeRaw(*it);
+    }
+  }
+
+  template <class T>
+  typename std::
+      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
+      writeRaw(const T& m) {
+    facebook::memcache::checkRuntime(
+        SerializationTraits<T>::size(m) <= std::numeric_limits<uint32_t>::max(),
+        "Input to writeRaw() for map too long (size = {})",
+        SerializationTraits<T>::size(m));
+
+    writeKVContainerFieldSizeAndInnerTypes(
+        SerializationTraits<T>::size(m),
+        detail::TypeToField<
+            typename SerializationTraits<T>::key_type>::fieldType,
+        detail::TypeToField<
+            typename SerializationTraits<T>::mapped_type>::fieldType);
+
+    for (auto it = SerializationTraits<T>::begin(m);
+         it != SerializationTraits<T>::end(m);
+         ++it) {
+      writeRaw(it->first);
+      writeRaw(it->second);
     }
   }
 

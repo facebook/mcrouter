@@ -105,6 +105,11 @@ struct IsLinearContainer {
       IsOfTraitFieldType<T, FieldType::Set>::value;
 };
 
+template <class T>
+struct IsKVContainer {
+  static constexpr bool value = IsOfTraitFieldType<T, FieldType::Map>::value;
+};
+
 template <class T, class Enable = void>
 struct TypeToField {};
 

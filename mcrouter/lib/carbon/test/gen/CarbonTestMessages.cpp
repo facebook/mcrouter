@@ -48,6 +48,9 @@ void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(22 /* field id */, testEnumVec());
   writer.writeField(23 /* field id */, testUnion());
   writer.writeField(24 /* field id */, testNestedVec());
+  writer.writeField(25 /* field id */, testUMap());
+  writer.writeField(26 /* field id */, testMap());
+  writer.writeField(27 /* field id */, testComplexMap());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -162,6 +165,18 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 24: {
         reader.readRawInto(testNestedVec());
+        break;
+      }
+      case 25: {
+        reader.readRawInto(testUMap());
+        break;
+      }
+      case 26: {
+        reader.readRawInto(testMap());
+        break;
+      }
+      case 27: {
+        reader.readRawInto(testComplexMap());
         break;
       }
       default: {

@@ -9,8 +9,13 @@
  */
 #pragma once
 
-#include <folly/Optional.h>
+#include <map>
+#include <type_traits>
+#include <unordered_map>
 #include <vector>
+
+#include <folly/Optional.h>
+#include <folly/Traits.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
@@ -89,6 +94,52 @@ struct SerializationTraits<std::vector<T>> {
 
   static auto end(const std::vector<T>& vec) -> decltype(vec.end()) {
     return vec.end();
+  }
+};
+
+template <class T>
+struct SerializationTraits<
+    T,
+    typename std::enable_if<folly::IsOneOf<
+        T,
+        std::map<typename T::key_type, typename T::mapped_type>,
+        std::unordered_map<typename T::key_type, typename T::mapped_type>>::
+                                value>::type> {
+  static constexpr carbon::FieldType kWireType = carbon::FieldType::Map;
+
+  using key_type = typename T::key_type;
+  using mapped_type = typename T::mapped_type;
+
+  static size_t size(const T& map) {
+    return map.size();
+  }
+
+  static void clear(T& map) {
+    map.clear();
+  }
+
+  static void reserve(
+      std::map<key_type, mapped_type>& /* map */,
+      size_t /* len */) {}
+
+  static void reserve(
+      std::unordered_map<key_type, mapped_type>& map,
+      size_t len) {
+    map.reserve(len);
+  }
+
+  template <class... Args>
+  static auto emplace(T& map, Args&&... args)
+      -> decltype(map.emplace(std::forward<Args>(args)...)) {
+    return map.emplace(std::forward<Args>(args)...);
+  }
+
+  static auto begin(const T& map) -> decltype(map.begin()) {
+    return map.begin();
+  }
+
+  static auto end(const T& map) -> decltype(map.end()) {
+    return map.end();
   }
 };
 

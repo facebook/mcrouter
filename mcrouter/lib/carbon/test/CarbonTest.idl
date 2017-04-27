@@ -32,6 +32,9 @@ request TestRequest with 1: SimpleStruct as Base {
   22: std::vector<test2::util::SimpleEnum> testEnumVec;
   23: test2::util::SimpleUnion testUnion;
   24: std::vector<std::vector<uint64_t>> testNestedVec;
+  25: std::unordered_map<string, string> testUMap;
+  26: std::map<double, double> testMap;
+  27: std::map<string, std::vector<uint16_t>> testComplexMap;
 };
 
 reply TestReply {

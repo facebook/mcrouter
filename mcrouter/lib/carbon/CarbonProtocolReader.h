@@ -51,12 +51,56 @@ class CarbonProtocolReader {
       void>::type
   readRawInto(T& v) {
     SerializationTraits<T>::clear(v);
-    const auto pr = readContainerFieldSizeAndInnerType();
+    const auto pr = readLinearContainerFieldSizeAndInnerType();
+    if (pr.first !=
+        detail::TypeToField<
+            typename SerializationTraits<T>::inner_type>::fieldType) {
+      LOG_FIRST_N(ERROR, 100) << "Type mismatch between Linear Container"
+                              << " inner type and wire type. Skipping.";
+      skipLinearContainerItems(pr);
+      return;
+    }
     const auto len = pr.second;
     SerializationTraits<T>::reserve(v, len);
     for (size_t i = 0; i < len; ++i) {
       SerializationTraits<T>::emplace(
           v, readRaw<typename SerializationTraits<T>::inner_type>());
+    }
+  }
+
+  template <class T>
+  typename std::
+      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
+      readRawInto(T& m) {
+    SerializationTraits<T>::clear(m);
+    const auto pr = readKVContainerFieldSizeAndInnerTypes();
+    bool mismatch = false;
+    if (pr.first.first !=
+        detail::TypeToField<
+            typename SerializationTraits<T>::key_type>::fieldType) {
+      mismatch = true;
+      LOG_FIRST_N(ERROR, 100) << "Type mismatch between Map key type and"
+                              << " wire type. Skipping.";
+    }
+    if (pr.first.second !=
+        detail::TypeToField<
+            typename SerializationTraits<T>::mapped_type>::fieldType) {
+      mismatch = true;
+      LOG_FIRST_N(ERROR, 100) << "Type mismatch between Map value type "
+                              << "and wire type. Skipping.";
+    }
+    if (mismatch) {
+      skipKVContainerItems(pr);
+      return;
+    }
+    const auto size = pr.second;
+    SerializationTraits<T>::reserve(m, size);
+    for (size_t i = 0; i < size; ++i) {
+      auto keyValue = readRaw<typename SerializationTraits<T>::key_type>();
+      auto mappedValue =
+          readRaw<typename SerializationTraits<T>::mapped_type>();
+      SerializationTraits<T>::emplace(
+          m, std::move(keyValue), std::move(mappedValue));
     }
   }
 
@@ -171,7 +215,21 @@ class CarbonProtocolReader {
     nestedStructFieldIds_.pop_back();
   }
 
-  std::pair<FieldType, uint32_t> readContainerFieldSizeAndInnerType() {
+  std::pair<std::pair<FieldType, FieldType>, uint32_t>
+  readKVContainerFieldSizeAndInnerTypes() {
+    std::pair<std::pair<FieldType, FieldType>, uint32_t> pr;
+    const auto len = readVarint<uint32_t>();
+    pr.second = len;
+    uint8_t byte = 0;
+    if (len > 0) {
+      byte = readByte();
+    }
+    pr.first.first = static_cast<FieldType>((byte & 0xf0) >> 4); // key-type
+    pr.first.second = static_cast<FieldType>(byte & 0x0f); // value-type
+    return pr;
+  }
+
+  std::pair<FieldType, uint32_t> readLinearContainerFieldSizeAndInnerType() {
     std::pair<FieldType, uint32_t> pr;
     const uint8_t byte = readByte();
     pr.first = static_cast<FieldType>(byte & 0x0f);
@@ -202,7 +260,11 @@ class CarbonProtocolReader {
   void skip(const FieldType fieldType);
 
  private:
-  void skipContainer();
+  void skipLinearContainer();
+  void skipLinearContainerItems(std::pair<carbon::FieldType, uint32_t> pr);
+  void skipKVContainer();
+  void skipKVContainerItems(
+      std::pair<std::pair<FieldType, FieldType>, uint32_t> pr);
 
   uint8_t readByte() {
     return cursor_.template read<uint8_t>();

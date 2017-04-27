@@ -10,12 +10,33 @@
 #include "CarbonProtocolReader.h"
 
 namespace carbon {
-void CarbonProtocolReader::skipContainer() {
-  const auto pr = readContainerFieldSizeAndInnerType();
+void CarbonProtocolReader::skipLinearContainer() {
+  const auto pr = readLinearContainerFieldSizeAndInnerType();
+  skipLinearContainerItems(pr);
+}
+
+void CarbonProtocolReader::skipLinearContainerItems(
+    std::pair<carbon::FieldType, uint32_t> pr) {
   const auto fieldType = pr.first;
   const auto len = pr.second;
   for (uint32_t i = 0; i < len; ++i) {
     skip(fieldType);
+  }
+}
+
+void CarbonProtocolReader::skipKVContainer() {
+  const auto pr = readKVContainerFieldSizeAndInnerTypes();
+  skipKVContainerItems(pr);
+}
+
+void CarbonProtocolReader::skipKVContainerItems(
+    std::pair<std::pair<FieldType, FieldType>, uint32_t> pr) {
+  const auto len = pr.second;
+  const auto keyType = pr.first.first;
+  const auto valType = pr.first.second;
+  for (uint32_t i = 0; i < len; ++i) {
+    skip(keyType);
+    skip(valType);
   }
 }
 
@@ -54,7 +75,7 @@ void CarbonProtocolReader::skip(const FieldType ft) {
       break;
     }
     case FieldType::List: {
-      skipContainer();
+      skipLinearContainer();
       break;
     }
     case FieldType::Struct: {
@@ -70,21 +91,11 @@ void CarbonProtocolReader::skip(const FieldType ft) {
       break;
     }
     case FieldType::Set: {
-      skipContainer();
+      skipLinearContainer();
       break;
     }
     case FieldType::Map: {
-      const auto len = readVarint<uint32_t>();
-      uint8_t byte = 0;
-      if (len > 0) {
-        byte = readByte();
-        const auto keyType = static_cast<FieldType>((byte & 0xf0) >> 4);
-        const auto valType = static_cast<FieldType>(byte & 0x0f);
-        for (uint32_t i = 0; i < len; ++i) {
-          skip(keyType);
-          skip(valType);
-        }
-      }
+      skipKVContainer();
       break;
     }
     default: { break; }

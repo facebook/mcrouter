@@ -145,6 +145,15 @@ TEST(CarbonBasic, defaultConstructed) {
   EXPECT_FALSE(req.testOptionalString());
   EXPECT_FALSE(req.testOptionalIobuf());
 
+  // Unordered map
+  EXPECT_TRUE(req.testUMap().empty());
+
+  // Ordered map
+  EXPECT_TRUE(req.testMap().empty());
+
+  // Complex map
+  EXPECT_TRUE(req.testComplexMap().empty());
+
   // fields generated for every request (will likely be removed in the future)
   EXPECT_EQ(0, req.exptime());
   EXPECT_EQ(0, req.flags());
@@ -261,6 +270,24 @@ TEST(CarbonBasic, setAndGet) {
   EXPECT_EQ(s, *req.testOptionalString());
   req.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, s);
   EXPECT_EQ(s, coalesceAndGetRange(*req.testOptionalIobuf()));
+
+  // Unordered map
+  std::unordered_map<std::string, std::string> stringmap;
+  stringmap.insert({"key", "value"});
+  req.testUMap() = stringmap;
+  EXPECT_EQ(stringmap, req.testUMap());
+
+  // Ordered map
+  std::map<double, double> doublemap;
+  doublemap.insert({1.08, 8.3});
+  req.testMap() = doublemap;
+  EXPECT_EQ(doublemap, req.testMap());
+
+  // Complex map
+  std::map<std::string, std::vector<uint16_t>> complexmap;
+  complexmap.insert({"key", {1, 2}});
+  req.testComplexMap() = complexmap;
+  EXPECT_EQ(complexmap, req.testComplexMap());
 }
 
 TEST(CarbonTest, serializeDeserialize) {
@@ -304,6 +331,10 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testEnumVec().push_back(carbon::test2::util::SimpleEnum::Twenty);
 
   outRequest.testNestedVec().push_back({100, 2000});
+
+  outRequest.testUMap().insert({"hello", "world"});
+  outRequest.testMap().insert({1.08, 8.3});
+  outRequest.testComplexMap().insert({"key", {1, 2}});
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
