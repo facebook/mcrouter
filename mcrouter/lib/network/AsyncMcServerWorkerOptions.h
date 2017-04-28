@@ -94,6 +94,15 @@ struct AsyncMcServerWorkerOptions {
    * The congestion controller for memory utilization at the server.
    */
   std::shared_ptr<MemoryController> memController;
+
+  /**
+   * EXPERIMENTAL FEATURE!
+   *
+   * If non-zero, enables server sending OOB GoAway messages to clients,
+   * signaling them that the server is about to disappear and the client should
+   * stop sending requests over this connection after processing this message.
+   */
+  std::chrono::milliseconds goAwayTimeout{1000};
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook

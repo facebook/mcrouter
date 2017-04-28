@@ -25,6 +25,8 @@ constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
 // Normalize the dropProbability to the accuracy of 10^-6.
 constexpr uint32_t kDropProbabilityNormalizer = 1000000;
 
+constexpr uint32_t kCaretConnectionControlReqId = 0;
+
 enum class UmbrellaVersion : uint8_t {
   BASIC = 0,
   TYPED_MESSAGE = 1,

@@ -95,7 +95,7 @@ class ServerMcParser : private McParser::ParserCallback {
   template <class C, class ReqsList>
   friend class detail::CallbackWrapper;
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "ServerMcParser-inl.h"

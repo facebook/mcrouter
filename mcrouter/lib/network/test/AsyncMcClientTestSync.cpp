@@ -444,7 +444,8 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   opts.writeTimeout = std::chrono::milliseconds(1000);
   auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
-      [&wasUp] { wasUp = true; }, [&wentDown](bool) { wentDown = true; });
+      [&wasUp] { wasUp = true; },
+      [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });
 
   fiberManager->addTask([&client, &replied] {
     McGetRequest req("hold");
@@ -566,7 +567,9 @@ TEST(AsyncMcClient, tonsOfConnections) {
 
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server->getListenPort(), 1, mc_ascii_protocol);
-  client.setStatusCallbacks([] {}, [&wentDown](bool) { wentDown = true; });
+  client.setStatusCallbacks(
+      [] {},
+      [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
 
@@ -725,5 +728,25 @@ TEST(AsyncMcClient, caretAdditionalFields) {
   }
   client.waitForReplies();
   server->shutdown();
+  server->join();
+}
+
+TEST(AsyncMcClient, caretGoAway) {
+  auto server = TestServer::create(true /* OOO */, false /* useSsl */);
+  TestClient client(
+      "localhost", server->getListenPort(), 200, mc_caret_protocol);
+  client.sendGet("test", mc_res_found);
+  client.sendGet("hold", mc_res_found);
+  client.setStatusCallbacks(
+      [] {},
+      [&client](AsyncMcClient::ConnectionDownReason reason) {
+        if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+          LOG(INFO) << "Server gone away, flushing";
+          client.sendGet("flush", mc_res_found);
+        }
+      });
+  client.waitForReplies(1);
+  server->shutdown();
+  client.waitForReplies();
   server->join();
 }

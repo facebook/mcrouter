@@ -105,6 +105,12 @@ class ProxyDestination {
     poolName_ = std::move(poolName);
   }
 
+  /**
+   * Gracefully closes the connection, allowing it to properly drain if
+   * possible.
+   */
+  void closeGracefully();
+
  private:
   static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
 
@@ -178,8 +184,8 @@ class ProxyDestination {
 
   friend class ProxyDestinationMap;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook
 
 #include "ProxyDestination-inl.h"

@@ -569,6 +569,91 @@ class McExecReply : public carbon::ReplyCommon {
   int16_t appSpecificErrorCode_{0};
 };
 
+class GoAwayRequest;
+
+class GoAwayAcknowledgement : public carbon::RequestCommon {
+ public:
+  using reply_type = GoAwayRequest;
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 41;
+  static constexpr const char* name = "goaway";
+
+  GoAwayAcknowledgement() = default;
+  GoAwayAcknowledgement(const GoAwayAcknowledgement&) = default;
+  GoAwayAcknowledgement& operator=(const GoAwayAcknowledgement&) = default;
+  GoAwayAcknowledgement(GoAwayAcknowledgement&&) = default;
+  GoAwayAcknowledgement& operator=(GoAwayAcknowledgement&&) = default;
+
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+};
+
+class GoAwayRequest : public carbon::ReplyCommon {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+  static constexpr size_t typeId = 42;
+
+  GoAwayRequest() = default;
+  GoAwayRequest(const GoAwayRequest&) = default;
+  GoAwayRequest& operator=(const GoAwayRequest&) = default;
+  GoAwayRequest(GoAwayRequest&&) = default;
+  GoAwayRequest& operator=(GoAwayRequest&&) = default;
+  explicit GoAwayRequest(carbon::Result carbonResult) : result_(carbonResult) {}
+
+  carbon::Result result() const {
+    return result_;
+  }
+  carbon::Result& result() {
+    return result_;
+  }
+  const std::string& reason() const {
+    return reason_;
+  }
+  std::string& reason() {
+    return reason_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  carbon::Result result_{mc_res_unknown};
+  std::string reason_;
+};
+
 } // memcache
 } // facebook
 

@@ -32,7 +32,7 @@ namespace test {
 
 class TestServerOnRequest {
  public:
-  TestServerOnRequest(std::atomic<bool>& shutdown, bool outOfOrder);
+  TestServerOnRequest(folly::fibers::Baton& shutdownLock, bool outOfOrder);
 
   void onRequest(McServerRequestContext&& ctx, McGetRequest&& req);
   void onRequest(McServerRequestContext&& ctx, McSetRequest&& req);
@@ -60,7 +60,7 @@ class TestServerOnRequest {
   }
 
  private:
-  std::atomic<bool>& shutdown_;
+  folly::fibers::Baton& shutdownLock_;
   bool outOfOrder_;
   std::vector<folly::Function<void()>> waitingReplies_;
 
@@ -78,7 +78,8 @@ class TestServer {
       size_t maxConns = 100,
       bool useDefaultVersion = false,
       size_t numThreads = 1,
-      bool useTicketKeySeeds = false) {
+      bool useTicketKeySeeds = false,
+      size_t goAwayTimeoutMs = 1000) {
     std::unique_ptr<TestServer> server(new TestServer(
         outOfOrder,
         useSsl,
@@ -87,10 +88,11 @@ class TestServer {
         maxConns,
         useDefaultVersion,
         numThreads,
-        useTicketKeySeeds));
+        useTicketKeySeeds,
+        goAwayTimeoutMs));
     server->run([& s = *server](AsyncMcServerWorker & worker) {
       worker.setOnRequest(
-          MemcacheRequestHandler<OnRequest>(s.shutdown_, s.outOfOrder_));
+          MemcacheRequestHandler<OnRequest>(s.shutdownLock_, s.outOfOrder_));
     });
     return server;
   }
@@ -100,7 +102,7 @@ class TestServer {
   }
 
   void join() {
-    server_->join();
+    serverThread_.join();
   }
 
   size_t getAcceptedConns() const {
@@ -108,7 +110,7 @@ class TestServer {
   }
 
   void shutdown() {
-    shutdown_.store(true);
+    shutdownLock_.post();
   }
 
   std::string version() const;
@@ -117,9 +119,10 @@ class TestServer {
   ListenSocket sock_;
   AsyncMcServer::Options opts_;
   std::unique_ptr<AsyncMcServer> server_;
+  std::thread serverThread_;
   bool outOfOrder_{false};
   bool useTicketKeySeeds_{false};
-  std::atomic<bool> shutdown_{false};
+  folly::fibers::Baton shutdownLock_;
   std::atomic<size_t> acceptedConns_{0};
 
   TestServer(
@@ -130,7 +133,8 @@ class TestServer {
       size_t maxConns,
       bool useDefaultVersion,
       size_t numThreads,
-      bool useTicketKeySeeds);
+      bool useTicketKeySeeds,
+      size_t goAwayTimeoutMs);
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };
@@ -165,7 +169,7 @@ class TestClient {
 
   void setStatusCallbacks(
       std::function<void()> onUp,
-      std::function<void(bool aborting)> onDown);
+      std::function<void(AsyncMcClient::ConnectionDownReason)> onDown);
 
   void
   sendGet(std::string key, mc_res_t expectedResult, uint32_t timeoutMs = 200);
@@ -175,7 +179,7 @@ class TestClient {
   void sendVersion(std::string expectedVersion);
 
   /**
-   * Wait until there're more than remaining requests in queue.
+   * Wait while there're more than remaining requests in queue.
    */
   void waitForReplies(size_t remaining = 0);
 
@@ -218,6 +222,6 @@ class TestClient {
 };
 
 std::string genBigValue();
-}
-}
-} // facebook::memcache::test
+} // test
+} // memcache
+} // facebook

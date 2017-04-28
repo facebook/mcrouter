@@ -73,3 +73,17 @@ reply McExecReply {
   3: string message;
   4: int16_t appSpecificErrorCode;
 };
+
+# Unlike other request types, this message is used for out-of-band communication
+# from the server side.
+request GoAwayAcknowledgement {
+  id: 21;
+  name: "goaway";
+  reply: GoAwayRequest;
+};
+
+reply GoAwayRequest {
+  # result is not used, but needed for McServerRequestContext
+  1: Result result;
+  2: string reason;
+};

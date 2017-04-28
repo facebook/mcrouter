@@ -400,10 +400,15 @@ void ProxyDestination::initializeAsyncMcClient() {
 
   client_->setStatusCallbacks(
       [this]() mutable { setState(State::kUp); },
-      [this](bool aborting) mutable {
-        if (aborting) {
+      [this](AsyncMcClient::ConnectionDownReason reason) mutable {
+        if (reason == AsyncMcClient::ConnectionDownReason::ABORTED) {
           setState(State::kClosed);
         } else {
+          // In case of server going away, we should gracefully close the
+          // connection (i.e. allow remaining outstanding requests to drain).
+          if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+            closeGracefully();
+          }
           setState(State::kDown);
           handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
         }
@@ -412,6 +417,21 @@ void ProxyDestination::initializeAsyncMcClient() {
   if (opts.target_max_inflight_requests > 0) {
     client_->setThrottle(
         opts.target_max_inflight_requests, opts.target_max_pending_requests);
+  }
+}
+
+void ProxyDestination::closeGracefully() {
+  if (client_) {
+    // In case we have outstanding probe, we should close now, to get it
+    // properly cleared.
+    if (probeInflight_) {
+      client_->closeNow();
+    }
+    // Check again, in case we reset it in closeNow()
+    if (client_) {
+      client_->setStatusCallbacks(nullptr, nullptr);
+      client_ = nullptr;
+    }
   }
 }
 
@@ -504,6 +524,6 @@ void ProxyDestination::updateShortestTimeout(
     }
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // mcrouter
+} // memcache
+} // facebook

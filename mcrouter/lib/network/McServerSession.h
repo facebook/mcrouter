@@ -109,6 +109,12 @@ class McServerSession : public folly::DelayedDestruction,
   void close();
 
   /**
+   * Same as close(), but if GoAway is enabled, will send the message to the
+   * client and wait for acknowledgement before actually closing.
+   */
+  void beginClose(folly::StringPiece reason);
+
+  /**
    * Returns true if there are some unfinished writes pending to the transport.
    */
   bool writesPending() const {
@@ -263,6 +269,8 @@ class McServerSession : public folly::DelayedDestruction,
 
   void* userCtxt_{nullptr};
 
+  std::unique_ptr<folly::AsyncTimeout> goAwayTimeout_;
+
   /**
    * pause()/resume() reads from the socket (TODO: does not affect the already
    * read buffer - requests in it will still be processed).
@@ -310,6 +318,8 @@ class McServerSession : public folly::DelayedDestruction,
   void caretRequestReady(
       const UmbrellaMessageInfo& headerInfo,
       const folly::IOBuf& reqBody);
+
+  void processConnectionControlMessage(const UmbrellaMessageInfo& headerInfo);
 
   void parseError(mc_res_t result, folly::StringPiece reason);
 
@@ -388,7 +398,7 @@ class McServerSession : public folly::DelayedDestruction,
   friend class McServerRequestContext;
   friend class ServerMcParser<McServerSession>;
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "McServerSession-inl.h"

@@ -236,5 +236,31 @@ void McExecReply::visitFields(V&& v) const {
   }
 }
 
+template <class V>
+void GoAwayAcknowledgement::visitFields(V&& v) {}
+
+template <class V>
+void GoAwayAcknowledgement::visitFields(V&& v) const {}
+
+template <class V>
+void GoAwayRequest::visitFields(V&& v) {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "reason", reason_)) {
+    return;
+  }
+}
+
+template <class V>
+void GoAwayRequest::visitFields(V&& v) const {
+  if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "reason", reason_)) {
+    return;
+  }
+}
+
 } // memcache
 } // facebook

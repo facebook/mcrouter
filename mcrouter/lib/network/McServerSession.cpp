@@ -194,8 +194,25 @@ void McServerSession::processMultiOpEnd() {
   currentMultiop_.reset();
 }
 
+void McServerSession::beginClose(folly::StringPiece reason) {
+  if (options_.goAwayTimeout.count() == 0 ||
+      parser_.protocol() != mc_caret_protocol) {
+    close();
+  } else {
+    McServerRequestContext ctx(*this, kCaretConnectionControlReqId);
+    GoAwayRequest goAway;
+    goAway.reason() = reason.str();
+    McServerRequestContext::reply(std::move(ctx), std::move(goAway));
+    goAwayTimeout_ = folly::AsyncTimeout::schedule(
+        options_.goAwayTimeout, eventBase_, [this]() noexcept { close(); });
+  }
+}
+
 void McServerSession::close() {
   DestructorGuard dg(this);
+
+  // Reset timeout if set, since we're shutting down anyway.
+  goAwayTimeout_ = nullptr;
 
   // Regardless of the reason we're closing, we should immediately stop reading
   // from the socket or we may get into invalid state.
@@ -303,12 +320,12 @@ void McServerSession::caretRequestReady(
 
   updateCompressionCodecIdRange(headerInfo);
 
-  McServerRequestContext ctx(
-      *this,
-      headerInfo.reqId,
-      false /* noReply */,
-      nullptr /* multiOpParent */,
-      false /* isEndContext */);
+  if (headerInfo.reqId == kCaretConnectionControlReqId) {
+    processConnectionControlMessage(headerInfo);
+    return;
+  }
+
+  McServerRequestContext ctx(*this, headerInfo.reqId);
 
   if (McVersionRequest::typeId == headerInfo.typeId &&
       options_.defaultVersionHandler) {
@@ -325,6 +342,22 @@ void McServerSession::caretRequestReady(
       ctx.replied_ = true;
       throw;
     }
+  }
+}
+
+void McServerSession::processConnectionControlMessage(
+    const UmbrellaMessageInfo& headerInfo) {
+  DestructorGuard dg(this);
+  switch (headerInfo.typeId) {
+    case GoAwayAcknowledgement::typeId: {
+      // Client acknowledged GoAway, no new requests should be received, start
+      // closing the connection.
+      close();
+      break;
+    }
+    default:
+      // Unknown connection controll message, ignore it.
+      break;
   }
 }
 

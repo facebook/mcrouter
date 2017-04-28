@@ -119,6 +119,8 @@ class McAsciiParserHarness {
     return true;
   }
 
+  void handleConnectionControlMessage(const UmbrellaMessageInfo&) {}
+
   void runTestImpl() {
     currentId_ = 0;
     errorState_ = false;

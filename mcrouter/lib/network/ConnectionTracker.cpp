@@ -42,7 +42,7 @@ void ConnectionTracker::closeAll() {
   while (it != sessions_.end()) {
     auto& session = *it;
     ++it;
-    session.close();
+    session.beginClose("Shutting down");
   }
 }
 

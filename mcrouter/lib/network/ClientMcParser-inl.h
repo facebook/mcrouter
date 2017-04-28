@@ -208,7 +208,9 @@ bool ClientMcParser<Callback>::caretMessageReady(
 
   try {
     const size_t reqId = headerInfo.reqId;
-    if (callback_.nextReplyAvailable(reqId)) {
+    if (UNLIKELY(reqId == kCaretConnectionControlReqId)) {
+      callback_.handleConnectionControlMessage(headerInfo);
+    } else if (callback_.nextReplyAvailable(reqId)) {
       (this->*umbrellaOrCaretForwarder_)(headerInfo, buffer, reqId);
     }
     return true;
@@ -324,5 +326,5 @@ double ClientMcParser<Callback>::getDropProbability() const {
   }
   return 0.0;
 }
-}
-} // facebook::memcache
+} // memcache
+} // facebook

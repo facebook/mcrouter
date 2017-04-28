@@ -82,6 +82,9 @@ class ClientServerMcParser {
 
     void parseError(mc_res_t, folly::StringPiece) {}
 
+    void handleConnectionControlMessage(const UmbrellaMessageInfo& headerInfo) {
+    }
+
    private:
     Callback& callback_;
   };
@@ -174,7 +177,7 @@ class ClientServerMcParser {
   detail::ExpectNextDispatcher<ClientMcParser<ReplyCallback>, RequestList>
       expectNextDispatcher_;
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "ClientServerMcParser-inl.h"

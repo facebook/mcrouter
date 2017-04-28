@@ -30,10 +30,6 @@
 namespace facebook {
 namespace memcache {
 
-namespace detail {
-class OnEventBaseDestructionCallback;
-} // detail
-
 /**
  * A base class for network communication with memcache protocol.
  *
@@ -44,6 +40,14 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
                           private folly::AsyncTransportWrapper::ReadCallback,
                           private folly::AsyncTransportWrapper::WriteCallback {
  public:
+  enum class ConnectionDownReason {
+    ERROR,
+    ABORTED,
+    CONNECT_TIMEOUT,
+    CONNECT_ERROR,
+    SERVER_GONE_AWAY,
+  };
+
   static std::shared_ptr<AsyncMcClientImpl> create(
       folly::VirtualEventBase& eventBase,
       ConnectionOptions options);
@@ -56,7 +60,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   void setStatusCallbacks(
       std::function<void()> onUp,
-      std::function<void(bool)> onDown);
+      std::function<void(ConnectionDownReason)> onDown);
 
   void setRequestStatusCallbacks(
       std::function<void(int pendingDiff, int inflightDiff)> onStateChange,
@@ -100,7 +104,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   struct ConnectionStatusCallbacks {
     std::function<void()> onUp;
-    std::function<void(bool)> onDown;
+    std::function<void(ConnectionDownReason)> onDown;
   };
   struct RequestStatusCallbacks {
     std::function<void(int pendingDiff, int inflightDiff)> onStateChange;
@@ -130,10 +134,11 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   CodecIdRange supportedCompressionCodecs_ = CodecIdRange::Empty;
 
   bool outOfOrder_{false};
+  bool pendingGoAwayReply_{false};
   McClientRequestContextQueue queue_;
 
   // Id for the next message that will be used by the next sendMsg() call.
-  uint64_t nextMsgId_{1};
+  uint32_t nextMsgId_{1};
 
   // Throttle options (disabled by default).
   size_t maxPending_{0};
@@ -149,8 +154,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   std::unique_ptr<WriterLoop> writer_;
 
   bool isAborting_{false};
-  std::unique_ptr<detail::OnEventBaseDestructionCallback>
-      eventBaseDestructionCallback_;
+  std::unique_ptr<folly::EventBase::LoopCallback> eventBaseDestructionCallback_;
 
   AsyncMcClientImpl(
       folly::VirtualEventBase& eventBase,
@@ -160,6 +164,8 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   // Common part for send/sendSync.
   void sendCommon(McClientRequestContextBase& req);
+
+  void sendGoAwayReply();
 
   // Write some requests from sendQueue_ to the socket, until max inflight limit
   // is reached or queue is empty.
@@ -199,13 +205,13 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   // Callbacks for McParser.
   template <class Reply>
   void replyReady(Reply&& reply, uint64_t reqId, ReplyStatsContext replyStats);
-
+  void handleConnectionControlMessage(const UmbrellaMessageInfo& headerInfo);
   void parseError(mc_res_t result, folly::StringPiece reason);
   bool nextReplyAvailable(uint64_t reqId);
 
-  static void incMsgId(size_t& msgId);
+  static void incMsgId(uint32_t& msgId);
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "AsyncMcClientImpl-inl.h"

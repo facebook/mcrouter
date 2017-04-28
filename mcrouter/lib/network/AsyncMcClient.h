@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/network/AsyncMcClientImpl.h"
 #include "mcrouter/lib/network/ConnectionOptions.h"
 
 namespace folly {
@@ -23,7 +24,6 @@ class EventBase;
 namespace facebook {
 namespace memcache {
 
-class AsyncMcClientImpl;
 struct ReplyStatsContext;
 
 /**
@@ -37,6 +37,8 @@ struct ReplyStatsContext;
  */
 class AsyncMcClient {
  public:
+  using ConnectionDownReason = AsyncMcClientImpl::ConnectionDownReason;
+
   AsyncMcClient(folly::EventBase& eventBase, ConnectionOptions options);
   AsyncMcClient(folly::VirtualEventBase& eventBase, ConnectionOptions options);
 
@@ -51,8 +53,9 @@ class AsyncMcClient {
    * @param onUp  will be called whenever client successfully connects to the
    *              server. Will be called immediately if we're already connected.
    *              Can be nullptr.
-   * @param onDown  will be called whenever connection goes down. Will not be
-   *                called if the connection is already DOWN.
+   * @param onDown  will be called whenever connection goes down. Will be passed
+   *                explanation about why the connection went down.
+   *                Will not be called if the connection is already DOWN.
    *                Can be nullptr.
    * Note: those callbacks may be called even after the client was destroyed.
    *       This will happen in case when the client is destroyed and there are
@@ -60,7 +63,7 @@ class AsyncMcClient {
    */
   void setStatusCallbacks(
       std::function<void()> onUp,
-      std::function<void(bool aborting)> onDown);
+      std::function<void(ConnectionDownReason)> onDown);
 
   /**
    * Set callbacks for when requests state change.
@@ -150,7 +153,7 @@ class AsyncMcClient {
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;
 };
-}
-} // facebook::memcache
+} // memcache
+} // facebook
 
 #include "AsyncMcClient-inl.h"

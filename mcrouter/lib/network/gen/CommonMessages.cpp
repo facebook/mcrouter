@@ -414,5 +414,73 @@ void McExecReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
+constexpr const char* const GoAwayAcknowledgement::name;
+
+void GoAwayAcknowledgement::serialize(
+    carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+
+  writer.writeStructEnd();
+  writer.writeStop();
+}
+
+void GoAwayAcknowledgement::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void GoAwayRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, reason());
+  writer.writeStructEnd();
+  writer.writeStop();
+}
+
+void GoAwayRequest::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readRawInto(result());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(reason());
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
 } // memcache
 } // facebook

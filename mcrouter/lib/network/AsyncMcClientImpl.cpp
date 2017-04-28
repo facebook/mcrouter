@@ -26,7 +26,7 @@ namespace memcache {
 constexpr size_t kReadBufferSizeMin = 256;
 constexpr size_t kReadBufferSizeMax = 4096;
 
-namespace detail {
+namespace {
 class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
  public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
@@ -39,7 +39,26 @@ class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
  private:
   AsyncMcClientImpl& client_;
 };
-} // detail
+
+struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
+  GoAwayAcknowledgement message;
+  McSerializedRequest data;
+  std::unique_ptr<GoAwayContext> selfPtr;
+
+  explicit GoAwayContext(const CodecIdRange& supportedCodecs)
+      : data(message, 0, mc_caret_protocol, supportedCodecs) {}
+
+  void writeSuccess() noexcept override final {
+    auto self = std::move(selfPtr);
+    self.reset();
+  }
+  void writeErr(size_t, const folly::AsyncSocketException&) noexcept override
+      final {
+    auto self = std::move(selfPtr);
+    self.reset();
+  }
+};
+} // anonymous
 
 /**
  * A callback class for network writing.
@@ -79,7 +98,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       queue_(outOfOrder_),
       writer_(folly::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
-          folly::make_unique<detail::OnEventBaseDestructionCallback>(*this)) {
+          folly::make_unique<OnEventBaseDestructionCallback>(*this)) {
   eventBase.runOnDestruction(eventBaseDestructionCallback_.get());
   if (connectionOptions_.compressionCodecMap) {
     supportedCompressionCodecs_ =
@@ -110,7 +129,7 @@ void AsyncMcClientImpl::closeNow() {
 
 void AsyncMcClientImpl::setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(bool)> onDown) {
+    std::function<void(ConnectionDownReason)> onDown) {
   DestructorGuard dg(this);
 
   statusCallbacks_ =
@@ -188,7 +207,7 @@ size_t AsyncMcClientImpl::getNumToSend() const {
 
 void AsyncMcClientImpl::scheduleNextWriterLoop() {
   if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
-      getNumToSend() > 0) {
+      (getNumToSend() > 0 || pendingGoAwayReply_)) {
     writeScheduled_ = true;
     eventBase_.runInLoop(writer_.get());
   }
@@ -227,8 +246,34 @@ void AsyncMcClientImpl::pushMessages() {
         numToSend == 1 ? folly::WriteFlags::NONE : folly::WriteFlags::CORK);
     --numToSend;
   }
+  if (connectionState_ == ConnectionState::UP && pendingGoAwayReply_) {
+    // Note: we're not waiting for all requests to be sent, since that may take
+    // a while and if we didn't succeed in one loop, this means that we're
+    // already backlogged.
+    sendGoAwayReply();
+  }
+  pendingGoAwayReply_ = false;
   writeScheduled_ = false;
   scheduleNextWriterLoop();
+}
+
+void AsyncMcClientImpl::sendGoAwayReply() {
+  auto ctxPtr = std::make_unique<GoAwayContext>(supportedCompressionCodecs_);
+  auto& ctx = *ctxPtr;
+  switch (ctx.data.serializationResult()) {
+    case McSerializedRequest::Result::OK: {
+      auto iov = ctx.data.getIovs();
+      auto iovcnt = ctx.data.getIovsCount();
+      // Pass context ownership of itself, writev will call a callback that
+      // will destroy the context.
+      ctx.selfPtr = std::move(ctxPtr);
+      socket_->writev(&ctx, iov, iovcnt);
+      break;
+    }
+    default:
+      // Ignore errors on GoAway.
+      break;
+  }
 }
 
 namespace {
@@ -428,6 +473,7 @@ void AsyncMcClientImpl::attemptConnection() {
     assert(connectionState_ == ConnectionState::DOWN);
 
     connectionState_ = ConnectionState::CONNECTING;
+    pendingGoAwayReply_ = false;
 
     if (connectionOptions_.sslContextProvider) {
       auto sslContext = connectionOptions_.sslContextProvider();
@@ -526,8 +572,6 @@ void AsyncMcClientImpl::connectErr(
   assert(connectionState_ == ConnectionState::CONNECTING);
   DestructorGuard dg(this);
 
-  mc_res_t error;
-
   if (connectionOptions_.sslContextProvider &&
       connectionOptions_.sessionCachingEnabled) {
     /* clear the ssl session from cache */
@@ -543,12 +587,14 @@ void AsyncMcClientImpl::connectErr(
         connectionOptions_.accessPoint->toHostPortString());
   }
 
+  mc_res_t error = mc_res_connect_error;
+  ConnectionDownReason reason = ConnectionDownReason::CONNECT_ERROR;
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
     error = mc_res_connect_timeout;
+    reason = ConnectionDownReason::CONNECT_TIMEOUT;
   } else if (isAborting_) {
     error = mc_res_aborted;
-  } else {
-    error = mc_res_connect_error;
+    reason = ConnectionDownReason::ABORTED;
   }
 
   assert(getInflightRequestCount() == 0);
@@ -558,7 +604,7 @@ void AsyncMcClientImpl::connectErr(
   socket_.reset();
 
   if (statusCallbacks_.onDown) {
-    statusCallbacks_.onDown(isAborting_);
+    statusCallbacks_.onDown(reason);
   }
 }
 
@@ -590,7 +636,9 @@ void AsyncMcClientImpl::processShutdown() {
         // This is a last processShutdown() for this error and it is safe
         // to go DOWN.
         if (statusCallbacks_.onDown) {
-          statusCallbacks_.onDown(isAborting_);
+          statusCallbacks_.onDown(
+              isAborting_ ? ConnectionDownReason::ABORTED
+                          : ConnectionDownReason::ERROR);
         }
 
         connectionState_ = ConnectionState::DOWN;
@@ -698,6 +746,29 @@ void AsyncMcClientImpl::logErrorWithContext(folly::StringPiece reason) {
       queue_.debugInfo());
 }
 
+void AsyncMcClientImpl::handleConnectionControlMessage(
+    const UmbrellaMessageInfo& headerInfo) {
+  DestructorGuard dg(this);
+  // Handle go away request.
+  switch (headerInfo.typeId) {
+    case GoAwayRequest::typeId: {
+      // No need to process GoAway if the connection is already closing.
+      if (connectionState_ != ConnectionState::UP) {
+        break;
+      }
+      if (statusCallbacks_.onDown) {
+        statusCallbacks_.onDown(ConnectionDownReason::SERVER_GONE_AWAY);
+      }
+      pendingGoAwayReply_ = true;
+      scheduleNextWriterLoop();
+      break;
+    }
+    default:
+      // Ignore unknown control messages.
+      break;
+  }
+}
+
 void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {
   logErrorWithContext(reason);
   // mc_parser can call the parseError multiple times, process only first.
@@ -721,11 +792,8 @@ bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {
   return false;
 }
 
-void AsyncMcClientImpl::incMsgId(size_t& msgId) {
-  ++msgId;
-  if (UNLIKELY(msgId == 0)) {
-    msgId = 1;
-  }
+void AsyncMcClientImpl::incMsgId(uint32_t& msgId) {
+  msgId += 2;
 }
 
 void AsyncMcClientImpl::updateWriteTimeout(std::chrono::milliseconds timeout) {
@@ -769,5 +837,5 @@ double AsyncMcClientImpl::getRetransmissionInfo() {
   }
   return -1.0;
 }
-}
-} // facebook::memcache
+} // memcache
+} // facebook

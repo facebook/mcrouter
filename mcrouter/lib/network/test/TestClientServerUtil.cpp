@@ -64,9 +64,9 @@ SSLContextProvider brokenSsl() {
 }
 
 TestServerOnRequest::TestServerOnRequest(
-    std::atomic<bool>& shutdown,
+    folly::fibers::Baton& shutdownLock,
     bool outOfOrder)
-    : shutdown_(shutdown), outOfOrder_(outOfOrder) {}
+    : shutdownLock_(shutdownLock), outOfOrder_(outOfOrder) {}
 
 void TestServerOnRequest::onRequest(
     McServerRequestContext&& ctx,
@@ -78,7 +78,7 @@ void TestServerOnRequest::onRequest(
     std::this_thread::sleep_for(std::chrono::seconds(1));
     processReply(std::move(ctx), Reply(mc_res_notfound));
   } else if (req.key().fullKey() == "shutdown") {
-    shutdown_.store(true);
+    shutdownLock_.post();
     processReply(std::move(ctx), Reply(mc_res_notfound));
     flushQueue();
   } else if (req.key().fullKey() == "busy") {
@@ -144,13 +144,15 @@ TestServer::TestServer(
     size_t maxConns,
     bool useDefaultVersion,
     size_t numThreads,
-    bool useTicketKeySeeds)
+    bool useTicketKeySeeds,
+    size_t goAwayTimeoutMs)
     : outOfOrder_(outOfOrder), useTicketKeySeeds_(useSsl && useTicketKeySeeds) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = numThreads;
   opts_.worker.defaultVersionHandler = useDefaultVersion;
   opts_.worker.maxInFlight = maxInflight;
   opts_.worker.sendTimeout = std::chrono::milliseconds{timeoutMs};
+  opts_.worker.goAwayTimeout = std::chrono::milliseconds{goAwayTimeoutMs};
   opts_.setPerThreadMaxConns(maxConns, opts_.numThreads);
   if (useSsl) {
     opts_.pemKeyPath = kValidKeyPath;
@@ -162,34 +164,38 @@ TestServer::TestServer(
 void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
   LOG(INFO) << "Spawning AsyncMcServer";
 
-  // take ownership of the socket before starting the server as
-  // its closed in the server
-  sock_.releaseSocketFd();
+  folly::fibers::Baton startupLock;
+  serverThread_ = std::thread([this, &startupLock, init] {
+    // take ownership of the socket before starting the server as
+    // its closed in the server
+    sock_.releaseSocketFd();
 
-  server_ = folly::make_unique<AsyncMcServer>(opts_);
-  if (useTicketKeySeeds_) {
-    wangle::TLSTicketKeySeeds seeds{
-        .oldSeeds = {"aaaa"}, .currentSeeds = {"bbbb"}, .newSeeds = {"cccc"},
-    };
-    server_->setTicketKeySeeds(std::move(seeds));
-  }
-  server_->spawn(
-      [this, init](size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
-        init(worker);
-        worker.setOnConnectionAccepted([this]() { ++acceptedConns_; });
+    server_ = folly::make_unique<AsyncMcServer>(opts_);
+    if (useTicketKeySeeds_) {
+      wangle::TLSTicketKeySeeds seeds{
+          .oldSeeds = {"aaaa"}, .currentSeeds = {"bbbb"}, .newSeeds = {"cccc"},
+      };
+      server_->setTicketKeySeeds(std::move(seeds));
+    }
+    server_->spawn([this, init](
+        size_t, folly::EventBase& evb, AsyncMcServerWorker& worker) {
+      init(worker);
+      worker.setOnConnectionAccepted([this]() { ++acceptedConns_; });
 
-        while (!shutdown_.load()) {
-          evb.loopOnce(EVLOOP_NONBLOCK);
-        }
+      evb.loop();
+    });
 
-        LOG(INFO) << "Shutting down AsyncMcServer";
+    // allow server some time to startup
+    /* sleep override */
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        worker.shutdown();
-      });
+    startupLock.post();
 
-  // allow server some time to startup
-  /* sleep override */
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    shutdownLock_.wait();
+    server_->shutdown();
+    server_->join();
+  });
+  startupLock.wait();
 }
 
 std::string TestServer::version() const {
@@ -225,7 +231,13 @@ TestClient::TestClient(
   client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks(
       [] { LOG(INFO) << "Client UP."; },
-      [](bool) { LOG(INFO) << "Client DOWN."; });
+      [](AsyncMcClient::ConnectionDownReason reason) {
+        if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+          LOG(INFO) << "Server gone Away.";
+        } else {
+          LOG(INFO) << "Client DOWN.";
+        }
+      });
   client_->setRequestStatusCallbacks(
       [this](int pendingDiff, int inflightDiff) {
         CHECK(pendingDiff != inflightDiff)
@@ -245,15 +257,19 @@ TestClient::TestClient(
 
 void TestClient::setStatusCallbacks(
     std::function<void()> onUp,
-    std::function<void(bool aborting)> onDown) {
+    std::function<void(AsyncMcClient::ConnectionDownReason)> onDown) {
   client_->setStatusCallbacks(
       [onUp] {
         LOG(INFO) << "Client UP.";
         onUp();
       },
-      [onDown](bool aborting) {
-        LOG(INFO) << "Client DOWN.";
-        onDown(aborting);
+      [onDown](AsyncMcClient::ConnectionDownReason reason) {
+        if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
+          LOG(INFO) << "Server gone Away.";
+        } else {
+          LOG(INFO) << "Client DOWN.";
+        }
+        onDown(reason);
       });
 }
 
@@ -370,6 +386,6 @@ std::string genBigValue() {
   }
   return bigValue;
 }
-}
-}
-} // facebook::memcache::test
+} // test
+} // memcache
+} // facebook
