@@ -95,6 +95,27 @@ class McPiperVisitor {
     }
   }
 
+  void renderStringField(folly::StringPiece name, const std::string& str) {
+    if (!script_ && str.empty()) {
+      return;
+    }
+    renderHeader(name);
+    if (script_) {
+      out_.append("\"");
+      if (!std::all_of<std::string::const_iterator, int(int)>(
+              str.begin(), str.end(), std::isprint)) {
+        /* JSON doesn't deal with arbitrary binary data - the input string
+           must be valid UTF-8.  So we just hex encode the whole string. */
+        out_.append(folly::hexlify(str));
+      } else {
+        out_.append(folly::cEscape<std::string>(str));
+      }
+      out_.append("\"");
+    } else {
+      out_.append(folly::backslashify(str), format_.dataValueColor);
+    }
+  }
+
   template <class T>
   typename std::enable_if<!carbon::IsCarbonStruct<T>::value, void>::type render(
       folly::StringPiece name,
@@ -152,34 +173,16 @@ template <>
 inline void McPiperVisitor::render(
     folly::StringPiece name,
     const folly::IOBuf& buf) {
-  renderHeader(name);
   auto buffer = buf;
-  out_.append(
-      folly::StringPiece(buffer.coalesce()).str(), format_.dataValueColor);
+  auto strPiece = folly::StringPiece(buffer.coalesce());
+  renderStringField(name, strPiece.str());
 }
 
 template <>
 inline void McPiperVisitor::render(
     folly::StringPiece name,
     const std::string& str) {
-  if (!script_ && str.empty()) {
-    return;
-  }
-  renderHeader(name);
-  if (script_) {
-    out_.append("\"");
-    if (!std::all_of<std::string::const_iterator, int(int)>(
-            str.begin(), str.end(), std::isprint)) {
-      /* JSON doesn't deal with arbitrary binary data - the input string
-         must be valid UTF-8.  So we just hex encode the whole string. */
-      out_.append(folly::hexlify(str));
-    } else {
-      out_.append(folly::cEscape<std::string>(str));
-    }
-    out_.append("\"");
-  } else {
-    out_.append(folly::backslashify(str));
-  }
+  renderStringField(name, str);
 }
 
 template <>
