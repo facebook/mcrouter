@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,7 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
-class ProxyBase;
+class ProxyRequestContext;
 struct RequestLoggerContext;
 } // mcrouter
 } // memcache
@@ -23,7 +23,8 @@ namespace carbon {
 
 class NoopAdditionalLogger {
  public:
-  explicit NoopAdditionalLogger(facebook::memcache::mcrouter::ProxyBase*) {}
+  explicit NoopAdditionalLogger(
+      const facebook::memcache::mcrouter::ProxyRequestContext&) {}
 
   template <class Request>
   void log(

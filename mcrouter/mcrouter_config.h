@@ -78,8 +78,9 @@ struct ProxyStatsContainer {
 
 class AdditionalProxyRequestLogger : public carbon::NoopAdditionalLogger {
  public:
-  explicit AdditionalProxyRequestLogger(ProxyBase* proxy)
-      : NoopAdditionalLogger(proxy) {}
+  explicit AdditionalProxyRequestLogger(
+      const ProxyRequestContext& proxyRequestContext)
+      : NoopAdditionalLogger(proxyRequestContext) {}
 };
 
 inline bool alwaysSendToMainShardSplit(uint64_t /* flags */) {

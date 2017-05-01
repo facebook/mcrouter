@@ -17,6 +17,7 @@
 
 #include "mcrouter/ProxyRequestPriority.h"
 #include "mcrouter/config-impl.h"
+#include "mcrouter/lib/mc/msg.h"
 
 namespace facebook {
 namespace memcache {
@@ -53,7 +54,7 @@ class ProxyRequestContext {
 
   virtual ~ProxyRequestContext();
 
-  ProxyBase& proxy() {
+  ProxyBase& proxy() const {
     return proxyBase_;
   }
 
@@ -117,8 +118,17 @@ class ProxyRequestContext {
     requester_ = std::move(requester);
   }
 
+  void setFinalResult(mc_res_t result) {
+    finalResult_ = result;
+  }
+
+  mc_res_t finalResult() const {
+    return finalResult_;
+  }
+
  protected:
   bool replied_{false};
+  mc_res_t finalResult_{mc_res_unknown};
 
   /**
    * The function that will be called when all replies (including async)

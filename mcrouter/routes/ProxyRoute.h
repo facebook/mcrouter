@@ -56,7 +56,12 @@ class ProxyRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    return root_->route(req);
+    auto reply = root_->route(req);
+
+    auto& requestContext = fiber_local<RouterInfo>::getSharedCtx();
+    requestContext->setFinalResult(reply.result());
+
+    return reply;
   }
 
   McFlushAllReply route(const McFlushAllRequest& req) const {
@@ -73,8 +78,9 @@ class ProxyRoute {
   std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>
   getAllDestinations() const;
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook
 
 #include "ProxyRoute-inl.h"

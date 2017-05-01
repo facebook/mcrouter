@@ -141,7 +141,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       : ProxyRequestContext(pr, priority__),
         proxy_(pr),
         logger_(ProxyRequestLogger<RouterInfo>(pr)),
-        additionalLogger_(AdditionalLogger(&pr)) {}
+        additionalLogger_(AdditionalLogger(*this)) {}
 
   Proxy<RouterInfo>& proxy_;
 
