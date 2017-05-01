@@ -28,7 +28,6 @@ libmcrouter_a_SOURCES = \
   McOpList.h \
   McOperation.h \
   McOperationTraits.h \
-  McRequestList.h \
   McResUtil.h \
   Operation.h \
   OperationTraits.h \

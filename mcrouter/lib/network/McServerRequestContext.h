@@ -15,7 +15,6 @@
 #include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 
-#include "mcrouter/lib/McRequestList.h"
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
