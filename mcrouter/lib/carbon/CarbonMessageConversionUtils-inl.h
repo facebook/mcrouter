@@ -19,6 +19,10 @@ namespace carbon {
 
 namespace detail {
 
+inline std::string getMixinName(folly::StringPiece name) {
+  return folly::to<std::string>("__", name);
+}
+
 class ToDynamicVisitor {
  public:
   explicit ToDynamicVisitor(FollyDynamicConversionOptions opts)
@@ -27,7 +31,7 @@ class ToDynamicVisitor {
   template <class T>
   bool enterMixin(uint16_t id, folly::StringPiece name, const T& value) {
     if (!opts_.inlineMixins) {
-      value_.insert("__" + name.str(), convertToFollyDynamic(value));
+      value_.insert(getMixinName(name), convertToFollyDynamic(value));
       return false;
     } else {
       return true;
@@ -111,7 +115,8 @@ class ToDynamicVisitor {
   template <class T>
   typename std::enable_if<std::is_enum<T>::value, folly::dynamic>::type
   toDynamic3(const T& value) const {
-    return static_cast<int64_t>(value);
+    return toDynamic(
+        static_cast<typename std::underlying_type<T>::type>(value));
   }
 
   template <class T>
@@ -182,6 +187,267 @@ class ToDynamicVisitor {
   }
 };
 
+class FromDynamicVisitor {
+ public:
+  explicit FromDynamicVisitor(
+      const folly::dynamic& json,
+      std::function<void(folly::StringPiece fieldName, folly::StringPiece msg)>
+          onError)
+      : json_(json), onError_(std::move(onError)) {}
+
+  template <class T>
+  bool enterMixin(uint16_t id, folly::StringPiece name, T& value) {
+    auto mixinName = getMixinName(name);
+    if (auto jsonPtr = json_.get_ptr(mixinName)) {
+      std::function<void(folly::StringPiece, folly::StringPiece)> onChildError;
+      if (onError_) {
+        onChildError = [this, &name](
+            folly::StringPiece field, folly::StringPiece msg) {
+          onError(folly::to<std::string>(name, ".", field), msg);
+        };
+      }
+      convertFromFollyDynamic(*jsonPtr, value, std::move(onChildError));
+      return false;
+    }
+    return true;
+  }
+
+  bool leaveMixin() {
+    return true;
+  }
+
+  template <class T>
+  bool visitField(uint16_t id, folly::StringPiece name, T& value) {
+    if (auto jsonPtr = json_.get_ptr(name)) {
+      fromDynamic(name, *jsonPtr, value);
+    }
+    return true;
+  }
+
+  template <size_t id, class T, class U>
+  bool visitUnionMember(folly::StringPiece fieldName, U& u) {
+    if (auto jsonPtr = json_.get_ptr(fieldName)) {
+      auto& ref = u.template emplace<id>();
+      fromDynamic(fieldName, *jsonPtr, ref);
+    }
+    return true;
+  }
+
+ private:
+  const folly::dynamic& json_;
+  std::function<void(folly::StringPiece fieldName, folly::StringPiece msg)>
+      onError_;
+
+  void onError(folly::StringPiece fieldName, folly::StringPiece msg) {
+    if (onError_) {
+      onError_(fieldName, msg);
+    }
+  }
+
+  bool fromDynamic(
+      folly::StringPiece name,
+      const folly::dynamic& json,
+      bool& valRef) {
+    if (!json.isBool()) {
+      onError(name, "Invalid type. Bool expected.");
+      return false;
+    }
+    valRef = json.asBool();
+    return true;
+  }
+
+  bool fromDynamic(
+      folly::StringPiece name,
+      const folly::dynamic& json,
+      char& valRef) {
+    if (!json.isString()) {
+      onError(name, "Invalid type. Char expected.");
+      return false;
+    }
+    auto str = json.asString();
+    if (str.size() != 1) {
+      onError(name, "Invalid length. Expected string of length 1.");
+      return false;
+    }
+    valRef = str[0];
+    return true;
+  }
+
+  bool fromDynamic(
+      folly::StringPiece name,
+      const folly::dynamic& json,
+      folly::IOBuf& valRef) {
+    if (!json.isString()) {
+      onError(name, "Invalid type. String expected.");
+      return false;
+    }
+    valRef = folly::IOBuf(folly::IOBuf::COPY_BUFFER, json.asString());
+    return true;
+  }
+
+  template <class T>
+  bool fromDynamic(
+      folly::StringPiece name,
+      const folly::dynamic& json,
+      folly::Optional<T>& valRef) {
+    T val;
+    if (fromDynamic(name, json, val)) {
+      valRef.assign(std::move(val));
+      return true;
+    }
+    return false;
+  }
+
+  template <class T>
+  bool fromDynamic(
+      folly::StringPiece name,
+      const folly::dynamic& json,
+      Keys<T>& valRef) {
+    if (!json.isString()) {
+      onError(name, "Invalid type. String expected.");
+      return false;
+    }
+    valRef = json.asString();
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_integral<T>::value, bool>::type
+  fromDynamic(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    if (!json.isInt()) {
+      onError(name, "Invalid type. Int expected.");
+      return false;
+    }
+    valRef = json.asInt();
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<!std::is_integral<T>::value, bool>::type
+  fromDynamic(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic2(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+  fromDynamic2(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    if (!json.isDouble()) {
+      onError(name, "Invalid type. Double expected.");
+      return false;
+    }
+    valRef = json.asDouble();
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<!std::is_floating_point<T>::value, bool>::type
+  fromDynamic2(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic3(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<IsCarbonUnion<T>::value, bool>::type
+  fromDynamic3(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    size_t numChildErrors = 0;
+    auto onChildError = [this, &name, &numChildErrors](
+        folly::StringPiece field, folly::StringPiece msg) {
+      numChildErrors++;
+      onError(folly::to<std::string>(name, ".", field), msg);
+    };
+
+    FromDynamicVisitor visitor(json, std::move(onChildError));
+    valRef.foreachMember(visitor);
+    return numChildErrors == 0;
+  }
+
+  template <class T>
+  typename std::enable_if<!IsCarbonUnion<T>::value, bool>::type
+  fromDynamic3(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic4(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<IsCarbonStruct<T>::value, bool>::type
+  fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    size_t numChildErrors = 0;
+    auto onChildError = [this, &name, &numChildErrors](
+        folly::StringPiece field, folly::StringPiece msg) {
+      numChildErrors++;
+      onError(folly::to<std::string>(name, ".", field), msg);
+    };
+    convertFromFollyDynamic(json, valRef, std::move(onChildError));
+    return numChildErrors == 0;
+  }
+
+  template <class T>
+  typename std::enable_if<!IsCarbonStruct<T>::value, bool>::type
+  fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic5(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<std::is_enum<T>::value, bool>::type
+  fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    if (!json.isInt()) {
+      onError(name, "Invalid type. Int expected.");
+      return false;
+    }
+    valRef = static_cast<T>(json.asInt());
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<!std::is_enum<T>::value, bool>::type
+  fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic6(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<
+      std::is_convertible<T, folly::StringPiece>::value,
+      bool>::type
+  fromDynamic6(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    if (!json.isString()) {
+      onError(name, "Invalid type. String expected.");
+      return false;
+    }
+    valRef = json.asString();
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<
+      !std::is_convertible<T, folly::StringPiece>::value,
+      bool>::type
+  fromDynamic6(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic7(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<IsLinearContainer<T>::value, bool>::type
+  fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    if (!json.isArray()) {
+      onError(name, "Invalid type. Array expected.");
+      return false;
+    }
+
+    for (size_t i = 0; i < json.size(); ++i) {
+      typename SerializationTraits<T>::inner_type val;
+      if (fromDynamic(folly::sformat("{}[{}]", name, i), json[i], val)) {
+        SerializationTraits<T>::emplace(valRef, std::move(val));
+      }
+    }
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<!IsLinearContainer<T>::value, bool>::type
+  fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    onError(name, "Unsupported type.");
+    return false;
+  }
+};
+
 } // detail
 
 template <class Message>
@@ -191,6 +457,16 @@ folly::dynamic convertToFollyDynamic(
   detail::ToDynamicVisitor visitor(opts);
   m.visitFields(visitor);
   return visitor.moveOutput();
+}
+
+template <class Message>
+void convertFromFollyDynamic(
+    const folly::dynamic& json,
+    Message& m,
+    std::function<void(folly::StringPiece fieldName, folly::StringPiece msg)>
+        onError) {
+  detail::FromDynamicVisitor visitor(json, std::move(onError));
+  m.visitFields(visitor);
 }
 
 } // carbon
