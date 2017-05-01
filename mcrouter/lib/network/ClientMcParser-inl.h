@@ -68,7 +68,7 @@ ClientMcParser<Callback>::expectNext() {
       debugFifo_->startMessage(
           MessageDirection::Received, ReplyT<Request>::typeId);
     }
-  } else if (parser_.protocol() == mc_umbrella_protocol) {
+  } else if (parser_.protocol() == mc_umbrella_protocol_DONOTUSE) {
     umbrellaOrCaretForwarder_ =
         &ClientMcParser<Callback>::forwardUmbrellaReply<Request>;
   } else if (parser_.protocol() == mc_caret_protocol) {
@@ -170,7 +170,7 @@ template <class Callback>
 bool ClientMcParser<Callback>::umMessageReady(
     const UmbrellaMessageInfo& info,
     const folly::IOBuf& buffer) {
-  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol)) {
+  if (UNLIKELY(parser_.protocol() != mc_umbrella_protocol_DONOTUSE)) {
     std::string reason = folly::sformat(
         "Expected {} protocol, but received umbrella!",
         mc_protocol_to_string(parser_.protocol()));

@@ -26,7 +26,7 @@ inline mc_protocol_t determineProtocol(uint8_t firstByte) {
     case kCaretMagicByte:
       return mc_caret_protocol;
     case ENTRY_LIST_MAGIC_BYTE:
-      return mc_umbrella_protocol;
+      return mc_umbrella_protocol_DONOTUSE;
     default:
       return mc_ascii_protocol;
   }

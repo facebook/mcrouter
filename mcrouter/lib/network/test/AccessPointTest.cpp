@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -53,7 +53,7 @@ TEST(AccessPoint, host_port_proto) {
   EXPECT_TRUE(ap != nullptr);
   EXPECT_EQ("127.0.0.1", ap->getHost());
   EXPECT_EQ(1, ap->getPort());
-  EXPECT_EQ(mc_umbrella_protocol, ap->getProtocol());
+  EXPECT_EQ(mc_umbrella_protocol_DONOTUSE, ap->getProtocol());
   ap = AccessPoint::create("127.0.0.1:1:caret", proto);
   EXPECT_TRUE(ap != nullptr);
   EXPECT_EQ("127.0.0.1", ap->getHost());
@@ -80,7 +80,7 @@ TEST(AccessPoint, host_port_proto_ssl) {
   EXPECT_TRUE(ap != nullptr);
   EXPECT_EQ("127.0.0.1", ap->getHost());
   EXPECT_EQ(1, ap->getPort());
-  EXPECT_EQ(mc_umbrella_protocol, ap->getProtocol());
+  EXPECT_EQ(mc_umbrella_protocol_DONOTUSE, ap->getProtocol());
   EXPECT_FALSE(ap->useSsl());
   ap = AccessPoint::create("127.0.0.1:1:caret:plain", proto);
   EXPECT_TRUE(ap != nullptr);

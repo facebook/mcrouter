@@ -94,7 +94,7 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
   if (!settings.protocol.empty()) {
     auto protocol = mc_string_to_protocol(settings.protocol.c_str());
     if (protocol == mc_ascii_protocol || protocol == mc_caret_protocol ||
-        protocol == mc_umbrella_protocol) {
+        protocol == mc_umbrella_protocol_DONOTUSE) {
       filter.protocol.emplace(protocol);
     } else {
       LOG(ERROR) << "Invalid protocol. ascii|caret|umbrella expected, got "

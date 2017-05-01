@@ -68,7 +68,7 @@ mc_protocol_t parseProtocol(folly::StringPiece str) {
   } else if (str == "caret") {
     return mc_caret_protocol;
   } else if (str == "umbrella") {
-    return mc_umbrella_protocol;
+    return mc_umbrella_protocol_DONOTUSE;
   }
   throw std::runtime_error("Invalid protocol");
 }

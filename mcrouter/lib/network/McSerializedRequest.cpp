@@ -20,7 +20,7 @@ McSerializedRequest::~McSerializedRequest() {
     case mc_caret_protocol:
       caretRequest_.~CaretSerializedMessage();
       break;
-    case mc_umbrella_protocol:
+    case mc_umbrella_protocol_DONOTUSE:
       umbrellaMessage_.~UmbrellaSerializedMessage();
       break;
     case mc_unknown_protocol:

@@ -23,7 +23,7 @@ typedef enum mc_protocol_e {
   mc_unknown_protocol = 0,
   mc_ascii_protocol = 1,
   mc_binary_protocol = 2,
-  mc_umbrella_protocol = 3,
+  mc_umbrella_protocol_DONOTUSE = 3, /* New code should use Caret or ASCII */
   mc_caret_protocol = 4,
   mc_nprotocols, // placeholder
 } mc_protocol_t;
@@ -34,7 +34,7 @@ static inline mc_protocol_t mc_string_to_protocol(const char* str) {
   } else if (!strcmp(str, "binary")) {
     return mc_binary_protocol;
   } else if (!strcmp(str, "umbrella")) {
-    return mc_umbrella_protocol;
+    return mc_umbrella_protocol_DONOTUSE;
   } else if (!strcmp(str, "caret")) {
     return mc_caret_protocol;
   } else {

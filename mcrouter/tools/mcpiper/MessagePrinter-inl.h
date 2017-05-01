@@ -348,7 +348,7 @@ void MessagePrinter::printRawReply(
     case mc_ascii_protocol:
       LOG_FIRST_N(INFO, 1) << "ASCII protocol is not supported for raw data";
       break;
-    case mc_umbrella_protocol:
+    case mc_umbrella_protocol_DONOTUSE:
       detail::prepareUmbrellaRawReply(
           umbrellaSerializedMessage,
           std::move(reply),

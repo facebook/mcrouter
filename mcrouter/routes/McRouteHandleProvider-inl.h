@@ -157,7 +157,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
       } else if (equalStr("caret", str, folly::AsciiCaseInsensitive())) {
         protocol = mc_caret_protocol;
       } else if (equalStr("umbrella", str, folly::AsciiCaseInsensitive())) {
-        protocol = mc_umbrella_protocol;
+        protocol = mc_umbrella_protocol_DONOTUSE;
       } else {
         throwLogic("Unknown protocol '{}'", str);
       }

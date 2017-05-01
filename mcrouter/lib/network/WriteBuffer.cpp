@@ -24,7 +24,7 @@ WriteBuffer::WriteBuffer(mc_protocol_t protocol) : protocol_(protocol) {
       new (&asciiReply_) AsciiSerializedReply;
       break;
 
-    case mc_umbrella_protocol:
+    case mc_umbrella_protocol_DONOTUSE:
       new (&umbrellaReply_) UmbrellaSerializedMessage;
       break;
 
@@ -43,7 +43,7 @@ WriteBuffer::~WriteBuffer() {
       asciiReply_.~AsciiSerializedReply();
       break;
 
-    case mc_umbrella_protocol:
+    case mc_umbrella_protocol_DONOTUSE:
       umbrellaReply_.~UmbrellaSerializedMessage();
       break;
 
@@ -67,7 +67,7 @@ void WriteBuffer::clear() {
       asciiReply_.clear();
       break;
 
-    case mc_umbrella_protocol:
+    case mc_umbrella_protocol_DONOTUSE:
       umbrellaReply_.clear();
       break;
 
@@ -95,7 +95,8 @@ bool WriteBuffer::isEndContext() const {
 WriteBuffer::Queue& WriteBufferQueue::initFreeQueue(
     mc_protocol_t protocol) noexcept {
   assert(
-      protocol == mc_ascii_protocol || protocol == mc_umbrella_protocol ||
+      protocol == mc_ascii_protocol ||
+      protocol == mc_umbrella_protocol_DONOTUSE ||
       protocol == mc_caret_protocol);
 
   static thread_local WriteBuffer::Queue freeQ[mc_nprotocols];

@@ -59,7 +59,7 @@ template <class Request>
 void McServerSession::umbrellaRequestReady(Request&& req, uint64_t reqid) {
   DestructorGuard dg(this);
 
-  assert(parser_.protocol() == mc_umbrella_protocol);
+  assert(parser_.protocol() == mc_umbrella_protocol_DONOTUSE);
   assert(parser_.outOfOrder());
 
   if (state_ != STREAMING) {

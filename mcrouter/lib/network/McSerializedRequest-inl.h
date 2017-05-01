@@ -83,7 +83,7 @@ McSerializedRequest::McSerializedRequest(
         result_ = Result::ERROR;
       }
       break;
-    case mc_umbrella_protocol:
+    case mc_umbrella_protocol_DONOTUSE:
       new (&umbrellaMessage_) UmbrellaSerializedMessage;
       if (detail::getKeySize(req) > MC_KEY_MAX_LEN_UMBRELLA) {
         return;

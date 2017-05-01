@@ -116,7 +116,7 @@ bool McParser::readUmbrellaOrCaretData() {
   while (readBuffer_.length() > 0) {
     // Parse header
     UmbrellaParseStatus parseStatus;
-    if (protocol_ == mc_umbrella_protocol) {
+    if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
       parseStatus = umbrellaParseHeader(
           readBuffer_.data(), readBuffer_.length(), umMsgInfo_);
     } else {
@@ -142,7 +142,7 @@ bool McParser::readUmbrellaOrCaretData() {
     // Case 1: Entire message (and possibly part of next) is in the buffer
     if (readBuffer_.length() >= messageSize) {
       if (UNLIKELY(debugFifo_ && debugFifo_->isConnected())) {
-        if (protocol_ == mc_umbrella_protocol) {
+        if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
           const auto mc_op = umbrellaDetermineOperation(
               readBuffer_.data(), umMsgInfo_.headerSize);
           umMsgInfo_.typeId = mcOpToRequestTypeId(mc_op);
@@ -158,7 +158,7 @@ bool McParser::readUmbrellaOrCaretData() {
       }
 
       bool cbStatus;
-      if (protocol_ == mc_umbrella_protocol) {
+      if (protocol_ == mc_umbrella_protocol_DONOTUSE) {
         cbStatus = callback_.umMessageReady(umMsgInfo_, readBuffer_);
       } else {
         cbStatus = callback_.caretMessageReady(umMsgInfo_, readBuffer_);
@@ -223,7 +223,8 @@ bool McParser::readDataAvailable(size_t len) {
       outOfOrder_ = false;
     } else {
       assert(
-          protocol_ == mc_umbrella_protocol || protocol_ == mc_caret_protocol);
+          protocol_ == mc_umbrella_protocol_DONOTUSE ||
+          protocol_ == mc_caret_protocol);
       outOfOrder_ = true;
     }
   }
