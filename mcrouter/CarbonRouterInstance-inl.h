@@ -364,6 +364,7 @@ void CarbonRouterInstance<RouterInfo>::subscribeToConfigUpdate() {
       }
     }
     if (success) {
+      configuredFromDisk_ = false;
       onReconfigureSuccess_.notify();
     } else {
       LOG(ERROR) << "Error while reconfiguring mcrouter after config change";
