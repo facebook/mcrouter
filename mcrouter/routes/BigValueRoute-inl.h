@@ -118,7 +118,8 @@ ReplyT<Request> BigValueRoute::route(
     return ch_->route(req);
   }
 
-  auto reqsInfoPair = chunkUpdateRequests(req);
+  auto reqsInfoPair =
+      chunkUpdateRequests(req.key().fullKey(), req.value(), req.exptime());
   std::vector<std::function<McSetReply()>> fs;
   fs.reserve(reqsInfoPair.first.size());
 
@@ -151,30 +152,6 @@ ReplyT<Request> BigValueRoute::route(
 }
 
 template <class FromRequest>
-std::pair<std::vector<McSetRequest>, BigValueRoute::ChunksInfo>
-BigValueRoute::chunkUpdateRequests(const FromRequest& req) const {
-  int numChunks =
-      (req.value().computeChainDataLength() + options_.threshold - 1) /
-      options_.threshold;
-  ChunksInfo info(numChunks);
-
-  std::vector<McSetRequest> bigSetReqs;
-  bigSetReqs.reserve(numChunks);
-
-  auto baseKey = req.key().fullKey();
-  folly::IOBuf chunkValue;
-  folly::io::Cursor cursor(&req.value());
-  for (int i = 0; i < numChunks; ++i) {
-    cursor.cloneAtMost(chunkValue, options_.threshold);
-    bigSetReqs.emplace_back(createChunkKey(baseKey, i, info.randSuffix()));
-    bigSetReqs.back().value() = std::move(chunkValue);
-    bigSetReqs.back().exptime() = req.exptime();
-  }
-
-  return std::make_pair(std::move(bigSetReqs), info);
-}
-
-template <class FromRequest>
 std::vector<McGetRequest> BigValueRoute::chunkGetRequests(
     const FromRequest& req,
     const ChunksInfo& info) const {
@@ -184,7 +161,7 @@ std::vector<McGetRequest> BigValueRoute::chunkGetRequests(
   auto baseKey = req.key().fullKey();
   for (uint32_t i = 0; i < info.numChunks(); i++) {
     // override key with chunk keys
-    bigGetReqs.emplace_back(createChunkKey(baseKey, i, info.randSuffix()));
+    bigGetReqs.emplace_back(createChunkKey(baseKey, i, info.suffix()));
   }
 
   return bigGetReqs;

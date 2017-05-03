@@ -3,6 +3,8 @@ SUBDIRS = . config cycles fbi network test
 noinst_LIBRARIES = libmcrouter.a
 
 libmcrouter_a_SOURCES = \
+  AuxiliaryCPUThreadPool.h \
+  AuxiliaryCPUThreadPool.cpp \
   CacheClientStats.h \
   Ch3HashFunc.h \
   Compression.cpp \

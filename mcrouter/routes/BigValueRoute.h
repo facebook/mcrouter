@@ -94,17 +94,17 @@ class BigValueRoute {
   class ChunksInfo {
    public:
     explicit ChunksInfo(folly::StringPiece replyValue);
-    explicit ChunksInfo(uint32_t numChunks);
+    explicit ChunksInfo(uint32_t numChunks, uint64_t suffix__);
 
     folly::IOBuf toStringType() const;
     uint32_t numChunks() const;
-    uint32_t randSuffix() const;
+    uint64_t suffix() const;
     bool valid() const;
 
    private:
     const uint32_t infoVersion_;
     uint32_t numChunks_;
-    uint32_t randSuffix_;
+    uint64_t suffix_;
     bool valid_;
   };
 
@@ -117,9 +117,10 @@ class BigValueRoute {
       typename std::iterator_traits<FuncIt>::value_type()>::type>
   collectAllByBatches(FuncIt beginF, FuncIt endF) const;
 
-  template <class FromRequest>
   std::pair<std::vector<McSetRequest>, ChunksInfo> chunkUpdateRequests(
-      const FromRequest& req) const;
+      folly::StringPiece baseKey,
+      const folly::IOBuf& value,
+      int32_t exptime) const;
 
   template <class FromRequest>
   std::vector<McGetRequest> chunkGetRequests(

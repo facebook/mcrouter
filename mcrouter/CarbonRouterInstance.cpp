@@ -12,6 +12,7 @@
 #include <folly/io/async/EventBase.h>
 #include <folly/json.h>
 
+#include "mcrouter/lib/AuxiliaryCPUThreadPool.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook {
@@ -22,6 +23,9 @@ namespace detail {
 
 McrouterManager::McrouterManager() {
   scheduleSingletonCleanup();
+  // Instantiate AuxiliaryCPUThreadPoolSingleton to make sure that it gets
+  // destroyed after McrouterManager is destroyed.
+  AuxiliaryCPUThreadPoolSingleton::try_get();
 }
 
 McrouterManager::~McrouterManager() {
