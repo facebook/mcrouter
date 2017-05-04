@@ -443,6 +443,35 @@ class FromDynamicVisitor {
   template <class T>
   typename std::enable_if<!IsLinearContainer<T>::value, bool>::type
   fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic8(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<IsKVContainer<T>::value, bool>::type
+  fromDynamic8(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    if (!json.isObject()) {
+      onError(name, "Invalid type. Map expected.");
+      return false;
+    }
+
+    typename SerializationTraits<T>::key_type key;
+    typename SerializationTraits<T>::mapped_type val;
+    for (const auto& jsonKey : json.keys()) {
+      if (!fromDynamic(folly::sformat("{}[{}]", name, jsonKey), jsonKey, key)) {
+        continue;
+      }
+      if (!fromDynamic(
+              folly::sformat("{}[{}]", name, jsonKey), json[jsonKey], val)) {
+        continue;
+      }
+      SerializationTraits<T>::emplace(valRef, std::move(key), std::move(val));
+    }
+    return true;
+  }
+
+  template <class T>
+  typename std::enable_if<!IsKVContainer<T>::value, bool>::type
+  fromDynamic8(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     onError(name, "Unsupported type.");
     return false;
   }

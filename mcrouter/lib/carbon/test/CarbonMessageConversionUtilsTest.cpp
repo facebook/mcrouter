@@ -201,18 +201,33 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
         [ 17, 26 ],
         [],
         [ 32 ]
-      ]
+      ],
+
+      "testMap": {
+        10.7: 11.8,
+        30.567: 31.789
+      },
+
+      "testComplexMap": {
+        "v1": [ 10 ],
+        "ve2": [ 20, 30 ],
+        "vec03": [ 50, 70, 90 ]
+      }
     }
   )json";
 
   size_t numErrors = 0;
-  auto onError = [&numErrors](folly::StringPiece, folly::StringPiece) {
+  auto onError = [&numErrors](folly::StringPiece name, folly::StringPiece msg) {
+    std::cerr << "ERROR: " << name << ": " << msg << std::endl;
     numErrors++;
   };
 
+  folly::json::serialization_opts jsonOpts;
+  jsonOpts.allow_non_string_keys = true;
+  folly::dynamic json = folly::parseJson(jsonStr, jsonOpts);
+
   carbon::test::TestRequest r;
-  carbon::convertFromFollyDynamic(
-      folly::parseJson(jsonStr), r, std::move(onError));
+  carbon::convertFromFollyDynamic(json, r, std::move(onError));
 
   EXPECT_EQ(0, numErrors);
 
@@ -267,6 +282,21 @@ TEST(CarbonMessageConversionUtils, fromFollyDynamic_Complex) {
   EXPECT_EQ(17, r.testNestedVec()[0][0]);
   EXPECT_EQ(26, r.testNestedVec()[0][1]);
   EXPECT_EQ(32, r.testNestedVec()[2][0]);
+
+  ASSERT_EQ(2, r.testMap().size());
+  EXPECT_EQ(11.8, r.testMap()[10.7]);
+  EXPECT_EQ(31.789, r.testMap()[30.567]);
+
+  ASSERT_EQ(3, r.testComplexMap().size());
+  ASSERT_EQ(1, r.testComplexMap()["v1"].size());
+  EXPECT_EQ(10, r.testComplexMap()["v1"][0]);
+  ASSERT_EQ(2, r.testComplexMap()["ve2"].size());
+  EXPECT_EQ(20, r.testComplexMap()["ve2"][0]);
+  EXPECT_EQ(30, r.testComplexMap()["ve2"][1]);
+  ASSERT_EQ(3, r.testComplexMap()["vec03"].size());
+  EXPECT_EQ(50, r.testComplexMap()["vec03"][0]);
+  EXPECT_EQ(70, r.testComplexMap()["vec03"][1]);
+  EXPECT_EQ(90, r.testComplexMap()["vec03"][2]);
 }
 
 TEST(CarbonMessageConversionUtils, fromFollyDynamic_Errors) {
