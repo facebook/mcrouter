@@ -400,17 +400,21 @@ void ProxyDestination::initializeAsyncMcClient() {
 
   client_->setStatusCallbacks(
       [this]() mutable { setState(State::kUp); },
-      [this](AsyncMcClient::ConnectionDownReason reason) mutable {
+      [pdstnPtr = selfPtr_](AsyncMcClient::ConnectionDownReason reason) {
+        auto pdstn = pdstnPtr.lock();
+        if (!pdstn) {
+          return;
+        }
         if (reason == AsyncMcClient::ConnectionDownReason::ABORTED) {
-          setState(State::kClosed);
+          pdstn->setState(State::kClosed);
         } else {
           // In case of server going away, we should gracefully close the
           // connection (i.e. allow remaining outstanding requests to drain).
           if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
-            closeGracefully();
+            pdstn->closeGracefully();
           }
-          setState(State::kDown);
-          handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
+          pdstn->setState(State::kDown);
+          pdstn->handle_tko(mc_res_connect_error, /* is_probe_req= */ false);
         }
       });
 
