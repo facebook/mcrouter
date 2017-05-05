@@ -209,7 +209,7 @@ class YetAnotherRequest : public carbon::RequestCommon {
   static constexpr bool hasFlags = false;
   static constexpr bool hasKey = true;
   static constexpr bool hasValue = false;
-  static constexpr size_t typeId = 65;
+  static constexpr size_t typeId = 67;
   static constexpr const char* name = "yet_another";
 
   YetAnotherRequest() = default;
@@ -253,7 +253,7 @@ class YetAnotherReply : public carbon::ReplyCommon {
   static constexpr bool hasFlags = false;
   static constexpr bool hasKey = false;
   static constexpr bool hasValue = false;
-  static constexpr size_t typeId = 66;
+  static constexpr size_t typeId = 68;
 
   YetAnotherReply() = default;
   YetAnotherReply(const YetAnotherReply&) = default;

@@ -205,11 +205,23 @@ void TestReply::visitFields(V&& v) {
   if (!v.visitField(1, "result", result_)) {
     return;
   }
+  if (!v.visitField(2, "valInt32", valInt32_)) {
+    return;
+  }
+  if (!v.visitField(3, "valInt64", valInt64_)) {
+    return;
+  }
 }
 
 template <class V>
 void TestReply::visitFields(V&& v) const {
   if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+  if (!v.visitField(2, "valInt32", valInt32_)) {
+    return;
+  }
+  if (!v.visitField(3, "valInt64", valInt64_)) {
     return;
   }
 }

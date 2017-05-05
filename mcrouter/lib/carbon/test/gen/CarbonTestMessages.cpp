@@ -191,6 +191,8 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 void TestReply::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, result());
+  writer.writeField(2 /* field id */, valInt32());
+  writer.writeField(3 /* field id */, valInt64());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -209,6 +211,14 @@ void TestReply::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readRawInto(result());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(valInt32());
+        break;
+      }
+      case 3: {
+        reader.readRawInto(valInt64());
         break;
       }
       default: {

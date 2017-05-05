@@ -331,6 +331,18 @@ class TestReply : public carbon::ReplyCommon {
   carbon::Result& result() {
     return result_;
   }
+  int32_t valInt32() const {
+    return valInt32_;
+  }
+  int32_t& valInt32() {
+    return valInt32_;
+  }
+  int64_t valInt64() const {
+    return valInt64_;
+  }
+  int64_t& valInt64() {
+    return valInt64_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -349,6 +361,8 @@ class TestReply : public carbon::ReplyCommon {
 
  private:
   carbon::Result result_{mc_res_unknown};
+  int32_t valInt32_{0};
+  int64_t valInt64_{0};
 };
 
 class TestReplyStringKey;
