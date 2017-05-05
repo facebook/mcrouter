@@ -149,6 +149,9 @@ McrouterLogger::~McrouterLogger() {
   stop();
 }
 
+static constexpr folly::StringPiece kStatsLoggerThreadName{
+    "mcrtr-stats-logger"};
+
 bool McrouterLogger::start() {
   if (running_ || router_.opts().stats_logging_interval == 0) {
     return false;
@@ -168,18 +171,16 @@ bool McrouterLogger::start() {
   }
 
   running_ = true;
-  const std::string threadName = "mcrtr-stats-logger";
   try {
     loggerThread_ =
         std::thread(std::bind(&McrouterLogger::loggerThreadRun, this));
-    folly::setThreadName(loggerThread_.native_handle(), threadName);
   } catch (const std::system_error& e) {
     running_ = false;
     MC_LOG_FAILURE(
         router_.opts(),
         memcache::failure::Category::kSystemError,
         "Can not start McrouterLogger thread {}: {}",
-        threadName,
+        kStatsLoggerThreadName,
         e.what());
   }
 
@@ -207,6 +208,7 @@ bool McrouterLogger::running() const {
 }
 
 void McrouterLogger::loggerThreadRun() {
+  folly::setThreadName(kStatsLoggerThreadName);
   logStartupOptions();
 
   while (running_) {
