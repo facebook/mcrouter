@@ -63,9 +63,7 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
   }
 
   try {
-    thread_ = std::thread([this, threadName]() {
-      folly::setThreadName(threadName);
-
+    thread_ = std::thread([this]() {
       // will return after terminateLoopSoon is called
       eventBase_.loopForever();
 
@@ -73,6 +71,7 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
         fiberManager_.loopUntilNoReady();
       }
     });
+    folly::setThreadName(thread_.native_handle(), threadName);
   } catch (const std::system_error& e) {
     LOG_FAILURE(
         "mcrouter",
