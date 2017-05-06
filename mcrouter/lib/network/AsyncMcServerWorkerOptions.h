@@ -102,7 +102,7 @@ struct AsyncMcServerWorkerOptions {
    * signaling them that the server is about to disappear and the client should
    * stop sending requests over this connection after processing this message.
    */
-  std::chrono::milliseconds goAwayTimeout{1000};
+  std::chrono::milliseconds goAwayTimeout{0};
 };
 } // memcache
 } // facebook
