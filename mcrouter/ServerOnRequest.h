@@ -66,7 +66,7 @@ class ServerOnRequest {
       McServerRequestContext&& ctx,
       Request&& req,
       ReplyFunction<Request> replyFn) {
-    auto rctx = folly::make_unique<ServerRequestContext<Request>>(
+    auto rctx = std::make_unique<ServerRequestContext<Request>>(
         std::move(ctx), std::move(req));
     auto& reqRef = rctx->req;
     auto& sessionRef = rctx->ctx.session();

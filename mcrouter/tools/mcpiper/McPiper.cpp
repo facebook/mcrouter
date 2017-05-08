@@ -135,7 +135,7 @@ void McPiper::run(Settings settings, std::ostream& targetOut) {
     std::cerr << "Filename pattern: " << *filenamePattern << std::endl;
   }
 
-  messagePrinter_ = folly::make_unique<MessagePrinter>(
+  messagePrinter_ = std::make_unique<MessagePrinter>(
       getOptions(settings, this),
       getFilter(settings),
       createValueFormatter(),

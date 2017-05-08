@@ -133,11 +133,11 @@ class ClientServerMcParser {
   explicit ClientServerMcParser(Callback& callback)
       : replyCallback_(callback),
         requestCallback_(callback),
-        replyParser_(folly::make_unique<ClientMcParser<ReplyCallback>>(
+        replyParser_(std::make_unique<ClientMcParser<ReplyCallback>>(
             replyCallback_,
             kReadBufferSizeMin,
             kReadBufferSizeMax)),
-        requestParser_(folly::make_unique<ServerMcParser<RequestCallback>>(
+        requestParser_(std::make_unique<ServerMcParser<RequestCallback>>(
             requestCallback_,
             kReadBufferSizeMin,
             kReadBufferSizeMax)),
@@ -150,7 +150,7 @@ class ClientServerMcParser {
   void parse(folly::ByteRange data, uint32_t typeId, bool isFirstPacket);
 
   void reset() {
-    replyParser_ = folly::make_unique<ClientMcParser<ReplyCallback>>(
+    replyParser_ = std::make_unique<ClientMcParser<ReplyCallback>>(
         replyCallback_,
         kReadBufferSizeMin,
         kReadBufferSizeMax,
@@ -158,7 +158,7 @@ class ClientServerMcParser {
         getCompressionCodecMap());
     expectNextDispatcher_.setReplyParser(replyParser_.get());
 
-    requestParser_ = folly::make_unique<ServerMcParser<RequestCallback>>(
+    requestParser_ = std::make_unique<ServerMcParser<RequestCallback>>(
         requestCallback_, kReadBufferSizeMin, kReadBufferSizeMax);
   }
 

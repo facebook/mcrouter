@@ -77,7 +77,7 @@ class OutstandingLimitRoute {
         if (entry_it != senderIdToEntry_.end()) {
           return *entry_it->second;
         }
-        blockedRequests_.push_back(folly::make_unique<QueueEntry>(senderId));
+        blockedRequests_.push_back(std::make_unique<QueueEntry>(senderId));
         if (senderId) {
           senderIdToEntry_[senderId] = blockedRequests_.back().get();
         }

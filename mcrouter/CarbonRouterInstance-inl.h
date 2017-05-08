@@ -252,18 +252,18 @@ bool CarbonRouterInstance<RouterInfo>::spinUp(
     for (size_t i = 0; i < opts_.num_proxies; i++) {
       if (evbs.empty()) {
         try {
-          proxyThreads_.emplace_back(folly::make_unique<ProxyThread>(*this, i));
+          proxyThreads_.emplace_back(std::make_unique<ProxyThread>(*this, i));
         } catch (...) {
           LOG(ERROR) << "Failed to start proxy thread: "
                      << folly::exceptionStr(std::current_exception());
           return false;
         }
-        proxyEvbs_.push_back(folly::make_unique<folly::VirtualEventBase>(
+        proxyEvbs_.push_back(std::make_unique<folly::VirtualEventBase>(
             proxyThreads_.back()->getEventBase()));
       } else {
         CHECK(evbs[i] != nullptr);
         proxyEvbs_.push_back(
-            folly::make_unique<folly::VirtualEventBase>(*evbs[i]));
+            std::make_unique<folly::VirtualEventBase>(*evbs[i]));
       }
 
       try {

@@ -167,7 +167,7 @@ class MessageQueue {
       MessageQueue& queue_;
     };
 
-    queueDrainCallback_ = folly::make_unique<MessageQueueDrainCallback>(
+    queueDrainCallback_ = std::make_unique<MessageQueueDrainCallback>(
         evb.getEventBase(), *this);
 
     evb.runOnDestruction(new folly::EventBase::FunctionLoopCallback(

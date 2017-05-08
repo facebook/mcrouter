@@ -29,7 +29,7 @@
 
 using namespace facebook::memcache;
 
-using folly::make_unique;
+using std::make_unique;
 using std::make_shared;
 using std::string;
 using std::vector;

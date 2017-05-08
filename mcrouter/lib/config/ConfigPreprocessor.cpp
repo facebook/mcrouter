@@ -27,7 +27,7 @@
 
 using folly::dynamic;
 using folly::json::stripComments;
-using folly::make_unique;
+using std::make_unique;
 using folly::StringPiece;
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -1649,7 +1649,7 @@ ConfigPreprocessor::ConfigPreprocessor(
 
 void ConfigPreprocessor::addConst(StringPiece name, folly::dynamic result) {
   auto it = consts_.emplace(name, nullptr).first;
-  it->second = folly::make_unique<Const>(*this, it->first, std::move(result));
+  it->second = std::make_unique<Const>(*this, it->first, std::move(result));
 }
 
 void ConfigPreprocessor::addMacro(
@@ -1658,7 +1658,7 @@ void ConfigPreprocessor::addMacro(
     Macro::Func func,
     bool autoExpand) {
   auto it = macros_.emplace(name, nullptr).first;
-  it->second = folly::make_unique<Macro>(
+  it->second = std::make_unique<Macro>(
       *this, it->first, params, std::move(func), autoExpand);
 }
 

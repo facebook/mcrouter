@@ -28,7 +28,7 @@ McServerRequestContext::McServerRequestContext(
     bool isEndContext)
     : session_(&s), isEndContext_(isEndContext), noReply_(nr), reqid_(r) {
   if (parent) {
-    asciiState_ = folly::make_unique<AsciiState>();
+    asciiState_ = std::make_unique<AsciiState>();
     asciiState_->parent_ = std::move(parent);
     asciiState_->parent_->recordRequest();
   }

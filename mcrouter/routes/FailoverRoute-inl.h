@@ -105,7 +105,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
       failoverTagging = jFailoverTag->getBool();
     }
     if (auto jFailoverLimit = json.get_ptr("failover_limit")) {
-      rateLimiter = folly::make_unique<FailoverRateLimiter>(*jFailoverLimit);
+      rateLimiter = std::make_unique<FailoverRateLimiter>(*jFailoverLimit);
     }
     if (auto jFailoverPolicy = json.get_ptr("failover_policy")) {
       checkLogic(

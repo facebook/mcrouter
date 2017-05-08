@@ -65,7 +65,7 @@ void Client::closeNow() {
 
 ThreadInfo::ThreadInfo()
     : fiberManager_(
-          folly::make_unique<folly::fibers::EventBaseLoopController>()) {
+          std::make_unique<folly::fibers::EventBaseLoopController>()) {
   folly::Baton<> baton;
 
   thread_ = std::thread([this, &baton] {
@@ -147,7 +147,7 @@ class ThreadPool : public std::enable_shared_from_this<ThreadPool> {
 
       // If it's not running yet, then we need to start it.
       if (threads_.size() <= threadId) {
-        threads_.emplace_back(folly::make_unique<detail::ThreadInfo>());
+        threads_.emplace_back(std::make_unique<detail::ThreadInfo>());
       }
       return *threads_[threadId];
     }();
@@ -221,13 +221,13 @@ ExternalCarbonConnectionImpl::ExternalCarbonConnectionImpl(
     Options options)
     : connectionOptions_(std::move(connectionOptions)),
       options_(std::move(options)),
-      impl_(folly::make_unique<Impl>(connectionOptions_, options_)) {}
+      impl_(std::make_unique<Impl>(connectionOptions_, options_)) {}
 
 bool ExternalCarbonConnectionImpl::healthCheck() {
   try {
     return impl_->healthCheck();
   } catch (const CarbonConnectionRecreateException&) {
-    impl_ = folly::make_unique<Impl>(connectionOptions_, options_);
+    impl_ = std::make_unique<Impl>(connectionOptions_, options_);
     return impl_->healthCheck();
   }
 }

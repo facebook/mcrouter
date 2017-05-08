@@ -175,7 +175,7 @@ inline void McAsciiParserBase::trimIOBufToRange(
 template <class Callback>
 McServerAsciiParser::McServerAsciiParser(Callback& callback)
     : callback_(
-          folly::make_unique<detail::CallbackWrapper<Callback, McRequestList>>(
+          std::make_unique<detail::CallbackWrapper<Callback, McRequestList>>(
               callback)) {}
 
 template <class Reply>

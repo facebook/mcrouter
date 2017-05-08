@@ -27,10 +27,10 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
       statsLogWriter_(
-          folly::make_unique<AsyncWriter>(opts_.stats_async_queue_length)),
-      asyncWriter_(folly::make_unique<AsyncWriter>()),
+          std::make_unique<AsyncWriter>(opts_.stats_async_queue_length)),
+      asyncWriter_(std::make_unique<AsyncWriter>()),
       rtVarsData_(std::make_shared<ObservableRuntimeVars>()),
-      leaseTokenMap_(folly::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
+      leaseTokenMap_(std::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
   evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
       [] { folly::setThreadName("CarbonAux"); });
 }
@@ -40,7 +40,7 @@ void CarbonRouterInstanceBase::setUpCompressionDictionaries(
   if (codecConfigs.empty() || compressionCodecManager_ != nullptr) {
     return;
   }
-  compressionCodecManager_ = folly::make_unique<const CompressionCodecManager>(
+  compressionCodecManager_ = std::make_unique<const CompressionCodecManager>(
       std::move(codecConfigs));
 }
 

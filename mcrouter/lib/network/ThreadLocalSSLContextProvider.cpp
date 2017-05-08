@@ -194,7 +194,7 @@ std::shared_ptr<SSLContext> getSSLContext(
 
 #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
       if (ticketKeySeeds.hasValue()) {
-        auto mgr = folly::make_unique<wangle::TLSTicketKeyManager>(
+        auto mgr = std::make_unique<wangle::TLSTicketKeyManager>(
             contextInfo.context.get(), nullptr);
         mgr->setTLSTicketKeySeeds(
             std::move(ticketKeySeeds->oldSeeds),

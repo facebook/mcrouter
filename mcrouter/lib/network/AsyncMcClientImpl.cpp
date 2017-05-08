@@ -96,9 +96,9 @@ AsyncMcClientImpl::AsyncMcClientImpl(
       outOfOrder_(
           connectionOptions_.accessPoint->getProtocol() != mc_ascii_protocol),
       queue_(outOfOrder_),
-      writer_(folly::make_unique<WriterLoop>(*this)),
+      writer_(std::make_unique<WriterLoop>(*this)),
       eventBaseDestructionCallback_(
-          folly::make_unique<OnEventBaseDestructionCallback>(*this)) {
+          std::make_unique<OnEventBaseDestructionCallback>(*this)) {
   eventBase.runOnDestruction(eventBaseDestructionCallback_.get());
   if (connectionOptions_.compressionCodecMap) {
     supportedCompressionCodecs_ =
@@ -557,7 +557,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   assert(queue_.getParserInitializer() == nullptr);
 
   scheduleNextWriterLoop();
-  parser_ = folly::make_unique<ParserT>(
+  parser_ = std::make_unique<ParserT>(
       *this,
       kReadBufferSizeMin,
       kReadBufferSizeMax,

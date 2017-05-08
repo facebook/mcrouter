@@ -30,14 +30,14 @@ ProxyBase::ProxyBase(
       eventBase_(evb),
       fiberManager_(
           typename fiber_local<RouterInfo>::ContextTypeTag(),
-          folly::make_unique<folly::fibers::EventBaseLoopController>(),
+          std::make_unique<folly::fibers::EventBaseLoopController>(),
           getFiberManagerOptions(router_.opts())),
       asyncLog_(router_.opts()),
-      destinationMap_(folly::make_unique<ProxyDestinationMap>(this)) {
+      destinationMap_(std::make_unique<ProxyDestinationMap>(this)) {
   // Setup a full random seed sequence
   folly::Random::seed(randomGenerator_);
 
-  statsContainer_ = folly::make_unique<ProxyStatsContainer>(*this);
+  statsContainer_ = std::make_unique<ProxyStatsContainer>(*this);
 }
 
 } // mcrouter

@@ -45,7 +45,7 @@ bool FailoverErrorsSettings::List::shouldFailover(const mc_res_t result) const {
 }
 
 void FailoverErrorsSettings::List::init(std::vector<std::string> errors) {
-  failover_ = folly::make_unique<std::array<bool, mc_nres>>();
+  failover_ = std::make_unique<std::array<bool, mc_nres>>();
 
   for (const auto& error : errors) {
     int i;

@@ -46,13 +46,13 @@ class TestRunner {
   template <class Request>
   TestRunner& expectNext(Request req, bool noreply = false) {
     callbacks_.emplace_back(
-        folly::make_unique<ExpectedRequestCallback<Request>>(
+        std::make_unique<ExpectedRequestCallback<Request>>(
             std::move(req), noreply));
     return *this;
   }
 
   TestRunner& expectMultiOpEnd() {
-    callbacks_.emplace_back(folly::make_unique<ExpectedMultiOpEndCallback>());
+    callbacks_.emplace_back(std::make_unique<ExpectedMultiOpEndCallback>());
     return *this;
   }
 

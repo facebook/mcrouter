@@ -34,7 +34,7 @@ namespace {
 ExtractorThread extractor;
 
 // Clock
-std::unique_ptr<Clock> clock = folly::make_unique<CyclesClock>();
+std::unique_ptr<Clock> clock = std::make_unique<CyclesClock>();
 
 class IntervalContext {
  public:

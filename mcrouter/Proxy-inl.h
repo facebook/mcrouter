@@ -178,7 +178,7 @@ void Proxy<RouterInfo>::dispatchRequest(
       return;
     }
     auto& queue = waitingRequests_[static_cast<int>(ctx->priority())];
-    auto w = folly::make_unique<WaitingRequest<Request>>(req, std::move(ctx));
+    auto w = std::make_unique<WaitingRequest<Request>>(req, std::move(ctx));
     // Only enable timeout on waitingRequests_ queue when queue throttling is
     // enabled
     if (getRouterOptions().proxy_max_inflight_requests > 0 &&
@@ -200,7 +200,7 @@ Proxy<RouterInfo>::Proxy(
     size_t id,
     folly::VirtualEventBase& evb)
     : ProxyBase(rtr, id, evb, RouterInfo()) {
-  messageQueue_ = folly::make_unique<MessageQueue<ProxyMessage>>(
+  messageQueue_ = std::make_unique<MessageQueue<ProxyMessage>>(
       router().opts().client_queue_size,
       [this](ProxyMessage&& message) {
         this->messageReady(message.type, message.data);

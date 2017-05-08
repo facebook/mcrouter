@@ -80,7 +80,7 @@ class PooledCarbonConnectionImpl {
     for (size_t i = 0; i < connections_.size(); ++i) {
       newConnections.push_back(connections_[i]->recreate());
     }
-    return folly::make_unique<Impl>(
+    return std::make_unique<Impl>(
         std::move(newConnections), splitBatchedRequests_);
   }
 

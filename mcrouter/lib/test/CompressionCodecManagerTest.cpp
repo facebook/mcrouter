@@ -54,7 +54,7 @@ TEST(CompressionCodecManager, basic) {
   for (uint32_t i = 1; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024)));
   }
 
@@ -78,7 +78,7 @@ TEST(CompressionCodecManager, basicNotEnabledWithFilters) {
   for (uint32_t i = 1; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024), filters));
   }
 
@@ -109,7 +109,7 @@ TEST(CompressionCodecManager, basicEnabled) {
   for (uint32_t i = 1; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i,
             CompressionCodecType::LZ4,
             createBinaryData(i * 1024),
@@ -139,7 +139,7 @@ TEST(CompressionCodecManager, missingStart) {
   for (uint32_t i = 10; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024)));
   }
 
@@ -163,13 +163,13 @@ TEST(CompressionCodecManager, missingMiddle) {
   for (uint32_t i = 1; i <= 20; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024)));
   }
   for (uint32_t i = 50; i <= 64; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024)));
   }
 
@@ -193,7 +193,7 @@ TEST(CompressionCodecManager, missingEnd) {
   for (uint32_t i = 1; i <= 50; ++i) {
     codecConfigs.emplace(
         i,
-        folly::make_unique<CodecConfig>(
+        std::make_unique<CodecConfig>(
             i, CompressionCodecType::LZ4, createBinaryData(i * 1024)));
   }
 
@@ -216,15 +216,15 @@ TEST(CompressionCodecManager, invalidDictionary) {
   std::unordered_map<uint32_t, CodecConfigPtr> codecConfigs;
   codecConfigs.emplace(
       1,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           1, CompressionCodecType::LZ4, createBinaryData(10 * 1024)));
   codecConfigs.emplace(
       2,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           2, CompressionCodecType::LZ4, createBinaryData(65 * 1024)));
   codecConfigs.emplace(
       3,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           3, CompressionCodecType::LZ4, createBinaryData(64 * 1024)));
 
   CompressionCodecManager codecManager(std::move(codecConfigs));
@@ -243,7 +243,7 @@ void buildCodecConfigs(
     std::unordered_map<uint32_t, CodecConfigPtr>& codecConfigs) {
   codecConfigs.emplace(
       1,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           1, /* id */
           CompressionCodecType::LZ4,
           createBinaryData(1024),
@@ -254,7 +254,7 @@ void buildCodecConfigs(
               true /* isEnabled */)));
   codecConfigs.emplace(
       2,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           2, /* id */
           CompressionCodecType::ZSTD,
           createBinaryData(1024),
@@ -267,7 +267,7 @@ void buildCodecConfigs(
           5 /* compressionLevel*/));
   codecConfigs.emplace(
       3,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           3, /* id */
           CompressionCodecType::ZSTD,
           createBinaryData(1024),
@@ -278,7 +278,7 @@ void buildCodecConfigs(
               false /* isEnabled */)));
   codecConfigs.emplace(
       4,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           4, /* id */
           CompressionCodecType::LZ4,
           createBinaryData(1024),
@@ -289,7 +289,7 @@ void buildCodecConfigs(
               true /* isEnabled */)));
   codecConfigs.emplace(
       5,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           5, /* id */
           CompressionCodecType::LZ4Immutable,
           createBinaryData(1024),
@@ -300,7 +300,7 @@ void buildCodecConfigs(
               false /* isEnabled */)));
   codecConfigs.emplace(
       6,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           6, /* id */
           CompressionCodecType::LZ4Immutable,
           createBinaryData(1024),
@@ -311,7 +311,7 @@ void buildCodecConfigs(
               true /* isEnabled */)));
   codecConfigs.emplace(
       7,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           7, /* id */
           CompressionCodecType::LZ4Immutable,
           createBinaryData(1024),
@@ -322,7 +322,7 @@ void buildCodecConfigs(
               false /* isEnabled */)));
   codecConfigs.emplace(
       8,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           8, /* id */
           CompressionCodecType::LZ4,
           createBinaryData(1024),
@@ -333,7 +333,7 @@ void buildCodecConfigs(
               true /* isEnabled */)));
   codecConfigs.emplace(
       9,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           9, /* id */
           CompressionCodecType::ZSTD,
           createBinaryData(1024),
@@ -344,7 +344,7 @@ void buildCodecConfigs(
               true /* isEnabled */)));
   codecConfigs.emplace(
       10,
-      folly::make_unique<CodecConfig>(
+      std::make_unique<CodecConfig>(
           10, /* id */
           CompressionCodecType::ZSTD,
           createBinaryData(1024),

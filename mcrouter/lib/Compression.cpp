@@ -120,14 +120,14 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
     uint32_t codecCompressionLevel) {
   switch (type) {
     case CompressionCodecType::NO_COMPRESSION:
-      return folly::make_unique<NoCompressionCodec>(
+      return std::make_unique<NoCompressionCodec>(
           std::move(dictionary),
           id,
           codecFilteringOptions,
           codecCompressionLevel);
     case CompressionCodecType::LZ4:
 #if FOLLY_HAVE_LIBLZ4
-      return folly::make_unique<Lz4CompressionCodec>(
+      return std::make_unique<Lz4CompressionCodec>(
           std::move(dictionary),
           id,
           codecFilteringOptions,
@@ -137,14 +137,14 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
       return nullptr;
 #endif // FOLLY_HAVE_LIBLZ4
     case CompressionCodecType::LZ4Immutable:
-      return folly::make_unique<Lz4ImmutableCompressionCodec>(
+      return std::make_unique<Lz4ImmutableCompressionCodec>(
           std::move(dictionary),
           id,
           codecFilteringOptions,
           codecCompressionLevel);
     case CompressionCodecType::ZSTD:
 #if FOLLY_HAVE_LIBZSTD
-      return folly::make_unique<ZstdCompressionCodec>(
+      return std::make_unique<ZstdCompressionCodec>(
           std::move(dictionary),
           id,
           codecFilteringOptions,

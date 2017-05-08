@@ -441,9 +441,9 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   //  2. Fail the request because of timeout.
   //  3. Delete EventBase, this in turn should case proper cleanup
   //     in AsyncMcClient.
-  auto eventBase = folly::make_unique<folly::EventBase>();
-  auto fiberManager = folly::make_unique<folly::fibers::FiberManager>(
-      folly::make_unique<folly::fibers::EventBaseLoopController>());
+  auto eventBase = std::make_unique<folly::EventBase>();
+  auto fiberManager = std::make_unique<folly::fibers::FiberManager>(
+      std::make_unique<folly::fibers::EventBaseLoopController>());
   dynamic_cast<folly::fibers::EventBaseLoopController&>(
       fiberManager->loopController())
       .attachEventBase(*eventBase);
@@ -453,7 +453,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
 
   ConnectionOptions opts("100::", 11302, mc_ascii_protocol);
   opts.writeTimeout = std::chrono::milliseconds(1000);
-  auto client = folly::make_unique<AsyncMcClient>(*eventBase, opts);
+  auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
       [&wasUp] { wasUp = true; },
       [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });

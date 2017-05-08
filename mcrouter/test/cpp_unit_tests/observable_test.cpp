@@ -129,10 +129,10 @@ TEST(Observable, rand) {
   std::unique_ptr<std::thread> producer;
 
   for (auto i = 0; i < 16; ++i) {
-    consumer[i] = folly::make_unique<std::thread>(consumerFunc);
+    consumer[i] = std::make_unique<std::thread>(consumerFunc);
   }
 
-  producer = folly::make_unique<std::thread>(producerFunc);
+  producer = std::make_unique<std::thread>(producerFunc);
 
   producer->join();
   for (auto i = 0; i < 16; ++i) {

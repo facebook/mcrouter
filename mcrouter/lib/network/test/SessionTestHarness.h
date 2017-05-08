@@ -210,7 +210,7 @@ class SessionTestHarness {
       McServerRequestContext::reply(
           std::move(ctx), createReply(DefaultReply, req));
     };
-    return folly::make_unique<Transaction<Request>>(
+    return std::make_unique<Transaction<Request>>(
         std::move(req), std::move(replyFn));
   }
 
@@ -224,7 +224,7 @@ class SessionTestHarness {
       reply.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, value);
       McServerRequestContext::reply(std::move(ctx), std::move(reply));
     };
-    return folly::make_unique<Transaction<McGetRequest>>(
+    return std::make_unique<Transaction<McGetRequest>>(
         std::move(req), std::move(replyFn));
   }
 

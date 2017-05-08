@@ -79,7 +79,7 @@ class McServerThread {
  public:
   explicit McServerThread(AsyncMcServer& server)
       : server_(server),
-        evb_(folly::make_unique<folly::EventBase>(
+        evb_(std::make_unique<folly::EventBase>(
             /* enableTimeMeasurement */ false)),
         worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),
@@ -89,13 +89,13 @@ class McServerThread {
 
   McServerThread(AcceptorT, AsyncMcServer& server)
       : server_(server),
-        evb_(folly::make_unique<folly::EventBase>(
+        evb_(std::make_unique<folly::EventBase>(
             /* enableTimeMeasurement */ false)),
         worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),
         sslAcceptCallback_(this, true),
         accepting_(true),
-        shutdownPipe_(folly::make_unique<ShutdownPipe>(server, *evb_)) {}
+        shutdownPipe_(std::make_unique<ShutdownPipe>(server, *evb_)) {}
 
   folly::EventBase& eventBase() {
     return *evb_;
@@ -360,7 +360,7 @@ void AsyncMcServer::Options::setPerThreadMaxConns(
 AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
   if (opts_.congestionController.cpuControlTarget > 0 ||
       opts_.congestionController.memControlTarget > 0) {
-    auxiliaryEvbThread_ = folly::make_unique<folly::ScopedEventBaseThread>();
+    auxiliaryEvbThread_ = std::make_unique<folly::ScopedEventBaseThread>();
 
     if (opts_.congestionController.cpuControlTarget > 0) {
       opts_.worker.cpuController = std::make_shared<CpuController>(
@@ -392,9 +392,9 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
         "Unexpected option: opts_.numThreads={}", opts_.numThreads));
   }
   threads_.emplace_back(
-      folly::make_unique<McServerThread>(McServerThread::Acceptor, *this));
+      std::make_unique<McServerThread>(McServerThread::Acceptor, *this));
   for (size_t i = 1; i < opts_.numThreads; ++i) {
-    threads_.emplace_back(folly::make_unique<McServerThread>(*this));
+    threads_.emplace_back(std::make_unique<McServerThread>(*this));
   }
 }
 
@@ -520,7 +520,7 @@ wangle::TLSTicketKeySeeds AsyncMcServer::getTicketKeySeeds() const {
 
 void AsyncMcServer::startPollingTicketKeySeeds() {
   // Caller assumed to have checked opts_.tlsTicketKeySeedPath is non-empty
-  ticketKeySeedPoller_ = folly::make_unique<wangle::TLSCredProcessor>(
+  ticketKeySeedPoller_ = std::make_unique<wangle::TLSCredProcessor>(
       opts_.tlsTicketKeySeedPath, opts_.pemCertPath);
   ticketKeySeedPoller_->addTicketCallback(
       [this](wangle::TLSTicketKeySeeds updatedSeeds) {

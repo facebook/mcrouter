@@ -99,7 +99,7 @@ class McServerRequestContext {
 
   folly::Optional<folly::IOBuf>& asciiKey() {
     if (!asciiState_) {
-      asciiState_ = folly::make_unique<AsciiState>();
+      asciiState_ = std::make_unique<AsciiState>();
     }
     return asciiState_->key_;
   }

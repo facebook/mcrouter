@@ -37,7 +37,7 @@ bool read_standalone_flavor(
 }
 
 std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts) {
-  return folly::make_unique<ConfigApi>(opts);
+  return std::make_unique<ConfigApi>(opts);
 }
 
 std::string performOptionSubstitution(std::string str) {
@@ -46,12 +46,12 @@ std::string performOptionSubstitution(std::string str) {
 
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 createExtraRouteHandleProvider() {
-  return folly::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
+  return std::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
 }
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(
     CarbonRouterInstanceBase& router) {
-  return folly::make_unique<McrouterLogger>(router);
+  return std::make_unique<McrouterLogger>(router);
 }
 
 void extraValidateOptions(const McrouterOptions& opts) {

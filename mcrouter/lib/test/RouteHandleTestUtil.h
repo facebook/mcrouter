@@ -247,11 +247,11 @@ inline std::vector<std::shared_ptr<RouteHandleIf>> get_route_handles(
 class TestFiberManager {
  public:
   TestFiberManager()
-      : fm_(folly::make_unique<folly::fibers::SimpleLoopController>()) {}
+      : fm_(std::make_unique<folly::fibers::SimpleLoopController>()) {}
 
   template <class LocalType>
   explicit TestFiberManager(LocalType t)
-      : fm_(t, folly::make_unique<folly::fibers::SimpleLoopController>()) {}
+      : fm_(t, std::make_unique<folly::fibers::SimpleLoopController>()) {}
 
   void run(std::function<void()>&& fun) {
     runAll({std::move(fun)});

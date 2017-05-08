@@ -260,7 +260,7 @@ TEST(failoverRouteTest, rateLimit) {
   auto rh = makeFailoverRouteInOrder(
       get_route_handles(test_handles),
       FailoverErrorsSettings(),
-      folly::make_unique<FailoverRateLimiter>(0.5, 1),
+      std::make_unique<FailoverRateLimiter>(0.5, 1),
       /* failoverTagging */ false);
 
   // tokens: 1

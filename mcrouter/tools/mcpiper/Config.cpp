@@ -36,7 +36,7 @@ std::string getDefaultFifoRoot() {
 }
 
 std::unique_ptr<ValueFormatter> createValueFormatter() {
-  return folly::make_unique<ValueFormatter>();
+  return std::make_unique<ValueFormatter>();
 }
 
 std::string getVersion() {
@@ -64,7 +64,7 @@ addCarbonSnifferParser(
   return parserMap
       .emplace(
           connectionId,
-          folly::make_unique<SnifferParser<
+          std::make_unique<SnifferParser<
               MessagePrinter,
               memcache::detail::MemcacheRequestList>>(printer))
       .first;

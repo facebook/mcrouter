@@ -193,7 +193,7 @@ createProxyRequestContext(
     ProxyRequestPriority priority) {
   using Type =
       detail::ProxyRequestContextTypedWithCallback<RouterInfo, Request, F>;
-  return folly::make_unique<Type>(pr, req, std::forward<F>(f), priority);
+  return std::make_unique<Type>(pr, req, std::forward<F>(f), priority);
 }
 
 } // mcrouter

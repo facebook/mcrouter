@@ -49,8 +49,8 @@ struct ProxyDestinationMap::StateList {
 
 ProxyDestinationMap::ProxyDestinationMap(ProxyBase* proxy)
     : proxy_(proxy),
-      active_(folly::make_unique<StateList>()),
-      inactive_(folly::make_unique<StateList>()),
+      active_(std::make_unique<StateList>()),
+      inactive_(std::make_unique<StateList>()),
       inactivityTimeout_(0) {}
 
 std::shared_ptr<ProxyDestination> ProxyDestinationMap::emplace(

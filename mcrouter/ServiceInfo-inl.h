@@ -113,7 +113,7 @@ class RouteCommandDispatcher {
       const ProxyRoute<RouterInfo>& proxyRoute) {
     proxy.fiberManager().addTaskFinally(
         [keyStr, &proxy, &proxyRoute]() {
-          auto destinations = folly::make_unique<std::vector<std::string>>();
+          auto destinations = std::make_unique<std::vector<std::string>>();
           folly::fibers::Baton baton;
           auto rctx =
               ProxyRequestContextWithInfo<RouterInfo>::createRecordingNotify(
@@ -203,7 +203,7 @@ template <class RouterInfo>
 ServiceInfo<RouterInfo>::ServiceInfo(
     Proxy<RouterInfo>* proxy,
     const ProxyConfig<RouterInfo>& config)
-    : impl_(folly::make_unique<ServiceInfoImpl>(proxy, config)) {}
+    : impl_(std::make_unique<ServiceInfoImpl>(proxy, config)) {}
 
 template <class RouterInfo>
 ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(

@@ -170,7 +170,7 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
     // its closed in the server
     sock_.releaseSocketFd();
 
-    server_ = folly::make_unique<AsyncMcServer>(opts_);
+    server_ = std::make_unique<AsyncMcServer>(opts_);
     if (useTicketKeySeeds_) {
       wangle::TLSTicketKeySeeds seeds{
           .oldSeeds = {"aaaa"}, .currentSeeds = {"bbbb"}, .newSeeds = {"cccc"},
@@ -214,7 +214,7 @@ TestClient::TestClient(
     SSLContextProvider ssl,
     uint64_t qosClass,
     uint64_t qosPath)
-    : fm_(folly::make_unique<folly::fibers::EventBaseLoopController>()) {
+    : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
   ConnectionOptions opts(host, port, protocol);
@@ -228,7 +228,7 @@ TestClient::TestClient(
     opts.qosClass = qosClass;
     opts.qosPath = qosPath;
   }
-  client_ = folly::make_unique<AsyncMcClient>(eventBase_, opts);
+  client_ = std::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks(
       [] { LOG(INFO) << "Client UP."; },
       [](AsyncMcClient::ConnectionDownReason reason) {

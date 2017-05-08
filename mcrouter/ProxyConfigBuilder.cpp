@@ -49,7 +49,7 @@ ProxyConfigBuilder::ProxyConfigBuilder(
   json_ = ConfigPreprocessor::getConfigWithoutMacros(
       jsonC, importResolver, std::move(globalParams));
 
-  poolFactory_ = folly::make_unique<PoolFactory>(json_, configApi);
+  poolFactory_ = std::make_unique<PoolFactory>(json_, configApi);
 
   configMd5Digest_ = Md5Hash(jsonC);
 }

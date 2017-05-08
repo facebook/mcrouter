@@ -134,7 +134,7 @@ TEST(awriter, create_destroy) {
   size_t i;
 
   for (i = 0; i < num_entries; i++) {
-    w[i] = folly::make_unique<AsyncWriter>(i);
+    w[i] = std::make_unique<AsyncWriter>(i);
   }
 }
 
@@ -149,7 +149,7 @@ TEST(awriter, sanity) {
   struct stat s;
   auto fd = std::make_shared<folly::File>(f.fd());
 
-  auto w = folly::make_unique<AsyncWriter>();
+  auto w = std::make_unique<AsyncWriter>();
   EXPECT_TRUE(w->start("awriter:test"));
 
   for (int i = 0; i < num_entries; i++) {
@@ -179,7 +179,7 @@ TEST(awriter, flush_queue) {
   const int num_entries = 10;
   testing_context_t e[num_entries];
 
-  auto w = folly::make_unique<AsyncWriter>(0);
+  auto w = std::make_unique<AsyncWriter>(0);
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
@@ -204,7 +204,7 @@ TEST(awriter, max_queue_length) {
   testing_context_t e[num_entries];
   auto fd = std::make_shared<folly::File>(f.fd());
 
-  auto w = folly::make_unique<AsyncWriter>(maxlen);
+  auto w = std::make_unique<AsyncWriter>(maxlen);
   EXPECT_TRUE(w != nullptr);
 
   for (int i = 0; i < num_entries; i++) {
@@ -240,7 +240,7 @@ TEST(awriter, invalid_fd) {
   testing_context_t e[num_entries];
   auto fd = std::make_shared<folly::File>(-1);
 
-  auto w = folly::make_unique<AsyncWriter>(0);
+  auto w = std::make_unique<AsyncWriter>(0);
   EXPECT_TRUE(w->start("awriter:test"));
 
   for (int i = 0; i < num_entries; i++) {

@@ -73,7 +73,7 @@ ProxyRequestContext::ProxyRequestContext(
     : proxyBase_(pr),
       recording_(true) {
   new (&recordingState_)
-      std::unique_ptr<RecordingState>(folly::make_unique<RecordingState>());
+      std::unique_ptr<RecordingState>(std::make_unique<RecordingState>());
   recordingState_->clientCallback = std::move(clientCallback);
   recordingState_->shardSplitCallback = std::move(shardSplitCallback);
 }

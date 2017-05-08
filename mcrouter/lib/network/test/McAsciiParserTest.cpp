@@ -124,7 +124,7 @@ class McAsciiParserHarness {
   void runTestImpl() {
     currentId_ = 0;
     errorState_ = false;
-    parser_ = folly::make_unique<ParserT>(*this, 1024, 4096);
+    parser_ = std::make_unique<ParserT>(*this, 1024, 4096);
     for (auto range : data_) {
       while (range.size() > 0 && !errorState_) {
         auto buffer = parser_->getReadBuffer();
@@ -142,7 +142,7 @@ class McAsciiParserHarness {
 template <class Request>
 void McAsciiParserHarness::expectNext(ReplyT<Request> reply, bool failure) {
   replies_.push_back(
-      folly::make_unique<ReplyInfo<Request>>(std::move(reply), failure));
+      std::make_unique<ReplyInfo<Request>>(std::move(reply), failure));
 }
 
 void McAsciiParserHarness::runTest(int maxPieceSize) {

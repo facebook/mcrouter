@@ -25,7 +25,7 @@ namespace mcrouter {
 AsyncWriter::AsyncWriter(size_t maxQueueSize)
     : maxQueueSize_(maxQueueSize),
       fiberManager_(
-          folly::make_unique<folly::fibers::EventBaseLoopController>()),
+          std::make_unique<folly::fibers::EventBaseLoopController>()),
       eventBase_(/* enableTimeMeasurement */ false) {
   auto& c = fiberManager_.loopController();
   dynamic_cast<folly::fibers::EventBaseLoopController&>(c).attachEventBase(

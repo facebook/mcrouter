@@ -147,7 +147,7 @@ class WriteBufferQueue {
 
   std::unique_ptr<WriteBuffer> get() {
     if (tlFreeQueue_.empty()) {
-      return folly::make_unique<WriteBuffer>(protocol_);
+      return std::make_unique<WriteBuffer>(protocol_);
     } else {
       return tlFreeQueue_.popFront();
     }

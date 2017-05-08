@@ -219,7 +219,7 @@ void ProxyDestination::onReply(
   handle_tko(result, false);
 
   if (!stats_.results) {
-    stats_.results = folly::make_unique<std::array<uint64_t, mc_nres>>();
+    stats_.results = std::make_unique<std::array<uint64_t, mc_nres>>();
   }
   ++(*stats_.results)[result];
   destreqCtx.endTime = nowUs();
@@ -368,7 +368,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   }
 
   auto client =
-      folly::make_unique<AsyncMcClient>(proxy->eventBase(), std::move(options));
+      std::make_unique<AsyncMcClient>(proxy->eventBase(), std::move(options));
   {
     folly::SpinLockGuard g(clientLock_);
     client_ = std::move(client);

@@ -85,7 +85,7 @@ McServerSession::McServerSession(
           options_.debugFifoPath,
           transport_.get(),
           onRequest_->name())),
-      pendingWrites_(folly::make_unique<WriteBufferIntrusiveList>()),
+      pendingWrites_(std::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
       parser_(
@@ -388,7 +388,7 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
 
 void McServerSession::ensureWriteBufs() {
   if (writeBufs_ == nullptr) {
-    writeBufs_ = folly::make_unique<WriteBufferQueue>(parser_.protocol());
+    writeBufs_ = std::make_unique<WriteBufferQueue>(parser_.protocol());
   }
 }
 

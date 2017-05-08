@@ -59,7 +59,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
   std::vector<folly::EventBase*> evbs;
   std::vector<std::thread> threads;
   for (size_t i = 0; i < opts.num_proxies; ++i) {
-    auto evb = folly::make_unique<folly::EventBase>();
+    auto evb = std::make_unique<folly::EventBase>();
     evbs.push_back(evb.get());
     threads.emplace_back([evb = std::move(evb)]() { evb->loopForever(); });
   }
@@ -92,7 +92,7 @@ TEST(CarbonRouterClient, basicUsageSameThreadClient) {
     // We must ensure that req will remain alive all the way through the reply
     // callback given to client->send(). This demonstrates one way of ensuring
     // this.
-    auto req = folly::make_unique<McGetRequest>("key");
+    auto req = std::make_unique<McGetRequest>("key");
     auto reqRawPtr = req.get();
     client->send(
         *reqRawPtr,

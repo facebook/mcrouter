@@ -251,7 +251,7 @@ void FifoReaderManager::runScanDirectory() {
     if (fd >= 0) {
       auto pipeReader = folly::AsyncPipeReader::UniquePtr(
           new folly::AsyncPipeReader(&evb_, fd));
-      auto callback = folly::make_unique<FifoReadCallback>(fifo, messageReady_);
+      auto callback = std::make_unique<FifoReadCallback>(fifo, messageReady_);
       pipeReader->setReadCB(callback.get());
       fifoReaders_.emplace(
           fifo, FifoReader(std::move(pipeReader), std::move(callback)));

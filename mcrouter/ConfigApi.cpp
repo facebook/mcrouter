@@ -348,7 +348,7 @@ void ConfigApi::subscribeToTrackedSources() {
           }
         }
         if (!file.provider) {
-          file.provider = folly::make_unique<FileDataProvider>(file.path);
+          file.provider = std::make_unique<FileDataProvider>(file.path);
         }
       } catch (const std::exception& e) {
         // it's not that bad, we will check for change in hash

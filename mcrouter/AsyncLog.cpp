@@ -47,7 +47,7 @@ std::unique_ptr<folly::File> createFile(int fd) {
   if (fd < 0) {
     return nullptr;
   }
-  return folly::make_unique<folly::File>(fd, true);
+  return std::make_unique<folly::File>(fd, true);
 }
 
 void closeFd(int fd) {
