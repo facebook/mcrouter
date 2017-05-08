@@ -9,6 +9,7 @@
  */
 #include <folly/Memory.h>
 
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
 
@@ -26,7 +27,12 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
   assert(folly::fibers::onFiber());
 
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
-    return ReplyT<Request>(mc_res_local_error);
+    return createReply<Request>(
+        ErrorReply,
+        folly::sformat(
+            "Max pending requests ({}) reached for destination \"{}\".",
+            maxPending_,
+            connectionOptions_.accessPoint->toHostPortString()));
   }
 
   // We need to send fbtrace before serializing, or otherwise we are going to

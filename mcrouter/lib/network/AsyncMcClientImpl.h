@@ -188,7 +188,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
-  void processShutdown();
+  void processShutdown(folly::StringPiece errorMessage);
 
   // AsyncTransportWrapper::ReadCallback overrides
   void getReadBuffer(void** bufReturn, size_t* lenReturn) override final;

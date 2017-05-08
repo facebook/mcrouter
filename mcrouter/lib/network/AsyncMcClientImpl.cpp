@@ -185,10 +185,10 @@ void AsyncMcClientImpl::sendCommon(McClientRequestContextBase& req) {
       }
       return;
     case McSerializedRequest::Result::BAD_KEY:
-      req.replyError(mc_res_bad_key);
+      req.replyError(mc_res_bad_key, "The key provided is invalid");
       return;
     case McSerializedRequest::Result::ERROR:
-      req.replyError(mc_res_local_error);
+      req.replyError(mc_res_local_error, "Error when serializing the request.");
       return;
   }
 }
@@ -578,13 +578,14 @@ void AsyncMcClientImpl::connectErr(
     removeSslSession(*connectionOptions_.accessPoint);
   }
 
+  std::string errorMessage;
   if (ex.getType() == folly::AsyncSocketException::SSL_ERROR) {
-    LOG_FAILURE(
-        "AsyncMcClient",
-        failure::Category::kBadEnvironment,
+    errorMessage = folly::sformat(
         "SSLError: {}. Connect to {} failed.",
         ex.what(),
         connectionOptions_.accessPoint->toHostPortString());
+    LOG_FAILURE(
+        "AsyncMcClient", failure::Category::kBadEnvironment, errorMessage);
   }
 
   mc_res_t error = mc_res_connect_error;
@@ -592,13 +593,15 @@ void AsyncMcClientImpl::connectErr(
   if (ex.getType() == folly::AsyncSocketException::TIMED_OUT) {
     error = mc_res_connect_timeout;
     reason = ConnectionDownReason::CONNECT_TIMEOUT;
+    errorMessage = "Timed out when trying to connect to server";
   } else if (isAborting_) {
     error = mc_res_aborted;
     reason = ConnectionDownReason::ABORTED;
+    errorMessage = "Connection aborted";
   }
 
   assert(getInflightRequestCount() == 0);
-  queue_.failAllPending(error);
+  queue_.failAllPending(error, errorMessage);
   connectionState_ = ConnectionState::DOWN;
   // We don't need it anymore, so let it perform complete cleanup.
   socket_.reset();
@@ -608,7 +611,7 @@ void AsyncMcClientImpl::connectErr(
   }
 }
 
-void AsyncMcClientImpl::processShutdown() {
+void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
   DestructorGuard dg(this);
   switch (connectionState_) {
     case ConnectionState::UP: // on error, UP always transitions to ERROR state
@@ -626,11 +629,12 @@ void AsyncMcClientImpl::processShutdown() {
     /* fallthrough */
 
     case ConnectionState::ERROR:
-      queue_.failAllSent(isAborting_ ? mc_res_aborted : mc_res_remote_error);
+      queue_.failAllSent(
+          isAborting_ ? mc_res_aborted : mc_res_remote_error, errorMessage);
       if (queue_.getInflightRequestCount() == 0) {
         // No need to send any of remaining requests if we're aborting.
         if (isAborting_) {
-          queue_.failAllPending(mc_res_aborted);
+          queue_.failAllPending(mc_res_aborted, errorMessage);
         }
 
         // This is a last processShutdown() for this error and it is safe
@@ -674,16 +678,18 @@ void AsyncMcClientImpl::readDataAvailable(size_t len) noexcept {
 
 void AsyncMcClientImpl::readEOF() noexcept {
   assert(connectionState_ == ConnectionState::UP);
-  processShutdown();
+  processShutdown("Connection closed by the server.");
 }
 
 void AsyncMcClientImpl::readErr(
     const folly::AsyncSocketException& ex) noexcept {
   assert(connectionState_ == ConnectionState::UP);
-  VLOG(1) << "Failed to read from socket with remote endpoint \""
-          << connectionOptions_.accessPoint->toString()
-          << "\". Exception: " << ex.what();
-  processShutdown();
+  std::string errorMessage = folly::sformat(
+      "Failed to read from socket with remote endpoint \"{}\". Exception: {}",
+      connectionOptions_.accessPoint->toString(),
+      ex.what());
+  VLOG(1) << errorMessage;
+  processShutdown(errorMessage);
 }
 
 void AsyncMcClientImpl::writeSuccess() noexcept {
@@ -697,7 +703,7 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
   // It is possible that we're already processing error, but still have a
   // successfull write.
   if (connectionState_ == ConnectionState::ERROR) {
-    processShutdown();
+    processShutdown("Connection was in ERROR state.");
   }
 }
 
@@ -708,14 +714,18 @@ void AsyncMcClientImpl::writeErr(
       connectionState_ == ConnectionState::UP ||
       connectionState_ == ConnectionState::ERROR);
 
-  VLOG(1) << "Failed to write into socket with remote endpoint \""
-          << connectionOptions_.accessPoint->toString() << "\", wrote "
-          << bytesWritten << " bytes. Exception: " << ex.what();
+  std::string errorMessage = folly::sformat(
+      "Failed to write into socket with remote endpoint \"{}\", "
+      "wrote {} bytes. Exception: {}",
+      connectionOptions_.accessPoint->toString(),
+      bytesWritten,
+      ex.what());
+  VLOG(1) << errorMessage;
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
   queue_.markNextAsSent();
-  processShutdown();
+  processShutdown(errorMessage);
 }
 
 folly::StringPiece AsyncMcClientImpl::clientStateToStr() const {
@@ -776,7 +786,7 @@ void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {
     return;
   }
   DestructorGuard dg(this);
-  processShutdown();
+  processShutdown(reason);
 }
 
 bool AsyncMcClientImpl::nextReplyAvailable(uint64_t reqId) {

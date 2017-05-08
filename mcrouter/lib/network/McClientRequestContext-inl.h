@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
 
 namespace facebook {
@@ -49,7 +50,8 @@ void McClientRequestContextBase::reply(Reply&& r) {
         replyType_.name(),
         typeid(Reply).name());
 
-    replyErrorImpl(mc_res_local_error);
+    replyErrorImpl(
+        mc_res_local_error, "Attempt to forward a reply of wrong type.");
     return;
   }
 
@@ -80,9 +82,12 @@ McClientRequestContextBase::McClientRequestContextBase(
       onStateChange_(onStateChange) {}
 
 template <class Request>
-void McClientRequestContext<Request>::replyErrorImpl(mc_res_t result) {
+void McClientRequestContext<Request>::replyErrorImpl(
+    mc_res_t result,
+    folly::StringPiece errorMessage) {
   assert(!replyStorage_.hasValue());
-  replyStorage_.emplace(result);
+  replyStorage_.assign(
+      createReply<Request>(ErrorReply, result, errorMessage.str()));
 }
 
 template <class Request>

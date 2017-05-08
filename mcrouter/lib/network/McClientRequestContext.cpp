@@ -14,9 +14,11 @@ namespace memcache {
 
 constexpr size_t kSerializedRequestContextLength = 1024;
 
-void McClientRequestContextBase::replyError(mc_res_t result) {
+void McClientRequestContextBase::replyError(
+    mc_res_t result,
+    folly::StringPiece errorMessage) {
   assert(state() == ReqState::NONE);
-  replyErrorImpl(result);
+  replyErrorImpl(result, errorMessage);
   setState(ReqState::COMPLETE);
   baton_.post();
 }
@@ -102,16 +104,20 @@ size_t McClientRequestContextQueue::getInflightRequestCount() const noexcept {
   return repliedQueue_.size() + writeQueue_.size() + pendingReplyQueue_.size();
 }
 
-void McClientRequestContextQueue::failAllSent(mc_res_t error) {
+void McClientRequestContextQueue::failAllSent(
+    mc_res_t error,
+    folly::StringPiece errorMessage) {
   clearStoredInitializers();
-  failQueue(pendingReplyQueue_, error);
+  failQueue(pendingReplyQueue_, error, errorMessage);
 }
 
-void McClientRequestContextQueue::failAllPending(mc_res_t error) {
+void McClientRequestContextQueue::failAllPending(
+    mc_res_t error,
+    folly::StringPiece errorMessage) {
   assert(pendingReplyQueue_.empty());
   assert(writeQueue_.empty());
   assert(repliedQueue_.empty());
-  failQueue(pendingQueue_, error);
+  failQueue(pendingQueue_, error, errorMessage);
 }
 
 void McClientRequestContextQueue::clearStoredInitializers() {
@@ -177,13 +183,14 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
 
 void McClientRequestContextQueue::failQueue(
     McClientRequestContextBase::Queue& queue,
-    mc_res_t error) {
+    mc_res_t error,
+    folly::StringPiece errorMessage) {
   while (!queue.empty()) {
     auto& req = queue.front();
     queue.pop_front();
     removeFromSet(req);
     req.setState(State::NONE);
-    req.replyError(error);
+    req.replyError(error, errorMessage);
   }
 }
 
