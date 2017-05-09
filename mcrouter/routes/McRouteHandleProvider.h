@@ -104,10 +104,15 @@ class McRouteHandleProvider
 
   RouteHandleFactoryMap buildRouteMap();
 
+  // This can be removed when the buildRouteMap specialization for
+  // MemcacheRouterInfo is removed.
+  RouteHandleFactoryMap buildCheckedRouteMap();
+
   std::unique_ptr<ExtraRouteHandleProviderIf<RouterInfo>> buildExtraProvider();
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook
 
 #include "McRouteHandleProvider-inl.h"

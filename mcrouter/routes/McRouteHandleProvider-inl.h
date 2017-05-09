@@ -9,6 +9,7 @@
  */
 #include <memory>
 
+#include <folly/Conv.h>
 #include <folly/Range.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
@@ -59,7 +60,7 @@ McRouteHandleProvider<RouterInfo>::McRouteHandleProvider(
     : proxy_(proxy),
       poolFactory_(poolFactory),
       extraProvider_(buildExtraProvider()),
-      routeMap_(buildRouteMap()) {}
+      routeMap_(buildCheckedRouteMap()) {}
 
 template <class RouterInfo>
 McRouteHandleProvider<RouterInfo>::~McRouteHandleProvider() {
@@ -382,6 +383,32 @@ template <class RouterInfo>
 typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMap
 McRouteHandleProvider<RouterInfo>::buildRouteMap() {
   return RouterInfo::buildRouteMap();
+}
+
+template <class RouterInfo>
+typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMap
+McRouteHandleProvider<RouterInfo>::buildCheckedRouteMap() {
+  typename McRouteHandleProvider<RouterInfo>::RouteHandleFactoryMap
+      checkedRouteMap;
+
+  // Wrap all factory functions with a nullptr check. Note that there are still
+  // other code paths that could lead to a nullptr being returned from a
+  // route handle factory function, e.g., in makeShadow() and makeFailover()
+  // extra provider functions. So those code paths must be checked by other
+  // means.
+  for (auto it : buildRouteMap()) {
+    checkedRouteMap.emplace(it.first, [
+      factoryFunc = std::move(it.second),
+      rhName = it.first
+    ](RouteHandleFactory<RouteHandleIf> & factory, const folly::dynamic& json) {
+      auto rh = factoryFunc(factory, json);
+      checkLogic(
+          rh != nullptr, folly::sformat("make{} returned nullptr", rhName));
+      return rh;
+    });
+  }
+
+  return checkedRouteMap;
 }
 
 // TODO(@aap): Remove this override as soon as all route handles are migrated
