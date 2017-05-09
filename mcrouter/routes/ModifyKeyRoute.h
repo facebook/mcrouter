@@ -98,8 +98,9 @@ class ModifyKeyRoute {
   const bool modifyInplace_;
   const folly::Optional<std::string> keyReplace_;
 
+  template <class StringLike>
   folly::Optional<std::string> getModifiedKey(
-      const carbon::Keys<folly::IOBuf>& reqKey) const {
+      const carbon::Keys<StringLike>& reqKey) const {
     folly::StringPiece rp = routingPrefix_.hasValue() ? routingPrefix_.value()
                                                       : reqKey.routingPrefix();
 
