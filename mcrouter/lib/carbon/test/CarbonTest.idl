@@ -35,6 +35,8 @@ request TestRequest with 1: SimpleStruct as Base {
   25: std::unordered_map<string, string> testUMap;
   26: std::map<double, double> testMap;
   27: std::map<string, std::vector<uint16_t>> testComplexMap;
+  28: std::unordered_set<string> testUSet;
+  29: std::set<uint64_t> testSet;
 };
 
 reply TestReply {

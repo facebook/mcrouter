@@ -263,6 +263,18 @@ class TestRequest : public carbon::RequestCommon {
   std::map<std::string, std::vector<uint16_t>>& testComplexMap() {
     return testComplexMap_;
   }
+  const std::unordered_set<std::string>& testUSet() const {
+    return testUSet_;
+  }
+  std::unordered_set<std::string>& testUSet() {
+    return testUSet_;
+  }
+  const std::set<uint64_t>& testSet() const {
+    return testSet_;
+  }
+  std::set<uint64_t>& testSet() {
+    return testSet_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -308,6 +320,8 @@ class TestRequest : public carbon::RequestCommon {
   std::unordered_map<std::string, std::string> testUMap_;
   std::map<double, double> testMap_;
   std::map<std::string, std::vector<uint16_t>> testComplexMap_;
+  std::unordered_set<std::string> testUSet_;
+  std::set<uint64_t> testSet_;
 };
 
 class TestReply : public carbon::ReplyCommon {

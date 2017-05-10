@@ -10,9 +10,10 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <type_traits>
 #include <unordered_map>
-#include <vector>
+#include <unordered_set>
 
 #include <folly/Optional.h>
 #include <folly/Traits.h>
@@ -76,8 +77,9 @@ struct SerializationTraits<std::vector<T>> {
     return vec.size();
   }
 
-  static void emplace(std::vector<T>& vec, T&& t) {
+  static bool emplace(std::vector<T>& vec, T&& t) {
     vec.emplace_back(std::move(t));
+    return true;
   }
 
   static void clear(std::vector<T>& vec) {
@@ -94,6 +96,45 @@ struct SerializationTraits<std::vector<T>> {
 
   static auto end(const std::vector<T>& vec) -> decltype(vec.end()) {
     return vec.end();
+  }
+};
+
+template <class T>
+struct SerializationTraits<
+    T,
+    typename std::enable_if<folly::IsOneOf<
+        T,
+        std::set<typename T::key_type>,
+        std::unordered_set<typename T::key_type>>::value>::type> {
+  static constexpr carbon::FieldType kWireType = carbon::FieldType::Set;
+
+  using inner_type = typename T::key_type;
+
+  static size_t size(const T& set) {
+    return set.size();
+  }
+
+  template <class... Args>
+  static bool emplace(T& set, Args&&... args) {
+    return set.emplace(std::forward<Args>(args)...).second;
+  }
+
+  static void clear(T& set) {
+    set.clear();
+  }
+
+  static void reserve(std::set<inner_type>& /* set */, size_t /* len */) {}
+
+  static void reserve(std::unordered_set<inner_type>& set, size_t len) {
+    set.reserve(len);
+  }
+
+  static auto begin(const T& set) -> decltype(set.begin()) {
+    return set.begin();
+  }
+
+  static auto end(const T& set) -> decltype(set.end()) {
+    return set.end();
   }
 };
 

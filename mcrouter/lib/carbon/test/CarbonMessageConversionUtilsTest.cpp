@@ -57,6 +57,8 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
   r.testMap() = std::map<double, double>({{3.14, 2.7}, {0.577, 0.2}});
   r.testComplexMap() = std::map<std::string, std::vector<uint16_t>>(
       {{"hello", {1, 1, 1}}, {"world", {2, 2, 2}}});
+  r.testUSet() = std::unordered_set<std::string>({"hello", "world"});
+  r.testSet() = std::set<uint64_t>({123, 456});
 
   folly::dynamic expected = folly::dynamic::object(
       "__Base",
@@ -92,9 +94,16 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
       "testMap", folly::dynamic::object("3.14", 2.7)("0.577", 0.2))(
       "testComplexMap",
       folly::dynamic::object("hello", folly::dynamic::array(1, 1, 1))(
-          "world", folly::dynamic::array(2, 2, 2)));
+          "world", folly::dynamic::array(2, 2, 2)))(
+      "testUSet", folly::dynamic::array("hello", "world"))(
+      "testSet", folly::dynamic::array(123, 456));
 
-  EXPECT_EQ(expected, carbon::convertToFollyDynamic(r));
+  auto dynamic = carbon::convertToFollyDynamic(r);
+  auto set = dynamic.at("testUSet");
+  std::sort(set.begin(), set.end());
+  dynamic.at("testUSet") = set;
+
+  EXPECT_EQ(expected, dynamic);
 }
 
 TEST(CarbonMessageConversionUtils, toFollyDynamic_InlineMixins) {

@@ -250,48 +250,27 @@ class CarbonProtocolWriter {
 
   template <class T>
   typename std::enable_if<
-      SerializationTraits<T>::kWireType == FieldType::List,
+      detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value,
       void>::type
-  writeField(const int16_t id, const T& v) {
-    if (SerializationTraits<T>::size(v) == 0) {
+  writeField(const int16_t id, const T& container) {
+    if (SerializationTraits<T>::size(container) == 0) {
       return;
     }
-    writeFieldAlways(id, v);
+    writeFieldAlways(id, container);
   }
 
   template <class T>
   typename std::enable_if<
-      SerializationTraits<T>::kWireType == FieldType::List,
+      detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value,
       void>::type
-  writeFieldAlways(const int16_t id, const T& v) {
+  writeFieldAlways(const int16_t id, const T& container) {
     facebook::memcache::checkRuntime(
-        SerializationTraits<T>::size(v) <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeField() for type too long (len = {})",
-        SerializationTraits<T>::size(v));
+        SerializationTraits<T>::size(container) <=
+            std::numeric_limits<uint32_t>::max(),
+        "Input to writeField() for container too long (len = {})",
+        SerializationTraits<T>::size(container));
     writeFieldHeader(SerializationTraits<T>::kWireType, id);
-    writeRaw(v);
-  }
-
-  template <class T>
-  typename std::
-      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
-      writeField(const int16_t id, const T& m) {
-    if (SerializationTraits<T>::size(m) == 0) {
-      return;
-    }
-    writeFieldAlways(id, m);
-  }
-
-  template <class T>
-  typename std::
-      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
-      writeFieldAlways(const int16_t id, const T& m) {
-    facebook::memcache::checkRuntime(
-        SerializationTraits<T>::size(m) <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeField() for map too long (size = {})",
-        SerializationTraits<T>::size(m));
-    writeFieldHeader(FieldType::Map, id);
-    writeRaw(m);
+    writeRaw(container);
   }
 
   // Serialize user-provided types that have suitable specializations of
@@ -430,32 +409,30 @@ class CarbonProtocolWriter {
   }
 
   template <class T>
-  typename std::enable_if<
-      SerializationTraits<T>::kWireType == FieldType::List,
-      void>::type
-  writeRaw(const T& v) {
+  typename std::enable_if<detail::IsLinearContainer<T>::value, void>::type
+  writeRaw(const T& container) {
     facebook::memcache::checkRuntime(
-        SerializationTraits<T>::size(v) <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeRaw() for type too long (len = {})",
-        SerializationTraits<T>::size(v));
+        SerializationTraits<T>::size(container) <=
+            std::numeric_limits<uint32_t>::max(),
+        "Input to writeRaw() for linear container too long (len = {})",
+        SerializationTraits<T>::size(container));
     writeLinearContainerFieldSizeAndInnerType(
-        static_cast<uint32_t>(SerializationTraits<T>::size(v)),
+        static_cast<uint32_t>(SerializationTraits<T>::size(container)),
         detail::TypeToField<
             typename SerializationTraits<T>::inner_type>::fieldType);
-    for (auto it = SerializationTraits<T>::begin(v);
-         it != SerializationTraits<T>::end(v);
+    for (auto it = SerializationTraits<T>::begin(container);
+         it != SerializationTraits<T>::end(container);
          ++it) {
       writeRaw(*it);
     }
   }
 
   template <class T>
-  typename std::
-      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
-      writeRaw(const T& m) {
+  typename std::enable_if<detail::IsKVContainer<T>::value, void>::type writeRaw(
+      const T& m) {
     facebook::memcache::checkRuntime(
         SerializationTraits<T>::size(m) <= std::numeric_limits<uint32_t>::max(),
-        "Input to writeRaw() for map too long (size = {})",
+        "Input to writeRaw() for key-value container too long (size = {})",
         SerializationTraits<T>::size(m));
 
     writeKVContainerFieldSizeAndInnerTypes(

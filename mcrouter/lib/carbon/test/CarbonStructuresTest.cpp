@@ -154,6 +154,12 @@ TEST(CarbonBasic, defaultConstructed) {
   // Complex map
   EXPECT_TRUE(req.testComplexMap().empty());
 
+  // Unordered set
+  EXPECT_TRUE(req.testUSet().empty());
+
+  // Ordered set
+  EXPECT_TRUE(req.testSet().empty());
+
   // fields generated for every request (will likely be removed in the future)
   EXPECT_EQ(0, req.exptime());
   EXPECT_EQ(0, req.flags());
@@ -288,6 +294,20 @@ TEST(CarbonBasic, setAndGet) {
   complexmap.insert({"key", {1, 2}});
   req.testComplexMap() = complexmap;
   EXPECT_EQ(complexmap, req.testComplexMap());
+
+  // Unordered set
+  std::unordered_set<std::string> stringset;
+  stringset.insert("hello");
+  stringset.insert("world");
+  req.testUSet() = stringset;
+  EXPECT_EQ(stringset, req.testUSet());
+
+  // Ordered set
+  std::set<uint64_t> intset;
+  intset.insert(1);
+  intset.insert(2);
+  req.testSet() = intset;
+  EXPECT_EQ(intset, req.testSet());
 }
 
 TEST(CarbonTest, serializeDeserialize) {
@@ -335,6 +355,9 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testUMap().insert({"hello", "world"});
   outRequest.testMap().insert({1.08, 8.3});
   outRequest.testComplexMap().insert({"key", {1, 2}});
+
+  outRequest.testUSet().insert("hello");
+  outRequest.testSet().insert(123);
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);

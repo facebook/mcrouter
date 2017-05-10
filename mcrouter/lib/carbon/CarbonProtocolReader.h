@@ -15,7 +15,6 @@
 #include <limits>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
@@ -46,11 +45,9 @@ class CarbonProtocolReader {
   }
 
   template <class T>
-  typename std::enable_if<
-      SerializationTraits<T>::kWireType == FieldType::List,
-      void>::type
-  readRawInto(T& v) {
-    SerializationTraits<T>::clear(v);
+  typename std::enable_if<detail::IsLinearContainer<T>::value, void>::type
+  readRawInto(T& c) {
+    SerializationTraits<T>::clear(c);
     const auto pr = readLinearContainerFieldSizeAndInnerType();
     if (pr.first !=
         detail::TypeToField<
@@ -61,17 +58,20 @@ class CarbonProtocolReader {
       return;
     }
     const auto len = pr.second;
-    SerializationTraits<T>::reserve(v, len);
+    SerializationTraits<T>::reserve(c, len);
     for (size_t i = 0; i < len; ++i) {
-      SerializationTraits<T>::emplace(
-          v, readRaw<typename SerializationTraits<T>::inner_type>());
+      auto inserted = SerializationTraits<T>::emplace(
+          c, readRaw<typename SerializationTraits<T>::inner_type>());
+      if (!inserted) {
+        LOG_FIRST_N(ERROR, 100) << "Item not inserted into container, possibly "
+                                << "due to a uniqueness constraint.";
+      }
     }
   }
 
   template <class T>
-  typename std::
-      enable_if<SerializationTraits<T>::kWireType == FieldType::Map, void>::type
-      readRawInto(T& m) {
+  typename std::enable_if<detail::IsKVContainer<T>::value, void>::type
+  readRawInto(T& m) {
     SerializationTraits<T>::clear(m);
     const auto pr = readKVContainerFieldSizeAndInnerTypes();
     bool mismatch = false;
