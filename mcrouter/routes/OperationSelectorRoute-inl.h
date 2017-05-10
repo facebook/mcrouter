@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -43,8 +43,16 @@ typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
     return factory.create(json);
   }
 
+  auto jsonDefaultPolicy = json.get_ptr("default_policy");
+  auto jOpPolicies = json.get_ptr("operation_policies");
+
+  checkLogic(
+      (jsonDefaultPolicy != nullptr || jOpPolicies != nullptr),
+      "OperationSelectorRoute needs either 'default_policy' "
+      "or 'operation_policies'");
+
   typename RouterInfo::RouteHandlePtr defaultPolicy;
-  if (auto jsonDefaultPolicy = json.get_ptr("default_policy")) {
+  if (jsonDefaultPolicy) {
     defaultPolicy = factory.create(*jsonDefaultPolicy);
   }
 
@@ -52,7 +60,7 @@ typename RouterInfo::RouteHandlePtr makeOperationSelectorRoute(
       typename RouterInfo::RoutableRequests,
       typename RouterInfo::RouteHandlePtr>
       operationPolicies;
-  if (auto jOpPolicies = json.get_ptr("operation_policies")) {
+  if (jOpPolicies) {
     checkLogic(
         jOpPolicies->isObject(),
         "OperationSelectorRoute: operation_policies is not an object");
