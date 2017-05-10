@@ -13,9 +13,6 @@
 
 #include <folly/fibers/FiberManager.h>
 
-#include "mcrouter/McrouterFiberContext.h"
-#include "mcrouter/McrouterLogFailure.h"
-
 namespace facebook {
 namespace memcache {
 namespace mcrouter {

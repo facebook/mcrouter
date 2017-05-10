@@ -17,6 +17,8 @@
 
 #include <folly/Optional.h>
 
+#include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -87,6 +89,15 @@ class ShadowRoute {
           normalReply = normal_->route(*adjustedReq);
         }
         auto shadow = iter.first;
+        if (!shadow) {
+          if (auto& reqCtx = fiber_local<RouterInfo>::getSharedCtx()) {
+            MC_LOG_FAILURE(
+                reqCtx->proxy().router().opts(),
+                failure::Category::kInvalidConfig,
+                "ShadowRoute: ShadowData has unexpected nullptr route handle");
+          }
+          continue;
+        }
         dispatchShadowRequest(std::move(shadow), adjustedReq);
       }
     }
@@ -105,6 +116,15 @@ class ShadowRoute {
 
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
+    if (!settings) {
+      if (auto& reqCtx = fiber_local<RouterInfo>::getSharedCtx()) {
+        MC_LOG_FAILURE(
+            reqCtx->proxy().router().opts(),
+            failure::Category::kInvalidConfig,
+            "ShadowRoute: ShadowSettings is nullptr");
+      }
+      return false;
+    }
     // If configured to use an explicit list of keys to be shadowed, check for
     // req.key() in that list. Otherwise, decide to shadow based on keyRange().
     const auto& keysToShadow = settings->keysToShadow();
