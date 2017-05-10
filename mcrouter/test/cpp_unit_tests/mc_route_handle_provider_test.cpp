@@ -31,13 +31,6 @@ namespace {
 
 const char* const kMemcacheConfig = "mcrouter/test/test_ascii.json";
 
-const char* const kAsynclogRoute =
-    R"({
-  "type": "AsynclogRoute",
-  "name": "test",
-  "target": "NullRoute"
- })";
-
 const char* const kConstShard =
     R"({
   "type": "HashRoute",

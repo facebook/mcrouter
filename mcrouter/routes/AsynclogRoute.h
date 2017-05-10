@@ -11,14 +11,11 @@
 
 #include <utility>
 
-#include <folly/dynamic.h>
-
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
-#include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/network/gen/MemcacheMessages.h"
 
 namespace facebook {
@@ -74,33 +71,6 @@ typename RouterInfo::RouteHandlePtr makeAsynclogRoute(
       std::move(rh), std::move(asynclogName));
 }
 
-/**
- * @return target and asynclogName
- *         Caller may call makeAsynclogRoute afterwards.
- */
-template <class RouterInfo>
-std::pair<typename RouterInfo::RouteHandlePtr, std::string> parseAsynclogRoute(
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json) {
-  std::string asynclogName;
-  typename RouterInfo::RouteHandlePtr target;
-  checkLogic(
-      json.isObject() || json.isString(),
-      "AsynclogRoute should be object or string");
-  if (json.isString()) {
-    asynclogName = json.getString();
-    target = factory.create(json);
-  } else { // object
-    auto jname = json.get_ptr("name");
-    checkLogic(
-        jname && jname->isString(), "AsynclogRoute: required string name");
-    auto jtarget = json.get_ptr("target");
-    checkLogic(jtarget, "AsynclogRoute: target not found");
-    asynclogName = jname->getString();
-    target = factory.create(*jtarget);
-  }
-  return {std::move(target), std::move(asynclogName)};
-}
 } // mcrouter
 } // memcache
 } // facebook
