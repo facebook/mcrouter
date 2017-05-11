@@ -22,7 +22,7 @@ request YetAnotherRequest {
   name: "yet_another";
   reply: YetAnotherReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply YetAnotherReply {

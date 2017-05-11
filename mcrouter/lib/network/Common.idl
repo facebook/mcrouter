@@ -6,7 +6,7 @@ request McVersionRequest {
   name: "version";
   reply: McVersionReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McVersionReply {
@@ -21,7 +21,7 @@ request McStatsRequest {
   name: "stats";
   reply: McStatsReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McStatsReply {
@@ -36,7 +36,7 @@ request McShutdownRequest {
   name: "shutdown";
   reply: McShutdownReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McShutdownReply {
@@ -50,7 +50,7 @@ request McQuitRequest {
   name: "quit";
   reply: McQuitReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McQuitReply {
@@ -64,7 +64,7 @@ request McExecRequest {
   name: "exec";
   reply: McExecReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McExecReply {

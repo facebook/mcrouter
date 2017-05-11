@@ -7,13 +7,13 @@ request McGetRequest {
   name: "get";
   reply: McGetReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: uint64_t flags;
 };
 
 reply McGetReply {
   1: Result result;
-  2: Optional<folly::IOBuf> value;
+  2: folly::Optional<folly::IOBuf> value;
   3: uint64_t flags;
   4: std::string message;
   5: int16_t appSpecificErrorCode;
@@ -24,7 +24,7 @@ request McSetRequest {
   name: "set";
   reply: McSetReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -43,7 +43,7 @@ request McDeleteRequest {
   name: "delete";
   reply: McDeleteReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: uint64_t flags;
   3: int32_t exptime;
   4: folly::IOBuf value;
@@ -62,13 +62,13 @@ request McLeaseGetRequest {
   name: "lease-get";
   reply: McLeaseGetReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McLeaseGetReply {
   1: Result result;
   2: int64_t leaseToken;
-  3: Optional<folly::IOBuf> value;
+  3: folly::Optional<folly::IOBuf> value;
   4: uint64_t flags;
   5: std::string message;
   6: int16_t appSpecificErrorCode;
@@ -79,7 +79,7 @@ request McLeaseSetRequest {
   name: "lease-set";
   reply: McLeaseSetReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -97,7 +97,7 @@ request McAddRequest {
   name: "add";
   reply: McAddReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -114,7 +114,7 @@ request McReplaceRequest {
   name: "replace";
   reply: McReplaceReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -131,13 +131,13 @@ request McGetsRequest {
   name: "gets";
   reply: McGetsReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McGetsReply {
   1: Result result;
   2: uint64_t casToken;
-  3: Optional<folly::IOBuf> value;
+  3: folly::Optional<folly::IOBuf> value;
   4: uint64_t flags;
   5: std::string message;
   6: int16_t appSpecificErrorCode;
@@ -148,7 +148,7 @@ request McCasRequest {
   name: "cas";
   reply: McCasReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -166,7 +166,7 @@ request McIncrRequest {
   name: "incr";
   reply: McIncrReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int64_t delta;
 };
 
@@ -182,7 +182,7 @@ request McDecrRequest {
   name: "decr";
   reply: McDecrReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int64_t delta;
 };
 
@@ -198,7 +198,7 @@ request McMetagetRequest {
   name: "metaget";
   reply: McMetagetReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McMetagetReply {
@@ -216,7 +216,7 @@ request McAppendRequest {
   name: "append";
   reply: McAppendReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -233,7 +233,7 @@ request McPrependRequest {
   name: "prepend";
   reply: McPrependReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
   4: folly::IOBuf value;
@@ -250,7 +250,7 @@ request McTouchRequest {
   name: "touch";
   reply: McTouchReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t exptime;
 };
 
@@ -265,7 +265,7 @@ request McFlushReRequest {
   name: "flushre";
   reply: McFlushReReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply McFlushReReply {
@@ -279,7 +279,7 @@ request McFlushAllRequest {
   name: "flushall";
   reply: McFlushAllReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: int32_t delay;
 };
 

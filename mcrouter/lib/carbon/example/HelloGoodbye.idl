@@ -7,7 +7,7 @@ request HelloRequest {
   name: "hello";
   reply: HelloReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply HelloReply {
@@ -19,7 +19,7 @@ request GoodbyeRequest {
   name: "goodbye";
   reply: GoodbyeReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
 };
 
 reply GoodbyeReply {

@@ -8,7 +8,7 @@ request TestRequest with 1: SimpleStruct as Base {
   name: "test";
   reply: TestReply;
 
-  1: Keys<folly::IOBuf> key;
+  1: carbon::Keys<folly::IOBuf> key;
   2: test2::util::SimpleEnum testEnum;
   3: bool testBool;
   4: char testChar;
@@ -27,8 +27,8 @@ request TestRequest with 1: SimpleStruct as Base {
   17: folly::IOBuf testIobuf;
   18: SimpleStruct testStruct;
   19: std::vector<std::string> testList;
-  20: Optional<std::string> testOptionalString;
-  21: Optional<folly::IOBuf> testOptionalIobuf;
+  20: folly::Optional<std::string> testOptionalString;
+  21: folly::Optional<folly::IOBuf> testOptionalIobuf;
   22: std::vector<test2::util::SimpleEnum> testEnumVec;
   23: test2::util::SimpleUnion testUnion;
   24: std::vector<std::vector<uint64_t>> testNestedVec;
@@ -50,7 +50,7 @@ request TestRequestStringKey {
   name: "testStringKey";
   reply: TestReplyStringKey;
 
-  1: Keys<std::string> key;
+  1: carbon::Keys<std::string> key;
 };
 
 reply TestReplyStringKey {
