@@ -231,24 +231,6 @@ class CarbonProtocolWriter {
   }
 
   template <class T>
-  typename std::
-      enable_if<folly::IsOneOf<T, std::string, folly::IOBuf>::value, void>::type
-      writeField(const int16_t id, const T& t) {
-    if (t.empty()) {
-      return;
-    }
-    writeFieldAlways(id, t);
-  }
-
-  template <class T>
-  typename std::
-      enable_if<folly::IsOneOf<T, std::string, folly::IOBuf>::value, void>::type
-      writeFieldAlways(const int16_t id, const T& t) {
-    writeFieldHeader(FieldType::Binary, id);
-    writeRaw(t);
-  }
-
-  template <class T>
   typename std::enable_if<
       detail::IsLinearContainer<T>::value || detail::IsKVContainer<T>::value,
       void>::type

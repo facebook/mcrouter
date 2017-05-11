@@ -7,15 +7,15 @@ request McGetRequest {
   name: "get";
   reply: McGetReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: uint64_t flags;
 };
 
 reply McGetReply {
   1: Result result;
-  2: Optional<IOBuf> value;
+  2: Optional<folly::IOBuf> value;
   3: uint64_t flags;
-  4: string message;
+  4: std::string message;
   5: int16_t appSpecificErrorCode;
 };
 
@@ -24,17 +24,17 @@ request McSetRequest {
   name: "set";
   reply: McSetReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
 };
 
 reply McSetReply {
   1: Result result;
   2: uint64_t flags;
-  3: IOBuf value;
-  4: string message;
+  3: folly::IOBuf value;
+  4: std::string message;
   5: int16_t appSpecificErrorCode;
 };
 
@@ -43,17 +43,17 @@ request McDeleteRequest {
   name: "delete";
   reply: McDeleteReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: uint64_t flags;
   3: int32_t exptime;
-  4: IOBuf value;
+  4: folly::IOBuf value;
 };
 
 reply McDeleteReply {
   1: Result result;
   2: uint64_t flags;
-  3: IOBuf value;
-  4: string message;
+  3: folly::IOBuf value;
+  4: std::string message;
   5: int16_t appSpecificErrorCode;
 };
 
@@ -62,15 +62,15 @@ request McLeaseGetRequest {
   name: "lease-get";
   reply: McLeaseGetReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McLeaseGetReply {
   1: Result result;
   2: int64_t leaseToken;
-  3: Optional<IOBuf> value;
+  3: Optional<folly::IOBuf> value;
   4: uint64_t flags;
-  5: string message;
+  5: std::string message;
   6: int16_t appSpecificErrorCode;
 };
 
@@ -79,16 +79,16 @@ request McLeaseSetRequest {
   name: "lease-set";
   reply: McLeaseSetReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
   5: int64_t leaseToken;
 };
 
 reply McLeaseSetReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -97,15 +97,15 @@ request McAddRequest {
   name: "add";
   reply: McAddReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
 };
 
 reply McAddReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -114,15 +114,15 @@ request McReplaceRequest {
   name: "replace";
   reply: McReplaceReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
 };
 
 reply McReplaceReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -131,15 +131,15 @@ request McGetsRequest {
   name: "gets";
   reply: McGetsReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McGetsReply {
   1: Result result;
   2: uint64_t casToken;
-  3: Optional<IOBuf> value;
+  3: Optional<folly::IOBuf> value;
   4: uint64_t flags;
-  5: string message;
+  5: std::string message;
   6: int16_t appSpecificErrorCode;
 };
 
@@ -148,16 +148,16 @@ request McCasRequest {
   name: "cas";
   reply: McCasReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
   5: uint64_t casToken;
 };
 
 reply McCasReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -166,14 +166,14 @@ request McIncrRequest {
   name: "incr";
   reply: McIncrReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int64_t delta;
 };
 
 reply McIncrReply {
   1: Result result;
   2: int64_t delta;
-  3: string message;
+  3: std::string message;
   4: int16_t appSpecificErrorCode;
 };
 
@@ -182,14 +182,14 @@ request McDecrRequest {
   name: "decr";
   reply: McDecrReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int64_t delta;
 };
 
 reply McDecrReply {
   1: Result result;
   2: int64_t delta;
-  3: string message;
+  3: std::string message;
   4: int16_t appSpecificErrorCode;
 };
 
@@ -198,7 +198,7 @@ request McMetagetRequest {
   name: "metaget";
   reply: McMetagetReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McMetagetReply {
@@ -206,8 +206,8 @@ reply McMetagetReply {
   2: int32_t age; # can be -1
   3: int32_t exptime;
   4: int16_t ipv;
-  5: string ipAddress;
-  6: string message;
+  5: std::string ipAddress;
+  6: std::string message;
   7: int16_t appSpecificErrorCode;
 };
 
@@ -216,15 +216,15 @@ request McAppendRequest {
   name: "append";
   reply: McAppendReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
 };
 
 reply McAppendReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -233,15 +233,15 @@ request McPrependRequest {
   name: "prepend";
   reply: McPrependReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
   3: uint64_t flags;
-  4: IOBuf value;
+  4: folly::IOBuf value;
 };
 
 reply McPrependReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -250,13 +250,13 @@ request McTouchRequest {
   name: "touch";
   reply: McTouchReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t exptime;
 };
 
 reply McTouchReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -265,12 +265,12 @@ request McFlushReRequest {
   name: "flushre";
   reply: McFlushReReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McFlushReReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -279,13 +279,13 @@ request McFlushAllRequest {
   name: "flushall";
   reply: McFlushAllReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: int32_t delay;
 };
 
 reply McFlushAllReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 

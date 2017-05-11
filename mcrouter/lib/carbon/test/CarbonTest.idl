@@ -8,7 +8,7 @@ request TestRequest with 1: SimpleStruct as Base {
   name: "test";
   reply: TestReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
   2: test2::util::SimpleEnum testEnum;
   3: bool testBool;
   4: char testChar;
@@ -22,20 +22,20 @@ request TestRequest with 1: SimpleStruct as Base {
   12: uint64_t testUInt64;
   13: float testFloat;
   14: double testDouble;
-  15: string testShortString;
-  16: string testLongString;
-  17: IOBuf testIobuf;
+  15: std::string testShortString;
+  16: std::string testLongString;
+  17: folly::IOBuf testIobuf;
   18: SimpleStruct testStruct;
-  19: std::vector<string> testList;
-  20: Optional<string> testOptionalString;
-  21: Optional<IOBuf> testOptionalIobuf;
+  19: std::vector<std::string> testList;
+  20: Optional<std::string> testOptionalString;
+  21: Optional<folly::IOBuf> testOptionalIobuf;
   22: std::vector<test2::util::SimpleEnum> testEnumVec;
   23: test2::util::SimpleUnion testUnion;
   24: std::vector<std::vector<uint64_t>> testNestedVec;
-  25: std::unordered_map<string, string> testUMap;
+  25: std::unordered_map<std::string, std::string> testUMap;
   26: std::map<double, double> testMap;
-  27: std::map<string, std::vector<uint16_t>> testComplexMap;
-  28: std::unordered_set<string> testUSet;
+  27: std::map<std::string, std::vector<uint16_t>> testComplexMap;
+  28: std::unordered_set<std::string> testUSet;
   29: std::set<uint64_t> testSet;
 };
 
@@ -50,7 +50,7 @@ request TestRequestStringKey {
   name: "testStringKey";
   reply: TestReplyStringKey;
 
-  1: Keys<string> key;
+  1: Keys<std::string> key;
 };
 
 reply TestReplyStringKey {

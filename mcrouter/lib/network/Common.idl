@@ -6,13 +6,13 @@ request McVersionRequest {
   name: "version";
   reply: McVersionReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McVersionReply {
   1: Result result;
-  2: IOBuf value;
-  3: string message;
+  2: folly::IOBuf value;
+  3: std::string message;
   4: int16_t appSpecificErrorCode;
 };
 
@@ -21,13 +21,13 @@ request McStatsRequest {
   name: "stats";
   reply: McStatsReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McStatsReply {
   1: Result result;
-  2: string message;
-  3: std::vector<string> stats;
+  2: std::string message;
+  3: std::vector<std::string> stats;
   4: int16_t appSpecificErrorCode;
 };
 
@@ -36,12 +36,12 @@ request McShutdownRequest {
   name: "shutdown";
   reply: McShutdownReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McShutdownReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -50,12 +50,12 @@ request McQuitRequest {
   name: "quit";
   reply: McQuitReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McQuitReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
   3: int16_t appSpecificErrorCode;
 };
 
@@ -64,13 +64,13 @@ request McExecRequest {
   name: "exec";
   reply: McExecReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply McExecReply {
   1: Result result;
-  2: string response;
-  3: string message;
+  2: std::string response;
+  3: std::string message;
   4: int16_t appSpecificErrorCode;
 };
 
@@ -85,5 +85,5 @@ request GoAwayAcknowledgement {
 reply GoAwayRequest {
   # result is not used, but needed for McServerRequestContext
   1: Result result;
-  2: string reason;
+  2: std::string reason;
 };

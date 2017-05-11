@@ -7,7 +7,7 @@ request HelloRequest {
   name: "hello";
   reply: HelloReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply HelloReply {
@@ -19,12 +19,12 @@ request GoodbyeRequest {
   name: "goodbye";
   reply: GoodbyeReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply GoodbyeReply {
   1: Result result;
-  2: string message;
+  2: std::string message;
 };
 
 service {

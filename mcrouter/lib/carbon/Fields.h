@@ -12,11 +12,9 @@
 #include <string>
 #include <vector>
 
-#include "mcrouter/lib/carbon/SerializationTraits.h"
+#include <folly/Traits.h>
 
-namespace folly {
-class IOBuf;
-} // folly
+#include "mcrouter/lib/carbon/SerializationTraits.h"
 
 namespace carbon {
 
@@ -131,51 +129,6 @@ struct TypeToField<bool> {
 };
 
 template <>
-struct TypeToField<char> {
-  static constexpr FieldType fieldType{FieldType::Int8};
-};
-
-template <>
-struct TypeToField<int8_t> {
-  static constexpr FieldType fieldType{FieldType::Int8};
-};
-
-template <>
-struct TypeToField<int16_t> {
-  static constexpr FieldType fieldType{FieldType::Int16};
-};
-
-template <>
-struct TypeToField<int32_t> {
-  static constexpr FieldType fieldType{FieldType::Int32};
-};
-
-template <>
-struct TypeToField<int64_t> {
-  static constexpr FieldType fieldType{FieldType::Int64};
-};
-
-template <>
-struct TypeToField<uint8_t> {
-  static constexpr FieldType fieldType{FieldType::Int8};
-};
-
-template <>
-struct TypeToField<uint16_t> {
-  static constexpr FieldType fieldType{FieldType::Int16};
-};
-
-template <>
-struct TypeToField<uint32_t> {
-  static constexpr FieldType fieldType{FieldType::Int32};
-};
-
-template <>
-struct TypeToField<uint64_t> {
-  static constexpr FieldType fieldType{FieldType::Int64};
-};
-
-template <>
 struct TypeToField<float> {
   static constexpr FieldType fieldType{FieldType::Float};
 };
@@ -185,14 +138,36 @@ struct TypeToField<double> {
   static constexpr FieldType fieldType{FieldType::Double};
 };
 
-template <>
-struct TypeToField<std::string> {
-  static constexpr FieldType fieldType{FieldType::Binary};
+template <class T>
+struct TypeToField<
+    T,
+    typename std::enable_if<
+        folly::IsOneOf<T, char, int8_t, uint8_t>::value>::type> {
+  static constexpr FieldType fieldType{FieldType::Int8};
 };
 
-template <>
-struct TypeToField<folly::IOBuf> {
-  static constexpr FieldType fieldType{FieldType::Binary};
+template <class T>
+struct TypeToField<
+    T,
+    typename std::enable_if<
+        folly::IsOneOf<T, int16_t, uint16_t>::value>::type> {
+  static constexpr FieldType fieldType{FieldType::Int16};
+};
+
+template <class T>
+struct TypeToField<
+    T,
+    typename std::enable_if<
+        folly::IsOneOf<T, int32_t, uint32_t>::value>::type> {
+  static constexpr FieldType fieldType{FieldType::Int32};
+};
+
+template <class T>
+struct TypeToField<
+    T,
+    typename std::enable_if<
+        folly::IsOneOf<T, int64_t, uint64_t>::value>::type> {
+  static constexpr FieldType fieldType{FieldType::Int64};
 };
 
 template <class T>
@@ -212,7 +187,6 @@ struct TypeToField<
     typename std::enable_if<IsSerializableViaTraits<T>::value>::type> {
   static constexpr FieldType fieldType{SerializationTraits<T>::kWireType};
 };
-
 
 } // detail
 } // carbon

@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -261,7 +262,7 @@ class CarbonProtocolReader {
 
  private:
   void skipLinearContainer();
-  void skipLinearContainerItems(std::pair<carbon::FieldType, uint32_t> pr);
+  void skipLinearContainerItems(std::pair<FieldType, uint32_t> pr);
   void skipKVContainer();
   void skipKVContainerItems(
       std::pair<std::pair<FieldType, FieldType>, uint32_t> pr);

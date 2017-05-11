@@ -16,7 +16,7 @@ void CarbonProtocolReader::skipLinearContainer() {
 }
 
 void CarbonProtocolReader::skipLinearContainerItems(
-    std::pair<carbon::FieldType, uint32_t> pr) {
+    std::pair<FieldType, uint32_t> pr) {
   const auto fieldType = pr.first;
   const auto len = pr.second;
   for (uint32_t i = 0; i < len; ++i) {

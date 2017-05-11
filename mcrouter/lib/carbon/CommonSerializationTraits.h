@@ -11,12 +11,15 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include <folly/Optional.h>
 #include <folly/Traits.h>
+#include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/carbon/CarbonProtocolReader.h"
 #include "mcrouter/lib/carbon/CarbonProtocolWriter.h"
@@ -29,6 +32,11 @@ namespace carbon {
 // SerializationTraits specialization for Keys<>
 template <class Storage>
 struct SerializationTraits<Keys<Storage>> {
+  static_assert(
+      carbon::detail::TypeToField<Storage>::fieldType ==
+          carbon::FieldType::Binary,
+      "Keys can only be templated by a binary type.");
+
   static constexpr carbon::FieldType kWireType = carbon::FieldType::Binary;
 
   static Keys<Storage> read(carbon::CarbonProtocolReader& reader) {
@@ -64,6 +72,26 @@ struct SerializationTraits<folly::Optional<T>> {
 
   static bool isEmpty(const folly::Optional<T>& opt) {
     return !opt.hasValue();
+  }
+};
+
+template <class T>
+struct SerializationTraits<
+    T,
+    typename std::enable_if<
+        folly::IsOneOf<T, std::string, folly::IOBuf>::value>::type> {
+  static constexpr carbon::FieldType kWireType = carbon::FieldType::Binary;
+
+  static T read(carbon::CarbonProtocolReader& reader) {
+    return reader.readRaw<T>();
+  }
+
+  static void write(const T& t, carbon::CarbonProtocolWriter& writer) {
+    writer.writeRaw(t);
+  }
+
+  static bool isEmpty(const T& t) {
+    return t.empty();
   }
 };
 

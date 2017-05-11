@@ -7,7 +7,7 @@ request AnotherRequest {
   id: 1;
   reply: AnotherReply;
 
-  1: Keys<IOBuf> key;
+  1: Keys<folly::IOBuf> key;
 };
 
 reply AnotherReply {
