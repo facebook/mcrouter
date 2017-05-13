@@ -49,7 +49,7 @@ bool AsyncMcServerWorker::addClientSocket(
   return addClientTransport(std::move(socket), userCtxt);
 }
 
-bool AsyncMcServerWorker::addClientTransport(
+McServerSession* AsyncMcServerWorker::addClientTransport(
     folly::AsyncTransportWrapper::UniquePtr transport,
     void* userCtxt) {
   if (!onRequest_) {
@@ -63,16 +63,15 @@ bool AsyncMcServerWorker::addClientTransport(
   transport->setSendTimeout(opts_.sendTimeout.count());
 
   try {
-    tracker_.add(
+    return std::addressof(tracker_.add(
         std::move(transport),
         onRequest_,
         opts_,
         userCtxt,
-        compressionCodecMap_);
-    return true;
+        compressionCodecMap_));
   } catch (const std::exception& ex) {
     // TODO: record stats about failure
-    return false;
+    return nullptr;
   }
 }
 

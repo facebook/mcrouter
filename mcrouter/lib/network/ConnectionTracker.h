@@ -49,9 +49,10 @@ class ConnectionTracker : public McServerSession::StateCallback {
   /**
    * Creates a new entry in the LRU and places the connection at the front.
    *
+   * @return reference to the created session.
    * @throws std::runtime_exception when fails to create a session.
    */
-  void add(
+  McServerSession& add(
       folly::AsyncTransportWrapper::UniquePtr transport,
       std::shared_ptr<McServerOnRequest> cb,
       AsyncMcServerWorkerOptions options,

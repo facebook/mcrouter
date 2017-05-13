@@ -68,9 +68,11 @@ class AsyncMcServerWorker {
    * externally created AsyncTransportWrapper object.
    * onAccept() will be called if set (despite the fact that the transport may
    * not technically have been "accepted").
-   * @return    true on success, false on error
+   * @return    on success, a pointer to the created session.
+   *            Note: returned session is owned by the worker. It will close
+   *                  transport before fully destroyed.
    */
-  bool addClientTransport(
+  McServerSession* addClientTransport(
       folly::AsyncTransportWrapper::UniquePtr transport,
       void* userCtxt);
 

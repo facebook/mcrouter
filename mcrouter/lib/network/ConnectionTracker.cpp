@@ -14,7 +14,7 @@ namespace memcache {
 
 ConnectionTracker::ConnectionTracker(size_t maxConns) : maxConns_(maxConns) {}
 
-void ConnectionTracker::add(
+McServerSession& ConnectionTracker::add(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     AsyncMcServerWorkerOptions options,
@@ -33,6 +33,8 @@ void ConnectionTracker::add(
       compressionCodecMap);
 
   sessions_.push_front(session);
+
+  return session;
 }
 
 void ConnectionTracker::closeAll() {
