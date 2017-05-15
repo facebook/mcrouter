@@ -59,5 +59,6 @@ void Notifier::maybeUpdatePeriod() noexcept {
     curMessages_ = 0;
   }
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

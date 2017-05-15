@@ -9,9 +9,11 @@
  */
 #pragma once
 
+#include <chrono>
+#include <memory>
+
 #include <folly/FileUtil.h>
 #include <folly/MPMCQueue.h>
-#include <folly/Memory.h>
 #include <folly/Random.h>
 #include <folly/io/async/EventFDWrapper.h>
 #include <folly/io/async/EventHandler.h>
@@ -131,7 +133,6 @@ class MessageQueue {
         onMessage_(std::move(onMessage)),
         notifier_(noNotifyRate, waitThreshold, nowFunc),
         handler_(*this),
-        timeoutHandler_(*this),
         notifyCallback_(std::move(notifyCallback)) {
     efd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);
     PCHECK(efd_ >= 0);
@@ -146,8 +147,14 @@ class MessageQueue {
         folly::EventHandler::READ | folly::EventHandler::PERSIST);
 
     if (notifier_.noNotifyRate() > 0) {
-      timeoutHandler_.attachTimeoutManager(&evb);
-      timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
+      waitTimeout_ = folly::AsyncTimeout::schedule(
+          std::chrono::milliseconds(kWakeupEveryMs),
+          evb.getEventBase(),
+          [this]() noexcept {
+            drain();
+            notifier_.maybeUpdatePeriod();
+            waitTimeout_->scheduleTimeout(kWakeupEveryMs);
+          });
     }
 
     class MessageQueueDrainCallback : public folly::EventBase::LoopCallback {
@@ -239,19 +246,8 @@ class MessageQueue {
     MessageQueue& parent_;
   };
 
-  class TimeoutHandler : public folly::AsyncTimeout {
-   public:
-    explicit TimeoutHandler(MessageQueue& q) : parent_(q) {}
-    void timeoutExpired() noexcept override final {
-      parent_.onTimeout();
-    }
-
-   private:
-    MessageQueue& parent_;
-  };
-
   EventHandler handler_;
-  TimeoutHandler timeoutHandler_;
+  std::unique_ptr<folly::AsyncTimeout> waitTimeout_;
   std::function<void()> notifyCallback_;
   int efd_{-1};
 
@@ -261,12 +257,6 @@ class MessageQueue {
     CHECK(res == sizeof(value));
 
     drain();
-  }
-
-  void onTimeout() {
-    drain();
-    notifier_.maybeUpdatePeriod();
-    timeoutHandler_.scheduleTimeout(kWakeupEveryMs);
   }
 
   void doNotify() {
@@ -288,5 +278,10 @@ class MessageQueue {
 
   std::shared_ptr<folly::EventBase::LoopCallback> queueDrainCallback_;
 };
-}
-} // facebook::memcache
+
+// Static member definition
+template <class T>
+constexpr int64_t MessageQueue<T>::kWakeupEveryMs;
+
+} // memcache
+} // facebook
