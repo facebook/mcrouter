@@ -186,6 +186,4 @@ int main(int argc, char** argv) {
 
   gMcpiper.run(parseOptions(argc, argv));
   cleanExit(0);
-
-  return 0;
 }
