@@ -58,7 +58,7 @@ static McrouterStandaloneOptions standaloneOpts;
 
 #define print_usage(opt, desc) fprintf(stderr, "\t%*s%s\n", -49, opt, desc)
 
-static void print_usage_and_die(char* progname, int errorCode) {
+[[noreturn]] static void print_usage_and_die(char* progname, int errorCode) {
   fprintf(
       stderr,
       "%s\n"

@@ -322,7 +322,7 @@ void serverLoop(
   evb.loop();
 }
 
-void usage(char** argv) {
+[[noreturn]] void usage(char** argv) {
   std::cerr << "Arguments:\n"
                "  -P <port>      TCP port on which to listen\n"
                "  -t <fd>        TCP listen sock fd\n"

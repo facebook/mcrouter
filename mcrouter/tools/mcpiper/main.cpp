@@ -22,7 +22,7 @@ namespace {
 
 McPiper gMcpiper;
 
-void cleanExit(int32_t status) {
+[[noreturn]] void cleanExit(int32_t status) {
   for (auto sig : {SIGINT, SIGABRT, SIGQUIT, SIGPIPE, SIGWINCH}) {
     signal(sig, SIG_IGN);
   }
