@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 
@@ -19,6 +20,10 @@
 #include <folly/Range.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/io/async/EventBaseThread.h>
+
+namespace folly {
+class AsyncTimeout;
+} // folly
 
 namespace facebook {
 namespace memcache {
@@ -135,24 +140,14 @@ class LeaseTokenMap {
   // Mutex to synchronize access to underlying data structure
   mutable std::mutex mutex_;
 
-  // Handles timeout
-  class TimeoutHandler : public folly::AsyncTimeout {
-   public:
-    explicit TimeoutHandler(LeaseTokenMap& parent, folly::EventBase& evb)
-        : folly::AsyncTimeout(&evb), parent_(parent) {}
-    void timeoutExpired() noexcept override final {
-      parent_.onTimeout();
-    }
-
-   private:
-    LeaseTokenMap& parent_;
-  };
   folly::EventBaseThread& evbThread_;
-  TimeoutHandler timeoutHandler_;
+  // When non-null, this timeout may only be used on its EventBase thread.
+  std::unique_ptr<folly::AsyncTimeout> tokenCleanupTimeout_;
   uint32_t leaseTokenTtlMs_;
 
-  void onTimeout();
+  void tokenCleanupTimeout();
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

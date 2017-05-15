@@ -9,6 +9,8 @@
  */
 #include "LeaseTokenMap.h"
 
+#include <folly/io/async/AsyncTimeout.h>
+
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
@@ -31,17 +33,21 @@ LeaseTokenMap::LeaseTokenMap(
     folly::EventBaseThread& evbThread,
     uint32_t leaseTokenTtl)
     : evbThread_(evbThread),
-      timeoutHandler_(*this, *evbThread.getEventBase()),
       leaseTokenTtlMs_(leaseTokenTtl) {
   assert(leaseTokenTtlMs_ > 0);
-  evbThread_.getEventBase()->runInEventBaseThread(
-      [this]() { timeoutHandler_.scheduleTimeout(leaseTokenTtlMs_); });
+  auto& evb = *evbThread_.getEventBase();
+  evb.runInEventBaseThread([ this, &evb = evb ]() {
+    tokenCleanupTimeout_ = folly::AsyncTimeout::schedule(
+        std::chrono::milliseconds(leaseTokenTtlMs_), evb, [this]() noexcept {
+          tokenCleanupTimeout();
+        });
+  });
 }
 
 LeaseTokenMap::~LeaseTokenMap() {
   if (evbThread_.running()) {
     evbThread_.getEventBase()->runImmediatelyOrRunInEventBaseThreadAndWait(
-        [this]() { timeoutHandler_.cancelTimeout(); });
+        [this]() { tokenCleanupTimeout_.reset(); });
   }
 }
 
@@ -100,25 +106,29 @@ uint64_t LeaseTokenMap::getOriginalLeaseToken(
   return token;
 }
 
-void LeaseTokenMap::onTimeout() {
-  std::lock_guard<std::mutex> lock(mutex_);
+void LeaseTokenMap::tokenCleanupTimeout() {
+  const auto now = ListItem::Clock::now();
+  uint32_t nextTimeoutMs = leaseTokenTtlMs_;
 
-  auto now = ListItem::Clock::now();
-  auto cur = invalidationQueue_.begin();
-  while (cur != invalidationQueue_.end() && cur->tokenTimeout <= now) {
-    uint64_t specialToken = cur->specialToken;
-    cur = invalidationQueue_.erase(cur);
-    data_.erase(specialToken);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto cur = invalidationQueue_.begin();
+    while (cur != invalidationQueue_.end() && cur->tokenTimeout <= now) {
+      uint64_t specialToken = cur->specialToken;
+      cur = invalidationQueue_.erase(cur);
+      data_.erase(specialToken);
+    }
+
+    if (!invalidationQueue_.empty()) {
+      nextTimeoutMs = std::max<uint32_t>(
+          1,
+          std::chrono::duration_cast<std::chrono::milliseconds>(
+              invalidationQueue_.front().tokenTimeout - now)
+              .count());
+    }
   }
 
-  if (invalidationQueue_.empty()) {
-    timeoutHandler_.scheduleTimeout(leaseTokenTtlMs_);
-  } else {
-    auto nextExpiration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                              invalidationQueue_.front().tokenTimeout - now)
-                              .count();
-    timeoutHandler_.scheduleTimeout(std::max<uint32_t>(nextExpiration, 1));
-  }
+  tokenCleanupTimeout_->scheduleTimeout(nextTimeoutMs);
 }
 
 size_t LeaseTokenMap::size() const {
@@ -129,6 +139,7 @@ size_t LeaseTokenMap::size() const {
 bool LeaseTokenMap::conflicts(uint64_t originalToken) {
   return hasMagic(originalToken);
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook
