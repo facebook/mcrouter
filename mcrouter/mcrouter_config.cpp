@@ -7,7 +7,8 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <folly/Memory.h>
+#include <memory>
+
 #include <folly/Range.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
@@ -119,6 +120,7 @@ std::string getBinPath(folly::StringPiece name) {
   }
   return "unknown";
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

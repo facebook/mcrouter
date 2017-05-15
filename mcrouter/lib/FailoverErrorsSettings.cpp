@@ -9,9 +9,9 @@
  */
 #include "FailoverErrorsSettings.h"
 
+#include <memory>
 #include <vector>
 
-#include <folly/Memory.h>
 #include <folly/dynamic.h>
 
 #include "mcrouter/lib/McResUtil.h"
@@ -97,5 +97,6 @@ FailoverErrorsSettings::FailoverErrorsSettings(const folly::dynamic& json) {
     deletes_ = FailoverErrorsSettings::List(json);
   }
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

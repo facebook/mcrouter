@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <memory>
 
 #include <boost/regex.hpp>
 
@@ -22,7 +23,6 @@
 #include <folly/File.h>
 #include <folly/FileUtil.h>
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/ThreadName.h>
 
@@ -150,6 +150,7 @@ void ShadowSettings::registerOnUpdateCallback(
     }
   });
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

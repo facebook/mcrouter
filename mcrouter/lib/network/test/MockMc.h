@@ -13,7 +13,6 @@
 #include <string>
 #include <unordered_map>
 
-#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/io/IOBuf.h>
 
@@ -167,5 +166,6 @@ class MockMc {
   std::unordered_map<std::string, CacheItem>::iterator findUnexpired(
       folly::StringPiece key);
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -9,8 +9,9 @@
  */
 #include "Compression.h"
 
+#include <memory>
+
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/Portability.h>
 #include <folly/io/IOBuf.h>
 

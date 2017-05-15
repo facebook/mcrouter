@@ -7,8 +7,9 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-
-#include <folly/Memory.h>
+#include <functional>
+#include <memory>
+#include <utility>
 
 namespace carbon {
 namespace detail {
@@ -204,4 +205,5 @@ void ExternalCarbonConnectionImpl::sendRequestMulti(
     return impl_->sendRequestMulti(std::move(reqs), std::move(cb));
   }
 }
-}
+
+} // carbon

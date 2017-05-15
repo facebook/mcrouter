@@ -9,8 +9,9 @@
  */
 #include "Util.h"
 
+#include <memory>
+
 #include <folly/Format.h>
-#include <folly/Memory.h>
 
 #include "mcrouter/lib/mc/msg.h"
 
@@ -112,5 +113,6 @@ std::unique_ptr<boost::regex> buildRegex(
   }
   return nullptr;
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

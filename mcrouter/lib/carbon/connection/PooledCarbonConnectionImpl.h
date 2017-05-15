@@ -12,12 +12,12 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include <folly/Memory.h>
 #include <folly/Random.h>
 
-#include <mcrouter/lib/CacheClientStats.h>
+#include "mcrouter/lib/CacheClientStats.h"
 #include "mcrouter/lib/carbon/connection/CarbonConnectionUtil.h"
 
 namespace carbon {

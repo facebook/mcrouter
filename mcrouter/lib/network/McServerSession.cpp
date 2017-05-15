@@ -11,7 +11,6 @@
 
 #include <memory>
 
-#include <folly/Memory.h>
 #include <folly/small_vector.h>
 
 #include "mcrouter/lib/debug/FifoManager.h"

@@ -12,11 +12,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <memory>
+
 #include <gtest/gtest.h>
 
 #include <folly/File.h>
 #include <folly/FileUtil.h>
-#include <folly/Memory.h>
 #include <folly/experimental/TestUtil.h>
 
 #include "mcrouter/AsyncWriter.h"

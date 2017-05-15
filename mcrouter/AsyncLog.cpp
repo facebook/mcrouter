@@ -18,10 +18,11 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <memory>
+
 #include <folly/Conv.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
-#include <folly/Memory.h>
 #include <folly/ThreadName.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/json.h>
@@ -276,6 +277,7 @@ void AsyncLog::writeDelete(
         poolName);
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

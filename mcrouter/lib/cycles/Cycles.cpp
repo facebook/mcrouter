@@ -15,10 +15,6 @@
 #include <thread>
 #include <vector>
 
-#include <glog/logging.h>
-
-#include <folly/Memory.h>
-
 #include "mcrouter/lib/cycles/Accumulator.h"
 #include "mcrouter/lib/cycles/ExtractorThread.h"
 

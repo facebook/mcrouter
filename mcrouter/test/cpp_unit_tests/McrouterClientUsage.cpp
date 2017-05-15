@@ -7,13 +7,13 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <memory>
 #include <thread>
 #include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
 
-#include <folly/Memory.h>
 #include <folly/fibers/Baton.h>
 #include <folly/io/async/EventBase.h>
 

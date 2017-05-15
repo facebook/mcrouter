@@ -9,8 +9,9 @@
  */
 #include "ProxyDestinationMap.h"
 
+#include <memory>
+
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/io/async/AsyncTimeout.h>
 #include <folly/io/async/EventBase.h>
 
@@ -161,6 +162,7 @@ void ProxyDestinationMap::scheduleTimer(bool initialAttempt) {
 }
 
 ProxyDestinationMap::~ProxyDestinationMap() {}
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

@@ -9,12 +9,12 @@
  */
 #include "ConfigPreprocessor.h"
 
+#include <memory>
 #include <random>
 
 #include <folly/Format.h>
 #include <folly/Hash.h>
 #include <folly/IPAddress.h>
-#include <folly/Memory.h>
 #include <folly/Optional.h>
 #include <folly/Random.h>
 #include <folly/String.h>
@@ -27,10 +27,7 @@
 
 using folly::dynamic;
 using folly::json::stripComments;
-using std::make_unique;
 using folly::StringPiece;
-using std::placeholders::_1;
-using std::placeholders::_2;
 using std::string;
 using std::vector;
 
@@ -1241,9 +1238,9 @@ class ConfigPreprocessor::BuiltIns {
    * %keyName% (key of current entry) and %itemName% (value of current entry)
    */
   static dynamic
-  transform(ConfigPreprocessor* p, dynamic&& json, const Context& ctx) {
+  transform(ConfigPreprocessor& p, dynamic&& json, const Context& ctx) {
     auto dictionary =
-        p->expandMacros(moveGet(json, "dictionary", "Transform"), ctx);
+        p.expandMacros(moveGet(json, "dictionary", "Transform"), ctx);
 
     checkLogic(
         dictionary.isObject() || dictionary.isArray(),
@@ -1276,14 +1273,14 @@ class ConfigPreprocessor::BuiltIns {
         keyRef = std::move(key);
         itemRef = std::move(value);
         auto nKey =
-            keyTransform ? p->expandMacros(*keyTransform, extContext) : keyRef;
+            keyTransform ? p.expandMacros(*keyTransform, extContext) : keyRef;
         checkLogic(
             nKey.isArray() || nKey.isString(),
             "Transformed key is not array/string");
         if (nKey.isArray() && nKey.empty()) {
           continue;
         }
-        auto nItem = itemTransform ? p->expandMacros(*itemTransform, extContext)
+        auto nItem = itemTransform ? p.expandMacros(*itemTransform, extContext)
                                    : std::move(itemRef);
         if (nKey.isString()) {
           res.insert(std::move(nKey), std::move(nItem));
@@ -1304,7 +1301,7 @@ class ConfigPreprocessor::BuiltIns {
         // add %key% and %item% to current context.
         keyRef = index;
         itemRef = std::move(item);
-        item = p->expandMacros(*itemTransform, extContext);
+        item = p.expandMacros(*itemTransform, extContext);
       }
       return dictionary;
     }
@@ -1332,10 +1329,10 @@ class ConfigPreprocessor::BuiltIns {
    * and %valueName% - current value.
    */
   static dynamic
-  process(ConfigPreprocessor* p, dynamic&& json, const Context& ctx) {
+  process(ConfigPreprocessor& p, dynamic&& json, const Context& ctx) {
     auto dictionary =
-        p->expandMacros(moveGet(json, "dictionary", "Process"), ctx);
-    auto value = p->expandMacros(moveGet(json, "initialValue", "Process"), ctx);
+        p.expandMacros(moveGet(json, "dictionary", "Process"), ctx);
+    auto value = p.expandMacros(moveGet(json, "initialValue", "Process"), ctx);
     const auto& transform = tryGet(json, "transform", "Process");
 
     checkLogic(
@@ -1367,7 +1364,7 @@ class ConfigPreprocessor::BuiltIns {
         keyRef = std::move(key);
         itemRef = std::move(val);
         valueRef = std::move(value);
-        value = p->expandMacros(transform, extContext);
+        value = p.expandMacros(transform, extContext);
       }
       return value;
     } else { // array
@@ -1377,7 +1374,7 @@ class ConfigPreprocessor::BuiltIns {
         keyRef = index;
         itemRef = std::move(item);
         valueRef = std::move(value);
-        value = p->expandMacros(transform, extContext);
+        value = p.expandMacros(transform, extContext);
       }
       return value;
     }
@@ -1417,8 +1414,8 @@ class ConfigPreprocessor::BuiltIns {
    *  "top": 2
    */
   static dynamic
-  foreach(ConfigPreprocessor* p, dynamic&& json, const Context& ctx) {
-    auto from = p->expandMacros(moveGet(json, "from", "Foreach"), ctx);
+  foreach(ConfigPreprocessor& p, dynamic&& json, const Context& ctx) {
+    auto from = p.expandMacros(moveGet(json, "from", "Foreach"), ctx);
     checkLogic(
         from.isObject() || from.isArray(), "Foreach: from is not object/array");
     StringPiece itemStr = "item";
@@ -1431,7 +1428,7 @@ class ConfigPreprocessor::BuiltIns {
     }
     size_t top = from.size();
     if (auto jTopField = json.get_ptr("top")) {
-      auto jtop = p->expandMacros(std::move(*jTopField), ctx);
+      auto jtop = p.expandMacros(std::move(*jTopField), ctx);
       checkLogic(
           jtop.isInt() && jtop.getInt() >= 0,
           "Foreach: top should be a non-negative integer");
@@ -1446,7 +1443,7 @@ class ConfigPreprocessor::BuiltIns {
     auto& itemRef = extContext.addExpanded(itemStr, nullptr);
 
     auto appendUseToResult = [&]() {
-      auto use = p->expandMacros(useIt->second, extContext);
+      auto use = p.expandMacros(useIt->second, extContext);
       if (result.isNull()) {
         checkLogic(
             use.isObject() || use.isArray(),
@@ -1473,7 +1470,7 @@ class ConfigPreprocessor::BuiltIns {
       if (whereIt == json.items().end()) {
         return true;
       }
-      auto where = p->expandMacros(whereIt->second, extContext);
+      auto where = p.expandMacros(whereIt->second, extContext);
       checkLogic(where.isBool(), "Foreach: expanded 'where' is not boolean");
       return where.getBool();
     };
@@ -1525,7 +1522,7 @@ class ConfigPreprocessor::BuiltIns {
     }
     if (result.isNull()) {
       if (auto jnoMatchResult = json.get_ptr("noMatchResult")) {
-        return p->expandMacros(std::move(*jnoMatchResult), ctx);
+        return p.expandMacros(std::move(*jnoMatchResult), ctx);
       }
       return from.isObject() ? dynamic::object() : dynamic::array();
     }
@@ -1640,11 +1637,17 @@ ConfigPreprocessor::ConfigPreprocessor(
   builtInCalls_.emplace("constDef", &BuiltIns::noop);
 
   builtInCalls_.emplace(
-      "transform", std::bind(&BuiltIns::transform, this, _1, _2));
+      "transform", [this](dynamic&& json, const Context& ctx) {
+        return BuiltIns::transform(*this, std::move(json), ctx);
+      });
 
-  builtInCalls_.emplace("process", std::bind(&BuiltIns::process, this, _1, _2));
+  builtInCalls_.emplace("process", [this](dynamic&& json, const Context& ctx) {
+    return BuiltIns::process(*this, std::move(json), ctx);
+  });
 
-  builtInCalls_.emplace("foreach", std::bind(&BuiltIns::foreach, this, _1, _2));
+  builtInCalls_.emplace("foreach", [this](dynamic&& json, const Context& ctx) {
+    return BuiltIns::foreach(*this, std::move(json), ctx);
+  });
 }
 
 void ConfigPreprocessor::addConst(StringPiece name, folly::dynamic result) {
@@ -1950,5 +1953,6 @@ dynamic ConfigPreprocessor::getConfigWithoutMacros(
 
   return prep.expandMacros(std::move(config), Context(prep));
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -172,8 +172,7 @@ bool McrouterLogger::start() {
 
   running_ = true;
   try {
-    loggerThread_ =
-        std::thread(std::bind(&McrouterLogger::loggerThreadRun, this));
+    loggerThread_ = std::thread([this]() { loggerThreadRun(); });
   } catch (const std::system_error& e) {
     running_ = false;
     MC_LOG_FAILURE(

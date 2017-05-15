@@ -9,9 +9,10 @@
  */
 #include "CarbonRouterInstanceBase.h"
 
+#include <memory>
+
 #include <boost/filesystem/operations.hpp>
 
-#include <folly/Memory.h>
 #include <folly/ThreadName.h>
 
 #include "mcrouter/AsyncWriter.h"
@@ -69,6 +70,7 @@ size_t CarbonRouterInstanceBase::nextProxyIndex() {
   nextProxy_ = (nextProxy_ + 1) % opts().num_proxies;
   return res;
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

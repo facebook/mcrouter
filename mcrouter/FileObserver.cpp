@@ -14,7 +14,6 @@
 
 #include <glog/logging.h>
 
-#include <folly/Memory.h>
 #include <folly/io/async/EventBase.h>
 
 #include "mcrouter/FileDataProvider.h"
@@ -124,6 +123,7 @@ bool startObservingFile(
     scheduleObserveFile(evb, std::move(data));
   });
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

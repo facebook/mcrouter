@@ -9,7 +9,7 @@
  */
 #include "Config.h"
 
-#include <folly/Memory.h>
+#include <memory>
 
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/network/gen/MemcacheServer.h"
@@ -69,5 +69,6 @@ addCarbonSnifferParser(
               memcache::detail::MemcacheRequestList>>(printer))
       .first;
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -10,9 +10,9 @@
 #include "ProxyDestination.h"
 
 #include <limits>
+#include <memory>
 #include <random>
 
-#include <folly/Memory.h>
 #include <folly/fibers/Fiber.h>
 
 #include "mcrouter/McrouterLogFailure.h"

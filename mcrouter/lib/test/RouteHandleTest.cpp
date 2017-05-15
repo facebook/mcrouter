@@ -8,12 +8,11 @@
  *
  */
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
-
-#include <folly/Memory.h>
 
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/routes/AllAsyncRoute.h"

@@ -9,7 +9,7 @@
  */
 #include "ProxyRequestContext.h"
 
-#include <folly/Memory.h>
+#include <memory>
 
 #include "mcrouter/CarbonRouterClientBase.h"
 #include "mcrouter/ProxyBase.h"
@@ -77,6 +77,7 @@ ProxyRequestContext::ProxyRequestContext(
   recordingState_->clientCallback = std::move(clientCallback);
   recordingState_->shardSplitCallback = std::move(shardSplitCallback);
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

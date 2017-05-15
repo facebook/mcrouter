@@ -7,8 +7,6 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <folly/Memory.h>
-
 #include "mcrouter/lib/Reply.h"
 #include "mcrouter/lib/network/FBTrace.h"
 #include "mcrouter/lib/network/ReplyStatsContext.h"
@@ -94,5 +92,6 @@ template <>
 inline double AsyncMcClientImpl::getDropProbability<McDeleteRequest>() const {
   return parser_ ? parser_->getDropProbability() : 0.0;
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

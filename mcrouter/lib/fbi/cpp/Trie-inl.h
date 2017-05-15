@@ -9,11 +9,11 @@
  */
 #pragma once
 
+#include <memory>
+
 #include <boost/iterator/iterator_facade.hpp>
 
 #include <glog/logging.h>
-
-#include <folly/Memory.h>
 
 namespace facebook {
 namespace memcache {
@@ -246,5 +246,6 @@ class Trie<Value>::iterator_base
     return *t_->value_;
   }
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

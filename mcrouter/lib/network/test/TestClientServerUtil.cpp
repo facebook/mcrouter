@@ -10,13 +10,13 @@
 #include "TestClientServerUtil.h"
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <thread>
 
 #include <glog/logging.h>
 
 #include <folly/Conv.h>
-#include <folly/Memory.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBase.h>

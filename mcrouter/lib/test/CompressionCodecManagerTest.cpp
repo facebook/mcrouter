@@ -12,7 +12,6 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/Memory.h>
 #include <folly/Random.h>
 #include <folly/io/IOBuf.h>
 
@@ -466,6 +465,7 @@ TEST(CompressionCodecManager, getBest_serverWithoutCodecs) {
       codecMap->getBest(
           CodecIdRange{1, 6}, 1234 /* body size */, 0 /* reply type id */));
 }
-}
-}
-} // facebook::memcache::test
+
+} // test
+} // memcache
+} // facebook

@@ -13,8 +13,6 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/Memory.h>
-
 #include "mcrouter/Observable.h"
 
 using facebook::memcache::mcrouter::CallbackPool;

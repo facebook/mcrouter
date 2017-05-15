@@ -11,7 +11,6 @@
 
 #include <gtest/gtest.h>
 
-#include <folly/Memory.h>
 #include <folly/io/async/EventBase.h>
 #include <folly/json.h>
 

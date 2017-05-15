@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <folly/Memory.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/fibers/SimpleLoopController.h>
 #include <folly/fibers/WhenN.h>
@@ -287,5 +286,6 @@ std::string replyFor(Rh& rh, const std::string& key) {
   auto reply = rh.route(McGetRequest(key));
   return carbon::valueRangeSlow(reply).str();
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -9,10 +9,11 @@
  */
 #include "ConfigApi.h"
 
+#include <memory>
+
 #include <boost/filesystem.hpp>
 
 #include <folly/FileUtil.h>
-#include <folly/Memory.h>
 #include <folly/String.h>
 #include <folly/dynamic.h>
 
@@ -120,7 +121,7 @@ ConfigApi::CallbackHandle ConfigApi::subscribe(Callback callback) {
 void ConfigApi::startObserving() {
   assert(!finish_);
   if (!opts_.disable_reload_configs) {
-    configThread_ = std::thread(std::bind(&ConfigApi::configThreadRun, this));
+    configThread_ = std::thread([this]() { configThreadRun(); });
   }
 }
 

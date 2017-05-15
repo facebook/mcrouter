@@ -10,10 +10,10 @@
 #pragma once
 
 #include <deque>
+#include <memory>
 #include <string>
 
 #include <folly/Function.h>
-#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/EventBase.h>
@@ -245,5 +245,6 @@ class SessionTestHarness {
 };
 
 inline SessionTestHarness::TransactionIf::~TransactionIf() {}
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

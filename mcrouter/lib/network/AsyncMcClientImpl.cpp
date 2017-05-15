@@ -11,8 +11,9 @@
 
 #include <netinet/tcp.h>
 
+#include <memory>
+
 #include <folly/EvictingCacheMap.h>
-#include <folly/Memory.h>
 #include <folly/SingletonThreadLocal.h>
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/EventBase.h>

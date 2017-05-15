@@ -9,10 +9,14 @@
  */
 #include "ExternalCarbonConnectionImpl.h"
 
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <utility>
+
 #include <gflags/gflags.h>
 
 #include <folly/Baton.h>
-#include <folly/Memory.h>
 #include <folly/ScopeGuard.h>
 #include <folly/Singleton.h>
 #include <folly/ThreadName.h>

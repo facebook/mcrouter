@@ -10,10 +10,11 @@
 #include "McParser.h"
 
 #include <algorithm>
+#include <new>
+#include <utility>
 
 #include <folly/Bits.h>
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/ThreadLocal.h>
 #include <folly/experimental/JemallocNodumpAllocator.h>
 #include <folly/io/Cursor.h>
@@ -240,5 +241,6 @@ double McParser::getDropProbability() const {
   return static_cast<double>(umMsgInfo_.dropProbability) /
       kDropProbabilityNormalizer;
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -10,12 +10,12 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/json.h>
 

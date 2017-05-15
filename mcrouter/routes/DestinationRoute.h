@@ -9,11 +9,9 @@
  */
 #pragma once
 
-#include <memory>
 #include <string>
 
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/Optional.h>
 #include <folly/ScopeGuard.h>
 #include <folly/fibers/FiberManager.h>

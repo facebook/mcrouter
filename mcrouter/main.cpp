@@ -27,7 +27,6 @@
 #include <glog/logging.h>
 
 #include <folly/Format.h>
-#include <folly/Memory.h>
 #include <folly/Range.h>
 #include <folly/Singleton.h>
 

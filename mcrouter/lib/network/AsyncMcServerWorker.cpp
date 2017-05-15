@@ -9,7 +9,8 @@
  */
 #include "AsyncMcServerWorker.h"
 
-#include <folly/Memory.h>
+#include <memory>
+
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
@@ -87,5 +88,6 @@ void AsyncMcServerWorker::shutdown() {
 bool AsyncMcServerWorker::writesPending() const {
   return tracker_.writesPending();
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook
