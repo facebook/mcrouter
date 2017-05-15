@@ -83,9 +83,11 @@ class Trie {
   /**
    * Get value of longest prefix stored in Trie
    *
-   * @param key string with any characters
-   * @return nullptr if no prefix found, pointer to value of the longest prefix
-             otherwise
+   * @param key   String with any characters
+   *
+   * @return Iterator to the element with the longest prefix.
+   *         If no such element is found, past-the-end (i.e. end()) iterator
+   *         is returned.
    */
   iterator findPrefix(folly::StringPiece key);
 
