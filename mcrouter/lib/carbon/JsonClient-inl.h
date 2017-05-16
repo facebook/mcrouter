@@ -20,27 +20,22 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 
 namespace carbon {
-namespace debug {
 
 template <class Request>
 bool JsonClient::sendRequest(
     const folly::dynamic& requestJson,
     folly::dynamic& replyJson) {
   bool hasErrors = false;
-  auto onError = [this, &hasErrors](
+  auto onParsingError = [this, &hasErrors](
       folly::StringPiece field, folly::StringPiece msg) {
-    if (!hasErrors) {
-      std::cerr << "Errors found when parsing json into " << Request::name
-                << ":" << std::endl;
-      hasErrors = true;
-    }
-    std::cerr << "\t" << field << ": " << msg << std::endl;
+    hasErrors = true;
+    onError(folly::to<std::string>(field, ": ", msg));
   };
   Request request;
-  convertFromFollyDynamic(requestJson, request, std::move(onError));
+  convertFromFollyDynamic(requestJson, request, std::move(onParsingError));
 
   if (!options().ignoreParsingErrors && hasErrors) {
-    std::cerr << "Found errors parsing json. Aborting." << std::endl;
+    onError("Found errors parsing json. Aborting - requests will not be sent.");
     return false;
   }
 
@@ -62,5 +57,4 @@ bool JsonClient::sendRequest(
   return true;
 }
 
-} // debug
 } // carbon

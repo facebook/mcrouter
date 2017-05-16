@@ -17,10 +17,12 @@
 using facebook::memcache::ConnectionOptions;
 
 namespace carbon {
-namespace debug {
 
-JsonClient::JsonClient(JsonClient::Options options)
+JsonClient::JsonClient(
+    JsonClient::Options options,
+    std::function<void(const std::string& msg)> onError)
     : options_{std::move(options)},
+      onError_{std::move(onError)},
       evb_{/* enableTimeMeasurement */ false},
       client_{
           evb_,
@@ -46,5 +48,10 @@ bool JsonClient::sendRequests(
   return true;
 }
 
-} // debug
+void JsonClient::onError(const std::string& msg) const {
+  if (onError_) {
+    onError_(msg);
+  }
+}
+
 } // carbon

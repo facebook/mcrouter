@@ -12,13 +12,16 @@
 #include <folly/dynamic.h>
 #include <folly/json.h>
 
+#include "mcrouter/lib/carbon/CmdLineClient.h"
 #include "mcrouter/lib/carbon/JsonClient.h"
 #include "mcrouter/lib/carbon/test/gen/CarbonTest.h"
 #include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
-using carbon::debug::JsonClient;
+
+using carbon::JsonClient;
+using carbon::tools::CmdLineClient;
 using namespace facebook::memcache;
 
 namespace carbon {
@@ -28,8 +31,10 @@ namespace {
 
 class TestJsonClient : public JsonClient {
  public:
-  explicit TestJsonClient(JsonClient::Options opts)
-      : JsonClient(std::move(opts)) {}
+  explicit TestJsonClient(
+      JsonClient::Options opts,
+      std::function<void(const std::string&)> onError = nullptr)
+      : JsonClient(std::move(opts), std::move(onError)) {}
 
  protected:
   bool sendRequestByName(
@@ -157,6 +162,112 @@ TEST(JsonClient, sendRequests_Array) {
   checkIntField(replies[1], "result", mc_res_ok);
   checkIntField(replies[1], "valInt32", 70);
   checkIntField(replies[1], "valInt64", 100);
+
+  server->shutdown();
+  server->join();
+}
+
+TEST(CmdLineClient, sendRequests) {
+  constexpr uint16_t kPort = 1538;
+  auto server = startServer(kPort);
+
+  std::array<const char*, 7> argv = {{"binaryName",
+                                      "-h",
+                                      "localhost",
+                                      "-p",
+                                      "1538",
+                                      "test", // Request name
+                                      R"json(
+        {
+          "key": "abcdef",
+          "testBool": true,
+          "testInt32": 17,
+          "testInt64": 30
+        }
+      )json"}};
+
+  std::stringstream outStream(std::ios::out | std::ios::in);
+  std::stringstream errStream(std::ios::out | std::ios::in);
+
+  CmdLineClient client(outStream, errStream);
+  client.sendRequests<TestJsonClient>(argv.size(), argv.data());
+
+  auto out = outStream.str();
+  auto err = errStream.str();
+
+  EXPECT_EQ(0, err.size());
+  EXPECT_GT(out.size(), 0);
+
+  auto reply = folly::parseJson(out);
+
+  checkIntField(reply, "result", mc_res_ok);
+  checkIntField(reply, "valInt32", 34);
+  checkIntField(reply, "valInt64", 60);
+
+  server->shutdown();
+  server->join();
+}
+
+TEST(CmdLineClient, sendRequests_InvalidJson) {
+  constexpr uint16_t kPort = 1785;
+  auto server = startServer(kPort);
+
+  std::array<const char*, 7> argv = {{"binaryName",
+                                      "-h",
+                                      "localhost",
+                                      "-p",
+                                      "1785",
+                                      "test", // Request name
+                                      "Invalid json."}};
+
+  std::stringstream outStream(std::ios::out | std::ios::in);
+  std::stringstream errStream(std::ios::out | std::ios::in);
+
+  CmdLineClient client(outStream, errStream);
+  client.sendRequests<TestJsonClient>(argv.size(), argv.data());
+
+  auto out = outStream.str();
+  auto err = errStream.str();
+
+  EXPECT_EQ(0, out.size());
+  EXPECT_GT(err.size(), 0);
+  std::cerr << err << std::endl;
+
+  server->shutdown();
+  server->join();
+}
+
+TEST(CmdLineClient, sendRequests_InvalidRequestName) {
+  constexpr uint16_t kPort = 1389;
+  auto server = startServer(kPort);
+
+  std::array<const char*, 7> argv = {{"binaryName",
+                                      "-h",
+                                      "localhost",
+                                      "-p",
+                                      "1389",
+                                      "abc", // Request name
+                                      R"json(
+        {
+          "key": "abcdef",
+          "testBool": true,
+          "testInt32": 17,
+          "testInt64": 30
+        }
+      )json"}};
+
+  std::stringstream outStream(std::ios::out | std::ios::in);
+  std::stringstream errStream(std::ios::out | std::ios::in);
+
+  CmdLineClient client(outStream, errStream);
+  client.sendRequests<TestJsonClient>(argv.size(), argv.data());
+
+  auto out = outStream.str();
+  auto err = errStream.str();
+
+  EXPECT_EQ(0, out.size());
+  EXPECT_GT(err.size(), 0);
+  std::cerr << err << std::endl;
 
   server->shutdown();
   server->join();

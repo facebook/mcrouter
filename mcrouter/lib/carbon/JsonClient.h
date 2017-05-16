@@ -16,7 +16,6 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 
 namespace carbon {
-namespace debug {
 
 /**
  * Virtual class responsible for sending json requests to carbon servers.
@@ -52,8 +51,13 @@ class JsonClient {
   /**
    * Creates JsonClient object.
    * May throw std::bad_alloc if some allocation fails.
+   *
+   * @paramm options  Client settings.
+   * @params onError  Callback for when an error happens.
    */
-  explicit JsonClient(Options options);
+  explicit JsonClient(
+      Options options,
+      std::function<void(const std::string& msg)> onError = nullptr);
   virtual ~JsonClient() = default;
 
   /**
@@ -111,13 +115,15 @@ class JsonClient {
 
  private:
   const Options options_;
+  const std::function<void(const std::string& msg)> onError_;
 
   folly::EventBase evb_;
   facebook::memcache::AsyncMcClient client_;
   folly::fibers::FiberManager& fiberManager_;
+
+  void onError(const std::string& msg) const;
 };
 
-} // debug
 } // carbon
 
 #include "JsonClient-inl.h"
