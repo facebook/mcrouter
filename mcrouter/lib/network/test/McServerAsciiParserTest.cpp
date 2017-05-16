@@ -16,7 +16,7 @@ using namespace facebook::memcache;
 
 namespace facebook {
 namespace memcache {
-class UmbrellaMessageInfo;
+struct UmbrellaMessageInfo;
 }
 }
 
