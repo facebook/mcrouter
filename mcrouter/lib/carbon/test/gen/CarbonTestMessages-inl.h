@@ -113,6 +113,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(29, "testSet", testSet_)) {
     return;
   }
+  if (!v.visitField(100, "testType", testType_)) {
+    return;
+  }
 }
 
 template <class V>
@@ -208,6 +211,9 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(29, "testSet", testSet_)) {
+    return;
+  }
+  if (!v.visitField(100, "testType", testType_)) {
     return;
   }
 }

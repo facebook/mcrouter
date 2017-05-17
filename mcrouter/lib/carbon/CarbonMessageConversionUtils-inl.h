@@ -180,6 +180,20 @@ class ToDynamicVisitor {
   template <class T>
   typename std::enable_if<!IsKVContainer<T>::value, folly::dynamic>::type
   toDynamic6(const T& value) const {
+    return toDynamic7(value);
+  }
+
+  template <class T>
+  typename std::enable_if<IsUserReadWriteDefined<T>::value, folly::dynamic>::
+      type
+      toDynamic7(const T& value) const {
+    return "(user type)";
+  }
+
+  template <class T>
+  typename std::enable_if<!IsUserReadWriteDefined<T>::value, folly::dynamic>::
+      type
+      toDynamic7(const T& value) const {
     if (!opts_.ignoreUnserializableTypes) {
       return "(not serializable)";
     }

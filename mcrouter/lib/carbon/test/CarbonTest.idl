@@ -3,6 +3,8 @@ namespace carbon::test;
 import "mcrouter/lib/carbon/test/a/A.idl"
 import "mcrouter/lib/network/Common.idl"
 
+include "mcrouter/lib/carbon/test/TestUserType.h"
+
 request TestRequest with 1: SimpleStruct as Base {
   id: 3;
   name: "test";
@@ -37,6 +39,7 @@ request TestRequest with 1: SimpleStruct as Base {
   27: std::map<std::string, std::vector<uint16_t>> testComplexMap;
   28: std::unordered_set<std::string> testUSet;
   29: std::set<uint64_t> testSet;
+  100: UserType testType;
 };
 
 reply TestReply {

@@ -160,6 +160,10 @@ TEST(CarbonBasic, defaultConstructed) {
   // Ordered set
   EXPECT_TRUE(req.testSet().empty());
 
+  // User Type
+  EXPECT_TRUE(carbon::SerializationTraits<carbon::test::UserType>::isEmpty(
+      req.testType()));
+
   // fields generated for every request (will likely be removed in the future)
   EXPECT_EQ(0, req.exptime());
   EXPECT_EQ(0, req.flags());
@@ -308,6 +312,12 @@ TEST(CarbonBasic, setAndGet) {
   intset.insert(2);
   req.testSet() = intset;
   EXPECT_EQ(intset, req.testSet());
+
+  // User type
+  carbon::test::UserType testType = {"blah", {1, 2, 3}};
+  req.testType() = testType;
+  EXPECT_EQ(testType.name, req.testType().name);
+  EXPECT_EQ(testType.points, req.testType().points);
 }
 
 TEST(CarbonTest, serializeDeserialize) {
@@ -358,6 +368,8 @@ TEST(CarbonTest, serializeDeserialize) {
 
   outRequest.testUSet().insert("hello");
   outRequest.testSet().insert(123);
+
+  outRequest.testType() = {"blah", {1, 2, 3}};
 
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);

@@ -36,6 +36,8 @@
 #include "mcrouter/lib/carbon/test/a/gen/AMessages.h"
 #include "mcrouter/lib/network/gen/CommonMessages.h"
 
+#include "mcrouter/lib/carbon/test/TestUserType.h"
+
 namespace carbon {
 namespace test {
 
@@ -275,6 +277,12 @@ class TestRequest : public carbon::RequestCommon {
   std::set<uint64_t>& testSet() {
     return testSet_;
   }
+  const UserType& testType() const {
+    return testType_;
+  }
+  UserType& testType() {
+    return testType_;
+  }
   uint64_t flags() const {
     return 0;
   }
@@ -322,6 +330,7 @@ class TestRequest : public carbon::RequestCommon {
   std::map<std::string, std::vector<uint16_t>> testComplexMap_;
   std::unordered_set<std::string> testUSet_;
   std::set<uint64_t> testSet_;
+  UserType testType_;
 };
 
 class TestReply : public carbon::ReplyCommon {
