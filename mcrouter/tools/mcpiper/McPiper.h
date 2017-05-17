@@ -53,7 +53,7 @@ class McPiper {
 
   const MessagePrinter::Stats& stats() const noexcept {
     return messagePrinter_->stats();
-  };
+  }
 
  private:
   std::unique_ptr<MessagePrinter> messagePrinter_;

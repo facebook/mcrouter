@@ -32,7 +32,7 @@ namespace memcache {
 template <class Callback>
 class SnifferParserBase {
  public:
-  explicit SnifferParserBase(Callback& cb) noexcept : callback_(cb){};
+  explicit SnifferParserBase(Callback& cb) noexcept : callback_(cb){}
   virtual ~SnifferParserBase() = default;
 
   virtual void
@@ -113,7 +113,7 @@ template <class Callback, class RequestList>
 class SnifferParser : public SnifferParserBase<Callback> {
  public:
   explicit SnifferParser(Callback& cb) noexcept;
-  ~SnifferParser(){};
+  ~SnifferParser(){}
 
   void parse(folly::ByteRange data, uint32_t typeId, bool isFirstPacket) {
     parser_.parse(data, typeId, isFirstPacket);

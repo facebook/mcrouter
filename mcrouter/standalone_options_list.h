@@ -131,7 +131,7 @@ MCROUTER_OPTION_INTEGER(
     "client-timeout",
     no_short,
     "Timeout for sending replies back to clients, in milliseconds. "
-    "(0 to disable)");
+    "(0 to disable)")
 
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE

@@ -21,7 +21,7 @@ using facebook::memcache::mcrouter::Observable;
 struct NoCopy {
   int x;
 
-  explicit NoCopy(int x_ = 0) : x(x_){};
+  explicit NoCopy(int x_ = 0) : x(x_){}
   NoCopy(const NoCopy&) = delete;
   NoCopy(NoCopy&&) = default;
 

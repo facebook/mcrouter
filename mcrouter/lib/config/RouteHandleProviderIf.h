@@ -45,7 +45,7 @@ class RouteHandleProviderIf {
       folly::StringPiece type,
       const folly::dynamic& json) = 0;
 
-  virtual ~RouteHandleProviderIf(){};
+  virtual ~RouteHandleProviderIf(){}
 };
 }
 } // facebook::memcache
