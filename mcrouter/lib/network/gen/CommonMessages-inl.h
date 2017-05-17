@@ -237,10 +237,10 @@ void McExecReply::visitFields(V&& v) const {
 }
 
 template <class V>
-void GoAwayAcknowledgement::visitFields(V&& v) {}
+void GoAwayAcknowledgement::visitFields(V&&) {}
 
 template <class V>
-void GoAwayAcknowledgement::visitFields(V&& v) const {}
+void GoAwayAcknowledgement::visitFields(V&&) const {}
 
 template <class V>
 void GoAwayRequest::visitFields(V&& v) {
