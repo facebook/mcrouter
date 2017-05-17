@@ -13,11 +13,12 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-enum class ProxyRequestPriority : int {
+enum class ProxyRequestPriority : uint8_t {
   kCritical = 0,
-  kAsync,
-  kNumPriorities,
+  kAsync = 1,
+  kNumPriorities = 2,
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

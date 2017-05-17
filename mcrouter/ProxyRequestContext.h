@@ -127,15 +127,14 @@ class ProxyRequestContext {
   }
 
  protected:
-  bool replied_{false};
-  mc_res_t finalResult_{mc_res_unknown};
-
   /**
    * The function that will be called when all replies (including async)
    * come back.
    * Guaranteed to be called after enqueueReply_ (right after in sync mode).
    */
   void (*reqComplete_)(ProxyRequestContext& preq){nullptr};
+  mc_res_t finalResult_{mc_res_unknown};
+  bool replied_{false};
 
   ProxyRequestContext(ProxyBase& pr, ProxyRequestPriority priority__);
 
@@ -148,13 +147,6 @@ class ProxyRequestContext {
 
  private:
   ProxyBase& proxyBase_;
-  bool failoverDisabled_{false};
-
-  /** If true, this is currently being processed by a proxy and
-      we want to notify we're done on destruction. */
-  bool processing_{false};
-
-  bool recording_{false};
 
   std::shared_ptr<CarbonRouterClientBase> requester_;
 
@@ -170,9 +162,15 @@ class ProxyRequestContext {
 
   uint64_t senderIdForTest_{0};
 
+  std::string userIpAddr_;
+
   ProxyRequestPriority priority_{ProxyRequestPriority::kCritical};
 
-  std::string userIpAddr_;
+  bool failoverDisabled_{false};
+  /** If true, this is currently being processed by a proxy and
+      we want to notify we're done on destruction. */
+  bool processing_{false};
+  bool recording_{false};
 
   ProxyRequestContext(const ProxyRequestContext&) = delete;
   ProxyRequestContext(ProxyRequestContext&&) noexcept = delete;
