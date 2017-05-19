@@ -31,4 +31,5 @@ service {
   additional_route_handles: [
     DuplicateRoute @ "mcrouter/lib/carbon/example/DuplicateRoute.h"
   ];
+  gen_client_tool: true;
 };
