@@ -101,35 +101,48 @@ class ToDynamicVisitor {
   }
 
   template <class T>
-  typename std::enable_if<IsCarbonStruct<T>::value, folly::dynamic>::type
+  typename std::enable_if<IsThriftWrapperStruct<T>::value, folly::dynamic>::type
   toDynamic2(const T& value) const {
+    return folly::dynamic("(thrift struct)");
+  }
+
+  template <class T>
+  typename std::enable_if<!IsThriftWrapperStruct<T>::value, folly::dynamic>::
+      type
+      toDynamic2(const T& value) const {
+    return toDynamic3(value);
+  }
+
+  template <class T>
+  typename std::enable_if<IsCarbonStruct<T>::value, folly::dynamic>::type
+  toDynamic3(const T& value) const {
     return convertToFollyDynamic(value, opts_);
   }
 
   template <class T>
   typename std::enable_if<!IsCarbonStruct<T>::value, folly::dynamic>::type
-  toDynamic2(const T& value) const {
-    return toDynamic3(value);
+  toDynamic3(const T& value) const {
+    return toDynamic4(value);
   }
 
   template <class T>
   typename std::enable_if<std::is_enum<T>::value, folly::dynamic>::type
-  toDynamic3(const T& value) const {
+  toDynamic4(const T& value) const {
     return toDynamic(
         static_cast<typename std::underlying_type<T>::type>(value));
   }
 
   template <class T>
   typename std::enable_if<!std::is_enum<T>::value, folly::dynamic>::type
-  toDynamic3(const T& value) const {
-    return toDynamic4(value);
+  toDynamic4(const T& value) const {
+    return toDynamic5(value);
   }
 
   template <class T>
   typename std::enable_if<
       std::is_convertible<T, folly::StringPiece>::value,
       folly::dynamic>::type
-  toDynamic4(const T& value) const {
+  toDynamic5(const T& value) const {
     return folly::StringPiece(value);
   }
 
@@ -137,13 +150,13 @@ class ToDynamicVisitor {
   typename std::enable_if<
       !std::is_convertible<T, folly::StringPiece>::value,
       folly::dynamic>::type
-  toDynamic4(const T& value) const {
-    return toDynamic5(value);
+  toDynamic5(const T& value) const {
+    return toDynamic6(value);
   }
 
   template <class T>
   typename std::enable_if<IsLinearContainer<T>::value, folly::dynamic>::type
-  toDynamic5(const T& value) const {
+  toDynamic6(const T& value) const {
     folly::dynamic array = folly::dynamic::array();
     for (auto it = SerializationTraits<T>::begin(value);
          it != SerializationTraits<T>::end(value);
@@ -155,13 +168,13 @@ class ToDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!IsLinearContainer<T>::value, folly::dynamic>::type
-  toDynamic5(const T& value) const {
-    return toDynamic6(value);
+  toDynamic6(const T& value) const {
+    return toDynamic7(value);
   }
 
   template <class T>
   typename std::enable_if<IsKVContainer<T>::value, folly::dynamic>::type
-  toDynamic6(const T& m) const {
+  toDynamic7(const T& m) const {
     folly::dynamic map = folly::dynamic::object();
     for (auto it = SerializationTraits<T>::begin(m);
          it != SerializationTraits<T>::end(m);
@@ -179,21 +192,21 @@ class ToDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!IsKVContainer<T>::value, folly::dynamic>::type
-  toDynamic6(const T& value) const {
-    return toDynamic7(value);
+  toDynamic7(const T& value) const {
+    return toDynamic8(value);
   }
 
   template <class T>
   typename std::enable_if<IsUserReadWriteDefined<T>::value, folly::dynamic>::
       type
-      toDynamic7(const T& value) const {
+      toDynamic8(const T& value) const {
     return "(user type)";
   }
 
   template <class T>
   typename std::enable_if<!IsUserReadWriteDefined<T>::value, folly::dynamic>::
       type
-      toDynamic7(const T& value) const {
+      toDynamic8(const T& value) const {
     if (!opts_.ignoreUnserializableTypes) {
       return "(not serializable)";
     }
@@ -360,8 +373,21 @@ class FromDynamicVisitor {
   }
 
   template <class T>
-  typename std::enable_if<IsCarbonUnion<T>::value, bool>::type
+  typename std::enable_if<IsThriftWrapperStruct<T>::value, bool>::type
   fromDynamic3(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    onError(name, "Could not deserialize thrift struct");
+    return false;
+  }
+
+  template <class T>
+  typename std::enable_if<!IsThriftWrapperStruct<T>::value, bool>::type
+  fromDynamic3(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic4(name, json, valRef);
+  }
+
+  template <class T>
+  typename std::enable_if<IsCarbonUnion<T>::value, bool>::type
+  fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     size_t numChildErrors = 0;
     auto onChildError = [this, &name, &numChildErrors](
         folly::StringPiece field, folly::StringPiece msg) {
@@ -376,13 +402,13 @@ class FromDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!IsCarbonUnion<T>::value, bool>::type
-  fromDynamic3(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
-    return fromDynamic4(name, json, valRef);
+  fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic5(name, json, valRef);
   }
 
   template <class T>
   typename std::enable_if<IsCarbonStruct<T>::value, bool>::type
-  fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     size_t numChildErrors = 0;
     auto onChildError = [this, &name, &numChildErrors](
         folly::StringPiece field, folly::StringPiece msg) {
@@ -395,13 +421,13 @@ class FromDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!IsCarbonStruct<T>::value, bool>::type
-  fromDynamic4(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
-    return fromDynamic5(name, json, valRef);
+  fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic6(name, json, valRef);
   }
 
   template <class T>
   typename std::enable_if<std::is_enum<T>::value, bool>::type
-  fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic6(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     if (!json.isInt()) {
       onError(name, "Invalid type. Int expected.");
       return false;
@@ -412,15 +438,15 @@ class FromDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!std::is_enum<T>::value, bool>::type
-  fromDynamic5(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
-    return fromDynamic6(name, json, valRef);
+  fromDynamic6(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic7(name, json, valRef);
   }
 
   template <class T>
   typename std::enable_if<
       std::is_convertible<T, folly::StringPiece>::value,
       bool>::type
-  fromDynamic6(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     if (!json.isString()) {
       onError(name, "Invalid type. String expected.");
       return false;
@@ -433,13 +459,13 @@ class FromDynamicVisitor {
   typename std::enable_if<
       !std::is_convertible<T, folly::StringPiece>::value,
       bool>::type
-  fromDynamic6(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
-    return fromDynamic7(name, json, valRef);
+  fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic8(name, json, valRef);
   }
 
   template <class T>
   typename std::enable_if<IsLinearContainer<T>::value, bool>::type
-  fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic8(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     if (!json.isArray()) {
       onError(name, "Invalid type. Array expected.");
       return false;
@@ -456,13 +482,13 @@ class FromDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!IsLinearContainer<T>::value, bool>::type
-  fromDynamic7(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
-    return fromDynamic8(name, json, valRef);
+  fromDynamic8(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+    return fromDynamic9(name, json, valRef);
   }
 
   template <class T>
   typename std::enable_if<IsKVContainer<T>::value, bool>::type
-  fromDynamic8(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic9(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     if (!json.isObject()) {
       onError(name, "Invalid type. Map expected.");
       return false;
@@ -485,7 +511,7 @@ class FromDynamicVisitor {
 
   template <class T>
   typename std::enable_if<!IsKVContainer<T>::value, bool>::type
-  fromDynamic8(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic9(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
     onError(name, "Unsupported type.");
     return false;
   }

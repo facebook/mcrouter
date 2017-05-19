@@ -48,6 +48,22 @@ class IsCarbonStruct {
 };
 
 template <class T>
+class IsThriftWrapperStruct {
+  template <class C>
+  static constexpr decltype(
+      std::declval<const C>().getThriftStruct(),
+      std::true_type())
+  check(int);
+
+  template <class C>
+  static constexpr std::false_type check(...);
+
+ public:
+  static constexpr bool value{decltype(check<T>(0))::value &&
+                              IsCarbonStruct<T>::value};
+};
+
+template <class T>
 class IsCarbonUnion {
   template <class C>
   static constexpr decltype(&C::which, std::true_type()) check(int);
