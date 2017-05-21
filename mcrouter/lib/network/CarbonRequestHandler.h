@@ -48,8 +48,8 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
 
   template <class Request>
   void onRequestImpl(
-      facebook::memcache::McServerRequestContext&& ctx,
-      Request&& req,
+      facebook::memcache::McServerRequestContext&&,
+      Request&&,
       std::false_type) {
     facebook::memcache::throwRuntime(
         "onRequest for {} not defined", typeid(Request).name());

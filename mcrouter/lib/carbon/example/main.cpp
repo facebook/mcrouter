@@ -51,7 +51,9 @@ struct HelloGoodbyeOnRequest {
 
 inline void spawnServer(AsyncMcServer& server) {
   server.spawn([](
-      size_t threadId, folly::EventBase& evb, AsyncMcServerWorker& worker) {
+      size_t /* threadId */,
+      folly::EventBase& evb,
+      AsyncMcServerWorker& worker) {
     worker.setOnRequest(HelloGoodbyeRequestHandler<HelloGoodbyeOnRequest>());
 
     while (worker.isAlive() || worker.writesPending()) {

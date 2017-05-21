@@ -96,7 +96,7 @@ class MigrateRoute {
             [&req, &to]() { return to->route(req); }};
 
         folly::Optional<Reply> reply;
-        folly::fibers::forEach(fs, fs + 2, [&reply](size_t id, Reply newReply) {
+        folly::fibers::forEach(fs, fs + 2, [&reply](size_t, Reply newReply) {
           if (!reply || worseThan(newReply.result(), reply.value().result())) {
             reply = std::move(newReply);
           }
@@ -117,7 +117,7 @@ class MigrateRoute {
   const TimeProvider tp_;
 
   template <class Request>
-  int routeMask(const Request& req, carbon::DeleteLikeT<Request> = 0) const {
+  int routeMask(const Request&, carbon::DeleteLikeT<Request> = 0) const {
     time_t curr = tp_();
 
     if (curr < startTimeSec_) {
@@ -134,7 +134,7 @@ class MigrateRoute {
 
   template <class Request>
   int routeMask(
-      const Request& req,
+      const Request&,
       carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
     time_t curr = tp_();
 

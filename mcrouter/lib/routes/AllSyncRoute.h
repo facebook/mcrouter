@@ -58,7 +58,7 @@ class AllSyncRoute {
 
     folly::Optional<Reply> reply;
     folly::fibers::forEach(
-        fs.begin(), fs.end(), [&reply](size_t id, Reply newReply) {
+        fs.begin(), fs.end(), [&reply](size_t /* id */, Reply newReply) {
           if (!reply || worseThan(newReply.result(), reply.value().result())) {
             reply = std::move(newReply);
           }

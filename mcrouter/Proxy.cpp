@@ -123,7 +123,7 @@ ShadowSettings::~ShadowSettings() {
 void ShadowSettings::registerOnUpdateCallback(
     CarbonRouterInstanceBase& router) {
   handle_ = router.rtVarsData().subscribeAndCall([this](
-      std::shared_ptr<const RuntimeVarsData> oldVars,
+      std::shared_ptr<const RuntimeVarsData> /* oldVars */,
       std::shared_ptr<const RuntimeVarsData> newVars) {
     if (!newVars || keyFractionRangeRv_.empty()) {
       return;

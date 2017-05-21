@@ -30,15 +30,14 @@ struct ErrorRoute {
   }
 
   template <class Request>
-  void traverse(
-      const Request& req,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {}
+  void traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
+      const {}
 
   explicit ErrorRoute(std::string valueToSet = "")
       : valueToSet_(std::move(valueToSet)) {}
 
   template <class Request>
-  ReplyT<Request> route(const Request& req) {
+  ReplyT<Request> route(const Request&) {
     return createReply<Request>(ErrorReply, valueToSet_);
   }
 

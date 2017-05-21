@@ -369,8 +369,7 @@ void proxy_config_swap(
 template <class RouterInfo>
 template <class Request>
 typename std::enable_if<TNotRateLimited<Request>::value, bool>::type
-Proxy<RouterInfo>::rateLimited(ProxyRequestPriority priority, const Request&)
-    const {
+Proxy<RouterInfo>::rateLimited(ProxyRequestPriority, const Request&) const {
   return false;
 }
 

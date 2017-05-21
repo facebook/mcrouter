@@ -105,7 +105,7 @@ class RouteCommandDispatcher {
 
   template <class Request>
   static void processMsg(
-      RouteCommandDispatcher<RouterInfo>& me,
+      RouteCommandDispatcher<RouterInfo>& /* me */,
       const std::shared_ptr<
           ProxyRequestContextTyped<RouterInfo, ServiceInfoRequest>>& ctx,
       folly::StringPiece keyStr,
@@ -210,18 +210,19 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
     Proxy<RouterInfo>* proxy,
     const ProxyConfig<RouterInfo>& config)
     : proxy_(proxy), proxyRoute_(config.proxyRoute()) {
-  commands_.emplace("version", [](const std::vector<folly::StringPiece>& args) {
-    return MCROUTER_PACKAGE_STRING;
-  });
+  commands_.emplace(
+      "version", [](const std::vector<folly::StringPiece>& /* args */) {
+        return MCROUTER_PACKAGE_STRING;
+      });
 
   commands_.emplace(
-      "config_age", [proxy](const std::vector<folly::StringPiece>& args) {
+      "config_age", [proxy](const std::vector<folly::StringPiece>& /* args */) {
         /* capturing this and accessing proxy_ crashes gcc-4.7 */
         return std::to_string(proxy->stats().getConfigAge(time(nullptr)));
       });
 
   commands_.emplace(
-      "config_file", [this](const std::vector<folly::StringPiece>& args) {
+      "config_file", [this](const std::vector<folly::StringPiece>& /* args */) {
         folly::StringPiece configStr = proxy_->router().opts().config;
         if (configStr.startsWith(ConfigApi::kFilePrefix)) {
           configStr.removePrefix(ConfigApi::kFilePrefix);
@@ -295,7 +296,7 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
 
   commands_.emplace(
       "config_md5_digest",
-      [&config](const std::vector<folly::StringPiece>& args) {
+      [&config](const std::vector<folly::StringPiece>& /* args */) {
         if (config.getConfigMd5Digest().empty()) {
           throw std::runtime_error("no config md5 digest found!");
         }
@@ -304,14 +305,14 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
 
   commands_.emplace(
       "config_sources_info",
-      [this](const std::vector<folly::StringPiece>& args) {
+      [this](const std::vector<folly::StringPiece>& /* args */) {
         auto configInfo = proxy_->router().configApi().getConfigSourcesInfo();
         return toPrettySortedJson(configInfo);
       });
 
   commands_.emplace(
       "preprocessed_config",
-      [this](const std::vector<folly::StringPiece>& args) {
+      [this](const std::vector<folly::StringPiece>& /* args */) {
         std::string confFile;
         std::string path;
         if (!proxy_->router().configApi().getConfigFile(confFile, path)) {
@@ -322,9 +323,10 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
         return toPrettySortedJson(builder.preprocessedConfig());
       });
 
-  commands_.emplace("hostid", [](const std::vector<folly::StringPiece>& args) {
-    return folly::to<std::string>(globals::hostid());
-  });
+  commands_.emplace(
+      "hostid", [](const std::vector<folly::StringPiece>& /* args */) {
+        return folly::to<std::string>(globals::hostid());
+      });
 
   commands_.emplace(
       "verbosity", [](const std::vector<folly::StringPiece>& args) {

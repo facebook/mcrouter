@@ -40,7 +40,7 @@ class McPiperVisitor {
       : script_(script), nested(script_ ? 1 : 0) {}
 
   template <class T>
-  bool enterMixin(size_t id, folly::StringPiece name, const T& t) {
+  bool enterMixin(size_t /* id */, folly::StringPiece /* name */, const T&) {
     return true;
   }
 
@@ -49,7 +49,7 @@ class McPiperVisitor {
   }
 
   template <class T>
-  bool visitField(size_t id, folly::StringPiece name, const T& t) {
+  bool visitField(size_t /* id */, folly::StringPiece name, const T& t) {
     if (kExcuseValues.find(name.str()) == kExcuseValues.end()) {
       render(name, t);
     }
@@ -203,7 +203,7 @@ inline void McPiperVisitor::render(folly::StringPiece name, const bool& b) {
 
 template <class R>
 facebook::memcache::StyledString
-print(const R& req, folly::StringPiece name, bool script) {
+print(const R& req, folly::StringPiece /* name */, bool script) {
   detail::McPiperVisitor printer(script);
   req.visitFields(printer);
   return std::move(printer).styled();

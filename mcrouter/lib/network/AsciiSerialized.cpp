@@ -170,7 +170,7 @@ void AsciiSerializedRequest::prepareImpl(const McTouchRequest& request) {
 }
 
 // Version op.
-void AsciiSerializedRequest::prepareImpl(const McVersionRequest& request) {
+void AsciiSerializedRequest::prepareImpl(const McVersionRequest&) {
   addString("version\r\n");
 }
 

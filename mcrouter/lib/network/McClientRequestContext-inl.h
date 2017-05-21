@@ -27,8 +27,7 @@ typename std::enable_if<
 template <class Request>
 typename std::enable_if<
     !RequestHasFbTraceInfo<Request>::value,
-    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&
-                                                              request) {
+    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&) {
   return nullptr;
 }
 

@@ -315,7 +315,7 @@ class MockMcOnRequest {
 };
 
 void serverLoop(
-    size_t threadId,
+    size_t /* threadId */,
     folly::EventBase& evb,
     AsyncMcServerWorker& worker) {
   worker.setOnRequest(MemcacheRequestHandler<MockMcOnRequest>());

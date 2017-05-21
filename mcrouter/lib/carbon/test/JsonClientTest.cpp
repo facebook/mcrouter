@@ -57,7 +57,9 @@ struct CarbonTestOnRequest {
     reply.valInt64() = request.testInt64() * 2;
     McServerRequestContext::reply(std::move(ctx), std::move(reply));
   }
-  void onRequest(McServerRequestContext&& ctx, TestRequestStringKey&& request) {
+  void onRequest(
+      McServerRequestContext&& ctx,
+      TestRequestStringKey&& /* request */) {
     McServerRequestContext::reply(
         std::move(ctx), TestReplyStringKey(mc_res_notfound));
   }
@@ -71,7 +73,9 @@ std::unique_ptr<AsyncMcServer> startServer(uint16_t port) {
   auto server = std::make_unique<AsyncMcServer>(std::move(opts));
 
   server->spawn(
-      [](size_t threadId, folly::EventBase& evb, AsyncMcServerWorker& worker) {
+      [](size_t /* threadId */,
+         folly::EventBase& evb,
+         AsyncMcServerWorker& worker) {
         worker.setOnRequest(CarbonTestRequestHandler<CarbonTestOnRequest>());
 
         while (worker.isAlive() || worker.writesPending()) {

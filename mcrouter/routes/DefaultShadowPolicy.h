@@ -25,7 +25,7 @@ class DefaultShadowPolicy {
   }
 
   template <class Request>
-  static bool shouldDelayShadow(const Request& req) {
+  static bool shouldDelayShadow(const Request&) {
     return false;
   }
 };

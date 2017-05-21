@@ -29,7 +29,7 @@ class ToDynamicVisitor {
       : value_(folly::dynamic::object()), opts_(opts) {}
 
   template <class T>
-  bool enterMixin(uint16_t id, folly::StringPiece name, const T& value) {
+  bool enterMixin(uint16_t /* id */, folly::StringPiece name, const T& value) {
     if (!opts_.inlineMixins) {
       value_.insert(getMixinName(name), convertToFollyDynamic(value));
       return false;
@@ -43,7 +43,7 @@ class ToDynamicVisitor {
   }
 
   template <class T>
-  bool visitField(uint16_t id, folly::StringPiece name, const T& value) {
+  bool visitField(uint16_t /* id */, folly::StringPiece name, const T& value) {
     auto val = toDynamic(value);
     if (val != nullptr) {
       value_.insert(name, std::move(val));
@@ -102,7 +102,7 @@ class ToDynamicVisitor {
 
   template <class T>
   typename std::enable_if<IsThriftWrapperStruct<T>::value, folly::dynamic>::type
-  toDynamic2(const T& value) const {
+  toDynamic2(const T& /* value */) const {
     return folly::dynamic("(thrift struct)");
   }
 
@@ -199,14 +199,14 @@ class ToDynamicVisitor {
   template <class T>
   typename std::enable_if<IsUserReadWriteDefined<T>::value, folly::dynamic>::
       type
-      toDynamic8(const T& value) const {
+      toDynamic8(const T& /* value */) const {
     return "(user type)";
   }
 
   template <class T>
   typename std::enable_if<!IsUserReadWriteDefined<T>::value, folly::dynamic>::
       type
-      toDynamic8(const T& value) const {
+      toDynamic8(const T& /* value */) const {
     if (!opts_.ignoreUnserializableTypes) {
       return "(not serializable)";
     }
@@ -223,7 +223,7 @@ class FromDynamicVisitor {
       : json_(json), onError_(std::move(onError)) {}
 
   template <class T>
-  bool enterMixin(uint16_t id, folly::StringPiece name, T& value) {
+  bool enterMixin(uint16_t /* id */, folly::StringPiece name, T& value) {
     auto mixinName = getMixinName(name);
     if (auto jsonPtr = json_.get_ptr(mixinName)) {
       std::function<void(folly::StringPiece, folly::StringPiece)> onChildError;
@@ -244,7 +244,7 @@ class FromDynamicVisitor {
   }
 
   template <class T>
-  bool visitField(uint16_t id, folly::StringPiece name, T& value) {
+  bool visitField(uint16_t /* id */, folly::StringPiece name, T& value) {
     if (auto jsonPtr = json_.get_ptr(name)) {
       fromDynamic(name, *jsonPtr, value);
     }
@@ -374,7 +374,10 @@ class FromDynamicVisitor {
 
   template <class T>
   typename std::enable_if<IsThriftWrapperStruct<T>::value, bool>::type
-  fromDynamic3(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  fromDynamic3(
+      folly::StringPiece name,
+      const folly::dynamic& /* json */,
+      T& /* valRef */) {
     onError(name, "Could not deserialize thrift struct");
     return false;
   }
@@ -510,8 +513,10 @@ class FromDynamicVisitor {
   }
 
   template <class T>
-  typename std::enable_if<!IsKVContainer<T>::value, bool>::type
-  fromDynamic9(folly::StringPiece name, const folly::dynamic& json, T& valRef) {
+  typename std::enable_if<!IsKVContainer<T>::value, bool>::type fromDynamic9(
+      folly::StringPiece name,
+      const folly::dynamic& /* json */,
+      T& /* valRef */) {
     onError(name, "Unsupported type.");
     return false;
   }

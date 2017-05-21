@@ -231,7 +231,7 @@ static std::string max_max_stat_to_str(ProxyBase* proxy, int idx) {
  *
  * @eturn the length of the string written, excluding terminator
  */
-static std::string stat_to_str(const stat_t* stat, void* ptr) {
+static std::string stat_to_str(const stat_t* stat, void* /* ptr */) {
   switch (stat->type) {
     case stat_string:
       return stat->data.string;

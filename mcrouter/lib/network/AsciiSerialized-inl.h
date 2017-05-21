@@ -19,8 +19,7 @@ struct AsciiSerializedRequest::PrepareImplWrapper {
   template <class Request>
   typename std::enable_if<
       std::is_same<PrepareType<Request>, std::false_type>::value,
-      bool>::
-      type static prepare(AsciiSerializedRequest& s, const Request& request) {
+      bool>::type static prepare(AsciiSerializedRequest&, const Request&) {
     return false;
   }
 

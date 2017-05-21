@@ -77,8 +77,8 @@ class DestinationRoute {
 
   template <class Request>
   void traverse(
-      const Request& req,
-      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>& t) const {
+      const Request&,
+      const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>&) const {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
     if (ctx) {
       ctx->recordDestination(

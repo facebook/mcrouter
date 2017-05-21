@@ -32,7 +32,7 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(std::string valueToSet) {
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeErrorRoute(
-    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>&,
     const folly::dynamic& json) {
   checkLogic(
       json.isObject() || json.isString() || json.isNull(),

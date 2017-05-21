@@ -69,7 +69,7 @@ class ShutdownPipe : public folly::EventHandler {
   AsyncMcServer& server_;
   int fd_;
 
-  void handlerReady(uint16_t events) noexcept override final {
+  void handlerReady(uint16_t /* events */) noexcept override final {
     LOG(INFO) << "Shutting down on signal";
     server_.shutdown();
   }
@@ -188,7 +188,7 @@ class McServerThread {
         : mcServerThread_(mcServerThread), secure_(secure) {}
     void connectionAccepted(
         int fd,
-        const folly::SocketAddress& clientAddr) noexcept override final {
+        const folly::SocketAddress& /* clientAddr */) noexcept override final {
       if (secure_) {
         const auto& server = mcServerThread_->server_;
         auto& opts = server.opts_;

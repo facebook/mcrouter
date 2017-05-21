@@ -779,7 +779,7 @@ req_body := (' '+ digit+)? ' '* new_line @{
 write data;
 }%%
 
-void McServerAsciiParser::consumeShutdown(folly::IOBuf& buffer) {
+void McServerAsciiParser::consumeShutdown(folly::IOBuf&) {
   auto& message =
     currentMessage_.get<McShutdownRequest>();
   %%{
@@ -913,7 +913,7 @@ req_body := (' '* delay)? ' '* new_line @{
 write data;
 }%%
 
-void McServerAsciiParser::consumeFlushAll(folly::IOBuf& buffer) {
+void McServerAsciiParser::consumeFlushAll(folly::IOBuf&) {
   auto& message =
     currentMessage_.get<McFlushAllRequest>();
   %%{
@@ -1091,7 +1091,7 @@ command := get | gets | lease_get | metaget | set | add | replace | append |
 write data;
 }%%
 
-void McServerAsciiParser::opTypeConsumer(folly::IOBuf& buffer) {
+void McServerAsciiParser::opTypeConsumer(folly::IOBuf&) {
   %%{
     machine mc_ascii_req_type;
     write init nocs;

@@ -179,9 +179,9 @@ unordered_map<string, string> McrouterOptionsBase::toDict() const {
   unordered_map<string, string> ret;
 
   forEach([&ret](
-      const string& name,
-      McrouterOptionData::Type type,
-      const boost::any& value) { ret[name] = toString(value); });
+      const string& name, McrouterOptionData::Type, const boost::any& value) {
+    ret[name] = toString(value);
+  });
 
   return ret;
 }

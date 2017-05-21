@@ -250,7 +250,7 @@ void McServerSession::readEOF() noexcept {
   close();
 }
 
-void McServerSession::readErr(const folly::AsyncSocketException& ex) noexcept {
+void McServerSession::readErr(const folly::AsyncSocketException&) noexcept {
   close();
 }
 
@@ -479,8 +479,8 @@ void McServerSession::writeSuccess() noexcept {
 }
 
 void McServerSession::writeErr(
-    size_t bytesWritten,
-    const folly::AsyncSocketException& ex) noexcept {
+    size_t /* bytesWritten */,
+    const folly::AsyncSocketException&) noexcept {
   DestructorGuard dg(this);
   completeWrite();
   close();

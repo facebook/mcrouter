@@ -46,7 +46,7 @@ typename std::enable_if<
     std::shared_ptr<RouteHandleIf>>::type
 wrapWithBigValueRoute(
     std::shared_ptr<RouteHandleIf> ch,
-    const McrouterOptions& routerOpts) {
+    const McrouterOptions& /* routerOpts */) {
   return std::move(ch);
 }
 

@@ -74,7 +74,7 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
   void shutdownWrite() override {}
   void shutdownWriteNow() override {}
 
-  void setSendTimeout(uint32_t milliseconds) override {}
+  void setSendTimeout(uint32_t /* milliseconds */) override {}
   uint32_t getSendTimeout() const override {
     return 0;
   }
@@ -88,7 +88,7 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
   bool error() const override {
     return false;
   }
-  void attachEventBase(folly::EventBase* eventBase) override {}
+  void attachEventBase(folly::EventBase*) override {}
   void detachEventBase() override {}
   folly::EventBase* getEventBase() const override {
     return &harness_.eventBase_;
@@ -98,14 +98,14 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
     return false;
   }
 
-  void getLocalAddress(folly::SocketAddress* address) const override {}
-  void getPeerAddress(folly::SocketAddress* address) const override {}
+  void getLocalAddress(folly::SocketAddress*) const override {}
+  void getPeerAddress(folly::SocketAddress*) const override {}
 
   bool isEorTrackingEnabled() const override {
     return false;
   }
 
-  void setEorTracking(bool track) override {}
+  void setEorTracking(bool /* track */) override {}
 
   bool connecting() const override {
     return false;

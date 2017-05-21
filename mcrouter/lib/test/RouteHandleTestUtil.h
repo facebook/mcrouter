@@ -47,8 +47,8 @@ typename std::enable_if<Reply::hasValue, void>::type setReplyValue(
 }
 template <class Reply>
 typename std::enable_if<!Reply::hasValue, void>::type setReplyValue(
-    Reply& reply,
-    const std::string& val) {}
+    Reply&,
+    const std::string& /* val */) {}
 } // detail
 
 struct GetRouteTestData {
@@ -178,9 +178,8 @@ struct RecordingRoute {
   }
 
   template <class Request>
-  void traverse(
-      const Request& req,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {}
+  void traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
+      const {}
 
   GetRouteTestData dataGet_;
   UpdateRouteTestData dataUpdate_;

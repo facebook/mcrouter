@@ -246,8 +246,8 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
 
   void dispatchTypedRequestIfDefined(
       const UmbrellaMessageInfo&,
-      const folly::IOBuf& reqBody,
-      McServerRequestContext&& ctx,
+      const folly::IOBuf& /* reqBody */,
+      McServerRequestContext&&,
       std::false_type) {
     throw std::runtime_error("dispatchTypedRequestIfDefined got bad request");
   }
@@ -261,10 +261,8 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   }
 
   template <class Request>
-  void requestReadyImpl(
-      McServerRequestContext&& ctx,
-      Request&& req,
-      std::false_type) {
+  void
+  requestReadyImpl(McServerRequestContext&& ctx, Request&&, std::false_type) {
     McServerRequestContext::reply(
         std::move(ctx), ReplyT<Request>(mc_res_local_error));
   }

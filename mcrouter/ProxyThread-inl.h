@@ -17,7 +17,7 @@ namespace mcrouter {
 
 inline ProxyThread::ProxyThread(
     const CarbonRouterInstanceBase& router,
-    size_t id) {
+    size_t /* id */) {
   thread_.start();
   getEventBase().runInEventBaseThreadAndWait(
       [&] { mcrouterSetThisThreadName(router.opts(), "mcrpxy"); });

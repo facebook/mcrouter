@@ -115,7 +115,7 @@ typename std::enable_if<R::hasValue, folly::IOBuf*>::type valuePtrUnsafe(
 }
 template <class R>
 typename std::enable_if<!R::hasValue, folly::IOBuf*>::type valuePtrUnsafe(
-    const R& requestOrReply) {
+    const R& /* requestOrReply */) {
   return nullptr;
 }
 
@@ -128,7 +128,7 @@ typename std::enable_if<R::hasValue, folly::StringPiece>::type valueRangeSlow(
 
 template <class R>
 typename std::enable_if<!R::hasValue, folly::StringPiece>::type valueRangeSlow(
-    R& requestOrReply) {
+    R& /* requestOrReply */) {
   return folly::StringPiece();
 }
 
@@ -166,7 +166,7 @@ template <class TypeList>
 inline size_t getTypeIdByName(folly::StringPiece name, TypeList);
 
 template <>
-inline size_t getTypeIdByName(folly::StringPiece name, List<>) {
+inline size_t getTypeIdByName(folly::StringPiece /* name */, List<>) {
   return 0;
 }
 

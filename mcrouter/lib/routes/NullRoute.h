@@ -38,9 +38,8 @@ struct NullRoute {
   }
 
   template <class Request>
-  void traverse(
-      const Request& req,
-      const RouteHandleTraverser<RouteHandleIf>& t) const {}
+  void traverse(const Request&, const RouteHandleTraverser<RouteHandleIf>&)
+      const {}
 
   template <class Request>
   static ReplyT<Request> route(const Request& req) {

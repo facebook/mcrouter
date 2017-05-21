@@ -93,7 +93,7 @@ class McAsciiParserHarness {
   template <class Reply>
   void replyReady(
       Reply&& reply,
-      uint64_t reqId,
+      uint64_t /* reqId */,
       ReplyStatsContext /* replyStatsContext */) {
     EXPECT_TRUE(currentId_ < replies_.size());
     EXPECT_FALSE(replies_[currentId_]->shouldFail);
@@ -107,13 +107,13 @@ class McAsciiParserHarness {
     ++currentId_;
   }
 
-  void parseError(mc_res_t result, folly::StringPiece reason) {
+  void parseError(mc_res_t /* result */, folly::StringPiece /* reason */) {
     EXPECT_TRUE(currentId_ < replies_.size());
     EXPECT_TRUE(replies_[currentId_]->shouldFail);
     errorState_ = true;
   }
 
-  bool nextReplyAvailable(uint64_t reqId) {
+  bool nextReplyAvailable(uint64_t /* reqId */) {
     EXPECT_TRUE(currentId_ < replies_.size());
     replies_[currentId_]->initializeParser(*parser_);
     return true;
@@ -203,7 +203,7 @@ Reply setVersion(Reply reply, std::string version) {
 McMetagetReply createMetagetHitReply(
     int32_t age,
     uint32_t exptime,
-    uint64_t flags,
+    uint64_t /* flags */,
     std::string host) {
   McMetagetReply msg;
   msg.age() = age;

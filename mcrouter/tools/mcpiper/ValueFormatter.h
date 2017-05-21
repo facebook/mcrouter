@@ -46,9 +46,9 @@ class ValueFormatter {
    */
   virtual StyledString uncompressAndFormat(
       folly::StringPiece value,
-      uint64_t flags,
+      uint64_t /* flags */,
       PrettyFormat format,
-      bool script,
+      bool /* script */,
       size_t& uncompressedSize) noexcept {
     uncompressedSize = value.size();
     return StyledString(value.str(), format.dataValueColor);

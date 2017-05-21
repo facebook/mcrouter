@@ -31,13 +31,13 @@ typename std::enable_if<M::hasExptime, int32_t>::type getExptime(const M& req) {
 }
 template <class M>
 typename std::enable_if<!M::hasExptime, int32_t>::type getExptime(
-    const M& reply) {
+    const M& /* reply */) {
   return 0;
 }
 
 // Lease token
 template <class M>
-int64_t getLeaseToken(const M& msg) {
+int64_t getLeaseToken(const M& /* msg */) {
   return 0;
 }
 inline int64_t getLeaseToken(const McLeaseGetReply& msg) {
@@ -51,7 +51,7 @@ inline int64_t getLeaseToken(const McLeaseSetRequest& msg) {
 template <class M>
 typename std::
     enable_if<!carbon::detail::HasMessage<M>::value, folly::StringPiece>::type
-    getMessage(const M& msg) {
+    getMessage(const M& /* msg */) {
   return folly::StringPiece();
 }
 
@@ -94,11 +94,11 @@ typename std::enable_if<
     std::is_same<RequestFromReplyType<Reply, RequestReplyPairs>, void>::value,
     void>::type
 prepareUmbrellaRawReply(
-    UmbrellaSerializedMessage& umbrellaSerializedMessage,
-    Reply&& reply,
-    uint64_t reqid,
-    const struct iovec*& iovOut,
-    size_t& niovOut) {
+    UmbrellaSerializedMessage&,
+    Reply&&,
+    uint64_t /* reqid */,
+    const struct iovec*& /* iovOut */,
+    size_t& /* niovOut */) {
   LOG(ERROR) << "Umbrella Protocol does not support a reply type"
              << " that is not Memcache compatible!";
 }

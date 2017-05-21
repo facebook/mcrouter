@@ -86,7 +86,7 @@ std::unique_ptr<folly::IOBuf> wrapIovec(
 class NoCompressionCodec : public CompressionCodec {
  public:
   NoCompressionCodec(
-      std::unique_ptr<folly::IOBuf> dictionary,
+      std::unique_ptr<folly::IOBuf> /* dictionary */,
       uint32_t id,
       FilteringOptions codecFilteringOptions,
       uint32_t codecCompressionLevel)
@@ -103,7 +103,7 @@ class NoCompressionCodec : public CompressionCodec {
   std::unique_ptr<folly::IOBuf> uncompress(
       const struct iovec* iov,
       size_t iovcnt,
-      size_t uncompressedLength = 0) override final {
+      size_t /* uncompressedLength */ = 0) override final {
     return wrapIovec(iov, iovcnt);
   }
 };

@@ -82,8 +82,8 @@ class ClientServerMcParser {
 
     void parseError(mc_res_t, folly::StringPiece) {}
 
-    void handleConnectionControlMessage(const UmbrellaMessageInfo& headerInfo) {
-    }
+    void handleConnectionControlMessage(
+        const UmbrellaMessageInfo& /* headerInfo */) {}
 
    private:
     Callback& callback_;
@@ -102,7 +102,7 @@ class ClientServerMcParser {
     explicit RequestCallback(Callback& callback) : callback_(callback) {}
 
     template <class Request>
-    void onRequest(Request&& req, bool noreply) {
+    void onRequest(Request&& req, bool /* noreply */) {
       callback_.requestReady(0, std::move(req));
     }
 

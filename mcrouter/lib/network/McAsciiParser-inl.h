@@ -193,7 +193,7 @@ void McClientAsciiParser::consumeVersion(const folly::IOBuf& buffer) {
 }
 
 template <class Reply>
-void McClientAsciiParser::consumeIpAddr(const folly::IOBuf& buffer) {
+void McClientAsciiParser::consumeIpAddr(const folly::IOBuf& /* buffer */) {
   auto& message = currentMessage_.get<Reply>();
   char inAddrBuf[sizeof(struct in6_addr)];
   // Max ip address length is INET6_ADDRSTRLEN - 1 chars.

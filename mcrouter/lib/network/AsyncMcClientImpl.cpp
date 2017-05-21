@@ -780,7 +780,9 @@ void AsyncMcClientImpl::handleConnectionControlMessage(
   }
 }
 
-void AsyncMcClientImpl::parseError(mc_res_t result, folly::StringPiece reason) {
+void AsyncMcClientImpl::parseError(
+    mc_res_t /* result */,
+    folly::StringPiece reason) {
   logErrorWithContext(reason);
   // mc_parser can call the parseError multiple times, process only first.
   if (connectionState_ != ConnectionState::UP) {
