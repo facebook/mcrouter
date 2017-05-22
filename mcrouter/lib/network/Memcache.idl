@@ -331,4 +331,5 @@ service {
       McDecrRequest
     ]
   };
+  gen_client_tool: true;
 };
