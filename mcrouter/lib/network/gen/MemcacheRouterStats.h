@@ -25,7 +25,7 @@ namespace facebook {
 namespace memcache {
 
 struct MemcacheRouterStatsConfig {
-  static constexpr size_t kNumRequestGroups = 8;
+  static constexpr size_t kNumRequestGroups = 9;
   static constexpr std::array<folly::StringPiece, 1 * kNumRequestGroups>
       sumStatNames{{folly::StringPiece("cmd_delete_count"),
                     folly::StringPiece("cmd_get_count"),
@@ -34,7 +34,8 @@ struct MemcacheRouterStatsConfig {
                     folly::StringPiece("cmd_set_count"),
                     folly::StringPiece("cmd_other_count"),
                     folly::StringPiece("cmd_gets_count"),
-                    folly::StringPiece("cmd_cas_count")}};
+                    folly::StringPiece("cmd_cas_count"),
+                    folly::StringPiece("cmd_append_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
       rateStatNames{{folly::StringPiece("cmd_delete"),
                      folly::StringPiece("cmd_get"),
@@ -44,6 +45,7 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_other"),
                      folly::StringPiece("cmd_gets"),
                      folly::StringPiece("cmd_cas"),
+                     folly::StringPiece("cmd_append"),
                      folly::StringPiece("cmd_delete_out"),
                      folly::StringPiece("cmd_get_out"),
                      folly::StringPiece("cmd_lease_get_out"),
@@ -52,6 +54,7 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_other_out"),
                      folly::StringPiece("cmd_gets_out"),
                      folly::StringPiece("cmd_cas_out"),
+                     folly::StringPiece("cmd_append_out"),
                      folly::StringPiece("cmd_delete_out_all"),
                      folly::StringPiece("cmd_get_out_all"),
                      folly::StringPiece("cmd_lease_get_out_all"),
@@ -59,7 +62,8 @@ struct MemcacheRouterStatsConfig {
                      folly::StringPiece("cmd_set_out_all"),
                      folly::StringPiece("cmd_other_out_all"),
                      folly::StringPiece("cmd_gets_out_all"),
-                     folly::StringPiece("cmd_cas_out_all")}};
+                     folly::StringPiece("cmd_cas_out_all"),
+                     folly::StringPiece("cmd_append_out_all")}};
 
   template <class Request>
   static constexpr size_t getStatGroup();
@@ -74,7 +78,7 @@ MemcacheRouterStatsConfig::getStatGroup<McAddRequest>() {
 template <>
 inline constexpr size_t
 MemcacheRouterStatsConfig::getStatGroup<McAppendRequest>() {
-  return 5; // stat group 'other'
+  return 8; // stat group 'append'
 }
 
 template <>
