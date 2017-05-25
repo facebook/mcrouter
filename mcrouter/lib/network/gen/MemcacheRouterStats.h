@@ -44,7 +44,7 @@ struct MemcacheRouterStatsConfig {
                     folly::StringPiece("cmd_replace_count"),
                     folly::StringPiece("cmd_flushall_count"),
                     folly::StringPiece("cmd_flushre_count"),
-                    folly::StringPiece("cmd_touch_count"}};
+                    folly::StringPiece("cmd_touch_count")}};
   static constexpr std::array<folly::StringPiece, 3 * kNumRequestGroups>
       rateStatNames{{folly::StringPiece("cmd_delete"),
                      folly::StringPiece("cmd_get"),
