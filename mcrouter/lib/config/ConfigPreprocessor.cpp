@@ -386,11 +386,30 @@ class ConfigPreprocessor::Macro {
             tryGet(param, "name", "Macro param object"),
             "Macro param object name");
 
+        auto optionalPtr = param.get_ptr("optional");
+        if (optionalPtr) {
+          checkLogic(
+              optionalPtr->isBool(),
+              "Incorrect definition for parameter '{}' in macro '{}'. Expected "
+              "optional parameter 'optional' to be boolean, but got {}!",
+              name,
+              name_,
+              optionalPtr->typeName());
+        }
+
         if (auto defaultPtr = param.get_ptr("default")) {
+          if (optionalPtr && !optionalPtr->getBool()) {
+            throwLogic(
+                "Conflicting options provided for parameter '{}' in "
+                "macro '{}'. Default was set, but the parameter is also "
+                "explicitly marked as not optional.",
+                name,
+                name_);
+          }
           hasOptional = true;
           --minParamCnt_;
           params_.emplace_back(name.str(), *defaultPtr, false);
-        } else if (param.get_ptr("optional") != nullptr) {
+        } else if (optionalPtr && optionalPtr->getBool()) {
           hasOptional = true;
           --minParamCnt_;
           params_.emplace_back(name.str(), nullptr, false);
