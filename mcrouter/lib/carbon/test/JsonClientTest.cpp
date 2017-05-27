@@ -19,6 +19,7 @@
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/test/ListenSocket.h"
 
 using carbon::JsonClient;
 using carbon::tools::CmdLineClient;
@@ -65,9 +66,9 @@ struct CarbonTestOnRequest {
   }
 };
 
-std::unique_ptr<AsyncMcServer> startServer(uint16_t port) {
+std::unique_ptr<AsyncMcServer> startServer(int existingSocketFd) {
   AsyncMcServer::Options opts;
-  opts.ports.push_back(port);
+  opts.existingSocketFd = existingSocketFd;
   opts.numThreads = 1;
 
   auto server = std::make_unique<AsyncMcServer>(std::move(opts));
@@ -108,9 +109,9 @@ inline void checkIntField(
 } // anonymous namespace
 
 TEST(JsonClient, sendRequests) {
-  constexpr uint16_t kPort = 1235;
-  auto server = startServer(kPort);
-  TestJsonClient client(getClientOpts(kPort));
+  ListenSocket socket;
+  auto server = startServer(socket.getSocketFd());
+  TestJsonClient client(getClientOpts(socket.getPort()));
 
   const std::string payload = R"json(
     {
@@ -135,9 +136,9 @@ TEST(JsonClient, sendRequests) {
 }
 
 TEST(JsonClient, sendRequests_Array) {
-  constexpr uint16_t kPort = 1335;
-  auto server = startServer(kPort);
-  TestJsonClient client(getClientOpts(kPort));
+  ListenSocket socket;
+  auto server = startServer(socket.getSocketFd());
+  TestJsonClient client(getClientOpts(socket.getPort()));
 
   const std::string payload = R"json(
     [
@@ -172,14 +173,15 @@ TEST(JsonClient, sendRequests_Array) {
 }
 
 TEST(CmdLineClient, sendRequests) {
-  constexpr uint16_t kPort = 1538;
-  auto server = startServer(kPort);
+  ListenSocket socket;
+  auto server = startServer(socket.getSocketFd());
+  auto portStr = folly::to<std::string>(socket.getPort());
 
   std::array<const char*, 7> argv = {{"binaryName",
                                       "-h",
                                       "localhost",
                                       "-p",
-                                      "1538",
+                                      portStr.c_str(),
                                       "test", // Request name
                                       R"json(
         {
@@ -213,14 +215,15 @@ TEST(CmdLineClient, sendRequests) {
 }
 
 TEST(CmdLineClient, sendRequests_InvalidJson) {
-  constexpr uint16_t kPort = 1785;
-  auto server = startServer(kPort);
+  ListenSocket socket;
+  auto server = startServer(socket.getSocketFd());
+  auto portStr = folly::to<std::string>(socket.getPort());
 
   std::array<const char*, 7> argv = {{"binaryName",
                                       "-h",
                                       "localhost",
                                       "-p",
-                                      "1785",
+                                      portStr.c_str(),
                                       "test", // Request name
                                       "Invalid json."}};
 
@@ -242,14 +245,15 @@ TEST(CmdLineClient, sendRequests_InvalidJson) {
 }
 
 TEST(CmdLineClient, sendRequests_InvalidRequestName) {
-  constexpr uint16_t kPort = 1389;
-  auto server = startServer(kPort);
+  ListenSocket socket;
+  auto server = startServer(socket.getSocketFd());
+  auto portStr = folly::to<std::string>(socket.getPort());
 
   std::array<const char*, 7> argv = {{"binaryName",
                                       "-h",
                                       "localhost",
                                       "-p",
-                                      "1389",
+                                      portStr.c_str(),
                                       "abc", // Request name
                                       R"json(
         {
