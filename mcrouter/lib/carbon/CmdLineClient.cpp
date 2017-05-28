@@ -21,8 +21,8 @@ namespace {
 std::string getUsage(const char* binaryName) {
   return folly::sformat(
       "Usage: {} [OPTIONS]... [REQUEST_NAME] [REQUEST]\n"
-      "Parses REQUEST into the carbon request with name REQUEST_NAME and "
-      "sends it to the server.\n",
+      "Parses REQUEST json into the carbon request with name REQUEST_NAME "
+      "and sends it to the server.\n",
       binaryName);
 }
 
@@ -88,8 +88,18 @@ CmdLineClient::Settings CmdLineClient::parseSettings(
     exit(1);
   }
 
+  // Validate args
+  bool error = false;
+  if (settings.requestName.empty()) {
+    error = true;
+    targetErr_ << "ERROR: No request name provided." << std::endl;
+  } else if (settings.data.empty()) {
+    error = true;
+    targetErr_ << "ERROR: No request data provided." << std::endl;
+  }
+
   // Handles help
-  if (vm.count("help")) {
+  if (vm.count("help") || error) {
     targetErr_ << getUsage(argv[0]) << std::endl;
 
     // Print only named options
