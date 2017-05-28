@@ -148,7 +148,7 @@ std::unique_ptr<folly::IOBuf> lz4Decompress(
     size_t uncompressedLength) {
   auto bytes = data.coalesce();
   auto buffer = folly::IOBuf::create(uncompressedLength);
-  int bytesWritten = LZ4_decompress_safe_usingDict(
+  int ret = LZ4_decompress_safe_usingDict(
       reinterpret_cast<const char*>(bytes.data()),
       reinterpret_cast<char*>(buffer->writableTail()),
       data.length(),
@@ -156,6 +156,9 @@ std::unique_ptr<folly::IOBuf> lz4Decompress(
       reinterpret_cast<const char*>(dictionary->data()),
       dictionary->length());
 
+  assert(ret >= 0);
+
+  auto const bytesWritten = static_cast<size_t>(ret);
   // Should either fail completely or decompress everything.
   assert(bytesWritten == uncompressedLength);
 

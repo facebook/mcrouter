@@ -33,7 +33,7 @@ Lz4CompressionCodec::Lz4CompressionCodec(
       lz4Stream_.get(),
       reinterpret_cast<const char*>(dictionary_->data()),
       dictionary_->length());
-  if (res != dictionary_->length()) {
+  if (res < 0 || static_cast<size_t>(res) != dictionary_->length()) {
     throw std::runtime_error(folly::sformat(
         "LZ4 codec: Failed to load dictionary. Return code: {}", res));
   }
@@ -78,7 +78,7 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
   auto data =
       coalesceIovecs(iov, iovcnt, IovecCursor::computeTotalLength(iov, iovcnt));
   auto buffer = folly::IOBuf::create(uncompressedLength);
-  int bytesWritten = LZ4_decompress_safe_usingDict(
+  int ret = LZ4_decompress_safe_usingDict(
       reinterpret_cast<const char*>(data.data()),
       reinterpret_cast<char*>(buffer->writableTail()),
       data.length(),
@@ -86,11 +86,14 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
       reinterpret_cast<const char*>(dictionary_->data()),
       dictionary_->length());
 
-  // Should either fail completely or decompress everything.
-  assert(bytesWritten <= 0 || bytesWritten == uncompressedLength);
-  if (bytesWritten <= 0) {
+  // Should either fail completely ...
+  if (ret <= 0) {
     throw std::runtime_error("LZ4 codec: decompression returned invalid value");
   }
+
+  auto const bytesWritten = static_cast<size_t>(ret);
+  // or decompress everything.
+  assert(bytesWritten == uncompressedLength);
 
   buffer->append(bytesWritten);
   return buffer;

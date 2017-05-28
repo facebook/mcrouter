@@ -95,16 +95,16 @@ void prepareRand() {
   std::string missKeys[] = {"zahskjsdf", "aba", "", "z", "asdjl:dafnsjsdf"};
 
   for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < keys[i].size(); ++j) {
+    for (size_t j = 0; j < keys[i].size(); ++j) {
       randTrie[i].emplace(keys[i][j], i + j + 1);
       randMap[i].emplace(keys[i][j], i + j + 1);
     }
 
-    for (int j = 0; j < keys[i].size(); ++j) {
+    for (size_t j = 0; j < keys[i].size(); ++j) {
       keysToGet[i].push_back(keys[i][j] + ":hit");
     }
 
-    for (int j = 0; j < 5; ++j) {
+    for (size_t j = 0; j < 5; ++j) {
       keysToGet[i].push_back(missKeys[j]);
     }
 
@@ -115,7 +115,7 @@ void prepareRand() {
 template <class Container>
 void runGet(Container& c, int id) {
   auto& keys = keysToGet[id];
-  for (int i = 0; i < keys.size(); ++i) {
+  for (size_t i = 0; i < keys.size(); ++i) {
     auto r = c.find(keys[i]);
     x += r == c.end() ? 0 : r->second;
   }
@@ -124,7 +124,7 @@ void runGet(Container& c, int id) {
 template <class Container>
 void runGetPrefix(Container& c, int id) {
   auto& keys = keysToGet[id];
-  for (int i = 0; i < keys.size(); ++i) {
+  for (size_t i = 0; i < keys.size(); ++i) {
     auto r = c.findPrefix(keys[i]);
     x += r == c.end() ? 0 : r->second;
   }

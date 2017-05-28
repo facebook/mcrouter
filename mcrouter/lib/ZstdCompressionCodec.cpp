@@ -85,7 +85,7 @@ std::unique_ptr<folly::IOBuf> ZstdCompressionCodec::uncompress(
   auto bytes = data.coalesce();
   auto buffer = folly::IOBuf::create(uncompressedLength);
 
-  int bytesWritten = ZSTD_decompress_usingDDict(
+  int ret = ZSTD_decompress_usingDDict(
       zstdDContext_.get(),
       reinterpret_cast<char*>(buffer->writableTail()),
       buffer->capacity(),
@@ -93,12 +93,14 @@ std::unique_ptr<folly::IOBuf> ZstdCompressionCodec::uncompress(
       bytes.size(),
       zstdDDict_.get());
 
-  assert(ZSTD_isError(bytesWritten) || bytesWritten == uncompressedLength);
-  if (ZSTD_isError(bytesWritten)) {
+  if (ZSTD_isError(ret)) {
     throw std::runtime_error(folly::sformat(
         "ZSTD codec: decompression returned invalid value. Error: {} ",
-        ZSTD_getErrorName(bytesWritten)));
+        ZSTD_getErrorName(ret)));
   }
+
+  auto const bytesWritten = static_cast<size_t>(ret);
+  assert(bytesWritten == uncompressedLength);
 
   buffer->append(bytesWritten);
   return buffer;

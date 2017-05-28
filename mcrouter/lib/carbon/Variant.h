@@ -61,7 +61,7 @@ class Variant {
     }
 
     const int32_t otherWhich = other.which_;
-    if (otherWhich >= 0 && otherWhich < sizeof...(Ts)) {
+    if (otherWhich >= 0 && static_cast<size_t>(otherWhich) < sizeof...(Ts)) {
       dispatcher[otherWhich](*this, std::move(other));
     }
     return *this;
