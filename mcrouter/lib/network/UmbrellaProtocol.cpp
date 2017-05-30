@@ -10,7 +10,9 @@
 #include "UmbrellaProtocol.h"
 
 #include <folly/Bits.h>
+#include <folly/Expected.h>
 #include <folly/GroupVarint.h>
+#include <folly/Range.h>
 #include <folly/Varint.h>
 #include <folly/io/IOBuf.h>
 
@@ -148,6 +150,53 @@ size_t serializeAdditionalFields(
   return buf - destination;
 }
 
+enum class DecodeVarintError {
+  TooManyBytes = 0,
+  TooFewBytes = 1,
+};
+
+// Copy-pasted from folly/Varint.h.  We can easily, and should, implement
+// decodeVarint() in terms of maybeDecodeVarint().
+folly::Expected<uint64_t, DecodeVarintError> maybeDecodeVarint(
+    folly::StringPiece& data) {
+  const int8_t* begin = reinterpret_cast<const int8_t*>(data.begin());
+  const int8_t* end = reinterpret_cast<const int8_t*>(data.end());
+  const int8_t* p = begin;
+  uint64_t val = 0;
+
+  // end is always greater than or equal to begin, so this subtraction is safe
+  if (LIKELY(size_t(end - begin) >= folly::kMaxVarintLength64)) { // fast path
+    int64_t b;
+    do {
+      b = *p++; val  = (b & 0x7f)      ; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) <<  7; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 14; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 21; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 28; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 35; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 42; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 49; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 56; if (b >= 0) break;
+      b = *p++; val |= (b & 0x7f) << 63; if (b >= 0) break;
+
+      return folly::makeUnexpected(DecodeVarintError::TooManyBytes);
+    } while (false);
+  } else {
+    int shift = 0;
+    while (p != end && *p < 0) {
+      val |= static_cast<uint64_t>(*p++ & 0x7f) << shift;
+      shift += 7;
+    }
+    if (p == end) {
+      return folly::makeUnexpected(DecodeVarintError::TooFewBytes);
+    }
+    val |= static_cast<uint64_t>(*p++) << shift;
+  }
+
+  data.uncheckedAdvance(p - begin);
+  return val;
+}
+
 } // anonymous namespace
 
 UmbrellaParseStatus umbrellaParseHeader(
@@ -224,43 +273,49 @@ UmbrellaParseStatus caretParseHeader(
   // Additional fields are sequence of (key,value) pairs
   resetAdditionalFields(headerInfo);
   for (uint32_t i = 0; i < additionalFields; i++) {
-    try {
-      uint64_t fieldType = folly::decodeVarint(range);
-      uint64_t fieldValue = folly::decodeVarint(range);
-
-      if (fieldType >
-          static_cast<uint64_t>(CaretAdditionalFieldType::TRACE_NODE_ID)) {
-        // Additional Field Type not recognized, ignore.
-        continue;
-      }
-
-      switch (static_cast<CaretAdditionalFieldType>(fieldType)) {
-        case CaretAdditionalFieldType::TRACE_ID:
-          headerInfo.traceId.first = fieldValue;
-          break;
-        case CaretAdditionalFieldType::TRACE_NODE_ID:
-          headerInfo.traceId.second = fieldValue;
-          break;
-        case CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID:
-          headerInfo.supportedCodecsFirstId = fieldValue;
-          break;
-        case CaretAdditionalFieldType::SUPPORTED_CODECS_SIZE:
-          headerInfo.supportedCodecsSize = fieldValue;
-          break;
-        case CaretAdditionalFieldType::USED_CODEC_ID:
-          headerInfo.usedCodecId = fieldValue;
-          break;
-        case CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE:
-          headerInfo.uncompressedBodySize = fieldValue;
-          break;
-        case CaretAdditionalFieldType::DROP_PROBABILITY:
-          headerInfo.dropProbability = fieldValue;
-          break;
-      }
-    } catch (const std::invalid_argument& e) {
-      // buffer was not sufficient for additional fields
+    size_t fieldType;
+    if (auto maybeFieldType = maybeDecodeVarint(range)) {
+      fieldType = *maybeFieldType;
+    } else {
       return UmbrellaParseStatus::NOT_ENOUGH_DATA;
     }
+
+    size_t fieldValue;
+    if (auto maybeFieldValue = maybeDecodeVarint(range)) {
+      fieldValue = *maybeFieldValue;
+    } else {
+      return UmbrellaParseStatus::NOT_ENOUGH_DATA;
+    }
+
+    if (fieldType >
+        static_cast<uint64_t>(CaretAdditionalFieldType::TRACE_NODE_ID)) {
+      // Additional Field Type not recognized, ignore.
+      continue;
+    }
+
+    switch (static_cast<CaretAdditionalFieldType>(fieldType)) {
+      case CaretAdditionalFieldType::TRACE_ID:
+        headerInfo.traceId.first = fieldValue;
+        break;
+      case CaretAdditionalFieldType::TRACE_NODE_ID:
+        headerInfo.traceId.second = fieldValue;
+        break;
+      case CaretAdditionalFieldType::SUPPORTED_CODECS_FIRST_ID:
+        headerInfo.supportedCodecsFirstId = fieldValue;
+        break;
+      case CaretAdditionalFieldType::SUPPORTED_CODECS_SIZE:
+        headerInfo.supportedCodecsSize = fieldValue;
+        break;
+      case CaretAdditionalFieldType::USED_CODEC_ID:
+        headerInfo.usedCodecId = fieldValue;
+        break;
+      case CaretAdditionalFieldType::UNCOMPRESSED_BODY_SIZE:
+        headerInfo.uncompressedBodySize = fieldValue;
+        break;
+      case CaretAdditionalFieldType::DROP_PROBABILITY:
+        headerInfo.dropProbability = fieldValue;
+        break;
+      }
   }
 
   headerInfo.headerSize = range.cbegin() - buf;
