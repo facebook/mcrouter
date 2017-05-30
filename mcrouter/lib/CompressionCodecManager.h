@@ -81,6 +81,10 @@ struct CodecIdRange {
   uint64_t firstId;
   size_t size;
 
+  bool isEmpty() const {
+    return firstId == Empty.firstId && size == Empty.size;
+  }
+
   static const CodecIdRange Empty;
 };
 /**

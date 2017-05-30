@@ -69,8 +69,10 @@ bool CaretSerializedMessage::fill(
   }
 
   UmbrellaMessageInfo info;
-  info.supportedCodecsFirstId = supportedCodecs.firstId;
-  info.supportedCodecsSize = supportedCodecs.size;
+  if (!supportedCodecs.isEmpty()) {
+    info.supportedCodecsFirstId = supportedCodecs.firstId;
+    info.supportedCodecsSize = supportedCodecs.size;
+  }
   fillImpl(info, reqId, typeId, traceId, 0.0, iovOut, niovOut);
   return true;
 }
