@@ -168,5 +168,39 @@
       "dictionary": {},
       "key": 15
     }
+  },
+  "conflicting_optional_param_settings": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [
+          {
+            "name": "p",
+            "optional": false,
+            "default": 0
+          }
+        ],
+        "result": "%p%"
+      }
+    },
+    "ret": "@a"
+  },
+  "non_optional_after_optional": {
+    "macros": {
+      "a": {
+        "type": "macroDef",
+        "params": [
+          {
+            "name": "p",
+            "default": 0
+          },
+          {
+            "name": "q"
+          },
+        ],
+        "result": "%p%"
+      }
+    },
+    "ret": "@a(0,1)"
   }
 }
