@@ -150,53 +150,6 @@ size_t serializeAdditionalFields(
   return buf - destination;
 }
 
-enum class DecodeVarintError {
-  TooManyBytes = 0,
-  TooFewBytes = 1,
-};
-
-// Copy-pasted from folly/Varint.h.  We can easily, and should, implement
-// decodeVarint() in terms of maybeDecodeVarint().
-folly::Expected<uint64_t, DecodeVarintError> maybeDecodeVarint(
-    folly::StringPiece& data) {
-  const int8_t* begin = reinterpret_cast<const int8_t*>(data.begin());
-  const int8_t* end = reinterpret_cast<const int8_t*>(data.end());
-  const int8_t* p = begin;
-  uint64_t val = 0;
-
-  // end is always greater than or equal to begin, so this subtraction is safe
-  if (LIKELY(size_t(end - begin) >= folly::kMaxVarintLength64)) { // fast path
-    int64_t b;
-    do {
-      b = *p++; val  = (b & 0x7f)      ; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) <<  7; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 14; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 21; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 28; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 35; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 42; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 49; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 56; if (b >= 0) break;
-      b = *p++; val |= (b & 0x7f) << 63; if (b >= 0) break;
-
-      return folly::makeUnexpected(DecodeVarintError::TooManyBytes);
-    } while (false);
-  } else {
-    int shift = 0;
-    while (p != end && *p < 0) {
-      val |= static_cast<uint64_t>(*p++ & 0x7f) << shift;
-      shift += 7;
-    }
-    if (p == end) {
-      return folly::makeUnexpected(DecodeVarintError::TooFewBytes);
-    }
-    val |= static_cast<uint64_t>(*p++) << shift;
-  }
-
-  data.uncheckedAdvance(p - begin);
-  return val;
-}
-
 } // anonymous namespace
 
 UmbrellaParseStatus umbrellaParseHeader(
@@ -274,14 +227,14 @@ UmbrellaParseStatus caretParseHeader(
   resetAdditionalFields(headerInfo);
   for (uint32_t i = 0; i < additionalFields; i++) {
     size_t fieldType;
-    if (auto maybeFieldType = maybeDecodeVarint(range)) {
+    if (auto maybeFieldType = folly::tryDecodeVarint(range)) {
       fieldType = *maybeFieldType;
     } else {
       return UmbrellaParseStatus::NOT_ENOUGH_DATA;
     }
 
     size_t fieldValue;
-    if (auto maybeFieldValue = maybeDecodeVarint(range)) {
+    if (auto maybeFieldValue = folly::tryDecodeVarint(range)) {
       fieldValue = *maybeFieldValue;
     } else {
       return UmbrellaParseStatus::NOT_ENOUGH_DATA;
