@@ -79,163 +79,163 @@ void ManyFields::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(buf1());
+        reader.readField(buf1(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(buf2());
+        reader.readField(buf2(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(buf3());
+        reader.readField(buf3(), fieldType);
         break;
       }
       case 4: {
-        reader.readRawInto(buf4());
+        reader.readField(buf4(), fieldType);
         break;
       }
       case 5: {
-        reader.readRawInto(buf5());
+        reader.readField(buf5(), fieldType);
         break;
       }
       case 6: {
-        reader.readRawInto(buf6());
+        reader.readField(buf6(), fieldType);
         break;
       }
       case 7: {
-        reader.readRawInto(buf7());
+        reader.readField(buf7(), fieldType);
         break;
       }
       case 8: {
-        reader.readRawInto(buf8());
+        reader.readField(buf8(), fieldType);
         break;
       }
       case 9: {
-        reader.readRawInto(buf9());
+        reader.readField(buf9(), fieldType);
         break;
       }
       case 10: {
-        reader.readRawInto(buf10());
+        reader.readField(buf10(), fieldType);
         break;
       }
       case 11: {
-        reader.readRawInto(buf11());
+        reader.readField(buf11(), fieldType);
         break;
       }
       case 12: {
-        reader.readRawInto(buf12());
+        reader.readField(buf12(), fieldType);
         break;
       }
       case 13: {
-        reader.readRawInto(buf13());
+        reader.readField(buf13(), fieldType);
         break;
       }
       case 14: {
-        reader.readRawInto(buf14());
+        reader.readField(buf14(), fieldType);
         break;
       }
       case 15: {
-        reader.readRawInto(buf15());
+        reader.readField(buf15(), fieldType);
         break;
       }
       case 16: {
-        reader.readRawInto(buf16());
+        reader.readField(buf16(), fieldType);
         break;
       }
       case 17: {
-        reader.readRawInto(buf17());
+        reader.readField(buf17(), fieldType);
         break;
       }
       case 18: {
-        reader.readRawInto(buf18());
+        reader.readField(buf18(), fieldType);
         break;
       }
       case 19: {
-        reader.readRawInto(buf19());
+        reader.readField(buf19(), fieldType);
         break;
       }
       case 20: {
-        reader.readRawInto(buf20());
+        reader.readField(buf20(), fieldType);
         break;
       }
       case 21: {
-        reader.readRawInto(buf21());
+        reader.readField(buf21(), fieldType);
         break;
       }
       case 22: {
-        reader.readRawInto(buf22());
+        reader.readField(buf22(), fieldType);
         break;
       }
       case 23: {
-        reader.readRawInto(buf23());
+        reader.readField(buf23(), fieldType);
         break;
       }
       case 24: {
-        reader.readRawInto(buf24());
+        reader.readField(buf24(), fieldType);
         break;
       }
       case 25: {
-        reader.readRawInto(buf25());
+        reader.readField(buf25(), fieldType);
         break;
       }
       case 26: {
-        reader.readRawInto(buf26());
+        reader.readField(buf26(), fieldType);
         break;
       }
       case 27: {
-        reader.readRawInto(buf27());
+        reader.readField(buf27(), fieldType);
         break;
       }
       case 28: {
-        reader.readRawInto(buf28());
+        reader.readField(buf28(), fieldType);
         break;
       }
       case 29: {
-        reader.readRawInto(buf29());
+        reader.readField(buf29(), fieldType);
         break;
       }
       case 30: {
-        reader.readRawInto(buf30());
+        reader.readField(buf30(), fieldType);
         break;
       }
       case 31: {
-        reader.readRawInto(buf31());
+        reader.readField(buf31(), fieldType);
         break;
       }
       case 32: {
-        reader.readRawInto(buf32());
+        reader.readField(buf32(), fieldType);
         break;
       }
       case 33: {
-        reader.readRawInto(buf33());
+        reader.readField(buf33(), fieldType);
         break;
       }
       case 34: {
-        reader.readRawInto(buf34());
+        reader.readField(buf34(), fieldType);
         break;
       }
       case 35: {
-        reader.readRawInto(buf35());
+        reader.readField(buf35(), fieldType);
         break;
       }
       case 36: {
-        reader.readRawInto(buf36());
+        reader.readField(buf36(), fieldType);
         break;
       }
       case 37: {
-        reader.readRawInto(buf37());
+        reader.readField(buf37(), fieldType);
         break;
       }
       case 38: {
-        reader.readRawInto(buf38());
+        reader.readField(buf38(), fieldType);
         break;
       }
       case 39: {
-        reader.readRawInto(buf39());
+        reader.readField(buf39(), fieldType);
         break;
       }
       case 40: {
-        reader.readRawInto(buf40());
+        reader.readField(buf40(), fieldType);
         break;
       }
       default: {

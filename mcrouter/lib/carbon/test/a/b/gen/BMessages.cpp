@@ -40,7 +40,7 @@ void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(member1());
+        reader.readField(member1(), fieldType);
         break;
       }
       default: {
@@ -129,7 +129,7 @@ void YetAnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -161,7 +161,7 @@ void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       default: {

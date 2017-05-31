@@ -41,7 +41,7 @@ void AnotherRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -73,7 +73,7 @@ void AnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       default: {

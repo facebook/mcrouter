@@ -41,7 +41,7 @@ void McVersionRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -76,19 +76,19 @@ void McVersionReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(value());
+        reader.readField(value(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(message());
+        reader.readField(message(), fieldType);
         break;
       }
       case 4: {
-        reader.readRawInto(appSpecificErrorCode());
+        reader.readField(appSpecificErrorCode(), fieldType);
         break;
       }
       default: {
@@ -122,7 +122,7 @@ void McStatsRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -157,19 +157,19 @@ void McStatsReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(message());
+        reader.readField(message(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(stats());
+        reader.readField(stats(), fieldType);
         break;
       }
       case 4: {
-        reader.readRawInto(appSpecificErrorCode());
+        reader.readField(appSpecificErrorCode(), fieldType);
         break;
       }
       default: {
@@ -203,7 +203,7 @@ void McShutdownRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -237,15 +237,15 @@ void McShutdownReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(message());
+        reader.readField(message(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(appSpecificErrorCode());
+        reader.readField(appSpecificErrorCode(), fieldType);
         break;
       }
       default: {
@@ -279,7 +279,7 @@ void McQuitRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -313,15 +313,15 @@ void McQuitReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(message());
+        reader.readField(message(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(appSpecificErrorCode());
+        reader.readField(appSpecificErrorCode(), fieldType);
         break;
       }
       default: {
@@ -355,7 +355,7 @@ void McExecRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -390,19 +390,19 @@ void McExecReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(response());
+        reader.readField(response(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(message());
+        reader.readField(message(), fieldType);
         break;
       }
       case 4: {
-        reader.readRawInto(appSpecificErrorCode());
+        reader.readField(appSpecificErrorCode(), fieldType);
         break;
       }
       default: {
@@ -466,11 +466,11 @@ void GoAwayRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(reason());
+        reader.readField(reason(), fieldType);
         break;
       }
       default: {

@@ -40,7 +40,7 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -72,7 +72,7 @@ void HelloReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       default: {
@@ -106,7 +106,7 @@ void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -139,11 +139,11 @@ void GoodbyeReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(message());
+        reader.readField(message(), fieldType);
         break;
       }
       default: {

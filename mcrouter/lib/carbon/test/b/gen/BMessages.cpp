@@ -39,7 +39,7 @@ void BaseStruct::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(baseInt64Member());
+        reader.readField(baseInt64Member(), fieldType);
         break;
       }
       default: {
@@ -75,23 +75,23 @@ void SimpleStruct::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case -1: {
-        reader.readRawInto(_carbon_basestruct_);
+        reader.readField(_carbon_basestruct_, fieldType);
         break;
       }
       case 1: {
-        reader.readRawInto(int32Member());
+        reader.readField(int32Member(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(stringMember());
+        reader.readField(stringMember(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(enumMember());
+        reader.readField(enumMember(), fieldType);
         break;
       }
       case 4: {
-        reader.readRawInto(vectorMember());
+        reader.readField(vectorMember(), fieldType);
         break;
       }
       default: {

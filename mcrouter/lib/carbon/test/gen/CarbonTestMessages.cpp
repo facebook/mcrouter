@@ -71,127 +71,127 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case -1: {
-        reader.readRawInto(_carbon_simplestruct_);
+        reader.readField(_carbon_simplestruct_, fieldType);
         break;
       }
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(testEnum());
+        reader.readField(testEnum(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(testBool(), fieldType);
+        reader.readField(testBool(), fieldType);
         break;
       }
       case 4: {
-        reader.readRawInto(testChar());
+        reader.readField(testChar(), fieldType);
         break;
       }
       case 5: {
-        reader.readRawInto(testInt8());
+        reader.readField(testInt8(), fieldType);
         break;
       }
       case 6: {
-        reader.readRawInto(testInt16());
+        reader.readField(testInt16(), fieldType);
         break;
       }
       case 7: {
-        reader.readRawInto(testInt32());
+        reader.readField(testInt32(), fieldType);
         break;
       }
       case 8: {
-        reader.readRawInto(testInt64());
+        reader.readField(testInt64(), fieldType);
         break;
       }
       case 9: {
-        reader.readRawInto(testUInt8());
+        reader.readField(testUInt8(), fieldType);
         break;
       }
       case 10: {
-        reader.readRawInto(testUInt16());
+        reader.readField(testUInt16(), fieldType);
         break;
       }
       case 11: {
-        reader.readRawInto(testUInt32());
+        reader.readField(testUInt32(), fieldType);
         break;
       }
       case 12: {
-        reader.readRawInto(testUInt64());
+        reader.readField(testUInt64(), fieldType);
         break;
       }
       case 13: {
-        reader.readRawInto(testFloat());
+        reader.readField(testFloat(), fieldType);
         break;
       }
       case 14: {
-        reader.readRawInto(testDouble());
+        reader.readField(testDouble(), fieldType);
         break;
       }
       case 15: {
-        reader.readRawInto(testShortString());
+        reader.readField(testShortString(), fieldType);
         break;
       }
       case 16: {
-        reader.readRawInto(testLongString());
+        reader.readField(testLongString(), fieldType);
         break;
       }
       case 17: {
-        reader.readRawInto(testIobuf());
+        reader.readField(testIobuf(), fieldType);
         break;
       }
       case 18: {
-        reader.readRawInto(testStruct());
+        reader.readField(testStruct(), fieldType);
         break;
       }
       case 19: {
-        reader.readRawInto(testList());
+        reader.readField(testList(), fieldType);
         break;
       }
       case 20: {
-        reader.readRawInto(testOptionalString());
+        reader.readField(testOptionalString(), fieldType);
         break;
       }
       case 21: {
-        reader.readRawInto(testOptionalIobuf());
+        reader.readField(testOptionalIobuf(), fieldType);
         break;
       }
       case 22: {
-        reader.readRawInto(testEnumVec());
+        reader.readField(testEnumVec(), fieldType);
         break;
       }
       case 23: {
-        reader.readRawInto(testUnion());
+        reader.readField(testUnion(), fieldType);
         break;
       }
       case 24: {
-        reader.readRawInto(testNestedVec());
+        reader.readField(testNestedVec(), fieldType);
         break;
       }
       case 25: {
-        reader.readRawInto(testUMap());
+        reader.readField(testUMap(), fieldType);
         break;
       }
       case 26: {
-        reader.readRawInto(testMap());
+        reader.readField(testMap(), fieldType);
         break;
       }
       case 27: {
-        reader.readRawInto(testComplexMap());
+        reader.readField(testComplexMap(), fieldType);
         break;
       }
       case 28: {
-        reader.readRawInto(testUSet());
+        reader.readField(testUSet(), fieldType);
         break;
       }
       case 29: {
-        reader.readRawInto(testSet());
+        reader.readField(testSet(), fieldType);
         break;
       }
       case 100: {
-        reader.readRawInto(testType());
+        reader.readField(testType(), fieldType);
         break;
       }
       default: {
@@ -225,15 +225,15 @@ void TestReply::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       case 2: {
-        reader.readRawInto(valInt32());
+        reader.readField(valInt32(), fieldType);
         break;
       }
       case 3: {
-        reader.readRawInto(valInt64());
+        reader.readField(valInt64(), fieldType);
         break;
       }
       default: {
@@ -268,7 +268,7 @@ void TestRequestStringKey::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(key());
+        reader.readField(key(), fieldType);
         break;
       }
       default: {
@@ -300,7 +300,7 @@ void TestReplyStringKey::deserialize(carbon::CarbonProtocolReader& reader) {
 
     switch (fieldId) {
       case 1: {
-        reader.readRawInto(result());
+        reader.readField(result(), fieldType);
         break;
       }
       default: {

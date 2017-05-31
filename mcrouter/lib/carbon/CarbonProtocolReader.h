@@ -45,6 +45,22 @@ class CarbonProtocolReader {
     return cursor_;
   }
 
+  void readField(bool& b, FieldType fieldType) {
+    DCHECK(fieldType == FieldType::True || fieldType == FieldType::False)
+        << "Invalid fieldType: " << static_cast<uint8_t>(fieldType);
+    b = fieldType == FieldType::True;
+  }
+
+  template <class T>
+  void readField(folly::Optional<T>& data, FieldType /* fieldType */) {
+    data = folly::Optional<T>(readRaw<T>());
+  }
+
+  template <class T>
+  void readField(T& t, FieldType /* fieldType */) {
+    readRawInto(t);
+  }
+
   template <class T>
   typename std::enable_if<detail::IsLinearContainer<T>::value, void>::type
   readRawInto(T& c) {
@@ -132,14 +148,6 @@ class CarbonProtocolReader {
   typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
   readRawInto(T& data) {
     data = SerializationTraits<T>::read(*this);
-  }
-
-  // The API of readRawInto() is different than other readRawInto() member
-  // functions in order to avoid keeping state in the Reader, which would entail
-  // maintaining some extra rarely executed branches.
-  void readRawInto(bool& b, const FieldType fieldType) {
-    DCHECK(fieldType == FieldType::True || fieldType == FieldType::False);
-    b = fieldType == FieldType::True;
   }
 
   void readRawInto(bool& b) {
