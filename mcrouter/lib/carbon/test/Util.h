@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -44,6 +44,9 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b);
 
 template <class T>
 T serializeAndDeserialize(const T&);
+
+template <class T>
+T serializeAndDeserialize(const T&, size_t& bytesWritten);
 
 /**
  * Takes a boolean predicate and returns the list of subranges over

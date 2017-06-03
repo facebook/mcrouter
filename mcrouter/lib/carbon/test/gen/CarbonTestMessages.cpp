@@ -53,6 +53,7 @@ void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(27 /* field id */, testComplexMap());
   writer.writeField(28 /* field id */, testUSet());
   writer.writeField(29 /* field id */, testSet());
+  writer.writeField(30 /* field id */, testOptionalBool());
   writer.writeField(100 /* field id */, testType());
   writer.writeStructEnd();
   writer.writeStop();
@@ -190,6 +191,10 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
         reader.readField(testSet(), fieldType);
         break;
       }
+      case 30: {
+        reader.readField(testOptionalBool(), fieldType);
+        break;
+      }
       case 100: {
         reader.readField(testType(), fieldType);
         break;
@@ -301,6 +306,38 @@ void TestReplyStringKey::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readField(result(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void TestOptionalBool::serialize(carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  writer.writeField(1 /* field id */, optionalBool());
+  writer.writeStructEnd();
+  writer.writeStop();
+}
+
+void TestOptionalBool::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readField(optionalBool(), fieldType);
         break;
       }
       default: {

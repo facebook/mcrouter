@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -22,7 +22,7 @@ namespace test {
 namespace util {
 
 template <class T>
-T serializeAndDeserialize(const T& toSerialize) {
+T serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
   // Serialize the request
   CarbonQueueAppenderStorage storage;
   CarbonProtocolWriter writer(storage);
@@ -33,6 +33,7 @@ T serializeAndDeserialize(const T& toSerialize) {
   auto* curBuf = &buf;
   const auto iovs = storage.getIovecs();
   // Skip Caret header iovec (with index 0)
+  bytesWritten = 0;
   for (size_t i = 1; i < iovs.second; ++i) {
     const struct iovec* iov = iovs.first + i;
     size_t written = 0;
@@ -45,6 +46,7 @@ T serializeAndDeserialize(const T& toSerialize) {
           bytesToWrite);
       curBuf->append(bytesToWrite);
       written += bytesToWrite;
+      bytesWritten += written;
 
       if (written < iov->iov_len) {
         // Append new buffer with enough room for remaining data in this
@@ -65,6 +67,11 @@ T serializeAndDeserialize(const T& toSerialize) {
   return deserialized;
 }
 
+template <class T>
+T serializeAndDeserialize(const T& toSerialize) {
+  size_t tmp;
+  return serializeAndDeserialize(toSerialize, tmp);
+}
 } // util
 } // test
 } // carbon

@@ -54,27 +54,6 @@ struct SerializationTraits<Keys<Storage>> {
   }
 };
 
-// SerializationTraits specialization for folly::Optional<>
-template <class T>
-struct SerializationTraits<folly::Optional<T>> {
-  static constexpr carbon::FieldType kWireType =
-      detail::TypeToField<T>::fieldType;
-
-  static folly::Optional<T> read(carbon::CarbonProtocolReader& reader) {
-    return folly::Optional<T>(reader.readRaw<T>());
-  }
-
-  static void write(
-      const folly::Optional<T>& opt,
-      carbon::CarbonProtocolWriter& writer) {
-    writer.writeRaw(*opt);
-  }
-
-  static bool isEmpty(const folly::Optional<T>& opt) {
-    return !opt.hasValue();
-  }
-};
-
 template <class T>
 struct SerializationTraits<
     T,

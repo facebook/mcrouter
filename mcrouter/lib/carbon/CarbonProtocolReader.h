@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <utility>
 
+#include <folly/Optional.h>
 #include <folly/io/Cursor.h>
 #include <folly/io/IOBuf.h>
 #include <folly/small_vector.h>
@@ -49,6 +50,10 @@ class CarbonProtocolReader {
     DCHECK(fieldType == FieldType::True || fieldType == FieldType::False)
         << "Invalid fieldType: " << static_cast<uint8_t>(fieldType);
     b = fieldType == FieldType::True;
+  }
+
+  void readField(folly::Optional<bool>& data, FieldType fieldType) {
+    data = folly::Optional<bool>(fieldType == FieldType::True);
   }
 
   template <class T>
@@ -147,6 +152,10 @@ class CarbonProtocolReader {
   template <class T>
   typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
   readRawInto(T& data) {
+    static_assert(
+        (SerializationTraits<T>::kWireType != FieldType::True) &&
+            (SerializationTraits<T>::kWireType != FieldType::False),
+        "Usertypes cannot have a boolean wiretype.");
     data = SerializationTraits<T>::read(*this);
   }
 

@@ -280,6 +280,8 @@ TEST(CarbonBasic, setAndGet) {
   EXPECT_EQ(s, *req.testOptionalString());
   req.testOptionalIobuf() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, s);
   EXPECT_EQ(s, coalesceAndGetRange(*req.testOptionalIobuf()));
+  req.testOptionalBool() = false;
+  EXPECT_EQ(false, *req.testOptionalBool());
 
   // Unordered map
   std::unordered_map<std::string, std::string> stringmap;
@@ -371,6 +373,8 @@ TEST(CarbonTest, serializeDeserialize) {
 
   outRequest.testType() = {"blah", {1, 2, 3}};
 
+  outRequest.testOptionalBool() = false;
+
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
 }
@@ -384,6 +388,28 @@ TEST(CarbonTest, unionZeroSerialization) {
   outRequest.testUnion().emplace<3>("");
   inRequest = serializeAndDeserialize(outRequest);
   EXPECT_EQ("", inRequest.testUnion().get<3>());
+}
+
+TEST(CarbonTest, OptionalBoolSerializationBytesWritten) {
+  carbon::test::TestOptionalBool testOpt;
+  size_t bytesWritten;
+  folly::Optional<bool> opt;
+  testOpt.optionalBool() = opt;
+  auto inOpt = serializeAndDeserialize(testOpt, bytesWritten);
+  EXPECT_EQ(testOpt.optionalBool(), inOpt.optionalBool());
+  EXPECT_EQ(1, bytesWritten); // One byte written for FieldType::Stop
+
+  bytesWritten = 0;
+  testOpt.optionalBool() = true;
+  inOpt = serializeAndDeserialize(testOpt, bytesWritten);
+  EXPECT_EQ(testOpt.optionalBool(), inOpt.optionalBool());
+  EXPECT_EQ(2, bytesWritten);
+
+  bytesWritten = 0;
+  testOpt.optionalBool() = false;
+  inOpt = serializeAndDeserialize(testOpt, bytesWritten);
+  EXPECT_EQ(testOpt.optionalBool(), inOpt.optionalBool());
+  EXPECT_EQ(2, bytesWritten);
 }
 
 TEST(CarbonTest, mixins) {

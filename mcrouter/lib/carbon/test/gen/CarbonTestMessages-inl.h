@@ -113,6 +113,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(29, "testSet", testSet_)) {
     return;
   }
+  if (!v.visitField(30, "testOptionalBool", testOptionalBool_)) {
+    return;
+  }
   if (!v.visitField(100, "testType", testType_)) {
     return;
   }
@@ -213,6 +216,9 @@ void TestRequest::visitFields(V&& v) const {
   if (!v.visitField(29, "testSet", testSet_)) {
     return;
   }
+  if (!v.visitField(30, "testOptionalBool", testOptionalBool_)) {
+    return;
+  }
   if (!v.visitField(100, "testType", testType_)) {
     return;
   }
@@ -268,6 +274,20 @@ void TestReplyStringKey::visitFields(V&& v) {
 template <class V>
 void TestReplyStringKey::visitFields(V&& v) const {
   if (!v.visitField(1, "result", result_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestOptionalBool::visitFields(V&& v) {
+  if (!v.visitField(1, "optionalBool", optionalBool_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestOptionalBool::visitFields(V&& v) const {
+  if (!v.visitField(1, "optionalBool", optionalBool_)) {
     return;
   }
 }

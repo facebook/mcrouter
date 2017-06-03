@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <utility>
 
+#include <folly/Optional.h>
 #include <folly/io/IOBuf.h>
 #include <folly/small_vector.h>
 
@@ -255,6 +256,13 @@ class CarbonProtocolWriter {
     writeRaw(container);
   }
 
+  template <class T>
+  void writeField(const int16_t id, const folly::Optional<T>& data) {
+    if (data.hasValue()) {
+      writeFieldAlways(id, *data);
+    }
+  }
+
   // Serialize user-provided types that have suitable specializations of
   // carbon::SerializationTraits<>.
   template <class T>
@@ -268,6 +276,10 @@ class CarbonProtocolWriter {
   template <class T>
   typename std::enable_if<detail::IsUserReadWriteDefined<T>::value, void>::type
   writeFieldAlways(const int16_t id, const T& data) {
+    static_assert(
+        (SerializationTraits<T>::kWireType != FieldType::True) &&
+            (SerializationTraits<T>::kWireType != FieldType::False),
+        "Usertypes cannot have a boolean wiretype.");
     writeFieldHeader(SerializationTraits<T>::kWireType, id);
     SerializationTraits<T>::write(data, *this);
   }

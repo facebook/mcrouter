@@ -277,6 +277,12 @@ class TestRequest : public carbon::RequestCommon {
   std::set<uint64_t>& testSet() {
     return testSet_;
   }
+  const folly::Optional<bool>& testOptionalBool() const {
+    return testOptionalBool_;
+  }
+  folly::Optional<bool>& testOptionalBool() {
+    return testOptionalBool_;
+  }
   const UserType& testType() const {
     return testType_;
   }
@@ -330,6 +336,7 @@ class TestRequest : public carbon::RequestCommon {
   std::map<std::string, std::vector<uint16_t>> testComplexMap_;
   std::unordered_set<std::string> testUSet_;
   std::set<uint64_t> testSet_;
+  folly::Optional<bool> testOptionalBool_;
   UserType testType_;
 };
 
@@ -476,6 +483,45 @@ class TestReplyStringKey : public carbon::ReplyCommon {
 
  private:
   carbon::Result result_{mc_res_unknown};
+};
+
+class TestOptionalBool {
+ public:
+  static constexpr bool hasExptime = false;
+  static constexpr bool hasFlags = false;
+  static constexpr bool hasKey = false;
+  static constexpr bool hasValue = false;
+
+  TestOptionalBool() = default;
+  TestOptionalBool(const TestOptionalBool&) = default;
+  TestOptionalBool& operator=(const TestOptionalBool&) = default;
+  TestOptionalBool(TestOptionalBool&&) = default;
+  TestOptionalBool& operator=(TestOptionalBool&&) = default;
+
+  const folly::Optional<bool>& optionalBool() const {
+    return optionalBool_;
+  }
+  folly::Optional<bool>& optionalBool() {
+    return optionalBool_;
+  }
+  uint64_t flags() const {
+    return 0;
+  }
+  int32_t exptime() const {
+    return 0;
+  }
+
+  void serialize(carbon::CarbonProtocolWriter& writer) const;
+
+  void deserialize(carbon::CarbonProtocolReader& reader);
+
+  template <class V>
+  void visitFields(V&& v);
+  template <class V>
+  void visitFields(V&& v) const;
+
+ private:
+  folly::Optional<bool> optionalBool_;
 };
 
 } // test
