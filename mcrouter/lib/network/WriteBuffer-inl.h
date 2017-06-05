@@ -101,5 +101,6 @@ WriteBuffer::prepareTyped(
       iovsBegin_,
       iovsCount_);
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

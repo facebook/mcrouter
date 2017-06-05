@@ -92,15 +92,16 @@ bool WriteBuffer::isEndContext() const {
   return ctx_.hasValue() ? ctx_->isEndContext() : false;
 }
 
-WriteBuffer::Queue& WriteBufferQueue::initFreeQueue(
+WriteBuffer::List& WriteBufferQueue::initFreeStack(
     mc_protocol_t protocol) noexcept {
   assert(
       protocol == mc_ascii_protocol ||
       protocol == mc_umbrella_protocol_DONOTUSE ||
       protocol == mc_caret_protocol);
 
-  static thread_local WriteBuffer::Queue freeQ[mc_nprotocols];
-  return freeQ[static_cast<size_t>(protocol)];
+  static thread_local WriteBuffer::List freeBuffers[mc_nprotocols];
+  return freeBuffers[static_cast<size_t>(protocol)];
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

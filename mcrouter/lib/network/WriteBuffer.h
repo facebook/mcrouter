@@ -33,7 +33,7 @@ class WriteBuffer {
   folly::Optional<Destructor> destructor_;
 
  public:
-  using Queue = UniqueIntrusiveList<WriteBuffer, &WriteBuffer::hook_>;
+  using List = UniqueIntrusiveList<WriteBuffer, &WriteBuffer::hook_>;
 
   explicit WriteBuffer(mc_protocol_t protocol);
   ~WriteBuffer();
@@ -138,18 +138,18 @@ class WriteBuffer {
 
 // The only purpose of this class is to avoid a circular #include dependency
 // between WriteBuffer.h and McServerSession.h.
-class WriteBufferIntrusiveList : public WriteBuffer::Queue {};
+class WriteBufferIntrusiveList : public WriteBuffer::List {};
 
 class WriteBufferQueue {
  public:
   explicit WriteBufferQueue(mc_protocol_t protocol) noexcept
-      : protocol_(protocol), tlFreeQueue_(initFreeQueue(protocol_)) {}
+      : protocol_(protocol), tlFreeStack_(initFreeStack(protocol_)) {}
 
   std::unique_ptr<WriteBuffer> get() {
-    if (tlFreeQueue_.empty()) {
+    if (tlFreeStack_.empty()) {
       return std::make_unique<WriteBuffer>(protocol_);
     } else {
-      return tlFreeQueue_.popFront();
+      return tlFreeStack_.popFront();
     }
   }
 
@@ -161,8 +161,8 @@ class WriteBufferQueue {
     bool done = false;
     do {
       assert(!empty());
-      if (tlFreeQueue_.size() < kMaxFreeQueueSz) {
-        auto& wb = tlFreeQueue_.pushBack(queue_.popFront());
+      if (tlFreeStack_.size() < kMaxFreeQueueSz) {
+        auto& wb = tlFreeStack_.pushFront(queue_.popFront());
         done = wb.isEndOfBatch();
         wb.clear();
       } else {
@@ -179,17 +179,18 @@ class WriteBufferQueue {
   constexpr static size_t kMaxFreeQueueSz = 50;
 
   mc_protocol_t protocol_;
-  WriteBuffer::Queue& tlFreeQueue_;
-  WriteBuffer::Queue queue_;
+  WriteBuffer::List& tlFreeStack_;
+  WriteBuffer::List queue_;
 
-  static WriteBuffer::Queue& initFreeQueue(mc_protocol_t protocol) noexcept;
+  static WriteBuffer::List& initFreeStack(mc_protocol_t protocol) noexcept;
 
   WriteBufferQueue(const WriteBufferQueue&) = delete;
   WriteBufferQueue& operator=(const WriteBufferQueue&) = delete;
   WriteBufferQueue(WriteBufferQueue&&) noexcept = delete;
   WriteBufferQueue& operator=(WriteBufferQueue&&) = delete;
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook
 
 #include "WriteBuffer-inl.h"
