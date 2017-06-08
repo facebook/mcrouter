@@ -3,6 +3,15 @@ dist: trusty
 
 language: cpp
 
+before_install:
+  - curl ipecho.net/plain; echo
+  - ifconfig
+  - id
+  - whoami
+  - sudo id
+  - sudo whoami
+  - echo 'done'
+
 compiler:
   - gcc
 
