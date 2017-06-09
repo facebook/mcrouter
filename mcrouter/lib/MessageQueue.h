@@ -238,7 +238,7 @@ class MessageQueue {
   class EventHandler : public folly::EventHandler {
    public:
     explicit EventHandler(MessageQueue& q) : parent_(q) {}
-    void handlerReady(uint16_t /* events */) noexcept override final {
+    void handlerReady(uint16_t /* events */) noexcept final {
       parent_.onEvent();
     }
 

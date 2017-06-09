@@ -54,7 +54,7 @@ class McRouteHandleProvider
   std::vector<RouteHandlePtr> create(
       RouteHandleFactory<RouteHandleIf>& factory,
       folly::StringPiece type,
-      const folly::dynamic& json) override final;
+      const folly::dynamic& json) final;
 
   folly::StringKeyedUnorderedMap<RouteHandlePtr> releaseAsyncLogRoutes() {
     return std::move(asyncLogRoutes_);
@@ -70,7 +70,7 @@ class McRouteHandleProvider
     return std::move(accessPoints_);
   }
 
-  ~McRouteHandleProvider();
+  ~McRouteHandleProvider() override;
 
  private:
   ProxyBase& proxy_;

@@ -198,7 +198,7 @@ class McClientRequestContext : public McClientRequestContextBase {
           onStateChange,
       const CodecIdRange& supportedCodecs);
 
-  virtual std::string getContextTypeStr() const override final;
+  std::string getContextTypeStr() const final;
 
   Reply waitForReply(std::chrono::milliseconds timeout);
 
@@ -208,9 +208,8 @@ class McClientRequestContext : public McClientRequestContextBase {
 #ifndef LIBMC_FBTRACE_DISABLE
   const mc_fbtrace_info_s* fbtraceInfo_;
 #endif
-  void sendTraceOnReply() override final;
-  void replyErrorImpl(mc_res_t result, folly::StringPiece errorMessage)
-      override final;
+  void sendTraceOnReply() final;
+  void replyErrorImpl(mc_res_t result, folly::StringPiece errorMessage) final;
 };
 
 class McClientRequestContextQueue {

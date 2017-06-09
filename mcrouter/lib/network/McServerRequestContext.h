@@ -192,7 +192,7 @@ class McServerOnRequestIf<List<Request, Requests...>>
                << Request::name;
   }
 
-  virtual ~McServerOnRequestIf() = default;
+  ~McServerOnRequestIf() override = default;
 };
 
 class McServerOnRequest : public McServerOnRequestIf<McRequestList> {
@@ -232,7 +232,7 @@ class McServerOnRequestWrapper<OnRequest, List<>> : public McServerOnRequest {
   void caretRequestReady(
       const UmbrellaMessageInfo& headerInfo,
       const folly::IOBuf& reqBody,
-      McServerRequestContext&& ctx) override final;
+      McServerRequestContext&& ctx) final;
 
   void dispatchTypedRequestIfDefined(
       const UmbrellaMessageInfo& headerInfo,
@@ -282,8 +282,7 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
       : McServerOnRequestWrapper<OnRequest, List<Requests...>>(
             std::forward<Args>(args)...) {}
 
-  void requestReady(McServerRequestContext&& ctx, Request&& req)
-      override final {
+  void requestReady(McServerRequestContext&& ctx, Request&& req) final {
     this->requestReadyImpl(
         std::move(ctx),
         std::move(req),

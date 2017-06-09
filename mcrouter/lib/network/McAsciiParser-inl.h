@@ -41,13 +41,13 @@ class CallbackWrapper<Callback, List<Request>>
  public:
   explicit CallbackWrapper(Callback& callback) : callback_(callback) {}
 
-  void multiOpEnd() noexcept override final {
+  void multiOpEnd() noexcept final {
     callback_.multiOpEnd();
   }
 
   using CallbackBase<McRequestList>::onRequest;
 
-  void onRequest(Request&& req, bool noreply = false) noexcept override final {
+  void onRequest(Request&& req, bool noreply = false) noexcept final {
     callback_.onRequest(std::move(req), noreply);
   }
 
@@ -64,7 +64,7 @@ class CallbackWrapper<Callback, List<Request, Requests...>>
 
   using CallbackWrapper<Callback, List<Requests...>>::onRequest;
 
-  void onRequest(Request&& req, bool noreply = false) noexcept override final {
+  void onRequest(Request&& req, bool noreply = false) noexcept final {
     this->callback_.onRequest(std::move(req), noreply);
   }
 };

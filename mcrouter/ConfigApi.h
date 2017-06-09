@@ -103,7 +103,7 @@ class ConfigApi : public ConfigApiIf {
    */
   virtual void stopObserving(pid_t pid) noexcept;
 
-  virtual ~ConfigApi();
+  ~ConfigApi() override;
 
   /**
    * Enable a behavior that forces this class to read config from

@@ -33,7 +33,7 @@ class ProxyRequestContextTypedWithCallback
         f_(std::forward<F>(f)) {}
 
  protected:
-  void sendReplyImpl(ReplyT<Request>&& reply) override final {
+  void sendReplyImpl(ReplyT<Request>&& reply) final {
     auto req = this->req_;
     fiber_local<RouterInfo>::runWithoutLocals(
         [this, req, &reply]() { f_(*req, std::move(reply)); });
