@@ -82,10 +82,10 @@ class ConnectionTracker : public McServerSession::StateCallback {
   void evict();
 
   // McServerSession::StateCallback API
-  void onWriteQuiescence(McServerSession& session) override final;
-  void onCloseStart(McServerSession& session) override final;
-  void onCloseFinish(McServerSession& session) override final;
-  void onShutdown() override final;
+  void onWriteQuiescence(McServerSession& session) final;
+  void onCloseStart(McServerSession& session) final;
+  void onCloseFinish(McServerSession& session) final;
+  void onShutdown() final;
 };
 }
 } // facebook::memcache

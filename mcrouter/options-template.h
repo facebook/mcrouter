@@ -38,7 +38,7 @@ class OPTIONS_NAME : public McrouterOptionsBase {
   void forEach(
       std::function<
           void(const std::string&, McrouterOptionData::Type, const boost::any&)>
-          f) const {
+          f) const override {
 #undef MCROUTER_OPTION
 #define MCROUTER_OPTION(_type, _name, _f, _l, _s, _d, _Type) \
   f(#_name,                                                  \

@@ -160,7 +160,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
       folly::VirtualEventBase& eventBase,
       ConnectionOptions options);
 
-  ~AsyncMcClientImpl();
+  ~AsyncMcClientImpl() override;
 
   // Common part for send/sendSync.
   void sendCommon(McClientRequestContextBase& req);
@@ -182,25 +182,24 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   folly::StringPiece clientStateToStr() const;
 
   // TAsyncSocket::ConnectCallback overrides
-  void connectSuccess() noexcept override final;
-  void connectErr(
-      const folly::AsyncSocketException& ex) noexcept override final;
+  void connectSuccess() noexcept final;
+  void connectErr(const folly::AsyncSocketException& ex) noexcept final;
 
   // We've have encountered some error or we're shutting down the client.
   // It goes to DOWN state.
   void processShutdown(folly::StringPiece errorMessage);
 
   // AsyncTransportWrapper::ReadCallback overrides
-  void getReadBuffer(void** bufReturn, size_t* lenReturn) override final;
-  void readDataAvailable(size_t len) noexcept override final;
-  void readEOF() noexcept override final;
-  void readErr(const folly::AsyncSocketException& ex) noexcept override final;
+  void getReadBuffer(void** bufReturn, size_t* lenReturn) final;
+  void readDataAvailable(size_t len) noexcept final;
+  void readEOF() noexcept final;
+  void readErr(const folly::AsyncSocketException& ex) noexcept final;
 
   // AsyncTransportWrapper::WriteCallback overrides
-  void writeSuccess() noexcept override final;
+  void writeSuccess() noexcept final;
   void writeErr(
       size_t bytesWritten,
-      const folly::AsyncSocketException& ex) noexcept override final;
+      const folly::AsyncSocketException& ex) noexcept final;
 
   // Callbacks for McParser.
   template <class Reply>

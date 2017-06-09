@@ -32,7 +32,7 @@ class McImportResolver : public ImportResolverIf {
   /**
    * @throws std::runtime_error if can not load file
    */
-  std::string import(folly::StringPiece path);
+  std::string import(folly::StringPiece path) override;
 
  private:
   ConfigApiIf& configApi_;

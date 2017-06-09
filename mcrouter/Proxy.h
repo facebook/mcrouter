@@ -156,7 +156,7 @@ struct ProxyMessage {
 template <class RouterInfo>
 class Proxy : public ProxyBase {
  public:
-  ~Proxy();
+  ~Proxy() override;
 
   /**
    * Access to config - can only be called on the proxy thread
@@ -205,7 +205,7 @@ class Proxy : public ProxyBase {
     return requestStats_;
   }
 
-  folly::dynamic dumpRequestStats(bool filterZeroes) const override final {
+  folly::dynamic dumpRequestStats(bool filterZeroes) const final {
     return requestStats_.dump(filterZeroes);
   }
 
@@ -300,7 +300,7 @@ class Proxy : public ProxyBase {
     WaitingRequest(
         const Request& req,
         std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
-    void process(Proxy* proxy) override final;
+    void process(Proxy* proxy) final;
     void setTimePushedOnQueue(int64_t now) {
       timePushedOnQueue_ = now;
     }
@@ -326,7 +326,7 @@ class Proxy : public ProxyBase {
   rateLimited(ProxyRequestPriority priority, const Request&) const;
 
   /** Will let through requests from the above queue if we have capacity */
-  void pump() override final;
+  void pump() final;
 
   friend class CarbonRouterInstance<RouterInfo>;
   friend class CarbonRouterClient<RouterInfo>;
