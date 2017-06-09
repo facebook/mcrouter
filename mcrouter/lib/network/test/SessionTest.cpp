@@ -130,15 +130,15 @@ TEST(Session, quit) {
 TEST(Session, closeBeforeReply) {
   struct Callbacks : public McServerSession::StateCallback {
    public:
-    void onWriteQuiescence(McServerSession&) override final {
+    void onWriteQuiescence(McServerSession&) final {
       EXPECT_EQ(state_, ACTIVE);
     }
-    void onCloseStart(McServerSession&) override final {}
-    void onCloseFinish(McServerSession&) override final {
+    void onCloseStart(McServerSession&) final {}
+    void onCloseFinish(McServerSession&) final {
       EXPECT_EQ(state_, ACTIVE);
       state_ = CLOSED;
     }
-    void onShutdown() override final {}
+    void onShutdown() final {}
 
    private:
     enum State { ACTIVE, CLOSED };

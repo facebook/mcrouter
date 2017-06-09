@@ -33,10 +33,10 @@ class SessionTestHarness {
  private:
   class NoopCallback : public McServerSession::StateCallback {
    public:
-    void onWriteQuiescence(McServerSession&) override final {}
-    void onCloseStart(McServerSession&) override final {}
-    void onCloseFinish(McServerSession&) override final {}
-    void onShutdown() override final {}
+    void onWriteQuiescence(McServerSession&) final {}
+    void onCloseStart(McServerSession&) final {}
+    void onCloseFinish(McServerSession&) final {}
+    void onShutdown() final {}
   };
   static NoopCallback noopCb;
 
@@ -151,10 +151,10 @@ class SessionTestHarness {
    public:
     Transaction(Request&& req, folly::Function<void(const Request&)> replyFn)
         : req_(std::move(req)), replyFn_(std::move(replyFn)) {}
-    std::string key() const override final {
+    std::string key() const final {
       return req_.key().fullKey().str();
     }
-    void reply() override final {
+    void reply() final {
       replyFn_(req_);
     }
 

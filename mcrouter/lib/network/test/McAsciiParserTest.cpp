@@ -79,7 +79,7 @@ class McAsciiParserHarness {
     ReplyInfo(Reply reply, bool failure)
         : ReplyInfoWithReply<Reply>(std::move(reply), failure) {}
 
-    void initializeParser(ParserT& parser) const override final {
+    void initializeParser(ParserT& parser) const final {
       parser.expectNext<Request>();
     }
   };

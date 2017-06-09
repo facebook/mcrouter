@@ -37,7 +37,7 @@ const folly::StringKeyedUnorderedMap<folly::dynamic> kGlobalParams = {
     {"templGlobal", "templ"}};
 
 class MockImportResolver : public ImportResolverIf {
-  std::string import(folly::StringPiece path) override final {
+  std::string import(folly::StringPiece path) final {
     if (path == "test") {
       return "\"mock_test\"";
     }

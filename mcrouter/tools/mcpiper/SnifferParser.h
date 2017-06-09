@@ -113,17 +113,18 @@ template <class Callback, class RequestList>
 class SnifferParser : public SnifferParserBase<Callback> {
  public:
   explicit SnifferParser(Callback& cb) noexcept;
-  ~SnifferParser(){}
+  ~SnifferParser() override {}
 
-  void parse(folly::ByteRange data, uint32_t typeId, bool isFirstPacket) {
+  void parse(folly::ByteRange data, uint32_t typeId, bool isFirstPacket)
+      override {
     parser_.parse(data, typeId, isFirstPacket);
   }
 
-  void resetParser() {
+  void resetParser() override {
     parser_.reset();
   }
 
-  mc_protocol_t getParserProtocol() {
+  mc_protocol_t getParserProtocol() override {
     return parser_.getProtocol();
   }
 

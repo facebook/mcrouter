@@ -190,7 +190,7 @@ class ProxyRequestContextTyped
     sendReply(ReplyT<Request>(std::forward<Args>(args)...));
   }
 
-  void startProcessing() override final;
+  void startProcessing() final;
 
   const ProxyConfig<RouterInfo>& proxyConfig() const {
     assert(!this->recording());

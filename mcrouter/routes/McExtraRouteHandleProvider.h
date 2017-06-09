@@ -26,22 +26,22 @@ class McExtraRouteHandleProvider
  public:
   using RouteHandleIf = typename RouterInfo::RouteHandleIf;
 
-  virtual std::shared_ptr<RouteHandleIf> makeShadow(
+  std::shared_ptr<RouteHandleIf> makeShadow(
       ProxyBase& proxy,
       std::shared_ptr<RouteHandleIf> destination,
       ShadowData<RouterInfo> data,
       folly::StringPiece shadowPolicy) override;
 
-  virtual std::shared_ptr<RouteHandleIf> makeFailoverRoute(
+  std::shared_ptr<RouteHandleIf> makeFailoverRoute(
       const folly::dynamic& json,
       std::vector<std::shared_ptr<RouteHandleIf>> children) override;
 
-  virtual std::vector<std::shared_ptr<RouteHandleIf>> tryCreate(
+  std::vector<std::shared_ptr<RouteHandleIf>> tryCreate(
       RouteHandleFactory<RouteHandleIf>& factory,
       folly::StringPiece type,
       const folly::dynamic& json) override;
 
-  virtual ~McExtraRouteHandleProvider() {}
+  ~McExtraRouteHandleProvider() override {}
 };
 }
 }

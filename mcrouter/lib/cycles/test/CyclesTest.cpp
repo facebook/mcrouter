@@ -17,11 +17,11 @@ using namespace facebook::memcache;
 
 class CyclesTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     cycles::startExtracting([](cycles::CycleStats) {});
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     cycles::stopExtracting();
   }
 };

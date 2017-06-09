@@ -137,7 +137,7 @@ class TestRunner {
    public:
     explicit ExpectedRequestCallback(Request req, bool noreply = false)
         : ExpectedCallbackBase(req, noreply), req_(std::move(req)) {}
-    virtual ~ExpectedRequestCallback() = default;
+    ~ExpectedRequestCallback() override = default;
 
    private:
     Request req_;

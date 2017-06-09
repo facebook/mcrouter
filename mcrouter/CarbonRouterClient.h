@@ -123,7 +123,7 @@ class CarbonRouterClient : public CarbonRouterClientBase {
   CarbonRouterClient& operator=(const CarbonRouterClient<RouterInfo>&) = delete;
   CarbonRouterClient& operator=(CarbonRouterClient<RouterInfo>&&) = delete;
 
-  ~CarbonRouterClient();
+  ~CarbonRouterClient() override;
 
  private:
   std::weak_ptr<CarbonRouterInstance<RouterInfo>> router_;

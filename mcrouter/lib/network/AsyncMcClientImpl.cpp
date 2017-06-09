@@ -32,8 +32,8 @@ class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
  public:
   explicit OnEventBaseDestructionCallback(AsyncMcClientImpl& client)
       : client_(client) {}
-  ~OnEventBaseDestructionCallback() {}
-  void runLoopCallback() noexcept override final {
+  ~OnEventBaseDestructionCallback() override {}
+  void runLoopCallback() noexcept final {
     client_.closeNow();
   }
 
@@ -49,12 +49,11 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
   explicit GoAwayContext(const CodecIdRange& supportedCodecs)
       : data(message, 0, mc_caret_protocol, supportedCodecs) {}
 
-  void writeSuccess() noexcept override final {
+  void writeSuccess() noexcept final {
     auto self = std::move(selfPtr);
     self.reset();
   }
-  void writeErr(size_t, const folly::AsyncSocketException&) noexcept override
-      final {
+  void writeErr(size_t, const folly::AsyncSocketException&) noexcept final {
     auto self = std::move(selfPtr);
     self.reset();
   }
@@ -70,8 +69,8 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
 class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
  public:
   explicit WriterLoop(AsyncMcClientImpl& client) : client_(client) {}
-  ~WriterLoop() {}
-  void runLoopCallback() noexcept override final {
+  ~WriterLoop() override {}
+  void runLoopCallback() noexcept final {
     // Delay this write until the end of current loop (e.g. after
     // runActiveFibers() callback). That way we achieve better batching without
     // affecting latency.

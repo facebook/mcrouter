@@ -41,7 +41,7 @@ class TestJsonClient : public JsonClient {
   bool sendRequestByName(
       const std::string& requestName,
       const folly::dynamic& requestJson,
-      folly::dynamic& replyJson) override final {
+      folly::dynamic& replyJson) final {
     if (requestName == TestRequest::name) {
       return sendRequest<TestRequest>(requestJson, replyJson);
     } else if (requestName == TestRequestStringKey::name) {

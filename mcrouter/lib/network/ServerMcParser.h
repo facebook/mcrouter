@@ -27,7 +27,7 @@ class ServerMcParser : private McParser::ParserCallback {
       size_t maxBufferSize,
       ConnectionFifo* debugFifo = nullptr);
 
-  ~ServerMcParser();
+  ~ServerMcParser() override;
 
   /**
    * TAsyncTransport-style getReadBuffer().
@@ -78,12 +78,12 @@ class ServerMcParser : private McParser::ParserCallback {
   /* McParser callbacks */
   bool umMessageReady(
       const UmbrellaMessageInfo& info,
-      const folly::IOBuf& buffer) override final;
+      const folly::IOBuf& buffer) final;
   bool caretMessageReady(
       const UmbrellaMessageInfo& headerInfo,
-      const folly::IOBuf& buffer) override final;
-  void handleAscii(folly::IOBuf& readBuffer) override final;
-  void parseError(mc_res_t result, folly::StringPiece reason) override final;
+      const folly::IOBuf& buffer) final;
+  void handleAscii(folly::IOBuf& readBuffer) final;
+  void parseError(mc_res_t result, folly::StringPiece reason) final;
   bool shouldReadToAsciiBuffer() const;
 
   // McServerAsciiParser callbacks

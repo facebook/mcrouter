@@ -30,11 +30,11 @@ class ZstdCompressionCodec : public CompressionCodec {
       uint32_t codecCompressionLevel);
 
   std::unique_ptr<folly::IOBuf> compress(const struct iovec* iov, size_t iovcnt)
-      override final;
+      final;
   std::unique_ptr<folly::IOBuf> uncompress(
       const struct iovec* iov,
       size_t iovcnt,
-      size_t uncompressedLength = 0) override final;
+      size_t uncompressedLength = 0) final;
 
  private:
   template <class T>

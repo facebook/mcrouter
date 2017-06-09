@@ -53,7 +53,7 @@ uint64_t getCpuCycles() noexcept;
 
 class CyclesClock : public Clock {
  public:
-  Metering read() const override final {
+  Metering read() const final {
     return Metering{getCpuCycles(), 0};
   }
 };
@@ -63,7 +63,7 @@ class CyclesClock : public Clock {
  */
 class RUsageClock : public Clock {
  public:
-  Metering read() const override final;
+  Metering read() const final;
 };
 }
 }
