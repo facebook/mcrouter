@@ -49,7 +49,9 @@ class CarbonRouterInstance
   /**
    * @return  If an instance with the given persistence_id already exists,
    *   returns a pointer to it. Options are ignored in this case.
-   *   Otherwise spins up a new instance and returns the pointer to it.
+   *   Otherwise spins up a new instance and returns the pointer to it. May
+   *   return nullptr if the McRouterManager singleton is unavailable, perhaps
+   *   due to misconfiguration.
    * @param evbs  Must be either empty or contain options.num_proxies
    *   event bases.  If empty, mcrouter will spawn its own proxy threads.
    *   Otherwise, proxies will run on the provided event bases
