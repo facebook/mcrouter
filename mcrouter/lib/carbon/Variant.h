@@ -41,7 +41,7 @@ class Variant {
     }
 
     const int32_t otherWhich = other.which_;
-    if (otherWhich >= 0 && otherWhich < sizeof...(Ts)) {
+    if (otherWhich >= 0 && static_cast<size_t>(otherWhich) < sizeof...(Ts)) {
       dispatcher[otherWhich](*this, other);
     }
     return *this;
@@ -132,7 +132,7 @@ class Variant {
 
   std::type_index which() const {
     static constexpr std::type_index types[sizeof...(Ts)] = {typeid(Ts)...};
-    if (which_ >= 0 && which_ < sizeof...(Ts)) {
+    if (which_ >= 0 && static_cast<size_t>(which_) < sizeof...(Ts)) {
       return types[which_];
     }
     return typeid(void);
