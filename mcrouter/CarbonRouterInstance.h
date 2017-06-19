@@ -128,8 +128,6 @@ class CarbonRouterInstance
    */
   Proxy<RouterInfo>* getProxy(size_t index) const;
 
-  bool configure(const ProxyConfigBuilder& builder);
-
   CarbonRouterInstance(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance& operator=(const CarbonRouterInstance&) = delete;
   CarbonRouterInstance(CarbonRouterInstance&&) noexcept = delete;
@@ -185,7 +183,8 @@ class CarbonRouterInstance
 
   ~CarbonRouterInstance() override;
 
-  bool spinUp(const std::vector<folly::EventBase*>& evbs);
+  folly::Expected<folly::Unit, std::string> spinUp(
+      const std::vector<folly::EventBase*>& evbs);
 
   void startAwriterThreads();
   void stopAwriterThreads() noexcept;
@@ -200,13 +199,15 @@ class CarbonRouterInstance
   void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
 
+  folly::Expected<folly::Unit, std::string> configure(
+      const ProxyConfigBuilder& builder);
   /** (re)configure the router. true on success, false on error.
       NB file-based configuration is synchronous
       but server-based configuration is asynchronous */
   bool reconfigure(const ProxyConfigBuilder& builder);
   /** Create the ProxyConfigBuilder used to reconfigure.
-  Returns folly::none if constructor fails. **/
-  folly::Optional<ProxyConfigBuilder> createConfigBuilder();
+  Returns error reason if constructor fails. **/
+  folly::Expected<ProxyConfigBuilder, std::string> createConfigBuilder();
 
   void registerOnUpdateCallbackForRxmits();
 
