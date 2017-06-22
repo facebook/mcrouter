@@ -16,6 +16,7 @@
 #include <utility>
 
 #include <folly/Conv.h>
+#include <folly/Optional.h>
 #include <folly/Range.h>
 #include <folly/json.h>
 
@@ -117,7 +118,7 @@ class McPiperVisitor {
   }
 
   template <class T>
-  typename std::enable_if<!carbon::IsCarbonStruct<T>::value, void>::type render(
+  std::enable_if_t<!carbon::IsCarbonStruct<T>::value> render(
       folly::StringPiece name,
       const T& t) {
     renderHeader(name);
@@ -125,9 +126,10 @@ class McPiperVisitor {
   }
 
   template <class T>
-  typename std::enable_if<carbon::IsCarbonStruct<T>::value, void>::type render(
-      folly::StringPiece name,
-      const T& t) {
+  std::enable_if_t<
+      carbon::IsCarbonStruct<T>::value &&
+      !carbon::IsThriftWrapperStruct<T>::value>
+  render(folly::StringPiece name, const T& t) {
     McPiperVisitor printer(script_);
     renderHeader(name);
     nested += 1;
@@ -140,6 +142,28 @@ class McPiperVisitor {
     out_.append("\n  ");
     out_.append(getSpaces());
     out_.pushBack('}');
+  }
+
+  template <class T>
+  std::enable_if_t<
+      carbon::IsCarbonStruct<T>::value &&
+      carbon::IsThriftWrapperStruct<T>::value>
+  render(folly::StringPiece name, const T& /* unused */) {
+    renderHeader(name);
+    out_.append("[Thrift structure]");
+  }
+
+  template <class BinaryType>
+  void render(folly::StringPiece name, const carbon::Keys<BinaryType>& keys) {
+    renderHeader(name);
+    out_.append(keys.routingKey().str(), format_.dataValueColor);
+  }
+
+  template <class T>
+  void render(folly::StringPiece name, const folly::Optional<T>& t) {
+    if (t) {
+      render(name, *t);
+    }
   }
 
   template <class T>
@@ -164,14 +188,6 @@ class McPiperVisitor {
 template <>
 inline void McPiperVisitor::render(
     folly::StringPiece name,
-    const carbon::Keys<folly::IOBuf>& keys) {
-  renderHeader(name);
-  out_.append(keys.routingKey().str(), format_.dataValueColor);
-}
-
-template <>
-inline void McPiperVisitor::render(
-    folly::StringPiece name,
     const folly::IOBuf& buf) {
   auto buffer = buf;
   auto strPiece = folly::StringPiece(buffer.coalesce());
@@ -183,15 +199,6 @@ inline void McPiperVisitor::render(
     folly::StringPiece name,
     const std::string& str) {
   renderStringField(name, str);
-}
-
-template <>
-inline void McPiperVisitor::render(
-    folly::StringPiece name,
-    const folly::Optional<folly::IOBuf>& keys) {
-  if (keys.hasValue()) {
-    render(name, keys.value());
-  }
 }
 
 template <>

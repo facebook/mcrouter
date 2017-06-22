@@ -290,7 +290,6 @@ ProxyDestination::~ProxyDestination() {
 
   proxy->stats().decrement(getStatName(stats_.state));
   proxy->stats().decrement(num_servers_stat);
-  magic_ = kDeadBeef;
 }
 
 ProxyDestination::ProxyDestination(
@@ -308,8 +307,6 @@ ProxyDestination::ProxyDestination(
       routerInfoName_(std::move(routerInfoName)),
       rxmitsToCloseConnection_(
           proxy->router().opts().min_rxmit_reconnect_threshold) {
-  static uint64_t next_magic = 0x12345678900000LL;
-  magic_ = __sync_fetch_and_add(&next_magic, 1);
   proxy->stats().increment(num_servers_new_stat);
   proxy->stats().increment(num_servers_stat);
 }

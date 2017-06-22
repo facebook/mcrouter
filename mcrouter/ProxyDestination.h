@@ -112,8 +112,6 @@ class ProxyDestination {
   void closeGracefully();
 
  private:
-  static const uint64_t kDeadBeef = 0xdeadbeefdeadbeefULL;
-
   std::unique_ptr<AsyncMcClient> client_;
   std::shared_ptr<const AccessPoint> accessPoint_;
   mutable folly::SpinLock clientLock_; // AsyncMcClient lock for stats threads.
@@ -123,7 +121,6 @@ class ProxyDestination {
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
   std::string routerInfoName_;
-  uint64_t magic_{0}; ///< to allow asserts that pdstn is still alive
 
   Stats stats_;
 
