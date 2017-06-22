@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -159,7 +159,7 @@ class TestMigratedPoolsFailover(McrouterTestCase):
         self.assertEqual(self.b_old.get("set-key-2"), str(42))
 
         #next phase
-        time.sleep(5)
+        time.sleep(10)
         # gets/sets go to the new place
         self.assertEqual(mcr.get("get-key-3"), str(30))
         mcr.set("set-key-3", str(424242))
@@ -402,10 +402,10 @@ class TestFailoverWithLimit(McrouterTestCase):
 
         # first 12 requests should succeed (9.8 - 1 + 0.2 * 11 - 11 = 0)
         self.assertTrue(mcr.set('key', 'value.gut'))
-        for i in range(11):
+        for _i in range(11):
             self.assertEqual(mcr.get('key'), 'value.gut')
         # now every 5th request should succeed
-        for i in range(10):
-            for j in range(4):
+        for _i in range(10):
+            for _j in range(4):
                 self.assertIsNone(mcr.get('key'))
             self.assertEqual(mcr.get('key'), 'value.gut')

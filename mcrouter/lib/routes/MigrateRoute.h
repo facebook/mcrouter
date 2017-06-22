@@ -29,14 +29,17 @@ namespace facebook {
 namespace memcache {
 
 /**
- * This route handle changes behavior based on Migration mode.
+ * This route handle changes behavior based on Migration mode. Each request is
+ * assigned a migration time based on the hash of its key in order to migrate
+ * smoothly over time. A key's migration time is calculated as start_time +
+ * hash(key) % (2 * interval).
  * 1. Before the migration starts, sends all requests to from_ route
  * handle.
- * 2. Between start time and (start_time + interval), sends all requests except
+ * 2. Between start time and the key's migration time, sends all requests except
  * for deletes to from_ route handle and sends all delete requests to both from_
  * and to_ route handle. For delete requests, returns reply from
  * worst among two replies.
- * 3. Between (start time + interval) and (start_time + 2*interval), sends all
+ * 3. Between the key's migration time and (start_time + 2*interval), sends all
  * requests except for deletes to to_ route handle and sends all delete requests
  * to both from_ and to_ route handle. For delete requests, returns
  * reply from worst among two replies.
@@ -134,11 +137,12 @@ class MigrateRoute {
 
   template <class Request>
   int routeMask(
-      const Request&,
+      const Request& req,
       carbon::OtherThanT<Request, carbon::DeleteLike<>> = 0) const {
     time_t curr = tp_();
-
-    if (curr < (startTimeSec_ + intervalSec_)) {
+    const time_t switchTime = startTimeSec_ + intervalSec_ +
+        req.key().routingKeyHash() % intervalSec_;
+    if (curr < switchTime) {
       return kFromMask;
     } else {
       return kToMask;
