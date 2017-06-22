@@ -54,6 +54,7 @@ void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(28 /* field id */, testUSet());
   writer.writeField(29 /* field id */, testSet());
   writer.writeField(30 /* field id */, testOptionalBool());
+  writer.writeField(31 /* field id */, testOptionalVec());
   writer.writeField(100 /* field id */, testType());
   writer.writeStructEnd();
   writer.writeStop();
@@ -193,6 +194,10 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 30: {
         reader.readField(testOptionalBool(), fieldType);
+        break;
+      }
+      case 31: {
+        reader.readField(testOptionalVec(), fieldType);
         break;
       }
       case 100: {
@@ -338,6 +343,61 @@ void TestOptionalBool::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readField(optionalBool(), fieldType);
+        break;
+      }
+      default: {
+        reader.skip(fieldType);
+        break;
+      }
+    }
+  }
+  reader.readStructEnd();
+}
+
+void TestOptionalUnion::serialize(carbon::CarbonProtocolWriter& writer) const {
+  writer.writeStructBegin();
+  switch (_which_) {
+    case 1: {
+      writer.writeFieldAlways(1 /* field id */, umember1());
+      break;
+    }
+    case 2: {
+      writer.writeFieldAlways(2 /* field id */, umember2());
+      break;
+    }
+    case 3: {
+      writer.writeFieldAlways(3 /* field id */, umember3());
+      break;
+    }
+    default:
+      break;
+  }
+  writer.writeStructEnd();
+  writer.writeStop();
+}
+
+void TestOptionalUnion::deserialize(carbon::CarbonProtocolReader& reader) {
+  reader.readStructBegin();
+  while (true) {
+    const auto pr = reader.readFieldHeader();
+    const auto fieldType = pr.first;
+    const auto fieldId = pr.second;
+
+    if (fieldType == carbon::FieldType::Stop) {
+      break;
+    }
+
+    switch (fieldId) {
+      case 1: {
+        reader.readRawInto(emplace<1>());
+        break;
+      }
+      case 2: {
+        reader.readRawInto(emplace<2>());
+        break;
+      }
+      case 3: {
+        reader.readRawInto(emplace<3>());
         break;
       }
       default: {

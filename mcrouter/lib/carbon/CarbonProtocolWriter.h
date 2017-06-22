@@ -259,6 +259,13 @@ class CarbonProtocolWriter {
   template <class T>
   void writeField(const int16_t id, const folly::Optional<T>& data) {
     if (data.hasValue()) {
+      writeFieldHeader(detail::TypeToField<T>::fieldType, id);
+      writeRaw(*data);
+    }
+  }
+
+  void writeField(const int16_t id, const folly::Optional<bool>& data) {
+    if (data.hasValue()) {
       writeFieldAlways(id, *data);
     }
   }
@@ -347,6 +354,11 @@ class CarbonProtocolWriter {
       writeTwoBytes(static_cast<uint16_t>(id));
     }
     lastFieldId_ = id;
+  }
+
+  template <class T>
+  void writeRaw(const folly::Optional<T>& data) {
+    SerializationTraits<folly::Optional<T>>::write(data, *this);
   }
 
   void writeRaw(const std::string& s) {

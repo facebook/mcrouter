@@ -99,6 +99,7 @@ void expectEqTestRequest(const TestRequest& a, const TestRequest& b) {
   EXPECT_EQ(a.testType().points, b.testType().points);
 
   EXPECT_EQ(a.testOptionalBool(), b.testOptionalBool());
+  EXPECT_EQ(a.testOptionalVec(), b.testOptionalVec());
 }
 
 } // util

@@ -116,6 +116,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(30, "testOptionalBool", testOptionalBool_)) {
     return;
   }
+  if (!v.visitField(31, "testOptionalVec", testOptionalVec_)) {
+    return;
+  }
   if (!v.visitField(100, "testType", testType_)) {
     return;
   }
@@ -219,6 +222,9 @@ void TestRequest::visitFields(V&& v) const {
   if (!v.visitField(30, "testOptionalBool", testOptionalBool_)) {
     return;
   }
+  if (!v.visitField(31, "testOptionalVec", testOptionalVec_)) {
+    return;
+  }
   if (!v.visitField(100, "testType", testType_)) {
     return;
   }
@@ -288,6 +294,82 @@ void TestOptionalBool::visitFields(V&& v) {
 template <class V>
 void TestOptionalBool::visitFields(V&& v) const {
   if (!v.visitField(1, "optionalBool", optionalBool_)) {
+    return;
+  }
+}
+
+template <class V>
+void TestOptionalUnion::visitFields(V&& v) {
+  switch (_which_) {
+    case 1:
+      v.visitField(1, "umember1", umember1());
+      break;
+
+    case 2:
+      v.visitField(2, "umember2", umember2());
+      break;
+
+    case 3:
+      v.visitField(3, "umember3", umember3());
+      break;
+
+    default:
+      break;
+  }
+}
+
+template <class V>
+void TestOptionalUnion::visitFields(V&& v) const {
+  switch (_which_) {
+    case 1:
+      v.visitField(1, "umember1", umember1());
+      break;
+
+    case 2:
+      v.visitField(2, "umember2", umember2());
+      break;
+
+    case 3:
+      v.visitField(3, "umember3", umember3());
+      break;
+
+    default:
+      break;
+  }
+}
+
+template <class V>
+void TestOptionalUnion::foreachMember(V&& v) {
+  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>(
+          "umember1", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<2, folly::Optional<bool>>(
+          "umember2", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<3, folly::Optional<std::string>>(
+          "umember3", *this)) {
+    return;
+  }
+}
+
+template <class V>
+void TestOptionalUnion::foreachMember(V&& v) const {
+  if (!v.template visitUnionMember<1, folly::Optional<int64_t>>(
+          "umember1", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<2, folly::Optional<bool>>(
+          "umember2", *this)) {
+    return;
+  }
+
+  if (!v.template visitUnionMember<3, folly::Optional<std::string>>(
+          "umember3", *this)) {
     return;
   }
 }
