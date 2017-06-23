@@ -107,7 +107,7 @@ AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h netdb.h stdint.h string.h sys/fil
 
 AC_CHECK_LIB([event], [event_set], [], [AC_MSG_ERROR([Unable to find libevent])])
 AC_CHECK_LIB([crypto], [MD5_Init], [], [AC_MSG_ERROR([Unable to find libcrypto])])
-AC_CHECK_LIB([lz4], [LZ4_freeStream], [], [AC_MSG_ERROR([Unable to find liblz4])])
+AC_CHECK_LIB([lz4], [LZ4_decompress_safe], [], [AC_MSG_ERROR([Unable to find liblz4])])
 AC_CHECK_LIB([ssl], [SSL_library_init], [], [AC_MSG_ERROR([Unable to find ssl])])
 AC_CHECK_LIB([z], [gzread], [], [AC_MSG_ERROR([Unable to find zlib])])
 AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
