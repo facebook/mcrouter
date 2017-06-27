@@ -27,77 +27,20 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace detail {
-
-template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteCrc32(
-    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
-    std::string salt) {
-  auto n = rh.size();
-  if (n == 0) {
-    return createNullRoute<typename RouterInfo::RouteHandleIf>();
-  }
-  if (n == 1) {
-    return std::move(rh[0]);
-  }
-
-  return createSelectionRoute<RouterInfo, HashSelector<Crc32HashFunc>>(
-      std::move(rh),
-      HashSelector<Crc32HashFunc>(std::move(salt), Crc32HashFunc(n)));
+template <class HashFunc>
+HashSelector<HashFunc> createHashSelector(std::string salt, HashFunc func) {
+  return HashSelector<HashFunc>(std::move(salt), std::move(func));
 }
 
-template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteCh3(
-    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
-    std::string salt) {
-  auto n = rh.size();
-  if (n == 0) {
-    return createNullRoute<typename RouterInfo::RouteHandleIf>();
-  }
-  if (n == 1) {
-    return std::move(rh[0]);
-  }
-  return createSelectionRoute<RouterInfo, HashSelector<Ch3HashFunc>>(
-      std::move(rh),
-      HashSelector<Ch3HashFunc>(std::move(salt), Ch3HashFunc(n)));
-}
-
-template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteConstShard(
-    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
-    std::string salt) {
-  auto n = rh.size();
-  if (n == 0) {
-    return createNullRoute<typename RouterInfo::RouteHandleIf>();
-  }
-  if (n == 1) {
-    return std::move(rh[0]);
-  }
-
-  return createSelectionRoute<RouterInfo, HashSelector<ConstShardHashFunc>>(
-      std::move(rh),
-      HashSelector<ConstShardHashFunc>(std::move(salt), ConstShardHashFunc(n)));
-}
-
-template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteWeightedCh3(
-    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh,
+template <class RouterInfo, class HashFunc>
+typename RouterInfo::RouteHandlePtr createHashRoute(
+    std::vector<typename RouterInfo::RouteHandlePtr> rh,
     std::string salt,
-    WeightedCh3HashFunc func) {
-  auto n = rh.size();
-  if (n == 0) {
-    return createNullRoute<typename RouterInfo::RouteHandleIf>();
-  }
-  if (n == 1) {
-    return std::move(rh[0]);
-  }
-
-  return createSelectionRoute<RouterInfo, HashSelector<WeightedCh3HashFunc>>(
+    HashFunc func) {
+  return createSelectionRoute<RouterInfo, HashSelector<HashFunc>>(
       std::move(rh),
-      HashSelector<WeightedCh3HashFunc>(std::move(salt), std::move(func)));
+      createHashSelector<HashFunc>(std::move(salt), std::move(func)));
 }
-
-} // detail
 
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
@@ -117,18 +60,27 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
     }
   }
 
+  auto n = rh.size();
+  if (n == 0) {
+    return createNullRoute<typename RouterInfo::RouteHandleIf>();
+  }
+  if (n == 1) {
+    return std::move(rh[0]);
+  }
+
   if (funcType == Ch3HashFunc::type()) {
-    return detail::makeHashRouteCh3<RouterInfo>(std::move(rh), std::move(salt));
+    return createHashRoute<RouterInfo, Ch3HashFunc>(
+        std::move(rh), std::move(salt), Ch3HashFunc(n));
   } else if (funcType == Crc32HashFunc::type()) {
-    return detail::makeHashRouteCrc32<RouterInfo>(
-        std::move(rh), std::move(salt));
+    return createHashRoute<RouterInfo, Crc32HashFunc>(
+        std::move(rh), std::move(salt), Crc32HashFunc(n));
   } else if (funcType == WeightedCh3HashFunc::type()) {
-    WeightedCh3HashFunc func{json, rh.size()};
-    return detail::makeHashRouteWeightedCh3<RouterInfo>(
+    WeightedCh3HashFunc func{json, n};
+    return createHashRoute<RouterInfo, WeightedCh3HashFunc>(
         std::move(rh), std::move(salt), std::move(func));
   } else if (funcType == ConstShardHashFunc::type()) {
-    return detail::makeHashRouteConstShard<RouterInfo>(
-        std::move(rh), std::move(salt));
+    return createHashRoute<RouterInfo, ConstShardHashFunc>(
+        std::move(rh), std::move(salt), ConstShardHashFunc(n));
   } else if (funcType == "Latest") {
     return createLatestRoute<RouterInfo>(json, std::move(rh), threadId);
   }

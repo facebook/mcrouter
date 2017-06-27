@@ -40,7 +40,7 @@ const char* const kConstShard =
 const char* const kInvalidHashFunc =
     R"({
   "type": "HashRoute",
-  "children": "ErrorRoute",
+  "children": ["ErrorRoute", "ErrorRoute"],
   "hash_func": "InvalidHashFunc"
  })";
 
