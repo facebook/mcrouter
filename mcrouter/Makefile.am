@@ -134,6 +134,7 @@ libmcroutercore_a_SOURCES = \
   routes/OperationSelectorRoute-inl.h \
   routes/OperationSelectorRoute.h \
   routes/OutstandingLimitRoute.h \
+  routes/PoolRouteUtils.h \
   routes/PrefixSelectorRoute.h \
   routes/ProxyRoute-inl.h \
   routes/ProxyRoute.h \
