@@ -119,8 +119,7 @@ class RouteCommandDispatcher {
               ProxyRequestContextWithInfo<RouterInfo>::createRecordingNotify(
                   proxy,
                   baton,
-                  [&destinations](
-                      folly::StringPiece, size_t, const AccessPoint& dest) {
+                  [&destinations](const PoolContext&, const AccessPoint& dest) {
                     destinations->push_back(dest.toHostPortString());
                   });
           Request recordingReq(keyStr);

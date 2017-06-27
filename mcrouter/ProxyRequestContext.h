@@ -35,6 +35,12 @@ class ProxyBase;
 class CarbonRouterClientBase;
 class ShardSplitter;
 
+struct PoolContext {
+  folly::StringPiece poolName;
+  size_t indexInPool;
+  bool isShadow;
+};
+
 /**
  * This object is alive for the duration of user's request,
  * including any subrequests that might have been sent out.
@@ -49,7 +55,7 @@ class ShardSplitter;
 class ProxyRequestContext {
  public:
   using ClientCallback =
-      std::function<void(folly::StringPiece, size_t, const AccessPoint&)>;
+      std::function<void(const PoolContext&, const AccessPoint&)>;
   using ShardSplitCallback = std::function<void(const ShardSplitter&)>;
 
   virtual ~ProxyRequestContext();
@@ -62,12 +68,10 @@ class ProxyRequestContext {
     return recording_;
   }
 
-  void recordDestination(
-      folly::StringPiece poolName,
-      size_t index,
-      const AccessPoint& ap) const {
+  void recordDestination(const PoolContext& poolContext, const AccessPoint& ap)
+      const {
     if (recording_ && recordingState_->clientCallback) {
-      recordingState_->clientCallback(poolName, index, ap);
+      recordingState_->clientCallback(poolContext, ap);
     }
   }
 

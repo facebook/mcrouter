@@ -81,8 +81,11 @@ class DestinationRoute {
       const RouteHandleTraverser<typename RouterInfo::RouteHandleIf>&) const {
     auto* ctx = fiber_local<RouterInfo>::getTraverseCtx();
     if (ctx) {
+      bool isShadow =
+          fiber_local<RouterInfo>::getRequestClass().is(RequestClass::kShadow);
       ctx->recordDestination(
-          poolName_, indexInPool_, *destination_->accessPoint());
+          PoolContext{poolName_, indexInPool_, isShadow},
+          *destination_->accessPoint());
     }
   }
 
@@ -126,14 +129,16 @@ class DestinationRoute {
       return constructAndLog(req, *ctx, BusyReply);
     }
 
+    auto requestClass = fiber_local<RouterInfo>::getRequestClass();
     if (ctx->recording()) {
+      bool isShadow = requestClass.is(RequestClass::kShadow);
       ctx->recordDestination(
-          poolName_, indexInPool_, *destination_->accessPoint());
+          PoolContext{poolName_, indexInPool_, isShadow},
+          *destination_->accessPoint());
       return constructAndLog(req, *ctx, DefaultReply, req);
     }
 
     auto proxy = &ctx->proxy();
-    auto requestClass = fiber_local<RouterInfo>::getRequestClass();
     if (requestClass.is(RequestClass::kShadow)) {
       if (proxy->router().opts().target_max_shadow_requests > 0 &&
           pendingShadowReqs_ >=

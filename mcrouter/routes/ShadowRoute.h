@@ -70,9 +70,12 @@ class ShadowRoute {
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
     t(*normal_, req);
-    for (auto& shadowData : shadowData_) {
-      t(*shadowData.first, req);
-    }
+    fiber_local<RouterInfo>::runWithLocals([this, &req, &t]() mutable {
+      fiber_local<RouterInfo>::addRequestClass(RequestClass::kShadow);
+      for (auto& shadowData : shadowData_) {
+        t(*shadowData.first, req);
+      }
+    });
   }
 
   template <class Request>
