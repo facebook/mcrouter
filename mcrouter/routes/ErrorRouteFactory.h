@@ -14,21 +14,16 @@
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/lib/routes/ErrorRoute.h"
-#include "mcrouter/lib/routes/NullRoute.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-namespace detail {
-
 template <class RouterInfo>
-typename RouterInfo::RouteHandlePtr makeErrorRoute(std::string valueToSet) {
+typename RouterInfo::RouteHandlePtr createErrorRoute(std::string valueToSet) {
   return makeRouteHandle<typename RouterInfo::RouteHandleIf, ErrorRoute>(
       std::move(valueToSet));
 }
-
-} // detail
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr makeErrorRoute(
@@ -46,8 +41,9 @@ typename RouterInfo::RouteHandlePtr makeErrorRoute(
       response = jResponse->getString();
     }
   }
-  return detail::makeErrorRoute<RouterInfo>(std::move(response));
+  return createErrorRoute<RouterInfo>(std::move(response));
 }
+
 } // mcrouter
 } // memcache
 } // facebook

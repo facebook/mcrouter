@@ -13,10 +13,12 @@
 
 #include "mcrouter/lib/Ch3HashFunc.h"
 #include "mcrouter/lib/Crc32HashFunc.h"
+#include "mcrouter/lib/HashSelector.h"
+#include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
-#include "mcrouter/lib/routes/HashRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
+#include "mcrouter/lib/routes/SelectionRoute.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/ShardHashFunc.h"
@@ -39,10 +41,9 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteCrc32(
     return std::move(rh[0]);
   }
 
-  return makeRouteHandle<
-      typename RouterInfo::RouteHandleIf,
-      HashRoute,
-      Crc32HashFunc>(std::move(rh), std::move(salt), Crc32HashFunc(n));
+  return createSelectionRoute<RouterInfo, HashSelector<Crc32HashFunc>>(
+      std::move(rh),
+      HashSelector<Crc32HashFunc>(std::move(salt), Crc32HashFunc(n)));
 }
 
 template <class RouterInfo>
@@ -56,10 +57,9 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteCh3(
   if (n == 1) {
     return std::move(rh[0]);
   }
-  return makeRouteHandle<
-      typename RouterInfo::RouteHandleIf,
-      HashRoute,
-      Ch3HashFunc>(std::move(rh), std::move(salt), Ch3HashFunc(n));
+  return createSelectionRoute<RouterInfo, HashSelector<Ch3HashFunc>>(
+      std::move(rh),
+      HashSelector<Ch3HashFunc>(std::move(salt), Ch3HashFunc(n)));
 }
 
 template <class RouterInfo>
@@ -74,11 +74,9 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteConstShard(
     return std::move(rh[0]);
   }
 
-  return makeRouteHandle<
-      typename RouterInfo::RouteHandleIf,
-      HashRoute,
-      ConstShardHashFunc>(
-      std::move(rh), std::move(salt), ConstShardHashFunc(n));
+  return createSelectionRoute<RouterInfo, HashSelector<ConstShardHashFunc>>(
+      std::move(rh),
+      HashSelector<ConstShardHashFunc>(std::move(salt), ConstShardHashFunc(n)));
 }
 
 template <class RouterInfo>
@@ -94,10 +92,9 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeHashRouteWeightedCh3(
     return std::move(rh[0]);
   }
 
-  return makeRouteHandle<
-      typename RouterInfo::RouteHandleIf,
-      HashRoute,
-      WeightedCh3HashFunc>(std::move(rh), std::move(salt), std::move(func));
+  return createSelectionRoute<RouterInfo, HashSelector<WeightedCh3HashFunc>>(
+      std::move(rh),
+      HashSelector<WeightedCh3HashFunc>(std::move(salt), std::move(func)));
 }
 
 } // detail

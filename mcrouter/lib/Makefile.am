@@ -36,6 +36,7 @@ libmcrouter_a_SOURCES = \
   Ref.h \
   Reply.h \
   RouteHandleTraverser.h \
+  SelectionRouteFactory.h \
   StatsReply.cpp \
   StatsReply.h \
   WeightedCh3HashFunc.cpp \
@@ -194,11 +195,11 @@ libmcrouter_a_SOURCES = \
   routes/AllMajorityRoute.h \
   routes/AllSyncRoute.h \
   routes/ErrorRoute.h \
-  routes/HashRoute.h \
   routes/LoggingRoute.h \
   routes/MigrateRoute.h \
   routes/NullRoute.h \
-  routes/RandomRoute.h
+  routes/RandomRoute.h \
+  routes/SelectionRoute.h
 
 libmcrouter_a_CPPFLAGS = -I$(top_srcdir)/..
 libmcrouter_a_CFLAGS = -I$(top_srcdir)/..

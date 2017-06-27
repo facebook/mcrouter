@@ -24,7 +24,6 @@
 #include <mcrouter/routes/ExtraRouteHandleProviderIf.h>
 #include <mcrouter/routes/McRouteHandleProvider.h>
 
-#include <mcrouter/lib/routes/HashRoute.h>
 #include <mcrouter/lib/routes/NullRoute.h>
 #include <mcrouter/routes/AllAsyncRouteFactory.h>
 #include <mcrouter/routes/AllFastestRouteFactory.h>
