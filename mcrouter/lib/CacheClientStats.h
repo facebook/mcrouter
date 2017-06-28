@@ -10,7 +10,7 @@
 #pragma once
 
 #include <folly/SpinLock.h>
-#include <folly/detail/CacheLocality.h>
+#include <folly/concurrency/CacheLocality.h>
 
 namespace facebook {
 namespace memcache {

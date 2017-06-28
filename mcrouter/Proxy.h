@@ -24,7 +24,7 @@
 #include <vector>
 
 #include <folly/Range.h>
-#include <folly/detail/CacheLocality.h>
+#include <folly/concurrency/CacheLocality.h>
 
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/Observable.h"
