@@ -297,15 +297,25 @@ service {
     McDeleteRequest,
     McGetRequest,
     McSetRequest,
+    McGetsRequest,
+    McCasRequest,
+    McMetagetRequest,
+    McAddRequest,
+    McReplaceRequest,
+    McAppendRequest,
+    McPrependRequest,
+    McIncrRequest,
+    McDecrRequest,
+    McFlushReRequest,
+    McFlushAllRequest,
+    McTouchRequest,
     # For backwards compatibility in stats names
     lease_get: [
       McLeaseGetRequest
     ],
     lease_set: [
       McLeaseSetRequest
-    ],
-    # Remaining requests grouped into 'other' group
-    other: *
+    ]
   };
   routing_groups: {
     get: [
