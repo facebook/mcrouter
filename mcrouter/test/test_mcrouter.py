@@ -90,13 +90,19 @@ class TestMigratedPools(McrouterTestCase):
         self.assertEqual(self.wild_old.get("get-key-2"), None)
         self.assertEqual(self.wild_new.get("get-key-2"), None)
 
-        #next phase
+        # next phase: migrating gets/sets uniformly over duration of this phase.
         time.sleep(2)
-        # gets/sets go to the new place
-        self.assertEqual(mcr.get("get-key-3"), str(300))
+        # gets/sets may go to either the old or new place depending on the
+        # specific key and when the request is made during the migration period.
+        value = mcr.get("get-key-3")
+        self.assertTrue(value == "3" or value == "300")
         mcr.set("set-key-3", str(424242))
-        self.assertEqual(self.wild_old.get("set-key-3"), None)
-        self.assertEqual(self.wild_new.get("set-key-3"), str(424242))
+        wild_old_value = self.wild_old.get("set-key-3")
+        wild_new_value = self.wild_new.get("set-key-3")
+        self.assertTrue(
+            (wild_old_value is None and wild_new_value == "424242") or
+            (wild_old_value == "424242" and wild_new_value is None)
+        )
 
         mcr.delete("get-key-3")
         #make sure the delete went to both places
