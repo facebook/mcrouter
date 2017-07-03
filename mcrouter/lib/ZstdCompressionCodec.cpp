@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,7 @@
  */
 #include "ZstdCompressionCodec.h"
 
-#if FOLLY_HAVE_LIBZSTD
+#if FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)
 
 namespace facebook {
 namespace memcache {
@@ -107,4 +107,4 @@ std::unique_ptr<folly::IOBuf> ZstdCompressionCodec::uncompress(
 
 } // memcache
 } // facebook
-#endif // FOLLY_HAVE_LIBZSTD
+#endif // FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)

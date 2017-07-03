@@ -8,7 +8,7 @@
  *
  */
 #include "Lz4CompressionCodec.h"
-#if FOLLY_HAVE_LIBLZ4
+#if FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
 
 namespace facebook {
 namespace memcache {
@@ -101,4 +101,4 @@ std::unique_ptr<folly::IOBuf> Lz4CompressionCodec::uncompress(
 
 } // memcache
 } // facebook
-#endif // FOLLY_HAVE_LIBLZ4
+#endif // FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)

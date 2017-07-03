@@ -127,7 +127,7 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
           codecFilteringOptions,
           codecCompressionLevel);
     case CompressionCodecType::LZ4:
-#if FOLLY_HAVE_LIBLZ4
+#if FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
       return std::make_unique<Lz4CompressionCodec>(
           std::move(dictionary),
           id,
@@ -136,7 +136,7 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
 #else
       LOG(ERROR) << "LZ4 is not available. Returning nullptr.";
       return nullptr;
-#endif // FOLLY_HAVE_LIBLZ4
+#endif // FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
     case CompressionCodecType::LZ4Immutable:
       return std::make_unique<Lz4ImmutableCompressionCodec>(
           std::move(dictionary),
@@ -144,7 +144,7 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
           codecFilteringOptions,
           codecCompressionLevel);
     case CompressionCodecType::ZSTD:
-#if FOLLY_HAVE_LIBZSTD
+#if FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
       return std::make_unique<ZstdCompressionCodec>(
           std::move(dictionary),
           id,
@@ -153,7 +153,7 @@ std::unique_ptr<CompressionCodec> createCompressionCodec(
 #else
       LOG(ERROR) << "ZSTD is not available. Returning nullptr.";
       return nullptr;
-#endif // FOLLY_HAVE_LIBZSTD
+#endif // FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)
   }
   return nullptr;
 }

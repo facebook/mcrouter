@@ -22,10 +22,8 @@ sudo apt-get install -y \
     libgflags-dev \
     libgoogle-glog-dev \
     libjemalloc-dev \
-    liblz4-dev \
     libssl-dev \
     libtool \
-    libzstd-dev \
     make \
     pkg-config \
     python-dev \

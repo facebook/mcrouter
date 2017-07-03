@@ -11,7 +11,7 @@
 
 #include <folly/Format.h>
 
-#if FOLLY_HAVE_LIBLZ4
+#if FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/IovecCursor.h"
@@ -50,4 +50,4 @@ class Lz4CompressionCodec : public CompressionCodec {
 
 } // memcache
 } // facebook
-#endif // FOLLY_HAVE_LIBLZ4
+#endif // FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)

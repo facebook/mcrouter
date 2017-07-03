@@ -11,7 +11,7 @@
 
 #include <folly/Format.h>
 
-#if FOLLY_HAVE_LIBZSTD
+#if FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)
 #include <zstd.h>
 
 #include "mcrouter/lib/Compression.h"
@@ -51,4 +51,4 @@ class ZstdCompressionCodec : public CompressionCodec {
 
 } // memcache
 } // facebook
-#endif // FOLLY_HAVE_LIBZSTD
+#endif // FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)

@@ -190,7 +190,7 @@ TEST(NoCompressionCodec, uncompressChained) {
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
 
-#if FOLLY_HAVE_LIBLZ4
+#if FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
 TEST(Lz4CompressionCodec, compressAndUncompress) {
   auto compressor = createCompressionCodec(
       CompressionCodecType::LZ4, getAsciiDictionary(), 1);
@@ -238,9 +238,9 @@ TEST(Lz4CompressionCodec, uncompressChained) {
       CompressionCodecType::LZ4, getAsciiDictionary(), 1);
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
-#endif // FOLLY_HAVE_LIBLZ4
+#endif // FOLLY_HAVE_LIBLZ4 && !defined(DISABLE_COMPRESSION)
 
-#if FOLLY_HAVE_LIBZSTD
+#if FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)
 TEST(ZstdCompressionCodec, compressAndUncompress) {
   auto compressor = createCompressionCodec(
       CompressionCodecType::ZSTD, getAsciiDictionary(), 1);
@@ -349,7 +349,7 @@ TEST(ZstdCompressionCodec, uncompressChainedWithCompressionLevel) {
 
   testUncompressChained(compressor.get(), *getAsciiReply(), 3);
 }
-#endif // FOLLY_HAVE_LIBZSTD
+#endif // FOLLY_HAVE_LIBZSTD && !defined(DISABLE_COMPRESSION)
 
 TEST(Lz4ImmutableCompressionCodec, compressAndUncompress) {
   auto compressor = createCompressionCodec(
