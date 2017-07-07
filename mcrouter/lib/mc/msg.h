@@ -256,6 +256,7 @@ enum mc_msg_flags_t {
   MC_MSG_FLAG_BIG_VALUE = 0X8000,
   MC_MSG_FLAG_NEGATIVE_CACHE = 0x10000,
   MC_MSG_FLAG_HOT_KEY = 0x20000,
+  MC_MSG_FLAG_ZSTD_COMPRESSED = 0x40000,
   /* Bits reserved for application-specific extension flags: */
   MC_MSG_FLAG_USER_1 = 0x100000000LL,
   MC_MSG_FLAG_USER_2 = 0x200000000LL,
@@ -297,6 +298,8 @@ static inline const char* mc_flag_to_string(const enum mc_msg_flags_t flag) {
       return "BIG_VALUE";
     case MC_MSG_FLAG_NEGATIVE_CACHE:
       return "NEGATIVE_CACHE";
+    case MC_MSG_FLAG_ZSTD_COMPRESSED:
+      return "ZSTD_COMPRESSED";
     case MC_MSG_FLAG_HOT_KEY:
       return "HOT_KEY";
     case MC_MSG_FLAG_USER_1:
