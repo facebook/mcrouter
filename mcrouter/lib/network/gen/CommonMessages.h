@@ -140,9 +140,9 @@ class McVersionReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   folly::IOBuf value_;
   std::string message_;
+  carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -249,9 +249,9 @@ class McStatsReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   std::string message_;
   std::vector<std::string> stats_;
+  carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -353,8 +353,8 @@ class McShutdownReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   std::string message_;
+  carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -455,8 +455,8 @@ class McQuitReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   std::string message_;
+  carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -563,9 +563,9 @@ class McExecReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   std::string response_;
   std::string message_;
+  carbon::Result result_{mc_res_unknown};
   int16_t appSpecificErrorCode_{0};
 };
 
@@ -650,8 +650,8 @@ class GoAwayRequest : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   std::string reason_;
+  carbon::Result result_{mc_res_unknown};
 };
 
 } // memcache

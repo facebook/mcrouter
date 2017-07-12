@@ -315,17 +315,8 @@ class TestRequest : public carbon::RequestCommon {
   SimpleStruct _carbon_simplestruct_;
   carbon::Keys<folly::IOBuf> key_;
   test2::util::SimpleEnum testEnum_{test2::util::SimpleEnum::Twenty};
-  bool testBool_{false};
-  char testChar_{'\0'};
-  int8_t testInt8_{0};
-  int16_t testInt16_{0};
-  int32_t testInt32_{0};
   int64_t testInt64_{0};
-  uint8_t testUInt8_{0};
-  uint16_t testUInt16_{0};
-  uint32_t testUInt32_{0};
   uint64_t testUInt64_{0};
-  float testFloat_{0.0};
   double testDouble_{0.0};
   std::string testShortString_;
   std::string testLongString_;
@@ -345,6 +336,15 @@ class TestRequest : public carbon::RequestCommon {
   folly::Optional<bool> testOptionalBool_;
   std::vector<folly::Optional<std::string>> testOptionalVec_;
   UserType testType_;
+  int32_t testInt32_{0};
+  uint32_t testUInt32_{0};
+  float testFloat_{0.0};
+  int16_t testInt16_{0};
+  uint16_t testUInt16_{0};
+  bool testBool_{false};
+  char testChar_{'\0'};
+  int8_t testInt8_{0};
+  uint8_t testUInt8_{0};
 };
 
 class TestReply : public carbon::ReplyCommon {
@@ -397,9 +397,9 @@ class TestReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
-  int32_t valInt32_{0};
   int64_t valInt64_{0};
+  int32_t valInt32_{0};
+  carbon::Result result_{mc_res_unknown};
 };
 
 class TestReplyStringKey;
@@ -649,13 +649,13 @@ class TestOptionalUnion {
   void foreachMember(V&& v) const;
 
  private:
-  uint32_t _which_{0};
-
   carbon::Variant<
       folly::Optional<int64_t>,
       folly::Optional<bool>,
       folly::Optional<std::string>>
       _carbon_variant;
+
+  uint32_t _which_{0};
 };
 
 } // test

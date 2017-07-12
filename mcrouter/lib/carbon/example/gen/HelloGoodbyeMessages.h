@@ -216,8 +216,8 @@ class GoodbyeReply : public carbon::ReplyCommon {
   void visitFields(V&& v) const;
 
  private:
-  carbon::Result result_{mc_res_unknown};
   std::string message_;
+  carbon::Result result_{mc_res_unknown};
 };
 
 } // hellogoodbye

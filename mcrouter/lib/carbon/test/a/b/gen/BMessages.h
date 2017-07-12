@@ -195,9 +195,9 @@ class SimpleUnion {
   void foreachMember(V&& v) const;
 
  private:
-  uint32_t _which_{0};
-
   carbon::Variant<int64_t, bool, std::string> _carbon_variant;
+
+  uint32_t _which_{0};
 };
 
 class YetAnotherReply;

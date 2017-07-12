@@ -144,10 +144,10 @@ class SimpleStruct {
 
  private:
   BaseStruct _carbon_basestruct_;
-  int32_t int32Member_{0};
   std::string stringMember_;
   test2::util::SimpleEnum enumMember_{test2::util::SimpleEnum::Twenty};
   std::vector<test2::util::SimpleStruct> vectorMember_;
+  int32_t int32Member_{0};
 };
 
 } // test
