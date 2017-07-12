@@ -101,6 +101,9 @@ class ProxyBase {
 
   virtual folly::dynamic dumpRequestStats(bool filterZeroes) const = 0;
 
+  /** Advance the request stats bin. */
+  virtual void advanceRequestStatsBin() = 0;
+
  private:
   CarbonRouterInstanceBase& router_;
   const size_t id_{0};

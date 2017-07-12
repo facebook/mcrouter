@@ -138,6 +138,16 @@ class CarbonRouterInstanceBase {
   size_t nextProxyIndex();
 
  protected:
+  /**
+   * Register this instance for periodic stats updates.
+   */
+  void registerForStatsUpdates();
+
+  /**
+   * Deregister this instance for periodic stats updates.
+   */
+  void deregisterForStatsUpdates();
+
   const McrouterOptions opts_;
   const pid_t pid_;
   const std::unique_ptr<ConfigApi> configApi_;
@@ -166,6 +176,14 @@ class CarbonRouterInstanceBase {
   folly::Optional<folly::observer::Observer<std::string>> rtVarsDataObserver_;
 
  private:
+  size_t statsIndex() const {
+    return statsIndex_;
+  }
+
+  void statsIndex(size_t newIndex) {
+    statsIndex_ = newIndex;
+  }
+
   TkoTrackerMap tkoTrackerMap_;
   std::unique_ptr<const CompressionCodecManager> compressionCodecManager_;
 
@@ -179,6 +197,11 @@ class CarbonRouterInstanceBase {
 
   std::mutex nextProxyMutex_;
   size_t nextProxy_{0};
+
+  // Current stats index. Only accessed / updated  by stats background thread.
+  size_t statsIndex_{0};
+
+  static void statUpdaterThreadRun();
 };
 }
 }

@@ -209,6 +209,10 @@ class Proxy : public ProxyBase {
     return requestStats_.dump(filterZeroes);
   }
 
+  void advanceRequestStatsBin() override {
+    requestStats().advanceBin();
+  }
+
  private:
   // If true, processing new requests is not safe.
   bool beingDestroyed_{false};

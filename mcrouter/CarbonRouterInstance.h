@@ -139,12 +139,6 @@ class CarbonRouterInstance
   // Lock to get before regenerating config structure
   std::mutex configReconfigLock_;
 
-  // Stat updater thread updates rate stat windows for each proxy
-  std::thread statUpdaterThread_;
-
-  std::mutex statUpdaterCvMutex_;
-  std::condition_variable statUpdaterCv_;
-
   // Corresponding handle
   ObservableRuntimeVars::CallbackHandle rxmitHandle_;
 
@@ -195,7 +189,6 @@ class CarbonRouterInstance
 
   void subscribeToConfigUpdate();
 
-  void statUpdaterThreadRun();
   void spawnStatLoggerThread();
   void startObservingRuntimeVarsFile();
 

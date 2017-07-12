@@ -13,15 +13,37 @@
 
 #include <boost/filesystem/operations.hpp>
 
+#include <folly/Indestructible.h>
 #include <folly/ThreadName.h>
 
 #include "mcrouter/AsyncWriter.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/fbi/cpp/util.h"
+#include "mcrouter/stats.h"
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
+namespace {
+
+// Mutex protecting statsUpdateRegisteredInstances.
+folly::Indestructible<std::mutex> statsUpdateLock;
+// Condition variable used to notify the stats background thread. Used with
+// statsUpdateLock.
+folly::Indestructible<std::condition_variable> statsUpdateCv;
+// The set of instances registered for stats updates. Protected by
+// statsUpdateLock.
+folly::Indestructible<std::unordered_set<CarbonRouterInstanceBase*>>
+    statsUpdateRegisteredInstances;
+// Mutex protecting starting and stopping of statsUpdateThread.
+folly::Indestructible<std::mutex> statsUpdateThreadControlLock;
+// Background thread for stats updates . Protected by
+// statsUpdateThreadControlLock.
+folly::Indestructible<std::thread> statsUpdateThread;
+
+} // namespace
 
 CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
     : opts_(std::move(inputOptions)),
@@ -69,6 +91,66 @@ size_t CarbonRouterInstanceBase::nextProxyIndex() {
   size_t res = nextProxy_;
   nextProxy_ = (nextProxy_ + 1) % opts().num_proxies;
   return res;
+}
+
+void CarbonRouterInstanceBase::registerForStatsUpdates() {
+  if (!opts_.num_proxies) {
+    return;
+  }
+  std::lock_guard<std::mutex> controlLock(*statsUpdateThreadControlLock);
+  std::lock_guard<std::mutex> updateLock(*statsUpdateLock);
+  statsUpdateRegisteredInstances->insert(this);
+  // Start the background thread if needed.
+  if (!statsUpdateThread->joinable()) {
+    *statsUpdateThread = std::thread(&statUpdaterThreadRun);
+  }
+}
+
+void CarbonRouterInstanceBase::deregisterForStatsUpdates() {
+  std::lock_guard<std::mutex> controlLock(*statsUpdateThreadControlLock);
+  std::unique_lock<std::mutex> updateLock(*statsUpdateLock);
+  statsUpdateRegisteredInstances->erase(this);
+  // TODO(bwatling): determine if we are actually forking anywhere.
+  if (getpid() != pid_) {
+    LOG(WARNING) << "getpid() != pid_, not joining stats update thread";
+    return;
+  }
+  // Join the background thread if there are no instances registered.
+  if (statsUpdateRegisteredInstances->empty() &&
+      statsUpdateThread->joinable()) {
+    updateLock.unlock();
+    statsUpdateCv->notify_all();
+    statsUpdateThread->join();
+  }
+}
+
+void CarbonRouterInstanceBase::statUpdaterThreadRun() {
+  folly::setThreadName("mcrtr-stats");
+  const int BIN_NUM =
+      (MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
+       MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
+
+  std::unique_lock<std::mutex> lock(*statsUpdateLock);
+  while (!statsUpdateRegisteredInstances->empty()) {
+    statsUpdateCv->wait_for(
+        lock, std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND));
+    for (auto* const instance : *statsUpdateRegisteredInstances) {
+      // To avoid inconsistence among proxies, we lock all mutexes together
+      std::vector<std::unique_lock<std::mutex>> statsLocks;
+      statsLocks.reserve(instance->opts_.num_proxies);
+      for (size_t i = 0; i < instance->opts_.num_proxies; ++i) {
+        statsLocks.push_back(instance->getProxyBase(i)->stats().lock());
+      }
+
+      const auto idx = instance->statsIndex();
+      for (size_t i = 0; i < instance->opts_.num_proxies; ++i) {
+        auto* const proxy = instance->getProxyBase(i);
+        proxy->stats().aggregate(idx);
+        proxy->advanceRequestStatsBin();
+      }
+      instance->statsIndex((idx + 1) % BIN_NUM);
+    }
+  }
 }
 
 } // mcrouter

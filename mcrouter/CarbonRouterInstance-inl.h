@@ -397,7 +397,7 @@ void CarbonRouterInstance<RouterInfo>::spawnAuxiliaryThreads() {
   startAwriterThreads();
   startObservingRuntimeVarsFile();
   registerOnUpdateCallbackForRxmits();
-  statUpdaterThread_ = std::thread([this]() { statUpdaterThreadRun(); });
+  registerForStatsUpdates();
   spawnStatLoggerThread();
 }
 
@@ -448,49 +448,6 @@ void CarbonRouterInstance<RouterInfo>::startObservingRuntimeVarsFile() {
 }
 
 template <class RouterInfo>
-void CarbonRouterInstance<RouterInfo>::statUpdaterThreadRun() {
-  mcrouterSetThisThreadName(opts_, "stats");
-
-  if (opts_.num_proxies == 0) {
-    return;
-  }
-
-  // the idx of the oldest bin
-  int idx = 0;
-  static const int BIN_NUM =
-      (MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
-       MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
-
-  while (true) {
-    {
-      /* Wait for the full timeout unless shutdown is started */
-      std::unique_lock<std::mutex> lock(statUpdaterCvMutex_);
-      if (statUpdaterCv_.wait_for(
-              lock,
-              std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND),
-              [this]() { return shutdownStarted_.load(); })) {
-        /* Shutdown was initiated, so we stop this thread */
-        break;
-      }
-    }
-
-    // to avoid inconsistence among proxies, we lock all mutexes together
-    std::vector<std::unique_lock<std::mutex>> statsLocks;
-    statsLocks.reserve(opts_.num_proxies);
-    for (size_t i = 0; i < opts_.num_proxies; ++i) {
-      statsLocks.push_back(getProxy(i)->stats().lock());
-    }
-
-    for (size_t i = 0; i < opts_.num_proxies; ++i) {
-      getProxy(i)->stats().aggregate(idx);
-      getProxy(i)->requestStats().advanceBin();
-    }
-
-    idx = (idx + 1) % BIN_NUM;
-  }
-}
-
-template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::spawnStatLoggerThread() {
   mcrouterLogger_ = createMcrouterLogger(*this);
   mcrouterLogger_->start();
@@ -504,16 +461,7 @@ void CarbonRouterInstance<RouterInfo>::joinAuxiliaryThreads() noexcept {
     configApi_->stopObserving(pid_);
   }
 
-  statUpdaterCv_.notify_all();
-
-  /* pid check is a huge hack to make PHP fork() kinda sorta work.
-     After fork(), the child doesn't have the thread but does have
-     the full copy of the stack which we must cleanup. */
-  if (getpid() == pid_) {
-    if (statUpdaterThread_.joinable()) {
-      statUpdaterThread_.join();
-    }
-  }
+  deregisterForStatsUpdates();
 
   if (mcrouterLogger_) {
     mcrouterLogger_->stop();
