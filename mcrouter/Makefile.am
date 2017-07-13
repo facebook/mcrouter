@@ -31,7 +31,6 @@ libmcroutercore_a_SOURCES = \
   CarbonRouterInstance.h \
   CarbonRouterInstanceBase.cpp \
   CarbonRouterInstanceBase.h \
-  Clock.h \
   ConfigApi.cpp \
   ConfigApi.h \
   ConfigApiIf.h \
