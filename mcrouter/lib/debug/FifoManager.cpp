@@ -16,8 +16,6 @@
 
 #include <mutex>
 
-#include <boost/thread/shared_lock_guard.hpp>
-
 #include <folly/Format.h>
 
 namespace facebook {
@@ -39,12 +37,11 @@ FifoManager::FifoManager() {
 
   thread_ = std::thread([this]() {
     while (true) {
-      {
-        boost::shared_lock_guard<boost::shared_mutex> lockGuard(fifosMutex_);
-        for (auto& it : fifos_) {
-          it.second->tryConnect();
+      fifos_.withRLock([](const auto& fifos) {
+        for (auto& kv : fifos) {
+          kv.second->tryConnect();
         }
-      }
+      });
 
       {
         std::unique_lock<std::mutex> lk(mutex_);
@@ -86,27 +83,27 @@ std::shared_ptr<Fifo> FifoManager::fetchThreadLocal(
 }
 
 std::shared_ptr<Fifo> FifoManager::find(const std::string& fifoPath) {
-  boost::shared_lock_guard<boost::shared_mutex> lockGuard(fifosMutex_);
-  auto it = fifos_.find(fifoPath);
-  if (it != fifos_.end()) {
-    return it->second;
-  }
-  return nullptr;
+  return fifos_.withRLock([&fifoPath](const auto& fifos) {
+    auto it = fifos.find(fifoPath);
+    return it != fifos.end() ? it->second : nullptr;
+  });
 }
 
 std::shared_ptr<Fifo> FifoManager::createAndStore(const std::string& fifoPath) {
-  std::lock_guard<boost::shared_mutex> lockGuard(fifosMutex_);
-  auto it = fifos_.emplace(fifoPath, std::shared_ptr<Fifo>(new Fifo(fifoPath)));
-  return it.first->second;
+  return fifos_.withWLock([&fifoPath](auto& fifos) {
+    auto it =
+        fifos.emplace(fifoPath, std::shared_ptr<Fifo>(new Fifo(fifoPath)));
+    return it.first->second;
+  });
 }
 
 void FifoManager::clear() {
-  std::lock_guard<boost::shared_mutex> lockGuard(fifosMutex_);
-  fifos_.clear();
+  fifos_.withWLock([](auto& fifos) { fifos.clear(); });
 }
 
 /* static  */ std::shared_ptr<FifoManager> FifoManager::getInstance() {
   return folly::Singleton<FifoManager>::try_get();
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

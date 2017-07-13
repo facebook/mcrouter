@@ -15,9 +15,10 @@
 #include <unordered_map>
 
 #include <boost/filesystem.hpp>
-#include <boost/thread/shared_mutex.hpp>
 
+#include <folly/SharedMutex.h>
 #include <folly/Singleton.h>
+#include <folly/Synchronized.h>
 
 #include "mcrouter/lib/debug/Fifo.h"
 
@@ -58,10 +59,10 @@ class FifoManager {
  private:
   FifoManager();
 
-  std::unordered_map<std::string, std::shared_ptr<Fifo>> fifos_;
-  // Note: folly::SharedMutex has caused build issues on Ubuntu 14.04 due to a
-  // gcc-4.8 bug. Here, boost::shared_mutex is an appropriate workaround.
-  boost::shared_mutex fifosMutex_;
+  folly::Synchronized<
+      std::unordered_map<std::string, std::shared_ptr<Fifo>>,
+      folly::SharedMutex>
+      fifos_;
 
   // Thread that connects to fifos
   std::thread thread_;
@@ -96,5 +97,6 @@ class FifoManager {
 
   friend class folly::Singleton<FifoManager>;
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

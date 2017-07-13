@@ -69,10 +69,6 @@ Fifo::~Fifo() {
   }
 }
 
-bool Fifo::isConnected() const noexcept {
-  return fd_ >= 0;
-}
-
 bool Fifo::tryConnect() noexcept {
   if (isConnected()) {
     return true;
