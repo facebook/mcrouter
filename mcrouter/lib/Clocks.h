@@ -15,30 +15,6 @@ namespace facebook {
 namespace memcache {
 namespace cycles {
 
-struct Metering {
-  // Number of ticks
-  uint64_t ticks;
-  // Number of context switches
-  uint64_t contextSwitches;
-};
-inline Metering operator-(const Metering& lhs, const Metering& rhs) {
-  return Metering{lhs.ticks - rhs.ticks,
-                  lhs.contextSwitches - rhs.contextSwitches};
-}
-
-/**
- * Abstract base class for clocks.
- */
-class Clock {
- public:
-  virtual ~Clock() noexcept {}
-
-  /**
-   * Reads the clock.
-   */
-  virtual Metering read() const = 0;
-};
-
 /**
  * Returns the number of cpu cycles since power-on. This clock doesn't involve
  * a system call. This clock does not measure context switches.
@@ -51,20 +27,6 @@ class Clock {
  */
 uint64_t getCpuCycles() noexcept;
 
-class CyclesClock : public Clock {
- public:
-  Metering read() const final {
-    return Metering{getCpuCycles(), 0};
-  }
-};
-
-/**
- * This clock adds context switches measurement capability to CyclesClock.
- */
-class RUsageClock : public Clock {
- public:
-  Metering read() const final;
-};
-}
-}
-} // namespace facebook::memcache::cycles
+} // cycles
+} // memcache
+} // facebook

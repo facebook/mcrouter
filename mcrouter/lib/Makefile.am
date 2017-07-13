@@ -1,4 +1,4 @@
-SUBDIRS = . config cycles fbi network test
+SUBDIRS = . config fbi network test
 
 noinst_LIBRARIES = libmcrouter.a
 
@@ -7,6 +7,8 @@ libmcrouter_a_SOURCES = \
   AuxiliaryCPUThreadPool.cpp \
   CacheClientStats.h \
   Ch3HashFunc.h \
+  Clocks.cpp \
+  Clocks.h \
   Compression.cpp \
   Compression.h \
   CompressionCodecManager.cpp \
@@ -73,15 +75,6 @@ libmcrouter_a_SOURCES = \
   config/RouteHandleFactory-inl.h \
   config/RouteHandleFactory.h \
   config/RouteHandleProviderIf.h \
-  cycles/Accumulator.cpp \
-  cycles/Accumulator.h \
-  cycles/Clocks.cpp \
-  cycles/Clocks.h \
-  cycles/Cycles.cpp \
-  cycles/Cycles.h \
-  cycles/ExtractorThread.cpp \
-  cycles/ExtractorThread.h \
-  cycles/Interval.h \
   debug/ConnectionFifo.cpp \
   debug/ConnectionFifo.h \
   debug/ConnectionFifoProtocol.cpp \

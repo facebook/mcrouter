@@ -19,7 +19,7 @@
 #include <folly/experimental/JemallocNodumpAllocator.h>
 #include <folly/io/Cursor.h>
 
-#include "mcrouter/lib/cycles/Clocks.h"
+#include "mcrouter/lib/Clocks.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {

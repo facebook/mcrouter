@@ -168,8 +168,6 @@ AC_CONFIG_FILES([Makefile
                  lib/test/Makefile
                  lib/config/Makefile
                  lib/config/test/Makefile
-                 lib/cycles/Makefile
-                 lib/cycles/test/Makefile
                  lib/fbi/Makefile
                  lib/fbi/test/Makefile
                  lib/fbi/cpp/Makefile

@@ -9,18 +9,14 @@
  */
 #include "Clocks.h"
 
-#include <sys/resource.h>
-#include <sys/time.h>
-
-#include <stdexcept>
-
 namespace facebook {
 namespace memcache {
 namespace cycles {
 
 uint64_t getCpuCycles() noexcept {
 #if defined(__x86_64__)
-  uint64_t hi, lo;
+  uint64_t hi;
+  uint64_t lo;
   __asm__ volatile("rdtsc" : "=a"(lo), "=d"(hi));
   return (hi << 32) | lo;
 #elif defined(__powerpc__) && \
@@ -37,15 +33,6 @@ uint64_t getCpuCycles() noexcept {
 #endif
 }
 
-Metering RUsageClock::read() const {
-  rusage res;
-#ifdef RUSAGE_THREAD
-  getrusage(RUSAGE_THREAD, &res);
-  return Metering{getCpuCycles(), (uint64_t)res.ru_nvcsw + res.ru_nivcsw};
-#else
-  throw std::runtime_error("RUSAGE_THREAD is not defined on this system.");
-#endif
-}
-}
-}
-} // namespace facebook::memcache::cycles
+} // cycles
+} // memcache
+} // facebook
