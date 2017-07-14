@@ -49,7 +49,7 @@ void testShardingForOp(
             UpdateRouteTestData(mc_res_found),
             DeleteRouteTestData(mc_res_found))};
     auto rh = get_route_handles(handles)[0];
-    ShardSplitRouteHandle splitRoute(rh, splitter);
+    ShardSplitRouteHandle splitRoute(rh, splitter, shouldAlwaysGoToMainSplit);
 
     TestFiberManager fm{FiberManagerContextTag()};
     fm.run([&] {

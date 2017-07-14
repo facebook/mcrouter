@@ -322,8 +322,12 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
         route = createRateLimitRoute(std::move(route), RateLimiter(*jrates));
       }
       if (auto jsplits = json.get_ptr("shard_splits")) {
+        const bool sendToMainShardSplitEnabled =
+            proxy_.router().opts().enable_send_to_main_shard_split;
         route = makeShardSplitRoute<RouterInfo>(
-            std::move(route), ShardSplitter(*jsplits));
+            std::move(route),
+            ShardSplitter(*jsplits),
+            sendToMainShardSplitEnabled);
       }
       if (auto jasynclog = json.get_ptr("asynclog")) {
         needAsynclog = parseBool(*jasynclog, "asynclog");

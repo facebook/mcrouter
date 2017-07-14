@@ -37,7 +37,7 @@ void testDirectOp(ShardSplitter splitter) {
       DeleteRouteTestData(mc_res_found))};
   auto rh = get_route_handles(handles)[0];
   McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
-      rh, splitter);
+      rh, splitter, true /* shouldAlwaysGoToMainSplitEnabled */);
 
   TestFiberManager fm{FiberManagerContextTag()};
   fm.run([&] {
@@ -88,7 +88,7 @@ TEST(shardSplitRoute, simpleSplit_deleteFanout) {
   auto rh = get_route_handles(handles)[0];
   ShardSplitter splitter(folly::dynamic::object("123", kNumSplits));
   McrouterRouteHandle<ShardSplitRoute<McrouterRouterInfo>> splitRoute(
-      rh, splitter);
+      rh, splitter, false /* shouldAlwaysGoToMainSplitEnabled */);
 
   TestFiberManager fm{FiberManagerContextTag()};
   fm.run([&] {

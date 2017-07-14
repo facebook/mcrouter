@@ -686,6 +686,14 @@ MCROUTER_OPTION_INTEGER(
     no_short,
     "If non-zero use this port while logging to async log")
 
+MCROUTER_OPTION_TOGGLE(
+    enable_send_to_main_shard_split,
+    true,
+    "disable-send-to-main-shard-split",
+    no_short,
+    "Whether ShardSplitRoute sends certain requests only to the main shard"
+    " split. Enabled by default.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif
