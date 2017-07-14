@@ -408,10 +408,6 @@ void CarbonRouterInstance<RouterInfo>::startAwriterThreads() {
       throw std::runtime_error("failed to spawn mcrouter awriter thread");
     }
   }
-
-  if (!statsLogWriter_->start("mcrtr-statsw")) {
-    throw std::runtime_error("failed to spawn mcrouter stats writer thread");
-  }
 }
 
 template <class RouterInfo>
@@ -475,7 +471,6 @@ void CarbonRouterInstance<RouterInfo>::joinAuxiliaryThreads() noexcept {
 template <class RouterInfo>
 void CarbonRouterInstance<RouterInfo>::stopAwriterThreads() noexcept {
   asyncWriter_->stop();
-  statsLogWriter_->stop();
 }
 
 template <class RouterInfo>

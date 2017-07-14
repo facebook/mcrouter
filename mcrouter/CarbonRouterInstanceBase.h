@@ -13,6 +13,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include <folly/experimental/ReadMostlySharedPtr.h>
 #include <folly/io/async/EventBaseThread.h>
 
 #include "mcrouter/ConfigApi.h"
@@ -42,7 +43,7 @@ using ObservableRuntimeVars =
 class CarbonRouterInstanceBase {
  public:
   explicit CarbonRouterInstanceBase(McrouterOptions inputOptions);
-  virtual ~CarbonRouterInstanceBase() = default;
+  virtual ~CarbonRouterInstanceBase();
 
   pid_t pid() const {
     return pid_;
@@ -80,10 +81,7 @@ class CarbonRouterInstanceBase {
     return rtVarsData_;
   }
 
-  AsyncWriter& statsLogWriter() {
-    assert(statsLogWriter_.get() != nullptr);
-    return *statsLogWriter_;
-  }
+  folly::ReadMostlySharedPtr<AsyncWriter> statsLogWriter();
 
   LeaseTokenMap& leaseTokenMap() {
     return *leaseTokenMap_;
@@ -151,8 +149,6 @@ class CarbonRouterInstanceBase {
   const McrouterOptions opts_;
   const pid_t pid_;
   const std::unique_ptr<ConfigApi> configApi_;
-
-  const std::unique_ptr<AsyncWriter> statsLogWriter_;
 
   /*
    * Asynchronous writer.

@@ -70,12 +70,27 @@ class AsyncWriter {
   bool run(std::function<void()> f);
 
   /**
+   * Wait until all tasks scheduled prior to this call have been completed.
+   */
+  void completePendingTasks();
+
+  /**
+   * Increase the maximum queue size. The max queue size will never decrease.
+   **/
+  void increaseMaxQueueSize(size_t add);
+
+  /**
+   * Make the queue have unlimited size.
+   */
+  void makeQueueSizeUnlimited();
+
+  /**
    * Waits for all the functions to complete
    */
   ~AsyncWriter();
 
  private:
-  const size_t maxQueueSize_;
+  size_t maxQueueSize_;
   std::atomic<size_t> queueSize_{0};
   std::atomic<bool> stopped_{false};
   SFRLock runLock_;

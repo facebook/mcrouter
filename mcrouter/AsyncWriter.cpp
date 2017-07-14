@@ -22,10 +22,9 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-AsyncWriter::AsyncWriter(size_t maxQueueSize)
-    : maxQueueSize_(maxQueueSize),
-      fiberManager_(
-          std::make_unique<folly::fibers::EventBaseLoopController>()),
+AsyncWriter::AsyncWriter(size_t maxQueue)
+    : maxQueueSize_(maxQueue),
+      fiberManager_(std::make_unique<folly::fibers::EventBaseLoopController>()),
       eventBase_(/* enableTimeMeasurement */ false) {
   auto& c = fiberManager_.loopController();
   dynamic_cast<folly::fibers::EventBaseLoopController&>(c).attachEventBase(
@@ -92,6 +91,7 @@ bool AsyncWriter::run(std::function<void()> f) {
     return false;
   }
 
+  bool decQueueSize = false;
   if (maxQueueSize_ != 0) {
     auto size = queueSize_.load();
     do {
@@ -99,15 +99,37 @@ bool AsyncWriter::run(std::function<void()> f) {
         return false;
       }
     } while (!queueSize_.compare_exchange_weak(size, size + 1));
+    decQueueSize = true;
   }
 
-  fiberManager_.addTaskRemote([ this, f_ = std::move(f) ]() {
+  fiberManager_.addTaskRemote([ this, f_ = std::move(f), decQueueSize ]() {
     fiberManager_.runInMainContext(std::move(f_));
-    if (maxQueueSize_ != 0) {
+    if (decQueueSize) {
       --queueSize_;
     }
   });
   return true;
+}
+
+void AsyncWriter::completePendingTasks() {
+  // Schedule a task and wait for it to complete. This relies on the fact that
+  // tasks are executed in FIFO order.
+  folly::fibers::Baton baton;
+  run([&]() { baton.post(); });
+  baton.wait();
+}
+
+void AsyncWriter::increaseMaxQueueSize(size_t add) {
+  std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+  // Don't touch maxQueueSize_ if it's already unlimited (zero).
+  if (maxQueueSize_ != 0) {
+    maxQueueSize_ += add;
+  }
+}
+
+void AsyncWriter::makeQueueSizeUnlimited() {
+  std::lock_guard<SFRWriteLock> lock(runLock_.writeLock());
+  maxQueueSize_ = 0;
 }
 
 bool awriter_queue(AsyncWriter* w, awriter_entry_t* e) {

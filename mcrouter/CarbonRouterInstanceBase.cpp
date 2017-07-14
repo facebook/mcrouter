@@ -14,6 +14,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/Indestructible.h>
+#include <folly/Singleton.h>
 #include <folly/ThreadName.h>
 
 #include "mcrouter/AsyncWriter.h"
@@ -43,19 +44,43 @@ folly::Indestructible<std::mutex> statsUpdateThreadControlLock;
 // statsUpdateThreadControlLock.
 folly::Indestructible<std::thread> statsUpdateThread;
 
+struct CarbonRouterLoggingAsyncWriter {};
+folly::Singleton<AsyncWriter, CarbonRouterLoggingAsyncWriter>
+    sharedLoggingAsyncWriter([]() {
+      // Queue size starts at 1, we'll make it unlimited if requested.
+      auto writer = std::make_unique<AsyncWriter>(1);
+      if (!writer->start("mcrtr-statsw")) {
+        throw std::runtime_error("Failed to spawn async stats logging thread");
+      }
+      return writer.release();
+    });
+
 } // namespace
 
 CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
     : opts_(std::move(inputOptions)),
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
-      statsLogWriter_(
-          std::make_unique<AsyncWriter>(opts_.stats_async_queue_length)),
       asyncWriter_(std::make_unique<AsyncWriter>()),
       rtVarsData_(std::make_shared<ObservableRuntimeVars>()),
       leaseTokenMap_(std::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
   evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
       [] { folly::setThreadName("CarbonAux"); });
+  if (auto statsLogger = statsLogWriter()) {
+    if (opts_.stats_async_queue_length) {
+      statsLogger->increaseMaxQueueSize(opts_.stats_async_queue_length);
+    } else {
+      statsLogger->makeQueueSizeUnlimited();
+    }
+  }
+}
+
+CarbonRouterInstanceBase::~CarbonRouterInstanceBase() {
+  // Complete all outstanding stats logging tasks to ensure all tasks related
+  // to this instance are finished.
+  if (auto statsLogger = statsLogWriter()) {
+    statsLogger->completePendingTasks();
+  }
 }
 
 void CarbonRouterInstanceBase::setUpCompressionDictionaries(
@@ -151,6 +176,11 @@ void CarbonRouterInstanceBase::statUpdaterThreadRun() {
       instance->statsIndex((idx + 1) % BIN_NUM);
     }
   }
+}
+
+folly::ReadMostlySharedPtr<AsyncWriter>
+CarbonRouterInstanceBase::statsLogWriter() {
+  return sharedLoggingAsyncWriter.try_get_fast();
 }
 
 } // mcrouter
