@@ -180,14 +180,12 @@ class TestRunner {
 
     // ServerMcParser callbacks.
     void caretRequestReady(const UmbrellaMessageInfo&, const folly::IOBuf&) {
-      ASSERT_TRUE(false)
-          << "caretRequestReady should never be called for ASCII";
+      FAIL() << "caretRequestReady should never be called for ASCII";
     }
 
     template <class Request>
     void umbrellaRequestReady(Request&&, uint64_t) {
-      ASSERT_TRUE(false)
-          << "umbrellaRequestReady should never be called for ASCII";
+      FAIL() << "umbrellaRequestReady should never be called for ASCII";
     }
 
     void parseError(mc_res_t, folly::StringPiece reason) {
