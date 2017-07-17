@@ -138,6 +138,12 @@ class Variant {
     return typeid(void);
   }
 
+  // When writing a Carbon structure visitor, it may be more efficient (avoiding
+  // RTTI) to use whichId() than which(), while remaining just as safe.
+  int32_t whichId() const {
+    return which_;
+  }
+
  private:
   static constexpr size_t kStorageSize =
       facebook::memcache::Fold<facebook::memcache::MaxOp, sizeof(Ts)...>::value;

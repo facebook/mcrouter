@@ -175,6 +175,23 @@ inline size_t getTypeIdByName(folly::StringPiece name, List<T, Ts...>) {
   return name == T::name ? T::typeId : getTypeIdByName(name, List<Ts...>());
 }
 
+template <class TypeList>
+inline ssize_t getIndexInListByName(folly::StringPiece name, TypeList);
+
+template <>
+inline ssize_t getIndexInListByName(folly::StringPiece /* name */, List<>) {
+  return -1;
+}
+
+template <class T, class... Ts>
+inline ssize_t getIndexInListByName(folly::StringPiece name, List<T, Ts...>) {
+  return name == T::name
+      ? 0
+      : (getIndexInListByName(name, List<Ts...>()) == -1
+             ? -1
+             : 1 + getIndexInListByName(name, List<Ts...>()));
+}
+
 namespace detail {
 template <class List>
 struct RequestListLimitsImpl;
