@@ -38,11 +38,23 @@ folly::Indestructible<std::condition_variable> statsUpdateCv;
 // statsUpdateLock.
 folly::Indestructible<std::unordered_set<CarbonRouterInstanceBase*>>
     statsUpdateRegisteredInstances;
-// Mutex protecting starting and stopping of statsUpdateThread.
-folly::Indestructible<std::mutex> statsUpdateThreadControlLock;
-// Background thread for stats updates . Protected by
-// statsUpdateThreadControlLock.
-folly::Indestructible<std::thread> statsUpdateThread;
+bool statsUpdateThreadRunning = false;
+struct CarbonRouterStatsUpdateThread {};
+// Background thread for stats updates.
+folly::Singleton<std::thread, CarbonRouterStatsUpdateThread> statsUpdateThread(
+    []() {
+      statsUpdateThreadRunning = true;
+      return new std::thread(&CarbonRouterInstanceBase::statUpdaterThreadRun);
+    },
+    [](std::thread* t) {
+      {
+        std::unique_lock<std::mutex> lock(*statsUpdateLock);
+        statsUpdateThreadRunning = false;
+        statsUpdateCv->notify_all();
+      }
+      t->join();
+      delete t;
+    });
 
 struct CarbonRouterLoggingAsyncWriter {};
 folly::Singleton<AsyncWriter, CarbonRouterLoggingAsyncWriter>
@@ -122,31 +134,17 @@ void CarbonRouterInstanceBase::registerForStatsUpdates() {
   if (!opts_.num_proxies) {
     return;
   }
-  std::lock_guard<std::mutex> controlLock(*statsUpdateThreadControlLock);
   std::lock_guard<std::mutex> updateLock(*statsUpdateLock);
   statsUpdateRegisteredInstances->insert(this);
   // Start the background thread if needed.
-  if (!statsUpdateThread->joinable()) {
-    *statsUpdateThread = std::thread(&statUpdaterThreadRun);
+  if (!statsUpdateThread.try_get()) {
+    LOG(WARNING) << "stats update thread has already shut down";
   }
 }
 
 void CarbonRouterInstanceBase::deregisterForStatsUpdates() {
-  std::lock_guard<std::mutex> controlLock(*statsUpdateThreadControlLock);
   std::unique_lock<std::mutex> updateLock(*statsUpdateLock);
   statsUpdateRegisteredInstances->erase(this);
-  // TODO(bwatling): determine if we are actually forking anywhere.
-  if (getpid() != pid_) {
-    LOG(WARNING) << "getpid() != pid_, not joining stats update thread";
-    return;
-  }
-  // Join the background thread if there are no instances registered.
-  if (statsUpdateRegisteredInstances->empty() &&
-      statsUpdateThread->joinable()) {
-    updateLock.unlock();
-    statsUpdateCv->notify_all();
-    statsUpdateThread->join();
-  }
 }
 
 void CarbonRouterInstanceBase::statUpdaterThreadRun() {
@@ -156,7 +154,7 @@ void CarbonRouterInstanceBase::statUpdaterThreadRun() {
        MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
 
   std::unique_lock<std::mutex> lock(*statsUpdateLock);
-  while (!statsUpdateRegisteredInstances->empty()) {
+  while (statsUpdateThreadRunning) {
     statsUpdateCv->wait_for(
         lock, std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND));
     for (auto* const instance : *statsUpdateRegisteredInstances) {

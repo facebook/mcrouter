@@ -197,6 +197,7 @@ class CarbonRouterInstanceBase {
   // Current stats index. Only accessed / updated  by stats background thread.
   size_t statsIndex_{0};
 
+ public:
   static void statUpdaterThreadRun();
 };
 }
