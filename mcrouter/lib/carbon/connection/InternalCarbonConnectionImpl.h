@@ -58,6 +58,16 @@ class InternalCarbonConnectionImpl {
   }
 
   explicit InternalCarbonConnectionImpl(
+      const facebook::memcache::mcrouter::CarbonRouterInstance<
+          typename If::RouterInfo>& router,
+      const InternalCarbonConnectionOptions& options =
+          InternalCarbonConnectionOptions(),
+      RecreateFunc recreateFunc = nullptr)
+      : recreateFunc_(std::move(recreateFunc)) {
+    init(&router, options);
+  }
+
+  explicit InternalCarbonConnectionImpl(
       const facebook::memcache::McrouterOptions& mcrouterOptions,
       const InternalCarbonConnectionOptions& options =
           InternalCarbonConnectionOptions(),
