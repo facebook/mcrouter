@@ -25,6 +25,13 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
+bool readLibmcrouterFlavor(
+    folly::StringPiece flavor,
+    std::unordered_map<std::string, std::string>& options) {
+  std::unordered_map<std::string, std::string> standaloneOptions;
+  return read_standalone_flavor(flavor, options, standaloneOptions);
+}
+
 bool read_standalone_flavor(
     const std::string& flavor,
     std::unordered_map<std::string, std::string>& option_dict,

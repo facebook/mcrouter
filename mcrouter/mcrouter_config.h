@@ -110,6 +110,10 @@ inline time_t nowWallSec() {
   return time(nullptr);
 }
 
+bool readLibmcrouterFlavor(
+    folly::StringPiece flavor,
+    std::unordered_map<std::string, std::string>& options);
+
 bool read_standalone_flavor(
     const std::string& flavor,
     std::unordered_map<std::string, std::string>& option_dict,
@@ -173,6 +177,7 @@ startObservingRuntimeVarsFileCustom(
     std::function<void(std::string)> onUpdate) {
   return folly::none;
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook
