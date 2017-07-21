@@ -29,7 +29,7 @@ bool readLibmcrouterFlavor(
     folly::StringPiece flavor,
     std::unordered_map<std::string, std::string>& options) {
   std::unordered_map<std::string, std::string> standaloneOptions;
-  return read_standalone_flavor(flavor, options, standaloneOptions);
+  return read_standalone_flavor(flavor.str(), options, standaloneOptions);
 }
 
 bool read_standalone_flavor(
