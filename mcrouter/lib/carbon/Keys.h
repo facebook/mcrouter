@@ -14,7 +14,7 @@
 #include <type_traits>
 
 #include <folly/Range.h>
-#include <folly/SpookyHashV2.h>
+#include <folly/hash/SpookyHashV2.h>
 #include <folly/io/IOBuf.h>
 
 namespace carbon {
