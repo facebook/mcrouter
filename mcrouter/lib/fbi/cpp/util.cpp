@@ -22,7 +22,7 @@
 #include <folly/FileUtil.h>
 #include <folly/Random.h>
 #include <folly/ScopeGuard.h>
-#include <folly/SpookyHashV2.h>
+#include <folly/hash/SpookyHashV2.h>
 #include <folly/json.h>
 
 namespace facebook {
