@@ -58,7 +58,7 @@ class InternalCarbonConnectionImpl {
   }
 
   explicit InternalCarbonConnectionImpl(
-      const facebook::memcache::mcrouter::CarbonRouterInstance<
+      facebook::memcache::mcrouter::CarbonRouterInstance<
           typename If::RouterInfo>& router,
       const InternalCarbonConnectionOptions& options =
           InternalCarbonConnectionOptions(),
