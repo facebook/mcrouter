@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -34,7 +34,7 @@ class CpuController : public std::enable_shared_from_this<CpuController> {
   folly::EventBase& evb_;
   bool firstLoop_{true};
   std::atomic<bool> stopController_{false};
-  std::vector<uint64_t> prev_{4};
+  std::vector<uint64_t> prev_{8};
   std::shared_ptr<CongestionController> logic_;
 };
 
