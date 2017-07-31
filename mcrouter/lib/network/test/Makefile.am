@@ -19,7 +19,7 @@ mcrouter_network_test_SOURCES = \
   TestMcAsciiParserUtil.cpp \
   TestMcAsciiParserUtil.h
 
-mcrouter_network_test_CPPFLAGS = -I$(top_srcdir)/.. -I$(top_srcdir)/lib/gtest/include
+mcrouter_network_test_CPPFLAGS = -I$(top_srcdir)/.. -isystem $(top_srcdir)/lib/gtest/include
 mcrouter_network_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/libtestmain.la \

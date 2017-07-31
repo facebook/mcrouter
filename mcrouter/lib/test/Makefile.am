@@ -11,7 +11,7 @@ mcrouter_lib_test_SOURCES = \
 
 mcrouter_lib_test_CPPFLAGS = \
   -I$(top_srcdir)/.. \
-  -I$(top_srcdir)/lib/gtest/include
+  -isystem $(top_srcdir)/lib/gtest/include
 mcrouter_lib_test_LDADD = \
   $(top_builddir)/lib/libmcrouter.a \
   $(top_builddir)/lib/libtestmain.la
