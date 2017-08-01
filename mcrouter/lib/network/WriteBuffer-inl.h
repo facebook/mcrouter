@@ -86,18 +86,12 @@ WriteBuffer::prepareTyped(
 
   typeId_ = static_cast<uint32_t>(Reply::typeId);
 
-  // The current congestion control only supports mc_caret_protocol.
-  // May extend to other protocals in the future.
-  const auto dropProbability = ctx_->session().getCpuController()
-      ? ctx_->session().getCpuController()->getDropProbability()
-      : 0.0;
-
   return caretReply_.prepare(
       std::move(reply),
       ctx_->reqid_,
       codecIdRange,
       compressionCodecMap,
-      dropProbability,
+      ctx_->getDropProbability(),
       iovsBegin_,
       iovsCount_);
 }
