@@ -17,6 +17,7 @@
 #include <folly/io/IOBuf.h>
 
 #include "mcrouter/lib/mc/umbrella.h"
+#include "mcrouter/lib/network/ServerLoad.h"
 
 #ifndef LIBMC_FBTRACE_DISABLE
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
@@ -77,6 +78,7 @@ void resetAdditionalFields(UmbrellaMessageInfo& info) {
   info.usedCodecId = 0;
   info.uncompressedBodySize = 0;
   info.dropProbability = 0;
+  info.serverLoad = ServerLoad::zero();
 }
 
 size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
@@ -100,6 +102,9 @@ size_t getNumAdditionalFields(const UmbrellaMessageInfo& info) {
     ++nAdditionalFields;
   }
   if (info.dropProbability != 0) {
+    ++nAdditionalFields;
+  }
+  if (!info.serverLoad.isZero()) {
     ++nAdditionalFields;
   }
   return nAdditionalFields;
@@ -146,6 +151,8 @@ size_t serializeAdditionalFields(
       info.uncompressedBodySize);
   buf += serializeAdditionalFieldIfNonZero(
       buf, CaretAdditionalFieldType::DROP_PROBABILITY, info.dropProbability);
+  buf += serializeAdditionalFieldIfNonZero(
+      buf, CaretAdditionalFieldType::SERVER_LOAD, info.serverLoad.raw());
 
   return buf - destination;
 }
@@ -241,7 +248,7 @@ UmbrellaParseStatus caretParseHeader(
     }
 
     if (fieldType >
-        static_cast<uint64_t>(CaretAdditionalFieldType::TRACE_NODE_ID)) {
+        static_cast<uint64_t>(CaretAdditionalFieldType::SERVER_LOAD)) {
       // Additional Field Type not recognized, ignore.
       continue;
     }
@@ -267,6 +274,9 @@ UmbrellaParseStatus caretParseHeader(
         break;
       case CaretAdditionalFieldType::DROP_PROBABILITY:
         headerInfo.dropProbability = fieldValue;
+        break;
+      case CaretAdditionalFieldType::SERVER_LOAD:
+        headerInfo.serverLoad = ServerLoad(fieldValue);
         break;
       }
   }

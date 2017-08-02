@@ -11,11 +11,13 @@
 
 #include <utility>
 
+#include "mcrouter/lib/network/ServerLoad.h"
+
 namespace facebook {
 namespace memcache {
 
 constexpr char kCaretMagicByte = '^';
-constexpr size_t kMaxAdditionalFields = 5;
+constexpr size_t kMaxAdditionalFields = 6;
 constexpr size_t kMaxHeaderLength = 1 /* magic byte */ +
     1 /* GroupVarint header (lengths of 4 ints) */ +
     4 * sizeof(uint32_t) /* body size, typeId, reqId, num additional fields */ +
@@ -46,6 +48,7 @@ struct UmbrellaMessageInfo {
   uint64_t usedCodecId{0};
   uint64_t uncompressedBodySize{0};
   uint64_t dropProbability{0}; // Use uint64_t to store a double.
+  ServerLoad serverLoad{0};
 };
 
 enum class CaretAdditionalFieldType {
@@ -66,6 +69,9 @@ enum class CaretAdditionalFieldType {
 
   // Node ID for trace
   TRACE_NODE_ID = 6,
+
+  // Load on the server
+  SERVER_LOAD = 7,
 };
 
 } // memcache

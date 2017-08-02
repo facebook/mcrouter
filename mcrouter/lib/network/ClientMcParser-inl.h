@@ -97,7 +97,8 @@ void ClientMcParser<Callback>::forwardAsciiReply() {
       ReplyStatsContext(
           0 /* usedCodecId  */,
           replySize /* reply size before compression */,
-          replySize /* reply size after compression */));
+          replySize /* reply size after compression */,
+          ServerLoad::zero()));
   replyForwarder_ = nullptr;
 }
 
@@ -117,7 +118,8 @@ void ClientMcParser<Callback>::forwardUmbrellaReply(
   callback_.replyReady(
       std::move(reply),
       reqId,
-      ReplyStatsContext(0 /* usedCodecId */, info.bodySize, info.bodySize));
+      ReplyStatsContext(
+          0 /* usedCodecId */, info.bodySize, info.bodySize, info.serverLoad));
 }
 
 template <class Callback>
@@ -143,8 +145,7 @@ void ClientMcParser<Callback>::forwardCaretReply(
   carbon::CarbonProtocolReader reader(cur);
   reply.deserialize(reader);
 
-  callback_.replyReady(
-      std::move(reply), reqId, getCompressionStats(headerInfo));
+  callback_.replyReady(std::move(reply), reqId, getReplyStats(headerInfo));
 }
 
 template <class Callback>
@@ -290,7 +291,7 @@ bool ClientMcParser<Callback>::shouldReadToAsciiBuffer() const {
 }
 
 template <class Callback>
-ReplyStatsContext ClientMcParser<Callback>::getCompressionStats(
+ReplyStatsContext ClientMcParser<Callback>::getReplyStats(
     const UmbrellaMessageInfo& headerInfo) const {
   ReplyStatsContext replyStatsContext;
   if (headerInfo.usedCodecId > 0) {
@@ -311,6 +312,7 @@ ReplyStatsContext ClientMcParser<Callback>::getCompressionStats(
         replyStatsContext.replySizeBeforeCompression;
   }
   replyStatsContext.usedCodecId = headerInfo.usedCodecId;
+  replyStatsContext.serverLoad = headerInfo.serverLoad;
   return replyStatsContext;
 }
 

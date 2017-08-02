@@ -119,8 +119,7 @@ class ClientMcParser : private McParser::ParserCallback {
 
   bool shouldReadToAsciiBuffer() const;
 
-  ReplyStatsContext getCompressionStats(
-      const UmbrellaMessageInfo& headerInfo) const;
+  ReplyStatsContext getReplyStats(const UmbrellaMessageInfo& headerInfo) const;
 };
 }
 } // facebook::memcache
