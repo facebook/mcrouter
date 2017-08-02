@@ -16,6 +16,7 @@
 #include <folly/IPAddress.h>
 #include <folly/SocketAddress.h>
 
+#include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/tools/mcpiper/AnsiColorCodeStream.h"
 #include "mcrouter/tools/mcpiper/PrettyFormat.h"
 #include "mcrouter/tools/mcpiper/SnifferParser.h"
@@ -111,7 +112,8 @@ class MessagePrinter {
       const folly::SocketAddress& from,
       const folly::SocketAddress& to,
       mc_protocol_t protocol,
-      int64_t latencyUs);
+      int64_t latencyUs = 0,
+      const ServerLoad& serverLoad = ServerLoad::zero());
 
  private:
   const Options options_;
@@ -196,7 +198,8 @@ class MessagePrinter {
       mc_res_t result,
       const std::string& key);
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook
 
 #include "MessagePrinter-inl.h"

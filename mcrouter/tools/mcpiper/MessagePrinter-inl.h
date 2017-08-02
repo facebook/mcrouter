@@ -119,8 +119,7 @@ void MessagePrinter::requestReady(
           mc_res_unknown,
           from,
           to,
-          protocol,
-          0 /* latency is undefined when request is sent */)) {
+          protocol)) {
     if (options_.raw) {
       printRawRequest(msgId, request, protocol);
     } else {
@@ -140,7 +139,15 @@ void MessagePrinter::replyReady(
     int64_t latencyUs,
     ReplyStatsContext replyStatsContext) {
   if (auto out = filterAndBuildOutput(
-          msgId, reply, key, reply.result(), from, to, protocol, latencyUs)) {
+          msgId,
+          reply,
+          key,
+          reply.result(),
+          from,
+          to,
+          protocol,
+          latencyUs,
+          replyStatsContext.serverLoad)) {
     stats_.numBytesBeforeCompression +=
         replyStatsContext.replySizeBeforeCompression;
     stats_.numBytesAfterCompression +=
@@ -162,7 +169,8 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
     const folly::SocketAddress& from,
     const folly::SocketAddress& to,
     mc_protocol_t protocol,
-    int64_t latencyUs) {
+    int64_t latencyUs,
+    const ServerLoad& serverLoad) {
   ++stats_.totalMessages;
 
   if (!matchAddress(from, to)) {
@@ -236,6 +244,17 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
       out.append("\n  request/response latency (us): ", format_.msgAttrColor);
     }
     out.append(folly::to<std::string>(latencyUs), format_.dataValueColor);
+  }
+
+  if (!serverLoad.isZero()) {
+    if (options_.script) {
+      out.append(",\n  \"server_load_percent\": ");
+    } else {
+      out.append("\n  server load: ", format_.msgAttrColor);
+    }
+    out.append(
+        folly::sformat("{:.2f}%", serverLoad.percentLoad()),
+        format_.dataValueColor);
   }
 
   if (options_.script) {
