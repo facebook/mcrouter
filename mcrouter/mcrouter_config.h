@@ -123,6 +123,9 @@ std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts);
 
 std::string performOptionSubstitution(std::string str);
 
+inline void standalonePreInitFromCommandLineOpts(
+    const std::unordered_map<std::string, std::string>& st_option_dict) {}
+
 inline void standaloneInit(
     const McrouterOptions& opts,
     const McrouterStandaloneOptions& standaloneOpts) {}

@@ -389,6 +389,8 @@ int main(int argc, char** argv) {
       &validate_configs,
       &flavor);
 
+  standalonePreInitFromCommandLineOpts(cmdline_st_option_dict);
+
   if (flavor.empty()) {
     option_dict = cmdline_option_dict;
     st_option_dict = cmdline_st_option_dict;
