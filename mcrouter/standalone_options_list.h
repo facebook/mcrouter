@@ -133,6 +133,15 @@ MCROUTER_OPTION_INTEGER(
     "Timeout for sending replies back to clients, in milliseconds. "
     "(0 to disable)")
 
+MCROUTER_OPTION_INTEGER(
+    uint64_t,
+    server_load_interval_ms,
+    0,
+    "server-load-interval-ms",
+    no_short,
+    "How often to collect server load data. "
+    "(0 to disable exposing server load)")
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif
