@@ -87,14 +87,6 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
   }
 }
 
-CarbonRouterInstanceBase::~CarbonRouterInstanceBase() {
-  // Complete all outstanding stats logging tasks to ensure all tasks related
-  // to this instance are finished.
-  if (auto statsLogger = statsLogWriter()) {
-    statsLogger->completePendingTasks();
-  }
-}
-
 void CarbonRouterInstanceBase::setUpCompressionDictionaries(
     std::unordered_map<uint32_t, CodecConfigPtr>&& codecConfigs) noexcept {
   if (codecConfigs.empty() || compressionCodecManager_ != nullptr) {

@@ -43,7 +43,7 @@ using ObservableRuntimeVars =
 class CarbonRouterInstanceBase {
  public:
   explicit CarbonRouterInstanceBase(McrouterOptions inputOptions);
-  virtual ~CarbonRouterInstanceBase();
+  virtual ~CarbonRouterInstanceBase() = default;
 
   pid_t pid() const {
     return pid_;
