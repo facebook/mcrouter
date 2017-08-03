@@ -111,6 +111,7 @@ void CpuController::cpuLoggingFn() {
         // Corner case: The max of CPU utilization can be at most 100%.
         cpuUtil = std::min((utilDiff / totalDiff) * 100, 100.0);
       }
+      percentLoad_.store(cpuUtil);
       prev_ = std::move(cur);
     }
   }

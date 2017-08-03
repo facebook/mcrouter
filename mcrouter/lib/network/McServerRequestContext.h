@@ -18,6 +18,7 @@
 #include "mcrouter/lib/carbon/RequestReplyUtil.h"
 #include "mcrouter/lib/carbon/RoutingGroups.h"
 #include "mcrouter/lib/network/CarbonMessageList.h"
+#include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -59,6 +60,8 @@ class McServerRequestContext {
   McServerSession& session();
 
   double getDropProbability() const;
+
+  ServerLoad getServerLoad() const noexcept;
 
  private:
   McServerSession* session_;
@@ -289,7 +292,8 @@ class McServerOnRequestWrapper<OnRequest, List<Request, Requests...>>
         carbon::detail::CanHandleRequest::value<Request, OnRequest>());
   }
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook
 
 #include "McServerRequestContext-inl.h"

@@ -13,6 +13,7 @@
 
 #include "mcrouter/lib/network/AsciiSerialized.h"
 #include "mcrouter/lib/network/McSerializedRequest.h"
+#include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/tools/mcpiper/Color.h"
 #include "mcrouter/tools/mcpiper/Config.h"
@@ -382,6 +383,7 @@ void MessagePrinter::printRawReply(
           CodecIdRange::Empty,
           nullptr, /* codec map */
           0.0, /* drop probability */
+          ServerLoad::zero(),
           iovsBegin,
           iovsCount);
       break;

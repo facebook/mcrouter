@@ -151,5 +151,6 @@ void McServerOnRequestWrapper<OnRequest, List<>>::caretRequestReady(
       std::move(ctx),
       HasDispatchTypedRequest<OnRequest>::value);
 }
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

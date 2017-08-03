@@ -10,6 +10,7 @@
 #pragma once
 
 #include "mcrouter/lib/network/CongestionController.h"
+#include "mcrouter/lib/network/ServerLoad.h"
 
 namespace facebook {
 namespace memcache {
@@ -24,6 +25,13 @@ class CpuController : public std::enable_shared_from_this<CpuController> {
 
   double getDropProbability() const;
 
+  /**
+   * Gets the load on the server.
+   */
+  ServerLoad getServerLoad() const noexcept {
+    return ServerLoad::fromPercentLoad(percentLoad_.load());
+  }
+
   void start();
   void stop();
 
@@ -36,6 +44,7 @@ class CpuController : public std::enable_shared_from_this<CpuController> {
   std::atomic<bool> stopController_{false};
   std::vector<uint64_t> prev_{8};
   std::shared_ptr<CongestionController> logic_;
+  std::atomic<double> percentLoad_{0.0};
 };
 
 } // memcache

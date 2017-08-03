@@ -102,5 +102,15 @@ double McServerRequestContext::getDropProbability() const {
 
   return dropProbability;
 }
+
+ServerLoad McServerRequestContext::getServerLoad() const noexcept {
+  if (session_) {
+    if (const auto& cpuController = session_->getCpuController()) {
+      return cpuController->getServerLoad();
+    }
+  }
+  return ServerLoad::zero();
 }
-} // facebook::memcache
+
+} // memcache
+} // facebook

@@ -56,6 +56,7 @@ WriteBuffer::prepareTyped(
           codecIdRange,
           compressionCodecMap,
           ctx_->getDropProbability(),
+          ctx_->getServerLoad(),
           iovsBegin_,
           iovsCount_);
 
@@ -92,6 +93,7 @@ WriteBuffer::prepareTyped(
       codecIdRange,
       compressionCodecMap,
       ctx_->getDropProbability(),
+      ctx_->getServerLoad(),
       iovsBegin_,
       iovsCount_);
 }

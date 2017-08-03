@@ -17,6 +17,7 @@
 #include "mcrouter/lib/Compression.h"
 #include "mcrouter/lib/CompressionCodecManager.h"
 #include "mcrouter/lib/carbon/CarbonQueueAppender.h"
+#include "mcrouter/lib/network/ServerLoad.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"
 
 namespace facebook {
@@ -63,13 +64,15 @@ class CaretSerializedMessage {
   /**
    * Prepare replies for serialization
    *
-   * @param  reply                TypedReply.
-   * @param  reqId                Request id.
-   * @param  supportedCodecs      Range of supported codecs.
-   * @param  compressionCodecMap  Map of available codecs.
-   * @param  iovOut               Will be set to the beginning of
-   *                              array of iovecs.
-   * @param  niovOut              Number of valid iovecs referenced by iovOut.
+   * @param reply                 TypedReply.
+   * @param reqId                 Request id.
+   * @param supportedCodecs       Range of supported codecs.
+   * @param compressionCodecMap   Map of available codecs.
+   * @param dropProbability       Probability to drop subsequent request.
+   * @param serverLoad            Represents load on the server.
+   * @param iovOut                Will be set to the beginning of
+   *                              array of iovecs
+   * @param niovOut               Number of valid iovecs referenced by iovOut.
    *
    * @return true if message was successfully prepared.
    */
@@ -80,6 +83,7 @@ class CaretSerializedMessage {
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
       double dropProbability,
+      ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut) noexcept;
 
@@ -105,6 +109,7 @@ class CaretSerializedMessage {
       const CodecIdRange& supportedCodecs,
       const CompressionCodecMap* compressionCodecMap,
       double dropProbability,
+      ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut);
 
@@ -114,6 +119,7 @@ class CaretSerializedMessage {
       size_t typeId,
       std::pair<uint64_t, uint64_t> traceId,
       double dropProbability,
+      ServerLoad serverLoad,
       const struct iovec*& iovOut,
       size_t& niovOut);
 
