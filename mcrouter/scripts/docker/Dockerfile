@@ -6,7 +6,7 @@ ENV             MCROUTER_DIR            /usr/local/mcrouter
 ENV             MCROUTER_REPO           https://github.com/facebook/mcrouter.git
 ENV             DEBIAN_FRONTEND         noninteractive
 
-RUN             apt-get update && apt-get install -y git && \
+RUN             apt-get update && apt-get install -y git software-properties-common && \
                 mkdir -p $MCROUTER_DIR/repo && \
                 cd $MCROUTER_DIR/repo && git clone $MCROUTER_REPO && \
                 cd $MCROUTER_DIR/repo/mcrouter/mcrouter/scripts && \
