@@ -104,9 +104,14 @@ class AsyncMcServer {
     AsyncMcServerWorkerOptions worker;
 
     /**
-     * CongestionController-specific options
+     * CPU-based congestion controller.
      */
-    CongestionControllerOptions congestionController;
+    CongestionControllerOptions cpuControllerOpts;
+
+    /**
+     * Memory-based congestion controller.
+     */
+    CongestionControllerOptions memoryControllerOpts;
 
     /**
      * @param globalMaxConns

@@ -9,6 +9,8 @@
  */
 #include "CpuController.h"
 
+#include <cassert>
+
 #include <folly/File.h>
 #include <folly/FileUtil.h>
 
@@ -16,9 +18,6 @@ namespace facebook {
 namespace memcache {
 
 namespace {
-
-// The interval of reading /proc/stat and /proc/meminfo in milliseconds
-constexpr double kReadProcInterval = 10;
 
 bool readProcStat(std::vector<uint64_t>& curArray) {
   auto cpuStatFile = folly::File("/proc/stat");
@@ -49,16 +48,17 @@ bool readProcStat(std::vector<uint64_t>& curArray) {
 } // anonymous
 
 CpuController::CpuController(
-    uint64_t target,
+    const CongestionControllerOptions& opts,
     folly::EventBase& evb,
-    std::chrono::milliseconds delay,
     size_t queueCapacity)
     : evb_(evb),
-      logic_(std::make_shared<CongestionController>(
-          target,
-          delay,
-          evb,
-          queueCapacity)) {}
+      logic_(std::make_shared<CongestionController>(opts, evb, queueCapacity)),
+      dataCollectionInterval_(opts.dataCollectionInterval),
+      enableDropProbability_(
+          opts.target > 0 && opts.delay >= opts.dataCollectionInterval),
+      enableServerLoad_(opts.enableServerLoad) {
+  assert(opts.shouldEnable());
+}
 
 double CpuController::getDropProbability() const {
   return logic_->getDropProbability();
@@ -111,17 +111,26 @@ void CpuController::cpuLoggingFn() {
         // Corner case: The max of CPU utilization can be at most 100%.
         cpuUtil = std::min((utilDiff / totalDiff) * 100, 100.0);
       }
-      percentLoad_.store(cpuUtil);
       prev_ = std::move(cur);
     }
   }
   if (stopController_) {
-    logic_->updateValue(0.0);
+    update(0.0);
     return;
   }
-  logic_->updateValue(cpuUtil);
+  update(cpuUtil);
   auto self = shared_from_this();
-  evb_.runAfterDelay([this, self]() { cpuLoggingFn(); }, kReadProcInterval);
+  evb_.runAfterDelay(
+      [this, self]() { cpuLoggingFn(); }, dataCollectionInterval_.count());
+}
+
+void CpuController::update(double cpuUtil) {
+  if (enableDropProbability_) {
+    logic_->updateValue(cpuUtil);
+  }
+  if (enableServerLoad_) {
+    percentLoad_.store(cpuUtil);
+  }
 }
 
 } // memcache

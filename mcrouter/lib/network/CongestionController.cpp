@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -9,6 +9,7 @@
  */
 #include "CongestionController.h"
 
+#include <cassert>
 #include <cmath>
 
 namespace facebook {
@@ -33,11 +34,15 @@ const double kLogResidue = log10(0.1);
 } // anonymous
 
 CongestionController::CongestionController(
-    uint64_t target,
-    std::chrono::milliseconds delay,
+    const CongestionControllerOptions& opts,
     folly::EventBase& evb,
     size_t queueCapacity)
-    : target_(target), delay_(delay), evb_(evb), valueQueue_(queueCapacity) {}
+    : target_(opts.target),
+      delay_(opts.delay),
+      evb_(evb),
+      valueQueue_(queueCapacity) {
+  assert(opts.shouldEnable());
+}
 
 void CongestionController::start() {
   stopController_ = false;

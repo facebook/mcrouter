@@ -18,9 +18,8 @@ namespace memcache {
 class CpuController : public std::enable_shared_from_this<CpuController> {
  public:
   CpuController(
-      uint64_t target,
+      const CongestionControllerOptions& opts,
       folly::EventBase& evb,
-      std::chrono::milliseconds delay = std::chrono::milliseconds(100),
       size_t queueCapacity = 1000);
 
   double getDropProbability() const;
@@ -39,12 +38,18 @@ class CpuController : public std::enable_shared_from_this<CpuController> {
   // The function responsible for logging the CPU utilization.
   void cpuLoggingFn();
 
+  // Updates cpu utilization value.
+  void update(double cpuUtil);
+
   folly::EventBase& evb_;
-  bool firstLoop_{true};
-  std::atomic<bool> stopController_{false};
-  std::vector<uint64_t> prev_{8};
   std::shared_ptr<CongestionController> logic_;
+  std::vector<uint64_t> prev_{8};
+  std::chrono::milliseconds dataCollectionInterval_;
   std::atomic<double> percentLoad_{0.0};
+  std::atomic<bool> stopController_{false};
+  bool enableDropProbability_{true};
+  bool enableServerLoad_{true};
+  bool firstLoop_{true};
 };
 
 } // memcache

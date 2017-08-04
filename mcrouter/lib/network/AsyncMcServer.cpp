@@ -358,23 +358,19 @@ void AsyncMcServer::Options::setPerThreadMaxConns(
 }
 
 AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
-  if (opts_.congestionController.cpuControlTarget > 0 ||
-      opts_.congestionController.memControlTarget > 0) {
+  if (opts_.cpuControllerOpts.shouldEnable() ||
+      opts_.memoryControllerOpts.shouldEnable()) {
     auxiliaryEvbThread_ = std::make_unique<folly::ScopedEventBaseThread>();
 
-    if (opts_.congestionController.cpuControlTarget > 0) {
+    if (opts_.cpuControllerOpts.shouldEnable()) {
       opts_.worker.cpuController = std::make_shared<CpuController>(
-          opts_.congestionController.cpuControlTarget,
-          *auxiliaryEvbThread_->getEventBase(),
-          opts_.congestionController.cpuControlDelay);
+          opts_.cpuControllerOpts, *auxiliaryEvbThread_->getEventBase());
       opts_.worker.cpuController->start();
     }
 
-    if (opts_.congestionController.memControlTarget > 0) {
+    if (opts_.memoryControllerOpts.shouldEnable()) {
       opts_.worker.memController = std::make_shared<MemoryController>(
-          opts_.congestionController.memControlTarget,
-          *auxiliaryEvbThread_->getEventBase(),
-          opts_.congestionController.memControlDelay);
+          opts_.memoryControllerOpts, *auxiliaryEvbThread_->getEventBase());
       opts_.worker.memController->start();
     }
   }
