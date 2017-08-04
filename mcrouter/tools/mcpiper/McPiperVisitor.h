@@ -120,9 +120,9 @@ class McPiperVisitor {
   template <class T>
   std::enable_if_t<!carbon::IsCarbonStruct<T>::value> render(
       folly::StringPiece name,
-      const T& t) {
+      const T& /* t */) {
     renderHeader(name);
-    out_.append(folly::to<std::string>(t), format_.dataValueColor);
+    out_.append("[Unserializable]", format_.dataValueColor);
   }
 
   template <class T>
