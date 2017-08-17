@@ -72,16 +72,6 @@ class McAsciiParserBase {
   bool readValue(folly::IOBuf& buffer, folly::IOBuf& to);
   bool readValue(folly::IOBuf& buffer, folly::Optional<folly::IOBuf>& to);
 
-  static void appendKeyPiece(
-      const folly::IOBuf& from,
-      folly::IOBuf& to,
-      const char* posStart,
-      const char* posEnd);
-  static void trimIOBufToRange(
-      folly::IOBuf& buffer,
-      const char* posStart,
-      const char* posEnd);
-
   std::string currentErrorDescription_;
 
   uint64_t currentUInt_{0};
@@ -177,6 +167,9 @@ class McClientAsciiParser : public McAsciiParserBase {
 namespace detail {
 template <class RequestList>
 class CallbackBase;
+
+template <class Callback, class Requests>
+class CallbackWrapper;
 } // detail
 
 class McServerAsciiParser : public McAsciiParserBase {

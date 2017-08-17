@@ -276,6 +276,11 @@ void ClientMcParser<Callback>::handleAscii(folly::IOBuf& readBuffer) {
 }
 
 template <class Callback>
+void ClientMcParser<Callback>::handleBinary(folly::IOBuf& readBuffer) {
+  LOG(ERROR) << "handleBinary() not available to client parser";
+}
+
+template <class Callback>
 void ClientMcParser<Callback>::parseError(
     mc_res_t result,
     folly::StringPiece reason) {

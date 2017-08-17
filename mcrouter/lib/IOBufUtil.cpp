@@ -79,5 +79,6 @@ coalesceIovecs(const struct iovec* iov, size_t iovcnt, size_t destCapacity) {
   }
   return coalesceSlow(iov, iovcnt, destCapacity);
 }
+
 }
 } // facebook::memcache

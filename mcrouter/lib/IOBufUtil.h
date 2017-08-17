@@ -104,5 +104,38 @@ copyAsString(const folly::IOBuf& source, const uint8_t* begin, size_t size) {
  */
 folly::IOBuf
 coalesceIovecs(const struct iovec* iov, size_t iovcnt, size_t destCapacity);
+
+/**
+ * Trim IOBuf to reference only data from range [posStart, posEnd).
+ */
+inline void trimIOBufToRange(
+    folly::IOBuf& buffer,
+    const char* posStart,
+    const char* posEnd) {
+  buffer.trimStart(posStart - reinterpret_cast<const char*>(buffer.data()));
+  buffer.trimEnd(buffer.length() - (posEnd - posStart));
+}
+
+
+inline void appendKeyPiece(
+    const folly::IOBuf& from,
+    folly::IOBuf& to,
+    const char* posStart,
+    const char* posEnd) {
+  // No need to process empty piece.
+  if (UNLIKELY(posEnd == posStart)) {
+    return;
+  }
+
+  if (LIKELY(to.length() == 0)) {
+    from.cloneOneInto(to);
+    trimIOBufToRange(to, posStart, posEnd);
+  } else {
+    auto nextPiece = from.cloneOne();
+    trimIOBufToRange(*nextPiece, posStart, posEnd);
+    to.prependChain(std::move(nextPiece));
+  }
+}
+
 }
 } // facebook::memcache

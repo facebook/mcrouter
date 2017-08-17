@@ -113,6 +113,7 @@ class ClientMcParser : private McParser::ParserCallback {
       const UmbrellaMessageInfo& headerInfo,
       const folly::IOBuf& buffer) final;
   void handleAscii(folly::IOBuf& readBuffer) final;
+  void handleBinary(folly::IOBuf& readBuffer) final;
   void parseError(mc_res_t result, folly::StringPiece reason) final;
 
   bool shouldReadToAsciiBuffer() const;

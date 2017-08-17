@@ -164,6 +164,8 @@ libmcrouter_a_SOURCES = \
   network/McAsciiParser-inl.h \
   network/McAsciiParser.cpp \
   network/McAsciiParser.h \
+  network/McBinaryParser.cpp \
+  network/McBinaryParser.h \
   network/McClientRequestContext-inl.h \
   network/McClientRequestContext.cpp \
   network/McClientRequestContext.h \
