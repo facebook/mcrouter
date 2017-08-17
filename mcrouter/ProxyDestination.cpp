@@ -485,7 +485,7 @@ void ProxyDestination::setState(State new_st) {
   }
 
   auto logUtil = [this](const char* s) {
-    VLOG(1) << "server " << pdstnKey_ << " " << s << " ("
+    VLOG(3) << "server " << pdstnKey_ << " " << s << " ("
             << proxy->stats().getValue(num_servers_up_stat) << " of "
             << proxy->stats().getValue(num_servers_stat) << ")";
   };
