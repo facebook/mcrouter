@@ -180,9 +180,6 @@ class CarbonRouterInstance
   folly::Expected<folly::Unit, std::string> spinUp(
       const std::vector<folly::EventBase*>& evbs);
 
-  void startAwriterThreads();
-  void stopAwriterThreads() noexcept;
-
   void spawnAuxiliaryThreads();
   void joinAuxiliaryThreads() noexcept;
   void shutdownImpl() noexcept;

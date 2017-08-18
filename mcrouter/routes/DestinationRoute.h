@@ -229,11 +229,13 @@ class DestinationRoute {
     auto proxy = &fiber_local<RouterInfo>::getSharedCtx()->proxy();
     auto& ap = *destination_->accessPoint();
     folly::fibers::Baton b;
-    auto res = proxy->router().asyncWriter().run(
-        [&b, &ap, proxy, key, asynclogName]() {
-          proxy->asyncLog().writeDelete(ap, key, asynclogName);
-          b.post();
-        });
+    auto res = false;
+    if (auto asyncWriter = proxy->router().asyncWriter()) {
+      res = asyncWriter->run([&b, &ap, proxy, key, asynclogName]() {
+        proxy->asyncLog().writeDelete(ap, key, asynclogName);
+        b.post();
+      });
+    }
     if (!res) {
       MC_LOG_FAILURE(
           proxy->router().opts(),

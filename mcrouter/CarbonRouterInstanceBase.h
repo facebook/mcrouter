@@ -81,6 +81,9 @@ class CarbonRouterInstanceBase {
     return rtVarsData_;
   }
 
+  /**
+   * Returns an AsyncWriter for stats related purposes.
+   */
   folly::ReadMostlySharedPtr<AsyncWriter> statsLogWriter();
 
   LeaseTokenMap& leaseTokenMap() {
@@ -95,10 +98,11 @@ class CarbonRouterInstanceBase {
     postprocessCallback_ = std::move(newCallback);
   }
 
-  AsyncWriter& asyncWriter() {
-    assert(asyncWriter_.get() != nullptr);
-    return *asyncWriter_;
-  }
+  /**
+   * Returns an AsyncWriter for mission critical work (use statsLogWriter() for
+   * auxiliary / low priority work).
+   */
+  folly::ReadMostlySharedPtr<AsyncWriter> asyncWriter();
 
   std::unordered_map<std::string, std::string> getStartupOpts() const;
   void addStartupOpts(
@@ -149,11 +153,6 @@ class CarbonRouterInstanceBase {
   const McrouterOptions opts_;
   const pid_t pid_;
   const std::unique_ptr<ConfigApi> configApi_;
-
-  /*
-   * Asynchronous writer.
-   */
-  const std::unique_ptr<AsyncWriter> asyncWriter_;
 
   // Auxiliary EventBase thread.
   folly::EventBaseThread evbAuxiliaryThread_;

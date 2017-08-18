@@ -67,13 +67,21 @@ folly::Singleton<AsyncWriter, CarbonRouterLoggingAsyncWriter>
       return writer.release();
     });
 
+struct CarbonRouterAsyncWriter {};
+folly::Singleton<AsyncWriter, CarbonRouterAsyncWriter> sharedAsyncWriter([]() {
+  auto writer = std::make_unique<AsyncWriter>();
+  if (!writer->start("mcrtr-awriter")) {
+    throw std::runtime_error("Failed to spawn mcrouter awriter thread");
+  }
+  return writer.release();
+});
+
 } // namespace
 
 CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
     : opts_(std::move(inputOptions)),
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
-      asyncWriter_(std::make_unique<AsyncWriter>()),
       rtVarsData_(std::make_shared<ObservableRuntimeVars>()),
       leaseTokenMap_(std::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
   evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
@@ -171,6 +179,11 @@ void CarbonRouterInstanceBase::statUpdaterThreadRun() {
 folly::ReadMostlySharedPtr<AsyncWriter>
 CarbonRouterInstanceBase::statsLogWriter() {
   return sharedLoggingAsyncWriter.try_get_fast();
+}
+
+folly::ReadMostlySharedPtr<AsyncWriter>
+CarbonRouterInstanceBase::asyncWriter() {
+  return sharedAsyncWriter.try_get_fast();
 }
 
 } // mcrouter

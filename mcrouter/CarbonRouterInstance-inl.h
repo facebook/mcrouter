@@ -394,20 +394,10 @@ void CarbonRouterInstance<RouterInfo>::spawnAuxiliaryThreads() {
   configApi_->startObserving();
   subscribeToConfigUpdate();
 
-  startAwriterThreads();
   startObservingRuntimeVarsFile();
   registerOnUpdateCallbackForRxmits();
   registerForStatsUpdates();
   spawnStatLoggerThread();
-}
-
-template <class RouterInfo>
-void CarbonRouterInstance<RouterInfo>::startAwriterThreads() {
-  if (!opts_.asynclog_disable) {
-    if (!asyncWriter_->start("mcrtr-awriter")) {
-      throw std::runtime_error("failed to spawn mcrouter awriter thread");
-    }
-  }
 }
 
 template <class RouterInfo>
@@ -463,14 +453,7 @@ void CarbonRouterInstance<RouterInfo>::joinAuxiliaryThreads() noexcept {
     mcrouterLogger_->stop();
   }
 
-  stopAwriterThreads();
-
   evbAuxiliaryThread_.stop();
-}
-
-template <class RouterInfo>
-void CarbonRouterInstance<RouterInfo>::stopAwriterThreads() noexcept {
-  asyncWriter_->stop();
 }
 
 template <class RouterInfo>
