@@ -136,6 +136,12 @@ void write_config_sources_info_to_disk(CarbonRouterInstanceBase& router) {
   }
 }
 
+std::string statsUpdateFunctionName(folly::StringPiece routerName) {
+  static std::atomic<uint64_t> uniqueId(0);
+  return folly::to<std::string>(
+      "carbon-logger-fn-", routerName, "-", uniqueId.fetch_add(1));
+}
+
 } // anonymous namespace
 
 McrouterLogger::McrouterLogger(
@@ -143,17 +149,14 @@ McrouterLogger::McrouterLogger(
     std::unique_ptr<AdditionalLoggerIf> additionalLogger)
     : router_(router),
       additionalLogger_(std::move(additionalLogger)),
-      pid_(getpid()) {}
+      functionHandle_(statsUpdateFunctionName(router_.opts().router_name)) {}
 
 McrouterLogger::~McrouterLogger() {
   stop();
 }
 
-static constexpr folly::StringPiece kStatsLoggerThreadName{
-    "mcrtr-stats-logger"};
-
 bool McrouterLogger::start() {
-  if (running_ || router_.opts().stats_logging_interval == 0) {
+  if (router_.opts().stats_logging_interval == 0) {
     return false;
   }
 
@@ -170,58 +173,26 @@ bool McrouterLogger::start() {
     touchStatsFilepaths_.push_back(std::move(path));
   }
 
-  running_ = true;
-  try {
-    loggerThread_ = std::thread([this]() { loggerThreadRun(); });
-  } catch (const std::system_error& e) {
-    running_ = false;
+  auto scheduler = router_.functionScheduler();
+  if (!scheduler) {
     MC_LOG_FAILURE(
         router_.opts(),
         memcache::failure::Category::kSystemError,
-        "Can not start McrouterLogger thread {}: {}",
-        kStatsLoggerThreadName,
-        e.what());
+        "Scheduler not available, disabling stats logging");
+    return false;
   }
+  scheduler->addFunction(
+      [this]() { log(); },
+      std::chrono::milliseconds(router_.opts().stats_logging_interval),
+      functionHandle_);
 
-  return running_;
+  return true;
 }
 
 void McrouterLogger::stop() noexcept {
-  if (!running_) {
-    return;
+  if (auto scheduler = router_.functionScheduler()) {
+    scheduler->cancelFunctionAndWait(functionHandle_);
   }
-
-  running_ = false;
-  loggerThreadCv_.notify_all();
-  if (loggerThread_.joinable()) {
-    if (getpid() == pid_) {
-      loggerThread_.join();
-    } else {
-      loggerThread_.detach();
-    }
-  }
-}
-
-bool McrouterLogger::running() const {
-  return running_;
-}
-
-void McrouterLogger::loggerThreadRun() {
-  folly::setThreadName(kStatsLoggerThreadName);
-  logStartupOptions();
-
-  while (running_) {
-    log();
-    loggerThreadSleep();
-  }
-}
-
-void McrouterLogger::loggerThreadSleep() {
-  std::unique_lock<std::mutex> lock(loggerThreadMutex_);
-  loggerThreadCv_.wait_for(
-      lock,
-      std::chrono::milliseconds(router_.opts().stats_logging_interval),
-      [this]() { return !running_; });
 }
 
 void McrouterLogger::logStartupOptions() {
@@ -232,6 +203,11 @@ void McrouterLogger::logStartupOptions() {
 }
 
 void McrouterLogger::log() {
+  if (!loggedStartupOptions_) {
+    logStartupOptions();
+    loggedStartupOptions_ = true;
+  }
+
   std::vector<stat_t> stats(num_stats);
   prepare_stats(router_, stats.data());
 

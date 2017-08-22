@@ -29,31 +29,15 @@ namespace mcrouter {
 
 namespace {
 
-// Mutex protecting statsUpdateRegisteredInstances.
-folly::Indestructible<std::mutex> statsUpdateLock;
-// Condition variable used to notify the stats background thread. Used with
-// statsUpdateLock.
-folly::Indestructible<std::condition_variable> statsUpdateCv;
-// The set of instances registered for stats updates. Protected by
-// statsUpdateLock.
-folly::Indestructible<std::unordered_set<CarbonRouterInstanceBase*>>
-    statsUpdateRegisteredInstances;
-bool statsUpdateThreadRunning = false;
-struct CarbonRouterStatsUpdateThread {};
-// Background thread for stats updates.
-folly::Singleton<std::thread, CarbonRouterStatsUpdateThread> statsUpdateThread(
-    []() {
-      statsUpdateThreadRunning = true;
-      return new std::thread(&CarbonRouterInstanceBase::statUpdaterThreadRun);
-    },
-    [](std::thread* t) {
-      {
-        std::unique_lock<std::mutex> lock(*statsUpdateLock);
-        statsUpdateThreadRunning = false;
-        statsUpdateCv->notify_all();
-      }
-      t->join();
-      delete t;
+struct CarbonRouterInstanceBaseFunctionSchedulerTag {};
+folly::Singleton<
+    folly::FunctionScheduler,
+    CarbonRouterInstanceBaseFunctionSchedulerTag>
+    globalFunctionScheduler([]() {
+      auto scheduler = std::make_unique<folly::FunctionScheduler>();
+      scheduler->start();
+      scheduler->setThreadName("carbon-global-scheduler");
+      return scheduler.release();
     });
 
 struct CarbonRouterLoggingAsyncWriter {};
@@ -76,14 +60,21 @@ folly::Singleton<AsyncWriter, CarbonRouterAsyncWriter> sharedAsyncWriter([]() {
   return writer.release();
 });
 
-} // namespace
+std::string statsUpdateFunctionName(folly::StringPiece routerName) {
+  static std::atomic<uint64_t> uniqueId(0);
+  return folly::to<std::string>(
+      "carbon-stats-update-fn-", routerName, "-", uniqueId.fetch_add(1));
+}
+
+} // anonymous namespace
 
 CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
     : opts_(std::move(inputOptions)),
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
       rtVarsData_(std::make_shared<ObservableRuntimeVars>()),
-      leaseTokenMap_(std::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)) {
+      leaseTokenMap_(std::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)),
+      statsUpdateFunctionHandle_(statsUpdateFunctionName(opts_.router_name)) {
   evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
       [] { folly::setThreadName("CarbonAux"); });
   if (auto statsLogger = statsLogWriter()) {
@@ -134,46 +125,39 @@ void CarbonRouterInstanceBase::registerForStatsUpdates() {
   if (!opts_.num_proxies) {
     return;
   }
-  std::lock_guard<std::mutex> updateLock(*statsUpdateLock);
-  statsUpdateRegisteredInstances->insert(this);
-  // Start the background thread if needed.
-  if (!statsUpdateThread.try_get()) {
-    LOG(WARNING) << "stats update thread has already shut down";
+  if (auto scheduler = functionScheduler()) {
+    scheduler->addFunction(
+        [this]() { updateStats(); },
+        /*interval=*/std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND),
+        statsUpdateFunctionHandle_,
+        /*startDelay=*/std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND));
   }
 }
 
 void CarbonRouterInstanceBase::deregisterForStatsUpdates() {
-  std::unique_lock<std::mutex> updateLock(*statsUpdateLock);
-  statsUpdateRegisteredInstances->erase(this);
+  if (auto scheduler = functionScheduler()) {
+    scheduler->cancelFunctionAndWait(statsUpdateFunctionHandle_);
+  }
 }
 
-void CarbonRouterInstanceBase::statUpdaterThreadRun() {
-  folly::setThreadName("mcrtr-stats");
+void CarbonRouterInstanceBase::updateStats() {
   const int BIN_NUM =
       (MOVING_AVERAGE_WINDOW_SIZE_IN_SECOND /
        MOVING_AVERAGE_BIN_SIZE_IN_SECOND);
-
-  std::unique_lock<std::mutex> lock(*statsUpdateLock);
-  while (statsUpdateThreadRunning) {
-    statsUpdateCv->wait_for(
-        lock, std::chrono::seconds(MOVING_AVERAGE_BIN_SIZE_IN_SECOND));
-    for (auto* const instance : *statsUpdateRegisteredInstances) {
-      // To avoid inconsistence among proxies, we lock all mutexes together
-      std::vector<std::unique_lock<std::mutex>> statsLocks;
-      statsLocks.reserve(instance->opts_.num_proxies);
-      for (size_t i = 0; i < instance->opts_.num_proxies; ++i) {
-        statsLocks.push_back(instance->getProxyBase(i)->stats().lock());
-      }
-
-      const auto idx = instance->statsIndex();
-      for (size_t i = 0; i < instance->opts_.num_proxies; ++i) {
-        auto* const proxy = instance->getProxyBase(i);
-        proxy->stats().aggregate(idx);
-        proxy->advanceRequestStatsBin();
-      }
-      instance->statsIndex((idx + 1) % BIN_NUM);
-    }
+  // To avoid inconsistence among proxies, we lock all mutexes together
+  std::vector<std::unique_lock<std::mutex>> statsLocks;
+  statsLocks.reserve(opts_.num_proxies);
+  for (size_t i = 0; i < opts_.num_proxies; ++i) {
+    statsLocks.push_back(getProxyBase(i)->stats().lock());
   }
+
+  const auto idx = statsIndex();
+  for (size_t i = 0; i < opts_.num_proxies; ++i) {
+    auto* const proxy = getProxyBase(i);
+    proxy->stats().aggregate(idx);
+    proxy->advanceRequestStatsBin();
+  }
+  statsIndex((idx + 1) % BIN_NUM);
 }
 
 folly::ReadMostlySharedPtr<AsyncWriter>
@@ -184,6 +168,11 @@ CarbonRouterInstanceBase::statsLogWriter() {
 folly::ReadMostlySharedPtr<AsyncWriter>
 CarbonRouterInstanceBase::asyncWriter() {
   return sharedAsyncWriter.try_get_fast();
+}
+
+folly::ReadMostlySharedPtr<folly::FunctionScheduler>
+CarbonRouterInstanceBase::functionScheduler() {
+  return globalFunctionScheduler.try_get_fast();
 }
 
 } // mcrouter

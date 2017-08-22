@@ -54,13 +54,6 @@ class McrouterLogger {
   bool start();
 
   /**
-   * Tells whether the logger thread is running.
-   *
-   * @return True if logger thread is running, false otherwise.
-   */
-  bool running() const;
-
-  /**
    * Stops the logger thread and join it.
    * Note: this is a blocking call.
    */
@@ -71,18 +64,14 @@ class McrouterLogger {
 
   std::unique_ptr<AdditionalLoggerIf> additionalLogger_;
 
+  bool loggedStartupOptions_{false};
+  // Name of the periodic function registered with the function scheduler.
+  const std::string functionHandle_;
+
   /**
    * File paths of stats we want to touch and keep their mtimes up-to-date
    */
   std::vector<std::string> touchStatsFilepaths_;
-
-  pid_t pid_;
-  std::thread loggerThread_;
-  std::mutex loggerThreadMutex_;
-  std::condition_variable loggerThreadCv_;
-  std::atomic<bool> running_{false};
-  void loggerThreadRun();
-  void loggerThreadSleep();
 
   /**
    * Writes router's logs.

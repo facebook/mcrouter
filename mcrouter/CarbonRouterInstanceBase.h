@@ -13,6 +13,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include <folly/experimental/FunctionScheduler.h>
 #include <folly/experimental/ReadMostlySharedPtr.h>
 #include <folly/io/async/EventBaseThread.h>
 
@@ -139,6 +140,12 @@ class CarbonRouterInstanceBase {
    */
   size_t nextProxyIndex();
 
+  /**
+   * Returns a FunctionScheduler suitable for running periodic background tasks
+   * on. Null may be returned if the global instance has been destroyed.
+   */
+  folly::ReadMostlySharedPtr<folly::FunctionScheduler> functionScheduler();
+
  protected:
   /**
    * Register this instance for periodic stats updates.
@@ -196,8 +203,11 @@ class CarbonRouterInstanceBase {
   // Current stats index. Only accessed / updated  by stats background thread.
   size_t statsIndex_{0};
 
- public:
-  static void statUpdaterThreadRun();
+  // Name of the stats update function registered with the function scheduler.
+  const std::string statsUpdateFunctionHandle_;
+
+  // Aggregates stats for all associated proxies. Should be called periodically.
+  void updateStats();
 };
 }
 }
