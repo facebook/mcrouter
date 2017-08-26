@@ -22,6 +22,10 @@ WriteBuffer::WriteBuffer(mc_protocol_t protocol) : protocol_(protocol) {
       new (&asciiReply_) AsciiSerializedReply;
       break;
 
+    case mc_binary_protocol:
+      new (&binaryReply_) BinarySerializedReply;
+      break;
+
     case mc_umbrella_protocol_DONOTUSE:
       new (&umbrellaReply_) UmbrellaSerializedMessage;
       break;
@@ -39,6 +43,10 @@ WriteBuffer::~WriteBuffer() {
   switch (protocol_) {
     case mc_ascii_protocol:
       asciiReply_.~AsciiSerializedReply();
+      break;
+
+    case mc_binary_protocol:
+      binaryReply_.~BinarySerializedReply();
       break;
 
     case mc_umbrella_protocol_DONOTUSE:
@@ -63,6 +71,10 @@ void WriteBuffer::clear() {
   switch (protocol_) {
     case mc_ascii_protocol:
       asciiReply_.clear();
+      break;
+
+    case mc_binary_protocol:
+      binaryReply_.clear();
       break;
 
     case mc_umbrella_protocol_DONOTUSE:

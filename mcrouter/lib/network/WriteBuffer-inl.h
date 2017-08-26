@@ -43,6 +43,10 @@ WriteBuffer::prepareTyped(
       return asciiReply_.prepare(
           std::move(reply), ctx_->asciiKey(), iovsBegin_, iovsCount_);
 
+    case mc_binary_protocol:
+      return binaryReply_.prepare(
+          std::move(reply), ctx_->asciiKey(), iovsBegin_, iovsCount_);
+
     case mc_umbrella_protocol_DONOTUSE:
       return umbrellaReply_.prepare(
           std::move(reply), ctx_->reqid_, iovsBegin_, iovsCount_);
