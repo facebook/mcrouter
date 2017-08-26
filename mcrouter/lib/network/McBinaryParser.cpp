@@ -93,94 +93,134 @@ bool McServerBinaryParser::parseHeader(const char * bytes) {
       return false;
 
     case 0x01:  // Set
-    case 0x11:  // SetQ
-    case 0x31:  // RSet
-    case 0x32:  // RSetQ
-      // TODO check the necessary parameters (extras size)
       currentMessage_.emplace<McSetRequest>();
-      consumer_ = &McServerBinaryParser::consumeSetLike<McSetRequest>;
+      consumer_ = &McServerBinaryParser::consumeSetLike<McSetRequest, false>;
+      return true;
+    case 0x11:  // SetQ
+      currentMessage_.emplace<McSetRequest>();
+      consumer_ = &McServerBinaryParser::consumeSetLike<McSetRequest, true>;
       return true;
     case 0x02:  // Add
+      currentMessage_.emplace<McAddRequest>();
+      consumer_ = &McServerBinaryParser::consumeSetLike<McAddRequest, false>;
+      return true;
     case 0x12:  // AddQ
       currentMessage_.emplace<McAddRequest>();
-      consumer_ = &McServerBinaryParser::consumeSetLike<McAddRequest>;
+      consumer_ = &McServerBinaryParser::consumeSetLike<McAddRequest, true>;
       return true;
     case 0x03:  // Replace
+      currentMessage_.emplace<McReplaceRequest>();
+      consumer_ = &McServerBinaryParser::consumeSetLike<McReplaceRequest, false>;
+      return true;
     case 0x13:  // ReplaceQ
       currentMessage_.emplace<McReplaceRequest>();
-      consumer_ = &McServerBinaryParser::consumeSetLike<McReplaceRequest>;
+      consumer_ = &McServerBinaryParser::consumeSetLike<McReplaceRequest, true>;
       return true;
     case 0x0e:  // Append
-    case 0x19:  // AppendQ
-    case 0x33:  // RAppend
-    case 0x34:  // RAppendQ
       currentMessage_.emplace<McAppendRequest>();
-      consumer_ = &McServerBinaryParser::consumeAppendLike<McAppendRequest>;
+      consumer_ = &McServerBinaryParser::consumeAppendLike<McAppendRequest, false>;
+      return true;
+    case 0x19:  // AppendQ
+      currentMessage_.emplace<McAppendRequest>();
+      consumer_ = &McServerBinaryParser::consumeAppendLike<McAppendRequest, true>;
       return true;
     case 0x0f:  // Prepend
-    case 0x1a:  // PrependQ
-    case 0x35:  // RPrepend
-    case 0x36:  // RPrependQ
       currentMessage_.emplace<McPrependRequest>();
-      consumer_ = &McServerBinaryParser::consumeAppendLike<McPrependRequest>;
+      consumer_ = &McServerBinaryParser::consumeAppendLike<McPrependRequest, false>;
+      return true;
+    case 0x1a:  // PrependQ
+      currentMessage_.emplace<McPrependRequest>();
+      consumer_ = &McServerBinaryParser::consumeAppendLike<McPrependRequest, true>;
       return true;
     case 0x00:  // Get
-    case 0x09:  // GetQ
-    case 0x0c:  // GetK
-    case 0x0d:  // GetKQ
-    case 0x30:  // RGet
       currentMessage_.emplace<McGetRequest>();
-      consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest>;
+      consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, false, false>;
+      return true;
+    case 0x09:  // GetQ
+      currentMessage_.emplace<McGetRequest>();
+      consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, true, false>;
+      return true;
+    case 0x0c:  // GetK
+      currentMessage_.emplace<McGetRequest>();
+      consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, false, true>;
+      return true;
+    case 0x0d:  // GetKQ
+      currentMessage_.emplace<McGetRequest>();
+      consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, true, true>;
       return true;
     case 0x04:  // Delete
-    case 0x14:  // DeleteQ
-    case 0x37:  // RDelete
-    case 0x38:  // RDeleteQ
       currentMessage_.emplace<McDeleteRequest>();
-      consumer_ = &McServerBinaryParser::consumeGetLike<McDeleteRequest>;
+      consumer_ = &McServerBinaryParser::consumeGetLike<McDeleteRequest, false, false>;
+      return true;
+    case 0x14:  // DeleteQ
+      currentMessage_.emplace<McDeleteRequest>();
+      consumer_ = &McServerBinaryParser::consumeGetLike<McDeleteRequest, true, false>;
       return true;
     case 0x05:  // Increment
-    case 0x15:  // IncrementQ
-    case 0x39:  // RIncr
-    case 0x3a:  // RIncrQ
       currentMessage_.emplace<McIncrRequest>();
-      consumer_ = &McServerBinaryParser::consumeArithLike<McIncrRequest>;
+      consumer_ = &McServerBinaryParser::consumeArithLike<McIncrRequest, false>;
+      return true;
+    case 0x15:  // IncrementQ
+      currentMessage_.emplace<McIncrRequest>();
+      consumer_ = &McServerBinaryParser::consumeArithLike<McIncrRequest, true>;
       return true;
     case 0x06:  // Decrement
-    case 0x16:  // DecrementQ
-    case 0x3b:  // RDecr
-    case 0x3c:  // RDecrQ
       currentMessage_.emplace<McDecrRequest>();
-      consumer_ = &McServerBinaryParser::consumeArithLike<McDecrRequest>;
+      consumer_ = &McServerBinaryParser::consumeArithLike<McDecrRequest, false>;
+      return true;
+    case 0x16:  // DecrementQ
+      currentMessage_.emplace<McDecrRequest>();
+      consumer_ = &McServerBinaryParser::consumeArithLike<McDecrRequest, true>;
       return true;
     case 0x1c:  // Touch
     case 0x1d:  // GAT
     case 0x1e:  // GATQ
       currentMessage_.emplace<McTouchRequest>();
-      consumer_ = &McServerBinaryParser::consumeGetLike<McTouchRequest>;
+      consumer_ = &McServerBinaryParser::consumeGetLike<McTouchRequest, false, false>;
       return true;
     case 0x10:  // Stat
       currentMessage_.emplace<McStatsRequest>();
-      consumer_ = &McServerBinaryParser::consumeGetLike<McStatsRequest>;
+      consumer_ = &McServerBinaryParser::consumeGetLike<McStatsRequest, false, false>;
       return true;
     case 0x0b:  // Version
       currentMessage_.emplace<McVersionRequest>();
-      consumer_ = &McServerBinaryParser::consumeUnary<McVersionRequest>;
+      consumer_ = &McServerBinaryParser::consumeVersion;
       return true;
     case 0x07:  // Quit
+      currentMessage_.emplace<McQuitRequest>();
+      consumer_ = &McServerBinaryParser::consumeQuit<false>;
+      return true;
     case 0x17:  // QuitQ
       currentMessage_.emplace<McQuitRequest>();
-      consumer_ = &McServerBinaryParser::consumeUnary<McQuitRequest>;
+      consumer_ = &McServerBinaryParser::consumeQuit<true>;
       return true;
     case 0x08:  // Flush
+      currentMessage_.emplace<McFlushAllRequest>();
+      consumer_ = &McServerBinaryParser::consumeFlush<false>;
+      return true;
     case 0x18:  // FlushQ
       currentMessage_.emplace<McFlushAllRequest>();
-      consumer_ = &McServerBinaryParser::consumeFlush;
+      consumer_ = &McServerBinaryParser::consumeFlush<true>;
       return true;
     /*
     case 0x20:  // SASL list mechs
     case 0x21:  // SASL Auth
     case 0x22:  // SASL Step
+
+    // Range operations, not implemented in memcached itself
+    case 0x31:  // RSet
+    case 0x32:  // RSetQ
+    case 0x33:  // RAppend
+    case 0x34:  // RAppendQ
+    case 0x35:  // RPrepend
+    case 0x36:  // RPrependQ
+    case 0x30:  // RGet
+    case 0x37:  // RDelete
+    case 0x38:  // RDeleteQ
+    case 0x39:  // RIncr
+    case 0x3a:  // RIncrQ
+    case 0x3b:  // RDecr
+    case 0x3c:  // RDecrQ
 
     // v1.6 proposed commands
     case 0x3d:  // Set VBucket *
@@ -202,51 +242,64 @@ bool McServerBinaryParser::parseHeader(const char * bytes) {
   }
 }
 
-template <class Request>
+template <class Request, bool quiet>
 void McServerBinaryParser::consumeSetLike() {
   auto extras       = reinterpret_cast<const SetExtras_t*>(currentExtras_.data());
   auto& message     = currentMessage_.get<Request>();
   message.key()     = std::move(currentKey_);
   message.exptime() = ntohl(extras->exptime);
+  message.quiet()   = quiet;
   callback_->onRequest(std::move(message));
 }
 
-template <class Request>
+template <class Request, bool quiet>
 void McServerBinaryParser::consumeAppendLike() {
   auto& message   = currentMessage_.get<Request>();
   message.key()   = std::move(currentKey_);
   message.value() = std::move(currentValue_);
+  message.quiet() = quiet;
   callback_->onRequest(std::move(message));
 }
 
-template <class Request>
+template <class Request, bool quiet, bool returnKey>
 void McServerBinaryParser::consumeGetLike() {
-  auto& message   = currentMessage_.get<Request>();
-  message.key()   = std::move(currentKey_);
+  auto& message       = currentMessage_.get<Request>();
+  message.key()       = std::move(currentKey_);
+  message.quiet()     = quiet;
+  message.returnKey() = returnKey;
   callback_->onRequest(std::move(message));
 }
 
-template <class Request>
+template <class Request, bool quiet>
 void McServerBinaryParser::consumeArithLike() {
-  auto extras     = reinterpret_cast<const ArithExtras_t*>(currentExtras_.data());
-  auto& message   = currentMessage_.get<Request>();
-  message.key()   = std::move(currentKey_);
-  message.delta() = ntohl(extras->delta);
+  auto extras            = reinterpret_cast<const ArithExtras_t*>(currentExtras_.data());
+  auto& message          = currentMessage_.get<Request>();
+  message.key()          = std::move(currentKey_);
+  message.delta()        = ntohl(extras->delta);
   // message.initialValue() = ntohl(extras->initialValue);
   // message.exptime() = ntohl(extras->exptime);
+  message.quiet()        = quiet;
   callback_->onRequest(std::move(message));
 }
 
-template <class Request>
-void McServerBinaryParser::consumeUnary() {
-  auto& message = currentMessage_.get<Request>();
+template <bool quiet>
+void McServerBinaryParser::consumeQuit() {
+  auto& message   = currentMessage_.get<McQuitRequest>();
+  message.quiet() = quiet;
   callback_->onRequest(std::move(message));
 }
 
+void McServerBinaryParser::consumeVersion() {
+  auto& message = currentMessage_.get<McVersionRequest>();
+  callback_->onRequest(std::move(message));
+}
+
+template <bool quiet>
 void McServerBinaryParser::consumeFlush() {
   // auto extras       = reinterpret_cast<const FlushExtras_t*>(currentExtras_.data());
   auto& message     = currentMessage_.get<McFlushAllRequest>();
   // message.exptime() = ntohl(extras->exptime);
+  message.quiet()   = quiet;
   callback_->onRequest(std::move(message));
 }
 

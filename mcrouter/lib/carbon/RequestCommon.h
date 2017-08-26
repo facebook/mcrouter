@@ -89,6 +89,18 @@ class RequestCommon {
     fbtraceInfo_ = McFbtraceRef::moveRef(carbonFbtraceInfo);
   }
 #endif
+  bool quiet() const {
+    return quiet_;
+  }
+  bool& quiet() {
+    return quiet_;
+  }
+  bool returnKey() const {
+    return returnKey_;
+  }
+  bool& returnKey() {
+    return returnKey_;
+  }
 
   /**
    * Tells whether or not "serializedBuffer()" is dirty, in which case it can't
@@ -130,6 +142,10 @@ class RequestCommon {
 
  private:
   static constexpr size_t kTraceIdSize = 11;
+  bool quiet_{false};
+  bool returnKey_{false};
+};
+
 
   const folly::IOBuf* serializedBuffer_{nullptr};
 

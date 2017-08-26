@@ -144,21 +144,24 @@ class McServerBinaryParser {
 
   bool parseHeader(const char* bytes);
 
-  template <class Request>
+  template <class Request, bool quiet>
   void consumeSetLike();
 
-  template <class Request>
+  template <class Request, bool quiet>
   void consumeAppendLike();
 
-  template <class Request>
+  template <class Request, bool quiet, bool returnKey>
   void consumeGetLike();
 
-  template <class Request>
+  template <class Request, bool quiet>
   void consumeArithLike();
 
-  template <class Request>
-  void consumeUnary();
+  template <bool quiet>
+  void consumeQuit();
 
+  void consumeVersion();
+
+  template <bool quiet>
   void consumeFlush();
 
   // Network byte-ordered fields
