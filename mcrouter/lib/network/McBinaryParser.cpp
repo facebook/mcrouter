@@ -242,7 +242,7 @@ void McServerBinaryParser::consumeSetLike() {
   auto& message     = currentMessage_.get<Request>();
   message.key()     = std::move(currentKey_);
   message.exptime() = ntohl(extras->exptime);
-  message.quiet()   = quiet;
+  // message.quiet()   = quiet;
   callback_->onRequest(std::move(message));
 }
 
@@ -251,7 +251,7 @@ void McServerBinaryParser::consumeAppendLike() {
   auto& message   = currentMessage_.get<Request>();
   message.key()   = std::move(currentKey_);
   message.value() = std::move(currentValue_);
-  message.quiet() = quiet;
+  // message.quiet() = quiet;
   callback_->onRequest(std::move(message));
 }
 
@@ -259,8 +259,8 @@ template <class Request, bool quiet, bool returnKey>
 void McServerBinaryParser::consumeGetLike() {
   auto& message       = currentMessage_.get<Request>();
   message.key()       = std::move(currentKey_);
-  message.quiet()     = quiet;
-  message.returnKey() = returnKey;
+  // message.quiet()     = quiet;
+  // message.returnKey() = returnKey;
   callback_->onRequest(std::move(message));
 }
 
@@ -274,14 +274,14 @@ void McServerBinaryParser::consumeArithLike() {
   // upstream servers because we use the ASCII protocol for upstreams
   // message.initialValue() = ntohl(extras->initialValue);
   // message.exptime() = ntohl(extras->exptime);
-  message.quiet()        = quiet;
+  // message.quiet()        = quiet;
   callback_->onRequest(std::move(message));
 }
 
 template <bool quiet>
 void McServerBinaryParser::consumeQuit() {
   auto& message   = currentMessage_.get<McQuitRequest>();
-  message.quiet() = quiet;
+  // message.quiet() = quiet;
   callback_->onRequest(std::move(message));
 }
 
@@ -296,7 +296,7 @@ void McServerBinaryParser::consumeFlush() {
   auto& message     = currentMessage_.get<McFlushAllRequest>();
   // Binary protocol only fields
   // message.exptime() = ntohl(extras->exptime);
-  message.quiet()   = quiet;
+  // message.quiet()   = quiet;
   callback_->onRequest(std::move(message));
 }
 

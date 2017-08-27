@@ -37,7 +37,7 @@ WriteBuffer::prepareTyped(
   typeId_ = static_cast<uint32_t>(Reply::typeId);
 
   // The current congestion control only supports mc_caret_protocol.
-  // May extend to other protocals in the future.
+  // May extend to other protocols in the future.
   switch (protocol_) {
     case mc_ascii_protocol:
       return asciiReply_.prepare(
