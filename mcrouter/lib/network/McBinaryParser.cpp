@@ -83,7 +83,7 @@ McServerBinaryParser::State McServerBinaryParser::consume(folly::IOBuf& buffer) 
 bool McServerBinaryParser::parseHeader(const char * bytes) {
   header_ = reinterpret_cast<const RequestHeader*>(bytes);
 
-  if (getMagic() != 0x80 || getMagic() != 0x81 || getDataType() != 0x00) {
+  if (getMagic() != 0x80 || getDataType() != 0x00) {
     return false;
   }
 
