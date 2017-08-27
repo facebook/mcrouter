@@ -89,154 +89,148 @@ bool McServerBinaryParser::parseHeader(const char * bytes) {
 
   // TODO validate command constraint (i.e. no extras, no value)
   switch (getOpCode()) {
-    case 0x0a:  // No-op
-      return false;
-
-    case 0x01:  // Set
+    case mc_opcode_set:
       currentMessage_.emplace<McSetRequest>();
       consumer_ = &McServerBinaryParser::consumeSetLike<McSetRequest, false>;
       return true;
-    case 0x11:  // SetQ
+    case mc_opcode_setq:
       currentMessage_.emplace<McSetRequest>();
       consumer_ = &McServerBinaryParser::consumeSetLike<McSetRequest, true>;
       return true;
-    case 0x02:  // Add
+    case mc_opcode_add:
       currentMessage_.emplace<McAddRequest>();
       consumer_ = &McServerBinaryParser::consumeSetLike<McAddRequest, false>;
       return true;
-    case 0x12:  // AddQ
+    case mc_opcode_addq
       currentMessage_.emplace<McAddRequest>();
       consumer_ = &McServerBinaryParser::consumeSetLike<McAddRequest, true>;
       return true;
-    case 0x03:  // Replace
+    case mc_opcode_replace:
       currentMessage_.emplace<McReplaceRequest>();
       consumer_ = &McServerBinaryParser::consumeSetLike<McReplaceRequest, false>;
       return true;
-    case 0x13:  // ReplaceQ
+    case mc_opcode_replaceq:
       currentMessage_.emplace<McReplaceRequest>();
       consumer_ = &McServerBinaryParser::consumeSetLike<McReplaceRequest, true>;
       return true;
-    case 0x0e:  // Append
+    case mc_opcode_append:
       currentMessage_.emplace<McAppendRequest>();
       consumer_ = &McServerBinaryParser::consumeAppendLike<McAppendRequest, false>;
       return true;
-    case 0x19:  // AppendQ
+    case mc_opcode_appendq:
       currentMessage_.emplace<McAppendRequest>();
       consumer_ = &McServerBinaryParser::consumeAppendLike<McAppendRequest, true>;
       return true;
-    case 0x0f:  // Prepend
+    case mc_opcode_prepend:
       currentMessage_.emplace<McPrependRequest>();
       consumer_ = &McServerBinaryParser::consumeAppendLike<McPrependRequest, false>;
       return true;
-    case 0x1a:  // PrependQ
+    case mc_opcode_prependq:
       currentMessage_.emplace<McPrependRequest>();
       consumer_ = &McServerBinaryParser::consumeAppendLike<McPrependRequest, true>;
       return true;
-    case 0x00:  // Get
+    case mc_opcode_get:
       currentMessage_.emplace<McGetRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, false, false>;
       return true;
-    case 0x09:  // GetQ
+    case mc_opcode_getq:
       currentMessage_.emplace<McGetRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, true, false>;
       return true;
-    case 0x0c:  // GetK
+    case mc_opcode_getk:
       currentMessage_.emplace<McGetRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, false, true>;
       return true;
-    case 0x0d:  // GetKQ
+    case mc_opcode_getkq:
       currentMessage_.emplace<McGetRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McGetRequest, true, true>;
       return true;
-    case 0x04:  // Delete
+    case mc_opcode_delete:
       currentMessage_.emplace<McDeleteRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McDeleteRequest, false, false>;
       return true;
-    case 0x14:  // DeleteQ
+    case mc_opcode_deleteq:
       currentMessage_.emplace<McDeleteRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McDeleteRequest, true, false>;
       return true;
-    case 0x05:  // Increment
+    case mc_opcode_increment:
       currentMessage_.emplace<McIncrRequest>();
       consumer_ = &McServerBinaryParser::consumeArithLike<McIncrRequest, false>;
       return true;
-    case 0x15:  // IncrementQ
+    case mc_opcode_incrementq:
       currentMessage_.emplace<McIncrRequest>();
       consumer_ = &McServerBinaryParser::consumeArithLike<McIncrRequest, true>;
       return true;
-    case 0x06:  // Decrement
+    case mc_opcode_decrement:
       currentMessage_.emplace<McDecrRequest>();
       consumer_ = &McServerBinaryParser::consumeArithLike<McDecrRequest, false>;
       return true;
-    case 0x16:  // DecrementQ
+    case mc_opcode_decrementq:
       currentMessage_.emplace<McDecrRequest>();
       consumer_ = &McServerBinaryParser::consumeArithLike<McDecrRequest, true>;
       return true;
-    case 0x1c:  // Touch
-    case 0x1d:  // GAT
-    case 0x1e:  // GATQ
+    case mc_opcode_touch:
+    case mc_opcode_gat:
+    case mc_opcode_gatq:
       currentMessage_.emplace<McTouchRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McTouchRequest, false, false>;
       return true;
-    case 0x10:  // Stat
+    case mc_opcode_stat:
       currentMessage_.emplace<McStatsRequest>();
       consumer_ = &McServerBinaryParser::consumeGetLike<McStatsRequest, false, false>;
       return true;
-    case 0x0b:  // Version
+    case mc_opcode_version:
       currentMessage_.emplace<McVersionRequest>();
       consumer_ = &McServerBinaryParser::consumeVersion;
       return true;
-    case 0x07:  // Quit
+    case mc_opcode_quit:
       currentMessage_.emplace<McQuitRequest>();
       consumer_ = &McServerBinaryParser::consumeQuit<false>;
       return true;
-    case 0x17:  // QuitQ
+    case mc_opcode_quitq:
       currentMessage_.emplace<McQuitRequest>();
       consumer_ = &McServerBinaryParser::consumeQuit<true>;
       return true;
-    case 0x08:  // Flush
+    case mc_opcode_flush:
       currentMessage_.emplace<McFlushAllRequest>();
       consumer_ = &McServerBinaryParser::consumeFlush<false>;
       return true;
-    case 0x18:  // FlushQ
+    case mc_opcode_flushq:
       currentMessage_.emplace<McFlushAllRequest>();
       consumer_ = &McServerBinaryParser::consumeFlush<true>;
       return true;
-    /*
-    case 0x20:  // SASL list mechs
-    case 0x21:  // SASL Auth
-    case 0x22:  // SASL Step
-
-    // Range operations, not implemented in memcached itself
-    case 0x31:  // RSet
-    case 0x32:  // RSetQ
-    case 0x33:  // RAppend
-    case 0x34:  // RAppendQ
-    case 0x35:  // RPrepend
-    case 0x36:  // RPrependQ
-    case 0x30:  // RGet
-    case 0x37:  // RDelete
-    case 0x38:  // RDeleteQ
-    case 0x39:  // RIncr
-    case 0x3a:  // RIncrQ
-    case 0x3b:  // RDecr
-    case 0x3c:  // RDecrQ
-
+    case mc_opcode_noop:
+    // SASL commands
+    case mc_opcode_sasllistmechs:
+    case mc_opcode_saslauth:
+    case mc_opcode_saslstep:
+    // Range commands
+    case mc_opcode_rset:
+    case mc_opcode_rsetq:
+    case mc_opcode_rappend:
+    case mc_opcode_rappendq:
+    case mc_opcode_rprepend:
+    case mc_opcode_rprependq:
+    case mc_opcode_rget:
+    case mc_opcode_rdelete:
+    case mc_opcode_rdeleteq:
+    case mc_opcode_rincr:
+    case mc_opcode_rincrq:
+    case mc_opcode_rdecr:
+    case mc_opcode_rdecrq:
     // v1.6 proposed commands
-    case 0x3d:  // Set VBucket *
-    case 0x45:  // TAP VBucket Set *
-    case 0x3e:  // Get VBucket *
-    case 0x42:  // TAP Delete *
-
-    case 0x1b:  // Verbosity *
-    case 0x43:  // TAP Flush *
-    case 0x3f:  // Del VBucket *
-    case 0x40:  // TAP Connect *
-    case 0x41:  // TAP Mutation *
-    case 0x44:  // TAP Opaque *
-    case 0x46:  // TAP Checkpoint Start *
-    case 0x47:  // TAP Checkpoint End *
-    */
+    case mc_opcode_setvbucket:
+    case mc_opcode_tapvbucketset:
+    case mc_opcode_getvbucket:
+    case mc_opcode_tapdelete:
+    case mc_opcode_verosity:
+    case mc_opcode_tapflush:
+    case mc_opcode_delvbucket:
+    case mc_opcode_tapconnect:
+    case mc_opcode_tapmutation:
+    case mc_opcode_tapopaque:
+    case mc_opcode_tapcheckpointstart:
+    case mc_opcode_tapcheckpointend::
     default:
       return false;
   }
