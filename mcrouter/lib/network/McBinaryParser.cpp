@@ -276,6 +276,8 @@ void McServerBinaryParser::consumeArithLike() {
   auto& message          = currentMessage_.get<Request>();
   message.key()          = std::move(currentKey_);
   message.delta()        = ntohl(extras->delta);
+  // These fields are for binary protocol only, we cannot forward them to
+  // upstream servers because we use the ASCII protocol for upstreams
   // message.initialValue() = ntohl(extras->initialValue);
   // message.exptime() = ntohl(extras->exptime);
   message.quiet()        = quiet;
@@ -298,6 +300,7 @@ template <bool quiet>
 void McServerBinaryParser::consumeFlush() {
   // auto extras       = reinterpret_cast<const FlushExtras_t*>(currentExtras_.data());
   auto& message     = currentMessage_.get<McFlushAllRequest>();
+  // Binary protocol only fields
   // message.exptime() = ntohl(extras->exptime);
   message.quiet()   = quiet;
   callback_->onRequest(std::move(message));
