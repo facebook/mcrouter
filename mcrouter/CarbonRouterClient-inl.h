@@ -33,7 +33,9 @@ void bumpCarbonRouterClientStats(
     const Request& req,
     const ReplyT<Request>&,
     carbon::UpdateLikeT<Request> = 0) {
-  auto valueBytes = req.value().computeChainDataLength();
+  auto valueBytes = carbon::valuePtrUnsafe(req)
+      ? carbon::valuePtrUnsafe(req)->computeChainDataLength()
+      : 0;
   stats.recordUpdateRequest(req.key().fullKey().size(), valueBytes);
 }
 
