@@ -21,6 +21,7 @@
 #include <thread>
 #include <vector>
 
+#include <folly/Conv.h>
 #include <folly/SharedMutex.h>
 #include <folly/String.h>
 #include <folly/io/async/AsyncServerSocket.h>
@@ -379,6 +380,12 @@ AsyncMcServer::AsyncMcServer(Options opts) : opts_(std::move(opts)) {
     if (auto initialSeeds = wangle::TLSCredProcessor::processTLSTickets(
             opts_.tlsTicketKeySeedPath)) {
       tlsTicketKeySeeds_ = std::move(*initialSeeds);
+      VLOG(0) << folly::to<std::string>(
+          "Successfully loaded ticket key seeds from ",
+          opts_.tlsTicketKeySeedPath);
+    } else {
+      LOG(ERROR) << folly::to<std::string>(
+          "Unable to load ticket key seeds from ", opts_.tlsTicketKeySeedPath);
     }
     startPollingTicketKeySeeds();
   }
