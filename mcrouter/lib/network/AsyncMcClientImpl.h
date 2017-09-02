@@ -111,10 +111,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
     std::function<void(size_t numToSend)> onWrite;
   };
 
-  // We need to be able to get shared_ptr to ourself and shared_from_this()
-  // doesn't work correctly with DelayedDestruction.
-  std::weak_ptr<AsyncMcClientImpl> selfPtr_;
-
   folly::EventBase& eventBase_;
   std::unique_ptr<ParserT> parser_;
 
@@ -123,7 +119,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   // Socket related variables.
   ConnectionState connectionState_{ConnectionState::DOWN};
-  ConnectionOptions connectionOptions_;
   folly::AsyncSocket::UniquePtr socket_;
   ConnectionStatusCallbacks statusCallbacks_;
   RequestStatusCallbacks requestStatusCallbacks_;
@@ -133,28 +128,36 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   CodecIdRange supportedCompressionCodecs_ = CodecIdRange::Empty;
 
-  bool outOfOrder_{false};
-  bool pendingGoAwayReply_{false};
   McClientRequestContextQueue queue_;
 
   // Id for the next message that will be used by the next sendMsg() call.
   uint32_t nextMsgId_{1};
 
+  bool outOfOrder_{false};
+  bool pendingGoAwayReply_{false};
+
   // Throttle options (disabled by default).
   size_t maxPending_{0};
   size_t maxInflight_{0};
+
+  // Writer loop related variables.
+  class WriterLoop;
+  std::unique_ptr<WriterLoop> writer_;
+  bool writeScheduled_{false};
 
   // Retransmission values
   uint32_t lastRetrans_{0}; // last known value of the no. of retransmissions
   uint64_t lastKBytes_{0}; // last known number of kBs sent
 
-  // Writer loop related variables.
-  class WriterLoop;
-  bool writeScheduled_{false};
-  std::unique_ptr<WriterLoop> writer_;
-
   bool isAborting_{false};
+
+  ConnectionOptions connectionOptions_;
+
   std::unique_ptr<folly::EventBase::LoopCallback> eventBaseDestructionCallback_;
+
+  // We need to be able to get shared_ptr to ourself and shared_from_this()
+  // doesn't work correctly with DelayedDestruction.
+  std::weak_ptr<AsyncMcClientImpl> selfPtr_;
 
   AsyncMcClientImpl(
       folly::VirtualEventBase& eventBase,

@@ -92,11 +92,10 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     folly::VirtualEventBase& eventBase,
     ConnectionOptions options)
     : eventBase_(eventBase.getEventBase()),
-      connectionOptions_(std::move(options)),
-      outOfOrder_(
-          connectionOptions_.accessPoint->getProtocol() != mc_ascii_protocol),
-      queue_(outOfOrder_),
+      queue_(options.accessPoint->getProtocol() != mc_ascii_protocol),
+      outOfOrder_(options.accessPoint->getProtocol() != mc_ascii_protocol),
       writer_(std::make_unique<WriterLoop>(*this)),
+      connectionOptions_(std::move(options)),
       eventBaseDestructionCallback_(
           std::make_unique<OnEventBaseDestructionCallback>(*this)) {
   eventBase.runOnDestruction(eventBaseDestructionCallback_.get());
