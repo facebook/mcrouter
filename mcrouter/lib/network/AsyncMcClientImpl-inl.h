@@ -19,9 +19,8 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
     const Request& request,
     std::chrono::milliseconds timeout,
     ReplyStatsContext* replyContext) {
-  auto selfPtr = selfPtr_.lock();
-  // shouldn't happen.
-  assert(selfPtr);
+  DestructorGuard dg(this);
+
   assert(folly::fibers::onFiber());
 
   if (maxPending_ != 0 && getPendingRequestCount() >= maxPending_) {
@@ -41,7 +40,6 @@ ReplyT<Request> AsyncMcClientImpl::sendSync(
       request,
       nextMsgId_,
       connectionOptions_.accessPoint->getProtocol(),
-      std::move(selfPtr),
       queue_,
       [](ParserT& parser) { parser.expectNext<Request>(); },
       requestStatusCallbacks_.onStateChange,
