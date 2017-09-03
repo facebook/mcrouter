@@ -36,6 +36,14 @@ class CarbonQueueAppenderStorage {
       delete;
 
   void append(const folly::IOBuf& buf) {
+    // IOBuf copy is a very expensive procedure (64 bytes object + atomic
+    // operation), avoid incuring that cost for small buffers.
+    if (!buf.isChained() && buf.length() <= kInlineIOBufLen &&
+        storageIdx_ + buf.length() <= sizeof(storage_)) {
+      push(buf.data(), buf.length());
+      return;
+    }
+
     finalizeLastIovec();
 
     if (nIovsUsed_ == kMaxIovecs) {
@@ -135,6 +143,7 @@ class CarbonQueueAppenderStorage {
 
  private:
   static constexpr size_t kMaxIovecs{32};
+  static constexpr size_t kInlineIOBufLen{128};
 
   // Copied from UmbrellaProtocol.h, which will eventually die
   static constexpr size_t kMaxAdditionalFields = 3;
