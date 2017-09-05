@@ -85,7 +85,7 @@ TEST(latestRouteTest, weights) {
     auto index = replyFor(*rh, "key")[0] - 'a';
     hits_per_index[index]++;
   }
-  EXPECT_NEAR(hits_per_index[0], 1000, 50);
+  EXPECT_NEAR(hits_per_index[0], 1000, 55);
   EXPECT_NEAR(hits_per_index[1], 2000, 100);
   EXPECT_NEAR(hits_per_index[2], 3000, 150);
   EXPECT_NEAR(hits_per_index[3], 4000, 200);
