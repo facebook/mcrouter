@@ -31,7 +31,8 @@ std::shared_ptr<folly::SSLContext> getSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
-    folly::Optional<wangle::TLSTicketKeySeeds> = folly::none);
+    folly::Optional<wangle::TLSTicketKeySeeds> = folly::none,
+    bool clientContext = false);
 
 } // memcache
 } // facebook

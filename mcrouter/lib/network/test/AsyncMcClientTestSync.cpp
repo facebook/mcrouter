@@ -63,7 +63,7 @@ TEST(AsyncMcClient, simpleAsciiTimeout) {
 }
 
 TEST(AsyncMcClient, simpleAsciiTimeoutSsl) {
-  simpleAsciiTimeoutTest(validSsl());
+  simpleAsciiTimeoutTest(validClientSsl());
 }
 
 void simpleUmbrellaTimeoutTest(SSLContextProvider ssl) {
@@ -89,7 +89,7 @@ TEST(AsyncMcClient, simpleUmbrellaTimeout) {
 }
 
 TEST(AsyncMcClient, simpleUmbrellaTimeoutSsl) {
-  simpleUmbrellaTimeoutTest(validSsl());
+  simpleUmbrellaTimeoutTest(validClientSsl());
 }
 
 void noServerTimeoutTest(SSLContextProvider ssl) {
@@ -103,7 +103,7 @@ TEST(AsyncMcClient, noServerTimeout) {
 }
 
 TEST(AsyncMcClient, noServerTimeoutSsl) {
-  noServerTimeoutTest(validSsl());
+  noServerTimeoutTest(validClientSsl());
 }
 
 void immediateConnectFailTest(SSLContextProvider ssl) {
@@ -117,7 +117,7 @@ TEST(AsyncMcClient, immeadiateConnectFail) {
 }
 
 TEST(AsyncMcClient, immeadiateConnectFailSsl) {
-  immediateConnectFailTest(validSsl());
+  immediateConnectFailTest(validClientSsl());
 }
 
 void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
@@ -149,7 +149,7 @@ void testCerts(std::string name, SSLContextProvider ssl, size_t numConns) {
       server->getListenPort(),
       200,
       mc_umbrella_protocol_DONOTUSE,
-      validSsl());
+      validClientSsl());
   brokenClient.sendGet("test", mc_res_connect_error);
   brokenClient.waitForReplies();
   EXPECT_TRUE(loggedFailure);
@@ -191,7 +191,7 @@ TEST(AsyncMcClient, inflightThrottle) {
 }
 
 TEST(AsyncMcClient, inflightThrottleSsl) {
-  inflightThrottleTest(validSsl());
+  inflightThrottleTest(validClientSsl());
 }
 
 void inflightThrottleFlushTest(SSLContextProvider ssl) {
@@ -217,7 +217,7 @@ TEST(AsyncMcClient, inflightThrottleFlush) {
 }
 
 TEST(AsyncMcClient, inflightThrottleFlushSsl) {
-  inflightThrottleFlushTest(validSsl());
+  inflightThrottleFlushTest(validClientSsl());
 }
 
 void outstandingThrottleTest(SSLContextProvider ssl) {
@@ -243,7 +243,7 @@ TEST(AsyncMcClient, outstandingThrottle) {
 }
 
 TEST(AsyncMcClient, outstandingThrottleSsl) {
-  outstandingThrottleTest(validSsl());
+  outstandingThrottleTest(validClientSsl());
 }
 
 void connectionErrorTest(SSLContextProvider ssl) {
@@ -266,7 +266,7 @@ TEST(AsyncMcClient, connectionError) {
 }
 
 TEST(AsyncMcClient, connectionErrorSsl) {
-  connectionErrorTest(validSsl());
+  connectionErrorTest(validClientSsl());
 }
 
 void basicTest(
@@ -313,15 +313,15 @@ TEST(AsyncMcClient, basicCaret) {
 }
 
 TEST(AsyncMcClient, basicAsciiSsl) {
-  basicTest(mc_ascii_protocol, validSsl());
+  basicTest(mc_ascii_protocol, validClientSsl());
 }
 
 TEST(AsyncMcClient, basicUmbrellaSsl) {
-  basicTest(mc_umbrella_protocol_DONOTUSE, validSsl());
+  basicTest(mc_umbrella_protocol_DONOTUSE, validClientSsl());
 }
 
 TEST(AsyncMcClient, basicCaretSsl) {
-  basicTest(mc_caret_protocol, validSsl());
+  basicTest(mc_caret_protocol, validClientSsl());
 }
 
 void qosTest(
@@ -341,11 +341,11 @@ TEST(AsyncMcClient, qosClass2) {
 }
 
 TEST(AsyncMcClient, qosClass3) {
-  qosTest(mc_umbrella_protocol_DONOTUSE, validSsl(), 3, 2);
+  qosTest(mc_umbrella_protocol_DONOTUSE, validClientSsl(), 3, 2);
 }
 
 TEST(AsyncMcClient, qosClass4) {
-  qosTest(mc_ascii_protocol, validSsl(), 4, 3);
+  qosTest(mc_ascii_protocol, validClientSsl(), 4, 3);
 }
 
 void reconnectTest(mc_protocol_t protocol) {
@@ -674,7 +674,7 @@ TEST(AsyncMcClient, SslSessionCache) {
         server->getListenPort(),
         200,
         mc_umbrella_protocol_DONOTUSE,
-        validSsl());
+        validClientSsl());
     LOG(INFO) << "Connection attempt: " << i;
     client.sendGet("test", mc_res_found);
     client.waitForReplies();
@@ -765,4 +765,24 @@ TEST(AsyncMcClient, caretGoAway) {
   server->shutdown();
   client.waitForReplies();
   server->join();
+}
+
+TEST(AsyncMcClient, contextProviders) {
+  auto clientCtxProvider = validClientSsl();
+  auto serverCtxProvider = validSsl();
+
+  auto clientCtx1 = clientCtxProvider();
+  auto clientCtx2 = clientCtxProvider();
+
+  auto serverCtx1 = serverCtxProvider();
+  auto serverCtx2 = serverCtxProvider();
+
+  // client contexts should be the same since they are
+  // thread local cached
+  EXPECT_EQ(clientCtx1, clientCtx2);
+
+  // server contexts should be the same for the same reason
+  EXPECT_EQ(serverCtx1, serverCtx2);
+
+  EXPECT_NE(clientCtx1, serverCtx1);
 }

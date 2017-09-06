@@ -360,7 +360,11 @@ void ProxyDestination::initializeAsyncMcClient() {
         "Some of ssl key paths are not set!");
     options.sslContextProvider = [&opts] {
       return getSSLContext(
-          opts.pem_cert_path, opts.pem_key_path, opts.pem_ca_path);
+          opts.pem_cert_path,
+          opts.pem_key_path,
+          opts.pem_ca_path,
+          folly::none,
+          true);
     };
   }
 

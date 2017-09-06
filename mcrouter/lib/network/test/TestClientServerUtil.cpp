@@ -46,6 +46,13 @@ const char* const kInvalidCertPath = "/do/not/exist";
 
 const char* const kServerVersion = "TestServer-1.0";
 
+SSLContextProvider validClientSsl() {
+  return []() {
+    return getSSLContext(
+        kValidCertPath, kValidKeyPath, kPemCaPath, folly::none, true);
+  };
+}
+
 SSLContextProvider validSsl() {
   return
       []() { return getSSLContext(kValidCertPath, kValidKeyPath, kPemCaPath); };

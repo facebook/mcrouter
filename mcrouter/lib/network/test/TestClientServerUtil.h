@@ -145,7 +145,9 @@ using SSLContextProvider = std::function<std::shared_ptr<folly::SSLContext>()>;
 constexpr std::nullptr_t noSsl() {
   return nullptr;
 }
-// valid client SSL certs
+// valid Client SSL Certs
+SSLContextProvider validClientSsl();
+// valid SSL certs
 SSLContextProvider validSsl();
 // non-existent client SSL certs
 SSLContextProvider invalidSsl();
