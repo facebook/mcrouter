@@ -13,6 +13,10 @@
 
 #include <folly/Hash.h>
 #include <folly/io/async/SSLContext.h>
+#include <wangle/ssl/SSLCacheOptions.h>
+#include <wangle/ssl/SSLContextConfig.h>
+#include <wangle/ssl/SSLSessionCacheManager.h>
+#include <wangle/ssl/ServerSSLContext.h>
 #include <wangle/ssl/TLSTicketKeyManager.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
@@ -25,8 +29,8 @@ namespace memcache {
 
 namespace {
 
-/* Sessions are valid for upto 30 mins */
-constexpr size_t kSessionLifeTime = 1800;
+/* Sessions are valid for upto 24 hours */
+constexpr size_t kSessionLifeTime = 86400;
 
 struct CertPaths {
   folly::StringPiece pemCertPath;
@@ -40,17 +44,11 @@ struct CertPaths {
   }
 };
 
-using TicketMgrMap =
-    std::unordered_map<uintptr_t, std::unique_ptr<wangle::TLSTicketKeyManager>>;
-
 struct ContextInfo {
   std::string pemCertPath;
   std::string pemKeyPath;
   std::string pemCaPath;
 
-  /* mgrMapRef must be declared before context to control the construction
-   * destruction order. */
-  std::shared_ptr<TicketMgrMap> mgrMapRef;
   std::shared_ptr<SSLContext> context;
 
   std::chrono::time_point<std::chrono::steady_clock> lastLoadTime;
@@ -60,24 +58,6 @@ struct CertPathsHasher {
   size_t operator()(const CertPaths& paths) const {
     return folly::Hash()(
         paths.pemCertPath, paths.pemKeyPath, paths.pemCaPath, paths.isClient);
-  }
-};
-
-std::shared_ptr<TicketMgrMap> contextToTicketMgr() {
-  thread_local auto map = std::make_shared<TicketMgrMap>();
-  return map;
-}
-
-/* custom deleter to release TLSTicketKeyManager */
-struct SSLContextDeleter {
-  void operator()(folly::SSLContext* ctx) const {
-    if (ctx == nullptr) {
-      return;
-    }
-    const auto mapKey = reinterpret_cast<uintptr_t>(ctx);
-    contextToTicketMgr()->erase(mapKey);
-    assert(contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
-    delete ctx;
   }
 };
 
@@ -156,27 +136,37 @@ std::shared_ptr<SSLContext> createServerSSLContext(
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath,
     folly::Optional<wangle::TLSTicketKeySeeds> ticketKeySeeds) {
-  std::shared_ptr<SSLContext> sslContext(new SSLContext(), SSLContextDeleter());
+  wangle::SSLContextConfig cfg;
+  // don't need to set any certs on the cfg since the context is configured
+  // in configureSSLContext;
+  cfg.sessionTicketEnabled = true;
+  cfg.sessionCacheEnabled = true;
+  cfg.sessionContext = "async-server";
+
+  // we'll use our own internal session cache instead of openssl's
+  wangle::SSLCacheOptions cacheOpts;
+  cacheOpts.sslCacheTimeout = std::chrono::seconds(kSessionLifeTime);
+  // defaults from wangle/acceptor/ServerSocketConfig.h
+  cacheOpts.maxSSLCacheSize = 20480;
+  cacheOpts.sslCacheFlushSize = 200;
+  auto sslContext = std::make_shared<wangle::ServerSSLContext>();
   if (!configureSSLContext(*sslContext, pemCertPath, pemKeyPath, pemCaPath)) {
     return nullptr;
   }
-  sslContext->setSessionCacheContext("async-server");
-  SSL_CTX_set_timeout(sslContext->getSSLCtx(), kSessionLifeTime);
-
 #ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
-  if (ticketKeySeeds.hasValue()) {
-    auto mgr = std::make_unique<wangle::TLSTicketKeyManager>(
-        sslContext.get(), nullptr);
-    mgr->setTLSTicketKeySeeds(
-        std::move(ticketKeySeeds->oldSeeds),
-        std::move(ticketKeySeeds->currentSeeds),
-        std::move(ticketKeySeeds->newSeeds));
+  // ServerSSLContext handles null
+  sslContext->setupTicketManager(ticketKeySeeds.get_pointer(), cfg, nullptr);
+#endif
+  sslContext->setupSessionCache(
+      cfg,
+      cacheOpts,
+      nullptr, // external cache
+      "", // common name
+      nullptr); // SSL Stats
 
-    /* store in the map */
-    const auto mapKey = reinterpret_cast<uintptr_t>(sslContext.get());
-    assert(contextToTicketMgr()->find(mapKey) == contextToTicketMgr()->end());
-    contextToTicketMgr()->emplace(mapKey, std::move(mgr));
-  }
+#ifdef SSL_CTRL_SET_MAX_SEND_FRAGMENT
+  // reduce send fragment size
+  SSL_CTX_set_max_send_fragment(sslContext->getSSLCtx(), 8000);
 #endif
   return sslContext;
 }
@@ -217,7 +207,6 @@ std::shared_ptr<SSLContext> getSSLContext(
     info.pemCertPath = pemCertPath.toString();
     info.pemKeyPath = pemKeyPath.toString();
     info.pemCaPath = pemCaPath.toString();
-    info.mgrMapRef = contextToTicketMgr();
     // Point all StringPiece's to our own strings.
     paths.pemCertPath = info.pemCertPath;
     paths.pemKeyPath = info.pemKeyPath;
