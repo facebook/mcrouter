@@ -19,7 +19,6 @@
 
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
-#include "mcrouter/FileObserver.h"
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/McrouterLogger.h"
 #include "mcrouter/Proxy.h"
@@ -425,12 +424,19 @@ void CarbonRouterInstance<RouterInfo>::startObservingRuntimeVarsFile() {
     return;
   }
 
-  startObservingFile(
-      opts_.runtime_vars_file,
-      *evbAuxiliaryThread_.getEventBase(),
-      opts_.file_observer_poll_period_ms,
-      opts_.file_observer_sleep_before_update_ms,
-      std::move(onUpdate));
+  if (auto scheduler = functionScheduler()) {
+    runtimeVarsObserverHandle_ = startObservingFile(
+        opts_.runtime_vars_file,
+        scheduler,
+        std::chrono::milliseconds(opts_.file_observer_poll_period_ms),
+        std::chrono::milliseconds(opts_.file_observer_sleep_before_update_ms),
+        std::move(onUpdate));
+  } else {
+    MC_LOG_FAILURE(
+        opts(),
+        failure::Category::kSystemError,
+        "Global function scheduler not available");
+  }
 }
 
 template <class RouterInfo>
@@ -453,7 +459,7 @@ void CarbonRouterInstance<RouterInfo>::joinAuxiliaryThreads() noexcept {
     mcrouterLogger_->stop();
   }
 
-  evbAuxiliaryThread_.stop();
+  runtimeVarsObserverHandle_.reset();
 }
 
 template <class RouterInfo>

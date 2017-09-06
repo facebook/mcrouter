@@ -23,6 +23,7 @@
 #include "mcrouter/CarbonRouterClient.h"
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/ConfigApi.h"
+#include "mcrouter/FileObserver.h"
 #include "mcrouter/Proxy.h"
 #include "mcrouter/ProxyConfigBuilder.h"
 
@@ -149,6 +150,8 @@ class CarbonRouterInstance
   std::unique_ptr<McrouterLogger> mcrouterLogger_;
 
   std::atomic<bool> shutdownStarted_{false};
+
+  FileObserverHandle runtimeVarsObserverHandle_;
 
   ConfigApi::CallbackHandle configUpdateHandle_;
 

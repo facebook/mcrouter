@@ -25,81 +25,84 @@ namespace mcrouter {
 
 namespace {
 
-void checkAndExecuteFallbackOnError(std::function<void()> fallbackOnError) {
-  if (fallbackOnError) {
-    LOG(INFO) << "Calling the fallbackOnError function";
-    fallbackOnError();
-  }
-}
-
 struct FileObserverData {
   FileObserverData(
+      const std::shared_ptr<folly::FunctionScheduler>& scheduler__,
+      std::string functionName__,
       std::shared_ptr<FileDataProvider> provider__,
       std::function<void(std::string)> onUpdate__,
-      std::function<void()> fallbackOnError__,
-      uint32_t pollPeriodMs__,
-      uint32_t sleepBeforeUpdateMs__)
-      : provider(std::move(provider__)),
+      std::chrono::milliseconds sleepBeforeUpdate__,
+      FileObserverHandle handle)
+      : scheduler(scheduler__),
+        functionName(functionName__),
+        provider(std::move(provider__)),
         onUpdate(std::move(onUpdate__)),
-        fallbackOnError(std::move(fallbackOnError__)),
-        pollPeriodMs(pollPeriodMs__),
-        sleepBeforeUpdateMs(sleepBeforeUpdateMs__) {}
+        sleepBeforeUpdate(sleepBeforeUpdate__),
+        token(handle) {}
+  std::weak_ptr<folly::FunctionScheduler> scheduler;
+  std::string functionName;
   std::shared_ptr<FileDataProvider> provider;
   std::function<void(std::string)> onUpdate;
-  std::function<void()> fallbackOnError;
-  uint32_t pollPeriodMs;
-  uint32_t sleepBeforeUpdateMs;
+  std::chrono::milliseconds sleepBeforeUpdate;
+  std::weak_ptr<FileObserverToken> token;
 };
 
-void scheduleObserveFile(folly::EventBase& evb, FileObserverData data) {
-  uint32_t pollPeriodMs = data.pollPeriodMs;
-  evb.runAfterDelay(
-      [&evb, data = std::move(data) ]() {
-        bool hasUpdate;
+void checkForUpdate(const std::shared_ptr<FileObserverData>& data) {
+  const auto scheduler = data->scheduler.lock();
+  assert(scheduler);
+  if (!scheduler) {
+    // Should never happens since we're executed by the scheduler.
+    LOG_FAILURE(
+        "mcrouter",
+        failure::Category::kSystemError,
+        "Global function scheduler not available");
+    return;
+  }
+  const auto tokenRef = data->token.lock();
+  if (!tokenRef) {
+    scheduler->cancelFunction(data->functionName);
+    return;
+  }
+  try {
+    if (!data->provider->hasUpdate()) {
+      return;
+    }
+  } catch (...) {
+    LOG_FAILURE(
+        "mcrouter",
+        failure::Category::kOther,
+        "Error while observing file for update. Will stop polling for updates");
+    data->token.reset();
+    return;
+  }
+
+  static std::atomic<uint64_t> updateId(0);
+  scheduler->addFunctionOnce(
+      [data = data]() {
         try {
-          hasUpdate = data.provider->hasUpdate();
+          if (const auto ref = data->token.lock()) {
+            data->onUpdate(data->provider->load());
+          }
         } catch (...) {
-          checkAndExecuteFallbackOnError(std::move(data.fallbackOnError));
           LOG_FAILURE(
               "mcrouter",
               failure::Category::kOther,
               "Error while observing file for update");
-          return;
-        }
-
-        if (hasUpdate) {
-          uint32_t sleepBeforeUpdateMs = data.sleepBeforeUpdateMs;
-          evb.runAfterDelay(
-              [&evb, data = std::move(data) ]() {
-                auto fallbackOnError = data.fallbackOnError;
-                try {
-                  data.onUpdate(data.provider->load());
-                  scheduleObserveFile(evb, std::move(data));
-                } catch (...) {
-                  checkAndExecuteFallbackOnError(std::move(fallbackOnError));
-                  LOG_FAILURE(
-                      "mcrouter",
-                      failure::Category::kOther,
-                      "Error while observing file for update");
-                }
-              },
-              sleepBeforeUpdateMs);
-        } else {
-          scheduleObserveFile(evb, std::move(data));
         }
       },
-      pollPeriodMs);
+      folly::to<std::string>(
+          "carbon-file-observer-update-", updateId.fetch_add(1)),
+      data->sleepBeforeUpdate);
 }
 
 } // anonymous namespace
 
-bool startObservingFile(
+FileObserverHandle startObservingFile(
     const std::string& filePath,
-    folly::EventBase& evb,
-    uint32_t pollPeriodMs,
-    uint32_t sleepBeforeUpdateMs,
-    std::function<void(std::string)> onUpdate,
-    std::function<void()> fallbackOnError) {
+    const std::shared_ptr<folly::FunctionScheduler>& scheduler,
+    std::chrono::milliseconds pollPeriod,
+    std::chrono::milliseconds sleepBeforeUpdate,
+    std::function<void(std::string)> onUpdate) {
   std::shared_ptr<FileDataProvider> provider;
   try {
     provider = std::make_shared<FileDataProvider>(filePath);
@@ -108,20 +111,25 @@ bool startObservingFile(
   } catch (const std::exception& e) {
     VLOG(0) << "Can not start watching " << filePath
             << " for modifications: " << e.what();
-    checkAndExecuteFallbackOnError(std::move(fallbackOnError));
-    return false;
+    return FileObserverHandle();
   }
 
   VLOG(0) << "Watching " << filePath << " for modifications.";
-  FileObserverData data(
+  FileObserverHandle handle = std::make_shared<FileObserverToken>();
+  static std::atomic<uint64_t> uniqueId(0);
+  auto data = std::make_shared<FileObserverData>(
+      scheduler,
+      folly::to<std::string>("carbon-file-observer-", uniqueId.fetch_add(1)),
       std::move(provider),
       std::move(onUpdate),
-      std::move(fallbackOnError),
-      pollPeriodMs,
-      sleepBeforeUpdateMs);
-  return evb.runInEventBaseThread([&evb, data = std::move(data) ]() {
-    scheduleObserveFile(evb, std::move(data));
-  });
+      sleepBeforeUpdate,
+      handle);
+  scheduler->addFunction(
+      [data = data]() { checkForUpdate(data); },
+      pollPeriod,
+      data->functionName,
+      pollPeriod);
+  return handle;
 }
 
 } // mcrouter

@@ -35,13 +35,19 @@ TEST(FileObserver, sanity) {
       folly::writeFull(config.fd(), contents.data(), contents.size()),
       contents.size());
 
-  folly::ScopedEventBaseThread evbThread;
+  const auto scheduler = std::make_shared<folly::FunctionScheduler>();
+  scheduler->start();
   int counter = 0;
-  startObservingFile(
-      path, *evbThread.getEventBase(), 100, 500, [&counter, &cv](std::string) {
+  auto handle = startObservingFile(
+      path,
+      scheduler,
+      std::chrono::milliseconds(100),
+      std::chrono::milliseconds(500),
+      [&counter, &cv](std::string) {
         counter++;
         cv.notify_all();
       });
+  EXPECT_TRUE(handle);
 
   EXPECT_EQ(counter, 1);
   contents = "b";
@@ -62,31 +68,42 @@ TEST(FileObserver, sanity) {
     cv.wait_for(lock, std::chrono::seconds(5));
   }
   EXPECT_EQ(counter, 3);
+
+  // Stop observing, then touch the file and verify the counter is not changed.
+  handle.reset();
+  contents = "d";
+  EXPECT_EQ(
+      folly::writeFull(config.fd(), contents.data(), contents.size()),
+      contents.size());
+  {
+    std::unique_lock<std::mutex> lock(mut);
+    cv.wait_for(lock, std::chrono::seconds(1));
+  }
+  EXPECT_EQ(counter, 3);
 }
 
 TEST(FileObserver, on_error_callback) {
-  folly::ScopedEventBaseThread evbThread;
-  int successCounter1 = 0, errorCounter1 = 0;
-  startObservingFile(
+  const auto scheduler = std::make_shared<folly::FunctionScheduler>();
+  scheduler->start();
+  int successCounter1 = 0;
+  auto handle1 = startObservingFile(
       BOGUS_CONFIG,
-      *evbThread.getEventBase(),
-      100,
-      500,
-      [&successCounter1](std::string) { successCounter1++; },
-      [&errorCounter1]() { errorCounter1++; });
+      scheduler,
+      std::chrono::milliseconds(100),
+      std::chrono::milliseconds(500),
+      [&successCounter1](std::string) { successCounter1++; });
 
-  int successCounter2 = 0, errorCounter2 = 0;
-  startObservingFile(
+  int successCounter2 = 0;
+  auto handle2 = startObservingFile(
       "",
-      *evbThread.getEventBase(),
-      100,
-      500,
-      [&successCounter2](std::string) { successCounter2++; },
-      [&errorCounter2]() { errorCounter2++; });
+      scheduler,
+      std::chrono::milliseconds(100),
+      std::chrono::milliseconds(500),
+      [&successCounter2](std::string) { successCounter2++; });
 
   EXPECT_EQ(successCounter1, 0);
-  EXPECT_EQ(errorCounter1, 1);
+  EXPECT_FALSE(handle1);
 
   EXPECT_EQ(successCounter2, 0);
-  EXPECT_EQ(errorCounter2, 1);
+  EXPECT_FALSE(handle2);
 }

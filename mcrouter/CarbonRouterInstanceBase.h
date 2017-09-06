@@ -88,7 +88,7 @@ class CarbonRouterInstanceBase {
   folly::ReadMostlySharedPtr<AsyncWriter> statsLogWriter();
 
   LeaseTokenMap& leaseTokenMap() {
-    return *leaseTokenMap_;
+    return leaseTokenMap_;
   }
 
   const LogPostprocessCallbackFunc& postprocessCallback() const {
@@ -144,7 +144,7 @@ class CarbonRouterInstanceBase {
    * Returns a FunctionScheduler suitable for running periodic background tasks
    * on. Null may be returned if the global instance has been destroyed.
    */
-  folly::ReadMostlySharedPtr<folly::FunctionScheduler> functionScheduler();
+  std::shared_ptr<folly::FunctionScheduler> functionScheduler();
 
  protected:
   /**
@@ -160,9 +160,6 @@ class CarbonRouterInstanceBase {
   const McrouterOptions opts_;
   const pid_t pid_;
   const std::unique_ptr<ConfigApi> configApi_;
-
-  // Auxiliary EventBase thread.
-  folly::EventBaseThread evbAuxiliaryThread_;
 
   LogPostprocessCallbackFunc postprocessCallback_;
 
@@ -193,7 +190,7 @@ class CarbonRouterInstanceBase {
   const std::shared_ptr<ObservableRuntimeVars> rtVarsData_;
 
   // Keep track of lease tokens of failed over requests.
-  const std::unique_ptr<LeaseTokenMap> leaseTokenMap_;
+  LeaseTokenMap leaseTokenMap_;
 
   std::unordered_map<std::string, std::string> additionalStartupOpts_;
 

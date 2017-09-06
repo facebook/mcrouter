@@ -13,7 +13,6 @@
 
 #include <boost/filesystem/operations.hpp>
 
-#include <folly/Indestructible.h>
 #include <folly/Singleton.h>
 #include <folly/ThreadName.h>
 
@@ -73,10 +72,8 @@ CarbonRouterInstanceBase::CarbonRouterInstanceBase(McrouterOptions inputOptions)
       pid_(getpid()),
       configApi_(createConfigApi(opts_)),
       rtVarsData_(std::make_shared<ObservableRuntimeVars>()),
-      leaseTokenMap_(std::make_unique<LeaseTokenMap>(evbAuxiliaryThread_)),
+      leaseTokenMap_(globalFunctionScheduler.try_get()),
       statsUpdateFunctionHandle_(statsUpdateFunctionName(opts_.router_name)) {
-  evbAuxiliaryThread_.getEventBase()->runInEventBaseThread(
-      [] { folly::setThreadName("CarbonAux"); });
   if (auto statsLogger = statsLogWriter()) {
     if (opts_.stats_async_queue_length) {
       statsLogger->increaseMaxQueueSize(opts_.stats_async_queue_length);
@@ -170,9 +167,9 @@ CarbonRouterInstanceBase::asyncWriter() {
   return sharedAsyncWriter.try_get_fast();
 }
 
-folly::ReadMostlySharedPtr<folly::FunctionScheduler>
+std::shared_ptr<folly::FunctionScheduler>
 CarbonRouterInstanceBase::functionScheduler() {
-  return globalFunctionScheduler.try_get_fast();
+  return globalFunctionScheduler.try_get();
 }
 
 } // mcrouter

@@ -9,7 +9,7 @@
  */
 #include "LeaseTokenMap.h"
 
-#include <folly/io/async/AsyncTimeout.h>
+#include <folly/Conv.h>
 
 namespace facebook {
 namespace memcache {
@@ -27,27 +27,35 @@ inline uint64_t applyMagic(uint32_t id) {
   return kAddMagicMask | id;
 }
 
+std::string leaseTokenTimeoutFunctionName() {
+  static std::atomic<uint64_t> uniqueId(0);
+  return folly::to<std::string>(
+      "carbon-lease-token-timeout-", uniqueId.fetch_add(1));
+}
+
 } // anonymous
 
 LeaseTokenMap::LeaseTokenMap(
-    folly::EventBaseThread& evbThread,
-    uint32_t leaseTokenTtl)
-    : evbThread_(evbThread),
-      leaseTokenTtlMs_(leaseTokenTtl) {
-  assert(leaseTokenTtlMs_ > 0);
-  auto& evb = *evbThread_.getEventBase();
-  evb.runInEventBaseThread([ this, &evb = evb ]() {
-    tokenCleanupTimeout_ = folly::AsyncTimeout::schedule(
-        std::chrono::milliseconds(leaseTokenTtlMs_), evb, [this]() noexcept {
-          tokenCleanupTimeout();
-        });
-  });
+    const std::shared_ptr<folly::FunctionScheduler>& functionScheduler,
+    std::chrono::milliseconds leaseTokenTtl,
+    std::chrono::milliseconds cleanupInterval)
+    : functionScheduler_(functionScheduler),
+      timeoutFunctionName_(leaseTokenTimeoutFunctionName()),
+      leaseTokenTtl_(leaseTokenTtl) {
+  assert(leaseTokenTtl_.count() > 0);
+  if (!functionScheduler) {
+    throw std::runtime_error("null function scheduler");
+  }
+  functionScheduler->addFunction(
+      [this]() { tokenCleanupTimeout(); },
+      cleanupInterval,
+      timeoutFunctionName_,
+      cleanupInterval);
 }
 
 LeaseTokenMap::~LeaseTokenMap() {
-  if (evbThread_.running()) {
-    evbThread_.getEventBase()->runImmediatelyOrRunInEventBaseThreadAndWait(
-        [this]() { tokenCleanupTimeout_.reset(); });
+  if (auto functionScheduler = functionScheduler_.lock()) {
+    functionScheduler->cancelFunctionAndWait(timeoutFunctionName_);
   }
 }
 
@@ -59,10 +67,7 @@ uint64_t LeaseTokenMap::insert(std::string routeName, Item item) {
   auto it = data_.emplace(
       specialToken,
       LeaseTokenMap::ListItem(
-          specialToken,
-          std::move(routeName),
-          std::move(item),
-          leaseTokenTtlMs_));
+          specialToken, std::move(routeName), std::move(item), leaseTokenTtl_));
   invalidationQueue_.push_back(it.first->second);
 
   return specialToken;
@@ -108,27 +113,13 @@ uint64_t LeaseTokenMap::getOriginalLeaseToken(
 
 void LeaseTokenMap::tokenCleanupTimeout() {
   const auto now = ListItem::Clock::now();
-  uint32_t nextTimeoutMs = leaseTokenTtlMs_;
-
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto cur = invalidationQueue_.begin();
-    while (cur != invalidationQueue_.end() && cur->tokenTimeout <= now) {
-      uint64_t specialToken = cur->specialToken;
-      cur = invalidationQueue_.erase(cur);
-      data_.erase(specialToken);
-    }
-
-    if (!invalidationQueue_.empty()) {
-      nextTimeoutMs = std::max<uint32_t>(
-          1,
-          std::chrono::duration_cast<std::chrono::milliseconds>(
-              invalidationQueue_.front().tokenTimeout - now)
-              .count());
-    }
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto cur = invalidationQueue_.begin();
+  while (cur != invalidationQueue_.end() && cur->tokenTimeout <= now) {
+    uint64_t specialToken = cur->specialToken;
+    cur = invalidationQueue_.erase(cur);
+    data_.erase(specialToken);
   }
-
-  tokenCleanupTimeout_->scheduleTimeout(nextTimeoutMs);
 }
 
 size_t LeaseTokenMap::size() const {
