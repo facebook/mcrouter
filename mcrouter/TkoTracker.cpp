@@ -10,8 +10,7 @@
 #include "TkoTracker.h"
 
 #include <cassert>
-
-#include <glog/logging.h>
+#include <functional>
 
 #include <folly/MapUtil.h>
 
@@ -194,10 +193,15 @@ void TkoTrackerMap::updateTracker(
     const size_t tkoThreshold,
     const size_t maxSoftTkos) {
   auto key = pdstn.accessPoint()->toHostPortString();
+
+  // This shared pointer has to be destroyed after releasing "mx_".
+  // The reason is that when "tracker" goes out of scope, we might destroy
+  // the TkoTracker it points to, which would again try to lock "mx_"
+  // (triggering an UB).
+  std::shared_ptr<TkoTracker> tracker;
   {
     std::lock_guard<std::mutex> lock(mx_);
     auto it = trackers_.find(key);
-    std::shared_ptr<TkoTracker> tracker;
     if (it == trackers_.end() || (tracker = it->second.lock()) == nullptr) {
       tracker.reset(new TkoTracker(tkoThreshold, maxSoftTkos, *this));
       auto trackerIt = trackers_.emplace(key, tracker);
@@ -206,42 +210,57 @@ void TkoTrackerMap::updateTracker(
       }
       tracker->key_ = trackerIt.first->first;
     }
-    pdstn.tracker = std::move(tracker);
   }
+  pdstn.tracker = std::move(tracker);
 }
 
 std::unordered_map<std::string, std::pair<bool, size_t>>
-TkoTrackerMap::getSuspectServers() {
+TkoTrackerMap::getSuspectServers() const {
   std::unordered_map<std::string, std::pair<bool, size_t>> result;
-  std::lock_guard<std::mutex> lock(mx_);
-  for (const auto& it : trackers_) {
-    if (auto tracker = it.second.lock()) {
-      auto failures = tracker->consecutiveFailureCount();
-      if (failures > 0) {
-        result.emplace(
-            it.first.str(), std::make_pair(tracker->isTko(), failures));
-      }
-    }
-  }
+  foreachTkoTracker(
+      [&result](folly::StringPiece key, const TkoTracker& tracker) mutable {
+        auto failures = tracker.consecutiveFailureCount();
+        if (failures > 0) {
+          result.emplace(key.str(), std::make_pair(tracker.isTko(), failures));
+        }
+      });
   return result;
 }
 
-size_t TkoTrackerMap::getSuspectServersCount() {
+size_t TkoTrackerMap::getSuspectServersCount() const {
   size_t result = 0;
-  std::lock_guard<std::mutex> lock(mx_);
-  for (const auto& it : trackers_) {
-    if (auto tracker = it.second.lock()) {
-      if (tracker->consecutiveFailureCount() > 0) {
-        ++result;
-      }
-    }
-  }
+  foreachTkoTracker(
+      [&result](folly::StringPiece, const TkoTracker& tracker) mutable {
+        if (tracker.consecutiveFailureCount() > 0) {
+          ++result;
+        }
+      });
   return result;
 }
 
-std::weak_ptr<TkoTracker> TkoTrackerMap::getTracker(folly::StringPiece key) {
-  std::lock_guard<std::mutex> lock(mx_);
-  return folly::get_default(trackers_, key);
+void TkoTrackerMap::foreachTkoTracker(
+    std::function<void(folly::StringPiece, const TkoTracker&)> func) const {
+  // We allocate a vector to delay the desctruction of TkoTrackers until after
+  // we release the lock. This is done to avoid the following race:
+  // After successfully locking the weak_ptr, we might become the last
+  // holder of the shared_ptr to TkoTracker. If that's the case, it would
+  // trigger destruction of TkoTracker, which would try to grab "mx_" and
+  // remove itself from the map.
+  // If we didn't have the lock, this would case two issues:
+  //  - We would try to lock "mx_" again from the same thread (which is UB).
+  //  - We would change "trackers_" while iterating over it.
+  std::vector<std::shared_ptr<TkoTracker>> lockedTrackers;
+  lockedTrackers.reserve(trackers_.size());
+
+  {
+    std::lock_guard<std::mutex> lock(mx_);
+    for (const auto& it : trackers_) {
+      if (auto tracker = it.second.lock()) {
+        func(it.first, *tracker);
+        lockedTrackers.emplace_back(std::move(tracker));
+      }
+    }
+  }
 }
 
 void TkoTrackerMap::removeTracker(folly::StringPiece key) noexcept {
@@ -251,6 +270,7 @@ void TkoTrackerMap::removeTracker(folly::StringPiece key) noexcept {
     trackers_.erase(it);
   }
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook

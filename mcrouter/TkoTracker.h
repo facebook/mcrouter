@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -206,7 +207,7 @@ class TkoTrackerMap {
   /**
    * @return  number of servers that recently returned error replies.
    */
-  size_t getSuspectServersCount();
+  size_t getSuspectServersCount() const;
 
   /**
    * @return  servers that recently returned error replies.
@@ -215,16 +216,15 @@ class TkoTrackerMap {
    *   }
    *   Only servers with positive number of failures will be returned.
    */
-  std::unordered_map<std::string, std::pair<bool, size_t>> getSuspectServers();
+  std::unordered_map<std::string, std::pair<bool, size_t>> getSuspectServers()
+      const;
 
   const TkoCounters& globalTkos() const {
     return globalTkos_;
   }
 
-  std::weak_ptr<TkoTracker> getTracker(folly::StringPiece key);
-
  private:
-  std::mutex mx_;
+  mutable std::mutex mx_;
   folly::StringKeyedUnorderedMap<std::weak_ptr<TkoTracker>> trackers_;
 
   // Total number of boxes marked as TKO.
@@ -232,8 +232,14 @@ class TkoTrackerMap {
 
   void removeTracker(folly::StringPiece key) noexcept;
 
+  // Thread-safe function that iterates over all tko trackers
+  void foreachTkoTracker(
+      const std::function<void(folly::StringPiece, const TkoTracker&)> func)
+      const;
+
   friend class TkoTracker;
 };
-}
-}
-} // facebook::memcache::mcrouter
+
+} // mcrouter
+} // memcache
+} // facebook
