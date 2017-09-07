@@ -72,33 +72,18 @@ inline size_t calculateIovecsTotalSize(const struct iovec* iovecs, size_t num) {
 }
 } // anonymous
 
-/**
- * A callback class for network writing.
- *
- * We use it instead of simple std::function, because it will safely cancel
- * callback event when destructed.
- */
-class AsyncMcClientImpl::WriterLoop : public folly::EventBase::LoopCallback {
- public:
-  explicit WriterLoop(AsyncMcClientImpl& client) : client_(client) {}
-  ~WriterLoop() override {}
-  void runLoopCallback() noexcept final {
-    // Delay this write until the end of current loop (e.g. after
-    // runActiveFibers() callback). That way we achieve better batching without
-    // affecting latency.
-    if (!rescheduled_) {
-      rescheduled_ = true;
-      client_.eventBase_.runInLoop(this, /* thisIteration */ true);
-      return;
-    }
-    rescheduled_ = false;
-    client_.pushMessages();
+void AsyncMcClientImpl::WriterLoop::runLoopCallback() noexcept {
+  // Delay this write until the end of current loop (e.g. after
+  // runActiveFibers() callback). That way we achieve better batching without
+  // affecting latency.
+  if (!rescheduled_) {
+    rescheduled_ = true;
+    client_.eventBase_.runInLoop(this, /* thisIteration */ true);
+    return;
   }
-
- private:
-  bool rescheduled_{false};
-  AsyncMcClientImpl& client_;
-};
+  rescheduled_ = false;
+  client_.pushMessages();
+}
 
 AsyncMcClientImpl::AsyncMcClientImpl(
     folly::VirtualEventBase& eventBase,
@@ -106,7 +91,7 @@ AsyncMcClientImpl::AsyncMcClientImpl(
     : eventBase_(eventBase.getEventBase()),
       queue_(options.accessPoint->getProtocol() != mc_ascii_protocol),
       outOfOrder_(options.accessPoint->getProtocol() != mc_ascii_protocol),
-      writer_(std::make_unique<WriterLoop>(*this)),
+      writer_(*this),
       connectionOptions_(std::move(options)),
       eventBaseDestructionCallback_(
           std::make_unique<OnEventBaseDestructionCallback>(*this)) {
@@ -220,13 +205,13 @@ void AsyncMcClientImpl::scheduleNextWriterLoop() {
   if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
       (getNumToSend() > 0 || pendingGoAwayReply_)) {
     writeScheduled_ = true;
-    eventBase_.runInLoop(writer_.get());
+    eventBase_.runInLoop(&writer_);
   }
 }
 
 void AsyncMcClientImpl::cancelWriterCallback() {
   writeScheduled_ = false;
-  writer_->cancelLoopCallback();
+  writer_.cancelLoopCallback();
 }
 
 void AsyncMcClientImpl::pushMessages() {

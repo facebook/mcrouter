@@ -141,8 +141,16 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   size_t maxInflight_{0};
 
   // Writer loop related variables.
-  class WriterLoop;
-  std::unique_ptr<WriterLoop> writer_;
+  class WriterLoop : public folly::EventBase::LoopCallback {
+   public:
+    explicit WriterLoop(AsyncMcClientImpl& client) : client_(client) {}
+    ~WriterLoop() override {}
+    void runLoopCallback() noexcept final;
+
+   private:
+    bool rescheduled_{false};
+    AsyncMcClientImpl& client_;
+  } writer_;
   bool writeScheduled_{false};
 
   // Retransmission values
