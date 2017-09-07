@@ -41,6 +41,7 @@ class McClientRequestContextBase
 
   McSerializedRequest reqContext;
   uint64_t id;
+  bool isBatchTail{false};
 
   McClientRequestContextBase(const McClientRequestContextBase&) = delete;
   McClientRequestContextBase& operator=(

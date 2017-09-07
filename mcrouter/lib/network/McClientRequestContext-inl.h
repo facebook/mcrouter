@@ -185,9 +185,29 @@ void McClientRequestContextQueue::reply(
     auto iter = getContextById(id);
     if (iter != set_.end()) {
       ctx = &(*iter);
-      assert(iter->state() == State::PENDING_REPLY_QUEUE);
-      pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(*iter));
-      set_.erase(iter);
+      if (iter->state() == State::PENDING_REPLY_QUEUE) {
+        pendingReplyQueue_.erase(pendingReplyQueue_.iterator_to(*iter));
+        set_.erase(iter);
+      } else if (iter->state() == State::WRITE_QUEUE) {
+        // We didn't get write callback yet, so need to properly handle that.
+        set_.erase(iter);
+      } else {
+        LOG_FAILURE(
+            "AsyncMcClient",
+            failure::Category::kOther,
+            "Received reply for a request in an unexpected state {}!",
+            static_cast<uint64_t>(iter->state()));
+        return;
+      }
+
+      auto oldState = ctx->state();
+      ctx->reply(std::move(r));
+      ctx->setReplyStatsContext(replyStatsContext);
+      ctx->setState(State::COMPLETE);
+
+      if (oldState == State::PENDING_REPLY_QUEUE) {
+        ctx->baton_.post();
+      }
     }
   } else {
     // First we're going to receive replies for timed out requests.
@@ -207,18 +227,18 @@ void McClientRequestContextQueue::reply(
           failure::Category::kOther,
           "Received unexpected reply from server!");
     }
-  }
 
-  if (ctx) {
-    ctx->reply(std::move(r));
-    ctx->setReplyStatsContext(replyStatsContext);
-    if (ctx->state() == State::PENDING_REPLY_QUEUE) {
-      ctx->setState(State::COMPLETE);
-      ctx->baton_.post();
-    } else {
-      // Move the request to the replied queue.
-      ctx->setState(State::REPLIED_QUEUE);
-      repliedQueue_.push_back(*ctx);
+    if (ctx) {
+      ctx->reply(std::move(r));
+      ctx->setReplyStatsContext(replyStatsContext);
+      if (ctx->state() == State::PENDING_REPLY_QUEUE) {
+        ctx->setState(State::COMPLETE);
+        ctx->baton_.post();
+      } else {
+        // Move the request to the replied queue.
+        ctx->setState(State::REPLIED_QUEUE);
+        repliedQueue_.push_back(*ctx);
+      }
     }
   }
 }

@@ -322,9 +322,10 @@ void TestClient::sendGet(
       }
       checkLogic(
           expectedResult == reply.result(),
-          "Expected {}, got {}",
+          "Expected {}, got {} for key '{}'",
           mc_res_to_string(expectedResult),
-          mc_res_to_string(reply.result()));
+          mc_res_to_string(reply.result()),
+          req.key().fullKey());
     } catch (const std::exception& e) {
       CHECK(false) << "Failed: " << e.what();
     }

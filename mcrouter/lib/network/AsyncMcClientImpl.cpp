@@ -26,6 +26,8 @@ namespace memcache {
 
 constexpr size_t kReadBufferSizeMin = 256;
 constexpr size_t kReadBufferSizeMax = 4096;
+constexpr size_t kStackIovecs = 128;
+constexpr size_t kMaxBatchSize = 24576 /* 24KB */;
 
 namespace {
 class OnEventBaseDestructionCallback : public folly::EventBase::LoopCallback {
@@ -58,6 +60,16 @@ struct GoAwayContext : public folly::AsyncTransportWrapper::WriteCallback {
     self.reset();
   }
 };
+
+inline size_t calculateIovecsTotalSize(const struct iovec* iovecs, size_t num) {
+  size_t size = 0;
+  while (num) {
+    size += iovecs->iov_len;
+    ++iovecs;
+    --num;
+  }
+  return size;
+}
 } // anonymous
 
 /**
@@ -227,6 +239,24 @@ void AsyncMcClientImpl::pushMessages() {
     requestStatusCallbacks_.onWrite(numToSend);
   }
 
+  std::array<struct iovec, kStackIovecs> iovecs;
+  size_t iovsUsed = 0;
+  size_t batchSize = 0;
+  McClientRequestContextBase* tail = nullptr;
+
+  auto sendBatchFun = [this](
+                          McClientRequestContextBase* tailReq,
+                          const struct iovec* iov,
+                          size_t iovCnt,
+                          bool last) {
+    tailReq->isBatchTail = true;
+    socket_->writev(
+        this,
+        iov,
+        iovCnt,
+        last ? folly::WriteFlags::NONE : folly::WriteFlags::CORK);
+  };
+
   while (getPendingRequestCount() != 0 && numToSend > 0 &&
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
@@ -238,11 +268,45 @@ void AsyncMcClientImpl::pushMessages() {
       debugFifo_.startMessage(MessageDirection::Sent, req.reqContext.typeId());
       debugFifo_.writeData(iov, iovcnt);
     }
-    socket_->writev(
-        this,
-        iov,
-        iovcnt,
-        numToSend == 1 ? folly::WriteFlags::NONE : folly::WriteFlags::CORK);
+
+    if (iovsUsed + iovcnt > kStackIovecs && iovsUsed) {
+      // We're out of inline iovecs, flush what we batched.
+      sendBatchFun(tail, iovecs.data(), iovsUsed, false);
+      iovsUsed = 0;
+      batchSize = 0;
+    }
+
+    if (iovcnt >= kStackIovecs || (iovsUsed == 0 && numToSend == 1)) {
+      // Req is either too big to batch or it's the last one, so just send it
+      // alone.
+      sendBatchFun(&req, iov, iovcnt, numToSend == 1);
+    } else {
+      auto size = calculateIovecsTotalSize(iov, iovcnt);
+
+      if (size + batchSize > kMaxBatchSize && iovsUsed) {
+        // We already accumulated too much data, flush what we have.
+        sendBatchFun(tail, iovecs.data(), iovsUsed, false);
+        iovsUsed = 0;
+        batchSize = 0;
+      }
+
+      if (size >= kMaxBatchSize || (iovsUsed == 0 && numToSend == 1)) {
+        // Req is either too big to batch or it's the last one, so just send it
+        // alone.
+        sendBatchFun(&req, iov, iovcnt, numToSend == 1);
+      } else {
+        memcpy(iovecs.data() + iovsUsed, iov, sizeof(struct iovec) * iovcnt);
+        iovsUsed += iovcnt;
+        batchSize += size;
+        tail = &req;
+
+        if (numToSend == 1) {
+          // This was the last request flush everything.
+          sendBatchFun(tail, iovecs.data(), iovsUsed, true);
+        }
+      }
+    }
+
     --numToSend;
   }
   if (connectionState_ == ConnectionState::UP && pendingGoAwayReply_) {
@@ -696,8 +760,13 @@ void AsyncMcClientImpl::writeSuccess() noexcept {
       connectionState_ == ConnectionState::UP ||
       connectionState_ == ConnectionState::ERROR);
   DestructorGuard dg(this);
-  auto& req = queue_.markNextAsSent();
-  req.scheduleTimeout();
+
+  bool last;
+  do {
+    auto& req = queue_.markNextAsSent();
+    last = req.isBatchTail;
+    req.scheduleTimeout();
+  } while (!last);
 
   // It is possible that we're already processing error, but still have a
   // successfull write.
@@ -723,7 +792,13 @@ void AsyncMcClientImpl::writeErr(
 
   // We're already in an error state, so all requests in pendingReplyQueue_ will
   // be replied with an error.
-  queue_.markNextAsSent();
+
+  bool last;
+  do {
+    auto& req = queue_.markNextAsSent();
+    last = req.isBatchTail;
+  } while (!last);
+
   processShutdown(errorMessage);
 }
 

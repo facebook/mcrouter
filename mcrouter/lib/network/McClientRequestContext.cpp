@@ -71,7 +71,9 @@ void McClientRequestContextBase::fireStateChangeCallbacks(
 }
 
 void McClientRequestContextBase::scheduleTimeout() {
-  batonTimeoutHandler_.scheduleTimeout(batonWaitTimeout_);
+  if (state() != ReqState::COMPLETE) {
+    batonTimeoutHandler_.scheduleTimeout(batonWaitTimeout_);
+  }
 }
 
 McClientRequestContextBase::~McClientRequestContextBase() {
@@ -173,6 +175,8 @@ McClientRequestContextBase& McClientRequestContextQueue::markNextAsSent() {
       timedOutInitializers_.push(req.initializer_);
     }
     req.canceled();
+  } else if (req.state() == State::COMPLETE) {
+    req.baton_.post();
   } else {
     assert(req.state() == State::WRITE_QUEUE);
     req.setState(State::PENDING_REPLY_QUEUE);
