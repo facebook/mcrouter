@@ -17,7 +17,6 @@
 #include "mcrouter/config.h"
 #include "mcrouter/flavor.h"
 #include "mcrouter/options.h"
-#include "mcrouter/routes/McExtraRouteHandleProvider.h"
 #include "mcrouter/routes/McrouterRouteHandle.h"
 #include "mcrouter/standalone_options.h"
 
@@ -50,11 +49,6 @@ std::unique_ptr<ConfigApi> createConfigApi(const McrouterOptions& opts) {
 
 std::string performOptionSubstitution(std::string str) {
   return str;
-}
-
-std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
-createExtraRouteHandleProvider() {
-  return std::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
 }
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(

@@ -60,9 +60,6 @@ inline LogPostprocessCallbackFunc getLogPostprocessFunc() {
 
 namespace mcrouter {
 
-template <class RouteHandleIf>
-class ExtraRouteHandleProviderIf;
-
 class CarbonRouterInstanceBase;
 class ConfigApi;
 class McrouterLogger;
@@ -129,9 +126,6 @@ inline void standalonePreInitFromCommandLineOpts(
 inline void standaloneInit(
     const McrouterOptions& opts,
     const McrouterStandaloneOptions& standaloneOpts) {}
-
-std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
-createExtraRouteHandleProvider();
 
 std::unique_ptr<McrouterLogger> createMcrouterLogger(
     CarbonRouterInstanceBase& router);

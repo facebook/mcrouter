@@ -25,6 +25,7 @@
 #include "mcrouter/routes/L1L2CacheRouteFactory.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
+#include "mcrouter/routes/McExtraRouteHandleProvider.h"
 #include "mcrouter/routes/MigrateRouteFactory.h"
 #include "mcrouter/routes/MissFailoverRoute.h"
 #include "mcrouter/routes/ModifyExptimeRoute.h"
@@ -40,7 +41,6 @@ namespace mcrouter {
 
 using McRouteHandleFactory = RouteHandleFactory<McrouterRouteHandleIf>;
 
-
 McrouterRouteHandlePtr makeWarmUpRoute(
     McRouteHandleFactory& factory,
     const folly::dynamic& json);
@@ -48,7 +48,7 @@ McrouterRouteHandlePtr makeWarmUpRoute(
 template <>
 std::unique_ptr<ExtraRouteHandleProviderIf<MemcacheRouterInfo>>
 McRouteHandleProvider<MemcacheRouterInfo>::buildExtraProvider() {
-  return createExtraRouteHandleProvider();
+  return std::make_unique<McExtraRouteHandleProvider<MemcacheRouterInfo>>();
 }
 
 template <>
