@@ -315,6 +315,13 @@ MCROUTER_OPTION_STRING(
     no_short,
     "Path of pem-style CA cert for ssl")
 
+MCROUTER_OPTION_STRING(
+    ssl_service_identity,
+    "",
+    "ssl-service-identity",
+    no_short,
+    "The service identity of the destination service when SSL is used")
+
 MCROUTER_OPTION_TOGGLE(
     enable_qos,
     false,

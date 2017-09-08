@@ -12,7 +12,11 @@
 #include <unordered_map>
 
 #include <folly/Hash.h>
+#include <folly/Singleton.h>
 #include <folly/io/async/SSLContext.h>
+#include <wangle/client/persistence/SharedMutexCacheLockGuard.h>
+#include <wangle/client/ssl/SSLSessionCacheData.h>
+#include <wangle/client/ssl/SSLSessionPersistentCache.h>
 #include <wangle/ssl/SSLCacheOptions.h>
 #include <wangle/ssl/SSLContextConfig.h>
 #include <wangle/ssl/SSLSessionCacheManager.h>
@@ -131,6 +135,31 @@ bool configureSSLContext(
   return true;
 }
 
+using TicketCacheLayer = wangle::LRUPersistentCache<
+    std::string,
+    wangle::SSLSessionCacheData,
+    folly::SharedMutex>;
+
+// a SSL session cache that keys off string
+class SSLTicketCache
+    : public wangle::SSLSessionPersistentCacheBase<std::string> {
+ public:
+  explicit SSLTicketCache(std::shared_ptr<TicketCacheLayer> cache)
+      : wangle::SSLSessionPersistentCacheBase<std::string>(std::move(cache)) {}
+
+ protected:
+  std::string getKey(const std::string& identity) const override {
+    return identity;
+  }
+};
+
+// global thread safe ticket cache
+folly::Singleton<SSLTicketCache> ticketCache([] {
+  // create cache layer of max size 100;
+  auto cacheLayer = std::make_shared<TicketCacheLayer>(100);
+  return new SSLTicketCache(std::move(cacheLayer));
+});
+
 std::shared_ptr<SSLContext> createServerSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
@@ -175,9 +204,13 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath) {
-  auto context = std::make_shared<SSLContext>();
+  auto context = std::make_shared<ClientSSLContext>();
   if (!configureSSLContext(*context, pemCertPath, pemKeyPath, pemCaPath)) {
     return nullptr;
+  }
+  auto sessionCache = ticketCache.try_get();
+  if (sessionCache) {
+    context->attachToCache(sessionCache);
   }
   return context;
 }

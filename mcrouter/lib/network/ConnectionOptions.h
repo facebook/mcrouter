@@ -116,6 +116,11 @@ struct ConnectionOptions {
    * If nullptr, compression will be disabled.
    */
   const CompressionCodecMap* compressionCodecMap{nullptr};
+
+  /**
+   * Service identity of the destination service when SSL is used.
+   */
+  std::string sslServiceIdentity;
 };
 }
 } // facebook::memcache

@@ -13,6 +13,8 @@
 
 #include <folly/Optional.h>
 #include <folly/Range.h>
+#include <folly/io/async/SSLContext.h>
+#include <wangle/client/ssl/SSLSessionCallbacks.h>
 #include <wangle/ssl/TLSTicketKeySeeds.h>
 
 namespace folly {
@@ -21,6 +23,37 @@ class SSLContext;
 
 namespace facebook {
 namespace memcache {
+
+// only purpose here is to hold onto the session cache
+class ClientSSLContext : public folly::SSLContext {
+ public:
+  ClientSSLContext() : folly::SSLContext() {}
+  virtual ~ClientSSLContext() {
+    detachFromCache();
+  }
+  void detachFromCache() {
+    if (cache_) {
+      wangle::SSLSessionCallbacks::detachCallbacksFromContext(
+          getSSLCtx(), cache_.get());
+      cache_ = nullptr;
+    }
+  }
+  void attachToCache(
+      const std::shared_ptr<wangle::SSLSessionCallbacks>& cache) {
+    detachFromCache();
+    if (cache) {
+      cache_ = cache;
+      wangle::SSLSessionCallbacks::attachCallbacksToContext(
+          getSSLCtx(), cache_.get());
+    }
+  }
+  std::shared_ptr<wangle::SSLSessionCallbacks> getCache() {
+    return cache_;
+  }
+
+ private:
+  std::shared_ptr<wangle::SSLSessionCallbacks> cache_;
+};
 
 /**
  * Manages sets of certificates on per thread basis.

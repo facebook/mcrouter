@@ -668,13 +668,7 @@ TEST(AsyncMcClient, SslSessionCache) {
       true /* useTicketKeySeeds */);
   auto constexpr nConnAttempts = 10;
 
-  for (int i = 0; i < nConnAttempts; i++) {
-    TestClient client(
-        "::1",
-        server->getListenPort(),
-        200,
-        mc_umbrella_protocol_DONOTUSE,
-        validClientSsl());
+  auto sendAndCheckRequest = [](TestClient& client, int i) {
     LOG(INFO) << "Connection attempt: " << i;
     client.sendGet("test", mc_res_found);
     client.waitForReplies();
@@ -685,11 +679,43 @@ TEST(AsyncMcClient, SslSessionCache) {
     } else {
       EXPECT_FALSE(socket->getSSLSessionReused());
     }
-    if (i == nConnAttempts - 1) {
-      client.sendGet("shutdown", mc_res_notfound);
-      client.waitForReplies();
-    }
+  };
+
+  for (int i = 0; i < nConnAttempts; i++) {
+    TestClient client(
+        "::1",
+        server->getListenPort(),
+        200,
+        mc_umbrella_protocol_DONOTUSE,
+        validClientSsl());
+    sendAndCheckRequest(client, i);
   }
+
+  // do the same test w/ service identity
+  // we should expect the first attempt to not resume
+  for (int i = 0; i < nConnAttempts; i++) {
+    TestClient client(
+        "::1",
+        server->getListenPort(),
+        200,
+        mc_umbrella_protocol_DONOTUSE,
+        validClientSsl(),
+        0,
+        0,
+        "test");
+    sendAndCheckRequest(client, i);
+  }
+
+  // shutdown the server
+  TestClient client(
+      "::1",
+      server->getListenPort(),
+      200,
+      mc_umbrella_protocol_DONOTUSE,
+      validClientSsl());
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+
   server->join();
 }
 

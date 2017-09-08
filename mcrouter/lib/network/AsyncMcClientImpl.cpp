@@ -20,6 +20,7 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/fbi/cpp/LogFailure.h"
+#include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 
 namespace facebook {
 namespace memcache {
@@ -69,6 +70,11 @@ inline size_t calculateIovecsTotalSize(const struct iovec* iovecs, size_t num) {
     --num;
   }
   return size;
+}
+
+std::string getServiceIdentity(const ConnectionOptions& opts) {
+  return opts.sslServiceIdentity.empty() ? opts.accessPoint->toHostPortString()
+                                         : opts.sslServiceIdentity;
 }
 } // anonymous
 
@@ -464,54 +470,6 @@ folly::AsyncSocket::OptionMap createSocketOptions(
 
   return options;
 }
-
-/////////////////////////////  SslSessionCache //////////////////////////////
-
-class SslSessionDestructor {
- public:
-  void operator()(SSL_SESSION* session) {
-    if (session != nullptr) {
-      SSL_SESSION_free(session);
-    }
-  }
-};
-
-using SslSessionUniquePtr = std::unique_ptr<SSL_SESSION, SslSessionDestructor>;
-
-using SslSessionCache =
-    folly::EvictingCacheMap<std::string, SslSessionUniquePtr>;
-
-SslSessionCache& sslSessionCache() {
-  constexpr size_t kCacheSize = 10000;
-  static folly::SingletonThreadLocal<SslSessionCache> cache(
-      []() { return new SslSessionCache(kCacheSize); });
-  return cache.get();
-}
-
-std::string getSessionCacheKey(const AccessPoint& ap) {
-  return ap.toHostPortString();
-}
-
-void storeSslSession(const AccessPoint& ap, SslSessionUniquePtr session) {
-  const auto& key = getSessionCacheKey(ap);
-  if (session != nullptr) {
-    sslSessionCache().set(key, std::move(session));
-  }
-}
-
-void removeSslSession(const AccessPoint& ap) {
-  const auto& key = getSessionCacheKey(ap);
-  sslSessionCache().erase(key);
-}
-
-SSL_SESSION* getSslSession(const AccessPoint& ap) {
-  const auto& key = getSessionCacheKey(ap);
-  auto it = sslSessionCache().find(key);
-  return it != sslSessionCache().end() ? it->second.get() : nullptr;
-}
-
-///////////////////////////////////////////////////////////////////////////
-
 } // anonymous namespace
 
 void AsyncMcClientImpl::attemptConnection() {
@@ -535,9 +493,16 @@ void AsyncMcClientImpl::attemptConnection() {
 
       auto sslSocket = new folly::AsyncSSLSocket(sslContext, &eventBase_);
       if (connectionOptions_.sessionCachingEnabled) {
-        /* If we have an existing session try to re-use */
-        auto* session = getSslSession(*connectionOptions_.accessPoint);
-        sslSocket->setSSLSession(session);
+        auto clientCtx =
+            std::dynamic_pointer_cast<ClientSSLContext>(sslContext);
+        if (clientCtx && clientCtx->getCache()) {
+          const auto& serviceId = getServiceIdentity(connectionOptions_);
+          sslSocket->setServiceIdentity(serviceId);
+          auto session = clientCtx->getCache()->getSSLSession(serviceId);
+          if (session) {
+            sslSocket->setSSLSession(session.release(), true);
+          }
+        }
       }
       socket_.reset(sslSocket);
     } else {
@@ -594,11 +559,6 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
       connectionOptions_.sessionCachingEnabled) {
     auto* sslSocket = socket_->getUnderlyingTransport<folly::AsyncSSLSocket>();
     assert(sslSocket != nullptr);
-    if (!sslSocket->getSSLSessionReused()) {
-      /* store the new ssl session for future re-use */
-      auto session = SslSessionUniquePtr(sslSocket->getSSLSession());
-      storeSslSession(*connectionOptions_.accessPoint, std::move(session));
-    }
   }
 
   assert(getInflightRequestCount() == 0);
@@ -619,12 +579,6 @@ void AsyncMcClientImpl::connectErr(
     const folly::AsyncSocketException& ex) noexcept {
   assert(connectionState_ == ConnectionState::CONNECTING);
   DestructorGuard dg(this);
-
-  if (connectionOptions_.sslContextProvider &&
-      connectionOptions_.sessionCachingEnabled) {
-    /* clear the ssl session from cache */
-    removeSslSession(*connectionOptions_.accessPoint);
-  }
 
   std::string errorMessage;
   if (ex.getType() == folly::AsyncSocketException::SSL_ERROR) {

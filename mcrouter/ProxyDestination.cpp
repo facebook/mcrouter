@@ -337,6 +337,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.tcpKeepAliveInterval = opts.keepalive_interval_s;
   options.writeTimeout = shortestTimeout_;
   options.sessionCachingEnabled = opts.ssl_connection_cache;
+  options.sslServiceIdentity = opts.ssl_service_identity;
   options.routerInfoName = routerInfoName_;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
