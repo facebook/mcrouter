@@ -376,6 +376,8 @@ void ProxyDestination::initializeAsyncMcClient() {
     client_ = std::move(client);
   }
 
+  client_->setFlushList(&proxy->flushList());
+
   client_->setRequestStatusCallbacks(
       [this](int pending, int inflight) {
         if (pending != 0) {

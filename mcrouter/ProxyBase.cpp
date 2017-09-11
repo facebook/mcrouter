@@ -33,6 +33,23 @@ folly::fibers::FiberManager::Options ProxyBase::getFiberManagerOptions(
   return fmOpts;
 }
 
+void ProxyBase::FlushCallback::runLoopCallback() noexcept {
+  // Always reschedlue until the end of event loop.
+  if (!rescheduled_) {
+    rescheduled_ = true;
+    proxy_.eventBase().getEventBase().runInLoop(this, true /* thisIteration */);
+    return;
+  }
+  rescheduled_ = false;
+
+  auto cbs = std::move(flushList_);
+  while (!cbs.empty()) {
+    folly::EventBase::LoopCallback* callback = &cbs.front();
+    cbs.pop_front();
+    callback->runLoopCallback();
+  }
+}
+
 } // mcrouter
 } // memcache
 } // facebook

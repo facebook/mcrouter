@@ -208,7 +208,24 @@ Proxy<RouterInfo>::Proxy(
       router().opts().client_queue_no_notify_rate,
       router().opts().client_queue_wait_threshold_us,
       &nowUs,
-      [this]() { stats().incrementSafe(client_queue_notifications_stat); });
+      [this]() { stats().incrementSafe(client_queue_notifications_stat); },
+      [ this, noFlushLoops = 0 ](bool last) mutable {
+        bool haveTasks = fiberManager().runQueueSize() != 0;
+        if (!last) {
+          // If we have tasks in fiber manager, or we have pending flushes, then
+          // we can guarantee that we won't block event loop.
+          return haveTasks || !flushList().empty();
+        }
+        if (!flushList().empty() &&
+            (!haveTasks ||
+             ++noFlushLoops == router().opts().max_no_flush_event_loops)) {
+          noFlushLoops = 0;
+          flushCallback_.setList(std::move(flushList()));
+          eventBase().getEventBase().runInLoop(
+              &flushCallback_, true /* thisIteration */);
+        }
+        return false;
+      });
 }
 
 template <class RouterInfo>

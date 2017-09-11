@@ -82,7 +82,7 @@ void AsyncMcClientImpl::WriterLoop::runLoopCallback() noexcept {
   // Delay this write until the end of current loop (e.g. after
   // runActiveFibers() callback). That way we achieve better batching without
   // affecting latency.
-  if (!rescheduled_) {
+  if (!client_.flushList_ && !rescheduled_) {
     rescheduled_ = true;
     client_.eventBase_.runInLoop(this, /* thisIteration */ true);
     return;
@@ -211,7 +211,11 @@ void AsyncMcClientImpl::scheduleNextWriterLoop() {
   if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
       (getNumToSend() > 0 || pendingGoAwayReply_)) {
     writeScheduled_ = true;
-    eventBase_.runInLoop(&writer_);
+    if (flushList_) {
+      flushList_->push_back(writer_);
+    } else {
+      eventBase_.runInLoop(&writer_);
+    }
   }
 }
 
