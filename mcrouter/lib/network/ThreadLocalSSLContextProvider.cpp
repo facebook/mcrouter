@@ -190,7 +190,7 @@ std::shared_ptr<SSLContext> createServerSSLContext(
       cfg,
       cacheOpts,
       nullptr, // external cache
-      "", // common name
+      "async-server", // session context
       nullptr); // SSL Stats
 
 #ifdef SSL_CTRL_SET_MAX_SEND_FRAGMENT
