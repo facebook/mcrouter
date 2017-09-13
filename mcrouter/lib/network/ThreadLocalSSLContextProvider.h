@@ -24,35 +24,25 @@ class SSLContext;
 namespace facebook {
 namespace memcache {
 
-// only purpose here is to hold onto the session cache
 class ClientSSLContext : public folly::SSLContext {
  public:
-  ClientSSLContext() : folly::SSLContext() {}
-  virtual ~ClientSSLContext() {
-    detachFromCache();
+  explicit ClientSSLContext(wangle::SSLSessionCallbacks& cache)
+      : cache_(cache) {
+    wangle::SSLSessionCallbacks::attachCallbacksToContext(getSSLCtx(), &cache_);
   }
-  void detachFromCache() {
-    if (cache_) {
-      wangle::SSLSessionCallbacks::detachCallbacksFromContext(
-          getSSLCtx(), cache_.get());
-      cache_ = nullptr;
-    }
+
+  virtual ~ClientSSLContext() override {
+    wangle::SSLSessionCallbacks::detachCallbacksFromContext(
+        getSSLCtx(), &cache_);
   }
-  void attachToCache(
-      const std::shared_ptr<wangle::SSLSessionCallbacks>& cache) {
-    detachFromCache();
-    if (cache) {
-      cache_ = cache;
-      wangle::SSLSessionCallbacks::attachCallbacksToContext(
-          getSSLCtx(), cache_.get());
-    }
-  }
-  std::shared_ptr<wangle::SSLSessionCallbacks> getCache() {
+
+  wangle::SSLSessionCallbacks& getCache() {
     return cache_;
   }
 
  private:
-  std::shared_ptr<wangle::SSLSessionCallbacks> cache_;
+  // In our usage, cache_ is a LeakySingleton so the raw reference is safe.
+  wangle::SSLSessionCallbacks& cache_;
 };
 
 /**

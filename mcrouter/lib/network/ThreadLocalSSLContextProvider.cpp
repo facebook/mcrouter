@@ -154,7 +154,9 @@ class SSLTicketCache
 };
 
 // global thread safe ticket cache
-folly::Singleton<SSLTicketCache> ticketCache([] {
+// TODO(jmswen) Try to come up with a cleaner approach here that doesn't require
+// leaking.
+folly::LeakySingleton<SSLTicketCache> ticketCache([] {
   // create cache layer of max size 100;
   auto cacheLayer = std::make_shared<TicketCacheLayer>(100);
   return new SSLTicketCache(std::move(cacheLayer));
@@ -204,13 +206,9 @@ std::shared_ptr<SSLContext> createClientSSLContext(
     folly::StringPiece pemCertPath,
     folly::StringPiece pemKeyPath,
     folly::StringPiece pemCaPath) {
-  auto context = std::make_shared<ClientSSLContext>();
+  auto context = std::make_shared<ClientSSLContext>(ticketCache.get());
   if (!configureSSLContext(*context, pemCertPath, pemKeyPath, pemCaPath)) {
     return nullptr;
-  }
-  auto sessionCache = ticketCache.try_get();
-  if (sessionCache) {
-    context->attachToCache(sessionCache);
   }
   return context;
 }
