@@ -51,6 +51,11 @@ class ListenSocket {
     return socketFd_;
   }
 
+  /**
+   * Set close on exec flag on or off, according to `value'.
+   */
+  void setCloseOnExec(bool value);
+
   // movable, but not copyable
   ListenSocket(ListenSocket&& other) noexcept;
   ListenSocket& operator=(ListenSocket&& other) noexcept;
