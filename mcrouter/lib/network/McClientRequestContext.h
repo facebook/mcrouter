@@ -250,6 +250,13 @@ class McClientRequestContextQueue {
   void markAsPending(McClientRequestContextBase& req);
 
   /**
+   * Peek next request that we're about to send.
+   *
+   * @return a reference to the next request in the pending queue.
+   */
+  McClientRequestContextBase& peekNextPending();
+
+  /**
    * Moves the first request from pending queue into sending queue.
    *
    * @return a reference to the request that was marked as sending.

@@ -250,12 +250,13 @@ void AsyncMcClientImpl::pushMessages() {
         iov,
         iovCnt,
         last ? folly::WriteFlags::NONE : folly::WriteFlags::CORK);
+    return connectionState_ == ConnectionState::UP;
   };
 
   while (getPendingRequestCount() != 0 && numToSend > 0 &&
          /* we might be already not UP, because of failed writev */
          connectionState_ == ConnectionState::UP) {
-    auto& req = queue_.markNextAsSending();
+    auto& req = queue_.peekNextPending();
 
     auto iov = req.reqContext.getIovs();
     auto iovcnt = req.reqContext.getIovsCount();
@@ -266,7 +267,9 @@ void AsyncMcClientImpl::pushMessages() {
 
     if (iovsUsed + iovcnt > kStackIovecs && iovsUsed) {
       // We're out of inline iovecs, flush what we batched.
-      sendBatchFun(tail, iovecs.data(), iovsUsed, false);
+      if (!sendBatchFun(tail, iovecs.data(), iovsUsed, false)) {
+        break;
+      }
       iovsUsed = 0;
       batchSize = 0;
     }
@@ -274,17 +277,21 @@ void AsyncMcClientImpl::pushMessages() {
     if (iovcnt >= kStackIovecs || (iovsUsed == 0 && numToSend == 1)) {
       // Req is either too big to batch or it's the last one, so just send it
       // alone.
+      queue_.markNextAsSending();
       sendBatchFun(&req, iov, iovcnt, numToSend == 1);
     } else {
       auto size = calculateIovecsTotalSize(iov, iovcnt);
 
       if (size + batchSize > kMaxBatchSize && iovsUsed) {
         // We already accumulated too much data, flush what we have.
-        sendBatchFun(tail, iovecs.data(), iovsUsed, false);
+        if (!sendBatchFun(tail, iovecs.data(), iovsUsed, false)) {
+          break;
+        }
         iovsUsed = 0;
         batchSize = 0;
       }
 
+      queue_.markNextAsSending();
       if (size >= kMaxBatchSize || (iovsUsed == 0 && numToSend == 1)) {
         // Req is either too big to batch or it's the last one, so just send it
         // alone.

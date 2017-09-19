@@ -148,6 +148,10 @@ void McClientRequestContextQueue::markAsPending(
   }
 }
 
+McClientRequestContextBase& McClientRequestContextQueue::peekNextPending() {
+  return pendingQueue_.front();
+}
+
 McClientRequestContextBase& McClientRequestContextQueue::markNextAsSending() {
   auto& req = pendingQueue_.front();
   pendingQueue_.pop_front();
