@@ -25,8 +25,7 @@ struct AccessPoint {
       uint16_t port = 0,
       mc_protocol_t protocol = mc_unknown_protocol,
       bool useSsl = false,
-      bool compressed = false,
-      std::string hostname = "");
+      bool compressed = false);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
@@ -37,8 +36,6 @@ struct AccessPoint {
    *                     hostPortProtocol used
    * @param defaultCompressed The is the compression config to use if it's not
    *                          specified in the string.
-   * @param hostname  Name of the host that corresponds to this access point.
-   *                  Used only for logging.
    *
    * @return shared_ptr to an AccessPoint object
    */
@@ -47,15 +44,10 @@ struct AccessPoint {
       mc_protocol_t defaultProtocol,
       bool defaultUseSsl = false,
       uint16_t portOverride = 0,
-      bool defaultCompressed = false,
-      std::string hostname = "");
+      bool defaultCompressed = false);
 
   const std::string& getHost() const {
     return host_;
-  }
-
-  const std::string& getHostname() const {
-    return hostname_;
   }
 
   uint16_t getPort() const {
@@ -93,7 +85,7 @@ struct AccessPoint {
   bool useSsl_{false};
   bool isV6_{false};
   bool compressed_{false};
-  std::string hostname_;
 };
-}
-} // facebook::memcache
+
+} // memcache
+} // facebook

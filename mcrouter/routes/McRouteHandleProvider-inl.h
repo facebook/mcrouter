@@ -224,9 +224,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
           server.stringPiece(),
           protocol,
           useSsl,
-          port,
-          enableCompression,
-          jhostnames ? jhostnames->at(i).asString() : "");
+          port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {
