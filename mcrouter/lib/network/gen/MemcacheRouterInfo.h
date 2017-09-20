@@ -30,7 +30,7 @@
 // Forward declarations
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -39,17 +39,17 @@ class RouteHandleFactory;
 namespace mcrouter {
 template <class RouterInfo>
 class ExtraRouteHandleProviderIf;
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
 class AdditionalProxyRequestLogger;
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 namespace facebook {
 namespace memcache {
@@ -75,7 +75,7 @@ using MemcacheRoutableRequests = carbon::List<
     McSetRequest,
     McTouchRequest>;
 
-} // detail
+} // namespace detail
 
 struct MemcacheRouterInfo {
   using RouteHandleIf = MemcacheRouteHandleIf;
@@ -104,5 +104,5 @@ struct MemcacheRouterInfo {
   buildExtraProvider();
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

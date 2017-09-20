@@ -110,4 +110,4 @@ struct UpdateLike<facebook::memcache::McSetRequest> {
   typedef void* Type;
 };
 
-} // carbon
+} // namespace carbon

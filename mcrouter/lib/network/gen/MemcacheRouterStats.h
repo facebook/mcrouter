@@ -203,5 +203,5 @@ MemcacheRouterStatsConfig::getStatGroup<McTouchRequest>() {
   return 16; // stat group 'touch'
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

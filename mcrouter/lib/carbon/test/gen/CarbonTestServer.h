@@ -37,7 +37,7 @@ using CarbonTestRequestList = carbon::List<
     facebook::memcache::McVersionRequest,
     test2::util::YetAnotherRequest>;
 
-} // detail
+} // namespace detail
 
 template <class OnRequest>
 class CarbonTestRequestHandler
@@ -52,5 +52,5 @@ class CarbonTestRequestHandler
             std::forward<Args>(args)...) {}
 };
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon

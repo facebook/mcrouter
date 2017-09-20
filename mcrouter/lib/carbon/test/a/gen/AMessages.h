@@ -127,7 +127,7 @@ class AnotherReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
 };
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon
 
 #include "AMessages-inl.h"

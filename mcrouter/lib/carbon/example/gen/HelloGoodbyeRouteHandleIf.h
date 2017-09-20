@@ -87,4 +87,4 @@ class HelloGoodbyeRouteHandle : public HelloGoodbyeRouteHandleIf {
   Route route_;
 };
 
-} // hellogoodbye
+} // namespace hellogoodbye

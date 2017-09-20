@@ -2042,7 +2042,7 @@ class McFlushAllReply : public carbon::ReplyCommon {
   int16_t appSpecificErrorCode_{0};
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "MemcacheMessages-inl.h"

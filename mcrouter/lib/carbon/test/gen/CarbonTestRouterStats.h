@@ -73,5 +73,5 @@ CarbonTestRouterStatsConfig::getStatGroup<test2::util::YetAnotherRequest>() {
   return 3; // stat group 'yet_another'
 }
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon

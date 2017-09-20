@@ -29,7 +29,7 @@
 // Forward declarations
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -38,9 +38,9 @@ class RouteHandleFactory;
 namespace mcrouter {
 template <class RouterInfo>
 class ExtraRouteHandleProviderIf;
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 namespace hellogoodbye {
 
@@ -48,7 +48,7 @@ namespace detail {
 
 using HelloGoodbyeRoutableRequests = carbon::List<GoodbyeRequest, HelloRequest>;
 
-} // detail
+} // namespace detail
 
 struct HelloGoodbyeRouterInfo {
   using RouteHandleIf = HelloGoodbyeRouteHandleIf;
@@ -76,4 +76,4 @@ struct HelloGoodbyeRouterInfo {
   buildExtraProvider();
 };
 
-} // hellogoodbye
+} // namespace hellogoodbye

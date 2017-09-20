@@ -52,4 +52,4 @@ HelloGoodbyeRouterStatsConfig::getStatGroup<HelloRequest>() {
   return 1; // stat group 'hello'
 }
 
-} // hellogoodbye
+} // namespace hellogoodbye

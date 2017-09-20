@@ -247,6 +247,6 @@ void ManyFields::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

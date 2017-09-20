@@ -654,7 +654,7 @@ class GoAwayRequest : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook
 
 #include "CommonMessages-inl.h"

@@ -482,5 +482,5 @@ void GoAwayRequest::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

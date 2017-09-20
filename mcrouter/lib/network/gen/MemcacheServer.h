@@ -50,7 +50,7 @@ using MemcacheRequestList = carbon::List<
     McTouchRequest,
     McVersionRequest>;
 
-} // detail
+} // namespace detail
 
 template <class OnRequest>
 class MemcacheRequestHandler
@@ -65,5 +65,5 @@ class MemcacheRequestHandler
             std::forward<Args>(args)...) {}
 };
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

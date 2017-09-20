@@ -374,5 +374,5 @@ void TestOptionalUnion::foreachMember(V&& v) const {
   }
 }
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon

@@ -150,7 +150,7 @@ class SimpleStruct {
   int32_t int32Member_{0};
 };
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon
 
 #include "BMessages-inl.h"

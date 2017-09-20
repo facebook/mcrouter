@@ -267,6 +267,6 @@ void ManyFields::visitFields(V&& v) const {
   }
 }
 
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook

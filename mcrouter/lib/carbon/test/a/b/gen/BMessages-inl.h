@@ -131,6 +131,6 @@ void YetAnotherReply::visitFields(V&& v) const {
   }
 }
 
-} // util
-} // test2
-} // carbon
+} // namespace util
+} // namespace test2
+} // namespace carbon

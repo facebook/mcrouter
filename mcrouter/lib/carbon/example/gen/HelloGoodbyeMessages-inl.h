@@ -79,4 +79,4 @@ void GoodbyeReply::visitFields(V&& v) const {
   }
 }
 
-} // hellogoodbye
+} // namespace hellogoodbye

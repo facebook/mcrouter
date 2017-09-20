@@ -357,5 +357,5 @@ using MemcacheInternalConnection = MemcacheConnectionImpl<
 using MemcacheExternalConnection =
     MemcacheConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

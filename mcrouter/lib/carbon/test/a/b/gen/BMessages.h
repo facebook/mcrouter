@@ -289,8 +289,8 @@ class YetAnotherReply : public carbon::ReplyCommon {
   carbon::Result result_{mc_res_unknown};
 };
 
-} // util
-} // test2
-} // carbon
+} // namespace util
+} // namespace test2
+} // namespace carbon
 
 #include "BMessages-inl.h"

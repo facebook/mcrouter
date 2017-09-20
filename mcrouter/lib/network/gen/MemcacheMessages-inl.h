@@ -992,5 +992,5 @@ void McFlushAllReply::visitFields(V&& v) const {
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -173,6 +173,6 @@ void YetAnotherReply::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
-} // util
-} // test2
-} // carbon
+} // namespace util
+} // namespace test2
+} // namespace carbon

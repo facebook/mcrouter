@@ -34,7 +34,7 @@ using HelloGoodbyeRequestList = carbon::List<
     facebook::memcache::McStatsRequest,
     facebook::memcache::McVersionRequest>;
 
-} // detail
+} // namespace detail
 
 template <class OnRequest>
 class HelloGoodbyeRequestHandler
@@ -50,4 +50,4 @@ class HelloGoodbyeRequestHandler
                 std::forward<Args>(args)...) {}
 };
 
-} // hellogoodbye
+} // namespace hellogoodbye

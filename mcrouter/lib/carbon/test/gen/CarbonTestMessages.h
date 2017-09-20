@@ -658,7 +658,7 @@ class TestOptionalUnion {
   uint32_t _which_{0};
 };
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon
 
 #include "CarbonTestMessages-inl.h"

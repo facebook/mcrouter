@@ -409,5 +409,5 @@ void TestOptionalUnion::deserialize(carbon::CarbonProtocolReader& reader) {
   reader.readStructEnd();
 }
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon

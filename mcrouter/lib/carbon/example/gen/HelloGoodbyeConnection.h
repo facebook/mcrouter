@@ -116,4 +116,4 @@ using HelloGoodbyeInternalConnection = HelloGoodbyeConnectionImpl<
 using HelloGoodbyeExternalConnection =
     HelloGoodbyeConnectionImpl<carbon::ExternalCarbonConnectionImpl>;
 
-} // hellogoodbye
+} // namespace hellogoodbye

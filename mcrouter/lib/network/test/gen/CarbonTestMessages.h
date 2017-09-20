@@ -349,8 +349,8 @@ class ManyFields {
   folly::IOBuf buf40_;
 };
 
-} // test
-} // memcache
-} // facebook
+} // namespace test
+} // namespace memcache
+} // namespace facebook
 
 #include "CarbonTestMessages-inl.h"

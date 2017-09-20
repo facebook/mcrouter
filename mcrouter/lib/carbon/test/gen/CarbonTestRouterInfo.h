@@ -29,7 +29,7 @@
 // Forward declarations
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -38,9 +38,9 @@ class RouteHandleFactory;
 namespace mcrouter {
 template <class RouterInfo>
 class ExtraRouteHandleProviderIf;
-} // mcrouter
-} // memcache
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 namespace carbon {
 namespace test {
@@ -53,7 +53,7 @@ using CarbonTestRoutableRequests = carbon::List<
     TestRequestStringKey,
     test2::util::YetAnotherRequest>;
 
-} // detail
+} // namespace detail
 
 struct CarbonTestRouterInfo {
   using RouteHandleIf = CarbonTestRouteHandleIf;
@@ -81,5 +81,5 @@ struct CarbonTestRouterInfo {
   buildExtraProvider();
 };
 
-} // test
-} // carbon
+} // namespace test
+} // namespace carbon
