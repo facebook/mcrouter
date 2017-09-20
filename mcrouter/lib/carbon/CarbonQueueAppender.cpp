@@ -21,7 +21,7 @@ void CarbonQueueAppenderStorage::coalesce() {
 
   canUsePreviousIov_ = false;
   nIovsUsed_ = 1; // headerBuf_ always considered used
-  storageIdx_ = kMaxHeaderLength;
+  storageIdx_ = 0;
 
   size_t newCapacity = 0;
   // coalesce() should always be triggered before writing header
