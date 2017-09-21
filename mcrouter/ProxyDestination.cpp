@@ -260,14 +260,9 @@ std::shared_ptr<ProxyDestination> ProxyDestination::create(
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
     uint64_t qosPath,
-    std::string routerInfoName) {
+    folly::StringPiece routerInfoName) {
   std::shared_ptr<ProxyDestination> ptr(new ProxyDestination(
-      proxy,
-      std::move(ap),
-      timeout,
-      qosClass,
-      qosPath,
-      std::move(routerInfoName)));
+      proxy, std::move(ap), timeout, qosClass, qosPath, routerInfoName));
   ptr->selfPtr_ = ptr;
   return ptr;
 }
@@ -298,13 +293,13 @@ ProxyDestination::ProxyDestination(
     std::chrono::milliseconds timeout,
     uint64_t qosClass,
     uint64_t qosPath,
-    std::string routerInfoName)
+    folly::StringPiece routerInfoName)
     : proxy(&proxy_),
       accessPoint_(std::move(ap)),
       shortestTimeout_(timeout),
       qosClass_(qosClass),
       qosPath_(qosPath),
-      routerInfoName_(std::move(routerInfoName)),
+      routerInfoName_(routerInfoName),
       rxmitsToCloseConnection_(
           proxy->router().opts().min_rxmit_reconnect_threshold) {
   proxy->stats().increment(num_servers_new_stat);

@@ -98,8 +98,10 @@ struct ConnectionOptions {
 
   /**
    * Name of the router that owns this connection.
+   * NOTE: Must be be a literal (constexpr), and shouldn't be used
+   * outside of mcrouter.
    */
-  std::string routerInfoName;
+  folly::StringPiece routerInfoName;
 
   /**
    * enable ssl session caching

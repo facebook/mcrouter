@@ -112,7 +112,7 @@ class IovecIterator {
 
 MessageHeader buildMsgHeader(
     const folly::AsyncTransportWrapper* transport,
-    const std::string& routerName) {
+    folly::StringPiece routerName) {
   MessageHeader header;
   header.setConnectionId(reinterpret_cast<uintptr_t>(transport));
 
@@ -152,7 +152,7 @@ MessageHeader buildMsgHeader(
         header.routerNameModifiable(),
         MessageHeader::kRouterNameMaxSize,
         "%s",
-        routerName.c_str());
+        routerName.str().c_str());
     if (res < 0) {
       LOG(ERROR) << "Error writing router name '" << routerName
                  << "' to debug fifo";
@@ -169,7 +169,7 @@ ConnectionFifo::ConnectionFifo() noexcept {}
 ConnectionFifo::ConnectionFifo(
     std::shared_ptr<Fifo> debugFifo,
     const folly::AsyncTransportWrapper* transport,
-    const std::string& routerName) noexcept
+    folly::StringPiece routerName) noexcept
     : debugFifo_(std::move(debugFifo)),
       currentMessageHeader_(buildMsgHeader(transport, routerName)) {}
 

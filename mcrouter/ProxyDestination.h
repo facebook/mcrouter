@@ -120,7 +120,7 @@ class ProxyDestination {
   std::chrono::milliseconds shortestTimeout_{0};
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
-  std::string routerInfoName_;
+  folly::StringPiece routerInfoName_;
 
   Stats stats_;
 
@@ -142,7 +142,7 @@ class ProxyDestination {
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
       uint64_t qosPath,
-      std::string routerInfoName);
+      folly::StringPiece routerInfoName);
 
   void setState(State st);
 
@@ -168,7 +168,7 @@ class ProxyDestination {
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
       uint64_t qosPath,
-      std::string routerInfoName);
+      folly::StringPiece routerInfoName);
 
   void onTkoEvent(TkoLogEvent event, mc_res_t result) const;
 

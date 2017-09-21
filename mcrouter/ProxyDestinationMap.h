@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <folly/Range.h>
 #include <folly/experimental/StringKeyedUnorderedMap.h>
 #include <folly/io/async/AsyncTimeout.h>
 
@@ -63,7 +64,7 @@ class ProxyDestinationMap {
       std::chrono::milliseconds timeout,
       uint64_t qosClass,
       uint64_t qosPath,
-      std::string routerInfoName);
+      folly::StringPiece routerInfoName);
 
   /**
    * Remove destination from both active and inactive lists
