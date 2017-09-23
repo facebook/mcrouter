@@ -27,6 +27,7 @@
 #include "mcrouter/lib/network/AsyncMcClient.h"
 #include "mcrouter/lib/network/AsyncMcServer.h"
 #include "mcrouter/lib/network/AsyncMcServerWorker.h"
+#include "mcrouter/lib/network/ReplyStatsContext.h"
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 
@@ -221,12 +222,14 @@ TestClient::TestClient(
     SSLContextProvider ssl,
     uint64_t qosClass,
     uint64_t qosPath,
-    std::string serviceIdentity)
+    std::string serviceIdentity,
+    const CompressionCodecMap* compressionCodecMap)
     : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
   ConnectionOptions opts(host, port, protocol);
   opts.writeTimeout = std::chrono::milliseconds(timeoutMs);
+  opts.compressionCodecMap = compressionCodecMap;
   if (ssl) {
     opts.sslContextProvider = std::move(ssl);
     opts.sessionCachingEnabled = true;
@@ -285,16 +288,29 @@ void TestClient::setStatusCallbacks(
 void TestClient::sendGet(
     std::string key,
     mc_res_t expectedResult,
-    uint32_t timeoutMs) {
+    uint32_t timeoutMs,
+    std::function<void(const ReplyStatsContext&)> replyStatsCallback) {
   inflight_++;
-  fm_.addTask([ key = std::move(key), expectedResult, this, timeoutMs ]() {
+  fm_.addTask([
+    key = std::move(key),
+    expectedResult,
+    replyStatsCallback = std::move(replyStatsCallback),
+    this,
+    timeoutMs
+  ]() {
     McGetRequest req(key);
     if (req.key().fullKey() == "trace_id") {
       req.setTraceId({12345, 67890});
     }
 
     try {
-      auto reply = client_->sendSync(req, std::chrono::milliseconds(timeoutMs));
+      ReplyStatsContext replyStatsContext;
+      auto reply = client_->sendSync(
+          req, std::chrono::milliseconds(timeoutMs), &replyStatsContext);
+      if (replyStatsCallback) {
+        replyStatsCallback(replyStatsContext);
+      }
+
       if (reply.result() == mc_res_found) {
         auto value = carbon::valueRangeSlow(reply);
         if (req.key().fullKey() == "empty") {
@@ -338,18 +354,25 @@ void TestClient::sendGet(
 void TestClient::sendSet(
     std::string key,
     std::string value,
-    mc_res_t expectedResult) {
+    mc_res_t expectedResult,
+    std::function<void(const ReplyStatsContext&)> replyStatsCallback) {
   inflight_++;
   fm_.addTask([
     key = std::move(key),
     value = std::move(value),
     expectedResult,
+    replyStatsCallback = std::move(replyStatsCallback),
     this
   ]() {
     McSetRequest req(key);
     req.value() = folly::IOBuf::wrapBufferAsValue(folly::StringPiece(value));
 
-    auto reply = client_->sendSync(req, std::chrono::milliseconds(200));
+    ReplyStatsContext replyStatsContext;
+    auto reply = client_->sendSync(
+        req, std::chrono::milliseconds(200), &replyStatsContext);
+    if (replyStatsCallback) {
+      replyStatsCallback(replyStatsContext);
+    }
 
     CHECK(expectedResult == reply.result())
         << "Expected: " << mc_res_to_string(expectedResult) << " got "

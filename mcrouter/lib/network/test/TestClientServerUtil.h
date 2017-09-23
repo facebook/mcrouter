@@ -28,6 +28,10 @@
 
 namespace facebook {
 namespace memcache {
+
+class CompressionCodecMap;
+struct ReplyStatsContext;
+
 namespace test {
 
 class TestServerOnRequest {
@@ -79,7 +83,8 @@ class TestServer {
       bool useDefaultVersion = false,
       size_t numThreads = 1,
       bool useTicketKeySeeds = false,
-      size_t goAwayTimeoutMs = 1000) {
+      size_t goAwayTimeoutMs = 1000,
+      const CompressionCodecMap* compressionCodecMap = nullptr) {
     std::unique_ptr<TestServer> server(new TestServer(
         outOfOrder,
         useSsl,
@@ -90,10 +95,12 @@ class TestServer {
         numThreads,
         useTicketKeySeeds,
         goAwayTimeoutMs));
-    server->run([& s = *server](AsyncMcServerWorker & worker) {
-      worker.setOnRequest(
-          MemcacheRequestHandler<OnRequest>(s.shutdownLock_, s.outOfOrder_));
-    });
+    server->run(
+        [compressionCodecMap, &s = *server](AsyncMcServerWorker& worker) {
+          worker.setCompressionCodecMap(compressionCodecMap);
+          worker.setOnRequest(MemcacheRequestHandler<OnRequest>(
+              s.shutdownLock_, s.outOfOrder_));
+        });
     return server;
   }
 
@@ -164,7 +171,8 @@ class TestClient {
       SSLContextProvider ssl = noSsl(),
       uint64_t qosClass = 0,
       uint64_t qosPath = 0,
-      std::string serviceIdentity = "");
+      std::string serviceIdentity = "",
+      const CompressionCodecMap* compressionCodecMap = nullptr);
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
     client_->setThrottle(maxInflight, maxOutstanding);
@@ -174,10 +182,19 @@ class TestClient {
       std::function<void()> onUp,
       std::function<void(AsyncMcClient::ConnectionDownReason)> onDown);
 
-  void
-  sendGet(std::string key, mc_res_t expectedResult, uint32_t timeoutMs = 200);
+  void sendGet(
+      std::string key,
+      mc_res_t expectedResult,
+      uint32_t timeoutMs = 200,
+      std::function<void(const ReplyStatsContext&)> replyStatsCallback =
+          nullptr);
 
-  void sendSet(std::string key, std::string value, mc_res_t expectedResult);
+  void sendSet(
+      std::string key,
+      std::string value,
+      mc_res_t expectedResult,
+      std::function<void(const ReplyStatsContext&)> replyStatsCallback =
+          nullptr);
 
   void sendVersion(std::string expectedVersion);
 
