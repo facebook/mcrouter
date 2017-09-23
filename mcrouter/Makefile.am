@@ -152,6 +152,7 @@ libmcroutercore_a_SOURCES = \
   routes/ShadowRouteIf.h \
   routes/ShardHashFunc.cpp \
   routes/ShardHashFunc.h \
+  routes/ShardSelectionRouteFactory.h \
   routes/ShardSplitRoute.cpp \
   routes/ShardSplitRoute.h \
   routes/ShardSplitter.cpp \
