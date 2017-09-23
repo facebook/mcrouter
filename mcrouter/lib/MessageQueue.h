@@ -57,27 +57,18 @@ class Notifier {
   }
 
   bool shouldNotify() noexcept {
-    return state_.exchange(State::NOTIFIED, std::memory_order_acq_rel) ==
-        State::EMPTY;
+    return (state_.exchange(State::NOTIFIED) == State::EMPTY);
   }
 
   bool shouldNotifyRelaxed() noexcept;
 
-  // In contrast to shouldNotify()/shouldNotifyRelaxed(), it is only safe to
-  // call drainWhileNonEmpty() from a single thread.
   template <class F>
   void drainWhileNonEmpty(F&& drainFunc) {
-    State expected;
+    auto expected = State::READING;
     do {
-      expected = State::READING;
-      state_.store(State::READING, std::memory_order_release);
+      state_ = State::READING;
       drainFunc();
-    } while (state_.load(std::memory_order_acquire) != State::READING ||
-             !state_.compare_exchange_strong(
-                 expected,
-                 State::EMPTY,
-                 std::memory_order_acq_rel,
-                 std::memory_order_acquire));
+    } while (!state_.compare_exchange_strong(expected, State::EMPTY));
 
     waitStart_ = nowFunc_();
   }
