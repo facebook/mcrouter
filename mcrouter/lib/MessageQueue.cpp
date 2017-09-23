@@ -15,12 +15,10 @@ namespace memcache {
 Notifier::Notifier(
     size_t noNotifyRate,
     int64_t waitThreshold,
-    NowUsecFunc nowFunc,
-    std::function<bool(bool)> postDrainCallback) noexcept
+    NowUsecFunc nowFunc) noexcept
     : noNotifyRate_(noNotifyRate),
       waitThreshold_(waitThreshold),
       nowFunc_(nowFunc),
-      postDrainCallback_(std::move(postDrainCallback)),
       lastTimeUsec_(nowFunc_()),
       state_(State::EMPTY) {}
 

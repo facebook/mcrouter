@@ -226,15 +226,6 @@ MCROUTER_OPTION_INTEGER(
     "set TCP KEEPALIVE idle parameter in seconds")
 
 MCROUTER_OPTION_INTEGER(
-    int,
-    max_no_flush_event_loops,
-    5,
-    "max-no-flush-event-loops",
-    no_short,
-    "Maximum number of non-blocking event loops before we flush batched "
-    "requests")
-
-MCROUTER_OPTION_INTEGER(
     unsigned int,
     reset_inactive_connection_interval,
     60000,

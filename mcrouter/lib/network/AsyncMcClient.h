@@ -38,13 +38,9 @@ struct ReplyStatsContext;
 class AsyncMcClient {
  public:
   using ConnectionDownReason = AsyncMcClientImpl::ConnectionDownReason;
-  using FlushList = AsyncMcClientImpl::FlushList;
 
   AsyncMcClient(folly::EventBase& eventBase, ConnectionOptions options);
   AsyncMcClient(folly::VirtualEventBase& eventBase, ConnectionOptions options);
-  ~AsyncMcClient() {
-    base_->setFlushList(nullptr);
-  }
 
   /**
    * Close connection and fail all outstanding requests immediately.
@@ -153,14 +149,6 @@ class AsyncMcClient {
    */
   template <class Request>
   double getDropProbability() const;
-
-  /**
-   * Set external queue for managing flush callbacks. By default we'll use
-   * EventBase as a manager of these callbacks.
-   */
-  void setFlushList(FlushList* flushList) {
-    base_->setFlushList(flushList);
-  }
 
  private:
   std::shared_ptr<AsyncMcClientImpl> base_;

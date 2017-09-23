@@ -42,18 +42,11 @@ class Notifier {
    *   If 0, this logic is disabled.
    *
    * @param nowFunc  Function that returns current time in us.
-   *
-   * @param postDrainCallback  Callback to be called after drainig a queue.
-   *   As an argument it will be passed false if we're still draining and false
-   *   if we're out of drain loop. It should return true if it can guarantee
-   *   that the current event_base_loop won't block, false otherwise. The return
-   *   value is used as a hint for avoiding unnecessary notifications.
    */
   Notifier(
       size_t noNotifyRate,
       int64_t waitThresholdUs,
-      NowUsecFunc nowFunc,
-      std::function<bool(bool)> postDrainCallback = nullptr) noexcept;
+      NowUsecFunc nowFunc) noexcept;
 
   void bumpMessages() noexcept {
     ++curMessages_;
@@ -75,25 +68,17 @@ class Notifier {
   template <class F>
   void drainWhileNonEmpty(F&& drainFunc) {
     State expected;
-    bool nonBlockingLoop;
-    // Drain queue and update state to EMPTY. Note, as an optimization, if we
-    // know that the loop is non-blocking, we don't mark it as empty to avoid
-    // unnecessary client notifications.
     do {
       expected = State::READING;
       state_.store(State::READING, std::memory_order_release);
       drainFunc();
-      nonBlockingLoop = postDrainCallback_ ? postDrainCallback_(false) : false;
     } while (state_.load(std::memory_order_acquire) != State::READING ||
-             (!nonBlockingLoop &&
-              !state_.compare_exchange_strong(
-                  expected,
-                  State::EMPTY,
-                  std::memory_order_acq_rel,
-                  std::memory_order_acquire)));
-    if (postDrainCallback_) {
-      postDrainCallback_(true);
-    }
+             !state_.compare_exchange_strong(
+                 expected,
+                 State::EMPTY,
+                 std::memory_order_acq_rel,
+                 std::memory_order_acquire));
+
     waitStart_ = nowFunc_();
   }
 
@@ -107,7 +92,6 @@ class Notifier {
   const size_t noNotifyRate_;
   const int64_t waitThreshold_;
   const NowUsecFunc nowFunc_;
-  std::function<bool(bool)> postDrainCallback_;
   int64_t lastTimeUsec_;
   size_t curMessages_{0};
 
@@ -146,8 +130,6 @@ class MessageQueue {
    * @param nowFunc  Function that returns current time in us.
    * @param notifyCallback  Called every time after a notification
    *   event is posted.
-   * @param postDrainCallback  Callback that will be called during the queue
-   *   drain phase. See Notifier for more details.
    */
   MessageQueue(
       size_t capacity,
@@ -155,15 +137,10 @@ class MessageQueue {
       size_t noNotifyRate,
       int64_t waitThreshold,
       Notifier::NowUsecFunc nowFunc,
-      std::function<void()> notifyCallback,
-      std::function<bool(bool)> postDrainCallback = nullptr)
+      std::function<void()> notifyCallback)
       : queue_(capacity),
         onMessage_(std::move(onMessage)),
-        notifier_(
-            noNotifyRate,
-            waitThreshold,
-            nowFunc,
-            std::move(postDrainCallback)),
+        notifier_(noNotifyRate, waitThreshold, nowFunc),
         handler_(*this),
         notifyCallback_(std::move(notifyCallback)) {
     efd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);

@@ -48,10 +48,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
     SERVER_GONE_AWAY,
   };
 
-  using FlushList = boost::intrusive::list<
-      folly::EventBase::LoopCallback,
-      boost::intrusive::constant_time_size<false>>;
-
   static std::shared_ptr<AsyncMcClientImpl> create(
       folly::VirtualEventBase& eventBase,
       ConnectionOptions options);
@@ -94,10 +90,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
 
   template <class Request>
   double getDropProbability() const;
-
-  void setFlushList(FlushList* flushList) {
-    flushList_ = flushList;
-  }
 
  private:
   using ParserT = ClientMcParser<AsyncMcClientImpl>;
@@ -160,7 +152,6 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
     AsyncMcClientImpl& client_;
   } writer_;
   bool writeScheduled_{false};
-  FlushList* flushList_{nullptr};
 
   // Retransmission values
   uint32_t lastRetrans_{0}; // last known value of the no. of retransmissions
