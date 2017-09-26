@@ -38,6 +38,21 @@ class RouteHandleFactory;
 
 namespace mcrouter {
 
+namespace detail {
+
+// Append number of destinations to the name of the route handle.
+// That's useful for us to just failover LeaseSets when then number of
+// failover targets didn't change.
+inline std::string getFailoverRouteName(std::string name, size_t numTargets) {
+  if (name.empty()) {
+    return "";
+  }
+  return folly::to<std::string>(
+      std::move(name), ":failover_targets=", numTargets);
+}
+
+} // namespace detail
+
 /**
  * Sends the same request sequentially to each destination in the list in order,
  * until the first non-error reply.  If all replies result in errors, returns
@@ -75,7 +90,7 @@ class FailoverRoute {
       bool enableLeasePairing,
       std::string name,
       const folly::dynamic& policyConfig)
-      : name_(std::move(name)),
+      : name_(detail::getFailoverRouteName(std::move(name), targets.size())),
         targets_(std::move(targets)),
         failoverErrors_(std::move(failoverErrors)),
         rateLimiter_(std::move(rateLimiter)),
@@ -105,7 +120,11 @@ class FailoverRoute {
       auto mutReq = req;
       mutReq.leaseToken() = item->originalToken;
       proxy.stats().increment(redirected_lease_set_count_stat);
-      assert(targets_.size() > item->routeHandleChildIndex);
+      if (targets_.size() <= item->routeHandleChildIndex) {
+        McLeaseSetReply errorReply(mc_res_local_error);
+        errorReply.message() = "LeaseSet failover destination out-of-range.";
+        return errorReply;
+      }
       return targets_[item->routeHandleChildIndex]->route(mutReq);
     }
 
