@@ -36,6 +36,8 @@ libmcrouter_a_SOURCES = \
   Operation.h \
   OperationTraits.h \
   Ref.h \
+  RendezvousHashFunc.cpp \
+  RendezvousHashFunc.h \
   Reply.h \
   RouteHandleTraverser.h \
   SelectionRouteFactory.h \

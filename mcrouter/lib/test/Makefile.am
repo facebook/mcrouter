@@ -8,6 +8,7 @@ mcrouter_lib_test_SOURCES = \
   Crc32HashTest.cpp \
   MigrateRouteTest.cpp \
   RandomRouteTest.cpp \
+  RendezvousHashTest.cpp \
   RouteHandleTest.cpp \
   WeightedCh3HashFuncTest.cpp
 
