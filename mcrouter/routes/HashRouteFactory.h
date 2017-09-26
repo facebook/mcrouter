@@ -14,6 +14,7 @@
 #include "mcrouter/lib/Ch3HashFunc.h"
 #include "mcrouter/lib/Crc32HashFunc.h"
 #include "mcrouter/lib/HashSelector.h"
+#include "mcrouter/lib/RendezvousHashFunc.h"
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
@@ -81,6 +82,18 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
   } else if (funcType == ConstShardHashFunc::type()) {
     return createHashRoute<RouterInfo, ConstShardHashFunc>(
         std::move(rh), std::move(salt), ConstShardHashFunc(n));
+  } else if (funcType == RendezvousHashFunc::type()) {
+    // Construct a list of endpoints
+    std::vector<std::string> endpoints;
+    endpoints.reserve(rh.size());
+    for (const auto& handle : rh) {
+      endpoints.push_back(handle->routeName());
+    }
+
+    return createHashRoute<RouterInfo, RendezvousHashFunc>(
+        std::move(rh),
+        std::move(salt),
+        RendezvousHashFunc(std::move(endpoints)));
   } else if (funcType == "Latest") {
     return createLatestRoute<RouterInfo>(json, std::move(rh), threadId);
   }
