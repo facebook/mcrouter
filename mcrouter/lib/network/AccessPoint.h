@@ -81,7 +81,7 @@ struct AccessPoint {
  private:
   std::string host_;
   uint16_t port_;
-  mc_protocol_t protocol_;
+  mc_protocol_t protocol_ : 8;
   bool useSsl_{false};
   bool isV6_{false};
   bool compressed_{false};
