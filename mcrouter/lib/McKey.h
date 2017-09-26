@@ -20,13 +20,15 @@ namespace facebook {
 namespace memcache {
 
 /**
- * Checks whether the given memcache key is valid.
+ * Checks whether the given key is valid.
  * The key must satisfy:
  *   1) The length should be nonzero.
  *   2) The length should be at most MC_KEY_MAX_LEN.
- *   3) There should be no spaces or control characters.
+ *   3) If a memcache key is being checked, as indicated by the template
+ *      parameter, there should be no spaces or control characters.
  */
-inline mc_req_err_t isKeyValid(folly::StringPiece key) {
+template <bool DoSpaceAndCtrlCheck>
+mc_req_err_t isKeyValid(folly::StringPiece key) {
   if (key.empty()) {
     return mc_req_err_no_key;
   }
@@ -35,14 +37,17 @@ inline mc_req_err_t isKeyValid(folly::StringPiece key) {
     return mc_req_err_key_too_long;
   }
 
-  for (auto c : key) {
-    // iscntrl(c) || isspace(c)
-    if ((unsigned)c <= 0x20 || (unsigned)c == 0x7F) {
-      return mc_req_err_space_or_ctrl;
+  if (DoSpaceAndCtrlCheck) {
+    for (auto c : key) {
+      // iscntrl(c) || isspace(c)
+      if ((unsigned)c <= 0x20 || (unsigned)c == 0x7F) {
+        return mc_req_err_space_or_ctrl;
+      }
     }
   }
 
   return mc_req_err_valid;
 }
-}
-}
+
+} // memcache
+} // facebook
