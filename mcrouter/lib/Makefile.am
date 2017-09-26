@@ -109,7 +109,7 @@ libmcrouter_a_SOURCES = \
   fbi/sfrlock.h \
   fbi/time.h \
   fbi/util.h \
-  mc/msg.c \
+  mc/msg.cpp \
   mc/msg.h \
   mc/protocol.h \
   mc/umbrella.c \
