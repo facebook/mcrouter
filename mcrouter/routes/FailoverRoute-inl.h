@@ -72,11 +72,17 @@ makeFailoverRouteLeastFailures(
 template <
     class RouterInfo,
     template <class...> class RouteHandle,
+    typename FailoverPolicyT,
     class... Args>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
     const folly::dynamic& json,
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
+    const folly::dynamic& policyConfig,
     Args&&... args) {
+  if (children.size() <= 1) {
+    return makeNullOrSingletonRoute(std::move(children));
+  }
+
   FailoverErrorsSettings failoverErrors;
   std::unique_ptr<FailoverRateLimiter> rateLimiter;
   bool failoverTagging = false;
@@ -107,6 +113,28 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
     if (auto jFailoverLimit = json.get_ptr("failover_limit")) {
       rateLimiter = std::make_unique<FailoverRateLimiter>(*jFailoverLimit);
     }
+  }
+
+  return makeRouteHandleWithInfo<RouterInfo, RouteHandle, FailoverPolicyT>(
+      std::move(children),
+      std::move(failoverErrors),
+      std::move(rateLimiter),
+      failoverTagging,
+      enableLeasePairing,
+      std::move(name),
+      policyConfig,
+      std::forward<Args>(args)...);
+}
+
+template <
+    class RouterInfo,
+    template <class...> class RouteHandle,
+    class... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
+    Args&&... args) {
+  if (json.isObject()) {
     if (auto jFailoverPolicy = json.get_ptr("failover_policy")) {
       checkLogic(
           jFailoverPolicy->isObject(),
@@ -116,27 +144,23 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteDefault(
           jPolicyType != nullptr,
           "Failover: failover_policy object is missing 'type' field");
       if (parseString(*jPolicyType, "type") == "LeastFailuresPolicy") {
-        return makeFailoverRouteLeastFailures<RouterInfo, RouteHandle>(
+        using FailoverPolicyT =
+            FailoverLeastFailuresPolicy<typename RouterInfo::RouteHandleIf>;
+        return makeFailoverRouteWithPolicy<
+            RouterInfo,
+            RouteHandle,
+            FailoverPolicyT>(
+            json,
             std::move(children),
-            std::move(failoverErrors),
-            std::move(rateLimiter),
-            failoverTagging,
-            enableLeasePairing,
-            std::move(name),
             *jFailoverPolicy,
             std::forward<Args>(args)...);
       }
     }
   }
-  return makeFailoverRouteInOrder<RouterInfo, RouteHandle>(
-      std::move(children),
-      std::move(failoverErrors),
-      std::move(rateLimiter),
-      failoverTagging,
-      enableLeasePairing,
-      std::move(name),
-      nullptr,
-      std::forward<Args>(args)...);
+  using FailoverPolicyT =
+      FailoverInOrderPolicy<typename RouterInfo::RouteHandleIf>;
+  return makeFailoverRouteWithPolicy<RouterInfo, RouteHandle, FailoverPolicyT>(
+      json, std::move(children), nullptr, std::forward<Args>(args)...);
 }
 
 } // mcrouter

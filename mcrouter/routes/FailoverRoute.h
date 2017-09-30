@@ -199,7 +199,9 @@ class FailoverRoute {
       }
     };
 
-    auto normalReply = targets_[0]->route(req);
+    auto iter = failoverPolicy_.begin();
+    auto normalReply = iter->route(req);
+    ++iter;
     childIndex = 0;
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();
@@ -227,6 +229,7 @@ class FailoverRoute {
     // Failover
     return fiber_local<RouterInfo>::runWithLocals(
         [this,
+         iter,
          &req,
          &proxy,
          &normalReply,
@@ -247,7 +250,7 @@ class FailoverRoute {
             return failoverReply;
           };
 
-          auto cur = failoverPolicy_.begin();
+          auto cur = iter;
           // set the index of the child that generated the reply.
           SCOPE_EXIT {
             childIndex = cur.getTrueIndex();

@@ -67,8 +67,7 @@ class FailoverInOrderPolicy {
   };
 
   Iterator begin() const {
-    // Zeroth child has already been tried
-    return Iterator(children_, 1);
+    return Iterator(children_, 0);
   }
 
   Iterator end() const {
@@ -129,9 +128,8 @@ class FailoverLeastFailuresPolicy {
    public:
     Iterator(
         FailoverLeastFailuresPolicy<RouteHandleIf>& failoverPolicy,
-        std::vector<size_t> order,
         size_t id)
-        : policy_(failoverPolicy), order_(std::move(order)), id_(id) {}
+        : policy_(failoverPolicy), id_(id) {}
 
     size_t getTrueIndex() const {
       return order_[id_];
@@ -139,6 +137,9 @@ class FailoverLeastFailuresPolicy {
 
    private:
     void increment() {
+      if (id_ == 0) {
+        order_ = std::move(policy_.getLeastFailureRouteIndices());
+      }
       ++id_;
     }
 
@@ -147,36 +148,36 @@ class FailoverLeastFailuresPolicy {
     }
 
     ChildProxy dereference() const {
-      return ChildProxy(policy_, order_[id_]);
+      return ChildProxy(policy_, id_ == 0 ? id_ : order_[id_]);
     }
 
     friend class boost::iterator_core_access;
 
     FailoverLeastFailuresPolicy<RouteHandleIf>& policy_;
-    const std::vector<size_t> order_;
+    std::vector<size_t> order_;
     size_t id_;
   };
 
   Iterator begin() {
-    return Iterator(*this, getLeastFailureRouteIndices(), 0);
+    return Iterator(*this, 0);
   }
 
   Iterator end() {
-    return Iterator(*this, {}, maxTries_ - 1);
+    return Iterator(*this, maxTries_);
   }
 
  private:
   std::vector<size_t> getLeastFailureRouteIndices() const {
     std::vector<size_t> indices;
-    // Start at i = 1 since we don't consider first child
-    for (size_t i = 1; i < recentErrorCount_.size(); ++i) {
+    for (size_t i = 0; i < recentErrorCount_.size(); ++i) {
       indices.push_back(i);
     }
+    // 0th index always goes first.
     std::stable_sort(
-        indices.begin(), indices.end(), [this](size_t a, size_t b) {
+        indices.begin() + 1, indices.end(), [this](size_t a, size_t b) {
           return recentErrorCount_[a] < recentErrorCount_[b];
         });
-    indices.resize(maxTries_ - 1);
+    indices.resize(maxTries_);
 
     return indices;
   }
