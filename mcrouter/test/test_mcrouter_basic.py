@@ -732,6 +732,99 @@ class TestMcrouterBasicL1L2(McrouterTestCase):
         self.assertEqual(mcr.get("key1"), "value1")
         self.assertEqual(self.l1.get("key1"), "value1")
 
+
+class TestMcrouterBasicL1L2SizeSplit(McrouterTestCase):
+    config = './mcrouter/test/test_basic_l1_l2_sizesplit.json'
+    config_bothset = './mcrouter/test/test_basic_l1_l2_sizesplit_bothset.json'
+    extra_args = []
+    MC_MSG_FLAG_SIZE_SPLIT = 0x20
+
+    def setUp(self):
+        # The order here corresponds to the order of hosts in the .json
+        self.l1 = self.add_server(Memcached())
+        self.l2 = self.add_server(Memcached())
+
+    def get_mcrouter(self, config):
+        return self.add_mcrouter(config, extra_args=self.extra_args)
+
+    def test_l1_l2_sizesplit_get(self):
+        """
+        Basic functionality tests. Sets go to the right place, gets route properly
+        """
+        mcr = self.get_mcrouter(self.config)
+
+        # get a non-existent key
+        self.assertFalse(mcr.get("key1"))
+
+        # set small key
+        mcr.set("key1", "value1")
+        # small key should be normal value in L1
+        self.assertEqual(self.l1.get("key1"), "value1")
+        # small key shouldn't be in L2
+        self.assertFalse(self.l2.get("key1"))
+
+        # perform a get and check the response
+        self.assertEqual(mcr.get("key1"), "value1")
+
+        # key should end up split
+        value2 = "foo" * 200
+        mcr.set("key2", value2)
+
+        # response should be zero bytes and have the flag
+        l1res = self.l1.get("key2", return_all_info=True)
+        self.assertEqual(l1res["value"], "")
+        self.assertTrue(l1res["flags"] & self.MC_MSG_FLAG_SIZE_SPLIT)
+        self.assertNotEqual(self.l1.get("key2"), "value1")
+        # full value on L2
+        self.assertEqual(self.l2.get("key2"), value2)
+
+        # get should run the internal redirect, give us L2 value
+        self.assertEqual(mcr.get("key2"), value2)
+        self.assertNotEqual(mcr.get("key2"), "")
+
+    def test_l1_l2_sizesplit_bothget(self):
+        """
+        Basic functionality. Allow full setst to both pools.
+        """
+        mcr = self.get_mcrouter(self.config_bothset)
+
+        self.assertFalse(mcr.get("key1"))
+
+        # small key should only exist in L1
+        mcr.set("key1", "value1")
+
+        # small key should be normal value in L1
+        self.assertEqual(self.l1.get("key1"), "value1")
+        # small key shouldn't be in L2
+        self.assertFalse(self.l2.get("key1"), "value1")
+
+        # perform a get and check the response
+        self.assertEqual(mcr.get("key1"), "value1")
+
+        # key should end up split. end up in both pools.
+        value2 = "foo" * 200
+        mcr.set("key2", value2)
+        # The write to L2 is async and we're checking it right away.
+        time.sleep(1)
+
+        self.assertEqual(self.l1.get("key2"), value2)
+        self.assertEqual(self.l2.get("key2"), value2)
+        self.assertEqual(mcr.get("key2"), value2)
+
+    def test_l1_l2_get_l2_down(self):
+        """
+        If L2 is down, do we get expected errors.
+        """
+        mcr = self.get_mcrouter(self.config)
+
+        value = "foob" * 200
+        mcr.set("key", value)
+
+        self.l2.terminate()
+        self.assertEqual(self.l1.get("key"), "")
+        self.assertFalse(mcr.get("key"))
+
+
 class TestMcrouterPortOverride(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_portoverride.json'
 

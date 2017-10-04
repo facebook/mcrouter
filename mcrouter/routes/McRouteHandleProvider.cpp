@@ -23,6 +23,7 @@
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/HostIdRouteFactory.h"
 #include "mcrouter/routes/L1L2CacheRouteFactory.h"
+#include "mcrouter/routes/L1L2SizeSplitRouteFactory.h"
 #include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoggingRoute.h"
 #include "mcrouter/routes/McExtraRouteHandleProvider.h"
@@ -70,6 +71,7 @@ McRouteHandleProvider<MemcacheRouterInfo>::buildRouteMap() {
        }},
       {"HostIdRoute", &makeHostIdRoute<MemcacheRouterInfo>},
       {"L1L2CacheRoute", &makeL1L2CacheRoute<MemcacheRouterInfo>},
+      {"L1L2SizeSplitRoute", &makeL1L2SizeSplitRoute<MemcacheRouterInfo>},
       {"LatestRoute", &makeLatestRoute<MemcacheRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<MemcacheRouterInfo>},
       {"MigrateRoute", &makeMigrateRoute<MemcacheRouterInfo>},
