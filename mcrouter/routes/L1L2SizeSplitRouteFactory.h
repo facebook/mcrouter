@@ -49,11 +49,11 @@ typename RouterInfo::RouteHandlePtr makeL1L2SizeSplitRoute(
   size_t threshold = json["threshold"].getInt();
 
   bool bothFullSet = false;
-  if (json.count("bothFullSet")) {
+  if (json.count("both_full_set")) {
     checkLogic(
-        json["bothFullSet"].isBool(),
-        "L1L2SizeSplitRoute: bothFullSet is not an boolean");
-    bothFullSet = json["bothFullSet"].getBool();
+        json["both_full_set"].isBool(),
+        "L1L2SizeSplitRoute: both_full_set is not a boolean");
+    bothFullSet = json["both_full_set"].getBool();
   }
 
   return detail::makeL1L2SizeSplitRoute<RouterInfo>(

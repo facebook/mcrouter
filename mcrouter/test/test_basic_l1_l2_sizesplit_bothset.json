@@ -12,6 +12,6 @@
     "l1": "PoolRoute|A",
     "l2": "PoolRoute|B",
     "threshold": 8,
-    "bothFullSet": true
+    "both_full_set": true
   }
 }
