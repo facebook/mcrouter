@@ -500,8 +500,6 @@ class CarbonProtocolWriter {
       appender_.write(byte);
       val >>= 7;
     }
-    facebook::memcache::checkRuntime(
-        val < 0x80, "writeVarint() called on invalid varint");
     appender_.write(static_cast<uint8_t>(val));
   }
 
