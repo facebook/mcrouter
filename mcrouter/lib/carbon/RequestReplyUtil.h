@@ -85,14 +85,27 @@ using GetRequestReplyPairs =
     typename detail::GetRequestReplyPairsImpl<RequestList>::type;
 
 template <typename Reply>
-typename std::enable_if<detail::HasMessage<Reply>::value>::type
-setMessageIfPresent(Reply& reply, std::string msg) {
+typename std::enable_if_t<detail::HasMessage<Reply>::value> setMessageIfPresent(
+    Reply& reply,
+    std::string msg) {
   reply.message() = std::move(msg);
 }
 
 template <typename Reply>
-typename std::enable_if<!detail::HasMessage<Reply>::value>::type
+typename std::enable_if_t<!detail::HasMessage<Reply>::value>
 setMessageIfPresent(Reply&, std::string) {}
+
+template <typename Reply>
+typename std::enable_if_t<detail::HasMessage<Reply>::value, folly::StringPiece>
+getMessage(const Reply& reply) {
+  return reply.message();
+}
+
+template <typename Reply>
+typename std::enable_if_t<!detail::HasMessage<Reply>::value, folly::StringPiece>
+getMessage(const Reply&) {
+  return folly::StringPiece{};
+}
 
 namespace detail {
 inline folly::IOBuf* bufPtr(folly::Optional<folly::IOBuf>& buf) {
