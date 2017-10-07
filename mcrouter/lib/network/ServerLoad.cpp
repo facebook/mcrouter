@@ -22,9 +22,8 @@ constexpr uint32_t kMaxRawLoad = kPercentLoadNormalizer * 100;
 
 } // anonymous namespace
 
-ServerLoad::ServerLoad(uint32_t rawLoad) noexcept : load_(rawLoad) {
-  assert(load_ <= kMaxRawLoad);
-}
+ServerLoad::ServerLoad(uint32_t rawLoad) noexcept
+    : load_(rawLoad > kMaxRawLoad ? 0 : rawLoad) {}
 
 /* static */
 ServerLoad ServerLoad::fromPercentLoad(double percentLoad) noexcept {
