@@ -121,6 +121,6 @@ size_t ProxyConfig<RouterInfo>::calcNumClients() const {
   }
   return result;
 }
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

@@ -141,6 +141,6 @@ class ProxyDestinationMap {
    */
   void scheduleTimer(bool initialAttempt);
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

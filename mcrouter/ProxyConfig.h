@@ -71,18 +71,21 @@ class ProxyConfig {
   size_t calcNumClients() const;
 
  private:
+  // This map (accessPoints_) needs to be destroyed as the last object in the
+  // config (after all RouteHandles) because its keys are being referenced
+  // by object in the Config.
+  folly::StringKeyedUnorderedMap<
+      std::vector<std::shared_ptr<const AccessPoint>>>
+      accessPoints_;
+  folly::StringKeyedUnorderedMap<
+      std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>>
+      pools_;
   std::shared_ptr<ProxyRoute<RouterInfo>> proxyRoute_;
   std::shared_ptr<ServiceInfo<RouterInfo>> serviceInfo_;
   std::string configMd5Digest_;
   folly::StringKeyedUnorderedMap<
       std::shared_ptr<typename RouterInfo::RouteHandleIf>>
       asyncLogRoutes_;
-  folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>>
-      pools_;
-  folly::StringKeyedUnorderedMap<
-      std::vector<std::shared_ptr<const AccessPoint>>>
-      accessPoints_;
 
   /**
    * Parses config and creates ProxyRoute
@@ -97,8 +100,8 @@ class ProxyConfig {
 
   friend class ProxyConfigBuilder;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ProxyConfig-inl.h"

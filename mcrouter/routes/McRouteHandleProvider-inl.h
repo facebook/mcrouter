@@ -221,10 +221,7 @@ McRouteHandleProvider<RouterInfo>::makePool(
         continue;
       }
       auto ap = AccessPoint::create(
-          server.stringPiece(),
-          protocol,
-          useSsl,
-          port, enableCompression);
+          server.stringPiece(), protocol, useSsl, port, enableCompression);
       checkLogic(ap != nullptr, "invalid server {}", server.stringPiece());
 
       if (ap->compressed() && proxy_.router().getCodecManager() == nullptr) {
@@ -241,7 +238,13 @@ McRouteHandleProvider<RouterInfo>::makePool(
         }
       }
 
-      accessPoints_[name].push_back(ap);
+      auto it = accessPoints_.find(name);
+      if (it == accessPoints_.end()) {
+        std::vector<std::shared_ptr<const AccessPoint>> accessPoints;
+        it = accessPoints_.emplace(name, std::move(accessPoints)).first;
+      }
+      it->second.push_back(ap);
+      folly::StringPiece nameSp = it->first;
 
       auto pdstn = proxy_.destinationMap()->find(*ap, timeout);
       if (!pdstn) {
@@ -252,10 +255,11 @@ McRouteHandleProvider<RouterInfo>::makePool(
       pdstn->updateShortestTimeout(timeout);
 
       destinations.push_back(makeDestinationRoute<RouterInfo>(
-          std::move(pdstn), name, i, timeout, keepRoutingPrefix));
+          std::move(pdstn), nameSp, i, timeout, keepRoutingPrefix));
     } // servers
 
-    return pools_.emplace(name, std::move(destinations)).first->second;
+    return pools_.emplace(std::move(name), std::move(destinations))
+        .first->second;
   } catch (const std::exception& e) {
     throwLogic("Pool {}: {}", name, e.what());
   }

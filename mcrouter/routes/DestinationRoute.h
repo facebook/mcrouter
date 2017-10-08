@@ -65,12 +65,12 @@ class DestinationRoute {
    */
   DestinationRoute(
       std::shared_ptr<ProxyDestination> destination,
-      std::string poolName,
+      folly::StringPiece poolName,
       size_t indexInPool,
       std::chrono::milliseconds timeout,
       bool keepRoutingPrefix)
       : destination_(std::move(destination)),
-        poolName_(std::move(poolName)),
+        poolName_(poolName),
         indexInPool_(indexInPool),
         timeout_(timeout),
         keepRoutingPrefix_(keepRoutingPrefix) {}
@@ -105,11 +105,11 @@ class DestinationRoute {
 
  private:
   const std::shared_ptr<ProxyDestination> destination_;
-  const std::string poolName_;
+  const folly::StringPiece poolName_;
   const size_t indexInPool_;
   const std::chrono::milliseconds timeout_;
-  const bool keepRoutingPrefix_;
   size_t pendingShadowReqs_{0};
+  const bool keepRoutingPrefix_;
 
   template <class Request>
   ReplyT<Request> routeWithDestination(const Request& req) const {
@@ -255,13 +255,13 @@ class DestinationRoute {
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeDestinationRoute(
     std::shared_ptr<ProxyDestination> destination,
-    std::string poolName,
+    folly::StringPiece poolName,
     size_t indexInPool,
     std::chrono::milliseconds timeout,
     bool keepRoutingPrefix) {
   return makeRouteHandleWithInfo<RouterInfo, DestinationRoute>(
       std::move(destination),
-      std::move(poolName),
+      poolName,
       indexInPool,
       timeout,
       keepRoutingPrefix);

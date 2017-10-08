@@ -102,7 +102,7 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
    */
   template <class Request>
   void onReplyReceived(
-      const std::string& poolName,
+      const folly::StringPiece poolName,
       const AccessPoint& ap,
       folly::StringPiece strippedRoutingPrefix,
       const Request& request,

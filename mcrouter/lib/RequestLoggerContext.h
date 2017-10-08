@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -32,7 +32,7 @@ namespace mcrouter {
 
 struct RequestLoggerContext {
   RequestLoggerContext(
-      const std::string& poolName_,
+      const folly::StringPiece poolName_,
       const AccessPoint& ap_,
       folly::StringPiece strippedRoutingPrefix_,
       RequestClass requestClass_,
@@ -54,7 +54,7 @@ struct RequestLoggerContext {
 
   const folly::StringPiece strippedRoutingPrefix;
   const RequestClass requestClass;
-  const std::string& poolName;
+  const folly::StringPiece poolName;
   const AccessPoint& ap;
   const int64_t startTimeUs;
   const int64_t endTimeUs;
