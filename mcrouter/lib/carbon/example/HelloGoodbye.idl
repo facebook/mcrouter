@@ -8,6 +8,7 @@ request HelloRequest {
   reply: HelloReply;
 
   1: carbon::Keys<folly::IOBuf> key;
+  2: uint64_t shardId;
 };
 
 reply HelloReply {
@@ -20,6 +21,7 @@ request GoodbyeRequest {
   reply: GoodbyeReply;
 
   1: carbon::Keys<folly::IOBuf> key;
+  2: uint64_t shardId;
 };
 
 reply GoodbyeReply {

@@ -22,11 +22,17 @@ void HelloRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+  if (!v.visitField(2, "shardId", shardId_)) {
+    return;
+  }
 }
 
 template <class V>
 void HelloRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "shardId", shardId_)) {
     return;
   }
 }
@@ -50,11 +56,17 @@ void GoodbyeRequest::visitFields(V&& v) {
   if (!v.visitField(1, "key", key_)) {
     return;
   }
+  if (!v.visitField(2, "shardId", shardId_)) {
+    return;
+  }
 }
 
 template <class V>
 void GoodbyeRequest::visitFields(V&& v) const {
   if (!v.visitField(1, "key", key_)) {
+    return;
+  }
+  if (!v.visitField(2, "shardId", shardId_)) {
     return;
   }
 }

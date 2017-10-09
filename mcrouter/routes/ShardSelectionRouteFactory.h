@@ -21,14 +21,16 @@
 #include <mcrouter/routes/ErrorRoute.h>
 
 namespace facebook {
+namespace memcache {
 namespace mcrouter {
 
 namespace detail {
+
 const folly::dynamic& getPoolJson(const folly::dynamic& json) {
   assert(json.isObject());
 
   auto poolJson = json.get_ptr("pool");
-  memcache::checkLogic(poolJson, "ShardSelectionRoute: 'pool' not found");
+  checkLogic(poolJson, "ShardSelectionRoute: 'pool' not found");
   return *poolJson;
 }
 
@@ -36,7 +38,7 @@ const folly::dynamic& getShardsJson(const folly::dynamic& json) {
   assert(json.isObject());
 
   auto shardsJson = json.get_ptr("shards");
-  memcache::checkLogic(
+  checkLogic(
       shardsJson && shardsJson->isArray(),
       "ShardSelectionRoute: 'shards' not found or not an array");
   return *shardsJson;
@@ -50,7 +52,7 @@ std::vector<size_t> parseShardsJsonArray(const folly::dynamic& shardsJson) {
 
   for (size_t j = 0; j < shardsJson.size(); ++j) {
     const auto& shardIdJson = shardsJson[j];
-    memcache::checkLogic(
+    checkLogic(
         shardIdJson.isInt(),
         "ShardSelectionRoute: 'shards' property expected to be an "
         "array of integers. Invalid shard found in array: {}",
@@ -72,7 +74,7 @@ std::vector<size_t> parseShardsJsonString(const folly::dynamic& shardsJson) {
     try {
       shards.push_back(folly::to<size_t>(shardId));
     } catch (const std::exception& e) {
-      memcache::throwLogic(
+      throwLogic(
           "ShardSelectionRoute: 'shards' property expected to be a string of "
           "comma-separated integers. Invalid shard found in string: {}. "
           "Exception: {}",
@@ -98,7 +100,7 @@ std::vector<std::vector<size_t>> parseAllShardsJson(
     } else if (shardsJson.isString()) {
       allShards.push_back(parseShardsJsonString(shardsJson));
     } else {
-      memcache::throwLogic(
+      throwLogic(
           "ShardSelectionRoute: 'shards[{}]' must be an array of integers or a "
           "string of comma-separated shard ids.",
           i);
@@ -126,7 +128,7 @@ std::vector<uint16_t> getShardsMap(
     size_t numDestinations) {
   assert(json.isArray());
 
-  memcache::checkLogic(
+  checkLogic(
       numDestinations < std::numeric_limits<uint16_t>::max(),
       "ShardSelectionRoute: Only up to {} destinations are supported. "
       "Current number of destinations: {}",
@@ -159,6 +161,7 @@ std::vector<uint16_t> getShardsMap(
 
   return shardsMap;
 }
+
 } // namespace detail
 
 /**
@@ -204,34 +207,34 @@ std::vector<uint16_t> getShardsMap(
  */
 template <class RouterInfo, class ShardSelector>
 typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
-    memcache::RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json,
     typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr) {
-  memcache::checkLogic(
-      json.isObject(), "ShardSelectionRoute config should be an object");
+  checkLogic(json.isObject(), "ShardSelectionRoute config should be an object");
 
   auto poolJson = detail::getPoolJson(json);
   auto destinations = factory.createList(poolJson);
   if (destinations.empty()) {
     LOG(WARNING) << "ShardSelectionRoute: Empty list of destinations found. "
                  << "Using ErrorRoute.";
-    return memcache::mcrouter::createErrorRoute<RouterInfo>(
+    return mcrouter::createErrorRoute<RouterInfo>(
         "ShardSelectionRoute has an empty list of destinations");
   }
 
   auto shardsJson = detail::getShardsJson(json);
-  memcache::checkLogic(
+  checkLogic(
       shardsJson.size() == destinations.size(),
       "ShardSelectionRoute: 'shards' must have the same number of "
       "entries as servers in 'pool'");
 
   auto selector =
       ShardSelector(detail::getShardsMap(shardsJson, destinations.size()));
-  return memcache::createSelectionRoute<RouterInfo, ShardSelector>(
+  return createSelectionRoute<RouterInfo, ShardSelector>(
       std::move(destinations),
       std::move(selector),
       std::move(outOfRangeDestination));
 }
 
-} // mcrouter
-} // facebook
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

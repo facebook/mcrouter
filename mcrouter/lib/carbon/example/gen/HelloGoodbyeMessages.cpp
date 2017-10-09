@@ -23,6 +23,7 @@ constexpr const char* const HelloRequest::name;
 void HelloRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, shardId());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -41,6 +42,10 @@ void HelloRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readField(key(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(shardId(), fieldType);
         break;
       }
       default: {
@@ -89,6 +94,7 @@ constexpr const char* const GoodbyeRequest::name;
 void GoodbyeRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, shardId());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -107,6 +113,10 @@ void GoodbyeRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readField(key(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(shardId(), fieldType);
         break;
       }
       default: {

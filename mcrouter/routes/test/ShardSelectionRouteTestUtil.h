@@ -20,12 +20,13 @@
 #include <mcrouter/routes/McRouteHandleProvider.h>
 
 namespace facebook {
+namespace memcache {
 namespace mcrouter {
 
 template <class RouterInfo>
-class ShardSelectionRouteTest : public ::testing::Test {
+class ShardSelectionRouteTestUtil : public ::testing::Test {
  public:
-  ShardSelectionRouteTest()
+  ShardSelectionRouteTestUtil()
       : router_(memcache::mcrouter::CarbonRouterInstance<RouterInfo>::init(
             "testRouter",
             getOpts())),
@@ -33,7 +34,7 @@ class ShardSelectionRouteTest : public ::testing::Test {
         rhProvider_(*router_->getProxy(0), poolFactory_),
         rhFactory_(rhProvider_, 0) {}
 
-  virtual ~ShardSelectionRouteTest(){};
+  virtual ~ShardSelectionRouteTestUtil() {}
 
   typename RouterInfo::RouteHandlePtr getRoute(folly::StringPiece jsonStr) {
     return rhFactory_.create(memcache::parseJsonString(jsonStr.str()));
@@ -72,4 +73,5 @@ class ShardSelectionRouteTest : public ::testing::Test {
 };
 
 } // namespace mcrouter
+} // namespace memcache
 } // namespace facebook
