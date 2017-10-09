@@ -34,6 +34,7 @@ ProxyBase::ProxyBase(
           std::make_unique<folly::fibers::EventBaseLoopController>(),
           getFiberManagerOptions(router_.opts())),
       asyncLog_(router_.opts()),
+      flushCallback_(*this),
       destinationMap_(std::make_unique<ProxyDestinationMap>(this)) {
   // Setup a full random seed sequence
   folly::Random::seed(randomGenerator_);

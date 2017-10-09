@@ -82,7 +82,7 @@ void AsyncMcClientImpl::WriterLoop::runLoopCallback() noexcept {
   // Delay this write until the end of current loop (e.g. after
   // runActiveFibers() callback). That way we achieve better batching without
   // affecting latency.
-  if (!rescheduled_) {
+  if (!client_.flushList_ && !rescheduled_) {
     rescheduled_ = true;
     client_.eventBase_.runInLoop(this, /* thisIteration */ true);
     return;
@@ -208,15 +208,18 @@ size_t AsyncMcClientImpl::getNumToSend() const {
 }
 
 void AsyncMcClientImpl::scheduleNextWriterLoop() {
-  if (connectionState_ == ConnectionState::UP && !writeScheduled_ &&
+  if (connectionState_ == ConnectionState::UP &&
+      !writer_.isLoopCallbackScheduled() &&
       (getNumToSend() > 0 || pendingGoAwayReply_)) {
-    writeScheduled_ = true;
-    eventBase_.runInLoop(&writer_);
+    if (flushList_) {
+      flushList_->push_back(writer_);
+    } else {
+      eventBase_.runInLoop(&writer_);
+    }
   }
 }
 
 void AsyncMcClientImpl::cancelWriterCallback() {
-  writeScheduled_ = false;
   writer_.cancelLoopCallback();
 }
 
@@ -314,7 +317,6 @@ void AsyncMcClientImpl::pushMessages() {
     sendGoAwayReply();
   }
   pendingGoAwayReply_ = false;
-  writeScheduled_ = false;
   scheduleNextWriterLoop();
 }
 
@@ -624,11 +626,9 @@ void AsyncMcClientImpl::processShutdown(folly::StringPiece errorMessage) {
   DestructorGuard dg(this);
   switch (connectionState_) {
     case ConnectionState::UP: // on error, UP always transitions to ERROR state
-      if (writeScheduled_) {
-        // Cancel loop callback, or otherwise we might attempt to write
-        // something while processing error state.
-        cancelWriterCallback();
-      }
+      // Cancel loop callback, or otherwise we might attempt to write
+      // something while processing error state.
+      cancelWriterCallback();
       connectionState_ = ConnectionState::ERROR;
       // We're already in ERROR state, no need to listen for reads.
       socket_->setReadCB(nullptr);
