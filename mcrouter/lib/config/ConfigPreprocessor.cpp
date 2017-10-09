@@ -587,6 +587,21 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
+   * Casts its argument to double.
+   * Usage: @double(5.1)
+   */
+  static dynamic doubleMacro(Context&& ctx) {
+    try {
+      return ctx.at("value").asDouble();
+    } catch (const std::exception& e) {
+      throwLogic(
+          "Can not cast {} to double:\n{}",
+          ctx.at("value").typeName(),
+          e.what());
+    }
+  }
+
+  /**
    * Casts its argument to string.
    * Usage: @str(@int(5))
    */
@@ -968,6 +983,14 @@ class ConfigPreprocessor::BuiltIns {
    */
   static dynamic isIntMacro(Context&& ctx) {
     return ctx.at("value").isInt();
+  }
+
+  /**
+   * Returns true if value is a double
+   * Usage: @isDouble(value)
+   */
+  static dynamic isDoubleMacro(Context&& ctx) {
+    return ctx.at("value").isDouble();
   }
 
   /**
@@ -1577,6 +1600,8 @@ ConfigPreprocessor::ConfigPreprocessor(
 
   addMacro("int", {"value"}, &BuiltIns::intMacro);
 
+  addMacro("double", {"value"}, &BuiltIns::doubleMacro);
+
   addMacro("str", {"value"}, &BuiltIns::strMacro);
 
   addMacro("bool", {"value"}, &BuiltIns::boolMacro);
@@ -1614,6 +1639,8 @@ ConfigPreprocessor::ConfigPreprocessor(
   addMacro("isBool", {"value"}, &BuiltIns::isBoolMacro);
 
   addMacro("isInt", {"value"}, &BuiltIns::isIntMacro);
+
+  addMacro("isDouble", {"value"}, &BuiltIns::isDoubleMacro);
 
   addMacro("isObject", {"value"}, &BuiltIns::isObjectMacro);
 

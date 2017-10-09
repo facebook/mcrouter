@@ -144,6 +144,14 @@
       "intToStr": {
         "orig": "@str(@int(5))",
         "expand": "5"
+      },
+      "strToDouble": {
+        "orig": "@double(5.5)",
+        "expand": 5.5
+      },
+      "doubleToStr": {
+        "orig": "@str(@double(5.5))",
+        "expand": "5.5"
       }
     }
   },

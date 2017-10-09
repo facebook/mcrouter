@@ -84,6 +84,9 @@
       }
     }
   },
+  "invalidDoubleCast": {
+    "ret": "@double(1.a)"
+  },
   "tooFewParams": {
     "macros": {
       "a": {
