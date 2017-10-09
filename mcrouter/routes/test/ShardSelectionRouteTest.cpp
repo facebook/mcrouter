@@ -371,8 +371,8 @@ TEST_F(ShardSelectionRouteTest, route) {
   auto rh = getShardSelectionRoute(kSelectionRouteConfig);
   ASSERT_TRUE(rh);
 
-  HelloRequest req;
-  HelloReply reply;
+  GoodbyeRequest req;
+  GoodbyeReply reply;
 
   req.shardId() = 1;
   reply = rh->route(req);
@@ -416,8 +416,8 @@ TEST_F(ShardSelectionRouteTest, routeString) {
   auto rh = getShardSelectionRoute(kSelectionRouteConfig);
   ASSERT_TRUE(rh);
 
-  HelloRequest req;
-  HelloReply reply;
+  GoodbyeRequest req;
+  GoodbyeReply reply;
 
   req.shardId() = 1;
   reply = rh->route(req);
@@ -461,8 +461,8 @@ TEST_F(ShardSelectionRouteTest, outOfRange) {
   auto rh = getShardSelectionRoute(kSelectionRouteConfig);
   ASSERT_TRUE(rh);
 
-  HelloRequest req;
-  HelloReply reply;
+  GoodbyeRequest req;
+  GoodbyeReply reply;
 
   req.shardId() = 1;
   reply = rh->route(req);
@@ -494,8 +494,8 @@ TEST_F(ShardSelectionRouteTest, outOfRangeString) {
   auto rh = getShardSelectionRoute(kSelectionRouteConfig);
   ASSERT_TRUE(rh);
 
-  HelloRequest req;
-  HelloReply reply;
+  GoodbyeRequest req;
+  GoodbyeReply reply;
 
   req.shardId() = 1;
   reply = rh->route(req);
@@ -508,6 +508,75 @@ TEST_F(ShardSelectionRouteTest, outOfRangeString) {
   req.shardId() = 3;
   reply = rh->route(req);
   EXPECT_EQ(mc_res_local_error, reply.result());
+}
+
+TEST_F(ShardSelectionRouteTest, customOutOfRangeRoute) {
+  constexpr folly::StringPiece kSelectionRouteConfig = R"(
+  {
+    "pool": [
+      "NullRoute",
+      "NullRoute"
+    ],
+    "shards": [
+      [1],
+      [2]
+    ],
+    "out_of_range": "ErrorRoute|Cool message!"
+  }
+  )";
+
+  auto rh = getShardSelectionRoute(kSelectionRouteConfig);
+  ASSERT_TRUE(rh);
+
+  GoodbyeRequest req;
+  GoodbyeReply reply;
+
+  req.shardId() = 1;
+  reply = rh->route(req);
+  EXPECT_EQ(mc_res_notfound, reply.result());
+
+  req.shardId() = 2;
+  reply = rh->route(req);
+  EXPECT_EQ(mc_res_notfound, reply.result());
+
+  req.shardId() = 3;
+  reply = rh->route(req);
+  EXPECT_EQ(mc_res_local_error, reply.result());
+  EXPECT_EQ("Cool message!", reply.message());
+}
+
+TEST_F(ShardSelectionRouteTest, customOutOfRangeRouteString) {
+  constexpr folly::StringPiece kSelectionRouteConfig = R"(
+  {
+    "pool": [
+      "NullRoute",
+      "NullRoute"
+    ],
+    "shards": [
+      "1",
+      "2"
+    ],
+    "out_of_range": "NullRoute"
+  }
+  )";
+
+  auto rh = getShardSelectionRoute(kSelectionRouteConfig);
+  ASSERT_TRUE(rh);
+
+  GoodbyeRequest req;
+  GoodbyeReply reply;
+
+  req.shardId() = 1;
+  reply = rh->route(req);
+  EXPECT_EQ(mc_res_notfound, reply.result());
+
+  req.shardId() = 2;
+  reply = rh->route(req);
+  EXPECT_EQ(mc_res_notfound, reply.result());
+
+  req.shardId() = 3;
+  reply = rh->route(req);
+  EXPECT_EQ(mc_res_notfound, reply.result());
 }
 
 } // namespace mcrouter

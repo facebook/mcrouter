@@ -175,6 +175,7 @@ std::vector<uint16_t> getShardsMap(
  *     [2, 4, 5],
  *     ...
  *   ],
+ *   "out_of_range": "ErrorRoute"
  * }
  *
  * Alternatively, "shards" can be an array of strings of comma-separated
@@ -201,15 +202,11 @@ std::vector<uint16_t> getShardsMap(
  *
  * @param factory               RouteHandleFactory to create destinations.
  * @param json                  JSON object with RouteHandle representation.
- * @param outOfRangeDestination RouteHandle to which the request will be
- *                              routed if selector.select() returns a value
- *                              that is >= than destinations.size().
  */
 template <class RouterInfo, class ShardSelector>
 typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
-    const folly::dynamic& json,
-    typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr) {
+    const folly::dynamic& json) {
   checkLogic(json.isObject(), "ShardSelectionRoute config should be an object");
 
   auto poolJson = detail::getPoolJson(json);
@@ -229,6 +226,12 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
 
   auto selector =
       ShardSelector(detail::getShardsMap(shardsJson, destinations.size()));
+
+  typename RouterInfo::RouteHandlePtr outOfRangeDestination = nullptr;
+  if (auto outOfRangeJson = json.get_ptr("out_of_range")) {
+    outOfRangeDestination = factory.create(*outOfRangeJson);
+  }
+
   return createSelectionRoute<RouterInfo, ShardSelector>(
       std::move(destinations),
       std::move(selector),
