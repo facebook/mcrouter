@@ -140,8 +140,7 @@ inline bool CaretSerializedMessage::maybeCompress(
   static constexpr size_t kCompressionOverhead = 4;
   try {
     const auto iovs = storage_.getIovecs();
-    // The first iovec is the header - we need to compress just the data.
-    auto compressedBuf = codec->compress(iovs.first + 1, iovs.second - 1);
+    auto compressedBuf = codec->compress(iovs.first, iovs.second);
     auto compressedSize = compressedBuf->computeChainDataLength();
     if ((compressedSize + kCompressionOverhead) < uncompressedSize) {
       storage_.reset();

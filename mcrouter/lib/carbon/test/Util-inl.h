@@ -33,8 +33,7 @@ T serializeAndDeserialize(const T& toSerialize, size_t& bytesWritten) {
   auto* curBuf = &buf;
   const auto iovs = storage.getIovecs();
   bytesWritten = 0;
-  // Skip Caret header iovec (with index 0)
-  for (size_t i = 1; i < iovs.second; ++i) {
+  for (size_t i = 0; i < iovs.second; ++i) {
     const struct iovec* iov = iovs.first + i;
     size_t written = 0;
     while (written < iov->iov_len) {
