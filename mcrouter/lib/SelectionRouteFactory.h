@@ -13,7 +13,7 @@
 
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
-#include "mcrouter/routes/ErrorRouteFactory.h"
+#include "mcrouter/routes/ErrorRoute.h"
 
 namespace facebook {
 namespace memcache {

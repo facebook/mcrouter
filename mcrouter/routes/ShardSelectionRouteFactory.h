@@ -18,7 +18,7 @@
 #include <mcrouter/lib/SelectionRouteFactory.h>
 #include <mcrouter/lib/config/RouteHandleFactory.h>
 #include <mcrouter/lib/fbi/cpp/util.h>
-#include <mcrouter/routes/ErrorRouteFactory.h>
+#include <mcrouter/routes/ErrorRoute.h>
 
 namespace facebook {
 namespace mcrouter {

@@ -21,7 +21,6 @@
 #include "mcrouter/lib/routes/AllInitialRoute.h"
 #include "mcrouter/lib/routes/AllMajorityRoute.h"
 #include "mcrouter/lib/routes/AllSyncRoute.h"
-#include "mcrouter/lib/routes/ErrorRoute.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
 #include "mcrouter/lib/test/RouteHandleTestUtil.h"
@@ -88,12 +87,6 @@ TEST(routeHandleTest, nullPrepend) {
   req.value() = folly::IOBuf(folly::IOBuf::COPY_BUFFER, "value");
   auto reply = rh.route(std::move(req));
   EXPECT_EQ(mc_res_notstored, reply.result());
-}
-
-TEST(routeHandleTest, error) {
-  TestRouteHandle<ErrorRoute<TestRouteHandleIf>> rh;
-  auto reply = rh.route(McGetRequest("key"));
-  EXPECT_TRUE(isErrorResult(reply.result()));
 }
 
 TEST(routeHandleTest, allSync) {

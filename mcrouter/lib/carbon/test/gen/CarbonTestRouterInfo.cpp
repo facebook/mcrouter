@@ -31,7 +31,7 @@
 #include <mcrouter/routes/AllMajorityRouteFactory.h>
 #include <mcrouter/routes/AllSyncRouteFactory.h>
 #include <mcrouter/routes/DevNullRoute.h>
-#include <mcrouter/routes/ErrorRouteFactory.h>
+#include <mcrouter/routes/ErrorRoute.h>
 #include <mcrouter/routes/FailoverRoute.h>
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/HostIdRouteFactory.h>

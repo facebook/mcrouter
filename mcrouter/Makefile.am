@@ -105,7 +105,7 @@ libmcroutercore_a_SOURCES = \
   routes/DefaultShadowPolicy.h \
   routes/DestinationRoute.h \
   routes/DevNullRoute.h \
-  routes/ErrorRouteFactory.h \
+  routes/ErrorRoute.h \
   routes/ExtraRouteHandleProviderIf.h \
   routes/FailoverPolicy.h \
   routes/FailoverRateLimiter.cpp \
