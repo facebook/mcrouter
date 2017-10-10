@@ -31,10 +31,7 @@ using FiberManagerContextTag =
 constexpr size_t kNumSplits = 26 * 26 + 1;
 
 template <class Request, class RouterInfo = MemcacheRouterInfo>
-void testShardingForOp(
-    ShardSplitter splitter,
-    uint64_t requestFlags = 0,
-    bool shouldAlwaysGoToMainSplit = false) {
+void testShardingForOp(ShardSplitter splitter, uint64_t requestFlags = 0) {
   using ShardSplitTestHandle =
       TestHandleImpl<typename RouterInfo::RouteHandleIf>;
   using ShardSplitRouteHandle =
@@ -49,7 +46,7 @@ void testShardingForOp(
             UpdateRouteTestData(mc_res_found),
             DeleteRouteTestData(mc_res_found))};
     auto rh = get_route_handles(handles)[0];
-    ShardSplitRouteHandle splitRoute(rh, splitter, shouldAlwaysGoToMainSplit);
+    ShardSplitRouteHandle splitRoute(rh, splitter);
 
     TestFiberManager fm{FiberManagerContextTag()};
     fm.run([&] {
@@ -60,7 +57,7 @@ void testShardingForOp(
       EXPECT_EQ(mc_res_found, reply.result());
     });
 
-    if (i == 0 || shouldAlwaysGoToMainSplit) {
+    if (i == 0) {
       EXPECT_EQ(std::vector<std::string>{"test:123:"}, handles[0]->saw_keys);
     } else {
       EXPECT_EQ(

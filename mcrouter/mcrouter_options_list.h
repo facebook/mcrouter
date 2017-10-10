@@ -707,8 +707,7 @@ MCROUTER_OPTION_TOGGLE(
     true,
     "disable-send-to-main-shard-split",
     no_short,
-    "Whether ShardSplitRoute sends certain requests only to the main shard"
-    " split. Enabled by default.")
+    "DEPRECATED. No longer supported/needed")
 
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE

@@ -83,11 +83,8 @@ class ShardSplitRoute {
 
   ShardSplitRoute(
       std::shared_ptr<RouteHandleIf> rh,
-      ShardSplitter shardSplitter,
-      bool sendToMainShardSplitEnabled)
-      : rh_(std::move(rh)),
-        shardSplitter_(std::move(shardSplitter)),
-        sendToMainShardSplitEnabled_(sendToMainShardSplitEnabled) {}
+      ShardSplitter shardSplitter)
+      : rh_(std::move(rh)), shardSplitter_(std::move(shardSplitter)) {}
 
   template <class Request>
   void traverse(
@@ -118,9 +115,7 @@ class ShardSplitRoute {
       size_t i = globals::hostid() % splitSize;
       // Note that foreachPossibleClient always calls traverse on a request with
       // no flags set.
-      if (i == 0 ||
-          (carbon::GetLike<Request>::value && sendToMainShardSplitEnabled_ &&
-           alwaysSendToMainShardSplit(req.flags()))) {
+      if (i == 0) {
         t(*rh_, req);
         return;
       }
@@ -149,9 +144,7 @@ class ShardSplitRoute {
       return rh_->route(req);
     } else {
       size_t i = globals::hostid() % splitSize;
-      if (i == 0 ||
-          (carbon::GetLike<Request>::value && sendToMainShardSplitEnabled_ &&
-           alwaysSendToMainShardSplit(req.flags()))) {
+      if (i == 0) {
         return rh_->route(req);
       }
       return rh_->route(splitReq(req, i, shard));
@@ -161,7 +154,6 @@ class ShardSplitRoute {
  private:
   std::shared_ptr<RouteHandleIf> rh_;
   const ShardSplitter shardSplitter_;
-  const bool sendToMainShardSplitEnabled_;
 
   // from request with key 'prefix:shard:suffix' creates a copy of
   // request with key 'prefix:shardXY:suffix'
@@ -177,10 +169,9 @@ class ShardSplitRoute {
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> makeShardSplitRoute(
     std::shared_ptr<typename RouterInfo::RouteHandleIf> rh,
-    ShardSplitter shardSplitter,
-    bool sendToMainShardSplitEnabled) {
+    ShardSplitter shardSplitter) {
   return makeRouteHandleWithInfo<RouterInfo, ShardSplitRoute>(
-      std::move(rh), std::move(shardSplitter), sendToMainShardSplitEnabled);
+      std::move(rh), std::move(shardSplitter));
 }
 
 } // mcrouter
