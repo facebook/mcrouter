@@ -284,9 +284,8 @@ folly::Optional<StyledString> MessagePrinter::filterAndBuildOutput(
     }
   }
   if (options_.script) {
-    out.append(",\n  \"message\": {");
+    out.pushBack(',');
     out.append(getTypeSpecificAttributes(message));
-    out.append("\n  }");
   } else {
     out.append(getTypeSpecificAttributes(message));
   }

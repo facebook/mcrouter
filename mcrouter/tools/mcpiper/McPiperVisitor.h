@@ -11,15 +11,14 @@
 
 #include <cctype>
 #include <type_traits>
-#include <typeinfo>
 #include <unordered_set>
 #include <utility>
 
 #include <folly/Conv.h>
 #include <folly/Optional.h>
 #include <folly/Range.h>
-#include <folly/json.h>
 
+#include "mcrouter/lib/carbon/CommonSerializationTraits.h"
 #include "mcrouter/lib/carbon/Fields.h"
 #include "mcrouter/lib/carbon/Keys.h"
 #include "mcrouter/tools/mcpiper/PrettyFormat.h"
@@ -30,15 +29,9 @@ namespace carbon {
 namespace detail {
 
 class McPiperVisitor {
- private:
-  const std::unordered_set<std::string> kExcuseValues = {"value",
-                                                         "flags",
-                                                         "result",
-                                                         "key"};
-
  public:
-  explicit McPiperVisitor(bool script)
-      : script_(script), nested(script_ ? 1 : 0) {}
+  explicit McPiperVisitor(bool script, size_t indent = 0)
+      : indent_(indent), script_(script) {}
 
   template <class T>
   bool enterMixin(size_t /* id */, folly::StringPiece /* name */, const T&) {
@@ -52,7 +45,11 @@ class McPiperVisitor {
   template <class T>
   bool visitField(size_t /* id */, folly::StringPiece name, const T& t) {
     if (kExcuseValues.find(name.str()) == kExcuseValues.end()) {
-      render(name, t);
+      auto content = serialize(t);
+      if (!content.empty()) {
+        out_.append(prepareAndRenderHeader(name));
+        out_.append(content);
+      }
     }
     return true;
   }
@@ -61,158 +58,263 @@ class McPiperVisitor {
     return std::move(out_);
   }
 
-  void setNested(uint32_t newNested) {
-    nested = newNested;
-  }
-
  private:
-  const bool script_;
+  const std::unordered_set<std::string> kExcuseValues = {"value",
+                                                         "flags",
+                                                         "result",
+                                                         "key"};
   facebook::memcache::StyledString out_;
+  size_t indent_{0};
   const facebook::memcache::PrettyFormat format_{};
-  uint32_t nested{0};
+  const bool script_{false};
+  bool commaNeeded_{false};
 
-  std::string getSpaces() const {
-    return std::string(nested, ' ');
+  // key
+  template <class T>
+  facebook::memcache::StyledString serialize(const carbon::Keys<T>& value) {
+    facebook::memcache::StyledString out;
+    out.append(value.fullKey().str(), format_.dataValueColor);
+    return out;
   }
 
-  void renderHeader(folly::StringPiece name) {
-    if (!name.empty()) {
-      auto s = getSpaces();
+  // string-like
+  facebook::memcache::StyledString serialize(char value) {
+    facebook::memcache::StyledString out;
+    char mark = script_ ? '"' : '\'';
+    out.pushBack(mark);
+    out.pushBack(value, format_.dataValueColor);
+    out.pushBack(mark);
+    return out;
+  }
+  facebook::memcache::StyledString serialize(const std::string& value) {
+    return serializeString(value);
+  }
+  facebook::memcache::StyledString serialize(const folly::IOBuf& buf) {
+    auto buffer = buf;
+    auto strPiece = folly::StringPiece(buffer.coalesce());
+    return serializeString(strPiece);
+  }
+
+  // boolean
+  facebook::memcache::StyledString serialize(const bool& b) {
+    facebook::memcache::StyledString out;
+    out.append(b ? "true" : "false", format_.dataValueColor);
+    return out;
+  }
+
+  // numbers
+  template <class T>
+  std::enable_if_t<
+      std::is_arithmetic<T>::value,
+      facebook::memcache::StyledString>
+  serialize(const T& value) {
+    facebook::memcache::StyledString out;
+    out.append(folly::to<std::string>(value), format_.dataValueColor);
+    return out;
+  }
+
+  // enums
+  template <class T>
+  std::enable_if_t<std::is_enum<T>::value, facebook::memcache::StyledString>
+  serialize(const T& value) {
+    facebook::memcache::StyledString out;
+    out.append(
+        folly::to<std::string>(static_cast<std::underlying_type_t<T>>(value)),
+        format_.dataValueColor);
+    return out;
+  }
+
+  // optional
+  template <class T>
+  facebook::memcache::StyledString serialize(const folly::Optional<T>& opt) {
+    if (opt.hasValue()) {
+      return serialize(opt.value());
+    }
+    return facebook::memcache::StyledString{};
+  }
+
+  // linear containers
+  template <class T>
+  std::enable_if_t<
+      carbon::detail::IsLinearContainer<T>::value,
+      facebook::memcache::StyledString>
+  serialize(const T& values) {
+    facebook::memcache::StyledString out;
+
+    if (SerializationTraits<T>::size(values) == 0) {
+      out.append("[]");
+      return out;
+    }
+
+    out.pushBack('[');
+    incrementIndentation();
+    for (auto it = SerializationTraits<T>::begin(values);
+         it != SerializationTraits<T>::end(values);
+         ++it) {
+      out.append(startNewLineAndIndent());
+      out.append(serialize(*it));
+    }
+    decrementIndentation();
+    out.append(startNewLineAndIndent());
+    out.pushBack(']');
+
+    return out;
+  }
+
+  // kv containers
+  template <class T>
+  std::enable_if_t<
+      carbon::detail::IsKVContainer<T>::value,
+      facebook::memcache::StyledString>
+  serialize(const T& values) {
+    facebook::memcache::StyledString out;
+
+    if (SerializationTraits<T>::size(values) == 0) {
+      out.append("{}");
+      return out;
+    }
+
+    out.pushBack('{');
+    incrementIndentation();
+    for (auto it = SerializationTraits<T>::begin(values);
+         it != SerializationTraits<T>::end(values);
+         ++it) {
+      out.append(startNewLineAndIndent());
       if (script_) {
-        if (!out_.empty()) {
-          out_.append(",");
-        }
-        out_.append("\n  ");
-        out_.append(getSpaces());
-        out_.append("\"");
-        out_.append(name.str());
-        out_.append("\": ");
+        out.append(serializeString(folly::to<std::string>(it->first)));
       } else {
-        out_.append("\n  ");
-        out_.append(getSpaces());
-        out_.append(name.str(), format_.msgAttrColor);
-        out_.append(": ", format_.msgAttrColor);
+        out.append(serialize(it->first));
       }
+      out.append(": ");
+      out.append(serialize(it->second));
     }
+    decrementIndentation();
+    out.append(startNewLineAndIndent());
+    out.pushBack('}');
+
+    return out;
   }
 
-  void renderStringField(folly::StringPiece name, const std::string& str) {
-    if (!script_ && str.empty()) {
-      return;
+  // carbon structs and carbon unions
+  template <class T>
+  std::enable_if_t<
+      carbon::IsCarbonStruct<T>::value &&
+          !carbon::IsThriftWrapperStruct<T>::value,
+      facebook::memcache::StyledString>
+  serialize(const T& value) {
+    facebook::memcache::StyledString out;
+
+    McPiperVisitor printer(script_, indent_ + 1);
+    value.visitFields(printer);
+    auto content = std::move(printer).styled();
+    if (!content.empty()) {
+      out.pushBack('{');
+
+      incrementIndentation();
+      out.append(content);
+      decrementIndentation();
+
+      out.append(startNewLineAndIndent());
+      out.pushBack('}');
+    } else {
+      out.append("{}");
     }
-    renderHeader(name);
+
+    return out;
+  }
+
+  // thrift structs
+  template <class T>
+  std::enable_if_t<
+      carbon::IsThriftWrapperStruct<T>::value,
+      facebook::memcache::StyledString>
+  serialize(const T& /* value */) {
+    facebook::memcache::StyledString out;
+    out.append(serializeString("<Thrift structure>"));
+    return out;
+  }
+
+  // user type
+  template <class T>
+  std::enable_if_t<
+      detail::IsUserReadWriteDefined<T>::value,
+      facebook::memcache::StyledString>
+  serialize(const T& /* value */) {
+    facebook::memcache::StyledString out;
+    out.append(serializeString("<User type>"));
+    return out;
+  }
+
+  facebook::memcache::StyledString prepareAndRenderHeader(
+      folly::StringPiece name) {
+    facebook::memcache::StyledString out;
+    out.append(startNewLineAndIndent());
     if (script_) {
-      out_.append("\"");
-      if (!std::all_of<std::string::const_iterator, int(int)>(
+      out.append("\"");
+      out.append(name.str());
+      out.append("\": ");
+    } else {
+      out.append(name.str(), format_.msgAttrColor);
+      out.append(": ", format_.msgAttrColor);
+    }
+    return out;
+  }
+
+  facebook::memcache::StyledString serializeString(
+      folly::StringPiece str) const {
+    facebook::memcache::StyledString out;
+    if (script_) {
+      out.append("\"");
+      if (!std::all_of<folly::StringPiece::const_iterator, int(int)>(
               str.begin(), str.end(), std::isprint)) {
         /* JSON doesn't deal with arbitrary binary data - the input string
            must be valid UTF-8.  So we just hex encode the whole string. */
-        out_.append(folly::hexlify(str));
+        out.append(folly::hexlify(str));
       } else {
-        out_.append(folly::cEscape<std::string>(str));
+        out.append(folly::cEscape<std::string>(str));
       }
-      out_.append("\"");
+      out.append("\"");
     } else {
-      out_.append(folly::backslashify(str), format_.dataValueColor);
+      out.append(folly::backslashify(str), format_.dataValueColor);
     }
+    return out;
   }
 
-  template <class T>
-  std::enable_if_t<!carbon::IsCarbonStruct<T>::value> render(
-      folly::StringPiece name,
-      const T& /* t */) {
-    renderHeader(name);
-    out_.append("[Unserializable]", format_.dataValueColor);
+  static std::string serializeIndentation(size_t indentLevel) {
+    constexpr size_t kIndentationUnit = 2;
+    return std::string(indentLevel * kIndentationUnit, ' ');
   }
 
-  template <class T>
-  std::enable_if_t<
-      carbon::IsCarbonStruct<T>::value &&
-      !carbon::IsThriftWrapperStruct<T>::value>
-  render(folly::StringPiece name, const T& t) {
-    McPiperVisitor printer(script_);
-    renderHeader(name);
-    nested += 1;
-    printer.setNested(nested);
-    nested -= 1;
-    t.visitFields(printer);
-    auto str = std::move(printer).styled();
-    out_.pushBack('{');
-    out_.append(str);
-    out_.append("\n  ");
-    out_.append(getSpaces());
-    out_.pushBack('}');
-  }
-
-  template <class T>
-  std::enable_if_t<
-      carbon::IsCarbonStruct<T>::value &&
-      carbon::IsThriftWrapperStruct<T>::value>
-  render(folly::StringPiece name, const T& /* unused */) {
-    renderHeader(name);
-    out_.append("[Thrift structure]");
-  }
-
-  template <class BinaryType>
-  void render(folly::StringPiece name, const carbon::Keys<BinaryType>& keys) {
-    renderHeader(name);
-    out_.append(keys.routingKey().str(), format_.dataValueColor);
-  }
-
-  template <class T>
-  void render(folly::StringPiece name, const folly::Optional<T>& t) {
-    if (t) {
-      render(name, *t);
+  facebook::memcache::StyledString startNewLineAndIndent() {
+    facebook::memcache::StyledString out;
+    if (script_ && commaNeeded_) {
+      out.pushBack(',');
     }
+    out.pushBack('\n');
+    out.append(serializeIndentation(indent_));
+
+    commaNeeded_ = true;
+    return out;
   }
 
-  template <class T>
-  void render(folly::StringPiece name, const std::vector<T>& ts) {
-    renderHeader(name);
-    out_.pushBack('[');
-
-    bool firstInArray = true;
-    for (const auto& t : ts) {
-      if (!firstInArray) {
-        out_.pushBack(',');
-      }
-      firstInArray = false;
-      McPiperVisitor printer(script_);
-      printer.render("", t);
-      out_.append(std::move(printer).styled());
-    }
-    out_.pushBack(']');
+  void incrementIndentation() {
+    ++indent_;
+    commaNeeded_ = false;
+  }
+  void decrementIndentation() {
+    --indent_;
+    commaNeeded_ = false;
   }
 };
 
-template <>
-inline void McPiperVisitor::render(
-    folly::StringPiece name,
-    const folly::IOBuf& buf) {
-  auto buffer = buf;
-  auto strPiece = folly::StringPiece(buffer.coalesce());
-  renderStringField(name, strPiece.str());
-}
-
-template <>
-inline void McPiperVisitor::render(
-    folly::StringPiece name,
-    const std::string& str) {
-  renderStringField(name, str);
-}
-
-template <>
-inline void McPiperVisitor::render(folly::StringPiece name, const bool& b) {
-  renderHeader(name);
-  out_.append(b ? "true" : "false", format_.dataValueColor);
-}
 } // detail
 
 template <class R>
 facebook::memcache::StyledString
 print(const R& req, folly::StringPiece /* name */, bool script) {
-  detail::McPiperVisitor printer(script);
+  detail::McPiperVisitor printer(script, 1 /* indentation */);
   req.visitFields(printer);
   return std::move(printer).styled();
 }
+
 } // carbon
