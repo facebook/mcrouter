@@ -300,6 +300,10 @@ McRouteHandleProvider<RouterInfo>::makePoolRoute(
           "hash_func", WeightedCh3HashFunc::type())("weights", *jWeights);
     }
 
+    if (auto jTags = poolJson.json.get_ptr("tags")) {
+      jhashWithWeights["tags"] = *jTags;
+    }
+
     if (json.isObject()) {
       if (auto jhash = json.get_ptr("hash")) {
         checkLogic(

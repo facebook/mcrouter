@@ -83,11 +83,18 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
     return createHashRoute<RouterInfo, ConstShardHashFunc>(
         std::move(rh), std::move(salt), ConstShardHashFunc(n));
   } else if (funcType == RendezvousHashFunc::type()) {
-    // Construct a list of endpoints
-    std::vector<std::string> endpoints;
-    endpoints.reserve(rh.size());
-    for (const auto& handle : rh) {
-      endpoints.push_back(handle->routeName());
+    std::vector<folly::StringPiece> endpoints;
+
+    auto jtags = json.get_ptr("tags");
+    checkLogic(jtags, "HashRoute: tags needed for Rendezvous hash route");
+    checkLogic(jtags->isArray(), "HashRoute: tags is not an array");
+    checkLogic(
+        jtags->size() == rh.size(),
+        "HashRoute: number of tags doesn't match number of route handles");
+
+    for (const auto& jtag : *jtags) {
+      checkLogic(jtag.isString(), "HashRoute: tag is not a string");
+      endpoints.push_back(jtag.stringPiece());
     }
 
     return createHashRoute<RouterInfo, RendezvousHashFunc>(

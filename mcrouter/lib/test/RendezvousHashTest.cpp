@@ -18,18 +18,29 @@
 using namespace facebook::memcache;
 
 namespace {
-std::vector<std::string> genEndpoints(int n) {
-  std::vector<std::string> result;
+std::pair<std::vector<std::string>, std::vector<folly::StringPiece>>
+genEndpoints(int n) {
+  std::vector<std::string> raw;
+  std::vector<folly::StringPiece> ref;
   for (int i = 0; i < n; ++i) {
     auto endpoint = "xxx." + folly::to<std::string>(i) + ".yy";
-    result.push_back(endpoint);
+    raw.push_back(endpoint);
   }
-  return result;
+  for (const auto& e : raw) {
+    ref.push_back(e);
+  }
+  return std::make_pair(std::move(raw), std::move(ref));
 }
+
+RendezvousHashFunc genRendezvousHashFunc(int n) {
+  auto combined = genEndpoints(n);
+  return RendezvousHashFunc(combined.second);
+}
+
 } // namespace
 
 TEST(RendezvousHashFunc, basic) {
-  RendezvousHashFunc func_3(genEndpoints(3));
+  auto func_3 = genRendezvousHashFunc(3);
 
   EXPECT_EQ(func_3("sample"), 1);
   EXPECT_EQ(func_3(""), 1);
@@ -42,7 +53,7 @@ TEST(RendezvousHashFunc, basic) {
   }
   EXPECT_EQ(func_3(test_max_key), 1);
 
-  RendezvousHashFunc func_343(genEndpoints(343));
+  auto func_343 = genRendezvousHashFunc(343);
 
   EXPECT_EQ(func_343(test_max_key), 183);
   EXPECT_EQ(func_343("sample"), 45);
@@ -51,7 +62,7 @@ TEST(RendezvousHashFunc, basic) {
 }
 
 TEST(RendezvousHashFunc, rendezvous_3) {
-  RendezvousHashFunc rendezvous_3(genEndpoints(3));
+  auto rendezvous_3 = genRendezvousHashFunc(3);
 
   std::vector<size_t> rendezvous_counts(3, 0);
   for (size_t i = 0; i < 1000; ++i) {
@@ -63,9 +74,9 @@ TEST(RendezvousHashFunc, rendezvous_3) {
 }
 
 TEST(RendezvousHashFunc, rendezvous_10) {
-  RendezvousHashFunc rendezvous_10(genEndpoints(10));
-  std::vector<size_t> rendezvous_counts(10, 0);
+  auto rendezvous_10 = genRendezvousHashFunc(10);
 
+  std::vector<size_t> rendezvous_counts(10, 0);
   for (size_t i = 0; i < 10000; ++i) {
     auto key = "mykey:" + folly::to<std::string>(i);
     ++rendezvous_counts[rendezvous_10(key)];
@@ -79,13 +90,14 @@ TEST(RendezvousHashFunc, rendezvous_10) {
 
 TEST(RendezvousHashFunc, rendezvous_rehash) {
   const uint32_t n = 499;
-  auto endpoints = genEndpoints(n);
+  auto combined = genEndpoints(n);
+  const auto& endpoints = combined.second;
 
   RendezvousHashFunc rendezvous(endpoints);
 
   // Number of rehashes if we remove one element
-  auto removeCompare = [&](std::vector<std::string>& newEndpoints,
-                           std::vector<std::string>::iterator it) {
+  auto removeCompare = [&](std::vector<folly::StringPiece>& newEndpoints,
+                           std::vector<folly::StringPiece>::iterator it) {
     newEndpoints.erase(it);
 
     RendezvousHashFunc newRendezvous(newEndpoints);

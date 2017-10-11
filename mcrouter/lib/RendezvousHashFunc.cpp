@@ -34,9 +34,10 @@ inline uint64_t hash128to64(const uint64_t upper, const uint64_t lower) {
 namespace facebook {
 namespace memcache {
 
-RendezvousHashFunc::RendezvousHashFunc(std::vector<std::string> endpoints) {
+RendezvousHashFunc::RendezvousHashFunc(
+    std::vector<folly::StringPiece> endpoints) {
   endpointHashes_.reserve(endpoints.size());
-  for (const folly::StringPiece ap : endpoints) {
+  for (const auto ap : endpoints) {
     const uint64_t hash = murmur_hash_64A(ap.data(), ap.size(), kHashSeed);
     endpointHashes_.push_back(hash);
   }
