@@ -15,6 +15,7 @@
 
 #include "mcrouter/lib/debug/FifoManager.h"
 #include "mcrouter/lib/network/McServerRequestContext.h"
+#include "mcrouter/lib/network/McServerSSLUtil.h"
 #include "mcrouter/lib/network/MultiOpParent.h"
 #include "mcrouter/lib/network/WriteBuffer.h"
 
@@ -487,37 +488,10 @@ void McServerSession::writeErr(
 }
 
 bool McServerSession::handshakeVer(
-    folly::AsyncSSLSocket*,
+    folly::AsyncSSLSocket* sock,
     bool preverifyOk,
     X509_STORE_CTX* ctx) noexcept {
-  if (!preverifyOk) {
-    return false;
-  }
-  // XXX I'm assuming that this will be the case as a result of
-  // preverifyOk being true
-  DCHECK(X509_STORE_CTX_get_error(ctx) == X509_V_OK);
-
-  // So the interesting thing is that this always returns the depth of
-  // the cert it's asking you to verify, and the error_ assumes to be
-  // just a poorly named function.
-  auto certDepth = X509_STORE_CTX_get_error_depth(ctx);
-
-  // Depth is numbered from the peer cert going up.  For anything in the
-  // chain, let's just leave it to openssl to figure out it's validity.
-  // We may want to limit the chain depth later though.
-  if (certDepth != 0) {
-    return preverifyOk;
-  }
-
-  auto cert = X509_STORE_CTX_get_current_cert(ctx);
-  sockaddr_storage addrStorage;
-  socklen_t addrLen = 0;
-  if (!folly::ssl::OpenSSLUtils::getPeerAddressFromX509StoreCtx(
-          ctx, &addrStorage, &addrLen)) {
-    return false;
-  }
-  return folly::ssl::OpenSSLUtils::validatePeerCertNames(
-      cert, reinterpret_cast<sockaddr*>(&addrStorage), addrLen);
+  return McServerSSLUtil::verifySSL(sock, preverifyOk, ctx);
 }
 
 void McServerSession::handshakeSuc(folly::AsyncSSLSocket* sock) noexcept {

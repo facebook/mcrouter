@@ -9,6 +9,7 @@
  */
 #include <gtest/gtest.h>
 
+#include "mcrouter/lib/network/McServerSSLUtil.h"
 #include "mcrouter/lib/network/test/TestClientServerUtil.h"
 
 using namespace facebook::memcache;
@@ -41,7 +42,11 @@ TEST(AsyncMcServer, sslCertCommonName) {
   LOG(INFO) << "creating client";
 
   TestClient clientWithSsl(
-      "localhost", server->getListenPort(), 200, mc_ascii_protocol, validSsl());
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_ascii_protocol,
+      validClientSsl());
   clientWithSsl.sendGet("empty", mc_res_found);
   clientWithSsl.waitForReplies();
 
@@ -54,4 +59,23 @@ TEST(AsyncMcServer, sslCertCommonName) {
   server->shutdown();
   server->join();
   EXPECT_EQ(2, server->getAcceptedConns());
+}
+
+TEST(AsyncMcServer, sslVerify) {
+  McServerSSLUtil::setApplicationSSLVerifier(
+      [](folly::AsyncSSLSocket*, bool, X509_STORE_CTX*) { return false; });
+  auto server = TestServer::create(false, true /* use ssl */);
+
+  TestClient sadClient(
+      "localhost",
+      server->getListenPort(),
+      200,
+      mc_ascii_protocol,
+      validClientSsl());
+  sadClient.sendGet("empty", mc_res_connect_error);
+  sadClient.waitForReplies();
+
+  server->shutdown();
+  server->join();
+  EXPECT_EQ(1, server->getAcceptedConns());
 }

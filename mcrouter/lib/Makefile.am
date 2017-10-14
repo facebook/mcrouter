@@ -170,6 +170,8 @@ libmcrouter_a_SOURCES = \
   network/McServerRequestContext.h \
   network/McServerSession.cpp \
   network/McServerSession.h \
+  network/McServerSSLUtil.cpp \
+  network/McServerSSLUtil.h \
   network/MemcacheMessageHelpers.h \
   network/MemoryController.cpp \
   network/MemoryController.h \
