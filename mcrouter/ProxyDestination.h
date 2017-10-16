@@ -114,7 +114,9 @@ class ProxyDestination {
  private:
   std::unique_ptr<AsyncMcClient> client_;
   std::shared_ptr<const AccessPoint> accessPoint_;
-  mutable folly::SpinLock clientLock_; // AsyncMcClient lock for stats threads.
+  // Ensure proxy thread doesn't reset AsyncMcClient
+  // while config and stats threads may be accessing it
+  mutable folly::SpinLock clientLock_;
 
   // Shortest timeout among all DestinationRoutes using this destination
   std::chrono::milliseconds shortestTimeout_{0};

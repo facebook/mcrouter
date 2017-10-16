@@ -433,7 +433,12 @@ void ProxyDestination::closeGracefully() {
     // Check again, in case we reset it in closeNow()
     if (client_) {
       client_->setStatusCallbacks(nullptr, nullptr);
-      client_ = nullptr;
+      std::unique_ptr<AsyncMcClient> client;
+      {
+        folly::SpinLockGuard g(clientLock_);
+        client = std::move(client_);
+      }
+      client.reset();
     }
   }
 }
@@ -522,6 +527,7 @@ void ProxyDestination::updateShortestTimeout(
   }
   if (shortestTimeout_.count() == 0 || shortestTimeout_ > timeout) {
     shortestTimeout_ = timeout;
+    folly::SpinLockGuard g(clientLock_);
     if (client_) {
       client_->updateWriteTimeout(shortestTimeout_);
     }
