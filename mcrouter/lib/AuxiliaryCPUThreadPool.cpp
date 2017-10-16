@@ -24,7 +24,7 @@ wangle::CPUThreadPoolExecutor& AuxiliaryCPUThreadPool::getThreadPool() {
   folly::call_once(initFlag_, [&] {
     threadPool_ = std::make_unique<wangle::CPUThreadPoolExecutor>(
         kNumCPUThreads,
-        std::make_shared<wangle::NamedThreadFactory>("mcr-cpuaux-"));
+        std::make_shared<folly::NamedThreadFactory>("mcr-cpuaux-"));
   });
 
   return *threadPool_;
