@@ -13,11 +13,13 @@ from __future__ import unicode_literals
 from threading import Thread
 import time
 
-from mcrouter.test.MCProcess import McrouterClient, Memcached
+from mcrouter.test.MCProcess import McrouterClient, Memcached, Mcrouter
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+
 
 class TestMcrouterBasic(McrouterTestCase):
     config = './mcrouter/test/mcrouter_test_basic_1_1_1.json'
+    null_route_config = './mcrouter/test/test_nullroute.json'
     extra_args = []
 
     def setUp(self):
@@ -134,6 +136,15 @@ class TestMcrouterBasic(McrouterTestCase):
         mcr.shutdown()
         time.sleep(2)
         self.assertFalse(mcr.is_alive())
+
+    def test_double_bind(self):
+        mcr1 = self.get_mcrouter()
+        time.sleep(1)
+        mcr2 = Mcrouter(self.null_route_config, port=mcr1.port)
+
+        time.sleep(2)
+        self.assertTrue(mcr1.is_alive())
+        self.assertFalse(mcr2.is_alive())
 
     def test_set_exptime(self):
         mcr = self.get_mcrouter()

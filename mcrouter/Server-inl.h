@@ -133,6 +133,19 @@ bool runServer(
       return false;
     }
 
+    SCOPE_EXIT {
+      router->shutdown();
+      server.join();
+
+      LOG(INFO) << "Shutting down";
+
+      freeAllRouters();
+
+      if (!opts.unixDomainSockPath.empty()) {
+        std::remove(opts.unixDomainSockPath.c_str());
+      }
+    };
+
     router->addStartupOpts(standaloneOpts.toDict());
 
     if (standaloneOpts.postprocess_logging_route) {
@@ -156,16 +169,6 @@ bool runServer(
         [&shutdownBaton]() { shutdownBaton.post(); });
 
     shutdownBaton.wait();
-    router->shutdown();
-    server.join();
-
-    LOG(INFO) << "Shutting down";
-
-    freeAllRouters();
-
-    if (!opts.unixDomainSockPath.empty()) {
-      std::remove(opts.unixDomainSockPath.c_str());
-    }
   } catch (const std::exception& e) {
     LOG(ERROR) << e.what();
     return false;

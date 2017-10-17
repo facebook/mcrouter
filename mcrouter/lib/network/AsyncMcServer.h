@@ -37,6 +37,7 @@ namespace memcache {
 
 class AsyncMcServerWorker;
 class McServerThread;
+class McServerThreadSpawnController;
 
 /**
  * A multithreaded, asynchronous MC protocol server.
@@ -195,6 +196,7 @@ class AsyncMcServer {
  private:
   std::unique_ptr<folly::ScopedEventBaseThread> auxiliaryEvbThread_;
   Options opts_;
+  std::unique_ptr<McServerThreadSpawnController> threadsSpawnController_;
   std::vector<std::unique_ptr<McServerThread>> threads_;
 
   std::unique_ptr<wangle::TLSCredProcessor> ticketKeySeedPoller_;
