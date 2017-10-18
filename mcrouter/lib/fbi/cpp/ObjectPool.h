@@ -17,14 +17,12 @@
 #include <type_traits>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
-
 #include <glog/logging.h>
 
 namespace facebook {
 namespace memcache {
 
-const size_t kInfinity = std::numeric_limits<size_t>::max();
+constexpr size_t kInfinity = std::numeric_limits<size_t>::max();
 
 /// ObjectPool is an efficient way to allocate small objects of
 /// type T. Internally it uses a free list of pointers to objects
@@ -39,13 +37,16 @@ const size_t kInfinity = std::numeric_limits<size_t>::max();
 ///
 /// Note: ObjectPool is not thread-safe
 template <typename T, typename Allocator = std::allocator<T>>
-class ObjectPool : boost::noncopyable {
+class ObjectPool {
  public:
   /// Create an object pool with the given max capacity for the free list
   /// If maxCapacity == std::numeric_limits<size_t>::max() then the capacity
   /// of the free list is unbounded
   explicit ObjectPool(size_t maxCapacity = kInfinity)
       : maxCapacity_(maxCapacity) {}
+
+  ObjectPool(const ObjectPool&) = delete;
+  ObjectPool& operator=(const ObjectPool&) = delete;
 
   /// Allocate an object
   /// @param    args        Arguments to forward to T's constructor
@@ -107,6 +108,45 @@ class ObjectPool : boost::noncopyable {
   }
 
  private:
+  class RecacheDeleter {
+   public:
+    explicit RecacheDeleter(ObjectPool<T>& pool) : pool_(pool) {}
+
+    RecacheDeleter(const RecacheDeleter&) = default;
+    RecacheDeleter& operator=(const RecacheDeleter&) = default;
+    RecacheDeleter(RecacheDeleter&&) = default;
+    RecacheDeleter& operator=(RecacheDeleter&&) = default;
+
+    void operator()(T* p) {
+      pool_.free(p);
+    }
+
+   private:
+    ObjectPool<T>& pool_;
+  };
+
+ public:
+  using UniquePtr = std::unique_ptr<T, RecacheDeleter>;
+
+  /**
+   * Same as alloc(), but returns a unique_ptr with custom deleter that will
+   * automatically release memory back to the pool on destruction.
+   */
+  template <class... Args>
+  UniquePtr make(Args&&... args) {
+    return takeOwnership(alloc(std::forward<Args>(args)...));
+  }
+
+  /**
+   * Convert a raw T* to a UniquePtr that will automatically release memory back
+   * to the pool on destruction. The caller must ensure that it is appropriate
+   * and safe to deallocate p via this->free().
+   */
+  UniquePtr takeOwnership(T* p) {
+    return UniquePtr(p, RecacheDeleter(*this));
+  }
+
+ private:
   // Return an object from the free list. The caller must invoke the
   // constructor
   //
@@ -153,8 +193,8 @@ class ObjectPool : boost::noncopyable {
 
   Allocator allocator_; // Allocator used to allocate objects
 
-  const size_t maxCapacity_; // Maximum number of objects that can be
-  // stored within the pool
+  // Maximum number of objects that can be stored within the pool
+  const size_t maxCapacity_;
 };
 
 /// ThreadSafeObjectPool, as the name suggests, is a thread safe version of
