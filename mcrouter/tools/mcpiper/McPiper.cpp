@@ -12,7 +12,6 @@
 #include <unordered_set>
 
 #include "mcrouter/lib/network/CarbonMessageList.h"
-
 #include "mcrouter/tools/mcpiper/FifoReader.h"
 #include "mcrouter/tools/mcpiper/MessagePrinter.h"
 

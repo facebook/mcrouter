@@ -56,9 +56,9 @@ class McPiper {
   }
 
  private:
+  folly::EventBase eventBase_;
   std::unique_ptr<MessagePrinter> messagePrinter_;
   std::unique_ptr<FifoReaderManager> fifoReaderManager_;
-  folly::EventBase eventBase_;
   bool running_{false};
 };
 

@@ -7,20 +7,21 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "McPiper.h"
-
 #include <signal.h>
 
 #include <boost/program_options.hpp>
 
 #include <folly/Format.h>
 #include <folly/Singleton.h>
+#include <folly/init/Init.h>
+
+#include "mcrouter/tools/mcpiper/McPiper.h"
 
 using namespace facebook::memcache::mcpiper;
 
 namespace {
 
-McPiper gMcpiper;
+std::unique_ptr<McPiper> gMcpiper;
 
 [[noreturn]] void cleanExit(int32_t status) {
   for (auto sig : {SIGINT, SIGABRT, SIGQUIT, SIGPIPE, SIGWINCH}) {
@@ -29,11 +30,12 @@ McPiper gMcpiper;
 
   if (status >= 0) {
     std::cerr << "exit" << std::endl
-              << gMcpiper.stats().totalMessages.load() << " messages received, "
-              << gMcpiper.stats().printedMessages.load() << " printed."
+              << gMcpiper->stats().totalMessages.load()
+              << " messages received, "
+              << gMcpiper->stats().printedMessages.load() << " printed."
               << std::endl;
-    auto beforeCompress = gMcpiper.stats().numBytesBeforeCompression.load();
-    auto afterCompress = gMcpiper.stats().numBytesAfterCompression.load();
+    auto beforeCompress = gMcpiper->stats().numBytesBeforeCompression.load();
+    auto afterCompress = gMcpiper->stats().numBytesAfterCompression.load();
     if (beforeCompress > 0 && afterCompress > 0) {
       std::cerr << "Compression ratio = "
                 << static_cast<double>(afterCompress) / beforeCompress
@@ -174,7 +176,13 @@ Settings parseOptions(int argc, char** argv) {
 } // anonymous namespace
 
 int main(int argc, char** argv) {
-  folly::SingletonVault::singleton()->registrationComplete();
+  // Just give the binary name to folly::init() because we use
+  // boost::program_options instead of gflags.
+  int tempArgc = 1;
+  folly::init(&tempArgc, &argv, false);
+
+  gMcpiper = std::make_unique<McPiper>();
+
   struct sigaction sa;
   memset(&sa, 0, sizeof(struct sigaction));
   sa.sa_handler = cleanExit;
@@ -182,8 +190,6 @@ int main(int argc, char** argv) {
     sigaction(sig, &sa, nullptr);
   }
 
-  google::InitGoogleLogging(argv[0]);
-
-  gMcpiper.run(parseOptions(argc, argv));
+  gMcpiper->run(parseOptions(argc, argv));
   cleanExit(0);
 }
