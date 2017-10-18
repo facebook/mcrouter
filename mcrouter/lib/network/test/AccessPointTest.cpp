@@ -40,6 +40,12 @@ TEST(AccessPoint, host_port) {
   EXPECT_EQ(12345, ap->getPort());
   EXPECT_EQ(proto, ap->getProtocol());
   EXPECT_TRUE(AccessPoint::create("[::1]", proto) == nullptr);
+  ap = AccessPoint::create("unix:/tmp/sock1", proto);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("/tmp/sock1", ap->getHost());
+  EXPECT_EQ(0, ap->getPort());
+  EXPECT_EQ(proto, ap->getProtocol());
+  EXPECT_TRUE(AccessPoint::create("unix:", proto) == nullptr);
 }
 
 TEST(AccessPoint, host_port_proto) {
@@ -66,6 +72,12 @@ TEST(AccessPoint, host_port_proto) {
   EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
   EXPECT_TRUE(AccessPoint::create("[::1]:12345:fhgsdg", proto) == nullptr);
   EXPECT_TRUE(AccessPoint::create("[::1]", proto) == nullptr);
+  ap = AccessPoint::create("unix:/tmp/sock2:caret", proto);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("/tmp/sock2", ap->getHost());
+  EXPECT_EQ(0, ap->getPort());
+  EXPECT_EQ(mc_caret_protocol, ap->getProtocol());
+  EXPECT_TRUE(AccessPoint::create("unix:/tmp/sock3:fhgsdg", proto) == nullptr);
 }
 
 TEST(AccessPoint, host_port_proto_ssl) {
@@ -101,6 +113,19 @@ TEST(AccessPoint, host_port_proto_ssl) {
   EXPECT_EQ(mc_ascii_protocol, ap->getProtocol());
   EXPECT_FALSE(ap->useSsl());
   EXPECT_TRUE(AccessPoint::create("[::1]:12345:ascii:blah", proto) == nullptr);
+  EXPECT_TRUE(
+      AccessPoint::create("unix:/tmp/sock4:ascii:ssl", proto) == nullptr);
+  EXPECT_TRUE(
+      AccessPoint::create("unix:/tmp/sock5:ascii:blah", proto) == nullptr);
+  EXPECT_TRUE(
+      AccessPoint::create("unix:/tmp/sock6:5000:caret", proto) == nullptr);
+  EXPECT_TRUE(AccessPoint::create("unix:/tmp/sock7:5000", proto) == nullptr);
+  ap = AccessPoint::create("unix:/tmp/sock8:caret:plain", proto);
+  EXPECT_TRUE(ap != nullptr);
+  EXPECT_EQ("/tmp/sock8", ap->getHost());
+  EXPECT_EQ(0, ap->getPort());
+  EXPECT_EQ(mc_caret_protocol, ap->getProtocol());
+  EXPECT_TRUE(!ap->useSsl());
 }
 
 TEST(AccessPoint, port_override) {

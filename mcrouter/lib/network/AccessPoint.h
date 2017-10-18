@@ -25,7 +25,8 @@ struct AccessPoint {
       uint16_t port = 0,
       mc_protocol_t protocol = mc_unknown_protocol,
       bool useSsl = false,
-      bool compressed = false);
+      bool compressed = false,
+      bool unixDomainSocket = false);
 
   /**
    * @param apString accepts host:port, host:port:protocol and
@@ -66,6 +67,10 @@ struct AccessPoint {
     return compressed_;
   }
 
+  bool isUnixDomainSocket() const {
+    return unixDomainSocket_;
+  }
+
   /**
    * @return [host]:port if address is IPv6, host:port otherwise
    */
@@ -83,8 +88,9 @@ struct AccessPoint {
   uint16_t port_;
   mc_protocol_t protocol_ : 8;
   bool useSsl_{false};
-  bool isV6_{false};
   bool compressed_{false};
+  bool isV6_{false};
+  bool unixDomainSocket_{false};
 };
 
 } // memcache

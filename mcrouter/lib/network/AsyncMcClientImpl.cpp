@@ -486,11 +486,20 @@ void AsyncMcClientImpl::attemptConnection() {
   // expensive SSL code. This should be always executed on main context.
   folly::fibers::runInMainContext([this] {
     assert(connectionState_ == ConnectionState::DOWN);
-
     connectionState_ = ConnectionState::CONNECTING;
     pendingGoAwayReply_ = false;
 
     if (connectionOptions_.sslContextProvider) {
+      // Unix Domain Sockets do not work with SSL because
+      // the protocol is not implemented for Unix Domain
+      // Sockets. Trying to use SSL with Unix Domain Sockets
+      // will result in protocol error.
+      if (connectionOptions_.accessPoint->isUnixDomainSocket()) {
+        connectErr(folly::AsyncSocketException(
+            folly::AsyncSocketException::BAD_ARGS,
+            "SSL protocol is not applicable for Unix Domain Sockets"));
+        return;
+      }
       auto sslContext = connectionOptions_.sslContextProvider();
       if (!sslContext) {
         connectErr(folly::AsyncSocketException(
@@ -520,10 +529,14 @@ void AsyncMcClientImpl::attemptConnection() {
 
     folly::SocketAddress address;
     try {
-      address = folly::SocketAddress(
-          connectionOptions_.accessPoint->getHost(),
-          connectionOptions_.accessPoint->getPort(),
-          /* allowNameLookup */ true);
+      if (connectionOptions_.accessPoint->isUnixDomainSocket()) {
+        address.setFromPath(connectionOptions_.accessPoint->getHost());
+      } else {
+        address = folly::SocketAddress(
+            connectionOptions_.accessPoint->getHost(),
+            connectionOptions_.accessPoint->getPort(),
+            /* allowNameLookup */ true);
+      }
     } catch (const std::system_error& e) {
       LOG_FAILURE(
           "AsyncMcClient", failure::Category::kBadEnvironment, "{}", e.what());
