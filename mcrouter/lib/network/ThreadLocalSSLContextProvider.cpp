@@ -11,8 +11,8 @@
 
 #include <unordered_map>
 
+#include <folly/Hash.h>
 #include <folly/Singleton.h>
-#include <folly/hash/Hash.h>
 #include <folly/io/async/SSLContext.h>
 #include <wangle/client/persistence/SharedMutexCacheLockGuard.h>
 #include <wangle/client/ssl/SSLSessionCacheData.h>

@@ -14,8 +14,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <folly/Hash.h>
 #include <folly/fibers/FiberManager.h>
-#include <folly/hash/Hash.h>
 
 #include "mcrouter/Proxy.h"
 #include "mcrouter/RoutingPrefix.h"

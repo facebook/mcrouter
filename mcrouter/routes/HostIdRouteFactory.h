@@ -9,8 +9,8 @@
  */
 #pragma once
 
+#include <folly/Hash.h>
 #include <folly/dynamic.h>
-#include <folly/hash/Hash.h>
 
 #include "mcrouter/lib/config/RouteHandleBuilder.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
