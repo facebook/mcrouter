@@ -13,11 +13,11 @@
 #include <random>
 
 #include <folly/Format.h>
-#include <folly/Hash.h>
 #include <folly/IPAddress.h>
 #include <folly/Optional.h>
 #include <folly/Random.h>
 #include <folly/String.h>
+#include <folly/hash/Hash.h>
 #include <folly/json.h>
 
 #include "mcrouter/lib/config/ImportResolverIf.h"
