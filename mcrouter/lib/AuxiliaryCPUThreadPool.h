@@ -9,8 +9,8 @@
  */
 #pragma once
 
-#include <folly/CallOnce.h>
 #include <folly/Singleton.h>
+#include <folly/synchronization/CallOnce.h>
 #include <wangle/concurrent/CPUThreadPoolExecutor.h>
 
 namespace facebook {
