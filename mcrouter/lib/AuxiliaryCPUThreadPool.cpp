@@ -20,9 +20,9 @@ namespace {
 folly::Singleton<AuxiliaryCPUThreadPool> gAuxiliaryCPUThreadPool;
 } // anonymous
 
-wangle::CPUThreadPoolExecutor& AuxiliaryCPUThreadPool::getThreadPool() {
+folly::CPUThreadPoolExecutor& AuxiliaryCPUThreadPool::getThreadPool() {
   folly::call_once(initFlag_, [&] {
-    threadPool_ = std::make_unique<wangle::CPUThreadPoolExecutor>(
+    threadPool_ = std::make_unique<folly::CPUThreadPoolExecutor>(
         kNumCPUThreads,
         std::make_shared<folly::NamedThreadFactory>("mcr-cpuaux-"));
   });

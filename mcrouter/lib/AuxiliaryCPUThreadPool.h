@@ -25,10 +25,10 @@ namespace mcrouter {
  */
 class AuxiliaryCPUThreadPool {
  public:
-  wangle::CPUThreadPoolExecutor& getThreadPool();
+  folly::CPUThreadPoolExecutor& getThreadPool();
 
  private:
-  std::unique_ptr<wangle::CPUThreadPoolExecutor> threadPool_;
+  std::unique_ptr<folly::CPUThreadPoolExecutor> threadPool_;
   folly::once_flag initFlag_;
 };
 
