@@ -19,9 +19,9 @@
 #include <boost/filesystem/path.hpp>
 
 #include <folly/DynamicConverter.h>
-#include <folly/ThreadName.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
+#include <folly/system/ThreadName.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"

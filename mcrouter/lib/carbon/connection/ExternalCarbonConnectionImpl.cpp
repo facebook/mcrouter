@@ -19,10 +19,10 @@
 #include <folly/Baton.h>
 #include <folly/ScopeGuard.h>
 #include <folly/Singleton.h>
-#include <folly/ThreadName.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/fibers/FiberManager.h>
 #include <folly/io/async/EventBaseManager.h>
+#include <folly/system/ThreadName.h>
 
 #include "mcrouter/lib/McResUtil.h"
 

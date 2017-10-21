@@ -14,7 +14,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include <folly/Singleton.h>
-#include <folly/ThreadName.h>
+#include <folly/system/ThreadName.h>
 
 #include "mcrouter/AsyncWriter.h"
 #include "mcrouter/ProxyBase.h"

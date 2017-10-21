@@ -10,7 +10,7 @@
 #include "ThreadUtil.h"
 
 #include <folly/Format.h>
-#include <folly/ThreadName.h>
+#include <folly/system/ThreadName.h>
 
 #include "mcrouter/options.h"
 

@@ -10,9 +10,9 @@
 #include "AsyncWriter.h"
 
 #include <folly/Range.h>
-#include <folly/ThreadName.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/io/async/EventBase.h>
+#include <folly/system/ThreadName.h>
 
 #include "mcrouter/AsyncWriterEntry.h"
 #include "mcrouter/McrouterLogFailure.h"

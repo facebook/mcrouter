@@ -23,9 +23,9 @@
 #include <folly/Conv.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
-#include <folly/ThreadName.h>
 #include <folly/fibers/EventBaseLoopController.h>
 #include <folly/json.h>
+#include <folly/system/ThreadName.h>
 
 #include "mcrouter/CarbonRouterInstance.h"
 #include "mcrouter/McrouterLogFailure.h"
