@@ -10,8 +10,8 @@
 #pragma once
 
 #include <folly/Singleton.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 #include <folly/synchronization/CallOnce.h>
-#include <wangle/concurrent/CPUThreadPoolExecutor.h>
 
 namespace facebook {
 namespace memcache {
