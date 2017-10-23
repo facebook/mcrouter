@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include <folly/Function.h>
 #include <folly/Optional.h>
 
 #include "mcrouter/McrouterFiberContext.h"
@@ -80,17 +81,10 @@ class ShadowRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) const {
-    std::shared_ptr<Request> adjustedReq;
+    std::shared_ptr<const Request> adjustedNormalReq;
     folly::Optional<ReplyT<Request>> normalReply;
     for (const auto& iter : shadowData_) {
       if (shouldShadow(req, iter.second.get())) {
-        if (!adjustedReq) {
-          adjustedReq = std::make_shared<Request>(
-              shadowPolicy_.updateRequestForShadowing(req));
-        }
-        if (!normalReply && shadowPolicy_.shouldDelayShadow(req)) {
-          normalReply = normal_->route(*adjustedReq);
-        }
         auto shadow = iter.first;
         if (!shadow) {
           if (auto& reqCtx = fiber_local<RouterInfo>::getSharedCtx()) {
@@ -101,15 +95,28 @@ class ShadowRoute {
           }
           continue;
         }
-        dispatchShadowRequest(std::move(shadow), adjustedReq);
+
+        if (!adjustedNormalReq) {
+          adjustedNormalReq = shadowPolicy_.makeAdjustedNormalRequest(req);
+          assert(adjustedNormalReq);
+        }
+
+        if (!normalReply &&
+            shadowPolicy_.template shouldDelayShadow<Request>()) {
+          normalReply = normal_->route(*adjustedNormalReq);
+        }
+
+        dispatchShadowRequest(
+            std::move(shadow),
+            shadowPolicy_.makeShadowRequest(adjustedNormalReq),
+            normalReply ? shadowPolicy_.makePostShadowReplyFn(*normalReply)
+                        : nullptr);
       }
     }
 
-    if (normalReply) {
-      return std::move(*normalReply);
-    } else {
-      return normal_->route(adjustedReq ? *adjustedReq : req);
-    }
+    return normalReply
+        ? std::move(*normalReply)
+        : normal_->route(adjustedNormalReq ? *adjustedNormalReq : req);
   }
 
  private:
@@ -149,7 +156,8 @@ class ShadowRoute {
   template <class Request>
   void dispatchShadowRequest(
       std::shared_ptr<RouteHandleIf> shadow,
-      std::shared_ptr<Request> adjustedReq) const;
+      std::shared_ptr<Request> adjustedReq,
+      folly::Function<void(const ReplyT<Request>&)> postShadowReplyFn) const;
 };
 
 template <class RouterInfo>

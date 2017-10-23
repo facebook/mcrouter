@@ -13,9 +13,13 @@
 #include <memory>
 #include <unordered_map>
 
+#include <folly/EvictingCacheMap.h>
+#include <folly/Synchronized.h>
 #include <folly/experimental/FunctionScheduler.h>
 #include <folly/experimental/ReadMostlySharedPtr.h>
+#include <folly/fibers/TimedMutex.h>
 #include <folly/io/async/EventBaseThread.h>
+#include <folly/synchronization/CallOnce.h>
 
 #include "mcrouter/ConfigApi.h"
 #include "mcrouter/LeaseTokenMap.h"
@@ -40,6 +44,10 @@ class Proxy;
 class RuntimeVarsData;
 using ObservableRuntimeVars =
     Observable<std::shared_ptr<const RuntimeVarsData>>;
+
+using ShadowLeaseTokenMap = folly::Synchronized<
+    folly::EvictingCacheMap<int64_t, int64_t>,
+    folly::fibers::TimedMutex>;
 
 class CarbonRouterInstanceBase {
  public:
@@ -89,6 +97,16 @@ class CarbonRouterInstanceBase {
 
   LeaseTokenMap& leaseTokenMap() {
     return leaseTokenMap_;
+  }
+
+  ShadowLeaseTokenMap& shadowLeaseTokenMap() {
+    using UnsynchronizedMap = typename ShadowLeaseTokenMap::DataType;
+
+    folly::call_once(shadowLeaseTokenMapInitFlag_, [this]() {
+      shadowLeaseTokenMap_ = std::make_unique<ShadowLeaseTokenMap>(
+          UnsynchronizedMap{opts().max_shadow_token_map_size});
+    });
+    return *shadowLeaseTokenMap_;
   }
 
   const LogPostprocessCallbackFunc& postprocessCallback() const {
@@ -191,6 +209,11 @@ class CarbonRouterInstanceBase {
 
   // Keep track of lease tokens of failed over requests.
   LeaseTokenMap leaseTokenMap_;
+
+  // In order to shadow lease-sets properly, we need to pass the correct token
+  // to the shadow destination.
+  std::unique_ptr<ShadowLeaseTokenMap> shadowLeaseTokenMap_;
+  folly::once_flag shadowLeaseTokenMapInitFlag_;
 
   std::unordered_map<std::string, std::string> additionalStartupOpts_;
 

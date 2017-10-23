@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -45,3 +45,42 @@ class TestShadowRoute(McrouterTestCase):
             else:
                 self.assertIsNone(self.mc_foo_shadow.get(key))
                 self.assertIsNone(self.mc_bar_shadow.get(key))
+
+    def test_shadow_route_leases(self):
+        kv = [('g' + str(i), 'value' + str(i)) for i in range(1, 20)]
+
+        # Send a few lease-get misses to the shadow in order to ensure primary
+        # and shadow hosts don't issue lease tokens in lockstep later on.
+        current_shadow_token = 0
+        for i in range(100, 500):
+            k = 'warmup' + str(i)
+            current_shadow_token = self.mc_foo_shadow.leaseGet(k)['token']
+
+        self.assertGreater(
+            current_shadow_token,
+            self.mc_foo_0.leaseGet('a')['token'],
+        )
+        self.assertGreater(
+            current_shadow_token,
+            self.mc_foo_1.leaseGet('a')['token'],
+        )
+
+        for key, value in kv:
+            self.assertIsNone(self.mc_foo_0.get(key))
+            self.assertIsNone(self.mc_foo_1.get(key))
+            self.assertIsNone(self.mc_foo_shadow.get(key))
+
+            token = self.mcrouter.leaseGet(key)['token']
+            self.assertGreater(token, 1)
+
+            self.assertTrue(self.mcrouter.leaseSet(
+                key,
+                {'value': value, 'token': token},
+            ))
+            self.assertTrue(self.mcrouter.set(key, value))
+
+            self.assertEqual(
+                self.mc_foo_0.get(key) or self.mc_foo_1.get(key),
+                value,
+            )
+            self.assertEqual(self.mc_foo_shadow.get(key), value)

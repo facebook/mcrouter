@@ -709,6 +709,16 @@ MCROUTER_OPTION_TOGGLE(
     no_short,
     "DEPRECATED. No longer supported/needed")
 
+MCROUTER_OPTION_INTEGER(
+    size_t,
+    max_shadow_token_map_size,
+    1024,
+    "max-shadow-token-map-size",
+    no_short,
+    "Maximum size of LRU cache mapping normal lease tokens to shadow lease"
+    " tokens. High rates of shadowing of lease operations may require a limit"
+    " higher than the default. 0 disables limiting of map size.")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

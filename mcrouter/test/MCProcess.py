@@ -750,6 +750,7 @@ class Memcached(MCProcess):
             if listen_sock is not None:
                 listen_sock.close()
         else:
+            args.extend(['--ht_lease_token_power', '0'])
             if port is None:
                 listen_sock = create_listen_socket()
                 port = listen_sock.getsockname()[1]

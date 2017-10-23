@@ -10,6 +10,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 
 #include <folly/fibers/FiberManager.h>
 
@@ -21,13 +22,19 @@ template <class RouterInfo, class ShadowPolicy>
 template <class Request>
 void ShadowRoute<RouterInfo, ShadowPolicy>::dispatchShadowRequest(
     std::shared_ptr<typename RouterInfo::RouteHandleIf> shadow,
-    std::shared_ptr<Request> adjustedReq) const {
+    std::shared_ptr<Request> adjustedReq,
+    folly::Function<void(const ReplyT<Request>&)> postShadowReplyFn) const {
   folly::fibers::addTask(
-      [ shadow = std::move(shadow), adjustedReq = std::move(adjustedReq) ]() {
+      [shadow = std::move(shadow),
+       adjustedReq = std::move(adjustedReq),
+       postShadowReplyFn = std::move(postShadowReplyFn)]() mutable {
         // we don't want to spool shadow requests
         fiber_local<RouterInfo>::clearAsynclogName();
         fiber_local<RouterInfo>::addRequestClass(RequestClass::kShadow);
-        shadow->route(*adjustedReq);
+        const auto shadowReply = shadow->route(*adjustedReq);
+        if (postShadowReplyFn) {
+          postShadowReplyFn(shadowReply);
+        }
       });
 }
 

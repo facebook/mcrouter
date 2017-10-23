@@ -23,13 +23,15 @@ namespace mcrouter {
 template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf>
 McExtraRouteHandleProvider<RouterInfo>::makeShadow(
-    ProxyBase&,
+    ProxyBase& proxy,
     std::shared_ptr<typename RouterInfo::RouteHandleIf> destination,
     ShadowData<RouterInfo> data,
     folly::StringPiece shadowPolicy) {
   if (shadowPolicy == "default") {
     return makeShadowRouteDefault<RouterInfo>(
-        std::move(destination), std::move(data), DefaultShadowPolicy());
+        std::move(destination),
+        std::move(data),
+        DefaultShadowPolicy(proxy.router()));
   } else {
     throw std::logic_error("Invalid shadow policy: " + shadowPolicy.str());
   }
