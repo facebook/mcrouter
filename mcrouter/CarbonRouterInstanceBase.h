@@ -13,8 +13,8 @@
 #include <memory>
 #include <unordered_map>
 
-#include <folly/EvictingCacheMap.h>
 #include <folly/Synchronized.h>
+#include <folly/container/EvictingCacheMap.h>
 #include <folly/experimental/FunctionScheduler.h>
 #include <folly/experimental/ReadMostlySharedPtr.h>
 #include <folly/fibers/TimedMutex.h>
