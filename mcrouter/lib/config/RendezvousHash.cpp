@@ -13,7 +13,7 @@
 #include <cmath>
 #include <limits>
 
-#include <folly/Hash.h>
+#include <folly/hash/Hash.h>
 
 namespace facebook {
 namespace memcache {
