@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Facebook, Inc.
+# Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -46,4 +46,4 @@ class TestTkoReconfigure(McrouterTestCase):
         self.assertEqual(self.mcrouter.stats('suspect_servers'), {})
         # one was removed from config
         self.assertTrue(self.mcrouter.check_in_log(
-            '127.0.0.1:12345 (A) was TKO, removed from config'))
+            '127.0.0.1:12345 was TKO, removed from config'))

@@ -44,8 +44,7 @@ struct TkoLog {
   double avgLatency{0.0};
   const AccessPoint& accessPoint;
   const TkoCounters& globalTkos;
-  folly::StringPiece poolName;
 };
-}
-}
-} // facebook::memcache::mcrouter
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

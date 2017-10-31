@@ -251,7 +251,6 @@ McRouteHandleProvider<RouterInfo>::makePool(
         pdstn = proxy_.destinationMap()->emplace(
             std::move(ap), timeout, qosClass, qosPath, RouterInfo::name);
       }
-      pdstn->updatePoolName(name);
       pdstn->updateShortestTimeout(timeout);
 
       destinations.push_back(makeDestinationRoute<RouterInfo>(

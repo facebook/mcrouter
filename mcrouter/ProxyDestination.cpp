@@ -452,8 +452,7 @@ AsyncMcClient& ProxyDestination::getAsyncMcClient() {
 
 void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   auto logUtil = [this, result](folly::StringPiece eventStr) {
-    VLOG(1) << accessPoint_->toHostPortString() << " (" << poolName_ << ") "
-            << eventStr
+    VLOG(1) << accessPoint_->toHostPortString() << " " << eventStr
             << ". Total hard TKOs: " << tracker->globalTkos().hardTkos
             << "; soft TKOs: " << tracker->globalTkos().softTkos
             << ". Reply: " << mc_res_to_string(result);
@@ -480,7 +479,6 @@ void ProxyDestination::onTkoEvent(TkoLogEvent event, mc_res_t result) const {
   tkoLog.isSoftTko = tracker->isSoftTko();
   tkoLog.avgLatency = stats_.avgLatency.value();
   tkoLog.probesSent = stats_.probesSent;
-  tkoLog.poolName = poolName_;
   tkoLog.result = result;
 
   logTkoEvent(*proxy, tkoLog);

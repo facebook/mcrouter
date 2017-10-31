@@ -101,10 +101,6 @@ class ProxyDestination {
 
   void updateShortestTimeout(std::chrono::milliseconds timeout);
 
-  void updatePoolName(std::string poolName) {
-    poolName_ = std::move(poolName);
-  }
-
   /**
    * Gracefully closes the connection, allowing it to properly drain if
    * possible.
@@ -132,7 +128,6 @@ class ProxyDestination {
 
   int probe_delay_next_ms{0};
   bool probeInflight_{false};
-  std::string poolName_;
   // The string is stored in ProxyDestinationMap::destinations_
   folly::StringPiece pdstnKey_; ///< consists of ap, server_timeout
 
