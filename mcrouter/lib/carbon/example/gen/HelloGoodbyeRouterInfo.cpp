@@ -36,6 +36,7 @@
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/HostIdRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
+#include <mcrouter/routes/LoadBalancerRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/MissFailoverRoute.h>
@@ -70,6 +71,7 @@ HelloGoodbyeRouterInfo::buildRouteMap() {
        }},
       {"HostIdRoute", &makeHostIdRoute<HelloGoodbyeRouterInfo>},
       {"LatestRoute", &makeLatestRoute<HelloGoodbyeRouterInfo>},
+      {"LoadBalancerRoute", &makeLoadBalancerRoute<HelloGoodbyeRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<HelloGoodbyeRouterInfo>},
       {"MigrateRoute", &makeMigrateRoute<HelloGoodbyeRouterInfo>},
       {"MissFailoverRoute", &makeMissFailoverRoute<HelloGoodbyeRouterInfo>},

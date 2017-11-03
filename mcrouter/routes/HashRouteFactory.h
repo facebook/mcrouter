@@ -21,6 +21,7 @@
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/lib/routes/SelectionRoute.h"
 #include "mcrouter/routes/LatestRoute.h"
+#include "mcrouter/routes/LoadBalancerRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/ShardHashFunc.h"
 
@@ -103,6 +104,8 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createHashRoute(
         RendezvousHashFunc(std::move(endpoints)));
   } else if (funcType == "Latest") {
     return createLatestRoute<RouterInfo>(json, std::move(rh), threadId);
+  } else if (funcType == "LoadBalancer") {
+    return createLoadBalancerRoute<RouterInfo>(json, std::move(rh));
   }
   throwLogic("Unknown hash function: {}", funcType);
 }

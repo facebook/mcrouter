@@ -42,6 +42,13 @@ class ServerLoad {
   static const ServerLoad zero() noexcept;
 
   /**
+   * Complement of load on server.
+   *
+   * @return  Complement of load on server
+   */
+  ServerLoad complement() const noexcept;
+
+  /**
    * Percent of load on server.
    *
    * @return  Load percent on server (number between 0 and 100).

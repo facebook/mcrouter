@@ -36,6 +36,7 @@
 #include <mcrouter/routes/HashRouteFactory.h>
 #include <mcrouter/routes/HostIdRouteFactory.h>
 #include <mcrouter/routes/LatestRoute.h>
+#include <mcrouter/routes/LoadBalancerRoute.h>
 #include <mcrouter/routes/LoggingRoute.h>
 #include <mcrouter/routes/MigrateRouteFactory.h>
 #include <mcrouter/routes/MissFailoverRoute.h>
@@ -69,6 +70,7 @@ CarbonTestRouterInfo::buildRouteMap() {
        }},
       {"HostIdRoute", &makeHostIdRoute<CarbonTestRouterInfo>},
       {"LatestRoute", &makeLatestRoute<CarbonTestRouterInfo>},
+      {"LoadBalancerRoute", &makeLoadBalancerRoute<CarbonTestRouterInfo>},
       {"LoggingRoute", &makeLoggingRoute<CarbonTestRouterInfo>},
       {"MigrateRoute", &makeMigrateRoute<CarbonTestRouterInfo>},
       {"MissFailoverRoute", &makeMissFailoverRoute<CarbonTestRouterInfo>},

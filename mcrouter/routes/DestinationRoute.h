@@ -213,6 +213,8 @@ class DestinationRoute {
         dctx.startTime,
         dctx.endTime,
         replyContext);
+
+    fiber_local<RouterInfo>::setServerLoad(replyContext.serverLoad);
     return reply;
   }
 

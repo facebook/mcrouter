@@ -15,6 +15,8 @@
 #include <folly/Range.h>
 #include <folly/fibers/FiberManager.h>
 
+#include "mcrouter/lib/HashUtil.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -41,7 +43,6 @@ class HashSelector {
   }
 
  private:
-  static const size_t kMaxKeySaltSize = 512;
   const std::string salt_;
   const HashFunc hashFunc_;
 
@@ -51,17 +52,10 @@ class HashSelector {
     if (salt_.empty()) {
       n = hashFunc_(req.key().routingKey());
     } else {
-      // fast string concatenation
-      char c[kMaxKeySaltSize];
-      auto key = req.key().routingKey();
-      auto keySaltSize = key.size() + salt_.size();
-      if (UNLIKELY(keySaltSize >= kMaxKeySaltSize)) {
-        throw std::runtime_error("Salted key too long: " + key.str() + salt_);
-      }
-      memcpy(c, key.data(), key.size());
-      memcpy(c + key.size(), salt_.data(), salt_.size());
-
-      n = hashFunc_(folly::StringPiece(c, c + keySaltSize));
+      n = hashWithSalt(
+          req.key().routingKey(), salt_, [this](const folly::StringPiece sp) {
+            return hashFunc_(sp);
+          });
     }
     if (UNLIKELY(n >= size)) {
       throw std::runtime_error("index out of range");

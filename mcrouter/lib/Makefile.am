@@ -16,6 +16,7 @@ libmcrouter_a_SOURCES = \
   Crc32HashFunc.h \
   FailoverErrorsSettings.cpp \
   FailoverErrorsSettings.h \
+  HashUtil.h \
   IOBufUtil.cpp \
   IOBufUtil.h \
   IovecCursor-inl.h \
@@ -193,6 +194,7 @@ libmcrouter_a_SOURCES = \
   routes/AllInitialRoute.h \
   routes/AllMajorityRoute.h \
   routes/AllSyncRoute.h \
+  routes/LoadBalancerRoute.h \
   routes/LoggingRoute.h \
   routes/MigrateRoute.h \
   routes/NullRoute.h \

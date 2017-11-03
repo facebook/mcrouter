@@ -95,6 +95,7 @@ STUI(destination_max_inflight_reqs, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | detailed_stats | count_stats
 STUI(rate_limited_log_count, 0, 1)
+STUI(load_balancer_load_reset_count, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
 STUI(redirected_lease_set_count, 0, 1)

@@ -17,7 +17,7 @@ namespace memcache {
 namespace {
 
 // Constant used to convert from raw load to percent load.
-constexpr uint32_t kPercentLoadNormalizer = 10e4; // 10,000
+constexpr uint32_t kPercentLoadNormalizer = 1e4; // 10,000
 constexpr uint32_t kMaxRawLoad = kPercentLoadNormalizer * 100;
 
 } // anonymous namespace
@@ -52,6 +52,10 @@ const ServerLoad ServerLoad::zero() noexcept {
 
 double ServerLoad::percentLoad() const noexcept {
   return static_cast<double>(load_) / kPercentLoadNormalizer;
+}
+
+ServerLoad ServerLoad::complement() const noexcept {
+  return ServerLoad(kMaxRawLoad - load_);
 }
 
 } // memcache
