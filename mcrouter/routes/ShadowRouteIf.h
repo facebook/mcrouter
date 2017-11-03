@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, Facebook, Inc.
+ *  Copyright (c) 2016-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -19,7 +19,7 @@ namespace facebook {
 namespace memcache {
 namespace mcrouter {
 
-struct ShadowSettings;
+class ShadowSettings;
 
 template <class RouterInfo>
 using ShadowData = std::vector<std::pair<

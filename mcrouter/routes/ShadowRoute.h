@@ -20,12 +20,13 @@
 
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/Proxy.h"
+#include "mcrouter/ProxyBase.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
-#include "mcrouter/route.h"
 #include "mcrouter/routes/DefaultShadowPolicy.h"
+#include "mcrouter/routes/McRouteHandleBuilder.h"
 #include "mcrouter/routes/ShadowRouteIf.h"
+#include "mcrouter/routes/ShadowSettings.h"
 
 namespace folly {
 struct dynamic;
@@ -135,22 +136,7 @@ class ShadowRoute {
       }
       return false;
     }
-    // If configured to use an explicit list of keys to be shadowed, check for
-    // req.key() in that list. Otherwise, decide to shadow based on keyRange().
-    const auto& keysToShadow = settings->keysToShadow();
-    if (!keysToShadow.empty()) {
-      const auto hashAndKeyToFind =
-          std::make_tuple(req.key().routingKeyHash(), req.key().routingKey());
-      return std::binary_search(
-          keysToShadow.begin(),
-          keysToShadow.end(),
-          hashAndKeyToFind,
-          std::less<std::tuple<uint32_t, folly::StringPiece>>());
-    }
-
-    auto range = settings->keyRange();
-    return range.first <= req.key().routingKeyHash() &&
-        req.key().routingKeyHash() <= range.second;
+    return settings->shouldShadow(req);
   }
 
   template <class Request>

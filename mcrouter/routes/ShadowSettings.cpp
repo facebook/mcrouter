@@ -7,41 +7,18 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "Proxy.h"
+#include "ShadowSettings.h"
 
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-
-#include <chrono>
+#include <algorithm>
 #include <memory>
 
-#include <boost/regex.hpp>
-
 #include <folly/DynamicConverter.h>
-#include <folly/File.h>
-#include <folly/FileUtil.h>
-#include <folly/Format.h>
-#include <folly/Range.h>
-#include <folly/system/ThreadName.h>
+#include <folly/dynamic.h>
 
 #include "mcrouter/CarbonRouterInstanceBase.h"
 #include "mcrouter/McrouterLogFailure.h"
-#include "mcrouter/ProxyConfig.h"
-#include "mcrouter/ProxyConfigBuilder.h"
-#include "mcrouter/ProxyDestinationMap.h"
-#include "mcrouter/ProxyRequestContextTyped.h"
 #include "mcrouter/RuntimeVarsData.h"
-#include "mcrouter/ServiceInfo.h"
-#include "mcrouter/config-impl.h"
-#include "mcrouter/config.h"
-#include "mcrouter/lib/WeightedCh3HashFunc.h"
-#include "mcrouter/lib/fbi/cpp/util.h"
-#include "mcrouter/options.h"
-#include "mcrouter/routes/RateLimiter.h"
-#include "mcrouter/routes/ShardSplitter.h"
-#include "mcrouter/stats.h"
+#include "mcrouter/lib/carbon/Keys.h"
 
 namespace facebook {
 namespace memcache {
@@ -118,6 +95,15 @@ ShadowSettings::~ShadowSettings() {
   /* We must unregister from updates before starting to destruct other
      members, like variable name strings */
   handle_.reset();
+}
+
+void ShadowSettings::setKeysToShadow(const std::vector<std::string>& keys) {
+  keysToShadow_.clear();
+  for (const auto& key : keys) {
+    const auto hash = carbon::Keys<std::string>(key).routingKeyHash();
+    keysToShadow_.emplace_back(hash, key);
+  }
+  std::sort(keysToShadow_.begin(), keysToShadow_.end());
 }
 
 void ShadowSettings::registerOnUpdateCallback(

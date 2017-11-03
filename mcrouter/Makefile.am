@@ -65,7 +65,6 @@ libmcroutercore_a_SOURCES = \
   PoolFactory.cpp \
   PoolFactory.h \
   Proxy-inl.h \
-  Proxy.cpp \
   Proxy.h \
   ProxyBase-inl.h \
   ProxyBase.cpp \
@@ -151,6 +150,8 @@ libmcroutercore_a_SOURCES = \
   routes/ShadowRoute.h \
   routes/ShadowRoute-inl.h \
   routes/ShadowRouteIf.h \
+  routes/ShadowSettings.cpp \
+  routes/ShadowSettings.h \
   routes/ShardHashFunc.cpp \
   routes/ShardHashFunc.h \
   routes/ShardSelectionRouteFactory.h \
