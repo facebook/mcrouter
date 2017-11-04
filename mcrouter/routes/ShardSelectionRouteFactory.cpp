@@ -175,14 +175,13 @@ std::unordered_map<uint32_t, uint16_t> getShardsMap(
   // Validate and get a list of shards.
   auto allShards = parseAllShardsJson(json);
 
-  constexpr uint16_t kNoDestination = std::numeric_limits<uint16_t>::max();
   std::unordered_map<uint32_t, uint16_t> shardsMap;
 
   // We don't need to validate here, as it was validated before.
   for (size_t i = 0; i < allShards.size(); ++i) {
     for (size_t j = 0; j < allShards[i].size(); ++j) {
       size_t shard = allShards[i][j];
-      if (shardsMap[shard] == kNoDestination || shardsMap[shard] == i) {
+      if (shardsMap.find(shard) == shardsMap.end()) {
         shardsMap[shard] = i;
       } else {
         LOG(WARNING) << "ShardSelectionRoute: shard " << shard
