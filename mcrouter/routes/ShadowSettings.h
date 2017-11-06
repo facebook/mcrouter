@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include <folly/Random.h>
 #include <folly/Range.h>
 
 #include "mcrouter/Observable.h"
@@ -85,15 +86,27 @@ class ShadowSettings {
     return keysToShadow_;
   }
 
+  void setRequestsFraction(double fraction) {
+    requestsFraction_ = fraction;
+  }
+
   /**
    * Tells whether or not a given request should be shadowed.
    *
    * NOTE: This does *not* take into account "index_ranges", as that information
    * is used to decide whether or not we should build ShadowRoute in the first
    * place.
+   *
+   * @param req   The original request.
+   * @param rng   Random number generator.
    */
+  template <class Request, class RNG>
+  bool shouldShadow(const Request& req, RNG&& rng) const {
+    return shouldShadowKey(req) && shouldShadowRandom(std::forward<RNG>(rng));
+  }
+
   template <class Request>
-  std::enable_if_t<Request::hasKey, bool> shouldShadow(
+  std::enable_if_t<Request::hasKey, bool> shouldShadowKey(
       const Request& req) const {
     // If configured to use an explicit list of keys to be shadowed, check for
     // req.key() in that list. Otherwise, decide to shadow based on keyRange().
@@ -112,7 +125,7 @@ class ShadowSettings {
         req.key().routingKeyHash() <= range.second;
   }
   template <class Request>
-  std::enable_if_t<!Request::hasKey, bool> shouldShadow(
+  std::enable_if_t<!Request::hasKey, bool> shouldShadowKey(
       const Request& /* req */) const {
     return true;
   }
@@ -124,6 +137,7 @@ class ShadowSettings {
   std::string keyFractionRangeRv_;
   size_t startIndex_{0};
   size_t endIndex_{0};
+  double requestsFraction_{1.0};
 
   // Ideally, this would just be an unordered set<Key<string>>, but we need to
   // allow for comparing to Key<IOBuf>. We can work with a vector<Key<string>>
@@ -133,6 +147,17 @@ class ShadowSettings {
   std::atomic<uint64_t> keyRange_{0};
 
   bool validateReplies_{false};
+
+  template <class RNG>
+  bool shouldShadowRandom(RNG&& rng) const {
+    const double kEpsilon = 0.00001;
+    const double kAlwaysSend = 1.0 - kEpsilon;
+
+    if (requestsFraction_ >= kAlwaysSend) {
+      return true;
+    }
+    return folly::Random::randDouble01(rng) < requestsFraction_;
+  }
 
   ShadowSettings() = default;
 };

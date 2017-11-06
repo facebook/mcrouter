@@ -66,6 +66,11 @@ std::shared_ptr<ShadowSettings> ShadowSettings::create(
           " key_fraction_range, or key_fraction_range_rv");
       result->setKeysToShadow(keysToShadow);
     }
+    if (auto jRequestsFraction = json.get_ptr("requests_fraction")) {
+      checkLogic(
+          jRequestsFraction->isDouble(), "requests_fraction is not a double");
+      result->setRequestsFraction(jRequestsFraction->asDouble());
+    }
   } catch (const std::logic_error& e) {
     MC_LOG_FAILURE(
         router.opts(),

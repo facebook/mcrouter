@@ -40,6 +40,10 @@ class ShadowSettingsTest : public ::testing::Test {
     EXPECT_TRUE(actual <= (expected + margin));
   }
 
+  std::mt19937& randomGenerator() {
+    return randomGenerator_;
+  }
+
  private:
   static McrouterOptions getOpts() {
     // Dummy config, used just to spin up mcrouter.
@@ -54,6 +58,8 @@ class ShadowSettingsTest : public ::testing::Test {
     opts.config = kDummyConfig.str();
     return opts;
   }
+
+  std::mt19937 randomGenerator_;
 };
 
 TEST_F(ShadowSettingsTest, create) {
@@ -85,11 +91,11 @@ TEST_F(ShadowSettingsTest, shouldRoute) {
   ASSERT_TRUE(shadowSettings != nullptr);
 
   McGetRequest req1("good_key");
-  bool res1 = shadowSettings->shouldShadow(req1);
+  bool res1 = shadowSettings->shouldShadow(req1, randomGenerator());
   EXPECT_TRUE(res1);
 
   McGetRequest req2("out_of_range_key_test");
-  bool res2 = shadowSettings->shouldShadow(req2);
+  bool res2 = shadowSettings->shouldShadow(req2, randomGenerator());
   EXPECT_FALSE(res2);
 
   constexpr size_t kNumRuns = 10000;
@@ -100,7 +106,40 @@ TEST_F(ShadowSettingsTest, shouldRoute) {
   size_t no = 0;
   for (size_t i = 0; i < kNumRuns; ++i) {
     McGetRequest req(folly::to<std::string>(i));
-    if (shadowSettings->shouldShadow(req)) {
+    if (shadowSettings->shouldShadow(req, randomGenerator())) {
+      ++yes;
+    } else {
+      ++no;
+    }
+  }
+
+  expectApproximatelyEqual(kExpected, yes, kMargin);
+  expectApproximatelyEqual(kExpected, no, kMargin);
+}
+
+TEST_F(ShadowSettingsTest, shouldRoute_random) {
+  constexpr folly::StringPiece kConfig = R"(
+  {
+    "key_fraction_range": [0.0, 1.0],
+    "requests_fraction": 0.5
+  }
+  )";
+
+  const auto json = folly::parseJson(kConfig);
+  auto& router = getRouter<MemcacheRouterInfo>();
+
+  auto shadowSettings = ShadowSettings::create(json, router);
+  ASSERT_TRUE(shadowSettings != nullptr);
+
+  constexpr size_t kNumRuns = 10000;
+  constexpr size_t kExpected = kNumRuns / 2;
+  constexpr size_t kMargin = 10000 * 0.01;
+
+  size_t yes = 0;
+  size_t no = 0;
+  for (size_t i = 0; i < kNumRuns; ++i) {
+    McGetRequest req(folly::to<std::string>(i));
+    if (shadowSettings->shouldShadow(req, randomGenerator())) {
       ++yes;
     } else {
       ++no;

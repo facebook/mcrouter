@@ -127,16 +127,27 @@ class ShadowRoute {
 
   template <class Request>
   bool shouldShadow(const Request& req, ShadowSettings* settings) const {
+    auto& ctx = fiber_local<RouterInfo>::getSharedCtx();
+
     if (!settings) {
-      if (auto& reqCtx = fiber_local<RouterInfo>::getSharedCtx()) {
+      if (ctx) {
         MC_LOG_FAILURE(
-            reqCtx->proxy().router().opts(),
+            ctx->proxy().router().opts(),
             failure::Category::kInvalidConfig,
             "ShadowRoute: ShadowSettings is nullptr");
       }
       return false;
     }
-    return settings->shouldShadow(req);
+
+    if (!ctx) {
+      LOG_FAILURE(
+          "mcrouter",
+          failure::Category::kInvalidConfig,
+          "ShadowRoute: ProxyRequestContext is nullptr. Ignoring randomness.");
+      return settings->shouldShadowKey(req);
+    }
+
+    return settings->shouldShadow(req, ctx->proxy().randomGenerator());
   }
 
   template <class Request>
