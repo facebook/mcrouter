@@ -37,8 +37,6 @@ class TestLoadBalancerRoute(McrouterTestCase):
             key = 'someprefix:{}:|#|id=123'.format(i)
             self.assertTrue(not self.mcrouter.get(key))
         self.assertTrue(self.mcrouter.stats()['cmd_get_count'] > 0)
-        lblrc = 'load_balancer_load_reset_count'
-        self.assertEqual(int(self.mcrouter.stats("all")[lblrc]), 0)
         sum = 0
         for i in range(8):
             self.assertTrue(self.mc[i].stats()['cmd_get_count'] > 0)
