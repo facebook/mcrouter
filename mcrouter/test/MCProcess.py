@@ -123,12 +123,6 @@ class ProcessBase(object):
             print("{} ({}) stdout:\n{}".format(self, self.cmd_line, stderr))
 
 class MCProcess(ProcessBase):
-    """
-    It would be best to use mc.client and support all requests. But we can't do
-    that until mc.client supports ASCII (because mcproxy doesn't support
-    binary). For now, be hacky and just talk ASCII by hand.
-    """
-
     proc = None
 
     def __init__(self, cmd, port, base_dir=None, junk_fill=False):
@@ -750,13 +744,19 @@ class Memcached(MCProcess):
             if listen_sock is not None:
                 listen_sock.close()
         else:
-            args.extend(['--ht_lease_token_power', '0'])
+            args.extend([
+                '-A',
+                '-g',
+                '-t', '1',
+                '--enable-hash-alias',
+                '--use-asmcs',
+            ])
             if port is None:
                 listen_sock = create_listen_socket()
                 port = listen_sock.getsockname()[1]
-                args.extend(['--listen_sock', str(listen_sock.fileno())])
+                args.extend(['--listen-sock-fd', str(listen_sock.fileno())])
             else:
-                args.extend(['--port', str(port)])
+                args.extend(['-p', str(port)])
 
             MCProcess.__init__(self, args, port)
 

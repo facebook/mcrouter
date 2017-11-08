@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -12,15 +12,15 @@ from __future__ import unicode_literals
 
 import time
 
-from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
+
 
 class TestWarmup2(McrouterTestCase):
     config = './mcrouter/test/test_warmup2.json'
 
     def setUp(self):
-        self.mc_warm = self.add_server(Memcached())
-        self.mc_cold = self.add_server(Memcached())
+        self.mc_warm = self.add_server(self.make_memcached())
+        self.mc_cold = self.add_server(self.make_memcached())
         self.mcrouter = self.add_mcrouter(self.config)
 
     def test_warmup_get(self):
@@ -99,6 +99,12 @@ class TestWarmup2(McrouterTestCase):
         self.assertEqual(len(self.mcrouter.metaget(k)), 0)
         self.assertTrue(self.mc_cold.set(k, v))
         self.assertEqual(self.mcrouter.metaget(k)['exptime'], '0')
+
+
+class TestWarmup2AppendPrependTouch(TestWarmup2):
+    def __init__(self, *args, **kwargs):
+        super(TestWarmup2AppendPrependTouch, self).__init__(*args, **kwargs)
+        self.use_mock_mc = True
 
     def test_warmup_append_prepend(self):
         k = 'key'

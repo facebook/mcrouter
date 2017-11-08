@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Facebook, Inc.
+# Copyright (c) 2016-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -10,19 +10,21 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from mcrouter.test.MCProcess import Memcached
 from mcrouter.test.McrouterTestCase import McrouterTestCase
 
-class TestNoreply(McrouterTestCase):
+
+class TestNoReplyBase(McrouterTestCase):
     config = './mcrouter/test/test_noreply.json'
 
     def setUp(self):
         # The order here must corresponds to the order of hosts in the .json
-        self.mc = self.add_server(Memcached())
+        self.mc = self.add_server(self.make_memcached())
 
     def get_mcrouter(self):
         return self.add_mcrouter(self.config)
 
+
+class TestNoReply(TestNoReplyBase):
     def test_set_noreply(self):
         mcrouter = self.get_mcrouter()
         self.assertTrue(mcrouter.set("key", "value", noreply=True))
@@ -59,6 +61,12 @@ class TestNoreply(McrouterTestCase):
 
         self.assertTrue(mcrouter.decr("arith", noreply=True))
         self.assertTrue(self.eventually_get(key="arith", expVal="1"))
+
+
+class TestNoReplyAppendPrepend(TestNoReplyBase):
+    def __init__(self, *args, **kwargs):
+        super(TestNoReplyAppendPrepend, self).__init__(*args, **kwargs)
+        self.use_mock_mc = True
 
     def test_affix_noreply(self):
         mcrouter = self.get_mcrouter()
