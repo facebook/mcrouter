@@ -749,6 +749,7 @@ class Memcached(MCProcess):
                 '-g',
                 '-t', '1',
                 '--enable-hash-alias',
+                '--enable-unchecked-l1-sentinel-reads',
                 '--use-asmcs',
             ])
             if port is None:

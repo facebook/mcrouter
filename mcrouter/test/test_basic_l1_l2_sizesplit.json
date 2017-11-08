@@ -1,10 +1,10 @@
 {
   "pools": {
     "A": {
-      "servers": [ "localhost:12345" ]
+      "servers": [ "localhost:12345:caret" ]
     },
     "B": {
-      "servers": [ "localhost:12346" ]
+      "servers": [ "localhost:12346:caret" ]
     }
   },
   "route": {
