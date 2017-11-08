@@ -63,6 +63,7 @@ request McLeaseGetRequest {
   reply: McLeaseGetReply;
 
   1: carbon::Keys<folly::IOBuf> key;
+  2: uint64_t flags;
 };
 
 reply McLeaseGetReply {

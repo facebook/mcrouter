@@ -415,7 +415,7 @@ class McLeaseGetRequest : public carbon::RequestCommon {
  public:
   using reply_type = McLeaseGetReply;
   static constexpr bool hasExptime = false;
-  static constexpr bool hasFlags = false;
+  static constexpr bool hasFlags = true;
   static constexpr bool hasKey = true;
   static constexpr bool hasValue = false;
   static constexpr size_t typeId = 7;
@@ -437,7 +437,10 @@ class McLeaseGetRequest : public carbon::RequestCommon {
     return key_;
   }
   uint64_t flags() const {
-    return 0;
+    return flags_;
+  }
+  uint64_t& flags() {
+    return flags_;
   }
   int32_t exptime() const {
     return 0;
@@ -454,6 +457,7 @@ class McLeaseGetRequest : public carbon::RequestCommon {
 
  private:
   carbon::Keys<folly::IOBuf> key_;
+  uint64_t flags_{0};
 };
 
 class McLeaseGetReply : public carbon::ReplyCommon {

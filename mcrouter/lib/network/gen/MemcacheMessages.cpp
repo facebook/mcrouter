@@ -317,6 +317,7 @@ constexpr const char* const McLeaseGetRequest::name;
 void McLeaseGetRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeStructBegin();
   writer.writeField(1 /* field id */, key());
+  writer.writeField(2 /* field id */, flags());
   writer.writeStructEnd();
   writer.writeStop();
 }
@@ -335,6 +336,10 @@ void McLeaseGetRequest::deserialize(carbon::CarbonProtocolReader& reader) {
     switch (fieldId) {
       case 1: {
         reader.readField(key(), fieldType);
+        break;
+      }
+      case 2: {
+        reader.readField(flags(), fieldType);
         break;
       }
       default: {
