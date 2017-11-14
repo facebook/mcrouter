@@ -122,6 +122,13 @@ std::string getBinPath(folly::StringPiece name) {
   return "unknown";
 }
 
+std::string getDefaultPemCertPath() {
+  return "";
+}
+std::string getDefaultPemCertKey() {
+  return "";
+}
+
 } // mcrouter
 } // memcache
 } // facebook

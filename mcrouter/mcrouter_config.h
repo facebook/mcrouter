@@ -35,6 +35,7 @@ static_assert(false, "mcrouter: invalid build");
 #define MCROUTER_STATS_ROOT_DEFAULT "/var/mcrouter/stats"
 #define DEBUG_FIFO_ROOT_DEFAULT "/var/mcrouter/fifos"
 #define CONFIG_DUMP_ROOT_DEFAULT "/var/mcrouter/config"
+#define MCROUTER_DEFAULT_CA_PATH ""
 
 namespace folly {
 struct dynamic;
@@ -163,6 +164,9 @@ inline bool isMetagetAvailable() {
 void insertCustomStartupOpts(folly::dynamic& options);
 
 std::string getBinPath(folly::StringPiece name);
+
+std::string getDefaultPemCertPath();
+std::string getDefaultPemCertKey();
 
 #ifndef MCROUTER_PACKAGE_STRING
 #define MCROUTER_PACKAGE_STRING "1.0.0 mcrouter"

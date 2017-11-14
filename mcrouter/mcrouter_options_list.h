@@ -305,21 +305,21 @@ MCROUTER_OPTION_INTEGER(
 
 MCROUTER_OPTION_STRING(
     pem_cert_path,
-    "",
+    facebook::memcache::mcrouter::getDefaultPemCertPath(),
     "pem-cert-path",
     no_short,
     "Path of pem-style certificate for ssl")
 
 MCROUTER_OPTION_STRING(
     pem_key_path,
-    "",
+    facebook::memcache::mcrouter::getDefaultPemCertKey(),
     "pem-key-path",
     no_short,
     "Path of pem-style key for ssl")
 
 MCROUTER_OPTION_STRING(
     pem_ca_path,
-    "",
+    MCROUTER_DEFAULT_CA_PATH,
     "pem-ca-path",
     no_short,
     "Path of pem-style CA cert for ssl")
