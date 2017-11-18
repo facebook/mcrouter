@@ -72,11 +72,13 @@ class L1L2SizeSplitRoute {
       std::shared_ptr<MemcacheRouteHandleIf> l2,
       size_t threshold,
       int32_t ttlThreshold,
+      int32_t failureTtl,
       bool bothFullSet)
       : l1_(std::move(l1)),
         l2_(std::move(l2)),
         threshold_(threshold),
         ttlThreshold_(ttlThreshold),
+        failureTtl_(failureTtl),
         bothFullSet_(bothFullSet) {
     assert(l1_ != nullptr);
     assert(l2_ != nullptr);
@@ -105,6 +107,7 @@ class L1L2SizeSplitRoute {
   const std::shared_ptr<MemcacheRouteHandleIf> l2_;
   const size_t threshold_{0};
   const int32_t ttlThreshold_{0};
+  const int32_t failureTtl_{0};
   const bool bothFullSet_{false};
   mutable std::mt19937 randomGenerator_;
 

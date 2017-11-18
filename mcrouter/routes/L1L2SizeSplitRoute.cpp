@@ -173,7 +173,7 @@ McLeaseSetReply L1L2SizeSplitRoute::route(const McLeaseSetRequest& req) const {
     // Generate a random integer that will be used as the value for the L1 item
     // and will be mixed into the key for L2.
     const auto randInt = randomGenerator_();
-    const auto l2SetReq = [&]() {
+    auto l2SetReq = [&]() {
       McSetRequest r(makeL2Key(req.key().fullKey(), randInt));
       r.value() = req.value();
       r.flags() = req.flags();
@@ -193,21 +193,15 @@ McLeaseSetReply L1L2SizeSplitRoute::route(const McLeaseSetRequest& req) const {
 
       return l1_->route(l1SentinelReq);
     } else {
-      // Make an effort to free up token in L1 before replying
-      auto makeInvalidateTokenReq = [&]() {
-        McLeaseSetRequest r(req.key().fullKey());
-        r.leaseToken() = req.leaseToken();
-        r.exptime() = -1;
+      // If L2 is failing, cut the exptime down and store full value to L1.
+      const auto l1FallbackReq = [&]() {
+        auto r = req;
+        if (r.exptime() > failureTtl_ || r.exptime() == 0) {
+          r.exptime() = failureTtl_;
+        }
         return r;
-      };
-      folly::fibers::addTask(
-          [l1 = l1_, invalidateTokenReq = makeInvalidateTokenReq()]() {
-            l1->route(invalidateTokenReq);
-          });
-
-      McLeaseSetReply reply(l2Reply.result());
-      reply.message() = std::move(l2Reply.message());
-      return reply;
+      }();
+      return l1_->route(l1FallbackReq);
     }
   }
 }
@@ -235,6 +229,18 @@ std::shared_ptr<MemcacheRouteHandleIf> makeL1L2SizeSplitRoute(
         "L1L2SizeSplitRoute: ttl_threshold must be nonnegative");
   }
 
+  int32_t failureTtl = 60;
+  if (json.count("failure_ttl")) {
+    checkLogic(
+        json["failure_ttl"].isInt(),
+        "L1L2SizeSplitRoute: failure_ttl is not an integer");
+    failureTtl = json["failure_ttl"].getInt();
+    checkLogic(
+        failureTtl >= 0, "L1L2SizeSplitRoute: failure_ttl must be nonnegative");
+    checkLogic(
+        failureTtl != 0, "L1L2SizeSplitRoute: failure_ttl must not be zero");
+  }
+
   bool bothFullSet = false;
   if (json.count("both_full_set")) {
     checkLogic(
@@ -248,6 +254,7 @@ std::shared_ptr<MemcacheRouteHandleIf> makeL1L2SizeSplitRoute(
       factory.create(json["l2"]),
       threshold,
       ttlThreshold,
+      failureTtl,
       bothFullSet);
 }
 
