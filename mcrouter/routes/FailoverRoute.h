@@ -164,19 +164,7 @@ class FailoverRoute {
  protected:
   const std::string name_;
 
-  virtual bool additionalFailoverCheck(
-      mc_res_t /* unused */,
-      folly::StringPiece /* unused */,
-      const folly::IOBuf& /* unused */) const {
-    return false;
-  }
-
  private:
-  enum class FailoverType {
-    NONE,
-    NORMAL,
-    CONDITIONAL,
-  };
 
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
   const FailoverErrorsSettingsT failoverErrors_;
@@ -213,9 +201,9 @@ class FailoverRoute {
       return normalReply;
     }
     switch (shouldFailover(normalReply, req)) {
-      case FailoverType::NONE:
+      case FailoverErrorsSettingsBase::FailoverType::NONE:
         return normalReply;
-      case FailoverType::CONDITIONAL:
+      case FailoverErrorsSettingsBase::FailoverType::CONDITIONAL:
         conditionalFailover = true;
         break;
       default:
@@ -262,9 +250,9 @@ class FailoverRoute {
           for (++nx; nx != failoverPolicy_.end(); ++cur, ++nx) {
             auto failoverReply = doFailover(cur);
             switch (shouldFailover(failoverReply, req)) {
-              case FailoverType::NONE:
+              case FailoverErrorsSettingsBase::FailoverType::NONE:
                 return failoverReply;
-              case FailoverType::CONDITIONAL:
+              case FailoverErrorsSettingsBase::FailoverType::CONDITIONAL:
                 conditionalFailover = true;
                 break;
               default:
@@ -281,24 +269,11 @@ class FailoverRoute {
         });
   }
 
-  // TODO t15812771 update this to work with all UpdateLike requests
-  FailoverType shouldFailover(const McSetReply& reply, const McSetRequest& req)
-      const {
-    if (failoverErrors_.shouldFailover(reply, req)) {
-      return FailoverType::NORMAL;
-    }
-    if (additionalFailoverCheck(
-            reply.result(), req.key().fullKey(), req.value())) {
-      return FailoverType::CONDITIONAL;
-    }
-    return FailoverType::NONE;
-  }
-
   template <class Request>
-  FailoverType shouldFailover(const ReplyT<Request>& reply, const Request& req)
-      const {
-    return failoverErrors_.shouldFailover(reply, req) ? FailoverType::NORMAL
-                                                      : FailoverType::NONE;
+  FailoverErrorsSettingsBase::FailoverType shouldFailover(
+      const ReplyT<Request>& reply,
+      const Request& req) const {
+    return failoverErrors_.shouldFailover(reply, req);
   }
 };
 

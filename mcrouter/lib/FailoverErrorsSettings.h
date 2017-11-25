@@ -37,31 +37,34 @@ class FailoverErrorsSettings : public FailoverErrorsSettingsBase {
       : FailoverErrorsSettingsBase(json) {}
 
   template <class Request>
-  bool shouldFailover(
+  FailoverType shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
       carbon::DeleteLikeT<Request> = 0) const {
-    return deletes_.shouldFailover(reply.result());
+    return deletes_.shouldFailover(reply.result()) ? FailoverType::NORMAL
+                                                   : FailoverType::NONE;
   }
 
   template <class Request>
-  bool shouldFailover(
+  FailoverType shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
       carbon::GetLikeT<Request> = 0) const {
-    return gets_.shouldFailover(reply.result());
+    return gets_.shouldFailover(reply.result()) ? FailoverType::NORMAL
+                                                : FailoverType::NONE;
   }
 
   template <class Request>
-  bool shouldFailover(
+  FailoverType shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
       carbon::UpdateLikeT<Request> = 0) const {
-    return updates_.shouldFailover(reply.result());
+    return updates_.shouldFailover(reply.result()) ? FailoverType::NORMAL
+                                                   : FailoverType::NONE;
   }
 
   template <class Request>
-  bool shouldFailover(
+  FailoverType shouldFailover(
       const ReplyT<Request>& reply,
       const Request&,
       carbon::OtherThanT<
@@ -69,7 +72,8 @@ class FailoverErrorsSettings : public FailoverErrorsSettingsBase {
           carbon::DeleteLike<>,
           carbon::GetLike<>,
           carbon::UpdateLike<>> = 0) const {
-    return isFailoverErrorResult(reply.result());
+    return isFailoverErrorResult(reply.result()) ? FailoverType::NORMAL
+                                                 : FailoverType::NONE;
   }
 };
 } // namespace memcache

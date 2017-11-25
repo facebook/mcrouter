@@ -50,6 +50,12 @@ class FailoverErrorsSettingsBase {
     void init(std::vector<std::string> errors);
   };
 
+  enum class FailoverType {
+    NONE,
+    NORMAL,
+    CONDITIONAL,
+  };
+
  protected:
   FailoverErrorsSettingsBase::List gets_;
   FailoverErrorsSettingsBase::List updates_;
