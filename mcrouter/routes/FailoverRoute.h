@@ -58,7 +58,10 @@ inline std::string getFailoverRouteName(std::string name, size_t numTargets) {
  * until the first non-error reply.  If all replies result in errors, returns
  * the last destination's reply.
  */
-template <class RouterInfo, typename FailoverPolicyT>
+template <
+    class RouterInfo,
+    typename FailoverPolicyT,
+    typename FailoverErrorsSettingsT = FailoverErrorsSettings>
 class FailoverRoute {
  private:
   using RouteHandleIf = typename RouterInfo::RouteHandleIf;
@@ -84,7 +87,7 @@ class FailoverRoute {
 
   FailoverRoute(
       std::vector<std::shared_ptr<RouteHandleIf>> targets,
-      FailoverErrorsSettings failoverErrors,
+      FailoverErrorsSettingsT failoverErrors,
       std::unique_ptr<FailoverRateLimiter> rateLimiter,
       bool failoverTagging,
       bool enableLeasePairing,
@@ -176,7 +179,7 @@ class FailoverRoute {
   };
 
   const std::vector<std::shared_ptr<RouteHandleIf>> targets_;
-  const FailoverErrorsSettings failoverErrors_;
+  const FailoverErrorsSettingsT failoverErrors_;
   std::unique_ptr<FailoverRateLimiter> rateLimiter_;
   const bool failoverTagging_{false};
   FailoverPolicyT failoverPolicy_;

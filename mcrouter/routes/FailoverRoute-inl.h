@@ -73,17 +73,19 @@ template <
     class RouterInfo,
     template <class...> class RouteHandle,
     typename FailoverPolicyT,
+    class FailoverErrorsSettingsT,
     class... Args>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
+std::shared_ptr<typename RouterInfo::RouteHandleIf>
+makeFailoverRouteWithPolicyAndFailoverError(
     const folly::dynamic& json,
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
     const folly::dynamic& policyConfig,
+    FailoverErrorsSettingsT failoverErrors,
     Args&&... args) {
   if (children.size() <= 1) {
     return makeNullOrSingletonRoute(std::move(children));
   }
 
-  FailoverErrorsSettings failoverErrors;
   std::unique_ptr<FailoverRateLimiter> rateLimiter;
   bool failoverTagging = false;
   bool enableLeasePairing = false;
@@ -103,9 +105,6 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
           !enableLeasePairing,
           "Failover: name is required when lease pairing is enabled");
     }
-    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
-      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
-    }
     if (auto jFailoverTag = json.get_ptr("failover_tag")) {
       checkLogic(jFailoverTag->isBool(), "Failover: failover_tag is not bool");
       failoverTagging = jFailoverTag->getBool();
@@ -115,7 +114,11 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
     }
   }
 
-  return makeRouteHandleWithInfo<RouterInfo, RouteHandle, FailoverPolicyT>(
+  return makeRouteHandleWithInfo<
+      RouterInfo,
+      RouteHandle,
+      FailoverPolicyT,
+      FailoverErrorsSettingsT>(
       std::move(children),
       std::move(failoverErrors),
       std::move(rateLimiter),
@@ -123,6 +126,34 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
       enableLeasePairing,
       std::move(name),
       policyConfig,
+      std::forward<Args>(args)...);
+}
+
+template <
+    class RouterInfo,
+    template <class...> class RouteHandle,
+    typename FailoverPolicyT,
+    class... Args>
+std::shared_ptr<typename RouterInfo::RouteHandleIf> makeFailoverRouteWithPolicy(
+    const folly::dynamic& json,
+    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> children,
+    const folly::dynamic& policyConfig,
+    Args&&... args) {
+  FailoverErrorsSettings failoverErrors;
+  if (json.isObject()) {
+    if (auto jFailoverErrors = json.get_ptr("failover_errors")) {
+      failoverErrors = FailoverErrorsSettings(*jFailoverErrors);
+    }
+  }
+  return makeFailoverRouteWithPolicyAndFailoverError<
+      RouterInfo,
+      RouteHandle,
+      FailoverPolicyT,
+      FailoverErrorsSettings>(
+      json,
+      children,
+      policyConfig,
+      std::move(failoverErrors),
       std::forward<Args>(args)...);
 }
 

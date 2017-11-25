@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include "FailoverErrorsSettings.h"
+#include "FailoverErrorsSettingsBase.h"
 
 #include <memory>
 #include <vector>
@@ -20,11 +20,11 @@
 namespace facebook {
 namespace memcache {
 
-FailoverErrorsSettings::List::List(std::vector<std::string> errors) {
+FailoverErrorsSettingsBase::List::List(std::vector<std::string> errors) {
   init(std::move(errors));
 }
 
-FailoverErrorsSettings::List::List(const folly::dynamic& json) {
+FailoverErrorsSettingsBase::List::List(const folly::dynamic& json) {
   checkLogic(json.isArray(), "List of failover errors is not an array.");
 
   std::vector<std::string> errors;
@@ -37,14 +37,15 @@ FailoverErrorsSettings::List::List(const folly::dynamic& json) {
   init(std::move(errors));
 }
 
-bool FailoverErrorsSettings::List::shouldFailover(const mc_res_t result) const {
+bool FailoverErrorsSettingsBase::List::shouldFailover(
+    const mc_res_t result) const {
   if (failover_ != nullptr) {
     return (*failover_)[result];
   }
   return isFailoverErrorResult(result);
 }
 
-void FailoverErrorsSettings::List::init(std::vector<std::string> errors) {
+void FailoverErrorsSettingsBase::List::init(std::vector<std::string> errors) {
   failover_ = std::make_unique<std::array<bool, mc_nres>>();
 
   for (const auto& error : errors) {
@@ -65,10 +66,11 @@ void FailoverErrorsSettings::List::init(std::vector<std::string> errors) {
   }
 }
 
-FailoverErrorsSettings::FailoverErrorsSettings(std::vector<std::string> errors)
+FailoverErrorsSettingsBase::FailoverErrorsSettingsBase(
+    std::vector<std::string> errors)
     : gets_(errors), updates_(errors), deletes_(std::move(errors)) {}
 
-FailoverErrorsSettings::FailoverErrorsSettings(
+FailoverErrorsSettingsBase::FailoverErrorsSettingsBase(
     std::vector<std::string> errorsGet,
     std::vector<std::string> errorsUpdate,
     std::vector<std::string> errorsDelete)
@@ -76,27 +78,28 @@ FailoverErrorsSettings::FailoverErrorsSettings(
       updates_(std::move(errorsUpdate)),
       deletes_(std::move(errorsDelete)) {}
 
-FailoverErrorsSettings::FailoverErrorsSettings(const folly::dynamic& json) {
+FailoverErrorsSettingsBase::FailoverErrorsSettingsBase(
+    const folly::dynamic& json) {
   checkLogic(
       json.isObject() || json.isArray(),
       "Failover errors must be either an array or an object.");
 
   if (json.isObject()) {
     if (auto jsonGets = json.get_ptr("gets")) {
-      gets_ = FailoverErrorsSettings::List(*jsonGets);
+      gets_ = FailoverErrorsSettingsBase::List(*jsonGets);
     }
     if (auto jsonUpdates = json.get_ptr("updates")) {
-      updates_ = FailoverErrorsSettings::List(*jsonUpdates);
+      updates_ = FailoverErrorsSettingsBase::List(*jsonUpdates);
     }
     if (auto jsonDeletes = json.get_ptr("deletes")) {
-      deletes_ = FailoverErrorsSettings::List(*jsonDeletes);
+      deletes_ = FailoverErrorsSettingsBase::List(*jsonDeletes);
     }
   } else if (json.isArray()) {
-    gets_ = FailoverErrorsSettings::List(json);
-    updates_ = FailoverErrorsSettings::List(json);
-    deletes_ = FailoverErrorsSettings::List(json);
+    gets_ = FailoverErrorsSettingsBase::List(json);
+    updates_ = FailoverErrorsSettingsBase::List(json);
+    deletes_ = FailoverErrorsSettingsBase::List(json);
   }
 }
 
-} // memcache
-} // facebook
+} // namespace memcache
+} // namespace facebook

@@ -14,7 +14,8 @@ libmcrouter_a_SOURCES = \
   CompressionCodecManager.cpp \
   CompressionCodecManager.h \
   Crc32HashFunc.h \
-  FailoverErrorsSettings.cpp \
+  FailoverErrorsSettingsBase.cpp \
+  FailoverErrorsSettingsBase.h \
   FailoverErrorsSettings.h \
   HashUtil.h \
   IOBufUtil.cpp \
