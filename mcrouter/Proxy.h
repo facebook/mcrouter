@@ -157,37 +157,42 @@ class Proxy : public ProxyBase {
 
   void messageReady(ProxyMessage::Type t, void* data);
 
-  /** Process and reply stats request */
+  // Add task to route request through route handle tree
+  template <class Request>
+  typename std::enable_if_t<
+      ListContains<typename RouterInfo::RoutableRequests, Request>::value>
+  addRouteTask(
+      const Request& req,
+      std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>> sharedCtx);
+  // Fail all unknown operations
+  template <class Request>
+  typename std::enable_if_t<
+      !ListContains<typename RouterInfo::RoutableRequests, Request>::value>
+  addRouteTask(
+      const Request& req,
+      std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>> sharedCtx);
+
+  // Process and reply stats request
   void routeHandlesProcessRequest(
       const McStatsRequest& req,
       std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McStatsRequest>>
           ctx);
-
-  /** Process and reply to a version request */
+  // Process and reply to a version request
   void routeHandlesProcessRequest(
       const McVersionRequest& req,
       std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McVersionRequest>>
           ctx);
-
-  /** Route request through route handle tree */
+  // Process and reply to a get request
+  void routeHandlesProcessRequest(
+      const McGetRequest& req,
+      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>> ctx);
+  // Route request through route handle tree
   template <class Request>
-  typename std::enable_if<
-      ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-      void>::type
-  routeHandlesProcessRequest(
+  void routeHandlesProcessRequest(
       const Request& req,
       std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
 
-  /** Fail all unknown operations */
-  template <class Request>
-  typename std::enable_if<
-      !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-      void>::type
-  routeHandlesProcessRequest(
-      const Request& req,
-      std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> ctx);
-
-  /** Process request (update stats and route the request) */
+  // Process request (update stats and route the request)
   template <class Request>
   void processRequest(
       const Request& req,

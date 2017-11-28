@@ -30,7 +30,7 @@ class ProxyConfig;
 namespace detail {
 
 template <class RouterInfo>
-bool processGetServiceInfoRequestImpl(
+bool processGetServiceInfoRequest(
     const McGetRequest& req,
     std::shared_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) {
   constexpr folly::StringPiece kInternalGetPrefix("__mcrouter__.");
@@ -43,21 +43,6 @@ bool processGetServiceInfoRequestImpl(
   key.advance(kInternalGetPrefix.size());
   config.serviceInfo()->handleRequest(key, ctx);
   return true;
-}
-
-template <class RouterInfo>
-bool processGetServiceInfoRequest(
-    const McGetRequest& req,
-    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>>& ctx) {
-  return processGetServiceInfoRequestImpl(req, ctx);
-}
-
-template <class RouterInfo, class Request>
-typename std::enable_if<!std::is_same<Request, McGetRequest>::value, bool>::type
-processGetServiceInfoRequest(
-    const Request&,
-    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>>&) {
-  return false;
 }
 
 } // detail
@@ -91,25 +76,17 @@ void Proxy<RouterInfo>::WaitingRequest<Request>::process(
 
 template <class RouterInfo>
 template <class Request>
-typename std::enable_if<
-    ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-    void>::type
-Proxy<RouterInfo>::routeHandlesProcessRequest(
+typename std::enable_if_t<
+    ListContains<typename RouterInfo::RoutableRequests, Request>::value>
+Proxy<RouterInfo>::addRouteTask(
     const Request& req,
-    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> uctx) {
+    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>> sharedCtx) {
   requestStats_.template bump<Request>(carbon::RouterStatTypes::Incoming);
-
-  auto sharedCtx = ProxyRequestContextTyped<RouterInfo, Request>::process(
-      std::move(uctx), getConfigUnsafe());
-
-  if (detail::processGetServiceInfoRequest(req, sharedCtx)) {
-    return;
-  }
 
   auto funcCtx = sharedCtx;
 
   fiberManager().addTaskFinally(
-      [&req, ctx = std::move(funcCtx) ]() mutable {
+      [&req, ctx = std::move(funcCtx)]() mutable {
         try {
           auto& proute = ctx->proxyRoute();
           fiber_local<RouterInfo>::setSharedCtx(std::move(ctx));
@@ -125,19 +102,18 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
           return reply;
         }
       },
-      [ctx = std::move(sharedCtx)](folly::Try<ReplyT<Request>> && reply) {
+      [ctx = std::move(sharedCtx)](folly::Try<ReplyT<Request>>&& reply) {
         ctx->sendReply(std::move(*reply));
       });
 }
 
 template <class RouterInfo>
 template <class Request>
-typename std::enable_if<
-    !ListContains<typename RouterInfo::RoutableRequests, Request>::value,
-    void>::type
-Proxy<RouterInfo>::routeHandlesProcessRequest(
+typename std::enable_if_t<
+    !ListContains<typename RouterInfo::RoutableRequests, Request>::value>
+Proxy<RouterInfo>::addRouteTask(
     const Request&,
-    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> uctx) {
+    std::shared_ptr<ProxyRequestContextTyped<RouterInfo, Request>> sharedCtx) {
   ReplyT<Request> reply(mc_res_local_error);
   carbon::setMessageIfPresent(
       reply,
@@ -146,7 +122,18 @@ Proxy<RouterInfo>::routeHandlesProcessRequest(
           "because the operation is not supported by RouteHandles "
           "library!",
           typeid(Request).name()));
-  uctx->sendReply(std::move(reply));
+  sharedCtx->sendReply(std::move(reply));
+}
+
+template <class RouterInfo>
+template <class Request>
+void Proxy<RouterInfo>::routeHandlesProcessRequest(
+    const Request& req,
+    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, Request>> uctx) {
+  auto sharedCtx = ProxyRequestContextTyped<RouterInfo, Request>::process(
+      std::move(uctx), getConfigUnsafe());
+
+  addRouteTask(req, std::move(sharedCtx));
 }
 
 template <class RouterInfo>
@@ -351,6 +338,20 @@ void Proxy<RouterInfo>::routeHandlesProcessRequest(
   reply.value() =
       folly::IOBuf(folly::IOBuf::COPY_BUFFER, MCROUTER_PACKAGE_STRING);
   ctx->sendReply(std::move(reply));
+}
+
+template <class RouterInfo>
+void Proxy<RouterInfo>::routeHandlesProcessRequest(
+    const McGetRequest& req,
+    std::unique_ptr<ProxyRequestContextTyped<RouterInfo, McGetRequest>> uctx) {
+  auto sharedCtx = ProxyRequestContextTyped<RouterInfo, McGetRequest>::process(
+      std::move(uctx), getConfigUnsafe());
+
+  if (detail::processGetServiceInfoRequest(req, sharedCtx)) {
+    return;
+  }
+
+  addRouteTask(req, std::move(sharedCtx));
 }
 
 template <class RouterInfo>
