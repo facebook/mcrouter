@@ -109,7 +109,7 @@ class ProxyDestination {
 
  private:
   std::unique_ptr<AsyncMcClient> client_;
-  std::shared_ptr<const AccessPoint> accessPoint_;
+  const std::shared_ptr<const AccessPoint> accessPoint_;
   // Ensure proxy thread doesn't reset AsyncMcClient
   // while config and stats threads may be accessing it
   mutable folly::SpinLock clientLock_;
@@ -118,7 +118,7 @@ class ProxyDestination {
   std::chrono::milliseconds shortestTimeout_{0};
   const uint64_t qosClass_{0};
   const uint64_t qosPath_{0};
-  folly::StringPiece routerInfoName_;
+  const folly::StringPiece routerInfoName_;
 
   Stats stats_;
 
