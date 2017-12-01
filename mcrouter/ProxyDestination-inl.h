@@ -14,6 +14,7 @@
 #include "mcrouter/ProxyDestinationMap.h"
 #include "mcrouter/config-impl.h"
 #include "mcrouter/lib/Operation.h"
+#include "mcrouter/lib/network/AsyncMcClient.h"
 
 namespace facebook {
 namespace memcache {
@@ -25,7 +26,7 @@ ReplyT<Request> ProxyDestination::send(
     DestinationRequestCtx& requestContext,
     std::chrono::milliseconds timeout,
     ReplyStatsContext& replyStatsContext) {
-  proxy->destinationMap()->markAsActive(*this);
+  proxy.destinationMap()->markAsActive(*this);
   auto reply =
       getAsyncMcClient().sendSync(request, timeout, &replyStatsContext);
   onReply(reply.result(), requestContext, replyStatsContext);
@@ -45,8 +46,9 @@ bool ProxyDestination::shouldDrop() const {
   }
 
   return std::generate_canonical<double, std::numeric_limits<double>::digits>(
-             proxy->randomGenerator()) < dropProbability;
+             proxy.randomGenerator()) < dropProbability;
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

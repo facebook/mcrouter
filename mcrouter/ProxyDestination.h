@@ -14,21 +14,24 @@
 #include <string>
 
 #include <folly/IntrusiveList.h>
+#include <folly/Range.h>
 #include <folly/SpinLock.h>
-#include <folly/io/async/AsyncTimeout.h>
 
 #include "mcrouter/ExponentialSmoothData.h"
 #include "mcrouter/TkoLog.h"
 #include "mcrouter/config.h"
-#include "mcrouter/lib/McOperation.h"
+#include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/mc/msg.h"
-#include "mcrouter/lib/network/AccessPoint.h"
-#include "mcrouter/lib/network/AsyncMcClient.h"
-#include "mcrouter/lib/network/gen/Memcache.h"
+
+namespace folly {
+class AsyncTimeout;
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
 
+struct AccessPoint;
+class AsyncMcClient;
 struct ReplyStatsContext;
 
 namespace mcrouter {
@@ -62,7 +65,7 @@ class ProxyDestination {
     double retransPerKByte{0.0};
   };
 
-  ProxyBase* proxy{nullptr}; ///< for convenience
+  ProxyBase& proxy; // for convenience
 
   std::shared_ptr<TkoTracker> tracker;
 
@@ -178,8 +181,9 @@ class ProxyDestination {
 
   friend class ProxyDestinationMap;
 };
-} // mcrouter
-} // memcache
-} // facebook
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
 
 #include "ProxyDestination-inl.h"
