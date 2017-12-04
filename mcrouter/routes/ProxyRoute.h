@@ -24,6 +24,7 @@
 #include "mcrouter/lib/routes/AllSyncRoute.h"
 #include "mcrouter/routes/BigValueRouteIf.h"
 #include "mcrouter/routes/RouteSelectorMap.h"
+#include "mcrouter/stats.h"
 
 namespace facebook {
 namespace memcache {
@@ -60,6 +61,10 @@ class ProxyRoute {
 
     auto& requestContext = fiber_local<RouterInfo>::getSharedCtx();
     requestContext->setFinalResult(reply.result());
+
+    if (proxy_ && isErrorResult(reply.result())) {
+      proxy_->stats().increment(final_result_error_stat);
+    }
 
     return reply;
   }
