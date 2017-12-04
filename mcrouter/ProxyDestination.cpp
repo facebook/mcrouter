@@ -49,22 +49,6 @@ static_assert(
     kProbeJitterMax >= kProbeJitterMin,
     "ProbeJitterMax should be greater or equal tham ProbeJitterMin");
 
-stat_name_t getStatName(ProxyDestination::State st) {
-  switch (st) {
-    case ProxyDestination::State::kNew:
-      return num_servers_new_stat;
-    case ProxyDestination::State::kUp:
-      return num_servers_up_stat;
-    case ProxyDestination::State::kClosed:
-      return num_servers_closed_stat;
-    case ProxyDestination::State::kDown:
-      return num_servers_down_stat;
-    case ProxyDestination::State::kNumStates:
-      CHECK(false);
-  }
-  return num_stats; // shouldn't reach here
-}
-
 } // anonymous namespace
 
 void ProxyDestination::schedule_next_probe() {
@@ -285,7 +269,7 @@ ProxyDestination::~ProxyDestination() {
     client_->closeNow();
   }
 
-  proxy.stats().decrement(getStatName(stats_.state));
+  onTransitionFromState(stats_.state);
   proxy.stats().decrement(num_servers_stat);
 }
 
@@ -497,10 +481,8 @@ void ProxyDestination::setState(State new_st) {
             << proxy.stats().getValue(num_servers_stat) << ")";
   };
 
-  auto old_name = getStatName(stats_.state);
-  auto new_name = getStatName(new_st);
-  proxy.stats().decrement(old_name);
-  proxy.stats().increment(new_name);
+  onTransitionFromState(stats_.state);
+  onTransitionToState(new_st);
   stats_.state = new_st;
 
   switch (stats_.state) {
@@ -533,6 +515,45 @@ void ProxyDestination::updateShortestTimeout(
     }
   }
 }
-} // mcrouter
-} // memcache
-} // facebook
+
+void ProxyDestination::onTransitionToState(State st) {
+  onTransitionImpl(st, true /* to */);
+}
+
+void ProxyDestination::onTransitionFromState(State st) {
+  onTransitionImpl(st, false /* to */);
+}
+
+void ProxyDestination::onTransitionImpl(State st, bool to) {
+  const int64_t delta = to ? 1 : -1;
+
+  switch (st) {
+    case ProxyDestination::State::kNew: {
+      proxy.stats().increment(num_servers_new_stat, delta);
+      break;
+    }
+    case ProxyDestination::State::kUp: {
+      proxy.stats().increment(num_servers_up_stat, delta);
+      if (accessPoint_->useSsl()) {
+        proxy.stats().increment(num_ssl_servers_up_stat, delta);
+      }
+      break;
+    }
+    case ProxyDestination::State::kClosed: {
+      proxy.stats().increment(num_servers_closed_stat, delta);
+      break;
+    }
+    case ProxyDestination::State::kDown: {
+      proxy.stats().increment(num_servers_down_stat, delta);
+      break;
+    }
+    case ProxyDestination::State::kNumStates: {
+      CHECK(false);
+      break;
+    }
+  }
+}
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook

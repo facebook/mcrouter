@@ -174,6 +174,10 @@ class ProxyDestination {
 
   void handleRxmittingConnection();
 
+  void onTransitionToState(State state);
+  void onTransitionFromState(State state);
+  void onTransitionImpl(State state, bool to);
+
   void* stateList_{nullptr};
   folly::IntrusiveListHook stateListHook_;
 

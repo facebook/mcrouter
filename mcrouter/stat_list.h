@@ -22,6 +22,7 @@ STUI(num_servers_new, 0, 1)
 STUI(num_servers_up, 0, 1)
 STUI(num_servers_down, 0, 1)
 STUI(num_servers_closed, 0, 1)
+STUI(num_ssl_servers_up, 0, 1)
 STUI(num_clients, 0, 1)
 STUI(num_suspect_servers, 0, 1)
 #undef GROUP
