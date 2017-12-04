@@ -167,7 +167,7 @@ class RouteCommandDispatcher {
 
 template <class RouterInfo>
 struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
-  Proxy<RouterInfo>* proxy_;
+  Proxy<RouterInfo>& proxy_;
   ProxyRoute<RouterInfo>& proxyRoute_;
   std::unordered_map<
       std::string,
@@ -179,7 +179,7 @@ struct ServiceInfo<RouterInfo>::ServiceInfoImpl {
   mutable detail::RouteCommandDispatcher<RouterInfo> routeCommandDispatcher_;
 
   ServiceInfoImpl(
-      Proxy<RouterInfo>* proxy,
+      Proxy<RouterInfo>& proxy,
       const ProxyConfig<RouterInfo>& config);
 
   void handleRequest(
@@ -200,13 +200,13 @@ ServiceInfo<RouterInfo>::~ServiceInfo() {}
 
 template <class RouterInfo>
 ServiceInfo<RouterInfo>::ServiceInfo(
-    Proxy<RouterInfo>* proxy,
+    Proxy<RouterInfo>& proxy,
     const ProxyConfig<RouterInfo>& config)
     : impl_(std::make_unique<ServiceInfoImpl>(proxy, config)) {}
 
 template <class RouterInfo>
 ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
-    Proxy<RouterInfo>* proxy,
+    Proxy<RouterInfo>& proxy,
     const ProxyConfig<RouterInfo>& config)
     : proxy_(proxy), proxyRoute_(config.proxyRoute()) {
   commands_.emplace(
@@ -215,24 +215,25 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
       });
 
   commands_.emplace(
-      "config_age", [proxy](const std::vector<folly::StringPiece>& /* args */) {
+      "config_age",
+      [&proxy](const std::vector<folly::StringPiece>& /* args */) {
         /* capturing this and accessing proxy_ crashes gcc-4.7 */
-        return std::to_string(proxy->stats().getConfigAge(time(nullptr)));
+        return std::to_string(proxy.stats().getConfigAge(time(nullptr)));
       });
 
   commands_.emplace(
       "config_file", [this](const std::vector<folly::StringPiece>& /* args */) {
-        folly::StringPiece configStr = proxy_->router().opts().config;
+        folly::StringPiece configStr = proxy_.router().opts().config;
         if (configStr.startsWith(ConfigApi::kFilePrefix)) {
           configStr.removePrefix(ConfigApi::kFilePrefix);
           return configStr.str();
         }
 
-        if (proxy_->router().opts().config_file.empty()) {
+        if (proxy_.router().opts().config_file.empty()) {
           throw std::runtime_error("no config file found!");
         }
 
-        return proxy_->router().opts().config_file;
+        return proxy_.router().opts().config_file;
       });
 
   commands_.emplace(
@@ -241,7 +242,7 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
           throw std::runtime_error("options: 0 or 1 args expected");
         }
 
-        auto optDict = proxy_->router().getStartupOpts();
+        auto optDict = proxy_.router().getStartupOpts();
 
         if (args.size() == 1) {
           auto it = optDict.find(args[0].str());
@@ -305,7 +306,7 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
   commands_.emplace(
       "config_sources_info",
       [this](const std::vector<folly::StringPiece>& /* args */) {
-        auto configInfo = proxy_->router().configApi().getConfigSourcesInfo();
+        auto configInfo = proxy_.router().configApi().getConfigSourcesInfo();
         return toPrettySortedJson(configInfo);
       });
 
@@ -314,11 +315,11 @@ ServiceInfo<RouterInfo>::ServiceInfoImpl::ServiceInfoImpl(
       [this](const std::vector<folly::StringPiece>& /* args */) {
         std::string confFile;
         std::string path;
-        if (!proxy_->router().configApi().getConfigFile(confFile, path)) {
+        if (!proxy_.router().configApi().getConfigFile(confFile, path)) {
           throw std::runtime_error("Can not load config from " + path);
         }
         ProxyConfigBuilder builder(
-            proxy_->router().opts(), proxy_->router().configApi(), confFile);
+            proxy_.router().opts(), proxy_.router().configApi(), confFile);
         return toPrettySortedJson(builder.preprocessedConfig());
       });
 
@@ -409,7 +410,7 @@ void ServiceInfo<RouterInfo>::ServiceInfoImpl::handleRouteCommand(
       requestName, typename RouterInfo::RoutableRequests());
 
   if (!routeCommandDispatcher_.dispatch(
-          typeId, ctx, key, *proxy_, proxyRoute_)) {
+          typeId, ctx, key, proxy_, proxyRoute_)) {
     throw std::runtime_error(
         folly::sformat("route: unknown request {}", requestName));
   }

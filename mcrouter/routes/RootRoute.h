@@ -36,9 +36,9 @@ class RootRoute {
   }
 
   RootRoute(
-      ProxyBase* proxy,
+      ProxyBase& proxy,
       const RouteSelectorMap<RouteHandleIf>& routeSelectors)
-      : opts_(proxy->getRouterOptions()),
+      : opts_(proxy.getRouterOptions()),
         rhMap_(
             routeSelectors,
             opts_.default_route,

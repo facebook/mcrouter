@@ -101,9 +101,8 @@ ProxyConfig<RouterInfo>::ProxyConfig(
   asyncLogRoutes_ = provider.releaseAsyncLogRoutes();
   pools_ = provider.releasePools();
   accessPoints_ = provider.releaseAccessPoints();
-  proxyRoute_ =
-      std::make_shared<ProxyRoute<RouterInfo>>(&proxy, routeSelectors);
-  serviceInfo_ = std::make_shared<ServiceInfo<RouterInfo>>(&proxy, *this);
+  proxyRoute_ = std::make_shared<ProxyRoute<RouterInfo>>(proxy, routeSelectors);
+  serviceInfo_ = std::make_shared<ServiceInfo<RouterInfo>>(proxy, *this);
 }
 
 template <class RouterInfo>

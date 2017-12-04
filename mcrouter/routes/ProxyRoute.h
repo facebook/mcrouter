@@ -44,7 +44,7 @@ class ProxyRoute {
   }
 
   ProxyRoute(
-      Proxy<RouterInfo>* proxy,
+      Proxy<RouterInfo>& proxy,
       const RouteSelectorMap<typename RouterInfo::RouteHandleIf>&
           routeSelectors);
 
@@ -62,8 +62,8 @@ class ProxyRoute {
     auto& requestContext = fiber_local<RouterInfo>::getSharedCtx();
     requestContext->setFinalResult(reply.result());
 
-    if (proxy_ && isErrorResult(reply.result())) {
-      proxy_->stats().increment(final_result_error_stat);
+    if (isErrorResult(reply.result())) {
+      proxy_.stats().increment(final_result_error_stat);
     }
 
     return reply;
@@ -77,7 +77,7 @@ class ProxyRoute {
   }
 
  private:
-  Proxy<RouterInfo>* proxy_;
+  Proxy<RouterInfo>& proxy_;
   std::shared_ptr<typename RouterInfo::RouteHandleIf> root_;
 
   std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>>

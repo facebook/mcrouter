@@ -54,17 +54,17 @@ wrapWithBigValueRoute(
 
 template <class RouterInfo>
 ProxyRoute<RouterInfo>::ProxyRoute(
-    Proxy<RouterInfo>* proxy,
+    Proxy<RouterInfo>& proxy,
     const RouteSelectorMap<typename RouterInfo::RouteHandleIf>& routeSelectors)
     : proxy_(proxy),
       root_(makeRouteHandle<typename RouterInfo::RouteHandleIf, RootRoute>(
           proxy_,
           routeSelectors)) {
-  if (proxy_->getRouterOptions().big_value_split_threshold != 0) {
+  if (proxy_.getRouterOptions().big_value_split_threshold != 0) {
     root_ = detail::wrapWithBigValueRoute(
-        std::move(root_), proxy_->getRouterOptions());
+        std::move(root_), proxy_.getRouterOptions());
   }
-  if (proxy_->getRouterOptions().enable_logging_route) {
+  if (proxy_.getRouterOptions().enable_logging_route) {
     root_ = createLoggingRoute<RouterInfo>(std::move(root_));
   }
 }
@@ -79,7 +79,7 @@ ProxyRoute<RouterInfo>::getAllDestinations() const {
   // include dependecies.
   //
   // Important: keep the shared_ptr alive for the duration of the loop.
-  auto config = proxy_->getConfigUnsafe();
+  auto config = proxy_.getConfigUnsafe();
   for (auto& it : config->getPools()) {
     rh.insert(rh.end(), it.second.begin(), it.second.end());
   }

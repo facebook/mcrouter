@@ -33,7 +33,7 @@ using ServiceInfoRequest = McGetRequest;
 template <class RouterInfo>
 class ServiceInfo {
  public:
-  ServiceInfo(Proxy<RouterInfo>* proxy, const ProxyConfig<RouterInfo>& config);
+  ServiceInfo(Proxy<RouterInfo>& proxy, const ProxyConfig<RouterInfo>& config);
 
   void handleRequest(
       folly::StringPiece req,
