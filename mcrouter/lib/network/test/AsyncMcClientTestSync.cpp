@@ -26,6 +26,10 @@
 using namespace facebook::memcache;
 using namespace facebook::memcache::test;
 
+namespace folly {
+class AsyncSocket;
+} // namespace folly
+
 void serverShutdownTest(SSLContextProvider ssl) {
   auto server = TestServer::create(false, ssl != noSsl());
   TestClient client(
@@ -455,7 +459,7 @@ TEST(AsyncMcClient, eventBaseDestructionWhileConnecting) {
   opts.writeTimeout = std::chrono::milliseconds(1000);
   auto client = std::make_unique<AsyncMcClient>(*eventBase, opts);
   client->setStatusCallbacks(
-      [&wasUp] { wasUp = true; },
+      [&wasUp](const folly::AsyncSocket&) { wasUp = true; },
       [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });
 
   fiberManager->addTask([&client, &replied] {
@@ -579,7 +583,7 @@ TEST(AsyncMcClient, tonsOfConnections) {
   /* Create a client to see if it gets evicted. */
   TestClient client("localhost", server->getListenPort(), 1, mc_ascii_protocol);
   client.setStatusCallbacks(
-      [] {},
+      [](const folly::AsyncSocket&) {},
       [&wentDown](AsyncMcClient::ConnectionDownReason) { wentDown = true; });
   client.sendGet("test", mc_res_found);
   client.waitForReplies();
@@ -780,7 +784,7 @@ TEST(AsyncMcClient, caretGoAway) {
   client.sendGet("test", mc_res_found);
   client.sendGet("hold", mc_res_found);
   client.setStatusCallbacks(
-      [] {},
+      [](const folly::AsyncSocket&) {},
       [&client](AsyncMcClient::ConnectionDownReason reason) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone away, flushing";

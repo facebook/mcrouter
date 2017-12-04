@@ -18,6 +18,7 @@
 #include "mcrouter/lib/network/ConnectionOptions.h"
 
 namespace folly {
+class AsyncSocket;
 class EventBase;
 } // folly
 
@@ -66,7 +67,7 @@ class AsyncMcClient {
    *       some requests left, for wich reply callback wasn't called yet.
    */
   void setStatusCallbacks(
-      std::function<void()> onUp,
+      std::function<void(const folly::AsyncSocket&)> onUp,
       std::function<void(ConnectionDownReason)> onDown);
 
   /**

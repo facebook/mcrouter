@@ -14,6 +14,7 @@
 
 #include <folly/fibers/Baton.h>
 #include <folly/io/IOBufQueue.h>
+#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/AsyncTransport.h>
 #include <folly/io/async/DelayedDestruction.h>
 #include <folly/io/async/VirtualEventBase.h>
@@ -63,7 +64,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   void closeNow();
 
   void setStatusCallbacks(
-      std::function<void()> onUp,
+      std::function<void(const folly::AsyncSocket&)> onUp,
       std::function<void(ConnectionDownReason)> onDown);
 
   void setRequestStatusCallbacks(
@@ -111,7 +112,7 @@ class AsyncMcClientImpl : public folly::DelayedDestruction,
   };
 
   struct ConnectionStatusCallbacks {
-    std::function<void()> onUp;
+    std::function<void(const folly::AsyncSocket&)> onUp;
     std::function<void(ConnectionDownReason)> onDown;
   };
   struct RequestStatusCallbacks {

@@ -130,7 +130,7 @@ void AsyncMcClientImpl::closeNow() {
 }
 
 void AsyncMcClientImpl::setStatusCallbacks(
-    std::function<void()> onUp,
+    std::function<void(const folly::AsyncSocket&)> onUp,
     std::function<void(ConnectionDownReason)> onDown) {
   DestructorGuard dg(this);
 
@@ -138,7 +138,7 @@ void AsyncMcClientImpl::setStatusCallbacks(
       ConnectionStatusCallbacks{std::move(onUp), std::move(onDown)};
 
   if (connectionState_ == ConnectionState::UP && statusCallbacks_.onUp) {
-    statusCallbacks_.onUp();
+    statusCallbacks_.onUp(*socket_);
   }
 }
 
@@ -564,7 +564,7 @@ void AsyncMcClientImpl::connectSuccess() noexcept {
   connectionState_ = ConnectionState::UP;
 
   if (statusCallbacks_.onUp) {
-    statusCallbacks_.onUp();
+    statusCallbacks_.onUp(*socket_);
   }
 
   if (!connectionOptions_.debugFifoPath.empty()) {

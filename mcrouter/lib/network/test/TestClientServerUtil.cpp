@@ -31,6 +31,10 @@
 #include "mcrouter/lib/network/ThreadLocalSSLContextProvider.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 
+namespace folly {
+class AsyncSocket;
+} // namespace folly
+
 namespace facebook {
 namespace memcache {
 namespace test {
@@ -242,7 +246,7 @@ TestClient::TestClient(
   }
   client_ = std::make_unique<AsyncMcClient>(eventBase_, opts);
   client_->setStatusCallbacks(
-      [] { LOG(INFO) << "Client UP."; },
+      [](const folly::AsyncSocket&) { LOG(INFO) << "Client UP."; },
       [](AsyncMcClient::ConnectionDownReason reason) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {
           LOG(INFO) << "Server gone Away.";
@@ -268,12 +272,12 @@ TestClient::TestClient(
 }
 
 void TestClient::setStatusCallbacks(
-    std::function<void()> onUp,
+    std::function<void(const folly::AsyncSocket&)> onUp,
     std::function<void(AsyncMcClient::ConnectionDownReason)> onDown) {
   client_->setStatusCallbacks(
-      [onUp] {
+      [onUp](const folly::AsyncSocket& socket) {
         LOG(INFO) << "Client UP.";
-        onUp();
+        onUp(socket);
       },
       [onDown](AsyncMcClient::ConnectionDownReason reason) {
         if (reason == AsyncMcClient::ConnectionDownReason::SERVER_GONE_AWAY) {

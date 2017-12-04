@@ -384,12 +384,25 @@ void ProxyDestination::initializeAsyncMcClient() {
       });
 
   client_->setStatusCallbacks(
-      [this]() mutable { setState(State::kUp); },
+      [this](const folly::AsyncSocket& socket) mutable {
+        setState(State::kUp);
+        if (const auto* sslSocket =
+                socket.getUnderlyingTransport<folly::AsyncSSLSocket>()) {
+          proxy.stats().increment(num_ssl_connection_successes_stat);
+          if (sslSocket->sessionResumptionAttempted()) {
+            proxy.stats().increment(num_ssl_resumption_attempts_stat);
+          }
+          if (sslSocket->getSSLSessionReused()) {
+            proxy.stats().increment(num_ssl_resumption_successes_stat);
+          }
+        }
+      },
       [pdstnPtr = selfPtr_](AsyncMcClient::ConnectionDownReason reason) {
         auto pdstn = pdstnPtr.lock();
         if (!pdstn) {
           return;
         }
+
         if (reason == AsyncMcClient::ConnectionDownReason::ABORTED) {
           pdstn->setState(State::kClosed);
         } else {

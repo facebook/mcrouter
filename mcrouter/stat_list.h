@@ -24,7 +24,12 @@ STUI(num_servers_down, 0, 1)
 STUI(num_servers_closed, 0, 1)
 STUI(num_ssl_servers_up, 0, 1)
 STUI(num_clients, 0, 1)
+// Current number of open SSL connections
 STUI(num_suspect_servers, 0, 1)
+// Running total of successful SSL connection attempts
+STUI(num_ssl_connection_successes, 0, 1)
+STUI(num_ssl_resumption_attempts, 0, 1)
+STUI(num_ssl_resumption_successes, 0, 1)
 #undef GROUP
 #define GROUP mcproxy_stats | rate_stats
 STUI(destination_batches_sum, 0, 1)

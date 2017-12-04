@@ -26,6 +26,10 @@
 #include "mcrouter/lib/network/gen/Memcache.h"
 #include "mcrouter/lib/network/test/ListenSocket.h"
 
+namespace folly {
+class AsyncSocket;
+} // namespace folly
+
 namespace facebook {
 namespace memcache {
 
@@ -54,7 +58,7 @@ class TestServerOnRequest {
       McServerRequestContext::reply(std::move(context), std::move(reply));
     } else {
       waitingReplies_.push_back(
-          [ ctx = std::move(context), reply = std::move(reply) ]() mutable {
+          [ctx = std::move(context), reply = std::move(reply)]() mutable {
             McServerRequestContext::reply(std::move(ctx), std::move(reply));
           });
       if (waitingReplies_.size() == 1) {
@@ -179,7 +183,7 @@ class TestClient {
   }
 
   void setStatusCallbacks(
-      std::function<void()> onUp,
+      std::function<void(const folly::AsyncSocket&)> onUp,
       std::function<void(AsyncMcClient::ConnectionDownReason)> onDown);
 
   void sendGet(
