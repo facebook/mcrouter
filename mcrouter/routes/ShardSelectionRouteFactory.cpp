@@ -146,9 +146,7 @@ std::vector<uint16_t> getShardsMap(
       if (shardsMap[shard] == kNoDestination || shardsMap[shard] == i) {
         shardsMap[shard] = i;
       } else {
-        LOG(WARNING) << "ShardSelectionRoute: shard " << shard
-                     << " is served by two destinations (" << shardsMap[shard]
-                     << " and " << i << "). Picking one destination randomly.";
+        // Shard is served by two destinations, picking one randomly
         if (folly::Random::oneIn(2)) {
           shardsMap[shard] = i;
         }
@@ -184,9 +182,7 @@ std::unordered_map<uint32_t, uint16_t> getShardsMap(
       if (shardsMap.find(shard) == shardsMap.end()) {
         shardsMap[shard] = i;
       } else {
-        LOG(WARNING) << "ShardSelectionRoute: shard " << shard
-                     << " is served by two destinations (" << shardsMap[shard]
-                     << " and " << i << "). Picking one destination randomly.";
+        // Shard is served by two destinations, picking one randomly
         if (folly::Random::oneIn(2)) {
           shardsMap[shard] = i;
         }
