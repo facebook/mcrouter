@@ -312,12 +312,12 @@ class MCProcess(ProcessBase):
             return None
         return re.match("STORED", answer)
 
-    def leaseSet(self, key, value_token, is_stalestored=False):
+    def leaseSet(self, key, value_token, exptime=0, is_stalestored=False):
         value = str(value_token["value"])
         token = int(value_token["token"])
         flags = 0
-        cmd = "lease-set %s %d %d 0 %d\r\n%s\r\n" % \
-                (key, token, flags, len(value), value)
+        cmd = "lease-set %s %d %d %d %d\r\n%s\r\n" % \
+                (key, token, flags, exptime, len(value), value)
         self.socket.sendall(cmd)
 
         answer = self.fd.readline().strip()
