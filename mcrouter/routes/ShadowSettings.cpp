@@ -19,6 +19,7 @@
 #include "mcrouter/McrouterLogFailure.h"
 #include "mcrouter/RuntimeVarsData.h"
 #include "mcrouter/lib/carbon/Keys.h"
+#include "mcrouter/lib/fbi/cpp/util.h"
 
 namespace facebook {
 namespace memcache {
