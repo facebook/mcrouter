@@ -9,7 +9,7 @@
  */
 #include <arpa/inet.h>
 
-#include <folly/Bits.h>
+#include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/IOBufUtil.h"
 #include "mcrouter/lib/McResUtil.h"

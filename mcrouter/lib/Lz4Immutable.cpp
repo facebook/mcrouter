@@ -9,8 +9,8 @@
  */
 #include "Lz4Immutable.h"
 
-#include <folly/Bits.h>
 #include <folly/Format.h>
+#include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/IovecCursor.h"
 

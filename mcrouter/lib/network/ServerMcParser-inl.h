@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <folly/Bits.h>
+#include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/UmbrellaProtocol.h"

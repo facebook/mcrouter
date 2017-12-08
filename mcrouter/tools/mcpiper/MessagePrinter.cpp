@@ -9,7 +9,7 @@
  */
 #include "MessagePrinter.h"
 
-#include <folly/Bits.h>
+#include <folly/lang/Bits.h>
 
 namespace facebook {
 namespace memcache {

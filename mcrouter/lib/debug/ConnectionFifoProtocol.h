@@ -11,10 +11,10 @@
 
 #include <limits.h>
 
-#include <folly/Bits.h>
 #include <folly/Portability.h>
 #include <folly/Range.h>
 #include <folly/SocketAddress.h>
+#include <folly/lang/Bits.h>
 
 namespace facebook {
 namespace memcache {

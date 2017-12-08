@@ -9,12 +9,12 @@
  */
 #include "UmbrellaProtocol.h"
 
-#include <folly/Bits.h>
 #include <folly/Expected.h>
 #include <folly/GroupVarint.h>
 #include <folly/Range.h>
 #include <folly/Varint.h>
 #include <folly/io/IOBuf.h>
+#include <folly/lang/Bits.h>
 
 #include "mcrouter/lib/mc/umbrella.h"
 #include "mcrouter/lib/network/ServerLoad.h"

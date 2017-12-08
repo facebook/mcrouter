@@ -14,10 +14,10 @@
 #include <type_traits>
 #include <utility>
 
-#include <folly/Bits.h>
 #include <folly/Optional.h>
 #include <folly/Varint.h>
 #include <folly/io/IOBuf.h>
+#include <folly/lang/Bits.h>
 
 namespace folly {
 class IOBuf;
