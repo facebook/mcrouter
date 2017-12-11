@@ -593,8 +593,8 @@ wangle::TLSTicketKeySeeds AsyncMcServer::getTicketKeySeeds() const {
 
 void AsyncMcServer::startPollingTicketKeySeeds() {
   // Caller assumed to have checked opts_.tlsTicketKeySeedPath is non-empty
-  ticketKeySeedPoller_ = std::make_unique<wangle::TLSCredProcessor>(
-      opts_.tlsTicketKeySeedPath, opts_.pemCertPath);
+  ticketKeySeedPoller_ = std::make_unique<wangle::TLSCredProcessor>();
+  ticketKeySeedPoller_->setTicketPathToWatch(opts_.tlsTicketKeySeedPath);
   ticketKeySeedPoller_->addTicketCallback(
       [this](wangle::TLSTicketKeySeeds updatedSeeds) {
         setTicketKeySeeds(std::move(updatedSeeds));
