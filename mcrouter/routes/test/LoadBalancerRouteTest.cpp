@@ -23,7 +23,6 @@
 #include "mcrouter/lib/test/TestRouteHandle.h"
 #include "mcrouter/routes/HashRouteFactory.h"
 #include "mcrouter/routes/LoadBalancerRoute.h"
-#include "mcrouter/routes/McrouterRouteHandle.h"
 
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
@@ -100,7 +99,7 @@ TEST(CpuLoadBalancerRouteTest, basic) {
       std::make_shared<TestHandle>("cpub", mymap),
       std::make_shared<TestHandle>("cpuc", mymap)};
 
-  TestRouteHandle<LoadBalancerRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
       getRouteHandles(testHandles),
       "",
       std::chrono::milliseconds(100),
@@ -133,7 +132,7 @@ TEST(CpuLoadBalancerRouteTest, oneFullyLoaded) {
       std::make_shared<TestHandle>("cpub", mymap),
       std::make_shared<TestHandle>("cpuc", mymap)};
 
-  TestRouteHandle<LoadBalancerRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
       getRouteHandles(testHandles),
       "SALT-STRING",
       std::chrono::milliseconds(100),
@@ -166,7 +165,7 @@ TEST(CpuLoadBalancerRouteTest, oneZeroLoad) {
       std::make_shared<TestHandle>("cpub", mymap),
       std::make_shared<TestHandle>("cpuc", mymap)};
 
-  TestRouteHandle<LoadBalancerRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
       getRouteHandles(testHandles),
       "TEST-SALT",
       std::chrono::milliseconds(100),
@@ -199,7 +198,7 @@ TEST(CpuLoadBalancerRouteTest, AllFullyLoaded) {
       std::make_shared<TestHandle>("cpub", mymap),
       std::make_shared<TestHandle>("cpuc", mymap)};
 
-  TestRouteHandle<LoadBalancerRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
       getRouteHandles(testHandles),
       "TEST-SALT",
       std::chrono::milliseconds(100),
@@ -232,7 +231,7 @@ TEST(CpuLoadBalancerRouteTest, AllZeroLoads) {
       std::make_shared<TestHandle>("cpub", mymap),
       std::make_shared<TestHandle>("cpuc", mymap)};
 
-  TestRouteHandle<LoadBalancerRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
       getRouteHandles(testHandles),
       "TEST-SALT",
       std::chrono::milliseconds(100),
@@ -265,7 +264,7 @@ TEST(CpuLoadBalancerRouteTest, LoadsWithWait) {
       std::make_shared<TestHandle>("cpub", mymap),
       std::make_shared<TestHandle>("cpuc", mymap)};
 
-  TestRouteHandle<LoadBalancerRoute<TestRouteHandleIf>> rh(
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
       getRouteHandles(testHandles),
       "TEST-SALT",
       std::chrono::milliseconds(100),

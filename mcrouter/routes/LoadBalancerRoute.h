@@ -17,6 +17,7 @@
 #include <folly/Conv.h>
 
 #include "mcrouter/McrouterFiberContext.h"
+#include "mcrouter/config.h"
 #include "mcrouter/lib/HashUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
@@ -33,11 +34,13 @@ namespace mcrouter {
  * of the servers is used as 'weight' to the WeightedCh3Hash function to
  * determine the next destination server.
  *
- * @tparam RouteHandleIf   The Route handle If.
+ * @tparam RouteHandleInfo   The Router
  */
-template <class RouteHandleIf>
+template <class RouterInfo>
 class LoadBalancerRoute {
-  using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
+ private:
+  using RouteHandleIf = typename RouterInfo::RouteHandleIf;
+  using RouteHandlePtr = typename RouterInfo::RouteHandlePtr;
 
  public:
   static std::string routeName() {
@@ -80,7 +83,7 @@ class LoadBalancerRoute {
   ReplyT<Request> route(const Request& req) {
     size_t idx = select(req);
     auto rep = children_[idx]->route(req);
-    auto load = mcrouter::fiber_local<MemcacheRouterInfo>::getServerLoad();
+    auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
     weightedLoads_[idx] = load.complement().percentLoad() / 100;
 
     auto now = nowUs();
@@ -97,8 +100,7 @@ class LoadBalancerRoute {
           expTimes_[i].count() <= now) {
         expTimes_[i] = std::chrono::microseconds(0);
         weightedLoads_[i] = defaultServerLoadWeight_;
-        if (auto& ctx =
-                mcrouter::fiber_local<MemcacheRouterInfo>::getSharedCtx()) {
+        if (auto& ctx = mcrouter::fiber_local<RouterInfo>::getSharedCtx()) {
           ctx->proxy().stats().increment(load_balancer_load_reset_count_stat);
         }
       }
@@ -179,7 +181,7 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createLoadBalancerRoute(
     defaultServerLoad = ServerLoad::fromPercentLoad(defServerLoad);
   }
 
-  return makeRouteHandle<typename RouterInfo::RouteHandleIf, LoadBalancerRoute>(
+  return makeRouteHandleWithInfo<RouterInfo, LoadBalancerRoute>(
       std::move(rh), std::move(salt), loadTtl, defaultServerLoad);
 }
 

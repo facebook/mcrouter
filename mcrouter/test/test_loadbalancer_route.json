@@ -21,7 +21,6 @@
       "hash_func": "LoadBalancer",
       "load_ttl_ms": 100,
       "default_server_load_percent": 50
-    },
-    "pool": "A.wildcard"
+    }
   }
 }
