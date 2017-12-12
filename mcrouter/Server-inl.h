@@ -125,16 +125,12 @@ bool runServer(
     AsyncMcServer server(opts);
     server.installShutdownHandler({SIGINT, SIGTERM});
 
-    auto router = CarbonRouterInstance<RouterInfo>::init(
-        "standalone", mcrouterOpts, server.eventBases());
-
-    if (router == nullptr) {
-      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
-      return false;
-    }
+    CarbonRouterInstance<RouterInfo>* router = nullptr;
 
     SCOPE_EXIT {
-      router->shutdown();
+      if (router) {
+        router->shutdown();
+      }
       server.join();
 
       LOG(INFO) << "Shutting down";
@@ -145,6 +141,13 @@ bool runServer(
         std::remove(opts.unixDomainSockPath.c_str());
       }
     };
+
+    router = CarbonRouterInstance<RouterInfo>::init(
+        "standalone", mcrouterOpts, server.eventBases());
+    if (router == nullptr) {
+      LOG(ERROR) << "CRITICAL: Failed to initialize mcrouter!";
+      return false;
+    }
 
     router->addStartupOpts(standaloneOpts.toDict());
 

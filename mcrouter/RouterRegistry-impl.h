@@ -11,6 +11,8 @@
 
 #include <stdexcept>
 
+#include <folly/Conv.h>
+
 #include "mcrouter/lib/network/gen/MemcacheRouterInfo.h"
 #include "mcrouter/lib/network/gen/MemcacheServer.h"
 
@@ -29,13 +31,14 @@
  * @param routerName  Name of the router (e.g. Memcache).
  * @param func        The function template that will be called.
  */
-#define CALL_BY_ROUTER_NAME(routerName, func, ...)                      \
-  do {                                                                  \
-    if ((routerName) == facebook::memcache::MemcacheRouterInfo::name) { \
-      func<                                                             \
-          facebook::memcache::MemcacheRouterInfo,                       \
-          facebook::memcache::MemcacheRequestHandler>(__VA_ARGS__);     \
-    } else {                                                            \
-      throw std::invalid_argument("routerName");                        \
-    }                                                                   \
+#define CALL_BY_ROUTER_NAME(routerName, func, ...)                        \
+  do {                                                                    \
+    if ((routerName) == facebook::memcache::MemcacheRouterInfo::name) {   \
+      func<                                                               \
+          facebook::memcache::MemcacheRouterInfo,                         \
+          facebook::memcache::MemcacheRequestHandler>(__VA_ARGS__);       \
+    } else {                                                              \
+      throw std::invalid_argument(                                        \
+          folly::to<std::string>("Invalid router name: ", (routerName))); \
+    }                                                                     \
   } while (false);

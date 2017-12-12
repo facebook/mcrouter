@@ -108,6 +108,15 @@ class McServerThreadSpawnController {
   }
 
   /**
+   * Abort execution.
+   * Used only when we want to shutdown the server before we started running.
+   */
+  void abort() {
+    runningPromise_.set_exception(
+        std::make_exception_ptr(std::runtime_error("Execution aborted.")));
+  }
+
+  /**
    * Starts accepting (if it's an acceptor thread), or blocks until accetor
    * thread has started accepting.
    *
@@ -189,13 +198,13 @@ class McServerThread {
         evb_.reset();
       };
 
-      server_.threadsSpawnController_->waitToStart();
-
       try {
+        server_.threadsSpawnController_->waitToStart();
+
         server_.threadsSpawnController_->startAccepting(
             [this]() { startAccepting(); }, accepting_);
       } catch (...) {
-        // if an exception is thrown, something went wrong with acceptor.
+        // if an exception is thrown, something went wrong before startup.
         return;
       }
 
@@ -503,6 +512,7 @@ void AsyncMcServer::spawn(LoopFn fn, std::function<void()> onShutdown) {
   }
 
   threadsSpawnController_->startRunning();
+  spawned_ = true;
 
   // this call will throw if something went wrong with acceptor.
   threadsSpawnController_->waitForAcceptor();
@@ -576,6 +586,9 @@ void AsyncMcServer::shutdownFromSignalHandler() {
 }
 
 void AsyncMcServer::join() {
+  if (!spawned_) {
+    threadsSpawnController_->abort();
+  }
   for (auto& thread : threads_) {
     thread->join();
   }

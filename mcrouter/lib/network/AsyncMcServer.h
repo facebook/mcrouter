@@ -203,8 +203,9 @@ class AsyncMcServer {
   wangle::TLSTicketKeySeeds tlsTicketKeySeeds_;
   mutable folly::SharedMutex tlsTicketKeySeedsLock_;
 
-  std::atomic<bool> alive_{true};
   std::function<void()> onShutdown_;
+  std::atomic<bool> alive_{true};
+  bool spawned_{false};
 
   enum class SignalShutdownState : uint64_t { STARTUP, SHUTDOWN, SPAWNED };
   std::atomic<SignalShutdownState> signalShutdownState_{
