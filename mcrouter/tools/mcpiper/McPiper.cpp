@@ -119,8 +119,8 @@ MessagePrinter::Filter getFilter(const Settings& settings) {
 } // anonymous
 
 void McPiper::stop() {
+  running_ = false;
   eventBase_.runInEventBaseThread([this]() {
-    running_ = false;
     if (fifoReaderManager_) {
       fifoReaderManager_->unregisterCallbacks();
     }

@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <atomic>
 #include <iostream>
 
 #include <folly/io/async/EventBase.h>
@@ -59,7 +60,7 @@ class McPiper {
   folly::EventBase eventBase_;
   std::unique_ptr<MessagePrinter> messagePrinter_;
   std::unique_ptr<FifoReaderManager> fifoReaderManager_;
-  bool running_{false};
+  std::atomic<bool> running_{false};
 };
 
 } // mcpiper
