@@ -703,28 +703,32 @@ class ConfigPreprocessor::BuiltIns {
   }
 
   /**
-   * Randomly shuffles list. Currently objects have no order, so it won't
-   * have any effect if dictionary is obj.
-   * Usage: @shuffle(list) or @shuffle(obj)
+   * Randomly shuffles list.
+   * Usage: @shuffle(list) or @shuffle(list, seed)
    *
-   * Returns list or object with randomly shuffled items.
+   * "dictionary": list
+   * "seed": int (optional, must be non-negative)
+   * Returns list with randomly shuffled items.
    */
   static dynamic shuffleMacro(Context&& ctx) {
-    auto dictionary = ctx.move("dictionary");
+    auto array = ctx.expandRawArg("dictionary");
+    checkLogic(array.isArray(), "Shuffle: argument must be an array");
 
-    checkLogic(
-        dictionary.isObject() || dictionary.isArray(),
-        "Shuffle: dictionary is not array/object");
+    static thread_local std::minstd_rand defaultEngine(
+        folly::randomNumberSeed());
 
-    static std::minstd_rand engine(folly::randomNumberSeed());
-    if (dictionary.isArray()) {
-      for (size_t i = 0; i < dictionary.size(); ++i) {
-        std::uniform_int_distribution<size_t> d(i, dictionary.size() - 1);
-        std::swap(dictionary[i], dictionary[d(engine)]);
-      }
-    } // obj will be in random order, because it is currently unordered_map
+    if (auto seedArg = ctx.tryExpandRawArg("seed")) {
+      checkLogic(
+          seedArg->isInt() && seedArg->getInt() >= 0,
+          "Shuffle: seed must be a non-negative integer");
+      auto seed = static_cast<uint32_t>(seedArg->getInt());
+      std::minstd_rand seededEngine(seed);
+      std::shuffle(array.begin(), array.end(), seededEngine);
+      return array;
+    }
 
-    return dictionary;
+    std::shuffle(array.begin(), array.end(), defaultEngine);
+    return array;
   }
 
   /**
@@ -1620,7 +1624,11 @@ ConfigPreprocessor::ConfigPreprocessor(
       &BuiltIns::selectMacro,
       false);
 
-  addMacro("shuffle", {"dictionary"}, &BuiltIns::shuffleMacro);
+  addMacro(
+      "shuffle",
+      {"dictionary", dynamic::object("name", "seed")("optional", true)},
+      &BuiltIns::shuffleMacro,
+      false);
 
   addMacro("slice", {"dictionary", "from", "to"}, &BuiltIns::sliceMacro);
 

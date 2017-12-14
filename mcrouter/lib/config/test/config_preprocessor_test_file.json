@@ -3,12 +3,12 @@
     "macros": {
       "s": {
         "type": "macroDef",
-        "result": "string",
+        "result": "string"
       },
       "sParam": {
         "type": "macroDef",
         "params": [ "a" ],
-        "result": "%a%",
+        "result": "%a%"
       }
     },
     "cases": {
@@ -44,7 +44,7 @@
       },
       "range": {
         "orig": "@range( @int(-1), @int(5) )",
-        "expand": [ -1, 0, 1, 2, 3, 4, 5, ]
+        "expand": [ -1, 0, 1, 2, 3, 4, 5 ]
       },
       "booleans": {
         "orig": "@and(@not(@or(@bool(false),@bool(1))), @not(@bool(false)))",
@@ -203,8 +203,7 @@
         "expand": "123"
       },
       "multiline_call": {
-        "orig": "@concat(hello,
-                         world)",
+        "orig": "@concat(hello, world)",
         "expand": "helloworld"
       }
     }
@@ -390,7 +389,7 @@
       "selectNoDefaultStr": {
         "orig": "@select(%my-dict%, a)",
         "expand": "b"
-      },
+      }
     }
   },
   "weightedHash": {
@@ -467,9 +466,9 @@
       "empty": {
         "orig": {
           "type": "shuffle",
-          "dictionary": { }
+          "dictionary": [ ]
         },
-        "expand": { }
+        "expand": [ ]
       },
       "one": {
         "orig": {
@@ -477,6 +476,38 @@
           "dictionary": [ 1 ]
         },
         "expand": [ 1 ]
+      },
+      "withSeed1": {
+        "orig": {
+          "type": "shuffle",
+          "dictionary": [ 1, 3 ],
+          "seed": 11111111
+        },
+        "expand": [ 1, 3 ]
+      },
+      "withSeed2": {
+        "orig": {
+          "type": "shuffle",
+          "dictionary": [ 1, 3 ],
+          "seed": 123
+        },
+        "expand": [ 3, 1 ]
+      },
+      "withSeed1again": {
+        "orig": {
+          "type": "shuffle",
+          "dictionary": [ 1, 3 ],
+          "seed": 11111111
+        },
+        "expand": [ 1, 3 ]
+      },
+      "withSeed2again": {
+        "orig": {
+          "type": "shuffle",
+          "dictionary": [ 1, 3 ],
+          "seed": 123
+        },
+        "expand": [ 3, 1 ]
       }
     }
   },
@@ -504,7 +535,7 @@
       "out_of_range2": {
         "orig": "@slice(abcd, @int(-10), @int(10000))",
         "expand": "abcd"
-      },
+      }
     }
   },
   "set": {
@@ -718,7 +749,7 @@
               "b": {
                 "type": "constDef",
                 "result": "%a%b"
-              },
+              }
             },
             {
               "c": {
@@ -928,8 +959,8 @@
       "notContainsList": {
         "orig": {
           "type": "contains",
-          "dictionary": [ 0, 1, 2, 3, ],
-          "key": 5,
+          "dictionary": [ 0, 1, 2, 3 ],
+          "key": 5
         },
         "expand": false
       },
@@ -944,8 +975,8 @@
       "notContainsObj": {
         "orig": {
           "type": "contains",
-          "dictionary": { "a": 1, "b": 2, },
-          "key": "c",
+          "dictionary": { "a": 1, "b": 2 },
+          "key": "c"
         },
         "expand": false
       }
@@ -983,7 +1014,7 @@
           },
           {
             "type": "foreach",
-            "from": [ 1, 2, 3, 4, 5, 6, ],
+            "from": [ 1, 2, 3, 4, 5, 6 ],
             "where": "@equals(@mod(%item%, @int(2)), @int(0))",
             "top": 2,
             "use": {
@@ -1007,7 +1038,7 @@
             "key": "k",
             "item": "v",
             "from": { "a": "b", "d": "c", "z": "\\@a" },
-            "where": "@less(%v%, %k%)",
+            "where": "@less(%v%, %k%)"
           },
           {
             "type": "foreach",
@@ -1245,7 +1276,7 @@
           "outside_macro": {
             "a": "@defined(a)",
             "local": "@defined(local)",
-            "myMacro": "@defined(myMacro)",
+            "myMacro": "@defined(myMacro)"
           }
         },
         "expand": {
