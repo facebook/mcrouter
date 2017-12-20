@@ -67,7 +67,8 @@ class CacheClientStats {
   }
 
  private:
-  mutable folly::SpinLock lock_ FOLLY_ALIGN_TO_AVOID_FALSE_SHARING;
+  alignas(folly::hardware_destructive_interference_size) mutable folly::SpinLock
+      lock_;
   CacheClientCounters counters_;
 };
 }

@@ -113,9 +113,12 @@ class Notifier {
 
   static constexpr int64_t kUpdatePeriodUsec = 1000000;
 
-  std::atomic<size_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING period_{0};
-  std::atomic<size_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING counter_{0};
-  std::atomic<int64_t> FOLLY_ALIGN_TO_AVOID_FALSE_SHARING waitStart_;
+  alignas(folly::hardware_destructive_interference_size)
+      std::atomic<size_t> period_{0};
+  alignas(folly::hardware_destructive_interference_size)
+      std::atomic<size_t> counter_{0};
+  alignas(folly::hardware_destructive_interference_size)
+      std::atomic<int64_t> waitStart_;
 
   enum class State {
     EMPTY,
@@ -123,7 +126,8 @@ class Notifier {
     READING,
   };
 
-  std::atomic<State> state_ FOLLY_ALIGN_TO_AVOID_FALSE_SHARING;
+  alignas(
+      folly::hardware_destructive_interference_size) std::atomic<State> state_;
 };
 
 template <class T>
