@@ -15,7 +15,7 @@
 
 #include <mcrouter/CarbonRouterInstance.h>
 #include <mcrouter/PoolFactory.h>
-#include <mcrouter/lib/config/RouteHandleFactory.h> // @manual=@/mcrouter/lib/config:routing_config
+#include <mcrouter/lib/config/RouteHandleFactory.h> // @manual=//mcrouter/lib/config:routing_config
 #include <mcrouter/options.h>
 #include <mcrouter/routes/McRouteHandleProvider.h>
 
