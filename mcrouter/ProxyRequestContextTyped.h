@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, Facebook, Inc.
+ *  Copyright (c) 2017-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -8,6 +8,8 @@
  *
  */
 #pragma once
+
+#include <folly/Utility.h>
 
 #include "mcrouter/ProxyRequestContext.h"
 #include "mcrouter/ProxyRequestLogger.h"
@@ -140,8 +142,8 @@ class ProxyRequestContextWithInfo : public ProxyRequestContext {
       ProxyRequestPriority priority__)
       : ProxyRequestContext(pr, priority__),
         proxy_(pr),
-        logger_(ProxyRequestLogger<RouterInfo>(pr)),
-        additionalLogger_(AdditionalLogger(*this)) {}
+        logger_(folly::in_place, pr),
+        additionalLogger_(folly::in_place, *this) {}
 
   Proxy<RouterInfo>& proxy_;
 
