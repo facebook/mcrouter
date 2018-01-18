@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, Facebook, Inc.
+ *  Copyright (c) 2017-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -211,6 +211,7 @@ class FailoverRoute {
     }
 
     proxy.stats().increment(failover_all_stat);
+    proxy.stats().increment(failoverPolicy_.getFailoverStat());
 
     if (rateLimiter_ && !rateLimiter_->failoverAllowed()) {
       proxy.stats().increment(failover_rate_limited_stat);
@@ -263,6 +264,7 @@ class FailoverRoute {
           auto failoverReply = doFailover(cur);
           if (isErrorResult(failoverReply.result())) {
             proxy.stats().increment(failover_all_failed_stat);
+            proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
           }
 
           return failoverReply;

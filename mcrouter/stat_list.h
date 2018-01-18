@@ -142,6 +142,12 @@ STUIR(failover_all, 0, 1)
 STUIR(failover_conditional, 0, 1)
 STUIR(failover_all_failed, 0, 1)
 STUIR(failover_rate_limited, 0, 1)
+STUIR(failover_inorder_policy, 0, 1)
+STUIR(failover_inorder_policy_failed, 0, 1)
+STUIR(failover_least_failures_policy, 0, 1)
+STUIR(failover_least_failures_policy_failed, 0, 1)
+STUIR(failover_custom_policy, 0, 1)
+STUIR(failover_custom_policy_failed, 0, 1)
 #undef GROUP
 #define GROUP ods_stats | count_stats
 STUI(result_error_count, 0, 1)

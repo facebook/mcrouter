@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, Facebook, Inc.
+ *  Copyright (c) 2017-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -72,6 +72,16 @@ class FailoverInOrderPolicy {
 
   Iterator end() const {
     return Iterator(children_, children_.size());
+  }
+
+  // Returns the stat to increment when failover occurs.
+  stat_name_t getFailoverStat() const {
+    return failover_inorder_policy_stat;
+  }
+
+  // Returns the stat when all failover destinations are exhausted.
+  stat_name_t getFailoverFailedStat() const {
+    return failover_inorder_policy_failed_stat;
   }
 
  private:
@@ -164,6 +174,16 @@ class FailoverLeastFailuresPolicy {
 
   Iterator end() {
     return Iterator(*this, maxTries_);
+  }
+
+  // Returns the stat to increment when failover occurs.
+  stat_name_t getFailoverStat() const {
+    return failover_least_failures_policy_stat;
+  }
+
+  // Returns the stat when all failover destinations are exhausted.
+  stat_name_t getFailoverFailedStat() const {
+    return failover_least_failures_policy_failed_stat;
   }
 
  private:
