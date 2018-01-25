@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, Facebook, Inc.
+ *  Copyright (c) 2017-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -21,6 +21,7 @@
 #include "mcrouter/lib/HashUtil.h"
 #include "mcrouter/lib/Operation.h"
 #include "mcrouter/lib/RouteHandleTraverser.h"
+#include "mcrouter/lib/WeightedCh3HashFunc.h"
 #include "mcrouter/lib/routes/NullRoute.h"
 #include "mcrouter/routes/McRouteHandleBuilder.h"
 
@@ -155,8 +156,9 @@ template <class RouterInfo>
 std::shared_ptr<typename RouterInfo::RouteHandleIf> createLoadBalancerRoute(
     const folly::dynamic& json,
     std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh) {
-  std::string salt;
+  assert(json.isObject());
 
+  std::string salt;
   if (auto jSalt = json.get_ptr("salt")) {
     checkLogic(jSalt->isString(), "LoadBalancerRoute: salt is not a string");
     salt = jSalt->getString();
