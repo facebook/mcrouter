@@ -21,6 +21,7 @@
 namespace facebook {
 namespace memcache {
 namespace mcrouter {
+
 /**
  * Create a route handle for sharding requests to servers.
  *
@@ -89,7 +90,7 @@ typename RouterInfo::RouteHandlePtr createShardSelectionRoute(
  *   "out_of_range": "ErrorRoute"
  * }
  *
- * "Shards" can be an array of strings of comma-separated
+ * "shards" can be an array of strings of comma-separated
  * shard ids, as stated in ShardSelectionRoute above
  *
  * NOTE:

@@ -14,6 +14,7 @@
 #include "mcrouter/lib/SelectionRouteFactory.h"
 #include "mcrouter/lib/config/RouteHandleFactory.h"
 #include "mcrouter/routes/ErrorRoute.h"
+#include "mcrouter/routes/LatestRoute.h"
 #include "mcrouter/routes/LoadBalancerRoute.h"
 
 namespace facebook {
@@ -203,18 +204,7 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     return jChildType->stringPiece();
   }();
 
-  using CreateRouteFunc = typename RouterInfo::RouteHandlePtr (*)(
-      const folly::dynamic&, std::vector<typename RouterInfo::RouteHandlePtr>);
-  CreateRouteFunc createRoute;
-  if (childrenType == "LoadBalancerRoute") {
-    createRoute = createLoadBalancerRoute<RouterInfo>;
-  } else {
-    throwLogic(
-        "EagerShardSelectionRoute: 'children_type' {} not supported",
-        childrenType);
-  }
-
-  const auto childrenSettings = [&json]() {
+  const auto& childrenSettings = [&json]() {
     auto jSettings = json.get_ptr("children_settings");
     checkLogic(
         jSettings && jSettings->isObject(),
@@ -223,14 +213,29 @@ typename RouterInfo::RouteHandlePtr createEagerShardSelectionRoute(
     return *jSettings;
   }();
 
-  auto shardToDestinationIndexMap =
+  using CreateRouteFunc = typename RouterInfo::RouteHandlePtr (*)(
+      RouteHandleFactory<typename RouterInfo::RouteHandleIf> & factory,
+      const folly::dynamic&,
+      std::vector<typename RouterInfo::RouteHandlePtr>);
+  CreateRouteFunc createRouteFn;
+  if (childrenType == "LoadBalancerRoute") {
+    createRouteFn = createLoadBalancerRoute<RouterInfo>;
+  } else if (childrenType == "LatestRoute") {
+    createRouteFn = createLatestRoute<RouterInfo>;
+  } else {
+    throwLogic(
+        "EagerShardSelectionRoute: 'children_type' {} not supported",
+        childrenType);
+  }
+
+  MapType shardToDestinationIndexMap =
       detail::prepareMap<MapType>(shardMap.size());
   std::vector<typename RouterInfo::RouteHandlePtr> destinations;
   std::for_each(shardMap.begin(), shardMap.end(), [&](auto& item) {
     auto shardId = item.first;
     auto childrenRouteHandles = std::move(item.second);
-    destinations.push_back(
-        createRoute(childrenSettings, std::move(childrenRouteHandles)));
+    destinations.push_back(createRouteFn(
+        factory, childrenSettings, std::move(childrenRouteHandles)));
     shardToDestinationIndexMap[shardId] = destinations.size() - 1;
   });
 

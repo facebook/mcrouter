@@ -7,6 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
+#include <unordered_set>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -154,7 +155,7 @@ TEST_F(EagerShardSelectionRouteTest, createMissingHost) {
   }
 }
 
-TEST_F(EagerShardSelectionRouteTest, createMissingHostPools) {
+TEST_F(EagerShardSelectionRouteTest, createEmptyServersAndShards) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
     "children_type": "LoadBalancerRoute",
@@ -187,7 +188,8 @@ TEST_F(EagerShardSelectionRouteTest, createMissingHostPools) {
   }
   )";
 
-  // should configure fine because the first pool is still valid
+  // should configure fine because number of servers and number of shards
+  // matches in both cases.
   try {
     testCreate(kSelectionRouteConfig);
   } catch (const std::exception& e) {
@@ -196,19 +198,21 @@ TEST_F(EagerShardSelectionRouteTest, createMissingHostPools) {
   }
 }
 
-TEST_F(EagerShardSelectionRouteTest, routeArray) {
+TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsLoadBalancer) {
   constexpr folly::StringPiece kSelectionRouteConfig = R"(
   {
     "children_type": "LoadBalancerRoute",
     "pools": [
       {
-        "pool": [
-          "NullRoute",
-          "ErrorRoute"
-        ],
+        "pool": {
+          "type": "Pool",
+          "name": "pool1",
+          "servers": [ "localhost:12345", "localhost:12325" ],
+          "protocol": "caret"
+        },
         "shards": [
-          [1, 2, 3],
-          [2, 3, 6]
+          "1, 2, 3",
+          "3, 5, 6"
         ]
       }
     ],
@@ -224,45 +228,166 @@ TEST_F(EagerShardSelectionRouteTest, routeArray) {
   EXPECT_EQ("selection|basic-shard-selector", rh->routeName());
 
   GoodbyeRequest req;
-  GoodbyeReply reply;
 
   req.shardId() = 1;
-  size_t cnt = 0;
+  size_t iterations = 0;
   RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
-      [&cnt](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
-        ++cnt;
-        if (cnt == 1) {
+      [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        ++iterations;
+        if (iterations == 1) {
           EXPECT_EQ("loadbalancer", r.routeName());
         }
       }};
   rh->traverse(req, t);
-  EXPECT_GE(cnt, 1);
+  EXPECT_GE(iterations, 1);
+}
 
-  req.shardId() = 1;
-  reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsFailover) {
+  constexpr folly::StringPiece kSelectionRouteConfig = R"(
+  {
+    "children_type": "LatestRoute",
+    "pools": [
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool1",
+          "servers": [ "localhost:12301", "localhost:35601" ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3, 5"
+        ]
+      },
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool2",
+          "servers": [ "localhost:12302", "localhost:35602" ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3, 5, 6"
+        ]
+      },
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool3",
+          "servers": [ "localhost:12303", "localhost:35603"],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3"
+        ]
+      }
+    ],
+    "children_settings" : {
+      "failover_count": 2
+    }
+  }
+  )";
 
-  req.shardId() = 2;
-  reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+  auto rh = getEagerShardSelectionRoute(kSelectionRouteConfig);
+  ASSERT_TRUE(rh);
+  EXPECT_EQ("selection|basic-shard-selector", rh->routeName());
 
-  // load hasnt changed much, still NullRoute
-  req.shardId() = 2;
-  reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+  GoodbyeRequest req;
 
-  req.shardId() = 3;
-  reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+  // Shards 1 and 2 are served by 3 servers, with name starting
+  // with "localhost:123"
+  for (auto shardId : {1, 2}) {
+    req.shardId() = shardId;
+    size_t iterations = 0;
+    std::unordered_set<std::string> children;
+    RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
+        [&iterations,
+         &children](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+          EXPECT_EQ(children.end(), children.find(r.routeName()));
+          children.emplace(r.routeName());
+          if (++iterations == 1) {
+            EXPECT_EQ("failover", r.routeName());
+          } else if (iterations > 1) {
+            EXPECT_TRUE(r.routeName().find("host|") != std::string::npos);
+            EXPECT_TRUE(
+                r.routeName().find("localhost:123") != std::string::npos);
+          }
+        }};
+    rh->traverse(req, t);
+    // We should iterate 3 times, once for FailoveRoute, and 2 for hosts,
+    // as failover_count is 2.
+    EXPECT_EQ(iterations, 3);
+  }
 
-  // load hasnt changed much, still ErrorRoute
-  req.shardId() = 3;
-  reply = rh->route(req);
-  EXPECT_EQ(mc_res_notfound, reply.result());
+  // Shard 3 is served by all 6 servers.
+  req.shardId() = 5;
+  size_t iterations = 0;
+  std::unordered_set<std::string> children;
+  RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf> t{
+      [&iterations, &children](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        EXPECT_EQ(children.end(), children.find(r.routeName()));
+        children.emplace(r.routeName());
+        if (++iterations == 1) {
+          EXPECT_EQ("failover", r.routeName());
+        } else if (iterations > 1) {
+          EXPECT_TRUE(r.routeName().find("host|") != std::string::npos);
+          EXPECT_TRUE(
+              (r.routeName().find("localhost:123") != std::string::npos) ||
+              (r.routeName().find("localhost:356") != std::string::npos));
+        }
+      }};
+  rh->traverse(req, t);
+  // We should iterate 3 times, once for FailoveRoute, and 2 for hosts,
+  // as failover_count is 2.
+  EXPECT_EQ(iterations, 3);
 
+  // There is no shard 4.
+  req.shardId() = 4;
+  iterations = 0;
+  t = RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf>{
+      [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        ++iterations;
+        EXPECT_TRUE(r.routeName().find("error|") != std::string::npos);
+      }};
+  rh->traverse(req, t);
+  // We should iterate just once, for ErrorRoute
+  EXPECT_EQ(iterations, 1);
+
+  // Shard 5 is served by 2 servers, with name starting with "localhost:356"
+  req.shardId() = 5;
+  iterations = 0;
+  children.clear();
+  t = RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf>{
+      [&iterations, &children](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        EXPECT_EQ(children.end(), children.find(r.routeName()));
+        children.emplace(r.routeName());
+        if (++iterations == 1) {
+          EXPECT_EQ("failover", r.routeName());
+        } else if (iterations > 1) {
+          EXPECT_TRUE(r.routeName().find("host|") != std::string::npos);
+          EXPECT_TRUE(r.routeName().find("localhost:356") != std::string::npos);
+        }
+      }};
+  rh->traverse(req, t);
+  // We should iterate 3 times, once for FailoveRoute, and 2 for hosts,
+  // as failover_count is 2.
+  EXPECT_EQ(iterations, 3);
+
+  // Shard 6 is served only by server "localhost:35602"
   req.shardId() = 6;
-  reply = rh->route(req);
-  EXPECT_EQ(mc_res_local_error, reply.result());
+  iterations = 0;
+  t = RouteHandleTraverser<HelloGoodbyeRouterInfo::RouteHandleIf>{
+      [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
+        ++iterations;
+        EXPECT_TRUE(r.routeName().find("host|") != std::string::npos);
+        EXPECT_TRUE(r.routeName().find("localhost:35602") != std::string::npos);
+      }};
+  rh->traverse(req, t);
+  // We should iterate just once, for host "localhost:35602"
+  // (FailoverRoute is optimized away).
+  EXPECT_EQ(iterations, 1);
 }
 
 } // namespace mcrouter

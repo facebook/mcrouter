@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017, Facebook, Inc.
+ *  Copyright (c) 2017-present, Facebook, Inc.
  *  All rights reserved.
  *
  *  This source code is licensed under the BSD-style license found in the
@@ -56,9 +56,9 @@ std::vector<std::shared_ptr<RouteHandleIf>> getTargets(
 } // detail
 
 template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> createLatestRoute(
+typename RouterInfo::RouteHandlePtr createLatestRoute(
     const folly::dynamic& json,
-    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> targets,
+    std::vector<typename RouterInfo::RouteHandlePtr> targets,
     size_t threadId) {
   size_t failoverCount = 5;
   size_t failoverThreadId = 0;
@@ -113,6 +113,15 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLatestRoute(
   } else {
     children = factory.createList(json);
   }
+  return createLatestRoute<RouterInfo>(
+      json, std::move(children), factory.getThreadId());
+}
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr createLatestRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
+    const folly::dynamic& json,
+    std::vector<typename RouterInfo::RouteHandlePtr> children) {
   return createLatestRoute<RouterInfo>(
       json, std::move(children), factory.getThreadId());
 }

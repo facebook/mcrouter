@@ -153,9 +153,9 @@ class LoadBalancerRoute {
 };
 
 template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> createLoadBalancerRoute(
+typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
     const folly::dynamic& json,
-    std::vector<std::shared_ptr<typename RouterInfo::RouteHandleIf>> rh) {
+    std::vector<typename RouterInfo::RouteHandlePtr> rh) {
   assert(json.isObject());
 
   std::string salt;
@@ -188,7 +188,15 @@ std::shared_ptr<typename RouterInfo::RouteHandleIf> createLoadBalancerRoute(
 }
 
 template <class RouterInfo>
-std::shared_ptr<typename RouterInfo::RouteHandleIf> makeLoadBalancerRoute(
+typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
+    RouteHandleFactory<typename RouterInfo::RouteHandleIf>& /* factory */,
+    const folly::dynamic& json,
+    std::vector<typename RouterInfo::RouteHandlePtr> rh) {
+  return createLoadBalancerRoute<RouterInfo>(json, std::move(rh));
+}
+
+template <class RouterInfo>
+typename RouterInfo::RouteHandlePtr makeLoadBalancerRoute(
     RouteHandleFactory<typename RouterInfo::RouteHandleIf>& factory,
     const folly::dynamic& json) {
   checkLogic(json.isObject(), "LoadBalancerRoute is not an object");
