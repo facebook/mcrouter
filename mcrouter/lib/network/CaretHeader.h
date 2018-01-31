@@ -11,6 +11,8 @@
 
 #include <utility>
 
+#include <folly/Varint.h>
+
 #include "mcrouter/lib/network/ServerLoad.h"
 
 namespace facebook {
