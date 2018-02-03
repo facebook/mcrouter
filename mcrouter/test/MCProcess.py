@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Facebook, Inc.
+# Copyright (c) 2017-present, Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -110,7 +110,7 @@ class ProcessBase(object):
             try:
                 with open(self.log, 'r') as log_f:
                     log = log_f.read()
-            except:
+            except IOError:
                 log = ""
         else:
             log = ""
@@ -125,15 +125,23 @@ class ProcessBase(object):
 class MCProcess(ProcessBase):
     proc = None
 
-    def __init__(self, cmd, port, base_dir=None, junk_fill=False):
-        port = int(port)
+    def __init__(self, cmd, addr, base_dir=None, junk_fill=False):
+        if cmd is not None and '-s' in cmd:
+            if os.path.exists(addr):
+                raise Exception('file path already existed')
+            self.addr = addr
+            self.port = 0
+            self.addr_family = socket.AF_UNIX
+        else:
+            port = int(addr)
+            self.addr = ('localhost', port)
+            self.port = port
+            self.addr_family = socket.AF_INET
 
         if base_dir is None:
             base_dir = BaseDirectory('MCProcess')
 
         ProcessBase.__init__(self, cmd, base_dir, junk_fill)
-        self.addr = ('localhost', port)
-        self.port = port
         self.deletes = 0
         self.others = 0
 
@@ -141,7 +149,7 @@ class MCProcess(ProcessBase):
         return self.port
 
     def connect(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = socket.socket(self.addr_family, socket.SOCK_STREAM)
         self.socket.connect(self.addr)
         self.fd = self.socket.makefile()
 
