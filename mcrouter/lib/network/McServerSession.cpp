@@ -46,14 +46,14 @@ McServerSession& McServerSession::create(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     StateCallback& stateCb,
-    AsyncMcServerWorkerOptions options,
+    const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
     const CompressionCodecMap* codecMap) {
   auto ptr = new McServerSession(
       std::move(transport),
       std::move(cb),
       stateCb,
-      std::move(options),
+      options,
       userCtxt,
       codecMap);
 
@@ -73,14 +73,14 @@ McServerSession::McServerSession(
     folly::AsyncTransportWrapper::UniquePtr transport,
     std::shared_ptr<McServerOnRequest> cb,
     StateCallback& stateCb,
-    AsyncMcServerWorkerOptions options,
+    const AsyncMcServerWorkerOptions& options,
     void* userCtxt,
     const CompressionCodecMap* codecMap)
-    : transport_(std::move(transport)),
+    : options_(options),
+      transport_(std::move(transport)),
       eventBase_(*transport_->getEventBase()),
       onRequest_(std::move(cb)),
       stateCb_(stateCb),
-      options_(std::move(options)),
       debugFifo_(getDebugFifo(
           options_.debugFifoPath,
           transport_.get(),

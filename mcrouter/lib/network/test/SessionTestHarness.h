@@ -53,7 +53,7 @@ class SessionTestHarness {
    * NOTE: Look at McServerSession.h for info about the above callbacks
    */
   explicit SessionTestHarness(
-      AsyncMcServerWorkerOptions opts = AsyncMcServerWorkerOptions(),
+      const AsyncMcServerWorkerOptions& opts,
       McServerSession::StateCallback& cb = SessionTestHarness::noopCb);
 
   /**

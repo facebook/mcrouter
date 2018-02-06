@@ -135,7 +135,7 @@ class MockAsyncSocket : public folly::AsyncTransportWrapper {
 SessionTestHarness::NoopCallback SessionTestHarness::noopCb;
 
 SessionTestHarness::SessionTestHarness(
-    AsyncMcServerWorkerOptions opts,
+    const AsyncMcServerWorkerOptions& opts,
     McServerSession::StateCallback& cb)
     : session_(McServerSession::create(
           folly::AsyncTransportWrapper::UniquePtr(new MockAsyncSocket(*this)),
@@ -143,7 +143,7 @@ SessionTestHarness::SessionTestHarness(
               McServerOnRequestWrapper<MemcacheRequestHandler<OnRequest>>>(
               OnRequest(*this)),
           cb,
-          std::move(opts),
+          opts,
           nullptr)) {}
 
 void SessionTestHarness::inputPacket(folly::StringPiece p) {

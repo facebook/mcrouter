@@ -98,7 +98,7 @@ class McServerSession : public folly::DelayedDestruction,
       folly::AsyncTransportWrapper::UniquePtr transport,
       std::shared_ptr<McServerOnRequest> cb,
       StateCallback& stateCb,
-      AsyncMcServerWorkerOptions options,
+      const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
       const CompressionCodecMap* codecMap = nullptr);
 
@@ -171,11 +171,12 @@ class McServerSession : public folly::DelayedDestruction,
   }
 
  private:
+  const AsyncMcServerWorkerOptions& options_;
+
   folly::AsyncTransportWrapper::UniquePtr transport_;
   folly::EventBase& eventBase_;
   std::shared_ptr<McServerOnRequest> onRequest_;
   StateCallback& stateCb_;
-  AsyncMcServerWorkerOptions options_;
 
   // Debug fifo fields
   ConnectionFifo debugFifo_;
@@ -388,7 +389,7 @@ class McServerSession : public folly::DelayedDestruction,
       folly::AsyncTransportWrapper::UniquePtr transport,
       std::shared_ptr<McServerOnRequest> cb,
       StateCallback& stateCb,
-      AsyncMcServerWorkerOptions options,
+      const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
       const CompressionCodecMap* codecMap);
 

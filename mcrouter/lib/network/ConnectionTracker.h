@@ -55,7 +55,7 @@ class ConnectionTracker : public McServerSession::StateCallback {
   McServerSession& add(
       folly::AsyncTransportWrapper::UniquePtr transport,
       std::shared_ptr<McServerOnRequest> cb,
-      AsyncMcServerWorkerOptions options,
+      const AsyncMcServerWorkerOptions& options,
       void* userCtxt,
       const CompressionCodecMap* compressionCodecMap);
 
