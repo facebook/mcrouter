@@ -61,9 +61,16 @@ void Keys<Storage>::update() {
     }
   }
   routingKey_ = keyWithoutRoute_;
-  size_t pos = keyWithoutRoute_.find("|#|");
+  // Micro-optimization: We use find_first_of as a first pass while looking for
+  // the hash stop because searching for a single character is faster than
+  // looking for a substring. Most keys in practice don't have a hash stop or a
+  // '|' character.
+  size_t pos = keyWithoutRoute_.find_first_of('|');
   if (pos != std::string::npos) {
-    routingKey_.reset(keyWithoutRoute_.begin(), pos);
+    pos = keyWithoutRoute_.find("|#|", pos);
+    if (pos != std::string::npos) {
+      routingKey_.reset(keyWithoutRoute_.begin(), pos);
+    }
   }
   routingKeyHash_ = 0;
 }
