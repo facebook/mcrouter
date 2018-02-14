@@ -15,7 +15,7 @@
 
 namespace folly {
 struct dynamic;
-} // folly
+} // namespace folly
 
 namespace facebook {
 namespace memcache {
@@ -53,7 +53,7 @@ std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n);
 
 size_t weightedCh3Hash(
     folly::StringPiece key,
-    const std::vector<double>& weights);
+    folly::Range<const double*> weights);
 
 class WeightedCh3HashFunc {
  public:
@@ -63,6 +63,13 @@ class WeightedCh3HashFunc {
    */
   explicit WeightedCh3HashFunc(std::vector<double> weights);
 
+  /**
+   * @param json  Json object of the following format:
+   *              {
+   *                "weights": [ ... ]
+   *              }
+   * @param n     Number of servers in the config.
+   */
   WeightedCh3HashFunc(const folly::dynamic& json, size_t n);
 
   size_t operator()(folly::StringPiece key) const;
@@ -79,7 +86,8 @@ class WeightedCh3HashFunc {
   }
 
  private:
-  std::vector<double> weights_;
+  const std::vector<double> weights_;
 };
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook

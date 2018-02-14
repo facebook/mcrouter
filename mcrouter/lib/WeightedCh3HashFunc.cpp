@@ -18,11 +18,6 @@
 namespace facebook {
 namespace memcache {
 
-namespace {
-const size_t kNumTries = 32;
-const uint32_t kHashSeed = 0xface2014;
-} // anonymous namespace
-
 std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n) {
   std::vector<double> weights;
   checkLogic(
@@ -46,7 +41,10 @@ std::vector<double> ch3wParseWeights(const folly::dynamic& json, size_t n) {
 
 size_t weightedCh3Hash(
     folly::StringPiece key,
-    const std::vector<double>& weights) {
+    folly::Range<const double*> weights) {
+  constexpr size_t kNumTries = 32;
+  constexpr uint32_t kHashSeed = 0xface2014;
+
   auto n = weights.size();
   checkLogic(n && n <= furc_maximum_pool_size(), "Invalid pool size: {}", n);
   size_t salt = 0;
@@ -85,12 +83,12 @@ size_t weightedCh3Hash(
 WeightedCh3HashFunc::WeightedCh3HashFunc(std::vector<double> weights)
     : weights_(std::move(weights)) {}
 
-WeightedCh3HashFunc::WeightedCh3HashFunc(const folly::dynamic& json, size_t n) {
-  weights_ = ch3wParseWeights(json, n);
-}
+WeightedCh3HashFunc::WeightedCh3HashFunc(const folly::dynamic& json, size_t n)
+    : weights_(ch3wParseWeights(json, n)) {}
 
 size_t WeightedCh3HashFunc::operator()(folly::StringPiece key) const {
   return weightedCh3Hash(key, weights_);
 }
-}
-} // facebook::memcache
+
+} // namespace memcache
+} // namespace facebook
