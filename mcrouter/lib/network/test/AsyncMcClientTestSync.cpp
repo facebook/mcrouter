@@ -816,3 +816,70 @@ TEST(AsyncMcClient, contextProviders) {
 
   EXPECT_NE(clientCtx1, serverCtx1);
 }
+
+using BoolPair = std::tuple<bool, bool>;
+class AsyncMcClientTFOTest : public testing::TestWithParam<BoolPair> {};
+
+TEST_P(AsyncMcClientTFOTest, testTfoWithSSL) {
+  auto serverEnabled = std::get<0>(GetParam());
+  auto clientEnabled = std::get<1>(GetParam());
+  auto server = TestServer::create(
+      true,
+      true,
+      10,
+      250,
+      100,
+      true,
+      4 /* nThreads */,
+      true /* useTicketKeySeeds */,
+      1000 /* go away timeout */,
+      nullptr,
+      serverEnabled);
+  auto constexpr nConnAttempts = 10;
+
+  auto sendReq = [serverEnabled, clientEnabled](TestClient& client) {
+    client.sendGet("test", mc_res_found);
+    client.waitForReplies();
+    auto transport = client.getClient().getTransport();
+    auto* socket = transport->getUnderlyingTransport<folly::AsyncSSLSocket>();
+    if (clientEnabled) {
+      EXPECT_TRUE(socket->getTFOAttempted());
+      EXPECT_TRUE(socket->getTFOFinished());
+      // we can not guarantee socket->getTFOSucceeded() will return true
+      // unless there are specific kernel + host settings applied
+      if (!serverEnabled) {
+        EXPECT_FALSE(socket->getTFOSucceded());
+      }
+    } else {
+      EXPECT_FALSE(socket->getTFOAttempted());
+    }
+  };
+
+  for (int i = 0; i < nConnAttempts; i++) {
+    TestClient client(
+        "::1",
+        server->getListenPort(),
+        200,
+        mc_caret_protocol,
+        validClientSsl(),
+        0,
+        0,
+        "",
+        nullptr,
+        clientEnabled);
+    sendReq(client);
+  }
+
+  // shutdown the server
+  TestClient client(
+      "::1", server->getListenPort(), 200, mc_caret_protocol, validClientSsl());
+  client.sendGet("shutdown", mc_res_notfound);
+  client.waitForReplies();
+
+  server->join();
+}
+
+INSTANTIATE_TEST_CASE_P(
+    AsyncMcClientTest,
+    AsyncMcClientTFOTest,
+    testing::Combine(testing::Bool(), testing::Bool()));

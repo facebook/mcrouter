@@ -142,6 +142,15 @@ MCROUTER_OPTION_INTEGER(
     "How often to collect server load data. "
     "(0 to disable exposing server load)")
 
+MCROUTER_OPTION_INTEGER(
+    uint32_t,
+    tfo_queue_size,
+    100000,
+    "tfo-queue-size",
+    no_short,
+    "TFO queue size for SSL connections.  "
+    "(only matters if ssl tfo is enabled)")
+
 #ifdef ADDITIONAL_STANDALONE_OPTIONS_FILE
 #include ADDITIONAL_STANDALONE_OPTIONS_FILE
 #endif

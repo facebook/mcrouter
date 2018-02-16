@@ -95,6 +95,12 @@ class AsyncMcServer {
     std::string tlsTicketKeySeedPath;
 
     /**
+     * TFO settings (for SSL only)
+     */
+    bool tfoEnabledForSsl{false};
+    uint32_t tfoQueueSize{0};
+
+    /**
      * Number of threads to spawn, must be positive.
      */
     size_t numThreads{1};

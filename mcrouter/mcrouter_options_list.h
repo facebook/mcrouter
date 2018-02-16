@@ -719,6 +719,13 @@ MCROUTER_OPTION_INTEGER(
     " tokens. High rates of shadowing of lease operations may require a limit"
     " higher than the default. 0 disables limiting of map size.")
 
+MCROUTER_OPTION_TOGGLE(
+    enable_ssl_tfo,
+    false,
+    "enable-ssl-tfo",
+    no_short,
+    "enable TFO when connecting/accepting via SSL")
+
 #ifdef ADDITIONAL_OPTIONS_FILE
 #include ADDITIONAL_OPTIONS_FILE
 #endif

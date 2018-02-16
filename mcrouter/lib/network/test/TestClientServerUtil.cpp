@@ -157,7 +157,8 @@ TestServer::TestServer(
     bool useDefaultVersion,
     size_t numThreads,
     bool useTicketKeySeeds,
-    size_t goAwayTimeoutMs)
+    size_t goAwayTimeoutMs,
+    bool tfoEnabled)
     : outOfOrder_(outOfOrder), useTicketKeySeeds_(useSsl && useTicketKeySeeds) {
   opts_.existingSocketFd = sock_.getSocketFd();
   opts_.numThreads = numThreads;
@@ -170,6 +171,10 @@ TestServer::TestServer(
     opts_.pemKeyPath = kValidKeyPath;
     opts_.pemCertPath = kValidCertPath;
     opts_.pemCaPath = kPemCaPath;
+    if (tfoEnabled) {
+      opts_.tfoEnabledForSsl = true;
+      opts_.tfoQueueSize = 100000;
+    }
   }
 }
 
@@ -227,7 +232,8 @@ TestClient::TestClient(
     uint64_t qosClass,
     uint64_t qosPath,
     std::string serviceIdentity,
-    const CompressionCodecMap* compressionCodecMap)
+    const CompressionCodecMap* compressionCodecMap,
+    bool enableTfo)
     : fm_(std::make_unique<folly::fibers::EventBaseLoopController>()) {
   dynamic_cast<folly::fibers::EventBaseLoopController&>(fm_.loopController())
       .attachEventBase(eventBase_);
@@ -238,6 +244,7 @@ TestClient::TestClient(
     opts.sslContextProvider = std::move(ssl);
     opts.sessionCachingEnabled = true;
     opts.sslServiceIdentity = serviceIdentity;
+    opts.tfoEnabledForSsl = enableTfo;
   }
   if (qosClass != 0 || qosPath != 0) {
     opts.enableQoS = true;

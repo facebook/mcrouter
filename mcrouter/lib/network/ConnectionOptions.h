@@ -123,6 +123,11 @@ struct ConnectionOptions {
    * Service identity of the destination service when SSL is used.
    */
   std::string sslServiceIdentity;
+
+  /**
+   * Whether TFO is enabled for SSL connections
+   */
+  bool tfoEnabledForSsl{false};
 };
 }
 } // facebook::memcache

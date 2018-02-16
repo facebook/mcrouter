@@ -88,7 +88,8 @@ class TestServer {
       size_t numThreads = 1,
       bool useTicketKeySeeds = false,
       size_t goAwayTimeoutMs = 1000,
-      const CompressionCodecMap* compressionCodecMap = nullptr) {
+      const CompressionCodecMap* compressionCodecMap = nullptr,
+      bool tfoEnabled = false) {
     std::unique_ptr<TestServer> server(new TestServer(
         outOfOrder,
         useSsl,
@@ -98,7 +99,8 @@ class TestServer {
         useDefaultVersion,
         numThreads,
         useTicketKeySeeds,
-        goAwayTimeoutMs));
+        goAwayTimeoutMs,
+        tfoEnabled));
     server->run(
         [compressionCodecMap, &s = *server](AsyncMcServerWorker& worker) {
           worker.setCompressionCodecMap(compressionCodecMap);
@@ -145,7 +147,8 @@ class TestServer {
       bool useDefaultVersion,
       size_t numThreads,
       bool useTicketKeySeeds,
-      size_t goAwayTimeoutMs);
+      size_t goAwayTimeoutMs,
+      bool tfoEnabled);
 
   void run(std::function<void(AsyncMcServerWorker&)> init);
 };
@@ -176,7 +179,8 @@ class TestClient {
       uint64_t qosClass = 0,
       uint64_t qosPath = 0,
       std::string serviceIdentity = "",
-      const CompressionCodecMap* compressionCodecMap = nullptr);
+      const CompressionCodecMap* compressionCodecMap = nullptr,
+      bool enableTfo = false);
 
   void setThrottle(size_t maxInflight, size_t maxOutstanding) {
     client_->setThrottle(maxInflight, maxOutstanding);

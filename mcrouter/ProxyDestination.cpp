@@ -320,6 +320,7 @@ void ProxyDestination::initializeAsyncMcClient() {
   options.sessionCachingEnabled = opts.ssl_connection_cache;
   options.sslServiceIdentity = opts.ssl_service_identity;
   options.routerInfoName = routerInfoName_;
+  options.tfoEnabledForSsl = opts.enable_ssl_tfo;
   if (!opts.debug_fifo_root.empty()) {
     options.debugFifoPath = getClientDebugFifoFullPath(opts);
   }

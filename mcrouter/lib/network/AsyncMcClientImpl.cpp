@@ -522,6 +522,9 @@ void AsyncMcClientImpl::attemptConnection() {
           }
         }
       }
+      if (connectionOptions_.tfoEnabledForSsl) {
+        sslSocket->enableTFO();
+      }
       socket_.reset(sslSocket);
     } else {
       socket_.reset(new folly::AsyncSocket(&eventBase_));

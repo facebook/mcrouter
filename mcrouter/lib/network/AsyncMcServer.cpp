@@ -391,6 +391,11 @@ class McServerThread {
       socket_->attachEventBase(evb_.get());
     }
     if (sslSocket_) {
+      if (server_.opts_.tfoEnabledForSsl) {
+        sslSocket_->setTFOEnabled(true, server_.opts_.tfoQueueSize);
+      } else {
+        sslSocket_->setTFOEnabled(false, 0);
+      }
       sslSocket_->listen(server_.opts_.tcpListenBacklog);
       sslSocket_->startAccepting();
       sslSocket_->attachEventBase(evb_.get());
