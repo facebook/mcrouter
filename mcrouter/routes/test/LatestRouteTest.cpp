@@ -23,6 +23,7 @@
 using namespace facebook::memcache;
 using namespace facebook::memcache::mcrouter;
 
+using facebook::memcache::globals::HostidMock;
 using std::make_shared;
 
 TEST(latestRouteTest, one) {
@@ -63,6 +64,7 @@ TEST(latestRouteTest, one) {
 }
 
 TEST(latestRouteTest, weights) {
+  HostidMock hostidMock(123);
   std::vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "b")),
@@ -85,10 +87,13 @@ TEST(latestRouteTest, weights) {
     auto index = replyFor(*rh, "key")[0] - 'a';
     hits_per_index[index]++;
   }
-  EXPECT_NEAR(hits_per_index[0], 1000, 55);
-  EXPECT_NEAR(hits_per_index[1], 2000, 100);
-  EXPECT_NEAR(hits_per_index[2], 3000, 150);
-  EXPECT_NEAR(hits_per_index[3], 4000, 200);
+  // The expected values below depend on the mocked host ID (123). The numbers
+  // roughly conform to the weights - 25% ~1000, 50% ~2000, 75% ~3000,
+  // and 100% ~4000
+  EXPECT_EQ(959, hits_per_index[0]);
+  EXPECT_EQ(1888, hits_per_index[1]);
+  EXPECT_EQ(3073, hits_per_index[2]);
+  EXPECT_EQ(4080, hits_per_index[3]);
 }
 
 TEST(latestRouteTest, thread_local_failover) {
