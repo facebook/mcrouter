@@ -155,7 +155,7 @@ class McServerThread {
   explicit McServerThread(AsyncMcServer& server, size_t id)
       : server_(server),
         evb_(std::make_unique<folly::EventBase>(
-            /* enableTimeMeasurement */ false)),
+            server.opts_.worker.enableEventBaseTimeMeasurement)),
         id_(id),
         worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),
@@ -169,7 +169,7 @@ class McServerThread {
   McServerThread(AcceptorT, AsyncMcServer& server, size_t id)
       : server_(server),
         evb_(std::make_unique<folly::EventBase>(
-            /* enableTimeMeasurement */ false)),
+            server.opts_.worker.enableEventBaseTimeMeasurement)),
         id_(id),
         worker_(server.opts_.worker, *evb_),
         acceptCallback_(this, false),

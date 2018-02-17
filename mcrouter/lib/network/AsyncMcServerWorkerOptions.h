@@ -35,6 +35,11 @@ struct AsyncMcServerWorkerOptions {
   bool singleWrite{false};
 
   /**
+   * If true, time measurement in event base is enabled.
+   */
+  bool enableEventBaseTimeMeasurement{false};
+
+  /**
    * Maximum number of read system calls per event loop iteration.
    * If 0, there is no limit.
    *
