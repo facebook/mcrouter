@@ -9,9 +9,11 @@
  */
 #pragma once
 
+#include <folly/io/async/Request.h>
 #include <mcrouter/lib/carbon/RequestReplyUtil.h>
 #include <mcrouter/lib/fbi/cpp/util.h>
 #include <mcrouter/lib/network/CarbonMessageDispatcher.h>
+#include <mcrouter/lib/network/FBTrace.h>
 
 namespace carbon {
 
@@ -43,6 +45,12 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       facebook::memcache::McServerRequestContext&& ctx,
       Request&& req,
       std::true_type) {
+    if (UNLIKELY(
+            facebook::memcache::getFbTraceInfo(req) != nullptr &&
+            facebook::memcache::traceCheckRateLimit())) {
+      onRequestImplWithTracingEnabled(std::move(ctx), std::move(req));
+      return;
+    }
     onRequest_.onRequest(std::move(ctx), std::move(req));
   }
 
@@ -53,6 +61,17 @@ class CarbonRequestHandler : public facebook::memcache::CarbonMessageDispatcher<
       std::false_type) {
     facebook::memcache::throwRuntime(
         "onRequest for {} not defined", typeid(Request).name());
+  }
+
+  template <class Request>
+  FOLLY_NOINLINE void onRequestImplWithTracingEnabled(
+      facebook::memcache::McServerRequestContext&& ctx,
+      Request&& req) {
+    folly::RequestContextScopeGuard requestContextGuard;
+    const auto commId =
+        facebook::memcache::traceRequestReceived(std::cref(req).get());
+    onRequest_.onRequest(std::move(ctx), std::move(req));
+    facebook::memcache::traceRequestHandlerCompleted(commId);
   }
 };
 

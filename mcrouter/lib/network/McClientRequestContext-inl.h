@@ -13,27 +13,6 @@
 namespace facebook {
 namespace memcache {
 
-namespace {
-#ifndef LIBMC_FBTRACE_DISABLE
-
-template <class Request>
-typename std::enable_if<
-    RequestHasFbTraceInfo<Request>::value,
-    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&
-                                                              request) {
-  return request.fbtraceInfo();
-}
-
-template <class Request>
-typename std::enable_if<
-    !RequestHasFbTraceInfo<Request>::value,
-    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&) {
-  return nullptr;
-}
-
-#endif
-} // anonymous
-
 template <class Reply>
 void McClientRequestContextBase::reply(Reply&& r) {
   assert(

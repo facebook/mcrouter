@@ -11,6 +11,7 @@
 
 #include <folly/Range.h>
 
+#include "mcrouter/lib/mc/msg.h"
 #include "mcrouter/lib/mc/protocol.h"
 #include "mcrouter/lib/network/AccessPoint.h"
 
@@ -41,6 +42,12 @@ bool fbTraceOnSend(const Request& request, const AccessPoint& ap);
 inline void fbTraceOnReceive(
     const mc_fbtrace_info_s* fbtraceInfo,
     const mc_res_t result);
+
+// Returns true if a rate limiting check passes and tracing can proceed.
+bool traceCheckRateLimit();
+
+// Returns the cumulative number of traces logged.
+uint64_t traceGetCount();
 }
 } // facebook::memcache
 
