@@ -16,6 +16,8 @@
 #include "mcrouter/lib/mc/mc_fbtrace_info.h"
 #endif
 
+#include "mcrouter/lib/carbon/RequestCommon.h"
+
 namespace facebook {
 namespace memcache {
 
@@ -45,8 +47,7 @@ inline uint64_t traceGetCount() {
   return 0;
 }
 
-template <class Request>
-inline mc_fbtrace_info_s* getFbTraceInfo(const Request&) {
+inline mc_fbtrace_info_s* getFbTraceInfo(const carbon::RequestCommon&) {
   return nullptr;
 }
 
@@ -184,19 +185,9 @@ inline void fbTraceOnReceive(
   });
 }
 
-template <class Request>
-typename std::enable_if<
-    RequestHasFbTraceInfo<Request>::value,
-    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&
-                                                              request) {
+inline const mc_fbtrace_info_s* getFbTraceInfo(
+    const carbon::RequestCommon& request) {
   return request.fbtraceInfo();
-}
-
-template <class Request>
-typename std::enable_if<
-    !RequestHasFbTraceInfo<Request>::value,
-    const mc_fbtrace_info_s*>::type inline getFbTraceInfo(const Request&) {
-  return nullptr;
 }
 
 // Start tracing for a request.
