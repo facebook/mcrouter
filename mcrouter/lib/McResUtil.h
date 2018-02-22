@@ -157,7 +157,7 @@ inline bool isConnectTimeoutResult(const mc_res_t result) {
  * if the data reached the server or not.
  */
 inline bool isDataTimeoutResult(const mc_res_t result) {
-  return result == mc_res_timeout || result == mc_res_remote_error;
+  return result == mc_res_timeout;
 }
 
 /**
