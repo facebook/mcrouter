@@ -7,17 +7,19 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 
 #include <gtest/gtest.h>
 
 #include <folly/File.h>
 #include <folly/FileUtil.h>
+#include <folly/Range.h>
 #include <folly/experimental/TestUtil.h>
 
 #include "mcrouter/AsyncWriter.h"
@@ -28,59 +30,39 @@ using namespace facebook::memcache::mcrouter;
 
 using folly::test::TemporaryFile;
 
-#define WRITE_STRING "abc\n"
-#define WRITE_STRING_LEN (sizeof(WRITE_STRING) - 1)
+namespace {
+constexpr folly::StringPiece kTestMessage = "abc\n";
 
 class AtomicCounter {
  public:
-  AtomicCounter() {
-    cnt = 0;
-    pthread_mutex_init(&lock, nullptr);
-    pthread_cond_init(&cond, nullptr);
-  }
-
-  ~AtomicCounter() {
-    pthread_mutex_destroy(&lock);
-    pthread_cond_destroy(&cond);
-  }
-
-  void notify(int v) {
-    pthread_mutex_lock(&lock);
-    cnt += v;
-    pthread_mutex_unlock(&lock);
-
-    pthread_cond_broadcast(&cond);
+  void notify(size_t v) {
+    {
+      std::lock_guard<std::mutex> lg(lock_);
+      cnt_ += v;
+    }
+    cond_.notify_all();
   }
 
   void reset() {
-    pthread_mutex_lock(&lock);
-    cnt = 0;
-    pthread_mutex_unlock(&lock);
+    std::lock_guard<std::mutex> lg(lock_);
+    cnt_ = 0;
   }
 
   void wait(std::function<bool(int)> f) {
-    pthread_mutex_lock(&lock);
-    while (!f(cnt)) {
-      pthread_cond_wait(&cond, &lock);
-    }
-    pthread_mutex_unlock(&lock);
+    std::unique_lock<std::mutex> ulock(lock_);
+    cond_.wait(ulock, [&]() { return f(cnt_); });
   }
 
  private:
-  pthread_cond_t cond;
-  pthread_mutex_t lock;
-  int cnt;
+  std::condition_variable cond_;
+  std::mutex lock_;
+  size_t cnt_{0};
 };
 
 struct counts {
-  int success;
-  int failure;
-
+  size_t success{0};
+  size_t failure{0};
   AtomicCounter cnt;
-
-  counts() {
-    success = failure = 0;
-  }
 
   void reset() {
     success = 0;
@@ -111,7 +93,7 @@ void callback_counter(awriter_entry_t* e, int result) {
   w->counter->cnt.notify(1);
 }
 
-static int test_entry_writer(awriter_entry_t* e) {
+int test_entry_writer(awriter_entry_t* e) {
   writelog_entry_t* entry = &((testing_context_t*)e->context)->log_context;
   ssize_t size =
       folly::writeFull(entry->file->fd(), entry->buf.data(), entry->buf.size());
@@ -124,8 +106,9 @@ static int test_entry_writer(awriter_entry_t* e) {
   return 0;
 }
 
-static const awriter_callbacks_t test_callbacks = {&callback_counter,
-                                                   &test_entry_writer};
+const awriter_callbacks_t test_callbacks = {&callback_counter,
+                                            &test_entry_writer};
+} // namespace
 
 // Simple test that creates a number of async writers and
 // then destroys them.
@@ -156,7 +139,7 @@ TEST(awriter, sanity) {
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
     e[i].log_context.file = fd;
-    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
+    e[i].log_context.buf = kTestMessage.str();
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     EXPECT_TRUE(awriter_queue(w.get(), &e[i].log_context.awentry));
@@ -169,7 +152,7 @@ TEST(awriter, sanity) {
 
   EXPECT_EQ(fstat(f.fd(), &s), 0);
 
-  EXPECT_EQ(s.st_size, num_entries * WRITE_STRING_LEN);
+  EXPECT_EQ(s.st_size, num_entries * kTestMessage.size());
 }
 
 // Test that ensures that pending items in the queue are
@@ -184,7 +167,7 @@ TEST(awriter, flush_queue) {
 
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
-    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
+    e[i].log_context.buf = kTestMessage.str();
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     EXPECT_TRUE(awriter_queue(w.get(), &e[i].log_context.awentry));
@@ -211,7 +194,7 @@ TEST(awriter, max_queue_length) {
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
     e[i].log_context.file = fd;
-    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
+    e[i].log_context.buf = kTestMessage.str();
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     bool ret = awriter_queue(w.get(), &e[i].log_context.awentry);
@@ -247,7 +230,7 @@ TEST(awriter, invalid_fd) {
   for (int i = 0; i < num_entries; i++) {
     e[i].counter = &testCounter;
     e[i].log_context.file = fd;
-    e[i].log_context.buf = std::string(WRITE_STRING, WRITE_STRING_LEN);
+    e[i].log_context.buf = kTestMessage.str();
     e[i].log_context.awentry.context = e + i;
     e[i].log_context.awentry.callbacks = &test_callbacks;
     EXPECT_TRUE(awriter_queue(w.get(), &e[i].log_context.awentry));

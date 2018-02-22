@@ -70,11 +70,6 @@ class AsyncWriter {
   bool run(std::function<void()> f);
 
   /**
-   * Wait until all tasks scheduled prior to this call have been completed.
-   */
-  void completePendingTasks();
-
-  /**
    * Increase the maximum queue size. The max queue size will never decrease.
    **/
   void increaseMaxQueueSize(size_t add);

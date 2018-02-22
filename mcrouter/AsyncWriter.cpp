@@ -69,7 +69,7 @@ bool AsyncWriter::start(folly::StringPiece threadName) {
       eventBase_.loopForever();
 
       while (fiberManager_.hasTasks()) {
-        fiberManager_.loopUntilNoReady();
+        eventBase_.loopOnce();
       }
     });
   } catch (const std::system_error& e) {
@@ -102,21 +102,14 @@ bool AsyncWriter::run(std::function<void()> f) {
     decQueueSize = true;
   }
 
-  fiberManager_.addTaskRemote([ this, f_ = std::move(f), decQueueSize ]() {
-    fiberManager_.runInMainContext(std::move(f_));
-    if (decQueueSize) {
-      --queueSize_;
-    }
-  });
+  fiberManager_.addTaskRemote(
+      [this, f_ = std::move(f), decQueueSize]() mutable {
+        fiberManager_.runInMainContext(std::move(f_));
+        if (decQueueSize) {
+          --queueSize_;
+        }
+      });
   return true;
-}
-
-void AsyncWriter::completePendingTasks() {
-  // Schedule a task and wait for it to complete. This relies on the fact that
-  // tasks are executed in FIFO order.
-  folly::fibers::Baton baton;
-  run([&]() { baton.post(); });
-  baton.wait();
 }
 
 void AsyncWriter::increaseMaxQueueSize(size_t add) {
@@ -142,6 +135,7 @@ bool awriter_queue(AsyncWriter* w, awriter_entry_t* e) {
     e->callbacks->completed(e, r);
   });
 }
-}
-}
-} // facebook::memcache::mcrouter
+
+} // namespace mcrouter
+} // namespace memcache
+} // namespace facebook
