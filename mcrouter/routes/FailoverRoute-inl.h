@@ -82,7 +82,7 @@ makeFailoverRouteWithPolicyAndFailoverError(
     const folly::dynamic& policyConfig,
     FailoverErrorsSettingsT failoverErrors,
     Args&&... args) {
-  if (children.size() <= 1) {
+  if (children.size() <= 1 && FailoverPolicyT::optimizeNoFailoverRouteCase) {
     return makeNullOrSingletonRoute(std::move(children));
   }
 

@@ -100,7 +100,7 @@ class FailoverRoute {
         failoverTagging_(failoverTagging),
         failoverPolicy_(targets_, policyConfig),
         enableLeasePairing_(enableLeasePairing) {
-    assert(targets_.size() > 1);
+    assert(!targets_.empty());
     assert(!enableLeasePairing_ || !name_.empty());
   }
 
@@ -193,6 +193,13 @@ class FailoverRoute {
     auto iter = failoverPolicy_.begin();
     auto normalReply = iter->route(req);
     ++iter;
+    if (iter == failoverPolicy_.end()) {
+      if (isErrorResult(normalReply.result())) {
+        proxy.stats().increment(failover_all_failed_stat);
+        proxy.stats().increment(failoverPolicy_.getFailoverFailedStat());
+      }
+      return normalReply;
+    }
     childIndex = 0;
     if (rateLimiter_) {
       rateLimiter_->bumpTotalReqs();

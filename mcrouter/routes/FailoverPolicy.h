@@ -26,6 +26,7 @@ namespace mcrouter {
 template <typename RouteHandleIf>
 class FailoverInOrderPolicy {
  public:
+  static constexpr bool optimizeNoFailoverRouteCase = true;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
 
   FailoverInOrderPolicy(
@@ -91,6 +92,7 @@ class FailoverInOrderPolicy {
 template <typename RouteHandleIf>
 class FailoverLeastFailuresPolicy {
  public:
+  static constexpr bool optimizeNoFailoverRouteCase = true;
   using RouteHandlePtr = std::shared_ptr<RouteHandleIf>;
 
   FailoverLeastFailuresPolicy(

@@ -51,6 +51,21 @@ McrouterRouteHandlePtr makeFailoverRouteInOrder(
 }
 } // facebook::memcache::mcrouter
 
+TEST(failoverRouteTest, nofailover) {
+  std::vector<std::shared_ptr<TestHandle>> test_handles{
+      make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a"))};
+
+  mockFiberContext();
+  auto rh = makeFailoverRouteInOrder(
+      get_route_handles(test_handles),
+      FailoverErrorsSettings(),
+      nullptr,
+      /* failoverTagging */ false);
+
+  auto reply = rh->route(McGetRequest("0"));
+  EXPECT_EQ("a", carbon::valueRangeSlow(reply).str());
+}
+
 TEST(failoverRouteTest, success) {
   std::vector<std::shared_ptr<TestHandle>> test_handles{
       make_shared<TestHandle>(GetRouteTestData(mc_res_found, "a")),
