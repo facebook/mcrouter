@@ -82,17 +82,26 @@ class LoadBalancerRoute {
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
-    size_t idx = select(req);
-    auto rep = children_[idx]->route(req);
-    auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
-    weightedLoads_[idx] = load.complement().percentLoad() / 100;
-
     auto now = nowUs();
-    // Mark the current load of the server for expiration only if it is
-    // more than default server load
-    if (weightedLoads_[idx] < defaultServerLoadWeight_) {
-      expTimes_[idx] = std::chrono::microseconds(now + loadTtl_.count());
-    }
+
+    size_t idx = select(req);
+    auto reply = mcrouter::fiber_local<RouterInfo>::runWithLocals(
+        [this, &req, idx, now]() {
+          auto rep = children_[idx]->route(req);
+          auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
+          if (!load.isZero()) {
+            weightedLoads_[idx] = load.complement().percentLoad() / 100;
+
+            // Mark the current load of the server for expiration only if it is
+            // more than default server load (using '<' below because
+            // weightedLoads_ is actually the complement of the load).
+            if (weightedLoads_[idx] < defaultServerLoadWeight_) {
+              expTimes_[idx] =
+                  std::chrono::microseconds(now + loadTtl_.count());
+            }
+          }
+          return rep;
+        });
 
     // Number of servers in LoadBalancer Pool is expected to be small -
     // 10s of servers. So, it is OK to do the following O(N) loop
@@ -107,7 +116,7 @@ class LoadBalancerRoute {
       }
     }
 
-    return rep;
+    return reply;
   }
 
  private:
