@@ -9,12 +9,14 @@
  */
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <string>
 #include <utility>
 
 #include <folly/Conv.h>
+#include <folly/Range.h>
 
 #include "mcrouter/McrouterFiberContext.h"
 #include "mcrouter/config.h"
@@ -50,26 +52,31 @@ class LoadBalancerRoute {
 
   /**
    * Constructs LoadBalancerRoute.
+   * Initializes the weighted load to 1.0. This means serverLoad is 0.
    *
    * @param children                List of children route handles.
    * @param salt                    salt
    * @param loadTtl                 TTL for load in micro seconds
    * @param defaultServerLoad       default server load upon TLL expiration
-   *
-   * Initialize the weighted load to 1.0 - this means serverLoad is 0.
+   * @param failoverCount           Number of times to route the request.
+   *                                1 means no failover (just route once).
+   *                                The value will be capped to
+   *                                std::min(failoverCount, children.size())
    */
   LoadBalancerRoute(
       std::vector<std::shared_ptr<RouteHandleIf>> children,
       std::string salt,
       std::chrono::microseconds loadTtl,
-      ServerLoad defaultServerLoad)
+      ServerLoad defaultServerLoad,
+      size_t failoverCount)
       : children_(std::move(children)),
         salt_(std::move(salt)),
+        loadTtl_(loadTtl),
+        defaultServerLoadWeight_(
+            defaultServerLoad.complement().percentLoad() / 100),
+        failoverCount_(std::min(failoverCount, children_.size())),
         weightedLoads_(children_.size(), 1.0),
-        expTimes_(children_.size(), std::chrono::microseconds(0)),
-        loadTtl_(loadTtl) {
-    defaultServerLoadWeight_ =
-        defaultServerLoad.complement().percentLoad() / 100;
+        expTimes_(children_.size(), std::chrono::microseconds(0)) {
     assert(!children_.empty());
   }
 
@@ -77,37 +84,38 @@ class LoadBalancerRoute {
   void traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    t(*children_[select(req)], req);
+    size_t idx = select(req, weightedLoads_, salt_);
+    t(*children_[idx], req);
   }
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
-    auto now = nowUs();
+    // first try
+    size_t idx = select(req, weightedLoads_, salt_);
+    auto reply = doRoute(req, idx);
 
-    size_t idx = select(req);
-    auto reply = mcrouter::fiber_local<RouterInfo>::runWithLocals(
-        [this, &req, idx, now]() {
-          auto rep = children_[idx]->route(req);
-          auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
-          if (!load.isZero()) {
-            weightedLoads_[idx] = load.complement().percentLoad() / 100;
+    // retry in case of error
+    if (failoverCount_ > 1 && shouldFailover(reply)) {
+      std::vector<double> weights = weightedLoads_;
+      std::vector<size_t> indexMap(children_.size(), 0);
+      std::iota(indexMap.begin(), indexMap.end(), 0);
 
-            // Mark the current load of the server for expiration only if it is
-            // more than default server load (using '<' below because
-            // weightedLoads_ is actually the complement of the load).
-            if (weightedLoads_[idx] < defaultServerLoadWeight_) {
-              expTimes_[idx] =
-                  std::chrono::microseconds(now + loadTtl_.count());
-            }
-          }
-          return rep;
-        });
+      int64_t retries = failoverCount_;
+      while (--retries > 0 && shouldFailover(reply)) {
+        std::swap(weights[idx], weights.back());
+        std::swap(indexMap[idx], indexMap.back());
+        weights.pop_back();
+        indexMap.pop_back();
 
-    // Number of servers in LoadBalancer Pool is expected to be small -
-    // 10s of servers. So, it is OK to do the following O(N) loop
+        idx = select(req, weights, folly::to<std::string>(salt_, retries));
+        reply = doRoute(req, indexMap[idx], /* isFailover */ true);
+      }
+    }
+
+    // Reset expried loads.
+    const int64_t now = nowUs();
     for (size_t i = 0; i < children_.size(); i++) {
-      if (i != idx && expTimes_[i].count() != 0 &&
-          expTimes_[i].count() <= now) {
+      if (expTimes_[i].count() != 0 && expTimes_[i].count() <= now) {
         expTimes_[i] = std::chrono::microseconds(0);
         weightedLoads_[i] = defaultServerLoadWeight_;
         if (auto& ctx = mcrouter::fiber_local<RouterInfo>::getSharedCtx()) {
@@ -122,29 +130,67 @@ class LoadBalancerRoute {
  private:
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
   const std::string salt_;
+  // Default TTL of a serer load. Indicates the time after which a server load
+  // value is reset to 'defaultServerLoad' value.
+  const std::chrono::microseconds loadTtl_{100000};
+  // Value to which server load is reset when it's value expires.
+  const double defaultServerLoadWeight_{0.5};
+  // Number of times to retry on error.
+  const size_t failoverCount_{1};
+
+  // 1-complement of the server load (i.e. 1 - serverLoad) of each of the
+  // children.
   std::vector<double> weightedLoads_;
-  // Assign an expiry time to a server load, so that a server's load
-  // gets reset to a default value upon expiry. This is to
-  // avoid not using a server that reports a high value of load(eg 100%)
-  // and never gets selected afterwards. This means the load value never
-  // gets updated, which is not what we want. expTimes_ are in micro seconds.
+  // Point in time when the weightedLoad become too old to trusted.
   std::vector<std::chrono::microseconds> expTimes_;
-  // Default TTL of a serer load is 100ms represented in micro-seconds.
-  // This indicates the time after which a server load value is reset
-  // to 'defServerLoad' value below.
-  std::chrono::microseconds loadTtl_{100000};
-  // default server load value is 50%.
-  double defaultServerLoadWeight_{0.5};
+
+  // route the request and update server load.
+  template <class Request>
+  ReplyT<Request>
+  doRoute(const Request& req, const size_t idx, bool isFailover = false) {
+    assert(idx < children_.size());
+    return mcrouter::fiber_local<RouterInfo>::runWithLocals(
+        [this, &req, idx, isFailover]() {
+          if (isFailover) {
+            fiber_local<RouterInfo>::addRequestClass(RequestClass::kFailover);
+          }
+          auto reply = children_[idx]->route(req);
+          auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
+          if (!load.isZero()) {
+            weightedLoads_[idx] = load.complement().percentLoad() / 100;
+
+            // mark the current load of the server for expiration only if it is
+            // more than default server load.
+            // (using '<' below because weightedLoads_ is actually the
+            // complement of the load)
+            if (weightedLoads_[idx] < defaultServerLoadWeight_) {
+              expTimes_[idx] =
+                  std::chrono::microseconds(nowUs() + loadTtl_.count());
+            }
+          }
+          return reply;
+        });
+  }
+
+  template <class Reply>
+  bool shouldFailover(const Reply& reply) {
+    return isErrorResult(reply.result());
+  }
 
   template <class Request>
-  size_t selectInternal(const Request& req) const {
+  size_t selectInternal(
+      const Request& req,
+      const std::vector<double>& weights,
+      folly::StringPiece salt) const {
     size_t n = 0;
-    if (salt_.empty()) {
-      n = weightedCh3Hash(req.key().routingKey(), weightedLoads_);
+    if (salt.empty()) {
+      n = weightedCh3Hash(req.key().routingKey(), weights);
     } else {
       n = hashWithSalt(
-          req.key().routingKey(), salt_, [this](const folly::StringPiece sp) {
-            return weightedCh3Hash(sp, weightedLoads_);
+          req.key().routingKey(),
+          salt,
+          [&weights](const folly::StringPiece sp) {
+            return weightedCh3Hash(sp, weights);
           });
     }
     if (UNLIKELY(n >= children_.size())) {
@@ -154,10 +200,14 @@ class LoadBalancerRoute {
   }
 
   template <class Request>
-  size_t select(const Request& req) const {
+  size_t select(
+      const Request& req,
+      const std::vector<double>& weights,
+      folly::StringPiece salt) const {
     // Hash functions can be stack-intensive so jump back to the main context
-    return folly::fibers::runInMainContext(
-        [this, &req]() { return selectInternal(req); });
+    return folly::fibers::runInMainContext([this, &req, &weights, &salt]() {
+      return selectInternal(req, weights, salt);
+    });
   }
 };
 
@@ -191,9 +241,20 @@ typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
         " an integer between 0 and 100");
     defaultServerLoad = ServerLoad::fromPercentLoad(defServerLoad);
   }
+  size_t failoverCount = 1;
+  if (auto jFailoverCount = json.get_ptr("failover_count")) {
+    checkLogic(
+        jFailoverCount->isInt(),
+        "LoadBalancerRoute: failover_count is not an integer");
+    failoverCount = jFailoverCount->getInt();
+  }
 
   return makeRouteHandleWithInfo<RouterInfo, LoadBalancerRoute>(
-      std::move(rh), std::move(salt), loadTtl, defaultServerLoad);
+      std::move(rh),
+      std::move(salt),
+      loadTtl,
+      defaultServerLoad,
+      failoverCount);
 }
 
 template <class RouterInfo>
