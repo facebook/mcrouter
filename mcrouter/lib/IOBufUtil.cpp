@@ -61,8 +61,10 @@ void copyInto(char* raw, const folly::IOBuf& buf) {
   auto cur = &buf;
   auto next = cur->next();
   do {
-    ::memcpy(raw, cur->data(), cur->length());
-    raw += cur->length();
+    if (cur->data()) {
+      ::memcpy(raw, cur->data(), cur->length());
+      raw += cur->length();
+    }
     cur = next;
     next = next->next();
   } while (cur != &buf);
