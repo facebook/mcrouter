@@ -46,6 +46,23 @@ class JsonClient {
      * Whether of not parsing errors should be ignored (they will be displayed).
      */
     bool ignoreParsingErrors{true};
+
+    /**
+     * Whether or not to use SSL.
+     */
+    bool useSsl;
+
+    /**
+     * The SSL cert/key/CA paths.
+     */
+    std::string pemCertPath;
+    std::string pemKeyPath;
+    std::string pemCaPath;
+
+    /**
+     * The SSL service identity.
+     */
+    std::string sslServiceIdentity;
   };
 
   /**

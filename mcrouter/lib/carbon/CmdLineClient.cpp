@@ -50,6 +50,21 @@ CmdLineClient::Settings CmdLineClient::parseSettings(
       "timeout,t",
       po::value<size_t>(&settings.clientOptions.serverTimeoutMs),
       "The timeout in milliseconds")(
+      "use-ssl",
+      po::bool_switch(&settings.clientOptions.useSsl)->default_value(false),
+      "Whether or not to use SSL")(
+      "sslCertPath",
+      po::value<std::string>(&settings.clientOptions.pemCertPath),
+      "The SSL cert pem path")(
+      "sslKeyPath",
+      po::value<std::string>(&settings.clientOptions.pemKeyPath),
+      "The SSL key pem path")(
+      "sslCaPath",
+      po::value<std::string>(&settings.clientOptions.pemCaPath),
+      "The SSL CA pem path")(
+      "sslServiceIdentity",
+      po::value<std::string>(&settings.clientOptions.sslServiceIdentity),
+      "The SSL service identity")(
       "stop-on-error",
       po::bool_switch(&settings.clientOptions.ignoreParsingErrors)
           ->default_value(true),

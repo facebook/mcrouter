@@ -25,6 +25,10 @@ using carbon::JsonClient;
 using carbon::tools::CmdLineClient;
 using namespace facebook::memcache;
 
+const std::string kPemCaPath = "mcrouter/lib/network/test/ca_cert.pem";
+const std::string kPemCertPath = "mcrouter/lib/network/test/test_cert.pem";
+const std::string kPemKeyPath = "mcrouter/lib/network/test/test_key.pem";
+
 namespace carbon {
 namespace test {
 
@@ -66,10 +70,18 @@ struct CarbonTestOnRequest {
   }
 };
 
-std::unique_ptr<AsyncMcServer> startServer(int existingSocketFd) {
+std::unique_ptr<AsyncMcServer> startServer(
+    int existingSocketFd,
+    bool useSsl = false) {
   AsyncMcServer::Options opts;
   opts.existingSocketFd = existingSocketFd;
   opts.numThreads = 1;
+
+  if (useSsl) {
+    opts.pemCaPath = kPemCaPath;
+    opts.pemCertPath = kPemCertPath;
+    opts.pemKeyPath = kPemKeyPath;
+  }
 
   auto server = std::make_unique<AsyncMcServer>(std::move(opts));
 
@@ -89,10 +101,17 @@ std::unique_ptr<AsyncMcServer> startServer(int existingSocketFd) {
 
 JsonClient::Options getClientOpts(
     uint16_t port,
+    bool useSsl = false,
     bool ignoreParsingErrors = true) {
   JsonClient::Options opts;
   opts.port = port;
   opts.ignoreParsingErrors = ignoreParsingErrors;
+  if (useSsl) {
+    opts.useSsl = useSsl;
+    opts.pemCaPath = kPemCaPath;
+    opts.pemCertPath = kPemCertPath;
+    opts.pemKeyPath = kPemKeyPath;
+  }
   return opts;
 }
 
@@ -112,6 +131,33 @@ TEST(JsonClient, sendRequests) {
   ListenSocket socket;
   auto server = startServer(socket.getSocketFd());
   TestJsonClient client(getClientOpts(socket.getPort()));
+
+  const std::string payload = R"json(
+    {
+      "key": "abcdef",
+      "testBool": true,
+      "testInt32": 17,
+      "testInt64": 30
+    }
+  )json";
+
+  folly::dynamic reply;
+  auto result = client.sendRequests("test", folly::parseJson(payload), reply);
+  ASSERT_TRUE(result);
+  ASSERT_TRUE(reply.isObject());
+
+  checkIntField(reply, "result", mc_res_ok);
+  checkIntField(reply, "valInt32", 34);
+  checkIntField(reply, "valInt64", 60);
+
+  server->shutdown();
+  server->join();
+}
+
+TEST(JsonClient, sendRequestsWithSsl) {
+  ListenSocket socket;
+  auto server = startServer(socket.getSocketFd(), true);
+  TestJsonClient client(getClientOpts(socket.getPort(), true));
 
   const std::string payload = R"json(
     {
