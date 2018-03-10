@@ -91,7 +91,7 @@ class McServerRequestContext {
       carbon::GetLike<>>::value>::type
   replyImpl(McServerRequestContext&& ctx, Reply&& reply, Args&&... args);
 
-  template <class Reply>
+  template <class Reply, class SessionType = McServerSession>
   static void replyImpl2(
       McServerRequestContext&& ctx,
       Reply&& reply,

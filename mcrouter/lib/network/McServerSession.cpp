@@ -83,7 +83,6 @@ McServerSession::McServerSession(
           options_.debugFifoPath,
           transport_.get(),
           onRequest_->name())),
-      pendingWrites_(std::make_unique<WriteBufferIntrusiveList>()),
       sendWritesCallback_(*this),
       compressionCodecMap_(codecMap),
       parser_(
@@ -133,7 +132,7 @@ void McServerSession::onTransactionStarted(bool isSubRequest) {
 
 void McServerSession::checkClosed() {
   if (!inFlight_) {
-    assert(pendingWrites_->empty());
+    assert(pendingWrites_.empty());
 
     if (state_ == CLOSING) {
       /* It's possible to call close() more than once from the same stack.
@@ -408,7 +407,7 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
       pause(PAUSE_WRITE);
     }
   } else {
-    pendingWrites_->pushBack(std::move(wb));
+    pendingWrites_.pushBack(std::move(wb));
 
     if (!writeScheduled_) {
       eventBase_.runInLoop(&sendWritesCallback_, /* thisIteration= */ true);
@@ -423,8 +422,8 @@ void McServerSession::sendWrites() {
   writeScheduled_ = false;
 
   folly::small_vector<struct iovec, kIovecVectorSize> iovs;
-  while (!pendingWrites_->empty()) {
-    auto wb = pendingWrites_->popFront();
+  while (!pendingWrites_.empty()) {
+    auto wb = pendingWrites_.popFront();
     if (!wb->noReply()) {
       if (UNLIKELY(debugFifo_.isConnected())) {
         writeToDebugFifo(wb.get());
@@ -434,7 +433,7 @@ void McServerSession::sendWrites() {
           wb->getIovsBegin(),
           wb->getIovsBegin() + wb->getIovsCount());
     }
-    if (pendingWrites_->empty()) {
+    if (pendingWrites_.empty()) {
       wb->markEndOfBatch();
     }
     writeBufs_->push(std::move(wb));

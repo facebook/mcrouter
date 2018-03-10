@@ -57,14 +57,17 @@ McServerRequestContext::replyImpl(
   replyImpl2(std::move(ctx), std::move(reply), std::forward<Args>(args)...);
 }
 
-template <class Reply>
+template <class Reply, class SessionType>
 void McServerRequestContext::replyImpl2(
     McServerRequestContext&& ctx,
     Reply&& reply,
     DestructorFunc destructor,
     void* toDestruct) {
   ctx.replied_ = true;
-  auto session = ctx.session_;
+  // Note: 'SessionType' being a template parameter allows the use of
+  // McServerSession members, otherwise there's a circular dependency preventing
+  // concrete use of McServerSession here.
+  SessionType* const session = ctx.session_;
   if (toDestruct != nullptr) {
     assert(destructor != nullptr);
   }

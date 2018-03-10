@@ -134,10 +134,6 @@ class WriteBuffer {
   WriteBuffer& operator=(WriteBuffer&&) = delete;
 };
 
-// The only purpose of this class is to avoid a circular #include dependency
-// between WriteBuffer.h and McServerSession.h.
-class WriteBufferIntrusiveList : public WriteBuffer::List {};
-
 class WriteBufferQueue {
  public:
   explicit WriteBufferQueue(mc_protocol_t protocol) noexcept

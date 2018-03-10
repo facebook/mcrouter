@@ -18,6 +18,7 @@
 #include "mcrouter/lib/debug/ConnectionFifo.h"
 #include "mcrouter/lib/network/AsyncMcServerWorkerOptions.h"
 #include "mcrouter/lib/network/ServerMcParser.h"
+#include "mcrouter/lib/network/WriteBuffer.h"
 #include "mcrouter/lib/network/gen/Memcache.h"
 
 namespace facebook {
@@ -194,7 +195,7 @@ class McServerSession : public folly::DelayedDestruction,
   std::pair<void*, size_t> curBuffer_;
 
   // All writes to be written at the end of the loop in a single batch.
-  std::unique_ptr<WriteBufferIntrusiveList> pendingWrites_;
+  WriteBuffer::List pendingWrites_;
 
   /**
    * Queue of write buffers.
