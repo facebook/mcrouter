@@ -24,7 +24,7 @@ class RendezvousHashFunc {
   /**
    * @param endpoints  A list of backend servers
    */
-  explicit RendezvousHashFunc(std::vector<folly::StringPiece> endpoints);
+  explicit RendezvousHashFunc(const std::vector<folly::StringPiece>& endpoints);
 
   size_t operator()(folly::StringPiece key) const;
 

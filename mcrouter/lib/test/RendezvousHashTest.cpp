@@ -12,26 +12,13 @@
 #include <folly/Conv.h>
 
 #include "mcrouter/lib/RendezvousHashFunc.h"
+#include "mcrouter/lib/test/HashTestUtil.h"
 
 using namespace facebook::memcache;
 
 namespace {
-std::pair<std::vector<std::string>, std::vector<folly::StringPiece>>
-genEndpoints(int n) {
-  std::vector<std::string> raw;
-  std::vector<folly::StringPiece> ref;
-  for (int i = 0; i < n; ++i) {
-    auto endpoint = "xxx." + folly::to<std::string>(i) + ".yy";
-    raw.push_back(endpoint);
-  }
-  for (const auto& e : raw) {
-    ref.push_back(e);
-  }
-  return std::make_pair(std::move(raw), std::move(ref));
-}
-
 RendezvousHashFunc genRendezvousHashFunc(int n) {
-  auto combined = genEndpoints(n);
+  auto combined = test::genEndpoints(n);
   return RendezvousHashFunc(combined.second);
 }
 
@@ -88,7 +75,7 @@ TEST(RendezvousHashFunc, rendezvous_10) {
 
 TEST(RendezvousHashFunc, rendezvous_rehash) {
   const uint32_t n = 499;
-  auto combined = genEndpoints(n);
+  auto combined = test::genEndpoints(n);
   const auto& endpoints = combined.second;
 
   RendezvousHashFunc rendezvous(endpoints);

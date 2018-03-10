@@ -6,11 +6,14 @@ mcrouter_lib_test_SOURCES = \
   CompressionTestUtil.cpp \
   CompressionTestUtil.h \
   Crc32HashTest.cpp \
+  HashTestUtil.cpp \
+  HashTestUtil.h \
   MigrateRouteTest.cpp \
   RandomRouteTest.cpp \
   RendezvousHashTest.cpp \
   RouteHandleTest.cpp \
-  WeightedCh3HashFuncTest.cpp
+  WeightedCh3HashFuncTest.cpp \
+  WeightedRendezvousHashTest.cpp
 
 mcrouter_lib_test_CPPFLAGS = \
   -I$(top_srcdir)/.. \
