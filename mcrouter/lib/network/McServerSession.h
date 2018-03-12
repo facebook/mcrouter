@@ -199,9 +199,8 @@ class McServerSession : public folly::DelayedDestruction,
 
   /**
    * Queue of write buffers.
-   * Only initialized after we know the protocol (see ensureWriteBufs())
    */
-  std::unique_ptr<WriteBufferQueue> writeBufs_;
+  WriteBufferQueue writeBufs_;
 
   /**
    * True iff SendWritesCallback has been scheduled.
@@ -341,15 +340,6 @@ class McServerSession : public folly::DelayedDestruction,
   void onRequest(McQuitRequest&& req, bool noreply);
 
   void multiOpEnd();
-
-  /**
-   * Must be called after parser has detected the protocol (i.e.
-   * at least one request was processed).
-   * Closes the session on protocol error
-   * @return True if writeBufs_ has value after this call,
-   *         False on any protocol error.
-   */
-  void ensureWriteBufs();
 
   void queueWrite(std::unique_ptr<WriteBuffer> wb);
 

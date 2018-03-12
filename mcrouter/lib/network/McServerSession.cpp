@@ -383,12 +383,6 @@ void McServerSession::parseError(mc_res_t result, folly::StringPiece reason) {
   close();
 }
 
-void McServerSession::ensureWriteBufs() {
-  if (writeBufs_ == nullptr) {
-    writeBufs_ = std::make_unique<WriteBufferQueue>(parser_.protocol());
-  }
-}
-
 void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
   if (wb == nullptr) {
     return;
@@ -399,9 +393,9 @@ void McServerSession::queueWrite(std::unique_ptr<WriteBuffer> wb) {
     }
     const struct iovec* iovs = wb->getIovsBegin();
     size_t iovCount = wb->getIovsCount();
-    writeBufs_->push(std::move(wb));
+    writeBufs_.push(std::move(wb));
     transport_->writev(this, iovs, iovCount);
-    if (!writeBufs_->empty()) {
+    if (!writeBufs_.empty()) {
       /* We only need to pause if the sendmsg() call didn't write everything
          in one go */
       pause(PAUSE_WRITE);
@@ -436,7 +430,7 @@ void McServerSession::sendWrites() {
     if (pendingWrites_.empty()) {
       wb->markEndOfBatch();
     }
-    writeBufs_->push(std::move(wb));
+    writeBufs_.push(std::move(wb));
   }
 
   transport_->writev(this, iovs.data(), iovs.size());
@@ -461,15 +455,14 @@ void McServerSession::writeToDebugFifo(const WriteBuffer* wb) noexcept {
 }
 
 void McServerSession::completeWrite() {
-  writeBufs_->pop(!options_.singleWrite /* popBatch */);
+  writeBufs_.pop(!options_.singleWrite /* popBatch */);
 }
 
 void McServerSession::writeSuccess() noexcept {
   DestructorGuard dg(this);
   completeWrite();
 
-  assert(writeBufs_ != nullptr);
-  if (writeBufs_->empty() && state_ == STREAMING) {
+  if (writeBufs_.empty() && state_ == STREAMING) {
     stateCb_.onWriteQuiescence(*this);
     /* No-op if not paused */
     resume(PAUSE_WRITE);

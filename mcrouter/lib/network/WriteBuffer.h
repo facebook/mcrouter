@@ -136,27 +136,34 @@ class WriteBuffer {
 
 class WriteBufferQueue {
  public:
-  explicit WriteBufferQueue(mc_protocol_t protocol) noexcept
-      : protocol_(protocol), tlFreeStack_(initFreeStack(protocol_)) {}
+  WriteBufferQueue() = default;
 
-  std::unique_ptr<WriteBuffer> get() {
-    if (tlFreeStack_.empty()) {
-      return std::make_unique<WriteBuffer>(protocol_);
+  std::unique_ptr<WriteBuffer> get(mc_protocol_t protocol) {
+    if (!tlFreeStack_) {
+      tlFreeStack_ = &initFreeStack(protocol);
+    }
+    assert(
+        tlFreeStack_ == &initFreeStack(protocol) &&
+        "protocol changed or called from a different thread");
+    if (tlFreeStack_->empty()) {
+      return std::make_unique<WriteBuffer>(protocol);
     } else {
-      return tlFreeStack_.popFront();
+      return tlFreeStack_->popFront();
     }
   }
 
   void push(std::unique_ptr<WriteBuffer> wb) {
+    assert(tlFreeStack_ && "must have been initialized");
     queue_.pushBack(std::move(wb));
   }
 
   void pop(bool popBatch) {
+    assert(tlFreeStack_ && "must have been initialized");
     bool done = false;
     do {
       assert(!empty());
-      if (tlFreeStack_.size() < kMaxFreeQueueSz) {
-        auto& wb = tlFreeStack_.pushFront(queue_.popFront());
+      if (tlFreeStack_->size() < kMaxFreeQueueSz) {
+        auto& wb = tlFreeStack_->pushFront(queue_.popFront());
         done = wb.isEndOfBatch();
         wb.clear();
       } else {
@@ -172,8 +179,7 @@ class WriteBufferQueue {
  private:
   constexpr static size_t kMaxFreeQueueSz = 50;
 
-  mc_protocol_t protocol_;
-  WriteBuffer::List& tlFreeStack_;
+  WriteBuffer::List* tlFreeStack_{nullptr};
   WriteBuffer::List queue_;
 
   static WriteBuffer::List& initFreeStack(mc_protocol_t protocol) noexcept;

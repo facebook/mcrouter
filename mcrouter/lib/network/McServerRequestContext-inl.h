@@ -80,10 +80,8 @@ void McServerRequestContext::replyImpl2(
     return;
   }
 
-  session->ensureWriteBufs();
-
   uint64_t reqid = ctx.reqid_;
-  auto wb = session->writeBufs_->get();
+  auto wb = session->writeBufs_.get(session->parser_.protocol());
   if (!wb->prepareTyped(
           std::move(ctx),
           std::move(reply),
