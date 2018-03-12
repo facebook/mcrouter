@@ -41,6 +41,7 @@ request TestRequest with 1: SimpleStruct as Base {
   29: std::set<uint64_t> testSet;
   30: folly::Optional<bool> testOptionalBool;
   31: std::vector<folly::Optional<std::string>> testOptionalVec;
+  32: std::vector<folly::IOBuf> testIOBufList;
   100: UserType testType;
 };
 

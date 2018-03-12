@@ -117,6 +117,9 @@ void TestRequest::visitFields(V&& v) {
   if (!v.visitField(31, "testOptionalVec", testOptionalVec_)) {
     return;
   }
+  if (!v.visitField(32, "testIOBufList", testIOBufList_)) {
+    return;
+  }
   if (!v.visitField(100, "testType", testType_)) {
     return;
   }
@@ -221,6 +224,9 @@ void TestRequest::visitFields(V&& v) const {
     return;
   }
   if (!v.visitField(31, "testOptionalVec", testOptionalVec_)) {
+    return;
+  }
+  if (!v.visitField(32, "testIOBufList", testIOBufList_)) {
     return;
   }
   if (!v.visitField(100, "testType", testType_)) {

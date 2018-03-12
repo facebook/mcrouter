@@ -287,6 +287,12 @@ class TestRequest : public carbon::RequestCommon {
   std::vector<folly::Optional<std::string>>& testOptionalVec() {
     return testOptionalVec_;
   }
+  const std::vector<folly::IOBuf>& testIOBufList() const {
+    return testIOBufList_;
+  }
+  std::vector<folly::IOBuf>& testIOBufList() {
+    return testIOBufList_;
+  }
   const UserType& testType() const {
     return testType_;
   }
@@ -333,6 +339,7 @@ class TestRequest : public carbon::RequestCommon {
   std::set<uint64_t> testSet_;
   folly::Optional<bool> testOptionalBool_;
   std::vector<folly::Optional<std::string>> testOptionalVec_;
+  std::vector<folly::IOBuf> testIOBufList_;
   UserType testType_;
   int32_t testInt32_{0};
   uint32_t testUInt32_{0};

@@ -57,6 +57,8 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
       {{"hello", {1, 1, 1}}, {"world", {2, 2, 2}}});
   r.testUSet() = std::unordered_set<std::string>({"hello", "world"});
   r.testSet() = std::set<uint64_t>({123, 456});
+  r.testIOBufList() =
+      std::vector<folly::IOBuf>({folly::IOBuf(), folly::IOBuf()});
 
   folly::dynamic expected = folly::dynamic::object(
       "__Base",
@@ -95,7 +97,8 @@ TEST(CarbonMessageConversionUtils, toFollyDynamic_Complex) {
           "world", folly::dynamic::array(2, 2, 2)))(
       "testUSet", folly::dynamic::array("hello", "world"))(
       "testSet", folly::dynamic::array(123, 456))("testType", "(user type)")(
-      "testOptionalVec", folly::dynamic::array());
+      "testOptionalVec", folly::dynamic::array())(
+      "testIOBufList", folly::dynamic::array("", ""));
 
   auto dynamic = carbon::convertToFollyDynamic(r);
   auto set = dynamic.at("testUSet");

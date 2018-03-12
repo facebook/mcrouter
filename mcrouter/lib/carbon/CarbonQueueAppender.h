@@ -19,7 +19,7 @@
 
 namespace folly {
 class IOBuf;
-} // folly
+} // namespace folly
 
 namespace carbon {
 
@@ -36,7 +36,7 @@ class CarbonQueueAppenderStorage {
   void append(const folly::IOBuf& buf) {
     // IOBuf copy is a very expensive procedure (64 bytes object + atomic
     // operation), avoid incuring that cost for small buffers.
-    if (!buf.isChained() && buf.length() <= kInlineIOBufLen &&
+    if (!buf.empty() && !buf.isChained() && buf.length() <= kInlineIOBufLen &&
         storageIdx_ + buf.length() <= sizeof(storage_)) {
       push(buf.data(), buf.length());
       return;
@@ -264,4 +264,4 @@ class CarbonQueueAppender {
   CarbonQueueAppenderStorage* storage_{nullptr};
 };
 
-} // carbon
+} // namespace carbon

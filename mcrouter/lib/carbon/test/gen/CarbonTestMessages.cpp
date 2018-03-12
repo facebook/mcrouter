@@ -53,6 +53,7 @@ void TestRequest::serialize(carbon::CarbonProtocolWriter& writer) const {
   writer.writeField(29 /* field id */, testSet());
   writer.writeField(30 /* field id */, testOptionalBool());
   writer.writeField(31 /* field id */, testOptionalVec());
+  writer.writeField(32 /* field id */, testIOBufList());
   writer.writeField(100 /* field id */, testType());
   writer.writeStructEnd();
   writer.writeStop();
@@ -196,6 +197,10 @@ void TestRequest::deserialize(carbon::CarbonProtocolReader& reader) {
       }
       case 31: {
         reader.readField(testOptionalVec(), fieldType);
+        break;
+      }
+      case 32: {
+        reader.readField(testIOBufList(), fieldType);
         break;
       }
       case 100: {

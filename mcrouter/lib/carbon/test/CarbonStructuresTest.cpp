@@ -382,6 +382,8 @@ TEST(CarbonTest, serializeDeserialize) {
   outRequest.testOptionalVec().emplace_back(
       folly::Optional<std::string>("hello"));
 
+  outRequest.testIOBufList().emplace_back(folly::IOBuf());
+
   const auto inRequest = serializeAndDeserialize(outRequest);
   expectEqTestRequest(outRequest, inRequest);
 }
