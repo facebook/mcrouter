@@ -75,6 +75,8 @@ class TestServerOnRequest {
 
 class TestServer {
  public:
+  ~TestServer();
+
   template <class OnRequest = TestServerOnRequest>
   static std::unique_ptr<TestServer> create(
       bool outOfOrder,
@@ -113,7 +115,9 @@ class TestServer {
   }
 
   void join() {
-    serverThread_.join();
+    if (serverThread_.joinable()) {
+      serverThread_.join();
+    }
   }
 
   size_t getAcceptedConns() const {

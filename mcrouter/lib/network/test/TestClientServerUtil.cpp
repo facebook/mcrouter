@@ -213,6 +213,11 @@ void TestServer::run(std::function<void(AsyncMcServerWorker&)> init) {
   startupLock.wait();
 }
 
+TestServer::~TestServer() {
+  shutdown();
+  join();
+}
+
 std::string TestServer::version() const {
   if (opts_.worker.defaultVersionHandler) {
     return opts_.worker.versionString;
