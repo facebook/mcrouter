@@ -44,8 +44,19 @@ class LoadBalancerRoute {
   using RouteHandlePtr = typename RouterInfo::RouteHandlePtr;
 
  public:
-  static std::string routeName() {
-    return "loadbalancer";
+  enum class AlgorithmType : std::uint8_t {
+    WEIGHTED_HASHING = 1,
+    TWO_RANDOM_CHOICES = 2,
+  };
+
+  static constexpr folly::StringPiece kWeightedHashing = "weighted-hashing";
+  static constexpr folly::StringPiece kTwoRandomChoices = "two-random-choices";
+
+  std::string routeName() const {
+    return folly::to<std::string>(
+        "loadbalancer|",
+        algorithm_ == AlgorithmType::WEIGHTED_HASHING ? kWeightedHashing
+                                                      : kTwoRandomChoices);
   }
 
   /**
@@ -60,41 +71,51 @@ class LoadBalancerRoute {
    *                                1 means no failover (just route once).
    *                                The value will be capped to
    *                                std::min(failoverCount, children.size())
+   * @param algorithm               AlgorithmType
+   * @param seed                    seed for random number generator used in
+   *                                the two random choices algorithm.
    */
   LoadBalancerRoute(
       std::vector<std::shared_ptr<RouteHandleIf>> children,
       std::string salt,
       std::chrono::microseconds loadTtl,
       ServerLoad defaultServerLoad,
-      size_t failoverCount)
+      size_t failoverCount,
+      AlgorithmType algorithm = AlgorithmType::WEIGHTED_HASHING,
+      uint32_t seed = nowUs())
       : children_(std::move(children)),
         salt_(std::move(salt)),
         loadTtl_(loadTtl),
-        defaultServerLoadWeight_(
+        defaultLoadComplement_(
             defaultServerLoad.complement().percentLoad() / 100),
         failoverCount_(std::min(failoverCount, children_.size())),
-        weightedLoads_(children_.size(), 1.0),
-        expTimes_(children_.size(), std::chrono::microseconds(0)) {
-    assert(!children_.empty());
+        loadComplements_(children_.size(), 1.0),
+        expTimes_(children_.size(), std::chrono::microseconds(0)),
+        gen_(seed),
+        algorithm_(algorithm) {
+    assert(children_.size() >= 2);
   }
 
   template <class Request>
   void traverse(
       const Request& req,
       const RouteHandleTraverser<RouteHandleIf>& t) const {
-    size_t idx = select(req, weightedLoads_, salt_);
-    t(*children_[idx], req);
+    // Walk all children
+    t(children_, req);
   }
 
   template <class Request>
   ReplyT<Request> route(const Request& req) {
+    if (algorithm_ == AlgorithmType::TWO_RANDOM_CHOICES) {
+      return routeTwoRandomChoices(req);
+    }
     // first try
-    size_t idx = select(req, weightedLoads_, salt_);
+    size_t idx = selectWeightedHashing(req, loadComplements_, salt_);
     auto reply = doRoute(req, idx);
 
     // retry in case of error
     if (failoverCount_ > 1 && shouldFailover(reply)) {
-      std::vector<double> weights = weightedLoads_;
+      std::vector<double> weights = loadComplements_;
       std::vector<size_t> indexMap(children_.size(), 0);
       std::iota(indexMap.begin(), indexMap.end(), 0);
 
@@ -105,7 +126,8 @@ class LoadBalancerRoute {
         weights.pop_back();
         indexMap.pop_back();
 
-        idx = select(req, weights, folly::to<std::string>(salt_, retries));
+        idx = selectWeightedHashing(
+            req, weights, folly::to<std::string>(salt_, retries));
         reply = doRoute(req, indexMap[idx], /* isFailover */ true);
       }
     }
@@ -115,7 +137,7 @@ class LoadBalancerRoute {
     for (size_t i = 0; i < children_.size(); i++) {
       if (expTimes_[i].count() != 0 && expTimes_[i].count() <= now) {
         expTimes_[i] = std::chrono::microseconds(0);
-        weightedLoads_[i] = defaultServerLoadWeight_;
+        loadComplements_[i] = defaultLoadComplement_;
         if (auto& ctx = mcrouter::fiber_local<RouterInfo>::getSharedCtx()) {
           ctx->proxy().stats().increment(load_balancer_load_reset_count_stat);
         }
@@ -129,18 +151,22 @@ class LoadBalancerRoute {
   const std::vector<std::shared_ptr<RouteHandleIf>> children_;
   const std::string salt_;
   // Default TTL of a serer load. Indicates the time after which a server load
-  // value is reset to 'defaultServerLoad' value.
+  // value is reset to 'defaultLoadComplement_' value.
   const std::chrono::microseconds loadTtl_{100000};
   // Value to which server load is reset when it's value expires.
-  const double defaultServerLoadWeight_{0.5};
+  const double defaultLoadComplement_{0.5};
   // Number of times to retry on error.
   const size_t failoverCount_{1};
 
   // 1-complement of the server load (i.e. 1 - serverLoad) of each of the
   // children.
-  std::vector<double> weightedLoads_;
-  // Point in time when the weightedLoad become too old to trusted.
+  std::vector<double> loadComplements_;
+  // Point in time when the loadComplement becomes too old to be trusted.
   std::vector<std::chrono::microseconds> expTimes_;
+  // Random Number generator used for TwoRandomChoices algorithm
+  std::ranlux24_base gen_;
+  // Load balancing algorithm
+  AlgorithmType algorithm_;
 
   // route the request and update server load.
   template <class Request>
@@ -155,13 +181,13 @@ class LoadBalancerRoute {
           auto reply = children_[idx]->route(req);
           auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
           if (!load.isZero()) {
-            weightedLoads_[idx] = load.complement().percentLoad() / 100;
+            loadComplements_[idx] = load.complement().percentLoad() / 100;
 
             // mark the current load of the server for expiration only if it is
             // more than default server load.
-            // (using '<' below because weightedLoads_ is actually the
+            // (using '<' below because loadComplements_ is actually the
             // complement of the load)
-            if (weightedLoads_[idx] < defaultServerLoadWeight_) {
+            if (loadComplements_[idx] < defaultLoadComplement_) {
               expTimes_[idx] =
                   std::chrono::microseconds(nowUs() + loadTtl_.count());
             }
@@ -176,7 +202,36 @@ class LoadBalancerRoute {
   }
 
   template <class Request>
-  size_t selectInternal(
+  ReplyT<Request> routeTwoRandomChoices(const Request& req) {
+    std::pair<size_t, size_t> idxs = selectTwoRandomChoices();
+    auto rep = children_[idxs.first]->route(req);
+    auto load = mcrouter::fiber_local<RouterInfo>::getServerLoad();
+    loadComplements_[idxs.first] = load.complement().percentLoad() / 100;
+
+    auto now = nowUs();
+    // Mark the current load of the server for expiration only if it is
+    // more than default server load
+    if (loadComplements_[idxs.first] < defaultLoadComplement_) {
+      expTimes_[idxs.first] = std::chrono::microseconds(now + loadTtl_.count());
+    }
+
+    // If the second entry, which had higher load that the first entry, has
+    // already expired, reset the expiry time to zero and set the load to
+    // the defaultLoadComplement_.
+    if (expTimes_[idxs.second].count() != 0 &&
+        expTimes_[idxs.second].count() <= now) {
+      expTimes_[idxs.second] = std::chrono::microseconds(0);
+      loadComplements_[idxs.second] = defaultLoadComplement_;
+      if (auto& ctx = mcrouter::fiber_local<RouterInfo>::getSharedCtx()) {
+        ctx->proxy().stats().increment(load_balancer_load_reset_count_stat);
+      }
+    }
+
+    return rep;
+  }
+
+  template <class Request>
+  size_t selectWeightedHashingInternal(
       const Request& req,
       const std::vector<double>& weights,
       folly::StringPiece salt) const {
@@ -197,23 +252,61 @@ class LoadBalancerRoute {
     return n;
   }
 
+  /**
+   * Implements Two Random Choices algorithm
+   *
+   * @return       pair of randomly selected idxs. First idx is of the child
+   *               with lowest load. The second idx is of the child with the
+   *               highest load.
+   *
+   */
+  std::pair<size_t, size_t> selectTwoRandomChoices() {
+    uint32_t x = 0;
+    uint32_t y = 1;
+    if (children_.size() > 2) {
+      x = gen_() % children_.size();
+      y = gen_() % (children_.size() - 1);
+      if (x == y) {
+        y = children_.size() - 1;
+      }
+    }
+
+    if (loadComplements_[x] > loadComplements_[y]) {
+      return std::make_pair<size_t, size_t>(x, y);
+    }
+    return std::make_pair<size_t, size_t>(y, x);
+  }
+
   template <class Request>
-  size_t select(
+  size_t selectWeightedHashing(
       const Request& req,
       const std::vector<double>& weights,
       folly::StringPiece salt) const {
     // Hash functions can be stack-intensive so jump back to the main context
     return folly::fibers::runInMainContext([this, &req, &weights, &salt]() {
-      return selectInternal(req, weights, salt);
+      return selectWeightedHashingInternal(req, weights, salt);
     });
   }
 };
+
+template <class RouterInfo>
+constexpr folly::StringPiece LoadBalancerRoute<RouterInfo>::kWeightedHashing;
+template <class RouterInfo>
+constexpr folly::StringPiece LoadBalancerRoute<RouterInfo>::kTwoRandomChoices;
 
 template <class RouterInfo>
 typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
     const folly::dynamic& json,
     std::vector<typename RouterInfo::RouteHandlePtr> rh) {
   assert(json.isObject());
+
+  if (rh.size() == 0) {
+    return createNullRoute<typename RouterInfo::RouteHandleIf>();
+  }
+
+  if (rh.size() == 1) {
+    return std::move(rh[0]);
+  }
 
   std::string salt;
   if (auto jSalt = json.get_ptr("salt")) {
@@ -246,13 +339,42 @@ typename RouterInfo::RouteHandlePtr createLoadBalancerRoute(
         "LoadBalancerRoute: failover_count is not an integer");
     failoverCount = jFailoverCount->getInt();
   }
+  auto algorithm =
+      LoadBalancerRoute<RouterInfo>::AlgorithmType::WEIGHTED_HASHING;
+  std::string algorithmStr;
+  /* Optional and will default to weighted hashing */
+  if (auto jAlgorithm = json.get_ptr("algorithm")) {
+    checkLogic(
+        jAlgorithm->isString(), "LoadBalancerRoute: algorithm is not a string");
+    algorithmStr = jAlgorithm->getString();
+    if (algorithmStr == LoadBalancerRoute<RouterInfo>::kWeightedHashing) {
+      algorithm =
+          LoadBalancerRoute<RouterInfo>::AlgorithmType::WEIGHTED_HASHING;
+    } else if (
+        algorithmStr == LoadBalancerRoute<RouterInfo>::kTwoRandomChoices) {
+      algorithm =
+          LoadBalancerRoute<RouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES;
+    } else {
+      throwLogic("Unknown algorithm: {}", algorithmStr);
+    }
+  }
+  uint32_t randomSeed;
+  if (auto jFailoverCount = json.get_ptr("seed")) {
+    checkLogic(
+        jFailoverCount->isInt(), "LoadBalancerRoute: seed is not an integer");
+    randomSeed = jFailoverCount->getInt();
+  } else {
+    randomSeed = nowUs();
+  }
 
   return makeRouteHandleWithInfo<RouterInfo, LoadBalancerRoute>(
       std::move(rh),
       std::move(salt),
       loadTtl,
       defaultServerLoad,
-      failoverCount);
+      failoverCount,
+      algorithm,
+      randomSeed);
 }
 
 template <class RouterInfo>
@@ -275,12 +397,6 @@ typename RouterInfo::RouteHandlePtr makeLoadBalancerRoute(
       "LoadBalancerRoute: 'children' property is missing");
 
   auto children = factory.createList(*jChildren);
-  if (children.size() == 0) {
-    return createNullRoute<typename RouterInfo::RouteHandleIf>();
-  }
-  if (children.size() == 1) {
-    return std::move(children[0]);
-  }
   return createLoadBalancerRoute<RouterInfo>(json, std::move(children));
 }
 

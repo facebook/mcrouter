@@ -212,6 +212,18 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsLoadBalancer) {
           "1, 2, 3",
           "3, 5, 6"
         ]
+      },
+      {
+        "pool": {
+          "type": "Pool",
+          "name": "pool2",
+          "servers": [ "localhost:12302", "localhost:35602" ],
+          "protocol": "caret"
+        },
+        "shards": [
+          "1, 2, 3",
+          "3, 5, 6"
+        ]
       }
     ],
     "children_settings" : {
@@ -233,7 +245,11 @@ TEST_F(EagerShardSelectionRouteTest, traverseAndCheckChildrenIsLoadBalancer) {
       [&iterations](const HelloGoodbyeRouterInfo::RouteHandleIf& r) {
         ++iterations;
         if (iterations == 1) {
-          EXPECT_EQ("loadbalancer", r.routeName());
+          EXPECT_EQ(
+              folly::to<std::string>(
+                  "loadbalancer|",
+                  LoadBalancerRoute<HelloGoodbyeRouterInfo>::kWeightedHashing),
+              r.routeName());
         }
       }};
   rh->traverse(req, t);

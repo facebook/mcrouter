@@ -383,3 +383,260 @@ TEST(LoadBalancerRouteTest, failoverStress) {
     EXPECT_EQ("cpuc", carbon::valueRangeSlow(reply).str());
   }
 }
+
+TEST(CpuLoadBalancerRouteTest, basicTwoChoice) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 25);
+  mymap.emplace("cpub", 50);
+  mymap.emplace("cpuc", 75);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 60) && (cmap["cpua"] <= 72));
+  EXPECT_TRUE((cmap["cpub"] >= 27) && (cmap["cpub"] <= 39));
+  EXPECT_TRUE((cmap["cpuc"] >= 0) && (cmap["cpuc"] <= 1));
+}
+
+TEST(CpuLoadBalancerRouteTest, basicTwoChoiceWithSeed) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 25);
+  mymap.emplace("cpub", 50);
+  mymap.emplace("cpuc", 75);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 60) && (cmap["cpua"] <= 72));
+  EXPECT_TRUE((cmap["cpub"] >= 27) && (cmap["cpub"] <= 39));
+  EXPECT_TRUE((cmap["cpuc"] >= 0) && (cmap["cpuc"] <= 1));
+}
+
+TEST(CpuLoadBalancerRouteTest, oneFullyLoadedTwoChoice) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 50);
+  mymap.emplace("cpub", 50);
+  mymap.emplace("cpuc", 100);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "SALT-STRING",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 40) && (cmap["cpua"] <= 60));
+  EXPECT_TRUE((cmap["cpub"] >= 40) && (cmap["cpub"] <= 60));
+  EXPECT_TRUE((cmap["cpuc"] >= 0) && (cmap["cpuc"] <= 1));
+}
+
+TEST(CpuLoadBalancerRouteTest, oneZeroLoadTwoChoice) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 0);
+  mymap.emplace("cpub", 50);
+  mymap.emplace("cpuc", 50);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "TEST-SALT",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 55) && (cmap["cpua"] <= 75));
+  EXPECT_TRUE((cmap["cpub"] >= 10) && (cmap["cpub"] <= 25));
+  EXPECT_TRUE((cmap["cpuc"] >= 10) && (cmap["cpuc"] <= 25));
+}
+
+TEST(CpuLoadBalancerRouteTest, AllFullyLoadedTwoChoice) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 100);
+  mymap.emplace("cpub", 100);
+  mymap.emplace("cpuc", 100);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "TEST-SALT",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 25) && (cmap["cpua"] <= 45));
+  EXPECT_TRUE((cmap["cpub"] >= 25) && (cmap["cpub"] <= 45));
+  EXPECT_TRUE((cmap["cpuc"] >= 25) && (cmap["cpuc"] <= 45));
+}
+
+TEST(CpuLoadBalancerRouteTest, AllZeroLoadsTwoChoice) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 0);
+  mymap.emplace("cpub", 0);
+  mymap.emplace("cpuc", 0);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "TEST-SALT",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 25) && (cmap["cpua"] <= 45));
+  EXPECT_TRUE((cmap["cpub"] >= 25) && (cmap["cpub"] <= 45));
+  EXPECT_TRUE((cmap["cpuc"] >= 25) && (cmap["cpuc"] <= 45));
+}
+
+TEST(CpuLoadBalancerRouteTest, LoadsWithWaitTwoChoice) {
+  std::unordered_map<std::string, double> mymap;
+  mymap.emplace("cpua", 100);
+  mymap.emplace("cpub", 50);
+  mymap.emplace("cpuc", 50);
+  std::vector<std::shared_ptr<TestRouteHandleIf>> testHandles{
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpua", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpub", mymap),
+      makeRouteHandle<TestRouteHandleIf, TestRoute>("cpuc", mymap)};
+
+  TestRouteHandle<LoadBalancerRoute<TestRouterInfo>> rh(
+      testHandles,
+      "TEST-SALT",
+      std::chrono::milliseconds(100),
+      ServerLoad::fromPercentLoad(50),
+      /* fauloverCount */ 1,
+      LoadBalancerRoute<TestRouterInfo>::AlgorithmType::TWO_RANDOM_CHOICES,
+      /* fixed seed */ 0);
+
+  std::unordered_map<std::string, size_t> cmap;
+  for (int i = 0; i < 100; i++) {
+    auto reply = rh.route(McGetRequest("0" + std::to_string(i)));
+    std::string v = carbon::valueRangeSlow(reply).str();
+    auto it = cmap.find(v);
+    if (it != cmap.end()) {
+      cmap[std::string(v)]++;
+    } else {
+      cmap.emplace(std::string(v), 1);
+    }
+    // sleep here to cause server load of 'cpua' to expire
+    if (i > 25) {
+      /* sleep override */
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+  }
+  LOG(INFO) << cmap["cpua"] << " " << cmap["cpub"] << " " << cmap["cpuc"];
+  EXPECT_TRUE((cmap["cpua"] >= 10) && (cmap["cpua"] <= 20));
+  EXPECT_TRUE((cmap["cpub"] >= 35) && (cmap["cpub"] <= 47));
+  EXPECT_TRUE((cmap["cpuc"] >= 35) && (cmap["cpuc"] <= 47));
+}
